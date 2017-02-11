@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2017 Akuli
 
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -164,7 +162,7 @@ class EditorText(tk.Text):
         end = '%d.%d' % (lineno, len(self._indentprefix))
         if self.get(start, end) == self._indentprefix:
             self.delete(start, end)
-            self.update_statusbar()
+            self.editor.update_statusbar()
 
     def _autoindent(self):
         """Indent the current line automatically if needed."""

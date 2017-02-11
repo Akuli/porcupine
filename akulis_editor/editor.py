@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2017 Akuli
 
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -43,50 +41,6 @@ except ImportError:
 from . import finddialog, textwidget
 
 
-DEFAULT_CONFIG = '''\
-# This is an automatically generated configuration file for Akuli's Editor.
-[files]
-# The encoding of opened files. Set this to UTF-8 unless you know that
-# you need something else.
-encoding = UTF-8
-# Add a trailing newline to the files? This is recommended.
-trailing-newline = yes
-
-# Use these to customize how the editor looks.
-[colors]
-foreground = white
-background = black
-string = yellow
-keyword = cyan
-exception = red
-builtin = mediumpurple
-comment = gray
-
-# These are used with syntax highlighting.
-[regexes]
-identifier = \\b%s\\b
-comment = #.*$
-string = '[^']*[^\\\\]'|"[^"]*[^\\\\]"
-multiline-string = """[\\S\\s]*?"""|\'\'\'[\\S\\s]*?\'\'\'
-
-[editing]
-# How many spaces to insert when tab is pressed? 0 means tabs instead of
-# spaces. Set this to 4 unless you need something else.
-indent = 4
-# How many undo/redo moves to remember? 0 means that there is no limit.
-maxundo = 0
-# Display the cursor as a square-shaped block instead of a vertical
-# line?
-blockcursor = no
-
-[toolbars]
-# Add buttons for things in the File menu?
-topbar = yes
-# Display the current line, column and some other things at the bottom?
-statusbar = yes
-'''
-
-
 @contextlib.contextmanager
 def handle_errors(*errors):
     """Show an error message if an exception is raised.
@@ -126,9 +80,10 @@ class EditorWindow(tk.Tk):
         self._currentfilelabel.pack()
         textarea = tk.Frame(self)
         textarea.pack(fill='both', expand=True)
-        # we need to set height=1 here to make sure it's never too large
-        # for seeing the statusbar
-        self.textwidget = textwidget.EditorText(textarea, self, height=1)
+        # we need to set width and height to 1 to make sure it's never too
+        # large for seeing the statusbar
+        self.textwidget = textwidget.EditorText(
+            textarea, self, width=1, height=1)
         self.textwidget.bind('<<Modified>>', self._update_top_label)
         self.textwidget.pack(side='left', fill='both', expand=True)
         scrollbar = tk.Scrollbar(textarea)

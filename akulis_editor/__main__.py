@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2017 Akuli
 
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -108,6 +106,7 @@ def main():
 
     editor = EditorWindow(settings)
     editor.title("Akuli's Editor")
+    editor.geometry('600x500')
     if args.file is not None:
         editor.open_file(args.file)
     editor.mainloop()
