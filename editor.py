@@ -223,6 +223,7 @@ class EditorText(tk.Text):
             self.bind('<ISO_Left_Tab>', lambda event: self._on_tab(True))
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
+        self.bind('<Button-1>', self._on_click)
 
     def _on_ctrl_a(self, event):
         """Select all and return 'break' to stop the event handling."""
@@ -275,6 +276,10 @@ class EditorText(tk.Text):
             self.after_idle(self.highlight_multiline)
         else:
             self.after_idle(self.highlight_line)
+        self.after_idle(self.editor.update_statusbar)
+
+    def _on_click(self, event):
+        self.after_idle(self.editor.update_statusbar)
 
     def indent(self, lineno):
         """Indent by one level."""
@@ -492,6 +497,10 @@ class Editor(tk.Tk):
         else:
             label['fg'] = self._orig_label_fg
         label['text'] = text
+
+    def update_statusbar(self):
+        line, column = self.textwidget.index('insert').split('.')
+        self.statusbar['text'] = "Line %s, column %s" % (line, column)
 
     def _open(self, path, mode):
         """Like open(), but uses the settingsuration."""
