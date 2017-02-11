@@ -284,6 +284,7 @@ class EditorText(tk.Text):
     def indent(self, lineno):
         """Indent by one level."""
         self.insert('%d.0' % lineno, self._indentprefix)
+        self.editor.update_statusbar()
 
     def dedent(self, lineno):
         """Unindent by one level if possible."""
@@ -292,6 +293,7 @@ class EditorText(tk.Text):
         end = '%d.%d' % (lineno, len(self._indentprefix))
         if self.get(start, end) == self._indentprefix:
             self.delete(start, end)
+            self.update_statusbar()
 
     def _autoindent(self):
         """Indent the current line automatically if needed."""
@@ -326,6 +328,8 @@ class EditorText(tk.Text):
         new = old.rstrip()
         if old != new:
             self.delete('%d.%d' % (lineno-1, len(new)), end)
+            # There's no need to update the statusbar because the current
+            # line is never changed.
 
     def highlight_line(self, lineno=None):
         """Do all one-line highlighting needed."""
@@ -417,7 +421,6 @@ class Editor(tk.Tk):
         self.textwidget['yscrollcommand'] = scrollbar.set
         scrollbar['command'] = self.textwidget.yview
         if self.settings['toolbars'].getboolean('statusbar'):
-            print("creatin status bar")
             self.statusbar = tk.Label(
                 self, anchor='w', relief='sunken', text="Line 1, column 0")
             self.statusbar.pack(fill='x')
@@ -550,6 +553,7 @@ class Editor(tk.Tk):
             self.textwidget.edit_modified(False)
             self.textwidget.edit_reset()
             self.filename = None
+            self.update_statusbar()
 
     def open_file(self, filename=None):
         if not self._savecheck("Open a file"):
@@ -573,12 +577,14 @@ class Editor(tk.Tk):
             self.textwidget.highlight_all()
             self.textwidget.edit_modified(False)
             self.textwidget.edit_reset()
+            self.update_statusbar()
 
     def save(self):
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with \n
             if self.settings['files'].getboolean('trailing-newline'):
                 self.textwidget.insert('end-1c', '\n')
+                self.update_statusbar()
         if self.filename is None:
             # set self.filename and call save() again
             self.save_as()
