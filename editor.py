@@ -160,15 +160,16 @@ class FindDialog(tk.Toplevel):
 
 class EditorText(tk.Text):
 
-    def __init__(self, master, settings, **kwargs):
-        self.settings = settings
-        colorsettings = settings['colors']
+    def __init__(self, master, editor, **kwargs):
+        self.editor = editor
+        self.settings = editor.settings
+        colorsettings = self.settings['colors']
         fg = colorsettings['foreground']
         super().__init__(
             master, foreground=fg, selectbackground=fg,
             insertbackground=fg, background=colorsettings['background'],
-            undo=True, maxundo=settings['editing'].getint('maxundo'),
-            blockcursor=settings['editing'].getboolean('blockcursor'),
+            undo=True, maxundo=self.settings['editing'].getint('maxundo'),
+            blockcursor=self.settings['editing'].getboolean('blockcursor'),
             **kwargs)
 
         for name in ['keyword', 'exception', 'builtin', 'string', 'comment']:
@@ -183,19 +184,19 @@ class EditorText(tk.Text):
         # keyword.kwlist and dir(builtins). We want builtins to take
         # precedence.
         for name in set(keyword.kwlist) - set(dir(builtins)):
-            regex = re.compile(settings['regexes']['identifier'] % name)
+            regex = re.compile(self.settings['regexes']['identifier'] % name)
             self._line_highlights.append((regex, 'keyword'))
         for name in dir(builtins):
             if name.startswith('_'):
                 continue
-            regex = re.compile(settings['regexes']['identifier'] % name)
+            regex = re.compile(self.settings['regexes']['identifier'] % name)
             value = getattr(builtins, name)
             if isinstance(value, type) and issubclass(value, Exception):
                 self._line_highlights.append((regex, 'exception'))
             else:
                 self._line_highlights.append((regex, 'builtin'))
         for name in ['string', 'comment']:
-            regex = re.compile(settings['regexes'][name])
+            regex = re.compile(self.settings['regexes'][name])
             self._line_highlights.append((regex, name))
         # This will be used for removing old tags in highlight_line().
         # The same tag can be added multiple times, but there's no need
@@ -205,12 +206,12 @@ class EditorText(tk.Text):
             self._line_highlight_tags.add(tag)
 
         self._multiline_string_regex = re.compile(
-            settings['regexes']['multiline-string'], flags=re.DOTALL)
+            self.settings['regexes']['multiline-string'], flags=re.DOTALL)
 
-        if settings['editing'].getint('indent') == 0:
+        if self.settings['editing'].getint('indent') == 0:
             self._indentprefix = '\t'
         else:
-            self._indentprefix = ' ' * settings['editing'].getint('indent')
+            self._indentprefix = ' ' * self.settings['editing'].getint('indent')
 
         self.bind('<Key>', self._on_key)
         self.bind('<Control-a>', self._on_ctrl_a)
@@ -403,7 +404,7 @@ class Editor(tk.Tk):
         textarea.pack(fill='both', expand=True)
         # we need to set height=1 here to make sure it's never too large
         # for seeing the statusbar
-        self.textwidget = EditorText(textarea, settings, height=1)
+        self.textwidget = EditorText(textarea, self, height=1)
         self.textwidget.bind('<<Modified>>', self._update_top_label)
         self.textwidget.pack(side='left', fill='both', expand=True)
         scrollbar = tk.Scrollbar(textarea)
