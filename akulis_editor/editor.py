@@ -114,7 +114,7 @@ class Editor(tk.Tk):
             ]),
             ("Edit", [
                 ("Undo", "Ctrl+Z", '<Control-z>', self.undo),
-                ("Redo", "Ctry+Y", '<Control-y>', self.redo),
+                ("Redo", "Ctrl+Y", '<Control-y>', self.redo),
                 None,
                 ("Find", "Ctrl+F", '<Control-f>', self.find),
             ]),
