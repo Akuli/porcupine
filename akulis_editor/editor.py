@@ -37,9 +37,6 @@ except ImportError:
 from . import finddialog, linenumbers, scrolling, textwidget
 
 
-FILETYPES = [("Python files", '*.py'), ("All files", '*')]
-
-
 class Editor(tk.Tk):
 
     def __init__(self, settings, **kwargs):
@@ -211,6 +208,15 @@ class Editor(tk.Tk):
                 self.save()
         return True
 
+    def _get_dialog_options(self):
+        result = {'filetypes': [("Python files", '*.py'), ("All files", '*')]}
+        if self.filename is None:
+            result['initialdir'] = os.getcwd()
+        else:
+            result['initialdir'] = os.path.dirname(self.filename)
+            result['initialfile'] = os.path.basename(self.filename)
+        return result
+
     def new_file(self):
         if self._savecheck("New file"):
             self.textwidget.delete('0.0', 'end')
@@ -224,15 +230,8 @@ class Editor(tk.Tk):
         if not self._savecheck("Open a file"):
             return
         if filename is None:
-            options = {}
-            if self.filename is None:
-                options['initialdir'] = os.getcwd()
-            else:
-                dirname, basename = os.path.split(self.filename)
-                options['initialdir'] = dirname
-                options['initialfile'] = basename
-            filename = filedialog.askopenfilename(
-                filetypes=FILETYPES, **options)
+            options = self._get_dialog_options()
+            filename = filedialog.askopenfilename(**options)
             if not filename:
                 # cancel
                 return
@@ -279,11 +278,8 @@ class Editor(tk.Tk):
         self.textwidget.edit_modified(False)
 
     def save_as(self):
-        options = {}
-        if self.filename is not None:
-            options['initialfile'] = self.filename
-        filename = filedialog.asksaveasfilename(
-            filetypes=FILETYPES, **options)
+        options = self._get_dialog_options()
+        filename = filedialog.asksaveasfilename(**options)
         if filename:
             # not cancelled
             self.filename = filename
@@ -322,3 +318,4 @@ class Editor(tk.Tk):
         if self._finddialog is None:
             self._finddialog = finddialog.FindDialog(self)
         self._finddialog.show()
+
