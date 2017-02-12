@@ -20,17 +20,16 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """A find dialog."""
-
 # TODO: replace support?
 
+import re
 import tkinter as tk
 
 
 def _parse_geometry(geometry):
     """Convert tkinter geometry string to (x, y, width, height) tuple."""
-    place, x, y = geometry.split('+')
-    width, height = map(int, place.split('x'))
-    return int(x), int(y), width, height
+    match = re.search(r'^(\d+)x(\d+)\+(\d+)\+(\d+)$', geometry)
+    return tuple(map(int, match.groups()))
 
 
 class FindDialog(tk.Toplevel):
@@ -65,6 +64,7 @@ class FindDialog(tk.Toplevel):
         self.protocol('WM_DELETE_WINDOW', self.withdraw)
 
     def show(self):
+        self.notfoundlabel['text'] = ''
         self.deiconify()
         self.update_idletasks()   # wait for it to get full size
         editorx, editory, editorwidth, editorheight = _parse_geometry(
@@ -75,7 +75,6 @@ class FindDialog(tk.Toplevel):
         self.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
     def find(self, what=None):
-        self.notfoundlabel['text'] = ''
         text = self.editor.textwidget
         if what is None:
             what = self.entry.get()
@@ -89,5 +88,6 @@ class FindDialog(tk.Toplevel):
             text.tag_add('sel', start, end)
             text.mark_set('insert', start)
             text.see(start)
+            self.notfoundlabel['text'] = ''
         else:
             self.notfoundlabel['text'] = "Search string not found :("
