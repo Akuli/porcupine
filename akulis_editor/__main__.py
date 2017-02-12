@@ -53,13 +53,14 @@ builtin = mediumpurple
 comment = gray
 
 [editing]
-# How many spaces to insert when tab is pressed? 0 means tabs instead of
-# spaces. Set this to 4 unless you need something else.
+# The font as a tkinter-compatible font string. Example: courier 12 bold
+font = TkFixedFont
+# How many spaces to insert when tab is pressed? 0 means tab characters
+# instead of spaces.
 indent = 4
 # How many undo/redo moves to remember? 0 means that there is no limit.
 maxundo = 0
-# Display the cursor as a square-shaped block instead of a vertical
-# line?
+# Display the cursor as a square-shaped block instead of a vertical line?
 blockcursor = no
 
 [toolbars]
@@ -81,6 +82,7 @@ def main():
         '-c', '--default-config', action='store_true',
         help="create a default ~/.akulis-editor.ini")
     args = parser.parse_args()
+
     if args.default_config:
         if os.path.exists(CONFIGFILE):
             answer = input("The configuration file exists. Overwrite? [Y/n] ")
@@ -89,8 +91,7 @@ def main():
                 return
         with open(CONFIGFILE, 'w', encoding='utf-8') as f:
             f.write(DEFAULT_CONFIG)
-        print("Default configuration was written to %s."
-              % CONFIGFILE)
+        print("Default configuration was written to %s." % CONFIGFILE)
         return
 
     settings = configparser.ConfigParser(interpolation=None)

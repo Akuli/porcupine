@@ -80,11 +80,12 @@ class Editor(tk.Tk):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing the statusbar
         self.textwidget = textwidget.EditorText(
-            textarea, self, width=1, height=1)
+            textarea, self, width=1, height=1,
+            font=settings['editing']['font'])
         self.textwidget.bind('<<Modified>>', self._update_top_label)
         if settings['toolbars'].getboolean('linenumbers'):
             self.linenumbers = linenumbers.LineNumbers(
-                textarea, self.textwidget)
+                textarea, self.textwidget, font=settings['editing']['font'])
             scrollbar = scrolling.MultiScrollbar(
                 textarea, [self.textwidget, self.linenumbers])
             self.linenumbers.pack(side='left', fill='y')
