@@ -67,6 +67,8 @@ blockcursor = no
 topbar = yes
 # Display the current line, column and some other things at the bottom?
 statusbar = yes
+# Display line numbers?
+linenumbers = yes
 '''
 
 
@@ -97,7 +99,7 @@ def main():
 
     editor = Editor(settings)
     editor.title("Akuli's Editor")
-    editor.geometry('600x500')
+    editor.geometry('650x500')
     if args.file is not None:
         editor.open_file(args.file)
     editor.mainloop()

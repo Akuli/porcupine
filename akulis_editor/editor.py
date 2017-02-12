@@ -34,7 +34,7 @@ except ImportError:
     # Python 3.2.
     from argparse import Namespace as SimpleNamespace
 
-from . import finddialog, textwidget
+from . import finddialog, linenumbers, scrolling, textwidget
 
 
 @contextlib.contextmanager
@@ -74,6 +74,7 @@ class Editor(tk.Tk):
         self._currentfilelabel = tk.Label(self, text="New file")
         self._orig_label_fg = self._currentfilelabel['fg']
         self._currentfilelabel.pack()
+
         textarea = tk.Frame(self)
         textarea.pack(fill='both', expand=True)
         # we need to set width and height to 1 to make sure it's never too
@@ -81,12 +82,20 @@ class Editor(tk.Tk):
         self.textwidget = textwidget.EditorText(
             textarea, self, width=1, height=1)
         self.textwidget.bind('<<Modified>>', self._update_top_label)
+        if settings['toolbars'].getboolean('linenumbers'):
+            self.linenumbers = linenumbers.LineNumbers(textarea, self.textwidget)
+            scrollbar = scrolling.MultiScrollbar(
+                textarea, [self.textwidget, self.linenumbers])
+            self.linenumbers.pack(side='left', fill='y')
+        else:
+            self.linenumbers = linenumbers.DummyLineNumbers()
+            scrollbar = tk.Scrollbar(textarea)
+            self.textwidget['yscrollcommand'] = scrollbar.set
+            scrollbar['command'] = self.textwidget.yview
         self.textwidget.pack(side='left', fill='both', expand=True)
-        scrollbar = tk.Scrollbar(textarea)
         scrollbar.pack(side='left', fill='y')
-        self.textwidget['yscrollcommand'] = scrollbar.set
-        scrollbar['command'] = self.textwidget.yview
-        if self.settings['toolbars'].getboolean('statusbar'):
+
+        if settings['toolbars'].getboolean('statusbar'):
             self.statusbar = tk.Label(
                 self, anchor='w', relief='sunken', text="Line 1, column 0")
             self.statusbar.pack(fill='x')
@@ -221,6 +230,7 @@ class Editor(tk.Tk):
             self.textwidget.edit_reset()
             self.filename = None
             self.update_statusbar()
+            self.linenumbers.do_update()
 
     def open_file(self, filename=None):
         if not self._savecheck("Open a file"):
@@ -249,6 +259,7 @@ class Editor(tk.Tk):
             self.textwidget.edit_modified(False)
             self.textwidget.edit_reset()
             self.update_statusbar()
+            self.linenumbers.do_update()
 
     def save(self):
         needs_update = False
@@ -261,7 +272,9 @@ class Editor(tk.Tk):
             linecount = int(self.textwidget.index('end-1c').split('.')[0])
             for lineno in range(1, linecount):
                 self.textwidget.strip_whitespace(lineno)
-        self.update_statusbar()
+            needs_update = True
+        if needs_update:
+            self.update_statusbar()
         if self.filename is None:
             # set self.filename and call save() again
             self.save_as()
@@ -300,6 +313,7 @@ class Editor(tk.Tk):
         except tk.TclError:   # nothing to undo
             pass
         self.textwidget.highlighter.highlight_all()
+        self.linenumbers.do_update()
 
     def redo(self):
         try:
@@ -307,6 +321,7 @@ class Editor(tk.Tk):
         except tk.TclError:   # nothing to redo
             pass
         self.textwidget.highlighter.highlight_all()
+        self.linenumbers.do_update()
 
     def find(self):
         if self._finddialog is None:
