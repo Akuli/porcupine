@@ -37,24 +37,6 @@ except ImportError:
 from . import finddialog, linenumbers, scrolling, textwidget
 
 
-@contextlib.contextmanager
-def handle_errors(*errors):
-    """Show an error message if an exception is raised.
-
-    This suppresses exceptions, but the yielded value has a success
-    attribute that is True if an exception was raised and False
-    otherwise.
-    """
-    result = SimpleNamespace()
-    try:
-        yield result
-    except errors as e:
-        messagebox.showerror(type(e).__name__, traceback.format_exc())
-        result.success = False
-    else:
-        result.success = True
-
-
 FILETYPES = [("Python files", '*.py'), ("All files", '*')]
 
 
@@ -254,42 +236,47 @@ class Editor(tk.Tk):
             if not filename:
                 # cancel
                 return
-        with handle_errors(OSError, UnicodeError) as result:
+        try:
             with self._open(filename, 'r') as f:
                 content = f.read()
-        if result.success:
-            self.filename = filename
-            self.textwidget.delete('0.0', 'end')
-            self.textwidget.insert('0.0', content)
-            self.textwidget.highlighter.highlight_all()
-            self.textwidget.edit_modified(False)
-            self.textwidget.edit_reset()
-            self.update_statusbar()
-            self.linenumbers.do_update()
+        except (OSError, UnicodeError):
+            messagebox.showerror("Opening failed!", traceback.format_exc())
+            return
+        self.filename = filename
+        self.textwidget.delete('0.0', 'end')
+        self.textwidget.insert('0.0', content)
+        self.textwidget.highlighter.highlight_all()
+        self.textwidget.edit_modified(False)
+        self.textwidget.edit_reset()
+        self.update_statusbar()
+        self.linenumbers.do_update()
 
     def save(self):
-        needs_update = False
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with \n
             if self.settings['files'].getboolean('add-trailing-newline'):
+                # make sure we don't move the cursor, it can be annoying
+                here = self.textwidget.index('insert')
                 self.textwidget.insert('end-1c', '\n')
-                needs_update = True
+                self.textwidget.mark_set('insert', here)
+                self.linenumbers.do_update()
         if self.settings['files'].getboolean('strip-trailing-whitespace'):
             linecount = int(self.textwidget.index('end-1c').split('.')[0])
-            for lineno in range(1, linecount):
+            for lineno in range(1, linecount+1):
                 self.textwidget.strip_whitespace(lineno)
-            needs_update = True
-        if needs_update:
             self.update_statusbar()
+
         if self.filename is None:
             # set self.filename and call save() again
             self.save_as()
             return
-        with handle_errors(OSError, UnicodeError) as result:
+        try:
             with self._backup_open(self.filename, 'w') as f:
                 f.write(self.textwidget.get('0.0', 'end-1c'))
-        if result.success:
-            self.textwidget.edit_modified(False)
+        except (OSError, UnicodeError):
+            messagebox.showerror("Saving failed!", traceback.format_exc())
+            return
+        self.textwidget.edit_modified(False)
 
     def save_as(self):
         options = {}
@@ -317,17 +304,19 @@ class Editor(tk.Tk):
         try:
             self.textwidget.edit_undo()
         except tk.TclError:   # nothing to undo
-            pass
+            return
         self.textwidget.highlighter.highlight_all()
         self.linenumbers.do_update()
+        self.update_statusbar()
 
     def redo(self):
         try:
             self.textwidget.edit_redo()
         except tk.TclError:   # nothing to redo
-            pass
+            return
         self.textwidget.highlighter.highlight_all()
         self.linenumbers.do_update()
+        self.update_statusbar()
 
     def find(self):
         if self._finddialog is None:

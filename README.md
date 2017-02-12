@@ -1,9 +1,15 @@
 # My editor
 
-This is an easy-to-use editor written in Python using Tkinter. You need 
-Python 3.2 or newer to run this.
+This is a simple and easy-to-use editor for writing Python. You need 
+Python 3.2 or newer with Tkinter to run this.
 
-## Well, how do I run it?
+This editor supports features like syntax highlighting, line numbers and 
+automatic indenting, but you cannot run files directly from this editor. 
+This is meant to be an editor that does one thing and does it well.
+
+![Screenshot.](screenshot.png)
+
+## How do I run this thing?
 
 Download the editor, `cd` to where you downloaded it and run it like this:
 

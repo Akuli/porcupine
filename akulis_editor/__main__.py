@@ -51,6 +51,7 @@ keyword = cyan
 exception = red
 builtin = mediumpurple
 comment = gray
+decorator = violetred
 
 [editing]
 # The font as a tkinter-compatible font string. Example: courier 12 bold
@@ -104,7 +105,12 @@ def main():
     editor = Editor(settings)
     editor.geometry()
     if args.file is not None:
-        editor.open_file(args.file)
+        # the editor doesn't create new files when opening, so we need to
+        # take care of that here
+        if os.path.exists(args.file):
+            editor.open_file(args.file)
+        else:
+            editor.filename = args.file
     editor.mainloop()
 
 

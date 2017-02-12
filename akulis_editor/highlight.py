@@ -31,6 +31,10 @@ IDENTIFIER = r'\b%s\b'
 COMMENT = re.compile(r'#.*$')
 STRING = re.compile(r"'.*?'" + '|' + r'".*?"')
 MULTILINE_STRING = re.compile(r'""".*?"""' + '|' + r"'''.*?'''", re.DOTALL)
+# It's important to stop at ( because it's possible to do this:
+#   @some_decorator(arg1, arg2,
+#                   arg3, arg4)
+DECORATOR = re.compile(r'^\s*@[^\(]+')
 
 
 class SyntaxHighlighter:
@@ -39,7 +43,8 @@ class SyntaxHighlighter:
         """Initialize the syntax highlighter."""
         self._widget = textwidget
 
-        for name in ['keyword', 'exception', 'builtin', 'string', 'comment']:
+        for name in ['keyword', 'exception', 'builtin', 'string',
+                     'comment', 'decorator']:
             self._widget.tag_config(name, foreground=settings['colors'][name])
         # this is a separate tag because multiline strings are
         # highlighted separately
@@ -64,6 +69,7 @@ class SyntaxHighlighter:
                 self._line_highlights.append((regex, 'builtin'))
         self._line_highlights.append((STRING, 'string'))
         self._line_highlights.append((COMMENT, 'comment'))
+        self._line_highlights.append((DECORATOR, 'decorator'))
 
         # This will be used for removing old tags in highlight_line().
         # The same tag can be added multiple times, but removing it multiple
