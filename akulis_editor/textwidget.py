@@ -21,10 +21,9 @@
 
 """The big text widget in the middle of the editor."""
 
-import builtins
-import keyword
-import re
 import tkinter as tk
+
+from . import highlight
 
 
 class EditorText(tk.Text):
@@ -40,42 +39,7 @@ class EditorText(tk.Text):
             undo=True, maxundo=self.settings['editing'].getint('maxundo'),
             blockcursor=self.settings['editing'].getboolean('blockcursor'),
             **kwargs)
-
-        for name in ['keyword', 'exception', 'builtin', 'string', 'comment']:
-            self.tag_config(name, foreground=colorsettings[name])
-        # this is a separate tag because multiline strings are
-        # highlighted separately
-        self.tag_config('multiline-string',
-                        foreground=colorsettings['string'])
-
-        self._line_highlights = []  # [(regex, tag), ...]
-        # True, False, None and probably some other things are in both
-        # keyword.kwlist and dir(builtins). We want builtins to take
-        # precedence.
-        for name in set(keyword.kwlist) - set(dir(builtins)):
-            regex = re.compile(self.settings['regexes']['identifier'] % name)
-            self._line_highlights.append((regex, 'keyword'))
-        for name in dir(builtins):
-            if name.startswith('_'):
-                continue
-            regex = re.compile(self.settings['regexes']['identifier'] % name)
-            value = getattr(builtins, name)
-            if isinstance(value, type) and issubclass(value, Exception):
-                self._line_highlights.append((regex, 'exception'))
-            else:
-                self._line_highlights.append((regex, 'builtin'))
-        for name in ['string', 'comment']:
-            regex = re.compile(self.settings['regexes'][name])
-            self._line_highlights.append((regex, name))
-        # This will be used for removing old tags in highlight_line().
-        # The same tag can be added multiple times, but there's no need
-        # to remove it multiple times.
-        self._line_highlight_tags = set()
-        for regex, tag in self._line_highlights:
-            self._line_highlight_tags.add(tag)
-
-        self._multiline_string_regex = re.compile(
-            self.settings['regexes']['multiline-string'], flags=re.DOTALL)
+        self.highlighter = highlight.SyntaxHighlighter(self, editor.settings)
 
         indent = self.settings['editing'].getint('indent')
         if indent == 0:
@@ -86,6 +50,7 @@ class EditorText(tk.Text):
         self.bind('<Key>', self._on_key)
         self.bind('<Control-a>', self._on_ctrl_a)
         self.bind('<BackSpace>', self._on_backspace)
+        self.bind('<Return>', self._on_return)
         for key in ('<parenright>', '<bracketright>', '<braceright>'):
             self.bind(key, self._on_closing_brace)
         self.bind('<Tab>', lambda event: self._on_tab(False))
@@ -106,6 +71,15 @@ class EditorText(tk.Text):
             return 'break'
         self._on_key(event)
         return None
+
+    def _on_return(self, event):
+        # The character is not inserted yet when this runs, so we use
+        # after_idle to wait until the event is processed.
+        self.after_idle(self._autoindent)
+        self.after_idle(self.strip_whitespace,
+                        int(self.index('insert').split('.')[0]))
+        self.after_idle(self.highlighter.highlight_multiline)
+        # This doesn't return 'break', so _on_key() runs.
 
     def _on_closing_brace(self, event):
         """Like _autodedent(), but ignore event and return None."""
@@ -134,18 +108,7 @@ class EditorText(tk.Text):
         return 'break'
 
     def _on_key(self, event):
-        # The character is not inserted yet when this runs, so we use
-        # after_idle to wait until the event is processed.
-        if event.keysym == 'Return':
-            # This is here because if we return 'break' from something
-            # connected to '<Return>' it's impossible to actually type a
-            # newline by pressing Return, but we don't really need to
-            # run self.highlight_line().
-            self.after_idle(self._autoindent)
-            self.after_idle(self._strip_whitespace)
-            self.after_idle(self.highlight_multiline)
-        else:
-            self.after_idle(self.highlight_line)
+        self.after_idle(self.highlighter.highlight_line)
         self.after_idle(self.editor.update_statusbar)
 
     def _on_click(self, event):
@@ -188,54 +151,11 @@ class EditorText(tk.Text):
             return True
         return False
 
-    def _strip_whitespace(self):
-        """Strip trailing whitespace from line before cursor."""
-        lineno = int(self.index('insert').split('.')[0])
-        start = '%d.0-1l' % lineno
-        end = '%d.0-1c' % lineno
+    def strip_whitespace(self, lineno):
+        """Strip whitespace from end of a line."""
+        start = '%d.0' % lineno
+        end = '%d.0+1l-1c' % lineno
         old = self.get(start, end)
         new = old.rstrip()
         if old != new:
-            self.delete('%d.%d' % (lineno-1, len(new)), end)
-            # There's no need to update the statusbar because the current
-            # line is never changed.
-
-    def highlight_line(self, lineno=None):
-        """Do all one-line highlighting needed."""
-        # This must be fast because this is ran on (almost) every
-        # keypress by _on_key().
-        if lineno is None:
-            # use cursor's line number
-            lineno = int(self.index('insert').split('.')[0])
-        line_start = '%d.0' % lineno
-        line_end = '%d.0+1l' % lineno
-        text = self.get(line_start, line_end).rstrip('\n')
-        for tag in self._line_highlight_tags:
-            self.tag_remove(tag, line_start, line_end)
-        for regex, tag in self._line_highlights:
-            for match in regex.finditer(text):
-                start = '{}.0+{}c'.format(lineno, match.start())
-                end = '{}.0+{}c'.format(lineno, match.end())
-                self.tag_add(tag, start, end)
-
-    def highlight_multiline(self):
-        """Do all multiline highlighting needed.
-
-        Currently only multiline strings need this.
-        """
-        text = self.get('0.0', 'end-1c')
-        self.tag_remove('multiline-string', '0.0', 'end-1c')
-        for match in self._multiline_string_regex.finditer(text):
-            start, end = map('0.0+{}c'.format, match.span())
-            self.tag_add('multiline-string', start, end)
-
-    def highlight_all(self):
-        """Highlight everything.
-
-        This call highlight_multiline() once and highlight_line() with
-        all possible line numbers.
-        """
-        linecount = int(self.index('end-1c').split('.')[0])
-        for lineno in range(1, linecount + 1):
-            self.highlight_line(lineno)
-        self.highlight_multiline()
+            self.delete('%d.%d' % (lineno, len(new)), end)

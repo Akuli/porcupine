@@ -19,12 +19,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""This is a really simple text editor for writing Python code.
+"""The main Editor class."""
 
-If you have used something like Notepad, Microsoft Word or LibreOffice
-Write before you know how to use this editor. Just make sure you have
-Python 3.2 or newer with Tkinter installed and run this.
-"""
 
 import contextlib
 import os
@@ -62,7 +58,7 @@ def handle_errors(*errors):
 FILETYPES = [("Python files", '*.py'), ("All files", '*')]
 
 
-class EditorWindow(tk.Tk):
+class Editor(tk.Tk):
 
     def __init__(self, settings, **kwargs):
         super().__init__(**kwargs)
@@ -109,6 +105,7 @@ class EditorWindow(tk.Tk):
             ("Edit", [
                 ("Undo", "Ctrl+Z", '<Control-z>', self.undo),
                 ("Redo", "Ctry+Y", '<Control-y>', self.redo),
+                None,
                 ("Find", "Ctrl+F", '<Control-f>', self.find),
             ]),
         ]
@@ -126,7 +123,7 @@ class EditorWindow(tk.Tk):
             menubar.add_cascade(label=title, menu=menu)
 
         if self.topbar is not None:
-            # menucontent[0][1] is content of the File menu
+            # menucontent[0][1] is the item list of the File menu
             for item in menucontent[0][1]:
                 if item is None:
                     # it's a separator, we'll add an empty frame that
@@ -230,8 +227,12 @@ class EditorWindow(tk.Tk):
             return
         if filename is None:
             options = {}
-            if self.filename is not None:
-                options['initialdir'] = os.path.dirname(self.filename)
+            if self.filename is None:
+                options['initialdir'] = os.getcwd()
+            else:
+                dirname, basename = os.path.split(self.filename)
+                options['initialdir'] = dirname
+                options['initialfile'] = basename
             filename = filedialog.askopenfilename(
                 filetypes=FILETYPES, **options)
             if not filename:
@@ -244,17 +245,23 @@ class EditorWindow(tk.Tk):
             self.filename = filename
             self.textwidget.delete('0.0', 'end')
             self.textwidget.insert('0.0', content)
-            self.textwidget.highlight_all()
+            self.textwidget.highlighter.highlight_all()
             self.textwidget.edit_modified(False)
             self.textwidget.edit_reset()
             self.update_statusbar()
 
     def save(self):
+        needs_update = False
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with \n
-            if self.settings['files'].getboolean('trailing-newline'):
+            if self.settings['files'].getboolean('add-trailing-newline'):
                 self.textwidget.insert('end-1c', '\n')
-                self.update_statusbar()
+                needs_update = True
+        if self.settings['files'].getboolean('strip-trailing-whitespace'):
+            linecount = int(self.textwidget.index('end-1c').split('.')[0])
+            for lineno in range(1, linecount):
+                self.textwidget.strip_whitespace(lineno)
+        self.update_statusbar()
         if self.filename is None:
             # set self.filename and call save() again
             self.save_as()
@@ -292,14 +299,14 @@ class EditorWindow(tk.Tk):
             self.textwidget.edit_undo()
         except tk.TclError:   # nothing to undo
             pass
-        self.textwidget.highlight_all()
+        self.textwidget.highlighter.highlight_all()
 
     def redo(self):
         try:
             self.textwidget.edit_redo()
         except tk.TclError:   # nothing to redo
             pass
-        self.textwidget.highlight_all()
+        self.textwidget.highlighter.highlight_all()
 
     def find(self):
         if self._finddialog is None:

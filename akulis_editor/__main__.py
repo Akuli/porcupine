@@ -19,30 +19,28 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""This is a really simple text editor for writing Python code.
-
-If you have used something like Notepad, Microsoft Word or LibreOffice
-Write before you know how to use this editor. Just make sure you have
-Python 3.2 or newer with Tkinter installed and run this.
-"""
+"""Run the editor."""
 
 import argparse
 import configparser
 import os
 
-from .editor import EditorWindow
+from .editor import Editor
 
 
 CONFIGFILE = os.path.join(os.path.expanduser('~'), '.akulis-editor.ini')
 
 DEFAULT_CONFIG = '''\
 # This is an automatically generated configuration file for Akuli's Editor.
+# Feel free to edit this to customize how the editor looks and behaves.
+
 [files]
-# The encoding of opened files. Set this to UTF-8 unless you know that
-# you need something else.
+# The encoding of all opened and saved files.
 encoding = UTF-8
-# Add a trailing newline to the files? This is recommended.
-trailing-newline = yes
+# Add a trailing newlines to ends of files when saving?
+add-trailing-newline = yes
+# Strip trailing whitespace from ends of lines when saving?
+strip-trailing-whitespace = yes
 
 # Use these to customize how the editor looks.
 [colors]
@@ -53,13 +51,6 @@ keyword = cyan
 exception = red
 builtin = mediumpurple
 comment = gray
-
-# These are used with syntax highlighting.
-[regexes]
-identifier = \\b%s\\b
-comment = #.*$
-string = '[^']*[^\\\\]'|"[^"]*[^\\\\]"
-multiline-string = """[\\S\\s]*?"""|\'\'\'[\\S\\s]*?\'\'\'
 
 [editing]
 # How many spaces to insert when tab is pressed? 0 means tabs instead of
@@ -85,7 +76,7 @@ def main():
         'file', nargs=argparse.OPTIONAL,
         help="open this file when the editor starts")
     parser.add_argument(
-        '-d', '--default-config', action='store_true',
+        '-c', '--default-config', action='store_true',
         help="create a default ~/.akulis-editor.ini")
     args = parser.parse_args()
     if args.default_config:
@@ -104,7 +95,7 @@ def main():
     settings.read_string(DEFAULT_CONFIG)
     settings.read([CONFIGFILE])
 
-    editor = EditorWindow(settings)
+    editor = Editor(settings)
     editor.title("Akuli's Editor")
     editor.geometry('600x500')
     if args.file is not None:
