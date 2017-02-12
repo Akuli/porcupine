@@ -66,7 +66,7 @@ class Editor(tk.Tk):
         self._filename = None
         self._finddialog = None
 
-        if self.settings['toolbars'].getboolean('topbar'):
+        if self.settings['window'].getboolean('topbar'):
             self.topbar = tk.Frame(self)
             self.topbar.pack(fill='x')
         else:
@@ -82,8 +82,8 @@ class Editor(tk.Tk):
         self.textwidget = textwidget.EditorText(
             textarea, self, width=1, height=1,
             font=settings['editing']['font'])
-        self.textwidget.bind('<<Modified>>', self._update_top_label)
-        if settings['toolbars'].getboolean('linenumbers'):
+        self.textwidget.bind('<<Modified>>', self._update_title)
+        if settings['window'].getboolean('linenumbers'):
             self.linenumbers = linenumbers.LineNumbers(
                 textarea, self.textwidget, font=settings['editing']['font'])
             scrollbar = scrolling.MultiScrollbar(
@@ -97,7 +97,7 @@ class Editor(tk.Tk):
         self.textwidget.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='left', fill='y')
 
-        if settings['toolbars'].getboolean('statusbar'):
+        if settings['window'].getboolean('statusbar'):
             self.statusbar = tk.Label(
                 self, anchor='w', relief='sunken', text="Line 1, column 0")
             self.statusbar.pack(fill='x')
@@ -145,8 +145,9 @@ class Editor(tk.Tk):
                 button = tk.Button(self.topbar, text=text, command=command)
                 button.pack(side='left')
 
-        self.title("Akuli's Editor")
+        self._update_title()
         self.protocol('WM_DELETE_WINDOW', self.quit_editor)
+        self.geometry(settings['window']['geometry'])
         self.textwidget.focus()
 
     @property
@@ -156,7 +157,7 @@ class Editor(tk.Tk):
     @filename.setter
     def filename(self, filename):
         self._filename = filename
-        self._update_top_label()
+        self._update_title()
 
     def _bind_menu_command(self, binding, command):
         def bindcallback(event):
@@ -166,18 +167,21 @@ class Editor(tk.Tk):
         self.bind(binding, bindcallback)
         self.textwidget.bind(binding, bindcallback)
 
-    def _update_top_label(self, event=None):
+    def _update_title(self, event=None):
+        """Update the current file label's text and the editor's title."""
         label = self._currentfilelabel
         if self.filename is None:
-            text = "New file"
+            windowtitle = labeltext = "New file"
         else:
-            text = "File " + self.filename
+            windowtitle = self.filename
+            labeltext = "File " + self.filename
         if self.textwidget.edit_modified():
             label['fg'] = 'red'
-            text += ", MODIFIED"
+            labeltext += ", MODIFIED"
         else:
             label['fg'] = self._orig_label_fg
-        label['text'] = text
+        self.title(windowtitle + " - Akuli's Editor")
+        label['text'] = labeltext
 
     def update_statusbar(self):
         line, column = self.textwidget.index('insert').split('.')

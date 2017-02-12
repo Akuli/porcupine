@@ -40,7 +40,7 @@ encoding = UTF-8
 # Add a trailing newlines to ends of files when saving?
 add-trailing-newline = yes
 # Strip trailing whitespace from ends of lines when saving?
-strip-trailing-whitespace = yes
+strip-trailing-whitespace = no
 
 # Use these to customize how the editor looks.
 [colors]
@@ -63,13 +63,16 @@ maxundo = 0
 # Display the cursor as a square-shaped block instead of a vertical line?
 blockcursor = no
 
-[toolbars]
+[window]
 # Add buttons for things in the File menu?
 topbar = yes
 # Display the current line, column and some other things at the bottom?
 statusbar = yes
 # Display line numbers?
 linenumbers = yes
+# The default window size as a tkinter geometry. For example, 700x400
+# means 700 pixels wide and 400 pixels high.
+geometry = 650x500
 '''
 
 
@@ -99,8 +102,7 @@ def main():
     settings.read([CONFIGFILE])
 
     editor = Editor(settings)
-    editor.title("Akuli's Editor")
-    editor.geometry('650x500')
+    editor.geometry()
     if args.file is not None:
         editor.open_file(args.file)
     editor.mainloop()

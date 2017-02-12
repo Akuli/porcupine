@@ -42,7 +42,8 @@ class FindDialog(tk.Toplevel):
         topframe.pack(expand=True, anchor='center')
         label = tk.Label(topframe, text="What do you want to search for?")
         label.pack()
-        self.entry = tk.Entry(topframe)
+        self.entry = tk.Entry(
+            topframe, font=editor.settings['editing']['font'])
         self.entry.bind('<Return>', lambda event: self.find())
         self.entry.bind('<Escape>', lambda event: self.withdraw())
         self.entry.pack()
@@ -67,6 +68,7 @@ class FindDialog(tk.Toplevel):
         self.notfoundlabel['text'] = ''
         self.deiconify()
         self.update_idletasks()   # wait for it to get full size
+        # center it on the editor
         editorx, editory, editorwidth, editorheight = _parse_geometry(
             self.editor.geometry())
         width, height = 240, 120
