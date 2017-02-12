@@ -50,6 +50,7 @@ class EditorText(tk.Text):
         self.bind('<Key>', self._on_key)
         self.bind('<Control-a>', self._on_ctrl_a)
         self.bind('<BackSpace>', self._on_backspace)
+        self.bind('<Delete>', self._on_delete)
         self.bind('<Return>', self._on_return)
         for key in ('<parenright>', '<bracketright>', '<braceright>'):
             self.bind(key, self._on_closing_brace)
@@ -66,11 +67,17 @@ class EditorText(tk.Text):
         return 'break'     # don't run _on_key
 
     def _on_backspace(self, event):
-        """Dedent and return 'break' if possible, if not call _on_key()."""
+        """Dedent if possible."""
         if self._autodedent():
             return 'break'
         self._on_key(event)
+        self.after_idle(self.editor.linenumbers.do_update)
         return None
+
+    def _on_delete(self, event):
+        """Schedule a line number update."""
+        self.after_idle(self.editor.linenumbers.do_update)
+        self._on_key(event)
 
     def _on_return(self, event):
         # The character is not inserted yet when this runs, so we use
@@ -79,7 +86,8 @@ class EditorText(tk.Text):
         self.after_idle(self.strip_whitespace,
                         int(self.index('insert').split('.')[0]))
         self.after_idle(self.highlighter.highlight_multiline)
-        # This doesn't return 'break', so _on_key() runs.
+        self.after_idle(self.editor.linenumbers.do_update)
+        self._on_key(event)
 
     def _on_closing_brace(self, event):
         """Like _autodedent(), but ignore event and return None."""
