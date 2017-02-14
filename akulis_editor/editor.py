@@ -28,11 +28,6 @@ import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import traceback
-try:
-    from types import SimpleNamespace
-except ImportError:
-    # Python 3.2.
-    from argparse import Namespace as SimpleNamespace
 
 from . import finddialog, linenumbers, scrolling, textwidget
 
@@ -45,7 +40,7 @@ class Editor(tk.Tk):
         self._filename = None
         self._finddialog = None
 
-        if self.settings['window'].getboolean('topbar'):
+        if self.settings['topbar']:
             self.topbar = tk.Frame(self)
             self.topbar.pack(fill='x')
         else:
@@ -59,12 +54,11 @@ class Editor(tk.Tk):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing the statusbar
         self.textwidget = textwidget.EditorText(
-            textarea, self, width=1, height=1,
-            font=settings['editing']['font'])
+            textarea, self, width=1, height=1)
         self.textwidget.bind('<<Modified>>', self._update_title)
-        if settings['window'].getboolean('linenumbers'):
+        if settings['linenumbers']:
             self.linenumbers = linenumbers.LineNumbers(
-                textarea, self.textwidget, font=settings['editing']['font'])
+                textarea, self.textwidget, font=settings['font'])
             scrollbar = scrolling.MultiScrollbar(
                 textarea, [self.textwidget, self.linenumbers])
             self.linenumbers.pack(side='left', fill='y')
@@ -76,7 +70,7 @@ class Editor(tk.Tk):
         self.textwidget.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='left', fill='y')
 
-        if settings['window'].getboolean('statusbar'):
+        if settings['statusbar']:
             self.statusbar = tk.Label(
                 self, anchor='w', relief='sunken', text="Line 1, column 0")
             self.statusbar.pack(fill='x')
@@ -126,7 +120,7 @@ class Editor(tk.Tk):
 
         self._update_title()
         self.protocol('WM_DELETE_WINDOW', self.quit_editor)
-        self.geometry(settings['window']['geometry'])
+        self.geometry(settings['default_geometry'])
         self.textwidget.focus()
 
     @property
@@ -167,8 +161,8 @@ class Editor(tk.Tk):
         self.statusbar['text'] = "Line %s, column %s" % (line, column)
 
     def _open(self, path, mode):
-        """Like open(), but uses the settingsuration."""
-        return open(path, mode, encoding=self.settings['files']['encoding'])
+        """Like open(), but uses the settings."""
+        return open(path, mode, encoding=self.settings['encoding'])
 
     @contextlib.contextmanager
     def _backup_open(self, path, mode):
@@ -253,17 +247,12 @@ class Editor(tk.Tk):
     def save(self):
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with \n
-            if self.settings['files'].getboolean('add-trailing-newline'):
+            if self.settings['add_trailing_newline']:
                 # make sure we don't move the cursor, it can be annoying
                 here = self.textwidget.index('insert')
                 self.textwidget.insert('end-1c', '\n')
                 self.textwidget.mark_set('insert', here)
                 self.linenumbers.do_update()
-        if self.settings['files'].getboolean('strip-trailing-whitespace'):
-            linecount = int(self.textwidget.index('end-1c').split('.')[0])
-            for lineno in range(1, linecount+1):
-                self.textwidget.strip_whitespace(lineno)
-            self.update_statusbar()
 
         if self.filename is None:
             # set self.filename and call save() again
@@ -318,4 +307,3 @@ class Editor(tk.Tk):
         if self._finddialog is None:
             self._finddialog = finddialog.FindDialog(self)
         self._finddialog.show()
-

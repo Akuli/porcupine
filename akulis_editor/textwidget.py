@@ -30,18 +30,20 @@ class EditorText(tk.Text):
 
     def __init__(self, master, editor, **kwargs):
         self.editor = editor
-        self.settings = editor.settings
-        colorsettings = self.settings['colors']
-        fg = colorsettings['foreground']
+        self.settings = settings = editor.settings
+        fg = settings['colors']['foreground']
+
         super().__init__(
             master, foreground=fg, selectbackground=fg,
-            insertbackground=fg, background=colorsettings['background'],
-            undo=True, maxundo=self.settings['editing'].getint('maxundo'),
-            blockcursor=self.settings['editing'].getboolean('blockcursor'),
+            insertbackground=fg,   # TODO: fix this
+            background=settings['colors']['background'], undo=True,
+            maxundo=settings['maxundo'],
+            blockcursor=settings['blockcursor'], font=settings['font'],
             **kwargs)
-        self.highlighter = highlight.SyntaxHighlighter(self, editor.settings)
 
-        indent = self.settings['editing'].getint('indent')
+        self.highlighter = highlight.SyntaxHighlighter(self, settings)
+
+        indent = settings['indent']
         if indent == 0:
             self._indentprefix = '\t'
         else:
@@ -52,8 +54,9 @@ class EditorText(tk.Text):
         self.bind('<BackSpace>', self._on_backspace)
         self.bind('<Delete>', self._on_delete)
         self.bind('<Return>', self._on_return)
-        for key in ('<parenright>', '<bracketright>', '<braceright>'):
-            self.bind(key, self._on_closing_brace)
+        self.bind('<parenright>', self._on_closing_brace)
+        self.bind('<bracketright>', self._on_closing_brace)
+        self.bind('<braceright>', self._on_closing_brace)
         self.bind('<Tab>', lambda event: self._on_tab(False))
         if self.tk.call('tk', 'windowingsystem') == 'x11':
             self.bind('<ISO_Left_Tab>', lambda event: self._on_tab(True))
