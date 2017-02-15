@@ -1,7 +1,7 @@
 # My editor
 
 This is a simple and easy-to-use editor for writing Python. You need 
-Python 3.2 or newer with Tkinter to run this.
+Python 3.3 or newer with Tkinter to run this.
 
 This editor supports features like syntax highlighting, line numbers and 
 automatic indenting, but you cannot run files directly from this editor. 
