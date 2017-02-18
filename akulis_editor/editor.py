@@ -28,10 +28,10 @@ import tkinter as tk
 from . import files
 
 
-class Editor(tk.Tk):
+class Editor(tk.Frame):
 
-    def __init__(self, settings, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, parent, settings, **kwargs):
+        super().__init__(parent, **kwargs)
         self.settings = settings
         self._filename = None
         self._finddialog = None
@@ -52,7 +52,7 @@ class Editor(tk.Tk):
                 ("Save", "Ctrl+S", '<Control-s>', self.file.save),
                 ("Save as", "Ctrl+Shift+S", '<Control-S>', self.file.save_as),
                 None,   # separator
-                ("Quit", "Ctrl+Q", '<Control-q>', self.quit_editor),
+                ("Quit", "Ctrl+Q", '<Control-q>', self.do_quit),
             ]),
             ("Edit", [
                 ("Undo", "Ctrl+Z", '<Control-z>', self.file.textwidget.undo),
@@ -61,9 +61,10 @@ class Editor(tk.Tk):
                 #("Find", "Ctrl+F", '<Control-f>', self.find),
             ]),
         ]
-        menubar = self['menu'] = tk.Menu(self)
+
+        self.menubar = tk.Menu()
         for title, menuitems in menucontent:
-            menu = tk.Menu(menubar, tearoff=False)
+            menu = tk.Menu(tearoff=False)
             for item in menuitems:
                 if item is None:
                     menu.add_separator()
@@ -72,7 +73,7 @@ class Editor(tk.Tk):
                 menu.add_command(label=text, accelerator=accelerator,
                                  command=command)
                 self._bind_menu_command(binding, command)
-            menubar.add_cascade(label=title, menu=menu)
+            self.menubar.add_cascade(label=title, menu=menu)
 
         if self.topbar is not None:
             # menucontent[0][1] is the item list of the File menu
@@ -88,8 +89,6 @@ class Editor(tk.Tk):
                 button = tk.Button(self.topbar, text=text, command=command)
                 button.pack(side='left')
 
-        self.protocol('WM_DELETE_WINDOW', self.quit_editor)
-        self.geometry(settings['default_geometry'])
         self.file.textwidget.focus()
 
     def _bind_menu_command(self, binding, command):
@@ -108,7 +107,7 @@ class Editor(tk.Tk):
             result['initialfile'] = os.path.basename(self.filename)
         return result
 
-    def quit_editor(self):
+    def do_quit(self):
         if self.file.savecheck("Quit"):
             # I'm not sure what's the difference between quit() and
             # destroy(), but sometimes destroy() gives me weird errors
@@ -120,3 +119,6 @@ class Editor(tk.Tk):
             self.quit()
 
     # TODO: add find dialog back here
+
+
+# See __main__.py for the code that runs this.

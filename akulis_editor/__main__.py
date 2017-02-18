@@ -23,22 +23,27 @@
 
 import argparse
 import os
+import tkinter as tk
 
 from . import config
+from . import __doc__ as description
 from .editor import Editor
 
 
 def main():
     # TODO: allow multiple file args when we have multiple tabs
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         'file', nargs=argparse.OPTIONAL,
         help="open this file when the editor starts")
     args = parser.parse_args()
 
+    root = tk.Tk()
+
     settings = config.load()
-    editor = Editor(settings)
-    editor.title("Akuli's Editor")
+    editor = Editor(root, settings)
+    editor.pack(fill='both', expand=True)
+
     if args.file is not None:
         # the editor doesn't create new files when opening, so we need to
         # take care of that here
@@ -46,7 +51,12 @@ def main():
             editor.open_file(args.file)
         else:
             editor.filename = args.file
-    editor.mainloop()
+
+    root['menu'] = editor.menubar
+    root.geometry(settings['default_geometry'])
+    root.title("Akuli's Editor")
+    root.protocol('WM_DELETE_WINDOW', editor.do_quit)
+    root.mainloop()
 
 
 if __name__ == '__main__':
