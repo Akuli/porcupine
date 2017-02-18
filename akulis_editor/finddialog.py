@@ -36,6 +36,7 @@ class FindDialog(tk.Toplevel):
 
     def __init__(self, editor, **kwargs):
         super().__init__(editor, **kwargs)
+        self.transient(editor)
         self.editor = editor
 
         topframe = tk.Frame(self)
@@ -43,7 +44,7 @@ class FindDialog(tk.Toplevel):
         label = tk.Label(topframe, text="What do you want to search for?")
         label.pack()
         self.entry = tk.Entry(
-            topframe, font=editor.settings['editing']['font'])
+            topframe, font=editor.settings['font'])
         self.entry.bind('<Return>', lambda event: self.find())
         self.entry.bind('<Escape>', lambda event: self.withdraw())
         self.entry.pack()
@@ -61,20 +62,12 @@ class FindDialog(tk.Toplevel):
         self.entry.focus()
         self.title("Find")
         self.resizable(False, False)
-        self.attributes('-topmost', True)
+        self.geometry('240x120')
         self.protocol('WM_DELETE_WINDOW', self.withdraw)
 
     def show(self):
         self.notfoundlabel['text'] = ''
         self.deiconify()
-        self.update_idletasks()   # wait for it to get full size
-        # center it on the editor
-        editorx, editory, editorwidth, editorheight = _parse_geometry(
-            self.editor.geometry())
-        width, height = 240, 120
-        x = editorx + (editorwidth - width) // 2
-        y = editory + (editorheight - height) // 2
-        self.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
     def find(self, what=None):
         text = self.editor.textwidget
@@ -83,6 +76,7 @@ class FindDialog(tk.Toplevel):
             if not what:
                 # the user didnt enter anything
                 return
+
         start = text.search(what, 'insert+1c')
         if start:
             end = start + ('+%dc' % len(what))
@@ -92,4 +86,4 @@ class FindDialog(tk.Toplevel):
             text.see(start)
             self.notfoundlabel['text'] = ''
         else:
-            self.notfoundlabel['text'] = "Search string not found :("
+            self.notfoundlabel['text'] = "Cannot find '%s' :(" % what
