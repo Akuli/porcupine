@@ -8,17 +8,15 @@ import tkinter as tk
 
 class LineNumbers(tk.Text):
 
-    def __init__(self, master, textwidget, **kwargs):
+    def __init__(self, *args, width=6, **kwargs):
         """Initialize the line number widget."""
-        super().__init__(master, width=6, **kwargs)
-        self.insert('1.0', ' 1')
+        super().__init__(*args, width=width, **kwargs)
+        self.insert('1.0', " 1")    # this is always there
         self['state'] = 'disabled'
-        self._textwidget = textwidget
         self._linecount = 1
 
-    def do_update(self):
+    def do_update(self, linecount):
         """This should be ran when the line count changes."""
-        linecount = int(self._textwidget.index('end-1c').split('.')[0])
         if linecount > self._linecount:
             # add more linenumbers
             self['state'] = 'normal'
@@ -33,17 +31,6 @@ class LineNumbers(tk.Text):
         self._linecount = linecount
 
 
-class DummyLineNumbers:
-    """A class with a do_update() method that does nothing.
-
-    This is used instead of LineNumbers when line numbers are disabled
-    in the configuration.
-    """
-
-    def do_update(self):
-        pass
-
-
 if __name__ == '__main__':
     # simple test/demo
     root = tk.Tk()
@@ -52,8 +39,13 @@ if __name__ == '__main__':
     linenumbers.pack(side='left', fill='y')
     text.pack(side='left', fill='both', expand=True)
 
+    def do_the_update():
+        linecount = int(text.index('end-1c').split('.')[0])
+        linenumbers.do_update(linecount)
+
     def on_lineno_change(event):
-        text.after_idle(linenumbers.do_update)
+        text.after_idle(do_the_update)
+
     # this isn't perfect but this is good enough for this test
     text.bind('<Return>', on_lineno_change)
     text.bind('<BackSpace>', on_lineno_change)

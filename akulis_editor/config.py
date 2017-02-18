@@ -41,29 +41,34 @@ encoding = 'UTF-8'
 # Add a trailing newlines to ends of files when saving?
 add_trailing_newline = True
 
-# Use these to customize how the editor looks. The color values can be
-# any Tkinter colors, including some common color names and '#RRGGBB'
-# strings.
-colors = {
-    'foreground': 'white',
-    'background': 'black',
-    'string': 'yellow',
-    'keyword': 'cyan',
-    'exception': 'red',
-    'builtin': 'mediumpurple',
-    'comment': 'gray',
-    'decorator': 'violetred',
-}
-
-# The editor's Tkinter font. Example: 'courier 12 bold'.
+# This will be used in things like the find dialog. It can be any
+# tkinter-compabible font.
 font = 'TkFixedFont'
-# How many spaces to insert when tab is pressed? 0 means tabs instead
-# of spaces.
+
+# This function is called on the main tkinter.Text widget every time a
+# new file is created or opened.
+def init_textwidget(text):
+    text['fg'] = 'white'
+    text['bg'] = 'black'
+    text['insertbackground'] = 'white'
+    text['selectbackground'] = 'gray'
+    text['undo'] = True
+
+    # These will be used with syntax highlighting. The highlighting is
+    # implemented in akulis_editor/highlight.py using tkinter's tags.
+    # See http://effbot.org/tkinterbook/text.htm for more info about
+    # tkinter's tags (scroll down to "Tags").
+    text.tag_config('string', foreground='yellow')
+    text.tag_config('keyword', foreground='cyan')
+    text.tag_config('exception', foreground='red')
+    text.tag_config('builtin', foreground='mediumpurple')
+    text.tag_config('comment', foreground='red')
+    text.tag_config('decorator', foreground='violetred')
+
+
+# How many spaces to insert when the tab key is pressed?
 indent = 4
-# How many undo/redo moves to remember? 0 means that there is no limit.
-maxundo = 0
-# Display the cursor as a square-shaped block instead of a vertical line?
-blockcursor = False
+
 # Display line numbers?
 linenumbers = True
 

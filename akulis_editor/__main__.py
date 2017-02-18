@@ -38,6 +38,7 @@ def main():
 
     settings = config.load()
     editor = Editor(settings)
+    editor.title("Akuli's Editor")
     if args.file is not None:
         # the editor doesn't create new files when opening, so we need to
         # take care of that here
