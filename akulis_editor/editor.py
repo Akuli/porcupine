@@ -24,79 +24,208 @@
 
 import os
 import tkinter as tk
+from tkinter import filedialog, messagebox
+import traceback
 
-from . import files
+from . import __doc__ as init_docstring
+from . import filetabs, tabs
+
+
+class GlobalBinding:
+    """Handy helper class for application-wide keyboard bindings."""
+
+    def __init__(self, some_widget, bindingstring, callback):
+        def real_callback(event):
+            callback()
+            return 'break'
+
+        self._widget = some_widget
+        self._callback = real_callback
+        self._binding = bindingstring
+        self._bind_id = None
+
+    def bind(self):
+        """Call the widget's bind_all() method if not already bound."""
+        if self._bind_id is not None:
+            # already bound
+            return
+        self._bind_id = self._widget.bind_all(self._binding, self._callback)
+
+    def unbind(self):
+        """Undo the bind() call."""
+        if self._bind_id is None:
+            # already unbound
+            return
+        self._widget.unbind(self._binding, self._bind_id)
+        self._bind_id = None
+
+    def bind_widget(self, widget):
+        """Bind a different widget using its bind() method."""
+        widget.bind(self._binding, self._callback)
+
+
+DESCRIPTION = '\n\n'.join([
+    ' '.join(init_docstring.split()),
+    "You can create a new file by pressing Ctrl+N or open an existing "
+    "file by pressing Ctrl+O. The file name will be displayed in red "
+    "when the file is not saved, and you can press Ctrl+S to save the "
+    "file.",
+    "See the menus at the top of the editor for other things you can "
+    "do and their keyboard shortcuts.",
+])
+
+
+def create_welcome_msg(frame):
+    def resize(event):
+        event.widget['wraplength'] = event.width * 0.9  # small borders
+
+    # fill in extra space at top and bottom using empty frames
+    tk.Frame(frame, bg='black').pack(expand=True)
+    titlelabel = tk.Label(frame, font='TkDefaultFont 16',
+                          text="Welcome to Akuli's Editor!\n")
+    titlelabel.pack(fill='x')
+    titlelabel.bind('<Configure>', resize)
+    desclabel = tk.Label(frame, font='TkDefaultFont 12', text=DESCRIPTION)
+    desclabel.pack(fill='x')
+    desclabel.bind('<Configure>', resize)
+    tk.Frame(frame, bg='black').pack(expand=True)
 
 
 class Editor(tk.Frame):
 
     def __init__(self, parent, settings, **kwargs):
         super().__init__(parent, **kwargs)
-        self.settings = settings
+        self._settings = settings
         self._filename = None
         self._finddialog = None
 
-        if settings['topbar']:
-            self.topbar = tk.Frame(self)
-            self.topbar.pack(fill='x')
-        else:
-            self.topbar = None
-
-        self.file = files.File(self, settings)
-        self.file.content.pack(fill='both', expand=True)
+        tabmgr = self.tabmanager = tabs.TabManager(self)
+        tabmgr.pack(fill='both', expand=True)
+        create_welcome_msg(tabmgr.no_tabs_frame)
 
         menucontent = [
-            ("File", [
-                ("New file", "Ctrl+N", '<Control-n>', self.file.new_file),
-                ("Open", "Ctrl+O", '<Control-o>', self.file.open_file),
-                ("Save", "Ctrl+S", '<Control-s>', self.file.save),
-                ("Save as", "Ctrl+Shift+S", '<Control-S>', self.file.save_as),
-                None,   # separator
-                ("Quit", "Ctrl+Q", '<Control-q>', self.do_quit),
-            ]),
-            ("Edit", [
-                ("Undo", "Ctrl+Z", '<Control-z>', self.file.textwidget.undo),
-                ("Redo", "Ctrl+Y", '<Control-y>', self.file.textwidget.redo),
-                #None,
-                #("Find", "Ctrl+F", '<Control-f>', self.find),
-            ]),
+          # (text, contentlist), ...
+          ("File", [
+            # (text, acceltext, binding, callback, disable), ...
+            # if callback is a string it is treated as an attribute 
+            # of the current file
+            # if disable is True the menuitem is disabled when 
+            # there is no current file
+            # if text is None, no menuitem will be created
+            ("New file", "Ctrl+N", '<Control-n>', self.new_file, False),
+            ("Open", "Ctrl+O", '<Control-o>', self.open_file, False),
+            ("Save", "Ctrl+S", '<Control-s>', 'save', True),
+            ("Save as", "Ctrl+Shift+S", '<Control-S>', 'save_as', True),
+            None,   # separator
+            ("Close this file", "Ctrl+W", '<Control-w>',
+             self._close_file, True),
+            ("Quit the editor", "Ctrl+Q", '<Control-q>', self.do_quit, False),
+          ]),
+
+          ("Edit", [
+            ("Undo", "Ctrl+Z", '<Control-z>', 'textwidget.undo', True),
+            ("Redo", "Ctrl+Y", '<Control-y>', 'textwidget.redo', True),
+            None,
+            ("Cut", "Ctrl+X", '<Control-x>', 'textwidget.cut', True),
+            ("Copy", "Ctrl+C", '<Control-c>', 'textwidget.copy', True),
+            ("Paste", "Ctrl+V", '<Control-v>', 'textwidget.paste', True),
+            #None,
+            #("Find", "Ctrl+F", '<Control-f>', self.find, True),
+          ]),
         ]
+
+        self._menus = {}        # {title: Menu, ...}
+        self._disablelist = []  # [(menu, index, globalbinding), ...]
+        self._bindings = []     # list of all global bindings
+
+        def current_tab_command(attributes):
+            """Return a function that calls the current tab's method."""
+            def result():
+                # support dots in attribute names
+                method = tabmgr.current_tab
+                for attribute in attributes.split('.'):
+                    method = getattr(method, attribute)
+                return method()
+
+            return result
 
         self.menubar = tk.Menu()
         for title, menuitems in menucontent:
-            menu = tk.Menu(tearoff=False)
-            for item in menuitems:
+            menu = self._menus[title] = tk.Menu(tearoff=False)
+            self.menubar.add_cascade(label=title, menu=menu)
+
+            for index, item in enumerate(menuitems):
                 if item is None:
                     menu.add_separator()
                     continue
-                text, accelerator, binding, command = item
-                menu.add_command(label=text, accelerator=accelerator,
-                                 command=command)
-                self._bind_menu_command(binding, command)
-            self.menubar.add_cascade(label=title, menu=menu)
 
-        if self.topbar is not None:
-            # menucontent[0][1] is the item list of the File menu
-            for item in menucontent[0][1]:
-                if item is None:
-                    # it's a separator, we'll add an empty frame that
-                    # fills extra space and pushes buttons after it to
-                    # right
-                    tk.Frame(self.topbar).pack(side='left', expand=True)
-                    continue
+                text, accelerator, binding, command, disable = item
+                if isinstance(command, str):
+                    command = current_tab_command(command)
+                if text is not None:
+                    menu.add_command(label=text, accelerator=accelerator,
+                                     command=command)
 
-                text, accelerator, binding, command = item
-                button = tk.Button(self.topbar, text=text, command=command)
-                button.pack(side='left')
+                global_binding = GlobalBinding(self, binding, command)
+                self._bindings.append(global_binding)
+                if disable:
+                    self._disablelist.append((menu, index, global_binding))
+                else:
+                    # the global_binding doesn't do anything by default,
+                    # but we will never enable it
+                    global_binding.bind()
 
-        self.file.textwidget.focus()
+        self.bind_all('<Button-1>', self._unpost_editmenu)
+        tabmgr.on_tabs_changed.append(self._tabs_changed)
+        self._tabs_changed([])
 
-    def _bind_menu_command(self, binding, command):
-        def bindcallback(event):
-            command()
-            return 'break'
+        self.bind_all('<Alt-Key>', self._do_alt_n)
+        self.bind_all('<Control-Prior>',
+                      lambda event: tabmgr.select_left(roll_over=True))
+        self.bind_all('<Control-Next>',
+                      lambda event: tabmgr.select_right(roll_over=True))
+        self.bind_all('<Control-Shift-Prior>',
+                      lambda event: tabmgr.move_left())
+        self.bind_all('<Control-Shift-Next>',
+                      lambda event: tabmgr.move_right())
 
-        self.bind_all(binding, bindcallback)
+    def _do_alt_n(self, event):
+        """Select the n'th tab (0 < n < 10)."""
+        try:
+            n = int(event.keysym)
+        except ValueError:
+            return
+        if 0 < n < 10 and len(self.tabmanager.tabs) >= n:
+            self.tabmanager.current_index = n-1
+
+    def _tabs_changed(self, tablist):
+        if tablist:
+            for menu, index, binding in self._disablelist:
+                binding.bind()
+                menu.entryconfig(index, state='normal')
+        else:
+            for menu, index, binding in self._disablelist:
+                binding.unbind()
+                menu.entryconfig(index, state='disabled')
+
+    def _new_tab(self):
+        tab = filetabs.FileTab(self._settings)
+        self.tabmanager.add_tab(tab)   # creates the tab's widgets
+        tab.textwidget.bind('<Button-3>', self._post_editmenu)
+
+        # some of our keyboard bindings conflict with tkinter's bindings
+        # and returning 'break' from a bind_all binding is not enough,
+        # so we also need these here
+        for binding in self._bindings:
+            binding.bind_widget(tab.textwidget)
+
+        return tab
+
+    def _post_editmenu(self, event):
+        self._menus["Edit"].post(event.x_root, event.y_root)
+
+    def _unpost_editmenu(self, event):
+        self._menus["Edit"].unpost()
 
     def _get_dialog_options(self):
         result = {'filetypes': [("Python files", '*.py'), ("All files", '*')]}
@@ -107,18 +236,64 @@ class Editor(tk.Frame):
             result['initialfile'] = os.path.basename(self.filename)
         return result
 
+    def new_file(self):
+        self._new_tab()
+
+    def open_file(self, filename=None):
+        if filename is None:
+            if self.tabmanager.current_tab is None:
+                # no tabs yet
+                options = {'initialdir': os.getcwd()}
+            else:
+                options = self.tabmanager.current_tab.get_dialog_options()
+            filename = filedialog.askopenfilename(**options)
+            if not filename:
+                # cancelled
+                return
+
+        try:
+            with open(filename, 'r',
+                      encoding=self._settings['encoding']) as f:
+                content = f.read()
+        except (OSError, UnicodeError):
+            messagebox.showerror("Opening failed!", traceback.format_exc())
+            return
+
+        tab = self._new_tab()
+        tab.name = filename
+        tab.textwidget.insert('1.0', content)
+        tab.textwidget.edit_modified(False)
+        tab.textwidget.edit_reset()
+        tab.textwidget.do_linecount_changed()
+
+    def _close_file(self):
+        self.tabmanager.close_tab(self.tabmanager.current_tab)
+
     def do_quit(self):
-        if self.file.savecheck("Quit"):
-            # I'm not sure what's the difference between quit() and
-            # destroy(), but sometimes destroy() gives me weird errors
-            # like this one:
-            #   alloc: invalid block: 0xa31eef8: 78 a
-            #   Aborted
-            # I have tried the faulthandler module, but for some reason
-            # it doesn't print a traceback... 0_o
-            self.quit()
+        for tab in self.tabmanager.tabs:
+            if not tab.can_be_closed():
+                return
+        # I'm not sure what's the difference between quit() and
+        # destroy(), but sometimes destroy() gives me weird errors
+        # like this one:
+        #   alloc: invalid block: 0xa31eef8: 78 a
+        #   Aborted
+        # I have tried the faulthandler module, but for some reason
+        # it doesn't print a traceback... 0_o
+        self.quit()
 
     # TODO: add find dialog back here
 
 
 # See __main__.py for the code that runs this.
+
+if __name__ == '__main__':
+    for i in range(1, 6):
+        tab = Tab()
+        tabmgr.add_tab(tab)   # creates tab.label and tab.content
+        tab.label['text'] = "tab %d" % i
+        text = tk.Text(tab.content)
+        text.pack()
+        text.insert('1.0', "this is the content of tab %d" % i)
+
+    root.mainloop()

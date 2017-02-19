@@ -55,13 +55,13 @@ def init_textwidget(text):
     text['undo'] = True
 
     # These will be used with syntax highlighting. The highlighting is
-    # implemented in akulis_editor/highlight.py using tkinter's tags.
-    # See http://effbot.org/tkinterbook/text.htm for more info about
+    # implemented in highlight.py using tkinter's tags. See
+    # http://effbot.org/tkinterbook/text.htm for more info about
     # tkinter's tags (scroll down to "Tags").
-    text.tag_config('string', foreground='yellow')
     text.tag_config('keyword', foreground='cyan')
-    text.tag_config('exception', foreground='red')
     text.tag_config('builtin', foreground='mediumpurple')
+    text.tag_config('exception', foreground='red')
+    text.tag_config('string', foreground='yellow')
     text.tag_config('comment', foreground='red')
     text.tag_config('decorator', foreground='violetred')
 
@@ -72,8 +72,6 @@ indent = 4
 # Display line numbers?
 linenumbers = True
 
-# Add buttons for things in the File menu?
-topbar = True
 # Display the current line, column and some other things at the bottom?
 statusbar = True
 # The default window size as a tkinter geometry. For example, 700x400

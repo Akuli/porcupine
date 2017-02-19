@@ -22,6 +22,5 @@
 """This is a really simple text editor for writing Python code.
 
 If you have used something like Notepad, Microsoft Word or LibreOffice
-Write before you know how to use this editor. Just make sure you have
-Python 3.2 or newer with Tkinter installed and run this.
+Writer before you know how to use this editor.
 """

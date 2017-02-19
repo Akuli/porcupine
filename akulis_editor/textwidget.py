@@ -76,6 +76,21 @@ class EditorText(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
+        # Undoing or redoing is already taken care of with bind_all in 
+        # editor.py, but if tkinter has bound Ctrl+Z by default it gets 
+        # called twice.
+        def _do_only_this(binding, callback):
+            def real_callback(event):
+                callback()
+                return 'break'
+
+            self.bind(binding, real_callback)
+
+        _do_only_this('<Control-z>', self.undo)
+        _do_only_this('<Control-y>', self.redo)
+        # TODO: seems like we need to override everything here... 
+        # something's wrong
+
     def do_cursor_move(self):
         line, column = map(int, self.index('insert').split('.'))
         if self._cursorpos != (line, column):
@@ -228,6 +243,7 @@ class EditorText(tk.Text):
             return
         self.do_cursor_move()
         self.do_linecount_changed()
+        return 'break'
 
     def redo(self):
         try:
@@ -236,3 +252,13 @@ class EditorText(tk.Text):
             return
         self.do_cursor_move()
         self.do_linecount_changed()
+        return 'break'
+
+    def cut(self):
+        self.event_generate('<<Cut>>')
+
+    def copy(self):
+        self.event_generate('<<Copy>>')
+
+    def paste(self):
+        self.event_generate('<<Paste>>')

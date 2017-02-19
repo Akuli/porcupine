@@ -1,11 +1,12 @@
 import contextlib
+import itertools
 import os
 import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import traceback
 
-from . import highlight, linenumbers, scrolling, textwidget
+from . import highlight, linenumbers, scrolling, tabs, textwidget
 
 
 @contextlib.contextmanager
@@ -33,37 +34,56 @@ def _backup_open(path, *args, **kwargs):
         yield open(path, *args, **kwargs)
 
 
-class File:
-    r"""This class represents a new or opened file.
+# The sep argument is just for doctesting.
+def shorten_filename(name, sep=os.sep):
+    """Create a representation of a filename at most 30 characters long.
 
-    Currently the editor creates only one File instance, but this class
-    will be used to implement tabs (as in browser tabs, not \t
-    characters) later.
+    >>> shorten_filename('/tmp/test.py', '/')
+    '/tmp/test.py'
+    >>> shorten_filename('/home/someusername/path/to/test.py', '/')
+    '.../path/to/test.py'
     """
+    if len(name) <= 30:
+        return name
 
-    def __init__(self, parentwidget, settings):
+    try:
+        # try to break it by sep in last 27 characters because
+        # 27 + len('...') == 30
+        # index returns the start of search string so name[where2cut:]
+        # will start with sep
+        where2cut = name.index(sep, -27)
+    except IndexError:
+        # no sep in name[-27:], just truncate it
+        where2cut = -27
+    return '...' + name[where2cut:]
+
+
+class FileTab(tabs.Tab):
+    """A tab in the editor."""
+
+    def __init__(self, settings):
+        super().__init__()
         self._name = None
         self._settings = settings
         self.on_name_changed = []   # these will be ran like callback(self)
 
-        self.label = tk.Label(parentwidget)
-        self._orig_label_fg = self.label['fg']
-        self.label.pack()
-        self.on_name_changed.append(self._update_label)
+    def create_widgets(self, tabmanager):
+        super().create_widgets(tabmanager)
 
-        self.content = tk.Frame(parentwidget)
-        self.content.pack(fill='both', expand=True)
+        self._orig_label_fg = self.label['fg']
+        self.on_name_changed.append(self._update_label)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.EditorText(
-            self.content, settings, width=1, height=1)
+            self.content, self._settings, width=1, height=1)
+        self._settings['init_textwidget'](self.textwidget)
         self.textwidget.bind('<<Modified>>', self._update_label)
-        settings['init_textwidget'](self.textwidget)
+        self._update_label()
 
-        if settings['linenumbers']:
+        if self._settings['linenumbers']:
             linenums = linenumbers.LineNumbers(
-                self.content, self.textwidget, font=settings['font'])
+                self.content, self.textwidget, font=self._settings['font'])
             self.textwidget.on_linecount_changed.append(linenums.do_update)
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget, linenums])
@@ -77,7 +97,7 @@ class File:
         self.textwidget.on_cursor_move.append(
             lambda line, col: highlighter.do_line(line))
 
-        if settings['statusbar']:
+        if self._settings['statusbar']:
             self.statusbar = tk.Label(self.content, anchor='w',
                                       relief='sunken')
             self.statusbar.pack(fill='x')
@@ -102,6 +122,8 @@ class File:
 
     @name.setter
     def name(self, new_name):
+        assert self.label is not None, \
+            "cannot set name before creating widgets"
         it_changes = (self._name != new_name)
         self._name = new_name
         if it_changes:
@@ -112,8 +134,7 @@ class File:
         if self.name is None:
             self.label['text'] = "New file"
         else:
-            # This doesn't use %r to avoid \\ on Windows.
-            self.label['text'] = "File '%s'" % self.name
+            self.label['text'] = shorten_filename(self.name)
 
         if self.textwidget.edit_modified():
             self.label['fg'] = 'red'
@@ -123,7 +144,7 @@ class File:
     def _update_statusbar(self, lineno, column):
         self.statusbar['text'] = "Line %d, column %d" % (lineno, column)
 
-    def savecheck(self, dialogtitle):
+    def can_be_closed(self):
         """If needed, display a 'wanna save?' dialog and save.
 
         Return False if the user cancels and True otherwise.
@@ -134,14 +155,18 @@ class File:
             else:
                 msg = ("Do you want to save your changes to %s?"
                        % self.name)
-            answer = messagebox.askyesnocancel(dialogtitle, msg)
+            answer = messagebox.askyesnocancel("Close file", msg)
             if answer is None:
+                # cancel
                 return False
             if answer:
                 self.save()
         return True
 
-    def _get_dialog_options(self):
+    def focus(self):
+        self.textwidget.focus()
+
+    def get_dialog_options(self):
         result = {'filetypes': [("Python files", "*.py"), ("All files", "*")]}
         if self.name is None:
             result['initialdir'] = os.getcwd()
@@ -149,42 +174,6 @@ class File:
             result['initialdir'] = os.path.dirname(self.name)
             result['initialfile'] = os.path.basename(self.name)
         return result
-
-    def new_file(self):
-        if self.savecheck("New file"):
-            self.textwidget.delete('1.0', 'end')
-            self.textwidget.edit_modified(False)
-            self.textwidget.edit_reset()
-            self.name = None
-            self.textwidget.do_cursor_move()
-            self.textwidget.do_linecount_changed()
-
-    def open_file(self, filename=None):
-        if not self.savecheck("Open a file"):
-            return
-
-        if filename is None:
-            options = self._get_dialog_options()
-            filename = filedialog.askopenfilename(**options)
-            if not filename:
-                # cancel
-                return
-
-        try:
-            with open(filename, 'r',
-                      encoding=self._settings['encoding']) as f:
-                content = f.read()
-        except (OSError, UnicodeError):
-            messagebox.showerror("Opening failed!", traceback.format_exc())
-            return
-
-        self.name = filename
-        self.textwidget.delete('1.0', 'end')
-        self.textwidget.insert('1.0', content)
-        self.textwidget.edit_modified(False)
-        self.textwidget.edit_reset()
-        self.textwidget.do_cursor_move()
-        self.textwidget.do_linecount_changed()
 
     def save(self):
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
@@ -211,9 +200,14 @@ class File:
         self.textwidget.edit_modified(False)
 
     def save_as(self):
-        options = self._get_dialog_options()
+        options = self.get_dialog_options()
         filename = filedialog.asksaveasfilename(**options)
         if filename:
             # not cancelled
             self.name = filename
             self.save()
+
+
+if __name__ == '__main__':
+    import doctest
+    print(doctest.testmod())
