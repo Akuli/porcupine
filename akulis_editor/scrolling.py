@@ -57,9 +57,12 @@ if __name__ == '__main__':
     left.pack(side='left', fill='both', expand=True)
     right = tk.Text(width=20)
     right.pack(side='left', fill='both', expand=True)
+
     scrollbar = MultiScrollbar(root, [left, right])
     scrollbar.pack(side='right', fill='y')
     scrollbar.on_visibility_changed.append(print)
+
     left.insert('1.0', '\n'.join(map('left {}'.format, range(1, 31))))
     right.insert('1.0', '\n'.join(map('left {}'.format, range(1, 31))))
+
     root.mainloop()

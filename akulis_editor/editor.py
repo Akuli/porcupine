@@ -35,33 +35,20 @@ class GlobalBinding:
     """Handy helper class for application-wide keyboard bindings."""
 
     def __init__(self, some_widget, bindingstring, callback):
-        def real_callback(event):
-            callback()
-            return 'break'
-
-        self._widget = some_widget
-        self._callback = real_callback
         self._binding = bindingstring
-        self._bind_id = None
+        self._callback = callback
+        self.enabled = False
 
-    def bind(self):
-        """Call the widget's bind_all() method if not already bound."""
-        if self._bind_id is not None:
-            # already bound
-            return
-        self._bind_id = self._widget.bind_all(self._binding, self._callback)
+        some_widget.bind_all(bindingstring, self._real_callback)
 
-    def unbind(self):
-        """Undo the bind() call."""
-        if self._bind_id is None:
-            # already unbound
-            return
-        self._widget.unbind(self._binding, self._bind_id)
-        self._bind_id = None
+    def _real_callback(self, event):
+        if not self.enabled:
+            return None
+        self._callback()
+        return 'break'
 
     def bind_widget(self, widget):
-        """Bind a different widget using its bind() method."""
-        widget.bind(self._binding, self._callback)
+        widget.bind(self._binding, self._real_callback)
 
 
 DESCRIPTION = '\n\n'.join([
@@ -96,7 +83,6 @@ class Editor(tk.Frame):
     def __init__(self, parent, settings, **kwargs):
         super().__init__(parent, **kwargs)
         self._settings = settings
-        self._filename = None
         self._finddialog = None
 
         tabmgr = self.tabmanager = tabs.TabManager(self)
@@ -111,7 +97,6 @@ class Editor(tk.Frame):
             # of the current file
             # if disable is True the menuitem is disabled when 
             # there is no current file
-            # if text is None, no menuitem will be created
             ("New file", "Ctrl+N", '<Control-n>', self.new_file, False),
             ("Open", "Ctrl+O", '<Control-o>', self.open_file, False),
             ("Save", "Ctrl+S", '<Control-s>', 'save', True),
@@ -162,18 +147,16 @@ class Editor(tk.Frame):
                 text, accelerator, binding, command, disable = item
                 if isinstance(command, str):
                     command = current_tab_command(command)
-                if text is not None:
-                    menu.add_command(label=text, accelerator=accelerator,
-                                     command=command)
+                menu.add_command(label=text, accelerator=accelerator,
+                                 command=command)
 
                 global_binding = GlobalBinding(self, binding, command)
                 self._bindings.append(global_binding)
                 if disable:
                     self._disablelist.append((menu, index, global_binding))
                 else:
-                    # the global_binding doesn't do anything by default,
-                    # but we will never enable it
-                    global_binding.bind()
+                    # it's not enabled by default
+                    global_binding.enabled = True
 
         self.bind_all('<Button-1>', self._unpost_editmenu)
         tabmgr.on_tabs_changed.append(self._tabs_changed)
@@ -201,14 +184,20 @@ class Editor(tk.Frame):
     def _tabs_changed(self, tablist):
         if tablist:
             for menu, index, binding in self._disablelist:
-                binding.bind()
+                binding.enabled = True
                 menu.entryconfig(index, state='normal')
         else:
             for menu, index, binding in self._disablelist:
-                binding.unbind()
+                binding.enabled = False
                 menu.entryconfig(index, state='disabled')
 
-    def _new_tab(self):
+    def _post_editmenu(self, event):
+        self._menus["Edit"].post(event.x_root, event.y_root)
+
+    def _unpost_editmenu(self, event):
+        self._menus["Edit"].unpost()
+
+    def new_file(self):
         tab = filetabs.FileTab(self._settings)
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
         tab.textwidget.bind('<Button-3>', self._post_editmenu)
@@ -219,48 +208,39 @@ class Editor(tk.Frame):
         for binding in self._bindings:
             binding.bind_widget(tab.textwidget)
 
+        self.tabmanager.current_tab = tab
         return tab
 
-    def _post_editmenu(self, event):
-        self._menus["Edit"].post(event.x_root, event.y_root)
-
-    def _unpost_editmenu(self, event):
-        self._menus["Edit"].unpost()
-
-    def _get_dialog_options(self):
-        result = {'filetypes': [("Python files", '*.py'), ("All files", '*')]}
-        if self.filename is None:
-            result['initialdir'] = os.getcwd()
-        else:
-            result['initialdir'] = os.path.dirname(self.filename)
-            result['initialfile'] = os.path.basename(self.filename)
-        return result
-
-    def new_file(self):
-        self._new_tab()
-
-    def open_file(self, filename=None):
-        if filename is None:
+    def open_file(self, path=None, *, content=None):
+        if path is None:
             if self.tabmanager.current_tab is None:
                 # no tabs yet
                 options = {'initialdir': os.getcwd()}
             else:
                 options = self.tabmanager.current_tab.get_dialog_options()
-            filename = filedialog.askopenfilename(**options)
-            if not filename:
+            path = filedialog.askopenfilename(**options)
+            if not path:
                 # cancelled
                 return
 
-        try:
-            with open(filename, 'r',
-                      encoding=self._settings['encoding']) as f:
-                content = f.read()
-        except (OSError, UnicodeError):
-            messagebox.showerror("Opening failed!", traceback.format_exc())
-            return
+        # maybe this file is open already?
+        for tab in self.tabmanager.tabs:
+            if tab.path == path:
+                self.tabmanager.current_tab = tab
+                return
 
-        tab = self._new_tab()
-        tab.name = filename
+        if content is None:
+            try:
+                with open(path, 'r',
+                          encoding=self._settings['encoding']) as f:
+                    content = f.read()
+            except (OSError, UnicodeError):
+                messagebox.showerror("Opening failed!",
+                                     traceback.format_exc())
+                return
+
+        tab = self.new_file()
+        tab.path = path
         tab.textwidget.insert('1.0', content)
         tab.textwidget.edit_modified(False)
         tab.textwidget.edit_reset()
@@ -285,7 +265,8 @@ class Editor(tk.Frame):
     # TODO: add find dialog back here
 
 
-# See __main__.py for the code that runs this.
+# See __main__.py for the code that actally runs this, but here's a
+# quick demo:
 
 if __name__ == '__main__':
     for i in range(1, 6):

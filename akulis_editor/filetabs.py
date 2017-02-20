@@ -35,12 +35,12 @@ def _backup_open(path, *args, **kwargs):
 
 
 # The sep argument is just for doctesting.
-def shorten_filename(name, sep=os.sep):
-    """Create a representation of a filename at most 30 characters long.
+def shorten_filepath(name, sep=os.sep):
+    """Create a representation of a path at most 30 characters long.
 
-    >>> shorten_filename('/tmp/test.py', '/')
+    >>> shorten_filepath('/tmp/test.py', '/')
     '/tmp/test.py'
-    >>> shorten_filename('/home/someusername/path/to/test.py', '/')
+    >>> shorten_filepath('/home/someusername/path/to/test.py', '/')
     '.../path/to/test.py'
     """
     if len(name) <= 30:
@@ -63,15 +63,15 @@ class FileTab(tabs.Tab):
 
     def __init__(self, settings):
         super().__init__()
-        self._name = None
+        self._path = None
         self._settings = settings
-        self.on_name_changed = []   # these will be ran like callback(self)
+        self.on_path_changed = []   # these will be ran like callback(self)
 
     def create_widgets(self, tabmanager):
         super().create_widgets(tabmanager)
 
         self._orig_label_fg = self.label['fg']
-        self.on_name_changed.append(self._update_label)
+        self.on_path_changed.append(self._update_label)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
@@ -96,6 +96,8 @@ class FileTab(tabs.Tab):
         scrollbar.on_visibility_changed.append(highlighter.do_lines)
         self.textwidget.on_cursor_move.append(
             lambda line, col: highlighter.do_line(line))
+        self.textwidget.on_linecount_changed.append(
+            lambda linecount: highlighter.do_multiline())
 
         if self._settings['statusbar']:
             self.statusbar = tk.Label(self.content, anchor='w',
@@ -117,24 +119,24 @@ class FileTab(tabs.Tab):
         scrollbar.pack(side='left', fill='y')
 
     @property
-    def name(self):
-        return self._name
+    def path(self):
+        return self._path
 
-    @name.setter
-    def name(self, new_name):
+    @path.setter
+    def path(self, new_name):
         assert self.label is not None, \
             "cannot set name before creating widgets"
-        it_changes = (self._name != new_name)
-        self._name = new_name
+        it_changes = (self._path != new_name)
+        self._path = new_name
         if it_changes:
-            for callback in self.on_name_changed:
+            for callback in self.on_path_changed:
                 callback()
 
     def _update_label(self, event=None):
-        if self.name is None:
+        if self.path is None:
             self.label['text'] = "New file"
         else:
-            self.label['text'] = shorten_filename(self.name)
+            self.label['text'] = shorten_filepath(self.path)
 
         if self.textwidget.edit_modified():
             self.label['fg'] = 'red'
@@ -150,11 +152,11 @@ class FileTab(tabs.Tab):
         Return False if the user cancels and True otherwise.
         """
         if self.textwidget.edit_modified():
-            if self.name is None:
+            if self.path is None:
                 msg = "Do you want to save your changes?"
             else:
                 msg = ("Do you want to save your changes to %s?"
-                       % self.name)
+                       % self.path)
             answer = messagebox.askyesnocancel("Close file", msg)
             if answer is None:
                 # cancel
@@ -168,11 +170,11 @@ class FileTab(tabs.Tab):
 
     def get_dialog_options(self):
         result = {'filetypes': [("Python files", "*.py"), ("All files", "*")]}
-        if self.name is None:
+        if self.path is None:
             result['initialdir'] = os.getcwd()
         else:
-            result['initialdir'] = os.path.dirname(self.name)
-            result['initialfile'] = os.path.basename(self.name)
+            result['initialdir'] = os.path.dirname(self.path)
+            result['initialfile'] = os.path.basename(self.path)
         return result
 
     def save(self):
@@ -186,12 +188,12 @@ class FileTab(tabs.Tab):
                 self.textwidget.mark_set('insert', here)
                 self.textwidget.do_linecount_changed()
 
-        if self.name is None:
+        if self.path is None:
             self.save_as()
             return
 
         try:
-            with _backup_open(self.name, 'w',
+            with _backup_open(self.path, 'w',
                               encoding=self._settings['encoding']) as f:
                 f.write(self.textwidget.get('1.0', 'end-1c'))
         except (OSError, UnicodeError):
@@ -201,10 +203,10 @@ class FileTab(tabs.Tab):
 
     def save_as(self):
         options = self.get_dialog_options()
-        filename = filedialog.asksaveasfilename(**options)
-        if filename:
+        path = filedialog.asksaveasfilepath(**options)
+        if path:
             # not cancelled
-            self.name = filename
+            self.path = path
             self.save()
 
 

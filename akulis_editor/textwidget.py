@@ -25,7 +25,7 @@ import tkinter as tk
 
 
 def spacecount(string):
-    """Count how many space characters the string starts with.
+    """Count how many spaces the string starts with.
 
     >>> spacecount('  123')
     2
@@ -85,11 +85,6 @@ class EditorText(tk.Text):
                 return 'break'
 
             self.bind(binding, real_callback)
-
-        _do_only_this('<Control-z>', self.undo)
-        _do_only_this('<Control-y>', self.redo)
-        # TODO: seems like we need to override everything here... 
-        # something's wrong
 
     def do_cursor_move(self):
         line, column = map(int, self.index('insert').split('.'))
@@ -157,6 +152,7 @@ class EditorText(tk.Text):
         return False
 
     def _on_tab(self, shifted):
+        """Indent, dedent or autocomplete."""
         if shifted:
             action = self.dedent
         else:
@@ -231,10 +227,16 @@ class EditorText(tk.Text):
 
     def _strip_whitespace(self):
         """Strip whitespace after end of previous line."""
-        lineno = self.index('insert').split('.')[0]
-        end = '%s.0+1l-1c' % lineno
-        if self.get('insert', end).isspace():
-            self.delete('insert', end)
+        lineno = int(self.index('insert').split('.')[0])
+        line = self.get('%d.0-1l' % lineno, '%d.0-1c' % lineno)
+
+        spaces = spacecount(line[::-1])
+        if spaces == 0:
+            return
+
+        start = '{}.0-1c-{}c'.format(lineno, spaces)
+        end = '{}.0-1c'.format(lineno)
+        self.delete(start, end)
 
     def undo(self):
         try:
@@ -256,9 +258,26 @@ class EditorText(tk.Text):
 
     def cut(self):
         self.event_generate('<<Cut>>')
+        self.do_cursor_move()
+        self.do_linecount_changed()
 
     def copy(self):
         self.event_generate('<<Copy>>')
+        self.do_cursor_move()
+        self.do_linecount_changed()
 
     def paste(self):
         self.event_generate('<<Paste>>')
+
+        # Without this, pasting while some text is selected is annoying
+        # because the selected text doesn't go away :(
+        try:
+            sel_start, sel_end = self.tag_ranges('sel')
+        except ValueError:
+            # nothing selected
+            pass
+        else:
+            self.delete(sel_start, sel_end)
+
+        self.do_cursor_move()
+        self.do_linecount_changed()

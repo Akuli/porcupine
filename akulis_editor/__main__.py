@@ -31,10 +31,9 @@ from .editor import Editor
 
 
 def main():
-    # TODO: allow multiple file args when we have multiple tabs
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
-        'file', nargs=argparse.OPTIONAL,
+        'file', nargs=argparse.ZERO_OR_MORE,
         help="open this file when the editor starts")
     args = parser.parse_args()
 
@@ -44,13 +43,13 @@ def main():
     editor = Editor(root, settings)
     editor.pack(fill='both', expand=True)
 
-    if args.file is not None:
+    for file in args.file:
         # the editor doesn't create new files when opening, so we need to
         # take care of that here
-        if os.path.exists(args.file):
-            editor.open_file(args.file)
+        if os.path.exists(file):
+            editor.open_file(file)
         else:
-            editor.filename = args.file
+            editor.open_file(file, content='')
 
     root['menu'] = editor.menubar
     root.geometry(settings['default_geometry'])
