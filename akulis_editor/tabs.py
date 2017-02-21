@@ -1,6 +1,6 @@
 r"""Tabs as in browser tabs, not \t characters.
 
-Yes, I am aware of ttk.Notebook but it's simply way too limited for my 
+Yes, I am aware of ttk.Notebook but it's simply way too limited for my
 needs. I can't even change the color of the top label.
 """
 

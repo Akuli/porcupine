@@ -76,8 +76,8 @@ class EditorText(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
-        # Undoing or redoing is already taken care of with bind_all in 
-        # editor.py, but if tkinter has bound Ctrl+Z by default it gets 
+        # Undoing or redoing is already taken care of with bind_all in
+        # editor.py, but if tkinter has bound Ctrl+Z by default it gets
         # called twice.
         def _do_only_this(binding, callback):
             def real_callback(event):

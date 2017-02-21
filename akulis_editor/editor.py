@@ -93,9 +93,9 @@ class Editor(tk.Frame):
           # (text, contentlist), ...
           ("File", [
             # (text, acceltext, binding, callback, disable), ...
-            # if callback is a string it is treated as an attribute 
+            # if callback is a string it is treated as an attribute
             # of the current file
-            # if disable is True the menuitem is disabled when 
+            # if disable is True the menuitem is disabled when
             # there is no current file
             ("New file", "Ctrl+N", '<Control-n>', self.new_file, False),
             ("Open", "Ctrl+O", '<Control-o>', self.open_file, False),
@@ -265,16 +265,4 @@ class Editor(tk.Frame):
     # TODO: add find dialog back here
 
 
-# See __main__.py for the code that actally runs this, but here's a
-# quick demo:
-
-if __name__ == '__main__':
-    for i in range(1, 6):
-        tab = Tab()
-        tabmgr.add_tab(tab)   # creates tab.label and tab.content
-        tab.label['text'] = "tab %d" % i
-        text = tk.Text(tab.content)
-        text.pack()
-        text.insert('1.0', "this is the content of tab %d" % i)
-
-    root.mainloop()
+# See __main__.py for the code that actally runs this.
