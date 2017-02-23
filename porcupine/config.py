@@ -32,9 +32,9 @@ import os
 CONFIGFILE = os.path.join(os.path.expanduser('~'), '.akulis-editor.py')
 
 DEFAULT_CONFIG = '''
-# This is an automatically generated setting file for Akuli's Editor.
-# The file is executed in Python with exec(). Feel free to edit this to
-# customize how the editor looks and behaves.
+# This is an automatically generated setting file for Porcupine. The
+# file is executed in Python with exec(). Feel free to edit this to
+# customize how Porcupine looks and behaves.
 
 # The encoding of all opened and saved files.
 encoding = 'UTF-8'

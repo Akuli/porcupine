@@ -69,7 +69,7 @@ def create_welcome_msg(frame):
     # fill in extra space at top and bottom using empty frames
     tk.Frame(frame, bg='black').pack(expand=True)
     titlelabel = tk.Label(frame, font='TkDefaultFont 16',
-                          text="Welcome to Akuli's Editor!\n")
+                          text="Welcome to Porcupine!\n")
     titlelabel.pack(fill='x')
     titlelabel.bind('<Configure>', resize)
     desclabel = tk.Label(frame, font='TkDefaultFont 12', text=DESCRIPTION)
@@ -104,7 +104,7 @@ class Editor(tk.Frame):
             None,   # separator
             ("Close this file", "Ctrl+W", '<Control-w>',
              self._close_file, True),
-            ("Quit the editor", "Ctrl+Q", '<Control-q>', self.do_quit, False),
+            ("Quit Porcupine", "Ctrl+Q", '<Control-q>', self.do_quit, False),
           ]),
 
           ("Edit", [

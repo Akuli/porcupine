@@ -53,7 +53,7 @@ def main():
 
     root['menu'] = editor.menubar
     root.geometry(settings['default_geometry'])
-    root.title("Akuli's Editor")
+    root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
     root.mainloop()
 
