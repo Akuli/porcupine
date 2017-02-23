@@ -1,4 +1,4 @@
-# My editor
+# Porcupine
 
 This is a simple and easy-to-use editor for writing Python. You need
 Python 3.3 or newer with Tkinter to run this.
@@ -12,12 +12,9 @@ your programs on a command prompt or a terminal.
 
 ## How do I run this thing?
 
-Download the editor, `cd` to where you downloaded it and run it like this:
+Download Porcupine, `cd` to where you downloaded it and run it with
+Python's `-m` option. Fore example, like this:
 
-    python3 -m akulis_editor
-
-If you are on Windows, do this instead:
-
-    py -m akulis_editor
-
-Note that you should *not* `cd` to `akulis_editor`.
+    git clone https://github.com/Akuli/porcupine
+    cd porcupine
+    python3 -m porcupine

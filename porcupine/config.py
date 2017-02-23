@@ -29,7 +29,7 @@ understand. It can't be too bad because Sphinx does it :)
 import os
 
 
-CONFIGFILE = os.path.join(os.path.expanduser('~'), '.akulis-editor.py')
+CONFIGFILE = os.path.join(os.path.expanduser('~'), '.porcupine.py')
 
 DEFAULT_CONFIG = '''
 # This is an automatically generated setting file for Porcupine. The
