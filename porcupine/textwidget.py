@@ -34,36 +34,33 @@ def spacecount(string):
     """
     result = 0
     for char in string:
-        # we don't use isspace() here because '\n'.isspace() is True
-        if char != ' ':
-            return result
+        if char == '\n' or not char.isspace():
+            break
         result += 1
+    return result
 
 
 class EditorText(tk.Text):
 
     def __init__(self, master, settings, **kwargs):
         self._settings = settings
+        self._cursorpos = '1.0'
         super().__init__(master, **kwargs)
 
-        # These will contain callback functions that are ran after the
-        # text in the textview is updated. on_other_insert callbacks are
-        # ran when text is inserted to the textwidget without running
-        # other callbacks, e.g. by pasting.
-        self.on_cursor_move = []        # callback(lineno, column)
-        self.on_linecount_changed = []  # callback(linecount)
-        self.on_other_insert = []       # callback()
-        self._cursorpos = (1, 0)
-        self._linecount = 1
+        # These will contain callback functions that are called with no
+        # arguments after the text in the textview is updated.
+        self.on_cursor_move = []
+        self.on_modified = []
 
         def cursor_move(event):
-            self.after_idle(self.do_cursor_move)
+            self.after_idle(self._do_cursor_move)
 
+        self.bind('<<Modified>>', self._do_modified)
         self.bind('<Button-1>', cursor_move)
         self.bind('<Key>', cursor_move)
         self.bind('<Control-a>', self._on_ctrl_a)
         self.bind('<BackSpace>', self._on_backspace)
-        self.bind('<Delete>', self._on_delete)
+        #self.bind('<Delete>', cursor_move)
         self.bind('<Return>', self._on_return)
         self.bind('<parenright>', self._on_closing_brace)
         self.bind('<bracketright>', self._on_closing_brace)
@@ -76,33 +73,20 @@ class EditorText(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
-        # Undoing or redoing is already taken care of with bind_all in
-        # editor.py, but if tkinter has bound Ctrl+Z by default it gets
-        # called twice.
-        def _do_only_this(binding, callback):
-            def real_callback(event):
-                callback()
-                return 'break'
-
-            self.bind(binding, real_callback)
-
-    def do_cursor_move(self):
-        line, column = map(int, self.index('insert').split('.'))
-        if self._cursorpos != (line, column):
-            self._cursorpos = (line, column)
-            for callback in self.on_cursor_move:
-                callback(line, column)
-
-    def do_linecount_changed(self):
-        linecount = int(self.index('end-1c').split('.')[0])
-        if self._linecount != linecount:
-            self._linecount = linecount
-            for callback in self.on_linecount_changed:
-                callback(linecount)
-
-    def do_other_insert(self):
-        for callback in self.on_other_insert:
+    def _do_modified(self, event):
+        # this runs recursively if we don't unbind
+        self.unbind('<<Modified>>')
+        self.edit_modified(False)
+        self.bind('<<Modified>>', self._do_modified)
+        for callback in self.on_modified:
             callback()
+
+    def _do_cursor_move(self):
+        cursorpos = self.index('insert')
+        if cursorpos != self._cursorpos:
+            self._cursorpos = cursorpos
+            for callback in self.on_cursor_move:
+                callback()
 
     def _on_backspace(self, event):
         if not self.tag_ranges('sel'):
@@ -117,21 +101,13 @@ class EditorText(tk.Text):
                     self.dedent(lineno)
                     return 'break'
 
-        self.after_idle(self.do_linecount_changed)
-        self.after_idle(self.do_cursor_move)
+        self.after_idle(self._do_cursor_move)
         return None
 
     def _on_ctrl_a(self, event):
         """Select all."""
-        self.tag_add('sel', '0.0', 'end-1c')
+        self.tag_add('sel', '1.0', 'end-1c')
         return 'break'     # don't run _on_key or move cursor
-
-    def _on_delete(self, event):
-        nextchar = self.get('insert', 'insert+1c')
-        if nextchar:
-            # not end of file
-            self.after_idle(self.do_linecount_changed)
-            self.after_idle(self.do_cursor_move)
 
     def _on_return(self, event):
         """Schedule automatic indent and whitespace stripping."""
@@ -139,8 +115,7 @@ class EditorText(tk.Text):
         # see _autoindent()
         self.after_idle(self._autoindent)
         self.after_idle(self._strip_whitespace)
-        self.after_idle(self.do_cursor_move)
-        self.after_idle(self.do_linecount_changed)
+        self.after_idle(self._do_cursor_move)
 
     def _on_closing_brace(self, event):
         """Dedent automatically."""
@@ -193,7 +168,7 @@ class EditorText(tk.Text):
         indent = self._settings['indent']
         spaces2add = indent - (spaces % indent)
         self.insert('%d.0' % lineno, ' ' * spaces2add)
-        self.do_cursor_move()
+        self._do_cursor_move()
         return spaces + spaces2add
 
     def dedent(self, lineno):
@@ -210,7 +185,7 @@ class EditorText(tk.Text):
         if howmany2del == 0:
             howmany2del = self._settings['indent']
         self.delete('%d.0' % lineno, '%d.%d' % (lineno, howmany2del))
-        self.do_cursor_move()
+        self._do_cursor_move()
         return spaces - howmany2del
 
     def _autoindent(self):
@@ -243,8 +218,7 @@ class EditorText(tk.Text):
             self.edit_undo()
         except tk.TclError:     # nothing to undo
             return
-        self.do_cursor_move()
-        self.do_linecount_changed()
+        self._do_cursor_move()
         return 'break'
 
     def redo(self):
@@ -252,19 +226,16 @@ class EditorText(tk.Text):
             self.edit_redo()
         except tk.TclError:     # nothing to redo
             return
-        self.do_cursor_move()
-        self.do_linecount_changed()
+        self._do_cursor_move()
         return 'break'
 
     def cut(self):
         self.event_generate('<<Cut>>')
-        self.do_cursor_move()
-        self.do_linecount_changed()
+        self._do_cursor_move()
 
     def copy(self):
         self.event_generate('<<Copy>>')
-        self.do_cursor_move()
-        self.do_linecount_changed()
+        self._do_cursor_move()
 
     def paste(self):
         self.event_generate('<<Paste>>')
@@ -279,5 +250,4 @@ class EditorText(tk.Text):
         else:
             self.delete(sel_start, sel_end)
 
-        self.do_cursor_move()
-        self.do_linecount_changed()
+        self._do_cursor_move()

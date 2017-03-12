@@ -8,15 +8,17 @@ import tkinter as tk
 
 class LineNumbers(tk.Text):
 
-    def __init__(self, *args, width=6, **kwargs):
+    def __init__(self, parent, textwidget, width=6, **kwargs):
         """Initialize the line number widget."""
-        super().__init__(*args, width=width, **kwargs)
+        super().__init__(parent, width=width, **kwargs)
+        self.textwidget = textwidget
         self.insert('1.0', " 1")    # this is always there
         self['state'] = 'disabled'
         self._linecount = 1
 
-    def do_update(self, linecount):
+    def do_update(self):
         """This should be ran when the line count changes."""
+        linecount = int(self.textwidget.index('end-1c').split('.')[0])
         if linecount > self._linecount:
             # add more linenumbers
             self['state'] = 'normal'

@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import os
 import shutil
 import tkinter as tk
@@ -64,7 +65,19 @@ class FileTab(tabs.Tab):
         super().__init__()
         self._path = None
         self._settings = settings
-        self.on_path_changed = []   # these will be ran like callback(self)
+        self.on_path_changed = []   # callbacks that are called with no args
+        self.textwidget = None      # just for _hash_content
+        self._save_hash = self._hash_content()
+
+    def _hash_content(self):
+        if self.textwidget is None:
+            # nothing here yet
+            content = b''
+        else:
+            text = self.textwidget.get('1.0', 'end-1c')
+            content = text.encode(self._settings['encoding'],
+                                  errors='replace')
+        return hashlib.md5(content).hexdigest()
 
     def create_widgets(self, tabmanager):
         super().create_widgets(tabmanager)
@@ -77,13 +90,13 @@ class FileTab(tabs.Tab):
         self.textwidget = textwidget.EditorText(
             self.content, self._settings, width=1, height=1)
         self._settings['init_textwidget'](self.textwidget)
-        self.textwidget.bind('<<Modified>>', self._update_label)
+        self.textwidget.on_modified.append(self._update_label)
         self._update_label()
 
         if self._settings['linenumbers']:
             linenums = linenumbers.LineNumbers(
                 self.content, self.textwidget, font=self._settings['font'])
-            self.textwidget.on_linecount_changed.append(linenums.do_update)
+            self.textwidget.on_modified.append(linenums.do_update)
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget, linenums])
         else:
@@ -91,19 +104,19 @@ class FileTab(tabs.Tab):
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget])
 
-        highlighter = highlight.SyntaxHighlighter(self.textwidget)
-        scrollbar.on_visibility_changed.append(highlighter.do_lines)
-        self.textwidget.on_cursor_move.append(
-            lambda line, col: highlighter.do_line(line))
-        self.textwidget.on_linecount_changed.append(
-            lambda linecount: highlighter.do_multiline())
+#        highlighter = highlight.SyntaxHighlighter(self.textwidget)
+#        scrollbar.on_visibility_changed.append(highlighter.do_lines)
+#        self.textwidget.on_cursor_move.append(
+#            lambda line, col: highlighter.do_line(line))
+#        self.textwidget.on_linecount_changed.append(
+#            lambda linecount: highlighter.do_multiline())
 
         if self._settings['statusbar']:
             self.statusbar = tk.Label(self.content, anchor='w',
                                       relief='sunken')
             self.statusbar.pack(fill='x')
             self.textwidget.on_cursor_move.append(self._update_statusbar)
-            self._update_statusbar(1, 0)
+            self._update_statusbar()
         else:
             self.statusbar = None
 
@@ -131,19 +144,20 @@ class FileTab(tabs.Tab):
             for callback in self.on_path_changed:
                 callback()
 
-    def _update_label(self, event=None):
+    def _update_label(self):
         if self.path is None:
             self.label['text'] = "New file"
         else:
             self.label['text'] = shorten_filepath(self.path)
 
-        if self.textwidget.edit_modified():
-            self.label['fg'] = 'red'
-        else:
+        if self._hash_content() == self._save_hash:
             self.label['fg'] = self._orig_label_fg
+        else:
+            self.label['fg'] = 'red'
 
-    def _update_statusbar(self, lineno, column):
-        self.statusbar['text'] = "Line %d, column %d" % (lineno, column)
+    def _update_statusbar(self):
+        line, column = self.textwidget.index('insert').split('.')
+        self.statusbar['text'] = "Line %s, column %s" % (line, column)
 
     def can_be_closed(self):
         """If needed, display a 'wanna save?' dialog and save.
@@ -185,7 +199,6 @@ class FileTab(tabs.Tab):
                 here = self.textwidget.index('insert')
                 self.textwidget.insert('end-1c', '\n')
                 self.textwidget.mark_set('insert', here)
-                self.textwidget.do_linecount_changed()
 
         if self.path is None:
             self.save_as()
@@ -198,7 +211,8 @@ class FileTab(tabs.Tab):
         except (OSError, UnicodeError):
             messagebox.showerror("Saving failed!", traceback.format_exc())
             return
-        self.textwidget.edit_modified(False)
+
+        self._save_hash = self._hash_content()
 
     def save_as(self):
         options = self.get_dialog_options()
