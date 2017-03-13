@@ -10,8 +10,8 @@ from . import highlight, linenumbers, scrolling, tabs, textwidget
 
 
 @contextlib.contextmanager
-def _backup_open(path, *args, **kwargs):
-    """Like _open(), but use a backup file if needed."""
+def backup_open(path, *args, **kwargs):
+    """Like open(), but use a backup file if needed."""
     if os.path.exists(path):
         # there's something to back up
         name, ext = os.path.splitext(path)
@@ -66,10 +66,10 @@ class FileTab(tabs.Tab):
         self._path = None
         self._settings = settings
         self.on_path_changed = []   # callbacks that are called with no args
-        self.textwidget = None      # just for _hash_content
-        self._save_hash = self._hash_content()
+        self.textwidget = None      # just for _get_hash
+        self.mark_saved()
 
-    def _hash_content(self):
+    def _get_hash(self):
         if self.textwidget is None:
             # nothing here yet
             content = b''
@@ -77,7 +77,23 @@ class FileTab(tabs.Tab):
             text = self.textwidget.get('1.0', 'end-1c')
             content = text.encode(self._settings['encoding'],
                                   errors='replace')
+
         return hashlib.md5(content).hexdigest()
+
+    def mark_saved(self):
+        """Make the tab look like it's saved."""
+        self._save_hash = self._get_hash()
+        if self.label is not None:
+            # the widgets have been created
+            self._update_label()
+
+    @property
+    def saved(self):
+        """True if the text looks like has been saved.
+
+        Use mark_saved() to set this.
+        """
+        return self._get_hash() == self._save_hash
 
     def create_widgets(self, tabmanager):
         super().create_widgets(tabmanager)
@@ -150,7 +166,7 @@ class FileTab(tabs.Tab):
         else:
             self.label['text'] = shorten_filepath(self.path)
 
-        if self._hash_content() == self._save_hash:
+        if self.saved:
             self.label['fg'] = self._orig_label_fg
         else:
             self.label['fg'] = 'red'
@@ -164,7 +180,7 @@ class FileTab(tabs.Tab):
 
         Return False if the user cancels and True otherwise.
         """
-        if self.textwidget.edit_modified():
+        if not self.saved:
             if self.path is None:
                 msg = "Do you want to save your changes?"
             else:
@@ -175,6 +191,7 @@ class FileTab(tabs.Tab):
                 # cancel
                 return False
             if answer:
+                # yes
                 self.save()
         return True
 
@@ -191,6 +208,10 @@ class FileTab(tabs.Tab):
         return result
 
     def save(self):
+        if self.path is None:
+            self.save_as()
+            return
+
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with a \n yet
             if self._settings['add_trailing_newline']:
@@ -200,23 +221,19 @@ class FileTab(tabs.Tab):
                 self.textwidget.insert('end-1c', '\n')
                 self.textwidget.mark_set('insert', here)
 
-        if self.path is None:
-            self.save_as()
-            return
-
         try:
-            with _backup_open(self.path, 'w',
-                              encoding=self._settings['encoding']) as f:
+            with backup_open(self.path, 'w',
+                             encoding=self._settings['encoding']) as f:
                 f.write(self.textwidget.get('1.0', 'end-1c'))
         except (OSError, UnicodeError):
             messagebox.showerror("Saving failed!", traceback.format_exc())
             return
 
-        self._save_hash = self._hash_content()
+        self.mark_saved()
 
     def save_as(self):
         options = self.get_dialog_options()
-        path = filedialog.asksaveasfilepath(**options)
+        path = filedialog.asksaveasfilename(**options)
         if path:
             # not cancelled
             self.path = path

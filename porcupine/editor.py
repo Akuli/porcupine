@@ -225,7 +225,9 @@ class Editor(tk.Frame):
 
         # maybe this file is open already?
         for tab in self.tabmanager.tabs:
-            if tab.path == path:
+            # we don't use == because paths are case-insensitive on
+            # windows
+            if tab.path is not None and os.path.samefile(path, tab.path):
                 self.tabmanager.current_tab = tab
                 return
 
@@ -242,9 +244,7 @@ class Editor(tk.Frame):
         tab = self.new_file()
         tab.path = path
         tab.textwidget.insert('1.0', content)
-        tab.textwidget.edit_modified(False)
-        tab.textwidget.edit_reset()
-        tab.textwidget.do_linecount_changed()
+        tab.mark_saved()
 
     def _close_file(self):
         self.tabmanager.close_tab(self.tabmanager.current_tab)
