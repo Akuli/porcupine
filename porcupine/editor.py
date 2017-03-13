@@ -52,11 +52,11 @@ class GlobalBinding:
 
 
 DESCRIPTION = '\n\n'.join([
-    ' '.join(init_docstring.split()),
+    init_docstring,
     "You can create a new file by pressing Ctrl+N or open an existing "
     "file by pressing Ctrl+O. The file name will be displayed in red "
-    "when the file is not saved, and you can press Ctrl+S to save the "
-    "file.",
+    "if the file has been changed and you can save the file with "
+    "Ctrl+S.",
     "See the menus at the top of the editor for other things you can "
     "do and their keyboard shortcuts.",
 ])
@@ -68,7 +68,7 @@ def create_welcome_msg(frame):
     innerframe.place(relx=0.5, rely=0.5, anchor='center')  # float in center
 
     titlelabel = tk.Label(innerframe, font='TkDefaultFont 16',
-                          text="Welcome to Porcupine!")
+                          text="<class 'Porcupine'>")
     titlelabel.pack()
     desclabel = tk.Label(innerframe, font='TkDefaultFont 12',
                          text=DESCRIPTION)
