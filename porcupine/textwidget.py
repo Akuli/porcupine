@@ -63,12 +63,12 @@ class EditorText(tk.Text):
         self.bind('<Key>', cursor_move)
         self.bind('<Control-a>', self._on_ctrl_a)
         self.bind('<BackSpace>', self._on_backspace)
-        self.bind('<Delete>', self._on_delete)
         self.bind('<Return>', self._on_return)
         self.bind('<parenright>', self._on_closing_brace)
         self.bind('<bracketright>', self._on_closing_brace)
         self.bind('<braceright>', self._on_closing_brace)
         self.bind('<Tab>', lambda event: self._on_tab(False))
+
         if self.tk.call('tk', 'windowingsystem') == 'x11':
             # even though the event keysym says Left, holding down right
             # shift and pressing tab also runs this event... 0_o
@@ -107,15 +107,11 @@ class EditorText(tk.Text):
     def _on_backspace(self, event):
         if not self.tag_ranges('sel'):
             # nothing is selected, we can do non-default stuff
-            prevchar = self.get('insert-1c', 'insert')
-            if prevchar:
-                # not beginning of file
-                lineno = int(self.index('insert').split('.')[0])
-                before_cursor = self.get('%d.0' % lineno,
-                                         '%d.0+1l-1c' % lineno)
-                if before_cursor.isspace():
-                    self.dedent(lineno)
-                    return 'break'
+            lineno = int(self.index('insert').split('.')[0])
+            before_cursor = self.get('%d.0' % lineno, 'insert')
+            if before_cursor and before_cursor.isspace():
+                self.dedent(lineno)
+                return 'break'
 
         self.after_idle(self.do_linecount_changed)
         self.after_idle(self.do_cursor_move)
