@@ -120,12 +120,8 @@ class FileTab(tabs.Tab):
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget])
 
-#        highlighter = highlight.SyntaxHighlighter(self.textwidget)
-#        scrollbar.on_visibility_changed.append(highlighter.do_lines)
-#        self.textwidget.on_cursor_move.append(
-#            lambda line, col: highlighter.do_line(line))
-#        self.textwidget.on_linecount_changed.append(
-#            lambda linecount: highlighter.do_multiline())
+        highlighter = highlight.Highlighter(self.textwidget)
+        self.textwidget.on_modified.append(highlighter.highlight)
 
         if self._settings['statusbar']:
             self.statusbar = tk.Label(self.content, anchor='w',

@@ -86,7 +86,7 @@ class Highlighter:
         # let's run this again when we can
         self.textwidget.after_idle(self._on_idle)
 
-    def _clear_tags(self, first_lineno, last_lineno):
+    def _clear_tags(self, first_lineno, last_lineno=None):
         """Delete all tags between two lines, except the selection tag."""
         start = '%d.0' % first_lineno
         if last_lineno is None:
@@ -97,9 +97,8 @@ class Highlighter:
             end = '%d.0+1l-1c' % last_lineno
 
         for tag in self.textwidget.tag_names():
-            if tag == 'sel':
-                continue
-            self.textwidget.tag_remove(tag, start, end)
+            if tag != 'sel':
+                self.textwidget.tag_remove(tag, start, end)
 
     def _iter_lines(self):
         last_lineno = int(self.textwidget.index('end-1c').split('.')[0])
@@ -171,28 +170,30 @@ class Highlighter:
                                         '%d.%d' % endpos)
 
         except SyntaxError as e:
-            # let's delete the rest of the old syntax highlighting
-            # instead of letting it just be there screwing around
-            self._clear_tags(last_lineno+1, None)
-
             try:
                 msg, (file, line, column, code) = e.args
             except ValueError:
                 # we don't know what caused the error, so let's not care
                 # about it
-                return
+                pass
+            else:
+                # we can highlight the bad syntax
+                start = '%d.0' % line
+                end = '%d.%d' % (line, column)
+                self._clear_tags(last_lineno+1)
+                self.textwidget.tag_add('syntax-error', start, end)
+                return   # don't run the _clear_tags a few lines below this
 
-            # we can highlight the bad syntax
-            start = '%d.0' % line
-            end = '%d.%d' % (line, column)
-            self.textwidget.tag_add('syntax-error', start, end)
-
-        # UnicodeDecodeErrors come from tokenize.tokenize()
+        # these errors come fron tokenize.tokenize()
         # TODO: handle things like "# coding: ascii" at the top of the
         # file, get rid of UnicodeDecodeError here and errors='replace'
         # in other places
         except (UnicodeDecodeError, tokenize.TokenError) as e:
-            self._clear_tags(last_lineno+1, None)
+            pass
+
+        # sometimes there's nothing to highlight at the end of the
+        # text widget and we need to delete old highlights
+        self._clear_tags(last_lineno+1)
 
     def highlight(self):
         self._highlight_job = self._highlight_coro()
@@ -200,8 +201,8 @@ class Highlighter:
 
 
 def main():
-    if len(sys.argv) != 2:
-        sys.exit("usage: %s FILE" % sys.argv[0])
+    if len(sys.argv) > 2 or sys.argv[1:] == ['--help']:
+        sys.exit("usage: %s [FILE]" % sys.argv[0])
 
     def on_modified(event):
         text.unbind('<<Modified>>')
@@ -215,8 +216,9 @@ def main():
 
     highlighter = Highlighter(text)
     text.bind('<<Modified>>', on_modified)
-    with open(sys.argv[1], 'r') as f:
-        text.insert('1.0', f.read())
+    if len(sys.argv) == 2:
+        with open(sys.argv[1], 'r') as f:
+            text.insert('1.0', f.read())
 
     root.mainloop()
 
