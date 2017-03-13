@@ -21,6 +21,7 @@
 
 """The big text widget in the middle of the editor."""
 
+from functools import partial   # not "import functools" to avoid long lines
 import tkinter as tk
 
 from porcupine import config
@@ -45,18 +46,19 @@ def spacecount(string):
 class EditorText(tk.Text):
 
     def __init__(self, master, **kwargs):
-        self._cursorpos = '1.0'
+        colors = config['colors']
         super().__init__(
-            master, fg=config['colors']['foreground'],
-            bg=config['colors']['background'],
-            insertbackground=config['colors']['foreground'],
-            selectbackground=config['colors']['selectbackground'],
-            **kwargs)
+            master, fg=colors['foreground'], bg=colors['background'],
+            undo=config['editing'].getboolean('undo'),
+            maxundo=config['editing'].getboolean('maxundo'),
+            insertbackground=colors['foreground'],
+            selectbackground=colors['selectbackground'], **kwargs)
 
         # These will contain callback functions that are called with no
         # arguments after the text in the textview is updated.
         self.on_cursor_move = []
         self.on_modified = []
+        self._cursorpos = '1.0'
 
         def cursor_move(event):
             self.after_idle(self._do_cursor_move)
@@ -65,7 +67,9 @@ class EditorText(tk.Text):
         self.bind('<Button-1>', cursor_move)
         self.bind('<Key>', cursor_move)
         self.bind('<Control-a>', self._on_ctrl_a)
-        self.bind('<BackSpace>', self._on_backspace)
+        self.bind('<BackSpace>', partial(self._on_delete, False))
+        self.bind('<Control-BackSpace>', partial(self._on_delete, True))
+        self.bind('<Control-Delete>', partial(self._on_delete, True))
         self.bind('<Return>', self._on_return)
         self.bind('<parenright>', self._on_closing_brace)
         self.bind('<bracketright>', self._on_closing_brace)
@@ -94,14 +98,29 @@ class EditorText(tk.Text):
             for callback in self.on_cursor_move:
                 callback()
 
-    def _on_backspace(self, event):
+    def _on_delete(self, control_down, event):
+        """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
             # nothing is selected, we can do non-default stuff
-            lineno = int(self.index('insert').split('.')[0])
-            before_cursor = self.get('%d.0' % lineno, 'insert')
-            if before_cursor and before_cursor.isspace():
-                self.dedent(lineno)
-                return 'break'
+            if event.keysym == 'BackSpace':
+                lineno = int(self.index('insert').split('.')[0])
+                before_cursor = self.get('%d.0' % lineno, 'insert')
+                if before_cursor and before_cursor.isspace():
+                    self.dedent(lineno)
+                    return 'break'
+
+                if control_down:
+                    # delete previous word
+                    old_cursor_pos = self.index('insert')
+                    self.event_generate('<<PrevWord>>')
+                    self.delete('insert', old_cursor_pos)
+                    return 'break'
+
+            if event.keysym == 'Delete' and control_down:
+                # delete next word
+                old_cursor_pos = self.index('insert')
+                self.event_generate('<<NextWord>>')
+                self.delete(old_cursor_pos, 'insert')
 
         self.after_idle(self._do_cursor_move)
         return None
