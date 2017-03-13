@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import os
 import shutil
 import tkinter as tk
@@ -9,8 +10,8 @@ from . import highlight, linenumbers, scrolling, tabs, textwidget
 
 
 @contextlib.contextmanager
-def _backup_open(path, *args, **kwargs):
-    """Like _open(), but use a backup file if needed."""
+def backup_open(path, *args, **kwargs):
+    """Like open(), but use a backup file if needed."""
     if os.path.exists(path):
         # there's something to back up
         name, ext = os.path.splitext(path)
@@ -64,7 +65,35 @@ class FileTab(tabs.Tab):
         super().__init__()
         self._path = None
         self._settings = settings
-        self.on_path_changed = []   # these will be ran like callback(self)
+        self.on_path_changed = []   # callbacks that are called with no args
+        self.textwidget = None      # just for _get_hash
+        self.mark_saved()
+
+    def _get_hash(self):
+        if self.textwidget is None:
+            # nothing here yet
+            content = b''
+        else:
+            text = self.textwidget.get('1.0', 'end-1c')
+            content = text.encode(self._settings['encoding'],
+                                  errors='replace')
+
+        return hashlib.md5(content).hexdigest()
+
+    def mark_saved(self):
+        """Make the tab look like it's saved."""
+        self._save_hash = self._get_hash()
+        if self.label is not None:
+            # the widgets have been created
+            self._update_label()
+
+    @property
+    def saved(self):
+        """True if the text looks like has been saved.
+
+        Use mark_saved() to set this.
+        """
+        return self._get_hash() == self._save_hash
 
     def create_widgets(self, tabmanager):
         super().create_widgets(tabmanager)
@@ -77,13 +106,13 @@ class FileTab(tabs.Tab):
         self.textwidget = textwidget.EditorText(
             self.content, self._settings, width=1, height=1)
         self._settings['init_textwidget'](self.textwidget)
-        self.textwidget.bind('<<Modified>>', self._update_label)
+        self.textwidget.on_modified.append(self._update_label)
         self._update_label()
 
         if self._settings['linenumbers']:
             linenums = linenumbers.LineNumbers(
                 self.content, self.textwidget, font=self._settings['font'])
-            self.textwidget.on_linecount_changed.append(linenums.do_update)
+            self.textwidget.on_modified.append(linenums.do_update)
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget, linenums])
         else:
@@ -91,19 +120,19 @@ class FileTab(tabs.Tab):
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget])
 
-        highlighter = highlight.SyntaxHighlighter(self.textwidget)
-        scrollbar.on_visibility_changed.append(highlighter.do_lines)
-        self.textwidget.on_cursor_move.append(
-            lambda line, col: highlighter.do_line(line))
-        self.textwidget.on_linecount_changed.append(
-            lambda linecount: highlighter.do_multiline())
+#        highlighter = highlight.SyntaxHighlighter(self.textwidget)
+#        scrollbar.on_visibility_changed.append(highlighter.do_lines)
+#        self.textwidget.on_cursor_move.append(
+#            lambda line, col: highlighter.do_line(line))
+#        self.textwidget.on_linecount_changed.append(
+#            lambda linecount: highlighter.do_multiline())
 
         if self._settings['statusbar']:
             self.statusbar = tk.Label(self.content, anchor='w',
                                       relief='sunken')
             self.statusbar.pack(fill='x')
             self.textwidget.on_cursor_move.append(self._update_statusbar)
-            self._update_statusbar(1, 0)
+            self._update_statusbar()
         else:
             self.statusbar = None
 
@@ -131,26 +160,27 @@ class FileTab(tabs.Tab):
             for callback in self.on_path_changed:
                 callback()
 
-    def _update_label(self, event=None):
+    def _update_label(self):
         if self.path is None:
             self.label['text'] = "New file"
         else:
             self.label['text'] = shorten_filepath(self.path)
 
-        if self.textwidget.edit_modified():
-            self.label['fg'] = 'red'
-        else:
+        if self.saved:
             self.label['fg'] = self._orig_label_fg
+        else:
+            self.label['fg'] = 'red'
 
-    def _update_statusbar(self, lineno, column):
-        self.statusbar['text'] = "Line %d, column %d" % (lineno, column)
+    def _update_statusbar(self):
+        line, column = self.textwidget.index('insert').split('.')
+        self.statusbar['text'] = "Line %s, column %s" % (line, column)
 
     def can_be_closed(self):
         """If needed, display a 'wanna save?' dialog and save.
 
         Return False if the user cancels and True otherwise.
         """
-        if self.textwidget.edit_modified():
+        if not self.saved:
             if self.path is None:
                 msg = "Do you want to save your changes?"
             else:
@@ -161,6 +191,7 @@ class FileTab(tabs.Tab):
                 # cancel
                 return False
             if answer:
+                # yes
                 self.save()
         return True
 
@@ -177,6 +208,10 @@ class FileTab(tabs.Tab):
         return result
 
     def save(self):
+        if self.path is None:
+            self.save_as()
+            return
+
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with a \n yet
             if self._settings['add_trailing_newline']:
@@ -185,24 +220,20 @@ class FileTab(tabs.Tab):
                 here = self.textwidget.index('insert')
                 self.textwidget.insert('end-1c', '\n')
                 self.textwidget.mark_set('insert', here)
-                self.textwidget.do_linecount_changed()
-
-        if self.path is None:
-            self.save_as()
-            return
 
         try:
-            with _backup_open(self.path, 'w',
-                              encoding=self._settings['encoding']) as f:
+            with backup_open(self.path, 'w',
+                             encoding=self._settings['encoding']) as f:
                 f.write(self.textwidget.get('1.0', 'end-1c'))
         except (OSError, UnicodeError):
             messagebox.showerror("Saving failed!", traceback.format_exc())
             return
-        self.textwidget.edit_modified(False)
+
+        self.mark_saved()
 
     def save_as(self):
         options = self.get_dialog_options()
-        path = filedialog.asksaveasfilepath(**options)
+        path = filedialog.asksaveasfilename(**options)
         if path:
             # not cancelled
             self.path = path
