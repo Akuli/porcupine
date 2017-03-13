@@ -63,19 +63,22 @@ DESCRIPTION = '\n\n'.join([
 
 
 def create_welcome_msg(frame):
-    def resize(event):
-        event.widget['wraplength'] = event.width * 0.9  # small borders
+    # the texts will be packed closed to each other into this
+    innerframe = tk.Frame(frame)
+    innerframe.place(relx=0.5, rely=0.5, anchor='center')  # float in center
 
-    # fill in extra space at top and bottom using empty frames
-    tk.Frame(frame, bg='black').pack(expand=True)
-    titlelabel = tk.Label(frame, font='TkDefaultFont 16',
-                          text="Welcome to Porcupine!\n")
-    titlelabel.pack(fill='x')
-    titlelabel.bind('<Configure>', resize)
-    desclabel = tk.Label(frame, font='TkDefaultFont 12', text=DESCRIPTION)
-    desclabel.pack(fill='x')
-    desclabel.bind('<Configure>', resize)
-    tk.Frame(frame, bg='black').pack(expand=True)
+    titlelabel = tk.Label(innerframe, font='TkDefaultFont 16',
+                          text="Welcome to Porcupine!")
+    titlelabel.pack()
+    desclabel = tk.Label(innerframe, font='TkDefaultFont 12',
+                         text=DESCRIPTION)
+    desclabel.pack()
+
+    def resize(event):
+        for label in [titlelabel, desclabel]:
+            label['wraplength'] = event.width * 0.9    # small borders
+
+    frame.bind('<Configure>', resize)
 
 
 class Editor(tk.Frame):
