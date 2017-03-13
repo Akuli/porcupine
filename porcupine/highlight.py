@@ -33,6 +33,8 @@ import tkinter as tk
 import tkinter.font as tkfont
 import tokenize
 
+from porcupine import config
+
 
 class Highlighter:
 
@@ -44,18 +46,19 @@ class Highlighter:
 
         # the order of these matters, the tags added last will be above
         # tags added earlier
-        textwidget.tag_config('decorator', foreground='#ff0099')
-        textwidget.tag_config('builtin', foreground='#9966cc')
-        textwidget.tag_config('keyword', foreground='#cc9900')
-        textwidget.tag_config('string', foreground='#00cc00')
-        textwidget.tag_config('comment', foreground='#999999')
-        textwidget.tag_config('exception', foreground='#ff0000')
-        textwidget.tag_config('syntax-error', background='#ff0000')
+        colors = config['colors']
+        for tag in ['decorator', 'builtin', 'keyword', 'string',
+                    'comment', 'exception']:
+            textwidget.tag_config(tag, foreground=colors[tag])
+        textwidget.tag_config(
+            'syntax-error', background=colors['errorbackground'])
 
-        self._highlight_job = None
-
+        # async and await are not in keyword.kwlist yet, I guess they
+        # will be added later but we'll support them here
+        self._keywords = set(keyword.kwlist + ['async', 'await'])
         self._builtins = set()
         self._exceptions = set()
+
         for name in dir(builtins):
             if name.startswith('_'):
                 continue
@@ -66,8 +69,10 @@ class Highlighter:
                 self._builtins.add(name)
 
         # some things like True and False are both in keyword.kwlist and
-        # dir(builtins), so we'll treat them as builtins
-        self._keywords = set(keyword.kwlist) - self._builtins
+        # dir(builtins), so we'll treat them as builtins. on the other
+        self._keywords -= self._builtins
+
+        self._highlight_job = None
 
     def _on_idle(self):
         # sometimes this gets added as a Tk idle callback twice but it
@@ -111,8 +116,8 @@ class Highlighter:
     def _highlight_coro(self):
         bytelines = (line.encode('utf-8', errors='replace')
                      for line in self._iter_lines())
-
         last_lineno = 0
+
         try:
             tokens = tokenize.tokenize(bytelines.__next__)
             for tokentype, string, startpos, endpos, line in tokens:
@@ -200,7 +205,8 @@ class Highlighter:
         self.textwidget.after_idle(self._on_idle)
 
 
-def main():
+if __name__ == '__main__':
+    # simple test
     if len(sys.argv) > 2 or sys.argv[1:] == ['--help']:
         sys.exit("usage: %s [FILE]" % sys.argv[0])
 
@@ -213,15 +219,21 @@ def main():
     root = tk.Tk()
     text = tk.Text(root, fg='white', bg='black', insertbackground='white')
     text.pack(fill='both', expand=True)
-
-    highlighter = Highlighter(text)
     text.bind('<<Modified>>', on_modified)
+
+    config['colors'] = {
+        'decorator': '#ff0099',
+        'builtin': '#9966cc',
+        'keyword': '#cc9900',
+        'string': '#00cc00',
+        'comment': '#999999',
+        'exception': '#ff0000',
+        'errorbackground': '#ff0000',
+    }
+    highlighter = Highlighter(text)
+
     if len(sys.argv) == 2:
         with open(sys.argv[1], 'r') as f:
             text.insert('1.0', f.read())
 
     root.mainloop()
-
-
-if __name__ == '__main__':
-    main()

@@ -10,10 +10,11 @@ class LineNumbers(tk.Text):
 
     def __init__(self, parent, textwidget, width=6, **kwargs):
         """Initialize the line number widget."""
-        super().__init__(parent, width=width, **kwargs)
+        super().__init__(parent, width=width, font=textwidget['font'],
+                         **kwargs)
         self.textwidget = textwidget
         self.insert('1.0', " 1")    # this is always there
-        self['state'] = 'disabled'
+        self['state'] = 'disabled'  # must be after the insert
         self._linecount = 1
 
     def do_update(self):
@@ -41,12 +42,8 @@ if __name__ == '__main__':
     linenumbers.pack(side='left', fill='y')
     text.pack(side='left', fill='both', expand=True)
 
-    def do_the_update():
-        linecount = int(text.index('end-1c').split('.')[0])
-        linenumbers.do_update(linecount)
-
     def on_lineno_change(event):
-        text.after_idle(do_the_update)
+        text.after_idle(linenumbers.do_update)
 
     # this isn't perfect but this is good enough for this test
     text.bind('<Return>', on_lineno_change)

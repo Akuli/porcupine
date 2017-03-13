@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import traceback
 
-from . import highlight, linenumbers, scrolling, tabs, textwidget
+from . import config, highlight, linenumbers, scrolling, tabs, textwidget
 
 
 @contextlib.contextmanager
@@ -61,10 +61,9 @@ def shorten_filepath(name, sep=os.sep):
 class FileTab(tabs.Tab):
     """A tab in the editor."""
 
-    def __init__(self, settings):
+    def __init__(self):
         super().__init__()
         self._path = None
-        self._settings = settings
         self.on_path_changed = []   # callbacks that are called with no args
         self.textwidget = None      # just for _get_hash
         self.mark_saved()
@@ -74,9 +73,9 @@ class FileTab(tabs.Tab):
             # nothing here yet
             content = b''
         else:
+            encoding = config['files']['encoding']
             text = self.textwidget.get('1.0', 'end-1c')
-            content = text.encode(self._settings['encoding'],
-                                  errors='replace')
+            content = text.encode(encoding, errors='replace')
 
         return hashlib.md5(content).hexdigest()
 
@@ -104,14 +103,12 @@ class FileTab(tabs.Tab):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.EditorText(
-            self.content, self._settings, width=1, height=1)
-        self._settings['init_textwidget'](self.textwidget)
+            self.content, width=1, height=1)
         self.textwidget.on_modified.append(self._update_label)
         self._update_label()
 
-        if self._settings['linenumbers']:
-            linenums = linenumbers.LineNumbers(
-                self.content, self.textwidget, font=self._settings['font'])
+        if config['gui'].getboolean('linenumbers'):
+            linenums = linenumbers.LineNumbers(self.content, self.textwidget)
             self.textwidget.on_modified.append(linenums.do_update)
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget, linenums])
@@ -123,7 +120,7 @@ class FileTab(tabs.Tab):
         highlighter = highlight.Highlighter(self.textwidget)
         self.textwidget.on_modified.append(highlighter.highlight)
 
-        if self._settings['statusbar']:
+        if config['gui'].getboolean('statusbar'):
             self.statusbar = tk.Label(self.content, anchor='w',
                                       relief='sunken')
             self.statusbar.pack(fill='x')
@@ -210,7 +207,7 @@ class FileTab(tabs.Tab):
 
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with a \n yet
-            if self._settings['add_trailing_newline']:
+            if config['files'].getboolean('add_trailing_newline'):
                 # make sure we don't move the cursor, IDLE does it and
                 # it's annoying
                 here = self.textwidget.index('insert')
@@ -218,8 +215,8 @@ class FileTab(tabs.Tab):
                 self.textwidget.mark_set('insert', here)
 
         try:
-            with backup_open(self.path, 'w',
-                             encoding=self._settings['encoding']) as f:
+            encoding = config['files']['encoding']
+            with backup_open(self.path, 'w', encoding=encoding) as f:
                 f.write(self.textwidget.get('1.0', 'end-1c'))
         except (OSError, UnicodeError):
             messagebox.showerror("Saving failed!", traceback.format_exc())

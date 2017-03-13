@@ -27,8 +27,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import traceback
 
-from . import __doc__ as init_docstring
-from . import filetabs, tabs
+from porcupine import __doc__ as init_docstring
+from porcupine import config, filetabs, tabs
 
 
 class GlobalBinding:
@@ -80,9 +80,8 @@ def create_welcome_msg(frame):
 
 class Editor(tk.Frame):
 
-    def __init__(self, parent, settings, **kwargs):
+    def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self._settings = settings
         self._finddialog = None
 
         tabmgr = self.tabmanager = tabs.TabManager(self)
@@ -198,7 +197,7 @@ class Editor(tk.Frame):
         self._menus["Edit"].unpost()
 
     def new_file(self):
-        tab = filetabs.FileTab(self._settings)
+        tab = filetabs.FileTab()
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
         tab.textwidget.bind('<Button-3>', self._post_editmenu)
 
@@ -232,9 +231,9 @@ class Editor(tk.Frame):
                 return
 
         if content is None:
+            encoding = config['files']['encoding']
             try:
-                with open(path, 'r',
-                          encoding=self._settings['encoding']) as f:
+                with open(path, 'r', encoding=encoding) as f:
                     content = f.read()
             except (OSError, UnicodeError):
                 messagebox.showerror("Opening failed!",

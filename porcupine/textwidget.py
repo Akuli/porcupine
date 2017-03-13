@@ -23,6 +23,8 @@
 
 import tkinter as tk
 
+from porcupine import config
+
 
 def spacecount(string):
     """Count how many spaces the string starts with.
@@ -42,10 +44,14 @@ def spacecount(string):
 
 class EditorText(tk.Text):
 
-    def __init__(self, master, settings, **kwargs):
-        self._settings = settings
+    def __init__(self, master, **kwargs):
         self._cursorpos = '1.0'
-        super().__init__(master, **kwargs)
+        super().__init__(
+            master, fg=config['colors']['foreground'],
+            bg=config['colors']['background'],
+            insertbackground=config['colors']['foreground'],
+            selectbackground=config['colors']['selectbackground'],
+            **kwargs)
 
         # These will contain callback functions that are called with no
         # arguments after the text in the textview is updated.
@@ -158,10 +164,10 @@ class EditorText(tk.Text):
         """
         line = self.get('%d.0' % lineno, '%d.0+1l' % lineno)
         spaces = spacecount(line)
+        indent = config['editing'].getint('indent')
 
-        # make the indent consistent, for example, add 1 space
-        # if self._settings['indent'] is 4 and there are 7 spaces
-        indent = self._settings['indent']
+        # make the indent consistent, for example, add 1 space if indent
+        # is 4 and there are 7 spaces
         spaces2add = indent - (spaces % indent)
         self.insert('%d.0' % lineno, ' ' * spaces2add)
         self._do_cursor_move()
@@ -177,9 +183,11 @@ class EditorText(tk.Text):
         spaces = spacecount(line)
         if spaces == 0:
             return 0
-        howmany2del = spaces % self._settings['indent']
+
+        indent = config['editing'].getint('indent')
+        howmany2del = spaces % indent
         if howmany2del == 0:
-            howmany2del = self._settings['indent']
+            howmany2del = indent
         self.delete('%d.0' % lineno, '%d.%d' % (lineno, howmany2del))
         self._do_cursor_move()
         return spaces - howmany2del
