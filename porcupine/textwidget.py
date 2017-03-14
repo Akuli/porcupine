@@ -58,6 +58,8 @@ class EditorText(tk.Text):
         # arguments after the text in the textview is updated.
         self.on_cursor_move = []
         self.on_modified = []
+        self.on_complete_previous = []
+        self.on_complete_next = []
         self._cursorpos = '1.0'
 
         def cursor_move(event):
@@ -150,9 +152,11 @@ class EditorText(tk.Text):
     def _on_tab(self, shifted):
         """Indent, dedent or autocomplete."""
         if shifted:
-            action = self.dedent
+            indent_action = self.dedent
+            complete_callbacks = self.on_complete_previous
         else:
-            action = self.indent
+            indent_action = self.indent
+            complete_callbacks = self.on_complete_next
 
         try:
             sel_start, sel_end = map(str, self.tag_ranges('sel'))
@@ -161,15 +165,16 @@ class EditorText(tk.Text):
             lineno = int(self.index('insert').split('.')[0])
             before_cursor = self.get('%d.0' % lineno, 'insert')
             if before_cursor.isspace() or not before_cursor:
-                action(lineno)
+                indent_action(lineno)
             else:
-                print("complete", "previous" if shifted else "next")
+                for callback in complete_callbacks:
+                    callback()
         else:
             # something selected, indent/dedent block
             first_lineno = int(sel_start.split('.')[0])
             last_lineno = int(sel_end.split('.')[0])
             for lineno in range(first_lineno, last_lineno+1):
-                action(lineno)
+                indent_action(lineno)
 
         # indenting and autocomplete: don't insert the default tab
         # dedenting: don't move focus out of this widget

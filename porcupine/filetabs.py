@@ -6,7 +6,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import traceback
 
-from . import config, highlight, linenumbers, scrolling, tabs, textwidget
+from . import (autocomplete, config, highlight, linenumbers, scrolling,
+               tabs, textwidget)
 
 
 @contextlib.contextmanager
@@ -106,6 +107,13 @@ class FileTab(tabs.Tab):
             self.content, width=1, height=1)
         self.textwidget.on_modified.append(self._update_label)
         self._update_label()
+
+        if config['editing'].getboolean('autocomplete'):
+            completer = autocomplete.AutoCompleter(self.textwidget)
+            self.textwidget.on_complete_previous.append(
+                completer.complete_previous)
+            self.textwidget.on_complete_next.append(completer.complete_next)
+            self.textwidget.on_cursor_move.append(completer.reset)
 
         if config['gui'].getboolean('linenumbers'):
             linenums = linenumbers.LineNumbers(self.content, self.textwidget)
