@@ -44,6 +44,8 @@ def main():
     editor.pack(fill='both', expand=True)
 
     for file in args.file:
+        file = os.path.abspath(file)
+
         # the editor doesn't create new files when opening, so we need to
         # take care of that here
         if os.path.exists(file):
