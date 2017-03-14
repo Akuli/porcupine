@@ -24,11 +24,11 @@
 
 import os
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import messagebox
 import traceback
 
 from porcupine import __doc__ as init_docstring
-from porcupine import config, filetabs, tabs
+from porcupine import config, dialogs, filetabs, tabs
 
 
 class GlobalBinding:
@@ -200,7 +200,7 @@ class Editor(tk.Frame):
         self._menus["Edit"].unpost()
 
     def new_file(self):
-        tab = filetabs.FileTab()
+        tab = filetabs.FileTab(self.tabmanager)
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
         tab.textwidget.bind('<Button-3>', self._post_editmenu)
 
@@ -215,14 +215,8 @@ class Editor(tk.Frame):
 
     def open_file(self, path=None, *, content=None):
         if path is None:
-            if self.tabmanager.current_tab is None:
-                # no tabs yet
-                options = {'initialdir': os.getcwd()}
-            else:
-                options = self.tabmanager.current_tab.get_dialog_options()
-            path = filedialog.askopenfilename(**options)
-            if not path:
-                # cancelled
+            path = dialogs.open_file()
+            if path is None:
                 return
 
         # maybe this file is open already?
@@ -249,7 +243,7 @@ class Editor(tk.Frame):
         tab.mark_saved()
 
     def _close_file(self):
-        self.tabmanager.close_tab(self.tabmanager.current_tab)
+        self.tabmanager.current_tab.close()
 
     def do_quit(self):
         for tab in self.tabmanager.tabs:

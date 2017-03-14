@@ -3,15 +3,15 @@ import hashlib
 import os
 import shutil
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import messagebox
 import traceback
 
-from . import (autocomplete, config, highlight, linenumbers, scrolling,
-               tabs, textwidget)
+from . import (autocomplete, config, dialogs, highlight, linenumbers,
+               scrolling, tabs, textwidget)
 
 
 @contextlib.contextmanager
-def backup_open(path, *args, **kwargs):
+def _backup_open(path, *args, **kwargs):
     """Like open(), but use a backup file if needed."""
     if os.path.exists(path):
         # there's something to back up
@@ -36,12 +36,12 @@ def backup_open(path, *args, **kwargs):
 
 
 # The sep argument is just for doctesting.
-def shorten_filepath(name, sep=os.sep):
+def _shorten_filepath(name, sep=os.sep):
     """Create a representation of a path at most 30 characters long.
 
-    >>> shorten_filepath('/tmp/test.py', '/')
+    >>> _shorten_filepath('/tmp/test.py', '/')
     '/tmp/test.py'
-    >>> shorten_filepath('/home/someusername/path/to/test.py', '/')
+    >>> _shorten_filepath('/home/someusername/path/to/test.py', '/')
     '.../path/to/test.py'
     """
     if len(name) <= 30:
@@ -62,41 +62,10 @@ def shorten_filepath(name, sep=os.sep):
 class FileTab(tabs.Tab):
     """A tab in the editor."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, manager):
+        super().__init__(manager)
         self._path = None
         self.on_path_changed = []   # callbacks that are called with no args
-        self.textwidget = None      # just for _get_hash
-        self.mark_saved()
-
-    def _get_hash(self):
-        if self.textwidget is None:
-            # nothing here yet
-            content = b''
-        else:
-            encoding = config['files']['encoding']
-            content = self.textwidget.get('1.0', 'end-1c')
-            content = content.encode(encoding, errors='replace')
-
-        return hashlib.md5(content).hexdigest()
-
-    def mark_saved(self):
-        """Make the tab look like it's saved."""
-        self._save_hash = self._get_hash()
-        if self.label is not None:
-            # the widgets have been created
-            self._update_label()
-
-    @property
-    def saved(self):
-        """True if the text looks like has been saved.
-
-        Use mark_saved() to set this.
-        """
-        return self._get_hash() == self._save_hash
-
-    def create_widgets(self, tabmanager):
-        super().create_widgets(tabmanager)
 
         self._orig_label_fg = self.label['fg']
         self.on_path_changed.append(self._update_label)
@@ -106,7 +75,6 @@ class FileTab(tabs.Tab):
         self.textwidget = textwidget.EditorText(
             self.content, width=1, height=1)
         self.textwidget.on_modified.append(self._update_label)
-        self._update_label()
 
         if config['editing'].getboolean('autocomplete'):
             completer = autocomplete.AutoCompleter(self.textwidget)
@@ -147,6 +115,30 @@ class FileTab(tabs.Tab):
         self.textwidget.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='left', fill='y')
 
+        self.mark_saved()
+        self._update_label()
+
+    def _get_hash(self):
+        encoding = config['files']['encoding']
+        content = self.textwidget.get('1.0', 'end-1c')
+        content = content.encode(encoding, errors='replace')
+        return hashlib.md5(content).hexdigest()
+
+    def mark_saved(self):
+        """Make the tab look like it's saved."""
+        self._save_hash = self._get_hash()
+        if self.label is not None:
+            # the widgets have been created
+            self._update_label()
+
+    @property
+    def saved(self):
+        """True if the text looks like has been saved.
+
+        Use mark_saved() to set this.
+        """
+        return self._get_hash() == self._save_hash
+
     @property
     def path(self):
         return self._path
@@ -165,7 +157,7 @@ class FileTab(tabs.Tab):
         if self.path is None:
             self.label['text'] = "New file"
         else:
-            self.label['text'] = shorten_filepath(self.path)
+            self.label['text'] = _shorten_filepath(self.path)
 
         if self.saved:
             self.label['fg'] = self._orig_label_fg
@@ -196,17 +188,8 @@ class FileTab(tabs.Tab):
                 self.save()
         return True
 
-    def focus(self):
+    def on_focus(self):
         self.textwidget.focus()
-
-    def get_dialog_options(self):
-        result = {'filetypes': [("Python files", "*.py"), ("All files", "*")]}
-        if self.path is None:
-            result['initialdir'] = os.getcwd()
-        else:
-            result['initialdir'] = os.path.dirname(self.path)
-            result['initialfile'] = os.path.basename(self.path)
-        return result
 
     def save(self):
         if self.path is None:
@@ -224,7 +207,7 @@ class FileTab(tabs.Tab):
 
         try:
             encoding = config['files']['encoding']
-            with backup_open(self.path, 'w', encoding=encoding) as f:
+            with _backup_open(self.path, 'w', encoding=encoding) as f:
                 f.write(self.textwidget.get('1.0', 'end-1c'))
         except (OSError, UnicodeError):
             messagebox.showerror("Saving failed!", traceback.format_exc())
@@ -233,10 +216,8 @@ class FileTab(tabs.Tab):
         self.mark_saved()
 
     def save_as(self):
-        options = self.get_dialog_options()
-        path = filedialog.asksaveasfilename(**options)
-        if path:
-            # not cancelled
+        path = dialogs.save_as()
+        if path is not None:
             self.path = path
             self.save()
 

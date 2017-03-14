@@ -15,50 +15,39 @@ def iter_children(widget):
         yield from iter_children(child)
 
 
-_close_image = None
-
-
 class Tab:
     """A tab that can be added to TabManager."""
 
-    def __init__(self):
-        """Initialize the tab.
+    def __init__(self, manager):
+        self._manager = manager
 
-        labeltext will be the text of the top label.
-        """
-        self.topframe = None
-        self.label = None
-        self.content = None
-
-    def create_widgets(self, tabmanager):
-        """Create the top frame and the content frame."""
-        global _close_image
-        if _close_image is None:
-            here = os.path.dirname(os.path.abspath(__file__))
-            _close_image = tk.PhotoImage(
-                file=os.path.join(here, 'data', 'closebutton.png'))
+        # the image needs to be attached to self to avoid garbage
+        # collection
+        here = os.path.dirname(os.path.abspath(__file__))
+        self._closeimage = tk.PhotoImage(
+            file=os.path.join(here, 'data', 'closebutton.png'))
 
         def select_me(event):
-            tabmanager.current_tab = self
+            manager.current_tab = self
 
-        def close_me(event):
-            tabmanager.close_tab(self)
+        self._topframe = tk.Frame(manager._topframeframe, relief='raised',
+                                  border=1, padx=10, pady=3)
+        self._topframe.bind('<Button-1>', select_me)
 
-        self.topframe = tk.Frame(tabmanager.topframeframe, relief='raised',
-                                 border=1, padx=10, pady=3)
-        self.topframe.bind('<Button-1>', select_me)
-
-        self.label = tk.Label(self.topframe)
+        self.label = tk.Label(self._topframe)
         self.label.pack(side='left')
         self.label.bind('<Button-1>', select_me)
 
-        self.content = tk.Frame(tabmanager)
+        # Subclasses can add stuff here.
+        self.content = tk.Frame(manager)
 
-        # The image needs to be attached to self to avoid garbage
-        # collection.
-        closebutton = tk.Label(self.topframe, image=_close_image)
+        closebutton = tk.Label(self._topframe, image=self._closeimage)
         closebutton.pack(side='left')
-        closebutton.bind('<Button-1>', close_me)
+        closebutton.bind('<Button-1>', lambda event: self.close())
+
+        manager._bind_wheel(self._topframe)
+        manager._bind_wheel(self.label)
+        manager._bind_wheel(closebutton)
 
     def can_be_closed(self):
         """Check if this tab can be closed.
@@ -68,7 +57,18 @@ class Tab:
         """
         return True
 
-    def focus(self):
+    def close(self):
+        """Remove this tab from the tab manager.
+
+        This checks the return value of can_be_closed() and returns True
+        if the tab was actually closed and False if not.
+        """
+        if self.can_be_closed():
+            self._manager.remove_tab(self)
+            return True
+        return False
+
+    def on_focus(self):
         """This is called when the tab is selected.
 
         This does nothing by default. You can override this in a
@@ -89,9 +89,9 @@ class TabManager(tk.Frame):
 
         # no, this is not a find/replace error, topframeframe is a frame
         # that contains topframes
-        self.topframeframe = tk.Frame(self)
-        self.topframeframe.pack(fill='x')
-        self._bind_wheel(self.topframeframe)
+        self._topframeframe = tk.Frame(self)
+        self._topframeframe.pack(fill='x')
+        self._bind_wheel(self._topframeframe)
         self.tabs = []
         self.on_tabs_changed = []   # these are called like callback(tablist)
         self._current_tab = None
@@ -104,18 +104,21 @@ class TabManager(tk.Frame):
 
     @current_tab.setter
     def current_tab(self, tab):
+        if tab is self._current_tab:
+            return
+
         if self.current_tab is None:
             self.no_tabs_frame.pack_forget()
         else:
-            self.current_tab.topframe['relief'] = 'raised'
+            self.current_tab._topframe['relief'] = 'raised'
             self.current_tab.content.pack_forget()
 
         if tab is None:
             self.no_tabs_frame.pack(fill='both', expand=True)
         else:
-            tab.topframe['relief'] = 'sunken'
+            tab._topframe['relief'] = 'sunken'
             tab.content.pack(fill='both', expand=True)
-            tab.focus()
+            tab.on_focus()
         self._current_tab = tab
 
     @property
@@ -126,36 +129,28 @@ class TabManager(tk.Frame):
     def current_index(self, index):
         self.current_tab = self.tabs[index % len(self.tabs)]
 
-    def do_tabs_changed(self):
+    def _do_tabs_changed(self):
         for callback in self.on_tabs_changed:
             callback(self.tabs)
 
     def add_tab(self, tab):
-        """Add a Tab and add it to the end.
-
-        Note that a tab can be added only once.
-        """
-        tab.create_widgets(self)
-        assert tab.content is not None
-        tab.topframe.grid(row=0, column=len(self.tabs))
+        """Add a Tab and add it to the end."""
+        tab._topframe.grid(row=0, column=len(self.tabs))
         self.tabs.append(tab)
-
-        self._bind_wheel(tab.topframe)
-        for widget in iter_children(tab.topframe):
-            self._bind_wheel(widget)
 
         if self.current_tab is None:
             # this is the first tab
             self.current_tab = tab
 
-        self.do_tabs_changed()
+        self._do_tabs_changed()
         return tab
 
     def remove_tab(self, tab):
         """Remove a tab added with add_tab().
 
-        The tab's closechecker is not called. Use the tab's close()
-        method if you want to call it.
+        The tab's can_be_closed() method is not called. Use the tab's
+        close() method instead if you want to check if the tab can be
+        closed.
         """
         if tab is self.current_tab:
             # go to next or previous tab if possible, otherwise unselect
@@ -164,22 +159,16 @@ class TabManager(tk.Frame):
                 self.current_tab = None
 
         tab.content.pack_forget()
-        tab.topframe.grid_forget()
+        tab._topframe.grid_forget()
 
         # the grid columns of topframes of tabs after this change, so we
         # need to take care of that
         where = self.tabs.index(tab)
         del self.tabs[where]
         for i in range(where, len(self.tabs)):
-            self.tabs[i].topframe.grid(column=i)
+            self.tabs[i]._topframe.grid(column=i)
 
-        self.do_tabs_changed()
-
-    def close_tab(self, tab):
-        if tab.can_be_closed():
-            self.remove_tab(tab)
-            return True
-        return False
+        self._do_tabs_changed()
 
     def select_left(self, *, roll_over=False):
         """Switch to the tab at left if possible.
@@ -210,11 +199,11 @@ class TabManager(tk.Frame):
         # gridding an already gridded widget moves it.
         tab1 = self.tabs[index1]
         tab2 = self.tabs[index2]
-        tab1.topframe.grid(column=index2)
-        tab2.topframe.grid(column=index1)
+        tab1._topframe.grid(column=index2)
+        tab2._topframe.grid(column=index1)
         self.tabs[index1] = tab2
         self.tabs[index2] = tab1
-        self.do_tabs_changed()
+        self._do_tabs_changed()
 
     def move_left(self):
         """Move the current tab left if possible.
@@ -259,43 +248,52 @@ class TabManager(tk.Frame):
             else:
                 self.select_right()
 
+    def _on_alt_n(self, event):
+        # checking if event.keysym is in '123456789' doesn't work
+        # because that's True when event.keysym is ''
+        try:
+            index = int(event.keysym) - 1
+        except ValueError:
+            return
+
+        if index in range(len(self.tabs)):
+            self.current_index = index
+
+    def _on_ctrl_w(self, event):
+        if self.current_tab is not None:
+            self.current_tab.close()
+
+    def setup_bindings(self):
+        """Set up handy, GLOBAL keyboard bindings.
+
+        Note that this binds <Alt-Key>, so this must be called before
+        creating any other Alt bindings.
+        """
+        self.bind_all('<Alt-Key>', self._on_alt_n)
+        self.bind_all('<Control-Prior>',
+                      lambda event: self.select_left(roll_over=True))
+        self.bind_all('<Control-Next>',
+                      lambda event: self.select_right(roll_over=True))
+        self.bind_all('<Control-Shift-Prior>', lambda event: self.move_left())
+        self.bind_all('<Control-Shift-Next>', lambda event: self.move_right())
+        self.bind_all('<Control-w>', self._on_ctrl_w)
+
 
 if __name__ == '__main__':
     # test/demo
-    def do_ctrl_w(event):
-        if tabmgr.current_tab is None:
-            # no more tabs
-            root.quit()
-        else:
-            tabmgr.close_tab(tabmgr.current_tab)
-
-    def do_alt_n(event):
-        if event.keysym in set('123456789'):
-            index = int(event.keysym) - 1
-            if index in range(len(tabmgr.tabs)):
-                tabmgr.current_index = index
-
     root = tk.Tk()
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)
+    tabmgr.setup_bindings()
     tabmgr.on_tabs_changed.append(print)
     tk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
 
-    root.bind_all('<Alt-Key>', do_alt_n)
-    root.bind_all('<Control-Prior>',
-                  lambda event: tabmgr.select_left(roll_over=True))
-    root.bind_all('<Control-Next>',
-                  lambda event: tabmgr.select_right(roll_over=True))
-    root.bind_all('<Control-Shift-Prior>', lambda event: tabmgr.move_left())
-    root.bind_all('<Control-Shift-Next>', lambda event: tabmgr.move_right())
-    root.bind_all('<Control-w>', do_ctrl_w)
-
     for i in range(1, 6):
-        tab = Tab()
-        tabmgr.add_tab(tab)   # creates tab.label and tab.content
+        tab = Tab(tabmgr)
         tab.label['text'] = "tab %d" % i
         text = tk.Text(tab.content)
         text.pack()
         text.insert('1.0', "this is the content of tab %d" % i)
+        tabmgr.add_tab(tab)
 
     root.mainloop()
