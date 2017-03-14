@@ -27,11 +27,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-
-
-here = os.path.dirname(os.path.abspath(__file__))
-default_config = os.path.join(here, 'default_config.ini')
-user_config = os.path.join(os.path.expanduser('~'), '.porcupine.ini')
+from porcupine import settings
 
 
 def main():
@@ -41,16 +37,9 @@ def main():
         help="open this file when the editor starts")
     args = parser.parse_args()
 
+    settings.load()
+
     root = tk.Tk()
-
-    files = porcupine.config.read([default_config, user_config])
-    if default_config not in files:
-        print("porcupine.__main__: cannot read default_config.ini",
-              file=sys.stderr)
-        sys.exit(1)
-    if user_config in files:
-        print("porcupine.__main__: configuration was read from", user_config)
-
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)
 
@@ -63,7 +52,7 @@ def main():
             editor.open_file(file, content='')
 
     root['menu'] = editor.menubar
-    root.geometry(porcupine.config['gui']['default_geometry'])
+    root.geometry(settings.config['gui']['default_geometry'])
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
     root.mainloop()

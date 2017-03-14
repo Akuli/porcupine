@@ -28,7 +28,8 @@ from tkinter import messagebox
 import traceback
 
 from porcupine import __doc__ as init_docstring
-from porcupine import config, dialogs, filetabs, tabs
+from porcupine import dialogs, filetabs, tabs
+from porcupine.settings import config
 
 
 class GlobalBinding:

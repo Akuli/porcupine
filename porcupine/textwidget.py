@@ -24,7 +24,7 @@
 from functools import partial   # not "import functools" to avoid long lines
 import tkinter as tk
 
-from porcupine import config
+from porcupine.settings import config
 
 
 def spacecount(string):

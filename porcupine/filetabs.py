@@ -6,8 +6,9 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from . import (autocomplete, config, dialogs, highlight, linenumbers,
-               scrolling, tabs, textwidget)
+from porcupine import (autocomplete, dialogs, highlight, linenumbers,
+                       scrolling, tabs, textwidget)
+from porcupine.settings import config
 
 
 @contextlib.contextmanager

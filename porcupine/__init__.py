@@ -24,9 +24,3 @@
 If you have used something like Notepad, Microsoft Word or LibreOffice
 Writer before you know how to use this editor.
 """
-
-import configparser
-
-
-# this is here because it makes accessing it easy everywhere
-config = configparser.ConfigParser()

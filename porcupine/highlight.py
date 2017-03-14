@@ -33,7 +33,7 @@ import tkinter as tk
 import tkinter.font as tkfont
 import tokenize
 
-from porcupine import config
+from porcupine.settings import config
 
 
 class Highlighter:
