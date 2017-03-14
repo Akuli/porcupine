@@ -74,8 +74,8 @@ class FileTab(tabs.Tab):
             content = b''
         else:
             encoding = config['files']['encoding']
-            text = self.textwidget.get('1.0', 'end-1c')
-            content = text.encode(encoding, errors='replace')
+            content = self.textwidget.get('1.0', 'end-1c')
+            content = content.encode(encoding, errors='replace')
 
         return hashlib.md5(content).hexdigest()
 
