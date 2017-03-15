@@ -19,8 +19,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"""This is a really simple text editor for writing Python code.
+"""Porcupine is a simple and beginner-friendly editor for writing Python.
 
-If you have used something like Notepad, Microsoft Word or LibreOffice
-Writer before you know how to use this editor.
+If you ever used anything like Notepad, Microsoft Word or LibreOffice
+Writer before, you will feel right at home.
 """
