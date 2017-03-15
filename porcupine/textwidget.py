@@ -63,7 +63,8 @@ class EditorText(tk.Text):
     def set_theme(self, theme):
         self['fg'] = theme['foreground']
         self['bg'] = theme['background']
-        self['insertbackground'] = theme['foreground']
+        self['insertbackground'] = theme['foreground']  # cursor color
+        self['selectforeground'] = theme['selectforeground']
         self['selectbackground'] = theme['selectbackground']
 
     def _do_modified(self, event):
