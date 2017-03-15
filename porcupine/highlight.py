@@ -30,10 +30,7 @@ import keyword
 import re
 import sys
 import tkinter as tk
-import tkinter.font as tkfont
 import tokenize
-
-from porcupine.settings import config
 
 
 class Highlighter:

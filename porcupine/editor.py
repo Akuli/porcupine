@@ -21,7 +21,6 @@
 
 """The main Editor class."""
 
-import functools
 import os
 import tkinter as tk
 from tkinter import messagebox
@@ -234,15 +233,6 @@ class Editor(tk.Frame):
         for filetab in self.tabmanager.tabs:
             filetab.textwidget.set_theme(theme)
             filetab.highlighter.set_theme(theme)
-
-    def _do_alt_n(self, event):
-        """Select the n'th tab (0 < n < 10)."""
-        try:
-            n = int(event.keysym)
-        except ValueError:
-            return
-        if 0 < n < 10 and len(self.tabmanager.tabs) >= n:
-            self.tabmanager.current_index = n-1
 
     def _tabs_changed(self, tablist):
         state = 'normal' if tablist else 'disabled'
