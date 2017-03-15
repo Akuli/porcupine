@@ -5,6 +5,7 @@ import glob
 import os
 
 
+# TODO: save these settings too
 config = configparser.ConfigParser()
 color_themes = configparser.ConfigParser(default_section='Default')
 _here = os.path.dirname(os.path.abspath(__file__))

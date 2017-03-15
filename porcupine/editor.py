@@ -185,16 +185,6 @@ class Editor(tk.Frame):
         # TODO: add these to the bindings below using
         # tabmgr.bind_whateverthethingywas (edit tabs.py if needed)
 
-        #self.bind_all('<Alt-Key>', self._do_alt_n)
-        #self.bind_all('<Control-Prior>',
-        #              lambda event: tabmgr.select_left(roll_over=True))
-        #self.bind_all('<Control-Next>',
-        #              lambda event: tabmgr.select_right(roll_over=True))
-        #self.bind_all('<Control-Shift-Prior>',
-        #              lambda event: tabmgr.move_left())
-        #self.bind_all('<Control-Shift-Next>',
-        #              lambda event: tabmgr.move_right())
-
         def disably(func):
             """Make a function that calls func when there are tabs."""
             def result():
@@ -205,8 +195,8 @@ class Editor(tk.Frame):
         # The text widgets are also bound to these because bind_all()
         # doesn't seem to override their default bindings if there are
         # any.
-        bindings = [
-            # (keysym, callback, return_break)
+        bindings = tabmgr.bindings + [
+            # (keysym, callback)
             ('<Control-n>', self.new_file),
             ('<Control-o>', self.open_file),
             ('<Control-s>', disably(tabmethod('save'))),
@@ -222,6 +212,11 @@ class Editor(tk.Frame):
         self._bindings = []   # [(keysym, real_callback), ...]
         for keysym, callback in bindings:
             self._add_binding(keysym, callback)
+
+        # See the comments in tabs.py. Binding this here is enough
+        # because text widgets don't seem to bind <Alt-SomeDigitHere> by
+        # default.
+        self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
 
     # this is in a separate function because of scopes and loops
     # TODO: add link to python FAQ here

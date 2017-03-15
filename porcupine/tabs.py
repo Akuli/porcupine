@@ -4,6 +4,7 @@ Yes, I am aware of ttk.Notebook but it's simply way too limited for my
 needs. I can't even change the color of the top label.
 """
 
+import functools
 import os
 import tkinter as tk
 
@@ -98,6 +99,18 @@ class TabManager(tk.Frame):
         self.no_tabs_frame = tk.Frame(self)
         self.no_tabs_frame.pack(fill='both', expand=True)
 
+        # These can be bound using bind_all(). Note that it's also
+        # recommended to bind <Alt-Key> to on_alt_n, but it isn't bound
+        # by default because it needs the event object that these other
+        # callbacks don't need.
+        self.bindings = [
+            ('<Control-Prior>', functools.partial(self.select_left, True)),
+            ('<Control-Next>', functools.partial(self.select_right, True)),
+            ('<Control-Shift-Prior>', self.move_left),
+            ('<Control-Shift-Next>', self.move_right),
+            ('<Control-w>', self._on_ctrl_w),
+        ]
+
     @property
     def current_tab(self):
         return self._current_tab
@@ -170,7 +183,7 @@ class TabManager(tk.Frame):
 
         self._do_tabs_changed()
 
-    def select_left(self, *, roll_over=False):
+    def select_left(self, roll_over=False):
         """Switch to the tab at left if possible.
 
         If roll_over is True and the current tab is the first tab in
@@ -184,7 +197,7 @@ class TabManager(tk.Frame):
         self.current_index -= 1
         return True
 
-    def select_right(self, *, roll_over=False):
+    def select_right(self, roll_over=False):
         """Like select_left(), but switch to the tab at right."""
         if len(self.tabs) < 2:
             return False
@@ -248,18 +261,23 @@ class TabManager(tk.Frame):
             else:
                 self.select_right()
 
-    def _on_alt_n(self, event):
-        # checking if event.keysym is in '123456789' doesn't work
-        # because that's True when event.keysym is ''
+    def on_alt_n(self, event):
+        """Select the n'th tab (1 <= n <= 9) based on event.keysym.
+
+        Return 'break' if event.keysym was useful for this and None if
+        nothing was done.
+        """
         try:
             index = int(event.keysym) - 1
         except ValueError:
-            return
+            return None
 
         if index in range(len(self.tabs)):
             self.current_index = index
+            return 'break'
+        return None
 
-    def _on_ctrl_w(self, event):
+    def _on_ctrl_w(self):
         if self.current_tab is not None:
             self.current_tab.close()
 
@@ -269,14 +287,6 @@ class TabManager(tk.Frame):
         Note that this binds <Alt-Key>, so this must be called before
         creating any other Alt bindings.
         """
-        self.bind_all('<Alt-Key>', self._on_alt_n)
-        self.bind_all('<Control-Prior>',
-                      lambda event: self.select_left(roll_over=True))
-        self.bind_all('<Control-Next>',
-                      lambda event: self.select_right(roll_over=True))
-        self.bind_all('<Control-Shift-Prior>', lambda event: self.move_left())
-        self.bind_all('<Control-Shift-Next>', lambda event: self.move_right())
-        self.bind_all('<Control-w>', self._on_ctrl_w)
 
 
 if __name__ == '__main__':
@@ -284,9 +294,12 @@ if __name__ == '__main__':
     root = tk.Tk()
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)
-    tabmgr.setup_bindings()
     tabmgr.on_tabs_changed.append(print)
     tk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
+
+    for keysym, callback in tabmgr.bindings:
+        root.bind_all(keysym, (lambda event: callback()))
+    root.bind_all('<Alt-Key>', tabmgr.on_alt_n)
 
     for i in range(1, 6):
         tab = Tab(tabmgr)
