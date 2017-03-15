@@ -26,3 +26,13 @@ def load():
         [os.path.join(_datadir, 'default_themes.ini')]
         + glob.glob(os.path.join(_user_config_dir, 'themes', '*.ini'))
     )
+
+
+def save():
+    msg = ["This is a Porcupine configuration file. You can edit this "
+           "manually, but any comments or formatting will be lost."]
+
+    with open(os.path.join(_user_config_dir, 'settings.ini'), 'w') as f:
+        for line in msg:
+            print('#', line, file=f)
+        config.write(f)

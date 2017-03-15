@@ -57,7 +57,13 @@ def main():
     root.geometry(settings.config['gui']['default_geometry'])
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
-    root.mainloop()
+
+    # the user can change the settings only if we get here, so there's
+    # no need to try/finally the whole thing
+    try:
+        root.mainloop()
+    finally:
+        settings.save()
 
 
 if __name__ == '__main__':

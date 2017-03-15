@@ -229,8 +229,8 @@ class Editor(tk.Frame):
         self._bindings.append((keysym, real_callback))
 
     def _on_theme_changed(self, *junk):
-        theme = color_themes[self.themevar.get()]
-        self._current_theme = theme
+        theme_name = config['editing']['color_theme'] = self.themevar.get()
+        theme = self._current_theme = color_themes[theme_name]
         for filetab in self.tabmanager.tabs:
             filetab.textwidget.set_theme(theme)
             filetab.highlighter.set_theme(theme)
