@@ -123,19 +123,23 @@ class Editor(tk.Frame):
 
         thememenu = HandyMenu()
         self.menubar.add_cascade(label="Color themes", menu=thememenu)
-        self._disablelist.append((self.menubar, self.menubar.index('end')))
 
         # the Default theme goes first
+        self.themevar = tk.StringVar()
         theme_names = color_themes.sections()
         theme_names.sort(key=str.casefold)
-        theme_names.insert(0, 'Default')
-
-        self.themevar = tk.StringVar()
-        for name in theme_names:
+        for name in ['Default'] + theme_names:
             thememenu.add_radiobutton(label=name, value=name,
                                       variable=self.themevar)
         self.themevar.trace('w', self._on_theme_changed)
-        self.themevar.set(config['editing']['color_theme'])
+
+        theme_name = config['editing']['color_theme']
+        if theme_name in color_themes:
+            self.themevar.set(theme_name)
+        else:
+            print("%s: unknown color theme name %r, using 'Default' instead"
+                  % (__name__, theme_name))
+            self.themevar.set('Default')
 
         tabmgr.on_tabs_changed.append(self._tabs_changed)
         self._tabs_changed([])  # disable the menuitems
@@ -187,11 +191,17 @@ class Editor(tk.Frame):
         self._bindings.append((keysym, real_callback))
 
     def _on_theme_changed(self, *junk):
-        theme_name = config['editing']['color_theme'] = self.themevar.get()
-        theme = self._current_theme = color_themes[theme_name]
-        for filetab in self.tabmanager.tabs:
-            filetab.textwidget.set_theme(theme)
-            filetab.highlighter.set_theme(theme)
+        try:
+            theme_name = config['editing']['color_theme'] = self.themevar.get()
+            theme = self._current_theme = color_themes[theme_name]
+            for filetab in self.tabmanager.tabs:
+                filetab.textwidget.set_theme(theme)
+                filetab.highlighter.set_theme(theme)
+        except Exception:
+            # tkinter suppresses exceptions in this callback :( i think
+            # it's a bug
+            import traceback
+            traceback.print_exc()
 
     def _tabs_changed(self, tablist):
         state = 'normal' if tablist else 'disabled'
