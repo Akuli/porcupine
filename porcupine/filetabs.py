@@ -94,8 +94,8 @@ class FileTab(tabs.Tab):
             scrollbar = scrolling.MultiScrollbar(
                 self.content, [self.textwidget])
 
-        highlighter = highlight.Highlighter(self.textwidget)
-        self.textwidget.on_modified.append(highlighter.highlight)
+        self.highlighter = highlight.Highlighter(self.textwidget)
+        self.textwidget.on_modified.append(self.highlighter.highlight)
 
         if config['gui'].getboolean('statusbar'):
             self.statusbar = tk.Label(self.content, anchor='w',

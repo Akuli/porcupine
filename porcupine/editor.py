@@ -21,7 +21,7 @@
 
 """The main Editor class."""
 
-
+import functools
 import os
 import tkinter as tk
 from tkinter import messagebox
@@ -29,7 +29,7 @@ import traceback
 
 from porcupine import __doc__ as init_docstring
 from porcupine import dialogs, filetabs, tabs
-from porcupine.settings import config
+from porcupine.settings import config, color_themes
 
 
 class GlobalBinding:
@@ -82,6 +82,30 @@ def create_welcome_msg(frame):
     frame.bind('<Configure>', resize)
 
 
+class HandyMenu(tk.Menu):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, tearoff=False, **kwargs)
+        self.disablelist = []    # compatible with Editor.disablelist
+
+    def add_handy_command(self, label=None, accelerator=None,
+                          command=None, disably=False, **kwargs):
+        """Add an item to the menu.
+
+        If disably is True, the menuitem will be disabled when there are
+        no tabs in the editor.
+        """
+        if label is not None:
+            kwargs['label'] = label
+        if accelerator is not None:
+            kwargs['accelerator'] = accelerator
+        if command is not None:
+            kwargs['command'] = command
+        self.add_command(**kwargs)
+        if disably:
+            self.disablelist.append((self, self.index('end')))
+
+
 class Editor(tk.Frame):
 
     def __init__(self, parent, **kwargs):
@@ -92,88 +116,129 @@ class Editor(tk.Frame):
         tabmgr.pack(fill='both', expand=True)
         create_welcome_msg(tabmgr.no_tabs_frame)
 
-        menucontent = [
-          # (text, contentlist), ...
-          ("File", [
-            # (text, acceltext, binding, callback, disable), ...
-            # if callback is a string it is treated as an attribute
-            # of the current file
-            # if disable is True the menuitem is disabled when
-            # there is no current file
-            ("New file", "Ctrl+N", '<Control-n>', self.new_file, False),
-            ("Open", "Ctrl+O", '<Control-o>', self.open_file, False),
-            ("Save", "Ctrl+S", '<Control-s>', 'save', True),
-            ("Save as", "Ctrl+Shift+S", '<Control-S>', 'save_as', True),
-            None,   # separator
-            ("Close this file", "Ctrl+W", '<Control-w>',
-             self._close_file, True),
-            ("Quit Porcupine", "Ctrl+Q", '<Control-q>', self.do_quit, False),
-          ]),
-
-          ("Edit", [
-            ("Undo", "Ctrl+Z", '<Control-z>', 'textwidget.undo', True),
-            ("Redo", "Ctrl+Y", '<Control-y>', 'textwidget.redo', True),
-            None,
-            ("Cut", "Ctrl+X", '<Control-x>', 'textwidget.cut', True),
-            ("Copy", "Ctrl+C", '<Control-c>', 'textwidget.copy', True),
-            ("Paste", "Ctrl+V", '<Control-v>', 'textwidget.paste', True),
-            #None,
-            #("Find", "Ctrl+F", '<Control-f>', self.find, True),
-          ]),
-        ]
-
-        self._menus = {}        # {title: Menu, ...}
-        self._disablelist = []  # [(menu, index, globalbinding), ...]
-        self._bindings = []     # list of all global bindings
-
-        def current_tab_command(attributes):
-            """Return a function that calls the current tab's method."""
+        def tabmethod(attribute):
+            """Make a function that calls the current tab's method."""
             def result():
-                # support dots in attribute names
-                method = tabmgr.current_tab
-                for attribute in attributes.split('.'):
-                    method = getattr(method, attribute)
+                method = getattr(tabmgr.current_tab, attribute)
                 return method()
-
             return result
 
+        def textmethod(attribute):
+            """Make a function that calls the current text widget's method."""
+            def result():
+                method = getattr(tabmgr.current_tab.textwidget, attribute)
+                return method()
+            return result
+
+        # This will contain (menu, index) pairs.
+        self._disablelist = []
+
         self.menubar = tk.Menu()
-        for title, menuitems in menucontent:
-            menu = self._menus[title] = tk.Menu(tearoff=False)
-            self.menubar.add_cascade(label=title, menu=menu)
 
-            for index, item in enumerate(menuitems):
-                if item is None:
-                    menu.add_separator()
-                    continue
+        filemenu = HandyMenu(name='filemenu')
+        self.menubar.add_cascade(label="File", menu=filemenu)
+        add = filemenu.add_handy_command
+        add("New file", "Ctrl+N", self.new_file)
+        add("Open", "Ctrl+O", self.open_file)
+        add("Save", "Ctrl+S", tabmethod('save'), disably=True)
+        add("Save as", "Ctrl+Shift+S", tabmethod('save_as'), disably=True)
+        filemenu.add_separator()
+        add("Close this file", "Ctrl+W", self._close_file, disably=True)
+        add("Quit Porcupine", "Ctrl+Q", self.do_quit)
+        self._disablelist.extend(filemenu.disablelist)
 
-                text, accelerator, binding, command, disable = item
-                if isinstance(command, str):
-                    command = current_tab_command(command)
-                menu.add_command(label=text, accelerator=accelerator,
-                                 command=command)
+        editmenu = self._editmenu = HandyMenu()
+        self.menubar.add_cascade(label="Edit", menu=editmenu)
+        add = editmenu.add_handy_command
+        add("Undo", "Ctrl+Z", textmethod('undo'), disably=True)
+        add("Redo", "Ctrl+Y", textmethod('redo'), disably=True)
+        editmenu.add_separator()
+        add("Cut", "Ctrl+X", textmethod('cut'), disably=True)
+        add("Copy", "Ctrl+C", textmethod('copy'), disably=True)
+        add("Paste", "Ctrl+V", textmethod('paste'), disably=True)
+        #editmenu.add_separator()
+        #add("Find", "Ctrl+F", self.find, disably=True)
+        self._disablelist.extend(editmenu.disablelist)
 
-                global_binding = GlobalBinding(self, binding, command)
-                self._bindings.append(global_binding)
-                if disable:
-                    self._disablelist.append((menu, index, global_binding))
-                else:
-                    # it's not enabled by default
-                    global_binding.enabled = True
+        # right-clicking on a text widget will post the edit menu
+        self.bind_all('<Button-1>', lambda event: editmenu.unpost())
 
-        self.bind_all('<Button-1>', self._unpost_editmenu)
+        thememenu = HandyMenu()
+        self.menubar.add_cascade(label="Color themes", menu=thememenu)
+        self._disablelist.append((self.menubar, self.menubar.index('end')))
+
+        # the Default theme goes first
+        theme_names = color_themes.sections()
+        theme_names.sort(key=str.casefold)
+        theme_names.insert(0, 'Default')
+
+        self.themevar = tk.StringVar()
+        for name in theme_names:
+            thememenu.add_radiobutton(label=name, value=name,
+                                      variable=self.themevar)
+        self.themevar.trace('w', self._on_theme_changed)
+        self.themevar.set(config['editing']['color_theme'])
+
         tabmgr.on_tabs_changed.append(self._tabs_changed)
-        self._tabs_changed([])
+        self._tabs_changed([])  # disable the menuitems
 
-        self.bind_all('<Alt-Key>', self._do_alt_n)
-        self.bind_all('<Control-Prior>',
-                      lambda event: tabmgr.select_left(roll_over=True))
-        self.bind_all('<Control-Next>',
-                      lambda event: tabmgr.select_right(roll_over=True))
-        self.bind_all('<Control-Shift-Prior>',
-                      lambda event: tabmgr.move_left())
-        self.bind_all('<Control-Shift-Next>',
-                      lambda event: tabmgr.move_right())
+        # TODO: add these to the bindings below using
+        # tabmgr.bind_whateverthethingywas (edit tabs.py if needed)
+
+        #self.bind_all('<Alt-Key>', self._do_alt_n)
+        #self.bind_all('<Control-Prior>',
+        #              lambda event: tabmgr.select_left(roll_over=True))
+        #self.bind_all('<Control-Next>',
+        #              lambda event: tabmgr.select_right(roll_over=True))
+        #self.bind_all('<Control-Shift-Prior>',
+        #              lambda event: tabmgr.move_left())
+        #self.bind_all('<Control-Shift-Next>',
+        #              lambda event: tabmgr.move_right())
+
+        def disably(func):
+            """Make a function that calls func when there are tabs."""
+            def result():
+                if tabmgr.tabs:
+                    func()
+            return result
+
+        # The text widgets are also bound to these because bind_all()
+        # doesn't seem to override their default bindings if there are
+        # any.
+        bindings = [
+            # (keysym, callback, return_break)
+            ('<Control-n>', self.new_file),
+            ('<Control-o>', self.open_file),
+            ('<Control-s>', disably(tabmethod('save'))),
+            ('<Control-S>', disably(tabmethod('save_as'))),
+            ('<Control-w>', disably(self._close_file)),
+            ('<Control-q>', self.do_quit),
+            ('<Control-z>', disably(textmethod('undo'))),
+            ('<Control-y>', disably(textmethod('redo'))),
+            ('<Control-x>', disably(textmethod('cut'))),
+            ('<Control-c>', disably(textmethod('copy'))),
+            ('<Control-v>', disably(textmethod('paste'))),
+        ]
+        self._bindings = []   # [(keysym, real_callback), ...]
+        for keysym, callback in bindings:
+            self._add_binding(keysym, callback)
+
+    # this is in a separate function because of scopes and loops
+    # TODO: add link to python FAQ here
+    def _add_binding(self, keysym, callback):
+        def real_callback(event):
+            callback()
+            return 'break'
+
+        self.bind_all(keysym, real_callback)
+        self._bindings.append((keysym, real_callback))
+
+    def _on_theme_changed(self, *junk):
+        theme = color_themes[self.themevar.get()]
+        self._current_theme = theme
+        for filetab in self.tabmanager.tabs:
+            filetab.textwidget.set_theme(theme)
+            filetab.highlighter.set_theme(theme)
 
     def _do_alt_n(self, event):
         """Select the n'th tab (0 < n < 10)."""
@@ -185,31 +250,25 @@ class Editor(tk.Frame):
             self.tabmanager.current_index = n-1
 
     def _tabs_changed(self, tablist):
-        if tablist:
-            for menu, index, binding in self._disablelist:
-                binding.enabled = True
-                menu.entryconfig(index, state='normal')
-        else:
-            for menu, index, binding in self._disablelist:
-                binding.enabled = False
-                menu.entryconfig(index, state='disabled')
+        state = 'normal' if tablist else 'disabled'
+        for menu, index in self._disablelist:
+            menu.entryconfig(index, state=state)
 
     def _post_editmenu(self, event):
-        self._menus["Edit"].post(event.x_root, event.y_root)
-
-    def _unpost_editmenu(self, event):
-        self._menus["Edit"].unpost()
+        self._editmenu.post(event.x_root, event.y_root)
 
     def new_file(self):
         tab = filetabs.FileTab(self.tabmanager)
+        tab.textwidget.set_theme(self._current_theme)
+        tab.highlighter.set_theme(self._current_theme)
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
-        tab.textwidget.bind('<Button-3>', self._post_editmenu)
+        tab.textwidget.bind(self._post_editmenu)
 
         # some of our keyboard bindings conflict with tkinter's bindings
         # and returning 'break' from a bind_all binding is not enough,
         # so we also need these here
-        for binding in self._bindings:
-            binding.bind_widget(tab.textwidget)
+        for binding, callback in self._bindings:
+            tab.textwidget.bind(binding, callback)
 
         self.tabmanager.current_tab = tab
         return tab

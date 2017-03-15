@@ -46,13 +46,9 @@ def spacecount(string):
 class EditorText(tk.Text):
 
     def __init__(self, master, **kwargs):
-        colors = config['colors']
         super().__init__(
-            master, fg=colors['foreground'], bg=colors['background'],
-            undo=config['editing'].getboolean('undo'),
-            maxundo=config['editing'].getboolean('maxundo'),
-            insertbackground=colors['foreground'],
-            selectbackground=colors['selectbackground'], **kwargs)
+            master, undo=config['editing'].getboolean('undo'),
+            maxundo=config['editing'].getboolean('maxundo'), **kwargs)
 
         # These will contain callback functions that are called with no
         # arguments after the text in the textview is updated.
@@ -84,6 +80,12 @@ class EditorText(tk.Text):
             self.bind('<ISO_Left_Tab>', lambda event: self._on_tab(True))
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
+
+    def set_theme(self, theme):
+        self['fg'] = theme['foreground']
+        self['bg'] = theme['background']
+        self['insertbackground'] = theme['foreground']
+        self['selectbackground'] = theme['selectbackground']
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind

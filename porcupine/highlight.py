@@ -37,21 +37,15 @@ from porcupine.settings import config
 
 
 class Highlighter:
+    """Syntax highlighting for Tkinter.
+
+    Note that you need to call set_theme() after instantiating to make
+    this thing work.
+    """
 
     def __init__(self, textwidget):
         self.textwidget = textwidget
-
-        bold = tkfont.Font(font=textwidget['font'])
-        bold['weight'] = 'bold'
-
-        # the order of these matters, the tags added last will be above
-        # tags added earlier
-        colors = config['colors']
-        for tag in ['decorator', 'builtin', 'keyword', 'string',
-                    'comment', 'exception']:
-            textwidget.tag_config(tag, foreground=colors[tag])
-        textwidget.tag_config(
-            'syntax-error', background=colors['errorbackground'])
+        self._highlight_job = None
 
         # async and await are not in keyword.kwlist yet, I guess they
         # will be added later but we'll support them here
@@ -72,7 +66,12 @@ class Highlighter:
         # dir(builtins), so we'll treat them as builtins. on the other
         self._keywords -= self._builtins
 
-        self._highlight_job = None
+    def set_theme(self, theme):
+        for tag in ['decorator', 'builtin', 'keyword', 'string',
+                    'comment', 'exception']:
+            self.textwidget.tag_config(tag, foreground=theme[tag])
+        self.textwidget.tag_config(
+            'syntax-error', background=theme['errorbackground'])
 
     def _on_idle(self):
         # sometimes this gets added as a Tk idle callback twice but it
@@ -221,7 +220,8 @@ if __name__ == '__main__':
     text.pack(fill='both', expand=True)
     text.bind('<<Modified>>', on_modified)
 
-    config['colors'] = {
+    highlighter = Highlighter(text)
+    highlighter.set_theme({
         'decorator': '#ff0099',
         'builtin': '#9966cc',
         'keyword': '#cc9900',
@@ -229,8 +229,7 @@ if __name__ == '__main__':
         'comment': '#999999',
         'exception': '#ff0000',
         'errorbackground': '#ff0000',
-    }
-    highlighter = Highlighter(text)
+    })
 
     if len(sys.argv) == 2:
         with open(sys.argv[1], 'r') as f:
