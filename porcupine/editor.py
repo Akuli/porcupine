@@ -10,26 +10,6 @@ from porcupine import dialogs, filetabs, tabs
 from porcupine.settings import config, color_themes
 
 
-class GlobalBinding:
-    """Handy helper class for application-wide keyboard bindings."""
-
-    def __init__(self, some_widget, bindingstring, callback):
-        self._binding = bindingstring
-        self._callback = callback
-        self.enabled = False
-
-        some_widget.bind_all(bindingstring, self._real_callback)
-
-    def _real_callback(self, event):
-        if not self.enabled:
-            return None
-        self._callback()
-        return 'break'
-
-    def bind_widget(self, widget):
-        widget.bind(self._binding, self._real_callback)
-
-
 DESCRIPTION = '\n\n'.join([
     ' '.join(init_docstring.split()),
     "You can create a new file by pressing Ctrl+N or open an existing "
