@@ -5,7 +5,6 @@ import glob
 import os
 
 
-# TODO: save these settings too
 config = configparser.ConfigParser()
 color_themes = configparser.ConfigParser(default_section='Default')
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -28,11 +27,13 @@ def load():
     )
 
 
-def save():
-    msg = ["This is a Porcupine configuration file. You can edit this "
-           "manually, but any comments or formatting will be lost."]
+_COMMENTS = """\
+# This is a Porcupine configuration file. You can edit this manually,
+# but any comments or formatting will be lost.
+"""
 
+
+def save():
     with open(os.path.join(_user_config_dir, 'settings.ini'), 'w') as f:
-        for line in msg:
-            print('#', line, file=f)
+        print(_COMMENTS, file=f)
         config.write(f)
