@@ -32,6 +32,8 @@ import sys
 import tkinter as tk
 import tokenize
 
+from porcupine.settings import config, color_themes
+
 
 class Highlighter:
     """Syntax highlighting for Tkinter.
@@ -63,7 +65,11 @@ class Highlighter:
         # dir(builtins), so we'll treat them as builtins. on the other
         self._keywords -= self._builtins
 
-    def set_theme(self, theme):
+        config['editing:color_theme'].trace('w', self._on_theme_changed)
+        self._on_theme_changed()
+
+    def _on_theme_changed(self, *junk):
+        theme = color_themes[config['editing:color_theme'].get()]
         for tag in ['decorator', 'builtin', 'keyword', 'string',
                     'comment', 'exception']:
             self.textwidget.tag_config(tag, foreground=theme[tag])
@@ -203,6 +209,8 @@ class Highlighter:
 
 if __name__ == '__main__':
     # simple test
+    from porcupine import settings
+
     if len(sys.argv) > 2 or sys.argv[1:] == ['--help']:
         sys.exit("usage: %s [FILE]" % sys.argv[0])
 
@@ -213,20 +221,14 @@ if __name__ == '__main__':
         highlighter.highlight()
 
     root = tk.Tk()
+    settings.load()     # must be after creating root window
     text = tk.Text(root, fg='white', bg='black', insertbackground='white')
     text.pack(fill='both', expand=True)
     text.bind('<<Modified>>', on_modified)
 
+    # The theme doesn't display perfectly here because the highlighter
+    # only does tags, not foreground, background etc. See textwidget.py.
     highlighter = Highlighter(text)
-    highlighter.set_theme({
-        'decorator': '#ff0099',
-        'builtin': '#9966cc',
-        'keyword': '#cc9900',
-        'string': '#00cc00',
-        'comment': '#999999',
-        'exception': '#ff0000',
-        'errorbackground': '#ff0000',
-    })
 
     if len(sys.argv) == 2:
         with open(sys.argv[1], 'r') as f:

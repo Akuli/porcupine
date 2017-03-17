@@ -3,7 +3,7 @@
 from functools import partial   # not "import functools" to avoid long lines
 import tkinter as tk
 
-from porcupine.settings import config
+from porcupine.settings import config, color_themes
 
 
 def spacecount(string):
@@ -25,9 +25,7 @@ def spacecount(string):
 class EditorText(tk.Text):
 
     def __init__(self, master, **kwargs):
-        super().__init__(
-            master, undo=config['editing'].getboolean('undo'),
-            maxundo=config['editing'].getboolean('maxundo'), **kwargs)
+        super().__init__(master, undo=config['editing:undo'].get(), **kwargs)
 
         # These will contain callback functions that are called with no
         # arguments after the text in the textview is updated.
@@ -60,7 +58,11 @@ class EditorText(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
-    def set_theme(self, theme):
+        config['editing:color_theme'].trace('w', self._on_theme_changed)
+        self._on_theme_changed()
+
+    def _on_theme_changed(self, *crap):
+        theme = color_themes[config['editing:color_theme'].get()]
         self['fg'] = theme['foreground']
         self['bg'] = theme['background']
         self['insertbackground'] = theme['foreground']  # cursor color
@@ -170,7 +172,7 @@ class EditorText(tk.Text):
         """
         line = self.get('%d.0' % lineno, '%d.0+1l' % lineno)
         spaces = spacecount(line)
-        indent = config['editing'].getint('indent')
+        indent = config['editing:indent'].get()
 
         # make the indent consistent, for example, add 1 space if indent
         # is 4 and there are 7 spaces
@@ -190,7 +192,7 @@ class EditorText(tk.Text):
         if spaces == 0:
             return 0
 
-        indent = config['editing'].getint('indent')
+        indent = config['editing:indent'].get()
         howmany2del = spaces % indent
         if howmany2del == 0:
             howmany2del = indent

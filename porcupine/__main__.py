@@ -15,9 +15,9 @@ def main():
         help="open this file when the editor starts")
     args = parser.parse_args()
 
-    settings.load()
-
     root = tk.Tk()
+    settings.load()     # root must exist first
+
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)
 
@@ -32,7 +32,7 @@ def main():
             editor.open_file(file, content='')
 
     root['menu'] = editor.menubar
-    root.geometry(settings.config['gui']['default_geometry'])
+    root.geometry(settings.config['gui:default_geometry'].get())
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
 

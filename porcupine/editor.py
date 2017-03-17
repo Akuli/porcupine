@@ -1,6 +1,7 @@
 """The main Editor class."""
 
 import os
+import sys
 import tkinter as tk
 from tkinter import messagebox
 import traceback
@@ -125,21 +126,11 @@ class Editor(tk.Frame):
         self.menubar.add_cascade(label="Color themes", menu=thememenu)
 
         # the Default theme goes first
-        self.themevar = tk.StringVar()
         theme_names = color_themes.sections()
         theme_names.sort(key=str.casefold)
         for name in ['Default'] + theme_names:
             thememenu.add_radiobutton(label=name, value=name,
-                                      variable=self.themevar)
-        self.themevar.trace('w', self._on_theme_changed)
-
-        theme_name = config['editing']['color_theme']
-        if theme_name in color_themes:
-            self.themevar.set(theme_name)
-        else:
-            print("%s: unknown color theme name %r, using 'Default' instead"
-                  % (__name__, theme_name))
-            self.themevar.set('Default')
+                                      variable=config['editing:color_theme'])
 
         tabmgr.on_tabs_changed.append(self._tabs_changed)
         self._tabs_changed([])  # disable the menuitems
@@ -180,6 +171,12 @@ class Editor(tk.Frame):
         # default.
         self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
 
+        if config['editing:color_theme'].get() not in theme_names:
+            print("%s: unknown color theme name %r, using 'Default' instead"
+                  % (__name__, config['editing:color_theme'].get()),
+                  file=sys.stderr)
+            config['editing:color_theme'].set('Default')
+
     # this is in a separate function because of scopes and loops
     # TODO: add link to python FAQ here
     def _add_binding(self, keysym, callback):
@@ -189,19 +186,6 @@ class Editor(tk.Frame):
 
         self.bind_all(keysym, real_callback)
         self._bindings.append((keysym, real_callback))
-
-    def _on_theme_changed(self, *junk):
-        try:
-            theme_name = config['editing']['color_theme'] = self.themevar.get()
-            theme = self._current_theme = color_themes[theme_name]
-            for filetab in self.tabmanager.tabs:
-                filetab.textwidget.set_theme(theme)
-                filetab.highlighter.set_theme(theme)
-        except Exception:
-            # tkinter suppresses exceptions in this callback :( i think
-            # it's a bug
-            import traceback
-            traceback.print_exc()
 
     def _tabs_changed(self, tablist):
         state = 'normal' if tablist else 'disabled'
@@ -213,8 +197,6 @@ class Editor(tk.Frame):
 
     def new_file(self):
         tab = filetabs.FileTab(self.tabmanager)
-        tab.textwidget.set_theme(self._current_theme)
-        tab.highlighter.set_theme(self._current_theme)
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
         tab.textwidget.bind(self._post_editmenu)
 
@@ -242,7 +224,7 @@ class Editor(tk.Frame):
                 return
 
         if content is None:
-            encoding = config['files']['encoding']
+            encoding = config['files:encoding'].get()
             try:
                 with open(path, 'r', encoding=encoding) as f:
                     content = f.read()

@@ -74,30 +74,34 @@ class FileTab(tabs.Tab):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.EditorText(
-            self.content, width=1, height=1, font=config['editing']['font'])
+            self.content, width=1, height=1)
         self.textwidget.on_modified.append(self._update_label)
 
-        if config['editing'].getboolean('autocomplete'):
+        if config['gui:linenumbers'].get():
+            self.linenumbers = linenumbers.LineNumbers(
+                self.content, self.textwidget)
+            self.textwidget.on_modified.append(self.linenumbers.do_update)
+            scrollbar = scrolling.MultiScrollbar(
+                self.content, [self.textwidget, self.linenumbers])
+        else:
+            self.linenumbers = None
+            scrollbar = scrolling.MultiScrollbar(
+                self.content, [self.textwidget])
+
+        config['editing:font'].trace('w', self._font_changed)
+        self._font_changed()
+
+        if config['editing:autocomplete'].get():
             completer = autocomplete.AutoCompleter(self.textwidget)
             self.textwidget.on_complete_previous.append(
                 completer.complete_previous)
             self.textwidget.on_complete_next.append(completer.complete_next)
             self.textwidget.on_cursor_move.append(completer.reset)
 
-        if config['gui'].getboolean('linenumbers'):
-            linenums = linenumbers.LineNumbers(self.content, self.textwidget)
-            self.textwidget.on_modified.append(linenums.do_update)
-            scrollbar = scrolling.MultiScrollbar(
-                self.content, [self.textwidget, linenums])
-        else:
-            linenums = None
-            scrollbar = scrolling.MultiScrollbar(
-                self.content, [self.textwidget])
-
         self.highlighter = highlight.Highlighter(self.textwidget)
         self.textwidget.on_modified.append(self.highlighter.highlight)
 
-        if config['gui'].getboolean('statusbar'):
+        if config['gui:statusbar'].get():
             self.statusbar = tk.Label(self.content, anchor='w',
                                       relief='sunken')
             self.statusbar.pack(fill='x')
@@ -111,16 +115,22 @@ class FileTab(tabs.Tab):
         # packed until now.
         if self.statusbar is not None:
             self.statusbar.pack(side='bottom', fill='x')
-        if linenums is not None:
-            linenums.pack(side='left', fill='y')
+        if self.linenumbers is not None:
+            self.linenumbers.pack(side='left', fill='y')
         self.textwidget.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='left', fill='y')
 
         self.mark_saved()
         self._update_label()
 
+    def _font_changed(self, *junk):
+        font = config['editing:font'].get()
+        self.textwidget['font'] = font
+        if self.linenumbers is not None:
+            self.linenumbers['font'] = font
+
     def _get_hash(self):
-        encoding = config['files']['encoding']
+        encoding = config['files:encoding'].get()
         content = self.textwidget.get('1.0', 'end-1c')
         content = content.encode(encoding, errors='replace')
         return hashlib.md5(content).hexdigest()
@@ -199,7 +209,7 @@ class FileTab(tabs.Tab):
 
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with a \n yet
-            if config['files'].getboolean('add_trailing_newline'):
+            if config['files:add_trailing_newline'].get():
                 # make sure we don't move the cursor, IDLE does it and
                 # it's annoying
                 here = self.textwidget.index('insert')
@@ -207,7 +217,7 @@ class FileTab(tabs.Tab):
                 self.textwidget.mark_set('insert', here)
 
         try:
-            encoding = config['files']['encoding']
+            encoding = config['files:encoding'].get()
             with _backup_open(self.path, 'w', encoding=encoding) as f:
                 f.write(self.textwidget.get('1.0', 'end-1c'))
         except (OSError, UnicodeError):
