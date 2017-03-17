@@ -26,7 +26,7 @@ class Tab:
         # collection
         here = os.path.dirname(os.path.abspath(__file__))
         self._closeimage = tk.PhotoImage(
-            file=os.path.join(here, 'data', 'closebutton.png'))
+            file=os.path.join(here, 'images', 'closebutton.png'))
 
         def select_me(event):
             manager.current_tab = self

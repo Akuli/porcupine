@@ -8,7 +8,6 @@ import os
 config = configparser.ConfigParser()
 color_themes = configparser.ConfigParser(default_section='Default')
 _here = os.path.dirname(os.path.abspath(__file__))
-_datadir = os.path.join(_here, 'data')
 _user_config_dir = os.path.join(os.path.expanduser('~'), '.porcupine')
 
 
@@ -18,11 +17,11 @@ def load():
     os.makedirs(os.path.join(_user_config_dir, 'themes'), exist_ok=True)
 
     config.read([
-        os.path.join(_datadir, 'default_settings.ini'),
+        os.path.join(_here, 'default_settings.ini'),
         os.path.join(_user_config_dir, 'settings.ini'),
     ])
     color_themes.read(
-        [os.path.join(_datadir, 'default_themes.ini')]
+        [os.path.join(_here, 'default_themes.ini')]
         + glob.glob(os.path.join(_user_config_dir, 'themes', '*.ini'))
     )
 
