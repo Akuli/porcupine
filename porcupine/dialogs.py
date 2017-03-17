@@ -29,8 +29,10 @@ def open_file(**kwargs):
     return path
 
 
-def save_as(**kwargs):
+def save_as(*, old_path=None, **kwargs):
     options = _default_options.copy()
+    if old_path is not None:
+        options['initialdir'], options['initialfile'] = os.path.split(old_path)
     options["title"] = "Save as"
     options.update(kwargs)
 

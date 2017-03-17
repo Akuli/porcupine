@@ -217,7 +217,7 @@ class FileTab(tabs.Tab):
         self.mark_saved()
 
     def save_as(self):
-        path = dialogs.save_as()
+        path = dialogs.save_as(old_path=self.path)
         if path is not None:
             self.path = path
             self.save()
