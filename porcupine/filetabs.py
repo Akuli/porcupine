@@ -74,7 +74,7 @@ class FileTab(tabs.Tab):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.EditorText(
-            self.content, width=1, height=1)
+            self.content, width=1, height=1, font=config['editing']['font'])
         self.textwidget.on_modified.append(self._update_label)
 
         if config['editing'].getboolean('autocomplete'):
