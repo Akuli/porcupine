@@ -254,6 +254,7 @@ class Editor(tk.Frame):
         tab = self.new_file()
         tab.path = path
         tab.textwidget.insert('1.0', content)
+        tab.textwidget.edit_reset()   # reset undo/redo
         tab.mark_saved()
 
     def _close_file(self):
