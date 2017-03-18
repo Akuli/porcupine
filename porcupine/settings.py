@@ -1,6 +1,7 @@
 import configparser
 import glob
 import os
+import sys
 import tkinter as tk
 
 
@@ -18,50 +19,58 @@ _user_config_dir = os.path.join(os.path.expanduser('~'), '.porcupine')
 # This : syntax might seem a bit odd at first, but I think it's a nice
 # and simple way to do this. Flat is better than nested :)
 _config_info = {
-    'files:encoding': str,
-    'files:add_trailing_newline': bool,
-    'editing:font': str,
-    'editing:indent': int,    # TODO: allow tabs? (ew)
-    'editing:undo': bool,
-    'editing:autocomplete': bool,
-    'editing:color_theme': str,
-    'gui:linenumbers': bool,
-    'gui:statusbar': bool,
-    'gui:default_geometry': str,
+    'files:encoding': tk.StringVar,
+    'files:add_trailing_newline': tk.BooleanVar,
+    'editing:font': tk.StringVar,
+    'editing:indent': tk.IntVar,    # TODO: allow tabs? (ew)
+    'editing:undo': tk.BooleanVar,
+    'editing:autocomplete': tk.BooleanVar,
+    'editing:color_theme': tk.StringVar,
+    'gui:linenumbers': tk.BooleanVar,
+    'gui:statusbar': tk.BooleanVar,
+    'gui:default_geometry': tk.StringVar,
 }
 
 
+def _load_config(user_settings=True):
+    files = [os.path.join(_here, 'default_settings.ini')]
+    if user_settings:
+        files.append(os.path.join(_user_config_dir, 'settings.ini'))
+
+    temp_parser = configparser.ConfigParser()
+    temp_parser.read(files)
+
+    for string, var in config.items():
+        var = config[string]
+        sectionname, key = string.split(':')
+        section = temp_parser[sectionname]
+
+        if isinstance(var, tk.BooleanVar):
+            var.set(section.getboolean(key))
+        elif isinstance(var, tk.IntVar):
+            var.set(section.getint(key))
+        elif isinstance(var, tk.StringVar):
+            var.set(section[key])
+        else:
+            raise TypeError("unexpected tkinter variable type: "
+                            + type(var).__name__)
+
+
 def load():
+    for string, vartype in _config_info.items():
+        config[string] = vartype()
+
     os.makedirs(os.path.join(_user_config_dir, 'themes'), exist_ok=True)
+    _load_config(user_settings=True)
 
     color_themes.read(
         [os.path.join(_here, 'default_themes.ini')]
         + glob.glob(os.path.join(_user_config_dir, 'themes', '*.ini'))
     )
 
-    temp_parser = configparser.ConfigParser()
-    temp_parser.read([
-        os.path.join(_here, 'default_settings.ini'),
-        os.path.join(_user_config_dir, 'settings.ini'),
-    ])
 
-    for string, vartype in _config_info.items():
-        sectionname, key = string.split(':')
-        section = temp_parser[sectionname]
-
-        if vartype == str:
-            var = tk.StringVar()
-            var.set(section[key])
-        elif vartype == bool:
-            var = tk.BooleanVar()
-            var.set(section.getboolean(key))
-        elif vartype == int:
-            var = tk.IntVar()
-            var.set(section.getint(key))
-        else:
-            raise NotImplementedError(
-                "can't create tkinter variable of %s" % vartype.__name__)
-        config[string] = var
+def reset_config():
+    _load_config(user_settings=False)
 
 
 _COMMENTS = """\

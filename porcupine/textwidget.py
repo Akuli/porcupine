@@ -24,8 +24,8 @@ def spacecount(string):
 
 class EditorText(tk.Text):
 
-    def __init__(self, master, **kwargs):
-        super().__init__(master, undo=config['editing:undo'].get(), **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # These will contain callback functions that are called with no
         # arguments after the text in the textview is updated.
@@ -58,8 +58,13 @@ class EditorText(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
+        config['editing:undo'].trace('w', self._on_undo_changed)
         config['editing:color_theme'].trace('w', self._on_theme_changed)
+        self._on_undo_changed()
         self._on_theme_changed()
+
+    def _on_undo_changed(self, *crap):
+        self['undo'] = config['editing:undo'].get()
 
     def _on_theme_changed(self, *crap):
         theme = color_themes[config['editing:color_theme'].get()]

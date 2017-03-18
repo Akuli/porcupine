@@ -69,65 +69,90 @@ class FileTab(tabs.Tab):
         self.on_path_changed = []   # callbacks that are called with no args
 
         self._orig_label_fg = self.label['fg']
-        self.on_path_changed.append(self._update_label)
+        self.on_path_changed.append(self._update_top_label)
+
+        mainframe = tk.Frame(self.content)
+        mainframe.pack(fill='both', expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.EditorText(
-            self.content, width=1, height=1)
-        self.textwidget.on_modified.append(self._update_label)
+            mainframe, width=1, height=1)
+        self.textwidget.on_modified.append(self._update_top_label)
+        self.linenumbers = linenumbers.LineNumbers(
+            mainframe, self.textwidget, height=1)
+        self.textwidget.on_modified.append(self.linenumbers.do_update)
 
-        if config['gui:linenumbers'].get():
-            self.linenumbers = linenumbers.LineNumbers(
-                self.content, self.textwidget)
-            self.textwidget.on_modified.append(self.linenumbers.do_update)
-            scrollbar = scrolling.MultiScrollbar(
-                self.content, [self.textwidget, self.linenumbers])
-        else:
-            self.linenumbers = None
-            scrollbar = scrolling.MultiScrollbar(
-                self.content, [self.textwidget])
+        config['gui:linenumbers'].trace('w', self._on_linenumbers_changed)
+        self._on_linenumbers_changed()
+
+        scrollbar = scrolling.MultiScrollbar(
+            mainframe, [self.textwidget, self.linenumbers])
+
+        # these are packed right-to-left because the linenumbers are at
+        # left and sometimes pack_forgot()ten
+        scrollbar.pack(side='right', fill='y')
+        self.textwidget.pack(side='right', fill='both', expand=True)
 
         config['editing:font'].trace('w', self._font_changed)
         self._font_changed()
 
-        if config['editing:autocomplete'].get():
-            completer = autocomplete.AutoCompleter(self.textwidget)
-            self.textwidget.on_complete_previous.append(
-                completer.complete_previous)
-            self.textwidget.on_complete_next.append(completer.complete_next)
-            self.textwidget.on_cursor_move.append(completer.reset)
+        self._completer = autocomplete.AutoCompleter(self.textwidget)
+        config['editing:autocomplete'].trace('w', self._on_completing_changed)
+        self._completing = False
+        self._on_completing_changed()
 
         self.highlighter = highlight.Highlighter(self.textwidget)
         self.textwidget.on_modified.append(self.highlighter.highlight)
 
-        if config['gui:statusbar'].get():
-            self.statusbar = tk.Label(self.content, anchor='w',
-                                      relief='sunken')
-            self.statusbar.pack(fill='x')
-            self.textwidget.on_cursor_move.append(self._update_statusbar)
-            self._update_statusbar()
-        else:
-            self.statusbar = None
+        self.statusbar = tk.Label(self.content, anchor='w',
+                                  relief='sunken')
+        self.textwidget.on_cursor_move.append(self._update_statusbar)
+        self._update_statusbar()
 
-        # The statusbar is the bottommost widget, but it must be packed
-        # first to get it below everything else. That's why nothing was
-        # packed until now.
-        if self.statusbar is not None:
-            self.statusbar.pack(side='bottom', fill='x')
-        if self.linenumbers is not None:
-            self.linenumbers.pack(side='left', fill='y')
-        self.textwidget.pack(side='left', fill='both', expand=True)
-        scrollbar.pack(side='left', fill='y')
+        config['gui:statusbar'].trace('w', self._on_statusbar_changed)
+        self._on_statusbar_changed()
 
         self.mark_saved()
-        self._update_label()
+        self._update_top_label()
+
+    def _on_linenumbers_changed(self, *junk):
+        if config['gui:linenumbers'].get():
+            self.linenumbers.pack(side='left', fill='y')
+        else:
+            self.linenumbers.pack_forget()
 
     def _font_changed(self, *junk):
         font = config['editing:font'].get()
         self.textwidget['font'] = font
         if self.linenumbers is not None:
             self.linenumbers['font'] = font
+
+    def _on_completing_changed(self, *junk):
+        completing_now = config['editing:autocomplete'].get()
+        if completing_now == self._completing:
+            return
+
+        # less typing and pep-8 line length
+        completer = self._completer
+        text = self.textwidget
+
+        if completing_now:
+            text.on_complete_previous.append(completer.complete_previous)
+            text.on_complete_next.append(completer.complete_next)
+            text.on_cursor_move.append(completer.reset)
+        else:
+            text.on_complete_previous.remove(completer.complete_previous)
+            text.on_complete_next.remove(completer.complete_next)
+            text.on_cursor_move.remove(completer.reset)
+
+        self._completing = completing_now
+
+    def _on_statusbar_changed(self, *junk):
+        if config['gui:statusbar'].get():
+            self.statusbar.pack(fill='x')
+        else:
+            self.statusbar.pack_forget()
 
     def _get_hash(self):
         encoding = config['files:encoding'].get()
@@ -140,7 +165,7 @@ class FileTab(tabs.Tab):
         self._save_hash = self._get_hash()
         if self.label is not None:
             # the widgets have been created
-            self._update_label()
+            self._update_top_label()
 
     @property
     def saved(self):
@@ -164,7 +189,7 @@ class FileTab(tabs.Tab):
             for callback in self.on_path_changed:
                 callback()
 
-    def _update_label(self):
+    def _update_top_label(self):
         if self.path is None:
             self.label['text'] = "New file"
         else:

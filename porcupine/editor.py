@@ -7,7 +7,7 @@ from tkinter import messagebox
 import traceback
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, filetabs, tabs
+from porcupine import dialogs, filetabs, settingdialog, tabs
 from porcupine.settings import config, color_themes
 
 
@@ -111,10 +111,11 @@ class Editor(tk.Frame):
         add = editmenu.add_handy_command
         add("Undo", "Ctrl+Z", textmethod('undo'), disably=True)
         add("Redo", "Ctrl+Y", textmethod('redo'), disably=True)
-        editmenu.add_separator()
         add("Cut", "Ctrl+X", textmethod('cut'), disably=True)
         add("Copy", "Ctrl+C", textmethod('copy'), disably=True)
         add("Paste", "Ctrl+V", textmethod('paste'), disably=True)
+        editmenu.add_separator()
+        add("Settings", None, self._show_settings)
         #editmenu.add_separator()
         #add("Find", "Ctrl+F", self.find, disably=True)
         self._disablelist.extend(editmenu.disablelist)
@@ -171,11 +172,16 @@ class Editor(tk.Frame):
         # default.
         self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
 
-        if config['editing:color_theme'].get() not in theme_names:
+        # It's important to check if the theme name is in color_themes
+        # instead of theme_names because theme_names doesn't contain the
+        # 'Default' theme.
+        if config['editing:color_theme'].get() not in color_themes:
             print("%s: unknown color theme name %r, using 'Default' instead"
                   % (__name__, config['editing:color_theme'].get()),
                   file=sys.stderr)
             config['editing:color_theme'].set('Default')
+
+        self._settingdialog = None
 
     # this is in a separate function because of scopes and loops
     # TODO: add link to python FAQ here
@@ -241,6 +247,14 @@ class Editor(tk.Frame):
 
     def _close_file(self):
         self.tabmanager.current_tab.close()
+
+    def _show_settings(self):
+        if self._settingdialog is None:
+            self._settingdialog = settingdialog.SettingDialog()
+            self._settingdialog.transient(self)
+            self._settingdialog.on_close = self._settingdialog.withdraw
+        else:
+            self._settingdialog.deiconify()
 
     def do_quit(self):
         for tab in self.tabmanager.tabs:
