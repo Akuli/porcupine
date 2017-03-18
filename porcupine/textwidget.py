@@ -130,8 +130,7 @@ class EditorText(tk.Text):
         beforethis = self.get('%d.0' % lineno, 'insert')
         if beforethis.isspace():
             self.dedent(lineno)
-            return True
-        return False
+        self.after_idle(self._do_cursor_move)
 
     def _on_tab(self, shifted):
         """Indent, dedent or autocomplete."""
