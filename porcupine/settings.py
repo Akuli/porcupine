@@ -8,7 +8,7 @@ import tkinter as tk
 # to be applied immediately when something is selected in the setting
 # dialog, but color_themes can be because themes cannot be edited or
 # created on-the-fly (yet)
-config = {}  # {sectionname: {key: tkintervar}}
+config = {}  # {'section:key': tkintervar}
 color_themes = configparser.ConfigParser(default_section='Default')
 
 _here = os.path.dirname(os.path.abspath(__file__))
