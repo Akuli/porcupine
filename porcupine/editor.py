@@ -137,9 +137,6 @@ class Editor(tk.Frame):
         tabmgr.on_tabs_changed.append(self._tabs_changed)
         self._tabs_changed([])  # disable the menuitems
 
-        # TODO: add these to the bindings below using
-        # tabmgr.bind_whateverthethingywas (edit tabs.py if needed)
-
         def disably(func):
             """Make a function that calls func when there are tabs."""
             def result():
