@@ -1,7 +1,9 @@
 """A dialog for changing the settings."""
 
+import base64
 import codecs
 import os
+import pkgutil
 import re
 import tkinter as tk
 from tkinter import messagebox
@@ -82,9 +84,8 @@ class _Section(tk.LabelFrame):
         if _image_cache:
             triangle_image, empty_image = _image_cache
         else:
-            here = os.path.dirname(os.path.abspath(__file__))
-            path = os.path.join(here, 'images', 'triangle.png')
-            triangle_image = tk.PhotoImage(file=path)
+            data = pkgutil.get_data('porcupine', 'images/triangle.png')
+            triangle_image = tk.PhotoImage(data=base64.b64encode(data))
             empty_image = tk.PhotoImage(
                 width=triangle_image.width(),
                 height=triangle_image.height())

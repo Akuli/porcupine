@@ -4,8 +4,10 @@ Yes, I am aware of ttk.Notebook but it's simply way too limited for my
 needs. I can't even change the color of the top label.
 """
 
+import base64
 import functools
 import os
+import pkgutil
 import tkinter as tk
 
 
@@ -24,9 +26,8 @@ class Tab:
 
         # the image needs to be attached to self to avoid garbage
         # collection
-        here = os.path.dirname(os.path.abspath(__file__))
-        self._closeimage = tk.PhotoImage(
-            file=os.path.join(here, 'images', 'closebutton.png'))
+        data = pkgutil.get_data('porcupine', 'images/closebutton.png')
+        self._closeimage = tk.PhotoImage(data=base64.b64encode(data))
 
         def select_me(event):
             manager.current_tab = self

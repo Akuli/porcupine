@@ -1,6 +1,7 @@
 import configparser
 import glob
 import os
+import pkgutil
 import tkinter as tk
 import traceback
 
@@ -35,18 +36,18 @@ class _Config:
         except Exception:  # tkinter suppresses these exceptions :(
             traceback.print_exc()
 
-    def load(self, defaultfile, userfile):
-        self._configparser_load(defaultfile)
+    def load(self, defaultstring, userfile):
+        parser = configparser.ConfigParser()
+        parser.read_string(defaultstring)
+        self._configparser_load(parser)
         self.default_values = dict(self)
-        self._configparser_load(userfile, allow_missing=True)
+
+        parser = configparser.ConfigParser()
+        if parser.read([userfile]):
+            self._configparser_load(parser, allow_missing=True)
         self.original_values = dict(self)
 
-    def _configparser_load(self, filename, allow_missing=False):
-        parser = configparser.ConfigParser()
-        files = parser.read([filename])
-        if (not files) and (not allow_missing):
-            raise OSError("cannot read '%s'" % filename)
-
+    def _configparser_load(self, parser, allow_missing=False):
         for string, var in self.variables.items():
             sectionname, key = string.split(':')
             try:
@@ -107,10 +108,9 @@ class _Config:
         return iter(self.variables)
 
 
-_here = os.path.dirname(os.path.abspath(__file__))
-_user_config_dir = os.path.join(os.path.expanduser('~'), '.porcupine')
 color_themes = configparser.ConfigParser(default_section='Default')
 config = _Config(dont_reset=['editing:color_theme'])
+_user_config_dir = os.path.join(os.path.expanduser('~'), '.porcupine')
 
 
 def load():
@@ -130,13 +130,15 @@ def load():
         ('gui:statusbar', tk.BooleanVar),
         ('gui:default_geometry', tk.StringVar),
     ])
-    config.load(os.path.join(_here, 'default_settings.ini'),
+
+    default_config = pkgutil.get_data('porcupine', 'default_settings.ini')
+    config.load(default_config.decode('utf-8'),
                 os.path.join(_user_config_dir, 'settings.ini'))
 
-    themefiles = [os.path.join(_here, 'default_themes.ini')]
+    default_themes = pkgutil.get_data('porcupine', 'default_themes.ini')
+    color_themes.read_string(default_themes.decode('utf-8'))
     escaped_path = glob.escape(os.path.join(_user_config_dir, 'themes'))
-    themefiles.extend(glob.glob(os.path.join(escaped_path, '*.ini')))
-    color_themes.read(themefiles)
+    color_themes.read(glob.glob(os.path.join(escaped_path, '*.ini')))
 
 
 _COMMENTS = """\
