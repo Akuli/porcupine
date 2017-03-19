@@ -202,7 +202,7 @@ class Editor(tk.Frame):
     def new_file(self):
         tab = filetabs.FileTab(self.tabmanager)
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
-        tab.textwidget.bind(self._post_editmenu)
+        tab.textwidget.bind('<Button-3>', self._post_editmenu)
 
         # some of our keyboard bindings conflict with tkinter's bindings
         # and returning 'break' from a bind_all binding is not enough,
