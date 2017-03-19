@@ -130,8 +130,9 @@ class Editor(tk.Frame):
         theme_names = color_themes.sections()
         theme_names.sort(key=str.casefold)
         for name in ['Default'] + theme_names:
-            thememenu.add_radiobutton(label=name, value=name,
-                                      variable=config['editing:color_theme'])
+            thememenu.add_radiobutton(
+                label=name, value=name,
+                variable=config.variables['editing:color_theme'])
 
         tabmgr.on_tabs_changed.append(self._tabs_changed)
         self._tabs_changed([])  # disable the menuitems
@@ -175,11 +176,11 @@ class Editor(tk.Frame):
         # It's important to check if the theme name is in color_themes
         # instead of theme_names because theme_names doesn't contain the
         # 'Default' theme.
-        if config['editing:color_theme'].get() not in color_themes:
+        if config['editing:color_theme'] not in color_themes:
             print("%s: unknown color theme name %r, using 'Default' instead"
-                  % (__name__, config['editing:color_theme'].get()),
+                  % (__name__, config['editing:color_theme']),
                   file=sys.stderr)
-            config['editing:color_theme'].set('Default')
+            config['editing:color_theme'] = 'Default'
 
         self._settingdialog = None
 
@@ -230,9 +231,8 @@ class Editor(tk.Frame):
                 return
 
         if content is None:
-            encoding = config['files:encoding'].get()
             try:
-                with open(path, 'r', encoding=encoding) as f:
+                with open(path, 'r', encoding=config['files:encoding']) as f:
                     content = f.read()
             except (OSError, UnicodeError):
                 messagebox.showerror("Opening failed!",
@@ -251,6 +251,7 @@ class Editor(tk.Frame):
     def _show_settings(self):
         if self._settingdialog is None:
             self._settingdialog = settingdialog.SettingDialog()
+            self._settingdialog.title("Porcupine Settings")
             self._settingdialog.transient(self)
             self._settingdialog.on_close = self._settingdialog.withdraw
         else:

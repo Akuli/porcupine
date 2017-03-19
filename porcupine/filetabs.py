@@ -83,9 +83,6 @@ class FileTab(tabs.Tab):
             mainframe, self.textwidget, height=1)
         self.textwidget.on_modified.append(self.linenumbers.do_update)
 
-        config['gui:linenumbers'].trace('w', self._on_linenumbers_changed)
-        self._on_linenumbers_changed()
-
         scrollbar = scrolling.MultiScrollbar(
             mainframe, [self.textwidget, self.linenumbers])
 
@@ -94,13 +91,8 @@ class FileTab(tabs.Tab):
         scrollbar.pack(side='right', fill='y')
         self.textwidget.pack(side='right', fill='both', expand=True)
 
-        config['editing:font'].trace('w', self._font_changed)
-        self._font_changed()
-
         self._completer = autocomplete.AutoCompleter(self.textwidget)
-        config['editing:autocomplete'].trace('w', self._on_completing_changed)
         self._completing = False
-        self._on_completing_changed()
 
         self.highlighter = highlight.Highlighter(self.textwidget)
         self.textwidget.on_modified.append(self.highlighter.highlight)
@@ -110,54 +102,55 @@ class FileTab(tabs.Tab):
         self.textwidget.on_cursor_move.append(self._update_statusbar)
         self._update_statusbar()
 
-        config['gui:statusbar'].trace('w', self._on_statusbar_changed)
-        self._on_statusbar_changed()
+        for key in ['gui:linenumbers', 'gui:statusbar', 
+                    'editing:autocomplete', 'editing:font']:
+            config.connect(key, self._on_config_changed)
+            self._on_config_changed(key, config[key])
 
         self.mark_saved()
         self._update_top_label()
 
-    def _on_linenumbers_changed(self, *junk):
-        if config['gui:linenumbers'].get():
-            self.linenumbers.pack(side='left', fill='y')
-        else:
-            self.linenumbers.pack_forget()
+    def _on_config_changed(self, key, value):
+        if key == 'gui:linenumbers':
+            if value:
+                self.linenumbers.pack(side='left', fill='y')
+            else:
+                self.linenumbers.pack_forget()
 
-    def _font_changed(self, *junk):
-        font = config['editing:font'].get()
-        self.textwidget['font'] = font
-        if self.linenumbers is not None:
-            self.linenumbers['font'] = font
+        elif key == 'editing:font':
+            self.textwidget['font'] = value
+            if self.linenumbers is not None:
+                self.linenumbers['font'] = value
 
-    def _on_completing_changed(self, *junk):
-        completing_now = config['editing:autocomplete'].get()
-        if completing_now == self._completing:
-            return
+        elif key == 'gui:statusbar':
+            if value:
+                self.statusbar.pack(fill='x')
+            else:
+                self.statusbar.pack_forget()
 
-        # less typing and pep-8 line length
-        completer = self._completer
-        text = self.textwidget
+        elif key == 'editing:autocomplete':
+            if value == self._completing:
+                # must not enable or disable completions twice
+                return
 
-        if completing_now:
-            text.on_complete_previous.append(completer.complete_previous)
-            text.on_complete_next.append(completer.complete_next)
-            text.on_cursor_move.append(completer.reset)
-        else:
-            text.on_complete_previous.remove(completer.complete_previous)
-            text.on_complete_next.remove(completer.complete_next)
-            text.on_cursor_move.remove(completer.reset)
+            # less typing and pep-8 line length
+            completer = self._completer
+            text = self.textwidget
 
-        self._completing = completing_now
+            if value:
+                text.on_complete_previous.append(completer.complete_previous)
+                text.on_complete_next.append(completer.complete_next)
+                text.on_cursor_move.append(completer.reset)
+            else:
+                text.on_complete_previous.remove(completer.complete_previous)
+                text.on_complete_next.remove(completer.complete_next)
+                text.on_cursor_move.remove(completer.reset)
 
-    def _on_statusbar_changed(self, *junk):
-        if config['gui:statusbar'].get():
-            self.statusbar.pack(fill='x')
-        else:
-            self.statusbar.pack_forget()
+            self._completing = value
 
     def _get_hash(self):
-        encoding = config['files:encoding'].get()
         content = self.textwidget.get('1.0', 'end-1c')
-        content = content.encode(encoding, errors='replace')
+        content = content.encode(config['files:encoding'], errors='replace')
         return hashlib.md5(content).hexdigest()
 
     def mark_saved(self):
@@ -234,7 +227,7 @@ class FileTab(tabs.Tab):
 
         if self.textwidget.get('end-2c', 'end-1c') != '\n':
             # doesn't end with a \n yet
-            if config['files:add_trailing_newline'].get():
+            if config['files:add_trailing_newline']:
                 # make sure we don't move the cursor, IDLE does it and
                 # it's annoying
                 here = self.textwidget.index('insert')
@@ -242,7 +235,7 @@ class FileTab(tabs.Tab):
                 self.textwidget.mark_set('insert', here)
 
         try:
-            encoding = config['files:encoding'].get()
+            encoding = config['files:encoding']
             with _backup_open(self.path, 'w', encoding=encoding) as f:
                 f.write(self.textwidget.get('1.0', 'end-1c'))
         except (OSError, UnicodeError):

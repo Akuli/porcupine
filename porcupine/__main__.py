@@ -32,7 +32,7 @@ def main():
             editor.open_file(file, content='')
 
     root['menu'] = editor.menubar
-    root.geometry(settings.config['gui:default_geometry'].get())
+    root.geometry(settings.config['gui:default_geometry'])
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
 

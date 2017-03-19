@@ -36,11 +36,7 @@ from porcupine.settings import config, color_themes
 
 
 class Highlighter:
-    """Syntax highlighting for Tkinter.
-
-    Note that you need to call set_theme() after instantiating to make
-    this thing work.
-    """
+    """Syntax highlighting for Tkinter."""
 
     def __init__(self, textwidget):
         self.textwidget = textwidget
@@ -65,11 +61,11 @@ class Highlighter:
         # dir(builtins), so we'll treat them as builtins. on the other
         self._keywords -= self._builtins
 
-        config['editing:color_theme'].trace('w', self._on_theme_changed)
-        self._on_theme_changed()
+        config.connect('editing:color_theme', self._on_theme_changed)
+        self._on_theme_changed(None, config['editing:color_theme'])
 
-    def _on_theme_changed(self, *junk):
-        theme = color_themes[config['editing:color_theme'].get()]
+    def _on_theme_changed(self, junk, value):
+        theme = color_themes[value]
         for tag in ['decorator', 'builtin', 'keyword', 'string',
                     'comment', 'exception']:
             self.textwidget.tag_config(tag, foreground=theme[tag])

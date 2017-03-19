@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import tkinter.font as tkfont
 
-from porcupine.settings import config, reset_config
+from porcupine.settings import config
 
 _PADDING = {'padx': 5, 'pady': 2}
 
@@ -63,12 +63,13 @@ class _Section(tk.LabelFrame):
         self._row += 1
 
     def add_checkbox(self, key, **kwargs):
-        checkbox = _create_checkbox(self, variable=config[key], **kwargs)
+        checkbox = _create_checkbox(
+            self, variable=config.variables[key], **kwargs)
         self.add_widget(checkbox)
 
     def add_entry(self, key, *, text, validator=None, **kwargs):
         if validator is None:
-            entry = tk.Entry(self, textvariable=config[key])
+            entry = tk.Entry(self, textvariable=config.variables[key])
             self.add_widget(entry, text)
         else:
             self._add_validating_entry(key, text, validator, **kwargs)
@@ -76,7 +77,7 @@ class _Section(tk.LabelFrame):
     def _add_validating_entry(self, key, text, validator, *,
                               _image_cache=[], **kwargs):
         var = tk.StringVar()
-        var.set(config[key].get())
+        var.set(config[key])
 
         if _image_cache:
             triangle_image, empty_image = _image_cache
@@ -99,20 +100,20 @@ class _Section(tk.LabelFrame):
             value = var.get()
             if validator(value):
                 trianglelabel['image'] = empty_image
-                config[key].set(value)
+                config[key] = value
             else:
                 trianglelabel['image'] = triangle_image
 
-        def from_config(*junk):
-            var.set(config[key].get())
+        def from_config(key, value):
+            var.set(value)
 
         var.trace('w', to_config)
-        config[key].trace('w', from_config)
+        config.connect(key, from_config)
         self.add_widget(frame, text)
 
     def add_spinbox(self, key, *, text, **kwargs):
         var = tk.StringVar()
-        var.set(str(config[key].get()))
+        var.set(str(config[key]))
         spinbox = tk.Spinbox(self, textvariable=var, **kwargs)
 
         def to_config(*junk):
@@ -121,13 +122,13 @@ class _Section(tk.LabelFrame):
             except ValueError:
                 return
             if spinbox['from'] <= value <= spinbox['to']:
-                config[key].set(value)
+                config[key] = value
 
-        def from_config(*junk):
-            var.set(str(config[key].get()))
+        def from_config(key, value):
+            var.set(str(value))
 
         var.trace('w', to_config)
-        config[key].trace('w', from_config)
+        config.connect(key, from_config)
         self.add_widget(spinbox, text)
 
 
@@ -247,15 +248,13 @@ class SettingDialog(tk.Toplevel):
 
     def reset(self):
         confirmed = messagebox.askyesno(
-            "Reset Settings", "Do you want to reset all settings to defaults?",
+            self.title(), "Do you want to reset all settings to defaults?",
             parent=self)
-        if not confirmed:
-            return
-
-        reset_config()
-        messagebox.showinfo(
-            "Reset Settings", "All settings were reset to defaults.",
-            parent=self)
+        if confirmed:
+            config.reset()
+            messagebox.showinfo(
+                self.title(), "All settings were reset to defaults.",
+                parent=self)
 
 
 if __name__ == '__main__':

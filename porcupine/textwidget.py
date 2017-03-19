@@ -58,21 +58,25 @@ class EditorText(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
-        config['editing:undo'].trace('w', self._on_undo_changed)
-        config['editing:color_theme'].trace('w', self._on_theme_changed)
-        self._on_undo_changed()
-        self._on_theme_changed()
+        config.connect('editing:undo', self._on_config_changed)
+        config.connect('editing:color_theme', self._on_config_changed)
+        self._on_config_changed('editing:undo')
+        self._on_config_changed('editing:color_theme')
 
-    def _on_undo_changed(self, *crap):
-        self['undo'] = config['editing:undo'].get()
+    def _on_config_changed(self, key, value=None):
+        if value is None:
+            # called from __init__
+            value = config[key]
 
-    def _on_theme_changed(self, *crap):
-        theme = color_themes[config['editing:color_theme'].get()]
-        self['fg'] = theme['foreground']
-        self['bg'] = theme['background']
-        self['insertbackground'] = theme['foreground']  # cursor color
-        self['selectforeground'] = theme['selectforeground']
-        self['selectbackground'] = theme['selectbackground']
+        if key == 'editing:undo':
+            self['undo'] = value
+        elif key == 'editing:color_theme':
+            theme = color_themes[value]
+            self['fg'] = theme['foreground']
+            self['bg'] = theme['background']
+            self['insertbackground'] = theme['foreground']  # cursor color
+            self['selectforeground'] = theme['selectforeground']
+            self['selectbackground'] = theme['selectbackground']
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind
@@ -176,7 +180,7 @@ class EditorText(tk.Text):
         """
         line = self.get('%d.0' % lineno, '%d.0+1l' % lineno)
         spaces = spacecount(line)
-        indent = config['editing:indent'].get()
+        indent = config['editing:indent']
 
         # make the indent consistent, for example, add 1 space if indent
         # is 4 and there are 7 spaces
@@ -196,7 +200,7 @@ class EditorText(tk.Text):
         if spaces == 0:
             return 0
 
-        indent = config['editing:indent'].get()
+        indent = config['editing:indent']
         howmany2del = spaces % indent
         if howmany2del == 0:
             howmany2del = indent
