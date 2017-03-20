@@ -7,7 +7,7 @@ from tkinter import messagebox
 import traceback
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, filetabs, settingdialog, tabs
+from porcupine import dialogs, filetabs, settingeditor, tabs
 from porcupine.settings import config, color_themes
 
 
@@ -246,13 +246,18 @@ class Editor(tk.Frame):
         self.tabmanager.current_tab.close()
 
     def _show_settings(self):
-        if self._settingdialog is None:
-            self._settingdialog = settingdialog.SettingDialog()
-            self._settingdialog.title("Porcupine Settings")
-            self._settingdialog.transient(self)
-            self._settingdialog.on_close = self._settingdialog.withdraw
-        else:
-            self._settingdialog.deiconify()
+        if self._settingdialog is not None:
+            self._settingeditor.deiconify()
+            return
+
+        dialog = self._settingdialog = tk.Toplevel()
+        dialog.title("Porcupine Settings")
+        dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
+        dialog.transient(self)
+        dialog.resizable(False, False)
+        edit = settingeditor.SettingEditor(
+            dialog, ok_callback=dialog.withdraw)
+        edit.pack()
 
     def do_quit(self):
         for tab in self.tabmanager.tabs:

@@ -1,4 +1,6 @@
 """A dialog for changing the settings."""
+# This uses ttk widgets instead of tk widgets because it needs
+# ttk.Combobox anyway and mixing the widgets looks inconsistent.
 
 import base64
 import codecs
@@ -29,39 +31,6 @@ except AttributeError:
             super().__init__(master, 'ttk::spinbox', **kwargs)
 
 
-def _create_checkbox(parent, *, text='', **kwargs):
-    """Create a widget like like tk.Checkbutton.
-
-    Unlike tk.Checkbutton, this doesn't screw up with dark GTK+ themes.
-    tk.Checkbutton displays a white checkmark on a white background on
-    my dark GTK+ 2 theme.
-    """
-    # I'm aware of ttk.Checkbutton, but ttk widgets display a light-gray
-    # background on my dark GTK+ theme.
-
-    # we can't use the checkbutton's text because the colors of the text
-    # also change when the checkmark colors are changed :(
-    frame = tk.Frame(parent)
-    checkbox = tk.Checkbutton(frame, foreground='black',
-                              selectcolor='white', **kwargs)
-    checkbox.pack(side='left')
-    label = tk.Label(frame, text=text)
-    label.pack(side='right', fill='both', expand=True)
-
-    # now we need to make the label behave like a part of the checkbox
-    def redirect_events(event_string):
-        def callback(event):
-            checkbox.event_generate(event_string)
-        label.bind(event_string, callback)
-
-    redirect_events('<Button-1>')
-    redirect_events('<Enter>')
-    redirect_events('<Leave>')
-
-    # the checkbox isn't easy to access, but it doesn't matter for this
-    return frame
-
-
 def _list_families():
     result = {'TkFixedFont'}   # a set to delete duplicates
     for family in tkfont.families():
@@ -72,7 +41,7 @@ def _list_families():
     return sorted(result, key=str.casefold)
 
 
-class _WarningTriangle(tk.Label):
+class _WarningTriangle(ttk.Label):
 
     _image_cache = {}
 
@@ -95,7 +64,7 @@ class _WarningTriangle(tk.Label):
         self['image'] = self._image_cache['empty']
 
 
-class _Section(tk.LabelFrame):
+class _Section(ttk.LabelFrame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -107,7 +76,7 @@ class _Section(tk.LabelFrame):
             widget.grid(row=self._row, column=0, columnspan=2,
                         sticky='w', **_PADDING)
         else:
-            label = tk.Label(self, text=text)
+            label = ttk.Label(self, text=text)
             label.grid(row=self._row, column=0, sticky='w', **_PADDING)
             widget.grid(row=self._row, column=1, sticky='e', **_PADDING)
         if triangle is not None:
@@ -115,14 +84,14 @@ class _Section(tk.LabelFrame):
         self._row += 1
 
     def add_checkbox(self, key, **kwargs):
-        checkbox = _create_checkbox(
+        checkbox = ttk.Checkbutton(
             self, variable=config.variables[key], **kwargs)
         self.add_widget(checkbox)
 
     def add_entry(self, key, *, text, **kwargs):
         var = tk.StringVar()
         var.set(config[key])
-        entry = tk.Entry(self, textvariable=var, **kwargs)
+        entry = ttk.Entry(self, textvariable=var, **kwargs)
         triangle = _WarningTriangle(self)
 
         def to_config(*junk):
@@ -143,7 +112,7 @@ class _Section(tk.LabelFrame):
     def add_spinbox(self, key, *, text, **kwargs):
         var = tk.StringVar()
         var.set(str(config[key]))
-        spinbox = tk.Spinbox(self, textvariable=var, **kwargs)
+        spinbox = TtkSpinbox(self, textvariable=var, **kwargs)
         triangle = _WarningTriangle(self)
 
         def to_config(*junk):
@@ -168,7 +137,7 @@ class _Section(tk.LabelFrame):
         familyvar = tk.StringVar()
         sizevar = tk.StringVar()
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         family_combobox = ttk.Combobox(
             frame, textvariable=familyvar, values=_list_families())
         family_combobox['width'] -= 4  # about same size as other widgets
@@ -199,16 +168,21 @@ class _Section(tk.LabelFrame):
                 cache[:] = [match.group(1), int(match.group(2))]
                 familyvar.set(match.group(1))
                 sizevar.set(match.group(2))
- 
+
         def to_config(*junk):
             family = familyvar.get()
-            ok = True
 
+            if family.lower() != 'tkfixedfont' and sizevar.get() == 'N/A':
+                # the user changed family to something else than
+                # TkFixedFont, we need a stupid default size
+                sizevar.set('10')  # run this again
+                return
+
+            ok = True
             if family.lower() == 'tkfixedfont':
                 # special family
                 cache[:] = ['TkFixedFont', None]
                 sizevar.set('N/A')
-
             elif family.casefold() in map(str.casefold, _list_families()):
                 # family is ok, how about size?
                 cache[0] = family
@@ -240,31 +214,21 @@ class _Section(tk.LabelFrame):
         self.add_widget(frame, text, triangle)
 
 
-class SettingDialog(tk.Toplevel):
+class SettingEditor(ttk.Frame):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, ok_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.on_close = self.destroy
-        self.protocol('WM_DELETE_WINDOW', self._close_me)
+        self._ok_callback = ok_callback
 
         filesection = self._create_filesection()
         editingsection = self._create_editingsection()
         guisection = self._create_guisection()
-        separator = tk.Frame(self, height=3, border=1, relief='sunken')
+        separator = ttk.Separator(self)
         buttonframe = self._create_buttons()
 
         for widget in [filesection, editingsection, guisection,
                        separator, buttonframe]:
             widget.pack(fill='x', **_PADDING)
-
-    def _close_me(self):
-        """Call self.on_close().
-
-        This is needed because it's possible to set on_close to another
-        callback function after creating the SettingDialog.
-        """
-        self.on_close()
 
     def _create_filesection(self):
         section = _Section(self, text="Files")
@@ -300,21 +264,27 @@ class SettingDialog(tk.Toplevel):
         return section
 
     def _create_buttons(self):
-        frame = tk.Frame(self)
-        ok = tk.Button(frame, width=6, text="OK", command=self._close_me)
-        ok.pack(side='right', **_PADDING)
-        reset = tk.Button(frame, width=6, text="Reset", command=self.reset)
-        reset.pack(side='right', **_PADDING)
+        frame = ttk.Frame(self)
+
+        okbutton = ttk.Button(frame, width=6, text="OK")
+        okbutton.pack(side='right', **_PADDING)
+        if self._ok_callback is not None:
+            okbutton['command'] = self._ok_callback
+
+        resetbutton = ttk.Button(
+            frame, width=6, text="Reset", command=self.reset)
+        resetbutton.pack(side='right', **_PADDING)
+
         return frame
 
     def reset(self):
         confirmed = messagebox.askyesno(
-            self.title(), "Do you want to reset all settings to defaults?",
+            "Reset settings", "Do you want to reset all settings to defaults?",
             parent=self)
         if confirmed:
             config.reset()
             messagebox.showinfo(
-                self.title(), "All settings were reset to defaults.",
+                "Reset settings", "All settings were reset to defaults.",
                 parent=self)
 
 
@@ -322,16 +292,14 @@ if __name__ == '__main__':
     import porcupine.settings
 
     root = tk.Tk()
-    root.withdraw()
-
     porcupine.settings.load()
-    dialog = SettingDialog()
-    dialog.title("Porcupine Settings")
-    dialog.on_close = root.destroy
 
-    # the dialog is usable only if we get here, so we don't need to wrap
-    # the whole thing in try/finally
+    settings = SettingEditor(root)
+    settings.pack()
+    root.title("Porcupine Settings")
     try:
+        # the dialog is usable only if we get here, so we don't need to
+        # wrap the whole thing in try/finally
         root.mainloop()
     finally:
         porcupine.settings.save()
