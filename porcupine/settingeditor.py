@@ -43,25 +43,22 @@ def _list_families():
 
 class _WarningTriangle(ttk.Label):
 
-    _image_cache = {}
+    _triangle_image = None
 
     def __init__(self, *args, **kwargs):
-        if not self._image_cache:
+        if self._triangle_image is None:
             data = pkgutil.get_data('porcupine', 'images/triangle.png')
-            triangle = tk.PhotoImage(data=base64.b64encode(data))
-            empty = tk.PhotoImage(width=triangle.width(),
-                                  height=triangle.height())
-            self._image_cache['triangle'] = triangle
-            self._image_cache['empty'] = empty
+            type(self)._triangle_image = tk.PhotoImage(
+                data=base64.b64encode(data))
 
         super().__init__(*args, **kwargs)
         self.hide()
 
     def show(self):
-        self['image'] = self._image_cache['triangle']
+        self['image'] = type(self)._triangle_image
 
     def hide(self):
-        self['image'] = self._image_cache['empty']
+        self['image'] = ''
 
 
 class _Section(ttk.LabelFrame):
@@ -70,6 +67,7 @@ class _Section(ttk.LabelFrame):
         super().__init__(*args, **kwargs)
         self._row = 0
         self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(2, minsize=20)
 
     def add_widget(self, widget, text=None, triangle=None):
         if text is None:
@@ -134,76 +132,49 @@ class _Section(ttk.LabelFrame):
         self.add_widget(spinbox, text, triangle)
 
     def add_font_selector(self, key, *, text, **kwargs):
+        # Tk uses 'TkFixedFont' as a default font, but it doesn't
+        # support specifying a size. The size spinbox is set to 'N/A'
+        # when the family is TkFixedFont, and a separate variable seems
+        # to be an easy way to do that. The size variable gets a stupid
+        # default here, but another value may be read from config.
         familyvar = tk.StringVar()
-        sizevar = tk.StringVar()
+        sizevar = tk.StringVar(value='10')
+        na_var = tk.StringVar(value='N/A')
+        na_var.trace('w', lambda *junk: na_var.set('N/A'))
 
         frame = ttk.Frame(self)
         family_combobox = ttk.Combobox(
             frame, textvariable=familyvar, values=_list_families())
-        family_combobox['width'] -= 4  # about same size as other widgets
+        family_combobox['width'] -= 4  # not much bigger than other widgets
         family_combobox.pack(side='left')
-        size_spinbox = TtkSpinbox(
-            frame, textvariable=sizevar, from_=1, to=100, width=4)
+        size_spinbox = TtkSpinbox(frame, from_=1, to=100, width=4)
         size_spinbox.pack(side='left')
-
         triangle = _WarningTriangle(self)
-
-        # not all values that the user types are valid, so we need to
-        # cache the previous correct family and size
-        cache = []   # ['family', size]
 
         def from_config(key, value):
             # the fonts are stored as "{family} size" strings because
-            # tkinter widgets can use strings like that
-            if value.lower() == 'tkfixedfont':
-                # Special case: tkinter's default font. The cache needs
-                # to be set before setting the variables because
-                # to_config() needs the cache.
-                cache[:] = ['TkFixedFont', None]
+            # tkinter widgets can use strings like that, but the default
+            # font is 'TkFixedFont' because it does not support
+            # specifying a size
+            if value == 'TkFixedFont':
                 familyvar.set('TkFixedFont')
-                sizevar.set('N/A')
             else:
-                print(repr(value))
                 match = re.search(r'^\{(.+)\} (\d+)$', value)
-                cache[:] = [match.group(1), int(match.group(2))]
                 familyvar.set(match.group(1))
                 sizevar.set(match.group(2))
 
         def to_config(*junk):
-            family = familyvar.get()
-
-            if family.lower() != 'tkfixedfont' and sizevar.get() == 'N/A':
-                # the user changed family to something else than
-                # TkFixedFont, we need a stupid default size
-                sizevar.set('10')  # run this again
+            if familyvar.get() == 'TkFixedFont':
+                size_spinbox['textvariable'] = na_var
+                config[key] = 'TkFixedFont'
+                triangle.hide()
                 return
 
-            ok = True
-            if family.lower() == 'tkfixedfont':
-                # special family
-                cache[:] = ['TkFixedFont', None]
-                sizevar.set('N/A')
-            elif family.casefold() in map(str.casefold, _list_families()):
-                # family is ok, how about size?
-                cache[0] = family
-                try:
-                    size = int(sizevar.get())
-                    if size <= 0:
-                        raise ValueError
-                    cache[1] = size
-                except ValueError:   # int() failed
-                    ok = False
-
-            else:
-                # family is not ok
-                ok = False
-
-            if ok:
+            size_spinbox['textvariable'] = sizevar
+            value = '{%s} %s' % (familyvar.get(), sizevar.get())
+            if config.validate(key, value):
                 triangle.hide()
-                if cache == ['TkFixedFont', None]:
-                    config[key] = 'TkFixedFont'
-                else:
-                    config[key] = '{%s} %d' % tuple(cache)
+                config[key] = value
             else:
                 triangle.show()
 
@@ -270,7 +241,6 @@ class SettingEditor(ttk.Frame):
         okbutton.pack(side='right', **_PADDING)
         if self._ok_callback is not None:
             okbutton['command'] = self._ok_callback
-
         resetbutton = ttk.Button(
             frame, width=6, text="Reset", command=self.reset)
         resetbutton.pack(side='right', **_PADDING)
@@ -294,8 +264,9 @@ if __name__ == '__main__':
     root = tk.Tk()
     porcupine.settings.load()
 
-    settings = SettingEditor(root)
+    settings = SettingEditor(root, ok_callback=root.destroy)
     settings.pack()
+
     root.title("Porcupine Settings")
     try:
         # the dialog is usable only if we get here, so we don't need to

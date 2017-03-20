@@ -69,7 +69,8 @@ class Editor(tk.Frame):
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self._finddialog = None
+        self._finddialog = None    # TODO
+        self._settingdialog = None
 
         tabmgr = self.tabmanager = tabs.TabManager(self)
         tabmgr.pack(fill='both', expand=True)
@@ -179,8 +180,6 @@ class Editor(tk.Frame):
                   file=sys.stderr)
             config['editing:color_theme'] = 'Default'
 
-        self._settingdialog = None
-
     # this is in a separate function because of scopes and loops
     # TODO: add link to python FAQ here
     def _add_binding(self, keysym, callback):
@@ -247,7 +246,7 @@ class Editor(tk.Frame):
 
     def _show_settings(self):
         if self._settingdialog is not None:
-            self._settingeditor.deiconify()
+            self._settingdialog.deiconify()
             return
 
         dialog = self._settingdialog = tk.Toplevel()
