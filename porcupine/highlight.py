@@ -58,7 +58,7 @@ class Highlighter:
                 self._builtins.add(name)
 
         # some things like True and False are both in keyword.kwlist and
-        # dir(builtins), so we'll treat them as builtins. on the other
+        # dir(builtins), so we'll treat them as builtins
         self._keywords -= self._builtins
 
         config.connect('editing:color_theme', self._on_theme_changed)
