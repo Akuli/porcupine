@@ -271,3 +271,13 @@ class EditorText(tk.Text):
             self.delete(sel_start, sel_end)
 
         self._do_cursor_move()
+
+    # these methods may move the cursor, there are other methods too but
+    # they aren't currently used
+    def insert(self, *args, **kwargs):
+        super().insert(*args, **kwargs)
+        self._do_cursor_move()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self._do_cursor_move()
