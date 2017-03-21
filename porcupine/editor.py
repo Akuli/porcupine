@@ -171,15 +171,6 @@ class Editor(tk.Frame):
         # default.
         self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
 
-        # It's important to check if the theme name is in color_themes
-        # instead of theme_names because theme_names doesn't contain the
-        # 'Default' theme.
-        if config['editing:color_theme'] not in color_themes:
-            print("%s: unknown color theme name %r, using 'Default' instead"
-                  % (__name__, config['editing:color_theme']),
-                  file=sys.stderr)
-            config['editing:color_theme'] = 'Default'
-
     # this is in a separate function because of scopes and loops
     # TODO: add link to python FAQ here
     def _add_binding(self, keysym, callback):
