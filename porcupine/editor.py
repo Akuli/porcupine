@@ -1,5 +1,6 @@
 """The main Editor class."""
 
+import logging
 import os
 import sys
 import tkinter as tk
@@ -10,6 +11,8 @@ from porcupine import __doc__ as init_docstring
 from porcupine import dialogs, filetabs, settingeditor, tabs
 from porcupine.settings import config, color_themes
 
+
+log = logging.getLogger(__name__)
 
 DESCRIPTION = '\n\n'.join([
     ' '.join(init_docstring.split()),
@@ -205,9 +208,11 @@ class Editor(tk.Frame):
 
     def open_file(self, path=None, *, content=None):
         if path is None:
-            path = dialogs.open_file()
-            if path is None:
-                return
+            # i think it's easier to recurse here than wrap the whole
+            # thing in try/except
+            for path in dialogs.open_files():
+                self.open_file(path, content=content)
+            return
 
         # maybe this file is open already?
         for tab in self.tabmanager.tabs:
@@ -237,9 +242,11 @@ class Editor(tk.Frame):
 
     def _show_settings(self):
         if self._settingdialog is not None:
+            log.info("setting dialog exists already, showing it")
             self._settingdialog.deiconify()
             return
 
+        log.info("creating a new setting dialog")
         dialog = self._settingdialog = tk.Toplevel()
         dialog.title("Porcupine Settings")
         dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)

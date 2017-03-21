@@ -21,14 +21,18 @@ def _backup_open(path, *args, **kwargs):
             name += '-backup'
         backuppath = name + ext
 
+        log.info("backing up '%s' to '%s'", path, backuppath)
         shutil.copy(path, backuppath)
+
         try:
             yield open(path, *args, **kwargs)
         except Exception as e:
             # oops, let's restore from our backup
+            log.info("restoring '%s' from the backup", path)
             shutil.move(backuppath, path)
             raise e
         else:
+            log.info("deleting '%s'" % backuppath)
             # it worked, let's clean up
             os.remove(backuppath)
 

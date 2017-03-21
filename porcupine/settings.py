@@ -1,6 +1,9 @@
+"""Setting manager for Porcupine."""
+
 import codecs
 import configparser
 import glob
+import logging
 import os
 import pkgutil
 import re
@@ -8,6 +11,8 @@ import sys
 import tkinter as tk
 import tkinter.font as tkfont
 import traceback
+
+log = logging.getLogger(__name__)
 
 
 # color_themes can be a configparser.ConfigParser object, but other
@@ -51,13 +56,15 @@ class _Config:
         parser = configparser.ConfigParser()
         if parser.read([userfile]):
             self._configparser_load(parser, allow_missing=True)
+            log.info("found user-wide setting file '%s'", userfile)
+        else:
+            log.info("cannot read settings from '%s'", userfile)
         self.original_values = dict(self)
 
         for key in self.keys():
             if not self.validate(key, self[key]):
-                print("%s: invalid %r value %r, using %r instead"
-                      % (__name__, key, self[key], self.default_values[key]),
-                      file=sys.stderr)
+                log.warning("invalid %r value %r, using %r instead",
+                            key, self[key], self.default_values[key])
                 self[key] = self.default_values[key]
 
     def _configparser_load(self, parser, allow_missing=False):
@@ -207,6 +214,16 @@ def load():
                 os.path.join(_user_config_dir, 'settings.ini'))
 
 
+def _log_config_change(key, value):
+    log.info("setting %r to %r", key, value)
+
+
+# this should be called once, after load()
+def enable_logging():
+    for key in config.keys():
+        config.connect(key, _log_config_change)
+
+
 _COMMENTS = """\
 # This is a Porcupine configuration file. You can edit this manually,
 # but any comments or formatting will be lost.
@@ -224,7 +241,12 @@ def save():
     # Of course, this doesn't handle the user changing settings in
     # both Porcupines, but I think it's not too bad to assume that
     # most users don't do that.
-    if dict(config) != config.original_values:
-        with open(os.path.join(_user_config_dir, 'settings.ini'), 'w') as f:
-            print(_COMMENTS, file=f)
-            config.dump(f)
+    if dict(config) == config.original_values:
+        log.info("settings have not been changed, not saving")
+        return
+
+    settingfile = os.path.join(_user_config_dir, 'settings.ini')
+    log.info("saving settings to '%s'", settingfile)
+    with open(settingfile, 'w') as f:
+        print(_COMMENTS, file=f)
+        config.dump(f)

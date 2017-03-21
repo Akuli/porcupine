@@ -1,6 +1,7 @@
 """Run the editor."""
 
 import argparse
+import logging
 import os
 import tkinter as tk
 
@@ -13,10 +14,20 @@ def main():
     parser.add_argument(
         'file', nargs=argparse.ZERO_OR_MORE,
         help="open this file when the editor starts")
+    parser.add_argument(
+        '--verbose', '-v', dest='loglevel', action='store_const',
+        const=logging.DEBUG, default=logging.WARNING,
+        help="print more debugging messages")
     args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(name)s: %(message)s',
+        level=args.loglevel,
+    )
 
     root = tk.Tk()
     settings.load()     # root must exist first
+    settings.enable_logging()
 
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)

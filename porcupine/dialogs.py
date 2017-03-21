@@ -14,19 +14,19 @@ _default_options = {
 }
 
 
-def open_file(**kwargs):
+def open_files(**kwargs):
     options = _default_options.copy()
     options["title"] = "Open file"
     options.update(kwargs)
 
-    path = filedialog.askopenfilename(**options)
-    if not path:
-        # the user cancelled, the path is ''
-        return None
+    paths = filedialog.askopenfilenames(**options)
+    if not paths:
+        # paths is actually '', not [] or ()
+        return []
 
-    path = os.path.abspath(path)
-    _default_options['initialdir'] = os.path.dirname(path)
-    return path
+    result = [os.path.abspath(path) for path in paths]
+    _default_options['initialdir'] = os.path.dirname(result[-1])
+    return result
 
 
 def save_as(*, old_path=None, **kwargs):

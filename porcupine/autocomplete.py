@@ -12,6 +12,9 @@ class AutoCompleter:
         self._completing = False
 
     def _find_suffixes(self):
+        # TODO: what if there's text on both sides of the cursor? currently
+        # this is treated as one long word that the cursor is a part of, and
+        # it's kind of confusing
         lineno = int(self.textwidget.index('insert').split('.')[0])
         before_cursor = self.textwidget.get('%d.0' % lineno, 'insert')
 

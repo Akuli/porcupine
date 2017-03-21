@@ -27,12 +27,16 @@
 
 import builtins
 import keyword
+import logging
 import re
 import sys
 import tkinter as tk
 import tokenize
 
 from porcupine.settings import config, color_themes
+
+
+log = logging.getLogger(__name__)
 
 
 class Highlighter:
@@ -82,7 +86,7 @@ class Highlighter:
         try:
             next(self._highlight_job)
         except StopIteration:
-            # done with highlighting
+            log.info("highlight job completed")
             self._highlight_job = None
             return
 
@@ -199,6 +203,7 @@ class Highlighter:
         self._clear_tags(last_lineno+1)
 
     def highlight(self):
+        log.info("(re)starting highlight job")
         self._highlight_job = self._highlight_coro()
         self.textwidget.after_idle(self._on_idle)
 
