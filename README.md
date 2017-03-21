@@ -5,21 +5,23 @@ need Python 3.3 or newer with Tkinter to run this.
 
 ![Screenshot.](screenshot.png)
 
-This editor supports everything that an editor needs to support:
+This editor has everything that a Python editor needs:
 
 - Syntax highlighting with different color themes
 - Converting tabs to spaces
-- Automatic indenting and indent/dedent block with tab and shift+tab
+- Automatic indenting
+- Indent/dedent block with Tab and Shift+Tab
 - Stripping trailing whitespace
-- Simple autocompleting with tab
-- Status bar that shows current line and column numbers
-- Multiple files can be opened at the same time in separate tabs
 - Line numbers
-- Simple setting dialog
+- Line length marker
+- Simple all-words-in-file autocompleting with tab
+- Multiple files can be opened at the same time like pages in a web browser
+- Status bar that shows current line and column numbers
+- Simple and easy-to-use setting dialog
+- PEP-8 compatible default settings
 
 These features will be added later: 
 
-- Line length marker
 - Something that runs the file in a terminal or PowerShell
 
 ## How do I run this thing?
@@ -32,7 +34,8 @@ Debian-based distributions (Ubuntu, Linux Mint, etc.):
     $ sudo apt install python3-tk
 
 Then you can download Porcupine, `cd` to where you downloaded it and run
-it with Python's `-m` option. Fore example, like this:
+it with Python's `-m` option. Fore example, it might look like this if
+you use Git for downloading Porcupine:
 
     $ git clone https://github.com/Akuli/porcupine
     $ cd porcupine
