@@ -77,7 +77,7 @@ class FileTab(tabs.Tab):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.EditorText(
-            mainframe, width=1, height=1)
+            mainframe, width=1, height=1, wrap='none')
         self.textwidget.on_modified.append(self._update_top_label)
         self.linenumbers = linenumbers.LineNumbers(
             mainframe, self.textwidget, height=1)
