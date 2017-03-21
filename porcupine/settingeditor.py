@@ -65,28 +65,30 @@ class _Section(ttk.LabelFrame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._row = 0
+        self.row = 0
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(2, minsize=20)
 
-    def add_widget(self, widget, text=None, triangle=None):
-        if text is None:
-            widget.grid(row=self._row, column=0, columnspan=2,
+    def add_widget(self, widget, label=None, triangle=None):
+        if label is None:
+            widget.grid(row=self.row, column=0, columnspan=2,
                         sticky='w', **_PADDING)
         else:
-            label = ttk.Label(self, text=text)
-            label.grid(row=self._row, column=0, sticky='w', **_PADDING)
-            widget.grid(row=self._row, column=1, sticky='e', **_PADDING)
+            if isinstance(label, str):
+                label = ttk.Label(self, text=label)
+            label.grid(row=self.row, column=0, sticky='w', **_PADDING)
+            widget.grid(row=self.row, column=1, sticky='e', **_PADDING)
         if triangle is not None:
-            triangle.grid(row=self._row, column=2)
-        self._row += 1
+            triangle.grid(row=self.row, column=2)
+        self.row += 1
 
     def add_checkbox(self, key, **kwargs):
         checkbox = ttk.Checkbutton(
             self, variable=config.variables[key], **kwargs)
         self.add_widget(checkbox)
+        return checkbox   # see long line marker
 
-    def add_entry(self, key, *, text, **kwargs):
+    def add_entry(self, key, *, label, **kwargs):
         var = tk.StringVar()
         var.set(config[key])
         entry = ttk.Entry(self, textvariable=var, **kwargs)
@@ -105,9 +107,9 @@ class _Section(ttk.LabelFrame):
 
         var.trace('w', to_config)
         config.connect(key, from_config)
-        self.add_widget(entry, text, triangle)
+        self.add_widget(entry, label, triangle)
 
-    def add_spinbox(self, key, *, text, **kwargs):
+    def add_spinbox(self, key, *, label, **kwargs):
         var = tk.StringVar()
         var.set(str(config[key]))
         spinbox = TtkSpinbox(self, textvariable=var, **kwargs)
@@ -129,9 +131,9 @@ class _Section(ttk.LabelFrame):
 
         var.trace('w', to_config)
         config.connect(key, from_config)
-        self.add_widget(spinbox, text, triangle)
+        self.add_widget(spinbox, label, triangle)
 
-    def add_font_selector(self, key, *, text, **kwargs):
+    def add_font_selector(self, key, *, label, **kwargs):
         # Tk uses 'TkFixedFont' as a default font, but it doesn't
         # support specifying a size. The size spinbox is set to 'N/A'
         # when the family is TkFixedFont, and a separate variable seems
@@ -182,7 +184,7 @@ class _Section(ttk.LabelFrame):
         sizevar.trace('w', to_config)
         config.connect(key, from_config)
         from_config(key, config[key])
-        self.add_widget(frame, text, triangle)
+        self.add_widget(frame, label, triangle)
 
 
 class SettingEditor(ttk.Frame):
@@ -204,7 +206,7 @@ class SettingEditor(ttk.Frame):
     def _create_filesection(self):
         section = _Section(self, text="Files")
         section.add_entry(
-            'files:encoding', text="Encoding of opened and saved files:")
+            'files:encoding', label="Encoding of opened and saved files:")
         section.add_checkbox(
             'files:add_trailing_newline',
             text="Make sure that files end with an empty line when saving")
@@ -213,13 +215,21 @@ class SettingEditor(ttk.Frame):
     def _create_editingsection(self):
         section = _Section(self, text="Editing")
         section.add_font_selector(
-            'editing:font', text="Font family and size:")
+            'editing:font', label="Font family and size:")
         section.add_spinbox(
-            'editing:indent', from_=1, to=100, text="Indent width:")
+            'editing:indent', from_=1, to=100, label="Indent width:")
         section.add_checkbox(
             'editing:undo', text="Enable undo and redo")
         section.add_checkbox(
             'editing:autocomplete', text="Autocomplete with tab")
+
+        checkbox = section.add_checkbox(
+            'editing:longlinemarker',
+            text="Display a long line marker at this column:")
+        section.row -= 1    # overwrite same row again
+        section.add_spinbox('editing:maxlinelen', from_=1, to=200,
+                            label=checkbox)
+
         return section
 
     def _create_guisection(self):
@@ -230,7 +240,7 @@ class SettingEditor(ttk.Frame):
             'gui:statusbar', text="Display a statusbar at bottom")
         section.add_entry(
             'gui:default_geometry',
-            text=("Default window size as a Tkinter geometry " +
+            label=("Default window size as a Tkinter geometry " +
                   "(e.g. 650x500):"))
         return section
 

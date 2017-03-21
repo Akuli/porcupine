@@ -7,7 +7,7 @@ from tkinter import messagebox
 import traceback
 
 from porcupine import (autocomplete, dialogs, highlight, linenumbers,
-                       scrolling, tabs, textwidget)
+                       longlinemarker, scrolling, tabs, textwidget)
 from porcupine.settings import config
 
 
@@ -87,13 +87,15 @@ class FileTab(tabs.Tab):
             mainframe, [self.textwidget, self.linenumbers])
 
         # these are packed right-to-left because the linenumbers are at
-        # left and sometimes pack_forgot()ten
+        # left and can be pack_forgot()ten
         scrollbar.pack(side='right', fill='y')
         self.textwidget.pack(side='right', fill='both', expand=True)
 
         self._completer = autocomplete.AutoCompleter(self.textwidget)
         self._completing = False
-
+        marker = longlinemarker.LongLineMarker(self.textwidget)
+        self.textwidget.bind('<Configure>',
+                             lambda event: marker.set_height(event.height))
         self.highlighter = highlight.Highlighter(self.textwidget)
         self.textwidget.on_modified.append(self.highlighter.highlight)
 

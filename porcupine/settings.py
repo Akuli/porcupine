@@ -195,6 +195,8 @@ def load():
         ('editing:autocomplete', tk.BooleanVar, None),
         ('editing:color_theme', tk.StringVar,
          (lambda name: name in color_themes)),
+        ('editing:longlinemarker', tk.BooleanVar, None),
+        ('editing:maxlinelen', tk.IntVar, (lambda value: value > 0)),
         ('gui:linenumbers', tk.BooleanVar, None),
         ('gui:statusbar', tk.BooleanVar, None),
         ('gui:default_geometry', tk.StringVar, _validate_geometry),
