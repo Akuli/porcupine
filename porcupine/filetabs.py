@@ -1,5 +1,6 @@
 import contextlib
 import hashlib
+import logging
 import os
 import shutil
 import tkinter as tk
@@ -9,6 +10,9 @@ import traceback
 from porcupine import (autocomplete, dialogs, highlight, linenumbers,
                        longlinemarker, scrolling, tabs, textwidget)
 from porcupine.settings import config
+
+
+log = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
@@ -108,7 +112,7 @@ class FileTab(tabs.Tab):
         self.textwidget.on_cursor_move.append(self._update_statusbar)
         self._update_statusbar()
 
-        for key in ['gui:linenumbers', 'gui:statusbar', 
+        for key in ['gui:linenumbers', 'gui:statusbar',
                     'editing:autocomplete', 'editing:font']:
             config.connect(key, self._on_config_changed)
             self._on_config_changed(key, config[key])

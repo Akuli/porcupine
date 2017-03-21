@@ -6,7 +6,6 @@ needs. I can't even change the color of the top label.
 
 import base64
 import functools
-import os
 import pkgutil
 import tkinter as tk
 

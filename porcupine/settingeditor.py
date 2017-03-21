@@ -3,11 +3,8 @@
 # ttk.Combobox anyway and mixing the widgets looks inconsistent.
 
 import base64
-import codecs
-import os
 import pkgutil
 import re
-import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter.font as tkfont
@@ -250,8 +247,7 @@ class SettingEditor(ttk.Frame):
             'gui:statusbar', text="Display a statusbar at bottom")
         section.add_entry(
             'gui:default_geometry',
-            label=("Default window size as a Tkinter geometry " +
-                  "(e.g. 650x500):"))
+            label="Default window size as a Tkinter geometry (e.g. 650x500):")
         return section
 
     def _create_buttons(self):
