@@ -3,6 +3,8 @@
 import argparse
 import logging
 import os
+import platform
+import sys
 import tkinter as tk
 
 import porcupine.editor
@@ -10,14 +12,22 @@ from porcupine import settings
 
 
 def main():
-    parser = argparse.ArgumentParser(description=porcupine.__doc__)
+    # sys.argv[0] is '__main__.py', so we can't use that as the prog.
+    # these hard-coded progs are wrong in some situations, but at least
+    # better than '__main__.py'.
+    if platform.system() == 'Windows':
+        prog = 'py -m porcupine'
+    else:
+        prog = '%s -m porcupine' % os.path.basename(sys.executable)
+
+    parser = argparse.ArgumentParser(prog=prog, description=porcupine.__doc__)
     parser.add_argument(
-        'file', nargs=argparse.ZERO_OR_MORE,
-        help="open this file when the editor starts")
+        'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
+        help="open these files when the editor starts, - means stdin")
     parser.add_argument(
         '--verbose', '-v', dest='loglevel', action='store_const',
         const=logging.DEBUG, default=logging.WARNING,
-        help="print more debugging messages")
+        help="print more debugging messages to stderr")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -33,10 +43,18 @@ def main():
     editor.pack(fill='both', expand=True)
 
     for file in args.file:
-        file = os.path.abspath(file)
+        if file == '-':
+            # read stdin
+            content = sys.stdin.read()
+            tab = editor.new_file()
+            tab.textwidget.insert('1.0', content)
+            tab.textwidget.edit_reset()   # reset undo/redo
+            tab.mark_saved()
+            continue
 
         # the editor doesn't create new files when opening, so we need to
         # take care of that here
+        file = os.path.abspath(file)
         if os.path.exists(file):
             editor.open_file(file)
         else:
