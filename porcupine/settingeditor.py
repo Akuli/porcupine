@@ -132,6 +132,7 @@ class _Section(ttk.LabelFrame):
         var.trace('w', to_config)
         config.connect(key, from_config)
         self.add_widget(spinbox, label, triangle)
+        return spinbox   # see long line marker
 
     def add_font_selector(self, key, *, label, **kwargs):
         # Tk uses 'TkFixedFont' as a default font, but it doesn't
@@ -212,6 +213,22 @@ class SettingEditor(ttk.Frame):
             text="Make sure that files end with an empty line when saving")
         return section
 
+    def _add_long_line_marker(self, section):
+        checkbox = section.add_checkbox(
+            'editing:longlinemarker',
+            text="Display a long line marker at this column:")
+        section.row -= 1    # overwrite same row again
+        spinbox = section.add_spinbox('editing:maxlinelen', from_=1, to=200,
+                                      label=checkbox)
+
+        def on_check(key, value):
+            if value:
+                spinbox['state'] = 'normal'
+            else:
+                spinbox['state'] = 'disabled'
+
+        config.connect('editing:longlinemarker', on_check)
+
     def _create_editingsection(self):
         section = _Section(self, text="Editing")
         section.add_font_selector(
@@ -222,14 +239,7 @@ class SettingEditor(ttk.Frame):
             'editing:undo', text="Enable undo and redo")
         section.add_checkbox(
             'editing:autocomplete', text="Autocomplete with tab")
-
-        checkbox = section.add_checkbox(
-            'editing:longlinemarker',
-            text="Display a long line marker at this column:")
-        section.row -= 1    # overwrite same row again
-        section.add_spinbox('editing:maxlinelen', from_=1, to=200,
-                            label=checkbox)
-
+        self._add_long_line_marker(section)
         return section
 
     def _create_guisection(self):
@@ -274,8 +284,8 @@ if __name__ == '__main__':
     root = tk.Tk()
     porcupine.settings.load()
 
-    settings = SettingEditor(root, ok_callback=root.destroy)
-    settings.pack()
+    settingedit = SettingEditor(root, ok_callback=root.destroy)
+    settingedit.pack(fill='both', expand=True)
 
     root.title("Porcupine Settings")
     try:
