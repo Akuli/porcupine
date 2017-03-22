@@ -161,8 +161,7 @@ def _validate_geometry(geometry):
 
 def _validate_fontstring(string):
     if string == 'TkFixedFont':
-        # special case, but this is case-sensitive here because tkinter
-        # wants it CapsWordy
+        # tkinter's default font, doesn't support specifying a size
         return True
 
     match = re.search(r'^\{(.+)\} (\d+)$', string)
