@@ -71,12 +71,15 @@ class EditorText(tk.Text):
         if key == 'editing:undo':
             self['undo'] = value
         elif key == 'editing:color_theme':
-            theme = color_themes[value]
-            self['fg'] = theme['foreground']
-            self['bg'] = theme['background']
-            self['insertbackground'] = theme['foreground']  # cursor color
-            self['selectforeground'] = theme['selectforeground']
-            self['selectbackground'] = theme['selectbackground']
+            keys = {
+                'fg': 'foreground',
+                'bg': 'background',
+                'insertbackground': 'foreground',  # cursor color
+                'selectforeground': 'selectforeground',
+                'selectbackground': 'selectbackground',
+            }
+            for selfkey, themekey in keys.items():
+                self[selfkey] = color_themes[value, themekey]
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind

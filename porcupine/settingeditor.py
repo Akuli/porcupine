@@ -79,10 +79,23 @@ class _Section(ttk.LabelFrame):
             triangle.grid(row=self.row, column=2)
         self.row += 1
 
+    # these methods add widgets that change the settings and also change
+    # when something else changes the settings, e.g. the reset button
+
     def add_checkbox(self, key, **kwargs):
-        checkbox = ttk.Checkbutton(
-            self, variable=config.variables[key], **kwargs)
+        var = tk.BooleanVar()
+        checkbox = ttk.Checkbutton(self, variable=var, **kwargs)
         self.add_widget(checkbox)
+
+        def from_config(*junk):
+            var.set(config[key])
+
+        def to_config(*junk):
+            config[key] = var.get()
+
+        config.connect(key, from_config)
+        from_config()
+        var.trace('w', to_config)
         return checkbox   # see long line marker
 
     def add_entry(self, key, *, label, **kwargs):
@@ -133,21 +146,18 @@ class _Section(ttk.LabelFrame):
 
     def add_font_selector(self, key, *, label, **kwargs):
         # Tk uses 'TkFixedFont' as a default font, but it doesn't
-        # support specifying a size. The size spinbox is set to 'N/A'
-        # when the family is TkFixedFont, and a separate variable seems
-        # to be an easy way to do that. The size variable gets a stupid
+        # support specifying a size. The size variable gets a stupid
         # default here, but another value may be read from config.
         familyvar = tk.StringVar()
         sizevar = tk.StringVar(value='10')
-        na_var = tk.StringVar(value='N/A')
-        na_var.trace('w', lambda *junk: na_var.set('N/A'))
 
         frame = ttk.Frame(self)
         family_combobox = ttk.Combobox(
             frame, textvariable=familyvar, values=_list_families())
         family_combobox['width'] -= 4  # not much bigger than other widgets
         family_combobox.pack(side='left')
-        size_spinbox = TtkSpinbox(frame, from_=1, to=100, width=4)
+        size_spinbox = TtkSpinbox(frame, textvariable=sizevar,
+                                  from_=1, to=100, width=4)
         size_spinbox.pack(side='left')
         triangle = _WarningTriangle(self)
 
@@ -165,12 +175,12 @@ class _Section(ttk.LabelFrame):
 
         def to_config(*junk):
             if familyvar.get() == 'TkFixedFont':
-                size_spinbox['textvariable'] = na_var
+                size_spinbox['state'] = 'disabled'
                 config[key] = 'TkFixedFont'
                 triangle.hide()
                 return
 
-            size_spinbox['textvariable'] = sizevar
+            size_spinbox['state'] = 'normal'
             value = '{%s} %s' % (familyvar.get(), sizevar.get())
             if config.validate(key, value):
                 triangle.hide()

@@ -1,15 +1,15 @@
 """Setting manager for Porcupine."""
 
 import codecs
+import collections
 import configparser
 import glob
+import json
 import logging
 import os
 import pkgutil
 import re
-import tkinter as tk
 import tkinter.font as tkfont
-import traceback
 
 log = logging.getLogger(__name__)
 
@@ -19,124 +19,120 @@ log = logging.getLogger(__name__)
 # when something is selected in the setting dialog. setting and getting
 # other settings must also be painless because it's done in many places.
 class _Config:
+    """A {'section:name': value} dictionary-like object.
 
-    def __init__(self, *, dont_reset=()):
-        self.variables = {}
-        self._callbacks = {}
-        self._validators = {}
-        self._dont_reset = dont_reset
-        self.default_values = None
-        self.original_values = None
+    Unlike plain dictionaries, these objects support things like
+    callbacks that run when a value is changed.
 
-    def setup(self, contentlist):
-        for key, vartype, validator in contentlist:
-            # The variables are named like the keys to make them easy
-            # to recognize in _on_var_changed().
-            var = vartype(name=key)
-            var.trace('w', self._on_var_changed)
-            self.variables[key] = var
-            self._callbacks[key] = []
-            self._validators[key] = validator
+    >>> c = _Config({})
+    >>> c.load({'test': {'a': 1, 'b': 2}}, {'test': {'a': 3}})
+    >>> dict(c) == {'test:a': 3, 'test:b': 2}
+    True
+    >>> c['test:b']     # default setting
+    2
+    >>> c['test:a']     # user setting that overrides a default setting
+    3
+    >>> c.dump()        # settings that are different from defaults
+    {'test': {'a': 3}}
+    >>>
+    """
 
-    def _on_var_changed(self, key, *junk):
-        try:
-            value = self.variables[key].get()
-            for callback in self._callbacks[key]:
-                callback(key, value)
-        except Exception:  # tkinter suppresses these exceptions :(
-            traceback.print_exc()
+    def __init__(self, name, validators=None):
+        if validators is None:
+            validators = {}
+        self.log = logging.getLogger(name)
+        self._validators = validators
+        self._callbacks = collections.defaultdict(list)
+        self._default_values = None
+        self._original_values = None
 
-    def load(self, defaultstring, userfile):
-        parser = configparser.ConfigParser()
-        parser.read_string(defaultstring)
-        self._configparser_load(parser)
-        self.default_values = dict(self)
+    def _flatten_dict(self, dictionary):
+        result = {}
+        for key1, sub in dictionary.items():
+            for key2, value in sub.items():
+                result[key1 + ':' + key2] = value
+        return result
 
-        parser = configparser.ConfigParser()
-        if parser.read([userfile]):
-            self._configparser_load(parser, allow_missing=True)
-            log.info("found user-wide setting file '%s'", userfile)
-        else:
-            log.info("cannot read settings from '%s'", userfile)
-        self.original_values = dict(self)
-
-        for key in self.keys():
-            if not self.validate(key, self[key]):
-                log.warning("invalid %r value %r, using %r instead",
-                            key, self[key], self.default_values[key])
-                self[key] = self.default_values[key]
-
-    def _configparser_load(self, parser, allow_missing=False):
-        for key, var in self.variables.items():
-            sectionname, configkey = key.split(':')
+    def _unflatten_dict(self, dictionary):
+        result = {}
+        for key, value in dictionary.items():
+            key1, key2 = key.split(':')
             try:
-                section = parser[sectionname]
-                section[configkey]
-            except KeyError as e:
-                if allow_missing:
-                    continue
-                raise e
-
-            if isinstance(var, tk.BooleanVar):
-                var.set(section.getboolean(configkey))
-            elif isinstance(var, tk.IntVar):
-                var.set(section.getint(configkey))
-            elif isinstance(var, tk.StringVar):
-                var.set(section[configkey])
-            else:
-                raise TypeError(type(var).__name__)
-
-    def dump(self, file):
-        parser = configparser.ConfigParser()
-        for string, var in self.variables.items():
-            if var.get() == self.default_values[string]:
-                continue
-
-            if isinstance(var, tk.StringVar):
-                value = var.get()
-            elif isinstance(var, tk.BooleanVar):
-                value = 'yes' if var.get() else 'no'
-            elif isinstance(var, tk.IntVar):
-                value = str(var.get())
-            else:
-                raise TypeError("can't convert to configparser string: "
-                                + type(var).__name__)
-
-            sectionname, key = string.split(':')
-            try:
-                parser[sectionname][key] = value
+                result[key1][key2] = value
             except KeyError:
-                parser[sectionname] = {key: value}
+                result[key1] = {key2: value}
+        return result
 
-        parser.write(file)
+    def load(self, defaults, user_settings):
+        """Set settings from two dict-like objects."""
+        self._values = self._flatten_dict(defaults)
+        self._default_values = self._values.copy()
+
+        # the user setting dict can contain more or less values than the
+        # default dict if we're using a config file from an older or
+        # newer porcupine, but it doesn't matter
+        user_settings = self._flatten_dict(user_settings)
+        for key in self.keys() & user_settings.keys():
+            value = user_settings[key]
+            if self.validate(key, value):
+                self[key] = value
+            else:
+                self.log.warning("invalid %r value %r, using %r instead",
+                                 key, value, self[key])
+        self._original_values = dict(self)
+
+    def dump(self):
+        result = {}
+        for key in self.keys():
+            if self[key] != self._default_values[key]:
+                result[key] = self[key]
+        return self._unflatten_dict(result)
+
+    def needs_saving(self):
+        return dict(self) != self._original_values
 
     def reset(self):
-        for name in self.keys():
-            if name not in self._dont_reset:
-                self[name] = self.default_values[name]
+        for key in self.keys():
+            self[key] = self._default_values[key]
 
-    # rest of this is mostly convenience stuff
-    def connect(self, string, callback):
-        self._callbacks[string].append(callback)
+    def validate(self, key, value):
+        assert key in self.keys()
+        try:
+            validator = self._validators[key]
+        except KeyError:
+            return True
+        return validator(value)
 
-    def validate(self, string, value):
-        validator = self._validators[string]
-        return validator is None or validator(value)
+    def connect(self, key, callback):
+        self._callbacks[key].append(callback)
 
-    def __setitem__(self, string, value):
-        self.variables[string].set(value)
+    def __setitem__(self, key, new_value):
+        assert self.validate(key, new_value)
+        if isinstance(key, tuple):
+            # config['section', 'key'] -> config['section:key']
+            key = ':'.join(key)
 
-    def __getitem__(self, string):
-        return self.variables[string].get()
+        old_value = self[key]
+        self._values[key] = new_value
+        if old_value != new_value:
+            self.log.info("setting %r to %r", key, new_value)
+            for callback in self._callbacks[key]:
+                callback(key, new_value)
 
-    # allow calling dict() on this
+    def __getitem__(self, key):
+        if isinstance(key, tuple):
+            key = ':'.join(key)
+        return self._values[key]
+
+    # this is used by dict(some_config_object)
     def keys(self):
-        return iter(self.variables)
+        return self._default_values.keys()
 
-
-color_themes = configparser.ConfigParser(default_section='Default')
-config = _Config(dont_reset=['editing:color_theme'])
-_user_config_dir = os.path.join(os.path.expanduser('~'), '.porcupine')
+    def sections(self):
+        result = set()
+        for key in self.keys():
+            result.add(key.split(':')[0])
+        return result
 
 
 def _validate_encoding(name):
@@ -179,54 +175,63 @@ def _validate_fontstring(string):
     return match.group(1).casefold() in map(str.casefold, tkfont.families())
 
 
+color_themes = _Config('porcupine.settings.color_themes')
+config = _Config('porcupine.settings.config', {
+    'files:encoding': _validate_encoding,
+    'editing:font': _validate_fontstring,
+    'editing:indent': (lambda value: value > 0),
+    'editing:color_theme': (lambda name: name in color_themes.sections()),
+    'editing:maxlinelen': (lambda value: value > 0),
+    'gui:default_geometry': _validate_geometry,
+})
+
+_user_dir = os.path.join(os.path.expanduser('~'), '.porcupine')
+_user_config_file = os.path.join(_user_dir, 'settings.json')
+_theme_dir = os.path.join(_user_dir, 'themes')
+_theme_glob = os.path.join(glob.escape(_theme_dir), '*.ini')
+
+
+def _configparser2dict(parser):
+    """Copy a config parser into a dictionary."""
+    result = {}
+    for sectionname, section in parser.items():
+        result[sectionname] = dict(section)
+    return result
+
+
 def load():
-    os.makedirs(os.path.join(_user_config_dir, 'themes'), exist_ok=True)
+    os.makedirs(_theme_dir, exist_ok=True)
 
-    # color themes must be read first because the editing:color_theme
+    # these must be read first because config's editing:color_theme
     # validator needs it
-    default_themes = pkgutil.get_data('porcupine', 'default_themes.ini')
-    color_themes.read_string(default_themes.decode('utf-8'))
-    escaped_path = glob.escape(os.path.join(_user_config_dir, 'themes'))
-    color_themes.read(glob.glob(os.path.join(escaped_path, '*.ini')))
+    themebytes = pkgutil.get_data('porcupine', 'default_themes.ini')
+    parser = configparser.ConfigParser(default_section='Default')
+    parser.read_string(themebytes.decode('utf-8'))
+    default_themes = _configparser2dict(parser)
 
-    # we can't create StringVar etc. earlier because they need a root window
-    # TODO: allow tabs? (ew)
-    config.setup([
-        # (string, vartype, validator)
-        ('files:encoding', tk.StringVar, _validate_encoding),
-        ('files:add_trailing_newline', tk.BooleanVar, None),
-        ('editing:font', tk.StringVar, _validate_fontstring),
-        ('editing:indent', tk.IntVar, (lambda value: value > 0)),
-        ('editing:undo', tk.BooleanVar, None),
-        ('editing:autocomplete', tk.BooleanVar, None),
-        ('editing:color_theme', tk.StringVar,
-         (lambda name: name in color_themes)),
-        ('editing:longlinemarker', tk.BooleanVar, None),
-        ('editing:maxlinelen', tk.IntVar, (lambda value: value > 0)),
-        ('gui:linenumbers', tk.BooleanVar, None),
-        ('gui:statusbar', tk.BooleanVar, None),
-        ('gui:default_geometry', tk.StringVar, _validate_geometry),
-    ])
+    for nondefaultsectionname in parser.sections():
+        del parser[nondefaultsectionname]
+    parser.read(glob.glob(_theme_glob))
+    user_themes = _configparser2dict(parser)
 
-    default_config = pkgutil.get_data('porcupine', 'default_settings.ini')
-    config.load(default_config.decode('utf-8'),
-                os.path.join(_user_config_dir, 'settings.ini'))
+    color_themes.load(default_themes, user_themes)
 
+    default_config = json.loads(
+        pkgutil.get_data('porcupine', 'default_config.json').decode('ascii'))
 
-def _log_config_change(key, value):
-    log.info("setting %r to %r", key, value)
+    try:
+        with open(_user_config_file, 'r') as f:
+            user_config = json.load(f)
+    except FileNotFoundError:
+        log.info("user-wide setting file '%s' was not found, " +
+                 "using default settings", _user_config_file)
+        user_config = {}
+    except Exception:
+        log.exception("unexpected error while reading settings from '%s'",
+                      _user_config_file)
+        user_config = {}
 
-
-# this should be called once, after load()
-def enable_logging():
-    for key in config.keys():
-        config.connect(key, _log_config_change)
-
-
-_COMMENTS = """\
-# This is a Porcupine configuration file. You can edit this manually,
-# but any comments or formatting will be lost.
-"""
+    config.load(default_config, user_config)
 
 
 def save():
@@ -237,15 +242,19 @@ def save():
     #  4. The user closes Porcupine B and it overwrites the settings
     #     that A saved.
     #  5. The user opens up Porcupine again and the settings are gone.
+    #
     # Of course, this doesn't handle the user changing settings in
     # both Porcupines, but I think it's not too bad to assume that
     # most users don't do that.
-    if dict(config) == config.original_values:
-        log.info("settings have not been changed, not saving")
-        return
+    if config.needs_saving():
+        log.info("saving config to '%s'", _user_config_file)
+        with open(_user_config_file, 'w') as file:
+            json.dump(config.dump(), file, indent=4)
+            file.write('\n')
+    else:
+        log.info("config hasn't changed, not saving it")
 
-    settingfile = os.path.join(_user_config_dir, 'settings.ini')
-    log.info("saving settings to '%s'", settingfile)
-    with open(settingfile, 'w') as f:
-        print(_COMMENTS, file=f)
-        config.dump(f)
+
+if __name__ == '__main__':
+    import doctest
+    print(doctest.testmod())

@@ -37,7 +37,6 @@ def main():
 
     root = tk.Tk()
     settings.load()     # root must exist first
-    settings.enable_logging()
 
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)

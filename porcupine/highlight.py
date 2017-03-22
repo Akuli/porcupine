@@ -69,12 +69,13 @@ class Highlighter:
         self._on_theme_changed(None, config['editing:color_theme'])
 
     def _on_theme_changed(self, junk, value):
-        theme = color_themes[value]
         for tag in ['decorator', 'builtin', 'keyword', 'string',
                     'comment', 'exception']:
-            self.textwidget.tag_config(tag, foreground=theme[tag])
+            color = color_themes[value, tag]
+            self.textwidget.tag_config(tag, foreground=color)
         self.textwidget.tag_config(
-            'syntax-error', background=theme['errorbackground'])
+            'syntax-error',
+            background=color_themes[value, 'errorbackground'])
 
     def _on_idle(self):
         # sometimes this gets added as a Tk idle callback twice but it

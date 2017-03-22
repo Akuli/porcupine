@@ -23,8 +23,8 @@ class LineNumbers(tk.Text):
         self._on_theme_changed(None, config['editing:color_theme'])
 
     def _on_theme_changed(self, junk, value):
-        self['fg'] = color_themes[value]['foreground']
-        self['bg'] = color_themes[value]['background']
+        self['fg'] = color_themes[value, 'foreground']
+        self['bg'] = color_themes[value, 'background']
 
     def do_update(self):
         """This should be ran when the line count changes."""

@@ -129,13 +129,16 @@ class Editor(tk.Frame):
         thememenu = HandyMenu()
         self.menubar.add_cascade(label="Color themes", menu=thememenu)
 
+        themevar = tk.StringVar()
+        themevar.set(config['editing:color_theme'])
+        themevar.trace('w', self._theme_changed_callback)
+
         # the Default theme goes first
-        theme_names = color_themes.sections()
-        theme_names.sort(key=str.casefold)
+        theme_names = sorted(color_themes.sections(), key=str.casefold)
+        theme_names.remove('Default')
         for name in ['Default'] + theme_names:
             thememenu.add_radiobutton(
-                label=name, value=name,
-                variable=config.variables['editing:color_theme'])
+                label=name, value=name, variable=themevar)
 
         tabmgr.on_tabs_changed.append(self._tabs_changed)
         self._tabs_changed([])  # disable the menuitems
@@ -172,6 +175,9 @@ class Editor(tk.Frame):
         # because text widgets don't seem to bind <Alt-SomeDigitHere> by
         # default.
         self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
+
+    def _theme_changed_callback(self, varname, *junk):
+        config['editing:color_theme'] = self.getvar(varname)
 
     # this is in a separate function because of scopes and loops
     # TODO: add link to python FAQ here
