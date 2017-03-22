@@ -14,10 +14,6 @@ import tkinter.font as tkfont
 log = logging.getLogger(__name__)
 
 
-# color_themes can be a configparser.ConfigParser object, but other
-# settings can't be because i want the changes to be applied immediately
-# when something is selected in the setting dialog. setting and getting
-# other settings must also be painless because it's done in many places.
 class _Config:
     """A {'section:name': value} dictionary-like object.
 
