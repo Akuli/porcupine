@@ -212,16 +212,20 @@ class EditorText(tk.Text):
         return spaces - howmany2del
 
     def _autoindent(self):
-        """Indent the current line automatically as needed."""
+        """Indent or dedent the current line automatically if needed."""
         lineno = int(self.index('insert').split('.')[0])
         prevline = self.get('%d.0-1l' % lineno, '%d.0' % lineno)
+        self.insert('insert', spacecount(prevline) * ' ')
+
         # we can't strip trailing whitespace before this because then
         # pressing enter twice would get rid of all indentation
-        if prevline.rstrip().endswith((':', '(', '[', '{')):
+        prevline = prevline.strip()
+        if prevline.endswith((':', '(', '[', '{')):
             # start of a new block
             self.indent(lineno)
-        # a block continues
-        self.insert('insert', spacecount(prevline) * ' ')
+        elif prevline in {'return', 'break'} or prevline.startswith('return '):
+            # must be end of a block
+            self.dedent(lineno)
 
     def _strip_whitespace(self):
         """Strip whitespace after end of previous line."""
