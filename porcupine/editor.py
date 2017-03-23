@@ -123,12 +123,14 @@ class Editor(tk.Frame):
         #add("Find", "Ctrl+F", self.find, disably=True)
         self._disablelist.extend(editmenu.disablelist)
 
-        # right-clicking on a text widget will post the edit menu
-        self.bind_all('<Button-1>', lambda event: editmenu.unpost())
+        # right-clicking on a text widget will post the edit menu, but
+        # just unposting it here makes it unpost before clicking it
+        # actually does something :(
+        self.bind_all('<Button-1>',
+                      lambda event: self.after(50, editmenu.unpost))
 
         thememenu = HandyMenu()
         self.menubar.add_cascade(label="Color themes", menu=thememenu)
-
         themevar = tk.StringVar()
         themevar.set(config['editing:color_theme'])
         themevar.trace('w', self._theme_changed_callback)
