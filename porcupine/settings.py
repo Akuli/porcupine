@@ -41,6 +41,7 @@ class _Config:
         self._callbacks = collections.defaultdict(list)
         self._default_values = None
         self._original_values = None
+        self._values = None
 
     def _flatten_dict(self, dictionary):
         result = {}
