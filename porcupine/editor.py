@@ -13,15 +13,12 @@ from porcupine.settings import config, color_themes
 
 log = logging.getLogger(__name__)
 
-DESCRIPTION = '\n\n'.join([
-    ' '.join(init_docstring.split()),
-    "You can create a new file by pressing Ctrl+N or open an existing "
-    "file by pressing Ctrl+O. The file name will be displayed in red "
-    "if the file has been changed and you can save the file with "
-    "Ctrl+S.",
-    "See the menus at the top of the editor for other things you can "
-    "do and their keyboard shortcuts.",
-])
+
+def _get_description():
+    parts = []
+    for part in init_docstring.split('\n\n'):
+        parts.append(' '.join(part.split()))
+    return '\n\n'.join(parts)
 
 
 def create_welcome_msg(frame):
@@ -33,7 +30,7 @@ def create_welcome_msg(frame):
                           text="Welcome to Porcupine!")
     titlelabel.pack()
     desclabel = tk.Label(innerframe, font='TkDefaultFont 12',
-                         text=DESCRIPTION)
+                         text=_get_description())
     desclabel.pack()
 
     def resize(event):
