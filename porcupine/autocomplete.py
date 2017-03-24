@@ -25,13 +25,12 @@ class AutoCompleter:
         prefix = match.group(0)
 
         # Tcl's regexes don't support \b or a sane way of grouping so
-        # they are kind of useless for this. Getting the whole content
-        # might seem like a bad idea, but I haven't noticed any
-        # performance issues so far.
+        # they are kind of useless for this
+        # TODO: ignore the word that the cursor is on top of if any
         result = set()
-        content = self.textwidget.get('1.0', 'end-1c')
-        for match in re.finditer(r'\b' + prefix + r'(\w+)', content):
-            result.add(match.group(1))
+        for chunk in self.textwidget.iter_chunks():
+            for match in re.finditer(r'\b' + prefix + r'(\w+)', chunk):
+                result.add(match.group(1))
         return collections.deque(sorted(result, key=str.casefold))
 
     def _complete(self, rotation):
@@ -81,6 +80,8 @@ class AutoCompleter:
 
 if __name__ == '__main__':
     # simple test
+    from porcupine.textwidget import EditorText
+
     def on_tab(event):
         completer.complete_next()
         return 'break'
@@ -98,7 +99,7 @@ if __name__ == '__main__':
         completer.reset()
 
     root = tk.Tk()
-    text = tk.Text(root)
+    text = EditorText(root)
     text.pack()
 
     completer = AutoCompleter(text)

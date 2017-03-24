@@ -288,3 +288,17 @@ class EditorText(tk.Text):
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
         self._do_cursor_move()
+
+    def iter_chunks(self):
+        """Iterate over the content as 100-line chunks.
+
+        This method does not break lines in the middle.
+        """
+        start = 1
+        while True:
+            end = start + 100
+            if self.index('%d.0' % end) == self.index('end'):
+                yield self.get('%d.0' % start, 'end-1c')
+                break
+            yield self.get('%d.0' % start, '%d.0' % end)
+            start = end

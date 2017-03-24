@@ -159,20 +159,20 @@ class FileTab(tabs.Tab):
             self._completing = value
 
     def _get_hash(self):
-        content = self.textwidget.get('1.0', 'end-1c')
-        content = content.encode(config['files:encoding'], errors='replace')
-        return hashlib.md5(content).hexdigest()
+        result = hashlib.md5()
+        encoding = config['files:encoding']  # superstitious speed-up
+        for chunk in self.textwidget.iter_chunks():
+            chunk = chunk.encode(encoding, errors='replace')
+            result.update(chunk)
+        return result.hexdigest()
 
     def mark_saved(self):
         """Make the tab look like it's saved."""
         self._save_hash = self._get_hash()
-        if self.label is not None:
-            # the widgets have been created
-            self._update_top_label()
+        self._update_top_label()
 
-    @property
-    def saved(self):
-        """True if the text looks like has been saved.
+    def is_saved(self):
+        """Return False if the text has changed since previous save.
 
         Use mark_saved() to set this.
         """
@@ -184,8 +184,8 @@ class FileTab(tabs.Tab):
 
     @path.setter
     def path(self, new_name):
-        assert self.label is not None, \
-            "cannot set name before creating widgets"
+        # TODO: use os.path.samefile() or something else that takes in
+        # account things like case-insensitive paths?
         it_changes = (self._path != new_name)
         self._path = new_name
         if it_changes:
@@ -198,7 +198,7 @@ class FileTab(tabs.Tab):
         else:
             self.label['text'] = _shorten_filepath(self.path)
 
-        if self.saved:
+        if self.is_saved():
             self.label['fg'] = self._orig_label_fg
         else:
             self.label['fg'] = 'red'
@@ -212,7 +212,7 @@ class FileTab(tabs.Tab):
 
         Return False if the user cancels and True otherwise.
         """
-        if not self.saved:
+        if not self.is_saved():
             if self.path is None:
                 msg = "Do you want to save your changes?"
             else:
@@ -247,7 +247,8 @@ class FileTab(tabs.Tab):
         try:
             encoding = config['files:encoding']
             with _backup_open(self.path, 'w', encoding=encoding) as f:
-                f.write(self.textwidget.get('1.0', 'end-1c'))
+                for chunk in self.textwidget.iter_chunks():
+                    f.write(chunk)
         except (OSError, UnicodeError):
             messagebox.showerror("Saving failed!", traceback.format_exc())
             return

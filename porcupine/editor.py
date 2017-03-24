@@ -199,8 +199,7 @@ class Editor(tk.Frame):
     def _post_editmenu(self, event):
         self._editmenu.post(event.x_root, event.y_root)
 
-    def new_file(self):
-        tab = filetabs.FileTab(self.tabmanager)
+    def _add_tab(self, tab):
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
         tab.textwidget.bind('<Button-3>', self._post_editmenu)
 
@@ -211,6 +210,10 @@ class Editor(tk.Frame):
             tab.textwidget.bind(binding, callback)
 
         self.tabmanager.current_tab = tab
+
+    def new_file(self):
+        tab = filetabs.FileTab(self.tabmanager)
+        self._add_tab(tab)
         return tab
 
     def open_file(self, path=None, *, content=None):
@@ -229,20 +232,24 @@ class Editor(tk.Frame):
                 self.tabmanager.current_tab = tab
                 return
 
+        tab = filetabs.FileTab(self.tabmanager)
+        tab.path = path
+
         if content is None:
             try:
                 with open(path, 'r', encoding=config['files:encoding']) as f:
-                    content = f.read()
+                    for line in f:
+                        tab.textwidget.insert('end-1c', line)
             except (OSError, UnicodeError):
                 messagebox.showerror("Opening failed!",
                                      traceback.format_exc())
                 return
+        else:
+            tab.textwidget.insert('1.0', content)
 
-        tab = self.new_file()
-        tab.path = path
-        tab.textwidget.insert('1.0', content)
         tab.textwidget.edit_reset()   # reset undo/redo
         tab.mark_saved()
+        self._add_tab(tab)
 
     def _close_file(self):
         self.tabmanager.current_tab.close()

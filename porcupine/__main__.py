@@ -44,9 +44,9 @@ def main():
     for file in args.file:
         if file == '-':
             # read stdin
-            content = sys.stdin.read()
             tab = editor.new_file()
-            tab.textwidget.insert('1.0', content)
+            for line in sys.stdin:
+                tab.textwidget.insert('end-1c', line)
             tab.textwidget.edit_reset()   # reset undo/redo
             tab.mark_saved()
             continue
