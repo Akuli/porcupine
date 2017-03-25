@@ -28,9 +28,7 @@ if platform.system() == 'Windows':
         _python = sys.executable
 
     def run(path):
-        dirname, basename = os.path.split(os.path.abspath(path))
-        command = [os.path.join(_scriptdir, 'windows_run.bat'),
-                   _python, dirname, basename]
+        command = [_python, os.path.join(_scriptdir, 'windows_run.py'), path]
         if not _running_pythonw:
             # windows wants to run python in the same terminal that
             # Porcupine was started from, this is the only way to open a
