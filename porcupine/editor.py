@@ -92,7 +92,7 @@ class Editor(tk.Frame):
         # This will contain (menu, index) pairs.
         self._disablelist = []
 
-        self.menubar = HandyMenu()
+        self.menubar = tk.Menu()
 
         filemenu = HandyMenu(name='filemenu')
         self.menubar.add_cascade(label="File", menu=filemenu)
@@ -101,6 +101,7 @@ class Editor(tk.Frame):
         add("Open", "Ctrl+O", self.open_file)
         add("Save", "Ctrl+S", tabmethod('save'), disably=True)
         add("Save as", "Ctrl+Shift+S", tabmethod('save_as'), disably=True)
+        add("Run", "F5", self._run_file, disably=True)
         filemenu.add_separator()
         add("Close this file", "Ctrl+W", self._close_file, disably=True)
         add("Quit Porcupine", "Ctrl+Q", self.do_quit)
@@ -119,10 +120,6 @@ class Editor(tk.Frame):
         #editmenu.add_separator()
         #add("Find", "Ctrl+F", self.find, disably=True)
         self._disablelist.extend(editmenu.disablelist)
-
-        self.menubar.add_handy_command(
-            "Run this file", "F5", self._run_file, disably=True)
-        self._disablelist.extend(self.menubar.disablelist)
 
         thememenu = HandyMenu()
         self.menubar.add_cascade(label="Color themes", menu=thememenu)
