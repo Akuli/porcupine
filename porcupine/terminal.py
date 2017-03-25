@@ -1,4 +1,3 @@
-import io
 import logging
 import os
 import platform
@@ -47,7 +46,8 @@ else:
         command = [os.path.join(_scriptdir, 'sh_run.sh'),
                    sys.executable, dirname, basename]
 
-        if utils.windowingsystem() == 'aqua':
+        if utils.windowingsystem() == 'aqua' and 'TERMINAL' not in os.environ:
+            # use OSX's default Terminal.app
             # these things are wrong with this:
             #  - i needed to cheat and use stackoverflow because i don't
             #    have a mac :( http://stackoverflow.com/a/989357
@@ -56,40 +56,40 @@ else:
             #    OSX need to change their terminal settings
             # big thanks to go|dfish for testing this code!
             quoted_command = ' '.join(map(shlex.quote, command))
-            file = tempfile.NamedTemporaryFile(
-                prefix='porcupine-', suffix='.command', delete=False)
-
-            with io.TextIOWrapper(file.file) as textfile:
-                print('#!/bin/sh', file=textfile)
-                print(quoted_command, file=textfile)
-                print('rm', shlex.quote(file.name), file=textfile)  # see below
+            with tempfile.NamedTemporaryFile('w', delete=False,
+                                             prefix='porcupine-') as file:
+                print('#!/bin/sh', file=file)
+                print(quoted_command, file=file)
+                print('rm', shlex.quote(file.name), file=file)  # see below
 
             os.chmod(file.name, 0o755)
-            subprocess.Popen(['open', file.name])
+            subprocess.Popen(['open', '-a', 'Terminal.app', file.name])
             # the terminal might be still opening when we get here,
             # that's why the file deletes itself
 
         else:
-            terminal = shutil.which('x-terminal-emulator')
+            env_terminal = os.environ.get('TERMINAL', 'x-terminal-emulator')
+            terminal = shutil.which(env_terminal)
             if terminal is None:
-                log.error("shutil.which('x-terminal-emulator') returned None")
+                log.error("shutil.which(%r) returned None" % env_terminal)
                 messagebox.showerror(
                     "Terminal not found",
-                    "Cannot find x-terminal-emulator in $PATH. Make sure " +
-                    "that you have a terminal installed and try again.")
+                    ("Cannot find %s in $PATH. Make sure that you have " +
+                     "a terminal installed and try again.") % env_terminal)
                 return
 
-            while os.path.islink(terminal):
-                terminal = os.readlink(terminal)
-            log.debug("x-terminal-emulator points to '%s'", terminal)
+            if env_terminal == 'x-terminal-emulator':
+                while os.path.islink(terminal):
+                    terminal = os.readlink(terminal)
+                log.debug("x-terminal-emulator points to '%s'", terminal)
 
-            if os.path.basename(terminal) == 'mate-terminal.wrapper':
-                # it's a python script that changes some command line
-                # options and runs mate-terminal, but it breaks the -e
-                # option for some reason
-                log.info("using mate-terminal instead of "
-                         "mate-terminal.wrapper")
-                terminal = 'mate-terminal'
+                if os.path.basename(terminal) == 'mate-terminal.wrapper':
+                    # it's a python script that changes some command line
+                    # options and runs mate-terminal, but it breaks the -e
+                    # option for some reason
+                    log.info("using mate-terminal instead of "
+                             "mate-terminal.wrapper")
+                    terminal = 'mate-terminal'
 
             quoted_command = ' '.join(map(shlex.quote, command))
             subprocess.Popen([terminal, '-e', quoted_command])
