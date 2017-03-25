@@ -124,8 +124,7 @@ class EditorText(tk.Text):
         return None
 
     def _on_ctrl_a(self, event):
-        """Select all."""
-        self.tag_add('sel', '1.0', 'end-1c')
+        self.select_all()
         return 'break'     # don't run _on_key or move cursor
 
     def _on_return(self, event):
@@ -278,6 +277,9 @@ class EditorText(tk.Text):
             self.delete(sel_start, sel_end)
 
         self._do_cursor_move()
+
+    def select_all(self):
+        self.tag_add('sel', '1.0', 'end-1c')
 
     # these methods may move the cursor, there are other methods too but
     # they aren't currently used

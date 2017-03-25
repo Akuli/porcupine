@@ -115,6 +115,7 @@ class Editor(tk.Frame):
         add("Cut", "Ctrl+X", textmethod('cut'), disably=True)
         add("Copy", "Ctrl+C", textmethod('copy'), disably=True)
         add("Paste", "Ctrl+V", textmethod('paste'), disably=True)
+        add("Select all", "Ctrl+A", textmethod('select_all'), disably=True)
         editmenu.add_separator()
         add("Settings", None, self._show_settings)
         #editmenu.add_separator()
@@ -160,6 +161,7 @@ class Editor(tk.Frame):
             ('<Control-x>', disably(textmethod('cut'))),
             ('<Control-c>', disably(textmethod('copy'))),
             ('<Control-v>', disably(textmethod('paste'))),
+            ('<Control-a>', disably(textmethod('select_all'))),
             ('<F5>', disably(self._run_file)),
         ]
         self._bindings = []   # [(keysym, real_callback), ...]
