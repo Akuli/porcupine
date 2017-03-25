@@ -7,7 +7,7 @@ from tkinter import messagebox
 import traceback
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, filetabs, settingeditor, tabs
+from porcupine import dialogs, filetabs, settingeditor, tabs, terminal
 from porcupine.settings import config, color_themes
 
 
@@ -92,7 +92,7 @@ class Editor(tk.Frame):
         # This will contain (menu, index) pairs.
         self._disablelist = []
 
-        self.menubar = tk.Menu()
+        self.menubar = HandyMenu()
 
         filemenu = HandyMenu(name='filemenu')
         self.menubar.add_cascade(label="File", menu=filemenu)
@@ -120,11 +120,9 @@ class Editor(tk.Frame):
         #add("Find", "Ctrl+F", self.find, disably=True)
         self._disablelist.extend(editmenu.disablelist)
 
-        # right-clicking on a text widget will post the edit menu, but
-        # just unposting it here makes it unpost before clicking it
-        # actually does something :(
-        self.bind_all('<Button-1>',
-                      lambda event: self.after(50, editmenu.unpost))
+        self.menubar.add_handy_command(
+            "Run this file", "F5", self._run_file, disably=True)
+        self._disablelist.extend(self.menubar.disablelist)
 
         thememenu = HandyMenu()
         self.menubar.add_cascade(label="Color themes", menu=thememenu)
@@ -165,6 +163,7 @@ class Editor(tk.Frame):
             ('<Control-x>', disably(textmethod('cut'))),
             ('<Control-c>', disably(textmethod('copy'))),
             ('<Control-v>', disably(textmethod('paste'))),
+            ('<F5>', disably(self._run_file)),
         ]
         self._bindings = []   # [(keysym, real_callback), ...]
         for keysym, callback in bindings:
@@ -174,6 +173,12 @@ class Editor(tk.Frame):
         # because text widgets don't seem to bind <Alt-SomeDigitHere> by
         # default.
         self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
+
+        # right-clicking on a text widget will post the edit menu, but
+        # just unposting it here makes it unpost before clicking it
+        # actually does something :(
+        self.bind_all('<Button-1>',
+                      lambda event: self.after(50, editmenu.unpost))
 
     def _theme_changed_callback(self, varname, *junk):
         config['editing:color_theme'] = self.getvar(varname)
@@ -250,6 +255,15 @@ class Editor(tk.Frame):
 
     def _close_file(self):
         self.tabmanager.current_tab.close()
+
+    def _run_file(self):
+        filetab = self.tabmanager.current_tab
+        if filetab.path is None or not filetab.is_saved():
+            filetab.save()
+        if filetab.path is None:
+            # user cancelled a save as dialog
+            return
+        terminal.run(filetab.path)
 
     def _show_settings(self):
         if self._settingdialog is not None:

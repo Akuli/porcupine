@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 
+import tkinter as tk
 from tkinter import messagebox
 
 
@@ -106,8 +107,6 @@ else:
 
 if __name__ == '__main__':
     # simple test
-    import tkinter as tk
-
     with tempfile.TemporaryDirectory() as tempdir:
         script = os.path.join(tempdir, 'hello.py')
         with open(script, 'w') as f:

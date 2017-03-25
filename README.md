@@ -1,28 +1,30 @@
 # Porcupine
 
 This is a simple and easy-to-use editor for writing Python code. You
-need Python 3.3 or newer with Tkinter to run this.
+need Python 3.3 or newer with Tkinter to run this. All features of
+Porcupine work great on Windows and Linux.
+
+If you have a Mac and Porcupine's "Run this file" button works or
+doesn't work on it, please let me know. I don't have an up-to-date Mac,
+so the Mac code in [porcupine/terminal.py](porcupine/terminal.py) is
+completely untested and I have no idea if it works.
 
 ![Screenshot.](screenshot.png)
 
 This editor has everything that a Python editor needs:
 
 - Syntax highlighting with different color themes
+- Running files in a terminal or command prompt by pressing F5
 - Converting tabs to spaces
-- Automatic indenting
+- PEP-8 compatible default settings
+- Simple all-words-in-file autocompleting with tab
+- Automatic indenting and stripping trailing whitespace when pressing Enter
 - Indent/dedent block with Tab and Shift+Tab
-- Stripping trailing whitespace
 - Line numbers
 - Line length marker
-- Simple all-words-in-file autocompleting with tab
 - Multiple files can be opened at the same time like pages in a web browser
-- Status bar that shows current line and column numbers
+- Status status bar that shows current line and column numbers
 - Simple and easy-to-use setting dialog
-- PEP-8 compatible default settings
-
-These features will be added later: 
-
-- Something that runs the file in a terminal or PowerShell
 
 ## How do I run this thing?
 
