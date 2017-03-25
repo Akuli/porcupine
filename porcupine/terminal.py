@@ -59,11 +59,13 @@ else:
                    sys.executable, dirname, basename]
 
         if _windowingsystem == 'aqua':
-            # there are several things wrong with this:
+            # these things are wrong with this:
             #  - i needed to cheat and use stackoverflow because i don't
             #    have a mac :( http://stackoverflow.com/a/989357
-            #  - i'm not sure if the .command suffix is necessary
-            #  - this probably doesn't work
+            #  - new OSX versions seem to keep the terminal open by
+            #    default but older versions don't, so people using a new
+            #    OSX need to change their terminal settings
+            # big thanks to go|dfish for testing this code!
             quoted_command = ' '.join(map(shlex.quote, command))
             file = tempfile.NamedTemporaryFile(
                 prefix='porcupine-', suffix='.command', delete=False)
@@ -79,8 +81,6 @@ else:
             # that's why the file deletes itself
 
         else:
-            command.insert(1, '--wait')
-
             terminal = shutil.which('x-terminal-emulator')
             if terminal is None:
                 log.error("shutil.which('x-terminal-emulator') returned None")
