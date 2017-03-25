@@ -25,8 +25,9 @@ class Tab:
 
         # the image needs to be attached to self to avoid garbage
         # collection
-        data = pkgutil.get_data('porcupine', 'images/closebutton.png')
-        self._closeimage = tk.PhotoImage(data=base64.b64encode(data))
+        data = pkgutil.get_data('porcupine', 'images/closebutton.gif')
+        self._closeimage = tk.PhotoImage(
+            format='gif', data=base64.b64encode(data))
 
         def select_me(event):
             manager.current_tab = self

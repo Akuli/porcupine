@@ -44,9 +44,9 @@ class _WarningTriangle(ttk.Label):
 
     def __init__(self, *args, **kwargs):
         if self._triangle_image is None:
-            data = pkgutil.get_data('porcupine', 'images/triangle.png')
+            data = pkgutil.get_data('porcupine', 'images/triangle.gif')
             type(self)._triangle_image = tk.PhotoImage(
-                data=base64.b64encode(data))
+                format='gif', data=base64.b64encode(data))
 
         super().__init__(*args, **kwargs)
         self.hide()
