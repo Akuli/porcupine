@@ -10,13 +10,6 @@ import pkgutil
 import tkinter as tk
 
 
-def iter_children(widget):
-    """Return an iterator of widget's children, recursively."""
-    for child in widget.winfo_children():
-        yield child
-        yield from iter_children(child)
-
-
 class Tab:
     """A tab that can be added to TabManager."""
 
@@ -281,13 +274,6 @@ class TabManager(tk.Frame):
     def _on_ctrl_w(self):
         if self.current_tab is not None:
             self.current_tab.close()
-
-    def setup_bindings(self):
-        """Set up handy, GLOBAL keyboard bindings.
-
-        Note that this binds <Alt-Key>, so this must be called before
-        creating any other Alt bindings.
-        """
 
 
 if __name__ == '__main__':
