@@ -175,7 +175,7 @@ class Editor(tk.Frame):
         # just unposting it here makes it unpost before clicking it
         # actually does something :(
         self.bind_all('<Button-1>',
-                      lambda event: self.after(50, editmenu.unpost))
+                      lambda event: self.after(100, editmenu.unpost))
 
     def _theme_changed_callback(self, varname, *junk):
         config['editing:color_theme'] = self.getvar(varname)
