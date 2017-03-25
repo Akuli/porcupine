@@ -2,13 +2,12 @@
 # This uses ttk widgets instead of tk widgets because it needs
 # ttk.Combobox anyway and mixing the widgets looks inconsistent.
 
-import base64
-import pkgutil
 import re
 import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter.font as tkfont
 
+from porcupine import utils
 from porcupine.settings import config
 
 _PADDING = {'padx': 5, 'pady': 2}
@@ -36,26 +35,6 @@ def _list_families():
         if not family.startswith('@'):
             result.add(family)
     return sorted(result, key=str.casefold)
-
-
-class _WarningTriangle(ttk.Label):
-
-    _triangle_image = None
-
-    def __init__(self, *args, **kwargs):
-        if self._triangle_image is None:
-            data = pkgutil.get_data('porcupine', 'images/triangle.gif')
-            type(self)._triangle_image = tk.PhotoImage(
-                format='gif', data=base64.b64encode(data))
-
-        super().__init__(*args, **kwargs)
-        self.hide()
-
-    def show(self):
-        self['image'] = type(self)._triangle_image
-
-    def hide(self):
-        self['image'] = ''
 
 
 class _Section(ttk.LabelFrame):
@@ -102,15 +81,15 @@ class _Section(ttk.LabelFrame):
         var = tk.StringVar()
         var.set(config[key])
         entry = ttk.Entry(self, textvariable=var, **kwargs)
-        triangle = _WarningTriangle(self)
+        triangle = ttk.Label(self)
 
         def to_config(*junk):
             value = var.get()
             if config.validate(key, value):
-                triangle.hide()
+                triangle['image'] = ''
                 config[key] = value
             else:
-                triangle.show()
+                triangle['image'] = utils.get_image('triangle.gif')
 
         def from_config(key, value):
             var.set(value)
@@ -123,7 +102,7 @@ class _Section(ttk.LabelFrame):
         var = tk.StringVar()
         var.set(str(config[key]))
         spinbox = TtkSpinbox(self, textvariable=var, **kwargs)
-        triangle = _WarningTriangle(self)
+        triangle = ttk.Label(self)
 
         def to_config(*junk):
             try:
@@ -131,9 +110,9 @@ class _Section(ttk.LabelFrame):
                 if not config.validate(key, value):
                     raise ValueError
             except ValueError:
-                triangle.show()
+                triangle['image'] = utils.get_image('triangle.gif')
                 return
-            triangle.hide()
+            triangle['image'] = ''
             config[key] = value
 
         def from_config(key, value):
@@ -159,7 +138,7 @@ class _Section(ttk.LabelFrame):
         size_spinbox = TtkSpinbox(frame, textvariable=sizevar,
                                   from_=1, to=100, width=4)
         size_spinbox.pack(side='left')
-        triangle = _WarningTriangle(self)
+        triangle = ttk.Label(self)
 
         def from_config(key, value):
             # the fonts are stored as "{family} size" strings because
@@ -177,16 +156,16 @@ class _Section(ttk.LabelFrame):
             if familyvar.get() == 'TkFixedFont':
                 size_spinbox['state'] = 'disabled'
                 config[key] = 'TkFixedFont'
-                triangle.hide()
+                triangle['image'] = ''
                 return
 
             size_spinbox['state'] = 'normal'
             value = '{%s} %s' % (familyvar.get(), sizevar.get())
             if config.validate(key, value):
-                triangle.hide()
+                triangle['image'] = ''
                 config[key] = value
             else:
-                triangle.show()
+                triangle['image'] = utils.get_image('triangle.gif')
 
         familyvar.trace('w', to_config)
         sizevar.trace('w', to_config)

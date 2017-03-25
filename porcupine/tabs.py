@@ -4,10 +4,10 @@ Yes, I am aware of ttk.Notebook but it's simply way too limited for my
 needs. I can't even change the color of the top label.
 """
 
-import base64
 import functools
-import pkgutil
 import tkinter as tk
+
+from porcupine import utils
 
 
 class Tab:
@@ -15,12 +15,6 @@ class Tab:
 
     def __init__(self, manager):
         self._manager = manager
-
-        # the image needs to be attached to self to avoid garbage
-        # collection
-        data = pkgutil.get_data('porcupine', 'images/closebutton.gif')
-        self._closeimage = tk.PhotoImage(
-            format='gif', data=base64.b64encode(data))
 
         def select_me(event):
             manager.current_tab = self
@@ -36,7 +30,8 @@ class Tab:
         # Subclasses can add stuff here.
         self.content = tk.Frame(manager)
 
-        closebutton = tk.Label(self._topframe, image=self._closeimage)
+        closebutton = tk.Label(
+            self._topframe, image=utils.get_image('closebutton.gif'))
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', lambda event: self.close())
 
@@ -80,7 +75,6 @@ class TabManager(tk.Frame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._on_x11 = (self.tk.call('tk', 'windowingsystem') == 'x11')
 
         # no, this is not a find/replace error, topframeframe is a frame
         # that contains topframes
@@ -237,14 +231,14 @@ class TabManager(tk.Frame):
     # don't have an up-to-date OSX :(
     # http://stackoverflow.com/a/17457843
     def _bind_wheel(self, widget):
-        if self._on_x11:
+        if utils.windowingsystem() == 'x11':
             widget.bind('<Button-4>', self._on_wheel)
             widget.bind('<Button-5>', self._on_wheel)
         else:
             widget.bind('<MouseWheel>', self._on_wheel)
 
     def _on_wheel(self, event):
-        if self._on_x11:
+        if utils.windowingsystem() == 'x11':
             if event.num == 4:
                 self.select_left()
             else:

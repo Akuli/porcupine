@@ -80,7 +80,7 @@ class AutoCompleter:
 
 if __name__ == '__main__':
     # simple test
-    from porcupine.textwidget import EditorText
+    from porcupine import textwidget, utils
 
     def on_tab(event):
         completer.complete_next()
@@ -99,13 +99,13 @@ if __name__ == '__main__':
         completer.reset()
 
     root = tk.Tk()
-    text = EditorText(root)
+    text = textwidget.EditorText(root)
     text.pack()
 
     completer = AutoCompleter(text)
     text.bind('<<Modified>>', on_modified)
     text.bind('<Tab>', on_tab)
-    if root.tk.call('tk', 'windowingsystem') == 'x11':
+    if utils.windowingsystem() == 'x11':
         text.bind('<ISO_Left_Tab>', on_shift_tab)
     else:
         text.bind('<Shift-Tab>', on_shift_tab)

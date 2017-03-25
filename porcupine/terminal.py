@@ -7,9 +7,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
-
 import tkinter as tk
 from tkinter import messagebox
+
+from porcupine import utils
 
 
 log = logging.getLogger(__name__)
@@ -40,23 +41,13 @@ if platform.system() == 'Windows':
 else:
     # we can't assume X11 or Aqua yet because someone might be running
     # X11 on OSX and we can't check that with tkinter yet
-    _windowingsystem = None
 
     def run(path):
-        global _windowingsystem
-
-        if _windowingsystem is None:
-            # tkinter doesn't expose the default root window anywhere so
-            # this is kind of weird
-            dummy = tk.Label()
-            _windowingsystem = dummy.tk.call('tk', 'windowingsystem')
-            dummy.destroy()
-
         dirname, basename = os.path.split(os.path.abspath(path))
         command = [os.path.join(_scriptdir, 'sh_run.sh'),
                    sys.executable, dirname, basename]
 
-        if _windowingsystem == 'aqua':
+        if utils.windowingsystem() == 'aqua':
             # these things are wrong with this:
             #  - i needed to cheat and use stackoverflow because i don't
             #    have a mac :( http://stackoverflow.com/a/989357
