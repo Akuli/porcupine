@@ -1,3 +1,4 @@
+import io
 import logging
 import os
 import platform
@@ -67,14 +68,14 @@ else:
             file = tempfile.NamedTemporaryFile(
                 prefix='porcupine-', suffix='.command', delete=False)
 
-            with file:
-                print('#!/bin/sh', file=file)
-                print(quoted_command, file=file)
-                print('rm', shlex.quote(file.name), file=file)  # see below
+            with io.TextIOWrapper(file.file) as textfile:
+                print('#!/bin/sh', file=textfile)
+                print(quoted_command, file=textfile)
+                print('rm', shlex.quote(file.name), file=textfile)  # see below
 
             os.chmod(file.name, 0o755)
             subprocess.Popen(['open', file.name])
-            # the terminal might be stil opening when we get here,
+            # the terminal might be still opening when we get here,
             # that's why the file deletes itself
 
         else:
