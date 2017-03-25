@@ -40,3 +40,29 @@ def windowingsystem():
     if gonna_destroy:
         widget.destroy()
     return result
+
+
+def bind_mouse_wheel(widget, callback, *, prefixes=''):
+    """Bind mouse wheel events to callback.
+
+    The callback will be called like callback(direction) where direction
+    is 'up' or 'down'. The prefixes argument can be used to change the
+    binding string. For example, prefixes='Control-' means that callback
+    will be ran when the user holds down Control and rolls the wheel.
+    """
+    # i needed to cheat and use stackoverflow, the man pages don't say
+    # what OSX does with MouseWheel events and i don't have an
+    # up-to-date OSX :( the non-x11 code should work on windows and osx
+    # http://stackoverflow.com/a/17457843
+    if windowingsystem() == 'x11':
+        def real_callback(event):
+            callback('up' if event.num == 4 else 'down')
+
+        widget.bind('<{}Button-4>'.format(prefixes), real_callback)
+        widget.bind('<{}Button-5>'.format(prefixes), real_callback)
+
+    else:
+        def real_callback(event):
+            callback('up' if event.delta > 0 else 'down')
+
+        widget.bind('<{}MouseWheel>'.format(prefixes), real_callback)

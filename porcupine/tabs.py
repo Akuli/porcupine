@@ -35,9 +35,9 @@ class Tab:
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', lambda event: self.close())
 
-        manager._bind_wheel(self._topframe)
-        manager._bind_wheel(self.label)
-        manager._bind_wheel(closebutton)
+        utils.bind_mouse_wheel(self._topframe, manager.on_wheel)
+        utils.bind_mouse_wheel(self.label, manager.on_wheel)
+        utils.bind_mouse_wheel(closebutton, manager.on_wheel)
 
     def can_be_closed(self):
         """Check if this tab can be closed.
@@ -80,7 +80,7 @@ class TabManager(tk.Frame):
         # that contains topframes
         self._topframeframe = tk.Frame(self)
         self._topframeframe.pack(fill='x')
-        self._bind_wheel(self._topframeframe)
+        utils.bind_mouse_wheel(self._topframeframe, self.on_wheel)
         self.tabs = []
         self.on_tabs_changed = []   # these are called like callback(tablist)
         self._current_tab = None
@@ -226,28 +226,11 @@ class TabManager(tk.Frame):
         self._swap(self.current_index, self.current_index+1)
         return True
 
-    # i needed to cheat with this and use stackoverflow, the man
-    # pages don't say what OSX does with MouseWheel events and i
-    # don't have an up-to-date OSX :(
-    # http://stackoverflow.com/a/17457843
-    def _bind_wheel(self, widget):
-        if utils.windowingsystem() == 'x11':
-            widget.bind('<Button-4>', self._on_wheel)
-            widget.bind('<Button-5>', self._on_wheel)
+    def on_wheel(self, direction):
+        if direction == 'up':
+            self.select_left()
         else:
-            widget.bind('<MouseWheel>', self._on_wheel)
-
-    def _on_wheel(self, event):
-        if utils.windowingsystem() == 'x11':
-            if event.num == 4:
-                self.select_left()
-            else:
-                self.select_right()
-        else:
-            if event.delta > 0:
-                self.select_left()
-            else:
-                self.select_right()
+            self.select_right()
 
     def on_alt_n(self, event):
         """Select the n'th tab (1 <= n <= 9) based on event.keysym.
