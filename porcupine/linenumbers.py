@@ -20,11 +20,16 @@ class LineNumbers(tk.Text):
         self._linecount = 1
 
         config.connect('editing:color_theme', self._on_theme_changed)
+        config.connect('editing:font', self._on_font_changed)
         self._on_theme_changed(None, config['editing:color_theme'])
+        self._on_font_changed(None, config['editing:font'])
 
     def _on_theme_changed(self, junk, value):
         self['fg'] = color_themes[value, 'foreground']
         self['bg'] = color_themes[value, 'background']
+
+    def _on_font_changed(self, junk, font):
+        self['font'] = font
 
     def do_update(self):
         """This should be ran when the line count changes."""

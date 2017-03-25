@@ -1,8 +1,10 @@
 """The big text widget in the middle of the editor."""
 
 from functools import partial   # not "import functools" to avoid long lines
+import re
 import tkinter as tk
 
+from porcupine import utils
 from porcupine.settings import config, color_themes
 
 
@@ -50,6 +52,7 @@ class EditorText(tk.Text):
         self.bind('<bracketright>', self._on_closing_brace)
         self.bind('<braceright>', self._on_closing_brace)
         self.bind('<Tab>', lambda event: self._on_tab(False))
+        utils.bind_mouse_wheel(self, self._on_wheel, prefixes='Control-')
 
         if self.tk.call('tk', 'windowingsystem') == 'x11':
             # even though the event keysym says Left, holding down right
@@ -58,18 +61,15 @@ class EditorText(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
-        config.connect('editing:undo', self._on_config_changed)
-        config.connect('editing:color_theme', self._on_config_changed)
-        self._on_config_changed('editing:undo')
-        self._on_config_changed('editing:color_theme')
+        for key in ['editing:undo', 'editing:color_theme', 'editing:font']:
+            config.connect(key, self._on_config_changed)
+            self._on_config_changed(key, config[key])
 
     def _on_config_changed(self, key, value=None):
-        if value is None:
-            # called from __init__
-            value = config[key]
-
         if key == 'editing:undo':
             self['undo'] = value
+        elif key == 'editing:font':
+            self['font'] = value
         elif key == 'editing:color_theme':
             keys = {
                 'fg': 'foreground',
@@ -80,6 +80,22 @@ class EditorText(tk.Text):
             }
             for selfkey, themekey in keys.items():
                 self[selfkey] = color_themes[value, themekey]
+
+    def _on_wheel(self, direction):
+        old_font = config['editing:font']
+        if old_font == 'TkFixedFont':
+            # can't do anything
+            return
+
+        family, size = re.search(r'^\{(.+)\} (\d+)$', old_font).groups()
+        size = int(size)
+        if direction == 'up':
+            size += 1
+        else:
+            size -= 1
+        new_font = '{%s} %d' % (family, size)
+        if config.validate('editing:font', new_font):
+            config['editing:font'] = new_font
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind
