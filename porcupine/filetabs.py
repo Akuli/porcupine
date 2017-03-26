@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import (autocomplete, dialogs, highlight, linenumbers,
+from porcupine import (autocomplete, dialogs, find, highlight, linenumbers,
                        longlinemarker, scrolling, tabs, textwidget)
 from porcupine.settings import config
 
@@ -71,7 +71,10 @@ def _shorten_filepath(name, sep=os.sep):
 
 
 class FileTab(tabs.Tab):
-    """A tab in the editor."""
+    """A tab in the editor.
+
+    This class implements all tab specific things using other classes.
+    """
 
     def __init__(self, manager):
         super().__init__(manager)
@@ -109,13 +112,15 @@ class FileTab(tabs.Tab):
         self.highlighter = highlight.Highlighter(self.textwidget)
         self.textwidget.on_modified.append(self.highlighter.highlight)
 
+        self._findwidget = None
+
         self.statusbar = tk.Label(self.content, anchor='w',
                                   relief='sunken')
         self.textwidget.on_cursor_move.append(self._update_statusbar)
         self._update_statusbar()
 
         for key in ['gui:linenumbers', 'gui:statusbar',
-                    'editing:autocomplete', 'editing:font']:
+                    'editing:autocomplete']:
             config.connect(key, self._on_config_changed)
             self._on_config_changed(key, config[key])
 
@@ -129,14 +134,11 @@ class FileTab(tabs.Tab):
             else:
                 self.linenumbers.pack_forget()
 
-        elif key == 'editing:font':
-            self.textwidget['font'] = value
-            if self.linenumbers is not None:
-                self.linenumbers['font'] = value
-
         elif key == 'gui:statusbar':
             if value:
-                self.statusbar.pack(fill='x')
+                # side='bottom' makes sure that the statusbar is always
+                # below all other widgets
+                self.statusbar.pack(side='bottom', fill='x')
             else:
                 self.statusbar.pack_forget()
 
@@ -262,6 +264,12 @@ class FileTab(tabs.Tab):
         if path is not None:
             self.path = path
             self.save()
+
+    def find(self):
+        if self._findwidget is None:
+            log.debug("find widget not created yet, creating it")
+            self._findwidget = find.Finder(self.content, self.textwidget)
+        self._findwidget.pack(fill='x')
 
 
 if __name__ == '__main__':

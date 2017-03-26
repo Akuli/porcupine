@@ -66,3 +66,16 @@ def bind_mouse_wheel(widget, callback, *, prefixes=''):
             callback('up' if event.delta > 0 else 'down')
 
         widget.bind('<{}MouseWheel>'.format(prefixes), real_callback)
+
+
+class Checkbox(tk.Checkbutton):
+    """Like tk.Checkbutton, but works with my dark GTK+ theme."""
+    # tk.Checkbutton displays a white checkmark on a white background to
+    # me, and changing the checkmark color also changes the text color
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        print('aaa', self['highlightcolor'], self['foreground'])
+        if self['selectcolor'] == self['foreground'] == '#ffffff':
+            print('lulz', self['background'])
+            self['selectcolor'] = self['background']

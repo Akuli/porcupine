@@ -116,10 +116,9 @@ class Editor(tk.Frame):
         add("Copy", "Ctrl+C", textmethod('copy'), disably=True)
         add("Paste", "Ctrl+V", textmethod('paste'), disably=True)
         add("Select all", "Ctrl+A", textmethod('select_all'), disably=True)
+        add("Find and replace", "Ctrl+F", tabmethod('find'), disably=True)
         editmenu.add_separator()
         add("Settings", None, self._show_settings)
-        #editmenu.add_separator()
-        #add("Find", "Ctrl+F", self.find, disably=True)
         self._disablelist.extend(editmenu.disablelist)
 
         thememenu = HandyMenu()
@@ -162,6 +161,7 @@ class Editor(tk.Frame):
             ('<Control-c>', disably(textmethod('copy'))),
             ('<Control-v>', disably(textmethod('paste'))),
             ('<Control-a>', disably(textmethod('select_all'))),
+            ('<Control-f>', disably(tabmethod('find'))),
             ('<F5>', disably(self._run_file)),
         ]
         self._bindings = []   # [(keysym, real_callback), ...]
