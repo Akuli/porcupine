@@ -52,6 +52,8 @@ def _shorten_filepath(name, sep=os.sep):
     '/tmp/test.py'
     >>> _shorten_filepath('/home/someusername/path/to/test.py', '/')
     '.../path/to/test.py'
+    >>> _shorten_filepath('really_really_long_file_name.py', '/')
+    '...ly_really_long_file_name.py'
     """
     if len(name) <= 30:
         return name
@@ -62,7 +64,7 @@ def _shorten_filepath(name, sep=os.sep):
         # index returns the start of search string so name[where2cut:]
         # will start with sep
         where2cut = name.index(sep, -27)
-    except IndexError:
+    except ValueError:
         # no sep in name[-27:], just truncate it
         where2cut = -27
     return '...' + name[where2cut:]
