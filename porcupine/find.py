@@ -43,7 +43,7 @@ class Finder(tk.Frame):
         #checkbox.grid(row=0, column=1, sticky='nw')
 
         self._statuslabel = tk.Label(self)
-        self._statuslabel.grid(row=1, column=1, sticky='nswe')
+        self._statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
 
         closebutton = tk.Label(self, image=utils.get_image('closebutton.gif'))
         closebutton.grid(row=0, column=2, sticky='ne')
