@@ -77,7 +77,7 @@ class Finder(tk.Frame):
         start = self._textwidget.search(what, 'insert+1c')
         if start:
             self._statuslabel['text'] = ''
-            end = start + ('+%dc' % len(what))
+            end = '{}+{}c'.format(start, len(what))
             self._textwidget.tag_remove('sel', '1.0', 'end')
             self._textwidget.tag_add('sel', start, end)
             self._textwidget.mark_set('insert', start)
@@ -131,7 +131,7 @@ class Finder(tk.Frame):
             if not start:
                 break
 
-            end = '%s+%dc' % (start, len(find_text))
+            end = '{}+{}c'.format(start, len(find_text))
             self._textwidget.delete(start, end)
             self._textwidget.insert(start, replace_text)
             start = '{}+{}c+1c'.format(start, len(replace_text))
