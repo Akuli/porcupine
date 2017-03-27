@@ -36,8 +36,12 @@ if platform.system() == 'Windows':
         subprocess.Popen(command)
 
 else:
-    # we can't assume X11 or Aqua yet because someone might be running
-    # X11 on OSX and we can't check that with tkinter yet
+    # We can't assume X11 or Aqua yet because someone might be running
+    # X11 on OSX and we can't check that with tkinter yet.
+    # This figures out which terminal to use every time the user wants
+    # to run something, but it takes only a few milliseconds so it
+    # doesn't really matter. This way the user can install a terminal
+    # while Porcupine is running without restarting it.
 
     def run(path):
         dirname, basename = os.path.split(os.path.abspath(path))
