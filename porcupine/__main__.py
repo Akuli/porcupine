@@ -20,7 +20,9 @@ def main():
     else:
         prog = '%s -m porcupine' % os.path.basename(sys.executable)
 
-    parser = argparse.ArgumentParser(prog=prog, description=porcupine.__doc__)
+    parser = argparse.ArgumentParser(
+        prog=prog, description=porcupine.__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         help="open these files when the editor starts, - means stdin")
