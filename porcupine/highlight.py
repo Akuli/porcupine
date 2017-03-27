@@ -87,7 +87,7 @@ class Highlighter:
         try:
             next(self._highlight_job)
         except StopIteration:
-            log.info("highlight job completed")
+            log.debug("highlight job completed")
             self._highlight_job = None
             return
 
@@ -204,7 +204,7 @@ class Highlighter:
         self._clear_tags(last_lineno+1)
 
     def highlight(self):
-        log.info("(re)starting highlight job")
+        log.debug("(re)starting highlight job")
         self._highlight_job = self._highlight_coro()
         self.textwidget.after_idle(self._on_idle)
 

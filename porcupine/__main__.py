@@ -30,10 +30,7 @@ def main():
         help="print more debugging messages to stderr")
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format='%(name)s: %(message)s',
-        level=args.loglevel,
-    )
+    logging.basicConfig(format='%(name)s: %(message)s', level=args.loglevel)
 
     root = tk.Tk()
     settings.load()     # root must exist first
