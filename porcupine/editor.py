@@ -1,10 +1,12 @@
 """The main Editor class."""
 
+import functools
 import logging
 import os
 import tkinter as tk
 from tkinter import messagebox
 import traceback
+import webbrowser
 
 from porcupine import __doc__ as init_docstring
 from porcupine import dialogs, filetabs, settingeditor, tabs, terminal
@@ -62,6 +64,10 @@ class HandyMenu(tk.Menu):
         self.add_command(**kwargs)
         if disably:
             self.disablelist.append((self, self.index('end')))
+
+    def add_linky_command(self, label, url):
+        callback = functools.partial(webbrowser.open, url)
+        self.add_command(label=label, command=callback)
 
 
 class Editor(tk.Frame):
@@ -134,6 +140,22 @@ class Editor(tk.Frame):
             thememenu.add_radiobutton(
                 label=name, value=name, variable=themevar)
 
+        helpmenu = HandyMenu()
+        self.menubar.add_cascade(label="Help", menu=helpmenu)
+        add = helpmenu.add_linky_command
+        add("Free help chat",
+            "http://webchat.freenode.net/?channels=%23%23learnpython")
+        add("My Python tutorial",
+            "https://github.com/Akuli/python-tutorial/blob/master/README.md")
+        add("Official Python documentation", "https://docs.python.org/")
+        helpmenu.add_separator()
+        # TODO: starring button
+        add("Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
+        add("Report a problem or request a feature",
+            "https://github.com/Akuli/porcupine/issues/new")
+        add("Read Porcupine's code",
+            "https://github.com/Akuli/porcupine/tree/master/porcupine")
+
         tabmgr.on_tabs_changed.append(self._tabs_changed)
         self._tabs_changed([])  # disable the menuitems
 
@@ -147,6 +169,7 @@ class Editor(tk.Frame):
         # The text widgets are also bound to these because bind_all()
         # doesn't seem to override their default bindings if there are
         # any.
+        # TODO: at least copy and paste are broken! shouldn't be global
         bindings = tabmgr.bindings + [
             # (keysym, callback)
             ('<Control-n>', self.new_file),
