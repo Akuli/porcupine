@@ -52,6 +52,14 @@ class EditorText(tk.Text):
         self.bind('<bracketright>', self._on_closing_brace)
         self.bind('<braceright>', self._on_closing_brace)
         self.bind('<Tab>', lambda event: self._on_tab(False))
+
+        self.bind('<Control-z>', self.undo)
+        self.bind('<Control-y>', self.redo)
+        self.bind('<Control-x>', self.cut)
+        self.bind('<Control-c>', self.copy)
+        self.bind('<Control-v>', self.paste)
+        self.bind('<Control-a>', self.select_all)
+
         utils.bind_mouse_wheel(self, self._on_wheel, prefixes='Control-')
 
         if self.tk.call('tk', 'windowingsystem') == 'x11':
@@ -255,7 +263,7 @@ class EditorText(tk.Text):
         end = '{}.0-1c'.format(lineno)
         self.delete(start, end)
 
-    def undo(self):
+    def undo(self, event=None):
         try:
             self.edit_undo()
         except tk.TclError:     # nothing to undo
@@ -263,7 +271,7 @@ class EditorText(tk.Text):
         self._do_cursor_move()
         return 'break'
 
-    def redo(self):
+    def redo(self, event=None):
         try:
             self.edit_redo()
         except tk.TclError:     # nothing to redo
@@ -271,15 +279,17 @@ class EditorText(tk.Text):
         self._do_cursor_move()
         return 'break'
 
-    def cut(self):
+    def cut(self, event=None):
         self.event_generate('<<Cut>>')
         self._do_cursor_move()
+        return 'break'
 
-    def copy(self):
+    def copy(self, event=None):
         self.event_generate('<<Copy>>')
         self._do_cursor_move()
+        return 'break'
 
-    def paste(self):
+    def paste(self, event=None):
         self.event_generate('<<Paste>>')
 
         # Without this, pasting while some text is selected is annoying
@@ -293,9 +303,11 @@ class EditorText(tk.Text):
             self.delete(sel_start, sel_end)
 
         self._do_cursor_move()
+        return 'break'
 
-    def select_all(self):
+    def select_all(self, event=None):
         self.tag_add('sel', '1.0', 'end-1c')
+        return 'break'
 
     # these methods may move the cursor, there are other methods too but
     # they aren't currently used

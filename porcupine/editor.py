@@ -176,6 +176,7 @@ class Editor(tk.Frame):
             ('<Control-S>', disably(tabmethod('save_as'))),
             ('<Control-w>', disably(self._close_file)),
             ('<Control-q>', self.do_quit),
+            ('<Control-f>', disably(tabmethod('find'))),
             ('<F5>', disably(self._run_file)),
         ]
         self._bindings = []   # [(keysym, real_callback), ...]

@@ -99,18 +99,6 @@ class FileTab(tabs.Tab):
         scrollbar = scrolling.MultiScrollbar(
             mainframe, [self.textwidget, self.linenumbers])
 
-        bindings = [
-            ('<Control-z>', self.textwidget.undo),
-            ('<Control-y>', self.textwidget.redo),
-            ('<Control-x>', self.textwidget.cut),
-            ('<Control-c>', self.textwidget.copy),
-            ('<Control-v>', self.textwidget.paste),
-            ('<Control-a>', self.textwidget.select_all),
-            ('<Control-f>', self.find),
-        ]
-        for keysym, callback in bindings:
-            self.textwidget.bind(keysym, (lambda event, c=callback: c()))
-
         # these are packed right-to-left because the linenumbers are at
         # left and can be pack_forgot()ten
         scrollbar.pack(side='right', fill='y')
