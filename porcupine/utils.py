@@ -3,6 +3,7 @@
 import base64
 import functools
 import pkgutil
+import platform
 import tkinter as tk
 
 
@@ -40,6 +41,14 @@ def windowingsystem():
     if gonna_destroy:
         widget.destroy()
     return result
+
+
+@functools.lru_cache()
+def running_pythonw():
+    """Return True if Porcupine is running in pythonw.exe on Windows."""
+    if platform.system() != 'Windows':
+        return False
+    return os.path.basename(sys.executable).lower() == 'pythonw.exe'
 
 
 def bind_mouse_wheel(widget, callback, *, prefixes=''):

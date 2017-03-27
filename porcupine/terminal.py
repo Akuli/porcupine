@@ -18,18 +18,16 @@ _scriptdir = os.path.join(
 
 
 if platform.system() == 'Windows':
-    if os.path.basename(sys.executable).lower() == 'pythonw.exe':
+    if utils.running_pythonw():
         # pythonw.exe is like python.exe but hides stdout and stderr
-        _running_pythonw = True
         _python = sys.executable[:-5] + sys.executable[-4:]  # get rid of 'w'
     else:
         # porcupine was started from command prompt or powershell
-        _running_pythonw = False
         _python = sys.executable
 
     def run(path):
         command = [_python, os.path.join(_scriptdir, 'windows_run.py'), path]
-        if not _running_pythonw:
+        if not utils.running_pythonw():
             # windows wants to run python in the same terminal that
             # Porcupine was started from, this is the only way to open a
             # new command prompt i found and it works :^) we need cmd
