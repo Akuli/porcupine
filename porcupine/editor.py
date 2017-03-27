@@ -168,23 +168,14 @@ class Editor(tk.Frame):
 
         # The text widgets are also bound to these because bind_all()
         # doesn't seem to override their default bindings if there are
-        # any.
-        # TODO: at least copy and paste are broken! shouldn't be global
+        # any. See _add_tab().
         bindings = tabmgr.bindings + [
-            # (keysym, callback)
             ('<Control-n>', self.new_file),
             ('<Control-o>', self.open_file),
             ('<Control-s>', disably(tabmethod('save'))),
             ('<Control-S>', disably(tabmethod('save_as'))),
             ('<Control-w>', disably(self._close_file)),
             ('<Control-q>', self.do_quit),
-            ('<Control-z>', disably(textmethod('undo'))),
-            ('<Control-y>', disably(textmethod('redo'))),
-            ('<Control-x>', disably(textmethod('cut'))),
-            ('<Control-c>', disably(textmethod('copy'))),
-            ('<Control-v>', disably(textmethod('paste'))),
-            ('<Control-a>', disably(textmethod('select_all'))),
-            ('<Control-f>', disably(tabmethod('find'))),
             ('<F5>', disably(self._run_file)),
         ]
         self._bindings = []   # [(keysym, real_callback), ...]
