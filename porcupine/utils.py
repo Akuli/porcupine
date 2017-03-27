@@ -2,8 +2,10 @@
 
 import base64
 import functools
+import os
 import pkgutil
 import platform
+import sys
 import tkinter as tk
 
 
