@@ -10,6 +10,8 @@ import tkinter as tk
 import porcupine.editor
 from porcupine import settings
 
+log = logging.getLogger(__name__)
+
 
 def main():
     # sys.argv[0] is '__main__.py', so we can't use that as the prog.
@@ -33,6 +35,11 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(format='%(name)s: %(message)s', level=args.loglevel)
+
+    log.info("starting Porcupine with PID %d on %s",
+             os.getpid(), platform.platform().replace('-', ' '))
+    log.info("running on Python %d.%d.%d from %s",
+             *(list(sys.version_info[:3]) + [sys.executable]))
 
     root = tk.Tk()
     settings.load()     # root must exist first
