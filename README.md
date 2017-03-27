@@ -16,15 +16,16 @@ This editor has everything that a Python editor needs:
 - Syntax highlighting with different color themes
 - Running files in a terminal or command prompt by pressing F5
 - Converting tabs to spaces
-- PEP-8 compatible default settings
 - Simple all-words-in-file autocompleting with tab
 - Automatic indenting and stripping trailing whitespace when pressing Enter
 - Indent/dedent block with Tab and Shift+Tab
 - Line numbers
 - Line length marker
+- Find/replace
 - Multiple files can be opened at the same time like pages in a web browser
 - Status status bar that shows current line and column numbers
 - Simple and easy-to-use setting dialog
+- Last but not least: PEP-8 compatible default settings
 
 ## How do I run this thing?
 
