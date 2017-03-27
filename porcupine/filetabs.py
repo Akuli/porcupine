@@ -254,6 +254,7 @@ class FileTab(tabs.Tab):
                 for chunk in self.textwidget.iter_chunks():
                     f.write(chunk)
         except (OSError, UnicodeError):
+            log.exception("saving '%s' failed", self.path)
             messagebox.showerror("Saving failed!", traceback.format_exc())
             return
 

@@ -235,7 +235,7 @@ class Editor(tk.Frame):
     def open_file(self, path=None, *, content=None):
         if path is None:
             # i think it's easier to recurse here than wrap the whole
-            # thing in try/except
+            # thing in a for loop
             for path in dialogs.open_files():
                 self.open_file(path, content=content)
             return
@@ -257,6 +257,7 @@ class Editor(tk.Frame):
                     for line in f:
                         tab.textwidget.insert('end-1c', line)
             except (OSError, UnicodeError):
+                log.exception("opening '%s' failed", path)
                 messagebox.showerror("Opening failed!",
                                      traceback.format_exc())
                 return
