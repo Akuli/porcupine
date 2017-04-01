@@ -246,7 +246,8 @@ class EditorText(tk.Text):
         if prevline.endswith((':', '(', '[', '{')):
             # start of a new block
             self.indent(lineno)
-        elif prevline in {'return', 'break'} or prevline.startswith('return '):
+        elif (prevline in {'return', 'break', 'pass'}
+              or prevline.startswith('return ')):
             # must be end of a block
             self.dedent(lineno)
 
