@@ -8,7 +8,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import settings
+from porcupine import logs, settings
 
 log = logging.getLogger(__name__)
 
@@ -29,15 +29,12 @@ def main():
         'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         help="open these files when the editor starts, - means stdin")
     parser.add_argument(
-        '--verbose', '-v', dest='loglevel', action='store_const',
-        const=logging.DEBUG, default=logging.WARNING,
-        help="print more debugging messages to stderr")
+        '--verbose', '-v', action='store_true',
+        help="print same debugging messages to stderr as to log file")
     args = parser.parse_args()
 
-    logging.basicConfig(format='%(name)s: %(message)s', level=args.loglevel)
-
-    log.info("starting Porcupine with PID %d on %s",
-             os.getpid(), platform.platform().replace('-', ' '))
+    logs.setup(verbose=args.verbose)
+    log.info("starting Porcupine on %s", platform.platform().replace('-', ' '))
     log.info("running on Python %d.%d.%d from %s",
              *(list(sys.version_info[:3]) + [sys.executable]))
 
