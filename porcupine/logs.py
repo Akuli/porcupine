@@ -3,12 +3,12 @@ import logging
 import os
 import platform
 
-if platform.system() == 'Windows':
+if platform.system() == 'Windows':  # noqa
     import msvcrt
-else:
+else:   # noqa
     import fcntl
 
-user_dir = os.path.expanduser('~/.porcupine')
+from porcupine import dirs
 
 
 def _lock(fileno):
@@ -43,7 +43,7 @@ def _open_log_file():
     )
 
     for filename in filenames:
-        path = os.path.join(user_dir, filename)
+        path = os.path.join(dirs.cachedir, filename)
         # unfortunately there's not a mode that would open in write but
         # not truncate like 'w' or seek to end like 'a'
         fileno = os.open(path, os.O_WRONLY | os.O_CREAT, 0o644)

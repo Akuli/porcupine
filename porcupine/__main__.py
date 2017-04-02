@@ -1,4 +1,4 @@
-"""Run the editor."""
+"""Run Porcupine."""
 
 import argparse
 import logging
@@ -8,7 +8,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import logs, settings
+from porcupine import dirs, logs, settings
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +33,7 @@ def main():
         help="print same debugging messages to stderr as to log file")
     args = parser.parse_args()
 
+    dirs.makedirs()
     logs.setup(verbose=args.verbose)
     log.info("starting Porcupine on %s", platform.platform().replace('-', ' '))
     log.info("running on Python %d.%d.%d from %s",
@@ -73,6 +74,8 @@ def main():
         root.mainloop()
     finally:
         settings.save()
+
+    log.info("exiting Porcupine...")
 
 
 if __name__ == '__main__':

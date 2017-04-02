@@ -11,6 +11,8 @@ import pkgutil
 import re
 import tkinter.font as tkfont
 
+from porcupine import dirs
+
 log = logging.getLogger(__name__)
 
 
@@ -181,10 +183,8 @@ config = _Config('porcupine.settings.config', {
     'gui:default_geometry': _validate_geometry,
 })
 
-_user_dir = os.path.join(os.path.expanduser('~'), '.porcupine')
-_user_config_file = os.path.join(_user_dir, 'settings.json')
-_theme_dir = os.path.join(_user_dir, 'themes')
-_theme_glob = os.path.join(glob.escape(_theme_dir), '*.ini')
+_user_config_file = os.path.join(dirs.configdir, 'settings.json')
+_theme_glob = os.path.join(glob.escape(dirs.themedir), '*.ini')
 
 
 def _configparser2dict(parser):
@@ -196,7 +196,7 @@ def _configparser2dict(parser):
 
 
 def load():
-    os.makedirs(_theme_dir, exist_ok=True)
+    os.makedirs(dirs.themedir, exist_ok=True)
 
     # these must be read first because config's editing:color_theme
     # validator needs it

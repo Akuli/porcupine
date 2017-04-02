@@ -10,6 +10,14 @@ import tkinter as tk
 
 
 @functools.lru_cache()
+def running_pythonw():
+    """Return True if Porcupine is running in pythonw.exe on Windows."""
+    if platform.system() != 'Windows':
+        return False
+    return os.path.basename(sys.executable).lower() == 'pythonw.exe'
+
+
+@functools.lru_cache()
 def get_image(filename):
     """Create a tkinter PhotoImage from a file in porcupine/images.
 
@@ -31,26 +39,43 @@ def windowingsystem():
     A tkinter root window must exist.
     """
     # tkinter's default root window is not accessible as a part of the
-    # public API
-    try:
-        widget = tk._default_root
-        gonna_destroy = False
-    except AttributeError:
-        widget = tk.Label()
-        gonna_destroy = True
-
-    result = widget.tk.call('tk', 'windowingsystem')
-    if gonna_destroy:
-        widget.destroy()
-    return result
+    # public API, but tkinter uses _default_root everywhere so I don't
+    # think it's going away
+    return tk._default_root.tk.call('tk', 'windowingsystem')
 
 
-@functools.lru_cache()
-def running_pythonw():
-    """Return True if Porcupine is running in pythonw.exe on Windows."""
-    if platform.system() != 'Windows':
-        return False
-    return os.path.basename(sys.executable).lower() == 'pythonw.exe'
+def errordialog(title, message, plaintext=None):
+    """Like messagebox.showinfo, but supports plain text messages.
+
+    If plaintext is not None, it will be displayed below the message in
+    a tkinter text widget.
+    """
+    if tk._default_root is None:
+        # create new main window
+        window = tk.Tk()
+    else:
+        window = tk.Toplevel()
+        window.transient(tk._default_root)
+
+    label = tk.Label(window, text=message, height=5)
+
+    if plaintext is None:
+        label.pack(fill='both', expand=True)
+        geometry = '250x150'
+    else:
+        label.pack(anchor='center')
+        text = tk.Text(window, width=1, height=1)
+        text.pack(fill='both', expand=True)
+        text.insert('1.0', plaintext)
+        text['state'] = 'disabled'
+        geometry = '400x300'
+
+    button = tk.Button(text="OK", width=6, command=window.destroy)
+    button.pack(pady=10)
+
+    window.title(title)
+    window.geometry(geometry)
+    window.wait_window()
 
 
 def bind_mouse_wheel(widget, callback, *, prefixes=''):

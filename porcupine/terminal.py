@@ -9,12 +9,10 @@ import tempfile
 import tkinter as tk
 from tkinter import messagebox
 
-from porcupine import utils
-
+from porcupine import dirs, utils
 
 log = logging.getLogger(__name__)
-_scriptdir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'scripts')
+_scriptdir = os.path.join(dirs.installdir, 'scripts')
 
 
 if platform.system() == 'Windows':
