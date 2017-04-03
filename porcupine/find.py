@@ -1,10 +1,8 @@
 """Find/replace widget."""
 
-import re
 import tkinter as tk
 
 from porcupine import utils
-from porcupine.settings import config
 
 
 class Finder(tk.Frame):

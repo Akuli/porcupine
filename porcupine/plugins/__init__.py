@@ -131,7 +131,7 @@ def load(editor):
     for plugin in plugins:
         try:
             plugin.start_callback(editor)
-        except Exception as e:
+        except Exception:
             log.exception("the %r plugin's start_callback doesn't work",
                           plugin.name)
 

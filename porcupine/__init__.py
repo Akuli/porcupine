@@ -72,7 +72,7 @@ class _PorcupineDirs(appdirs.AppDirs):
             os.makedirs(path, exist_ok=True)
 
 
-if platform.system() in {'Windows', 'Darwin'}: 
+if platform.system() in {'Windows', 'Darwin'}:
     dirs = _PorcupineDirs('Porcupine', 'Akuli')
 else:
     dirs = _PorcupineDirs('porcupine', 'Akuli')
