@@ -24,6 +24,7 @@ def spacecount(string):
     return result
 
 
+# TODO: turn indent/strip stuff into plugin(s)?
 class Text(tk.Text):
 
     def __init__(self, *args, **kwargs):

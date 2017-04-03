@@ -33,7 +33,7 @@ import sys
 import tkinter as tk
 import tokenize
 
-import porcupine.plugins
+from porcupine import plugins
 from porcupine.settings import config, color_themes
 
 log = logging.getLogger(__name__)
@@ -216,7 +216,7 @@ def filetab_hook(filetab):
     filetab.textwidget.on_modified.remove(highlighter.highlight)
 
 
-porcupine.plugins.add_plugin("Highlight", filetab_hook=filetab_hook)
+plugins.add_plugin("Highlight", filetab_hook=filetab_hook)
 
 
 if __name__ == '__main__':

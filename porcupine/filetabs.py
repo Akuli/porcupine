@@ -7,8 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import (autocomplete, dialogs, find,
-                       plugins, tabs, textwidget)
+from porcupine import dialogs, find, plugins, tabs, textwidget
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -83,15 +82,15 @@ class FileTab(tabs.Tab):
         self._orig_label_fg = self.label['fg']
         self.on_path_changed.append(self._update_top_label)
 
-        mainframe = tk.Frame(self.content)
-        mainframe.pack(fill='both', expand=True)
+        self.mainframe = tk.Frame(self.content)
+        self.mainframe.pack(fill='both', expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.Text(
-            mainframe, width=1, height=1, wrap='none')
+            self.mainframe, width=1, height=1, wrap='none')
         self.textwidget.on_modified.append(self._update_top_label)
-        self.scrollbar = tk.Scrollbar(mainframe)
+        self.scrollbar = tk.Scrollbar(self.mainframe)
 
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
@@ -101,53 +100,12 @@ class FileTab(tabs.Tab):
         self.scrollbar.pack(side='right', fill='y')
         self.textwidget.pack(side='right', fill='both', expand=True)
 
-        self._completer = autocomplete.AutoCompleter(self.textwidget)
-        self._completing = False
-
         self._findwidget = None
-
-        self.statusbar = tk.Label(self.content, anchor='w',
-                                  relief='sunken')
-        self.textwidget.on_cursor_move.append(self._update_statusbar)
-        self._update_statusbar()
-
-        for key in ['gui:statusbar', 'editing:autocomplete']:
-            config.connect(key, self._on_config_changed)
-            self._on_config_changed(key, config[key])
 
         self.mark_saved()
         self._update_top_label()
 
         plugins.init_filetab(self)
-
-    def _on_config_changed(self, key, value):
-        if key == 'gui:statusbar':
-            if value:
-                # side='bottom' makes sure that the statusbar is always
-                # below all other widgets
-                self.statusbar.pack(side='bottom', fill='x')
-            else:
-                self.statusbar.pack_forget()
-
-        elif key == 'editing:autocomplete':
-            if value == self._completing:
-                # must not enable or disable completions twice
-                return
-
-            # less typing and pep-8 line length
-            completer = self._completer
-            text = self.textwidget
-
-            if value:
-                text.on_complete_previous.append(completer.complete_previous)
-                text.on_complete_next.append(completer.complete_next)
-                text.on_cursor_move.append(completer.reset)
-            else:
-                text.on_complete_previous.remove(completer.complete_previous)
-                text.on_complete_next.remove(completer.complete_next)
-                text.on_cursor_move.remove(completer.reset)
-
-            self._completing = value
 
     def _get_hash(self):
         result = hashlib.md5()
@@ -193,10 +151,6 @@ class FileTab(tabs.Tab):
             self.label['fg'] = self._orig_label_fg
         else:
             self.label['fg'] = 'red'
-
-    def _update_statusbar(self):
-        line, column = self.textwidget.index('insert').split('.')
-        self.statusbar['text'] = "Line %s, column %s" % (line, column)
 
     def can_be_closed(self):
         """If needed, display a 'wanna save?' dialog and save.

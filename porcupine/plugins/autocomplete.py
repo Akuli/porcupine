@@ -2,6 +2,9 @@ import collections
 import re
 import tkinter as tk
 
+from porcupine import plugins
+from porcupine.settings import config
+
 
 class AutoCompleter:
 
@@ -50,14 +53,14 @@ class AutoCompleter:
         finally:
             self._completing = False
 
-    def complete_previous(self):
+    def do_previous(self):
         """Autocomplete the previous alternative.
 
         This should be ran when shift+tab is pressed.
         """
         self._complete(1)
 
-    def complete_next(self):
+    def do_next(self):
         """Autocomplete the next alternative.
 
         This should be ran when tab is pressed.
@@ -78,16 +81,44 @@ class AutoCompleter:
             self._startpos = None
 
 
+def filetab_hook(filetab):
+    completer = AutoCompleter(filetab.textwidget)
+
+    def set_enabled(junk, value):
+        text = filetab.textwidget
+        if value:
+            # the porcupine text widget has these callback lists just
+            # for creating autocompleters :)
+            text.on_complete_previous.append(completer.do_previous)
+            text.on_complete_next.append(completer.do_next)
+            text.on_cursor_move.append(completer.reset)
+        else:
+            text.on_complete_previous.remove(completer.do_previous)
+            text.on_complete_next.remove(completer.do_next)
+            text.on_cursor_move.remove(completer.reset)
+
+    config.connect('editing:autocomplete', set_enabled)
+    set_enabled(None, config['editing:autocomplete'])
+    yield
+    if config['editing:autocomplete']:
+        # disable it to try to get garbage collected
+        set_enabled(None, False)
+
+
+plugins.add_plugin("Autocomplete", filetab_hook=filetab_hook)
+
+
 if __name__ == '__main__':
     # simple test
     from porcupine import textwidget, utils
+    from porcupine.settings import load as load_settings
 
     def on_tab(event):
-        completer.complete_next()
+        completer.do_next()
         return 'break'
 
     def on_shift_tab(event):
-        completer.complete_previous()
+        completer.do_previous()
         return 'break'
 
     # <<Modified>> is not really correct, the real editor resets on
@@ -99,6 +130,8 @@ if __name__ == '__main__':
         completer.reset()
 
     root = tk.Tk()
+    load_settings()
+
     text = textwidget.Text(root)
     text.pack()
 

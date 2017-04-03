@@ -1,4 +1,7 @@
 """Setting manager for Porcupine."""
+# TODO: currently the settings are a mess :( i have turned many things
+# into plugins, and the plugins use random config values from different
+# config sections and it's not organized in any way
 
 import codecs
 import collections

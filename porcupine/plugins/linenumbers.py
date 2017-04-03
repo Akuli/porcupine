@@ -5,7 +5,7 @@ This doesn't handle scrolling in any way. See multiscrollbar.py.
 
 import tkinter as tk
 
-import porcupine.plugins
+from porcupine import plugins
 from porcupine.settings import config, color_themes
 
 
@@ -76,9 +76,7 @@ class LineNumbers(tk.Text):
 
 
 def filetab_hook(filetab):
-    parent = filetab.textwidget.nametowidget(
-        filetab.textwidget.winfo_parent())
-    linenumbers = LineNumbers(parent, filetab.textwidget)
+    linenumbers = LineNumbers(filetab.mainframe, filetab.textwidget)
     scrollmgr = ScrollManager(
         filetab.scrollbar, filetab.textwidget, [linenumbers])
 
@@ -105,7 +103,7 @@ def filetab_hook(filetab):
     filetab.textwidget.on_modified.remove(linenumbers.do_update)
 
 
-porcupine.plugins.add_plugin("Line Numbers", filetab_hook=filetab_hook)
+plugins.add_plugin("Line Numbers", filetab_hook=filetab_hook)
 
 
 if __name__ == '__main__':
