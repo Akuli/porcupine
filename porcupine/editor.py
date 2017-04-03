@@ -74,7 +74,6 @@ class Editor(tk.Frame):
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self._finddialog = None    # TODO
         self._settingdialog = None
 
         tabmgr = self.tabmanager = tabs.TabManager(self)
@@ -100,22 +99,22 @@ class Editor(tk.Frame):
 
         self.menubar = tk.Menu()
 
-        filemenu = HandyMenu(name='filemenu')
-        self.menubar.add_cascade(label="File", menu=filemenu)
-        add = filemenu.add_handy_command
+        self.filemenu = HandyMenu()
+        self.menubar.add_cascade(label="File", menu=self.filemenu)
+        add = self.filemenu.add_handy_command
         add("New file", "Ctrl+N", self.new_file)
         add("Open", "Ctrl+O", self.open_file)
         add("Save", "Ctrl+S", tabmethod('save'), disably=True)
         add("Save as", "Ctrl+Shift+S", tabmethod('save_as'), disably=True)
         add("Run", "F5", self._run_file, disably=True)
-        filemenu.add_separator()
+        self.filemenu.add_separator()
         add("Close this file", "Ctrl+W", self._close_file, disably=True)
         add("Quit Porcupine", "Ctrl+Q", self.do_quit)
-        self._disablelist.extend(filemenu.disablelist)
+        self._disablelist.extend(self.filemenu.disablelist)
 
-        editmenu = self._editmenu = HandyMenu()
-        self.menubar.add_cascade(label="Edit", menu=editmenu)
-        add = editmenu.add_handy_command
+        self.editmenu = self.editmenu = HandyMenu()
+        self.menubar.add_cascade(label="Edit", menu=self.editmenu)
+        add = self.editmenu.add_handy_command
         add("Undo", "Ctrl+Z", textmethod('undo'), disably=True)
         add("Redo", "Ctrl+Y", textmethod('redo'), disably=True)
         add("Cut", "Ctrl+X", textmethod('cut'), disably=True)
@@ -123,12 +122,12 @@ class Editor(tk.Frame):
         add("Paste", "Ctrl+V", textmethod('paste'), disably=True)
         add("Select all", "Ctrl+A", textmethod('select_all'), disably=True)
         add("Find and replace", "Ctrl+F", tabmethod('find'), disably=True)
-        editmenu.add_separator()
+        self.editmenu.add_separator()
         add("Settings", None, self._show_settings)
-        self._disablelist.extend(editmenu.disablelist)
+        self._disablelist.extend(self.editmenu.disablelist)
 
-        thememenu = HandyMenu()
-        self.menubar.add_cascade(label="Color themes", menu=thememenu)
+        self.thememenu = HandyMenu()
+        self.menubar.add_cascade(label="Color themes", menu=self.thememenu)
         themevar = tk.StringVar()
         themevar.set(config['editing:color_theme'])
         themevar.trace('w', self._theme_changed_callback)
@@ -137,18 +136,18 @@ class Editor(tk.Frame):
         theme_names = sorted(color_themes.sections(), key=str.casefold)
         theme_names.remove('Default')
         for name in ['Default'] + theme_names:
-            thememenu.add_radiobutton(
+            self.thememenu.add_radiobutton(
                 label=name, value=name, variable=themevar)
 
-        helpmenu = HandyMenu()
-        self.menubar.add_cascade(label="Help", menu=helpmenu)
-        add = helpmenu.add_linky_command
+        self.helpmenu = HandyMenu()
+        self.menubar.add_cascade(label="Help", menu=self.helpmenu)
+        add = self.helpmenu.add_linky_command
         add("Free help chat",
             "http://webchat.freenode.net/?channels=%23%23learnpython")
         add("My Python tutorial",
             "https://github.com/Akuli/python-tutorial/blob/master/README.md")
         add("Official Python documentation", "https://docs.python.org/")
-        helpmenu.add_separator()
+        self.helpmenu.add_separator()
         # TODO: starring button
         add("Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
         add("Report a problem or request a feature",
@@ -192,7 +191,7 @@ class Editor(tk.Frame):
         # just unposting it here makes it unpost before clicking it
         # actually does something :(
         self.bind_all('<Button-1>',
-                      lambda event: self.after(100, editmenu.unpost))
+                      lambda event: self.after(100, self.editmenu.unpost))
 
     def _theme_changed_callback(self, varname, *junk):
         config['editing:color_theme'] = self.getvar(varname)
@@ -213,7 +212,7 @@ class Editor(tk.Frame):
             menu.entryconfig(index, state=state)
 
     def _post_editmenu(self, event):
-        self._editmenu.post(event.x_root, event.y_root)
+        self.editmenu.post(event.x_root, event.y_root)
 
     def _add_tab(self, tab):
         self.tabmanager.add_tab(tab)   # creates the tab's widgets
@@ -269,7 +268,9 @@ class Editor(tk.Frame):
         self._add_tab(tab)
 
     def _close_file(self):
-        self.tabmanager.current_tab.close()
+        tab = self.tabmanager.current_tab
+        if tab.can_be_closed():
+            tab.close()
 
     def _run_file(self):
         filetab = self.tabmanager.current_tab

@@ -33,8 +33,8 @@ import sys
 import tkinter as tk
 import tokenize
 
+import porcupine.plugins
 from porcupine.settings import config, color_themes
-
 
 log = logging.getLogger(__name__)
 
@@ -209,9 +209,19 @@ class Highlighter:
         self.textwidget.after_idle(self._on_idle)
 
 
+def filetab_hook(filetab):
+    highlighter = Highlighter(filetab.textwidget)
+    filetab.textwidget.on_modified.append(highlighter.highlight)
+    yield
+    filetab.textwidget.on_modified.remove(highlighter.highlight)
+
+
+porcupine.plugins.add_plugin("Highlight", filetab_hook=filetab_hook)
+
+
 if __name__ == '__main__':
     # simple test
-    from porcupine import settings
+    from porcupine.settings import load as load_settings
 
     if len(sys.argv) > 2 or sys.argv[1:] == ['--help']:
         sys.exit("usage: %s [FILE]" % sys.argv[0])
@@ -223,7 +233,7 @@ if __name__ == '__main__':
         highlighter.highlight()
 
     root = tk.Tk()
-    settings.load()     # must be after creating root window
+    load_settings()     # must be after creating root window
     text = tk.Text(root, fg='white', bg='black', insertbackground='white')
     text.pack(fill='both', expand=True)
     text.bind('<<Modified>>', on_modified)

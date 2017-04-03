@@ -8,7 +8,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import dirs, logs, settings
+from porcupine import dirs, logs, plugins, settings
 
 log = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ def main():
     settings.load()     # root must exist first
 
     editor = porcupine.editor.Editor(root)
+    plugins.load(editor)
     editor.pack(fill='both', expand=True)
 
     for file in args.file:
@@ -75,7 +76,7 @@ def main():
     finally:
         settings.save()
 
-    log.info("exiting Porcupine...")
+    log.info("exiting Porcupine")
 
 
 if __name__ == '__main__':

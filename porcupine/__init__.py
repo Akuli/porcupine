@@ -50,10 +50,6 @@ class _PorcupineDirs(appdirs.AppDirs):
 
     # and some other stuff
     @property
-    def themedir(self):
-        return os.path.join(self.configdir, 'themes')
-
-    @property
     def installdir(self):
         # this hack shouldn't be a problem because porcupine isn't
         # distributed with tools like pyinstaller, and it doesn't need
@@ -61,13 +57,22 @@ class _PorcupineDirs(appdirs.AppDirs):
         # anyway
         return os.path.dirname(os.path.abspath(__file__))
 
+    @property
+    def themedir(self):
+        return os.path.join(self.configdir, 'themes')
+
+    @property
+    def userplugindir(self):
+        return os.path.join(self.configdir, 'plugins')
+
     def makedirs(self):
-        for path in [self.cachedir, self.configdir, self.themedir]:
+        all_paths = [self.cachedir, self.configdir,
+                     self.themedir, self.userplugindir]
+        for path in all_paths:
             os.makedirs(path, exist_ok=True)
 
 
-if platform.system() in {'Windows', 'Darwin'}:
-    # these platforms like UpperCase paths
-    dirs = _PorcupineDirs('Porcupine')
+if platform.system() in {'Windows', 'Darwin'}: 
+    dirs = _PorcupineDirs('Porcupine', 'Akuli')
 else:
-    dirs = _PorcupineDirs('porcupine')
+    dirs = _PorcupineDirs('porcupine', 'Akuli')

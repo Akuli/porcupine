@@ -7,10 +7,10 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import (autocomplete, dialogs, find, highlight, linenumbers,
-                       longlinemarker, scrolling, tabs, textwidget)
+from porcupine import (
+    autocomplete, dialogs, find, linenumbers, longlinemarker,
+    plugins, scrolling, tabs, textwidget)
 from porcupine.settings import config
-
 
 log = logging.getLogger(__name__)
 
@@ -109,8 +109,6 @@ class FileTab(tabs.Tab):
         marker = longlinemarker.LongLineMarker(self.textwidget)
         self.textwidget.bind('<Configure>',
                              lambda event: marker.set_height(event.height))
-        self.highlighter = highlight.Highlighter(self.textwidget)
-        self.textwidget.on_modified.append(self.highlighter.highlight)
 
         self._findwidget = None
 
@@ -126,6 +124,8 @@ class FileTab(tabs.Tab):
 
         self.mark_saved()
         self._update_top_label()
+
+        plugins.init_filetab(self)
 
     def _on_config_changed(self, key, value):
         if key == 'gui:linenumbers':
@@ -230,6 +230,10 @@ class FileTab(tabs.Tab):
                 # yes
                 self.save()
         return True
+
+    def close(self):
+        super().close()
+        plugins.destroy_filetab(self)
 
     def on_focus(self):
         self.textwidget.focus()

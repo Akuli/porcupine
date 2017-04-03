@@ -2,6 +2,10 @@ r"""Tabs as in browser tabs, not \t characters.
 
 Yes, I am aware of ttk.Notebook but it's simply way too limited for my
 needs. I can't even change the color of the top label.
+
+The filetabs.FileTab class inherits from the Tab class in this module.
+This is less God-objecty than dumping everything into one class, and
+it's easier to find problems from the code.
 """
 
 import functools
@@ -30,10 +34,14 @@ class Tab:
         # Subclasses can add stuff here.
         self.content = tk.Frame(manager)
 
+        def _close_if_can(event):
+            if self.can_be_closed():
+                self.close()
+
         closebutton = tk.Label(
             self._topframe, image=utils.get_image('closebutton.gif'))
         closebutton.pack(side='left')
-        closebutton.bind('<Button-1>', lambda event: self.close())
+        closebutton.bind('<Button-1>', _close_if_can)
 
         utils.bind_mouse_wheel(self._topframe, manager.on_wheel)
         utils.bind_mouse_wheel(self.label, manager.on_wheel)
@@ -53,10 +61,9 @@ class Tab:
         This checks the return value of can_be_closed() and returns True
         if the tab was actually closed and False if not.
         """
-        if self.can_be_closed():
-            self._manager.remove_tab(self)
-            return True
-        return False
+        self._manager._remove_tab(self)
+        self._topframe.destroy()
+        self.content.destroy()
 
     def on_focus(self):
         """This is called when the tab is selected.
@@ -146,13 +153,7 @@ class TabManager(tk.Frame):
         self._do_tabs_changed()
         return tab
 
-    def remove_tab(self, tab):
-        """Remove a tab added with add_tab().
-
-        The tab's can_be_closed() method is not called. Use the tab's
-        close() method instead if you want to check if the tab can be
-        closed.
-        """
+    def _remove_tab(self, tab):
         if tab is self.current_tab:
             # go to next or previous tab if possible, otherwise unselect
             # the tab
