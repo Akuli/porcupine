@@ -5,19 +5,22 @@ get an idea of how everything works. You can find them like this:
 
     >>> import porcupine.plugins
     >>> porcupine.plugins.__path__
-    ['/bla/bla/bla/porcupine/plugins',
-     '/home/akuli/.config/porcupine/plugins']
+    ['/home/akuli/.config/porcupine/plugins',
+     '/bla/bla/bla/porcupine/plugins']
     >>>
 
-Porcupine's built-in plugins are installed in the first directory and
-you can add your own plugins to the second directory.
+You can add your own plugins to the first directory and Porcupine's
+default plugins are installed in the second directory.
 
 Plugins are just Python files that Porcupine imports on startup, so
 their names need to be valid module names. The files should import
 porcupine and call porcupine.plugins.add_plugin(). You can read the
-built-in plugins for examples.
+default plugins for examples.
 
 Some notes about writing plugins:
+
+  - If you don't like a default plugin you can disable that by creating
+    an empty file with the same name in your own plugin directory.
 
   - Use the add keyword argument to bind() when binding widgets that
     Porcupine created. See the help, e.g. help('tkinter.Label.bind').
@@ -44,13 +47,14 @@ Porcupines at the same time.
 import importlib
 import logging
 import os
+import random
 import types
 
 import porcupine
 
 
 # simple hack to allow user-wide plugins
-__path__.append(porcupine.dirs.userplugindir)
+__path__.insert(0, porcupine.dirs.userplugindir)
 
 # __path__ will show up in help() too because the module docstring
 # recommends checking it out
@@ -105,11 +109,15 @@ def add_plugin(name, *, start_callback=_do_nothing, filetab_hook=_do_nothing,
 def load(editor):
     assert not plugins, "cannot load plugins twice"
 
-    modulenames = set()
+    modulenames = []
     for path in __path__:    # this line looks odd
         for name, ext in map(os.path.splitext, os.listdir(path)):
             if name.isidentifier() and name[0] != '_' and ext == '.py':
-                modulenames.add(__name__ + '.' + name)
+                modulenames.append(__name__ + '.' + name)
+
+    # plugins should be made so that their loading order doesn't matter,
+    # so let's heavily discourage relying on it :D
+    random.shuffle(modulenames)
 
     for name in modulenames:
         try:

@@ -105,6 +105,9 @@ class _Config:
     def connect(self, key, callback):
         self._callbacks[key].append(callback)
 
+    def disconnect(self, key, callback):
+        self._callbacks[key].remove(callback)
+
     def __setitem__(self, key, new_value):
         assert self.validate(key, new_value)
         if isinstance(key, tuple):

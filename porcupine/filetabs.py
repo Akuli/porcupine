@@ -7,8 +7,8 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import (autocomplete, dialogs, find, linenumbers,
-                       plugins, scrolling, tabs, textwidget)
+from porcupine import (autocomplete, dialogs, find,
+                       plugins, tabs, textwidget)
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -91,16 +91,14 @@ class FileTab(tabs.Tab):
         self.textwidget = textwidget.Text(
             mainframe, width=1, height=1, wrap='none')
         self.textwidget.on_modified.append(self._update_top_label)
-        self.linenumbers = linenumbers.LineNumbers(
-            mainframe, self.textwidget, height=1)
-        self.textwidget.on_modified.append(self.linenumbers.do_update)
+        self.scrollbar = tk.Scrollbar(mainframe)
 
-        scrollbar = scrolling.MultiScrollbar(
-            mainframe, [self.textwidget, self.linenumbers])
+        self.textwidget['yscrollcommand'] = self.scrollbar.set
+        self.scrollbar['command'] = self.textwidget.yview
 
         # these are packed right-to-left because the linenumbers are at
         # left and can be pack_forgot()ten
-        scrollbar.pack(side='right', fill='y')
+        self.scrollbar.pack(side='right', fill='y')
         self.textwidget.pack(side='right', fill='both', expand=True)
 
         self._completer = autocomplete.AutoCompleter(self.textwidget)
@@ -113,8 +111,7 @@ class FileTab(tabs.Tab):
         self.textwidget.on_cursor_move.append(self._update_statusbar)
         self._update_statusbar()
 
-        for key in ['gui:linenumbers', 'gui:statusbar',
-                    'editing:autocomplete']:
+        for key in ['gui:statusbar', 'editing:autocomplete']:
             config.connect(key, self._on_config_changed)
             self._on_config_changed(key, config[key])
 
@@ -124,13 +121,7 @@ class FileTab(tabs.Tab):
         plugins.init_filetab(self)
 
     def _on_config_changed(self, key, value):
-        if key == 'gui:linenumbers':
-            if value:
-                self.linenumbers.pack(side='left', fill='y')
-            else:
-                self.linenumbers.pack_forget()
-
-        elif key == 'gui:statusbar':
+        if key == 'gui:statusbar':
             if value:
                 # side='bottom' makes sure that the statusbar is always
                 # below all other widgets
