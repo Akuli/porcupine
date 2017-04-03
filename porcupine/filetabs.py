@@ -7,9 +7,8 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import (
-    autocomplete, dialogs, find, linenumbers, longlinemarker,
-    plugins, scrolling, tabs, textwidget)
+from porcupine import (autocomplete, dialogs, find, linenumbers,
+                       plugins, scrolling, tabs, textwidget)
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -89,7 +88,7 @@ class FileTab(tabs.Tab):
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
-        self.textwidget = textwidget.EditorText(
+        self.textwidget = textwidget.Text(
             mainframe, width=1, height=1, wrap='none')
         self.textwidget.on_modified.append(self._update_top_label)
         self.linenumbers = linenumbers.LineNumbers(
@@ -106,9 +105,6 @@ class FileTab(tabs.Tab):
 
         self._completer = autocomplete.AutoCompleter(self.textwidget)
         self._completing = False
-        marker = longlinemarker.LongLineMarker(self.textwidget)
-        self.textwidget.bind('<Configure>',
-                             lambda event: marker.set_height(event.height))
 
         self._findwidget = None
 

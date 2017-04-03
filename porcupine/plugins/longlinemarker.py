@@ -3,6 +3,7 @@
 import tkinter as tk
 import tkinter.font as tkfont
 
+import porcupine.plugins
 from porcupine.settings import config, color_themes
 
 
@@ -31,6 +32,15 @@ class LongLineMarker(tk.Frame):
         self._height = height
         if config['editing:longlinemarker']:
             self.place(height=self._height)
+
+
+def filetab_hook(filetab):
+    marker = LongLineMarker(filetab.textwidget)
+    filetab.textwidget.bind(
+        '<Configure>', lambda event: marker.set_height(event.height))
+
+
+porcupine.plugins.add_plugin("Long Line Marker", filetab_hook=filetab_hook)
 
 
 if __name__ == '__main__':

@@ -99,7 +99,7 @@ if __name__ == '__main__':
         completer.reset()
 
     root = tk.Tk()
-    text = textwidget.EditorText(root)
+    text = textwidget.Text(root)
     text.pack()
 
     completer = AutoCompleter(text)
