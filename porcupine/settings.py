@@ -38,10 +38,9 @@ class _Config:
     >>>
     """
 
-    def __init__(self, name, validators=None):
+    def __init__(self, validators=None):
         if validators is None:
             validators = {}
-        self.log = logging.getLogger(name)
         self._validators = validators
         self._callbacks = collections.defaultdict(list)
         self._default_values = None
@@ -79,8 +78,8 @@ class _Config:
             if self.validate(key, value):
                 self[key] = value
             else:
-                self.log.warning("invalid %r value %r, using %r instead",
-                                 key, value, self[key])
+                log.warning("invalid %r value %r, using %r instead",
+                            key, value, self[key])
         self._original_values = dict(self)
 
     def dump(self):
@@ -120,7 +119,7 @@ class _Config:
         old_value = self[key]
         self._values[key] = new_value
         if old_value != new_value:
-            self.log.info("setting %r to %r", key, new_value)
+            log.info("setting %r to %r", key, new_value)
             for callback in self._callbacks[key]:
                 callback(key, new_value)
 
@@ -179,12 +178,14 @@ def _validate_fontstring(string):
     return match.group(1).casefold() in map(str.casefold, tkfont.families())
 
 
-color_themes = _Config('porcupine.settings.color_themes')
-config = _Config('porcupine.settings.config', {
+# color_themes can be just a configparser because the themes don't need
+# to be changed while porcupine is running
+color_themes = configparser.ConfigParser(default_section='Default')
+config = _Config({
     'files:encoding': _validate_encoding,
     'editing:font': _validate_fontstring,
     'editing:indent': (lambda value: value > 0),
-    'editing:color_theme': (lambda name: name in color_themes.sections()),
+    'editing:color_theme': (lambda name: name in color_themes),
     'editing:maxlinelen': (lambda value: value > 0),
     'gui:default_geometry': _validate_geometry,
 })
@@ -202,25 +203,14 @@ def _configparser2dict(parser):
 
 
 def load():
-    os.makedirs(dirs.themedir, exist_ok=True)
-
     # these must be read first because config's editing:color_theme
     # validator needs it
     themebytes = pkgutil.get_data('porcupine', 'default_themes.ini')
-    parser = configparser.ConfigParser(default_section='Default')
-    parser.read_string(themebytes.decode('utf-8'))
-    default_themes = _configparser2dict(parser)
-
-    for nondefaultsectionname in parser.sections():
-        del parser[nondefaultsectionname]
-    parser.read(glob.glob(_theme_glob))
-    user_themes = _configparser2dict(parser)
-
-    color_themes.load(default_themes, user_themes)
+    color_themes.read_string(themebytes.decode('utf-8'))
+    color_themes.read(glob.glob(_theme_glob))
 
     default_config = json.loads(
         pkgutil.get_data('porcupine', 'default_config.json').decode('ascii'))
-
     try:
         with open(_user_config_file, 'r') as f:
             user_config = json.load(f)

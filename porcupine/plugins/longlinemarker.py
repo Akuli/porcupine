@@ -19,7 +19,7 @@ class LongLineMarker(tk.Frame):
 
     def _on_config_changed(self, key, value):
         if key == 'editing:color_theme':
-            self['bg'] = color_themes[value, 'longlinemarker']
+            self['bg'] = color_themes[value]['longlinemarker']
         else:
             if config['editing:longlinemarker']:
                 font = tkfont.Font(font=config['editing:font'])

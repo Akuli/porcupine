@@ -52,8 +52,9 @@ class LineNumbers(tk.Text):
         self._on_font_changed(None, config['editing:font'])
 
     def _on_theme_changed(self, junk, value):
-        self['fg'] = color_themes[value, 'foreground']
-        self['bg'] = color_themes[value, 'background']
+        theme = color_themes[value]
+        self['fg'] = theme['foreground']
+        self['bg'] = theme['background']
 
     def _on_font_changed(self, junk, font):
         self['font'] = font

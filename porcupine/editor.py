@@ -134,7 +134,6 @@ class Editor(tk.Frame):
 
         # the Default theme goes first
         theme_names = sorted(color_themes.sections(), key=str.casefold)
-        theme_names.remove('Default')
         for name in ['Default'] + theme_names:
             self.thememenu.add_radiobutton(
                 label=name, value=name, variable=themevar)

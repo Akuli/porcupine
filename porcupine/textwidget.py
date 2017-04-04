@@ -80,15 +80,12 @@ class Text(tk.Text):
         elif key == 'editing:font':
             self['font'] = value
         elif key == 'editing:color_theme':
-            keys = {
-                'fg': 'foreground',
-                'bg': 'background',
-                'insertbackground': 'foreground',  # cursor color
-                'selectforeground': 'selectforeground',
-                'selectbackground': 'selectbackground',
-            }
-            for selfkey, themekey in keys.items():
-                self[selfkey] = color_themes[value, themekey]
+            theme = color_themes[value]
+            self['fg'] = theme['foreground']
+            self['bg'] = theme['background']
+            self['insertbackground'] = theme['foreground']  # cursor color
+            self['selectforeground'] = theme['selectforeground']
+            self['selectbackground'] = theme['selectbackground']
 
     def _on_wheel(self, direction):
         old_font = config['editing:font']
