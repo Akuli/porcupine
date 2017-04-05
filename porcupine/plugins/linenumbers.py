@@ -86,10 +86,10 @@ def filetab_hook(filetab):
         linenumbers['font'] = font
 
     filetab.textwidget.on_modified.append(linenumbers.do_update)
-    with config.connect('gui:linenumbers', show_or_hide), \
-         config.connect('editing:font', set_font), \
-         config.connect('editing:color_theme', linenumbers.set_theme_name):
-        yield
+    with config.connect('editing:color_theme', linenumbers.set_theme_name):
+        with config.connect('gui:linenumbers', show_or_hide):
+            with config.connect('editing:font', set_font):
+                yield
     filetab.textwidget.on_modified.remove(linenumbers.do_update)
 
 

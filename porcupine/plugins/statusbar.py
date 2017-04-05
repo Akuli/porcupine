@@ -49,5 +49,4 @@ def session_hook(editor):
         yield
 
 
-plugins.add_plugin(
-    "Statusbar", session_hook=session_hook)
+plugins.add_plugin("Statusbar", session_hook=session_hook)

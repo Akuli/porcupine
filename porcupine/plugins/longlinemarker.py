@@ -36,12 +36,13 @@ def filetab_hook(filetab):
     def configure_callback(event):
         marker.set_height(event.height)
 
-    with config.connect('editing:color_theme', marker.set_theme_name), \
-         config.connect('editing:font', marker.update), \
-         config.connect('editing:longlinemarker', marker.update), \
-         config.connect('editing:maxlinelen', marker.update):
-        filetab.textwidget.bind('<Configure>', configure_callback, add=True)
-        yield
+    with config.connect('editing:color_theme', marker.set_theme_name):
+        with config.connect('editing:longlinemarker', marker.update):
+            with config.connect('editing:maxlinelen', marker.update):
+                with config.connect('editing:font', marker.update):
+                    filetab.textwidget.bind(
+                        '<Configure>', configure_callback, add=True)
+                    yield
 
 
 plugins.add_plugin("Long Line Marker", filetab_hook=filetab_hook)
