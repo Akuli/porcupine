@@ -7,37 +7,41 @@ from porcupine import plugins
 from porcupine.settings import config, color_themes
 
 
-class LongLineMarker(tk.Frame):
+class LongLineMarker:
 
     def __init__(self, textwidget):
-        super().__init__(textwidget, width=1)
-        self._height = 0   # set_height should be called
-        for key in ['editing:longlinemarker', 'editing:maxlinelen',
-                    'editing:font', 'editing:color_theme']:
-            config.connect(key, self._on_config_changed)
-            self._on_config_changed(key, config[key])
+        self._frame = tk.Frame(textwidget, width=1)
+        self._height = 0   # set_height() will be called
 
-    def _on_config_changed(self, key, value):
-        if key == 'editing:color_theme':
-            self['bg'] = color_themes[value]['longlinemarker']
-        else:
-            if config['editing:longlinemarker']:
-                font = tkfont.Font(font=config['editing:font'])
-                x = font.measure(' ' * config['editing:maxlinelen'])
-                self.place(x=x, height=self._height)
-            else:
-                self.place_forget()
+    def set_theme_name(self, name):
+        self._frame['bg'] = color_themes[name]['longlinemarker']
+
+    def update(self, junk=None):
+        if not config['editing:longlinemarker']:
+            self._frame.place_forget()
+            return
+
+        font = tkfont.Font(font=config['editing:font'])
+        where = font.measure(' ' * config['editing:maxlinelen'])
+        self._frame.place(x=where, height=self._height)
 
     def set_height(self, height):
         self._height = height
-        if config['editing:longlinemarker']:
-            self.place(height=self._height)
+        self.update()
 
 
 def filetab_hook(filetab):
     marker = LongLineMarker(filetab.textwidget)
-    filetab.textwidget.bind(
-        '<Configure>', lambda event: marker.set_height(event.height))
+
+    def configure_callback(event):
+        marker.set_height(event.height)
+
+    with config.connect('editing:color_theme', marker.set_theme_name), \
+         config.connect('editing:font', marker.update), \
+         config.connect('editing:longlinemarker', marker.update), \
+         config.connect('editing:maxlinelen', marker.update):
+        filetab.textwidget.bind('<Configure>', configure_callback, add=True)
+        yield
 
 
 plugins.add_plugin("Long Line Marker", filetab_hook=filetab_hook)

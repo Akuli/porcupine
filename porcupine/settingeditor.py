@@ -66,20 +66,19 @@ class _Section(ttk.LabelFrame):
         checkbox = ttk.Checkbutton(self, variable=var, **kwargs)
         self.add_widget(checkbox)
 
-        def from_config(*junk):
-            var.set(config[key])
-
         def to_config(*junk):
             config[key] = var.get()
 
-        config.connect(key, from_config)
-        from_config()
         var.trace('w', to_config)
+
+        @config.connect(key)
+        def from_config(value):
+            var.set(value)
+
         return checkbox   # see long line marker
 
     def add_entry(self, key, *, label, **kwargs):
-        var = tk.StringVar()
-        var.set(config[key])
+        var = tk.StringVar(value=config[key])
         entry = ttk.Entry(self, textvariable=var, **kwargs)
         triangle = ttk.Label(self)
 
@@ -91,11 +90,12 @@ class _Section(ttk.LabelFrame):
             else:
                 triangle['image'] = utils.get_image('triangle.gif')
 
-        def from_config(key, value):
+        var.trace('w', to_config)
+
+        @config.connect(key, run_now=False)
+        def from_config(value):
             var.set(value)
 
-        var.trace('w', to_config)
-        config.connect(key, from_config)
         self.add_widget(entry, label, triangle)
 
     def add_spinbox(self, key, *, label, **kwargs):
@@ -115,11 +115,12 @@ class _Section(ttk.LabelFrame):
             triangle['image'] = ''
             config[key] = value
 
-        def from_config(key, value):
+        var.trace('w', to_config)
+
+        @config.connect(key, run_now=False)
+        def from_config(value):
             var.set(str(value))
 
-        var.trace('w', to_config)
-        config.connect(key, from_config)
         self.add_widget(spinbox, label, triangle)
         return spinbox   # see long line marker
 
@@ -140,18 +141,6 @@ class _Section(ttk.LabelFrame):
         size_spinbox.pack(side='left')
         triangle = ttk.Label(self)
 
-        def from_config(key, value):
-            # the fonts are stored as "{family} size" strings because
-            # tkinter widgets can use strings like that, but the default
-            # font is 'TkFixedFont' because it does not support
-            # specifying a size
-            if value == 'TkFixedFont':
-                familyvar.set('TkFixedFont')
-            else:
-                match = re.search(r'^\{(.+)\} (\d+)$', value)
-                familyvar.set(match.group(1))
-                sizevar.set(match.group(2))
-
         def to_config(*junk):
             if familyvar.get() == 'TkFixedFont':
                 size_spinbox['state'] = 'disabled'
@@ -169,8 +158,20 @@ class _Section(ttk.LabelFrame):
 
         familyvar.trace('w', to_config)
         sizevar.trace('w', to_config)
-        config.connect(key, from_config)
-        from_config(key, config[key])
+
+        @config.connect(key)
+        def from_config(value):
+            # the fonts are stored as "{family} size" strings because
+            # tkinter widgets can use strings like that, but the default
+            # font is 'TkFixedFont' because it does not support
+            # specifying a size
+            if value == 'TkFixedFont':
+                familyvar.set('TkFixedFont')
+            else:
+                match = re.search(r'^\{(.+)\} (\d+)$', value)
+                familyvar.set(match.group(1))
+                sizevar.set(match.group(2))
+
         self.add_widget(frame, label, triangle)
 
 
@@ -207,13 +208,12 @@ class SettingEditor(ttk.Frame):
         spinbox = section.add_spinbox('editing:maxlinelen', from_=1, to=200,
                                       label=checkbox)
 
-        def on_check(key, value):
+        @config.connect('editing:longlinemarker')
+        def on_check(value):
             if value:
                 spinbox['state'] = 'normal'
             else:
                 spinbox['state'] = 'disabled'
-
-        config.connect('editing:longlinemarker', on_check)
 
     def _create_editingsection(self):
         section = _Section(self, text="Editing")

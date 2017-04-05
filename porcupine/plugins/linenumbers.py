@@ -17,16 +17,6 @@ class ScrollManager:
         self._main_widget = main_widget
         self._widgets = [main_widget] + other_widgets
 
-    def enable(self):
-        self._scrollbar['command'] = self._yview
-        for widget in self._widgets:
-            widget['yscrollcommand'] = self._set
-
-    def disable(self):
-        # other than the default widget should be hidden when this runs
-        self._scrollbar['command'] = self._main_widget.yview
-        self._main_widget['yscrollcommand'] = self._scrollbar.set
-
     def _yview(self, *args):
         for widget in self._widgets:
             widget.yview(*args)
@@ -34,6 +24,17 @@ class ScrollManager:
     def _set(self, beginning, end):
         self._scrollbar.set(beginning, end)
         self._yview('moveto', beginning)
+
+    def enable(self):
+        self._scrollbar['command'] = self._yview
+        for widget in self._widgets:
+            widget['yscrollcommand'] = self._set
+
+    def disable(self):
+        # all scrolled widgets except the default widget should be
+        # hidden when this runs
+        self._scrollbar['command'] = self._main_widget.yview
+        self._main_widget['yscrollcommand'] = self._scrollbar.set
 
 
 class LineNumbers(tk.Text):
@@ -46,18 +47,10 @@ class LineNumbers(tk.Text):
         self['state'] = 'disabled'  # must be after the insert
         self._linecount = 1
 
-        config.connect('editing:color_theme', self._on_theme_changed)
-        config.connect('editing:font', self._on_font_changed)
-        self._on_theme_changed(None, config['editing:color_theme'])
-        self._on_font_changed(None, config['editing:font'])
-
-    def _on_theme_changed(self, junk, value):
-        theme = color_themes[value]
+    def set_theme_name(self, name):
+        theme = color_themes[name]
         self['fg'] = theme['foreground']
         self['bg'] = theme['background']
-
-    def _on_font_changed(self, junk, font):
-        self['font'] = font
 
     def do_update(self):
         """This should be ran when the line count changes."""
@@ -81,26 +74,22 @@ def filetab_hook(filetab):
     scrollmgr = ScrollManager(
         filetab.scrollbar, filetab.textwidget, [linenumbers])
 
-    # this is fragile, but fortunately most people use line
-    # numbers and if this breaks it's easy to notice
-    pack_kwargs = filetab.textwidget.pack_info()
-    pack_kwargs.update({'side': 'left', 'fill': 'y', 'expand': False})
-
-    def show_or_hide(junk, showing):
+    def show_or_hide(showing):
         if showing:
-            linenumbers.pack(**pack_kwargs)
+            linenumbers.pack(side='left', fill='y')
             scrollmgr.enable()
         else:
             linenumbers.pack_forget()
             scrollmgr.disable()
 
-    config.connect('gui:linenumbers', show_or_hide)
-    show_or_hide(None, config['gui:linenumbers'])
-    filetab.textwidget.on_modified.append(linenumbers.do_update)
-    yield
+    def set_font(font):
+        linenumbers['font'] = font
 
-    # try to get garbage-collected
-    config.disconnect('gui:linenumbers', show_or_hide)
+    filetab.textwidget.on_modified.append(linenumbers.do_update)
+    with config.connect('gui:linenumbers', show_or_hide), \
+         config.connect('editing:font', set_font), \
+         config.connect('editing:color_theme', linenumbers.set_theme_name):
+        yield
     filetab.textwidget.on_modified.remove(linenumbers.do_update)
 
 

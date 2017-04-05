@@ -6,6 +6,8 @@
 import codecs
 import collections
 import configparser
+import contextlib
+import functools
 import glob
 import json
 import logging
@@ -104,24 +106,38 @@ class _Config:
             return True
         return validator(value)
 
-    def connect(self, key, callback):
+    def connect(self, key, callback=None, *, run_now=True):
+        if callback is None:
+            # used as a decorator
+            return functools.partial(self.connect, key, run_now=run_now)
+
+        @contextlib.contextmanager
+        def _disconnecter():
+            try:
+                yield
+            finally:
+                self.disconnect(key, callback)
+
         self._callbacks[key].append(callback)
+        if run_now:
+            callback(self[key])
+        return _disconnecter()
 
     def disconnect(self, key, callback):
         self._callbacks[key].remove(callback)
 
     def __setitem__(self, key, new_value):
-        assert self.validate(key, new_value)
         if isinstance(key, tuple):
             # config['section', 'key'] -> config['section:key']
             key = ':'.join(key)
+        assert self.validate(key, new_value)
 
         old_value = self[key]
         self._values[key] = new_value
         if old_value != new_value:
             log.info("setting %r to %r", key, new_value)
             for callback in self._callbacks[key]:
-                callback(key, new_value)
+                callback(new_value)
 
     def __getitem__(self, key):
         if isinstance(key, tuple):

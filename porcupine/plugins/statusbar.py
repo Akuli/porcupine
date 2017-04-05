@@ -11,7 +11,7 @@ def filetab_hook(filetab):
         line, column = filetab.textwidget.index('insert').split('.')
         statusbar['text'] = "Line %s, column %s" % (line, column)
 
-    def set_enabled(junk, enabled):
+    def set_enabled(enabled):
         if enabled:
             # side='bottom' makes this go below the main area
             # TODO: convert the find/replace area into a plugin. the
@@ -25,12 +25,12 @@ def filetab_hook(filetab):
             statusbar.pack_forget()
             filetab.textwidget.on_cursor_move.remove(update)
 
-    config.connect('gui:statusbar', set_enabled)
-    set_enabled(None, config['gui:statusbar'])
-    yield
     if config['gui:statusbar']:
-        # try to get things garbage-collected
-        set_enabled(None, False)
+        set_enabled(True)
+    with config.connect('gui:statusbar', set_enabled, run_now=False):
+        yield
+    if config['gui:statusbar']:
+        set_enabled(False)
 
 
 plugins.add_plugin("Statusbar", filetab_hook=filetab_hook)

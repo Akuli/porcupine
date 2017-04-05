@@ -154,8 +154,8 @@ class Editor(tk.Frame):
         add("Read Porcupine's code",
             "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
-        tabmgr.on_tabs_changed.append(self._tabs_changed)
-        self._tabs_changed([])  # disable the menuitems
+        tabmgr.on_tab_changed.append(self._tab_changed)
+        self._tab_changed(None)  # disable the menuitems
 
         def disably(func):
             """Make a function that calls func when there are tabs."""
@@ -205,8 +205,8 @@ class Editor(tk.Frame):
         self.bind_all(keysym, real_callback)
         self._bindings.append((keysym, real_callback))
 
-    def _tabs_changed(self, tablist):
-        state = 'normal' if tablist else 'disabled'
+    def _tab_changed(self, tab):
+        state = 'disabled' if tab is None else 'normal'
         for menu, index in self._disablelist:
             menu.entryconfig(index, state=state)
 
@@ -214,7 +214,7 @@ class Editor(tk.Frame):
         self.editmenu.post(event.x_root, event.y_root)
 
     def _add_tab(self, tab):
-        self.tabmanager.add_tab(tab)   # creates the tab's widgets
+        self.tabmanager.add_tab(tab)
         tab.textwidget.bind('<Button-3>', self._post_editmenu)
 
         # some of our keyboard bindings conflict with tkinter's bindings

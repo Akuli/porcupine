@@ -5,7 +5,7 @@ needs. I can't even change the color of the top label.
 
 The filetabs.FileTab class inherits from the Tab class in this module.
 This is less God-objecty than dumping everything into one class, and
-it's easier to find problems from the code.
+it's easier to debug the code.
 """
 
 import functools
@@ -43,9 +43,9 @@ class Tab:
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', _close_if_can)
 
-        utils.bind_mouse_wheel(self._topframe, manager.on_wheel)
-        utils.bind_mouse_wheel(self.label, manager.on_wheel)
-        utils.bind_mouse_wheel(closebutton, manager.on_wheel)
+        utils.bind_mouse_wheel(self._topframe, manager._on_wheel)
+        utils.bind_mouse_wheel(self.label, manager._on_wheel)
+        utils.bind_mouse_wheel(closebutton, manager._on_wheel)
 
     def can_be_closed(self):
         """Check if this tab can be closed.
@@ -58,8 +58,7 @@ class Tab:
     def close(self):
         """Remove this tab from the tab manager.
 
-        This checks the return value of can_be_closed() and returns True
-        if the tab was actually closed and False if not.
+        Overrides must call super().
         """
         self._manager._remove_tab(self)
         self._topframe.destroy()
@@ -87,9 +86,9 @@ class TabManager(tk.Frame):
         # that contains topframes
         self._topframeframe = tk.Frame(self)
         self._topframeframe.pack(fill='x')
-        utils.bind_mouse_wheel(self._topframeframe, self.on_wheel)
+        utils.bind_mouse_wheel(self._topframeframe, self._on_wheel)
         self.tabs = []
-        self.on_tabs_changed = []   # these are called like callback(tablist)
+        self.on_tab_changed = []  # callback(tab) runs when current tab changes
         self._current_tab = None
         self.no_tabs_frame = tk.Frame(self)
         self.no_tabs_frame.pack(fill='both', expand=True)
@@ -112,51 +111,54 @@ class TabManager(tk.Frame):
 
     @current_tab.setter
     def current_tab(self, tab):
+        assert tab is None or tab in self.tabs
         if tab is self._current_tab:
             return
 
+        # there's always a tab or no tabs message, let's hide it
         if self.current_tab is None:
             self.no_tabs_frame.pack_forget()
         else:
             self.current_tab._topframe['relief'] = 'raised'
             self.current_tab.content.pack_forget()
 
+        # and then replace it with the new tab or no tabs message
         if tab is None:
             self.no_tabs_frame.pack(fill='both', expand=True)
         else:
             tab._topframe['relief'] = 'sunken'
             tab.content.pack(fill='both', expand=True)
             tab.on_focus()
+
         self._current_tab = tab
+        for callback in self.on_tab_changed:
+            callback(tab)
 
     @property
     def current_index(self):
+        if self.current_tab is None:
+            return None
         return self.tabs.index(self.current_tab)
 
     @current_index.setter
     def current_index(self, index):
-        self.current_tab = self.tabs[index % len(self.tabs)]
-
-    def _do_tabs_changed(self):
-        for callback in self.on_tabs_changed:
-            callback(self.tabs)
+        if index < 0:
+            # this would create weird rollovers so maybe best to avoid
+            raise IndexError
+        self.current_tab = self.tabs[index]
 
     def add_tab(self, tab):
-        """Add a Tab and add it to the end."""
         tab._topframe.grid(row=0, column=len(self.tabs))
         self.tabs.append(tab)
-
         if self.current_tab is None:
             # this is the first tab
             self.current_tab = tab
-
-        self._do_tabs_changed()
         return tab
 
     def _remove_tab(self, tab):
         if tab is self.current_tab:
-            # go to next or previous tab if possible, otherwise unselect
-            # the tab
+            # go to next or previous tab if there are other tabs,
+            # otherwise unselect the tab
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
@@ -170,7 +172,18 @@ class TabManager(tk.Frame):
         for i in range(where, len(self.tabs)):
             self.tabs[i]._topframe.grid(column=i)
 
-        self._do_tabs_changed()
+    def _select_next_to(self, diff, roll_over):
+        if len(self.tabs) < 2:
+            return False
+
+        if roll_over:
+            self.current_index = (self.current_index + diff) % len(self.tabs)
+            return True
+        try:
+            self.current_index += diff
+            return True
+        except IndexError:
+            return False
 
     def select_left(self, roll_over=False):
         """Switch to the tab at left if possible.
@@ -179,59 +192,39 @@ class TabManager(tk.Frame):
         this widget, switch to the last tab. Return True if the current
         tab was changed.
         """
-        if len(self.tabs) < 2:
-            return False
-        if self.current_index == 0 and not roll_over:
-            return False
-        self.current_index -= 1
-        return True
+        return self._select_next_to(-1, roll_over)
 
     def select_right(self, roll_over=False):
         """Like select_left(), but switch to the tab at right."""
-        if len(self.tabs) < 2:
-            return False
-        if self.current_index == len(self.tabs)-1 and not roll_over:
-            return False
-        self.current_index += 1
-        return True
+        return self._select_next_to(+1, roll_over)
 
-    def _swap(self, index1, index2):
-        """Swap two tabs with each other by indexes."""
-        # Tk allows gridding multiple widgets in the same place, and
-        # gridding an already gridded widget moves it.
-        tab1 = self.tabs[index1]
-        tab2 = self.tabs[index2]
-        tab1._topframe.grid(column=index2)
-        tab2._topframe.grid(column=index1)
-        self.tabs[index1] = tab2
-        self.tabs[index2] = tab1
-        self._do_tabs_changed()
+    def _on_wheel(self, direction):
+        diffs = {'up': -1, 'down': +1}
+        self._select_next_to(diffs[direction], False)
+
+    def _swap(self, i1, i2):
+        self.tabs[i1], self.tabs[i2] = self.tabs[i2], self.tabs[i1]
+        for i in (i1, i2):
+            # tk allows gridding multiple widgets in the same place, and
+            # gridding an already gridded widget moves it
+            self.tabs[i]._topframe.grid(column=i)
 
     def move_left(self):
         """Move the current tab left if possible.
 
         Return True if the tab was moved.
         """
-        if len(self.tabs) < 2 or self.current_index == 0:
+        if self.current_index in {None, 0}:
             return False
         self._swap(self.current_index, self.current_index-1)
         return True
 
     def move_right(self):
-        """Move the current tab right if possible.
-
-        Return True if the tab was moved.
-        """
-        if len(self.tabs) < 2 or self.current_index == len(self.tabs)-1:
+        """Like move_left(), but moves right."""
+        if self.current_index in {None, len(self.tabs)-1}:
             return False
         self._swap(self.current_index, self.current_index+1)
         return True
-
-    def on_wheel(self, direction):
-        if direction == 'up':
-            self.select_left()
-        else:
-            self.select_right()
 
     def on_alt_n(self, event):
         """Select the n'th tab (1 <= n <= 9) based on event.keysym.
@@ -240,14 +233,10 @@ class TabManager(tk.Frame):
         nothing was done.
         """
         try:
-            index = int(event.keysym) - 1
-        except ValueError:
-            return None
-
-        if index in range(len(self.tabs)):
-            self.current_index = index
+            self.current_index = int(event.keysym) - 1
             return 'break'
-        return None
+        except (IndexError, ValueError):
+            return None
 
     def _on_ctrl_w(self):
         if self.current_tab is not None:
@@ -259,11 +248,12 @@ if __name__ == '__main__':
     root = tk.Tk()
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)
-    tabmgr.on_tabs_changed.append(print)
+    tabmgr.on_tab_changed.append(lambda tab: print(tab.label['text']))
+
     tk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
 
     for keysym, callback in tabmgr.bindings:
-        root.bind_all(keysym, (lambda event: callback()))
+        root.bind_all(keysym, (lambda event, c=callback: c()))
     root.bind_all('<Alt-Key>', tabmgr.on_alt_n)
 
     for i in range(1, 6):

@@ -84,7 +84,7 @@ class AutoCompleter:
 def filetab_hook(filetab):
     completer = AutoCompleter(filetab.textwidget)
 
-    def set_enabled(junk, value):
+    def set_enabled(value):
         text = filetab.textwidget
         if value:
             # the porcupine text widget has these callback lists just
@@ -97,12 +97,12 @@ def filetab_hook(filetab):
             text.on_complete_next.remove(completer.do_next)
             text.on_cursor_move.remove(completer.reset)
 
-    config.connect('editing:autocomplete', set_enabled)
-    set_enabled(None, config['editing:autocomplete'])
-    yield
     if config['editing:autocomplete']:
-        # disable it to try to get garbage collected
-        set_enabled(None, False)
+        set_enabled(True)
+    with config.connect('editing:autocomplete', set_enabled, run_now=False):
+        yield
+    if config['editing:autocomplete']:
+        set_enabled(False)
 
 
 plugins.add_plugin("Autocomplete", filetab_hook=filetab_hook)

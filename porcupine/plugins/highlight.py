@@ -65,11 +65,13 @@ class Highlighter:
         # dir(builtins), so we'll treat them as builtins
         self._keywords -= self._builtins
 
-        config.connect('editing:color_theme', self._on_theme_changed)
-        self._on_theme_changed(None, config['editing:color_theme'])
+        config.connect('editing:color_theme', self._set_theme_name)
 
-    def _on_theme_changed(self, junk, value):
-        theme = color_themes[value]
+    def destroy(self):
+        config.disconnect('editing:color_theme', self._set_theme_name)
+
+    def _set_theme_name(self, name):
+        theme = color_themes[name]
         for tag in ['decorator', 'builtin', 'keyword', 'string',
                     'comment', 'exception']:
             self.textwidget.tag_config(tag, foreground=theme[tag])
@@ -212,6 +214,7 @@ def filetab_hook(filetab):
     highlighter = Highlighter(filetab.textwidget)
     filetab.textwidget.on_modified.append(highlighter.highlight)
     yield
+    highlighter.destroy()
     filetab.textwidget.on_modified.remove(highlighter.highlight)
 
 

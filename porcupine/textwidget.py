@@ -70,22 +70,30 @@ class Text(tk.Text):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
-        for key in ['editing:undo', 'editing:color_theme', 'editing:font']:
-            config.connect(key, self._on_config_changed)
-            self._on_config_changed(key, config[key])
+        config.connect('editing:undo', self._set_undo)
+        config.connect('editing:font', self._set_font)
+        config.connect('editing:color_theme', self._set_theme_name)
 
-    def _on_config_changed(self, key, value=None):
-        if key == 'editing:undo':
-            self['undo'] = value
-        elif key == 'editing:font':
-            self['font'] = value
-        elif key == 'editing:color_theme':
-            theme = color_themes[value]
-            self['fg'] = theme['foreground']
-            self['bg'] = theme['background']
-            self['insertbackground'] = theme['foreground']  # cursor color
-            self['selectforeground'] = theme['selectforeground']
-            self['selectbackground'] = theme['selectbackground']
+    def destroy(self):
+        # these start raising errors when the widget is destroyed
+        config.disconnect('editing:undo', self._set_undo)
+        config.disconnect('editing:font', self._set_font)
+        config.disconnect('editing:color_theme', self._set_theme_name)
+        super().destroy()
+
+    def _set_undo(self, undo):
+        self['undo'] = undo
+
+    def _set_font(self, font):
+        self['font'] = font
+
+    def _set_theme_name(self, name):
+        theme = color_themes[name]
+        self['fg'] = theme['foreground']
+        self['bg'] = theme['background']
+        self['insertbackground'] = theme['foreground']  # cursor color
+        self['selectforeground'] = theme['selectforeground']
+        self['selectbackground'] = theme['selectbackground']
 
     def _on_wheel(self, direction):
         old_font = config['editing:font']
