@@ -44,6 +44,7 @@ have opened in Porcupine; there's nothing wrong with running multiple
 Porcupines at the same time.
 """
 
+import contextlib
 import importlib
 import logging
 import os
@@ -68,7 +69,7 @@ def _do_nothing(*args):
     pass
 
 
-def add_plugin(name, *, start_callback=_do_nothing, filetab_hook=_do_nothing,
+def add_plugin(name, *, session_hook=_do_nothing, filetab_hook=_do_nothing,
                setting_widget_factory=_do_nothing):
     """Add a new plugin to Porcupine when it's starting.
 
@@ -76,9 +77,11 @@ def add_plugin(name, *, start_callback=_do_nothing, filetab_hook=_do_nothing,
     other plugins. These are the valid keyword arguments to this
     function, and they all do nothing by default:
 
-      start_callback(editor)
+      session_hook(editor)
         This function will be called with a porcupine.editor.Editor
-        object as its only argument when Porcupine starts.
+        object as its only argument when Porcupine starts. It should set
+        up everything, and then optionally yield and then undo
+        everything it did.
 
       filetab_hook(filetab)
         This function is called when a new filetabs.FileTab is created.
@@ -95,7 +98,7 @@ def add_plugin(name, *, start_callback=_do_nothing, filetab_hook=_do_nothing,
     """
     plugin = types.SimpleNamespace(
         name=name,
-        start_callback=start_callback,
+        session_hook=session_hook,
         filetab_hook=filetab_hook,
         setting_widget_factory=setting_widget_factory,
     )
@@ -128,12 +131,36 @@ def load(editor):
             log.debug("successfully imported %s", name)
 
     log.info("found %d plugins", len(plugins))
+
+
+@contextlib.contextmanager
+def session(editor):
+    state = []
     for plugin in plugins:
         try:
-            plugin.start_callback(editor)
+            generator = plugin.session_hook(editor)
+            if generator is None:
+                # no yields
+                continue
+            next(generator)
+            state.append((plugin.name, generator))
         except Exception:
-            log.exception("the %r plugin's start_callback doesn't work",
+            log.exception("the %r plugin's session_hook doesn't work",
                           plugin.name)
+    try:
+        yield
+    finally:
+        for name, generator in state:
+            try:
+                next(generator)
+            except StopIteration:
+                # it ran to the end normally
+                pass
+            except Exception:
+                log.exception("the %r plugin's session_hook doesn't work",
+                              name)
+            else:
+                log.error("the %r plugin's session_hook yielded twice", name)
 
 
 # the filetab stuff looks like a context manager at this point, but
@@ -157,15 +184,17 @@ def init_filetab(filetab):
             log.exception("the %r plugin's filetab_hook doesn't work",
                           plugin.name)
 
-    filetab.__plugin_state = state
+    return state
 
 
-def destroy_filetab(filetab):
-    for name, generator in filetab.__plugin_state:
+def destroy_filetab(state):
+    for name, generator in state:
         try:
             next(generator)
         except StopIteration:
-            # it didn't yield, let's assume there's nothing to clean up
+            # it ran to the end normally
             pass
         except Exception:
             log.exception("the %r plugin's filetab_hook doesn't work", name)
+        else:
+            log.error("the %r plugin's session_hook yielded twice", name)

@@ -105,7 +105,7 @@ class FileTab(tabs.Tab):
         self.mark_saved()
         self._update_top_label()
 
-        plugins.init_filetab(self)
+        self._plugin_state = plugins.init_filetab(self)
 
     def _get_hash(self):
         result = hashlib.md5()
@@ -174,7 +174,7 @@ class FileTab(tabs.Tab):
 
     def close(self):
         super().close()
-        plugins.destroy_filetab(self)
+        plugins.destroy_filetab(self._plugin_state)
 
     def on_focus(self):
         self.textwidget.focus()

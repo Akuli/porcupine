@@ -4,33 +4,50 @@ from porcupine import plugins
 from porcupine.settings import config
 
 
-def filetab_hook(filetab):
-    statusbar = tk.Label(filetab.content, anchor='w', relief='sunken')
+class StatusBar(tk.Label):
 
-    def update():
-        line, column = filetab.textwidget.index('insert').split('.')
-        statusbar['text'] = "Line %s, column %s" % (line, column)
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self._active_tab = None
 
+    def set_active_tab(self, tab):
+        if self._active_tab is not None:
+            self._active_tab.textwidget.on_cursor_move.remove(self.update)
+        if tab is not None:
+            tab.textwidget.on_cursor_move.append(self.update)
+        self._active_tab = tab
+        self.update()
+
+    def update(self):
+        if self._active_tab is None:
+            self['text'] = "Welcome to Porcupine!"
+        else:
+            text = self._active_tab.textwidget
+            line, column = text.index('insert').split('.')
+            self['text'] = "Line %s, column %s" % (line, column)
+
+
+def session_hook(editor):
+    statusbar = StatusBar(editor, anchor='w', relief='sunken')
+    editor.tabmanager.on_tab_changed.append(statusbar.set_active_tab)
+
+    # TODO: display the Porcupine version in the status bar when it
+    # starts? or maybe some messages about failing to load plugins?
+    statusbar.update()
+
+    @config.connect('gui:statusbar')
     def set_enabled(enabled):
+        # TODO: convert the find/replace area into a plugin that goes
+        # into the editor, but to make sure that it's always above the
+        # statusbar?
         if enabled:
-            # side='bottom' makes this go below the main area
-            # TODO: convert the find/replace area into a plugin. the
-            # statusbar probably shouldn't be a part of the filetab at
-            # all? the find/replace area will not be but it should be
-            # above the statusbar.
             statusbar.pack(side='bottom', fill='x')
-            filetab.textwidget.on_cursor_move.append(update)
-            update()
         else:
             statusbar.pack_forget()
-            filetab.textwidget.on_cursor_move.remove(update)
 
-    if config['gui:statusbar']:
-        set_enabled(True)
-    with config.connect('gui:statusbar', set_enabled, run_now=False):
+    with set_enabled:    # config.connect() returned a context manager
         yield
-    if config['gui:statusbar']:
-        set_enabled(False)
 
 
-plugins.add_plugin("Statusbar", filetab_hook=filetab_hook)
+plugins.add_plugin(
+    "Statusbar", session_hook=session_hook)
