@@ -135,8 +135,11 @@ class Editor(tk.Frame):
         # the Default theme goes first
         theme_names = sorted(color_themes.sections(), key=str.casefold)
         for name in ['Default'] + theme_names:
+            # the variable option doesn't seem to work on windows 0_o
+            # name=name prevents scope issues
             self.thememenu.add_radiobutton(
-                label=name, value=name, variable=themevar)
+                label=name, value=name, variable=themevar,
+                command=(lambda name=name: themevar.set(name)))
 
         self.helpmenu = HandyMenu()
         self.menubar.add_cascade(label="Help", menu=self.helpmenu)
