@@ -32,16 +32,21 @@ def get_image(filename):
     return tk.PhotoImage(format='gif', data=base64.b64encode(data))
 
 
+def get_root():
+    """Return tkinter's current root window."""
+    # tkinter's default root window is not accessible as a part of the
+    # public API, but tkinter uses _default_root everywhere so I don't
+    # think it's going away
+    return tk._default_root
+
+
 @functools.lru_cache()
 def windowingsystem():
     """Run "tk windowingsystem" in the Tcl interpreter.
 
     A tkinter root window must exist.
     """
-    # tkinter's default root window is not accessible as a part of the
-    # public API, but tkinter uses _default_root everywhere so I don't
-    # think it's going away
-    return tk._default_root.tk.call('tk', 'windowingsystem')
+    return get_root().tk.call('tk', 'windowingsystem')
 
 
 def errordialog(title, message, plaintext=None):
