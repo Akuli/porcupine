@@ -7,6 +7,7 @@ import tkinter as tk
 
 from porcupine import plugins
 from porcupine.settings import config, color_themes
+from porcupine.textwidget import ThemedText
 
 
 class ScrollManager:
@@ -37,20 +38,14 @@ class ScrollManager:
         self._main_widget['yscrollcommand'] = self._scrollbar.set
 
 
-class LineNumbers(tk.Text):
+class LineNumbers(ThemedText):
 
     def __init__(self, parent, textwidget, **kwargs):
-        """Initialize the line number widget."""
-        super().__init__(parent, width=6, **kwargs)
+        super().__init__(parent, width=6, height=1, **kwargs)
         self.textwidget = textwidget
         self.insert('1.0', " 1")    # this is always there
         self['state'] = 'disabled'  # must be after the insert
         self._linecount = 1
-
-    def set_theme_name(self, name):
-        theme = color_themes[name]
-        self['fg'] = theme['foreground']
-        self['bg'] = theme['background']
 
     def do_update(self):
         """This should be ran when the line count changes."""
@@ -82,14 +77,9 @@ def filetab_hook(filetab):
             linenumbers.pack_forget()
             scrollmgr.disable()
 
-    def set_font(font):
-        linenumbers['font'] = font
-
     filetab.textwidget.on_modified.append(linenumbers.do_update)
-    with config.connect('editing:color_theme', linenumbers.set_theme_name):
-        with config.connect('gui:linenumbers', show_or_hide):
-            with config.connect('editing:font', set_font):
-                yield
+    with config.connect('gui:linenumbers', show_or_hide):
+        yield
     filetab.textwidget.on_modified.remove(linenumbers.do_update)
 
 

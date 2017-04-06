@@ -24,8 +24,35 @@ def spacecount(string):
     return result
 
 
+# this can be used for implementing other themed things too, e.g. the
+# line number plugin
+class ThemedText(tk.Text):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        config.connect('editing:font', self._set_font)
+        config.connect('editing:color_theme', self._set_theme)
+
+    # tkinter seems to call this automatically
+    def destroy(self):
+        config.disconnect('editing:font', self._set_font)
+        config.disconnect('editing:color_theme', self._set_theme)
+        super().destroy()
+
+    def _set_font(self, font):
+        self['font'] = font
+
+    def _set_theme(self, name):
+        theme = color_themes[name]
+        self['fg'] = theme['foreground']
+        self['bg'] = theme['background']
+        self['insertbackground'] = theme['foreground']  # cursor color
+        self['selectforeground'] = theme['selectforeground']
+        self['selectbackground'] = theme['selectbackground']
+
+
 # TODO: turn indent/strip stuff into plugin(s)?
-class Text(tk.Text):
+class MainText(ThemedText):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -52,48 +79,29 @@ class Text(tk.Text):
         self.bind('<parenright>', self._on_closing_brace)
         self.bind('<bracketright>', self._on_closing_brace)
         self.bind('<braceright>', self._on_closing_brace)
-        self.bind('<Tab>', lambda event: self._on_tab(False))
-
         self.bind('<Control-z>', self.undo)
         self.bind('<Control-y>', self.redo)
         self.bind('<Control-x>', self.cut)
         self.bind('<Control-c>', self.copy)
         self.bind('<Control-v>', self.paste)
         self.bind('<Control-a>', self.select_all)
-
-        utils.bind_mouse_wheel(self, self._on_wheel, prefixes='Control-')
-
-        if self.tk.call('tk', 'windowingsystem') == 'x11':
+        self.bind('<Tab>', lambda event: self._on_tab(False))
+        if utils.windowingsystem() == 'x11':
             # even though the event keysym says Left, holding down right
             # shift and pressing tab also runs this event... 0_o
             self.bind('<ISO_Left_Tab>', lambda event: self._on_tab(True))
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
+        utils.bind_mouse_wheel(self, self._on_wheel, prefixes='Control-')
         config.connect('editing:undo', self._set_undo)
-        config.connect('editing:font', self._set_font)
-        config.connect('editing:color_theme', self._set_theme_name)
 
     def destroy(self):
-        # these start raising errors when the widget is destroyed
         config.disconnect('editing:undo', self._set_undo)
-        config.disconnect('editing:font', self._set_font)
-        config.disconnect('editing:color_theme', self._set_theme_name)
         super().destroy()
 
     def _set_undo(self, undo):
         self['undo'] = undo
-
-    def _set_font(self, font):
-        self['font'] = font
-
-    def _set_theme_name(self, name):
-        theme = color_themes[name]
-        self['fg'] = theme['foreground']
-        self['bg'] = theme['background']
-        self['insertbackground'] = theme['foreground']  # cursor color
-        self['selectforeground'] = theme['selectforeground']
-        self['selectbackground'] = theme['selectbackground']
 
     def _on_wheel(self, direction):
         old_font = config['editing:font']
