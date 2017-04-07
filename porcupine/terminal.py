@@ -46,7 +46,8 @@ else:
         command = [os.path.join(_scriptdir, 'sh_run.sh'),
                    sys.executable, dirname, basename]
 
-        if utils.windowingsystem() == 'aqua' and 'TERMINAL' not in os.environ:
+        windowingsystem = utils.get_root().tk.call('tk', 'windowingsystem')
+        if windowingsystem == 'aqua' and 'TERMINAL' not in os.environ:
             # use OSX's default Terminal.app
             # these things are wrong with this:
             #  - i needed to cheat and use stackoverflow because i don't

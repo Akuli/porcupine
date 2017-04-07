@@ -86,7 +86,7 @@ class MainText(ThemedText):
         self.bind('<Control-v>', self.paste)
         self.bind('<Control-a>', self.select_all)
         self.bind('<Tab>', lambda event: self._on_tab(False))
-        if utils.windowingsystem() == 'x11':
+        if self.tk.call('tk', 'windowingsystem') == 'x11':
             # even though the event keysym says Left, holding down right
             # shift and pressing tab also runs this event... 0_o
             self.bind('<ISO_Left_Tab>', lambda event: self._on_tab(True))

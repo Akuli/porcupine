@@ -40,15 +40,6 @@ def get_root():
     return tk._default_root
 
 
-@functools.lru_cache()
-def windowingsystem():
-    """Run "tk windowingsystem" in the Tcl interpreter.
-
-    A tkinter root window must exist.
-    """
-    return get_root().tk.call('tk', 'windowingsystem')
-
-
 def errordialog(title, message, plaintext=None):
     """Like messagebox.showinfo, but supports plain text messages.
 
@@ -95,7 +86,7 @@ def bind_mouse_wheel(widget, callback, *, prefixes=''):
     # what OSX does with MouseWheel events and i don't have an
     # up-to-date OSX :( the non-x11 code should work on windows and osx
     # http://stackoverflow.com/a/17457843
-    if windowingsystem() == 'x11':
+    if get_root().tk.call('tk', 'windowingsystem') == 'x11':
         def real_callback(event):
             callback('up' if event.num == 4 else 'down')
 

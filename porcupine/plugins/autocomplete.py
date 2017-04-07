@@ -110,7 +110,7 @@ plugins.add_plugin("Autocomplete", filetab_hook=filetab_hook)
 
 if __name__ == '__main__':
     # simple test
-    from porcupine import textwidget, utils
+    from porcupine import textwidget
     from porcupine.settings import load as load_settings
 
     def on_tab(event):
@@ -132,13 +132,14 @@ if __name__ == '__main__':
     root = tk.Tk()
     load_settings()
 
-    text = textwidget.Text(root)
+    text = textwidget.MainText(root)
+    text.iter_chunks = lambda: [text.get('1.0', 'end-1c')]    # lol
     text.pack()
 
     completer = AutoCompleter(text)
     text.bind('<<Modified>>', on_modified)
     text.bind('<Tab>', on_tab)
-    if utils.windowingsystem() == 'x11':
+    if root.tk.call('tk', 'windowingsystem') == 'x11':
         text.bind('<ISO_Left_Tab>', on_shift_tab)
     else:
         text.bind('<Shift-Tab>', on_shift_tab)
