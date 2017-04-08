@@ -56,6 +56,7 @@ def _gtk_dialog(action, title, default):
             filefilter.add_mime_type(mimetype)
         dialog.add_filter(filefilter)
 
+    dialog.present()
     response = dialog.run()
     if response == Gtk.ResponseType.OK:
         if action == 'open':
