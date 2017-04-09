@@ -235,14 +235,14 @@ class Editor(tk.Frame):
 
     def open_file(self, path=None, *, content=None):
         if path is None:
-            # i think it's easier to recurse here than wrap the whole
-            # thing in a for loop
             try:
                 defaultdir = os.path.dirname(self.tabmanager.current_tab.path)
             except AttributeError as e:
                 defaultdir = None
 
-            for path in dialogs.open_files(defaultdir):
+            # i think it's easier to recurse here than wrap the whole
+            # thing in a for loop
+            for path in dialogs.open_files(self, defaultdir):
                 self.open_file(path, content=content)
             return
 

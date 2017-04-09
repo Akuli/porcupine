@@ -40,6 +40,13 @@ def get_root():
     return tk._default_root
 
 
+def get_window(widget):
+    """Return the tk.Tk or tk.Toplevel widget that a widget is in."""
+    while not isinstance(widget, (tk.Tk, tk.Toplevel)):
+        widget = widget.master
+    return widget
+
+
 @functools.lru_cache()
 def windowingsystem():
     """Run "tk windowingsystem" in the Tcl interpreter.

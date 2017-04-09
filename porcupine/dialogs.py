@@ -26,7 +26,7 @@ _filetypes = [
 ]
 
 
-def _gtk_dialog(action, title, default):
+def _gtk_dialog(parentwindow, action, title, default):
     if action == 'open':
         dialog = Gtk.FileChooserDialog(
             title, None, Gtk.FileChooserAction.OPEN,
@@ -56,8 +56,16 @@ def _gtk_dialog(action, title, default):
             filefilter.add_mime_type(mimetype)
         dialog.add_filter(filefilter)
 
+    # we can't make the dialog modal to the parent window, but at least
+    # we can lift it in front of other windows and make the parent
+    # window look busy, see busy(3tk)
     dialog.present()
+    parentwindow.tk.call('tk', 'busy', 'hold', parentwindow)
+    parentwindow.update()
+    print("aa")
     response = dialog.run()
+    parentwindow.tk.call('tk', 'busy', 'forget', parentwindow)
+
     if response == Gtk.ResponseType.OK:
         if action == 'open':
             result = dialog.get_filenames()
@@ -88,10 +96,11 @@ def _gtk_dialog(action, title, default):
     return result
 
 
-def _tkinter_dialog(action, title, default):
+def _tkinter_dialog(parentwindow, action, title, default):
     options = {
         'filetypes': [(name, glob) for name, glob, mimetype in _filetypes],
         'title': title,
+        'transient': parentwindow,
     }
 
     if action == 'open':
@@ -113,18 +122,14 @@ def _tkinter_dialog(action, title, default):
 
 
 def _dialog(*args):
-    if Gtk is None:
-        func = _tkinter_dialog
-    elif utils.get_root().tk.call('tk', 'windowingsystem') != 'x11':
-        func = _tkinter_dialog
-    else:
-        func = _gtk_dialog
-    return func(*args)
+    if Gtk is None or utils.windowingsystem() != 'x11':
+        return _tkinter_dialog(*args)
+    return _gtk_dialog(*args)
 
 
-def open_files(defaultdir=None):
-    return _dialog('open', "Open files", defaultdir)
+def open_files(parentwindow, defaultdir=None):
+    return _dialog(parentwindow, 'open', "Open files", defaultdir)
 
 
-def save_as(old_path=None):
-    return _dialog('save', "Save as", old_path)
+def save_as(parentwindow, old_path=None):
+    return _dialog(parentwindow, 'save', "Save as", old_path)
