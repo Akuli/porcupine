@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import dialogs, find, plugins, tabs, textwidget
+from porcupine import dialogs, find, plugins, tabs, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -206,7 +206,8 @@ class FileTab(tabs.Tab):
         self.mark_saved()
 
     def save_as(self):
-        path = dialogs.save_as(old_path=self.path)
+        parentwindow = utils.get_window(self.content)
+        path = dialogs.save_as(parentwindow, old_path=self.path)
         if path is not None:
             self.path = path
             self.save()

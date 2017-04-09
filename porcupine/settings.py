@@ -206,27 +206,19 @@ config = _Config({
     'gui:default_geometry': _validate_geometry,
 })
 
+_default_config_file = os.path.join(dirs.installdir, 'default_config.json')
+_default_theme_file = os.path.join(dirs.installdir, 'default_themes.ini')
 _user_config_file = os.path.join(dirs.configdir, 'settings.json')
-_theme_glob = os.path.join(glob.escape(dirs.themedir), '*.ini')
-
-
-def _configparser2dict(parser):
-    """Copy a config parser into a dictionary."""
-    result = {}
-    for sectionname, section in parser.items():
-        result[sectionname] = dict(section)
-    return result
+_user_theme_file = os.path.join(dirs.configdir, 'themes.ini')
 
 
 def load():
     # these must be read first because config's editing:color_theme
     # validator needs it
-    themebytes = pkgutil.get_data('porcupine', 'default_themes.ini')
-    color_themes.read_string(themebytes.decode('utf-8'))
-    color_themes.read(glob.glob(_theme_glob))
+    color_themes.read([_default_theme_file, _user_theme_file])
 
-    default_config = json.loads(
-        pkgutil.get_data('porcupine', 'default_config.json').decode('ascii'))
+    with open(_default_config_file, 'r') as f:
+        default_config = json.load(f)
     try:
         with open(_user_config_file, 'r') as f:
             user_config = json.load(f)

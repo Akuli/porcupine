@@ -58,16 +58,11 @@ class _PorcupineDirs(appdirs.AppDirs):
         return os.path.dirname(os.path.abspath(__file__))
 
     @property
-    def themedir(self):
-        return os.path.join(self.configdir, 'themes')
-
-    @property
     def userplugindir(self):
         return os.path.join(self.configdir, 'plugins')
 
     def makedirs(self):
-        all_paths = [self.cachedir, self.configdir,
-                     self.themedir, self.userplugindir]
+        all_paths = [self.cachedir, self.configdir, self.userplugindir]
         for path in all_paths:
             os.makedirs(path, exist_ok=True)
 

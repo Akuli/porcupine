@@ -135,8 +135,11 @@ class Editor(tk.Frame):
         # the Default theme goes first
         theme_names = sorted(color_themes.sections(), key=str.casefold)
         for name in ['Default'] + theme_names:
+            # the variable option doesn't seem to work on windows 0_o
+            # name=name prevents scope issues
             self.thememenu.add_radiobutton(
-                label=name, value=name, variable=themevar)
+                label=name, value=name, variable=themevar,
+                command=(lambda name=name: themevar.set(name)))
 
         self.helpmenu = HandyMenu()
         self.menubar.add_cascade(label="Help", menu=self.helpmenu)
@@ -232,9 +235,14 @@ class Editor(tk.Frame):
 
     def open_file(self, path=None, *, content=None):
         if path is None:
+            try:
+                defaultdir = os.path.dirname(self.tabmanager.current_tab.path)
+            except AttributeError as e:
+                defaultdir = None
+
             # i think it's easier to recurse here than wrap the whole
             # thing in a for loop
-            for path in dialogs.open_files():
+            for path in dialogs.open_files(self, defaultdir):
                 self.open_file(path, content=content)
             return
 

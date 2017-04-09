@@ -170,7 +170,7 @@ class MainText(ThemedText):
         # the whitespace must be stripped after autoindenting,
         # see _autoindent()
         self.after_idle(self._autoindent)
-        self.after_idle(self._strip_whitespace)
+        self.after_idle(self._rstrip_prev_line)
         self.after_idle(self._do_cursor_move)
 
     def _on_closing_brace(self, event):
@@ -184,11 +184,11 @@ class MainText(ThemedText):
     def _on_tab(self, shifted):
         """Indent, dedent or autocomplete."""
         if shifted:
-            indent_action = self.dedent
             complete_callbacks = self.on_complete_previous
+            indenter = self.dedent
         else:
-            indent_action = self.indent
             complete_callbacks = self.on_complete_next
+            indenter = self.indent
 
         try:
             sel_start, sel_end = map(str, self.tag_ranges('sel'))
@@ -197,7 +197,7 @@ class MainText(ThemedText):
             lineno = int(self.index('insert').split('.')[0])
             before_cursor = self.get('%d.0' % lineno, 'insert')
             if before_cursor.isspace() or not before_cursor:
-                indent_action(lineno)
+                indenter(lineno)
             else:
                 for callback in complete_callbacks:
                     callback()
@@ -206,7 +206,8 @@ class MainText(ThemedText):
             first_lineno = int(sel_start.split('.')[0])
             last_lineno = int(sel_end.split('.')[0])
             for lineno in range(first_lineno, last_lineno+1):
-                indent_action(lineno)
+                indenter(lineno)
+                self.rstrip(lineno)
 
         # indenting and autocomplete: don't insert the default tab
         # dedenting: don't move focus out of this widget
@@ -265,18 +266,21 @@ class MainText(ThemedText):
             # must be end of a block
             self.dedent(lineno)
 
-    def _strip_whitespace(self):
-        """Strip whitespace after end of previous line."""
-        lineno = int(self.index('insert').split('.')[0])
-        line = self.get('%d.0-1l' % lineno, '%d.0-1c' % lineno)
-
+    def rstrip(self, lineno):
+        """Strip trailing whitespace at the end of a line."""
+        line_end = '%d.0+1l-1c' % lineno
+        line = self.get('%d.0' % lineno, line_end)
         spaces = spacecount(line[::-1])
         if spaces == 0:
             return
 
-        start = '{}.0-1c-{}c'.format(lineno, spaces)
-        end = '{}.0-1c'.format(lineno)
-        self.delete(start, end)
+        deleting_start = '{}-{}c'.format(line_end, spaces)
+        self.delete(deleting_start, line_end)
+
+    def _rstrip_prev_line(self):
+        """Strip whitespace after end of previous line."""
+        lineno = int(self.index('insert').split('.')[0])
+        self.rstrip(lineno-1)
 
     def undo(self, event=None):
         try:
