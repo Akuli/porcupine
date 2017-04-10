@@ -122,9 +122,13 @@ def _tkinter_dialog(parentwindow, action, title, default):
 
 
 def _dialog(*args):
-    if Gtk is None or utils.windowingsystem() != 'x11':
+    if Gtk is None:
         return _tkinter_dialog(*args)
-    return _gtk_dialog(*args)
+
+    root = utils.get_root()
+    if root.tk.call('tk', 'windowingsystem') == 'x11':
+        return _gtk_dialog(*args)
+    return _tkinter_dialog(*args)
 
 
 def open_files(parentwindow, defaultdir=None):
