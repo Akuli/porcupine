@@ -128,18 +128,17 @@ class Editor(tk.Frame):
 
         self.thememenu = HandyMenu()
         self.menubar.add_cascade(label="Color themes", menu=self.thememenu)
-        themevar = tk.StringVar()
-        themevar.set(config['editing:color_theme'])
-        themevar.trace('w', self._theme_changed_callback)
 
         # the Default theme goes first
-        theme_names = sorted(color_themes.sections(), key=str.casefold)
-        for name in ['Default'] + theme_names:
-            # the variable option doesn't seem to work on windows 0_o
-            # name=name prevents scope issues
+        themevar = tk.StringVar()
+        themenames = sorted(color_themes.sections(), key=str.casefold)
+        for name in ['Default'] + themenames:
+            set_this_theme = functools.partial(
+                config.set, 'Editing', 'color_theme', name)
             self.thememenu.add_radiobutton(
                 label=name, value=name, variable=themevar,
-                command=(lambda name=name: themevar.set(name)))
+                command=set_this_theme)
+        config.connect('Editing', 'color_theme', themevar.set)
 
         self.helpmenu = HandyMenu()
         self.menubar.add_cascade(label="Help", menu=self.helpmenu)
@@ -189,15 +188,6 @@ class Editor(tk.Frame):
         # default.
         self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
 
-        # right-clicking on a text widget will post the edit menu, but
-        # just unposting it here makes it unpost before clicking it
-        # actually does something :(
-        self.bind_all('<Button-1>',
-                      lambda event: self.after(100, self.editmenu.unpost))
-
-    def _theme_changed_callback(self, varname, *junk):
-        config['editing:color_theme'] = self.getvar(varname)
-
     # this is in a separate function because of scopes and loops
     # TODO: add link to python FAQ here
     def _add_binding(self, keysym, callback):
@@ -214,7 +204,7 @@ class Editor(tk.Frame):
             menu.entryconfig(index, state=state)
 
     def _post_editmenu(self, event):
-        self.editmenu.post(event.x_root, event.y_root)
+        self.editmenu.tk_popup(event.x_root, event.y_root)
 
     def _add_tab(self, tab):
         self.tabmanager.add_tab(tab)
@@ -259,7 +249,8 @@ class Editor(tk.Frame):
 
         if content is None:
             try:
-                with open(path, 'r', encoding=config['files:encoding']) as f:
+                encoding = config['Files']['encoding']
+                with open(path, 'r', encoding=encoding) as f:
                     for line in f:
                         tab.textwidget.insert('end-1c', line)
             except (OSError, UnicodeError):

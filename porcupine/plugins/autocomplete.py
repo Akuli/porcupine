@@ -84,8 +84,9 @@ class AutoCompleter:
 def filetab_hook(filetab):
     completer = AutoCompleter(filetab.textwidget)
 
-    def set_enabled(value):
-        text = filetab.textwidget
+    def update_state(junk=None):
+        text = filetab.textwidget       # pep8 line length
+        value = config['Editing'].getboolean('autocomplete')
         if value:
             # the porcupine text widget has these callback lists just
             # for creating autocompleters :)
@@ -97,12 +98,13 @@ def filetab_hook(filetab):
             text.on_complete_next.remove(completer.do_next)
             text.on_cursor_move.remove(completer.reset)
 
-    if config['editing:autocomplete']:
-        set_enabled(True)
-    with config.connect('editing:autocomplete', set_enabled, run_now=False):
+    if config['Editing'].getboolean('autocomplete', True):
+        update_state()
+    with config.connect('Editing', 'autocomplete', update_state,
+                        run_now=False):
         yield
-    if config['editing:autocomplete']:
-        set_enabled(False)
+    if config['Editing'].getboolean('autocomplete', True):
+        update_state()
 
 
 plugins.add_plugin("Autocomplete", filetab_hook=filetab_hook)

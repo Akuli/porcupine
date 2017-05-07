@@ -68,6 +68,8 @@ class _PorcupineDirs(appdirs.AppDirs):
 
 
 if platform.system() in {'Windows', 'Darwin'}:
+    # these platforms like path names like "Program Files" or
+    # "Application Support"
     dirs = _PorcupineDirs('Porcupine', 'Akuli')
 else:
-    dirs = _PorcupineDirs('porcupine', 'Akuli')
+    dirs = _PorcupineDirs('porcupine', 'akuli')

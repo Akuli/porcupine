@@ -27,9 +27,13 @@ _filetypes = [
 
 
 def _gtk_dialog(parentwindow, action, title, default):
+    # Gtk prints a warning if the parent is None, so we'll create a
+    # dummy parent window that is never shown to the user
+    parent = Gtk.Window()
+
     if action == 'open':
         dialog = Gtk.FileChooserDialog(
-            title, None, Gtk.FileChooserAction.OPEN,
+            title, parent, Gtk.FileChooserAction.OPEN,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OPEN, Gtk.ResponseType.OK),
             select_multiple=True,
@@ -39,7 +43,7 @@ def _gtk_dialog(parentwindow, action, title, default):
 
     if action == 'save':
         dialog = Gtk.FileChooserDialog(
-            title, None, Gtk.FileChooserAction.SAVE,
+            title, parent, Gtk.FileChooserAction.SAVE,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_SAVE, Gtk.ResponseType.OK),
             do_overwrite_confirmation=True,
@@ -100,7 +104,7 @@ def _tkinter_dialog(parentwindow, action, title, default):
     options = {
         'filetypes': [(name, glob) for name, glob, mimetype in _filetypes],
         'title': title,
-        'transient': parentwindow,
+        'parent': parentwindow,
     }
 
     if action == 'open':

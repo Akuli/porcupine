@@ -3,212 +3,173 @@
 # into plugins, and the plugins use random config values from different
 # config sections and it's not organized in any way
 
-import codecs
 import collections
 import configparser
 import contextlib
-import functools
-import glob
-import json
 import logging
 import os
-import pkgutil
-import re
 import tkinter.font as tkfont
 
-from porcupine import dirs
+from porcupine import dirs, utils
 
 log = logging.getLogger(__name__)
 
 
-class _Config:
-    """A {'section:name': value} dictionary-like object.
+def _get_size(font):
+    """Return a positive size of the tkfont.Font."""
+    if font['size'] > 0:
+        size = font['size']
+    else:
+        # Tk has some weird meaning for a negative font size, let's try
+        # to translate it to a regular size
+        #
+        #  font['size']      font.metrics('linespace')
+        # -------------- = ------------------------------
+        #      100          bigfont.metrics('linespace')
+        #
+        #                 font.metrics('linespace') * 100
+        # font['size'] = ---------------------------------
+        #                   bigfont.metrics('linespace')
+        bigfont = tkfont.Font(family=font['family'], size=100)
+        size = font.metrics('linespace') * 100 // bigfont.metrics('linespace')
+    return font['family'], size
 
-    Unlike plain dictionaries, these objects support things like
-    callbacks that run when a value is changed.
 
-    >>> c = _Config({})
-    >>> c.load({'test': {'a': 1, 'b': 2}}, {'test': {'a': 3}})
-    >>> dict(c) == {'test:a': 3, 'test:b': 2}
-    True
-    >>> c['test:b']     # default setting
-    2
-    >>> c['test:a']     # user setting that overrides a default setting
-    3
-    >>> c.dump()        # settings that are different from defaults
-    {'test': {'a': 3}}
-    >>>
+class InvalidValue(Exception):
+    """Raised when attempting to set an invalid value."""
+
+
+class _Config(configparser.ConfigParser):
+    """Like :class:`configparser.ConfigParser`, but supports callbacks.
+
+    When a value is set, the config object does these things:
+
+    1. The value is converted to a string with `str()` because
+       configparser only handles strings.
+    2. Validator callbacks are called. If one of them returns False,
+       :exc:`~InvalidValue` is raised and the setting process stops.
+    3. The value is set normally.
+    4. Each callback added with :meth:`~connect` is called with the new
+       value.
+
     """
 
-    def __init__(self, validators=None):
-        if validators is None:
-            validators = {}
-        self._validators = validators
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # these are like {(sectionname, key): valuelist}
+        self._validators = collections.defaultdict(list)
         self._callbacks = collections.defaultdict(list)
-        self._default_values = None
-        self._original_values = None
-        self._values = None
 
-    def _flatten_dict(self, dictionary):
-        result = {}
-        for key1, sub in dictionary.items():
-            for key2, value in sub.items():
-                result[key1 + ':' + key2] = value
-        return result
+    # currently configparser always calls this method, i'll add more
+    # overrides if future versions of it stop doing that. the docstring
+    # says that configparser.ConfigParser.set "extends
+    # RawConfigParser.set by validating type and interpolation syntax on
+    # the value", so maybe this isn't an implementation detail :^)
+    def set(self, section, key, value):
+        value = str(value)
+        for validator in self._validators[(section, key)]:
+            if not validator(value):
+                raise InvalidValue("%s(%r) returned False" % (
+                    utils.nice_repr(validator), value))
 
-    def _unflatten_dict(self, dictionary):
-        result = {}
-        for key, value in dictionary.items():
-            key1, key2 = key.split(':')
-            try:
-                result[key1][key2] = value
-            except KeyError:
-                result[key1] = {key2: value}
-        return result
+        old_value = self[section][key]
+        super().set(section, key, value)
+        new_value = self[section][key]
 
-    def load(self, defaults, user_settings):
-        """Set settings from two dict-like objects."""
-        self._values = self._flatten_dict(defaults)
-        self._default_values = self._values.copy()
-
-        # the user setting dict can contain more or less values than the
-        # default dict if we're using a config file from an older or
-        # newer porcupine, but it doesn't matter
-        user_settings = self._flatten_dict(user_settings)
-        for key in self.keys() & user_settings.keys():
-            value = user_settings[key]
-            if self.validate(key, value):
-                self[key] = value
-            else:
-                log.warning("invalid %r value %r, using %r instead",
-                            key, value, self[key])
-        self._original_values = dict(self)
-
-    def dump(self):
-        result = {}
-        for key in self.keys():
-            if self[key] != self._default_values[key]:
-                result[key] = self[key]
-        return self._unflatten_dict(result)
-
-    def needs_saving(self):
-        return dict(self) != self._original_values
-
-    def reset(self):
-        for key in self.keys():
-            self[key] = self._default_values[key]
-
-    def validate(self, key, value):
-        assert key in self.keys()
-        try:
-            validator = self._validators[key]
-        except KeyError:
-            return True
-        return validator(value)
-
-    def connect(self, key, callback=None, *, run_now=True):
-        if callback is None:
-            # used as a decorator
-            return functools.partial(self.connect, key, run_now=run_now)
-
-        @contextlib.contextmanager
-        def _disconnecter():
-            try:
-                yield
-            finally:
-                self.disconnect(key, callback)
-
-        self._callbacks[key].append(callback)
-        if run_now:
-            callback(self[key])
-        return _disconnecter()
-
-    def disconnect(self, key, callback):
-        self._callbacks[key].remove(callback)
-
-    def __setitem__(self, key, new_value):
-        if isinstance(key, tuple):
-            # config['section', 'key'] -> config['section:key']
-            key = ':'.join(key)
-        assert self.validate(key, new_value)
-
-        old_value = self[key]
-        self._values[key] = new_value
         if old_value != new_value:
-            log.info("setting %r to %r", key, new_value)
-            for callback in self._callbacks[key]:
+            log.info("setting %s:%s to %r", section, key, new_value)
+            for callback in self._callbacks[(section, key)]:
                 callback(new_value)
 
-    def __getitem__(self, key):
-        if isinstance(key, tuple):
-            key = ':'.join(key)
-        return self._values[key]
+    @contextlib.contextmanager
+    def _disconnecter(self, section, key, callback):
+        try:
+            yield
+        finally:
+            self.disconnect(section, key, callback)
 
-    # this is used by dict(some_config_object)
-    def keys(self):
-        return self._default_values.keys()
+    def connect(self, section, key, callback=None, *, run_now=True):
+        """Run ``callback(new_value)`` when a setting changes.
 
-    def sections(self):
-        result = set()
-        for key in self.keys():
-            result.add(key.split(':')[0])
-        return result
+        If *run_now* is True, *callback* will also be ran right away
+        when this function is called. This function returns an object
+        that can be used as a context manager for disconnecting the
+        callback easily::
+
+            def cool_callback(value):
+                ...
+
+            with config.connect('some_section:some_key', cool_callback):
+                # do something here
+
+        The connect method can be used as a decorator too, but the
+        disconnecter will be lost::
+
+            @config.connect('some_section:some_key')
+            def cool_callback(value):
+                ...
+
+            try:
+                # do something here
+            finally:
+                config.disconnect('some_section:some_key', cool_callback)
+        """
+        if callback is None:
+            def decorated(callback):
+                self.connect(section, key, callback, run_now=run_now)
+                return callback
+            return decorated
+
+        self._callbacks[(section, key)].append(callback)
+        if run_now:
+            callback(self[section][key])
+        return self._disconnecter(section, key, callback)
+
+    def disconnect(self, section, key, callback):
+        """Undo a :meth:`~connect` call."""
+        self._callbacks[(section, key)].remove(callback)
+
+    def validator(self, section, key):
+        """A decorator that adds a validator function.
+
+        The validator will be called with the new value converted to a
+        string as its only argument, and it should return True if the
+        value is OK.
+        """
+        def validator_adder(function):
+            self._validators.setdefault((section, key), []).append(function)
+            return function
+        return validator_adder
+
+    def to_dict(self):
+        """Convert the config object to nested dictionaries."""
+        return {name: dict(section) for name, section in self.items()}
+
+    def set_font(self, section, key, family, size):
+        """Set a font in a way compatible with :meth:`~get_font`."""
+        self[section][key] = '%s %d' % (family, size)
+
+    def get_font(self, section, key):
+        """Get a (family, size) tuple from a 'family size' string."""
+        fontstring = self[section][key]
+        if fontstring in ('TkDefaultFont', 'TkFixedFont'):
+            # it's not families, but we can use it to get a family
+            family = tkfont.Font(font=fontstring)['family']
+            size = 10   # stupid default
+            self.set_font(section, key, family, size)
+        else:
+            family, size = self[section][key].rsplit(None, 1)
+        return (family, int(size))
 
 
-def _validate_encoding(name):
-    try:
-        codecs.lookup(name)
-        return True
-    except LookupError:
-        return False
-
-
-def _validate_geometry(geometry):
-    """Check if a tkinter geometry is valid.
-
-    >>> _validate_geometry('100x200+300+400')
-    True
-    >>> _validate_geometry('100x200')
-    True
-    >>> _validate_geometry('+300+400')
-    True
-    >>> _validate_geometry('asdf')
-    False
-    >>> # tkinter actually allows '', but it does nothing
-    >>> _validate_geometry('')
-    False
-    """
-    if not geometry:
-        return False
-    return re.search(r'^(\d+x\d+)?(\+\d+\+\d+)?$', geometry) is not None
-
-
-def _validate_fontstring(string):
-    if string == 'TkFixedFont':
-        # tkinter's default font, doesn't support specifying a size
-        return True
-
-    match = re.search(r'^\{(.+)\} (\d+)$', string)
-    if match is None or int(match.group(2)) <= 0:
-        return False
-    return match.group(1).casefold() in map(str.casefold, tkfont.families())
-
-
-# color_themes can be just a configparser because the themes don't need
-# to be changed while porcupine is running
 color_themes = configparser.ConfigParser(default_section='Default')
-config = _Config({
-    'files:encoding': _validate_encoding,
-    'editing:font': _validate_fontstring,
-    'editing:indent': (lambda value: value > 0),
-    'editing:color_theme': (lambda name: name in color_themes),
-    'editing:maxlinelen': (lambda value: value > 0),
-    'gui:default_geometry': _validate_geometry,
-})
+config = _Config()
+_saved_config = {}
 
-_default_config_file = os.path.join(dirs.installdir, 'default_config.json')
+_default_config_file = os.path.join(dirs.installdir, 'default_config.ini')
 _default_theme_file = os.path.join(dirs.installdir, 'default_themes.ini')
-_user_config_file = os.path.join(dirs.configdir, 'settings.json')
+_user_config_file = os.path.join(dirs.configdir, 'settings.ini')
 _user_theme_file = os.path.join(dirs.configdir, 'themes.ini')
 
 
@@ -216,22 +177,15 @@ def load():
     # these must be read first because config's editing:color_theme
     # validator needs it
     color_themes.read([_default_theme_file, _user_theme_file])
+    config.read([_default_config_file, _user_config_file])
+    _saved_config.clear()
+    _saved_config.update(config.to_dict())
 
-    with open(_default_config_file, 'r') as f:
-        default_config = json.load(f)
-    try:
-        with open(_user_config_file, 'r') as f:
-            user_config = json.load(f)
-    except FileNotFoundError:
-        log.info("user-wide setting file '%s' was not found, " +
-                 "using default settings", _user_config_file)
-        user_config = {}
-    except Exception:
-        log.exception("unexpected error while reading settings from '%s'",
-                      _user_config_file)
-        user_config = {}
 
-    config.load(default_config, user_config)
+_comments = '''\
+# This is a Porcupine setting file. You can edit it yourself or you can
+# use Porcupine's setting dialog.
+'''
 
 
 def save():
@@ -246,13 +200,13 @@ def save():
     # Of course, this doesn't handle the user changing settings in
     # both Porcupines, but I think it's not too bad to assume that
     # most users don't do that.
-    if config.needs_saving():
-        log.info("saving config to '%s'", _user_config_file)
-        with open(_user_config_file, 'w') as file:
-            json.dump(config.dump(), file, indent=4)
-            file.write('\n')
-    else:
+    if config.to_dict() == _saved_config:
         log.info("config hasn't changed, not saving it")
+    else:
+        log.info("saving config to '%s'", _user_config_file)
+        with open(_user_config_file, 'w') as f:
+            print(_comments, file=f)
+            config.write(f)
 
 
 if __name__ == '__main__':

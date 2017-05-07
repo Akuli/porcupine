@@ -65,10 +65,10 @@ class Highlighter:
         # dir(builtins), so we'll treat them as builtins
         self._keywords -= self._builtins
 
-        config.connect('editing:color_theme', self._set_theme_name)
+        config.connect('Editing', 'color_theme', self._set_theme_name)
 
     def destroy(self):
-        config.disconnect('editing:color_theme', self._set_theme_name)
+        config.disconnect('Editing', 'color_theme', self._set_theme_name)
 
     def _set_theme_name(self, name):
         theme = color_themes[name]

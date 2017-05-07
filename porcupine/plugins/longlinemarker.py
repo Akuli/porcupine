@@ -17,12 +17,13 @@ class LongLineMarker:
         self._frame['bg'] = color_themes[name]['longlinemarker']
 
     def update(self, junk=None):
-        if not config['editing:longlinemarker']:
+        if not config['Editing']['longlinemarker']:
             self._frame.place_forget()
             return
 
-        font = tkfont.Font(font=config['editing:font'])
-        where = font.measure(' ' * config['editing:maxlinelen'])
+        family, size = config.get_font('Editing', 'font')
+        font = tkfont.Font(family=family, size=size)
+        where = font.measure(' ' * config['Editing'].getint('maxlinelen'))
         self._frame.place(x=where, height=self._height)
 
     def set_height(self, height):
@@ -36,10 +37,10 @@ def filetab_hook(filetab):
     def configure_callback(event):
         marker.set_height(event.height)
 
-    with config.connect('editing:color_theme', marker.set_theme_name):
-        with config.connect('editing:longlinemarker', marker.update):
-            with config.connect('editing:maxlinelen', marker.update):
-                with config.connect('editing:font', marker.update):
+    with config.connect('Editing', 'color_theme', marker.set_theme_name):
+        with config.connect('Editing', 'longlinemarker', marker.update):
+            with config.connect('Editing', 'maxlinelen', marker.update):
+                with config.connect('Editing', 'font', marker.update):
                     filetab.textwidget.bind(
                         '<Configure>', configure_callback, add=True)
                     yield

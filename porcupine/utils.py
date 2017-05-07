@@ -107,6 +107,21 @@ def bind_mouse_wheel(widget, callback, *, prefixes=''):
         widget.bind('<{}MouseWheel>'.format(prefixes), real_callback)
 
 
+def nice_repr(obj):
+    """Return a nice string representation of an object.
+
+    >>> import time
+    >>> nice_repr(time.strftime)
+    'time.strftime'
+    >>> nice_repr(object())     # doctest: +ELLIPSIS
+    '<object object at 0x...>'
+    """
+    try:
+        return obj.__module__ + '.' + obj.__name__
+    except AttributeError:
+        return repr(obj)
+
+
 class Checkbox(tk.Checkbutton):
     """Like tk.Checkbutton, but works with my dark GTK+ theme."""
     # tk.Checkbutton displays a white checkmark on a white background to

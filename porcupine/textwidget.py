@@ -30,17 +30,17 @@ class ThemedText(tk.Text):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        config.connect('editing:font', self._set_font)
-        config.connect('editing:color_theme', self._set_theme)
+        config.connect('Editing', 'font', self._set_font)
+        config.connect('Editing', 'color_theme', self._set_theme)
 
     # tkinter seems to call this automatically
     def destroy(self):
-        config.disconnect('editing:font', self._set_font)
-        config.disconnect('editing:color_theme', self._set_theme)
+        config.disconnect('Editing', 'font', self._set_font)
+        config.disconnect('Editing', 'color_theme', self._set_theme)
         super().destroy()
 
-    def _set_font(self, font):
-        self['font'] = font
+    def _set_font(self, junk):
+        self['font'] = config.get_font('Editing', 'font')
 
     def _set_theme(self, name):
         theme = color_themes[name]
@@ -94,30 +94,23 @@ class MainText(ThemedText):
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
         utils.bind_mouse_wheel(self, self._on_wheel, prefixes='Control-')
-        config.connect('editing:undo', self._set_undo)
+        config.connect('Editing', 'undo', self._set_undo)
 
     def destroy(self):
-        config.disconnect('editing:undo', self._set_undo)
+        config.disconnect('Editing', 'undo', self._set_undo)
         super().destroy()
 
     def _set_undo(self, undo):
         self['undo'] = undo
 
     def _on_wheel(self, direction):
-        old_font = config['editing:font']
-        if old_font == 'TkFixedFont':
-            # can't do anything
-            return
-
-        family, size = re.search(r'^\{(.+)\} (\d+)$', old_font).groups()
-        size = int(size)
+        family, size = config.get_font('Editing', 'font')
         if direction == 'up':
             size += 1
         else:
             size -= 1
-        new_font = '{%s} %d' % (family, size)
-        if config.validate('editing:font', new_font):
-            config['editing:font'] = new_font
+        if size > 2:
+            config.set_font('Editing', 'font', family, size)
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind
@@ -221,7 +214,7 @@ class MainText(ThemedText):
         """
         line = self.get('%d.0' % lineno, '%d.0+1l' % lineno)
         spaces = spacecount(line)
-        indent = config['editing:indent']
+        indent = config['Editing'].getint('indent')
 
         # make the indent consistent, for example, add 1 space if indent
         # is 4 and there are 7 spaces
@@ -241,7 +234,7 @@ class MainText(ThemedText):
         if spaces == 0:
             return 0
 
-        indent = config['editing:indent']
+        indent = config['Editing'].getint('indent')
         howmany2del = spaces % indent
         if howmany2del == 0:
             howmany2del = indent

@@ -11,7 +11,7 @@ def set_theme(name):
 
 def session_hook(editor):
     old_color = utils.get_root()['bg']
-    with config.connect('editing:color_theme', set_theme):
+    with config.connect('Editing', 'color_theme', set_theme):
         yield
     utils.get_root().tk_setPalette(old_color)
 

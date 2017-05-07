@@ -49,9 +49,11 @@ def _open_log_file():
         fileno = os.open(path, os.O_WRONLY | os.O_CREAT, 0o644)
 
         if _lock(fileno):
-            # now we can delete the old content
-            os.truncate(fileno, 0)
-            return open(fileno, 'w')
+            # now we can delete the old content, can't use os.truncate
+            # here because it doesn't exist on windows
+            file = open(fileno, 'w')
+            file.truncate(0)
+            return file
         else:
             os.close(fileno)
 

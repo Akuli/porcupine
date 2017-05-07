@@ -29,7 +29,7 @@ def main():
         'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         help="open these files when the editor starts, - means stdin")
     parser.add_argument(
-        '--verbose', '-v', action='store_true',
+        '-v', '--verbose', action='store_true',
         help="print same debugging messages to stderr as to log file")
     args = parser.parse_args()
 
@@ -47,7 +47,7 @@ def main():
     editor.pack(fill='both', expand=True)
 
     root['menu'] = editor.menubar
-    root.geometry(settings.config['gui:default_geometry'])
+    root.geometry(settings.config['GUI']['default_size'])
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
 

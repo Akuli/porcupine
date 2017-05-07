@@ -1,7 +1,4 @@
-"""Line numbers for tkinter's Text widget.
-
-This doesn't handle scrolling in any way. See multiscrollbar.py.
-"""
+"""Line numbers for tkinter's Text widget."""
 
 import tkinter as tk
 
@@ -78,7 +75,7 @@ def filetab_hook(filetab):
             scrollmgr.disable()
 
     filetab.textwidget.on_modified.append(linenumbers.do_update)
-    with config.connect('gui:linenumbers', show_or_hide):
+    with config.connect('GUI', 'linenumbers', show_or_hide):
         yield
     filetab.textwidget.on_modified.remove(linenumbers.do_update)
 
@@ -92,8 +89,7 @@ if __name__ == '__main__':
     root = tk.Tk()
     porcupine.settings.load()
 
-    theme = color_themes[config['editing:color_theme']]
-    text = tk.Text(root, fg=theme['foreground'], bg=theme['background'])
+    text = ThemedText(root)
     linenumbers = LineNumbers(root, text)
     linenumbers.pack(side='left', fill='y')
     text.pack(side='left', fill='both', expand=True)
