@@ -11,7 +11,7 @@ it's easier to debug the code.
 import functools
 import tkinter as tk
 
-from porcupine import structures, utils
+from porcupine import utils
 
 
 class Tab:
@@ -88,7 +88,7 @@ class TabManager(tk.Frame):
         self._topframeframe.pack(fill='x')
         utils.bind_mouse_wheel(self._topframeframe, self._on_wheel)
         self.tabs = []
-        self.tab_changed_hook = structures.CallbackHook(__name__)
+        self.tab_changed_hook = utils.CallbackHook(__name__)
         self._current_tab = None
         self.no_tabs_frame = tk.Frame(self)
         self.no_tabs_frame.pack(fill='both', expand=True)

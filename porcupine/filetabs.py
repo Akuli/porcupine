@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import dialogs, find, plugins, structures, tabs, textwidget, utils
+from porcupine import dialogs, find, plugins, tabs, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class FileTab(tabs.Tab):
     def __init__(self, manager):
         super().__init__(manager)
         self._path = None
-        self.path_changed_hook = structures.CallbackHook(__name__)
+        self.path_changed_hook = utils.CallbackHook(__name__)
 
         self._orig_label_fg = self.label['fg']
         self.path_changed_hook.connect(self._update_top_label)

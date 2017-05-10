@@ -4,7 +4,7 @@ from functools import partial   # not "import functools" to avoid long lines
 import re
 import tkinter as tk
 
-from porcupine import structures, utils
+from porcupine import utils
 from porcupine.settings import config, color_themes
 
 
@@ -59,9 +59,9 @@ class MainText(ThemedText):
 
         # These will contain callback functions that are called with no
         # arguments after the text in the textview is updated.
-        self.cursor_move_hook = structures.CallbackHook(__name__)
-        self.modified_hook = structures.CallbackHook(__name__)
-        self.complete_hook = structures.CallbackHook(__name__)
+        self.cursor_move_hook = utils.CallbackHook(__name__)
+        self.modified_hook = utils.CallbackHook(__name__)
+        self.complete_hook = utils.CallbackHook(__name__)
         self._cursorpos = (1, 0)
 
         def cursor_move(event):
