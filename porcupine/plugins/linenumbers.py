@@ -74,10 +74,10 @@ def filetab_hook(filetab):
             linenumbers.pack_forget()
             scrollmgr.disable()
 
-    filetab.textwidget.on_modified.append(linenumbers.do_update)
+    filetab.textwidget.modified_hook.connect(linenumbers.do_update)
     with config.connect('GUI', 'linenumbers', show_or_hide):
         yield
-    filetab.textwidget.on_modified.remove(linenumbers.do_update)
+    filetab.textwidget.modified_hook.disconnect(linenumbers.do_update)
 
 
 plugins.add_plugin("Line Numbers", filetab_hook=filetab_hook)

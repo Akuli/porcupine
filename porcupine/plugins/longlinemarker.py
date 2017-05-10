@@ -17,7 +17,7 @@ class LongLineMarker:
         self._frame['bg'] = color_themes[name]['longlinemarker']
 
     def update(self, junk=None):
-        if not config['Editing']['longlinemarker']:
+        if not config['Editing'].getboolean('longlinemarker'):
             self._frame.place_forget()
             return
 

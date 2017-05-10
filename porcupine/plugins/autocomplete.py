@@ -36,8 +36,9 @@ class AutoCompleter:
                 result.add(match.group(1))
         return collections.deque(sorted(result, key=str.casefold))
 
-    def _complete(self, rotation):
+    def complete(self, prev_or_next):
         self._completing = True
+
         try:
             if self._startpos is None:
                 # not completing yet
@@ -45,7 +46,7 @@ class AutoCompleter:
                 self._suffixes = self._find_suffixes()
                 self._suffixes.appendleft('')  # end of completions
 
-            self._suffixes.rotate(rotation)
+            self._suffixes.rotate(-1 if prev_or_next == 'next' else 1)
             self.textwidget.delete(self._startpos, 'insert')
             self.textwidget.mark_set('insert', self._startpos)
             self.textwidget.insert(self._startpos, self._suffixes[0])
@@ -53,26 +54,7 @@ class AutoCompleter:
         finally:
             self._completing = False
 
-    def do_previous(self):
-        """Autocomplete the previous alternative.
-
-        This should be ran when shift+tab is pressed.
-        """
-        self._complete(1)
-
-    def do_next(self):
-        """Autocomplete the next alternative.
-
-        This should be ran when tab is pressed.
-        """
-        self._complete(-1)
-
     def reset(self):
-        """Forget previous completions.
-
-        This should be called when the user keeps typing after
-        completing.
-        """
         # deleting and inserting text might run this if this is a
         # callback, so this must do nothing if we're currently
         # completing
@@ -84,27 +66,28 @@ class AutoCompleter:
 def filetab_hook(filetab):
     completer = AutoCompleter(filetab.textwidget)
 
+    def do_reset(*junk):
+        completer.reset()
+
     def update_state(junk=None):
         text = filetab.textwidget       # pep8 line length
         value = config['Editing'].getboolean('autocomplete')
         if value:
             # the porcupine text widget has these callback lists just
             # for creating autocompleters :)
-            text.on_complete_previous.append(completer.do_previous)
-            text.on_complete_next.append(completer.do_next)
-            text.on_cursor_move.append(completer.reset)
+            text.complete_hook.connect(completer.complete)
+            text.cursor_move_hook.connect(do_reset)
         else:
-            text.on_complete_previous.remove(completer.do_previous)
-            text.on_complete_next.remove(completer.do_next)
-            text.on_cursor_move.remove(completer.reset)
+            text.complete_hook.disconnect(completer.complete)
+            text.cursor_move_hook.disconnect(do_reset)
 
     if config['Editing'].getboolean('autocomplete', True):
-        update_state()
+        update_state()    # enable it
     with config.connect('Editing', 'autocomplete', update_state,
                         run_now=False):
         yield
     if config['Editing'].getboolean('autocomplete', True):
-        update_state()
+        update_state()    # disable it
 
 
 plugins.add_plugin("Autocomplete", filetab_hook=filetab_hook)
@@ -116,11 +99,11 @@ if __name__ == '__main__':
     from porcupine.settings import load as load_settings
 
     def on_tab(event):
-        completer.do_next()
+        completer.complete('next')
         return 'break'
 
     def on_shift_tab(event):
-        completer.do_previous()
+        completer.complete('previous')
         return 'break'
 
     # <<Modified>> is not really correct, the real editor resets on

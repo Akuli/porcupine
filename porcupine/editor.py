@@ -156,7 +156,7 @@ class Editor(tk.Frame):
         add("Read Porcupine's code",
             "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
-        tabmgr.on_tab_changed.append(self._tab_changed)
+        tabmgr.tab_changed_hook.connect(self._tab_changed)
         self._tab_changed(None)  # disable the menuitems
 
         def disably(func):

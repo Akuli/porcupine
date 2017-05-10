@@ -117,7 +117,7 @@ def nice_repr(obj):
     '<object object at 0x...>'
     """
     try:
-        return obj.__module__ + '.' + obj.__name__
+        return obj.__module__ + '.' + obj.__qualname__
     except AttributeError:
         return repr(obj)
 

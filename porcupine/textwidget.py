@@ -4,7 +4,7 @@ from functools import partial   # not "import functools" to avoid long lines
 import re
 import tkinter as tk
 
-from porcupine import utils
+from porcupine import structures, utils
 from porcupine.settings import config, color_themes
 
 
@@ -59,11 +59,10 @@ class MainText(ThemedText):
 
         # These will contain callback functions that are called with no
         # arguments after the text in the textview is updated.
-        self.on_cursor_move = []
-        self.on_modified = []
-        self.on_complete_previous = []
-        self.on_complete_next = []
-        self._cursorpos = '1.0'
+        self.cursor_move_hook = structures.CallbackHook(__name__)
+        self.modified_hook = structures.CallbackHook(__name__)
+        self.complete_hook = structures.CallbackHook(__name__)
+        self._cursorpos = (1, 0)
 
         def cursor_move(event):
             self.after_idle(self._do_cursor_move)
@@ -117,15 +116,13 @@ class MainText(ThemedText):
         self.unbind('<<Modified>>')
         self.edit_modified(False)
         self.bind('<<Modified>>', self._do_modified)
-        for callback in self.on_modified:
-            callback()
+        self.modified_hook.run()
 
     def _do_cursor_move(self):
-        cursorpos = self.index('insert')
-        if cursorpos != self._cursorpos:
-            self._cursorpos = cursorpos
-            for callback in self.on_cursor_move:
-                callback()
+        line, column = map(int, self.index('insert').split('.'))
+        if (line, column) != self._cursorpos:
+            self._cursorpos = (line, column)
+            self.cursor_move_hook.run(line, column)
 
     def _on_delete(self, control_down, event):
         """This runs when the user presses backspace or delete."""
@@ -177,10 +174,10 @@ class MainText(ThemedText):
     def _on_tab(self, shifted):
         """Indent, dedent or autocomplete."""
         if shifted:
-            complete_callbacks = self.on_complete_previous
+            complete_arg = 'previous'
             indenter = self.dedent
         else:
-            complete_callbacks = self.on_complete_next
+            complete_arg = 'next'
             indenter = self.indent
 
         try:
@@ -192,8 +189,7 @@ class MainText(ThemedText):
             if before_cursor.isspace() or not before_cursor:
                 indenter(lineno)
             else:
-                for callback in complete_callbacks:
-                    callback()
+                self.complete_hook.run(complete_arg)
         else:
             # something selected, indent/dedent block
             first_lineno = int(sel_start.split('.')[0])

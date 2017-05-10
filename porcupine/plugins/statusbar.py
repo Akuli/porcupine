@@ -12,28 +12,27 @@ class StatusBar(tk.Label):
 
     def set_active_tab(self, tab):
         if self._active_tab is not None:
-            self._active_tab.textwidget.on_cursor_move.remove(self.update)
+            self._active_tab.textwidget.cursor_move_hook.disconnect(self.update)
         if tab is not None:
-            tab.textwidget.on_cursor_move.append(self.update)
+            tab.textwidget.cursor_move_hook.connect(self.update)
         self._active_tab = tab
         self.update()
 
-    def update(self):
+    def update(self, *junk):
         if self._active_tab is None:
             self['text'] = "Welcome to Porcupine!"
         else:
-            text = self._active_tab.textwidget
-            line, column = text.index('insert').split('.')
+            textwidget = self._active_tab.textwidget
+            line, column = textwidget.index('insert').split('.')
             self['text'] = "Line %s, column %s" % (line, column)
 
 
 def session_hook(editor):
     statusbar = StatusBar(editor, anchor='w', relief='sunken')
-    editor.tabmanager.on_tab_changed.append(statusbar.set_active_tab)
+    editor.tabmanager.tab_changed_hook.connect(statusbar.set_active_tab)
 
-    # TODO: display the Porcupine version in the status bar when it
-    # starts? or maybe some messages about failing to load plugins?
-    statusbar.update()
+    # TODO: display logging messages in the statusbar
+    statusbar.update(None, None)
 
     def set_enabled(junk):
         enabled = config['GUI'].getboolean('statusbar', True)

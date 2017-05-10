@@ -39,6 +39,16 @@ from porcupine.settings import config, color_themes
 log = logging.getLogger(__name__)
 
 
+# asyncs and awaits aren't NAMEs like other keywords 0_o
+NAME_TOKENS = {tokenize.NAME}
+try:
+    NAME_TOKENS.add(tokenize.ASYNC)
+    NAME_TOKENS.add(tokenize.AWAIT)
+except AttributeError:
+    # python 3.4 or older
+    pass
+
+
 class Highlighter:
     """Syntax highlighting for Tkinter."""
 
@@ -125,7 +135,8 @@ class Highlighter:
         try:
             tokens = tokenize.tokenize(bytelines.__next__)
             for tokentype, string, startpos, endpos, line in tokens:
-                if tokentype == tokenize.NAME:
+
+                if tokentype in NAME_TOKENS:
                     if string in self._builtins:
                         tag = 'builtin'
                     elif string in self._exceptions:
@@ -134,10 +145,13 @@ class Highlighter:
                         tag = 'keyword'
                     else:
                         continue
+
                 elif tokentype == tokenize.STRING:
                     tag = 'string'
+
                 elif tokentype == tokenize.COMMENT:
                     tag = 'comment'
+
                 elif tokentype == tokenize.OP and string == '@':
                     # it might be a decorator or an "a @ b" expression,
                     # we need to check. this handles this corner case...
@@ -161,6 +175,7 @@ class Highlighter:
                         continue
                     endpos = (endpos[0], match.end())
                     tag = 'decorator'
+
                 else:
                     continue
 
@@ -212,10 +227,10 @@ class Highlighter:
 
 def filetab_hook(filetab):
     highlighter = Highlighter(filetab.textwidget)
-    filetab.textwidget.on_modified.append(highlighter.highlight)
+    filetab.textwidget.modified_hook.connect(highlighter.highlight)
     yield
     highlighter.destroy()
-    filetab.textwidget.on_modified.remove(highlighter.highlight)
+    filetab.textwidget.modified_hook.disconnect(highlighter.highlight)
 
 
 plugins.add_plugin("Highlight", filetab_hook=filetab_hook)
@@ -224,9 +239,6 @@ plugins.add_plugin("Highlight", filetab_hook=filetab_hook)
 if __name__ == '__main__':
     # simple test
     from porcupine.settings import load as load_settings
-
-    if len(sys.argv) > 2 or sys.argv[1:] == ['--help']:
-        sys.exit("usage: %s [FILE]" % sys.argv[0])
 
     def on_modified(event):
         text.unbind('<<Modified>>')
@@ -244,8 +256,7 @@ if __name__ == '__main__':
     # only does tags, not foreground, background etc. See textwidget.py.
     highlighter = Highlighter(text)
 
-    if len(sys.argv) == 2:
-        with open(sys.argv[1], 'r') as f:
-            text.insert('1.0', f.read())
+    with open(__file__, 'r') as f:
+        text.insert('1.0', f.read())
 
     root.mainloop()

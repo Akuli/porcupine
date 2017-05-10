@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import dialogs, find, plugins, tabs, textwidget, utils
+from porcupine import dialogs, find, plugins, structures, tabs, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -77,10 +77,10 @@ class FileTab(tabs.Tab):
     def __init__(self, manager):
         super().__init__(manager)
         self._path = None
-        self.on_path_changed = []   # callbacks that are called with no args
+        self.path_changed_hook = structures.CallbackHook(__name__)
 
         self._orig_label_fg = self.label['fg']
-        self.on_path_changed.append(self._update_top_label)
+        self.path_changed_hook.connect(self._update_top_label)
 
         self.mainframe = tk.Frame(self.content)
         self.mainframe.pack(fill='both', expand=True)
@@ -89,7 +89,7 @@ class FileTab(tabs.Tab):
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
             self.mainframe, width=1, height=1, wrap='none')
-        self.textwidget.on_modified.append(self._update_top_label)
+        self.textwidget.modified_hook.connect(self._update_top_label)
         self.scrollbar = tk.Scrollbar(self.mainframe)
 
         self.textwidget['yscrollcommand'] = self.scrollbar.set
@@ -132,16 +132,15 @@ class FileTab(tabs.Tab):
         return self._path
 
     @path.setter
-    def path(self, new_name):
-        # TODO: use os.path.samefile() or something else that takes in
+    def path(self, new_path):
+        # FIXME: use os.path.samefile() or something else that takes in
         # account things like case-insensitive paths?
-        it_changes = (self._path != new_name)
-        self._path = new_name
+        it_changes = (self._path != new_path)
+        self._path = new_path
         if it_changes:
-            for callback in self.on_path_changed:
-                callback()
+            self.path_changed_hook.run(new_path)
 
-    def _update_top_label(self):
+    def _update_top_label(self, junk=None):
         if self.path is None:
             self.label['text'] = "New file"
         else:
@@ -175,6 +174,8 @@ class FileTab(tabs.Tab):
     def close(self):
         super().close()
         plugins.destroy_filetab(self._plugin_state)
+        self.path_changed_hook.disconnect_all()
+        self.textwidget.modified_hook.disconnect(self._update_top_label)
 
     def on_focus(self):
         self.textwidget.focus()
