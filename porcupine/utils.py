@@ -177,7 +177,7 @@ def errordialog(title, message, plaintext=None):
     window.wait_window()
 
 
-def bind_mouse_wheel(widget, callback, *, prefixes=''):
+def bind_mouse_wheel(widget, callback, *, prefixes='', **kwargs):
     """Bind mouse wheel events to callback.
 
     The callback will be called like callback(direction) where direction
@@ -193,14 +193,15 @@ def bind_mouse_wheel(widget, callback, *, prefixes=''):
         def real_callback(event):
             callback('up' if event.num == 4 else 'down')
 
-        widget.bind('<{}Button-4>'.format(prefixes), real_callback)
-        widget.bind('<{}Button-5>'.format(prefixes), real_callback)
+        widget.bind('<{}Button-4>'.format(prefixes), real_callback, **kwargs)
+        widget.bind('<{}Button-5>'.format(prefixes), real_callback, **kwargs)
 
     else:
         def real_callback(event):
             callback('up' if event.delta > 0 else 'down')
 
-        widget.bind('<{}MouseWheel>'.format(prefixes), real_callback)
+        widget.bind('<{}MouseWheel>'.format(prefixes),
+                    real_callback, **kwargs)
 
 
 def nice_repr(obj):
