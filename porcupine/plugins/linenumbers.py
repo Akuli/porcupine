@@ -2,7 +2,6 @@
 
 import tkinter as tk
 
-from porcupine import plugins
 from porcupine.settings import config, color_themes
 from porcupine.textwidget import ThemedText
 
@@ -65,23 +64,23 @@ class LineNumbers(ThemedText):
         self._linecount = linecount
 
 
-def filetab_hook(filetab):
-    linenumbers = LineNumbers(filetab.mainframe, filetab.textwidget)
+def tab_callback(tab):
+    linenumbers = LineNumbers(tab.mainframe, tab.textwidget)
     linenumbers.pack(side='left', fill='y')
-    scrollmgr = ScrollManager(
-        filetab.scrollbar, filetab.textwidget, [linenumbers])
+    scrollmgr = ScrollManager(tab.scrollbar, tab.textwidget, [linenumbers])
     scrollmgr.enable()
-    filetab.textwidget.modified_hook.connect(linenumbers.do_update)
+    tab.textwidget.modified_hook.connect(linenumbers.do_update)
 
     yield
 
     # FIXME: this errors for some reason
     scrollmgr.disable()
-    filetab.textwidget.modified_hook.disconnect(linenumbers.do_update)
+    tab.textwidget.modified_hook.disconnect(linenumbers.do_update)
     linenumbers.destroy()
 
 
-plugins.add_plugin("Line Numbers", filetab_hook=filetab_hook)
+def setup(editor):
+    editor.new_tab_hook.connect(tab_callback)
 
 
 if __name__ == '__main__':

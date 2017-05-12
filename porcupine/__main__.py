@@ -43,7 +43,6 @@ def main():
     settings.load()     # root must exist first
 
     editor = porcupine.editor.Editor(root)
-    plugins.load(editor)
     editor.pack(fill='both', expand=True)
 
     root['menu'] = editor.menubar
@@ -51,31 +50,32 @@ def main():
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
 
-    with plugins.session(editor):
-        for file in args.file:
-            if file == '-':
-                # read stdin
-                tab = editor.new_file()
-                for line in sys.stdin:
-                    tab.textwidget.insert('end-1c', line)
-                tab.textwidget.edit_reset()   # reset undo/redo
-                tab.mark_saved()
-                continue
+    plugins.load(editor)
 
-            # the editor doesn't create new files when opening, so we
-            # need to take care of that here
-            file = os.path.abspath(file)
-            if os.path.exists(file):
-                editor.open_file(file)
-            else:
-                editor.open_file(file, content='')
+    for file in args.file:
+        if file == '-':
+            # read stdin
+            tab = editor.new_file()
+            for line in sys.stdin:
+                tab.textwidget.insert('end-1c', line)
+            tab.textwidget.edit_reset()   # reset undo/redo
+            tab.mark_saved()
+            continue
 
-        # the user can change the settings only if we get here, so
-        # there's no need to try/finally the whole thing
-        try:
-            root.mainloop()
-        finally:
-            settings.save()
+        # the editor doesn't create new files when opening, so we
+        # need to take care of that here
+        file = os.path.abspath(file)
+        if os.path.exists(file):
+            editor.open_file(file)
+        else:
+            editor.open_file(file, content='')
+
+    # the user can change the settings only if we get here, so
+    # there's no need to try/finally the whole thing
+    try:
+        root.mainloop()
+    finally:
+        settings.save()
 
     log.info("exiting Porcupine successfully")
 

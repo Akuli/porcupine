@@ -9,7 +9,7 @@ import traceback
 import webbrowser
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, filetabs, settingeditor, tabs, terminal
+from porcupine import dialogs, filetabs, settingeditor, tabs, terminal, utils
 from porcupine.settings import config, color_themes
 
 
@@ -79,6 +79,9 @@ class Editor(tk.Frame):
         tabmgr = self.tabmanager = tabs.TabManager(self)
         tabmgr.pack(fill='both', expand=True)
         create_welcome_msg(tabmgr.no_tabs_frame)
+
+        self.new_tab_hook = tabmgr.new_tab_hook
+        self.tab_changed_hook = utils.ContextManagerHook(__name__)
 
         def tabmethod(attribute):
             """Make a function that calls the current tab's method."""
@@ -157,7 +160,8 @@ class Editor(tk.Frame):
             "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
         tabmgr.tab_changed_hook.connect(self._tab_changed)
-        self._tab_changed(None)  # disable the menuitems
+        self._tab_context_manager = None   # this is lol, see _tab_changed()
+        self._tab_changed(None)
 
         def disably(func):
             """Make a function that calls func when there are tabs."""
@@ -198,10 +202,17 @@ class Editor(tk.Frame):
         self.bind_all(keysym, real_callback)
         self._bindings.append((keysym, real_callback))
 
-    def _tab_changed(self, tab):
-        state = 'disabled' if tab is None else 'normal'
+    def _tab_changed(self, new_tab):
+        state = 'normal' if self.tabmanager.tabs else 'disabled'
         for menu, index in self._disablelist:
             menu.entryconfig(index, state=state)
+
+        if self._tab_context_manager is not None:
+            # not running this for the first time
+            self._tab_context_manager.__exit__(None, None, None)
+
+        self._tab_context_manager = self.tab_changed_hook.run(new_tab)
+        self._tab_context_manager.__enter__()
 
     def _post_editmenu(self, event):
         self.editmenu.tk_popup(event.x_root, event.y_root)
@@ -270,6 +281,7 @@ class Editor(tk.Frame):
         if tab.can_be_closed():
             tab.close()
 
+    # TODO: turn this into a plugin
     def _run_file(self):
         filetab = self.tabmanager.current_tab
         if filetab.path is None or not filetab.is_saved():

@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class CallbackHook:
     """Simple object that runs callbacks.
 
-    >>> hook = CallbackHook()
+    >>> hook = CallbackHook('whatever')
     >>> @hook.connect
     ... def user_callback(value):
     ...     print("user_callback called with", value)
@@ -34,9 +34,9 @@ class CallbackHook:
     user_callback called with 456
     another_callback called with 456
 
-    Hooks have a ``callbacks`` attribute that contains a list of hooked
-    functions. It's useful for removing callbacks or checking if a
-    callback has been added.
+    Callback hooks have a ``callbacks`` attribute that contains a list
+    of hooked functions. It's useful for things like checking if a
+    callback has been connected.
 
     >>> hook.callbacks == [user_callback, another_callback]
     True
@@ -65,29 +65,14 @@ class CallbackHook:
         """Undo a :meth:`connect` call."""
         self.callbacks.remove(function)
 
+    # TODO: get rid of this? i originally added this to help with
+    # garbage collection but it's not really an issue anyway
     def disconnect_all(self):
         """Disconnect all connected callbacks.
 
         This should be ran when the hook won't be needed anymore.
         """
         self.callbacks.clear()
-
-    def run(self, *args):
-        """Run ``callback(*args)`` for each connected callback.
-
-        This does nothing if :meth:`~blocked` is currently running.
-        """
-        assert self._blocklevel >= 0
-        if self._blocklevel > 0:
-            return
-
-        for callback in self.callbacks:
-            try:
-                callback(*args)
-            except Exception as e:
-                if isinstance(e, self._unhandled):
-                    raise e
-                self._log.exception("%s doesn't work", nice_repr(callback))
 
     @contextlib.contextmanager
     def blocked(self):
@@ -103,6 +88,83 @@ class CallbackHook:
             yield
         finally:
             self._blocklevel -= 1
+
+    def is_blocked(self):
+        """Return True if :meth:`~blocked` is running somewhere."""
+        assert self._blocklevel >= 0
+        return self._blocklevel > 0
+
+    def _handle_error(self, callback, error):
+        if isinstance(error, self._unhandled):
+            raise error
+        self._log.exception("%s doesn't work", nice_repr(callback))
+
+    def run(self, *args):
+        """Run ``callback(*args)`` for each connected callback.
+
+        This does nothing if :meth:`~blocked` is currently running.
+        """
+        if not self.is_blocked():
+            for callback in self.callbacks:
+                try:
+                    callback(*args)
+                except Exception as e:
+                    self._handle_error(callback, e)
+
+
+class ContextManagerHook(CallbackHook):
+    """A :class:`.CallbackHook` subclass for "set up and tear down" callbacks.
+
+    The connected callbacks should usually do something, yield and then
+    undo everything they did, just like :func:`contextlib.contextmanager`
+    functions.
+
+    >>> hook = ContextManagerHook('whatever')
+    >>> @hook.connect
+    ... def hooked_callback():
+    ...     print("setting up")
+    ...     yield
+    ...     print("tearing down")
+    ...
+    >>> with hook.run():
+    ...     print("now things are set up")
+    ...
+    setting up
+    now things are set up
+    tearing down
+    >>>
+    """
+
+    @contextlib.contextmanager
+    def run(self, *args):
+        """Run ``callback(*args)`` for each connected callback.
+
+        This does nothing if :meth:`~blocked` is currently running.
+        """
+        if self.is_blocked():
+            return
+
+        generators = []   # [(callback, generator), ...]
+        for callback in self.callbacks:
+            try:
+                generator = callback(*args)
+                if not hasattr(type(generator), '__next__'):
+                    raise RuntimeError("the function didn't yield")
+                next(generator)
+                generators.append((callback, generator))
+            except Exception as e:
+                self._handle_error(callback, e)
+
+        yield
+
+        for callback, generator in generators:
+            try:
+                next(generator)     # should raise StopIteration
+                raise RuntimeError("the function yieleded twice")
+            except StopIteration:
+                pass
+            except Exception as e:
+                self._handle_error(callback, e)
 
 
 @functools.lru_cache()

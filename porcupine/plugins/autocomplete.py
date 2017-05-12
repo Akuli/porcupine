@@ -2,7 +2,6 @@ import collections
 import re
 import tkinter as tk
 
-from porcupine import plugins
 from porcupine.settings import config
 
 
@@ -63,13 +62,13 @@ class AutoCompleter:
             self._startpos = None
 
 
-def filetab_hook(filetab):
-    completer = AutoCompleter(filetab.textwidget)
+def tab_callback(tab):
+    completer = AutoCompleter(tab.textwidget)
 
     def do_reset(*junk):
         completer.reset()
 
-    text = filetab.textwidget
+    text = tab.textwidget
     text.complete_hook.connect(completer.complete)
     text.cursor_move_hook.connect(do_reset)
     yield
@@ -77,7 +76,8 @@ def filetab_hook(filetab):
     text.cursor_move_hook.disconnect(do_reset)
 
 
-plugins.add_plugin("Autocomplete", filetab_hook=filetab_hook)
+def setup(editor):
+    editor.new_tab_hook.connect(tab_callback)
 
 
 if __name__ == '__main__':

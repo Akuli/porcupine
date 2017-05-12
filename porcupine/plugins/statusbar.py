@@ -1,7 +1,5 @@
 import tkinter as tk
 
-from porcupine import plugins
-
 # i have experimented with a logging handler that displays logging
 # messages in the label, but it's not as good idea as it sounds like
 
@@ -17,22 +15,19 @@ class StatusBar(tk.Frame):
         self._cursor_label = tk.Label(self)
         self._cursor_label.pack(side='right')
 
-    def _connect(self, tab):
-        tab.path_changed_hook.connect(self.do_update)
-        tab.textwidget.cursor_move_hook.connect(self.do_update)
-
-    def _disconnect(self, tab):
-        tab.path_changed_hook.disconnect(self.do_update)
-        tab.textwidget.cursor_move_hook.disconnect(self.do_update)
-
-    def set_active_tab(self, tab):
-        if self._active_tab is not None:
-            self._disconnect(self._active_tab)
-        if tab is not None:
-            self._connect(tab)
-
+    def tab_callback(self, tab):
         self._active_tab = tab
+
+        if tab is not None:
+            tab.path_changed_hook.connect(self.do_update)
+            tab.textwidget.cursor_move_hook.connect(self.do_update)
+
         self.do_update()
+        yield
+
+        if tab is not None:
+            tab.path_changed_hook.disconnect(self.do_update)
+            tab.textwidget.cursor_move_hook.disconnect(self.do_update)
 
     # this is do_update() because tkinter has a method called update()
     def do_update(self, *junk):
@@ -58,18 +53,16 @@ class StatusBar(tk.Frame):
         super().destroy()
 
 
-def session_hook(editor):
+def setup(editor):
     statusbar = StatusBar(editor, relief='sunken')
-    editor.tabmanager.tab_changed_hook.connect(statusbar.set_active_tab)
+    editor.tab_changed_hook.connect(statusbar.tab_callback)
     statusbar.do_update()
 
     # TODO: convert the find/replace area into a plugin and make sure
     # that it's always above the statusbar?
     statusbar.pack(side='bottom', fill='x')
 
-    yield
-    editor.tabmanager.tab_changed_hook.disconnect(statusbar.set_active_tab)
-    statusbar.destroy()
-
-
-plugins.add_plugin("Statusbar", session_hook=session_hook)
+    # FIXME: figure out how to run this code
+    #yield
+    #editor.tabmanager.tab_changed_hook.disconnect(statusbar.set_active_tab)
+    #statusbar.destroy()

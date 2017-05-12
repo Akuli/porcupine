@@ -88,6 +88,7 @@ class TabManager(tk.Frame):
         self._topframeframe.pack(fill='x')
         utils.bind_mouse_wheel(self._topframeframe, self._on_wheel)
         self.tabs = []
+        self.new_tab_hook = utils.ContextManagerHook(__name__)
         self.tab_changed_hook = utils.CallbackHook(__name__)
         self._current_tab = None
         self.no_tabs_frame = tk.Frame(self)
@@ -152,6 +153,9 @@ class TabManager(tk.Frame):
         if self.current_tab is None:
             # this is the first tab
             self.current_tab = tab
+
+        tab.__hook_context_manager = self.new_tab_hook.run(tab)
+        tab.__hook_context_manager.__enter__()
         return tab
 
     def _remove_tab(self, tab):
@@ -161,6 +165,7 @@ class TabManager(tk.Frame):
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
+        tab.__hook_context_manager.__exit__(None, None, None)
         tab.content.pack_forget()
         tab._topframe.grid_forget()
 

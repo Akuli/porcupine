@@ -33,7 +33,6 @@ import sys
 import tkinter as tk
 import tokenize
 
-from porcupine import plugins
 from porcupine.settings import config, color_themes
 
 log = logging.getLogger(__name__)
@@ -225,15 +224,16 @@ class Highlighter:
         self.textwidget.after_idle(self._on_idle)
 
 
-def filetab_hook(filetab):
-    highlighter = Highlighter(filetab.textwidget)
-    filetab.textwidget.modified_hook.connect(highlighter.highlight)
+def tab_callback(tab):
+    highlighter = Highlighter(tab.textwidget)
+    tab.textwidget.modified_hook.connect(highlighter.highlight)
     yield
     highlighter.destroy()
-    filetab.textwidget.modified_hook.disconnect(highlighter.highlight)
+    tab.textwidget.modified_hook.disconnect(highlighter.highlight)
 
 
-plugins.add_plugin("Highlight", filetab_hook=filetab_hook)
+def setup(editor):
+    editor.new_tab_hook.connect(tab_callback)
 
 
 if __name__ == '__main__':

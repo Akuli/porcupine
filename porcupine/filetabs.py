@@ -105,8 +105,6 @@ class FileTab(tabs.Tab):
         self.mark_saved()
         self._update_top_label()
 
-        self._plugin_state = plugins.init_filetab(self)
-
     def _get_hash(self):
         result = hashlib.md5()
         encoding = config['Files']['encoding']   # superstitious speed-up
@@ -173,7 +171,6 @@ class FileTab(tabs.Tab):
 
     def close(self):
         super().close()
-        plugins.destroy_filetab(self._plugin_state)
         self.path_changed_hook.disconnect_all()
         self.textwidget.modified_hook.disconnect(self._update_top_label)
 
@@ -213,6 +210,7 @@ class FileTab(tabs.Tab):
             self.path = path
             self.save()
 
+    # TODO: turn this into a plugin!
     def find(self):
         if self._findwidget is None:
             log.debug("find widget not created yet, creating it")

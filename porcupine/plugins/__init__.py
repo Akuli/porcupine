@@ -39,10 +39,15 @@ Some notes about writing plugins:
 
 When you have added a plugin file, run Porcupine from a terminal,
 command prompt or PowerShell so you'll see any errors messages that your
-plugin might produce. Note that you don't need to save all files you
-have opened in Porcupine; there's nothing wrong with running multiple
-Porcupines at the same time.
+plugin might produce. Note that there's nothing wrong with running
+multiple Porcupines at the same time, so if you are writing the plugin
+in a Porcupine you don't need to restart that Porcupine at all.
 """
+# TODO:
+#   - update the docstring
+#   - move this file to something like pluginloader.py
+#   - add some way to require setting up another plugin before loading
+#     some particular plugin
 
 import contextlib
 import importlib
@@ -53,70 +58,22 @@ import types
 
 import porcupine
 
+log = logging.getLogger(__name__)
+
 
 # simple hack to allow user-wide plugins
 __path__.insert(0, porcupine.dirs.userplugindir)
 
-# __path__ will show up in help() too because the module docstring
-# recommends checking it out
-__all__ = ['add_plugin', '__path__']
-
-log = logging.getLogger(__name__)
-plugins = []
-
-
-def _do_nothing(*args):
-    pass
-
-
-def add_plugin(name, *, session_hook=_do_nothing, filetab_hook=_do_nothing,
-               setting_widget_factory=_do_nothing):
-    """Add a new plugin to Porcupine when it's starting.
-
-    The name argument can be any string that does not conflict with
-    other plugins. These are the valid keyword arguments to this
-    function, and they all do nothing by default:
-
-      session_hook(editor)
-        This function will be called with a porcupine.editor.Editor
-        object as its only argument when Porcupine starts. It should set
-        up everything, and then optionally yield and then undo
-        everything it did.
-
-      filetab_hook(filetab)
-        This function is called when a new filetabs.FileTab is created.
-        It should set up the filetab, and then optionally yield and undo
-        everything it did. It will be called with a
-        porcupine.filetabs.FileTab object as the only argument.
-
-      setting_widget_factory(labelframe):
-        This function is called when the setting dialog is opened for
-        the first time. It should create other tkinter widgets for
-        changing the settings into the given tkinter LabelFrame widget.
-        The labelframe is displayed in the setting dialog only if this
-        callback returns True.
-    """
-    plugin = types.SimpleNamespace(
-        name=name,
-        session_hook=session_hook,
-        filetab_hook=filetab_hook,
-        setting_widget_factory=setting_widget_factory,
-    )
-    plugins.append(plugin)
-
-
 # these are wrapped tightly in try/except because someone might write
-# Porcupine plugins using Porcupine, so Porcupine MUST be able to start
-# if the plugins are broken
-
+# Porcupine plugins using Porcupine, so Porcupine must run if the
+# plugins are broken
 def load(editor):
-    assert not plugins, "cannot load plugins twice"
-
     modulenames = []
     for path in __path__:    # this line looks odd
         for name, ext in map(os.path.splitext, os.listdir(path)):
             if name.isidentifier() and name[0] != '_' and ext == '.py':
-                modulenames.append(__name__ + '.' + name)
+                modulenames.append('porcupine.plugins.' + name)
+    log.info("found %d plugins", len(modulenames))
 
     # plugins should be made so that their loading order doesn't matter,
     # so let's heavily discourage relying on it :D
@@ -124,77 +81,9 @@ def load(editor):
 
     for name in modulenames:
         try:
-            importlib.import_module(name)
+            module = importlib.import_module(name)
+            module.setup(editor)
         except Exception:
-            log.exception("problem with importing %s", name)
+            log.exception("problem with loading %s", name)
         else:
-            log.debug("successfully imported %s", name)
-
-    log.info("found %d plugins", len(plugins))
-
-
-@contextlib.contextmanager
-def session(editor):
-    state = []
-    for plugin in plugins:
-        try:
-            generator = plugin.session_hook(editor)
-            if generator is None:
-                # no yields
-                continue
-            next(generator)
-            state.append((plugin.name, generator))
-        except Exception:
-            log.exception("the %r plugin's session_hook doesn't work",
-                          plugin.name)
-    try:
-        yield
-    finally:
-        for name, generator in state:
-            try:
-                next(generator)
-            except StopIteration:
-                # it ran to the end normally
-                pass
-            except Exception:
-                log.exception("the %r plugin's session_hook doesn't work",
-                              name)
-            else:
-                log.error("the %r plugin's session_hook yielded twice", name)
-
-
-# the filetab stuff looks like a context manager at this point, but
-# filetabs.py is actually simpler when these are kept apart like this
-
-# TODO: would it be better to just expose some minimal callback based
-# plugin API in filetabs.py and other places?
-
-def init_filetab(filetab):
-    state = []      # [(plugin, generator), ...]
-    for plugin in plugins:
-        try:
-            generator = plugin.filetab_hook(filetab)
-            if generator is None:
-                # no yields
-                continue
-            next(generator)
-            state.append((plugin.name, generator))
-
-        except Exception:
-            log.exception("the %r plugin's filetab_hook doesn't work",
-                          plugin.name)
-
-    return state
-
-
-def destroy_filetab(state):
-    for name, generator in state:
-        try:
-            next(generator)
-        except StopIteration:
-            # it ran to the end normally
-            pass
-        except Exception:
-            log.exception("the %r plugin's filetab_hook doesn't work", name)
-        else:
-            log.error("the %r plugin's session_hook yielded twice", name)
+            log.info("successfully loaded %s", name)

@@ -20,15 +20,18 @@ class LongLineMarker(tk.Frame):
         family, size = config.get_font('Editing', 'font')
         font = tkfont.Font(family=family, size=size)
         where = font.measure(' ' * config['Editing'].getint('maxlinelen'))
-        self.place(x=where, height=self._height)
+        #self.place(x=where, height=self._height)
 
     def set_height(self, height):
         self._height = height
         self.update()
 
+    def destroy(self):
+        super().destroy()
 
-def filetab_hook(filetab):
-    marker = LongLineMarker(filetab.textwidget)
+
+def tab_callback(tab):
+    marker = LongLineMarker(tab.textwidget)
 
     def configure_callback(event):
         marker.set_height(event.height)
@@ -36,13 +39,14 @@ def filetab_hook(filetab):
     with config.connect('Editing', 'color_theme', marker.set_theme_name):
         with config.connect('Editing', 'maxlinelen', marker.update):
             with config.connect('Editing', 'font', marker.update):
-                filetab.textwidget.bind(
+                tab.textwidget.bind(
                     '<Configure>', configure_callback, add=True)
                 yield
     marker.destroy()
 
 
-plugins.add_plugin("Long Line Marker", filetab_hook=filetab_hook)
+def setup(editor):
+    editor.new_tab_hook.connect(tab_callback)
 
 
 if __name__ == '__main__':
