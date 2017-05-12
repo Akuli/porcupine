@@ -1,51 +1,75 @@
 import tkinter as tk
 
 from porcupine import plugins
-from porcupine.settings import config
+
+# i have experimented with a logging handler that displays logging
+# messages in the label, but it's not as good idea as it sounds like
 
 
-class StatusBar(tk.Label):
+class StatusBar(tk.Frame):
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self._active_tab = None
 
+        self._file_label = tk.Label(self)
+        self._file_label.pack(side='left')
+        self._cursor_label = tk.Label(self)
+        self._cursor_label.pack(side='right')
+
+    def _connect(self, tab):
+        tab.path_changed_hook.connect(self.do_update)
+        tab.textwidget.cursor_move_hook.connect(self.do_update)
+
+    def _disconnect(self, tab):
+        tab.path_changed_hook.disconnect(self.do_update)
+        tab.textwidget.cursor_move_hook.disconnect(self.do_update)
+
     def set_active_tab(self, tab):
         if self._active_tab is not None:
-            self._active_tab.textwidget.cursor_move_hook.disconnect(self.update)
+            self._disconnect(self._active_tab)
         if tab is not None:
-            tab.textwidget.cursor_move_hook.connect(self.update)
-        self._active_tab = tab
-        self.update()
+            self._connect(tab)
 
-    def update(self, *junk):
+        self._active_tab = tab
+        self.do_update()
+
+    # this is do_update() because tkinter has a method called update()
+    def do_update(self, *junk):
         if self._active_tab is None:
-            self['text'] = "Welcome to Porcupine!"
+            self._file_label['text'] = "Welcome to Porcupine!"
+            self._cursor_label['text'] = ""
+            return
+
+        file = self._active_tab.path
+        if file is None:
+            # use the text of the top label
+            self._file_label['text'] = self._active_tab.label['text']
         else:
-            textwidget = self._active_tab.textwidget
-            line, column = textwidget.index('insert').split('.')
-            self['text'] = "Line %s, column %s" % (line, column)
+            self._file_label['text'] = "File '%s'" % file
+
+        line, column = (self._active_tab.textwidget
+                        .index('insert').split('.'))
+        self._cursor_label['text'] = "Line %s, column %s" % (line, column)
+
+    def destroy(self):
+        if self._active_tab is not None:
+            self._disconnect(self._active_tab)
+        super().destroy()
 
 
 def session_hook(editor):
-    statusbar = StatusBar(editor, anchor='w', relief='sunken')
+    statusbar = StatusBar(editor, relief='sunken')
     editor.tabmanager.tab_changed_hook.connect(statusbar.set_active_tab)
+    statusbar.do_update()
 
-    # TODO: display logging messages in the statusbar
-    statusbar.update(None, None)
+    # TODO: convert the find/replace area into a plugin and make sure
+    # that it's always above the statusbar?
+    statusbar.pack(side='bottom', fill='x')
 
-    def set_enabled(junk):
-        enabled = config['GUI'].getboolean('statusbar', True)
-        # TODO: convert the find/replace area into a plugin that goes
-        # into the editor, but to make sure that it's always above the
-        # statusbar?
-        if enabled:
-            statusbar.pack(side='bottom', fill='x')
-        else:
-            statusbar.pack_forget()
-
-    with config.connect('GUI', 'statusbar', set_enabled):
-        yield
+    yield
+    editor.tabmanager.tab_changed_hook.disconnect(statusbar.set_active_tab)
+    statusbar.destroy()
 
 
 plugins.add_plugin("Statusbar", session_hook=session_hook)

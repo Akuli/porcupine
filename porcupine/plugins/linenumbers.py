@@ -15,13 +15,9 @@ class ScrollManager:
         self._main_widget = main_widget
         self._widgets = [main_widget] + other_widgets
 
-    def _yview(self, *args):
-        for widget in self._widgets:
-            widget.yview(*args)
-
-    def _set(self, beginning, end):
-        self._scrollbar.set(beginning, end)
-        self._yview('moveto', beginning)
+        self._old_command = scrollbar['command']
+        self._old_yscrollcommands = [
+            widget['yscrollcommand'] for widget in self._widgets]
 
     def enable(self):
         self._scrollbar['command'] = self._yview
@@ -29,10 +25,18 @@ class ScrollManager:
             widget['yscrollcommand'] = self._set
 
     def disable(self):
-        # all scrolled widgets except the default widget should be
-        # hidden when this runs
-        self._scrollbar['command'] = self._main_widget.yview
-        self._main_widget['yscrollcommand'] = self._scrollbar.set
+        self._scrollbar['command'] = self._old_command
+        for widget, ycommand in zip(self._widgets, self._old_yscrollcommands):
+            widget['yscrollcommand'] = ycommand
+
+    def _yview(self, *args):
+        for widget in self._widgets:
+            widget.yview(*args)
+
+    def _set(self, beginning, end):
+        self._scrollbar.set(beginning, end)
+        for widget in self._widgets:
+            widget.yview('moveto', beginning)
 
 
 class LineNumbers(ThemedText):
@@ -63,21 +67,18 @@ class LineNumbers(ThemedText):
 
 def filetab_hook(filetab):
     linenumbers = LineNumbers(filetab.mainframe, filetab.textwidget)
+    linenumbers.pack(side='left', fill='y')
     scrollmgr = ScrollManager(
         filetab.scrollbar, filetab.textwidget, [linenumbers])
-
-    def show_or_hide(showing):
-        if showing:
-            linenumbers.pack(side='left', fill='y')
-            scrollmgr.enable()
-        else:
-            linenumbers.pack_forget()
-            scrollmgr.disable()
-
+    scrollmgr.enable()
     filetab.textwidget.modified_hook.connect(linenumbers.do_update)
-    with config.connect('GUI', 'linenumbers', show_or_hide):
-        yield
+
+    yield
+
+    # FIXME: this errors for some reason
+    scrollmgr.disable()
     filetab.textwidget.modified_hook.disconnect(linenumbers.do_update)
+    linenumbers.destroy()
 
 
 plugins.add_plugin("Line Numbers", filetab_hook=filetab_hook)
