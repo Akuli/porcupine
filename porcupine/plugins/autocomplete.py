@@ -2,8 +2,6 @@ import collections
 import re
 import tkinter as tk
 
-from porcupine.settings import config
-
 
 class AutoCompleter:
 

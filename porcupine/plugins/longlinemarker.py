@@ -3,7 +3,6 @@
 import tkinter as tk
 import tkinter.font as tkfont
 
-from porcupine import plugins
 from porcupine.settings import config, color_themes
 
 
@@ -20,7 +19,7 @@ class LongLineMarker(tk.Frame):
         family, size = config.get_font('Editing', 'font')
         font = tkfont.Font(family=family, size=size)
         where = font.measure(' ' * config['Editing'].getint('maxlinelen'))
-        #self.place(x=where, height=self._height)
+        self.place(x=where, height=self._height)
 
     def set_height(self, height):
         self._height = height

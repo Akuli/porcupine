@@ -49,17 +49,15 @@ in a Porcupine you don't need to restart that Porcupine at all.
 #   - add some way to require setting up another plugin before loading
 #     some particular plugin
 
-import contextlib
 import importlib
 import logging
 import os
 import random
-import types
 
 import porcupine
 
-log = logging.getLogger(__name__)
 
+log = logging.getLogger(__name__)
 
 # simple hack to allow user-wide plugins
 __path__.insert(0, porcupine.dirs.userplugindir)

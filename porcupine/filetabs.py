@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import dialogs, find, plugins, tabs, textwidget, utils
+from porcupine import dialogs, find, tabs, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)

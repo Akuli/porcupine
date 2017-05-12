@@ -1,7 +1,6 @@
 """The big text widget in the middle of the editor."""
 
 from functools import partial   # not "import functools" to avoid long lines
-import re
 import tkinter as tk
 
 from porcupine import utils

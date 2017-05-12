@@ -29,7 +29,6 @@ import builtins
 import keyword
 import logging
 import re
-import sys
 import tkinter as tk
 import tokenize
 

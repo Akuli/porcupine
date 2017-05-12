@@ -2,7 +2,6 @@
 
 import tkinter as tk
 
-from porcupine.settings import config, color_themes
 from porcupine.textwidget import ThemedText
 
 
