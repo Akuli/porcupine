@@ -3,6 +3,7 @@
 import tkinter as tk
 import tkinter.font as tkfont
 
+from porcupine import filetabs
 from porcupine.settings import config, color_themes
 
 
@@ -30,6 +31,10 @@ class LongLineMarker(tk.Frame):
 
 
 def tab_callback(tab):
+    if not isinstance(tab, filetabs.FileTab):
+        yield
+        return
+
     marker = LongLineMarker(tab.textwidget)
 
     def configure_callback(event):

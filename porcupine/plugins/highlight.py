@@ -32,6 +32,7 @@ import re
 import tkinter as tk
 import tokenize
 
+from porcupine import filetabs
 from porcupine.settings import config, color_themes
 
 log = logging.getLogger(__name__)
@@ -224,6 +225,10 @@ class Highlighter:
 
 
 def tab_callback(tab):
+    if not isinstance(tab, filetabs.FileTab):
+        yield
+        return
+
     highlighter = Highlighter(tab.textwidget)
     tab.textwidget.modified_hook.connect(highlighter.highlight)
     yield

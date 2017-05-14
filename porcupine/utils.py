@@ -149,9 +149,17 @@ class ContextManagerHook(CallbackHook):
             try:
                 generator = callback(*args)
                 if not hasattr(type(generator), '__next__'):
+                    # it has no yields at all
                     raise RuntimeError("the function didn't yield")
-                next(generator)
+
+                try:
+                    next(generator)
+                except StopIteration:
+                    # it has a yield but it didn't run, e.g. if False: yield
+                    raise RuntimeError("the function didn't yield")
+
                 generators.append((callback, generator))
+
             except Exception as e:
                 self._handle_error(callback, e)
 
