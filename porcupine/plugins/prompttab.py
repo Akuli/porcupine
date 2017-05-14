@@ -87,6 +87,10 @@ class PythonPrompt:
         if not (end_of_output <= cursor <= end):
             return 'break'
 
+        # this happens when inputting multiple lines at once
+        if end_of_output[0] < cursor[0]:
+            end_of_output = (cursor[0], 0)
+
         # this needs to return 'break' to allow pressing enter with the
         # cursor anywhere on the line
         text = self.widget.get('%d.%d' % end_of_output, 'end')   # ends with \n
