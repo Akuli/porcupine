@@ -13,7 +13,12 @@ import tkinter as tk
 from porcupine import tabs, textwidget, utils
 
 
-_WINDOWS = (platform.system() == 'Windows')
+if platform.system() == 'Windows':
+    _WINDOWS = True
+    _INTERRUPT = signal.CTRL_C_EVENT
+else:
+    _WINDOWS = False
+    _INTERRUPT = signal.SIGINT
 
 
 def _tupleindex(index):
@@ -49,7 +54,7 @@ class PythonPrompt:
 
     def _keyboard_interrupt(self, event):
         try:
-            self.process.send_signal(signal.SIGINT)
+            self.process.send_signal(_INTERRUPT)
         except ProcessLookupError:
             # the subprocess has terminated, _queue_clearer should have
             # taken care of it already
