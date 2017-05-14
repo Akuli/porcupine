@@ -1,4 +1,8 @@
+# TODO: test this on windows, this may turn out to be pretty broken :(
+# even input() fails under wine
+
 import io
+import platform
 import queue
 import signal
 import subprocess
@@ -7,6 +11,9 @@ import threading
 import tkinter as tk
 
 from porcupine import tabs, textwidget, utils
+
+
+_WINDOWS = (platform.system() == 'Windows')
 
 
 def _tupleindex(index):
@@ -114,6 +121,8 @@ class PythonPrompt:
             return
 
         assert state == 'output'
+        if _WINDOWS:
+            value = value.replace(b'\r\n', b'\n')
         self.widget.insert(
             'end-1c', value.decode('utf-8', errors='replace'), 'output')
         self.widget.see('end-1c')
