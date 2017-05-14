@@ -285,6 +285,79 @@ def nice_repr(obj):
         return repr(obj)
 
 
+class HandyText(tk.Text):
+    """Like ``tkinter.Text``, but with some handy features.
+
+    All arguments are passed to ``tkinter.Text``.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cursorpos = (1, 0)
+
+        #: This :class:`~CallbackHook` will be ran when the user moves
+        #: the cursor. It will be ran with the line and column numbers
+        #: as arguments, where 1 is the first line and 0 is the first
+        #: column.
+        self.cursor_move_hook = CallbackHook(__name__)
+
+        #: This :class:`~CallbackHook` will be ran with no arguments
+        #: when the user changes the content of the widget in any way or
+        #: methods like ``insert()`` or ``delete()`` are used. Use this
+        #: instead of binding ``<<Modified>>``.
+        self.modified_hook = CallbackHook(__name__)
+
+        def cursor_move(event):
+            self.after_idle(self.cursor_has_moved)
+
+        for keysym in [
+                '<Button-1>', '<Key>', '<<Undo>>', '<<Redo>>',
+                '<<Cut>>', '<<Copy>>', '<<Paste>>', '<<Selection>>']:
+            self.bind(keysym, cursor_move, add=True)
+
+    def cursor_has_moved(self):
+        """Call this when the cursor may have moved.
+
+        This does nothing if the cursor hasn't actually moved, so you
+        don't need to worry about calling this too often. You may need
+        to use ``after_idle`` if you are calling this from an event
+        handler::
+
+            def the_bind_callback(event):
+                ...
+                handytext.after_idle(handytext.cursor_has_moved)
+        """
+        line, column = map(int, self.index('insert').split('.'))
+        if (line, column) != self._cursorpos:
+            self._cursorpos = (line, column)
+            self.cursor_move_hook.run(line, column)
+
+    # these methods may move the cursor
+    # FIXME: add more movy method
+    def insert(self, *args, **kwargs):
+        super().insert(*args, **kwargs)
+        self.cursor_has_moved()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self.cursor_has_moved()
+
+    def iter_chunks(self):
+        """Iterate over the content as 100-line chunks.
+
+        This does not break lines in the middle.
+        """
+        start = 1
+        while True:
+            end = start + 100
+            if self.index('%d.0' % end) == self.index('end'):
+                yield self.get('%d.0' % start, 'end-1c')
+                break
+
+            yield self.get('%d.0' % start, '%d.0' % end)
+            start = end
+
+
 class Checkbox(tk.Checkbutton):
     """Like ``tkinter.Checkbutton``, but works with my dark GTK+ theme.
 

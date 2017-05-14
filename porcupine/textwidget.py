@@ -25,7 +25,7 @@ def spacecount(string):
 
 # this can be used for implementing other themed things too, e.g. the
 # line number plugin
-class ThemedText(tk.Text):
+class ThemedText(utils.HandyText):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -55,20 +55,9 @@ class MainText(ThemedText):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # These will contain callback functions that are called with no
-        # arguments after the text in the textview is updated.
-        self.cursor_move_hook = utils.CallbackHook(__name__)
-        self.modified_hook = utils.CallbackHook(__name__)
         self.complete_hook = utils.CallbackHook(__name__)
-        self._cursorpos = (1, 0)
-
-        def cursor_move(event):
-            self.after_idle(self._do_cursor_move)
 
         self.bind('<<Modified>>', self._do_modified)
-        self.bind('<Button-1>', cursor_move)
-        self.bind('<Key>', cursor_move)
         self.bind('<Control-a>', self._on_ctrl_a)
         self.bind('<BackSpace>', partial(self._on_delete, False))
         self.bind('<Control-BackSpace>', partial(self._on_delete, True))
@@ -117,12 +106,6 @@ class MainText(ThemedText):
         self.bind('<<Modified>>', self._do_modified)
         self.modified_hook.run()
 
-    def _do_cursor_move(self):
-        line, column = map(int, self.index('insert').split('.'))
-        if (line, column) != self._cursorpos:
-            self._cursorpos = (line, column)
-            self.cursor_move_hook.run(line, column)
-
     def _on_delete(self, control_down, event):
         """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
@@ -147,7 +130,7 @@ class MainText(ThemedText):
                 self.event_generate('<<NextWord>>')
                 self.delete(old_cursor_pos, 'insert')
 
-        self.after_idle(self._do_cursor_move)
+        self.after_idle(self.cursor_has_moved)
         return None
 
     def _on_ctrl_a(self, event):
@@ -160,7 +143,7 @@ class MainText(ThemedText):
         # see _autoindent()
         self.after_idle(self._autoindent)
         self.after_idle(self._rstrip_prev_line)
-        self.after_idle(self._do_cursor_move)
+        self.after_idle(self.cursor_has_moved)
 
     def _on_closing_brace(self, event):
         """Dedent automatically."""
@@ -168,7 +151,7 @@ class MainText(ThemedText):
         beforethis = self.get('%d.0' % lineno, 'insert')
         if beforethis.isspace():
             self.dedent(lineno)
-        self.after_idle(self._do_cursor_move)
+        self.after_idle(self.cursor_has_moved)
 
     def _on_tab(self, shifted):
         """Indent, dedent or autocomplete."""
@@ -215,7 +198,7 @@ class MainText(ThemedText):
         # is 4 and there are 7 spaces
         spaces2add = indent - (spaces % indent)
         self.insert('%d.0' % lineno, ' ' * spaces2add)
-        self._do_cursor_move()
+        self.cursor_has_moved()
         return spaces + spaces2add
 
     def dedent(self, lineno):
@@ -234,7 +217,7 @@ class MainText(ThemedText):
         if howmany2del == 0:
             howmany2del = indent
         self.delete('%d.0' % lineno, '%d.%d' % (lineno, howmany2del))
-        self._do_cursor_move()
+        self.cursor_has_moved()
         return spaces - howmany2del
 
     def _autoindent(self):
@@ -275,7 +258,7 @@ class MainText(ThemedText):
             self.edit_undo()
         except tk.TclError:     # nothing to undo
             return
-        self._do_cursor_move()
+        self.cursor_has_moved()
         return 'break'
 
     def redo(self, event=None):
@@ -283,17 +266,15 @@ class MainText(ThemedText):
             self.edit_redo()
         except tk.TclError:     # nothing to redo
             return
-        self._do_cursor_move()
+        self.cursor_has_moved()
         return 'break'
 
     def cut(self, event=None):
         self.event_generate('<<Cut>>')
-        self._do_cursor_move()
         return 'break'
 
     def copy(self, event=None):
         self.event_generate('<<Copy>>')
-        self._do_cursor_move()
         return 'break'
 
     def paste(self, event=None):
@@ -309,33 +290,8 @@ class MainText(ThemedText):
         else:
             self.delete(sel_start, sel_end)
 
-        self._do_cursor_move()
         return 'break'
 
     def select_all(self, event=None):
         self.tag_add('sel', '1.0', 'end-1c')
         return 'break'
-
-    # these methods may move the cursor, there are other methods too but
-    # they aren't currently used
-    def insert(self, *args, **kwargs):
-        super().insert(*args, **kwargs)
-        self._do_cursor_move()
-
-    def delete(self, *args, **kwargs):
-        super().delete(*args, **kwargs)
-        self._do_cursor_move()
-
-    def iter_chunks(self):
-        """Iterate over the content as 100-line chunks.
-
-        This method does not break lines in the middle.
-        """
-        start = 1
-        while True:
-            end = start + 100
-            if self.index('%d.0' % end) == self.index('end'):
-                yield self.get('%d.0' % start, 'end-1c')
-                break
-            yield self.get('%d.0' % start, '%d.0' % end)
-            start = end
