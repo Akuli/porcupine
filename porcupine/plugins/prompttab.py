@@ -1,5 +1,5 @@
+# FIXME: >>> while True: print("lel")
 # TODO: test this on windows, this may turn out to be pretty broken :(
-# even input() fails under wine
 
 import io
 import platform
