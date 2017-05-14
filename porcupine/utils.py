@@ -1,4 +1,4 @@
-"""Handy utility functions."""
+"""Handy utility functions and classes."""
 
 import base64
 import contextlib
@@ -205,29 +205,30 @@ def get_window(widget):
     return widget
 
 
-def errordialog(title, message, plaintext=None):
-    """Like messagebox.showinfo, but supports plain text messages.
+def errordialog(title, message, monospace_text=None):
+    """A lot like ``tkinter.messagebox.showerror``.
 
-    If plaintext is not None, it will be displayed below the message in
-    a tkinter text widget.
+    This function can be called with or without creating a root window
+    first. If *monospace_text* is not None, it will be displayed below
+    the message in a ``tkinter.Text`` widget.
     """
-    if tk._default_root is None:
-        # create new main window
+    root = get_root()
+    if root is None:
         window = tk.Tk()
     else:
         window = tk.Toplevel()
-        window.transient(tk._default_root)
+        window.transient(root)
 
     label = tk.Label(window, text=message, height=5)
 
-    if plaintext is None:
+    if monospace_text is None:
         label.pack(fill='both', expand=True)
         geometry = '250x150'
     else:
         label.pack(anchor='center')
         text = tk.Text(window, width=1, height=1)
         text.pack(fill='both', expand=True)
-        text.insert('1.0', plaintext)
+        text.insert('1.0', monospace_text)
         text['state'] = 'disabled'
         geometry = '400x300'
 
@@ -239,13 +240,14 @@ def errordialog(title, message, plaintext=None):
     window.wait_window()
 
 
-def bind_mouse_wheel(widget, callback, *, prefixes='', **kwargs):
+def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
     """Bind mouse wheel events to callback.
 
-    The callback will be called like callback(direction) where direction
-    is 'up' or 'down'. The prefixes argument can be used to change the
-    binding string. For example, prefixes='Control-' means that callback
-    will be ran when the user holds down Control and rolls the wheel.
+    The callback will be called like ``callback(direction)`` where
+    *direction* is ``'up'`` or ``'down'``. The *prefixes* argument can
+    be used to change the binding string. For example,
+    ``prefixes='Control-'`` means that callback will be ran when the
+    user holds down Control and rolls the wheel.
     """
     # i needed to cheat and use stackoverflow, the man pages don't say
     # what OSX does with MouseWheel events and i don't have an
@@ -255,15 +257,17 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **kwargs):
         def real_callback(event):
             callback('up' if event.num == 4 else 'down')
 
-        widget.bind('<{}Button-4>'.format(prefixes), real_callback, **kwargs)
-        widget.bind('<{}Button-5>'.format(prefixes), real_callback, **kwargs)
+        widget.bind('<{}Button-4>'.format(prefixes),
+                    real_callback, **bind_kwargs)
+        widget.bind('<{}Button-5>'.format(prefixes),
+                    real_callback, **bind_kwargs)
 
     else:
         def real_callback(event):
             callback('up' if event.delta > 0 else 'down')
 
         widget.bind('<{}MouseWheel>'.format(prefixes),
-                    real_callback, **kwargs)
+                    real_callback, **bind_kwargs)
 
 
 def nice_repr(obj):
@@ -282,9 +286,12 @@ def nice_repr(obj):
 
 
 class Checkbox(tk.Checkbutton):
-    """Like tk.Checkbutton, but works with my dark GTK+ theme."""
-    # tk.Checkbutton displays a white checkmark on a white background to
-    # me, and changing the checkmark color also changes the text color
+    """Like ``tkinter.Checkbutton``, but works with my dark GTK+ theme.
+
+    Tkinter's Checkbutton displays a white checkmark on a white
+    background on my dark GTK+ theme (BlackMATE on Mate 1.8). This class
+    fixes that.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

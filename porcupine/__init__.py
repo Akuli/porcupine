@@ -33,11 +33,9 @@ except ImportError:
         # i know i know, running GUI dialogs on import sucks
         traceback.print_exc()
         utils.errordialog(
-            "Importing appdirs failed",
-            "Looks like appdirs is not installed. " +
-            "You can install it like this:",
-            ">>> import pip\n" +
-            ">>> pip.main(['install', '--user', 'appdirs'])")
+          "Importing appdirs failed",
+          "Looks like appdirs is not installed. You can install it like this:",
+          ">>> import pip\n>>> pip.main(['install', '--user', 'appdirs'])")
         raise ImportError("appdirs not found") from e
 
 
