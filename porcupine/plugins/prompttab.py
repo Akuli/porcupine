@@ -146,9 +146,14 @@ class PromptTab(tabs.Tab):
         super().__init__(*args, **kwargs)
         self.label['text'] = "Interactive Prompt"
 
-        self.textwidget = textwidget.ThemedText(self.content)
-        self.textwidget.pack(fill='both', expand=True)
+        self.textwidget = textwidget.ThemedText(self.content, width=1)
+        self.textwidget.pack(side='left', fill='both', expand=True)
         self.prompt = PythonPrompt(self.textwidget, self.close)
+
+        self.scrollbar = tk.Scrollbar(self.content)
+        self.scrollbar.pack(side='left', fill='y')
+        self.textwidget['yscrollcommand'] = self.scrollbar.set
+        self.scrollbar['command'] = self.textwidget.yview
 
     def on_focus(self):
         self.textwidget.focus()
