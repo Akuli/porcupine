@@ -74,6 +74,7 @@ def tab_callback(tab):
     scrollmgr = ScrollManager(tab.scrollbar, tab.textwidget, [linenumbers])
     scrollmgr.enable()
     tab.textwidget.modified_hook.connect(linenumbers.do_update)
+    linenumbers.do_update()
 
     yield
 

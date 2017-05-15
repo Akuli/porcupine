@@ -172,7 +172,7 @@ class Editor(tk.Frame):
 
         # The text widgets are also bound to these because bind_all()
         # doesn't seem to override their default bindings if there are
-        # any. See _add_tab().
+        # any. See _add_file_tab().
         bindings = tabmgr.bindings + [
             ('<Control-n>', self.new_file),
             ('<Control-o>', self.open_file),
@@ -217,7 +217,7 @@ class Editor(tk.Frame):
     def _post_editmenu(self, event):
         self.editmenu.tk_popup(event.x_root, event.y_root)
 
-    def _add_tab(self, tab):
+    def _add_file_tab(self, tab):
         self.tabmanager.add_tab(tab)
         tab.textwidget.bind('<Button-3>', self._post_editmenu)
 
@@ -231,14 +231,14 @@ class Editor(tk.Frame):
 
     def new_file(self):
         tab = filetabs.FileTab(self.tabmanager)
-        self._add_tab(tab)
+        self._add_file_tab(tab)
         return tab
 
     def open_file(self, path=None, *, content=None):
         if path is None:
             try:
                 defaultdir = os.path.dirname(self.tabmanager.current_tab.path)
-            except AttributeError as e:
+            except AttributeError:
                 defaultdir = None
 
             # i think it's easier to recurse here than wrap the whole
@@ -251,7 +251,9 @@ class Editor(tk.Frame):
         for tab in self.tabmanager.tabs:
             # we don't use == because paths are case-insensitive on
             # windows
-            if tab.path is not None and os.path.samefile(path, tab.path):
+            if (isinstance(path, filetabs.FileTab)
+              and tab.path is not None
+              and os.path.samefile(path, tab.path)):
                 self.tabmanager.current_tab = tab
                 return
 
@@ -274,7 +276,7 @@ class Editor(tk.Frame):
 
         tab.textwidget.edit_reset()   # reset undo/redo
         tab.mark_saved()
-        self._add_tab(tab)
+        self._add_file_tab(tab)
 
     def _close_file(self):
         tab = self.tabmanager.current_tab

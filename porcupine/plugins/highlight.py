@@ -231,6 +231,7 @@ def tab_callback(tab):
 
     highlighter = Highlighter(tab.textwidget)
     tab.textwidget.modified_hook.connect(highlighter.highlight)
+    highlighter.highlight()
     yield
     highlighter.destroy()
     tab.textwidget.modified_hook.disconnect(highlighter.highlight)
