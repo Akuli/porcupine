@@ -80,8 +80,7 @@ else:
                 return
 
             if env_terminal == 'x-terminal-emulator':
-                while os.path.islink(terminal):
-                    terminal = os.readlink(terminal)
+                terminal = os.path.realpath(terminal)
                 log.debug("x-terminal-emulator points to '%s'", terminal)
 
                 if os.path.basename(terminal) == 'mate-terminal.wrapper':
