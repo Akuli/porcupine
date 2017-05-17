@@ -8,7 +8,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import dirs, logs, plugins, settings
+from porcupine import dirs, logs, plugins, settings, utils
 
 log = logging.getLogger(__name__)
 
@@ -39,11 +39,14 @@ def main():
     log.info("running on Python %d.%d.%d from %s",
              *(list(sys.version_info[:3]) + [sys.executable]))
 
-    root = tk.Tk()
-    settings.load()     # root must exist first
+    settings.load()
 
+    root = tk.Tk()
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)
+
+    # the root window has focus when there are no tabs
+    utils.copy_bindings(editor, root)
 
     root['menu'] = editor.menubar
     root.geometry(settings.config['GUI']['default_size'])

@@ -39,41 +39,13 @@ def create_welcome_msg(frame):
         for label in [titlelabel, desclabel]:
             label['wraplength'] = event.width * 0.9    # small borders
 
-    frame.bind('<Configure>', resize)
-
-
-class HandyMenu(tk.Menu):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, tearoff=False, **kwargs)
-        self.disablelist = []    # compatible with Editor.disablelist
-
-    def add_handy_command(self, label=None, accelerator=None,
-                          command=None, disably=False, **kwargs):
-        """Add an item to the menu.
-
-        If disably is True, the menuitem will be disabled when there are
-        no tabs in the editor.
-        """
-        if label is not None:
-            kwargs['label'] = label
-        if accelerator is not None:
-            kwargs['accelerator'] = accelerator
-        if command is not None:
-            kwargs['command'] = command
-        self.add_command(**kwargs)
-        if disably:
-            self.disablelist.append((self, self.index('end')))
-
-    def add_linky_command(self, label, url):
-        callback = functools.partial(webbrowser.open, url)
-        self.add_command(label=label, command=callback)
+    frame.bind('<Configure>', resize, add=True)
 
 
 class Editor(tk.Frame):
 
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._settingdialog = None
 
         tabmgr = self.tabmanager = tabs.TabManager(self)
@@ -83,54 +55,65 @@ class Editor(tk.Frame):
         self.new_tab_hook = tabmgr.new_tab_hook
         self.tab_changed_hook = utils.ContextManagerHook(__name__)
 
-        def tabmethod(attribute):
-            """Make a function that calls the current tab's method."""
-            def result():
-                method = getattr(tabmgr.current_tab, attribute)
-                return method()
-            return result
+        self.menubar = tk.Menu(tearoff=False)
+        self._submenus = {}     # {(parentmenu, label): submenu, ...}
+        add = self.add_action
+
+        add(self.new_file, "File/New File", "Ctrl+N", '<Control-n>')
+        add(self.open_file, "File/Open", "Ctrl+O", '<Control-o>')
+        add((lambda: tabmgr.current_tab.save()), "File/Save", "Ctrl+S",
+            '<Control-s>', [filetabs.FileTab])
+        add((lambda: tabmgr.current_tab.save_as()), "File/Save As...",
+            "Ctrl+Shift+S", '<Control-S>', [filetabs.FileTab])
+        # TODO: turn this into a plugin
+        add(self._run_file, "File/Run", 'F5', '<F5>', [filetabs.FileTab])
+        self.get_menu("File").add_separator()
+        # TODO: rename to 'File/Quit' when possible?
+        add(self._close_tab_or_quit, "File/Close", "Ctrl+W", '<Control-w>')
 
         def textmethod(attribute):
-            """Make a function that calls the current text widget's method."""
             def result():
                 method = getattr(tabmgr.current_tab.textwidget, attribute)
-                return method()
+                method()
             return result
 
-        # This will contain (menu, index) pairs.
-        self._disablelist = []
+        add(textmethod('undo'), "Edit/Undo", "Ctrl+Z", '<Control-z>',
+            [filetabs.FileTab])
+        add(textmethod('redo'), "Edit/Redo", "Ctrl+Y", '<Control-y>',
+            [filetabs.FileTab])
+        add(textmethod('cut'), "Edit/Cut", "Ctrl+X", '<Control-x>',
+            [filetabs.FileTab])
+        add(textmethod('copy'), "Edit/Copy", "Ctrl+C", '<Control-c>',
+            [filetabs.FileTab])
+        add(textmethod('paste'), "Edit/Paste", "Ctrl+V", '<Control-v>',
+            [filetabs.FileTab])
+        add(textmethod('select_all'), "Edit/Select All",
+            "Ctrl+A", '<Control-a>', [filetabs.FileTab])
+        self.get_menu("Edit").add_separator()
+        # TODO: make this a plugin
+        add((lambda: tabmgr.current_tab.find()), "Edit/Find and Replace",
+            "Ctrl+F", '<Control-a>', [filetabs.FileTab])
 
-        self.menubar = tk.Menu()
+        # FIXME: update the setting dialog
+        thememenu = self.get_menu("Settings/Color Themes")
+        add((lambda: print("lol")), "Settings/Porcupine Settings...")
 
-        self.filemenu = HandyMenu()
-        self.menubar.add_cascade(label="File", menu=self.filemenu)
-        add = self.filemenu.add_handy_command
-        add("New file", "Ctrl+N", self.new_file)
-        add("Open", "Ctrl+O", self.open_file)
-        add("Save", "Ctrl+S", tabmethod('save'), disably=True)
-        add("Save as", "Ctrl+Shift+S", tabmethod('save_as'), disably=True)
-        add("Run", "F5", self._run_file, disably=True)
-        self.filemenu.add_separator()
-        add("Close this file", "Ctrl+W", self._close_file, disably=True)
-        add("Quit Porcupine", "Ctrl+Q", self.do_quit)
-        self._disablelist.extend(self.filemenu.disablelist)
+        def link(menupath, url):
+            callback = functools.partial(webbrowser.open, url)
+            self.add_action(callback, menupath)
 
-        self.editmenu = self.editmenu = HandyMenu()
-        self.menubar.add_cascade(label="Edit", menu=self.editmenu)
-        add = self.editmenu.add_handy_command
-        add("Undo", "Ctrl+Z", textmethod('undo'), disably=True)
-        add("Redo", "Ctrl+Y", textmethod('redo'), disably=True)
-        add("Cut", "Ctrl+X", textmethod('cut'), disably=True)
-        add("Copy", "Ctrl+C", textmethod('copy'), disably=True)
-        add("Paste", "Ctrl+V", textmethod('paste'), disably=True)
-        add("Select all", "Ctrl+A", textmethod('select_all'), disably=True)
-        add("Find and replace", "Ctrl+F", tabmethod('find'), disably=True)
-        self.editmenu.add_separator()
-        add("Settings", None, self._show_settings)
-        self._disablelist.extend(self.editmenu.disablelist)
-
-        self.thememenu = HandyMenu()
-        self.menubar.add_cascade(label="Color themes", menu=self.thememenu)
+        # TODO: porcupine starring button
+        link("Help/Free help chat",
+             "http://webchat.freenode.net/?channels=%23%23learnpython")
+        link("Help/My Python tutorial",
+             "https://github.com/Akuli/python-tutorial/blob/master/README.md")
+        link("Help/Official Python documentation", "https://docs.python.org/")
+        self.get_menu("Help").add_separator()
+        link("Help/Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
+        link("Help/Report a problem or request a feature",
+             "https://github.com/Akuli/porcupine/issues/new")
+        link("Help/Read Porcupine's code",
+             "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
         # the Default theme goes first
         themevar = tk.StringVar()
@@ -138,75 +121,95 @@ class Editor(tk.Frame):
         for name in ['Default'] + themenames:
             set_this_theme = functools.partial(
                 config.set, 'Editing', 'color_theme', name)
-            self.thememenu.add_radiobutton(
+            thememenu.add_radiobutton(
                 label=name, value=name, variable=themevar,
                 command=set_this_theme)
         config.connect('Editing', 'color_theme', themevar.set)
-
-        self.helpmenu = HandyMenu()
-        self.menubar.add_cascade(label="Help", menu=self.helpmenu)
-        add = self.helpmenu.add_linky_command
-        add("Free help chat",
-            "http://webchat.freenode.net/?channels=%23%23learnpython")
-        add("My Python tutorial",
-            "https://github.com/Akuli/python-tutorial/blob/master/README.md")
-        add("Official Python documentation", "https://docs.python.org/")
-        self.helpmenu.add_separator()
-        # TODO: starring button
-        add("Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
-        add("Report a problem or request a feature",
-            "https://github.com/Akuli/porcupine/issues/new")
-        add("Read Porcupine's code",
-            "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
         tabmgr.tab_changed_hook.connect(self._tab_changed)
         self._tab_context_manager = None   # this is lol, see _tab_changed()
         self._tab_changed(None)
 
-        def disably(func):
-            """Make a function that calls func when there are tabs."""
-            def result():
-                if tabmgr.tabs:
-                    func()
-            return result
+        for binding, callback in tabmgr.bindings:
+            self.add_action(callback, binding=binding)
 
-        # The text widgets are also bound to these because bind_all()
-        # doesn't seem to override their default bindings if there are
-        # any. See _add_file_tab().
-        bindings = tabmgr.bindings + [
-            ('<Control-n>', self.new_file),
-            ('<Control-o>', self.open_file),
-            ('<Control-s>', disably(tabmethod('save'))),
-            ('<Control-S>', disably(tabmethod('save_as'))),
-            ('<Control-w>', disably(self._close_file)),
-            ('<Control-q>', self.do_quit),
-            ('<Control-f>', disably(tabmethod('find'))),
-            ('<F5>', disably(self._run_file)),
-        ]
-        self._bindings = []   # [(keysym, real_callback), ...]
-        for keysym, callback in bindings:
-            self._add_binding(keysym, callback)
+    def get_menu(self, label_path):
+        """Return a submenu from the menubar.
 
-        # See the comments in tabs.py. Binding this here is enough
-        # because text widgets don't seem to bind <Alt-SomeDigitHere> by
-        # default.
-        self.bind_all('<Alt-Key>', tabmgr.on_alt_n)
+        The submenu will be created if it doesn't exist already. The
+        *label_path* should be a ``/``-separated string of menu labels;
+        for example, ``'File/Stuff'`` is a Stuff submenu under the File
+        menu.
+        """
+        menu = self.menubar
+        for label in label_path.split('/'):
+            try:
+                menu = self._submenus[(menu, label)]
+            except KeyError:
+                submenu = tk.Menu(tearoff=False)
+                menu.add_cascade(label=label, menu=submenu)
+                self._submenus[(menu, label)] = submenu
+                menu = submenu
+        return menu
 
-    # this is in a separate function because of scopes and loops
-    # TODO: add link to python FAQ here
-    def _add_binding(self, keysym, callback):
-        def real_callback(event):
-            callback()
-            return 'break'
+    def add_action(self, callback, menupath=None, accelerator=None,
+                   binding=None, tabtypes=(None, tabs.Tab)):
+        """Add a keyboard binding and/or a menu item.
 
-        self.bind_all(keysym, real_callback)
-        self._bindings.append((keysym, real_callback))
+        If *menupath* is given, it will be split by the last ``/``. The
+        first part will be used to get a menu with :meth:`~get_menu`,
+        and the end will be used as the text of the menu item.
+
+        Keyboard shortcuts can be added too. If given, *accelerator*
+        should be a user-readable string and *binding* should be a
+        tkinter keyboard binding.
+
+        If defined, the *tabtypes* argument should be an iterable of
+        :class:`porcupine.tabs.Tab` subclasses that this item can work
+        with. If you want to allow no tabs at all, add None to this
+        list. The menuitem will be disabled and the binding won't do
+        anything when the current tab is not of a compatible type.
+
+        Example::
+
+            def print_hello():
+                print("hello")
+
+            editor.add_action(callback, menupath="LOL/Do LOL")
+        """
+        tabtypes = tuple((
+            # isinstance(None, type(None)) is True
+            type(None) if cls is None else cls
+            for cls in tabtypes
+        ))
+
+        if menupath is not None:
+            menupath, menulabel = menupath.rsplit('/', 1)
+            menu = self.get_menu(menupath)
+            menu.add_command(label=menulabel, command=callback,
+                             accelerator=accelerator)
+            menuindex = menu.index('end')
+
+            def tab_changed(new_tab):
+                if isinstance(new_tab, tabtypes):
+                    menu.entryconfig(menuindex, state='normal')
+                else:
+                    menu.entryconfig(menuindex, state='disabled')
+
+            self.tabmanager.tab_changed_hook.connect(tab_changed)
+
+        if binding is not None:
+            # TODO: check if it's already bound
+            def bind_callback(event):
+                if isinstance(self.tabmanager.current_tab, tabtypes):
+                    callback()
+                    # try to allow binding keys that are used for other
+                    # things by default, see also add_bindings()
+                    return 'break'
+
+            self.bind(binding, bind_callback)
 
     def _tab_changed(self, new_tab):
-        state = 'normal' if self.tabmanager.tabs else 'disabled'
-        for menu, index in self._disablelist:
-            menu.entryconfig(index, state=state)
-
         if self._tab_context_manager is not None:
             # not running this for the first time
             self._tab_context_manager.__exit__(None, None, None)
@@ -218,15 +221,10 @@ class Editor(tk.Frame):
         self.editmenu.tk_popup(event.x_root, event.y_root)
 
     def _add_file_tab(self, tab):
+        # TODO: move the binding stuff to FileTab.__init__ or something?
         self.tabmanager.add_tab(tab)
         tab.textwidget.bind('<Button-3>', self._post_editmenu)
-
-        # some of our keyboard bindings conflict with tkinter's bindings
-        # and returning 'break' from a bind_all binding is not enough,
-        # so we also need these here
-        for binding, callback in self._bindings:
-            tab.textwidget.bind(binding, callback)
-
+        utils.copy_bindings(self, tab.textwidget)
         self.tabmanager.current_tab = tab
 
     def new_file(self):
@@ -252,8 +250,8 @@ class Editor(tk.Frame):
             # we don't use == because paths are case-insensitive on
             # windows
             if (isinstance(path, filetabs.FileTab)
-              and tab.path is not None
-              and os.path.samefile(path, tab.path)):
+                    and tab.path is not None
+                    and os.path.samefile(path, tab.path)):
                 self.tabmanager.current_tab = tab
                 return
 
@@ -278,12 +276,14 @@ class Editor(tk.Frame):
         tab.mark_saved()
         self._add_file_tab(tab)
 
-    def _close_file(self):
+    def _close_tab_or_quit(self):
         tab = self.tabmanager.current_tab
-        if tab.can_be_closed():
+        if tab is None:
+            # no more tabs
+            self.do_quit()
+        elif tab.can_be_closed():
             tab.close()
 
-    # TODO: turn this into a plugin
     def _run_file(self):
         filetab = self.tabmanager.current_tab
         if filetab.path is None or not filetab.is_saved():
@@ -292,22 +292,6 @@ class Editor(tk.Frame):
             # user cancelled a save as dialog
             return
         terminal.run(filetab.path)
-
-    def _show_settings(self):
-        if self._settingdialog is not None:
-            log.info("setting dialog exists already, showing it")
-            self._settingdialog.deiconify()
-            return
-
-        log.info("creating a new setting dialog")
-        dialog = self._settingdialog = tk.Toplevel()
-        dialog.title("Porcupine Settings")
-        dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
-        dialog.transient(self)
-        dialog.resizable(False, False)
-        edit = settingeditor.SettingEditor(
-            dialog, ok_callback=dialog.withdraw)
-        edit.pack()
 
     def do_quit(self):
         for tab in self.tabmanager.tabs:

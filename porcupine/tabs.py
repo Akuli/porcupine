@@ -94,17 +94,17 @@ class TabManager(tk.Frame):
         self.no_tabs_frame = tk.Frame(self)
         self.no_tabs_frame.pack(fill='both', expand=True)
 
-        # These can be bound using bind_all(). Note that it's also
-        # recommended to bind <Alt-Key> to on_alt_n, but it isn't bound
-        # by default because it needs the event object that these other
-        # callbacks don't need.
+        # These can be bound in a parent widget. Note that the callbacks
+        # should be called with no arguments.
         self.bindings = [
             ('<Control-Prior>', functools.partial(self.select_left, True)),
             ('<Control-Next>', functools.partial(self.select_right, True)),
             ('<Control-Shift-Prior>', self.move_left),
             ('<Control-Shift-Next>', self.move_right),
-            ('<Control-w>', self._on_ctrl_w),
         ]
+        for number in range(1, 10):
+            callback = functools.partial(self._on_alt_n, number-1)
+            self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
     @property
     def current_tab(self):
@@ -230,21 +230,12 @@ class TabManager(tk.Frame):
         self._swap(self.current_index, self.current_index+1)
         return True
 
-    def on_alt_n(self, event):
-        """Select the n'th tab (1 <= n <= 9) based on event.keysym.
-
-        Return 'break' if event.keysym was useful for this and None if
-        nothing was done.
-        """
+    def _on_alt_n(self, index):
         try:
-            self.current_index = int(event.keysym) - 1
+            self.current_index = index
             return 'break'
-        except (IndexError, ValueError):
+        except IndexError:
             return None
-
-    def _on_ctrl_w(self):
-        if self.current_tab is not None:
-            self.current_tab.close()
 
 
 if __name__ == '__main__':
@@ -252,13 +243,12 @@ if __name__ == '__main__':
     root = tk.Tk()
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)
-    tabmgr.on_tab_changed.append(lambda tab: print(tab.label['text']))
+    tabmgr.tab_changed_hook.connect(print)
 
     tk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
 
     for keysym, callback in tabmgr.bindings:
-        root.bind_all(keysym, (lambda event, c=callback: c()))
-    root.bind_all('<Alt-Key>', tabmgr.on_alt_n)
+        root.bind(keysym, (lambda event, c=callback: c()))
 
     for i in range(1, 6):
         tab = Tab(tabmgr)

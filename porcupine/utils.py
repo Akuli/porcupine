@@ -248,6 +248,21 @@ def errordialog(title, message, monospace_text=None):
     window.wait_window()
 
 
+def copy_bindings(widget1, widget2):
+    """Add all bindings of *widget1* to *widget2*.
+
+    You should call ``copy_bindings(editor, focusable_widget)`` on all
+    widgets that can be focused by e.g. clocking them, like ``Text`` and
+    ``Entry`` widgets. This way porcupine's keyboard bindings will work
+    with all widgets.
+    """
+    # tkinter's bind() can do quite a few different things depending
+    # on how it's invoked
+    for keysym in widget1.bind():
+        tcl_command = widget1.bind(keysym)
+        widget2.bind(keysym, tcl_command)
+
+
 def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
     """Bind mouse wheel events to callback.
 
