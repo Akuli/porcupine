@@ -31,6 +31,10 @@ def main():
     parser.add_argument(
         '-v', '--verbose', action='store_true',
         help="print same debugging messages to stderr as to log file")
+    parser.add_argument(
+        '--shuffle-plugins', action='store_true',
+        help=("setup the plugins in a random order " +
+              "(still respects setup_before and setup_after)"))
     args = parser.parse_args()
 
     dirs.makedirs()
@@ -52,7 +56,7 @@ def main():
 
     # the root window has focus when there are no tabs, the bindings
     # must be copied after loading the plugins
-    pluginloader.load(editor)
+    pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
     for file in args.file:
