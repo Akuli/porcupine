@@ -1,4 +1,4 @@
-"""Plugin system for Porcupine.
+"""Porcupine's plugins.
 
 Porcupine comes with many handy plugins, and you can read them to
 get an idea of how everything works. You can find them like this:
@@ -43,45 +43,9 @@ plugin might produce. Note that there's nothing wrong with running
 multiple Porcupines at the same time, so if you are writing the plugin
 in a Porcupine you don't need to restart that Porcupine at all.
 """
-# TODO:
-#   - update the docstring
-#   - move this file to something like pluginloader.py
-#   - add some way to require setting up another plugin before loading
-#     some particular plugin
-
-import importlib
-import logging
-import os
-import random
+# TODO: update the docstring
 
 import porcupine
 
-
-log = logging.getLogger(__name__)
-
 # simple hack to allow user-wide plugins
 __path__.insert(0, porcupine.dirs.userplugindir)
-
-# these are wrapped tightly in try/except because someone might write
-# Porcupine plugins using Porcupine, so Porcupine must run if the
-# plugins are broken
-def load(editor):
-    modulenames = []
-    for path in __path__:    # this line looks odd
-        for name, ext in map(os.path.splitext, os.listdir(path)):
-            if name.isidentifier() and name[0] != '_' and ext == '.py':
-                modulenames.append('porcupine.plugins.' + name)
-    log.info("found %d plugins", len(modulenames))
-
-    # plugins should be made so that their loading order doesn't matter,
-    # so let's heavily discourage relying on it :D
-    random.shuffle(modulenames)
-
-    for name in modulenames:
-        try:
-            module = importlib.import_module(name)
-            module.setup(editor)
-        except Exception:
-            log.exception("problem with loading %s", name)
-        else:
-            log.info("successfully loaded %s", name)

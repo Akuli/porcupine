@@ -2,7 +2,7 @@ import collections
 import re
 import tkinter as tk
 
-from porcupine import filetabs
+from porcupine import tabs
 
 
 class AutoCompleter:
@@ -63,7 +63,7 @@ class AutoCompleter:
 
 
 def tab_callback(tab):
-    if not isinstance(tab, filetabs.FileTab):
+    if not isinstance(tab, tabs.FileTab):
         # TODO: autocomplete in some other tabs too?
         yield
         return

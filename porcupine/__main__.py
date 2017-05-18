@@ -8,7 +8,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import dirs, logs, plugins, settings, utils
+from porcupine import dirs, logs, pluginloader, settings, utils
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def main():
 
     # the root window has focus when there are no tabs, the bindings
     # must be copied after loading the plugins
-    plugins.load(editor)
+    pluginloader.load(editor)
     utils.copy_bindings(editor, root)
 
     for file in args.file:

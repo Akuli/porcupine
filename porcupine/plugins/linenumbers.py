@@ -2,7 +2,7 @@
 
 import tkinter as tk
 
-from porcupine import filetabs
+from porcupine import tabs
 from porcupine.textwidget import ThemedText
 
 
@@ -65,7 +65,7 @@ class LineNumbers(ThemedText):
 
 
 def tab_callback(tab):
-    if not isinstance(tab, filetabs.FileTab):
+    if not isinstance(tab, tabs.FileTab):
         yield
         return
 

@@ -7,6 +7,7 @@ import logging
 import os
 import pkgutil
 import platform
+import shutil
 import sys
 import tkinter as tk
 
@@ -64,15 +65,6 @@ class CallbackHook:
     def disconnect(self, function):
         """Undo a :meth:`connect` call."""
         self.callbacks.remove(function)
-
-    # TODO: get rid of this? i originally added this to help with
-    # garbage collection but it's not really an issue anyway
-    def disconnect_all(self):
-        """Disconnect all connected callbacks.
-
-        This should be ran when the hook won't be needed anymore.
-        """
-        self.callbacks.clear()
 
     @contextlib.contextmanager
     def blocked(self):
@@ -306,6 +298,36 @@ def nice_repr(obj):
         return obj.__module__ + '.' + obj.__qualname__
     except AttributeError:
         return repr(obj)
+
+
+@contextlib.contextmanager
+def backup_open(path, *args, **kwargs):
+    """Like :func:`open`, but uses a backup file if needed.
+
+    This automatically restores from a backup on failure.
+    """
+    if os.path.exists(path):
+        # there's something to back up
+        name, ext = os.path.splitext(path)
+        while os.path.exists(name + ext):
+            name += '-backup'
+        backuppath = name + ext
+
+        log.info("backing up '%s' to '%s'", path, backuppath)
+        shutil.copy(path, backuppath)
+
+        try:
+            yield open(path, *args, **kwargs)
+        except Exception as e:
+            log.info("restoring '%s' from the backup", path)
+            shutil.move(backuppath, path)
+            raise e
+        else:
+            log.info("deleting '%s'" % backuppath)
+            os.remove(backuppath)
+
+    else:
+        yield open(path, *args, **kwargs)
 
 
 class HandyText(tk.Text):

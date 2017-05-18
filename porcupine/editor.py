@@ -5,12 +5,11 @@ import logging
 import os
 import platform
 import tkinter as tk
-from tkinter import messagebox
 import traceback
 import webbrowser
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, filetabs, settingeditor, tabs, terminal, utils
+from porcupine import dialogs, settingeditor, tabs, terminal, utils
 from porcupine.settings import config, color_themes
 
 
@@ -63,9 +62,9 @@ class Editor(tk.Frame):
         add(self.new_file, "File/New File", "Ctrl+N", '<Control-n>')
         add(self.open_file, "File/Open", "Ctrl+O", '<Control-o>')
         add((lambda: tabmgr.current_tab.save()), "File/Save", "Ctrl+S",
-            '<Control-s>', [filetabs.FileTab])
+            '<Control-s>', [tabs.FileTab])
         add((lambda: tabmgr.current_tab.save_as()), "File/Save As...",
-            "Ctrl+Shift+S", '<Control-S>', [filetabs.FileTab])
+            "Ctrl+Shift+S", '<Control-S>', [tabs.FileTab])
         self.get_menu("File").add_separator()
         # TODO: rename to 'File/Quit' when possible?
         add(self._close_tab_or_quit, "File/Close", "Ctrl+W", '<Control-w>')
@@ -77,28 +76,28 @@ class Editor(tk.Frame):
             return result
 
         add(textmethod('undo'), "Edit/Undo", "Ctrl+Z", '<Control-z>',
-            [filetabs.FileTab])
+            [tabs.FileTab])
         add(textmethod('redo'), "Edit/Redo", "Ctrl+Y", '<Control-y>',
-            [filetabs.FileTab])
+            [tabs.FileTab])
         add(textmethod('cut'), "Edit/Cut", "Ctrl+X", '<Control-x>',
-            [filetabs.FileTab])
+            [tabs.FileTab])
         add(textmethod('copy'), "Edit/Copy", "Ctrl+C", '<Control-c>',
-            [filetabs.FileTab])
+            [tabs.FileTab])
         add(textmethod('paste'), "Edit/Paste", "Ctrl+V", '<Control-v>',
-            [filetabs.FileTab])
+            [tabs.FileTab])
         add(textmethod('select_all'), "Edit/Select All",
-            "Ctrl+A", '<Control-a>', [filetabs.FileTab])
+            "Ctrl+A", '<Control-a>', [tabs.FileTab])
         self.get_menu("Edit").add_separator()
         # TODO: make this a plugin
         add((lambda: tabmgr.current_tab.find()), "Edit/Find and Replace",
-            "Ctrl+F", '<Control-f>', [filetabs.FileTab])
+            "Ctrl+F", '<Control-f>', [tabs.FileTab])
 
         # TODO: turn this into a plugin
         if platform.system() == 'Windows':
             runmenupath = "Run/Run in Command Prompt"
         else:
             runmenupath = "Run/Run in Terminal"
-        add(self._run_file, runmenupath, 'F5', '<F5>', [filetabs.FileTab])
+        add(self._run_file, runmenupath, 'F5', '<F5>', [tabs.FileTab])
 
         # FIXME: update the setting dialog
         thememenu = self.get_menu("Settings/Color Themes")
@@ -235,7 +234,7 @@ class Editor(tk.Frame):
         self.tabmanager.current_tab = tab
 
     def new_file(self):
-        tab = filetabs.FileTab(self.tabmanager)
+        tab = tabs.FileTab(self.tabmanager)
         self._add_file_tab(tab)
         return tab
 
@@ -256,13 +255,13 @@ class Editor(tk.Frame):
         for tab in self.tabmanager.tabs:
             # we don't use == because paths are case-insensitive on
             # windows
-            if (isinstance(path, filetabs.FileTab)
+            if (isinstance(path, tabs.FileTab)
                     and tab.path is not None
                     and os.path.samefile(path, tab.path)):
                 self.tabmanager.current_tab = tab
                 return
 
-        tab = filetabs.FileTab(self.tabmanager)
+        tab = tabs.FileTab(self.tabmanager)
         tab.path = path
 
         if content is None:
@@ -271,10 +270,10 @@ class Editor(tk.Frame):
                 with open(path, 'r', encoding=encoding) as f:
                     for line in f:
                         tab.textwidget.insert('end-1c', line)
-            except (OSError, UnicodeError):
+            except (OSError, UnicodeError) as e:
                 log.exception("opening '%s' failed", path)
-                messagebox.showerror("Opening failed!",
-                                     traceback.format_exc())
+                utils.errordialog(e.__name__, "Opening failed!",
+                                  traceback.format_exc())
                 return
         else:
             tab.textwidget.insert('1.0', content)

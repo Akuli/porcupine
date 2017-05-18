@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from porcupine import filetabs
+from porcupine import tabs
 
 # i have experimented with a logging handler that displays logging
 # messages in the label, but it's not as good idea as it sounds like
@@ -18,7 +18,7 @@ class StatusBar(tk.Frame):
         self._cursor_label.pack(side='right')
 
     def tab_callback(self, tab):
-        if not isinstance(tab, filetabs.FileTab):
+        if not isinstance(tab, tabs.FileTab):
             # ignore other kinds of tabs for now
             tab = None
         self._active_tab = tab
