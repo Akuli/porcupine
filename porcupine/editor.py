@@ -3,6 +3,7 @@
 import functools
 import logging
 import os
+import platform
 import tkinter as tk
 from tkinter import messagebox
 import traceback
@@ -65,8 +66,6 @@ class Editor(tk.Frame):
             '<Control-s>', [filetabs.FileTab])
         add((lambda: tabmgr.current_tab.save_as()), "File/Save As...",
             "Ctrl+Shift+S", '<Control-S>', [filetabs.FileTab])
-        # TODO: turn this into a plugin
-        add(self._run_file, "File/Run", 'F5', '<F5>', [filetabs.FileTab])
         self.get_menu("File").add_separator()
         # TODO: rename to 'File/Quit' when possible?
         add(self._close_tab_or_quit, "File/Close", "Ctrl+W", '<Control-w>')
@@ -93,6 +92,13 @@ class Editor(tk.Frame):
         # TODO: make this a plugin
         add((lambda: tabmgr.current_tab.find()), "Edit/Find and Replace",
             "Ctrl+F", '<Control-a>', [filetabs.FileTab])
+
+        # TODO: turn this into a plugin
+        if platform.system() == 'Windows':
+            runmenupath = "Run/Run in Command Prompt"
+        else:
+            runmenupath = "Run/Run in Terminal"
+        add(self._run_file, runmenupath, 'F5', '<F5>', [filetabs.FileTab])
 
         # FIXME: update the setting dialog
         thememenu = self.get_menu("Settings/Color Themes")

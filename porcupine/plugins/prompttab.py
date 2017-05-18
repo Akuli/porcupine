@@ -176,5 +176,5 @@ def setup(editor):
         editor.tabmanager.add_tab(tab)
         editor.tabmanager.current_tab = tab
 
-    # FIXME: add a menu item instead! this is for really dirty testing
-    editor.bind_all('<Control-i>', start_prompt)
+    editor.add_action(start_prompt, "Run/Interactive Prompt",
+                      "Ctrl+I", "<Control-i>")
