@@ -45,15 +45,15 @@ def main():
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)
 
-    # the root window has focus when there are no tabs
-    utils.copy_bindings(editor, root)
-
     root['menu'] = editor.menubar
     root.geometry(settings.config['GUI']['default_size'])
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
 
+    # the root window has focus when there are no tabs, the bindings
+    # must be copied after loading the plugins
     plugins.load(editor)
+    utils.copy_bindings(editor, root)
 
     for file in args.file:
         if file == '-':

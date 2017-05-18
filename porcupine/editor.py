@@ -91,7 +91,7 @@ class Editor(tk.Frame):
         self.get_menu("Edit").add_separator()
         # TODO: make this a plugin
         add((lambda: tabmgr.current_tab.find()), "Edit/Find and Replace",
-            "Ctrl+F", '<Control-a>', [filetabs.FileTab])
+            "Ctrl+F", '<Control-f>', [filetabs.FileTab])
 
         # TODO: turn this into a plugin
         if platform.system() == 'Windows':
@@ -202,6 +202,7 @@ class Editor(tk.Frame):
                 else:
                     menu.entryconfig(menuindex, state='disabled')
 
+            tab_changed(self.tabmanager.current_tab)
             self.tabmanager.tab_changed_hook.connect(tab_changed)
 
         if binding is not None:

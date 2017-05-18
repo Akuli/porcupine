@@ -146,7 +146,8 @@ class PromptTab(tabs.Tab):
         super().__init__(*args, **kwargs)
         self.label['text'] = "Interactive Prompt"
 
-        self.textwidget = textwidget.ThemedText(self.content, width=1)
+        self.textwidget = textwidget.ThemedText(
+            self.content, width=1, height=1)
         self.textwidget.pack(side='left', fill='both', expand=True)
         self.prompt = PythonPrompt(self.textwidget, self.close)
 
@@ -171,8 +172,9 @@ class PromptTab(tabs.Tab):
 
 
 def setup(editor):
-    def start_prompt(event=None):
+    def start_prompt():
         tab = PromptTab(editor.tabmanager)
+        utils.copy_bindings(editor, tab.textwidget)
         editor.tabmanager.add_tab(tab)
         editor.tabmanager.current_tab = tab
 
