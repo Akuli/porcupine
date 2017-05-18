@@ -167,12 +167,16 @@ class ContextManagerHook(CallbackHook):
                 self._handle_error(callback, e)
 
 
-@functools.lru_cache()
-def running_pythonw():
-    """Return True if Porcupine is running in pythonw.exe on Windows."""
-    if platform.system() != 'Windows':
-        return False
-    return os.path.basename(sys.executable).lower() == 'pythonw.exe'
+# TODO: document these
+running_pythonw = (
+    platform.system() == 'Windows' and
+    os.path.basename(sys.executable).lower() == 'pythonw.exe')
+
+if running_pythonw:
+    # get rid of 'w'
+    python_executable = sys.executable[:-5] + sys.executable[-4:]
+else:
+    python_executable = sys.executable
 
 
 @functools.lru_cache()

@@ -67,8 +67,9 @@ class PluginLoader:
 def load(editor, shuffle):
     modulenames = []
     for path in porcupine.plugins.__path__:
+        # this handles directories and files
         for name, ext in map(os.path.splitext, os.listdir(path)):
-            if name.isidentifier() and name[0] != '_' and ext == '.py':
+            if name.isidentifier() and not name.startswith('_'):
                 modulenames.append('porcupine.plugins.' + name)
     log.info("found %d plugins", len(modulenames))
 

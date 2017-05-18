@@ -9,7 +9,7 @@ import traceback
 import webbrowser
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, settingeditor, tabs, terminal, utils
+from porcupine import dialogs, settingeditor, tabs, utils
 from porcupine.settings import config, color_themes
 
 
@@ -91,13 +91,6 @@ class Editor(tk.Frame):
         # TODO: make this a plugin
         add((lambda: tabmgr.current_tab.find()), "Edit/Find and Replace",
             "Ctrl+F", '<Control-f>', [tabs.FileTab])
-
-        # TODO: turn this into a plugin
-        if platform.system() == 'Windows':
-            runmenupath = "Run/Run in Command Prompt"
-        else:
-            runmenupath = "Run/Run in Terminal"
-        add(self._run_file, runmenupath, 'F5', '<F5>', [tabs.FileTab])
 
         # FIXME: update the setting dialog
         thememenu = self.get_menu("Settings/Color Themes")
@@ -289,15 +282,6 @@ class Editor(tk.Frame):
             self.do_quit()
         elif tab.can_be_closed():
             tab.close()
-
-    def _run_file(self):
-        filetab = self.tabmanager.current_tab
-        if filetab.path is None or not filetab.is_saved():
-            filetab.save()
-        if filetab.path is None:
-            # user cancelled a save as dialog
-            return
-        terminal.run(filetab.path)
 
     def do_quit(self):
         for tab in self.tabmanager.tabs:
