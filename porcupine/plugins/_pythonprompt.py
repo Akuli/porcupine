@@ -1,3 +1,10 @@
+"""A tab that displays a >>> prompt.
+
+This plugin is disabled by default because sending a Ctrl+C ,to a
+subprocess is basically impossible on Windows and interrupts. If you
+don't use Windows, rename this to _pythonprompt and have fun with it :)
+"""
+
 # FIXME: >>> while True: print("lel")
 # TODO: test this on windows, this may turn out to be pretty broken :(
 
@@ -13,12 +20,7 @@ import tkinter as tk
 from porcupine import tabs, textwidget, utils
 
 
-if platform.system() == 'Windows':
-    _WINDOWS = True
-    _INTERRUPT = signal.CTRL_C_EVENT
-else:
-    _WINDOWS = False
-    _INTERRUPT = signal.SIGINT
+_WINDOWS = (platform.system() == 'Windows')
 
 
 def _tupleindex(index):
@@ -54,7 +56,7 @@ class PythonPrompt:
 
     def _keyboard_interrupt(self, event):
         try:
-            self.process.send_signal(_INTERRUPT)
+            self.process.send_signal(signal.SIGINT)
         except ProcessLookupError:
             # the subprocess has terminated, _queue_clearer should have
             # taken care of it already
