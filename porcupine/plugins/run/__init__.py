@@ -6,12 +6,11 @@ import platform
 import shlex
 import shutil
 import subprocess
-import sys
 import tempfile
 import tkinter as tk
 from tkinter import messagebox
 
-from porcupine import dirs, tabs, utils
+from porcupine import tabs, utils
 
 log = logging.getLogger(__name__)
 

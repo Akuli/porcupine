@@ -3,13 +3,12 @@
 import functools
 import logging
 import os
-import platform
 import tkinter as tk
 import traceback
 import webbrowser
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, settingeditor, tabs, utils
+from porcupine import dialogs, tabs, utils
 from porcupine.settings import config, color_themes
 
 
