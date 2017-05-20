@@ -9,7 +9,9 @@ import pkgutil
 import platform
 import shutil
 import sys
+import threading
 import tkinter as tk
+import traceback
 
 log = logging.getLogger(__name__)
 
@@ -236,7 +238,7 @@ def errordialog(title, message, monospace_text=None):
         text['state'] = 'disabled'
         geometry = '400x300'
 
-    button = tk.Button(text="OK", width=6, command=window.destroy)
+    button = tk.Button(window, text="OK", width=6, command=window.destroy)
     button.pack(pady=10)
 
     window.title(title)
@@ -302,6 +304,43 @@ def nice_repr(obj):
         return obj.__module__ + '.' + obj.__qualname__
     except AttributeError:
         return repr(obj)
+
+
+def run_in_thread(blocking_function, done_callback):
+    """Run ``done_callback(True, blocking_function())`` in the background.
+
+    This function runs ``blocking_function()`` with no arguments in a
+    thread. If the *blocking_function* raises an error,
+    ``done_callback(False, traceback)`` will be called where *traceback*
+    is the error message as a string. If no errors are raised,
+    ``done_callback(True, result)`` will be called where *result* is the
+    return value from *blocking_function*.
+
+    The *done_callback* will be always called from Tk's main loop, so it
+    can do things with Tkinter widgets unlike *blocking_function*.
+    """
+    root = get_root()
+    result = []     # [success, result]
+
+    def thread_target():
+        # the logging module uses locks so calling it from another
+        # thread should be safe
+        try:
+            value = blocking_function()
+            result[:] = [True, value]
+        except Exception as e:
+            result[:] = [False, traceback.format_exc()]
+
+    def check():
+        if thread.is_alive():
+            # let's come back and check again later
+            root.after(100, check)
+        else:
+            done_callback(*result)
+
+    thread = threading.Thread(target=thread_target)
+    thread.start()
+    root.after_idle(check)
 
 
 @contextlib.contextmanager
