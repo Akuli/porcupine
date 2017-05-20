@@ -174,9 +174,9 @@ running_pythonw = (
 
 if running_pythonw:
     # get rid of 'w'
-    python_executable = sys.executable[:-5] + sys.executable[-4:]
+    python = sys.executable[:-5] + sys.executable[-4:]
 else:
-    python_executable = sys.executable
+    python = sys.executable
 
 
 @functools.lru_cache()

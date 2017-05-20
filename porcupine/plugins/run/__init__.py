@@ -1,5 +1,7 @@
 """Run files when pressing F5."""
+# TODO: add more error handling
 
+import functools
 import logging
 import os
 import platform
@@ -14,13 +16,21 @@ from porcupine import tabs, utils
 
 log = logging.getLogger(__name__)
 
+
 # __path__[0] is the directory where this __init__.py is
-_scriptdir = os.path.abspath(__path__[0])
+if platform.system() == 'Windows':
+    run_script = 'windows_run.py'
+else:
+    run_script = 'sh_run.sh'
+run_script = os.path.join(os.path.abspath(__path__[0]), run_script)
 
 
 def _windows_run(path):
-    command = [utils.python_executable,
-               os.path.join(_scriptdir, 'windows_run.py'), path]
+    if path is None:
+        command = [utils.python]
+    else:
+        command = [utils.python, run_script, path]
+
     if not utils.running_pythonw:
         # windows wants to run python in the same terminal that
         # Porcupine was started from, this is the only way to open a
@@ -31,20 +41,24 @@ def _windows_run(path):
 
 
 def _osx_terminal_app_run(path):
-    dirname, basename = os.path.split(path)
-    command = [os.path.join(_scriptdir, 'sh_run.sh'), '--dont-wait',
-               utils.python_executable, dirname, basename]
+    if path is None:
+        # this is easy because we don't need to pass arguments
+        subprocess.Popen(['open', '-a', 'Terminal.app', utils.python])
+        return
 
-    # these things are wrong with this:
+    # passing arguments is not easy, these things are wrong with this:
     #  - i needed to cheat and use stackoverflow because i don't
     #    have a mac :( http://stackoverflow.com/a/989357
     #  - new OSX versions keep the terminal open by
     #    default but older versions don't, so people using old
     #    OSX versions need to change their terminal settings
     # big thanks to go|dfish for testing this code!
+    dirname, basename = os.path.split(path)
+    command = [run_script, '--dont-wait', utils.python, dirname, basename]
+
     quoted_command = ' '.join(map(shlex.quote, command))
-    with tempfile.NamedTemporaryFile('w', delete=False,
-                                     prefix='porcupine-') as file:
+    with tempfile.NamedTemporaryFile(
+            'w', delete=False, prefix='porcupine-run-') as file:
         print('#!/bin/sh', file=file)
         print(quoted_command, file=file)
         print('rm', shlex.quote(file.name), file=file)  # see below
@@ -56,31 +70,29 @@ def _osx_terminal_app_run(path):
 
 
 def _x11_like_run(path):
-    dirname, basename = os.path.split(path)
-    command = [os.path.join(_scriptdir, 'sh_run.sh'),
-               utils.python_executable, dirname, basename]
-
-    env_terminal = os.environ.get('TERMINAL', 'x-terminal-emulator')
-    terminal = shutil.which(env_terminal)
-    if terminal is None:
-        log.error("shutil.which(%r) returned None" % env_terminal)
-        messagebox.showerror(
-            "Terminal not found",
-            ("Cannot find %s in $PATH. Make sure that you have " +
-             "a terminal program installed and try again.") % env_terminal)
+    terminal = os.environ.get('TERMINAL', 'x-terminal-emulator')
+    if path is None:
+        subprocess.Popen([terminal, '-e', utils.python])
         return
 
-    if env_terminal == 'x-terminal-emulator':
+    # sometimes x-terminal-emulator points to mate-terminal.wrapper,
+    # it's a python script that changes some command line options and
+    # runs mate-terminal but it breaks passing arguments with the -e
+    # option for some reason
+    if terminal == 'x-terminal-emulator':
+        terminal = shutil.which(terminal)
+        if terminal is None:
+            raise FileNotFoundError(
+                "x-terminal-emulator is not in $PATH")
+
         terminal = os.path.realpath(terminal)
         log.debug("x-terminal-emulator points to '%s'", terminal)
-
         if os.path.basename(terminal) == 'mate-terminal.wrapper':
-            # it's a python script that changes some command line
-            # options and runs mate-terminal, but it breaks the -e
-            # option for some reason
             log.info("using mate-terminal instead of mate-terminal.wrapper")
             terminal = 'mate-terminal'
 
+    dirname, basename = os.path.split(path)
+    command = [run_script, utils.python, dirname, basename]
     quoted_command = ' '.join(map(shlex.quote, command))
     subprocess.Popen([terminal, '-e', quoted_command])
 
@@ -90,19 +102,20 @@ def _x11_like_run(path):
 # doesn't really matter. This way the user can install a terminal
 # while Porcupine is running without restarting it.
 def run(path):
-    path = os.path.abspath(path)
+    if path is not None:
+        path = os.path.abspath(path)
 
     windowingsystem = utils.get_root().tk.call('tk', 'windowingsystem')
     if windowingsystem == 'win32':
         _windows_run(path)
-    elif windowingsystem == 'aqua' and 'TERMINAL' not in os.environ:
+    elif windowingsystem == 'aqua' and not os.environ.get('TERMINAL', ''):
         _osx_terminal_app_run(path)
     else:
         _x11_like_run(path)
 
 
 def setup(editor):
-    def run_current_file():
+    def run_this_file():
         filetab = editor.tabmanager.current_tab
         if filetab.path is None or not filetab.is_saved():
             filetab.save()
@@ -111,12 +124,12 @@ def setup(editor):
             return
         run(filetab.path)
 
-    if platform.system() == 'Windows':
-        menupath = "Run/Run in Command Prompt"
-    else:
-        menupath = "Run/Run in Terminal"
-    editor.add_action(run_current_file, menupath, "F5", "<F5>",
+    open_prompt = functools.partial(run, None)
+
+    editor.add_action(run_this_file, "Run/Run File", "F5", "<F5>",
                       [tabs.FileTab])
+    editor.add_action(open_prompt, "Run/Interactive Prompt",
+                      "Ctrl+I", "<Control-i>")
 
 
 if __name__ == '__main__':
