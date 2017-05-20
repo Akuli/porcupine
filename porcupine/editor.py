@@ -264,7 +264,7 @@ class Editor(tk.Frame):
                         tab.textwidget.insert('end-1c', line)
             except (OSError, UnicodeError) as e:
                 log.exception("opening '%s' failed", path)
-                utils.errordialog(e.__name__, "Opening failed!",
+                utils.errordialog(type(e).__name__, "Opening failed!",
                                   traceback.format_exc())
                 return
         else:

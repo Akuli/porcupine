@@ -89,6 +89,8 @@ def load(editor, shuffle):
         except Exception:
             log.exception("problem with loading %s", name)
 
+    # modulenames contains modules that failed to import, must not use
+    # it here
     loader = PluginLoader(editor, plugins)
-    for name in modulenames:
-        loader.load(name)
+    for plugin in plugins:
+        loader.load(plugin.name)

@@ -370,7 +370,7 @@ class FileTab(Tab):
                     f.write(chunk)
         except (OSError, UnicodeError) as e:
             log.exception("saving '%s' failed", self.path)
-            utils.errordialog(e.__name__, "Saving failed!",
+            utils.errordialog(type(e).__name__, "Saving failed!",
                               traceback.format_exc())
             return
 
