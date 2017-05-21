@@ -26,10 +26,14 @@ def main():
         prog=prog, description=porcupine.__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
+        '-v', '--version', action='version',
+        version=("Porcupine %s" % porcupine.__version__),
+        help="display the Porcupine version number and exit")
+    parser.add_argument(
         'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         help="open these files when the editor starts, - means stdin")
     parser.add_argument(
-        '-v', '--verbose', action='store_true',
+        '--verbose', action='store_true',
         help="print same debugging messages to stderr as to log file")
     parser.add_argument(
         '--shuffle-plugins', action='store_true',
@@ -39,7 +43,8 @@ def main():
 
     dirs.makedirs()
     logs.setup(verbose=args.verbose)
-    log.info("starting Porcupine on %s", platform.platform().replace('-', ' '))
+    log.info("starting Porcupine %s on %s", porcupine.__version__,
+             platform.platform().replace('-', ' '))
     log.info("running on Python %d.%d.%d from %s",
              *(list(sys.version_info[:3]) + [sys.executable]))
 
