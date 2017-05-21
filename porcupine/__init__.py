@@ -13,61 +13,6 @@ See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
 """
 
-import os
-import platform
-import traceback
-
-from porcupine import utils
-
-try:
-    import appdirs
-except ImportError:
-    try:
-        # some versions of pip seem to come with a copy of appdirs, but
-        # it's an implementation detail so we need to make sure it's
-        # actually compatible
-        from pip._vendor import appdirs
-        appdirs.AppDirs.user_cache_dir
-        appdirs.AppDirs.user_config_dir
-    except (ImportError, AttributeError) as e:
-        # i know i know, running GUI dialogs on import sucks
-        traceback.print_exc()
-        utils.errordialog(
-          "Importing appdirs failed",
-          "Looks like appdirs is not installed. You can install it like this:",
-          ">>> import pip\n>>> pip.main(['install', '--user', 'appdirs'])")
-        raise ImportError("appdirs not found") from e
-
-
-class _PorcupineDirs(appdirs.AppDirs):
-
-    # handy aliases because porcupine doesn't use the system-wide dirs
-    # and there's no risk of confusing them with these
-    cachedir = appdirs.AppDirs.user_cache_dir
-    configdir = appdirs.AppDirs.user_config_dir
-
-    # and some other stuff
-    @property
-    def installdir(self):
-        # this hack shouldn't be a problem because porcupine isn't
-        # distributed with tools like pyinstaller, and it doesn't need
-        # to be because people using porcupine have python installed
-        # anyway
-        return os.path.dirname(os.path.abspath(__file__))
-
-    @property
-    def userplugindir(self):
-        return os.path.join(self.configdir, 'plugins')
-
-    def makedirs(self):
-        all_paths = [self.cachedir, self.configdir, self.userplugindir]
-        for path in all_paths:
-            os.makedirs(path, exist_ok=True)
-
-
-if platform.system() in {'Windows', 'Darwin'}:
-    # these platforms like path names like "Program Files" or
-    # "Application Support"
-    dirs = _PorcupineDirs('Porcupine', 'Akuli')
-else:
-    dirs = _PorcupineDirs('porcupine', 'akuli')
+__version__ = '0.1.0'
+__author__ = 'Akuli'
+__copyright__ = 'Copyright (c) 2017 Akuli'
