@@ -13,6 +13,6 @@ See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
 """
 
-__version__ = '0.1.0'
+__version__ = '0.1.0-dev'
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'
