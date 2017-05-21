@@ -1,5 +1,4 @@
 import functools
-import json
 import logging
 import os
 import socket
@@ -95,13 +94,10 @@ if requests is not None:
         else:
             gist_file = os.path.basename(origin)
 
-        # TODO: can we do json={...} instead?
-        response = session.post(
-            'https://api.github.com/gists', data=json.dumps({
-                'public': False,
-                'files': {gist_file: {'content': code}},
-            })
-        )
+        response = session.post('https://api.github.com/gists', json={
+            'public': False,
+            'files': {gist_file: {'content': code}},
+        })
         response.raise_for_status()
         return response.json()['html_url']
 
@@ -175,7 +171,7 @@ class Paste:
         dialog = tk.Toplevel()
         dialog.title("Pasting Succeeded")
 
-        label = tk.Label(dialog, text="Here's your URL:")
+        label = tk.Label(dialog, text="Here's your link:")
         label.place(relx=0.5, rely=0.15, anchor='center')
 
         def select_all(event=None, breaking=False):
