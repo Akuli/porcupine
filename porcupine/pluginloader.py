@@ -80,6 +80,7 @@ def load(editor, shuffle):
 
     plugins = []
     for name in modulenames:
+        log.debug("importing %s", name)
         try:
             module = importlib.import_module(name)
             plugins.append(Plugin(
@@ -87,7 +88,7 @@ def load(editor, shuffle):
                 setup_after=set(getattr(module, 'setup_after', [])),
             ))
         except Exception:
-            log.exception("problem with loading %s", name)
+            log.exception("problem with importing %s", name)
 
     # modulenames contains modules that failed to import, must not use
     # it here
