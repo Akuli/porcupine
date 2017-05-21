@@ -56,8 +56,9 @@ class Editor(tk.Frame):
 
         self.menubar = tk.Menu(tearoff=False)
         self._submenus = {}     # {(parentmenu, label): submenu, ...}
-        add = self.add_action
+        self.get_menu("Help")   # see comments in get_menu()
 
+        add = self.add_action
         add(self.new_file, "File/New File", "Ctrl+N", '<Control-n>')
         add(self.open_file, "File/Open", "Ctrl+O", '<Control-o>')
         add((lambda: tabmgr.current_tab.save()), "File/Save", "Ctrl+S",
@@ -144,9 +145,20 @@ class Editor(tk.Frame):
                 menu = self._submenus[(menu, label)]
             except KeyError:
                 submenu = tk.Menu(tearoff=False)
-                menu.add_cascade(label=label, menu=submenu)
+                if menu is self.menubar:
+                    # the help menu is always last, like in most other programs
+                    index = menu.index('end')
+                    if index is None:
+                        # there's nothing in the menu bar yet, we're
+                        # adding the help menu now
+                        index = 0
+                    menu.insert_cascade(index, label=label, menu=submenu)
+                else:
+                    menu.add_cascade(label=label, menu=submenu)
+
                 self._submenus[(menu, label)] = submenu
                 menu = submenu
+
         return menu
 
     def add_action(self, callback, menupath=None, accelerator=None,

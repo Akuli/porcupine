@@ -18,7 +18,12 @@ try:
 except ImportError:
     pythonprompt = None
 
+
 log = logging.getLogger(__name__)
+
+# this makes the "Run" menu always appear before the "Pastebin to" menu,
+# most people need the run menu more than the pastebin menu
+setup_after = ['run']
 
 _pastebins = {}
 
