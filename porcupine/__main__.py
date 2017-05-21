@@ -37,8 +37,8 @@ def main():
         help="print same debugging messages to stderr as to log file")
     parser.add_argument(
         '--shuffle-plugins', action='store_true',
-        help=("setup the plugins in a random order " +
-              "(still respects setup_before and setup_after)"))
+        help=("respect setup_after, but otherwise setup the plugins "
+              "in a random order instead of alphabetical order"))
     args = parser.parse_args()
 
     dirs.makedirs()

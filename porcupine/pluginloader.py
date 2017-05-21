@@ -83,9 +83,13 @@ def load(editor, shuffle):
         log.debug("importing %s", name)
         try:
             module = importlib.import_module(name)
+            setup_after = {
+                'porcupine.plugins.' + name
+                for name in getattr(module, 'setup_after', [])
+            }
             plugins.append(Plugin(
                 name=name, setup=module.setup,
-                setup_after=set(getattr(module, 'setup_after', [])),
+                setup_after=setup_after,
             ))
         except Exception:
             log.exception("problem with importing %s", name)
