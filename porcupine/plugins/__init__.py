@@ -45,7 +45,9 @@ in a Porcupine you don't need to restart that Porcupine at all.
 """
 # TODO: update the docstring
 
-import porcupine
+import os
+
+from porcupine import dirs
 
 # simple hack to allow user-wide plugins
-__path__.insert(0, porcupine.dirs.userplugindir)
+__path__.insert(0, os.path.join(dirs.configdir, 'plugins'))
