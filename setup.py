@@ -1,12 +1,17 @@
-import porcupine
+# flake8: noqa
+import sys
+assert sys.version_info >= (3, 3), "Porcupine requires Python 3.3 or newer"
+import tkinter     # just to make sure it's there
 
 from setuptools import setup, find_packages
+
+import porcupine
 
 
 setup(
     name='Porcupine',
     description="An editor that sucks less than IDLE",
-    keywords='editor tkinter idle beginner',
+    keywords='editor tkinter idle beginner suck',
     url='https://github.com/Akuli/porcupine',
     author=porcupine.__author__,
     version=porcupine.__version__,
