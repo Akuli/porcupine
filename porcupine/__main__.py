@@ -72,7 +72,7 @@ def main():
             # read stdin
             tab = editor.new_file()
             for line in sys.stdin:
-                tab.textwidget.insert('end-1c', line)
+                tab.textwidget.insert('end - 1 char', line)
             tab.textwidget.edit_reset()   # reset undo/redo
             tab.mark_saved()
             continue

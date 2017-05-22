@@ -110,7 +110,7 @@ if __name__ == '__main__':
     load_settings()
 
     text = textwidget.MainText(root)
-    text.iter_chunks = lambda: [text.get('1.0', 'end-1c')]    # lol
+    text.iter_chunks = lambda: [text.get('1.0', 'end - 1 char')]    # lol
     text.pack()
 
     completer = AutoCompleter(text)

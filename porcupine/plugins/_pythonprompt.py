@@ -83,7 +83,7 @@ class PythonPrompt:
     def _on_return(self, event):
         end_of_output = _tupleindex(str(self.widget.tag_ranges('output')[-1]))
         cursor = _tupleindex(self.widget.index('insert'))
-        end = _tupleindex(self.widget.index('end-1c'))
+        end = _tupleindex(self.widget.index('end - 1 char'))
 
         # (line, column) tuples compare nicely
         if not (end_of_output <= cursor <= end):

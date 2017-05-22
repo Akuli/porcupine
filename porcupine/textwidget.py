@@ -129,9 +129,9 @@ class MainText(ThemedText):
 
                 if control_down:
                     # delete previous word
-                    old_cursor_pos = self.index('insert')
+                    end = self.index('insert')
                     self.event_generate('<<PrevWord>>')
-                    self.delete('insert', old_cursor_pos)
+                    self.delete('insert', end)
                     return 'break'
 
             if event.keysym == 'Delete' and control_down:
@@ -200,7 +200,7 @@ class MainText(ThemedText):
         Return the resulting number of spaces in the beginning of
         the line.
         """
-        line = self.get('%d.0' % lineno, '%d.0+1l' % lineno)
+        line = self.get('%d.0' % lineno, '%d.0 lineend' % lineno)
         spaces = spacecount(line)
         indent = config['Editing'].getint('indent')
 
@@ -217,7 +217,7 @@ class MainText(ThemedText):
         Return the resulting number of spaces in the beginning of
         the line.
         """
-        line = self.get('%d.0' % lineno, '%d.0+1l' % lineno)
+        line = self.get('%d.0' % lineno, '%d.0 lineend' % lineno)
         spaces = spacecount(line)
         if spaces == 0:
             return 0
@@ -233,7 +233,7 @@ class MainText(ThemedText):
     def _autoindent(self):
         """Indent or dedent the current line automatically if needed."""
         lineno = int(self.index('insert').split('.')[0])
-        prevline = self.get('%d.0-1l' % lineno, '%d.0' % lineno)
+        prevline = self.get('%d.0 - 1 line' % lineno, '%d.0' % lineno)
         self.insert('insert', spacecount(prevline) * ' ')
 
         # we can't strip trailing whitespace before this because then
@@ -249,13 +249,13 @@ class MainText(ThemedText):
 
     def rstrip(self, lineno):
         """Strip trailing whitespace at the end of a line."""
-        line_end = '%d.0+1l-1c' % lineno
+        line_end = '%d.0 lineend' % lineno
         line = self.get('%d.0' % lineno, line_end)
         spaces = spacecount(line[::-1])
         if spaces == 0:
             return
 
-        deleting_start = '{}-{}c'.format(line_end, spaces)
+        deleting_start = '%s - %d chars' % (line_end, spaces)
         self.delete(deleting_start, line_end)
 
     def _rstrip_prev_line(self):
@@ -303,5 +303,5 @@ class MainText(ThemedText):
         return 'break'
 
     def select_all(self, event=None):
-        self.tag_add('sel', '1.0', 'end-1c')
+        self.tag_add('sel', '1.0', 'end - 1 char')
         return 'break'

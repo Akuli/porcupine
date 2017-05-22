@@ -439,7 +439,7 @@ class HandyText(tk.Text):
         while True:
             end = start + 100
             if self.index('%d.0' % end) == self.index('end'):
-                yield self.get('%d.0' % start, 'end-1c')
+                yield self.get('%d.0' % start, 'end - 1 char')
                 break
 
             yield self.get('%d.0' % start, '%d.0' % end)

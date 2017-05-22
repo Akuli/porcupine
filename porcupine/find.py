@@ -68,10 +68,10 @@ class Finder(tk.Frame):
             self._statuslabel['text'] = "Cannot find an emptiness!"
             return
 
-        start = self._textwidget.search(what, 'insert+1c')
+        start = self._textwidget.search(what, 'insert + 1 char')
         if start:
             self._statuslabel['text'] = ''
-            end = '{}+{}c'.format(start, len(what))
+            end = '%s + %d chars' % (start, len(what))
             self._textwidget.tag_remove('sel', '1.0', 'end')
             self._textwidget.tag_add('sel', start, end)
             self._textwidget.mark_set('insert', start)
@@ -104,7 +104,7 @@ class Finder(tk.Frame):
         replace_text = self._replace_entry.get()
         self._textwidget.delete(start, end)
         self._textwidget.insert(start, replace_text)
-        new_end = '{}+{}c'.format(start, len(replace_text))
+        new_end = '%s + %d chars' % (start, len(replace_text))
         self._textwidget.tag_add('sel', start, new_end)
 
     def replace_and_find(self):
@@ -125,10 +125,10 @@ class Finder(tk.Frame):
             if not start:
                 break
 
-            end = '{}+{}c'.format(start, len(find_text))
+            end = '%s + %d chars' % (start, len(find_text))
             self._textwidget.delete(start, end)
             self._textwidget.insert(start, replace_text)
-            start = '{}+{}c+1c'.format(start, len(replace_text))
+            start = '%s + %d chars' % (start, len(replace_text)+1)
             count += 1
 
         if count == 1:

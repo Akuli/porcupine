@@ -273,7 +273,7 @@ class Editor(tk.Frame):
                 encoding = config['Files']['encoding']
                 with open(path, 'r', encoding=encoding) as f:
                     for line in f:
-                        tab.textwidget.insert('end-1c', line)
+                        tab.textwidget.insert('end - 1 char', line)
             except (OSError, UnicodeError) as e:
                 log.exception("opening '%s' failed", path)
                 utils.errordialog(type(e).__name__, "Opening failed!",

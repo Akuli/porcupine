@@ -49,17 +49,17 @@ class LineNumbers(ThemedText):
 
     def do_update(self):
         """This should be ran when the line count changes."""
-        linecount = int(self.textwidget.index('end-1c').split('.')[0])
+        linecount = int(self.textwidget.index('end - 1 char').split('.')[0])
         if linecount > self._linecount:
             # add more linenumbers
             self['state'] = 'normal'
             for i in range(self._linecount + 1, linecount + 1):
-                self.insert('end-1c', '\n %d' % i)
+                self.insert('end - 1 char', '\n %d' % i)
             self['state'] = 'disabled'
         if linecount < self._linecount:
             # delete the linenumbers we don't need
             self['state'] = 'normal'
-            self.delete('%d.0+1l-1c' % linecount, 'end-1c')
+            self.delete('%d.0 endline' % linecount, 'end - 1 char')
             self['state'] = 'disabled'
         self._linecount = linecount
 

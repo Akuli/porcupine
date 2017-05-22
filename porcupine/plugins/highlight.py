@@ -109,20 +109,20 @@ class Highlighter:
         start = '%d.0' % first_lineno
         if last_lineno is None:
             # end of whole file
-            end = 'end-1c'
+            end = 'end - 1 char'
         else:
             # end of last_lineno'th line
-            end = '%d.0+1l-1c' % last_lineno
+            end = '%d.0 endline' % last_lineno
 
         for tag in self.textwidget.tag_names():
             if tag != 'sel':
                 self.textwidget.tag_remove(tag, start, end)
 
     def _iter_lines(self):
-        last_lineno = int(self.textwidget.index('end-1c').split('.')[0])
+        last_lineno = int(self.textwidget.index('end - 1 char').split('.')[0])
         for lineno in range(1, last_lineno):
             yield self.textwidget.get('%d.0' % lineno, '%d.0' % (lineno+1))
-        last_line = self.textwidget.get('end-1l', 'end-1c')
+        last_line = self.textwidget.get('end-1l', 'end - 1 char')
         if last_line:
             yield last_line
 

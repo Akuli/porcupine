@@ -354,13 +354,13 @@ class FileTab(Tab):
             self.save_as()
             return
 
-        if self.textwidget.get('end-2c', 'end-1c') != '\n':
+        if self.textwidget.get('end - 2 chars', 'end - 1 char') != '\n':
             # doesn't end with a \n yet
             if config['Files']['add_trailing_newline']:
                 # make sure we don't move the cursor, IDLE does it and
                 # it's annoying
                 here = self.textwidget.index('insert')
-                self.textwidget.insert('end-1c', '\n')
+                self.textwidget.insert('end - 1 char', '\n')
                 self.textwidget.mark_set('insert', here)
 
         try:
