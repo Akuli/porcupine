@@ -2,9 +2,24 @@
 
 from functools import partial   # not "import functools" to avoid long lines
 import tkinter as tk
+from tkinter import font as tkfont
 
 from porcupine import utils
 from porcupine.settings import config, color_themes
+
+
+# the font should be always set to the settings, but it can be retrieved
+# using TkFixedFont
+def init_font():
+    font = tkfont.Font(name='TkFixedFont', exists=True)
+    if 'family' not in config['Font']:
+        config['Font']['family'] = font['family']
+
+    for key in ['family', 'size']:
+        # callback(value) does font[key] = value
+        callback = partial(font.__setitem__, key)
+        config.connect('Font', key, callback)
+
 
 
 def spacecount(string):
@@ -29,17 +44,12 @@ class ThemedText(utils.HandyText):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        config.connect('Editing', 'font', self._set_font)
         config.connect('Editing', 'color_theme', self._set_theme)
 
     # tkinter seems to call this automatically
     def destroy(self):
-        config.disconnect('Editing', 'font', self._set_font)
         config.disconnect('Editing', 'color_theme', self._set_theme)
         super().destroy()
-
-    def _set_font(self, junk):
-        self['font'] = config.get_font('Editing', 'font')
 
     def _set_theme(self, name):
         theme = color_themes[name]
@@ -91,13 +101,13 @@ class MainText(ThemedText):
         self['undo'] = undo
 
     def _on_wheel(self, direction):
-        family, size = config.get_font('Editing', 'font')
+        size = config['Font'].getint('size')
         if direction == 'up':
             size += 1
         else:
             size -= 1
         if size > 2:
-            config.set_font('Editing', 'font', family, size)
+            config['Font']['size'] = size
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind

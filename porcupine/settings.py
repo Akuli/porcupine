@@ -8,31 +8,10 @@ import configparser
 import contextlib
 import logging
 import os
-import tkinter.font as tkfont
 
 from porcupine import dirs, utils
 
 log = logging.getLogger(__name__)
-
-
-def _get_size(font):
-    """Return a positive size of the tkfont.Font."""
-    if font['size'] > 0:
-        size = font['size']
-    else:
-        # Tk has some weird meaning for a negative font size, let's try
-        # to translate it to a regular size
-        #
-        #  font['size']      font.metrics('linespace')
-        # -------------- = ------------------------------
-        #      100          bigfont.metrics('linespace')
-        #
-        #                 font.metrics('linespace') * 100
-        # font['size'] = ---------------------------------
-        #                   bigfont.metrics('linespace')
-        bigfont = tkfont.Font(family=font['family'], size=100)
-        size = font.metrics('linespace') * 100 // bigfont.metrics('linespace')
-    return font['family'], size
 
 
 class InvalidValue(Exception):
@@ -73,7 +52,10 @@ class _Config(configparser.ConfigParser):
                 raise InvalidValue("%s(%r) returned False" % (
                     utils.nice_repr(validator), value))
 
-        old_value = self[section][key]
+        try:
+            old_value = self[section][key]
+        except KeyError:
+            old_value = object()    # run the changed callbacks
         super().set(section, key, value)
         new_value = self[section][key]
 
@@ -145,22 +127,6 @@ class _Config(configparser.ConfigParser):
     def to_dict(self):
         """Convert the config object to nested dictionaries."""
         return {name: dict(section) for name, section in self.items()}
-
-    def set_font(self, section, key, family, size):
-        """Set a font in a way compatible with :meth:`~get_font`."""
-        self[section][key] = '%s %d' % (family, size)
-
-    def get_font(self, section, key):
-        """Get a (family, size) tuple from a 'family size' string."""
-        fontstring = self[section][key]
-        if fontstring in ('TkDefaultFont', 'TkFixedFont'):
-            # it's not families, but we can use it to get a family
-            family = tkfont.Font(font=fontstring)['family']
-            size = 10   # stupid default
-            self.set_font(section, key, family, size)
-        else:
-            family, size = self[section][key].rsplit(None, 1)
-        return (family, int(size))
 
 
 color_themes = configparser.ConfigParser(default_section='Default')

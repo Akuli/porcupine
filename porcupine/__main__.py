@@ -9,6 +9,7 @@ import tkinter as tk
 
 import porcupine.editor
 from porcupine import dirs, logs, pluginloader, settings, utils
+from porcupine.textwidget import init_font
 
 log = logging.getLogger(__name__)
 
@@ -51,6 +52,8 @@ def main():
     settings.load()
 
     root = tk.Tk()
+    init_font()     # uses the root implicitly
+
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)
 

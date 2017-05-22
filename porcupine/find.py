@@ -49,16 +49,12 @@ class Finder(tk.Frame):
 
     def _add_entry(self, frame, row, text, callback=None):
         tk.Label(frame, text=text).grid(row=row, column=0)
-        entry = tk.Entry(frame, width=35)
+        entry = tk.Entry(frame, width=35, font='TkFixedFont')
         entry.bind('<Escape>', lambda event: self.pack_forget())
         if callback is not None:
             entry.bind('<Return>', lambda event: callback())
         entry.grid(row=row, column=1, sticky='we')
         return entry
-
-    def _on_font_changed(self, junk, font):
-        self._find_entry['font'] = font
-        self._replace_entry['font'] = font
 
     # reset this when showing
     def pack(self, *args, **kwargs):

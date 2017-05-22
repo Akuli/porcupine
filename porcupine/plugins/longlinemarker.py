@@ -16,9 +16,9 @@ class LongLineMarker(tk.Frame):
     def set_theme_name(self, name):
         self['bg'] = color_themes[name]['errorbackground']
 
+    # FIXME: this overrides tkinter's update method but it shouldn't
     def update(self, junk=None):
-        family, size = config.get_font('Editing', 'font')
-        font = tkfont.Font(family=family, size=size)
+        font = tkfont.Font(name='TkFixedFont', exists=True)
         where = font.measure(' ' * config['Editing'].getint('maxlinelen'))
         self.place(x=where, height=self._height)
 
@@ -40,12 +40,14 @@ def tab_callback(tab):
     def configure_callback(event):
         marker.set_height(event.height)
 
+    # TODO: some way to connect multiple things at once
     with config.connect('Editing', 'color_theme', marker.set_theme_name):
         with config.connect('Editing', 'maxlinelen', marker.update):
-            with config.connect('Editing', 'font', marker.update):
-                tab.textwidget.bind(
-                    '<Configure>', configure_callback, add=True)
-                yield
+            with config.connect('Font', 'family', marker.update):
+                with config.connect('Font', 'size', marker.update):
+                    tab.textwidget.bind(
+                        '<Configure>', configure_callback, add=True)
+                    yield
     marker.destroy()
 
 
