@@ -59,7 +59,7 @@ class LineNumbers(ThemedText):
         if linecount < self._linecount:
             # delete the linenumbers we don't need
             self['state'] = 'normal'
-            self.delete('%d.0 endline' % linecount, 'end - 1 char')
+            self.delete('%d.0 lineend' % linecount, 'end - 1 char')
             self['state'] = 'disabled'
         self._linecount = linecount
 

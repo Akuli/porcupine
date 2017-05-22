@@ -112,7 +112,7 @@ class Highlighter:
             end = 'end - 1 char'
         else:
             # end of last_lineno'th line
-            end = '%d.0 endline' % last_lineno
+            end = '%d.0 lineend' % last_lineno
 
         for tag in self.textwidget.tag_names():
             if tag != 'sel':
