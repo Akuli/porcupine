@@ -26,40 +26,18 @@ This editor has everything that a Python editor needs:
 
 [comment]: # (TODO: plugin docs and a link to them here)
 
-## How do I run this thing?
+## Installing Porcupine
 
-Porcupine requires Python 3.3 or newer with tkinter. If you [installed
-Python](https://github.com/Akuli/python-tutorial/blob/master/basics/installing-python.md)
-yourself it probably came with tkinter, but most Linux distributions
-don't include it so you need to install tkinter yourself. For example,
-you can run this command on a terminal on Debian-based Linux
-distributions (Ubuntu, Mint etc.):
+There are detailed installation instructions in [the Porcupine
+Wiki](https://github.com/Akuli/porcupine/wiki/Installing-Porcupine).
+Here's a summary of the commands for inpatient people :)
 
-    sudo apt install python3-tk
+### Windows
 
-Then you can download Porcupine. You can download it with Git...
+    py -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
+    pyw -m porcupine
 
-    git clone https://github.com/Akuli/porcupine
-    cd porcupine
+### Other operating systems
 
-...or if you don't have Git, you can do this instead:
-
-1. Go [here](https://github.com/Akuli/porcupine) if you aren't here
-   already.
-2. Click the big green "Clone or download" button in the top right of
-   the page, then click "Download ZIP".
-3. Open the ZIP you downloaded and drag and drop `porcupine-master` to
-   your desktop.
-4. Open a PowerShell, command prompt or terminal and go to the folder
-   you downloaded. Like this:
-
-        cd Desktop
-        cd porcupine-master
-
-Now we can run porcupine. Run this if you're using Windows:
-
-    py -m porcupine
-
-Use this command instead on Mac OSX and Linux:
-
-    python3 -m porcupine
+    python3 -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
+    python3 -m porcupine &
