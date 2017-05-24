@@ -1,6 +1,6 @@
 """The big text widget in the middle of the editor."""
 
-from functools import partial   # not "import functools" to avoid long lines
+import functools
 import tkinter as tk
 from tkinter import font as tkfont
 
@@ -17,7 +17,7 @@ def init_font():
 
     for key in ['family', 'size']:
         # callback(value) does font[key] = value
-        callback = partial(font.__setitem__, key)
+        callback = functools.partial(font.__setitem__, key)
         config.connect('Font', key, callback)
 
 
@@ -38,9 +38,87 @@ def spacecount(string):
     return result
 
 
+class HandyText(tk.Text):
+    """Like ``tkinter.Text``, but with some handy features.
+
+    All arguments are passed to ``tkinter.Text``.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cursorpos = (1, 0)
+
+        #: This :class:`porcupine.utils.CallbackHook` will be ran when
+        #: the user moves the cursor. It will be ran with the line and
+        #: column numbers as arguments, where 1 is the first line and 0
+        #: is the first column.
+        self.cursor_move_hook = utils.CallbackHook(__name__)
+
+        #: This :class:`porcupine.utils.CallbackHook` will be ran with
+        #: no arguments when the user changes the content of the widget
+        #: in any way or methods like ``insert()`` or ``delete()`` are
+        #: used. Use this instead of binding ``<<Modified>>``.
+        self.modified_hook = utils.CallbackHook(__name__)
+
+        def cursor_move(event):
+            self.after_idle(self.cursor_has_moved)
+
+        for keysym in [
+                '<Button-1>', '<Key>', '<<Undo>>', '<<Redo>>',
+                '<<Cut>>', '<<Copy>>', '<<Paste>>', '<<Selection>>']:
+            self.bind(keysym, cursor_move, add=True)
+
+    def cursor_has_moved(self):
+        """Call this when the cursor may have moved.
+
+        This does nothing if the cursor hasn't actually moved, so you
+        don't need to worry about calling this too often. You may need
+        to use ``after_idle`` if you are calling this from an event
+        handler::
+
+            def the_bind_callback(event):
+                ...
+                handytext.after_idle(handytext.cursor_has_moved)
+        """
+        line, column = map(int, self.index('insert').split('.'))
+        if (line, column) != self._cursorpos:
+            self._cursorpos = (line, column)
+            self.cursor_move_hook.run(line, column)
+
+    # these methods may move the cursor
+    # FIXME: add more movy method
+    def _movymethod(overrided):
+        @functools.wraps(overrided)
+        def movy_override(self, *args, **kwargs):
+            result = overrided(self, *args, **kwargs)
+            self.cursor_has_moved()
+            return result
+
+        return movy_override
+
+    insert = _movymethod(tk.Text.insert)
+    delete = _movymethod(tk.Text.delete)
+    mark_set = _movymethod(tk.Text.mark_set)
+
+    def iter_chunks(self):
+        """Iterate over the content as 100-line chunks.
+
+        This does not break lines in the middle.
+        """
+        start = 1
+        while True:
+            end = start + 100
+            if self.index('%d.0' % end) == self.index('end'):
+                yield self.get('%d.0' % start, 'end - 1 char')
+                break
+
+            yield self.get('%d.0' % start, '%d.0' % end)
+            start = end
+
+
 # this can be used for implementing other themed things too, e.g. the
 # line number plugin
-class ThemedText(utils.HandyText):
+class ThemedText(HandyText):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,6 +145,7 @@ class MainText(ThemedText):
         super().__init__(*args, **kwargs)
         self.complete_hook = utils.CallbackHook(__name__)
 
+        partial = functools.partial     # pep8 line length
         self.bind('<<Modified>>', self._do_modified)
         self.bind('<Control-a>', self._on_ctrl_a)
         self.bind('<BackSpace>', partial(self._on_delete, False))
