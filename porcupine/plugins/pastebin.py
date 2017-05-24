@@ -12,6 +12,7 @@ except ImportError:
     requests = None
 
 from porcupine import tabs, utils
+from porcupine import __version__ as _porcupine_version
 try:
     from porcupine.plugins import pythonprompt
 except ImportError:
@@ -50,7 +51,7 @@ def paste_to_termbin(code, origin):
 if requests is not None:
     # TODO: add porcupine version here if there will be a version number
     session = requests.Session()
-    session.headers['User-Agent'] = "Porcupine"
+    session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
     @pastebin("dpaste.com")
     def paste_to_dpaste_com(code, origin):
@@ -128,21 +129,59 @@ if requests is not None:
         return response.url
 
 
+class SuccessDialog(tk.Toplevel):
+
+    def __init__(self, url, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.url = url
+
+        label = tk.Label(self, text="Here's your link:")
+        label.place(relx=0.5, rely=0.15, anchor='center')
+
+        breaky_select_all = functools.partial(self._select_all, breaking=True)
+        entry = self._entry = tk.Entry(self, justify='center')
+        entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
+        entry.insert(0, url)
+        entry['state'] = 'readonly'     # must be after the insert
+        entry.bind('<Control-a>', breaky_select_all)
+        entry.bind('<FocusIn>', self._select_all)
+        self._select_all()
+
+        button_info = [
+            ("Open in browser", self._open_browser),
+            ("Copy to clipboard", self._to_clipboard),
+            ("Close this dialog", self.destroy),
+        ]
+        buttonframe = tk.Frame(self)
+        buttonframe.place(relx=0.5, rely=0.8, anchor='center', relwidth=1)
+        for text, callback in button_info:
+            button = tk.Button(buttonframe, text=text, command=callback)
+            button.pack(side='left', expand=True)
+
+    def _select_all(self, event=None, breaking=False):
+        self._entry.selection_range(0, 'end')
+        return ('break' if breaking else None)
+
+    def _open_browser(self):
+        webbrowser.open(self.url)
+        self.destroy()
+
+    def _to_clipboard(self):
+        self.clipboard_clear()
+        self.clipboard_append(self.url)
+
+
 class Paste:
 
-    def __init__(self, editorwindow, pastebin_name, code, origin):
-        self.editorwindow = editorwindow
+    def __init__(self, pastebin_name, code, origin):
         self.pastebin_name = pastebin_name
         self.content = code
         self.origin = origin
         self.please_wait_window = None
 
-    def _do_nothing(self):
-        pass
-
     def make_please_wait_window(self):
         window = self.please_wait_window = tk.Toplevel()
-        window.transient(self.editorwindow)
+        window.transient(utils.get_root())
 
         label = tk.Label(
             window, font=('', 12, ''),
@@ -153,73 +192,42 @@ class Paste:
         progressbar.pack(fill='x', padx=15, pady=15)
         progressbar.start()
 
-        window.protocol('WM_DELETE_WINDOW', self._do_nothing)
+        # disable the close button
+        window.protocol('WM_DELETE_WINDOW', (lambda: None))
+
         window.title("Pasting...")
         window.geometry('350x150')
         window.resizable(False, False)
 
     def start(self):
-        busy_status = self.editorwindow.tk.call(
-            'tk', 'busy', 'status', self.editorwindow)
-        if self.editorwindow.getboolean(busy_status):
+        root = utils.get_root()
+        busy_status = utils.get_root().tk.call('tk', 'busy', 'status', root)
+        if root.getboolean(busy_status):
             # we are already pasting something somewhere or something
             # else is being done
-            log.info("'tk busy status %s' returned 1", self.editorwindow)
+            log.info("'tk busy status %s' returned 1", root)
             return
 
         log.debug("starting to paste to %s", self.pastebin_name)
 
-        self.editorwindow.tk.call('tk', 'busy', 'hold', self.editorwindow)
+        root.tk.call('tk', 'busy', 'hold', root)
         self.make_please_wait_window()
         paste_it = functools.partial(
             _pastebins[self.pastebin_name], self.content, self.origin)
         utils.run_in_thread(paste_it, self.done_callback)
 
-    def _to_clipboard(self, url):
-        self.editorwindow.clipboard_clear()
-        self.editorwindow.clipboard_append(url)
-
-    def show_url(self, url):
-        dialog = tk.Toplevel()
-        dialog.title("Pasting Succeeded")
-
-        label = tk.Label(dialog, text="Here's your link:")
-        label.place(relx=0.5, rely=0.15, anchor='center')
-
-        def select_all(event=None, breaking=False):
-            entry.selection_range(0, 'end')
-            return ('break' if breaking else None)
-
-        entry = tk.Entry(dialog, justify='center')
-        entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
-        entry.insert(0, url)
-        entry['state'] = 'readonly'     # must be after the insert
-        entry.bind('<Control-a>', functools.partial(select_all, breaking=True))
-        entry.bind('<FocusIn>', select_all)
-        select_all()
-
-        button_info = [
-            ("Open in browser", functools.partial(webbrowser.open, url)),
-            ("Copy to clipboard", functools.partial(self._to_clipboard, url)),
-            ("Close this dialog", dialog.destroy),
-        ]
-        buttonframe = tk.Frame(dialog)
-        buttonframe.place(relx=0.5, rely=0.8, anchor='center', relwidth=1)
-        for text, callback in button_info:
-            button = tk.Button(buttonframe, text=text, command=callback)
-            button.pack(side='left', expand=True)
-
-        dialog.geometry('450x150')
-        dialog.transient(utils.get_root())
-        dialog.wait_window()
-
     def done_callback(self, success, result):
-        self.editorwindow.tk.call('tk', 'busy', 'forget', self.editorwindow)
+        root = utils.get_root()
+        root.tk.call('tk', 'busy', 'forget', root)
         self.please_wait_window.destroy()
 
         if success:
             log.info("pasting succeeded")
-            self.show_url(result)
+            dialog = SuccessDialog(url)
+            dialog.title("Pasting Succeeded")
+            dialog.geometry('450x150')
+            dialog.transient(utils.get_root())
+            dialog.wait_window()
         else:
             # result is the traceback as a string
             log.error("pasting failed\n%s" % result)
@@ -231,8 +239,6 @@ class Paste:
 
 
 def setup(editor):
-    editorwindow = utils.get_window(editor)
-
     def start_pasting(pastebin_name):
         tab = editor.tabmanager.current_tab
         code = tab.textwidget.get('1.0', 'end - 1 char')
@@ -241,7 +247,7 @@ def setup(editor):
         else:
             origin = '>>>'
 
-        paste = Paste(editorwindow, pastebin_name, code, origin)
+        paste = Paste(pastebin_name, code, origin)
         paste.start()
 
     tabtypes = [tabs.FileTab]
@@ -249,5 +255,6 @@ def setup(editor):
         tabtypes.append(pythonprompt.PromptTab)
 
     for name in sorted(_pastebins, key=str.casefold):
+        assert '/' not in name
         callback = functools.partial(start_pasting, name)
         editor.add_action(callback, "Pastebin to/" + name, tabtypes=tabtypes)
