@@ -422,13 +422,18 @@ class HandyText(tk.Text):
 
     # these methods may move the cursor
     # FIXME: add more movy method
-    def insert(self, *args, **kwargs):
-        super().insert(*args, **kwargs)
-        self.cursor_has_moved()
+    def _movymethod(overrided):
+        @functools.wraps(overrided)
+        def movy_override(self, *args, **kwargs):
+            result = overrided(self, *args, **kwargs)
+            self.cursor_has_moved()
+            return result
 
-    def delete(self, *args, **kwargs):
-        super().delete(*args, **kwargs)
-        self.cursor_has_moved()
+        return movy_override
+
+    insert = _movymethod(tk.Text.insert)
+    delete = _movymethod(tk.Text.delete)
+    mark_set = _movymethod(tk.Text.mark_set)
 
     def iter_chunks(self):
         """Iterate over the content as 100-line chunks.
