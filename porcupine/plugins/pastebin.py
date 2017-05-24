@@ -52,7 +52,6 @@ if requests is not None:
     session = requests.Session()
     session.headers['User-Agent'] = "Porcupine"
 
-    # there's also a dpaste.de, must not confuse this with it
     @pastebin("dpaste.com")
     def paste_to_dpaste_com(code, origin):
         # dpaste's syntax highlighting for interactive sessions grays out
@@ -61,6 +60,19 @@ if requests is not None:
         response = session.post('http://dpaste.com/api/v2/', data={
             'content': code,
             'syntax': 'python3',
+        })
+        response.raise_for_status()
+        return response.text.strip()
+
+    @pastebin("dpaste.de")
+    def paste_to_dpaste_de(code, origin):
+        # docs: http://dpaste.readthedocs.io/en/latest/api.html
+        # the docs tell to post to http://dpaste.de/api/ but they use
+        # https://... in the examples 0_o only the https version works
+        response = session.post('https://dpaste.de/api/', data={
+            'content': code,
+            # lexer defaults to 'python'
+            'format': 'url',
         })
         response.raise_for_status()
         return response.text.strip()
