@@ -29,7 +29,7 @@ This editor has everything that a Python editor needs:
 ## Installing Porcupine
 
 There are detailed installation instructions in [the Porcupine
-Wiki](https://github.com/Akuli/porcupine/wiki/Installing-Porcupine).
+Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
 Here's a summary of the commands for inpatient people :)
 
 ### Windows
