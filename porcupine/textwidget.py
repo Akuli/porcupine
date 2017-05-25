@@ -186,7 +186,7 @@ class MainText(ThemedText):
         else:
             size -= 1
         if size > 2:
-            config['Font']['size'] = size
+            config['Font']['size'] = str(size)
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind
