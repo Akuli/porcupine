@@ -50,7 +50,10 @@ def _key_press_callback(event):
 
 
 all_keys = [
-    'apostrophe', 'quotedbl',       # ' "
+    # binding <Key> and looking at the keysym seems to say 'apostrophe'
+    # instead of 'quoteright' on x11, but it doesn't work on windows
+    # while 'quoteright' works on windows and x11
+    'quoteright', 'quotedbl',       # ' "
     'parenleft', 'parenright',      # ( )
     'bracketleft', 'bracketright',  # [ ]
     'braceleft', 'braceright',      # { }
