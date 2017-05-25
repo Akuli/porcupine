@@ -1,0 +1,8 @@
+# any version should have what porcupine/dirs.py needs
+# https://github.com/ActiveState/appdirs/blob/master/CHANGES.rst
+appdirs
+
+# this is just for the pastebin.py plugin, any python 3 compatible
+# requests should work
+# https://github.com/kennethreitz/requests/blob/master/HISTORY.rst
+requests>=0.10.1
