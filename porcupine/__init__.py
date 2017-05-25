@@ -14,6 +14,7 @@ See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
 """
 
-__version__ = '0.6.3'
+version_info = (0, 6, 3)        # this is updated with bump.py
+__version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'
