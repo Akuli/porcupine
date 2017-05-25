@@ -223,7 +223,7 @@ class Paste:
 
         if success:
             log.info("pasting succeeded")
-            dialog = SuccessDialog(url)
+            dialog = SuccessDialog(result)
             dialog.title("Pasting Succeeded")
             dialog.geometry('450x150')
             dialog.transient(utils.get_root())
