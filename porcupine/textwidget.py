@@ -67,6 +67,14 @@ class HandyText(tk.Text):
                 '<Button-1>', '<Key>', '<<Undo>>', '<<Redo>>',
                 '<<Cut>>', '<<Copy>>', '<<Paste>>', '<<Selection>>']:
             self.bind(keysym, cursor_move, add=True)
+        self.bind('<<Modified>>', self._do_modified)
+
+    def _do_modified(self, event):
+        # this runs recursively if we don't unbind
+        self.unbind('<<Modified>>')
+        self.edit_modified(False)
+        self.bind('<<Modified>>', self._do_modified)
+        self.modified_hook.run()
 
     def cursor_has_moved(self):
         """Call this when the cursor may have moved.
@@ -146,8 +154,6 @@ class MainText(ThemedText):
         self.complete_hook = utils.CallbackHook(__name__)
 
         partial = functools.partial     # pep8 line length
-        self.bind('<<Modified>>', self._do_modified)
-        self.bind('<Control-a>', self._on_ctrl_a)
         self.bind('<BackSpace>', partial(self._on_delete, False))
         self.bind('<Control-BackSpace>', partial(self._on_delete, True))
         self.bind('<Control-Delete>', partial(self._on_delete, True))
@@ -188,13 +194,6 @@ class MainText(ThemedText):
         if size > 2:
             config['Font']['size'] = str(size)
 
-    def _do_modified(self, event):
-        # this runs recursively if we don't unbind
-        self.unbind('<<Modified>>')
-        self.edit_modified(False)
-        self.bind('<<Modified>>', self._do_modified)
-        self.modified_hook.run()
-
     def _on_delete(self, control_down, event):
         """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
@@ -221,10 +220,6 @@ class MainText(ThemedText):
 
         self.after_idle(self.cursor_has_moved)
         return None
-
-    def _on_ctrl_a(self, event):
-        self.select_all()
-        return 'break'     # don't run _on_key or move cursor
 
     def _on_return(self, event):
         """Schedule automatic indent and whitespace stripping."""
