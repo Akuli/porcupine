@@ -44,7 +44,7 @@ def _key_press_callback(event):
             # autocomplete the closing brace
             event.widget.insert('insert', closing)
             event.widget.mark_set('insert', 'insert - 1 char')
-            return None
+        return None
 
     assert False, "unexpected event character %r" % event.char
 
