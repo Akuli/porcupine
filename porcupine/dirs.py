@@ -18,7 +18,7 @@ else:
     _author = _author.lower()
 
 cachedir = appdirs.user_cache_dir(_appname, _author)
-configdir = appdirs.user_cache_dir(_appname, _author)
+configdir = appdirs.user_config_dir(_appname, _author)
 
 # this hack shouldn't be a problem because porcupine isn't distributed
 # with tools like pyinstaller, and it doesn't need to be because people
