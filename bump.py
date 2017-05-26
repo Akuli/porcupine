@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Bump the Porcupine version number."""
 
+import argparse
 import os
 import subprocess
-import sys
 
 from porcupine import version_info as old_info
 
 
-def bump_version(new_info):
+def bump_version(new_info, commit_message):
     path = os.path.join('porcupine', '__init__.py')
     with open(path, 'r') as f:
         content = f.read()
@@ -19,22 +19,30 @@ def bump_version(new_info):
         f.write(content)
 
     subprocess.call(['git', 'add', path])
-    subprocess.call(['git', 'commit', '-m', 'bump version'])
+    subprocess.call(['git', 'commit', '-m', commit_message])
     subprocess.call(['git', 'tag', 'v%d.%d.%d' % new_info])
     print("Bumped version from %d.%d.%d to %d.%d.%d" % (old_info + new_info))
 
 
 def main():
-    if sys.argv[1:] == ['major']:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'what_to_bump', choices=['major', 'minor', 'patch'],
+        help="which part of major.minor.patch version number to increment")
+    parser.add_argument(
+        '-m', '--message', default='bump version', help="git commit message")
+    args = parser.parse_args()
+
+    if args.what_to_bump == 'major':
         new_info = (old_info[0]+1, 0, 0)
-    elif sys.argv[1:] == ['minor']:
+    elif args.what_to_bump == 'minor':
         new_info = (old_info[0], old_info[1]+1, 0)
-    elif sys.argv[1:] == ['patch']:
+    elif args.what_to_bump == 'patch':
         new_info = (old_info[0], old_info[1], old_info[2]+1)
     else:
-        print("Usage:", sys.argv[0], "{major,minor,patch}", file=sys.stderr)
-        sys.exit(2)
-    bump_version(new_info)
+        assert False, "unexpected args.what_to_bump %r" % args.what_to_bump
+
+    bump_version(new_info, args.message)
 
 
 if __name__ == '__main__':
