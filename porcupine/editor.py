@@ -43,9 +43,8 @@ def create_welcome_msg(frame):
 
 class Editor(tk.Frame):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, fullscreen_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._settingdialog = None
 
         tabmgr = self.tabmanager = tabs.TabManager(self)
         tabmgr.pack(fill='both', expand=True)
