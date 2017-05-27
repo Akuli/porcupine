@@ -69,19 +69,22 @@ def main():
     pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
-    for file in args.file:
-        if file == '-':
+    for path in args.file:
+        if path == '-':
             tab = tabs.FileTab.from_file_object(editor.tabmanager, sys.stdin)
+            utils.copy_bindings(editor, tab.textwidget)
             editor.tabmanager.add_tab(tab)
             continue
 
         # the editor doesn't create new files when opening, so we
         # need to take care of that here
-        file = os.path.abspath(file)
-        if os.path.exists(file):
-            editor.open_file(file)
+        path = os.path.abspath(path)
+        if os.path.exists(path):
+            tab = tabs.FileTab.from_path(editor.tabmanager, path)
         else:
-            editor.open_file(file, content='')
+            tab = tabs.FileTab.from_path(editor.tabmanager, path, content='')
+        utils.copy_bindings(editor, tab.textwidget)
+        editor.tabmanager.add_tab(tab)
 
     # the user can change the settings only if we get here, so
     # there's no need to try/finally the whole thing

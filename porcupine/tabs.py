@@ -368,12 +368,12 @@ class FileTab(Tab):
         .. seealso:: The :meth:`from_path` method.
         """
         tab = cls(manager)
+        tab.mark_saved()
         for chunk in utils.read_chunks(file):
             tab.textwidget.insert('end - 1 char', chunk)
         if hasattr(file, 'name'):
             tab.label['text'] = file.name
         tab.textwidget.edit_reset()     # reset undo/redo
-        tab.mark_saved()
         return tab
 
     @classmethod
