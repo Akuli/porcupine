@@ -52,7 +52,6 @@ class CallbackHook:
     def __init__(self, logname, *, unhandled_errors=()):
         self._log = logging.getLogger(logname)
         self._unhandled = tuple(unhandled_errors)  # isinstance() likes tuples
-        self._blocklevel = 0
         self.callbacks = []
 
     def connect(self, function):
@@ -68,42 +67,18 @@ class CallbackHook:
         """Undo a :meth:`connect` call."""
         self.callbacks.remove(function)
 
-    @contextlib.contextmanager
-    def blocked(self):
-        """Prevent the callbacks from running temporarily.
-
-        Use this as a context manager, like this::
-
-            with some_hook.blocked():
-                # do something that would normally run the callbacks
-        """
-        self._blocklevel += 1
-        try:
-            yield
-        finally:
-            self._blocklevel -= 1
-
-    def is_blocked(self):
-        """Return True if :meth:`~blocked` is running somewhere."""
-        assert self._blocklevel >= 0
-        return self._blocklevel > 0
-
     def _handle_error(self, callback, error):
         if isinstance(error, self._unhandled):
             raise error
         self._log.exception("%s doesn't work", nice_repr(callback))
 
     def run(self, *args):
-        """Run ``callback(*args)`` for each connected callback.
-
-        This does nothing if :meth:`~blocked` is currently running.
-        """
-        if not self.is_blocked():
-            for callback in self.callbacks:
-                try:
-                    callback(*args)
-                except Exception as e:
-                    self._handle_error(callback, e)
+        """Run ``callback(*args)`` for each connected callback."""
+        for callback in self.callbacks:
+            try:
+                callback(*args)
+            except Exception as e:
+                self._handle_error(callback, e)
 
 
 class ContextManagerHook(CallbackHook):
@@ -131,13 +106,13 @@ class ContextManagerHook(CallbackHook):
 
     @contextlib.contextmanager
     def run(self, *args):
-        """Run ``callback(*args)`` for each connected callback.
+        """Run ``callback(*args)`` context managers.
 
-        This does nothing if :meth:`~blocked` is currently running.
+        Use this as a context manager too::
+
+            with hook.run("the", "args", "go", "here"):
+                ...
         """
-        if self.is_blocked():
-            return
-
         generators = []   # [(callback, generator), ...]
         for callback in self.callbacks:
             try:
