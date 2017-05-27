@@ -8,7 +8,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import dirs, logs, pluginloader, utils
+from porcupine import dirs, logs, pluginloader, tabs, utils
 from porcupine.settings import config, color_themes
 from porcupine.textwidget import init_font
 
@@ -71,12 +71,8 @@ def main():
 
     for file in args.file:
         if file == '-':
-            # read stdin
-            tab = editor.new_file()
-            for line in sys.stdin:
-                tab.textwidget.insert('end - 1 char', line)
-            tab.textwidget.edit_reset()   # reset undo/redo
-            tab.mark_saved()
+            tab = tabs.FileTab.from_file_object(editor.tabmanager, sys.stdin)
+            editor.tabmanager.add_tab(tab)
             continue
 
         # the editor doesn't create new files when opening, so we

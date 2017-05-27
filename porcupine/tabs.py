@@ -255,6 +255,7 @@ class FileTab(Tab):
 
     def __init__(self, manager):
         super().__init__(manager)
+        self.label['text'] = "New File"
         self._path = None
         self.path_changed_hook = utils.CallbackHook(__name__)
 
@@ -322,9 +323,7 @@ class FileTab(Tab):
             self.path_changed_hook.run(new_path)
 
     def _update_top_label(self, junk=None):
-        if self.path is None:
-            self.label['text'] = "New file"
-        else:
+        if self.path is not None:
             self.label['text'] = os.path.basename(self.path)
 
         if self.is_saved():
@@ -359,6 +358,24 @@ class FileTab(Tab):
 
     def on_focus(self):
         self.textwidget.focus()
+
+    @classmethod
+    def from_file_object(cls, manager, file):
+        """Read a file object and create new FileTab from that.
+
+        The :attr:`path` attribute is set to None.
+
+        .. seealso:: The :meth:`from_path` method.
+        """
+        # TODO: read the file in chunks?
+        tab = cls(manager)
+        for line in file:
+            tab.textwidget.insert('end - 1 char', line)
+        if hasattr(file, 'name'):
+            tab.label['text'] = file.name
+        tab.textwidget.edit_reset()     # reset undo/redo
+        tab.mark_saved()
+        return tab
 
     @classmethod
     def from_path(cls, manager, path=None, *, content=None):
@@ -430,7 +447,7 @@ class FileTab(Tab):
     def save_as(self):
         """Ask the user where to save the file and save it there."""
         parentwindow = utils.get_window(self.content)
-        path = dialogs.save_as(parentwindow, old_path=self.path)
+        path = dialogs.save_as(old_path=self.path)
         if path is not None:
             self.path = path
             self.save()
