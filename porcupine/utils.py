@@ -3,6 +3,8 @@
 import base64
 import contextlib
 import functools
+import io
+import itertools
 import logging
 import os
 import pkgutil
@@ -349,6 +351,16 @@ def backup_open(path, *args, **kwargs):
 
     else:
         yield open(path, *args, **kwargs)
+
+
+def read_chunks(file, size=io.DEFAULT_BUFFER_SIZE):
+    """Return an iterator that reads a file object in chunks of given size.
+
+    The size defaults to :data:`io.DEFAULT_BUFFER_SIZE`.
+    """
+    # functional programming ftw
+    chunk_iterator = (file.read(size) for crap in itertools.count())
+    return itertools.takewhile(bool, chunk_iterator)
 
 
 class Checkbox(tk.Checkbutton):

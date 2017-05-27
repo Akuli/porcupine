@@ -367,10 +367,9 @@ class FileTab(Tab):
 
         .. seealso:: The :meth:`from_path` method.
         """
-        # TODO: read the file in chunks?
         tab = cls(manager)
-        for line in file:
-            tab.textwidget.insert('end - 1 char', line)
+        for chunk in utils.read_chunks(file):
+            tab.textwidget.insert('end - 1 char', chunk)
         if hasattr(file, 'name'):
             tab.label['text'] = file.name
         tab.textwidget.edit_reset()     # reset undo/redo
@@ -402,9 +401,9 @@ class FileTab(Tab):
 
         if content is None:
             encoding = config['Files', 'encoding']
-            with open(path, 'r', encoding=encoding) as f:
-                for line in f:
-                    tab.textwidget.insert('end - 1 char', line)
+            with open(path, 'r', encoding=encoding) as file:
+                for chunk in utils.read_chunks(file):
+                    tab.textwidget.insert('end - 1 char', chunk)
         else:
             tab.textwidget.insert('1.0', content)
 
