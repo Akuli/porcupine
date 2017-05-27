@@ -251,7 +251,7 @@ config.add_int_key('Font', 'size', 10, minimum=3)
 config.add_key('GUI', 'default_size', '650x500')   # TODO: fix this
 
 # color_themes can be simpler because it's never edited on the fly
-color_themes = configparser.ConfigParser()
+color_themes = configparser.ConfigParser(default_section='Default')
 color_themes.load = functools.partial(color_themes.read, [
     os.path.join(dirs.installdir, 'default_themes.ini'),
     os.path.join(dirs.configdir, 'themes.ini'),
