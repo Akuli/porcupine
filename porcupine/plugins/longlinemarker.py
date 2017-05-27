@@ -13,7 +13,8 @@ class LongLineMarker(tk.Frame):
         super().__init__(textwidget, width=1)
         self._height = 0   # set_height() will be called
 
-    def set_theme_name(self, name):
+    def on_theme_changed(self):
+        name = config['Editing', 'color_theme']
         self['bg'] = color_themes[name]['errorbackground']
 
     def do_update(self, junk=None):
@@ -35,12 +36,14 @@ def tab_callback(tab):
         return
 
     marker = LongLineMarker(tab.textwidget)
+    marker.on_theme_changed()
+    marker.do_update()
 
     def on_settings_changed(section, key, value):
         if section == 'Font' or (section, key) == ('Editing', 'maxlinelen'):
             marker.do_update()
         elif section == 'Editing' and key == 'color_theme':
-            marker.set_theme_name(value)
+            marker.on_theme_changed()
 
     tab.textwidget.bind('<Configure>', marker.on_configure, add=True)
     config.anything_changed_hook.connect(on_settings_changed)
@@ -54,11 +57,13 @@ def setup(editor):
 
 
 if __name__ == '__main__':
-    from porcupine.settings import load as load_settings
+    config.load()
+    color_themes.load()
     root = tk.Tk()
-    load_settings()
     text = tk.Text(root)
     text.pack(fill='both', expand=True)
     marker = LongLineMarker(text)
-    text.bind('<Configure>', lambda event: marker.set_height(event.height))
+    marker.on_theme_changed()
+    marker.do_update()
+    text.bind('<Configure>', marker.on_configure)
     root.mainloop()
