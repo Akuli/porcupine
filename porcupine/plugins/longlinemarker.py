@@ -16,15 +16,14 @@ class LongLineMarker(tk.Frame):
     def set_theme_name(self, name):
         self['bg'] = color_themes[name]['errorbackground']
 
-    # FIXME: this overrides tkinter's update method but it shouldn't
-    def update(self, junk=None):
+    def do_update(self, junk=None):
         font = tkfont.Font(name='TkFixedFont', exists=True)
-        where = font.measure(' ' * config['Editing'].getint('maxlinelen'))
+        where = font.measure(' ' * config['Editing', 'maxlinelen'])
         self.place(x=where, height=self._height)
 
-    def set_height(self, height):
-        self._height = height
-        self.update()
+    def on_configure(self, event):
+        self._height = event.height
+        self.do_update()
 
     def destroy(self):
         super().destroy()
@@ -37,18 +36,17 @@ def tab_callback(tab):
 
     marker = LongLineMarker(tab.textwidget)
 
-    def configure_callback(event):
-        marker.set_height(event.height)
+    def on_settings_changed(section, key, value):
+        if section == 'Font' or (section, key) == ('Editing', 'maxlinelen'):
+            marker.do_update()
+        elif section == 'Editing' and key == 'color_theme':
+            marker.set_theme_name(value)
 
-    # TODO: some way to connect multiple things at once
-    with config.connect('Editing', 'color_theme', marker.set_theme_name):
-        with config.connect('Editing', 'maxlinelen', marker.update):
-            with config.connect('Font', 'family', marker.update):
-                with config.connect('Font', 'size', marker.update):
-                    tab.textwidget.bind(
-                        '<Configure>', configure_callback, add=True)
-                    yield
-    marker.destroy()
+    tab.textwidget.bind('<Configure>', marker.on_configure, add=True)
+    config.anything_changed_hook.connect(on_settings_changed)
+    yield
+    config.anything_changed_hook.disconnect(on_settings_changed)
+    # destroying the textwidget will destroy the marker
 
 
 def setup(editor):

@@ -5,21 +5,22 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 from porcupine import utils
-from porcupine.settings import config, color_themes
+from porcupine.settings import config, color_themes, InvalidValue
 
 
 # the font should be always set to the settings, but it can be retrieved
 # using TkFixedFont
 def init_font():
+    # the default family is platform specific, so it's not set as a
+    # default in settings.py
     font = tkfont.Font(name='TkFixedFont', exists=True)
-    if 'family' not in config['Font']:
-        config['Font']['family'] = font['family']
+    if config['Font', 'family'] == '':
+        config['Font', 'family'] = font['family']
 
     for key in ['family', 'size']:
         # callback(value) does font[key] = value
         callback = functools.partial(font.__setitem__, key)
-        config.connect('Font', key, callback)
-
+        config.connect('Font', key, callback, run_now=True)
 
 
 def spacecount(string):
@@ -130,7 +131,7 @@ class ThemedText(HandyText):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        config.connect('Editing', 'color_theme', self._set_theme)
+        config.connect('Editing', 'color_theme', self._set_theme, run_now=True)
 
     # tkinter seems to call this automatically
     def destroy(self):
@@ -176,7 +177,7 @@ class MainText(ThemedText):
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
         utils.bind_mouse_wheel(self, self._on_wheel, prefixes='Control-')
-        config.connect('Editing', 'undo', self._set_undo)
+        config.connect('Editing', 'undo', self._set_undo, run_now=True)
 
     def destroy(self):
         config.disconnect('Editing', 'undo', self._set_undo)
@@ -186,13 +187,14 @@ class MainText(ThemedText):
         self['undo'] = undo
 
     def _on_wheel(self, direction):
-        size = config['Font'].getint('size')
-        if direction == 'up':
-            size += 1
-        else:
-            size -= 1
-        if size > 2:
-            config['Font']['size'] = str(size)
+        try:
+            if direction == 'up':
+                config['Font', 'size'] += 1
+            else:
+                config['Font', 'size'] -= 1
+        except InvalidValue as e:
+            print('WOLOLO 2', locals())
+            pass
 
     def _on_delete(self, control_down, event):
         """This runs when the user presses backspace or delete."""
@@ -276,7 +278,7 @@ class MainText(ThemedText):
         """
         line = self.get('%d.0' % lineno, '%d.0 lineend' % lineno)
         spaces = spacecount(line)
-        indent = config['Editing'].getint('indent')
+        indent = config['Editing', 'indent']
 
         # make the indent consistent, for example, add 1 space if indent
         # is 4 and there are 7 spaces
@@ -296,7 +298,7 @@ class MainText(ThemedText):
         if spaces == 0:
             return 0
 
-        indent = config['Editing'].getint('indent')
+        indent = config['Editing', 'indent']
         howmany2del = spaces % indent
         if howmany2del == 0:
             howmany2del = indent

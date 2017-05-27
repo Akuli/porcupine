@@ -116,12 +116,13 @@ class Editor(tk.Frame):
         themevar = tk.StringVar()
         themenames = sorted(color_themes.sections(), key=str.casefold)
         for name in ['Default'] + themenames:
+            # set_this_theme() runs config['Editing', 'color_theme'] = name
             set_this_theme = functools.partial(
-                config.set, 'Editing', 'color_theme', name)
+                config.__setitem__, ('Editing', 'color_theme'), name)
             thememenu.add_radiobutton(
                 label=name, value=name, variable=themevar,
                 command=set_this_theme)
-        config.connect('Editing', 'color_theme', themevar.set)
+        config.connect('Editing', 'color_theme', themevar.set, run_now=True)
 
         tabmgr.tab_changed_hook.connect(self._tab_changed)
         self._tab_context_manager = None   # this is lol, see _tab_changed()
@@ -269,7 +270,7 @@ class Editor(tk.Frame):
 
         if content is None:
             try:
-                encoding = config['Files']['encoding']
+                encoding = config['Files', 'encoding']
                 with open(path, 'r', encoding=encoding) as f:
                     for line in f:
                         tab.textwidget.insert('end - 1 char', line)

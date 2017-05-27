@@ -1,180 +1,258 @@
-"""Setting manager for Porcupine."""
-# TODO: currently the settings are a mess :( i have turned many things
-# into plugins, and the plugins use random config values from different
-# config sections and it's not organized in any way
-
-import collections
+import collections.abc
 import configparser
-import contextlib
+import functools
 import logging
 import os
+import types
 
 from porcupine import dirs, utils
 
 log = logging.getLogger(__name__)
 
 
-class InvalidValue(Exception):
-    """Raised when attempting to set an invalid value."""
+# this is a custom exception because plain ValueError is often raised
+# when something goes wrong unexpectedly
+class InvalidValue(ValueError):
+    """This is raised when attempting to set an invalid value.
 
-
-class _Config(configparser.ConfigParser):
-    """Like :class:`configparser.ConfigParser`, but supports callbacks.
-
-    When a value is set, the config object does these things:
-
-    1. The value is converted to a string with `str()` because
-       configparser only handles strings.
-    2. Validator callbacks are called. If one of them returns False,
-       :exc:`~InvalidValue` is raised and the setting process stops.
-    3. The value is set normally.
-    4. Each callback added with :meth:`~connect` is called with the new
-       value.
-
+    Validator functions can raise this.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-        # these are like {(sectionname, key): valuelist}
-        self._validators = collections.defaultdict(list)
-        self._callbacks = collections.defaultdict(list)
+class _Config(collections.abc.MutableMapping):
+    """A dictionary-like object for storing settings.
 
-    # currently configparser always calls this method, i'll add more
-    # overrides if future versions of it stop doing that. the docstring
-    # says that configparser.ConfigParser.set "extends
-    # RawConfigParser.set by validating type and interpolation syntax on
-    # the value", so maybe this isn't an implementation detail :^)
-    def set(self, section, key, value):
-        value = str(value)
-        for validator in self._validators[(section, key)]:
-            if not validator(value):
-                raise InvalidValue("%s(%r) returned False" % (
-                    utils.nice_repr(validator), value))
+    The config object behaves like a ``{(section, configkey): value}``
+    dictionary where *section* and *configkey* are strings, but they
+    also support things like running callbacks when something changes
+    and default values. Note that ``config['key', 'value']`` does the
+    same thing as ``config[('key', 'value')]``, so usually you don't
+    need to use parentheses when setting or getting values.
 
-        try:
-            old_value = self[section][key]
-        except KeyError:
-            old_value = object()    # run the changed callbacks
-        super().set(section, key, value)
-        new_value = self[section][key]
+    .. note::
+        If you use threads, don't set config values from other threads
+        than the main thread. Setting values may run callbacks that need
+        to do something with tkinter.
+    """
 
-        if old_value != new_value:
-            log.info("setting %s:%s to %r", section, key, new_value)
-            for callback in self._callbacks[(section, key)]:
-                callback(new_value)
+    def __init__(self, filename):
+        self._filename = filename
+        self._infos = {}    # see add_key()
+        self._values = {}
 
-    @contextlib.contextmanager
-    def _disconnecter(self, section, key, callback):
-        try:
-            yield
-        finally:
-            self.disconnect(section, key, callback)
+        # this is stored here to allow keeping unknown settings in the
+        # setting files, this way if the user enables a plugin, disables
+        # it and enables it again, the settings will be there
+        self._configparser = configparser.ConfigParser()
 
-    def connect(self, section, key, callback=None, *, run_now=True):
-        """Run ``callback(new_value)`` when a setting changes.
+        #: A dictionary with ``(section, configkey)`` tuples as keys and 
+        #: :class:`..utils.CallbackHook` objects as values. The
+        #: approppriate callback hook is ran when a value is set with
+        #: the new value as the only argument.
+        #:
+        #: .. seealso::
+        #:      Usually it's easiest to use the :meth:`~connect` and
+        #:      :meth:`~disconnect` methods instead of using this
+        #:      dictionary directly.
+        self.hooks = {}
 
-        If *run_now* is True, *callback* will also be ran right away
-        when this function is called. This function returns an object
-        that can be used as a context manager for disconnecting the
-        callback easily::
+        #: Like the callback hooks in :attr:`~hooks`, but this hook is
+        #: ran like ``callback(section, configkey, value)`` when any
+        #: value is set.
+        self.anything_changed_hook = utils.CallbackHook(__name__)
 
-            def cool_callback(value):
-                ...
+    def connect(self, section, configkey, function, run_now=False):
+        """Same as ``config.hooks[section, configkey].connect(function)``.
 
-            with config.connect('some_section:some_key', cool_callback):
-                # do something here
-
-        The connect method can be used as a decorator too, but the
-        disconnecter will be lost::
-
-            @config.connect('some_section:some_key')
-            def cool_callback(value):
-                ...
-
-            try:
-                # do something here
-            finally:
-                config.disconnect('some_section:some_key', cool_callback)
+        The function will also be called right away if ``run_now`` is True.
         """
-        if callback is None:
-            def decorated(callback):
-                self.connect(section, key, callback, run_now=run_now)
-                return callback
-            return decorated
-
-        self._callbacks[(section, key)].append(callback)
+        self.hooks[section, configkey].connect(function)
         if run_now:
-            callback(self[section][key])
-        return self._disconnecter(section, key, callback)
+            function(self[section, configkey])
+        return function
 
-    def disconnect(self, section, key, callback):
-        """Undo a :meth:`~connect` call."""
-        self._callbacks[(section, key)].remove(callback)
+    def disconnect(self, section, configkey, *args, **kwargs):
+        """Same as ``config.hooks[section, configkey].disconnect``."""
+        self.hooks[section, configkey].disconnect(*args, **kwargs)
 
-    def validator(self, section, key):
-        """A decorator that adds a validator function.
+    def __setitem__(self, item, value):
+        info = self._infos[item]
+        if info.validate is not None:
+            info.validate(value)
 
-        The validator will be called with the new value converted to a
-        string as its only argument, and it should return True if the
-        value is OK.
+        # make sure that the configparser isn't caching an old value
+        section, configkey = item
+        try:
+            del self._configparser[section][configkey]
+        except KeyError:
+            pass
+
+        old_value = self[item]
+        self._values[item] = value
+        if value != old_value:
+            log.debug("%r was set to %r, running callbacks", item, value)
+            self.hooks[item].run(value)
+            self.anything_changed_hook.run(section, configkey, value)
+
+    def __getitem__(self, item):
+        # this raises KeyError
+        info = self._infos[item]
+
+        try:
+            return self._values[item]
+        except KeyError:
+            # maybe it's loaded in the configparser, but not converted
+            # to a non-string yet? this happens when plugins add their
+            # own config keys after the config is loaded
+            section, key = item
+            try:
+                string_value = self._configparser[section][key]
+            except KeyError:    # nope
+                self._values[item] = info.default
+            else:       # it's there :D
+                self._values[item] = info.from_string(string_value)
+            return self._values[item]
+
+    def __delitem__(self, item):    # the abc requires this
+        raise TypeError("cannot delete setting keys")
+
+    def __iter__(self):
+        return iter(self._infos)
+
+    def __len__(self):
+        return len(self._infos)
+
+    def add_key(self, section, configkey, default=None, *,
+                converters=(str, str), validator=None, reset=True):
+        """Add a new valid key to a section in the config.
+
+        ``config[section, configkey]`` will be *default* unless
+        something else is specified.
+
+        The *converters* argument should be a two-tuple of
+        ``(from_string, to_string)`` functions that will be called when
+        the settings are loaded and saved. These functions will be
+        called with exactly one argument and they should construct the
+        values from strings and convert them back to strings.
+
+        If a validator is given, it will be called with the new value as
+        the only argument when setting a value. It may raise an
+        :exc:`.InvalidValue` exception.
+
+        If *reset* is False, :meth:`reset` won't do anything to the
+        value. This is useful for things that are not controlled with
+        the setting dialog, like the current color theme.
+
+        .. seealso::
+            The :meth:`add_bool_key` and :meth:`add_int_key` make adding
+            booleans and integers easy.
         """
-        def validator_adder(function):
-            self._validators.setdefault((section, key), []).append(function)
-            return function
-        return validator_adder
+        info = types.SimpleNamespace(default=default, validate=validator)
+        info.from_string, info.to_string = converters
+        self._infos[section, configkey] = info
+        self.hooks[section, configkey] = utils.CallbackHook(__name__)
 
-    def to_dict(self):
-        """Convert the config object to nested dictionaries."""
-        return {name: dict(section) for name, section in self.items()}
+    def add_bool_key(self, section, configkey, default, **kwargs):
+        """A convenience method for adding Boolean keys.
+
+        The value is ``yes`` or ``no`` when converted to a string.
+        """
+        converters = (        # (from_string, to_string)
+            lambda string: {'yes': True, 'no': False}.get(string, default),
+            lambda boolean: ('yes' if boolean else 'no'))
+        self.add_key(section, configkey, default,
+                     converters=converters, **kwargs)
+
+    def add_int_key(self, section, configkey, default, *,
+                    minimum=None, maximum=None, **kwargs):
+        """A convenience method for adding integer keys.
+
+        The *minimum* and *maximum* arguments can be used to
+        automatically add a validator that makes sure that the value is
+        minimum, maximum or something between them.
+        """
+        def validator(value):
+            if minimum is not None and value < minimum:
+                raise InvalidValue("%r is too small" % value)
+            if maximum is not None and valie > maximum:
+                raise InvalidValue("%r is too big" % value)
+
+        self.add_key(section, configkey, default,
+                     converters=(int, str), validator=validator, **kwargs)
+
+    def reset(self):
+        """Set all settings to defaults."""
+        for key, info in self._infos.items():
+            if info.reset:
+                self[key] = info.default
+
+    def load(self):
+        """Read the settings from the user's file."""
+        self._configparser.clear()
+        if not self._configparser.read([self._filename]):
+            # the user file can't be read, no need to do anything
+            return
+
+        for sectionname, section in self._configparser.items():
+            for configkey, value in section.items():
+                try:
+                    info = self._infos[sectionname, configkey]
+                except KeyError:
+                    # see the comments about _configparser in __init__()
+                    log.info("unknown config key %r", (section, configkey))
+                    continue
+                self[sectionname, configkey] = info.from_string(value)
+
+    def save(self):
+        """Save all non-default settings to the user's file."""
+        # if the user opens up two porcupines, the other porcupine might
+        # have saved to the config file while this porcupine was running
+        # we'll avoid overwriting its settings
+        self._configparser.read([self._filename])
+
+        for (section, configkey), value in self.items():
+            info = self._infos[section, configkey]
+            if value == info.default:
+                # make sure the default will be used
+                try:
+                    del self._configparser[section][configkey]
+                except KeyError:
+                    pass
+            else:
+                string = info.to_string(value)
+                try:
+                    if self._configparser[section][configkey] == string:
+                        # the value hasn't changed
+                        continue
+                except KeyError:
+                    pass
+
+                # set string to config, create a new section if needed
+                self._configparser.setdefault(section, {})[configkey] = string
+
+        # delete empty sections
+        for sectionname in self._configparser.sections().copy():
+            if not self._configparser[sectionname]:
+                del self._configparser[sectionname]
+
+        with open(self._filename, 'w') as file:
+            self._configparser.write(file)
 
 
-color_themes = configparser.ConfigParser(default_section='Default')
-config = _Config()
-_saved_config = {}
+config = _Config(os.path.join(dirs.configdir, 'settings.ini'))
+config.add_key('Files', 'encoding', 'utf-8')
+config.add_bool_key('Files', 'add_trailing_newline', True)
+config.add_bool_key('Editing', 'undo', True)
+config.add_int_key('Editing', 'indent', 4, minimum=1)
+config.add_int_key('Editing', 'maxlinelen', 79, minimum=1)
+config.add_key('Editing', 'color_theme', 'Default')
+config.add_key('Font', 'family', '')   # see textwidget.init_font()
+config.add_int_key('Font', 'size', 10, minimum=3)
+config.add_key('GUI', 'default_size', '650x500')   # TODO: fix this
 
-_default_config_file = os.path.join(dirs.installdir, 'default_config.ini')
-_default_theme_file = os.path.join(dirs.installdir, 'default_themes.ini')
-_user_config_file = os.path.join(dirs.configdir, 'settings.ini')
-_user_theme_file = os.path.join(dirs.configdir, 'themes.ini')
-
-
-def load():
-    # these must be read first because config's editing:color_theme
-    # validator needs it
-    color_themes.read([_default_theme_file, _user_theme_file])
-    config.read([_default_config_file, _user_config_file])
-    _saved_config.clear()
-    _saved_config.update(config.to_dict())
-
-
-_comments = '''\
-# This is a Porcupine setting file. You can edit it yourself or you can
-# use Porcupine's setting dialog.
-'''
-
-
-def save():
-    # It's important to check if the config changed because otherwise:
-    #  1. The user opens up two Porcupines. Let's call them A and B.
-    #  2. The user changes settings in porcupine A.
-    #  3. The user closes Porcupine A and it saves the settings.
-    #  4. The user closes Porcupine B and it overwrites the settings
-    #     that A saved.
-    #  5. The user opens up Porcupine again and the settings are gone.
-    #
-    # Of course, this doesn't handle the user changing settings in
-    # both Porcupines, but I think it's not too bad to assume that
-    # most users don't do that.
-    if config.to_dict() == _saved_config:
-        log.info("config hasn't changed, not saving it")
-    else:
-        log.info("saving config to '%s'", _user_config_file)
-        with open(_user_config_file, 'w') as f:
-            print(_comments, file=f)
-            config.write(f)
-
-
-if __name__ == '__main__':
-    import doctest
-    print(doctest.testmod())
+# color_themes can be simpler because it's never edited on the fly
+color_themes = configparser.ConfigParser()
+color_themes.load = functools.partial(color_themes.read, [
+    os.path.join(dirs.installdir, 'default_themes.ini'),
+    os.path.join(dirs.configdir, 'themes.ini'),
+])

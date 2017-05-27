@@ -279,7 +279,7 @@ class FileTab(Tab):
 
     def _get_hash(self):
         result = hashlib.md5()
-        encoding = config['Files']['encoding']   # superstitious speed-up
+        encoding = config['Files', 'encoding']   # superstitious speed-up
         for chunk in self.textwidget.iter_chunks():
             chunk = chunk.encode(encoding, errors='replace')
             result.update(chunk)
@@ -356,7 +356,8 @@ class FileTab(Tab):
 
         if self.textwidget.get('end - 2 chars', 'end - 1 char') != '\n':
             # doesn't end with a \n yet
-            if config['Files']['add_trailing_newline']:
+            # TODO: turn this into a plugin
+            if config['Files', 'add_trailing_newline']:
                 # make sure we don't move the cursor, IDLE does it and
                 # it's annoying
                 here = self.textwidget.index('insert')
@@ -364,7 +365,7 @@ class FileTab(Tab):
                 self.textwidget.mark_set('insert', here)
 
         try:
-            encoding = config['Files']['encoding']
+            encoding = config['Files', 'encoding']
             with utils.backup_open(self.path, 'w', encoding=encoding) as f:
                 for chunk in self.textwidget.iter_chunks():
                     f.write(chunk)

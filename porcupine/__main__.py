@@ -8,7 +8,8 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import dirs, logs, pluginloader, settings, utils
+from porcupine import dirs, logs, pluginloader, utils
+from porcupine.settings import config, color_themes
 from porcupine.textwidget import init_font
 
 log = logging.getLogger(__name__)
@@ -49,7 +50,8 @@ def main():
     log.info("running on Python %d.%d.%d from %s",
              *(list(sys.version_info[:3]) + [sys.executable]))
 
-    settings.load()
+    color_themes.load()
+    config.load()
 
     root = tk.Tk()
     init_font()     # uses the root implicitly
@@ -58,7 +60,7 @@ def main():
     editor.pack(fill='both', expand=True)
 
     root['menu'] = editor.menubar
-    root.geometry(settings.config['GUI']['default_size'])
+    root.geometry(config['GUI', 'default_size'])
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
 
@@ -90,7 +92,7 @@ def main():
     try:
         root.mainloop()
     finally:
-        settings.save()
+        config.save()
 
     log.info("exiting Porcupine successfully")
 
