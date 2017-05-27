@@ -8,7 +8,7 @@ import subprocess
 from porcupine import version_info as old_info
 
 
-def bump_version(new_info, commit_message):
+def bump_version(new_info, git_commit_args):
     path = os.path.join('porcupine', '__init__.py')
     with open(path, 'r') as f:
         content = f.read()
@@ -19,30 +19,29 @@ def bump_version(new_info, commit_message):
         f.write(content)
 
     subprocess.call(['git', 'add', path])
-    subprocess.call(['git', 'commit', '-m', commit_message])
+    subprocess.call(['git', 'commit'] + git_commit_args)
     subprocess.call(['git', 'tag', 'v%d.%d.%d' % new_info])
     print("Bumped version from %d.%d.%d to %d.%d.%d" % (old_info + new_info))
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        usage="%(prog)s {major,minor,patch} [arguments for git commit]")
     parser.add_argument(
         'what_to_bump', choices=['major', 'minor', 'patch'],
         help="which part of major.minor.patch version number to increment")
-    parser.add_argument(
-        '-m', '--message', default='bump version', help="git commit message")
-    args = parser.parse_args()
+    known_args, git_commit_args = parser.parse_known_args()
 
-    if args.what_to_bump == 'major':
+    if known_args.what_to_bump == 'major':
         new_info = (old_info[0]+1, 0, 0)
-    elif args.what_to_bump == 'minor':
+    elif known_args.what_to_bump == 'minor':
         new_info = (old_info[0], old_info[1]+1, 0)
-    elif args.what_to_bump == 'patch':
+    elif known_args.what_to_bump == 'patch':
         new_info = (old_info[0], old_info[1], old_info[2]+1)
     else:
-        assert False, "unexpected args.what_to_bump %r" % args.what_to_bump
+        assert False, "unexpected what_to_bump %r" % known_args.what_to_bump
 
-    bump_version(new_info, args.message)
+    bump_version(new_info, git_commit_args)
 
 
 if __name__ == '__main__':
