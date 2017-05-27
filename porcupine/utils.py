@@ -136,8 +136,11 @@ class ContextManagerHook(CallbackHook):
 
         for callback, generator in generators:
             try:
-                next(generator)     # should raise StopIteration
-                raise RuntimeError("the function yieleded twice")
+                # next() should raise StopIteration, if it doesn't we
+                # want to use self._handle_error and that's why the
+                # raise is in the try block
+                next(generator)
+                raise RuntimeError("the function yielded twice")
             except StopIteration:
                 pass
             except Exception as e:

@@ -94,7 +94,12 @@ class TabManager(tk.Frame):
             raise IndexError
         self.current_tab = self.tabs[index]
 
-    def add_tab(self, tab):
+    def add_tab(self, tab, make_current=True):
+        """Add a :class:`Tab` to this tab manager.
+
+        If *make_current* is True, :attr:`current_tab` will be set to
+        *tab*.
+        """
         tab._topframe.grid(row=0, column=len(self.tabs))
         self.tabs.append(tab)
         if self.current_tab is None:
@@ -103,6 +108,8 @@ class TabManager(tk.Frame):
 
         tab.__hook_context_manager = self.new_tab_hook.run(tab)
         tab.__hook_context_manager.__enter__()
+        if make_current:
+            self.current_tab = tab
         return tab
 
     def _remove_tab(self, tab):
@@ -189,7 +196,7 @@ class Tab:
     """A tab that can be added to TabManager."""
 
     def __init__(self, manager):
-        self._manager = manager
+        self.manager = manager
 
         def select_me(event):
             manager.current_tab = self
@@ -231,7 +238,7 @@ class Tab:
 
         Overrides must call super().
         """
-        self._manager._remove_tab(self)
+        self.manager._remove_tab(self)
         self._topframe.destroy()
         self.content.destroy()
 
@@ -299,6 +306,10 @@ class FileTab(Tab):
 
     @property
     def path(self):
+        """The file path where this file is currently saved.
+
+        This is None if the file has never been saved.
+        """
         return self._path
 
     @path.setter
@@ -349,7 +360,46 @@ class FileTab(Tab):
     def on_focus(self):
         self.textwidget.focus()
 
+    @classmethod
+    def from_path(cls, manager, path=None, *, content=None):
+        """Open a file from a path.
+
+        The *manager* should be a :class:`.TabManager`. The content will
+        be read from the path if *content* is not given.
+
+        If the file is already opened, this sets ``manager.current_tab``
+        to the file's tab and returns the tab. Otherwise the new FileTab
+        object is returned.
+        """
+        # maybe this file is open already?
+        for tab in manager.tabs:
+            # we don't use == because paths are case-insensitive on
+            # windows
+            if (isinstance(path, cls) and tab.path is not None
+                    and os.path.samefile(path, tab.path)):
+                manager.current_tab = tab
+                return tab
+
+        tab = cls(manager)
+        tab.path = path
+
+        if content is None:
+            encoding = config['Files', 'encoding']
+            with open(path, 'r', encoding=encoding) as f:
+                for line in f:
+                    tab.textwidget.insert('end - 1 char', line)
+        else:
+            tab.textwidget.insert('1.0', content)
+
+        tab.textwidget.edit_reset()   # reset undo/redo
+        tab.mark_saved()
+        return tab
+
     def save(self):
+        """Save the file.
+
+        This calls :meth:`save_as` if :attr:`path` is None.
+        """
         if self.path is None:
             self.save_as()
             return
@@ -378,6 +428,7 @@ class FileTab(Tab):
         self.mark_saved()
 
     def save_as(self):
+        """Ask the user where to save the file and save it there."""
         parentwindow = utils.get_window(self.content)
         path = dialogs.save_as(parentwindow, old_path=self.path)
         if path is not None:

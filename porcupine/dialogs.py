@@ -4,6 +4,9 @@ Tkinter uses native file dialogs provided by the OS on Mac OSX and
 Windows, but the X11 dialog looks stupid and breaks with dark Porcupine
 themes. This module uses a GTK+ dialog instead on X11 if possible.
 """
+# the action argument to _gtk_dialog and _tkinter_dialog is always
+# 'open' or 'save', this module doesn't use enums because it's just an
+# internal thing
 
 import os
 from tkinter import filedialog
@@ -26,7 +29,7 @@ _filetypes = [
 ]
 
 
-def _gtk_dialog(parentwindow, action, title, default):
+def _gtk_dialog(action, title, default):
     # Gtk prints a warning if the parent is None, so we'll create a
     # dummy parent window that is never shown to the user
     parent = Gtk.Window()
@@ -60,15 +63,15 @@ def _gtk_dialog(parentwindow, action, title, default):
             filefilter.add_mime_type(mimetype)
         dialog.add_filter(filefilter)
 
-    # we can't make the dialog modal to the parent window, but at least
-    # we can lift it in front of other windows and make the parent
-    # window look busy, see busy(3tk)
+    # we can't make the dialog modal to the root window, but at least we
+    # can lift it in front of other windows and make the root window
+    # look busy, see busy(3tk)
     dialog.present()
-    parentwindow.tk.call('tk', 'busy', 'hold', parentwindow)
-    parentwindow.update()
-    print("aa")
+    root = utils.get_root()
+    root.tk.call('tk', 'busy', 'hold', root)
+    root.update()
     response = dialog.run()
-    parentwindow.tk.call('tk', 'busy', 'forget', parentwindow)
+    root.tk.call('tk', 'busy', 'forget', root)
 
     if response == Gtk.ResponseType.OK:
         if action == 'open':
@@ -100,11 +103,10 @@ def _gtk_dialog(parentwindow, action, title, default):
     return result
 
 
-def _tkinter_dialog(parentwindow, action, title, default):
+def _tkinter_dialog(action, title, default):
     options = {
         'filetypes': [(name, glob) for name, glob, mimetype in _filetypes],
         'title': title,
-        'parent': parentwindow,
     }
 
     if action == 'open':
@@ -135,9 +137,19 @@ def _dialog(*args):
     return _tkinter_dialog(*args)
 
 
-def open_files(parentwindow, defaultdir=None):
-    return _dialog(parentwindow, 'open', "Open files", defaultdir)
+def open_files(defaultdir=None):
+    """Display an "open files" dialog.
+
+    Return a list of the paths that the user selected.
+    """
+    return _dialog('open', "Open files", defaultdir)
 
 
-def save_as(parentwindow, old_path=None):
-    return _dialog(parentwindow, 'save', "Save as", old_path)
+def save_as(old_path=None):
+    """Display a "save as" dialog.
+
+    The *old_path* argument should be the path where the file is
+    currently saved. This function returns the new path, or None if the
+    user closes the dialog.
+    """
+    return _dialog('save', "Save as", old_path)
