@@ -251,7 +251,7 @@ class Editor(tk.Frame):
                 utils.errordialog(type(e).__name__, "Opening failed!",
                                   traceback.format_exc())
                 continue
-            utils.copy_bindings(self, tab)
+            utils.copy_bindings(self, tab.textwidget)
             self.tabmanager.add_tab(tab, make_current=True)
 
     def _close_tab_or_quit(self):
