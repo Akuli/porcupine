@@ -264,10 +264,14 @@ class Editor(tk.Frame):
         self.tabmanager.add_tab(tab)
 
     def open_files(self):
+        defaultdir = None
         try:
-            defaultdir = os.path.dirname(self.tabmanager.current_tab.path)
+            path = self.tabmanager.current_tab.path
         except AttributeError:
-            defaultdir = None
+            pass
+        else:
+            if path is not None:
+                defaultdir = os.path.dirname(path)
 
         for path in dialogs.open_files(defaultdir):
             try:
