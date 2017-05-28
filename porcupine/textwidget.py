@@ -2,7 +2,6 @@
 
 import functools
 import tkinter as tk
-from tkinter import font as tkfont
 
 from porcupine import utils
 from porcupine.settings import config, color_themes, InvalidValue

@@ -445,7 +445,6 @@ class FileTab(Tab):
 
     def save_as(self):
         """Ask the user where to save the file and save it there."""
-        parentwindow = utils.get_window(self.content)
         path = dialogs.save_as(old_path=self.path)
         if path is not None:
             self.path = path

@@ -169,7 +169,8 @@ class Editor(tk.Frame):
 
         def textmethod(attribute):
             def result():
-                method = getattr(self.tabmanager.current_tab.textwidget, attribute)
+                textwidget = self.tabmanager.current_tab.textwidget
+                method = getattr(textwidget, attribute)
                 method()
             return result
 

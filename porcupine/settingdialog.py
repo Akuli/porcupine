@@ -3,7 +3,6 @@
 # ttk.Combobox anyway and mixing the widgets looks inconsistent.
 # TODO: some nice API for plugins to add stuff
 
-import re
 import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter.font as tkfont
@@ -156,6 +155,7 @@ class FontSelector(_ConfigMixin, ttk.Frame):
 
 
 class SettingEditor(ttk.Frame):
+    # TODO: fix the window size thing and add it somewhere
 
     def __init__(self, *args, ok_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -163,11 +163,11 @@ class SettingEditor(ttk.Frame):
 
         filesection = self._create_file_section()
         editingsection = self._create_editing_section()
-#        guisection = self._create_guisection()
-        buttonframe = self._create_buttons(ok_callback)
-
-        for widget in [filesection, editingsection]:# guisection
+        for widget in [filesection, editingsection]:
             widget.pack(fill='x', **_PADDING)
+
+        # side='bottom' packs bottom to top, so the buttons need to be
+        # packed before the separator
         self._create_buttons(ok_callback).pack(side='bottom', fill='x')
         ttk.Separator(self).pack(side='bottom', fill='x', **_PADDING)
 
@@ -202,17 +202,6 @@ class SettingEditor(ttk.Frame):
         undo_checkbox = Checkbutton(
             section, ('Editing', 'undo'), text="Enable undo and redo")
         undo_checkbox.add()
-        return section
-
-    def _create_guisection(self):
-        section = __Section(self, text="The GUI")
-        section.add_checkbox(
-            'gui:linenumbers', text="Display line numbers")
-        section.add_checkbox(
-            'gui:statusbar', text="Display a statusbar at bottom")
-        section.add_entry(
-            'gui:default_geometry',
-            label="Default window size as a Tkinter geometry (e.g. 650x500):")
         return section
 
     def _create_buttons(self, ok_callback):

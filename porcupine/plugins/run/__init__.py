@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import tempfile
 import tkinter as tk
-from tkinter import messagebox
 
 from porcupine import tabs, utils
 

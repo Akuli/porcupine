@@ -67,8 +67,3 @@ def setup(editor):
     # TODO: convert the find/replace area into a plugin and make sure
     # that it's always above the statusbar?
     statusbar.pack(side='bottom', fill='x')
-
-    # FIXME: figure out how to run this code
-    #yield
-    #editor.tabmanager.tab_changed_hook.disconnect(statusbar.set_active_tab)
-    #statusbar.destroy()
