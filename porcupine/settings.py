@@ -241,13 +241,6 @@ class _Config(collections.abc.MutableMapping):
             else:
                 string = info.to_string(value)
                 try:
-                    if self._configparser[section][configkey] == string:
-                        # the value hasn't changed
-                        continue
-                except KeyError:
-                    pass
-
-                try:
                     self._configparser[section][configkey] = string
                 except KeyError:
                     self._configparser[section] = {configkey: string}
