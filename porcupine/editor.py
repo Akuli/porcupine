@@ -8,7 +8,7 @@ import traceback
 import webbrowser
 
 from porcupine import __doc__ as init_docstring
-from porcupine import dialogs, tabs, utils
+from porcupine import dialogs, settingdialog, tabs, utils
 from porcupine.settings import config, color_themes
 
 
@@ -45,8 +45,9 @@ class Editor(tk.Frame):
 
     def __init__(self, *args, fullscreen_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._settingdialog = None
 
-        tabmgr = self.tabmanager = tabs.TabManager(self)
+        self.tabmanager = tabs.TabManager(self)
         self.tabmanager.pack(fill='both', expand=True)
         create_welcome_msg(self.tabmanager.no_tabs_frame)
 
@@ -189,9 +190,8 @@ class Editor(tk.Frame):
         add((lambda: self.tabmanager.current_tab.find()),
             "Edit/Find and Replace", "Ctrl+F", '<Control-f>', [tabs.FileTab])
 
-        # FIXME: fix the setting dialog
         thememenu = self.get_menu("Settings/Color Themes")   # see below
-        add((lambda: print("lol")), "Settings/Porcupine Settings...")
+        add(self._show_setting_dialog, "Settings/Porcupine Settings...")
 
         def link(menupath, url):
             callback = functools.partial(webbrowser.open, url)
@@ -261,6 +261,21 @@ class Editor(tk.Frame):
             self.do_quit()
         elif tab.can_be_closed():
             tab.close()
+
+    def _show_setting_dialog(self):
+        if self._settingdialog is None:
+            dialog = self._settingdialog = tk.Toplevel()
+            dialog.transient('.')
+            content = settingdialog.SettingEditor(
+                dialog, ok_callback=dialog.withdraw)
+            content.pack(fill='both', expand=True)
+
+            dialog.title("Porcupine Settings")
+            dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
+            dialog.update()
+            dialog.minsize(dialog.winfo_reqwidth(), dialog.winfo_reqheight())
+        else:
+            self._settingdialog.deiconify()
 
     def do_quit(self):
         for tab in self.tabmanager.tabs:

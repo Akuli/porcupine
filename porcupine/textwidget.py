@@ -8,21 +8,6 @@ from porcupine import utils
 from porcupine.settings import config, color_themes, InvalidValue
 
 
-# the font should be always set to the settings, but it can be retrieved
-# using TkFixedFont
-def init_font():
-    # the default family is platform specific, so it's not set as a
-    # default in settings.py
-    font = tkfont.Font(name='TkFixedFont', exists=True)
-    if config['Font', 'family'] == '':
-        config['Font', 'family'] = font['family']
-
-    for key in ['family', 'size']:
-        # callback(value) does font[key] = value
-        callback = functools.partial(font.__setitem__, key)
-        config.connect('Font', key, callback, run_now=True)
-
-
 def spacecount(string):
     """Count how many spaces the string starts with.
 

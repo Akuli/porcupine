@@ -56,18 +56,18 @@ class CallbackHook:
         self._unhandled = tuple(unhandled_errors)  # isinstance() likes tuples
         self.callbacks = []
 
-    def connect(self, function):
+    def connect(self, callback):
         """Schedule a function to be called when the hook is ran.
 
         The function is returned too, so this can be used as a
         decorator.
         """
-        self.callbacks.append(function)
-        return function
+        self.callbacks.append(callback)
+        return callback
 
-    def disconnect(self, function):
+    def disconnect(self, callback):
         """Undo a :meth:`connect` call."""
-        self.callbacks.remove(function)
+        self.callbacks.remove(callback)
 
     def _handle_error(self, callback, error):
         if isinstance(error, self._unhandled):
