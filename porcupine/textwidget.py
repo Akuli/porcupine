@@ -52,14 +52,15 @@ class HandyText(tk.Text):
                 '<Button-1>', '<Key>', '<<Undo>>', '<<Redo>>',
                 '<<Cut>>', '<<Copy>>', '<<Paste>>', '<<Selection>>']:
             self.bind(keysym, cursor_move, add=True)
-        self.bind('<<Modified>>', self._do_modified)
+        self._modified_id = self.bind('<<Modified>>', self._do_modified)
 
     def _do_modified(self, event):
         # this runs recursively if we don't unbind
-        self.unbind('<<Modified>>')
+        self.unbind('<<Modified>>', self._modified_id)
         self.edit_modified(False)
-        self.bind('<<Modified>>', self._do_modified)
+        self._modified_id = self.bind('<<Modified>>', self._do_modified)
         self.modified_hook.run()
+        self.cursor_has_moved()
 
     def cursor_has_moved(self):
         """Call this when the cursor may have moved.
@@ -78,20 +79,10 @@ class HandyText(tk.Text):
             self._cursorpos = (line, column)
             self.cursor_move_hook.run(line, column)
 
-    # these methods may move the cursor
-    # FIXME: add more movy method
-    def _movymethod(overrided):
-        @functools.wraps(overrided)
-        def movy_override(self, *args, **kwargs):
-            result = overrided(self, *args, **kwargs)
-            self.cursor_has_moved()
-            return result
-
-        return movy_override
-
-    insert = _movymethod(tk.Text.insert)
-    delete = _movymethod(tk.Text.delete)
-    mark_set = _movymethod(tk.Text.mark_set)
+    # setting a mark moves the cursor if the mark is 'insert'
+    def mark_set(self, *args, **kwargs):
+        super().mark_set(*args, **kwargs)
+        self.cursor_has_moved()
 
     def iter_chunks(self):
         """Iterate over the content as 100-line chunks.
