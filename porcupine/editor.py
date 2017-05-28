@@ -265,11 +265,8 @@ class Editor(tk.Frame):
 
     def open_files(self):
         defaultdir = None
-        try:
+        if isinstance(self.tabmanager.current_tab, tabs.FileTab):
             path = self.tabmanager.current_tab.path
-        except AttributeError:
-            pass
-        else:
             if path is not None:
                 defaultdir = os.path.dirname(path)
 
