@@ -160,7 +160,11 @@ class MainText(ThemedText):
         else:
             self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
-        utils.bind_mouse_wheel(self, self._on_wheel, prefixes='Control-')
+        self.bind('<Control-plus>', lambda event: self.on_wheel('up'))
+        self.bind('<Control-minus>', lambda event: self.on_wheel('down'))
+        self.bind('<Control-0>', lambda event: self.on_wheel('reset'))
+        utils.bind_mouse_wheel(self, self.on_wheel, prefixes='Control-')
+
         config.connect('Editing', 'undo', self._set_undo, run_now=True)
 
     def destroy(self):
@@ -170,14 +174,13 @@ class MainText(ThemedText):
     def _set_undo(self, undo):
         self['undo'] = undo
 
-    def _on_wheel(self, direction):
+    def on_wheel(self, direction):
+        if direction == 'reset':
+            config.reset(('Font', 'size'))
+            return
         try:
-            if direction == 'up':
-                config['Font', 'size'] += 1
-            else:
-                config['Font', 'size'] -= 1
-        except InvalidValue as e:
-            print('WOLOLO 2', locals())
+            config['Font', 'size'] += (1 if direction == 'up' else -1)
+        except InvalidValue:
             pass
 
     def _on_delete(self, control_down, event):

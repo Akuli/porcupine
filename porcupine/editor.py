@@ -9,7 +9,7 @@ import webbrowser
 
 from porcupine import __doc__ as init_docstring
 from porcupine import dialogs, settingdialog, tabs, utils
-from porcupine.settings import config, color_themes
+from porcupine.settings import config, color_themes, InvalidValue
 
 
 log = logging.getLogger(__name__)
@@ -174,6 +174,7 @@ class Editor(tk.Frame):
                 method()
             return result
 
+        # FIXME: bind these in a text widget only, not globally
         add(textmethod('undo'), "Edit/Undo", "Ctrl+Z", '<Control-z>',
             [tabs.FileTab])
         add(textmethod('redo'), "Edit/Redo", "Ctrl+Y", '<Control-y>',
@@ -193,6 +194,15 @@ class Editor(tk.Frame):
 
         thememenu = self.get_menu("Settings/Color Themes")   # see below
         add(self._show_setting_dialog, "Settings/Porcupine Settings...")
+
+        # the font size stuff are bound in textwidget.MainText
+        add((lambda: self.tabmanager.current_tab.textwidget.on_wheel('up')),
+            "View/Bigger Font", "Ctrl+Plus", tabtypes=[tabs.FileTab])
+        add((lambda: self.tabmanager.current_tab.textwidget.on_wheel('down')),
+            "View/Smaller Font", "Ctrl+Minus", tabtypes=[tabs.FileTab])
+        add((lambda: self.tabmanager.current_tab.textwidget.on_wheel('reset')),
+            "View/Reset Font Size", "Ctrl+Zero", tabtypes=[tabs.FileTab])
+        self.get_menu("View").add_separator()
 
         def link(menupath, url):
             callback = functools.partial(webbrowser.open, url)
@@ -222,6 +232,21 @@ class Editor(tk.Frame):
                 label=name, value=name, variable=themevar,
                 command=set_this_theme)
         config.connect('Editing', 'color_theme', themevar.set, run_now=True)
+
+    def _show_setting_dialog(self):
+        if self._settingdialog is None:
+            dialog = self._settingdialog = tk.Toplevel()
+            dialog.transient('.')
+            content = settingdialog.SettingEditor(
+                dialog, ok_callback=dialog.withdraw)
+            content.pack(fill='both', expand=True)
+
+            dialog.title("Porcupine Settings")
+            dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
+            dialog.update()
+            dialog.minsize(dialog.winfo_reqwidth(), dialog.winfo_reqheight())
+        else:
+            self._settingdialog.deiconify()
 
     def _tab_changed(self, new_tab):
         # accessing __enter__ and __exit__ like this is lol, it feels
@@ -263,21 +288,6 @@ class Editor(tk.Frame):
         elif tab.can_be_closed():
             tab.close()
 
-    def _show_setting_dialog(self):
-        if self._settingdialog is None:
-            dialog = self._settingdialog = tk.Toplevel()
-            dialog.transient('.')
-            content = settingdialog.SettingEditor(
-                dialog, ok_callback=dialog.withdraw)
-            content.pack(fill='both', expand=True)
-
-            dialog.title("Porcupine Settings")
-            dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
-            dialog.update()
-            dialog.minsize(dialog.winfo_reqwidth(), dialog.winfo_reqheight())
-        else:
-            self._settingdialog.deiconify()
-
     def do_quit(self):
         for tab in self.tabmanager.tabs:
             if not tab.can_be_closed():
@@ -290,8 +300,6 @@ class Editor(tk.Frame):
         # I have tried the faulthandler module, but for some reason
         # it doesn't print a traceback... 0_o
         self.quit()
-
-    # TODO: add find dialog back here
 
 
 # See __main__.py for the code that actally runs this.

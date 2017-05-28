@@ -187,11 +187,19 @@ class _Config(collections.abc.MutableMapping):
         self.add_key(section, configkey, default,
                      converters=(int, str), validator=validator, **kwargs)
 
-    def reset(self):
-        """Set all settings to defaults."""
-        for key, info in self._infos.items():
-            if info.reset:
-                self[key] = info.default
+    def reset(self, item=None):
+        """Set a settings to the default value.
+
+        The item can be a ``(section, key)`` tuple or None. If it's
+        None, all settings :meth:`~add_key <added>` with ``reset=True``
+        are set to defaults.
+        """
+        if item is None:
+            for key, info in self._infos.items():
+                if info.reset:
+                    self[key] = info.default
+        else:
+            self[item] = self._infos[item].default
 
     def _load(self):
         self._configparser.clear()
