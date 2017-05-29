@@ -257,4 +257,4 @@ def setup(editor):
     for name in sorted(_pastebins, key=str.casefold):
         assert '/' not in name
         callback = functools.partial(start_pasting, name)
-        editor.add_action(callback, "Pastebin to/" + name, tabtypes=tabtypes)
+        editor.add_action(callback, "Share/" + name, tabtypes=tabtypes)
