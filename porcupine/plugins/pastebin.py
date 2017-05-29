@@ -241,7 +241,10 @@ class Paste:
 def setup(editor):
     def start_pasting(pastebin_name):
         tab = editor.tabmanager.current_tab
-        code = tab.textwidget.get('1.0', 'end - 1 char')
+        try:
+            code = tab.textwidget.get('sel.first', 'sel.last')
+        except tk.TclError:
+            code = tab.textwidget.get('1.0', 'end - 1 char')
         if isinstance(tab, tabs.FileTab):
             origin = tab.path
         else:
