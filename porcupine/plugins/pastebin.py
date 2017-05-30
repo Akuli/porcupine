@@ -244,6 +244,7 @@ def setup(editor):
         try:
             code = tab.textwidget.get('sel.first', 'sel.last')
         except tk.TclError:
+            # nothing is selected, pastebin everything
             code = tab.textwidget.get('1.0', 'end - 1 char')
         if isinstance(tab, tabs.FileTab):
             origin = tab.path
