@@ -133,6 +133,10 @@ class MainText(ThemedText):
         self.bind('<BackSpace>', partial(self._on_delete, False))
         self.bind('<Control-BackSpace>', partial(self._on_delete, True))
         self.bind('<Control-Delete>', partial(self._on_delete, True))
+        self.bind('<Shift-Control-Delete>',
+                  partial(self._on_delete, True, shifted=True))
+        self.bind('<Shift-Control-BackSpace>',
+                  partial(self._on_delete, True, shifted=True))
         self.bind('<Return>', self._on_return)
         self.bind('<parenright>', self._on_closing_brace, add=True)
         self.bind('<bracketright>', self._on_closing_brace, add=True)
@@ -174,10 +178,28 @@ class MainText(ThemedText):
         except InvalidValue:
             pass
 
-    def _on_delete(self, control_down, event):
+    def _on_delete(self, control_down, event, shifted=False):
         """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
             # nothing is selected, we can do non-default stuff
+            if control_down and shifted:
+                # plan A: delete until end or beginning of line
+                # plan B: delete a newline character if there's nothing
+                #         to delete with plan A
+                if event.keysym == 'Delete':
+                    plan_a = ('insert', 'insert lineend')
+                    plan_b = ('insert', 'insert + 1 char')
+                else:
+                    plan_a = ('insert linestart', 'insert')
+                    plan_b = ('insert - 1 char', 'insert')
+
+                if self.index(plan_a[0]) == self.index(plan_a[1]):
+                    # nothing can be deleted with plan a
+                    self.delete(*plan_b)
+                else:
+                    self.delete(*plan_a)
+                return 'break'
+
             if event.keysym == 'BackSpace':
                 lineno = int(self.index('insert').split('.')[0])
                 before_cursor = self.get('%d.0' % lineno, 'insert')
