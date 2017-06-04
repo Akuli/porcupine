@@ -8,12 +8,14 @@ from porcupine.settings import config, color_themes, InvalidValue
 
 
 def spacecount(string):
-    """Count how many spaces the string starts with.
+    """Count how many spaces a string starts with.
 
     >>> spacecount('  123')
     2
     >>> spacecount('  \n')
     2
+    >>> spacecount('  \t\n')
+    3
     """
     result = 0
     for char in string:
@@ -87,22 +89,42 @@ class HandyText(tk.Text):
     def iter_chunks(self):
         """Iterate over the content as 100-line chunks.
 
-        This does not break lines in the middle.
+        This does not break lines in the middle or yield empty strings.
         """
         start = 1
         while True:
             end = start + 100
             if self.index('%d.0' % end) == self.index('end'):
-                yield self.get('%d.0' % start, 'end - 1 char')
+                # '%d.0' % start can be 'end - 1 char' in some corner
+                # cases, let's not yield an empty string
+                last_chunk = self.get('%d.0' % start, 'end - 1 char')
+                if last_chunk:
+                    yield last_chunk
                 break
 
             yield self.get('%d.0' % start, '%d.0' % end)
             start = end
 
+    def iter_lines(self):
+        r"""Iterate over the content as lines.
+
+        The trailing ``\n`` character is always included.
+        """
+        for chunk in self.iter_chunks():
+            yield from chunk.splitlines(True)
+
 
 # this can be used for implementing other themed things too, e.g. the
 # line number plugin
 class ThemedText(HandyText):
+    """A text widget that uses Porcupine's color theme's colors.
+
+    This is useful for things like the
+    :github:`line number plugin <plugins/linenumbers.py`.
+
+    .. seealso::
+        Syntax highlighting is implemented in :github:`plugins/highlight.py`.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -124,6 +146,7 @@ class ThemedText(HandyText):
 
 # TODO: turn indent/strip stuff into plugin(s)?
 class MainText(ThemedText):
+    """Don't use this. It may be renamed later."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

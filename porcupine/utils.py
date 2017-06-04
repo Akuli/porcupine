@@ -15,6 +15,8 @@ import threading
 import tkinter as tk
 import traceback
 
+from porcupine import dirs
+
 log = logging.getLogger(__name__)
 
 
@@ -39,13 +41,6 @@ class CallbackHook:
     user_callback called with 456
     another_callback called with 456
 
-    Callback hooks have a ``callbacks`` attribute that contains a list
-    of hooked functions. It's useful for things like checking if a
-    callback has been connected.
-
-    >>> hook.callbacks == [user_callback, another_callback]
-    True
-
     Errors in the connected functions will be logged to
     ``logging.getLogger(logname)``. The *unhandled_errors* argument
     should be an iterable of exceptions that won't be handled.
@@ -59,14 +54,14 @@ class CallbackHook:
     def connect(self, callback):
         """Schedule a function to be called when the hook is ran.
 
-        The function is returned too, so this can be used as a
-        decorator.
+        This appends *callback* to :attr:`~callbacks`. The *callback* is
+        also returned, so this can be used as a decorator.
         """
         self.callbacks.append(callback)
         return callback
 
     def disconnect(self, callback):
-        """Undo a :meth:`connect` call."""
+        """Remove *callback* from :attr:`~callbacks`."""
         self.callbacks.remove(callback)
 
     def _handle_error(self, callback, error):
@@ -108,9 +103,9 @@ class ContextManagerHook(CallbackHook):
 
     @contextlib.contextmanager
     def run(self, *args):
-        """Run ``callback(*args)`` context managers.
+        """Run the ``callback(*args)`` generator for each connected callback.
 
-        Use this as a context manager too::
+        Use this as a context manager::
 
             with hook.run("the", "args", "go", "here"):
                 ...
@@ -149,81 +144,40 @@ class ContextManagerHook(CallbackHook):
                 self._handle_error(callback, e)
 
 
-# TODO: document these
-running_pythonw = (
-    platform.system() == 'Windows' and
-    os.path.basename(sys.executable).lower() == 'pythonw.exe')
+# pythonw.exe sets sys.stdout to None because there's no console window,
+# print still works because it checks if sys.stdout is None
+running_pythonw = (sys.stdout is None)
 
-if running_pythonw:
-    # get rid of 'w'
-    python = sys.executable[:-5] + sys.executable[-4:]
-else:
-    python = sys.executable
-
-
-@functools.lru_cache()
-def get_image(filename):
-    """Create a tkinter PhotoImage from a file in porcupine/images.
-
-    This function is cached and the cache holds references to all
-    returned images, so there's no need to worry about calling this
-    function too many times or keeping reference to the returned images.
-
-    Only gif images should be added to porcupine/images. Other image
-    formats don't work with old Tk versions.
-    """
-    data = pkgutil.get_data('porcupine', 'images/' + filename)
-    return tk.PhotoImage(format='gif', data=base64.b64encode(data))
-
-
-def get_root():
-    """Return tkinter's current root window."""
-    # tkinter's default root window is not accessible as a part of the
-    # public API, but tkinter uses _default_root everywhere so I don't
-    # think it's going away
-    return tk._default_root
+# this is a hack :(
+python = sys.executable
+if running_pythonw and sys.executable.lower().endswith(r'\pythonw.exe'):
+    # get rid of the 'w'
+    _possible_python = sys.executable[:-5] + sys.executable[-4:]
+    if os.path.isfile(_possible_python):
+        python = _possible_python
 
 
 def get_window(widget):
-    """Return the tk.Tk or tk.Toplevel widget that a widget is in."""
+    """Return the ``tk.Tk`` or ``tk.Toplevel`` that *widget* is in."""
     while not isinstance(widget, (tk.Tk, tk.Toplevel)):
         widget = widget.master
     return widget
 
 
-def errordialog(title, message, monospace_text=None):
-    """A lot like ``tkinter.messagebox.showerror``.
+def get_root():
+    """Return tkinter's current root window.
 
-    This function can be called with or without creating a root window
-    first. If *monospace_text* is not None, it will be displayed below
-    the message in a ``tkinter.Text`` widget.
+    Currently :class:`the editor object <porcupine.editor.Editor>` is
+    always in the root window, but don't rely on that, it may change in
+    the future.
+
+    This function returns None if no tkinter root window has been
+    created yet.
     """
-    root = get_root()
-    if root is None:
-        window = tk.Tk()
-    else:
-        window = tk.Toplevel()
-        window.transient(root)
-
-    label = tk.Label(window, text=message, height=5)
-
-    if monospace_text is None:
-        label.pack(fill='both', expand=True)
-        geometry = '250x150'
-    else:
-        label.pack(anchor='center')
-        text = tk.Text(window, width=1, height=1)
-        text.pack(fill='both', expand=True)
-        text.insert('1.0', monospace_text)
-        text['state'] = 'disabled'
-        geometry = '400x300'
-
-    button = tk.Button(window, text="OK", width=6, command=window.destroy)
-    button.pack(pady=10)
-
-    window.title(title)
-    window.geometry(geometry)
-    window.wait_window()
+    # tkinter's default root window is not accessible as a part of the
+    # public API, but tkinter uses _default_root everywhere so I don't
+    # think it's going away
+    return tk._default_root
 
 
 def copy_bindings(widget1, widget2):
@@ -271,33 +225,78 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
                     real_callback, **bind_kwargs)
 
 
-def nice_repr(obj):
-    """Return a nice string representation of an object.
+# FIXME: is lru_cache() guaranteed to hold references?
+@functools.lru_cache()
+def get_image(filename):
+    """Create a ``tkinter.PhotoImage`` from a file in ``porcupine/images``.
 
-    >>> import time
-    >>> nice_repr(time.strftime)
-    'time.strftime'
-    >>> nice_repr(object())     # doctest: +ELLIPSIS
-    '<object object at 0x...>'
+    This function is cached and the cache holds references to all
+    returned images, so there's no need to worry about calling this
+    function too many times or keeping references to the returned
+    images.
     """
-    try:
-        return obj.__module__ + '.' + obj.__qualname__
-    except AttributeError:
-        return repr(obj)
+    # only gif images should be added to porcupine/images, other image
+    # formats don't work with old Tk versions
+    data = pkgutil.get_data('porcupine', 'images/' + filename)
+    return tk.PhotoImage(format='gif', data=base64.b64encode(data))
+
+
+def errordialog(title, message, monospace_text=None):
+    """This is a lot like ``tkinter.messagebox.showerror``.
+
+    Don't rely on this, I'll probably move this to
+    :mod:`porcupine.dialogs` later.
+
+    This function can be called with or without creating a root window
+    first. If *monospace_text* is not None, it will be displayed below
+    the message in a ``tkinter.Text`` widget.
+
+    Example::
+
+        try:
+            do something
+        except SomeError:
+            utils.errordialog("Oh no", "Doing something failed!",
+                              traceback.format_exc())
+    """
+    root = get_root()
+    if root is None:
+        window = tk.Tk()
+    else:
+        window = tk.Toplevel()
+        window.transient(root)
+
+    label = tk.Label(window, text=message, height=5)
+
+    if monospace_text is None:
+        label.pack(fill='both', expand=True)
+        geometry = '250x150'
+    else:
+        label.pack(anchor='center')
+        text = tk.Text(window, width=1, height=1)
+        text.pack(fill='both', expand=True)
+        text.insert('1.0', monospace_text)
+        text['state'] = 'disabled'
+        geometry = '400x300'
+
+    button = tk.Button(window, text="OK", width=6, command=window.destroy)
+    button.pack(pady=10)
+
+    window.title(title)
+    window.geometry(geometry)
+    window.wait_window()
 
 
 def run_in_thread(blocking_function, done_callback):
-    """Run ``done_callback(True, blocking_function())`` in the background.
+    """Run ``blocking_function()`` in another thread.
 
-    This function runs ``blocking_function()`` with no arguments in a
-    thread. If the *blocking_function* raises an error,
+    If the *blocking_function* raises an error,
     ``done_callback(False, traceback)`` will be called where *traceback*
     is the error message as a string. If no errors are raised,
     ``done_callback(True, result)`` will be called where *result* is the
-    return value from *blocking_function*.
-
-    The *done_callback* will be always called from Tk's main loop, so it
-    can do things with Tkinter widgets unlike *blocking_function*.
+    return value from *blocking_function*. The *done_callback* is always
+    called from Tk's main loop, so it can do things with Tkinter widgets
+    unlike *blocking_function*.
     """
     root = get_root()
     result = []     # [success, result]
@@ -323,11 +322,53 @@ def run_in_thread(blocking_function, done_callback):
     root.after_idle(check)
 
 
+class Checkbox(tk.Checkbutton):
+    """Like ``tkinter.Checkbutton``, but works with my dark GTK+ theme.
+
+    Tkinter's Checkbutton displays a white checkmark on a white
+    background on my dark GTK+ theme (BlackMATE on Mate 1.8). This class
+    fixes that.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self['selectcolor'] == self['foreground'] == '#ffffff':
+            self['selectcolor'] = self['background']
+
+
+def nice_repr(obj):
+    """Don't rely on this, this may be removed later.
+
+    Return a nice string representation of an object.
+
+    >>> import time
+    >>> nice_repr(time.strftime)
+    'time.strftime'
+    >>> nice_repr(object())     # doctest: +ELLIPSIS
+    '<object object at 0x...>'
+    """
+    try:
+        return obj.__module__ + '.' + obj.__qualname__
+    except AttributeError:
+        return repr(obj)
+
+
 @contextlib.contextmanager
 def backup_open(path, *args, **kwargs):
     """Like :func:`open`, but uses a backup file if needed.
 
-    This automatically restores from a backup on failure.
+    This is useless with modes like ``'r'`` because they don't modify
+    the file, but this is useful when overwriting the user's files.
+
+    This needs to be used as a context manager. For example::
+
+        try:
+            with utils.backup_open(cool_file, 'w') as file:
+                ...
+        except (UnicodeError, OSError):
+            # log the error and report it to the user
+
+    This automatically restores from the backup on failure.
     """
     if os.path.exists(path):
         # there's something to back up
@@ -361,22 +402,6 @@ def read_chunks(file, size=io.DEFAULT_BUFFER_SIZE):
     # functional programming ftw
     chunk_iterator = (file.read(size) for crap in itertools.count())
     return itertools.takewhile(bool, chunk_iterator)
-
-
-class Checkbox(tk.Checkbutton):
-    """Like ``tkinter.Checkbutton``, but works with my dark GTK+ theme.
-
-    Tkinter's Checkbutton displays a white checkmark on a white
-    background on my dark GTK+ theme (BlackMATE on Mate 1.8). This class
-    fixes that.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        print('aaa', self['highlightcolor'], self['foreground'])
-        if self['selectcolor'] == self['foreground'] == '#ffffff':
-            print('lulz', self['background'])
-            self['selectcolor'] = self['background']
 
 
 if __name__ == '__main__':

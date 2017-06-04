@@ -7,7 +7,6 @@ import os
 import tkinter.font as tkfont
 import types
 
-
 from porcupine import dirs, utils
 
 log = logging.getLogger(__name__)
@@ -16,9 +15,14 @@ log = logging.getLogger(__name__)
 # this is a custom exception because plain ValueError is often raised
 # when something goes wrong unexpectedly
 class InvalidValue(Exception):
-    """This is raised when attempting to set an invalid value.
+    """Validators raise this when attempting to set an invalid value..
 
-    Validator functions can raise this.
+    You can also catch this to check if a value is valid::
+
+        try:
+            config['Editing', 'indent'] = new_indent_size
+        except InvalidValue:
+            show_error_message()
     """
 
 
@@ -42,30 +46,16 @@ class _Config(collections.abc.MutableMapping):
         self._filename = filename
         self._infos = {}    # see add_key()
         self._values = {}
+        self.hooks = {}
+        self.anything_changed_hook = utils.CallbackHook(__name__)
 
         # this is stored here to allow keeping unknown settings in the
         # setting files, this way if the user enables a plugin, disables
         # it and enables it again, the settings will be there
         self._configparser = configparser.ConfigParser()
 
-        #: A dictionary with ``(section, key)`` tuples as keys and
-        #: :class:`..utils.CallbackHook` objects as values. The
-        #: approppriate callback hook is ran when a value is set with
-        #: the new value as the only argument.
-        #:
-        #: .. seealso::
-        #:      Usually it's easiest to use the :meth:`~connect` and
-        #:      :meth:`~disconnect` methods instead of using this
-        #:      dictionary directly.
-        self.hooks = {}
-
-        #: Like the callback hooks in :attr:`~hooks`, but this hook is
-        #: ran like ``callback(section, key, value)`` when any value is
-        #: set.
-        self.anything_changed_hook = utils.CallbackHook(__name__)
-
     def connect(self, section, key, callback, run_now=False):
-        """Same as ``config.hooks[section, key].connect(callback)``.
+        """Handy way to do ``config.hooks[section, key].connect(callback)``.
 
         The callback will also be called right away if ``run_now`` is True.
         """
@@ -127,7 +117,11 @@ class _Config(collections.abc.MutableMapping):
 
     def add_key(self, section, configkey, default=None, *,
                 converters=(str, str), validator=None, reset=True):
-        """Add a new valid key to a section in the config.
+        """Add a new valid key to the config.
+
+        Unlike with regular dictionaries, you need to add keys to the
+        config before you can set them to a value. This method does
+        that.
 
         ``config[section, configkey]`` will be *default* unless
         something else is specified.
@@ -145,10 +139,6 @@ class _Config(collections.abc.MutableMapping):
         If *reset* is False, :meth:`reset` won't do anything to the
         value. This is useful for things that are not controlled with
         the setting dialog, like the current color theme.
-
-        .. seealso::
-            The :meth:`add_bool_key` and :meth:`add_int_key` make adding
-            booleans and integers easy.
         """
         if validator is not None:
             validator(default)
@@ -171,35 +161,38 @@ class _Config(collections.abc.MutableMapping):
                      converters=converters, **kwargs)
 
     def add_int_key(self, section, configkey, default, *,
-                    minimum=None, maximum=None, **kwargs):
+                    minimum=None, maximum=None, validator=None, **kwargs):
         """A convenience method for adding integer keys.
 
         The *minimum* and *maximum* arguments can be used to
         automatically add a validator that makes sure that the value is
-        minimum, maximum or something between them.
+        minimum, maximum or something between them. Of course, you can
+        also use a custom *validator* with or without the
+        minimum-maximum validator.
         """
-        def validator(value):
+        def the_real_validator(value):
             if minimum is not None and value < minimum:
                 raise InvalidValue("%r is too small" % value)
             if maximum is not None and value > maximum:
                 raise InvalidValue("%r is too big" % value)
+            if validator is not None:
+                validator(value)
 
-        self.add_key(section, configkey, default,
-                     converters=(int, str), validator=validator, **kwargs)
+        self.add_key(section, configkey, default, converters=(int, str),
+                     validator=the_real_validator, **kwargs)
 
-    def reset(self, item=None):
+    def reset(self, key=None):
         """Set a settings to the default value.
 
-        The item can be a ``(section, key)`` tuple or None. If it's
-        None, all settings :meth:`~add_key <added>` with ``reset=True``
-        are set to defaults.
+        The key can be a ``(section, configkey)`` tuple or None. If it's
+        None, all settings will be set to defaults.
         """
-        if item is None:
-            for key, info in self._infos.items():
+        if key is None:
+            for the_key, info in self._infos.items():
                 if info.reset:
-                    self[key] = info.default
+                    self[the_key] = info.default
         else:
-            self[item] = self._infos[item].default
+            self[key] = self._infos[key].default
 
     def _load(self):
         self._configparser.clear()

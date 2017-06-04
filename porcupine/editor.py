@@ -1,4 +1,4 @@
-"""The main Editor class."""
+"""The main Editor class is in this module."""
 
 import functools
 import logging
@@ -14,15 +14,14 @@ from porcupine.settings import config, color_themes, InvalidValue
 
 log = logging.getLogger(__name__)
 
-
-def _get_description():
-    parts = []
-    for part in init_docstring.split('\n\n'):
-        parts.append(' '.join(part.split()))
-    return '\n\n'.join(parts)
+__all__ = ['Editor']
 
 
-def create_welcome_msg(frame):
+def _create_welcome_msg(frame):
+    description_lines = []
+    for line in init_docstring.split('\n\n'):
+        description_lines.append(' '.join(line.split()))
+
     # the texts will be packed closed to each other into this
     innerframe = tk.Frame(frame)
     innerframe.place(relx=0.5, rely=0.5, anchor='center')  # float in center
@@ -31,7 +30,7 @@ def create_welcome_msg(frame):
                           text="Welcome to Porcupine!")
     titlelabel.pack()
     desclabel = tk.Label(innerframe, font='TkDefaultFont 12',
-                         text=_get_description())
+                         text='\n\n'.join(description_lines))
     desclabel.pack()
 
     def resize(event):
@@ -41,7 +40,9 @@ def create_welcome_msg(frame):
     frame.bind('<Configure>', resize, add=True)
 
 
+# See __main__.py for the code that actally runs this.
 class Editor(tk.Frame):
+    """The main class that takes care of menus, tabs and other things."""
 
     def __init__(self, *args, fullscreen_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,7 +50,7 @@ class Editor(tk.Frame):
 
         self.tabmanager = tabs.TabManager(self)
         self.tabmanager.pack(fill='both', expand=True)
-        create_welcome_msg(self.tabmanager.no_tabs_frame)
+        _create_welcome_msg(self.tabmanager.no_tabs_frame)
 
         self.new_tab_hook = self.tabmanager.new_tab_hook
         self.tab_changed_hook = utils.ContextManagerHook(__name__)
@@ -259,11 +260,13 @@ class Editor(tk.Frame):
         self._tab_context_manager.__enter__()
 
     def new_file(self):
+        """Add a new :class:`porcupine.tabs.FileTab` to the editor."""
         tab = tabs.FileTab(self.tabmanager)
         utils.copy_bindings(self, tab.textwidget)
         self.tabmanager.add_tab(tab)
 
     def open_files(self):
+        """Ask the user to choose files and open them."""
         defaultdir = None
         if isinstance(self.tabmanager.current_tab, tabs.FileTab):
             path = self.tabmanager.current_tab.path
@@ -290,6 +293,7 @@ class Editor(tk.Frame):
             tab.close()
 
     def do_quit(self):
+        """Make sure that all tabs can be closed and stop the main loop."""
         for tab in self.tabmanager.tabs:
             if not tab.can_be_closed():
                 return
@@ -301,6 +305,3 @@ class Editor(tk.Frame):
         # I have tried the faulthandler module, but for some reason
         # it doesn't print a traceback... 0_o
         self.quit()
-
-
-# See __main__.py for the code that actally runs this.

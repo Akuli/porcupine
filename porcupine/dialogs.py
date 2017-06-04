@@ -1,8 +1,9 @@
-"""Native file dialog functions.
+"""This module creates file dialogs that look good on different platforms.
 
 Tkinter uses native file dialogs provided by the OS on Mac OSX and
-Windows, but the X11 dialog looks stupid and breaks with dark Porcupine
-themes. This module uses a GTK+ dialog instead on X11 if possible.
+Windows, but the X11 file dialog looks stupid and breaks with dark
+Porcupine themes. This module uses a GTK+ dialog instead on X11 if
+possible.
 """
 # the action argument to _gtk_dialog and _tkinter_dialog is always
 # 'open' or 'save', this module doesn't use enums because it's just an
@@ -20,6 +21,8 @@ try:
 except ImportError:
     Gtk = None
     GLib = None
+
+__all__ = ['open_files', 'save_as']
 
 
 _filetypes = [
@@ -137,10 +140,11 @@ def _dialog(*args):
     return _tkinter_dialog(*args)
 
 
-def open_files(defaultdir=None):
+def open_files(defaultdir=None) -> list:
     """Display an "open files" dialog.
 
-    Return a list of the paths that the user selected.
+    The user will be in *defaultdir* by default. This returns a list of
+    the paths that the user selected.
     """
     return _dialog('open', "Open files", defaultdir)
 
@@ -148,8 +152,9 @@ def open_files(defaultdir=None):
 def save_as(old_path=None):
     """Display a "save as" dialog.
 
-    The *old_path* argument should be the path where the file is
-    currently saved. This function returns the new path, or None if the
-    user closes the dialog.
+    Usually *old_path* should be a path to where the file is currently
+    saved. If it's given, it will be selected by default.
+
+    The new path is returned, or None if the user closes the dialog.
     """
     return _dialog('save', "Save as", old_path)

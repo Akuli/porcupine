@@ -1,7 +1,6 @@
 """A dialog for changing the settings."""
 # This uses ttk widgets instead of tk widgets because it needs
 # ttk.Combobox anyway and mixing the widgets looks inconsistent.
-# TODO: some nice API for plugins to add stuff
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -26,7 +25,16 @@ except AttributeError:
 _PADDING = {'padx': 5, 'pady': 2}
 
 
-class _ConfigMixin:
+class ConfigMixin:
+    """Base class for widgets that will be added to:class:`.SettingEditor`.
+
+    This class creates a warning triangle next to the widget. It's meant
+    to be shown when the user chose an invalid value.
+
+    This class also takes care of adding the widgets to the
+    :class:`SettingEditor`. When you have created an instance of a
+    ConfigMixin subclass just call the :meth:`~add` method.
+    """
 
     def __init__(self, sectionwidget, **kwargs):
         super().__init__(sectionwidget, **kwargs)
@@ -62,7 +70,8 @@ class _ConfigMixin:
         self.master._row += 1
 
 
-class Checkbutton(_ConfigMixin, ttk.Checkbutton):
+class Checkbutton(ConfigMixin, ttk.Checkbutton):
+    """A checkbutton that sets ``config[configkey]`` to True or False."""
 
     def __init__(self, sectionwidget, configkey, **kwargs):
         super().__init__(sectionwidget, **kwargs)
@@ -75,7 +84,8 @@ class Checkbutton(_ConfigMixin, ttk.Checkbutton):
         config[self._key] = self._var.get()
 
 
-class Entry(_ConfigMixin, ttk.Entry):
+class Entry(ConfigMixin, ttk.Entry):
+    """An entry that sets ``config[configkey]`` to a string."""
 
     def __init__(self, sectionwidget, configkey, **kwargs):
         super().__init__(sectionwidget, **kwargs)
@@ -92,7 +102,8 @@ class Entry(_ConfigMixin, ttk.Entry):
             self.show_triangle()
 
 
-class Spinbox(_ConfigMixin, _TtkSpinbox):
+class Spinbox(ConfigMixin, _TtkSpinbox):
+    """A spinbox widget that sets ``config[configkey]`` to an integer."""
 
     def __init__(self, sectionwidget, configkey, **kwargs):
         super().__init__(sectionwidget, **kwargs)
@@ -112,7 +123,12 @@ class Spinbox(_ConfigMixin, _TtkSpinbox):
             self.show_triangle()
 
 
-class FontSelector(_ConfigMixin, ttk.Frame):
+class FontSelector(ConfigMixin, ttk.Frame):
+    """A combination of a combobox and spinbox for choosing fonts.
+
+    The combobox and spinbox will change ``config[section, 'family']``
+    and ``config[section, 'size']``.
+    """
 
     def __init__(self, parentwidget, section, **kwargs):
         super().__init__(parentwidget, **kwargs)
@@ -154,8 +170,7 @@ class FontSelector(_ConfigMixin, ttk.Frame):
             self.show_triangle()
 
 
-class SettingEditor(ttk.Frame):
-    # TODO: fix the window size thing and add it somewhere
+class _SettingEditor(ttk.Frame):
 
     def __init__(self, *args, ok_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -176,7 +191,7 @@ class SettingEditor(ttk.Frame):
             return self._sections[title]
         except KeyError:
             section = ttk.LabelFrame(self, text=title)
-            section._row = 0     # see _ConfigMixin.add
+            section._row = 0     # see ConfigMixin.add
             section.grid_columnconfigure(0, weight=1)
             section.grid_columnconfigure(2, minsize=20)
             self._sections[title] = section
@@ -231,17 +246,35 @@ class SettingEditor(ttk.Frame):
 _dialog = None
 
 
-def show(parentwindow):
+def _init():
     global _dialog
     if _dialog is None:
         _dialog = tk.Toplevel()
-        editor = SettingEditor(_dialog, ok_callback=_dialog.withdraw)
+        editor = _SettingEditor(_dialog, ok_callback=_dialog.withdraw)
         editor.pack(fill='both', expand=True)
-
         _dialog.title("Porcupine Settings")
-        _dialog.update()
+        _dialog.protocol('WM_DELETE_WINDOW', _dialog.withdraw)
+        _dialog.update()      # make the winfo stuff return correct values
         _dialog.minsize(_dialog.winfo_reqwidth(), _dialog.winfo_reqheight())
 
+
+def get_section(title):
+    """Return a ``ttk.LabelFrame`` from the setting dialog.
+
+    If there's a labelframe with *title* as its text in the setting
+    dialog, it's returned. Otherwise a new labelframe with *title* as
+    its text will be created.
+
+    .. note::
+        This function has nothing to do with the sections of
+        :data:`porcupine.settings.config`.
+    """
+    _init()
+    return _dialog.get_section(title)
+
+
+def show(parentwindow):
+    _init()
     _dialog.transient(parentwindow)
     _dialog.deiconify()
 
@@ -253,11 +286,11 @@ if __name__ == '__main__':
     root.withdraw()
     settings.load()
     show(root)
-    _dialog.withdraw = root.destroy       # lol
 
+    # the dialog is usable only if we get here, so we don't need to
+    # wrap the whole thing in try/finally
     try:
-        # the dialog is usable only if we get here, so we don't need to
-        # wrap the whole thing in try/finally
-        root.mainloop()
+        # this seems to work instead of root.mainloop()
+        _dialog.wait_window()
     finally:
         settings.save()

@@ -1,9 +1,8 @@
-r"""Tabs as in browser tabs, not \t characters.
+r"""Tabs as in browser tabs, not \t characters."""
 
-Yes, I am aware of ``ttk.Notebook`` but it's simply way too limited for
-Porcupine. I can't even add a closing button or change the color of the
-top label.
-"""
+# Yes, I am aware of ``ttk.Notebook`` but it's way too limited for
+# Porcupine. I can't even add a closing button or change the color of
+# the top label.
 
 import functools
 import hashlib
@@ -13,7 +12,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import dialogs, find, textwidget, utils
+from porcupine import dialogs, _find, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -34,12 +33,23 @@ class TabManager(tk.Frame):
         self._topframeframe = tk.Frame(self)
         self._topframeframe.pack(fill='x')
         utils.bind_mouse_wheel(self._topframeframe, self._on_wheel)
+
+        #: List of :class:`.Tab` objects. This is supposed to be
+        #: read-only, don't modify this.
         self.tabs = []
-        self.new_tab_hook = utils.ContextManagerHook(__name__)
-        self.tab_changed_hook = utils.CallbackHook(__name__)
+
         self._current_tab = None
         self.no_tabs_frame = tk.Frame(self)
         self.no_tabs_frame.pack(fill='both', expand=True)
+
+        #: This :class:`porcupine.utils.CallbackHook` is ran with a
+        #: :class:`.Tab` as the only argument when a new tab is added to
+        #: the tab manager.
+        self.new_tab_hook = utils.ContextManagerHook(__name__)
+
+        #: This :class:`porcupine.utils.CallbackHook` is ran when the
+        #: :attr:`current_tab` changes.
+        self.tab_changed_hook = utils.CallbackHook(__name__)
 
         # These can be bound in a parent widget. Note that the callbacks
         # should be called with no arguments.
@@ -53,8 +63,16 @@ class TabManager(tk.Frame):
             callback = functools.partial(self._on_alt_n, number-1)
             self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
+    def tabs(self):
+        """Return a list of tabs in the tab manager."""
+        return self.tabs.copy()
+
     @property
     def current_tab(self):
+        """The tab that the user has currently selected.
+
+        This is None when there are no tabs.
+        """
         return self._current_tab
 
     @current_tab.setter
@@ -83,6 +101,11 @@ class TabManager(tk.Frame):
 
     @property
     def current_index(self):
+        """The index of :attr:`current_tab` in :attr:`.tabs`.
+
+        Setting this raises :exc:`IndexError` if the index is too big or
+        too small. Negative indexes are not supported.
+        """
         if self.current_tab is None:
             return None
         return self.tabs.index(self.current_tab)
@@ -95,10 +118,12 @@ class TabManager(tk.Frame):
         self.current_tab = self.tabs[index]
 
     def add_tab(self, tab, make_current=True):
-        """Add a :class:`Tab` to this tab manager.
+        """Append a :class:`Tab` to this tab manager.
 
         If *make_current* is True, :attr:`current_tab` will be set to
         *tab*.
+
+        .. seealso:: :meth:`.Tab.close`
         """
         tab._topframe.grid(row=0, column=len(self.tabs))
         self.tabs.append(tab)
@@ -110,7 +135,6 @@ class TabManager(tk.Frame):
         tab.__hook_context_manager.__enter__()
         if make_current:
             self.current_tab = tab
-        return tab
 
     def _remove_tab(self, tab):
         if tab is self.current_tab:
@@ -146,14 +170,14 @@ class TabManager(tk.Frame):
     def select_left(self, roll_over=False):
         """Switch to the tab at left if possible.
 
-        If roll_over is True and the current tab is the first tab in
+        If *roll_over* is True and the current tab is the first tab in
         this widget, switch to the last tab. Return True if the current
         tab was changed.
         """
         return self._select_next_to(-1, roll_over)
 
     def select_right(self, roll_over=False):
-        """Like select_left(), but switch to the tab at right."""
+        """Like :meth:`select_left`, but switch to the tab at right."""
         return self._select_next_to(+1, roll_over)
 
     def _on_wheel(self, direction):
@@ -178,7 +202,7 @@ class TabManager(tk.Frame):
         return True
 
     def move_right(self):
-        """Like move_left(), but moves right."""
+        """Like :meth:`move_left`, but moves right."""
         if self.current_index in {None, len(self.tabs)-1}:
             return False
         self._swap(self.current_index, self.current_index+1)
@@ -193,7 +217,7 @@ class TabManager(tk.Frame):
 
 
 class Tab:
-    """A tab that can be added to TabManager."""
+    """A tab that can be added to :class:`TabManager`."""
 
     def __init__(self, manager):
         self.manager = manager
@@ -236,7 +260,7 @@ class Tab:
     def close(self):
         """Remove this tab from the tab manager.
 
-        Overrides must call super().
+        Call ``super().close()`` if you override this in a subclass.
         """
         self.manager._remove_tab(self)
         self._topframe.destroy()
@@ -246,7 +270,7 @@ class Tab:
         """This is called when the tab is selected.
 
         This does nothing by default. You can override this in a
-        subclass and make this focus the main widget if the tab has one.
+        subclass and make this focus the tab's main widget if needed.
         """
 
 
@@ -301,7 +325,7 @@ class FileTab(Tab):
     def is_saved(self):
         """Return False if the text has changed since previous save.
 
-        Use mark_saved() to set this.
+        Use :meth:`mark_saved` to set this.
         """
         return self._get_hash() == self._save_hash
 
@@ -391,7 +415,7 @@ class FileTab(Tab):
         for tab in manager.tabs:
             # we don't use == because paths are case-insensitive on
             # windows
-            if (isinstance(path, cls) and tab.path is not None
+            if (isinstance(tab, cls) and (None not in [path, tab.path])
                     and os.path.samefile(path, tab.path)):
                 manager.current_tab = tab
                 return tab
@@ -452,9 +476,10 @@ class FileTab(Tab):
 
     # TODO: turn this into a plugin!
     def find(self):
+        """This method will probably be removed soon. Don't use it."""
         if self._findwidget is None:
             log.debug("find widget not created yet, creating it")
-            self._findwidget = find.Finder(self.content, self.textwidget)
+            self._findwidget = _find.Finder(self.content, self.textwidget)
         self._findwidget.pack(fill='x')
 
 
