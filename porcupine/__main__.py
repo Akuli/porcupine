@@ -4,15 +4,56 @@ import argparse
 import logging
 import os
 import platform
+from queue import Empty         # queue is a handy variable name
 import sys
 import tkinter as tk
+import traceback
 
 import porcupine.editor
-from porcupine import dirs, _logs, _pluginloader, settings, tabs, utils
+from porcupine import dirs, _ipc, _logs, _pluginloader, settings, tabs, utils
 
 __all__ = ['main']
 
 log = logging.getLogger(__name__)
+
+
+def open_file(editor, path):
+    # the editor doesn't create new files when opening, so we need to
+    # take care of that here
+    try:
+        if os.path.exists(path):
+            tab = tabs.FileTab.from_path(editor.tabmanager, path)
+        else:
+            tab = tabs.FileTab.from_path(editor.tabmanager, path, content='')
+    except (OSError, UnicodeError):
+        utils.errordialog("Opening failed", "Cannot open '%s'!" % path,
+                          traceback.format_exc())
+        return
+    if tab is not None:
+        utils.copy_bindings(editor, tab.textwidget)
+        editor.tabmanager.add_tab(tab)
+
+
+def _get_list(queue):
+    result = []
+    while True:
+        try:
+            result.append(queue.get(block=False))
+        except Empty:
+            return result
+
+
+def queue_opener(editor, queue):
+    paths = _get_list(queue)
+    if paths:
+        # sending None focuses the window, sending a path opens a file
+        # and focuses the window
+        for path in paths:
+            if path is not None:
+                open_file(editor, path)
+        utils.get_root().focus_set()
+
+    editor.after(200, queue_opener, editor, queue)
 
 
 def main():
@@ -43,6 +84,26 @@ def main():
               "in a random order instead of alphabetical order"))
     args = parser.parse_args()
 
+    # TODO: fix this
+    if '-' in args.file:
+        parser.error("sorry, reading from stdin is currently not supported :(")
+
+    filelist = [os.path.abspath(path) for path in args.file]
+    try:
+        if filelist:
+            _ipc.send(filelist)
+            print("The", ("file" if len(filelist) == 1 else "files"),
+                  "will be opened in the already running Porcupine.")
+        else:
+            # see comments in queue_opener()
+            _ipc.send([None])
+            print("Porcupine is already running.")
+        return
+    except ConnectionRefusedError:
+        # not running yet, become the Porcupine that other Porcupines
+        # connect to
+        pass
+
     dirs.makedirs()
     _logs.setup(verbose=args.verbose)
     log.info("starting Porcupine %s on %s", porcupine.__version__,
@@ -66,29 +127,17 @@ def main():
     _pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
-    for path in args.file:
-        if path == '-':
-            tab = tabs.FileTab.from_file_object(editor.tabmanager, sys.stdin)
-            utils.copy_bindings(editor, tab.textwidget)
-            editor.tabmanager.add_tab(tab)
-            continue
+    for path in filelist:
+        open_file(editor, path)
 
-        # the editor doesn't create new files when opening, so we
-        # need to take care of that here
-        path = os.path.abspath(path)
-        if os.path.exists(path):
-            tab = tabs.FileTab.from_path(editor.tabmanager, path)
-        else:
-            tab = tabs.FileTab.from_path(editor.tabmanager, path, content='')
-        utils.copy_bindings(editor, tab.textwidget)
-        editor.tabmanager.add_tab(tab)
-
-    # the user can change the settings only if we get here, so
-    # there's no need to try/finally the whole thing
-    try:
-        root.mainloop()
-    finally:
-        settings.save()
+    # the user can change the settings only if we get here, so there's
+    # no need to wrap the try/with/finally/whatever the whole thing
+    with _ipc.session() as queue:
+        root.after_idle(queue_opener, editor, queue)
+        try:
+            root.mainloop()
+        finally:
+            settings.save()
 
     log.info("exiting Porcupine successfully")
 
