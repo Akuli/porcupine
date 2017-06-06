@@ -341,7 +341,7 @@ class MainText(ThemedText):
         if prevline.endswith((':', '(', '[', '{')):
             # start of a new block
             self.indent(lineno)
-        elif (prevline in {'return', 'break', 'pass'}
+        elif (prevline in {'return', 'break', 'pass', 'continue'}
               or prevline.startswith(('return ', 'raise '))):
             # must be end of a block
             self.dedent(lineno)
