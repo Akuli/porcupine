@@ -277,7 +277,7 @@ class Tab:
 class FileTab(Tab):
     """A tab that represents an opened file."""
 
-    def __init__(self, manager):
+    def __init__(self, manager, content=None, *, path=None):
         super().__init__(manager)
         self.label['text'] = "New File"
         self._path = None
@@ -305,6 +305,11 @@ class FileTab(Tab):
         self.textwidget.pack(side='right', fill='both', expand=True)
 
         self._findwidget = None
+
+        self.path = path
+        if content is not None:
+            self.textwidget.insert('1.0', content)
+            self.textwidget.edit_reset()   # reset undo/redo
 
         self.mark_saved()
         self._update_top_label()
@@ -382,17 +387,6 @@ class FileTab(Tab):
 
     def on_focus(self):
         self.textwidget.focus()
-
-    @classmethod
-    def from_content(cls, manager, content, *, path=None):
-        tab = cls(manager)
-        tab.path = path
-
-        tab.textwidget.insert('1.0', content)
-        tab.textwidget.edit_reset()   # reset undo/redo
-        tab.mark_saved()
-
-        return tab
 
     def save(self):
         """Save the file.
