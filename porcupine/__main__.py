@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import platform
+import tempfile
 from queue import Empty         # queue is a handy variable name
 import sys
 import tkinter as tk
@@ -16,6 +17,12 @@ __all__ = ['main']
 
 log = logging.getLogger(__name__)
 
+# weird values so they don't conflict with anything
+REGULAR_FILE = 0xF173
+STDIN_FILE = 0x57D10
+
+FOCUS = 0xF0C05
+
 
 def open_file(editor, path):
     # the editor doesn't create new files when opening, so we need to
@@ -27,31 +34,54 @@ def open_file(editor, path):
             tab = tabs.FileTab.from_path(editor.tabmanager, path, content='')
     except (OSError, UnicodeError):
         utils.errordialog("Opening failed", "Cannot open '%s'!" % path,
-                          traceback.format_exc())
+                          traceback.format_exc()) 
         return
     if tab is not None:
         utils.copy_bindings(editor, tab.textwidget)
         editor.tabmanager.add_tab(tab)
 
 
-def _get_list(queue):
-    result = []
-    while True:
-        try:
-            result.append(queue.get(block=False))
-        except Empty:
-            return result
+def open_content(editor, content):
+    """
+    Open a tab with the specified content.
+    """
+    tab = tabs.FileTab(editor.tabmanager)
+
+    tab.textwidget.insert('1.0', content)
+    tab.textwidget.edit_reset()   # reset undo/redo
+    tab.mark_saved()
+
+    utils.copy_bindings(editor, tab.textwidget)
+    editor.tabmanager.add_tab(tab)
 
 
 def queue_opener(editor, queue):
-    paths = _get_list(queue)
-    if paths:
-        # sending None focuses the window, sending a path opens a file
-        # and focuses the window
-        for path in paths:
-            if path is not None:
-                open_file(editor, path)
+
+    try:
+        kind, path = queue.get(block=False)
+    except Empty:
+        pass
+    else:
         utils.get_root().focus_set()
+        while True:
+            if kind == FOCUS:
+                pass
+            elif kind == REGULAR_FILE:
+                open_file(editor, path)
+            elif kind == STDIN_FILE:
+                with open(path) as f:
+                    open_content(editor, f.read())
+                # pretty sure we don't need the path anymore.
+                os.unlink(path)
+            else:
+                raise ValueError("Unknown type {!r}".format(kind))
+
+            # We purposefully only get the next one at the end so we can do the
+            # trick where we focus if there's naything in the queue.
+            try:
+                kind, path = queue.get(block=False)
+            except Empty:
+                break
 
     editor.after(200, queue_opener, editor, queue)
 
@@ -84,11 +114,16 @@ def main():
               "in a random order instead of alphabetical order"))
     args = parser.parse_args()
 
-    # TODO: fix this
-    if '-' in args.file:
-        parser.error("sorry, reading from stdin is currently not supported :(")
+    filelist = []
 
-    filelist = [os.path.abspath(path) for path in args.file]
+    for path in args.file:
+        if path == "-":
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+                f.write(sys.stdin.read())
+                filelist.append((STDIN_FILE, os.path.abspath(f.name)))
+        else:
+            filelist.append((REGULAR_FILE, os.path.abspath(path)))
+
     try:
         if filelist:
             _ipc.send(filelist)
@@ -96,7 +131,7 @@ def main():
                   "will be opened in the already running Porcupine.")
         else:
             # see comments in queue_opener()
-            _ipc.send([None])
+            _ipc.send([(FOCUS, None)])
             print("Porcupine is already running.")
         return
     except ConnectionRefusedError:
@@ -127,8 +162,12 @@ def main():
     _pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
-    for path in filelist:
-        open_file(editor, path)
+    for kind, path in filelist:
+        if kind == REGULAR_FILE:
+            open_file(editor, path)
+        elif kind == STDIN_FILE:
+            with open(path) as f:
+                open_content(editor, f.read())
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing
