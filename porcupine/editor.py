@@ -275,7 +275,10 @@ class Editor(tk.Frame):
 
         for path in dialogs.open_files(defaultdir):
             try:
-                tab = tabs.FileTab.from_path(self.tabmanager, path)
+                encoding = config["Files", "encoding"]
+                with open(path, encoding=encoding) as f:
+                    tab = tabs.FileTab.from_content(self.tabmanager,
+                                                    f.read(), path=path)
             except (OSError, UnicodeError) as e:
                 log.exception("opening '%s' failed", path)
                 utils.errordialog(type(e).__name__, "Opening failed!",

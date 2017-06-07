@@ -384,38 +384,14 @@ class FileTab(Tab):
         self.textwidget.focus()
 
     @classmethod
-    def from_path(cls, manager, path=None, *, content=None):
-        """Open a file from a path.
-
-        The *manager* should be a :class:`.TabManager`. The content will
-        be read from the path if *content* is not given.
-
-        If the file is already opened, this sets ``manager.current_tab``
-        to the file's tab and returns None. Otherwise the new FileTab
-        object is returned.
-        """
-        # maybe this file is open already?
-        for tab in manager.tabs:
-            # we don't use == because paths are case-insensitive on
-            # windows
-            if (isinstance(tab, cls) and (None not in [path, tab.path])
-                    and os.path.samefile(path, tab.path)):
-                manager.current_tab = tab
-                return None
-
+    def from_content(cls, manager, content, *, path=None):
         tab = cls(manager)
         tab.path = path
 
-        if content is None:
-            encoding = config['Files', 'encoding']
-            with open(path, 'r', encoding=encoding) as file:
-                for chunk in utils.read_chunks(file):
-                    tab.textwidget.insert('end - 1 char', chunk)
-        else:
-            tab.textwidget.insert('1.0', content)
-
+        tab.textwidget.insert('1.0', content)
         tab.textwidget.edit_reset()   # reset undo/redo
         tab.mark_saved()
+
         return tab
 
     def save(self):

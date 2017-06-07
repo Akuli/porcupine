@@ -7,7 +7,6 @@ import platform
 from queue import Empty         # queue is a handy variable name
 import sys
 import tkinter as tk
-import traceback
 
 import porcupine.editor
 from porcupine import dirs, _ipc, _logs, _pluginloader, settings, tabs, utils
@@ -16,45 +15,12 @@ __all__ = ['main']
 
 log = logging.getLogger(__name__)
 
-# weird values so they don't conflict with anything
-REGULAR_FILE = 0xF173
-STDIN_CONTENTS = 0x57D10
-FOCUS = 0xF0C05
 
-
-def open_file(editor, path):
-    # the editor doesn't create new files when opening, so we need to
-    # take care of that here
-
-    if isinstance(path, str):
-        try:
-            if os.path.exists(path):
-                tab = tabs.FileTab.from_path(editor.tabmanager, path)
-            else:
-                tab = tabs.FileTab.from_path(editor.tabmanager, path,
-                                             content='')
-        except (OSError, UnicodeError):
-            utils.errordialog("Opening failed", "Cannot open '%s'!" % path,
-                              traceback.format_exc())
-            return
-    else:
-        tab = open_content(editor, path.read())
-        tab.path = path.name
-
-    if tab is not None:
-        utils.copy_bindings(editor, tab.textwidget)
-        editor.tabmanager.add_tab(tab)
-
-
-def open_content(editor, content):
+def open_content(editor, content, path=None):
     """
     Open a tab with the specified content.
     """
-    tab = tabs.FileTab(editor.tabmanager)
-
-    tab.textwidget.insert('1.0', content)
-    tab.textwidget.edit_reset()   # reset undo/redo
-    tab.mark_saved()
+    tab = tabs.FileTab.from_content(editor.tabmanager, content, path=path)
 
     utils.copy_bindings(editor, tab.textwidget)
     editor.tabmanager.add_tab(tab)
@@ -64,7 +30,7 @@ def open_content(editor, content):
 
 def queue_opener(editor, queue):
     try:
-        kind, value = queue.get(block=False)
+        path, contents = queue.get(block=False)
     except Empty:
         # We still want to pass, not return, here because we need to schedule
         # the next call.
@@ -75,19 +41,13 @@ def queue_opener(editor, queue):
         # FOCUS without actually opening any file.
         utils.get_root().focus_set()
         while True:
-            if kind == FOCUS:
-                pass
-            elif kind == REGULAR_FILE:
-                open_file(editor, value)
-            elif kind == STDIN_CONTENTS:
-                open_content(editor, value)
-            else:
-                raise ValueError("Unknown type {!r}".format(kind))
+            if contents is not None:
+                open_content(editor, contents, path)
 
             # We purposefully only get the next one at the end so we can do the
             # trick where we focus if there's anything in the queue.
             try:
-                kind, value = queue.get(block=False)
+                path, contents = queue.get(block=False)
             except Empty:
                 break
 
@@ -127,9 +87,9 @@ def main():
 
     for f in args.file:
         if f == sys.stdin:
-            filelist.append((STDIN_CONTENTS, f.read()))
+            filelist.append((None, f.read()))
         else:
-            filelist.append((REGULAR_FILE, f))
+            filelist.append((f.name, f.read()))
 
     try:
         if filelist:
@@ -138,7 +98,7 @@ def main():
                   "will be opened in the already running Porcupine.")
         else:
             # see comments in queue_opener()
-            _ipc.send([(FOCUS, None)])
+            _ipc.send([(None, None)])
             print("Porcupine is already running.")
         return
     except ConnectionRefusedError:
@@ -169,11 +129,9 @@ def main():
     _pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
-    for kind, value in filelist:
-        if kind == REGULAR_FILE:
-            open_file(editor, value)
-        elif kind == STDIN_CONTENTS:
-            open_content(editor, value)
+    for path, contents in filelist:
+        if contents is not None:
+            open_content(editor, contents, path)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing
