@@ -17,6 +17,8 @@ from porcupine import utils
 # the gtk stuff in this module is mostly based on this:
 # https://python-gtk-3-tutorial.readthedocs.io/en/latest/dialogs.html
 try:
+    import gi
+    gi.require_version('Gtk', '3.0')
     from gi.repository import Gtk, GLib
 except ImportError:
     Gtk = None
