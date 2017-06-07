@@ -4,7 +4,6 @@ import argparse
 import logging
 import os
 import platform
-import tempfile
 from queue import Empty         # queue is a handy variable name
 import sys
 import tkinter as tk
@@ -19,23 +18,29 @@ log = logging.getLogger(__name__)
 
 # weird values so they don't conflict with anything
 REGULAR_FILE = 0xF173
-STDIN_FILE = 0x57D10
-
+STDIN_CONTENTS = 0x57D10
 FOCUS = 0xF0C05
 
 
 def open_file(editor, path):
     # the editor doesn't create new files when opening, so we need to
     # take care of that here
-    try:
-        if os.path.exists(path):
-            tab = tabs.FileTab.from_path(editor.tabmanager, path)
-        else:
-            tab = tabs.FileTab.from_path(editor.tabmanager, path, content='')
-    except (OSError, UnicodeError):
-        utils.errordialog("Opening failed", "Cannot open '%s'!" % path,
-                          traceback.format_exc())
-        return
+
+    if isinstance(path, str):
+        try:
+            if os.path.exists(path):
+                tab = tabs.FileTab.from_path(editor.tabmanager, path)
+            else:
+                tab = tabs.FileTab.from_path(editor.tabmanager, path,
+                                             content='')
+        except (OSError, UnicodeError):
+            utils.errordialog("Opening failed", "Cannot open '%s'!" % path,
+                              traceback.format_exc())
+            return
+    else:
+        tab = open_content(editor, path.read())
+        tab.path = path.name
+
     if tab is not None:
         utils.copy_bindings(editor, tab.textwidget)
         editor.tabmanager.add_tab(tab)
@@ -54,10 +59,12 @@ def open_content(editor, content):
     utils.copy_bindings(editor, tab.textwidget)
     editor.tabmanager.add_tab(tab)
 
+    return tab
+
 
 def queue_opener(editor, queue):
     try:
-        kind, path = queue.get(block=False)
+        kind, value = queue.get(block=False)
     except Empty:
         # We still want to pass, not return, here because we need to schedule
         # the next call.
@@ -71,19 +78,16 @@ def queue_opener(editor, queue):
             if kind == FOCUS:
                 pass
             elif kind == REGULAR_FILE:
-                open_file(editor, path)
-            elif kind == STDIN_FILE:
-                with open(path) as f:
-                    open_content(editor, f.read())
-                # pretty sure we don't need the path anymore.
-                os.unlink(path)
+                open_file(editor, value)
+            elif kind == STDIN_CONTENTS:
+                open_content(editor, value)
             else:
                 raise ValueError("Unknown type {!r}".format(kind))
 
             # We purposefully only get the next one at the end so we can do the
             # trick where we focus if there's anything in the queue.
             try:
-                kind, path = queue.get(block=False)
+                kind, value = queue.get(block=False)
             except Empty:
                 break
 
@@ -108,6 +112,7 @@ def main():
         help="display the Porcupine version number and exit")
     parser.add_argument(
         'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
+        type=argparse.FileType("r"),
         help="open these files when the editor starts, - means stdin")
     parser.add_argument(
         '--verbose', action='store_true',
@@ -120,13 +125,11 @@ def main():
 
     filelist = []
 
-    for path in args.file:
-        if path == "-":
-            with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
-                f.write(sys.stdin.read())
-                filelist.append((STDIN_FILE, os.path.abspath(f.name)))
+    for f in args.file:
+        if f == sys.stdin:
+            filelist.append((STDIN_CONTENTS, f.read()))
         else:
-            filelist.append((REGULAR_FILE, os.path.abspath(path)))
+            filelist.append((REGULAR_FILE, f))
 
     try:
         if filelist:
@@ -166,14 +169,11 @@ def main():
     _pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
-    # TODO: This loop is repeated twice, can we DRY it?
-    for kind, path in filelist:
+    for kind, value in filelist:
         if kind == REGULAR_FILE:
-            open_file(editor, path)
-        elif kind == STDIN_FILE:
-            with open(path) as f:
-                open_content(editor, f.read())
-            os.unlink(path)
+            open_file(editor, value)
+        elif kind == STDIN_CONTENTS:
+            open_content(editor, value)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing
