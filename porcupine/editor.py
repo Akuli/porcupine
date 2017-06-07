@@ -194,7 +194,8 @@ class Editor(tk.Frame):
             "Edit/Find and Replace", "Ctrl+F", '<Control-f>', [tabs.FileTab])
 
         thememenu = self.get_menu("Settings/Color Themes")   # see below
-        add(self._show_setting_dialog, "Settings/Porcupine Settings...")
+        add(lambda: settingdialog.show(utils.get_window(self)),
+            "Settings/Porcupine Settings...")
 
         # the font size stuff are bound in textwidget.MainText
         add((lambda: self.tabmanager.current_tab.textwidget.on_wheel('up')),
@@ -233,21 +234,6 @@ class Editor(tk.Frame):
                 label=name, value=name, variable=themevar,
                 command=set_this_theme)
         config.connect('Editing', 'color_theme', themevar.set, run_now=True)
-
-    def _show_setting_dialog(self):
-        if self._settingdialog is None:
-            dialog = self._settingdialog = tk.Toplevel()
-            dialog.transient('.')
-            content = settingdialog.SettingEditor(
-                dialog, ok_callback=dialog.withdraw)
-            content.pack(fill='both', expand=True)
-
-            dialog.title("Porcupine Settings")
-            dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
-            dialog.update()
-            dialog.minsize(dialog.winfo_reqwidth(), dialog.winfo_reqheight())
-        else:
-            self._settingdialog.deiconify()
 
     def _tab_changed(self, new_tab):
         # accessing __enter__ and __exit__ like this is lol, it feels

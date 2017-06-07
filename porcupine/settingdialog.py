@@ -170,10 +170,12 @@ class FontSelector(ConfigMixin, ttk.Frame):
             self.show_triangle()
 
 
-class _SettingEditor(ttk.Frame):
+class _SettingDialog(tk.Toplevel):
 
     def __init__(self, *args, ok_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.content = ttk.Frame(self)
+        self.content.pack(fill='both', expand=True)
         self._sections = {}
 
         filesection = self._create_file_section()
@@ -183,14 +185,17 @@ class _SettingEditor(ttk.Frame):
 
         # side='bottom' packs bottom to top, so the buttons need to be
         # packed before the separator
-        self._create_buttons(ok_callback).pack(side='bottom', fill='x')
+        self._create_buttons().pack(side='bottom', fill='x')
         ttk.Separator(self).pack(side='bottom', fill='x', **_PADDING)
+
+        self.title("Porcupine Settings")
+        self.protocol('WM_DELETE_WINDOW', self.withdraw)
 
     def get_section(self, title):
         try:
             return self._sections[title]
         except KeyError:
-            section = ttk.LabelFrame(self, text=title)
+            section = ttk.LabelFrame(self.content, text=title)
             section._row = 0     # see ConfigMixin.add
             section.grid_columnconfigure(0, weight=1)
             section.grid_columnconfigure(2, minsize=20)
@@ -219,13 +224,11 @@ class _SettingEditor(ttk.Frame):
         undo_checkbox.add()
         return section
 
-    def _create_buttons(self, ok_callback):
-        frame = ttk.Frame(self)
+    def _create_buttons(self):
+        frame = ttk.Frame(self.content)
 
-        okbutton = ttk.Button(frame, width=6, text="OK")
+        okbutton = ttk.Button(frame, width=6, text="OK", command=self.withdraw)
         okbutton.pack(side='right', **_PADDING)
-        if ok_callback is not None:
-            okbutton['command'] = ok_callback
         resetbutton = ttk.Button(
             frame, width=6, text="Reset", command=self.reset)
         resetbutton.pack(side='right', **_PADDING)
@@ -249,13 +252,8 @@ _dialog = None
 def _init():
     global _dialog
     if _dialog is None:
-        _dialog = tk.Toplevel()
-        editor = _SettingEditor(_dialog, ok_callback=_dialog.withdraw)
-        editor.pack(fill='both', expand=True)
-        _dialog.title("Porcupine Settings")
-        _dialog.protocol('WM_DELETE_WINDOW', _dialog.withdraw)
-        _dialog.update()      # make the winfo stuff return correct values
-        _dialog.minsize(_dialog.winfo_reqwidth(), _dialog.winfo_reqheight())
+        _dialog = _SettingDialog()
+        _dialog.withdraw()
 
 
 def get_section(title):
@@ -275,6 +273,8 @@ def get_section(title):
 
 def show(parentwindow):
     _init()
+    _dialog.update()      # now the winfo stuff will return correct values
+    _dialog.minsize(_dialog.winfo_reqwidth(), _dialog.winfo_reqheight())
     _dialog.transient(parentwindow)
     _dialog.deiconify()
 
