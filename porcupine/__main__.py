@@ -34,7 +34,7 @@ def open_file(editor, path):
             tab = tabs.FileTab.from_path(editor.tabmanager, path, content='')
     except (OSError, UnicodeError):
         utils.errordialog("Opening failed", "Cannot open '%s'!" % path,
-                          traceback.format_exc()) 
+                          traceback.format_exc())
         return
     if tab is not None:
         utils.copy_bindings(editor, tab.textwidget)
@@ -56,12 +56,16 @@ def open_content(editor, content):
 
 
 def queue_opener(editor, queue):
-
     try:
         kind, path = queue.get(block=False)
     except Empty:
+        # We still want to pass, not return, here because we need to schedule
+        # the next call.
         pass
     else:
+        # We utilize the no-exception else so that in any case there's a file
+        # or whatever the Porcupine window is focused. This allows sending
+        # FOCUS without actually opening any file.
         utils.get_root().focus_set()
         while True:
             if kind == FOCUS:
@@ -77,7 +81,7 @@ def queue_opener(editor, queue):
                 raise ValueError("Unknown type {!r}".format(kind))
 
             # We purposefully only get the next one at the end so we can do the
-            # trick where we focus if there's naything in the queue.
+            # trick where we focus if there's anything in the queue.
             try:
                 kind, path = queue.get(block=False)
             except Empty:
@@ -162,12 +166,14 @@ def main():
     _pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
+    # TODO: This loop is repeated twice, can we DRY it?
     for kind, path in filelist:
         if kind == REGULAR_FILE:
             open_file(editor, path)
         elif kind == STDIN_FILE:
             with open(path) as f:
                 open_content(editor, f.read())
+            os.unlink(path)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing
