@@ -125,6 +125,12 @@ class TabManager(tk.Frame):
 
         .. seealso:: :meth:`.Tab.close`
         """
+        existing_tab = utils.find(self.tabs, tab)
+        if existing_tab is not None:
+            if make_current:
+                self.current_tab = existing_tab
+            return existing_tab
+
         tab._topframe.grid(row=0, column=len(self.tabs))
         self.tabs.append(tab)
         if self.current_tab is None:
@@ -135,6 +141,7 @@ class TabManager(tk.Frame):
         tab.__hook_context_manager.__enter__()
         if make_current:
             self.current_tab = tab
+        return tab
 
     def _remove_tab(self, tab):
         if tab is self.current_tab:
@@ -277,10 +284,11 @@ class Tab:
 class FileTab(Tab):
     """A tab that represents an opened file."""
 
-    def __init__(self, manager):
+    def __init__(self, manager, content=None, *, path=None):
         super().__init__(manager)
         self.label['text'] = "New File"
         self._path = None
+        self._save_hash = None
         self.path_changed_hook = utils.CallbackHook(__name__)
 
         self._orig_label_fg = self.label['fg']
@@ -306,8 +314,16 @@ class FileTab(Tab):
 
         self._findwidget = None
 
+        self.path = path
+        if content is not None:
+            self.textwidget.insert('1.0', content)
+            self.textwidget.edit_reset()   # reset undo/redo
+
         self.mark_saved()
         self._update_top_label()
+
+    def __eq__(self, other):
+        return hasattr(other, "path") and self.path == other.path
 
     def _get_hash(self):
         result = hashlib.md5()
@@ -382,41 +398,6 @@ class FileTab(Tab):
 
     def on_focus(self):
         self.textwidget.focus()
-
-    @classmethod
-    def from_path(cls, manager, path=None, *, content=None):
-        """Open a file from a path.
-
-        The *manager* should be a :class:`.TabManager`. The content will
-        be read from the path if *content* is not given.
-
-        If the file is already opened, this sets ``manager.current_tab``
-        to the file's tab and returns None. Otherwise the new FileTab
-        object is returned.
-        """
-        # maybe this file is open already?
-        for tab in manager.tabs:
-            # we don't use == because paths are case-insensitive on
-            # windows
-            if (isinstance(tab, cls) and (None not in [path, tab.path])
-                    and os.path.samefile(path, tab.path)):
-                manager.current_tab = tab
-                return None
-
-        tab = cls(manager)
-        tab.path = path
-
-        if content is None:
-            encoding = config['Files', 'encoding']
-            with open(path, 'r', encoding=encoding) as file:
-                for chunk in utils.read_chunks(file):
-                    tab.textwidget.insert('end - 1 char', chunk)
-        else:
-            tab.textwidget.insert('1.0', content)
-
-        tab.textwidget.edit_reset()   # reset undo/redo
-        tab.mark_saved()
-        return tab
 
     def save(self):
         """Save the file.

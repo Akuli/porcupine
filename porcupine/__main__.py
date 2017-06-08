@@ -7,7 +7,6 @@ import platform
 from queue import Empty         # queue is a handy variable name
 import sys
 import tkinter as tk
-import traceback
 
 import porcupine.editor
 from porcupine import dirs, _ipc, _logs, _pluginloader, settings, tabs, utils
@@ -17,41 +16,38 @@ __all__ = ['main']
 log = logging.getLogger(__name__)
 
 
-def open_file(editor, path):
-    # the editor doesn't create new files when opening, so we need to
-    # take care of that here
-    try:
-        if os.path.exists(path):
-            tab = tabs.FileTab.from_path(editor.tabmanager, path)
-        else:
-            tab = tabs.FileTab.from_path(editor.tabmanager, path, content='')
-    except (OSError, UnicodeError):
-        utils.errordialog("Opening failed", "Cannot open '%s'!" % path,
-                          traceback.format_exc())
-        return
-    if tab is not None:
-        utils.copy_bindings(editor, tab.textwidget)
-        editor.tabmanager.add_tab(tab)
+def open_content(editor, content, path=None):
+    """
+    Open a tab with the specified content.
+    """
+    tab = tabs.FileTab(editor.tabmanager, content, path=path)
 
-
-def _get_list(queue):
-    result = []
-    while True:
-        try:
-            result.append(queue.get(block=False))
-        except Empty:
-            return result
+    utils.copy_bindings(editor, tab.textwidget)
+    return editor.tabmanager.add_tab(tab)
 
 
 def queue_opener(editor, queue):
-    paths = _get_list(queue)
-    if paths:
-        # sending None focuses the window, sending a path opens a file
-        # and focuses the window
-        for path in paths:
-            if path is not None:
-                open_file(editor, path)
+    try:
+        path, contents = queue.get(block=False)
+    except Empty:
+        # We still want to pass, not return, here because we need to schedule
+        # the next call.
+        pass
+    else:
+        # We utilize the no-exception else so that in any case there's a file
+        # or whatever the Porcupine window is focused. This allows sending
+        # FOCUS without actually opening any file.
         utils.get_root().focus_set()
+        while True:
+            if contents is not None:
+                open_content(editor, contents, path)
+
+            # We purposefully only get the next one at the end so we can do the
+            # trick where we focus if there's anything in the queue.
+            try:
+                path, contents = queue.get(block=False)
+            except Empty:
+                break
 
     editor.after(200, queue_opener, editor, queue)
 
@@ -74,6 +70,7 @@ def main():
         help="display the Porcupine version number and exit")
     parser.add_argument(
         'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
+        type=argparse.FileType("r"),
         help="open these files when the editor starts, - means stdin")
     parser.add_argument(
         '--verbose', action='store_true',
@@ -84,11 +81,14 @@ def main():
               "in a random order instead of alphabetical order"))
     args = parser.parse_args()
 
-    # TODO: fix this
-    if '-' in args.file:
-        parser.error("sorry, reading from stdin is currently not supported :(")
+    filelist = []
 
-    filelist = [os.path.abspath(path) for path in args.file]
+    for f in args.file:
+        if f == sys.stdin:
+            filelist.append((None, f.read()))
+        else:
+            filelist.append((f.name, f.read()))
+
     try:
         if filelist:
             _ipc.send(filelist)
@@ -96,7 +96,7 @@ def main():
                   "will be opened in the already running Porcupine.")
         else:
             # see comments in queue_opener()
-            _ipc.send([None])
+            _ipc.send([(None, None)])
             print("Porcupine is already running.")
         return
     except ConnectionRefusedError:
@@ -127,8 +127,9 @@ def main():
     _pluginloader.load(editor, args.shuffle_plugins)
     utils.copy_bindings(editor, root)
 
-    for path in filelist:
-        open_file(editor, path)
+    for path, contents in filelist:
+        if contents is not None:
+            open_content(editor, contents, path)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing
