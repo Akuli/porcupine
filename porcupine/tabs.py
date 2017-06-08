@@ -225,6 +225,8 @@ class TabManager(tk.Frame):
 
 class Tab:
     """A tab that can be added to :class:`TabManager`."""
+    # TODO: when documenting this module, also document the __eq__ magic
+    # that is used for checking if the tab is already opened
 
     def __init__(self, manager):
         self.manager = manager
@@ -323,7 +325,22 @@ class FileTab(Tab):
         self._update_top_label()
 
     def __eq__(self, other):
-        return hasattr(other, "path") and self.path == other.path
+        # this used to be hasattr(other, "path") but it screws up if a
+        # plugin defines something different with a compatible path
+        # attribute, for example, a debugger plugin might have tabs that
+        # represent files and they might need to be opened at the same
+        # time as FileTabs
+        if not isinstance(other, FileTab):
+            return NotImplemented
+
+        # there can be multiple "New File" tabs, so if one of the paths
+        # is None we don't do anything special
+        if self.path is None or other.path is None:
+            return NotImplemented
+
+        # paths shouldn't be compared with == because they are
+        # case-insensitive on some filesystems
+        return os.path.samefile(self.path, other.path)
 
     def _get_hash(self):
         result = hashlib.md5()
