@@ -23,9 +23,7 @@ def open_content(editor, content, path=None):
     tab = tabs.FileTab(editor.tabmanager, content, path=path)
 
     utils.copy_bindings(editor, tab.textwidget)
-    editor.tabmanager.add_tab(tab)
-
-    return tab
+    return editor.tabmanager.add_tab(tab)
 
 
 def queue_opener(editor, queue):
