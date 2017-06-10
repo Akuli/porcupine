@@ -30,7 +30,6 @@ I/O Utilities
 -------------
 
 .. autofunction:: backup_open
-.. autofunction:: read_chunks
 
 Information about Python
 ------------------------

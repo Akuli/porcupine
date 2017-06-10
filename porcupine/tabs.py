@@ -63,21 +63,18 @@ class TabManager(tk.Frame):
             callback = functools.partial(self._on_alt_n, number-1)
             self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
-    def tabs(self):
-        """Return a list of tabs in the tab manager."""
-        return self.tabs.copy()
-
     @property
     def current_tab(self):
         """The tab that the user has currently selected.
 
-        This is None when there are no tabs.
+        This is None when there are no tabs. Don't set this if there are
+        no tabs.
         """
         return self._current_tab
 
     @current_tab.setter
     def current_tab(self, tab):
-        assert tab is None or tab in self.tabs  # TODO: validate better
+        assert tab is None or tab in self.tabs
         if tab is self._current_tab:
             return
 
@@ -120,16 +117,22 @@ class TabManager(tk.Frame):
     def add_tab(self, tab, make_current=True):
         """Append a :class:`Tab` to this tab manager.
 
-        If *make_current* is True, :attr:`current_tab` will be set to
-        *tab*.
+        If ``tab.equivalent(existing_tab)`` returns True for any
+        ``existing_tab`` that is already in the tab manager, then that
+        existing tab is returned. Otherwise *tab* is added to the tab
+        manager and returned.
 
-        .. seealso:: :meth:`.Tab.close`
+        If *make_current* is True, then :attr:`current_tab` is set to
+        the tab that is returned.
+
+        .. seealso:: :meth:`.Tab.equivalent` and :meth:`.Tab.close`.
         """
-        existing_tab = utils.find(self.tabs, tab)
-        if existing_tab is not None:
-            if make_current:
-                self.current_tab = existing_tab
-            return existing_tab
+        assert tab not in self.tabs, "cannot add the same tab twice"
+        for existing_tab in self.tabs:
+            if tab.equivalent(existing_tab):
+                if make_current:
+                    self.current_tab = existing_tab
+                return existing_tab
 
         tab._topframe.grid(row=0, column=len(self.tabs))
         self.tabs.append(tab)
@@ -137,6 +140,7 @@ class TabManager(tk.Frame):
             # this is the first tab
             self.current_tab = tab
 
+        # TODO: use a {tab: contextmanager} dict instead?
         tab.__hook_context_manager = self.new_tab_hook.run(tab)
         tab.__hook_context_manager.__enter__()
         if make_current:
@@ -225,8 +229,6 @@ class TabManager(tk.Frame):
 
 class Tab:
     """A tab that can be added to :class:`TabManager`."""
-    # TODO: when documenting this module, also document the __eq__ magic
-    # that is used for checking if the tab is already opened
 
     def __init__(self, manager):
         self.manager = manager
@@ -282,9 +284,35 @@ class Tab:
         subclass and make this focus the tab's main widget if needed.
         """
 
+    def equivalent(self, other):
+        """This is explained in :meth:`.TabManager.add_tab`.
+
+        This always returns False by default, but you can override it in
+        a subclass. For example::
+
+            class MyCoolTab(tabs.Tab):
+                ...
+
+                def equivalent(self, other):
+                    if isinstance(other, MyCoolTab):
+                        # other can be used instead of this tab if its
+                        # thingy is same as this tab's thingy
+                        return (self.thingy == other.thingy)
+                    else:
+                        # MyCoolTabs are never equivalent to other kinds
+                        # of tabs
+                        return False
+        """
+        return False
+
 
 class FileTab(Tab):
-    """A tab that represents an opened file."""
+    """A tab that represents an opened file.
+
+    The tab will have *content* in it by default when it's opened. If
+    *path* is given, the file will be saved there when the user presses
+    Ctrl+S; otherwise the user will be asked to choose a path.
+    """
 
     def __init__(self, manager, content=None, *, path=None):
         super().__init__(manager)
@@ -324,23 +352,23 @@ class FileTab(Tab):
         self.mark_saved()
         self._update_top_label()
 
-    def __eq__(self, other):
-        # this used to be hasattr(other, "path") but it screws up if a
-        # plugin defines something different with a compatible path
-        # attribute, for example, a debugger plugin might have tabs that
-        # represent files and they might need to be opened at the same
-        # time as FileTabs
-        if not isinstance(other, FileTab):
-            return NotImplemented
+    def equivalent(self, other):
+        """Return True if *self* and *other* are saved to the same place.
 
-        # there can be multiple "New File" tabs, so if one of the paths
-        # is None we don't do anything special
-        if self.path is None or other.path is None:
-            return NotImplemented
-
-        # paths shouldn't be compared with == because they are
-        # case-insensitive on some filesystems
-        return os.path.samefile(self.path, other.path)
+        This returns False if *other* is not a FileTab or the
+        :attr:`path` attributes of both tabs are None.
+        """
+        # this used to have hasattr(other, "path") instead of isinstance
+        # but it screws up if a plugin defines something different with
+        # a path attribute, for example, a debugger plugin might have
+        # tabs that represent files and they might need to be opened at
+        # the same time as FileTabs are
+        # note that this returns False when the paths of both tabs are
+        # None, so it's possible to have multiple "New File" tabs
+        return (isinstance(other, FileTab)
+                and self.path is not None
+                and other.path is not None
+                and os.path.samefile(self.path, other.path))
 
     def _get_hash(self):
         result = hashlib.md5()
@@ -348,10 +376,16 @@ class FileTab(Tab):
         for chunk in self.textwidget.iter_chunks():
             chunk = chunk.encode(encoding, errors='replace')
             result.update(chunk)
+
+        # hash objects don't define an __eq__ so we need to use a string
+        # representation of the hash
         return result.hexdigest()
 
     def mark_saved(self):
-        """Make the tab look like it's saved."""
+        """Make the tab look like it's saved.
+
+        This makes :meth:`is_saved` return True.
+        """
         self._save_hash = self._get_hash()
         self._update_top_label()
 
@@ -364,7 +398,7 @@ class FileTab(Tab):
 
     @property
     def path(self):
-        """The file path where this file is currently saved.
+        """Path to where this file is currently saved.
 
         This is None if the file has never been saved.
         """
@@ -372,9 +406,15 @@ class FileTab(Tab):
 
     @path.setter
     def path(self, new_path):
-        # FIXME: use os.path.samefile() or something else that takes in
-        # account things like case-insensitive paths?
-        it_changes = (self._path != new_path)
+        if self.path is None and new_path is None:
+            it_changes = False
+        elif self.path is None or new_path is None:
+            it_changes = True
+        else:
+            # windows paths are case-insensitive
+            it_changes = (os.path.normcase(self._path) !=
+                          os.path.normcase(new_path))
+
         self._path = new_path
         if it_changes:
             self.path_changed_hook.run(new_path)

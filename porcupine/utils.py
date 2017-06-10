@@ -393,26 +393,6 @@ def backup_open(path, *args, **kwargs):
         yield open(path, *args, **kwargs)
 
 
-def read_chunks(file, size=io.DEFAULT_BUFFER_SIZE):
-    """Return an iterator that reads a file object in chunks of given size.
-
-    The size defaults to :data:`io.DEFAULT_BUFFER_SIZE`.
-    """
-    # functional programming ftw
-    chunk_iterator = (file.read(size) for crap in itertools.count())
-    return itertools.takewhile(bool, chunk_iterator)
-
-
-def find(iterable, item):
-    """
-    Finds an element in a list and returns it if present.
-
-    This is useful if you want a reference to the existing element, not the
-    new one.
-    """
-
-    return next((item2 for item2 in iterable if item == item2), None)
-
 if __name__ == '__main__':
     import doctest
     print(doctest.testmod())
