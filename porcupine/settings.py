@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 # this is a custom exception because plain ValueError is often raised
 # when something goes wrong unexpectedly
 class InvalidValue(Exception):
-    """Validators raise this when attempting to set an invalid value..
+    """Validators raise this when attempting to set an invalid value.
 
     You can also catch this to check if a value is valid::
 
