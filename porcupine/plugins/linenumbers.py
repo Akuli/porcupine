@@ -46,6 +46,9 @@ class LineNumbers(ThemedText):
         self.insert('1.0', " 1")    # this is always there
         self['state'] = 'disabled'  # must be after the insert
         self._linecount = 1
+        self.bind('<Button-1>', self._on_click)
+        self.bind('<Double-Button-1>', self._on_double_click)
+        self.bind('<Button1-Motion>', self._on_drag)
 
     def do_update(self):
         """This should be ran when the line count changes."""
@@ -62,6 +65,31 @@ class LineNumbers(ThemedText):
             self.delete('%d.0 lineend' % linecount, 'end - 1 char')
             self['state'] = 'disabled'
         self._linecount = linecount
+
+    def _on_click(self, event):
+        # go to clicked line
+        self.textwidget.tag_remove('sel', '1.0', 'end')
+        self.textwidget.mark_set('insert', '@0,%d' % event.y)
+        self._clicked_place = self.textwidget.index('insert')
+        return 'break'
+
+    def _on_double_click(self, event):
+        # select the line the cursor is on, including trailing newline
+        self.textwidget.tag_remove('sel', '1.0', 'end')
+        self.textwidget.tag_add('sel', 'insert', 'insert + 1 line')
+        return 'break'
+
+    def _on_drag(self, event):
+        # select multiple lines
+        self.textwidget.mark_set('insert', '@0,%d' % event.y)
+        start = 'insert'
+        end = self._clicked_place
+        if self.textwidget.compare(start, '>', end):
+            start, end = end, start
+
+        self.textwidget.tag_remove('sel', '1.0', 'end')
+        self.textwidget.tag_add('sel', start, end)
+        return 'break'
 
 
 def tab_callback(tab):
