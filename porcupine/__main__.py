@@ -11,43 +11,35 @@ import tkinter as tk
 import porcupine.editor
 from porcupine import dirs, _ipc, _logs, _pluginloader, settings, tabs, utils
 
-__all__ = ['main']
-
 log = logging.getLogger(__name__)
 
 
-def open_content(editor, content, path=None):
-    """
-    Open a tab with the specified content.
-    """
-    tab = tabs.FileTab(editor.tabmanager, content, path=path)
+def _iter_queue(queue):
+    while True:
+        try:
+            yield queue.get(block=False)
+        except Empty:
+            break
 
+
+def open_content(editor, content, path):
+    tab = tabs.FileTab(editor.tabmanager, content, path=path)
     utils.copy_bindings(editor, tab.textwidget)
-    return editor.tabmanager.add_tab(tab)
+    editor.tabmanager.add_tab(tab)
 
 
 def queue_opener(editor, queue):
-    try:
-        path, contents = queue.get(block=False)
-    except Empty:
-        # We still want to pass, not return, here because we need to schedule
-        # the next call.
-        pass
-    else:
-        # We utilize the no-exception else so that in any case there's a file
-        # or whatever the Porcupine window is focused. This allows sending
-        # FOCUS without actually opening any file.
-        utils.get_root().focus_set()
-        while True:
-            if contents is not None:
-                open_content(editor, contents, path)
+    gonna_focus = False
+    for path, content in _iter_queue(queue):
+        # if porcupine is running and the user runs it again without any
+        # arguments, then path and content are None and we just focus
+        # the editor window
+        gonna_focus = True
+        if content is not None:
+            open_content(editor, content, path)
 
-            # We purposefully only get the next one at the end so we can do the
-            # trick where we focus if there's anything in the queue.
-            try:
-                path, contents = queue.get(block=False)
-            except Empty:
-                break
+    if gonna_focus:
+        utils.get_root().focus_set()
 
     editor.after(200, queue_opener, editor, queue)
 
