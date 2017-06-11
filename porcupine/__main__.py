@@ -84,10 +84,11 @@ def main():
     filelist = []
 
     for f in args.file:
-        if f == sys.stdin:
-            filelist.append((None, f.read()))
-        else:
-            filelist.append((f.name, f.read()))
+        with f:
+            if f == sys.stdin:
+                filelist.append((None, f.read()))
+            else:
+                filelist.append((os.path.abspath(f.name), f.read()))
 
     try:
         if filelist:
