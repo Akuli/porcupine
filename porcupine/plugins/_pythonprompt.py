@@ -2,7 +2,8 @@
 
 This plugin is disabled by default because sending a Ctrl+C ,to a
 subprocess is basically impossible on Windows and interrupts. If you
-don't use Windows, rename this to _pythonprompt and have fun with it :)
+don't use Windows, get rid of the _ in this file's name and have fun
+with it :)
 """
 
 # FIXME: >>> while True: print("lel")
