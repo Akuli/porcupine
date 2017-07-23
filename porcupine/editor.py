@@ -299,6 +299,12 @@ class Editor(tk.Frame):
         for tab in self.tabmanager.tabs:
             if not tab.can_be_closed():
                 return
+            # the tabs must not be closed here, otherwise some of them
+            # are closed if not all tabs can be closed
+
+        for tab in self.tabmanager.tabs:
+            tab.close()
+
         # I'm not sure what's the difference between quit() and
         # destroy(), but sometimes destroy() gives me weird errors
         # like this one:

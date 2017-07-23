@@ -434,19 +434,22 @@ class FileTab(Tab):
         Return False if the user cancels and True otherwise. This
         overrides :meth:`.Tab.can_be_closed`.
         """
-        if not self.is_saved():
-            if self.path is None:
-                msg = "Do you want to save your changes?"
-            else:
-                msg = ("Do you want to save your changes to %s?"
-                       % self.path)
-            answer = messagebox.askyesnocancel("Close file", msg)
-            if answer is None:
-                # cancel
-                return False
-            if answer:
-                # yes
-                self.save()
+        if self.is_saved():
+            return True
+
+        if self.path is None:
+            msg = "Do you want to save your changes?"
+        else:
+            msg = ("Do you want to save your changes to %s?"
+                   % os.path.basename(self.path))
+        answer = messagebox.askyesnocancel("Close file", msg)
+        if answer is None:
+            # cancel
+            return False
+        if answer:
+            # yes
+            return self.save()
+        # no was clicked, can be closed
         return True
 
     def close(self):
@@ -459,11 +462,12 @@ class FileTab(Tab):
     def save(self):
         """Save the file.
 
-        This calls :meth:`save_as` if :attr:`path` is None.
+        This calls :meth:`save_as` if :attr:`path` is None, and returns
+        False if the user cancels the save as dialog. None is returned
+        on errors, and True is returned in all other cases.
         """
         if self.path is None:
-            self.save_as()
-            return
+            return self.save_as()
 
         if self.textwidget.get('end - 2 chars', 'end - 1 char') != '\n':
             # doesn't end with a \n yet
@@ -484,16 +488,23 @@ class FileTab(Tab):
             log.exception("saving '%s' failed", self.path)
             utils.errordialog(type(e).__name__, "Saving failed!",
                               traceback.format_exc())
-            return
+            return None
 
         self.mark_saved()
+        return True
 
     def save_as(self):
-        """Ask the user where to save the file and save it there."""
+        """Ask the user where to save the file and save it there.
+
+        Returns True if the file was saved, and False if the user
+        cancelled the dialog.
+        """
         path = dialogs.save_as(old_path=self.path)
-        if path is not None:
-            self.path = path
-            self.save()
+        if path is None:
+            return False
+        self.path = path
+        self.save()
+        return True
 
     # TODO: turn this into a plugin!
     def find(self):
