@@ -121,7 +121,7 @@ class Editor(tk.Frame):
             def print_hello():
                 print("hello")
 
-            editor.add_action(callback, menupath="LOL/Do LOL")
+            editor.add_action(print_hello, menupath="Hello/Hello World")
         """
         tabtypes = tuple((
             # isinstance(None, type(None)) is True
