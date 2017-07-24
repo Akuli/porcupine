@@ -44,10 +44,17 @@ def _create_welcome_msg(frame):
 
 # See __main__.py for the code that actally runs this.
 class Editor(tk.Frame):
-    """The main class that takes care of menus, tabs and other things."""
+    """The main class that takes care of menus, tabs and other things.
 
-    def __init__(self, *args, fullscreen_callback=None, **kwargs):
+    The *destroy_callback* is called with no arguments when the user
+    wants to close the whole editor. It does nothing by default.
+    """
+
+    def __init__(self, *args, destroy_callback=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.destroy_callback = destroy_callback
+
+        # FIXME: update the setting dialog code
         self._settingdialog = None
 
         self.tabmanager = tabs.TabManager(self)
@@ -307,14 +314,8 @@ class Editor(tk.Frame):
             # the tabs must not be closed here, otherwise some of them
             # are closed if not all tabs can be closed
 
-        for tab in self.tabmanager.tabs:
-            tab.close()
-
-        # I'm not sure what's the difference between quit() and
-        # destroy(), but sometimes destroy() gives me weird errors
-        # like this one:
-        #   alloc: invalid block: 0xa31eef8: 78 a
-        #   Aborted
-        # I have tried the faulthandler module, but for some reason
-        # it doesn't print a traceback... 0_o
-        self.quit()
+        # this also invokes self.tabmanager.destroy(), and that closes
+        # all open tabs
+        self.destroy()
+        if self.destroy_callback is not None:
+            self.destroy_callback()

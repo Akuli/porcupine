@@ -123,8 +123,9 @@ class Highlighter:
         config.disconnect('Font', 'family', self._on_config_changed)
         config.disconnect('Font', 'size', self._on_config_changed)
 
-        # print("terminating")
+        print("terminating", repr(self.pygmentizer.process))
         self.pygmentizer.process.terminate()
+        print("terminated", repr(self.pygmentizer.process))
 
     def _on_config_changed(self, junk=None):
         # when the font family or size changes, self.textwidget['font']
