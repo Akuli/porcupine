@@ -108,7 +108,7 @@ def main():
     root = tk.Tk()
     config.load()
 
-    editor = porcupine.editor.Editor(root)
+    editor = porcupine.editor.Editor(root, destroy_callback=root.destroy)
     editor.pack(fill='both', expand=True)
 
     root['menu'] = editor.menubar
