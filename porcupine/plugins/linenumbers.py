@@ -117,10 +117,10 @@ def setup(editor):
 
 
 if __name__ == '__main__':
-    import porcupine.settings
+    from porcupine.settings import config
 
     root = tk.Tk()
-    porcupine.settings.load()
+    config.load()
 
     text = ThemedText(root)
     linenumbers = LineNumbers(root, text)

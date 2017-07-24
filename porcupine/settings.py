@@ -127,10 +127,10 @@ class _Config(collections.abc.MutableMapping):
         something else is specified.
 
         The *converters* argument should be a two-tuple of
-        ``(from_string, to_string)`` functions that will be called when
-        the settings are loaded and saved. These functions will be
-        called with exactly one argument and they should construct the
-        values from strings and convert them back to strings.
+        ``(from_string, to_string)`` functions. They should construct
+        values from strings and convert them back to strings,
+        respectively. Both functions are called like ``function(value)``
+        and they should return the converted value.
 
         If a validator is given, it will be called with the new value as
         the only argument when setting a value. It may raise an
@@ -138,9 +138,11 @@ class _Config(collections.abc.MutableMapping):
 
         If *reset* is False, :meth:`reset` won't do anything to the
         value. This is useful for things that are not controlled with
-        the setting dialog, like the current color theme.
+        the setting dialog, like ``pygments_style``.
         """
-        if validator is not None:
+        # the font validators require a tkinter root window and this
+        # needs to run at import time (no root window yet)
+        if validator is not None and section != 'Font':
             validator(default)
 
         info = types.SimpleNamespace(
@@ -194,7 +196,27 @@ class _Config(collections.abc.MutableMapping):
         else:
             self[key] = self._infos[key].default
 
-    def _load(self):
+    def load(self):
+        """Load all settings so other modules can use them.
+
+        This must be called after creating a tkinter root window.
+        """
+        # the font stuff must be here because validating a font requires the
+        # tkinter root window
+        fixedfont = tkfont.Font(name='TkFixedFont', exists=True)
+        original_family = fixedfont.actual('family')
+
+        def on_family_changed(family):
+            fixedfont['family'] = original_family if family is None else family
+
+        def on_size_changed(size):
+            fixedfont['size'] = size
+
+        self.connect('Font', 'family', on_family_changed, run_now=True)
+        self.connect('Font', 'size', on_size_changed, run_now=True)
+
+        # now the stupid font stuff is done, time to do what this method
+        # is supposed to be doing
         self._configparser.clear()
         if not self._configparser.read([self._filename]):
             # the user file can't be read, no need to do anything
@@ -216,7 +238,7 @@ class _Config(collections.abc.MutableMapping):
                         "cannot set %r to %r", (sectionname, configkey),
                         value, exc_info=True)
 
-    def _save(self):
+    def save(self):
         """Save all non-default settings to the user's file."""
         # if the user opens up two porcupines, the other porcupine might
         # have saved to the config file while this porcupine was running
@@ -254,48 +276,19 @@ def _validate_encoding(name):
         raise InvalidValue(str(e)) from None
 
 
-config = _Config(os.path.join(dirs.configdir, 'settings.ini'))
-config.add_key('Files', 'encoding', 'UTF-8', validator=_validate_encoding)
-config.add_bool_key('Files', 'add_trailing_newline', True)
-config.add_bool_key('Editing', 'undo', True)
-config.add_int_key('Editing', 'indent', 4, minimum=1)
-config.add_int_key('Editing', 'maxlinelen', 79, minimum=1)
-config.add_key('Editing', 'color_theme', 'Default')
-config.add_key('GUI', 'default_size', '650x500')   # TODO: fix this
-
-# color_themes can be simpler because it's never edited on the fly
-color_themes = configparser.ConfigParser(default_section='Default')
-
-
+# this needs a tkinter root window
 def _validate_font_family(family):
     if family.casefold() not in map(str.casefold, tkfont.families()):
         raise InvalidValue("unknown family %r" % family)
 
 
-def load():
-    """Load all settings so other modules can use them.
-
-    This must be called after creating a tkinter root window.
-    """
-    # the font stuff must be here because validating a font requires the
-    # tkinter root window
-    font = tkfont.Font(name='TkFixedFont', exists=True)
-    config.add_key('Font', 'family', font.actual('family'),
-                   validator=_validate_font_family)
-    config.add_int_key('Font', 'size', 10, minimum=3, maximum=1000)
-
-    for key in ['family', 'size']:
-        # callback(value) will run font[key] = value
-        callback = functools.partial(font.__setitem__, key)
-        config.connect('Font', key, callback, run_now=True)
-
-    config._load()
-    color_themes.read([
-        os.path.join(dirs.installdir, 'default_themes.ini'),
-        os.path.join(dirs.configdir, 'themes.ini'),
-    ])
-
-
-def save():
-    """Save any changes of the config."""
-    config._save()
+config = _Config(os.path.join(dirs.configdir, 'settings.ini'))
+config.add_key('Font', 'family', None, validator=_validate_font_family)
+config.add_int_key('Font', 'size', 10, minimum=3, maximum=1000)
+config.add_key('Files', 'encoding', 'UTF-8', validator=_validate_encoding)
+config.add_bool_key('Files', 'add_trailing_newline', True)
+config.add_bool_key('Editing', 'undo', True)
+config.add_int_key('Editing', 'indent', 4, minimum=1)
+config.add_int_key('Editing', 'maxlinelen', 79, minimum=1)
+config.add_key('Editing', 'pygments_style', 'default', reset=False)
+config.add_key('GUI', 'default_size', '650x500')   # TODO: fix this

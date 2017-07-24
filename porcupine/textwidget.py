@@ -3,8 +3,10 @@
 import functools
 import tkinter as tk
 
+import pygments.styles
+
 from porcupine import utils
-from porcupine.settings import config, color_themes, InvalidValue
+from porcupine.settings import config, InvalidValue
 
 
 def spacecount(string):
@@ -117,31 +119,51 @@ class HandyText(tk.Text):
 # this can be used for implementing other themed things too, e.g. the
 # line number plugin
 class ThemedText(HandyText):
-    """A text widget that uses Porcupine's color theme's colors.
+    """A text widget that uses a Pygments style's colors.
 
     This is useful for things like the
-    :github:`line number plugin <plugins/linenumbers.py`.
+    :github:`line number plugin <plugins/linenumbers.py>`.
 
     .. seealso::
-        Syntax highlighting is implemented in :github:`plugins/highlight.py`.
+        Syntax highlighting is implemented with Pygments in
+        :github:`plugins/highlight.py`.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        config.connect('Editing', 'color_theme', self._set_theme, run_now=True)
+        config.connect('Editing', 'pygments_style', self._set_style,
+                       run_now=True)
 
     # tkinter seems to call this automatically
     def destroy(self):
-        config.disconnect('Editing', 'color_theme', self._set_theme)
+        config.disconnect('Editing', 'pygments_style', self._set_style)
         super().destroy()
 
-    def _set_theme(self, name):
-        theme = color_themes[name]
-        self['fg'] = theme['foreground']
-        self['bg'] = theme['background']
-        self['insertbackground'] = theme['foreground']  # cursor color
-        self['selectforeground'] = theme['selectforeground']
-        self['selectbackground'] = theme['selectbackground']
+    def _set_style(self, name):
+        style = pygments.styles.get_style_by_name(name)
+        bg = style.background_color
+
+        # yes, style.default_style is a '#rrggbb' string or with some
+        # themes an empty string (undocumented)
+        #
+        #   >>> from pygments.styles import *
+        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
+        #   ...  for name in get_all_styles()]
+        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
+        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
+        #    '#222222', '', '', '', '???', '']
+        #
+        # this falls back to the background inverted, and it's currently
+        # used only in the line numbers
+        fg = getattr(style, 'default_style', '') or utils.invert_color(bg)
+
+        self['fg'] = fg
+        self['bg'] = bg
+        self['insertbackground'] = fg  # cursor color
+
+        # TODO: do something nicer here :(
+        self['selectforeground'] = bg
+        self['selectbackground'] = fg
 
 
 # TODO: turn indent/strip stuff into plugin(s)?

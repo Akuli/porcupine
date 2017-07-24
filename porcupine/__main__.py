@@ -9,7 +9,8 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import dirs, _ipc, _logs, _pluginloader, settings, tabs, utils
+from porcupine import dirs, _ipc, _logs, _pluginloader, tabs, utils
+from porcupine.settings import config
 
 log = logging.getLogger(__name__)
 
@@ -105,13 +106,13 @@ def main():
              *(list(sys.version_info[:3]) + [sys.executable]))
 
     root = tk.Tk()
-    settings.load()
+    config.load()
 
     editor = porcupine.editor.Editor(root)
     editor.pack(fill='both', expand=True)
 
     root['menu'] = editor.menubar
-    root.geometry(settings.config['GUI', 'default_size'])
+    root.geometry(config['GUI', 'default_size'])
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', editor.do_quit)
 
@@ -131,7 +132,7 @@ def main():
         try:
             root.mainloop()
         finally:
-            settings.save()
+            config.save()
 
     log.info("exiting Porcupine successfully")
 

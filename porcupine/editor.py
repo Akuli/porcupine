@@ -7,9 +7,11 @@ import tkinter as tk
 import traceback
 import webbrowser
 
+import pygments.styles
+
 from porcupine import __doc__ as init_docstring
 from porcupine import dialogs, settingdialog, tabs, utils
-from porcupine.settings import config, color_themes, InvalidValue
+from porcupine.settings import config, InvalidValue
 
 
 log = logging.getLogger(__name__)
@@ -193,8 +195,12 @@ class Editor(tk.Frame):
         add((lambda: self.tabmanager.current_tab.find()),
             "Edit/Find and Replace", "Ctrl+F", '<Control-f>', [tabs.FileTab])
 
-        thememenu = self.get_menu("Settings/Color Themes")   # see below
-        add(self._show_setting_dialog, "Settings/Porcupine Settings...")
+        # TODO: make sure that things added by plugins appear here,
+        # before the separator and "Porcupine Settings" (see get_menu)
+        self.get_menu("Edit").add_separator()
+        add(self._show_setting_dialog, "Edit/Porcupine Settings...")
+
+        self.get_menu("Color Themes")   # this goes between Edit and View
 
         # the font size stuff are bound in textwidget.MainText
         add((lambda: self.tabmanager.current_tab.textwidget.on_wheel('up')),
@@ -222,17 +228,16 @@ class Editor(tk.Frame):
         link("Help/Read Porcupine's code",
              "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
-        # the Default theme goes first
-        themevar = tk.StringVar()
-        themenames = sorted(color_themes.sections(), key=str.casefold)
-        for name in ['Default'] + themenames:
-            # set_this_theme() runs config['Editing', 'color_theme'] = name
-            set_this_theme = functools.partial(
-                config.__setitem__, ('Editing', 'color_theme'), name)
-            thememenu.add_radiobutton(
-                label=name, value=name, variable=themevar,
-                command=set_this_theme)
-        config.connect('Editing', 'color_theme', themevar.set, run_now=True)
+        stylenamevar = tk.StringVar()
+        for name in sorted(pygments.styles.get_all_styles()):
+            # set_this_style() runs config['Editing', 'pygments_style'] = name
+            set_this_style = functools.partial(
+                config.__setitem__, ('Editing', 'pygments_style'), name)
+            self.get_menu("Color Themes").add_radiobutton(
+                label=name.replace('-', ' ').replace('_', ' ').title(),
+                value=name, variable=stylenamevar, command=set_this_style)
+        config.connect('Editing', 'pygments_style', stylenamevar.set,
+                       run_now=True)
 
     def _show_setting_dialog(self):
         if self._settingdialog is None:

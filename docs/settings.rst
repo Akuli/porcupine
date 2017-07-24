@@ -25,6 +25,7 @@ before you can set them to a value.
 
 ..  documenting methods from an instance like this seems to work,
     i'll fix this if this breaks in a newer sphinx
+
 .. automethod:: porcupine.settings.config.add_key
 .. automethod:: porcupine.settings.config.add_bool_key
 .. automethod:: porcupine.settings.config.add_int_key
@@ -54,11 +55,3 @@ Other things
 
 .. automethod:: porcupine.settings.config.reset
 .. autoexception:: porcupine.settings.InvalidValue
-
-
-Color Themes
-------------
-
-Currently the ``color_themes`` variable is set to a
-:class:`configparser.ConfigParser` object. Don't rely on this, I may
-change it later.

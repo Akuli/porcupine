@@ -284,7 +284,7 @@ if __name__ == '__main__':
 
     root = tk.Tk()
     root.withdraw()
-    settings.load()
+    config.load()
     show(root)
 
     # the dialog is usable only if we get here, so we don't need to
@@ -293,4 +293,4 @@ if __name__ == '__main__':
         # this seems to work instead of root.mainloop()
         _dialog.wait_window()
     finally:
-        settings.save()
+        config.save()

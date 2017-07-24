@@ -1,228 +1,202 @@
-"""Syntax highlighting for Tkinter's text widget."""
+"""Syntax highlighting for Tkinter's text widget with Pygments."""
+# TODO: optimize by not always highlighting everything and may be get
+#       rid of the multiprocessing stuff? alternatively, at least don't
+#       make a separate process for each file!
+# TODO: if a tag goes all the way to end of line, extend it past it to
+#       hide the lagging at least a little bit (if we're not
+#       highlighting it line by line
+# TODO: better support for different languages in the rest of the editor
 
-# This thing uses tokenize for parsing the syntax. It works very well,
-# and I had no trouble at all when testing this with a 10000 line test
-# file.
-#
-# Usually the tokenize module isn't used for highlighting, so you are probably
-# thinking of other modules. Here's why I didn't use them:
-#   ast
-#       The ast module allows no syntax errors at all, but tokenizing
-#       doesn't require perfectly valid syntax. Especially things like
-#       indentation errors and unclosed quotes are reasons why ast isn't
-#       useful here.
-#   pygments
-#       Two reasons: implementing a formatter for a tkinter Text widget
-#       is difficult and pygments is way too slow for highlighting as
-#       the user types.
-#
-# The highlighting is done semi-asynchronously using generators, and
-# this is the only sane way to highlight without freezing I could think
-# of. The highlighting takes time and using threads with tkinter
-# requires a queue with a callback that clears the queue every n
-# milliseconds, so it would be laggy. The highlighting also needs to be
-# cancelled if the user keeps typing while it's running, and simply
-# setting Highlighter's _highlight_job to a new generator works very
-# well for that.
-
-import builtins
-import keyword
-import logging
+import functools
+import multiprocessing
+import queue
 import re
 import tkinter as tk
-import tokenize
+import tkinter.font as tkfont
+
+import pygments.lexers
+import pygments.styles
+import pygments.token
+import pygments.util   # only for ClassNotFound, the docs say that it's here
 
 from porcupine import tabs
-from porcupine.settings import config, color_themes
-
-log = logging.getLogger(__name__)
+from porcupine.settings import config
 
 
-# asyncs and awaits aren't NAMEs like other keywords 0_o
-NAME_TOKENS = {tokenize.NAME}
-try:
-    NAME_TOKENS.add(tokenize.ASYNC)
-    NAME_TOKENS.add(tokenize.AWAIT)
-except AttributeError:
-    # python 3.4 or older
-    pass
+def _list_all_token_types(tokentype):
+    yield tokentype
+    for sub in map(_list_all_token_types, tokentype.subtypes):
+        yield from sub
+
+_ALL_TAGS = set(map(str, _list_all_token_types(pygments.token.Token)))  # noqa
+
+
+# tokenizing with pygments is the bottleneck of this thing (at least on
+# CPython) so it's done in another process
+class PygmentizerProcess:
+
+    def __init__(self):
+        self.in_queue = multiprocessing.Queue()   # contains strings
+        self.out_queue = multiprocessing.Queue()  # dicts from _pygmentize()
+        self.process = multiprocessing.Process(target=self._run)
+        self.process.start()
+
+    @staticmethod
+    @functools.lru_cache()
+    def _get_lexer(filename):
+        if filename is None:
+            return None
+
+        if filename.endswith('.py'):
+            # pygments likes python 2 :(
+            return pygments.lexers.Python3Lexer()
+
+        try:
+            return pygments.lexers.get_lexer_for_filename(filename)
+        except pygments.util.ClassNotFound:
+            return None
+
+    # filename and code -> {str(tokentype): [start1, end1, start2, end2, ...]}
+    def _pygmentize(self, filename, code):
+        # pygments doesn't include any info about where the tokens are
+        # so we need to do it manually :(
+        lineno = 1
+        column = 0
+
+        lexer = self._get_lexer(filename)
+        if lexer is None:
+            return {}
+
+        result = {}
+        for tokentype, string in lexer.get_tokens(code):
+            start = '%d.%d' % (lineno, column)
+            if '\n' in string:
+                lineno += string.count('\n')
+                column = len(string.rsplit('\n', 1)[1])
+            else:
+                column += len(string)
+            end = '%d.%d' % (lineno, column)
+            result.setdefault(str(tokentype), []).extend([start, end])
+
+        return result
+
+    def _run(self):
+        while True:
+            # if multiple codes were queued while this thing was doing
+            # the previous code, just do the last one and ignore the rest
+            args = self.in_queue.get(block=True)
+            try:
+                while True:
+                    args = self.in_queue.get(block=False)
+                    # print("_run: ignoring a code")
+            except queue.Empty:
+                pass
+
+            result = self._pygmentize(*args)
+            self.out_queue.put(result)
 
 
 class Highlighter:
-    """Syntax highlighting for Tkinter."""
 
-    def __init__(self, textwidget):
+    def __init__(self, textwidget, filename_getter):
         self.textwidget = textwidget
-        self._highlight_job = None
+        self._get_filename = filename_getter
+        self.pygmentizer = PygmentizerProcess()
 
-        # async and await are not in keyword.kwlist yet, I guess they
-        # will be added later but we'll support them here
-        self._keywords = set(keyword.kwlist + ['async', 'await'])
-        self._builtins = set()
-        self._exceptions = set()
+        # the tags use fonts from here
+        self._fonts = {}
+        for bold in (True, False):
+            for italic in (True, False):
+                # the fonts will be updated later, see _on_config_changed()
+                self._fonts[(bold, italic)] = tkfont.Font(
+                    weight=('bold' if bold else 'normal'),
+                    slant=('italic' if italic else 'roman'))
 
-        for name in dir(builtins):
-            if name.startswith('_'):
-                continue
-            value = getattr(builtins, name)
-            if isinstance(value, type) and issubclass(value, Exception):
-                self._exceptions.add(name)
-            else:
-                self._builtins.add(name)
-
-        # some things like True and False are both in keyword.kwlist and
-        # dir(builtins), so we'll treat them as builtins
-        self._keywords -= self._builtins
-
-        config.connect('Editing', 'color_theme',
-                       self._set_theme_name, run_now=True)
+        config.connect('Editing', 'pygments_style', self._on_config_changed)
+        config.connect('Font', 'family', self._on_config_changed)
+        config.connect('Font', 'size', self._on_config_changed)
+        self._on_config_changed()
+        self.textwidget.after(50, self._do_highlights)
 
     def destroy(self):
-        config.disconnect('Editing', 'color_theme', self._set_theme_name)
+        config.disconnect('Editing', 'pygments_style', self._on_config_changed)
+        config.disconnect('Font', 'family', self._on_config_changed)
+        config.disconnect('Font', 'size', self._on_config_changed)
 
-    def _set_theme_name(self, name):
-        theme = color_themes[name]
-        for tag in ['decorator', 'builtin', 'keyword', 'string',
-                    'comment', 'exception']:
-            self.textwidget.tag_config(tag, foreground=theme[tag])
-        self.textwidget.tag_config(
-            'syntax-error', background=theme['errorbackground'])
+        # print("terminating")
+        self.pygmentizer.process.terminate()
 
-    def _on_idle(self):
-        # sometimes this gets added as a Tk idle callback twice but it
-        # doesn't matter, see Tcl_DoWhenIdle(3tcl)
-        if self._highlight_job is None:
-            # not highlighting anything currently
-            return
+    def _on_config_changed(self, junk=None):
+        # when the font family or size changes, self.textwidget['font']
+        # also changes because it's a porcupine.textwiddet.ThemedText widget
+        fontobject = tkfont.Font(name=self.textwidget['font'], exists=True)
+        font_updates = fontobject.actual()
+        del font_updates['weight']     # ignore boldness
+        del font_updates['slant']      # ignore italicness
 
-        try:
-            next(self._highlight_job)
-        except StopIteration:
-            log.debug("highlight job completed")
-            self._highlight_job = None
-            return
+        for (bold, italic), font in self._fonts.items():
+            # fonts don't have an update() method
+            for key, value in font_updates.items():
+                font[key] = value
 
-        # let's run this again when we can
-        self.textwidget.after_idle(self._on_idle)
+        # http://pygments.org/docs/formatterdevelopment/#styles
+        # all styles seem to yield all token types when iterated over,
+        # so we should always end up with the same tags configured
+        style = pygments.styles.get_style_by_name(
+            config['Editing', 'pygments_style'])
 
-    def _clear_tags(self, first_lineno, last_lineno=None):
-        """Delete all tags between two lines, except the selection tag."""
-        start = '%d.0' % first_lineno
-        if last_lineno is None:
-            # end of whole file
-            end = 'end - 1 char'
-        else:
-            # end of last_lineno'th line
-            end = '%d.0 lineend' % last_lineno
-
-        for tag in self.textwidget.tag_names():
-            if tag != 'sel':
-                self.textwidget.tag_remove(tag, start, end)
-
-    def _iter_lines(self):
-        last_lineno = int(self.textwidget.index('end - 1 char').split('.')[0])
-        for lineno in range(1, last_lineno):
-            yield self.textwidget.get('%d.0' % lineno, '%d.0' % (lineno+1))
-        last_line = self.textwidget.get('end-1l', 'end - 1 char')
-        if last_line:
-            yield last_line
-
-    def _highlight_coro(self):
-        bytelines = (line.encode('utf-8', errors='replace')
-                     for line in self._iter_lines())
-        last_lineno = 0
-
-        try:
-            tokens = tokenize.tokenize(bytelines.__next__)
-            for tokentype, string, startpos, endpos, line in tokens:
-
-                if tokentype in NAME_TOKENS:
-                    if string in self._builtins:
-                        tag = 'builtin'
-                    elif string in self._exceptions:
-                        tag = 'exception'
-                    elif string in self._keywords:
-                        tag = 'keyword'
-                    else:
-                        continue
-
-                elif tokentype == tokenize.STRING:
-                    tag = 'string'
-
-                elif tokentype == tokenize.COMMENT:
-                    tag = 'comment'
-
-                elif tokentype == tokenize.OP and string == '@':
-                    # it might be a decorator or an "a @ b" expression,
-                    # we need to check. this handles this corner case...
-                    #
-                    #   @stuff(this, decorator, takes,
-                    #          arguments, on, multiple, lines)
-                    #   def thing():
-                    #       ...
-                    #
-                    # ...but screws up when doing this:
-                    #
-                    #   stuff = (a
-                    #            @ b)
-                    #
-                    # note that Raymond Hettinger's highlighting script
-                    # (distributed with python in Tools/scripts/highlight.py)
-                    # doesn't highlight decorators at all, so I think
-                    # this is better than that
-                    match = re.search(r'^\s*@[^(\n]+', line)
-                    if match is None:
-                        continue
-                    endpos = (endpos[0], match.end())
-                    tag = 'decorator'
-
-                else:
-                    continue
-
-                if endpos[0] > last_lineno:
-                    # we need to delete old highlights between these
-                    # line numbers, it's important to NOT yield between
-                    # deleting and adding tags because that makes the
-                    # text flicker. right before deleting is actually
-                    # the only time when we can be sure that
-                    # everything's highlighted, so we'll yield here.
-                    yield
-                    self._clear_tags(last_lineno+1, endpos[0])
-                    last_lineno = endpos[0]
-
-                self.textwidget.tag_add(tag, '%d.%d' % startpos,
-                                        '%d.%d' % endpos)
-
-        except SyntaxError as e:
-            try:
-                msg, (file, line, column, code) = e.args
-            except ValueError:
-                # we don't know what caused the error, so let's not care
-                # about it
-                pass
+        for tokentype, infodict in style:
+            # this doesn't use underline and border
+            # i don't like random underlines in my code and i don't know
+            # how to implement the border with tkinter
+            key = (infodict['bold'], infodict['italic'])   # pep8 line length
+            kwargs = {'font': self._fonts[key]}
+            if infodict['color'] is None:
+                kwargs['foreground'] = ''    # reset it
             else:
-                # we can highlight the bad syntax
-                start = '%d.0' % line
-                end = '%d.%d' % (line, column)
-                self._clear_tags(last_lineno+1)
-                self.textwidget.tag_add('syntax-error', start, end)
-                return   # don't run the _clear_tags a few lines below this
+                kwargs['foreground'] = '#' + infodict['color']
+            if infodict['bgcolor'] is None:
+                kwargs['background'] = ''
+            else:
+                kwargs['background'] = '#' + infodict['bgcolor']
 
-        # these errors come fron tokenize.tokenize()
-        # TODO: handle things like "# coding: ascii" at the top of the
-        # file, get rid of UnicodeDecodeError here and errors='replace'
-        # in other places
-        except (UnicodeDecodeError, tokenize.TokenError) as e:
+            self.textwidget.tag_config(str(tokentype), **kwargs)
+
+            # make sure that the selection tag takes precedence over our
+            # token tag
+            self.textwidget.tag_lower(str(tokentype), 'sel')
+
+    # handle things from the highlighting process
+    def _do_highlights(self):
+        # this check is actually unnecessary; turns out that destroying
+        # the text widget stops this timeout because the text widget's
+        # after method was used, but i don't feel like relying on it
+        if not self.pygmentizer.process.is_alive():
+            return
+
+        # if the pygmentizer process has put multiple result dicts to
+        # the queue, only use the last one
+        tags2add = None
+        try:
+            while True:
+                tags2add = self.pygmentizer.out_queue.get(block=False)
+        except queue.Empty:
             pass
 
-        # sometimes there's nothing to highlight at the end of the
-        # text widget and we need to delete old highlights
-        self._clear_tags(last_lineno+1)
+        if tags2add is not None:
+            # print("_do_highlights: got something")
+            for tag in _ALL_TAGS:
+                self.textwidget.tag_remove(tag, '0.0', 'end')
+            for tag, places in tags2add.items():
+                self.textwidget.tag_add(tag, *places)
 
-    def highlight(self):
-        log.debug("(re)starting highlight job")
-        self._highlight_job = self._highlight_coro()
-        self.textwidget.after_idle(self._on_idle)
+        # 50 milliseconds doesn't seem too bad, bigger timeouts tend to
+        # make things laggy
+        self.textwidget.after(50, self._do_highlights)
+
+    def highlight_all(self):
+        code = self.textwidget.get('1.0', 'end - 1 char')
+        self.pygmentizer.in_queue.put((self._get_filename(), code))
 
 
 def tab_callback(tab):
@@ -230,12 +204,12 @@ def tab_callback(tab):
         yield
         return
 
-    highlighter = Highlighter(tab.textwidget)
-    tab.textwidget.modified_hook.connect(highlighter.highlight)
-    highlighter.highlight()
+    highlighter = Highlighter(tab.textwidget, (lambda: tab.path))
+    tab.textwidget.modified_hook.connect(highlighter.highlight_all)
+    highlighter.highlight_all()
     yield
     highlighter.destroy()
-    tab.textwidget.modified_hook.disconnect(highlighter.highlight)
+    tab.textwidget.modified_hook.disconnect(highlighter.highlight_all)
 
 
 def setup(editor):
@@ -250,11 +224,11 @@ if __name__ == '__main__':
         text.unbind('<<Modified>>')
         text.edit_modified(False)
         text.bind('<<Modified>>', on_modified)
-        highlighter.highlight()
+        text.after_idle(highlighter.highlight_all)
 
     root = tk.Tk()
     load_settings()     # must be after creating root window
-    text = tk.Text(root, fg='white', bg='black', insertbackground='white')
+    text = tk.Text(root, insertbackground='red')
     text.pack(fill='both', expand=True)
     text.bind('<<Modified>>', on_modified)
 
@@ -264,5 +238,9 @@ if __name__ == '__main__':
 
     with open(__file__, 'r') as f:
         text.insert('1.0', f.read())
+    text.see('end')
 
-    root.mainloop()
+    try:
+        root.mainloop()
+    finally:
+        highlighter.destroy()

@@ -26,11 +26,6 @@ These classes are used for running callbacks in Porcupine:
 
 .. autoclass:: ContextManagerHook
 
-I/O Utilities
--------------
-
-.. autofunction:: backup_open
-
 Information about Python
 ------------------------
 
@@ -59,3 +54,9 @@ Tkinter Utilities
 .. autofunction:: run_in_thread
 .. autofunction:: get_image
 .. autofunction:: errordialog
+
+Miscellaneous
+-------------
+
+.. autofunction:: backup_open
+.. autofunction:: invert_color

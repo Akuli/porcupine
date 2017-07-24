@@ -179,11 +179,31 @@ def get_root():
     return tk._default_root
 
 
+# TODO: add this to docs/utils.rst
+def invert_color(color):
+    """Return a color with opposite red, green and blue values.
+
+    Example: ``invert_color('white')`` is ``'#000000'`` (black).
+
+    This function uses tkinter for converting the color to RGB. That's
+    why a tkinter root window must have been created, but *color* can be
+    any Tk-compatible color string, like a color name or a ``'#rrggbb'``
+    string.
+
+    The return value is always a ``'#rrggbb`` string (also compatible
+    with Tk).
+    """
+    # tkinter uses 16-bit colors for some reason, so gotta convert them
+    # to 8-bit (with >> 8)
+    r, g, b = (0xff - (value >> 8) for value in get_root().winfo_rgb(color))
+    return '#%02x%02x%02x' % (r, g, b)
+
+
 def copy_bindings(widget1, widget2):
     """Add all bindings of *widget1* to *widget2*.
 
     You should call ``copy_bindings(editor, focusable_widget)`` on all
-    widgets that can be focused by e.g. clocking them, like ``Text`` and
+    widgets that can be focused by clicking them, like ``Text`` and
     ``Entry`` widgets. This way porcupine's keyboard bindings will work
     with all widgets.
     """
