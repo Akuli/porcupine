@@ -147,6 +147,7 @@ class TabManager(tk.Frame):
             self.current_tab = tab
         return tab
 
+    # this is called only from Tab.close()
     def _remove_tab(self, tab):
         if tab is self.current_tab:
             # go to next or previous tab if there are other tabs,
@@ -154,6 +155,7 @@ class TabManager(tk.Frame):
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
+        print("calling __exit__")
         tab.__hook_context_manager.__exit__(None, None, None)
         tab.content.pack_forget()
         tab._topframe.grid_forget()
@@ -225,6 +227,18 @@ class TabManager(tk.Frame):
             return 'break'
         except IndexError:
             return None
+
+    def destroy(self):
+        """Close all tabs and destroy all remaining child widgets.
+
+        Tkinter calls this automatically when the tab manager's parent
+        widget is destroyed.
+        """
+        # need to loop over a copy because closing a tab also removes it
+        # from self.tabs
+        for tab in self.tabs.copy():
+            tab.close()
+        super().destroy()
 
 
 class Tab:
