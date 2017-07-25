@@ -19,7 +19,7 @@ setup(
     license='MIT',
     # requests isn't really needed but most pastebins in
     # plugins/pastebin.py use it
-    install_requires=['appdirs', 'requests'],
+    install_requires=['appdirs', 'requests', 'pygments>=1.6'],
     packages=find_packages(),
     package_data={
         '': ['*.txt', '*.gif', '*.sh', '*.ini'],
