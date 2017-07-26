@@ -9,24 +9,6 @@ from porcupine import utils
 from porcupine.settings import config, InvalidValue
 
 
-def spacecount(string):
-    """Count how many spaces a string starts with.
-
-    >>> spacecount('  123')
-    2
-    >>> spacecount('  \n')
-    2
-    >>> spacecount('  \t\n')
-    3
-    """
-    result = 0
-    for char in string:
-        if char == '\n' or not char.isspace():
-            break
-        result += 1
-    return result
-
-
 class HandyText(tk.Text):
     """Like ``tkinter.Text``, but with some handy features.
 
@@ -83,7 +65,19 @@ class HandyText(tk.Text):
             self._cursorpos = (line, column)
             self.cursor_move_hook.run(line, column)
 
+    # TODO: override more movy methods
+    @functools.wraps(tk.Text.insert)
+    def insert(self, *args, **kwargs):
+        super().insert(*args, **kwargs)
+        self.cursor_has_moved()
+
+    @functools.wraps(tk.Text.delete)
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self.cursor_has_moved()
+
     # setting a mark moves the cursor if the mark is 'insert'
+    @functools.wraps(tk.Text.mark_set)
     def mark_set(self, *args, **kwargs):
         super().mark_set(*args, **kwargs)
         self.cursor_has_moved()
@@ -93,7 +87,7 @@ class HandyText(tk.Text):
 
         This does not break lines in the middle or yield empty strings.
         """
-        start = 1
+        start = 1     # this is not a mistake
         while True:
             end = start + 100
             if self.index('%d.0' % end) == self.index('end'):
@@ -166,13 +160,12 @@ class ThemedText(HandyText):
         self['selectbackground'] = fg
 
 
-# TODO: turn indent/strip stuff into plugin(s)?
+# TODO: remove useless cursor_has_moved() calls
 class MainText(ThemedText):
     """Don't use this. It may be renamed later."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.complete_hook = utils.CallbackHook(__name__)
 
         partial = functools.partial     # pep8 line length
         self.bind('<BackSpace>', partial(self._on_delete, False))
@@ -182,7 +175,7 @@ class MainText(ThemedText):
                   partial(self._on_delete, True, shifted=True))
         self.bind('<Shift-Control-BackSpace>',
                   partial(self._on_delete, True, shifted=True))
-        self.bind('<Return>', self._on_return)
+        self.bind('<Return>', (lambda event: self.cursor_has_moved()))
         self.bind('<parenright>', self._on_closing_brace, add=True)
         self.bind('<bracketright>', self._on_closing_brace, add=True)
         self.bind('<braceright>', self._on_closing_brace, add=True)
@@ -192,13 +185,6 @@ class MainText(ThemedText):
         self.bind('<Control-c>', self.copy)
         self.bind('<Control-v>', self.paste)
         self.bind('<Control-a>', self.select_all)
-        self.bind('<Tab>', lambda event: self._on_tab(False))
-        if self.tk.call('tk', 'windowingsystem') == 'x11':
-            # even though the event keysym says Left, holding down right
-            # shift and pressing tab also runs this event... 0_o
-            self.bind('<ISO_Left_Tab>', lambda event: self._on_tab(True))
-        else:
-            self.bind('<Shift-Tab>', lambda event: self._on_tab(True))
 
         self.bind('<Control-plus>', lambda event: self.on_wheel('up'))
         self.bind('<Control-minus>', lambda event: self.on_wheel('down'))
@@ -249,7 +235,7 @@ class MainText(ThemedText):
                 lineno = int(self.index('insert').split('.')[0])
                 before_cursor = self.get('%d.0' % lineno, 'insert')
                 if before_cursor and before_cursor.isspace():
-                    self.dedent(lineno)
+                    self.dedent('insert')
                     return 'break'
 
                 if control_down:
@@ -268,121 +254,58 @@ class MainText(ThemedText):
         self.after_idle(self.cursor_has_moved)
         return None
 
-    def _on_return(self, event):
-        """Schedule automatic indent and whitespace stripping."""
-        # the whitespace must be stripped after autoindenting,
-        # see _autoindent()
-        self.after_idle(self._autoindent)
-        self.after_idle(self._rstrip_prev_line)
-        self.after_idle(self.cursor_has_moved)
-
     def _on_closing_brace(self, event):
         """Dedent automatically."""
-        lineno = int(self.index('insert').split('.')[0])
-        beforethis = self.get('%d.0' % lineno, 'insert')
-        if beforethis.isspace():
-            self.dedent(lineno)
-        self.after_idle(self.cursor_has_moved)
+        self.dedent('insert')
+        self.after_idle(self.cursor_has_moved)    # TODO: do we need this?
 
-    def _on_tab(self, shifted):
-        """Indent, dedent or autocomplete."""
-        if shifted:
-            complete_arg = 'previous'
-            indenter = self.dedent
-        else:
-            complete_arg = 'next'
-            indenter = self.indent
-
-        try:
-            sel_start, sel_end = map(str, self.tag_ranges('sel'))
-        except ValueError:
-            # no text is selected
-            lineno = int(self.index('insert').split('.')[0])
-            before_cursor = self.get('%d.0' % lineno, 'insert')
-            if before_cursor.isspace() or not before_cursor:
-                indenter(lineno)
-            else:
-                self.complete_hook.run(complete_arg)
-        else:
-            # something selected, indent/dedent block
-            first_lineno = int(sel_start.split('.')[0])
-            last_lineno = int(sel_end.split('.')[0])
-            for lineno in range(first_lineno, last_lineno+1):
-                indenter(lineno)
-                self.rstrip(lineno)
-
-        # indenting and autocomplete: don't insert the default tab
-        # dedenting: don't move focus out of this widget
-        return 'break'
-
-    def indent(self, lineno):
-        """Indent by one level.
-
-        Return the resulting number of spaces in the beginning of
-        the line.
-        """
-        line = self.get('%d.0' % lineno, '%d.0 lineend' % lineno)
-        spaces = spacecount(line)
+    def indent(self, location):
+        """Insert indentation character(s) at the given location."""
+        # TODO: add support for tabs (easy)
+        before_location = self.get('%s linestart' % location, location)
         indent = config['Editing', 'indent']
 
         # make the indent consistent, for example, add 1 space if indent
         # is 4 and there are 7 spaces
-        spaces2add = indent - (spaces % indent)
-        self.insert('%d.0' % lineno, ' ' * spaces2add)
+        spaces2add = indent - (len(before_location) % indent)
+        self.insert(location, ' ' * spaces2add)
         self.cursor_has_moved()
-        return spaces + spaces2add
 
-    def dedent(self, lineno):
-        """Unindent by one level if possible.
+    def dedent(self, location):
+        """Remove indentation character(s) if possible.
 
-        Return the resulting number of spaces in the beginning of
-        the line.
+        This method tries to remove spaces intelligently so that
+        everything's lined up evenly based on the indentation settings.
+        This method is useful for dedenting whole lines (with location
+        set to beginning of the line) or deleting whitespace in the
+        middle of a line.
+
+        This returns True if something was done, and False otherwise.
         """
-        line = self.get('%d.0' % lineno, '%d.0 lineend' % lineno)
-        spaces = spacecount(line)
-        if spaces == 0:
-            return 0
-
+        # TODO: support tabs here too
         indent = config['Editing', 'indent']
-        howmany2del = spaces % indent
-        if howmany2del == 0:
-            howmany2del = indent
-        self.delete('%d.0' % lineno, '%d.%d' % (lineno, howmany2del))
-        self.cursor_has_moved()
-        return spaces - howmany2del
+        line = self.get('%s linestart' % location, '%s lineend' % location)
+        lineno, column = map(int, self.index(location).split('.'))
 
-    def _autoindent(self):
-        """Indent or dedent the current line automatically if needed."""
-        lineno = int(self.index('insert').split('.')[0])
-        prevline = self.get('%d.0 - 1 line' % lineno, '%d.0' % lineno)
-        self.insert('insert', spacecount(prevline) * ' ')
+        if column == 0:
+            start = 0
+            end = indent
+        else:
+            start = column - (column % indent)
+            if start == column:    # prefer deleting from left side
+                start -= indent
+            end = start + indent
 
-        # we can't strip trailing whitespace before this because then
-        # pressing enter twice would get rid of all indentation
-        prevline = prevline.strip()
-        if prevline.endswith((':', '(', '[', '{')):
-            # start of a new block
-            self.indent(lineno)
-        elif (prevline in {'return', 'break', 'pass', 'continue'}
-              or prevline.startswith(('return ', 'raise '))):
-            # must be end of a block
-            self.dedent(lineno)
+        end = min(end, len(line))    # don't go past end of line
+        if start == 0:
+            # delete undersized indents
+            whitespaces = len(line) - len(line.lstrip())
+            end = min(whitespaces, end)
 
-    def rstrip(self, lineno):
-        """Strip trailing whitespace at the end of a line."""
-        line_end = '%d.0 lineend' % lineno
-        line = self.get('%d.0' % lineno, line_end)
-        spaces = spacecount(line[::-1])
-        if spaces == 0:
-            return
-
-        deleting_start = '%s - %d chars' % (line_end, spaces)
-        self.delete(deleting_start, line_end)
-
-    def _rstrip_prev_line(self):
-        """Strip whitespace after end of previous line."""
-        lineno = int(self.index('insert').split('.')[0])
-        self.rstrip(lineno-1)
+        if not line[start:end].isspace():   # ''.isspace() is False
+            return False
+        self.delete('%d.%d' % (lineno, start), '%d.%d' % (lineno, end))
+        return True
 
     def undo(self, event=None):
         try:

@@ -155,7 +155,7 @@ class TabManager(tk.Frame):
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
-        print("calling __exit__")
+        # print("calling __exit__")
         tab.__hook_context_manager.__exit__(None, None, None)
         tab.content.pack_forget()
         tab._topframe.grid_forget()

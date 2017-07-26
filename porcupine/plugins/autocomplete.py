@@ -1,8 +1,7 @@
 import collections
 import re
-import tkinter as tk
 
-from porcupine import tabs
+from porcupine import tabs, utils
 
 
 class AutoCompleter:
@@ -11,7 +10,7 @@ class AutoCompleter:
         self.textwidget = textwidget
         self._startpos = None
         self._suffixes = None
-        self._completing = False
+        self._completing = False    # avoid recursion
 
     def _find_suffixes(self):
         before_cursor = self.textwidget.get('insert linestart', 'insert')
@@ -20,7 +19,7 @@ class AutoCompleter:
         match = re.search('\w+$', before_cursor)
         if match is None:
             # can't autocomplete based on this
-            return collections.deque()
+            return None
         prefix = match.group(0)
 
         # Tcl's regexes don't support \b or a sane way of grouping so
@@ -38,31 +37,43 @@ class AutoCompleter:
 
         return collections.deque(sorted(result, key=str.casefold))
 
-    def complete(self, prev_or_next):
+    def _complete(self, rotation):
         self._completing = True
 
-        try:
-            if self._startpos is None:
-                # not completing yet
-                self._startpos = self.textwidget.index('insert')
-                self._suffixes = self._find_suffixes()
-                self._suffixes.appendleft('')  # end of completions
+        if self._suffixes is None:
+            self._startpos = self.textwidget.index('insert')
+            self._suffixes = self._find_suffixes()
+            if self._suffixes is None:
+                # no completable characters before the cursor, just give
+                # up and allow doing something else on this tab press
+                return None
+            self._suffixes.appendleft('')  # end of completions
 
-            self._suffixes.rotate(-1 if prev_or_next == 'next' else 1)
-            self.textwidget.delete(self._startpos, 'insert')
-            self.textwidget.mark_set('insert', self._startpos)
-            self.textwidget.insert(self._startpos, self._suffixes[0])
+        self._suffixes.rotate(rotation)
+        self.textwidget.delete(self._startpos, 'insert')
+        self.textwidget.mark_set('insert', self._startpos)
+        self.textwidget.insert(self._startpos, self._suffixes[0])
 
-        finally:
-            self._completing = False
+        self._completing = False
+        return 'break'
+
+    # unfortunately functools.partialmethod() is new in 3.4 :(
+    def do_previous(self, event=None): return self._complete(1)   # noqa
+    def do_next(self, event=None): return self._complete(-1)      # noqa
 
     def reset(self):
-        # deleting and inserting text might run this if this is a
-        # callback, so this must do nothing if we're currently
-        # completing
+        # deleting and inserting from _complete() runs this, so this
+        # must do nothing if we're currently completing
         if not self._completing:
             self._suffixes = None
-            self._startpos = None
+
+
+def if_nothing_selected(func):
+    def result(event):
+        if not event.widget.tag_ranges('sel'):
+            return func()
+        return None
+    return result
 
 
 def tab_callback(tab):
@@ -76,10 +87,12 @@ def tab_callback(tab):
     def do_reset(*junk):
         completer.reset()
 
-    tab.textwidget.complete_hook.connect(completer.complete)
     tab.textwidget.cursor_move_hook.connect(do_reset)
-    yield
-    tab.textwidget.complete_hook.disconnect(completer.complete)
+    with utils.temporary_bind(tab.textwidget, '<Tab>',
+                              if_nothing_selected(completer.do_next)):
+        with utils.temporary_bind(tab.textwidget, utils.shift_tab(),
+                                  if_nothing_selected(completer.do_previous)):
+            yield
     tab.textwidget.cursor_move_hook.disconnect(do_reset)
 
 

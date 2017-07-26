@@ -228,7 +228,7 @@ class _Config(collections.abc.MutableMapping):
                     info = self._infos[sectionname, configkey]
                 except KeyError:
                     # see the comments about _configparser in __init__()
-                    log.info("unknown config key %r", (section, configkey))
+                    log.info("unknown config key %r", (sectionname, configkey))
                     continue
 
                 try:

@@ -199,6 +199,60 @@ def invert_color(color):
     return '#%02x%02x%02x' % (r, g, b)
 
 
+# TODO: document this in docs/utils.rst and make a better docstring
+@contextlib.contextmanager
+def temporary_bind(widget, sequence, func):
+    """Bind and unbind a callback.
+
+    It's possible (and in Porcupine plugins, highly recommended) to use
+    ``add=True`` when binding. This way more than one function can be
+    bound to the same command.
+
+    The problem with this is that tkinter provodes no good ways to
+    unbind these functions one by one, and the ``unbind()`` method
+    always unbinds *everything* (see the source code). This function
+    only unbinds the function it bound, and doesn't touch anything else.
+
+    Use this as a context manager, like this::
+
+        with utils.temporary_bind(some_widget, '<Button-1>', on_click):
+            # now clicking the widget runs on_click() and whatever was
+            # bound before (unless on_click() returns 'break')
+            ...
+        # now on_click() doesn't run when the widget is clicked, but
+        # everything else still runs
+    """
+    not_bound_commands = widget.bind(sequence)
+    tcl_command = widget.bind(sequence, func, add=True)
+    bound_commands = widget.bind(sequence)
+    assert bound_commands.startswith(not_bound_commands)
+    new_things = bound_commands[len(not_bound_commands):]
+
+    try:
+        yield
+    finally:
+        # other stuff might be bound too while this thing was yielding
+        bound_and_stuff = widget.bind(sequence)
+        assert bound_and_stuff.count(new_things) == 1
+        widget.bind(sequence, bound_and_stuff.replace(new_things, ''))
+        widget.deletecommand(tcl_command)    # unbind() does this too
+
+
+# TODO: document this in docs/utils.rst
+def shift_tab():
+    """Return a bind keysym for binding Shift+Tab.
+
+    ``'<Shift-Tab>'`` works only on Windows and Mac OSX, but this
+    function returns a different string on different platforms, and thus
+    works pretty much everywhere.
+    """
+    if get_root().tk.call('tk', 'windowingsystem') == 'x11':
+        # even though the event keysym says Left, holding down the right
+        # shift and pressing tab also works :D
+        return '<ISO_Left_Tab>'
+    return '<Shift-Tab>'
+
+
 def copy_bindings(widget1, widget2):
     """Add all bindings of *widget1* to *widget2*.
 
