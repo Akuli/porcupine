@@ -57,43 +57,35 @@ class AutoCompleter:
         self._completing = False
         return 'break'
 
-    # unfortunately functools.partialmethod() is new in 3.4 :(
-    def do_previous(self, event=None): return self._complete(1)   # noqa
-    def do_next(self, event=None): return self._complete(-1)      # noqa
+    def on_tab(self, event, shifted):
+        if event.widget.tag_ranges('sel'):
+            # something's selected, autocompleting is probably not the
+            # right thing to do
+            return None
 
-    def reset(self):
+        if shifted:       # display the previous completion
+            return self._complete(1)
+        else:
+            return self._complete(-1)
+
+    def reset(self, *junk):
         # deleting and inserting from _complete() runs this, so this
         # must do nothing if we're currently completing
         if not self._completing:
             self._suffixes = None
 
 
-def if_nothing_selected(func):
-    def result(event):
-        if not event.widget.tag_ranges('sel'):
-            return func()
-        return None
-    return result
-
-
 def tab_callback(tab):
     if not isinstance(tab, tabs.FileTab):
-        # TODO: autocomplete in some other tabs too?
+        # TODO: autocomplete in other kinds of tabs too?
         yield
         return
 
     completer = AutoCompleter(tab.textwidget)
-
-    def do_reset(*junk):
-        completer.reset()
-
-    tab.textwidget.cursor_move_hook.connect(do_reset)
-    with utils.temporary_bind(tab.textwidget, '<Tab>',
-                              if_nothing_selected(completer.do_next)):
-        with utils.temporary_bind(tab.textwidget, utils.shift_tab(),
-                                  if_nothing_selected(completer.do_previous)):
-            yield
-    tab.textwidget.cursor_move_hook.disconnect(do_reset)
+    tab.textwidget.cursor_move_hook.connect(completer.reset)
+    with utils.temporary_tab_bind(tab.textwidget, completer.on_tab):
+        yield
+    tab.textwidget.cursor_move_hook.disconnect(completer.reset)
 
 
 def setup(editor):

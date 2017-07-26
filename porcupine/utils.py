@@ -199,19 +199,34 @@ def invert_color(color):
     return '#%02x%02x%02x' % (r, g, b)
 
 
-# TODO: document this in docs/utils.rst and make a better docstring
+# TODO: document this in docs/utils.rst
+def shift_tab():
+    """Return a bind keysym for binding Shift+Tab.
+
+    ``'<Shift-Tab>'`` works only on Windows and Mac OSX, but this
+    function returns a different string on different platforms, and thus
+    works pretty much everywhere.
+    """
+    if get_root().tk.call('tk', 'windowingsystem') == 'x11':
+        # even though the event keysym says Left, holding down the right
+        # shift and pressing tab also works :D
+        return '<ISO_Left_Tab>'
+    return '<Shift-Tab>'
+
+
+# TODO: document this in docs/utils.rst
 @contextlib.contextmanager
 def temporary_bind(widget, sequence, func):
     """Bind and unbind a callback.
 
     It's possible (and in Porcupine plugins, highly recommended) to use
     ``add=True`` when binding. This way more than one function can be
-    bound to the same command.
+    bound to the same key sequence at the same time.
 
-    The problem with this is that tkinter provodes no good ways to
-    unbind these functions one by one, and the ``unbind()`` method
-    always unbinds *everything* (see the source code). This function
-    only unbinds the function it bound, and doesn't touch anything else.
+    Unfortunately tkinter provodes no good way to unbind functions bound
+    with ``add=True`` one by one, and the ``unbind()`` method always
+    unbinds *everything* (see the source code). This function only
+    unbinds the function it bound, and doesn't touch anything else.
 
     Use this as a context manager, like this::
 
@@ -221,6 +236,9 @@ def temporary_bind(widget, sequence, func):
             ...
         # now on_click() doesn't run when the widget is clicked, but
         # everything else still runs
+
+    Calls to this function may be nested, and other things can be bound
+    inside the ``with`` block.
     """
     not_bound_commands = widget.bind(sequence)
     tcl_command = widget.bind(sequence, func, add=True)
@@ -235,22 +253,37 @@ def temporary_bind(widget, sequence, func):
         bound_and_stuff = widget.bind(sequence)
         assert bound_and_stuff.count(new_things) == 1
         widget.bind(sequence, bound_and_stuff.replace(new_things, ''))
-        widget.deletecommand(tcl_command)    # unbind() does this too
+
+        # unbind() does this too to avoid memory leaks
+        widget.deletecommand(tcl_command)
 
 
-# TODO: document this in docs/utils.rst
-def shift_tab():
-    """Return a bind keysym for binding Shift+Tab.
-
-    ``'<Shift-Tab>'`` works only on Windows and Mac OSX, but this
-    function returns a different string on different platforms, and thus
-    works pretty much everywhere.
+@contextlib.contextmanager
+def temporary_tab_bind(widget, on_tab):
     """
-    if get_root().tk.call('tk', 'windowingsystem') == 'x11':
-        # even though the event keysym says Left, holding down the right
-        # shift and pressing tab also works :D
-        return '<ISO_Left_Tab>'
-    return '<Shift-Tab>'
+    A convenience function for using :func:`.temporary_bind` with
+    ``'<Tab>'`` and :func:`.shift_tab`.
+
+    Use this function like this::
+
+        def on_tab(event, shifted):
+            # shifted is True if the user held down shift while pressing
+            # tab, and False otherwise
+            ...
+
+        with utils.temporary_tab_bind(some_widget, on_tab):
+            ...
+
+    The ``event`` argument and ``on_tab()`` return values are treated
+    just like with regular bindings.
+    """
+    def callback(shifted, event):
+        return on_tab(event, shifted)
+
+    partial = functools.partial     # pep-8 line length
+    with temporary_bind(widget, '<Tab>', partial(callback, False)):
+        with temporary_bind(widget, shift_tab(), partial(callback, True)):
+            yield
 
 
 def copy_bindings(widget1, widget2):

@@ -106,7 +106,6 @@ def tab_callback(tab):
 
     yield
 
-    # FIXME: this errors for some reason
     scrollmgr.disable()
     tab.textwidget.modified_hook.disconnect(linenumbers.do_update)
     linenumbers.destroy()

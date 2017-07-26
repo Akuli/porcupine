@@ -6,7 +6,7 @@ import tkinter.font as tkfont
 import pygments.styles
 import pygments.token
 
-from porcupine import tabs
+from porcupine import tabs, utils
 from porcupine.settings import config
 
 
@@ -59,14 +59,14 @@ class LongLineMarker(tk.Frame):
 
 
 def tab_callback(tab):
-    if not isinstance(tab, tabs.FileTab):
+    if isinstance(tab, tabs.FileTab):
+        marker = LongLineMarker(tab.textwidget)
+        with utils.temporary_bind(tab.textwidget, '<Configure>',
+                                  marker.on_configure):
+            yield
+        # destroying the textwidget will destroy the marker
+    else:
         yield
-        return
-
-    marker = LongLineMarker(tab.textwidget)
-    tab.textwidget.bind('<Configure>', marker.on_configure, add=True)
-    yield
-    # destroying the textwidget will destroy the marker
 
 
 def setup(editor):

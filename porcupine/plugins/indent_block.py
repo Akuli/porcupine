@@ -1,11 +1,9 @@
 """Allow selecting multiple lines and indenting them all at once."""
 
-import functools
-
 from porcupine import tabs, utils
 
 
-def on_tab(event, shift=False):
+def on_tab(event, shift):
     try:
         start_index, end_index = map(str, event.widget.tag_ranges('sel'))
     except ValueError as e:
@@ -33,19 +31,13 @@ def on_tab(event, shift=False):
     event.widget.tag_remove('sel', '1.0', 'end')
     event.widget.tag_add('sel', '%d.0' % start, '%d.0' % end)
 
-on_shift_tab = functools.partial(on_tab, shift=True)    # noqa
-
 
 def tab_callback(tab):
-    if not isinstance(tab, tabs.FileTab):
-        yield
-        return
-
-    print("wolo")
-    text = tab.textwidget
-    with utils.temporary_bind(text, '<Tab>', on_tab):
-        with utils.temporary_bind(text, utils.shift_tab(), on_shift_tab):
+    if isinstance(tab, tabs.FileTab):
+        with utils.temporary_tab_bind(tab.textwidget, on_tab):
             yield
+    else:
+        yield
 
 
 def setup(editor):

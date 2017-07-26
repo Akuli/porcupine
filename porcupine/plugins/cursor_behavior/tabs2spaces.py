@@ -10,12 +10,10 @@ must be loaded after all other plugins that bind tab or shift+tab.
 #   defaults (really only needs tabsize + spaces)
 # - good support for tabs instead of spaces in rest of the editor
 
-import functools
-
 from porcupine import tabs, utils
 
 
-def on_tab(event, shift_pressed=False):
+def on_tab(event, shift_pressed):
     if not event.widget.tag_ranges('sel'):
         # nothing selected
         if shift_pressed:
@@ -27,18 +25,13 @@ def on_tab(event, shift_pressed=False):
     # shift is pressed down, don't move focus out of the widget
     return 'break'
 
-on_shift_tab = functools.partial(on_tab, shift_pressed=True)   # noqa
-
 
 def tab_callback(tab):
-    if not isinstance(tab, tabs.FileTab):
-        yield
-        return
-
-    with utils.temporary_bind(tab.textwidget, '<Tab>', on_tab):
-        with utils.temporary_bind(tab.textwidget, utils.shift_tab(),
-                                  on_shift_tab):
+    if isinstance(tab, tabs.FileTab):
+        with utils.temporary_tab_bind(tab.textwidget, on_tab):
             yield
+    else:
+        yield
 
 
 def setup(editor):
