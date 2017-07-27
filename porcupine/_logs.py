@@ -73,7 +73,7 @@ def setup(verbose):
         .format(os.getpid()))
 
     printhandler = logging.StreamHandler()
-    printhandler.setLevel(logging.DEBUG if verbose else logging.ERROR)
+    printhandler.setLevel(logging.DEBUG if verbose else logging.WARNING)
     printhandler.setFormatter(fileformat if verbose else printformat)
 
     filehandler = _ClosingStreamHandler(_open_log_file())

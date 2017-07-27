@@ -8,6 +8,7 @@ import itertools
 import logging
 import os
 import pkgutil
+import platform
 import shutil
 import sys
 import threading
@@ -154,6 +155,58 @@ if running_pythonw and sys.executable.lower().endswith(r'\pythonw.exe'):
     _possible_python = sys.executable[:-5] + sys.executable[-4:]
     if os.path.isfile(_possible_python):
         python = _possible_python
+
+# get rid of symlinks and make it absolute
+python = os.path.realpath(python)
+
+
+# TODO: document quote()
+if platform.system() == 'Windows':
+    # this is mostly copy/pasted from subprocess.list2cmdline
+    def quote(string):
+        """Like shlex.quote, but for Windows.
+
+        >>> quote('test')
+        'test'
+        >>> quote('test thing')
+        '"test thing"'
+        """
+        result = []
+        needquote = False
+        bs_buf = []
+
+        needquote = (" " in string) or ("\t" in string) or not string
+        if needquote:
+            result.append('"')
+
+        for c in string:
+            if c == '\\':
+                # Don't know if we need to double yet.
+                bs_buf.append(c)
+            elif c == '"':
+                # Double backslashes.
+                result.append('\\' * len(bs_buf)*2)
+                bs_buf = []
+                result.append('\\"')
+            else:
+                # Normal char
+                if bs_buf:
+                    result.extend(bs_buf)
+                    bs_buf = []
+                result.append(c)
+
+        # Add remaining backslashes, if any.
+        if bs_buf:
+            result.extend(bs_buf)
+
+        if needquote:
+            result.extend(bs_buf)
+            result.append('"')
+
+        return ''.join(result)
+
+else:
+    from shlex import quote    # noqa
 
 
 def get_window(widget):
