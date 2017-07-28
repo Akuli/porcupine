@@ -400,9 +400,7 @@ def get_image(filename):
     # only gif images should be added to porcupine/images, other image
     # formats don't work with old Tk versions
     data = pkgutil.get_data('porcupine', 'images/' + filename)
-    result = tk.PhotoImage(format='gif', data=base64.b64encode(data))
-    print("utils.get_image: %s -> %s" % (filename, result))
-    return result
+    return tk.PhotoImage(format='gif', data=base64.b64encode(data))
 
 
 # implementation details: when cpython exits:
