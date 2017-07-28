@@ -5,11 +5,6 @@ textwidget.MainText.indent and textwidget.MainText.dedent. This plugin
 must be loaded after all other plugins that bind tab or shift+tab.
 """
 
-# TODO:
-# - language-specificly configurable indentations settings with good
-#   defaults (really only needs tabsize + spaces)
-# - good support for tabs instead of spaces in rest of the editor
-
 from porcupine import tabs, utils
 
 

@@ -7,6 +7,10 @@ import os
 import tkinter.font as tkfont
 import types
 
+# the pygments stuff is just for _validate_style_name()
+import pygments.styles
+import pygments.util
+
 from porcupine import dirs, utils
 
 log = logging.getLogger(__name__)
@@ -20,9 +24,9 @@ class InvalidValue(Exception):
     You can also catch this to check if a value is valid::
 
         try:
-            config['Editing', 'indent'] = new_indent_size
+            config['Editing', 'pygments_style'] = 'Zaab'
         except InvalidValue:
-            show_error_message()
+            print("8banana pygments styles aren't installed :(")
     """
 
 
@@ -279,7 +283,14 @@ def _validate_encoding(name):
 # this needs a tkinter root window
 def _validate_font_family(family):
     if family.casefold() not in map(str.casefold, tkfont.families()):
-        raise InvalidValue("unknown family %r" % family)
+        raise InvalidValue("unknown font family %r" % family)
+
+
+def _validate_style_name(name):
+    try:
+        pygments.styles.get_style_by_name(name)
+    except pygments.util.ClassNotFound as e:
+        raise InvalidValue(str(e)) from None
 
 
 config = _Config(os.path.join(dirs.configdir, 'settings.ini'))
@@ -287,8 +298,6 @@ config.add_key('Font', 'family', None, validator=_validate_font_family)
 config.add_int_key('Font', 'size', 10, minimum=3, maximum=1000)
 config.add_key('Files', 'encoding', 'UTF-8', validator=_validate_encoding)
 config.add_bool_key('Files', 'add_trailing_newline', True)
-config.add_bool_key('Editing', 'undo', True)
-config.add_int_key('Editing', 'indent', 4, minimum=1)
-config.add_int_key('Editing', 'maxlinelen', 79, minimum=1)
-config.add_key('Editing', 'pygments_style', 'default', reset=False)
+config.add_key('Editing', 'pygments_style', 'default', reset=False,
+               validator=_validate_style_name)
 config.add_key('GUI', 'default_size', '650x500')   # TODO: fix this

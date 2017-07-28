@@ -1,6 +1,8 @@
 """A dialog for changing the settings."""
 # This uses ttk widgets instead of tk widgets because it needs
 # ttk.Combobox anyway and mixing the widgets looks inconsistent.
+#
+# FIXME: this thing is currently outdated and broken :/
 
 import tkinter as tk
 from tkinter import ttk, messagebox

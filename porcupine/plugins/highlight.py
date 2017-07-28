@@ -14,12 +14,11 @@ import re
 import tkinter as tk
 import tkinter.font as tkfont
 
-import pygments.lexers
 import pygments.styles
 import pygments.token
 import pygments.util   # only for ClassNotFound, the docs say that it's here
 
-from porcupine import tabs
+from porcupine import filetypes, tabs
 from porcupine.settings import config
 
 
@@ -41,31 +40,15 @@ class PygmentizerProcess:
         self.process = multiprocessing.Process(target=self._run)
         self.process.start()
 
-    @staticmethod
-    @functools.lru_cache()
-    def _get_lexer(filename):
-        if filename is None:
-            return None
-
-        if filename.endswith('.py'):
-            # pygments likes python 2 :(
-            return pygments.lexers.Python3Lexer()
-
-        try:
-            return pygments.lexers.get_lexer_for_filename(filename)
-        except pygments.util.ClassNotFound:
-            return None
-
-    # filename and code -> {str(tokentype): [start1, end1, start2, end2, ...]}
-    def _pygmentize(self, filename, code):
+    # returns {str(tokentype): [start1, end1, start2, end2, ...]}
+    # TODO: send the actual FileType object instead of its name when
+    # FileTypes will support pickling
+    def _pygmentize(self, filetype_name, code):
         # pygments doesn't include any info about where the tokens are
         # so we need to do it manually :(
         lineno = 1
         column = 0
-
-        lexer = self._get_lexer(filename)
-        if lexer is None:
-            return {}
+        lexer = filetypes.filetypes[filetype_name].get_lexer()
 
         result = {}
         for tokentype, string in lexer.get_tokens(code):
@@ -98,9 +81,9 @@ class PygmentizerProcess:
 
 class Highlighter:
 
-    def __init__(self, textwidget, filename_getter):
+    def __init__(self, textwidget, filetype_name_getter):
         self.textwidget = textwidget
-        self._get_filename = filename_getter
+        self._get_filetype_name = filetype_name_getter
         self.pygmentizer = PygmentizerProcess()
 
         # the tags use fonts from here
@@ -197,7 +180,7 @@ class Highlighter:
 
     def highlight_all(self):
         code = self.textwidget.get('1.0', 'end - 1 char')
-        self.pygmentizer.in_queue.put((self._get_filename(), code))
+        self.pygmentizer.in_queue.put([self._get_filetype_name(), code])
 
 
 def tab_callback(tab):
@@ -205,7 +188,7 @@ def tab_callback(tab):
         yield
         return
 
-    highlighter = Highlighter(tab.textwidget, (lambda: tab.path))
+    highlighter = Highlighter(tab.textwidget, (lambda: tab.filetype.name))
     tab.textwidget.modified_hook.connect(highlighter.highlight_all)
     highlighter.highlight_all()
     yield
@@ -235,7 +218,7 @@ if __name__ == '__main__':
 
     # The theme doesn't display perfectly here because the highlighter
     # only does tags, not foreground, background etc. See textwidget.py.
-    highlighter = Highlighter(text)
+    highlighter = Highlighter(text, (lambda: 'Python'))
 
     with open(__file__, 'r') as f:
         text.insert('1.0', f.read())

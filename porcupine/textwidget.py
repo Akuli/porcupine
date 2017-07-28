@@ -2,6 +2,7 @@
 
 import functools
 import tkinter as tk
+import tkinter.font as tkfont
 
 import pygments.styles
 
@@ -162,10 +163,12 @@ class ThemedText(HandyText):
 
 # TODO: remove useless cursor_has_moved() calls
 class MainText(ThemedText):
-    """Don't use this. It may be renamed later."""
+    """Don't use this. It may be changed later."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # the filetype is needed for setting the tab width and indenting
+    def __init__(self, parent, filetype, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.set_filetype(filetype)
 
         partial = functools.partial     # pep8 line length
         self.bind('<BackSpace>', partial(self._on_delete, False))
@@ -191,14 +194,18 @@ class MainText(ThemedText):
         self.bind('<Control-0>', lambda event: self.on_wheel('reset'))
         utils.bind_mouse_wheel(self, self.on_wheel, prefixes='Control-')
 
-        config.connect('Editing', 'undo', self._set_undo, run_now=True)
+    def set_filetype(self, filetype):
+        self._filetype = filetype
 
-    def destroy(self):
-        config.disconnect('Editing', 'undo', self._set_undo)
-        super().destroy()
-
-    def _set_undo(self, undo):
-        self['undo'] = undo
+        # from the text(3tk) man page: "To achieve a different standard
+        # spacing, for example every 4 characters, simply configure the
+        # widget with “-tabs "[expr {4 * [font measure $font 0]}] left"
+        # -tabstyle wordprocessor”."
+        #
+        # my version is kind of minimal compared to that example, but it
+        # seems to work :)
+        font = tkfont.Font(name=self['font'], exists=True)
+        self['tabs'] = str(font.measure(' ' * filetype.indent_size))
 
     def on_wheel(self, direction):
         if direction == 'reset':
@@ -261,13 +268,15 @@ class MainText(ThemedText):
 
     def indent(self, location):
         """Insert indentation character(s) at the given location."""
-        # TODO: add support for tabs (easy)
-        before_location = self.get('%s linestart' % location, location)
-        indent = config['Editing', 'indent']
+        if not self._filetype.tabs2spaces:
+            self.insert(location, '\t')
+            return
 
-        # make the indent consistent, for example, add 1 space if indent
-        # is 4 and there are 7 spaces
-        spaces2add = indent - (len(before_location) % indent)
+        # we can't just add ' '*self._filetype.indent_size, for example,
+        # if indent_size is 4 and there are 7 charaters we add 1 space
+        spaces = self._filetype.indent_size    # pep-8 line length
+        how_many_chars = int(self.index(location).split('.')[1])
+        spaces2add = spaces - (how_many_chars % spaces)
         self.insert(location, ' ' * spaces2add)
         self.cursor_has_moved()
 
@@ -282,19 +291,24 @@ class MainText(ThemedText):
 
         This returns True if something was done, and False otherwise.
         """
-        # TODO: support tabs here too
-        indent = config['Editing', 'indent']
-        line = self.get('%s linestart' % location, '%s lineend' % location)
+        if not self._filetype.tabs2spaces:
+            one_back = '%s - 1 char' % location
+            if self.get(one_back, location) == '\t':
+                self.delete(one_back, location)
+                return True
+            return False
+
         lineno, column = map(int, self.index(location).split('.'))
+        line = self.get('%s linestart' % location, '%s lineend' % location)
 
         if column == 0:
             start = 0
-            end = indent
+            end = self._filetype.indent_size
         else:
-            start = column - (column % indent)
+            start = column - (column % self._filetype.indent_size)
             if start == column:    # prefer deleting from left side
-                start -= indent
-            end = start + indent
+                start -= self._filetype.indent_size
+            end = start + self._filetype.indent_size
 
         end = min(end, len(line))    # don't go past end of line
         if start == 0:

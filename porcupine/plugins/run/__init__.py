@@ -1,5 +1,5 @@
 """Run files when pressing F5."""
-# TODO: add more error handling
+# TODO: update this crap to not be limited to python
 
 import functools
 import logging

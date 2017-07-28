@@ -9,7 +9,7 @@ import sys
 import tkinter as tk
 
 import porcupine.editor
-from porcupine import dirs, _ipc, _logs, _pluginloader, tabs, utils
+from porcupine import _ipc, _logs, _pluginloader, dirs, filetypes, tabs, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -105,8 +105,10 @@ def main():
     log.info("running on Python %d.%d.%d from %s",
              *(list(sys.version_info[:3]) + [sys.executable]))
 
+    filetypes.init()
+
     root = tk.Tk()
-    config.load()
+    config.load()       # must be after creating the root window
 
     editor = porcupine.editor.Editor(root, destroy_callback=root.destroy)
     editor.pack(fill='both', expand=True)

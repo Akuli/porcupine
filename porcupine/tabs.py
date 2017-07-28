@@ -12,7 +12,9 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-from porcupine import dialogs, _find, textwidget, utils
+import pygments.lexers
+
+from porcupine import dialogs, filetypes, _find, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -331,9 +333,16 @@ class FileTab(Tab):
     def __init__(self, manager, content=None, *, path=None):
         super().__init__(manager)
         self.label['text'] = "New File"
-        self._path = None
         self._save_hash = None
+
+        # path and filetype are set correctly below
+        self._path = None
+        self._filetype = filetypes.filetypes['Text only']
         self.path_changed_hook = utils.CallbackHook(__name__)
+        self.filetype_changed_hook = utils.CallbackHook(__name__)
+
+        # TODO: try to guess the filetype from the content when path is None
+        self.path_changed_hook.connect(self._guess_filetype)
 
         self._orig_label_fg = self.label['fg']
         self.path_changed_hook.connect(self._update_top_label)
@@ -344,7 +353,8 @@ class FileTab(Tab):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
-            self.mainframe, width=1, height=1, wrap='none')
+            self.mainframe, self._filetype, width=1, height=1, wrap='none')
+        self.filetype_changed_hook.connect(self.textwidget.set_filetype)
         self.textwidget.modified_hook.connect(self._update_top_label)
         self.scrollbar = tk.Scrollbar(self.mainframe)
 
@@ -432,6 +442,26 @@ class FileTab(Tab):
         self._path = new_path
         if it_changes:
             self.path_changed_hook.run(new_path)
+
+    @property
+    def filetype(self):
+        """A value from :data:`porcupine.filetypes.filetypes`."""
+        return self._filetype
+
+    @filetype.setter
+    def filetype(self, filetype):
+        assert filetype in filetypes.filetypes.values()
+        self._filetype = filetype
+        self.filetype_changed_hook.run(filetype)
+
+    def _guess_filetype(self, new_path):
+        print("guessing filetype from", new_path)
+        if new_path is None:
+            # currently this should never run
+            self.filetype = filetypes.filetypes['Text only']
+        else:
+            temp_lexer = pygments.lexers.get_lexer_for_filename(new_path)
+            self.filetype = filetypes.lexer2filetype(temp_lexer)
 
     def _update_top_label(self, junk=None):
         if self.path is not None:

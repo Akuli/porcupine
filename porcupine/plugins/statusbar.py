@@ -25,15 +25,17 @@ class StatusBar(tk.Frame):
             tab = None
         self._active_tab = tab
 
-        if tab is not None:
+        if tab is None:
+            self.do_update()
+            yield
+        else:
             tab.path_changed_hook.connect(self.do_update)
+            tab.filetype_changed_hook.connect(self.do_update)
             tab.textwidget.cursor_move_hook.connect(self.do_update)
-
-        self.do_update()
-        yield
-
-        if tab is not None:
+            self.do_update()
+            yield
             tab.path_changed_hook.disconnect(self.do_update)
+            tab.filetype_changed_hook.connect(self.do_update)
             tab.textwidget.cursor_move_hook.disconnect(self.do_update)
 
     # this is do_update() because tkinter has a method called update()
@@ -43,12 +45,15 @@ class StatusBar(tk.Frame):
             self._cursor_label['text'] = ""
             return
 
-        file = self._active_tab.path
-        if file is None:
-            # use the text of the top label
-            self._file_label['text'] = self._active_tab.label['text']
+        if self._active_tab.path is None:
+            # use the text of the top label (usually "New File")
+            part1 = self._active_tab.label['text']
         else:
-            self._file_label['text'] = "File '%s'" % file
+            part1 = "File '%s'" % self._active_tab.path
+
+        # TODO: add a drop-down (or up?) menu for choosing the filetype
+        self._file_label['text'] = "%s, %s" % (
+            part1, self._active_tab.filetype.name)
 
         line, column = (self._active_tab.textwidget
                         .index('insert').split('.'))
