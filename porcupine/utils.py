@@ -1,5 +1,6 @@
 """Handy utility functions and classes."""
 
+import atexit
 import base64
 import contextlib
 import functools
@@ -384,7 +385,9 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
                     real_callback, **bind_kwargs)
 
 
-# FIXME: is lru_cache() guaranteed to hold references?
+# FIXME: is lru_cache() guaranteed to hold references? tkinter's images
+# use __del__ and it's important to hold a reference to them as long as
+# they're used somewhere
 @functools.lru_cache()
 def get_image(filename):
     """Create a ``tkinter.PhotoImage`` from a file in ``porcupine/images``.
@@ -397,7 +400,20 @@ def get_image(filename):
     # only gif images should be added to porcupine/images, other image
     # formats don't work with old Tk versions
     data = pkgutil.get_data('porcupine', 'images/' + filename)
-    return tk.PhotoImage(format='gif', data=base64.b64encode(data))
+    result = tk.PhotoImage(format='gif', data=base64.b64encode(data))
+    print("utils.get_image: %s -> %s" % (filename, result))
+    return result
+
+
+# implementation details: when cpython exits:
+#   1) atexit callbacks run
+#   2) module globals are set to None (wtf lol)
+#   3) all objects are destroyed and __del__ methods run
+#
+# the problem here is that tkinter's PhotoImage callback does "except
+# TclError", but tkinter.TclError is already None, it's not a big deal
+# but this silences those errors
+atexit.register(get_image.cache_clear)
 
 
 def errordialog(title, message, monospace_text=None):
