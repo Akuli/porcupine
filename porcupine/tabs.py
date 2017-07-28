@@ -353,7 +353,8 @@ class FileTab(Tab):
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
-            self.mainframe, self._filetype, width=1, height=1, wrap='none')
+            self.mainframe, self._filetype, width=1, height=1,
+            wrap='none', undo=True)
         self.filetype_changed_hook.connect(self.textwidget.set_filetype)
         self.textwidget.modified_hook.connect(self._update_top_label)
         self.scrollbar = tk.Scrollbar(self.mainframe)
