@@ -410,9 +410,9 @@ def get_image(filename):
 #   2) module globals are set to None (wtf lol)
 #   3) all objects are destroyed and __del__ methods run
 #
-# the problem here is that tkinter's PhotoImage callback does "except
-# TclError", but tkinter.TclError is already None, it's not a big deal
-# but this silences those errors
+# the problem here is that tkinter.Image.__del__ does "except TclError",
+# but tkinter.TclError is already None, it's not a big deal but this
+# silences those errors
 atexit.register(get_image.cache_clear)
 
 
