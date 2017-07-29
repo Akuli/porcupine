@@ -1,8 +1,6 @@
 """A dialog for changing the settings."""
 # This uses ttk widgets instead of tk widgets because it needs
 # ttk.Combobox anyway and mixing the widgets looks inconsistent.
-#
-# FIXME: this thing is currently outdated and broken :/
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -24,59 +22,35 @@ except AttributeError:
                 kwargs['from'] = from_  # this actually works
             super().__init__(master, 'ttk::spinbox', **kwargs)
 
-_PADDING = {'padx': 5, 'pady': 2}
+
+PADDING = {'padx': 5, 'pady': 2}
 
 
-class ConfigMixin:
-    """Base class for widgets that will be added to:class:`.SettingEditor`.
+class Triangle(ttk.Label):
+    """Really simple widget. Just to avoid repetitive and repetitive code."""
 
-    This class creates a warning triangle next to the widget. It's meant
-    to be shown when the user chose an invalid value.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        img = utils.get_image('triangle.gif')
 
-    This class also takes care of adding the widgets to the
-    :class:`SettingEditor`. When you have created an instance of a
-    ConfigMixin subclass just call the :meth:`~add` method.
-    """
+        # i'm not sure why this _fake_img reference doesn't cause
+        # similar problems as functools.lru_cache() in utils.get_image()
+        # (see the comments there for weird stuff)
+        self._fake_img = tk.PhotoImage(width=img.width(), height=img.height())
+        self['image'] = self._fake_img
 
-    def __init__(self, sectionwidget, **kwargs):
-        super().__init__(sectionwidget, **kwargs)
-        self._triangle = ttk.Label(sectionwidget)
+    def show(self):
+        self['image'] = utils.get_image('triangle.gif')
 
-    def show_triangle(self):
-        """Add a triangle image next to the widget.
-
-        This does nothing if the triangle is already visible.
-        """
-        self._triangle['image'] = utils.get_image('triangle.gif')
-
-    def hide_triangle(self):
-        """Hide the triangle image if it's visible."""
-        # setting the image to None doesn't work, but setting to '' does
-        self._triangle['image'] = ''
-
-    def add(self, label=None):
-        """Grid this widget correctly to the section widget.
-
-        The label can be None, a string or a Ttk widget. If it's a
-        string, a new ``ttk.Label`` will be created.
-        """
-        if label is None:
-            self.grid(row=self.master._row, column=0,
-                      columnspan=2, sticky='w', **_PADDING)
-        else:
-            if isinstance(label, str):
-                label = ttk.Label(self.master, text=label)
-            label.grid(row=self.master._row, column=0, sticky='w', **_PADDING)
-            self.grid(row=self.master._row, column=1, sticky='e', **_PADDING)
-        self._triangle.grid(row=self.master._row, column=2)
-        self.master._row += 1
+    def hide(self):
+        self['image'] = self._fake_img
 
 
-class Checkbutton(ConfigMixin, ttk.Checkbutton):
+class Checkbutton(ttk.Checkbutton):
     """A checkbutton that sets ``config[configkey]`` to True or False."""
 
-    def __init__(self, sectionwidget, configkey, **kwargs):
-        super().__init__(sectionwidget, **kwargs)
+    def __init__(self, parent, configkey, **kwargs):
+        super().__init__(parent, **kwargs)
         self._key = configkey
         self._var = self['variable'] = tk.BooleanVar()
         self._var.trace('w', self._to_config)
@@ -86,29 +60,43 @@ class Checkbutton(ConfigMixin, ttk.Checkbutton):
         config[self._key] = self._var.get()
 
 
-class Entry(ConfigMixin, ttk.Entry):
-    """An entry that sets ``config[configkey]`` to a string."""
+class Entry(ttk.Frame):
+    """A frame with an entry and a triangle label.
 
-    def __init__(self, sectionwidget, configkey, **kwargs):
-        super().__init__(sectionwidget, **kwargs)
+    The entry is available as an ``entry`` attribute. Its text is the
+    same as ``config[configkey]``.
+    """
+
+    def __init__(self, parent, configkey, **kwargs):
+        super().__init__(parent)
+        self.entry = ttk.Entry(self, **kwargs)
+        self.entry.pack(side='left', fill='both', expand=True)
+        self._triangle = Triangle(self)
+        self._triangle.pack(side='right')
+
         self._key = configkey
-        self._var = self['textvariable'] = tk.StringVar()
+        self._var = self.entry['textvariable'] = tk.StringVar()
         self._var.trace('w', self._to_config)
         config.connect(*configkey, callback=self._var.set, run_now=True)
 
     def _to_config(self, *junk):
         try:
             config[self._key] = self._var.get()
-            self.hide_triangle()
+            self._triangle.hide()
         except InvalidValue:
-            self.show_triangle()
+            self._triangle.show()
 
 
-class Spinbox(ConfigMixin, _TtkSpinbox):
+class Spinbox(ttk.Frame):
     """A spinbox widget that sets ``config[configkey]`` to an integer."""
 
-    def __init__(self, sectionwidget, configkey, **kwargs):
-        super().__init__(sectionwidget, **kwargs)
+    def __init__(self, parent, configkey, **kwargs):
+        super().__init__(parent)
+        self.spinbox = _TtkSpinbox(self, **kwargs)
+        self.spinbox.pack(side='left', fill='both', expand=True)
+        self._triangle = Triangle(self)
+        self._triangle.pack(side='right')
+
         self._key = configkey
         self._var = self['textvariable'] = tk.StringVar()
         self._var.trace('w', self._to_config)
@@ -120,21 +108,20 @@ class Spinbox(ConfigMixin, _TtkSpinbox):
     def _to_config(self, *junk):
         try:
             config[self._key] = int(self._var.get())
-            self.hide_triangle()
+            self._triangle.hide()
         except (ValueError, InvalidValue):
-            self.show_triangle()
+            self._triangle.show()
 
 
-class FontSelector(ConfigMixin, ttk.Frame):
+class FontSelector(ttk.Frame):
     """A combination of a combobox and spinbox for choosing fonts.
 
     The combobox and spinbox will change ``config[section, 'family']``
     and ``config[section, 'size']``.
     """
 
-    def __init__(self, parentwidget, section, **kwargs):
+    def __init__(self, parentwidget, **kwargs):
         super().__init__(parentwidget, **kwargs)
-        self._section = section
 
         self._familyvar = tk.StringVar()
         self._sizevar = tk.StringVar()
@@ -144,9 +131,18 @@ class FontSelector(ConfigMixin, ttk.Frame):
         size_spinbox = _TtkSpinbox(
             self, from_=3, to=1000, width=4, textvariable=self._sizevar)
         size_spinbox.pack(side='left')
+        self._triangle = Triangle(self)
+        self._triangle.pack(side='right')
 
-        config.connect(section, 'family', self._familyvar.set, run_now=True)
-        config.connect(section, 'size', self._sizevar.set, run_now=True)
+        self._fixedfont = tkfont.Font(name='TkFixedFont', exists=True)
+        config.connect('Font', 'family', self._family_from_config,
+                       run_now=True)
+
+        # tkinter converts everything to strings, so setting an integer
+        # to a StringVar works ok
+        # FIXME: can the size be negative?
+        config.connect('Font', 'size', self._sizevar.set, run_now=True)
+
         self._familyvar.trace('w', self._to_config)
         self._sizevar.trace('w', self._to_config)
 
@@ -156,143 +152,150 @@ class FontSelector(ConfigMixin, ttk.Frame):
 
     @staticmethod
     def _get_families():
-        # delete duplicates, sort and get weird of weird fonts starting
-        # with @ on windows
-        result = [family for family in tkfont.families() if family[0] != '@']
-        return sorted(set(result))
+        # get weird of weird fonts starting with @ on windows, delete
+        # duplicates with a set and sort case-insensitively
+        return sorted({family for family in tkfont.families()
+                       if family[0] != '@'}, key=str.casefold)
+
+    def _family_from_config(self, junk):
+        # config['Font', 'family'] can be None, but porcupine.settings
+        # should set all font changes to TkFixedFont
+        self._familyvar.set(self._fixedfont.actual('family'))
 
     # this is combined into one function because otherwise figuring out
     # when to show the triangle would be harder
     def _to_config(self, *junk):
         try:
-            config[self._section, 'family'] = self._familyvar.get()
-            config[self._section, 'size'] = int(self._sizevar.get())
-            self.hide_triangle()
-        except (ValueError, InvalidValue):
-            self.show_triangle()
-
-
-class _SettingEditor(ttk.Frame):
-
-    def __init__(self, *args, ok_callback=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._sections = {}
-
-        filesection = self._create_file_section()
-        editingsection = self._create_editing_section()
-        for widget in [filesection, editingsection]:
-            widget.pack(fill='x', **_PADDING)
-
-        # side='bottom' packs bottom to top, so the buttons need to be
-        # packed before the separator
-        self._create_buttons(ok_callback).pack(side='bottom', fill='x')
-        ttk.Separator(self).pack(side='bottom', fill='x', **_PADDING)
-
-    def get_section(self, title):
-        try:
-            return self._sections[title]
-        except KeyError:
-            section = ttk.LabelFrame(self, text=title)
-            section._row = 0     # see ConfigMixin.add
-            section.grid_columnconfigure(0, weight=1)
-            section.grid_columnconfigure(2, minsize=20)
-            self._sections[title] = section
-            return section
-
-    def _create_file_section(self):
-        section = self.get_section("Files")
-        entry = Entry(section, ('Files', 'encoding'))
-        entry.add("Encoding of opened and saved files:")
-        checkbox = Checkbutton(
-            section, ('Files', 'add_trailing_newline'),
-            text="Make sure that files end with an empty line when saving")
-        checkbox.add()
-        return section
-
-    def _create_editing_section(self):
-        section = self.get_section("Editing")
-        font_selector = FontSelector(section, 'Font')
-        font_selector.add("The font:")
-        indent_spinbox = Spinbox(
-            section, ('Editing', 'indent'), from_=1, to=100)
-        indent_spinbox.add("Indent size:")
-        undo_checkbox = Checkbutton(
-            section, ('Editing', 'undo'), text="Enable undo and redo")
-        undo_checkbox.add()
-        return section
-
-    def _create_buttons(self, ok_callback):
-        frame = ttk.Frame(self)
-
-        okbutton = ttk.Button(frame, width=6, text="OK")
-        okbutton.pack(side='right', **_PADDING)
-        if ok_callback is not None:
-            okbutton['command'] = ok_callback
-        resetbutton = ttk.Button(
-            frame, width=6, text="Reset", command=self.reset)
-        resetbutton.pack(side='right', **_PADDING)
-
-        return frame
-
-    def reset(self):
-        confirmed = messagebox.askyesno(
-            "Reset settings", "Do you want to reset all settings to defaults?",
-            parent=self)
-        if confirmed:
-            config.reset()
-            messagebox.showinfo(
-                "Reset settings", "All settings were set to defaults.",
-                parent=self)
+            # if family is ok and size is not the family gets set but
+            # the size doesn't, but it doesn't matter
+            config['Font', 'family'] = self._familyvar.get()
+            config['Font', 'size'] = int(self._sizevar.get())
+            self._triangle.hide()
+        except (ValueError, InvalidValue) as e:
+            self._triangle.show()
 
 
 _dialog = None
 
 
-def _init():
-    global _dialog
-    if _dialog is None:
-        _dialog = tk.Toplevel()
-        editor = _SettingEditor(_dialog, ok_callback=_dialog.withdraw)
-        editor.pack(fill='both', expand=True)
-        _dialog.title("Porcupine Settings")
-        _dialog.protocol('WM_DELETE_WINDOW', _dialog.withdraw)
-        _dialog.update()      # make the winfo stuff return correct values
-        _dialog.minsize(_dialog.winfo_reqwidth(), _dialog.winfo_reqheight())
+def get_main_area():
+    assert _dialog is not None, "init() wasn't called"
+    return _dialog._main_area
 
 
-def get_section(title):
-    """Return a ``ttk.LabelFrame`` from the setting dialog.
-
-    If there's a labelframe with *title* as its text in the setting
-    dialog, it's returned. Otherwise a new labelframe with *title* as
-    its text will be created.
-
-    .. note::
-        This function has nothing to do with the sections of
-        :data:`porcupine.settings.config`.
-    """
-    _init()
-    return _dialog.get_section(title)
-
-
-def show(parentwindow):
-    _init()
-    _dialog.transient(parentwindow)
+def show():
+    assert _dialog is not None, "init() wasn't called"
     _dialog.deiconify()
 
 
+def _reset():
+    confirmed = messagebox.askyesno(
+        "Reset", "Do you want to reset all settings to defaults?",
+        parent=_dialog)
+    if confirmed:
+        config.reset()
+        messagebox.showinfo(
+            "Reset", "All settings were set to defaults.", parent=_dialog)
+
+
+def init(parentwindow):
+    global _dialog
+    assert _dialog is None, "init() was called twice"
+
+    _dialog = tk.Toplevel()
+    _dialog.withdraw()
+    _dialog.title("Porcupine Settings")
+    _dialog.geometry('500x300')
+    _dialog.protocol('WM_DELETE_WINDOW', _dialog.withdraw)
+    _dialog.transient(parentwindow)
+
+    # create a ttk frame that fills the whole toplevel because tk
+    # widgets have a different color than ttk widgets on my system and
+    # there's no ttk.Toplevel
+    big_frame = ttk.Frame(_dialog)
+    big_frame.pack(fill='both', expand=True)
+
+    main_area = ttk.Frame(big_frame)
+    main_area.pack(fill='both', expand=True, **PADDING)
+    _dialog._main_area = main_area      # see get_main_area()
+
+    ttk.Separator(big_frame).pack(fill='x', **PADDING)
+
+    button_frame = ttk.Frame(big_frame)
+    button_frame.pack(anchor='e', **PADDING)
+    ttk.Button(button_frame, text="OK", command=_dialog.withdraw).pack(
+        side='right', **PADDING)
+    ttk.Button(button_frame, text="Reset everything", command=_reset).pack(
+        side='right', **PADDING)
+
+    general = ttk.LabelFrame(main_area, text="General")
+    general.pack(fill='x', **PADDING)
+    general.grid_columnconfigure(0, weight=1)
+
+    ttk.Label(general, text="Encoding of opened and saved files:").grid(
+        row=0, column=0, sticky='w', **PADDING)
+    Entry(general, ('Files', 'encoding')).grid(
+        row=0, column=1, sticky='e', **PADDING)
+    Checkbutton(
+        general, ('Files', 'add_trailing_newline'),
+        text="Make sure that files end with an empty line when saving"
+    ).grid(row=1, columnspan=2, sticky='we', **PADDING)
+    ttk.Label(general, text="The font:").grid(
+        row=2, column=0, sticky='w', **PADDING)
+    FontSelector(general).grid(row=2, column=1, sticky='e', **PADDING)
+    ttk.Separator(general).grid(row=3, columnspan=2, **PADDING)
+
+    langspec = ttk.LabelFrame(main_area, text="Filetype specific settings")
+    langspec.pack(fill='x', **PADDING)
+
+    def autowrap(label):
+        label.master.bind(
+            '<Configure>',
+            lambda event: label.config(wraplength=event.width),
+            add=True)
+
+    label = ttk.Label(langspec, text=(
+        "Currently there's no GUI for changing filetype specific "
+        "settings, but they're stored in filetypes.ini and you can "
+        "edit it yourself too."))
+    autowrap(label)
+    label.pack(**PADDING)
+
+    # FIXME: make a simple API for opening files
+    def shit():
+        import os
+        from porcupine import dirs, tabs
+
+        tabmgr = _dialog.nametowidget('.!editor').tabmanager  # very shit
+        path = os.path.join(dirs.configdir, 'filetypes.ini')
+        with open(path) as file:
+            tab = tabs.FileTab(tabmgr, file.read(), path=path)
+        tabmgr.add_tab(tab)
+        _dialog.withdraw()
+
+    ttk.Button(langspec, text="Edit filetypes.ini", command=shit).pack(
+        anchor='center', **PADDING)
+
+
 if __name__ == '__main__':
-    from porcupine import settings
+    from porcupine import settings, _logs
 
     root = tk.Tk()
     root.withdraw()
     config.load()
-    show(root)
+    _logs.setup(verbose=True)
+
+    init(root)
+    show()
+
+    # make the ok button and close button quit everything
+    (_dialog.winfo_children()[0].winfo_children()[-1].winfo_children()[0]
+     ['command']) = root.destroy
+    _dialog.protocol('WM_DELETE_WINDOW', root.destroy)
 
     # the dialog is usable only if we get here, so we don't need to
     # wrap the whole thing in try/finally
     try:
-        # this seems to work instead of root.mainloop()
-        _dialog.wait_window()
+        root.mainloop()
     finally:
         config.save()

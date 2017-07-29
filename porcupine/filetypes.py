@@ -234,8 +234,22 @@ def _from_config(parser):
 # TODO: add a link to porcupine's docs about this file when the docs are
 # ready for it
 _comments = '''\
-# This is Porcupine's filetype configuration file. You can
-# edit this file freely to suit your needs.
+# This is Porcupine's filetype configuration file. You can edit this
+# file freely to suit your needs.
+#
+# For example, here's Linus Torvalds style settings for C files, with
+# clang for compiling and include-what-you-use for linting:
+#
+#    [C]
+#    tabs2spaces = no
+#    indent_size = 8
+#    max_line_length = 80
+#    compile_command = clang {file} -Wall -Wextra -std=c99 -o {no_ext}
+#    run_command = ./{no_ext}
+#    lint_command = include-what-you ./{no_ext}
+#
+# I have never actually used include-what-you-use, so the lint command
+# might be incorrect. But you get the idea.
 '''
 
 

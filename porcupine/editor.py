@@ -54,9 +54,6 @@ class Editor(tk.Frame):
         super().__init__(*args, **kwargs)
         self.destroy_callback = destroy_callback
 
-        # FIXME: update the setting dialog code
-        self._settingdialog = None
-
         self.tabmanager = tabs.TabManager(self)
         self.tabmanager.pack(fill='both', expand=True)
         _create_welcome_msg(self.tabmanager.no_tabs_frame)
@@ -205,7 +202,7 @@ class Editor(tk.Frame):
         # TODO: make sure that things added by plugins appear here,
         # before the separator and "Porcupine Settings" (see get_menu)
         self.get_menu("Edit").add_separator()
-        add(self._show_setting_dialog, "Edit/Porcupine Settings...")
+        add(settingdialog.show, "Edit/Porcupine Settings...")
 
         self.get_menu("Color Themes")   # this goes between Edit and View
 
@@ -245,21 +242,6 @@ class Editor(tk.Frame):
                 value=name, variable=stylenamevar, command=set_this_style)
         config.connect('Editing', 'pygments_style', stylenamevar.set,
                        run_now=True)
-
-    def _show_setting_dialog(self):
-        if self._settingdialog is None:
-            dialog = self._settingdialog = tk.Toplevel()
-            dialog.transient('.')
-            content = settingdialog.SettingEditor(
-                dialog, ok_callback=dialog.withdraw)
-            content.pack(fill='both', expand=True)
-
-            dialog.title("Porcupine Settings")
-            dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
-            dialog.update()
-            dialog.minsize(dialog.winfo_reqwidth(), dialog.winfo_reqheight())
-        else:
-            self._settingdialog.deiconify()
 
     def _tab_changed(self, new_tab):
         # accessing __enter__ and __exit__ like this is lol, it feels

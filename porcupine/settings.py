@@ -282,8 +282,9 @@ def _validate_encoding(name):
 
 # this needs a tkinter root window
 def _validate_font_family(family):
-    if family.casefold() not in map(str.casefold, tkfont.families()):
-        raise InvalidValue("unknown font family %r" % family)
+    if family is not None:
+        if family.casefold() not in map(str.casefold, tkfont.families()):
+            raise InvalidValue("unknown font family %r" % family)
 
 
 def _validate_style_name(name):
