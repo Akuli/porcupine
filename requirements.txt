@@ -2,7 +2,10 @@
 # https://github.com/ActiveState/appdirs/blob/master/CHANGES.rst
 appdirs
 
-# this is just for the pastebin.py plugin, any python 3 compatible
+# this is just for the pastebin plugin, any python 3 compatible
 # requests should work
 # https://github.com/kennethreitz/requests/blob/master/HISTORY.rst
 requests>=0.10.1
+
+# feel free to make this version number higher if needed
+pygments>=1.6

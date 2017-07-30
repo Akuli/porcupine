@@ -8,6 +8,13 @@ from setuptools import setup, find_packages
 import porcupine
 
 
+def get_requirements():
+    with open('requirements.txt', 'r') as file:
+        for line in map(str.strip, file):
+            if (not line.startswith('#')) and line:
+                yield line
+
+
 setup(
     name='Porcupine',
     description="An editor that sucks less than IDLE",
@@ -17,9 +24,7 @@ setup(
     version=porcupine.__version__,
     copyright=porcupine.__copyright__,
     license='MIT',
-    # requests isn't really needed but most pastebins in
-    # plugins/pastebin.py use it
-    install_requires=['appdirs', 'requests', 'pygments>=1.6'],
+    install_requires=get_requirements(),
     packages=find_packages(),
     package_data={
         '': ['*.txt', '*.gif', '*.sh', '*.ini'],
