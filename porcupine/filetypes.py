@@ -276,6 +276,8 @@ _comments = '''\
 #
 # If any of these values are not specified, the values specified in the
 # DEFAULT section will be used instead.
+#
+# Restart Porcupine to apply your changes to this file.
 ''' % {'cmd or shell': ('command prompt' if platform.system() == 'Windows'
                         else 'bash')}
 

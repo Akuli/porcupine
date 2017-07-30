@@ -18,9 +18,9 @@ def bump_version(new_info, git_commit_args):
     with open(path, 'w') as f:
         f.write(content)
 
-    subprocess.call(['git', 'add', path])
-    subprocess.call(['git', 'commit'] + git_commit_args)
-    subprocess.call(['git', 'tag', 'v%d.%d.%d' % new_info])
+    subprocess.check_call(['git', 'add', path])
+    subprocess.check_call(['git', 'commit'] + git_commit_args)
+    subprocess.check_call(['git', 'tag', 'v%d.%d.%d' % new_info])
     print("Bumped version from %d.%d.%d to %d.%d.%d" % (old_info + new_info))
 
 
