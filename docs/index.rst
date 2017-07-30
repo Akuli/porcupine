@@ -2,14 +2,15 @@ Welcome to Porcupine's API documentation!
 =========================================
 
 .. toctree::
-    :maxdepth: 1
-    :caption: Contents:
+   :maxdepth: 1
+   :caption: Contents:
 
-    porcupine
-    dialogs
-    dirs
-    settings
-    utils
+   porcupine
+   dialogs
+   dirs
+   filetypes
+   settings
+   utils
 
 
 Indices and tables
