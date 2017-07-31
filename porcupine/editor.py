@@ -234,12 +234,38 @@ class Editor(tk.Frame):
 
         stylenamevar = tk.StringVar()
         for name in sorted(pygments.styles.get_all_styles()):
-            # set_this_style() runs config['Editing', 'pygments_style'] = name
-            set_this_style = functools.partial(
-                config.__setitem__, ('Editing', 'pygments_style'), name)
-            self.get_menu("Color Themes").add_radiobutton(
-                label=name.replace('-', ' ').replace('_', ' ').title(),
-                value=name, variable=stylenamevar, command=set_this_style)
+            # the command runs config['Editing', 'pygments_style'] = name
+            options = {
+                'label': name.replace('-', ' ').replace('_', ' ').title(),
+                'value': name, 'variable': stylenamevar,
+                'command': functools.partial(
+                    config.__setitem__, ('Editing', 'pygments_style'), name),
+            }
+
+            style = pygments.styles.get_style_by_name(name)
+            bg = style.background_color
+
+            # styles have a style_for_token() method, but only iterating
+            # is documented :( http://pygments.org/docs/formatterdevelopment/
+            # i'm using iter() to make sure that dict() really treats
+            # the style as an iterable of pairs instead of some other
+            # metaprogramming fanciness
+            fg = None
+            style_infos = dict(iter(style))
+            for token in [pygments.token.String, pygments.token.Text]:
+                if style_infos[token]['color'] is not None:
+                    fg = '#' + style_infos[token]['color']
+                    break
+            if fg is None:
+                # do like textwidget.ThemedText._set_style does
+                fg = (getattr(style, 'default_style', '')
+                      or utils.invert_color(bg))
+
+            options['foreground'] = options['activebackground'] = fg
+            options['background'] = options['activeforeground'] = bg
+
+            self.get_menu("Color Themes").add_radiobutton(**options)
+
         config.connect('Editing', 'pygments_style', stylenamevar.set,
                        run_now=True)
 

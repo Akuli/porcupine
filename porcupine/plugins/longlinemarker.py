@@ -42,10 +42,7 @@ class LongLineMarker:
         self.frame.place(x=where, height=self._height)
 
     def on_style_changed(self, name):
-        # styles have a style_for_token() method, but only iterating is
-        # documented :( http://pygments.org/docs/formatterdevelopment/
-        # dict(iterable_of_pairs) ftw, i'm using iter() to make sure
-        # that dict() really treats it as an iterable of pairs
+        # do the same thing as porcupine's color theme menu does
         infos = dict(iter(pygments.styles.get_style_by_name(name)))
         for tokentype in [pygments.token.Error, pygments.token.Name.Exception]:
             if tokentype in infos:
