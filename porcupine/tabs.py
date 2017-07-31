@@ -458,11 +458,11 @@ class FileTab(Tab):
     def _guess_filetype(self, new_path):
         print("guessing filetype from", new_path)
         if new_path is None:
-            # currently this should never run
+            # there's no way to "unsave a file", but a plugin might do
+            # that for whatever reason
             self.filetype = filetypes.filetypes['Text only']
         else:
-            temp_lexer = pygments.lexers.get_lexer_for_filename(new_path)
-            self.filetype = filetypes.lexer2filetype(temp_lexer)
+            self.filetype = filetypes.guess_filetype(new_path)
 
     def _update_top_label(self, junk=None):
         if self.path is not None:
