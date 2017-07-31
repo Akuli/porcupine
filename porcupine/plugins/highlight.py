@@ -178,7 +178,7 @@ class Highlighter:
         # make things laggy
         self.textwidget.after(50, self._do_highlights)
 
-    def highlight_all(self):
+    def highlight_all(self, junk=None):
         code = self.textwidget.get('1.0', 'end - 1 char')
         self.pygmentizer.in_queue.put([self._get_filetype_name(), code])
 
@@ -189,11 +189,13 @@ def tab_callback(tab):
         return
 
     highlighter = Highlighter(tab.textwidget, (lambda: tab.filetype.name))
+    tab.path_changed_hook.connect(highlighter.highlight_all)
     tab.textwidget.modified_hook.connect(highlighter.highlight_all)
     highlighter.highlight_all()
     yield
     highlighter.destroy()
     tab.textwidget.modified_hook.disconnect(highlighter.highlight_all)
+    tab.path_changed_hook.disconnect(highlighter.highlight_all)
 
 
 def setup(editor):
