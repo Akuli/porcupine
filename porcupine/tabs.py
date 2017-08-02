@@ -1,4 +1,4 @@
-r"""Tabs as in browser tabs, not \t characters."""
+"""Tabs as in browser tabs, not \t characters."""
 
 # Yes, I am aware of ``ttk.Notebook`` but it's way too limited for
 # Porcupine. I can't even add a closing button or change the color of
@@ -12,8 +12,7 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-import pygments.lexers
-
+import porcupine
 from porcupine import dialogs, filetypes, _find, textwidget, utils
 from porcupine.settings import config
 
@@ -53,16 +52,30 @@ class TabManager(tk.Frame):
         #: :attr:`current_tab` changes.
         self.tab_changed_hook = utils.CallbackHook(__name__)
 
+        def on_page_updown(shifted, event):
+            if shifted:
+                if event.keysym == 'Prior':
+                    self.move_left()
+                else:
+                    self.move_right()
+            else:
+                if event.keysym == 'Prior':
+                    self.select_left(True)
+                else:
+                    self.select_right(True)
+
+            return 'break'
+
         # These can be bound in a parent widget. Note that the callbacks
         # should be called with no arguments.
         self.bindings = [
-            ('<Control-Prior>', functools.partial(self.select_left, True)),
-            ('<Control-Next>', functools.partial(self.select_right, True)),
-            ('<Control-Shift-Prior>', self.move_left),
-            ('<Control-Shift-Next>', self.move_right),
+            ('<Control-Prior>', functools.partial(on_page_updown, False)),
+            ('<Control-Next>', functools.partial(on_page_updown, False)),
+            ('<Control-Shift-Prior>', functools.partial(on_page_updown, True)),
+            ('<Control-Shift-Next>', functools.partial(on_page_updown, True)),
         ]
         for number in range(1, 10):
-            callback = functools.partial(self._on_alt_n, number-1)
+            callback = functools.partial(self._on_alt_n, number)
             self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
     @property
@@ -116,6 +129,7 @@ class TabManager(tk.Frame):
             raise IndexError
         self.current_tab = self.tabs[index]
 
+
     def add_tab(self, tab, make_current=True):
         """Append a :class:`Tab` to this tab manager.
 
@@ -157,7 +171,6 @@ class TabManager(tk.Frame):
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
-        # print("calling __exit__")
         tab.__hook_context_manager.__exit__(None, None, None)
         tab.content.pack_forget()
         tab._topframe.grid_forget()
@@ -223,12 +236,12 @@ class TabManager(tk.Frame):
         self._swap(self.current_index, self.current_index+1)
         return True
 
-    def _on_alt_n(self, index):
+    def _on_alt_n(self, n, event):
         try:
-            self.current_index = index
+            self.current_index = n-1
             return 'break'
         except IndexError:
-            return None
+            pass
 
     def destroy(self):
         """Close all tabs and destroy all remaining child widgets.
@@ -357,8 +370,13 @@ class FileTab(Tab):
             wrap='none', undo=True)
         self.filetype_changed_hook.connect(self.textwidget.set_filetype)
         self.textwidget.modified_hook.connect(self._update_top_label)
-        self.scrollbar = tk.Scrollbar(self.mainframe)
 
+        # everything seems to work ok without this except that e.g.
+        # pressing Ctrl+O in the text widget opens a file AND inserts a
+        # newline (Tk inserts a newline by default)
+        utils.copy_bindings(porcupine.get_main_window(), self.textwidget)
+
+        self.scrollbar = tk.Scrollbar(self.mainframe)
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
 

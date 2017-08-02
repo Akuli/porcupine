@@ -4,8 +4,6 @@ import atexit
 import base64
 import contextlib
 import functools
-import io
-import itertools
 import logging
 import os
 import pkgutil
@@ -16,7 +14,7 @@ import threading
 import tkinter as tk
 import traceback
 
-from porcupine import dirs
+import porcupine
 
 log = logging.getLogger(__name__)
 
@@ -210,29 +208,6 @@ else:
     from shlex import quote    # noqa
 
 
-def get_window(widget):
-    """Return the ``tk.Tk`` or ``tk.Toplevel`` that *widget* is in."""
-    while not isinstance(widget, (tk.Tk, tk.Toplevel)):
-        widget = widget.master
-    return widget
-
-
-def get_root():
-    """Return tkinter's current root window.
-
-    Currently :class:`the editor object <porcupine.editor.Editor>` is
-    always in the root window, but don't rely on that, it may change in
-    the future.
-
-    This function returns None if no tkinter root window has been
-    created yet.
-    """
-    # tkinter's default root window is not accessible as a part of the
-    # public API, but tkinter uses _default_root everywhere so I don't
-    # think it's going away
-    return tk._default_root
-
-
 # TODO: add this to docs/utils.rst
 def invert_color(color):
     """Return a color with opposite red, green and blue values.
@@ -249,7 +224,8 @@ def invert_color(color):
     """
     # tkinter uses 16-bit colors for some reason, so gotta convert them
     # to 8-bit (with >> 8)
-    r, g, b = (0xff - (value >> 8) for value in get_root().winfo_rgb(color))
+    widget = porcupine.get_main_window()
+    r, g, b = (0xff - (value >> 8) for value in widget.winfo_rgb(color))
     return '#%02x%02x%02x' % (r, g, b)
 
 
@@ -261,7 +237,8 @@ def shift_tab():
     function returns a different string on different platforms, and thus
     works pretty much everywhere.
     """
-    if get_root().tk.call('tk', 'windowingsystem') == 'x11':
+    widget = porcupine.get_main_window()
+    if widget.tk.call('tk', 'windowingsystem') == 'x11':
         # even though the event keysym says Left, holding down the right
         # shift and pressing tab also works :D
         return '<ISO_Left_Tab>'
@@ -368,7 +345,7 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
     # what OSX does with MouseWheel events and i don't have an
     # up-to-date OSX :( the non-x11 code should work on windows and osx
     # http://stackoverflow.com/a/17457843
-    if get_root().tk.call('tk', 'windowingsystem') == 'x11':
+    if widget.tk.call('tk', 'windowingsystem') == 'x11':
         def real_callback(event):
             callback('up' if event.num == 4 else 'down')
 
@@ -378,6 +355,7 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
                     real_callback, **bind_kwargs)
 
     else:
+        # TODO: test this on OSX
         def real_callback(event):
             callback('up' if event.delta > 0 else 'down')
 
@@ -403,7 +381,7 @@ def get_image(filename):
     return tk.PhotoImage(format='gif', data=base64.b64encode(data))
 
 
-# implementation details: when cpython exits:
+# cpython exits like this:
 #   1) atexit callbacks run
 #   2) module globals are set to None (wtf lol)
 #   3) all objects are destroyed and __del__ methods run
@@ -432,7 +410,7 @@ def errordialog(title, message, monospace_text=None):
             utils.errordialog("Oh no", "Doing something failed!",
                               traceback.format_exc())
     """
-    root = get_root()
+    root = porcupine.get_main_window()
     if root is None:
         window = tk.Tk()
     else:
@@ -471,7 +449,7 @@ def run_in_thread(blocking_function, done_callback):
     called from Tk's main loop, so it can do things with Tkinter widgets
     unlike *blocking_function*.
     """
-    root = get_root()
+    root = porcupine.get_main_window()
     result = []     # [success, result]
 
     def thread_target():

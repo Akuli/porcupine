@@ -6,6 +6,7 @@ import tkinter.font as tkfont
 import pygments.styles
 import pygments.token
 
+import porcupine
 from porcupine import tabs, utils
 from porcupine.settings import config
 
@@ -24,6 +25,7 @@ class LongLineMarker:
                        self.on_style_changed, run_now=True)
         self.tab.filetype_changed_hook.connect(self.do_update)
         self.do_update()
+        return self
 
     def __exit__(self, *error):
         config.disconnect('Font', 'family', self.do_update)
@@ -62,14 +64,13 @@ class LongLineMarker:
 
 def tab_callback(tab):
     if isinstance(tab, tabs.FileTab):
-        marker = LongLineMarker(tab)
-        with utils.temporary_bind(tab.textwidget, '<Configure>',
-                                  marker.on_configure):
-            with marker:
+        with LongLineMarker(tab) as marker:
+            with utils.temporary_bind(tab.textwidget, '<Configure>',
+                                      marker.on_configure):
                 yield
     else:
         yield
 
 
-def setup(editor):
-    editor.new_tab_hook.connect(tab_callback)
+def setup():
+    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)

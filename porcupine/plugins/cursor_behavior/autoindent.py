@@ -5,6 +5,7 @@ otherwise pressing enter twice would strip all trailing whitespace from
 the blank line above the cursor, and then on_enter() wouldn't do anything.
 """
 
+import porcupine
 from porcupine import tabs, utils
 
 
@@ -51,8 +52,8 @@ def tab_callback(tab):
         yield
 
 
-def setup(editor):
-    editor.new_tab_hook.connect(tab_callback)
+def setup():
+    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)
 
 
 if __name__ == '__main__':

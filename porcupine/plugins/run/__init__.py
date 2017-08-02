@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import tkinter as tk
 
+import porcupine
 from porcupine import tabs, utils
 
 log = logging.getLogger(__name__)
@@ -104,7 +105,8 @@ def run(path):
     if path is not None:
         path = os.path.abspath(path)
 
-    windowingsystem = utils.get_root().tk.call('tk', 'windowingsystem')
+    widget = porcupine.get_main_window()    # any tk widget will do
+    windowingsystem = widget.tk.call('tk', 'windowingsystem')
     if windowingsystem == 'win32':
         _windows_run(path)
     elif windowingsystem == 'aqua' and not os.environ.get('TERMINAL', ''):
@@ -113,22 +115,22 @@ def run(path):
         _x11_like_run(path)
 
 
-def setup(editor):
-    def run_this_file():
-        filetab = editor.tabmanager.current_tab
-        if filetab.path is None or not filetab.is_saved():
-            filetab.save()
-        if filetab.path is None:
-            # user cancelled a save as dialog
-            return
-        run(filetab.path)
+def run_this_file():
+    filetab = porcupine.get_tab_manager().current_tab
+    if filetab.path is None or not filetab.is_saved():
+        filetab.save()
+    if filetab.path is None:
+        # user cancelled a save as dialog
+        return
+    run(filetab.path)
 
+
+def setup():
     open_prompt = functools.partial(run, None)
-
-    editor.add_action(run_this_file, "Run/Run File", "F5", "<F5>",
-                      [tabs.FileTab])
-    editor.add_action(open_prompt, "Run/Interactive Prompt",
-                      "Ctrl+I", "<Control-i>")
+    porcupine.add_action(run_this_file, "Run/Run File", ("F5", "<F5>"),
+                         [tabs.FileTab])
+    porcupine.add_action(open_prompt, "Run/Interactive Prompt",
+                         ("Ctrl+I", "<Control-i>"))
 
 
 if __name__ == '__main__':

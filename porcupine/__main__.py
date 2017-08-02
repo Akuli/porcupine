@@ -8,7 +8,7 @@ from queue import Empty         # queue is a handy variable name
 import sys
 import tkinter as tk
 
-import porcupine.editor
+import porcupine
 from porcupine import (_ipc, _logs, _pluginloader, dirs, filetypes,
                        settingdialog, tabs, utils)
 from porcupine.settings import config
@@ -24,13 +24,13 @@ def _iter_queue(queue):
             break
 
 
-def open_content(editor, content, path):
-    tab = tabs.FileTab(editor.tabmanager, content, path=path)
-    utils.copy_bindings(editor, tab.textwidget)
-    editor.tabmanager.add_tab(tab)
+def open_content(content, path):
+    tab = tabs.FileTab(porcupine.get_tab_manager(), content, path=path)
+    #utils.copy_bindings(editor, tab.textwidget)
+    porcupine.get_tab_manager().add_tab(tab)
 
 
-def queue_opener(editor, queue):
+def queue_opener(queue):
     gonna_focus = False
     for path, content in _iter_queue(queue):
         # if porcupine is running and the user runs it again without any
@@ -38,18 +38,18 @@ def queue_opener(editor, queue):
         # the editor window
         gonna_focus = True
         if content is not None:
-            open_content(editor, content, path)
+            open_content(content, path)
 
     if gonna_focus:
-        utils.get_root().focus_set()
+        porcupine.get_main_window().focus_set()
 
-    editor.after(200, queue_opener, editor, queue)
+    porcupine.get_main_window().after(200, queue_opener, queue)
 
 
 def main():
-    # sys.argv[0] is '__main__.py', so we can't use that as the prog.
+    # sys.argv[0] is '__main__.py', so we can't use that as the prog
     # these hard-coded progs are wrong in some situations, but at least
-    # better than '__main__.py'.
+    # better than '__main__.py'
     if platform.system() == 'Windows':
         prog = 'py -m porcupine'
     else:
@@ -65,7 +65,7 @@ def main():
     parser.add_argument(
         'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         type=argparse.FileType("r"),
-        help="open these files when the editor starts, - means stdin")
+        help="open these files when Porcupine starts, - means stdin")
     parser.add_argument(
         '--verbose', action='store_true',
         help="print same debugging messages to stderr as to log file")
@@ -109,30 +109,22 @@ def main():
     filetypes.init()
 
     root = tk.Tk()
-    config.load()       # must be after creating the root window
-    settingdialog.init(root)
-
-    editor = porcupine.editor.Editor(root, destroy_callback=root.destroy)
-    editor.pack(fill='both', expand=True)
-
-    root['menu'] = editor.menubar
-    root.geometry(config['GUI', 'default_size'])
+    porcupine.init(root)
     root.title("Porcupine")
-    root.protocol('WM_DELETE_WINDOW', editor.do_quit)
+    root.geometry(config['GUI', 'default_size'])
+    root.protocol('WM_DELETE_WINDOW', porcupine.quit)
 
-    # the root window has focus when there are no tabs, the bindings
-    # must be copied after loading the plugins
-    _pluginloader.load(editor, args.shuffle_plugins)
-    utils.copy_bindings(editor, root)
+    _pluginloader.load(shuffle=args.shuffle_plugins)
+    #utils.copy_bindings(editor, root)   # includes bindings added by plugins
 
     for path, contents in filelist:
         if contents is not None:
-            open_content(editor, contents, path)
+            open_content(contents, path)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing
     with _ipc.session() as queue:
-        root.after_idle(queue_opener, editor, queue)
+        root.after_idle(queue_opener, queue)
         try:
             root.mainloop()
         finally:

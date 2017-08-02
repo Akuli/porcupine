@@ -12,9 +12,9 @@ from . import autoindent, rstrip, tabs2spaces
 setup_after = ['autocomplete', 'indent_block']
 
 
-def setup(editor):
+def setup():
     # the order of some of these things matters, see the docstrings in
     # other files for more info
-    autoindent.setup(editor)
-    rstrip.setup(editor)
-    tabs2spaces.setup(editor)
+    autoindent.setup()
+    rstrip.setup()
+    tabs2spaces.setup()

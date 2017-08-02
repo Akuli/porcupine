@@ -2,12 +2,15 @@
 # This uses ttk widgets instead of tk widgets because it needs
 # ttk.Combobox anyway and mixing the widgets looks inconsistent.
 
+import functools
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter.font as tkfont
 
+import porcupine
 from porcupine import utils
-from porcupine.settings import config, InvalidValue
+from porcupine.settings import config, dirs, InvalidValue
 
 try:
     # There's no ttk.Spinbox for some reason. Maybe this will be fixed
@@ -198,16 +201,16 @@ def _reset():
             "Reset", "All settings were set to defaults.", parent=_dialog)
 
 
-def init(parentwindow):
+def init():
     global _dialog
     assert _dialog is None, "init() was called twice"
 
-    _dialog = tk.Toplevel()
+    _dialog = tk.Toplevel(porcupine.get_main_window())
+    _dialog.transient(porcupine.get_main_window())
     _dialog.withdraw()
     _dialog.title("Porcupine Settings")
     _dialog.geometry('500x300')
     _dialog.protocol('WM_DELETE_WINDOW', _dialog.withdraw)
-    _dialog.transient(parentwindow)
 
     # create a ttk frame that fills the whole toplevel because tk
     # widgets have a different color than ttk widgets on my system and
@@ -248,37 +251,26 @@ def init(parentwindow):
     langspec = ttk.LabelFrame(main_area, text="Filetype specific settings")
     langspec.pack(fill='x', **PADDING)
 
-    def autowrap(label):
-        label.master.bind(
-            '<Configure>',
-            lambda event: label.config(wraplength=event.width),
-            add=True)
-
     label = ttk.Label(langspec, text=(
         "Currently there's no GUI for changing filetype specific "
         "settings, but they're stored in filetypes.ini and you can "
         "edit it yourself too."))
-    autowrap(label)
+    langspec.bind(      # automatic wrapping
+        '<Configure>',
+        lambda event: label.config(wraplength=event.width),
+        add=True)
     label.pack(**PADDING)
 
-    # FIXME: make a simple API for opening files
-    def shit():
-        import os
-        from porcupine import dirs, tabs
-
-        tabmgr = _dialog.nametowidget('.!editor').tabmanager  # very shit
-        path = os.path.join(dirs.configdir, 'filetypes.ini')
-        with open(path) as file:
-            tab = tabs.FileTab(tabmgr, file.read(), path=path)
-        tabmgr.add_tab(tab)
+    def edit_it():
+        porcupine.open_file(os.path.join(dirs.configdir, 'filetypes.ini'))
         _dialog.withdraw()
 
-    ttk.Button(langspec, text="Edit filetypes.ini", command=shit).pack(
-        anchor='center', **PADDING)
+    button = ttk.Button(langspec, text="Edit filetypes.ini", command=edit_it)
+    button.pack(anchor='center', **PADDING)
 
 
 if __name__ == '__main__':
-    from porcupine import settings, _logs
+    from porcupine import _logs
 
     root = tk.Tk()
     root.withdraw()

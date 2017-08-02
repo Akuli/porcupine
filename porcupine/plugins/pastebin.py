@@ -1,3 +1,5 @@
+# FIXME: this is way too python-specific :(
+
 import functools
 import logging
 import os
@@ -11,6 +13,7 @@ try:
 except ImportError:
     requests = None
 
+import porcupine
 from porcupine import tabs, utils
 from porcupine import __version__ as _porcupine_version
 try:
@@ -181,7 +184,14 @@ class Paste:
 
     def make_please_wait_window(self):
         window = self.please_wait_window = tk.Toplevel()
-        window.transient(utils.get_root())
+        window.transient(porcupine.get_main_window())
+        window.title("Pasting...")
+        window.geometry('350x150')
+        window.resizable(False, False)
+
+        # disable the close button, there's no good way to cancel this
+        # forcefully :(
+        window.protocol('WM_DELETE_WINDOW', (lambda: None))
 
         label = tk.Label(
             window, font=('', 12, ''),
@@ -192,33 +202,26 @@ class Paste:
         progressbar.pack(fill='x', padx=15, pady=15)
         progressbar.start()
 
-        # disable the close button
-        window.protocol('WM_DELETE_WINDOW', (lambda: None))
-
-        window.title("Pasting...")
-        window.geometry('350x150')
-        window.resizable(False, False)
-
     def start(self):
-        root = utils.get_root()
-        busy_status = utils.get_root().tk.call('tk', 'busy', 'status', root)
-        if root.getboolean(busy_status):
+        window = porcupine.get_main_window()
+        busy_status = window.tk.call('tk', 'busy', 'status', window)
+        if window.getboolean(busy_status):
             # we are already pasting something somewhere or something
             # else is being done
-            log.info("'tk busy status %s' returned 1", root)
+            log.info("'tk busy status %s' returned 1", window)
             return
 
         log.debug("starting to paste to %s", self.pastebin_name)
 
-        root.tk.call('tk', 'busy', 'hold', root)
+        window.tk.call('tk', 'busy', 'hold', window)
         self.make_please_wait_window()
         paste_it = functools.partial(
             _pastebins[self.pastebin_name], self.content, self.origin)
         utils.run_in_thread(paste_it, self.done_callback)
 
     def done_callback(self, success, result):
-        root = utils.get_root()
-        root.tk.call('tk', 'busy', 'forget', root)
+        window = porcupine.get_main_window()
+        window.tk.call('tk', 'busy', 'forget', window)
         self.please_wait_window.destroy()
 
         if success:
@@ -226,7 +229,7 @@ class Paste:
             dialog = SuccessDialog(result)
             dialog.title("Pasting Succeeded")
             dialog.geometry('450x150')
-            dialog.transient(utils.get_root())
+            dialog.transient(window)
             dialog.wait_window()
         else:
             # result is the traceback as a string
@@ -238,27 +241,28 @@ class Paste:
                 monospace_text=result)
 
 
-def setup(editor):
-    def start_pasting(pastebin_name):
-        tab = editor.tabmanager.current_tab
-        try:
-            code = tab.textwidget.get('sel.first', 'sel.last')
-        except tk.TclError:
-            # nothing is selected, pastebin everything
-            code = tab.textwidget.get('1.0', 'end - 1 char')
-        if isinstance(tab, tabs.FileTab):
-            origin = tab.path
-        else:
-            origin = '>>>'
+def start_pasting(pastebin_name):
+    tab = porcupine.get_tab_manager().current_tab
+    try:
+        code = tab.textwidget.get('sel.first', 'sel.last')
+    except tk.TclError:
+        # nothing is selected, pastebin everything
+        code = tab.textwidget.get('1.0', 'end - 1 char')
 
-        paste = Paste(pastebin_name, code, origin)
-        paste.start()
+    if isinstance(tab, tabs.FileTab):
+        origin = tab.path
+    else:
+        origin = '>>>'      # FIXME
 
+    Paste(pastebin_name, code, origin).start()
+
+
+def setup():
     tabtypes = [tabs.FileTab]
     if pythonprompt is not None:
         tabtypes.append(pythonprompt.PromptTab)
 
     for name in sorted(_pastebins, key=str.casefold):
-        assert '/' not in name
+        assert '/' not in name, "porcupine.add_action() needs to be fixed"
         callback = functools.partial(start_pasting, name)
-        editor.add_action(callback, "Share/" + name, tabtypes=tabtypes)
+        porcupine.add_action(callback, "Share/" + name, tabtypes=tabtypes)

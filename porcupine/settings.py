@@ -1,7 +1,6 @@
 import codecs
 import collections.abc
 import configparser
-import functools
 import logging
 import os
 import tkinter.font as tkfont

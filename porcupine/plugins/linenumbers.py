@@ -2,6 +2,7 @@
 
 import tkinter as tk
 
+import porcupine
 from porcupine import tabs
 from porcupine.textwidget import ThemedText
 
@@ -111,8 +112,8 @@ def tab_callback(tab):
     linenumbers.destroy()
 
 
-def setup(editor):
-    editor.new_tab_hook.connect(tab_callback)
+def setup():
+    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)
 
 
 if __name__ == '__main__':

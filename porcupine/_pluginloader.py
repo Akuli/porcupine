@@ -20,8 +20,7 @@ Plugin = namedtuple('Plugin', 'name setup setup_after')
 # to store state and a class makes sense
 class PluginLoader:
 
-    def __init__(self, editor, plugins):
-        self._editor = editor
+    def __init__(self, plugins):
         self._all_plugins = {}
         self._states = {}
         for plugin in plugins:
@@ -29,11 +28,11 @@ class PluginLoader:
             self._states[plugin.name] = 'waiting'
 
     def _raw_load(self, plugin):
-        log.debug("running %s.setup", plugin.name)
+        log.debug("running %s.setup()", plugin.name)
         try:
-            plugin.setup(self._editor)
+            plugin.setup()
         except Exception:
-            log.exception("%s.setup doesn't work", plugin.name)
+            log.exception("%s.setup() doesn't work", plugin.name)
 
     def load(self, name):
         if self._states[name] == 'loaded':
@@ -64,7 +63,7 @@ class PluginLoader:
         self._states[name] = 'loaded'
 
 
-def load(editor, shuffle):
+def load(shuffle=False):
     modulenames = []
     for path in porcupine.plugins.__path__:
         # this handles directories and files
@@ -96,6 +95,6 @@ def load(editor, shuffle):
 
     # modulenames contains modules that failed to import, must not use
     # it here
-    loader = PluginLoader(editor, plugins)
+    loader = PluginLoader(plugins)
     for plugin in plugins:
         loader.load(plugin.name)

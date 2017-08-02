@@ -1,6 +1,7 @@
 import collections
 import re
 
+import porcupine
 from porcupine import tabs, utils
 
 
@@ -88,5 +89,5 @@ def tab_callback(tab):
     tab.textwidget.cursor_move_hook.disconnect(completer.reset)
 
 
-def setup(editor):
-    editor.new_tab_hook.connect(tab_callback)
+def setup():
+    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)

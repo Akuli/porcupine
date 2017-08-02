@@ -1,7 +1,7 @@
 import tkinter as tk
 
+import porcupine
 from porcupine import tabs
-from porcupine import __version__ as _porcupine_version
 
 # i have experimented with a logging handler that displays logging
 # messages in the label, but it's not as good idea as it sounds like,
@@ -10,8 +10,8 @@ from porcupine import __version__ as _porcupine_version
 
 class StatusBar(tk.Frame):
 
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._active_tab = None
 
         self._file_label = tk.Label(self)
@@ -20,28 +20,28 @@ class StatusBar(tk.Frame):
         self._cursor_label.pack(side='right')
 
     def tab_callback(self, tab):
-        if not isinstance(tab, tabs.FileTab):
-            # ignore other kinds of tabs for now
-            tab = None
-        self._active_tab = tab
+        if self._active_tab is not None:
+            self._active_tab.path_changed_hook.disconnect(self.do_update)
+            self._active_tab.filetype_changed_hook.connect(self.do_update)
+            self._active_tab.textwidget.cursor_move_hook.disconnect(
+                self.do_update)     # pep-8 line length
 
-        if tab is None:
-            self.do_update()
-            yield
-        else:
+        if not isinstance(tab, tabs.FileTab):
+            # FIXME: don't ignore other tabs
+            tab = None
+
+        self._active_tab = tab
+        if tab is not None:
             tab.path_changed_hook.connect(self.do_update)
             tab.filetype_changed_hook.connect(self.do_update)
             tab.textwidget.cursor_move_hook.connect(self.do_update)
-            self.do_update()
-            yield
-            tab.path_changed_hook.disconnect(self.do_update)
-            tab.filetype_changed_hook.connect(self.do_update)
-            tab.textwidget.cursor_move_hook.disconnect(self.do_update)
+        self.do_update()
 
     # this is do_update() because tkinter has a method called update()
     def do_update(self, *junk):
         if self._active_tab is None:
-            self._file_label['text'] = "Welcome to Porcupine %s!" % _porcupine_version
+            self._file_label['text'] = ("Welcome to Porcupine %s!"
+                                        % porcupine.__version__)
             self._cursor_label['text'] = ""
             return
 
@@ -60,11 +60,11 @@ class StatusBar(tk.Frame):
         self._cursor_label['text'] = "Line %s, column %s" % (line, column)
 
 
-def setup(editor):
-    statusbar = StatusBar(editor, relief='sunken')
-    editor.tab_changed_hook.connect(statusbar.tab_callback)
-    statusbar.do_update()
-
-    # TODO: convert the find/replace area into a plugin and make sure
-    # that it's always above the statusbar?
+def setup():
+    # TODO: add a frame to the main window for plugins to add stuff like
+    # this?
+    statusbar = StatusBar(porcupine.get_main_window(), relief='sunken')
     statusbar.pack(side='bottom', fill='x')
+    porcupine.get_tab_manager().tab_changed_hook.connect(
+        statusbar.tab_callback)
+    statusbar.do_update()

@@ -5,6 +5,7 @@ textwidget.MainText.indent and textwidget.MainText.dedent. This plugin
 must be loaded after all other plugins that bind tab or shift+tab.
 """
 
+import porcupine
 from porcupine import tabs, utils
 
 
@@ -29,5 +30,5 @@ def tab_callback(tab):
         yield
 
 
-def setup(editor):
-    editor.new_tab_hook.connect(tab_callback)
+def setup():
+    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)

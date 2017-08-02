@@ -1,11 +1,10 @@
-# flake8: noqa
 import sys
-assert sys.version_info >= (3, 3), "Porcupine requires Python 3.3 or newer"
-import tkinter     # just to make sure it's there
+assert sys.version_info >= (3, 3), "Porcupine requires Python 3.3 or newer"  # noqa
+import os
+import re
+import tkinter      # noqa  # just to make sure it's there
 
-from setuptools import setup, find_packages
-
-import porcupine
+from setuptools import setup, find_packages  # noqa
 
 
 def get_requirements():
@@ -15,24 +14,38 @@ def get_requirements():
                 yield line
 
 
+def find_metadata():
+    with open(os.path.join('porcupine', '__init__.py')) as file:
+        content = file.read()
+
+    result = dict(re.findall(
+        r'''^__(author|copyright|license)__ = ['"](.*)['"]$''',
+        content, re.MULTILINE))
+    assert result.keys() == {'author', 'copyright', 'license'}, result
+
+    # version is defined like this:  version = '%d.%d.%d' % version_info
+    version_info = re.search(r'^version_info = \((\d+), (\d+), (\d+)\)',
+                             content, re.MULTILINE).groups()
+    result['version'] = '%s.%s.%s' % version_info
+
+    return result
+
+
 setup(
     name='Porcupine',
     description="An editor that sucks less than IDLE",
     keywords='editor tkinter idle beginner suck',
     url='https://github.com/Akuli/porcupine',
-    author=porcupine.__author__,
-    version=porcupine.__version__,
-    copyright=porcupine.__copyright__,
-    license='MIT',
-    install_requires=get_requirements(),
+    install_requires=list(get_requirements()),
     packages=find_packages(),
     package_data={
         '': ['*.txt', '*.gif', '*.sh', '*.ini'],
         # this is needed because porcupine/images isn't a package
         'porcupine': ['images/*'],
     },
-    entry_points = {
+    entry_points={
         'gui_scripts': ['porcupine = porcupine.__main__:main'],
     },
     zip_safe=False,
+    **find_metadata()       # must not end with , before python 3.5
 )

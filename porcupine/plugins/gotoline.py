@@ -1,21 +1,22 @@
 from tkinter import simpledialog
 
+import porcupine
 from porcupine import tabs
 
 
-def setup(editor):
-    def gotoline():
-        lineno = simpledialog.askinteger(
-            "Go to Line", "Type a line number and press Enter:")
-        if lineno is None:    # cancelled
-            return
+def gotoline():
+    lineno = simpledialog.askinteger(
+        "Go to Line", "Type a line number and press Enter:")
+    if lineno is None:    # cancelled
+        return
 
-        tab = editor.tabmanager.current_tab
-        column = tab.textwidget.index('insert').split('.')[1]
-        location = '%d.%s' % (lineno, column)
-        tab.textwidget.mark_set('insert', location)
-        tab.textwidget.see(location)
-        tab.on_focus()
+    tab = porcupine.get_tab_manager().current_tab
+    column = tab.textwidget.index('insert').split('.')[1]
+    tab.textwidget.mark_set('insert', '%d.%s' % (lineno, column))
+    tab.textwidget.see('insert')
+    tab.on_focus()
 
-    editor.add_action(gotoline, 'Edit/Go to Line', 'Ctrl+L', '<Control-l>',
-                      tabtypes=[tabs.FileTab])
+
+def setup():
+    porcupine.add_action(gotoline, 'Edit/Go to Line',
+                         ('Ctrl+L', '<Control-l>'), tabtypes=[tabs.FileTab])

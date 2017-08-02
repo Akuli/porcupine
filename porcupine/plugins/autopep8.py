@@ -1,7 +1,7 @@
 import platform
 import subprocess
-from tkinter import messagebox
 
+import porcupine
 from porcupine import tabs, utils
 
 
@@ -43,20 +43,21 @@ def run_autopep8(code):
     return output.decode('utf-8')
 
 
-def setup(editor):
-    def on_click():
-        widget = editor.tabmanager.current_tab.textwidget
-        before = widget.get('1.0', 'end - 1 char')
-        after = run_autopep8(before)
-        if after is None:
-            # error
-            return
+def on_click():
+    widget = porcupine.get_tab_manager().current_tab.textwidget
+    before = widget.get('1.0', 'end - 1 char')
+    after = run_autopep8(before)
+    if after is None:
+        # error
+        return
 
-        if before != after:
-            widget['autoseparators'] = False
-            widget.delete('1.0', 'end - 1 char')
-            widget.insert('1.0', after)
-            widget.edit_separator()
-            widget['autoseparators'] = True
+    if before != after:
+        widget['autoseparators'] = False
+        widget.delete('1.0', 'end - 1 char')
+        widget.insert('1.0', after)
+        widget.edit_separator()
+        widget['autoseparators'] = True
 
-    editor.add_action(on_click, "Tools/autopep8", tabtypes=[tabs.FileTab])
+
+def setup():
+    porcupine.add_action(on_click, "Tools/autopep8", tabtypes=[tabs.FileTab])

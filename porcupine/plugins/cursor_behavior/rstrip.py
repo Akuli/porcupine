@@ -1,5 +1,6 @@
 """Remove trailing whitespace when enter is pressed."""
 
+import porcupine
 from porcupine import tabs, utils
 
 
@@ -24,5 +25,5 @@ def tab_callback(tab):
         yield
 
 
-def setup(editor):
-    editor.new_tab_hook.connect(tab_callback)
+def setup():
+    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)

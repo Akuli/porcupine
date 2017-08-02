@@ -7,10 +7,8 @@
 #       highlighting it line by line
 # TODO: better support for different languages in the rest of the editor
 
-import functools
 import multiprocessing
 import queue
-import re
 import tkinter as tk
 import tkinter.font as tkfont
 
@@ -18,6 +16,7 @@ import pygments.styles
 import pygments.token
 import pygments.util   # only for ClassNotFound, the docs say that it's here
 
+import porcupine
 from porcupine import filetypes, tabs
 from porcupine.settings import config
 
@@ -198,8 +197,8 @@ def tab_callback(tab):
     tab.path_changed_hook.disconnect(highlighter.highlight_all)
 
 
-def setup(editor):
-    editor.new_tab_hook.connect(tab_callback)
+def setup():
+    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)
 
 
 if __name__ == '__main__':
