@@ -320,10 +320,12 @@ def temporary_tab_bind(widget, on_tab):
 def copy_bindings(widget1, widget2):
     """Add all bindings of *widget1* to *widget2*.
 
-    You should call ``copy_bindings(editor, focusable_widget)`` on all
-    widgets that can be focused by clicking them, like ``Text`` and
-    ``Entry`` widgets. This way porcupine's keyboard bindings will work
-    with all widgets.
+    You may need to call ``copy_bindings(porcupine.get_main_window(), widget)``
+    on widgets that can be focused by clicking them, like ``Text`` and
+    ``Entry`` widgets. Porcupine's keyboard bindings return ``'break'``
+    and are bound to the main window, and thus work by default, but in
+    some cases returning ``'break'`` doesn't do anything when the focus
+    is in another widget inside the main window.
     """
     # tkinter's bind() can do quite a few different things depending
     # on how it's invoked

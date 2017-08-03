@@ -111,7 +111,7 @@ def main():
 
     # see queue_opener()
     for path, content in filelist:
-        if content is not None:
+        if (path, content) != (None, None):
             porcupine.open_file(path, content)
 
     # the user can change the settings only if we get here, so there's

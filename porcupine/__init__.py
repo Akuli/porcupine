@@ -61,13 +61,13 @@ def get_tab_manager():
 
 
 def new_file():
-    """Add a "New File" tab to the editor."""
+    """Add a "New File" tab to the tab manager."""
     tabmanager = get_tab_manager()
     tabmanager.add_tab(tabs.FileTab(tabmanager))
 
 
 def open_file(path, content=None):
-    """Open an existing file in the editor.
+    """Open an existing file in Porcupine.
 
     If *path* is None, the content will be inserted to a "New File" tab.
 
@@ -110,7 +110,7 @@ def add_action(callback, menupath=None, keyboard_shortcut=(None, None),
         def print_hello():
             print("hello")
 
-        editor.add_action(print_hello, "Hello/Hello World")
+        porcupine.add_action(print_hello, "Hello/Hello World")
     """
     tabtypes = tuple((
         # isinstance(None, type(None)) is True
