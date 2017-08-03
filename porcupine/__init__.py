@@ -15,7 +15,7 @@ their keyboard shortcuts.
 """
 
 
-version_info = (0, 26, 0)        # this is updated with bump.py
+version_info = (0, 26, 2)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'
@@ -66,14 +66,20 @@ def new_file():
     tabmanager.add_tab(tabs.FileTab(tabmanager))
 
 
-def open_file(path):
+def open_file(path, content=None):
     """Open an existing file in the editor.
 
-    :exc:`UnicodeError` or :exc:`OSError` is raised if the file cannot
-    be read.
+    If *path* is None, the content will be inserted to a "New File" tab.
+
+    If *content* is None, it will be read from the *path* using
+    :func:`open`. In that case, :exc:`UnicodeError` or :exc:`OSError`
+    may be raised.
+
+    At least one of *path* and *content* must be non-None.
     """
-    with open(path, 'r', encoding=config['Files', 'encoding']) as file:
-        content = file.read()
+    if content is None:
+        with open(path, 'r', encoding=config['Files', 'encoding']) as file:
+            content = file.read()
 
     tabmanager = get_tab_manager()
     tab = tabs.FileTab(tabmanager, content, path=path)

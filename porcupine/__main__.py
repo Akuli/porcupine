@@ -9,8 +9,7 @@ import sys
 import tkinter as tk
 
 import porcupine
-from porcupine import (_ipc, _logs, _pluginloader, dirs, filetypes,
-                       settingdialog, tabs, utils)
+from porcupine import _ipc, _logs, _pluginloader, dirs, filetypes
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -24,12 +23,6 @@ def _iter_queue(queue):
             break
 
 
-def open_content(content, path):
-    tab = tabs.FileTab(porcupine.get_tab_manager(), content, path=path)
-    #utils.copy_bindings(editor, tab.textwidget)
-    porcupine.get_tab_manager().add_tab(tab)
-
-
 def queue_opener(queue):
     gonna_focus = False
     for path, content in _iter_queue(queue):
@@ -37,13 +30,13 @@ def queue_opener(queue):
         # arguments, then path and content are None and we just focus
         # the editor window
         gonna_focus = True
-        if content is not None:
-            open_content(content, path)
+        if (path, content) != (None, None):
+            porcupine.open_file(path, content)
 
+    window = porcupine.get_main_window()
     if gonna_focus:
-        porcupine.get_main_window().focus_set()
-
-    porcupine.get_main_window().after(200, queue_opener, queue)
+        window.focus_set()      # FIXME
+    window.after(200, queue_opener, queue)
 
 
 def main():
@@ -90,7 +83,7 @@ def main():
             print("The", ("file" if len(filelist) == 1 else "files"),
                   "will be opened in the already running Porcupine.")
         else:
-            # see comments in queue_opener()
+            # see queue_opener()
             _ipc.send([(None, None)])
             print("Porcupine is already running.")
         return
@@ -115,11 +108,11 @@ def main():
     root.protocol('WM_DELETE_WINDOW', porcupine.quit)
 
     _pluginloader.load(shuffle=args.shuffle_plugins)
-    #utils.copy_bindings(editor, root)   # includes bindings added by plugins
 
-    for path, contents in filelist:
-        if contents is not None:
-            open_content(contents, path)
+    # see queue_opener()
+    for path, content in filelist:
+        if content is not None:
+            porcupine.open_file(path, content)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing

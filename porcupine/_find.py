@@ -128,7 +128,7 @@ class Finder(tk.Frame):
             end = '%s + %d chars' % (start, len(find_text))
             self._textwidget.delete(start, end)
             self._textwidget.insert(start, replace_text)
-            start = '%s + %d chars' % (start, len(replace_text)+1)
+            start = '%s + %d chars' % (start, len(replace_text)+1)  # noqa
             count += 1
 
         if count == 1:

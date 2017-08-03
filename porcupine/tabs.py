@@ -1,4 +1,4 @@
-"""Tabs as in browser tabs, not \t characters."""
+r"""Tabs as in browser tabs, not \t characters."""
 
 # Yes, I am aware of ``ttk.Notebook`` but it's way too limited for
 # Porcupine. I can't even add a closing button or change the color of
@@ -129,7 +129,6 @@ class TabManager(tk.Frame):
             raise IndexError
         self.current_tab = self.tabs[index]
 
-
     def add_tab(self, tab, make_current=True):
         """Append a :class:`Tab` to this tab manager.
 
@@ -226,19 +225,19 @@ class TabManager(tk.Frame):
         """
         if self.current_index in {None, 0}:
             return False
-        self._swap(self.current_index, self.current_index-1)
+        self._swap(self.current_index, self.current_index-1)    # noqa
         return True
 
     def move_right(self):
         """Like :meth:`move_left`, but moves right."""
-        if self.current_index in {None, len(self.tabs)-1}:
+        if self.current_index in {None, len(self.tabs)-1}:   # noqa
             return False
-        self._swap(self.current_index, self.current_index+1)
+        self._swap(self.current_index, self.current_index+1)    # noqa
         return True
 
     def _on_alt_n(self, n, event):
         try:
-            self.current_index = n-1
+            self.current_index = n - 1
             return 'break'
         except IndexError:
             pass
@@ -408,10 +407,10 @@ class FileTab(Tab):
         # the same time as FileTabs are
         # note that this returns False when the paths of both tabs are
         # None, so it's possible to have multiple "New File" tabs
-        return (isinstance(other, FileTab)
-                and self.path is not None
-                and other.path is not None
-                and os.path.samefile(self.path, other.path))
+        return (isinstance(other, FileTab) and
+                self.path is not None and
+                other.path is not None and
+                os.path.samefile(self.path, other.path))
 
     def _get_hash(self):
         result = hashlib.md5()

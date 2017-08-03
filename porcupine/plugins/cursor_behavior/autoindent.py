@@ -34,8 +34,8 @@ def after_enter(textwidget):
     if prevline.endswith((':', '(', '[', '{')):
         # start of a new block
         textwidget.indent('insert')
-    elif (prevline in {'return', 'break', 'pass', 'continue'}
-            or prevline.startswith(('return ', 'raise '))):
+    elif (prevline in {'return', 'break', 'pass', 'continue'} or
+          prevline.startswith(('return ', 'raise '))):
         # must be end of a block
         textwidget.dedent('insert')
 

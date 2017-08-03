@@ -184,7 +184,7 @@ if platform.system() == 'Windows':
                 bs_buf.append(c)
             elif c == '"':
                 # Double backslashes.
-                result.append('\\' * len(bs_buf)*2)
+                result.append('\\' * len(bs_buf)*2)     # noqa
                 bs_buf = []
                 result.append('\\"')
             else:

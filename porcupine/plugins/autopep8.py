@@ -7,7 +7,7 @@ from porcupine import tabs, utils
 
 def run_autopep8(code):
     try:
-        import autopep8
+        import autopep8     # noqa
     except ImportError:
         # this command is wrong in some cases, but most of the time
         # it's ok

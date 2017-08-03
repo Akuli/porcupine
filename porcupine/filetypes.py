@@ -215,10 +215,11 @@ class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
                      value_token=pygments.token.String):
         for regex, token in [(value, value_token),
                              (r'.*?', pygments.token.Name)]:
-            yield (r'(%s)([^\S\n]*)(=)([^\S\n]*)(%s)$' % (key, regex),
-                   pygments.lexer.bygroups(
-                        key_token, pygments.token.Text,
-                        pygments.token.Operator, pygments.token.Text, token))
+            yield (
+                r'(%s)([^\S\n]*)(=)([^\S\n]*)(%s)$' % (key, regex),
+                pygments.lexer.bygroups(
+                    key_token, pygments.token.Text,
+                    pygments.token.Operator, pygments.token.Text, token))
 
     tokens = {'root': list(itertools.chain(
         [(r'\s*#.*?$', pygments.token.Comment)],

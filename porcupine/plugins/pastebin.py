@@ -236,8 +236,8 @@ class Paste:
             log.error("pasting failed\n%s" % result)
             utils.errordialog(
                 "Pasting Failed",
-                "Check your internet connection and try again.\n\n"
-                + "Here's the full error message:",
+                ("Check your internet connection and try again.\n\n" +
+                 "Here's the full error message:"),
                 monospace_text=result)
 
 
