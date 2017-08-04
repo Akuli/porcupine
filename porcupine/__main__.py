@@ -99,8 +99,6 @@ def main():
     log.info("running on Python %d.%d.%d from %s",
              *(list(sys.version_info[:3]) + [sys.executable]))
 
-    filetypes.init()
-
     root = tk.Tk()
     porcupine.init(root)
     root.title("Porcupine")

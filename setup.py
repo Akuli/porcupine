@@ -23,7 +23,7 @@ def find_metadata():
         content, re.MULTILINE))
     assert result.keys() == {'author', 'copyright', 'license'}, result
 
-    # version is defined like this:  version = '%d.%d.%d' % version_info
+    # version is defined like this: __version__ = '%d.%d.%d' % version_info
     version_info = re.search(r'^version_info = \((\d+), (\d+), (\d+)\)',
                              content, re.MULTILINE).groups()
     result['version'] = '%s.%s.%s' % version_info

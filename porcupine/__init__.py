@@ -34,7 +34,8 @@ import pygments.token
 
 # these are mostly for init(), "import porcupine" isn't guaranteed to
 # import any of this
-from porcupine import dialogs, dirs, menubar, settingdialog, tabs, utils
+from porcupine import (dialogs, dirs, filetypes, menubar,
+                       settingdialog, tabs, utils)
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -321,8 +322,9 @@ def init(window):
     _tab_manager.pack(fill='both', expand=True)
     _make_welcome_msg(_tab_manager.no_tabs_frame)
     for binding, callback in _tab_manager.bindings:
-        window.bind(binding, callback)
+        window.bind(binding, callback, add=True)
 
+    filetypes.init()
     dirs.makedirs()
     config.load()
     settingdialog.init()
