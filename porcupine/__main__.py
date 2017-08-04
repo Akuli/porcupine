@@ -9,7 +9,7 @@ import sys
 import tkinter as tk
 
 import porcupine
-from porcupine import _ipc, _logs, _pluginloader, dirs, filetypes
+from porcupine import _ipc, _logs, _pluginloader, dirs
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
