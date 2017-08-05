@@ -53,9 +53,10 @@ def init(window):
 
 
 def quit():
-    """If possible, close all tabs and call ``get_main_window().destroy()``.
+    """If all tabs can be closed, close them and destroy the main window.
 
-    .. seealso:: :func:`get_main_window`
+    .. seealso:: :meth:`porcupine.tabs.Tab.can_be_closed`,
+                 :func:`~get_main_window`
     """
     for tab in _tab_manager.tabs:
         if not tab.can_be_closed():
@@ -63,8 +64,11 @@ def quit():
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    # this should destroy all porcupine's widgets, including the tab
-    # manager (destroying it closes all tabs)
+    # the tab list must be copied because closing a tab removes it from
+    # the list
+    for tab in _tab_manager.tabs.copy():
+        _tab_manager.close_tab(tab)
+
     _main_window.destroy()
 
 
@@ -116,9 +120,8 @@ def _setup_actions():
                 continue
 
     def close_current_tab():
-        tab = _tab_manager.current_tab
-        if tab.can_be_closed():
-            tab.close()
+        if _tab_manager.current_tab.can_be_closed():
+            _tab_manager.close_tab(_tab_manager.current_tab)
 
     add_action(new_file, "File/New File", ("Ctrl+N", '<Control-n>'))
     add_action(open_files, "File/Open", ("Ctrl+O", '<Control-o>'))

@@ -167,16 +167,20 @@ class TabManager(tk.Frame):
         self.event_generate('<<NewTab>>')
         return tab
 
-    # this is called only from Tab.close()
-    def _remove_tab(self, tab):
+    def close_tab(self, tab):
+        """Remove a tab from the tab manager.
+
+        The tab is also destroyed, so it cannot be added back to the tab
+        manager later.
+        """
         if tab is self.current_tab:
             # go to next or previous tab if there are other tabs,
             # otherwise unselect the tab
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
-        tab.pack_forget()
-        tab._topframe.grid_forget()
+        tab.destroy()
+        tab._topframe.destroy()
 
         # the grid columns of topframes of tabs after this change, so we
         # need to take care of that
@@ -256,7 +260,7 @@ class TabManager(tk.Frame):
         # need to loop over a copy because closing a tab also removes it
         # from self.tabs
         for tab in self.tabs.copy():
-            tab.close()
+            self.close_tab(tab)
         super().destroy()
 
 
@@ -276,14 +280,13 @@ class Tab(tk.Frame):
                                   border=1, padx=10, pady=3)
         self._topframe.bind('<Button-1>', select_me)
 
-        # TODO: rename this to top_label
         self.top_label = tk.Label(self._topframe)
         self.top_label.pack(side='left')
         self.top_label.bind('<Button-1>', select_me)
 
         def _close_if_can(event):
             if self.can_be_closed():
-                self.close()
+                manager.close_tab(self)
 
         closebutton = tk.Label(
             self._topframe, image=utils.get_image('closebutton.gif'))
@@ -301,17 +304,6 @@ class Tab(tk.Frame):
         subclass.
         """
         return True
-
-    # TODO: replace this with a TabManager.close_tab() method and
-    # binding <Destroy>
-    def close(self):
-        """Remove this tab from the tab manager.
-
-        Call ``super().close()`` if you override this in a subclass.
-        """
-        self.master._remove_tab(self)
-        self._topframe.destroy()
-        self.destroy()
 
     def on_focus(self):
         """This is called when the tab is selected.
@@ -596,8 +588,8 @@ if __name__ == '__main__':
     tk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
 
     def on_ctrl_w(event):
-        if tabmgr.tabs:
-            tabmgr.current_tab.close()
+        if tabmgr.tabs:    # current_tab is not None
+            tabmgr.close_tab(tabmgr.current_tab)
 
     root.bind('<Control-w>', on_ctrl_w)
     for keysym, callback in tabmgr.bindings:
