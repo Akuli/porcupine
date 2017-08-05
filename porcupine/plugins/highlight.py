@@ -189,12 +189,12 @@ def on_new_tab(event):
 
     def on_destroy(event):
         highlighter.destroy()
-        tab.textwidget.modified_hook.disconnect(highlighter.highlight_all)
         tab.path_changed_hook.disconnect(highlighter.highlight_all)
 
     highlighter = Highlighter(tab.textwidget, (lambda: tab.filetype.name))
     tab.path_changed_hook.connect(highlighter.highlight_all)
-    tab.textwidget.modified_hook.connect(highlighter.highlight_all)
+    tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all,
+                        add=True)
     tab.content.bind('<Destroy>', on_destroy, add=True)
     highlighter.highlight_all()
 

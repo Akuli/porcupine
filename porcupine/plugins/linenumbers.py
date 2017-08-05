@@ -42,7 +42,7 @@ class LineNumbers(ThemedText):
         self.bind('<Double-Button-1>', self._on_double_click)
         self.bind('<Button1-Motion>', self._on_drag)
 
-    def do_update(self):
+    def do_update(self, *junk):
         """This should be ran when the line count changes."""
         linecount = int(self.textwidget.index('end - 1 char').split('.')[0])
         if linecount > self._linecount:
@@ -92,14 +92,8 @@ def on_new_tab(event):
     linenumbers = LineNumbers(tab.mainframe, tab.textwidget)
     linenumbers.pack(side='left', fill='y')
     ScrollManager(tab.scrollbar, tab.textwidget, [linenumbers]).enable()
-    tab.textwidget.modified_hook.connect(linenumbers.do_update)
+    tab.textwidget.bind('<<ContentChanged>>', linenumbers.do_update, add=True)
     linenumbers.do_update()
-
-    def on_destroy(event):
-        # linenumbers will be destroyed automatically
-        tab.textwidget.modified_hook.disconnect(linenumbers.do_update)
-
-    tab.textwidget.bind('<Destroy>', on_destroy)
 
 
 def setup():

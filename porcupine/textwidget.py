@@ -14,31 +14,40 @@ class HandyText(tk.Text):
     """Like ``tkinter.Text``, but with some handy features.
 
     All arguments are passed to ``tkinter.Text``.
+
+    Virtual events:
+
+    ``<<ContentChanged>>``
+        This event is generated when the text in the widget is modified
+        in any way, and it's implemented with ``<<Modified>>``. Unlike
+        ``<<Modified>>``, this event is simply generated every time the
+        content changes, and there's no need to unset a flag like
+        ``textwidget.edit_modified(False)`` or anything like that.
+
+        .. note::
+            Don't use ``<<Modified>>`` or ``edit_modified()`` with
+            HandyText. That would conflict with the
+            ``<<ContentChanged>>`` implementation.
+
+    ``<<CursorMoved>>``
+        This event is generated every time the user moves the cursor or
+        it's moved with a method of the text widget. Use
+        ``textwidget.index('insert')`` to find the current cursor
+        position.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._cursorpos = (1, 0)
-
-        #: This :class:`porcupine.utils.CallbackHook` will be ran when
-        #: the user moves the cursor. It will be ran with the line and
-        #: column numbers as arguments, where 1 is the first line and 0
-        #: is the first column.
-        self.cursor_move_hook = utils.CallbackHook(__name__)
-
-        #: This :class:`porcupine.utils.CallbackHook` will be ran with
-        #: no arguments when the user changes the content of the widget
-        #: in any way or methods like ``insert()`` or ``delete()`` are
-        #: used. Use this instead of binding ``<<Modified>>``.
-        self.modified_hook = utils.CallbackHook(__name__)
 
         def cursor_move(event):
             self.after_idle(self.cursor_has_moved)
 
+        self._cursorpos = '1.0'
         for keysym in [
                 '<Button-1>', '<Key>', '<<Undo>>', '<<Redo>>',
                 '<<Cut>>', '<<Copy>>', '<<Paste>>', '<<Selection>>']:
             self.bind(keysym, cursor_move, add=True)
+
         self._modified_id = self.bind('<<Modified>>', self._do_modified)
 
     def _do_modified(self, event):
@@ -46,25 +55,29 @@ class HandyText(tk.Text):
         self.unbind('<<Modified>>', self._modified_id)
         self.edit_modified(False)
         self._modified_id = self.bind('<<Modified>>', self._do_modified)
-        self.modified_hook.run()
+        self.event_generate('<<ContentChanged>>')
         self.cursor_has_moved()
 
     def cursor_has_moved(self):
         """Call this when the cursor may have moved.
 
         This does nothing if the cursor hasn't actually moved, so you
-        don't need to worry about calling this too often. You may need
-        to use ``after_idle`` if you are calling this from an event
-        handler::
+        don't need to worry about calling this too often.
+
+        You may need to use ``after_idle`` if you are calling this from
+        an event handler::
 
             def the_bind_callback(event):
                 ...
                 handytext.after_idle(handytext.cursor_has_moved)
+
+        Event handlers are ran before anything happens, and this way
+        ``handytext.cursor_has_moved()`` runs *after* the event has been
+        processed and the cursor has actually moved.
         """
-        line, column = map(int, self.index('insert').split('.'))
-        if (line, column) != self._cursorpos:
-            self._cursorpos = (line, column)
-            self.cursor_move_hook.run(line, column)
+        if self.index('insert') != self._cursorpos:
+            self._cursorpos = self.index('insert')
+            self.event_generate('<<CursorMoved>>')
 
     # TODO: override more movy methods
     @functools.wraps(tk.Text.insert)

@@ -313,7 +313,7 @@ def add_action(callback, menupath=None, keyboard_shortcut=(None, None),
                 menuindex, state=('normal' if enable else 'disabled'))
 
         tab_changed(_tab_manager.current_tab)
-        _tab_manager.bind('<<CurrentTabChanged>>', tab_changed)
+        _tab_manager.bind('<<CurrentTabChanged>>', tab_changed, add=True)
 
     if binding is not None:
         # TODO: check if it's already bound

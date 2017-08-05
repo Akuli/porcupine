@@ -376,7 +376,8 @@ class FileTab(Tab):
             self.mainframe, self._filetype, width=1, height=1,
             wrap='none', undo=True)
         self.filetype_changed_hook.connect(self.textwidget.set_filetype)
-        self.textwidget.modified_hook.connect(self._update_top_label)
+        self.textwidget.bind('<<ContentChanged>>', self._update_top_label,
+                             add=True)
 
         # everything seems to work ok without this except that e.g.
         # pressing Ctrl+O in the text widget opens a file AND inserts a
@@ -521,10 +522,6 @@ class FileTab(Tab):
             return self.save()
         # no was clicked, can be closed
         return True
-
-    def close(self):
-        super().close()
-        self.textwidget.modified_hook.disconnect(self._update_top_label)
 
     def on_focus(self):
         self.textwidget.focus()
