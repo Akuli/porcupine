@@ -303,14 +303,17 @@ def add_action(callback, menupath=None, keyboard_shortcut=(None, None),
                          accelerator=accelerator)
         menuindex = menu.index('end')
 
-        def tab_changed(new_tab):
-            if isinstance(new_tab, tabtypes):
-                menu.entryconfig(menuindex, state='normal')
-            else:
-                menu.entryconfig(menuindex, state='disabled')
+        def tab_changed(event):
+            try:
+                enable = isinstance(_tab_manager.tabs[-1], tabtypes)
+            except IndexError:
+                # no tabs
+                enable = False
+            menu.entryconfig(
+                menuindex, state=('normal' if enable else 'disabled'))
 
         tab_changed(_tab_manager.current_tab)
-        _tab_manager.tab_changed_hook.connect(tab_changed)
+        _tab_manager.bind('<<CurrentTabChanged>>', tab_changed)
 
     if binding is not None:
         # TODO: check if it's already bound

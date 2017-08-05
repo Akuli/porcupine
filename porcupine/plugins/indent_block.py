@@ -33,10 +33,11 @@ def on_tab(event, shifted):
     event.widget.tag_add('sel', '%d.0' % start, '%d.0' % end)
 
 
-def tab_callback(tab):
+def on_new_tab(event):
+    tab = event.widget.tabs[-1]
     if isinstance(tab, tabs.FileTab):
-        utils.bind_tab_key(tab.textwidget, on_tab)
+        utils.bind_tab_key(tab.textwidget, on_tab, add=True)
 
 
 def setup():
-    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)
+    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)

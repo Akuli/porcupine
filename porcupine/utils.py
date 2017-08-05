@@ -276,7 +276,7 @@ def temporary_bind(widget, sequence, func):
 
 
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
-def bind_tab_key(widget, on_tab):
+def bind_tab_key(widget, on_tab, **bind_kwargs):
     """A convenience function for binding Tab and Shift+Tab.
 
     Use this function like this::
@@ -286,7 +286,7 @@ def bind_tab_key(widget, on_tab):
             # tab, and False otherwise
             ...
 
-        utils.bind_tab(some_widget, on_tab)
+        utils.bind_tab(some_widget, on_tab, add=True)
 
     The ``event`` argument and ``on_tab()`` return values are treated
     just like with regular bindings.
@@ -307,8 +307,8 @@ def bind_tab_key(widget, on_tab):
     else:
         shift_tab = '<Shift-Tab>'
 
-    widget.bind('<Tab>', functools.partial(callback, False), add=True)
-    widget.bind(shift_tab, functools.partial(callback, True), add=True)
+    widget.bind('<Tab>', functools.partial(callback, False), **bind_kwargs)
+    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)
 
 
 def copy_bindings(widget1, widget2):

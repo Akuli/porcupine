@@ -63,11 +63,12 @@ class LongLineMarker:
         self.do_update()
 
 
-def tab_callback(tab):
-    if isinstance(tab, tabs.FileTab):
-        marker = LongLineMarker(tab)
+def on_new_tab(event):
+    new_tab = event.widget.tabs[-1]
+    if isinstance(new_tab, tabs.FileTab):
+        marker = LongLineMarker(new_tab)
         marker.setup()
 
 
 def setup():
-    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)
+    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)

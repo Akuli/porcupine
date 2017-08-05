@@ -40,7 +40,8 @@ def after_enter(textwidget):
         textwidget.dedent('insert')
 
 
-def tab_callback(tab):
+def on_new_tab(event):
+    tab = event.widget.tabs[-1]
     if isinstance(tab, tabs.FileTab):
         def bind_callback(event):
             tab.textwidget.after_idle(after_enter, tab.textwidget)
@@ -49,7 +50,7 @@ def tab_callback(tab):
 
 
 def setup():
-    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)
+    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
 
 
 if __name__ == '__main__':

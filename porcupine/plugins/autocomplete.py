@@ -76,8 +76,9 @@ class AutoCompleter:
             self._suffixes = None
 
 
-def tab_callback(tab):
+def on_new_tab(event):
     # TODO: autocomplete in other kinds of tabs too?
+    tab = event.widget.tabs[-1]
     if not isinstance(tab, tabs.FileTab):
         return
 
@@ -85,11 +86,11 @@ def tab_callback(tab):
         tab.textwidget.cursor_move_hook.disconnect(completer.reset)
 
     completer = AutoCompleter(tab.textwidget)
-    utils.bind_tab_key(tab.textwidget, completer.on_tab)
+    utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
 
     tab.textwidget.cursor_move_hook.connect(completer.reset)
     tab.textwidget.bind('<Destroy>', on_destroy)
 
 
 def setup():
-    porcupine.get_tab_manager().new_tab_hook.connect(tab_callback)
+    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)

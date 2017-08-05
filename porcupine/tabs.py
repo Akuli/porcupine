@@ -24,6 +24,24 @@ class TabManager(tk.Frame):
 
     The tabs attribute is meant to be read-only. The results of
     modifying it are undefined.
+
+    Virtual events:
+
+    ``<<NewTab>>``
+        This runs after a new tab has been added to this tab manager
+        with :meth:`~add_tab`. The tab is always added to the end of
+        :attr:`~tabs`, so you can access it with
+        ``event.widget.tabs[-1]``.
+
+        Bind to the ``<Destroy>`` event of e.g. :attr:`.Tab.content` if
+        you want to clean up something when the tab is closed.
+
+    ``<<CurrentTabChanged>>``
+        This runs when the user selects another tab or Porcupine does it
+        for some reason. Use ``event.widget.current_tab`` to get or set
+        the currently selected tab.
+
+        .. seealso:: :attr:`~current_tab`
     """
 
     def __init__(self, *args, **kwargs):
@@ -42,18 +60,6 @@ class TabManager(tk.Frame):
         self._current_tab = None
         self.no_tabs_frame = tk.Frame(self)
         self.no_tabs_frame.pack(fill='both', expand=True)
-
-        #: This :class:`porcupine.utils.CallbackHook` is ran with a
-        #: :class:`.Tab` as the only argument when a new tab is added to
-        #: the tab manager. The tab's ``content`` frame is destroyed
-        #: when the tab is closed, so you can bind to its ``<Destroy>``
-        #: method if you need to clean up something when the tab is
-        #: destroyed.
-        self.new_tab_hook = utils.CallbackHook(__name__)
-
-        #: This :class:`porcupine.utils.CallbackHook` is ran when the
-        #: :attr:`current_tab` changes.
-        self.tab_changed_hook = utils.CallbackHook(__name__)
 
         def on_page_updown(shifted, event):
             if shifted:
@@ -111,7 +117,7 @@ class TabManager(tk.Frame):
             tab.on_focus()
 
         self._current_tab = tab
-        self.tab_changed_hook.run(tab)
+        self.event_generate('<<CurrentTabChanged>>')
 
     @property
     def current_index(self):
@@ -153,13 +159,12 @@ class TabManager(tk.Frame):
 
         tab._topframe.grid(row=0, column=len(self.tabs))
         self.tabs.append(tab)
-        if self.current_tab is None:
-            # this is the first tab
+        if self.current_tab is None or make_current:
+            # this is the first tab or it's supposed to become the
+            # current tab for some other reason
             self.current_tab = tab
 
-        self.new_tab_hook.run(tab)
-        if make_current:
-            self.current_tab = tab
+        self.event_generate('<<NewTab>>')
         return tab
 
     # this is called only from Tab.close()
@@ -254,6 +259,8 @@ class TabManager(tk.Frame):
         super().destroy()
 
 
+# TODO: replace self.content with inheritance because flat is better
+# than nested and utils.CallbackHook is stupid
 class Tab:
     """A tab that can be added to :class:`TabManager`."""
 
@@ -295,6 +302,8 @@ class Tab:
         """
         return True
 
+    # TODO: replace this with a TabManager.close_tab() method and
+    # binding <Destroy>
     def close(self):
         """Remove this tab from the tab manager.
 

@@ -19,13 +19,14 @@ class StatusBar(tk.Frame):
         self._cursor_label = tk.Label(self)
         self._cursor_label.pack(side='right')
 
-    def tab_callback(self, tab):
+    def on_current_tab_changed(self, event):
         if self._active_tab is not None:
             self._active_tab.path_changed_hook.disconnect(self.do_update)
             self._active_tab.filetype_changed_hook.connect(self.do_update)
             self._active_tab.textwidget.cursor_move_hook.disconnect(
                 self.do_update)     # pep-8 line length
 
+        tab = event.widget.tabs[-1]
         if not isinstance(tab, tabs.FileTab):
             # FIXME: don't ignore other tabs
             tab = None
@@ -65,6 +66,6 @@ def setup():
     # this?
     statusbar = StatusBar(porcupine.get_main_window(), relief='sunken')
     statusbar.pack(side='bottom', fill='x')
-    porcupine.get_tab_manager().tab_changed_hook.connect(
-        statusbar.tab_callback)
+    porcupine.get_tab_manager().bind(
+        '<<CurrentTabChanged>>', statusbar.on_current_tab_changed, add=True)
     statusbar.do_update()
