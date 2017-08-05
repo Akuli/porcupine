@@ -24,16 +24,14 @@ class LongLineMarker:
         config.connect('Editing', 'pygments_style',
                        self.on_style_changed, run_now=True)
         self.tab.textwidget.bind('<Configure>', self.on_configure, add=True)
-        self.tab.filetype_changed_hook.connect(self.do_update)
-        self.do_update()
-
+        self.tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
         self.tab.bind('<Destroy>', self.on_destroy, add=True)
+        self.do_update()
 
     def on_destroy(self, event):
         config.disconnect('Font', 'family', self.do_update)
         config.disconnect('Font', 'size', self.do_update)
         config.disconnect('Editing', 'pygments_style', self.on_style_changed)
-        self.tab.filetype_changed_hook.disconnect(self.do_update)
 
     def do_update(self, junk=None):
         column = self.tab.filetype.max_line_length

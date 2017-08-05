@@ -20,12 +20,11 @@ class StatusBar(tk.Frame):
         self._cursor_label.pack(side='right')
 
     def on_new_tab(self, event):
-        tab = event.widget.tabs[-1]
-
         # do_update() can get called more often than necessary, but it
         # doesn't matter
-        tab.path_changed_hook.connect(self.do_update)
-        tab.filetype_changed_hook.connect(self.do_update)
+        tab = event.widget.tabs[-1]
+        tab.bind('<<PathChanged>>', self.do_update, add=True)
+        tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
         tab.textwidget.bind('<<CursorMoved>>', self.do_update, add=True)
 
     def on_tab_changed(self, event):
@@ -36,7 +35,7 @@ class StatusBar(tk.Frame):
         self.do_update()
 
     # this is do_update() because tkinter has a method called update()
-    def do_update(self, *junk):
+    def do_update(self, junk=None):
         if self._current_tab is None:
             self._file_label['text'] = ("Welcome to Porcupine %s!"
                                         % porcupine.__version__)

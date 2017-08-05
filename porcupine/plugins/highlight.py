@@ -100,14 +100,14 @@ class Highlighter:
         self._on_config_changed()
         self.textwidget.after(50, self._do_highlights)
 
-    def destroy(self):
+    def destroy(self, junk=None):
         config.disconnect('Editing', 'pygments_style', self._on_config_changed)
         config.disconnect('Font', 'family', self._on_config_changed)
         config.disconnect('Font', 'size', self._on_config_changed)
 
-        # print("terminating", repr(self.pygmentizer.process))
+        #print("terminating", repr(self.pygmentizer.process))
         self.pygmentizer.process.terminate()
-        # print("terminated", repr(self.pygmentizer.process))
+        #print("terminated", repr(self.pygmentizer.process))
 
     def _on_config_changed(self, junk=None):
         # when the font family or size changes, self.textwidget['font']
@@ -187,15 +187,11 @@ def on_new_tab(event):
     if not isinstance(tab, tabs.FileTab):
         return
 
-    def on_destroy(event):
-        highlighter.destroy()
-        tab.path_changed_hook.disconnect(highlighter.highlight_all)
-
     highlighter = Highlighter(tab.textwidget, (lambda: tab.filetype.name))
-    tab.path_changed_hook.connect(highlighter.highlight_all)
+    tab.bind('<<FiletypeChanged>>', highlighter.highlight_all, add=True)
     tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all,
                         add=True)
-    tab.bind('<Destroy>', on_destroy, add=True)
+    tab.bind('<Destroy>', highlighter.destroy, add=True)
     highlighter.highlight_all()
 
 

@@ -159,12 +159,12 @@ class PromptTab(tabs.Tab):
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
 
+        self.bind('<Destroy>', self.on_destroy, add=True)
+
     def on_focus(self):
         self.textwidget.focus()
 
-    def close(self):
-        super().close()
-
+    def _on_destroy(self, event):
         # TODO: what if terminating blocks? maybe a timeout and fall
         # back to killing?
         try:

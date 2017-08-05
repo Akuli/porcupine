@@ -340,24 +340,29 @@ class FileTab(Tab):
     The tab will have *content* in it by default when it's opened. If
     *path* is given, the file will be saved there when the user presses
     Ctrl+S; otherwise the user will be asked to choose a path.
+
+    Virtual events:
+
+    ``<<PathChanged>>``
+        This runs when :attr:`~path` is set to a new value. Use
+        ``event.widget.path`` to get the new path.
+
+    ``<<FiletypeChanged>>``
+        Like ``<<PathChanged>>``, but for :attr:`~filetype`.
     """
 
     def __init__(self, manager, content=None, *, path=None):
         super().__init__(manager)
         self.top_label['text'] = "New File"
+        self._orig_label_fg = self.top_label['fg']
         self._save_hash = None
 
         # path and filetype are set correctly below
+        # TODO: try to guess the filetype from the content when path is None
         self._path = None
         self._filetype = filetypes.filetypes['Text only']
-        self.path_changed_hook = utils.CallbackHook(__name__)
-        self.filetype_changed_hook = utils.CallbackHook(__name__)
-
-        # TODO: try to guess the filetype from the content when path is None
-        self.path_changed_hook.connect(self._guess_filetype)
-
-        self._orig_label_fg = self.top_label['fg']
-        self.path_changed_hook.connect(self._update_top_label)
+        self.bind('<<PathChanged>>', self._guess_filetype, add=True)
+        self.bind('<<PathChanged>>', self._update_top_label, add=True)
 
         # FIXME: wtf is this doing here?
         self.mainframe = tk.Frame(self)
@@ -368,7 +373,9 @@ class FileTab(Tab):
         self.textwidget = textwidget.MainText(
             self.mainframe, self._filetype, width=1, height=1,
             wrap='none', undo=True)
-        self.filetype_changed_hook.connect(self.textwidget.set_filetype)
+        self.bind('<<FiletypeChanged>>',
+                  lambda event: self.textwidget.set_filetype(self.filetype),
+                  add=True)
         self.textwidget.bind('<<ContentChanged>>', self._update_top_label,
                              add=True)
 
@@ -377,6 +384,8 @@ class FileTab(Tab):
         # newline (Tk inserts a newline by default)
         utils.copy_bindings(porcupine.get_main_window(), self.textwidget)
 
+        # the scrollbar is exposed for things like line numbers, see
+        # plugins/linenumbers.py
         self.scrollbar = tk.Scrollbar(self.mainframe)
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
@@ -444,7 +453,8 @@ class FileTab(Tab):
     def path(self):
         """Path to where this file is currently saved.
 
-        This is None if the file has never been saved.
+        This is None if the file has never been saved, and otherwise
+        this should be always set to an absolute path.
         """
         return self._path
 
@@ -461,7 +471,7 @@ class FileTab(Tab):
 
         self._path = new_path
         if it_changes:
-            self.path_changed_hook.run(new_path)
+            self.event_generate('<<PathChanged>>')
 
     @property
     def filetype(self):
@@ -472,16 +482,15 @@ class FileTab(Tab):
     def filetype(self, filetype):
         assert filetype in filetypes.filetypes.values()
         self._filetype = filetype
-        self.filetype_changed_hook.run(filetype)
+        self.event_generate('<<FiletypeChanged>>')
 
-    def _guess_filetype(self, new_path):
-        print("guessing filetype from", new_path)
-        if new_path is None:
+    def _guess_filetype(self, event):
+        if self.path is None:
             # there's no way to "unsave a file", but a plugin might do
             # that for whatever reason
             self.filetype = filetypes.filetypes['Text only']
         else:
-            self.filetype = filetypes.guess_filetype(new_path)
+            self.filetype = filetypes.guess_filetype(self.path)
 
     def _update_top_label(self, junk=None):
         if self.path is not None:
