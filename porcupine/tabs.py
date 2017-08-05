@@ -246,6 +246,7 @@ class TabManager(tk.Frame):
         except IndexError:
             pass
 
+    # TODO: don't rely on this?
     def destroy(self):
         """Close all tabs and destroy all remaining child widgets.
 
@@ -276,9 +277,9 @@ class Tab(tk.Frame):
         self._topframe.bind('<Button-1>', select_me)
 
         # TODO: rename this to top_label
-        self.label = tk.Label(self._topframe)
-        self.label.pack(side='left')
-        self.label.bind('<Button-1>', select_me)
+        self.top_label = tk.Label(self._topframe)
+        self.top_label.pack(side='left')
+        self.top_label.bind('<Button-1>', select_me)
 
         def _close_if_can(event):
             if self.can_be_closed():
@@ -290,7 +291,7 @@ class Tab(tk.Frame):
         closebutton.bind('<Button-1>', _close_if_can)
 
         utils.bind_mouse_wheel(self._topframe, manager._on_wheel)
-        utils.bind_mouse_wheel(self.label, manager._on_wheel)
+        utils.bind_mouse_wheel(self.top_label, manager._on_wheel)
         utils.bind_mouse_wheel(closebutton, manager._on_wheel)
 
     def can_be_closed(self):
@@ -351,7 +352,7 @@ class FileTab(Tab):
 
     def __init__(self, manager, content=None, *, path=None):
         super().__init__(manager)
-        self.label['text'] = "New File"
+        self.top_label['text'] = "New File"
         self._save_hash = None
 
         # path and filetype are set correctly below
@@ -363,7 +364,7 @@ class FileTab(Tab):
         # TODO: try to guess the filetype from the content when path is None
         self.path_changed_hook.connect(self._guess_filetype)
 
-        self._orig_label_fg = self.label['fg']
+        self._orig_label_fg = self.top_label['fg']
         self.path_changed_hook.connect(self._update_top_label)
 
         # FIXME: wtf is this doing here?
@@ -492,12 +493,12 @@ class FileTab(Tab):
 
     def _update_top_label(self, junk=None):
         if self.path is not None:
-            self.label['text'] = os.path.basename(self.path)
+            self.top_label['text'] = os.path.basename(self.path)
 
         if self.is_saved():
-            self.label['fg'] = self._orig_label_fg
+            self.top_label['fg'] = self._orig_label_fg
         else:
-            self.label['fg'] = 'red'
+            self.top_label['fg'] = 'red'
 
     def can_be_closed(self):
         """If needed, display a "wanna save?" dialog and save.
@@ -604,7 +605,7 @@ if __name__ == '__main__':
 
     for i in range(1, 6):
         tab = Tab(tabmgr)
-        tab.label['text'] = "tab %d" % i
+        tab.top_label['text'] = "tab %d" % i
         tabmgr.add_tab(tab)
 
         text = tk.Text(tab)

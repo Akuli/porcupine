@@ -147,7 +147,7 @@ class PromptTab(tabs.Tab):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.label['text'] = "Interactive Prompt"
+        self.top_label['text'] = "Interactive Prompt"
 
         self.textwidget = textwidget.ThemedText(
             self.content, width=1, height=1)

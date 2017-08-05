@@ -48,7 +48,7 @@ class StatusBar(tk.Frame):
             self._file_label['text'] = "File '%s'" % self._current_tab.path
         else:
             # the top label's text is usually "New File"
-            self._file_label['text'] = self._current_tab.label['text']
+            self._file_label['text'] = self._current_tab.top_label['text']
 
         if isinstance(self._current_tab, tabs.FileTab):
             # TODO: add a drop-down (or up?) menu for choosing the filetype
