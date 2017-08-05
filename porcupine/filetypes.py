@@ -6,6 +6,7 @@ import logging
 import os
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -80,19 +81,24 @@ class FileType:
 
     @staticmethod
     def substitute_command(template, file):
-        """
-        Format a command for Windows command prompt or a POSIX -compatible
-        shell.
+        """Create an argument list for e.g. :func:`subprocess.call`.
 
         :param str template: A value of :attr:`.compile_command`,
                              :attr:`.run_command` or :attr:`.lint_command`.
         :param str file: Path to the source file, without quotes.
+        :return: List of strings.
         """
-        return template.format(
-            file=utils.quote(file),
-            no_ext=utils.quote(os.path.splitext(file)[0]),
-            no_exts=utils.quote(re.search(r'^\.*[^\.]*', file).group(0)),
-        )
+        format_args = {
+            'file': file,
+            'no_ext': os.path.splitext(file)[0],
+            'no_exts': re.search(r'^\.*[^\.]*', file).group(0),
+        }
+
+        # the template must be split into parts so that '{no_ext}.o'
+        # turns into '"hello world.o"' when no_ext is 'hello world'
+        # shlex.split supports single and double quotes
+        return [part.format(**format_args)
+                for part in shlex.split(template)]
 
 
 filetypes = {}      # this is {filetype.name: filetype}, see init()
@@ -265,12 +271,21 @@ def _get_pygments_lexers():
     yield ['Porcupine filetypes.ini', _FiletypesDotIniLexer, (), ()]
 
 
-def _validate_value(section_name, section, option, getter, minimum=None):
+def _validate_value(section_name, section, option, getter,
+                    minimum=None, command=False):
     try:
-        value = getter(option)
+        if getter is None:
+            value = section[option]
+        else:
+            value = getter(option)
+
         if minimum is not None and value < minimum:
             raise ValueError
-    except ValueError:    # also catch ValueError from getter()
+        if command:
+            FileType.substitute_command(value, 'whatever.tar.gz')
+
+    except ValueError:
+        # the error might come from getter() or substitute_command()
         log.error("invalid %r value %r in [%s]",
                   option, section[option], section_name)
         if section_name == 'DEFAULT':
@@ -283,7 +298,7 @@ def _validate_value(section_name, section, option, getter, minimum=None):
 # might have more keys and this way the same config file can be used
 # painlessly in different porcupine and pygments versions
 def _config2filetypes(config):
-    # make sure that 'DEFAULT' is first, its values must be good when
+    # make sure that 'DEFAULT' is first, its values must be valid when
     # _validate_value() is called with other sections
     for name in (['DEFAULT'] + config.sections()):
         section = config[name]
@@ -291,7 +306,9 @@ def _config2filetypes(config):
         validate('tabs2spaces', section.getboolean)
         validate('indent_size', section.getint, minimum=1)
         validate('max_line_length', section.getint, minimum=0)
-        # the commands can be any strings, no need to check them
+        validate('compile_command', None, command=True)
+        validate('run_command', None, command=True)
+        validate('lint_command', None, command=True)
 
     for name, *args in _get_pygments_lexers():
         # setdefault return value is useless, this is a small bug
