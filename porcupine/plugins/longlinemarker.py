@@ -27,7 +27,7 @@ class LongLineMarker:
         self.tab.filetype_changed_hook.connect(self.do_update)
         self.do_update()
 
-        self.tab.textwidget.bind('<Destroy>', self.on_destroy, add=True)
+        self.tab.bind('<Destroy>', self.on_destroy, add=True)
 
     def on_destroy(self, event):
         config.disconnect('Font', 'family', self.do_update)

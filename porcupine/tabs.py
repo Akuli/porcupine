@@ -33,8 +33,8 @@ class TabManager(tk.Frame):
         :attr:`~tabs`, so you can access it with
         ``event.widget.tabs[-1]``.
 
-        Bind to the ``<Destroy>`` event of e.g. :attr:`.Tab.content` if
-        you want to clean up something when the tab is closed.
+        Bind to the ``<Destroy>`` event of the tab if you want to clean
+        up something when the tab is closed.
 
     ``<<CurrentTabChanged>>``
         This runs when the user selects another tab or Porcupine does it
@@ -106,14 +106,14 @@ class TabManager(tk.Frame):
             self.no_tabs_frame.pack_forget()
         else:
             self.current_tab._topframe['relief'] = 'raised'
-            self.current_tab.content.pack_forget()
+            self.current_tab.pack_forget()
 
         # and then replace it with the new tab or no tabs message
         if tab is None:
             self.no_tabs_frame.pack(fill='both', expand=True)
         else:
             tab._topframe['relief'] = 'sunken'
-            tab.content.pack(fill='both', expand=True)
+            tab.pack(fill='both', expand=True)
             tab.on_focus()
 
         self._current_tab = tab
@@ -175,7 +175,7 @@ class TabManager(tk.Frame):
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
-        tab.content.pack_forget()
+        tab.pack_forget()
         tab._topframe.grid_forget()
 
         # the grid columns of topframes of tabs after this change, so we
@@ -259,13 +259,14 @@ class TabManager(tk.Frame):
         super().destroy()
 
 
-# TODO: replace self.content with inheritance because flat is better
-# than nested and utils.CallbackHook is stupid
-class Tab:
-    """A tab that can be added to :class:`TabManager`."""
+class Tab(tk.Frame):
+    """A tab widget that can be added to :class:`TabManager`.
+
+    Use ``tab.master`` to get the tab manager of a tab.
+    """
 
     def __init__(self, manager):
-        self.manager = manager
+        super().__init__(manager)
 
         def select_me(event):
             manager.current_tab = self
@@ -274,12 +275,10 @@ class Tab:
                                   border=1, padx=10, pady=3)
         self._topframe.bind('<Button-1>', select_me)
 
+        # TODO: rename this to top_label
         self.label = tk.Label(self._topframe)
         self.label.pack(side='left')
         self.label.bind('<Button-1>', select_me)
-
-        # Subclasses can add stuff here.
-        self.content = tk.Frame(manager)
 
         def _close_if_can(event):
             if self.can_be_closed():
@@ -309,9 +308,9 @@ class Tab:
 
         Call ``super().close()`` if you override this in a subclass.
         """
-        self.manager._remove_tab(self)
+        self.master._remove_tab(self)
         self._topframe.destroy()
-        self.content.destroy()
+        self.destroy()
 
     def on_focus(self):
         """This is called when the tab is selected.
@@ -367,7 +366,8 @@ class FileTab(Tab):
         self._orig_label_fg = self.label['fg']
         self.path_changed_hook.connect(self._update_top_label)
 
-        self.mainframe = tk.Frame(self.content)
+        # FIXME: wtf is this doing here?
+        self.mainframe = tk.Frame(self)
         self.mainframe.pack(fill='both', expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
@@ -578,7 +578,7 @@ class FileTab(Tab):
         """This method will probably be removed soon. Don't use it."""
         if self._findwidget is None:
             log.debug("find widget not created yet, creating it")
-            self._findwidget = _find.Finder(self.content, self.textwidget)
+            self._findwidget = _find.Finder(self, self.textwidget)
         self._findwidget.pack(fill='x')
 
 
@@ -597,7 +597,7 @@ if __name__ == '__main__':
     for i in range(1, 6):
         tab = Tab(tabmgr)
         tab.label['text'] = "tab %d" % i
-        text = tk.Text(tab.content)
+        text = tk.Text(tab)
         text.pack()
         text.insert('1.0', "this is the content of tab %d" % i)
         tabmgr.add_tab(tab)

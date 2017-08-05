@@ -195,7 +195,7 @@ def on_new_tab(event):
     tab.path_changed_hook.connect(highlighter.highlight_all)
     tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all,
                         add=True)
-    tab.content.bind('<Destroy>', on_destroy, add=True)
+    tab.bind('<Destroy>', on_destroy, add=True)
     highlighter.highlight_all()
 
 
