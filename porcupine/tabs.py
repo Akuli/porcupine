@@ -45,8 +45,11 @@ class TabManager(tk.Frame):
 
         #: This :class:`porcupine.utils.CallbackHook` is ran with a
         #: :class:`.Tab` as the only argument when a new tab is added to
-        #: the tab manager.
-        self.new_tab_hook = utils.ContextManagerHook(__name__)
+        #: the tab manager. The tab's ``content`` frame is destroyed
+        #: when the tab is closed, so you can bind to its ``<Destroy>``
+        #: method if you need to clean up something when the tab is
+        #: destroyed.
+        self.new_tab_hook = utils.CallbackHook(__name__)
 
         #: This :class:`porcupine.utils.CallbackHook` is ran when the
         #: :attr:`current_tab` changes.
@@ -66,8 +69,7 @@ class TabManager(tk.Frame):
 
             return 'break'
 
-        # These can be bound in a parent widget. Note that the callbacks
-        # should be called with no arguments.
+        # These can be bound in a parent widget.
         self.bindings = [
             ('<Control-Prior>', functools.partial(on_page_updown, False)),
             ('<Control-Next>', functools.partial(on_page_updown, False)),
@@ -155,9 +157,7 @@ class TabManager(tk.Frame):
             # this is the first tab
             self.current_tab = tab
 
-        # TODO: use a {tab: contextmanager} dict instead?
-        tab.__hook_context_manager = self.new_tab_hook.run(tab)
-        tab.__hook_context_manager.__enter__()
+        self.new_tab_hook.run(tab)
         if make_current:
             self.current_tab = tab
         return tab
@@ -170,7 +170,6 @@ class TabManager(tk.Frame):
             if not (self.select_right() or self.select_left()):
                 self.current_tab = None
 
-        tab.__hook_context_manager.__exit__(None, None, None)
         tab.content.pack_forget()
         tab._topframe.grid_forget()
 

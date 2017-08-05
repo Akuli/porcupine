@@ -18,16 +18,18 @@ class LongLineMarker:
         self.frame = tk.Frame(filetab.textwidget, width=1)
         self._height = 0        # on_configure() will run later
 
-    def __enter__(self):
+    def setup(self):
         config.connect('Font', 'family', self.do_update)
         config.connect('Font', 'size', self.do_update)
         config.connect('Editing', 'pygments_style',
                        self.on_style_changed, run_now=True)
+        self.tab.textwidget.bind('<Configure>', self.on_configure, add=True)
         self.tab.filetype_changed_hook.connect(self.do_update)
         self.do_update()
-        return self
 
-    def __exit__(self, *error):
+        self.tab.textwidget.bind('<Destroy>', self.on_destroy, add=True)
+
+    def on_destroy(self, event):
         config.disconnect('Font', 'family', self.do_update)
         config.disconnect('Font', 'size', self.do_update)
         config.disconnect('Editing', 'pygments_style', self.on_style_changed)
@@ -56,7 +58,6 @@ class LongLineMarker:
         # stupid fallback
         self.frame['bg'] = 'red'
 
-    # bind <Configure> to this
     def on_configure(self, event):
         self._height = event.height
         self.do_update()
@@ -64,12 +65,8 @@ class LongLineMarker:
 
 def tab_callback(tab):
     if isinstance(tab, tabs.FileTab):
-        with LongLineMarker(tab) as marker:
-            with utils.temporary_bind(tab.textwidget, '<Configure>',
-                                      marker.on_configure):
-                yield
-    else:
-        yield
+        marker = LongLineMarker(tab)
+        marker.setup()
 
 
 def setup():

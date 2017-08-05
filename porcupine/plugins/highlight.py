@@ -184,17 +184,18 @@ class Highlighter:
 
 def tab_callback(tab):
     if not isinstance(tab, tabs.FileTab):
-        yield
         return
+
+    def on_destroy(event):
+        highlighter.destroy()
+        tab.textwidget.modified_hook.disconnect(highlighter.highlight_all)
+        tab.path_changed_hook.disconnect(highlighter.highlight_all)
 
     highlighter = Highlighter(tab.textwidget, (lambda: tab.filetype.name))
     tab.path_changed_hook.connect(highlighter.highlight_all)
     tab.textwidget.modified_hook.connect(highlighter.highlight_all)
+    tab.content.bind('<Destroy>', on_destroy, add=True)
     highlighter.highlight_all()
-    yield
-    highlighter.destroy()
-    tab.textwidget.modified_hook.disconnect(highlighter.highlight_all)
-    tab.path_changed_hook.disconnect(highlighter.highlight_all)
 
 
 def setup():

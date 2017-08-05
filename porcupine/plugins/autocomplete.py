@@ -77,16 +77,18 @@ class AutoCompleter:
 
 
 def tab_callback(tab):
+    # TODO: autocomplete in other kinds of tabs too?
     if not isinstance(tab, tabs.FileTab):
-        # TODO: autocomplete in other kinds of tabs too?
-        yield
         return
 
+    def on_destroy(event):
+        tab.textwidget.cursor_move_hook.disconnect(completer.reset)
+
     completer = AutoCompleter(tab.textwidget)
+    utils.bind_tab_key(tab.textwidget, completer.on_tab)
+
     tab.textwidget.cursor_move_hook.connect(completer.reset)
-    with utils.temporary_tab_bind(tab.textwidget, completer.on_tab):
-        yield
-    tab.textwidget.cursor_move_hook.disconnect(completer.reset)
+    tab.textwidget.bind('<Destroy>', on_destroy)
 
 
 def setup():

@@ -15,19 +15,10 @@ class ScrollManager:
         self._main_widget = main_widget
         self._widgets = [main_widget] + other_widgets
 
-        self._old_command = scrollbar['command']
-        self._old_yscrollcommands = [
-            widget['yscrollcommand'] for widget in self._widgets]
-
     def enable(self):
         self._scrollbar['command'] = self._yview
         for widget in self._widgets:
             widget['yscrollcommand'] = self._set
-
-    def disable(self):
-        self._scrollbar['command'] = self._old_command
-        for widget, ycommand in zip(self._widgets, self._old_yscrollcommands):
-            widget['yscrollcommand'] = ycommand
 
     def _yview(self, *args):
         for widget in self._widgets:
@@ -95,21 +86,19 @@ class LineNumbers(ThemedText):
 
 def tab_callback(tab):
     if not isinstance(tab, tabs.FileTab):
-        yield
         return
 
     linenumbers = LineNumbers(tab.mainframe, tab.textwidget)
     linenumbers.pack(side='left', fill='y')
-    scrollmgr = ScrollManager(tab.scrollbar, tab.textwidget, [linenumbers])
-    scrollmgr.enable()
+    ScrollManager(tab.scrollbar, tab.textwidget, [linenumbers]).enable()
     tab.textwidget.modified_hook.connect(linenumbers.do_update)
     linenumbers.do_update()
 
-    yield
+    def on_destroy(event):
+        # linenumbers will be destroyed automatically
+        tab.textwidget.modified_hook.disconnect(linenumbers.do_update)
 
-    scrollmgr.disable()
-    tab.textwidget.modified_hook.disconnect(linenumbers.do_update)
-    linenumbers.destroy()
+    tab.textwidget.bind('<Destroy>', on_destroy)
 
 
 def setup():

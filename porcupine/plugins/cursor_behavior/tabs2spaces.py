@@ -24,10 +24,7 @@ def on_tab(event, shift_pressed):
 
 def tab_callback(tab):
     if isinstance(tab, tabs.FileTab):
-        with utils.temporary_tab_bind(tab.textwidget, on_tab):
-            yield
-    else:
-        yield
+        utils.bind_tab_key(tab.textwidget, on_tab)
 
 
 def setup():

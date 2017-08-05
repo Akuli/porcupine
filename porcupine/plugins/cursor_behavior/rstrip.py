@@ -14,15 +14,11 @@ def after_enter(textwidget):
 
 
 def tab_callback(tab):
-    if not isinstance(tab, tabs.FileTab):
-        yield
-        return
+    if isinstance(tab, tabs.FileTab):
+        def bind_callback(event):
+            tab.textwidget.after_idle(after_enter, tab.textwidget)
 
-    def bind_callback(event):
-        tab.textwidget.after_idle(after_enter, tab.textwidget)
-
-    with utils.temporary_bind(tab.textwidget, '<Return>', bind_callback):
-        yield
+        tab.textwidget.bind('<Return>', bind_callback, add=True)
 
 
 def setup():

@@ -4,7 +4,7 @@ import porcupine
 from porcupine import tabs, utils
 
 
-def on_tab(event, shift):
+def on_tab(event, shifted):
     try:
         start_index, end_index = map(str, event.widget.tag_ranges('sel'))
     except ValueError as e:
@@ -18,7 +18,7 @@ def on_tab(event, shift):
         end += 1
 
     for lineno in range(start, end):
-        if shift:
+        if shifted:
             event.widget.dedent('%d.0' % lineno)
         else:
             # if the line is empty or it contains nothing but
@@ -35,10 +35,7 @@ def on_tab(event, shift):
 
 def tab_callback(tab):
     if isinstance(tab, tabs.FileTab):
-        with utils.temporary_tab_bind(tab.textwidget, on_tab):
-            yield
-    else:
-        yield
+        utils.bind_tab_key(tab.textwidget, on_tab)
 
 
 def setup():

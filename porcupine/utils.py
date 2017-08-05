@@ -229,22 +229,8 @@ def invert_color(color):
     return '#%02x%02x%02x' % (r, g, b)
 
 
-# TODO: document this in docs/utils.rst
-def shift_tab():
-    """Return a bind keysym for binding Shift+Tab.
-
-    ``'<Shift-Tab>'`` works only on Windows and Mac OSX, but this
-    function returns a different string on different platforms, and thus
-    works pretty much everywhere.
-    """
-    widget = porcupine.get_main_window()
-    if widget.tk.call('tk', 'windowingsystem') == 'x11':
-        # even though the event keysym says Left, holding down the right
-        # shift and pressing tab also works :D
-        return '<ISO_Left_Tab>'
-    return '<Shift-Tab>'
-
-
+# this is currently not used anywhere, but i spent a while figuring out
+# how to do this and it might be useful in the future
 # TODO: document this in docs/utils.rst
 @contextlib.contextmanager
 def temporary_bind(widget, sequence, func):
@@ -289,11 +275,9 @@ def temporary_bind(widget, sequence, func):
         widget.deletecommand(tcl_command)
 
 
-@contextlib.contextmanager
-def temporary_tab_bind(widget, on_tab):
-    """
-    A convenience function for using :func:`.temporary_bind` with
-    ``'<Tab>'`` and :func:`.shift_tab`.
+# this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
+def bind_tab_key(widget, on_tab):
+    """A convenience function for binding Tab and Shift+Tab.
 
     Use this function like this::
 
@@ -302,19 +286,29 @@ def temporary_tab_bind(widget, on_tab):
             # tab, and False otherwise
             ...
 
-        with utils.temporary_tab_bind(some_widget, on_tab):
-            ...
+        utils.bind_tab(some_widget, on_tab)
 
     The ``event`` argument and ``on_tab()`` return values are treated
     just like with regular bindings.
+
+    Binding ``'<Tab>'`` works just fine everywhere, but binding
+    ``'<Shift-Tab>'`` only works on Windows and Mac OSX. This function
+    also works on X11.
     """
+    # there's something for this in more_functools, but it's a big 
+    # dependency for something this simple imo
     def callback(shifted, event):
         return on_tab(event, shifted)
 
-    partial = functools.partial     # pep-8 line length
-    with temporary_bind(widget, '<Tab>', partial(callback, False)):
-        with temporary_bind(widget, shift_tab(), partial(callback, True)):
-            yield
+    if widget.tk.call('tk', 'windowingsystem') == 'x11':
+        # even though the event keysym says Left, holding down the right
+        # shift and pressing tab also works :D
+        shift_tab = '<ISO_Left_Tab>'
+    else:
+        shift_tab = '<Shift-Tab>'
+
+    widget.bind('<Tab>', functools.partial(callback, False), add=True)
+    widget.bind(shift_tab, functools.partial(callback, True), add=True)
 
 
 def copy_bindings(widget1, widget2):
