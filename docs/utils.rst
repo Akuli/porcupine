@@ -24,8 +24,6 @@ These classes are used for running callbacks in Porcupine:
             >>> hook.callbacks == [print]
             True
 
-.. autoclass:: ContextManagerHook
-
 Information about Python
 ------------------------
 
