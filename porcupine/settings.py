@@ -33,10 +33,10 @@ class _Config(collections.abc.MutableMapping):
     """A dictionary-like object for storing settings.
 
     The config object behaves like a ``{(section, configkey): value}``
-    dictionary where *section* and *configkey* are strings, but they
-    also support things like running callbacks when something changes
-    and default values. Note that ``config['key', 'value']`` does the
-    same thing as ``config[('key', 'value')]``, so usually you don't
+    dictionary where *section* and *configkey* are strings, but it also
+    supports running callbacks when the values change, validating the
+    values and default values. Note that ``config['key', 'value']`` does
+    the same thing as ``config[('key', 'value')]``, so usually you don't
     need to use parentheses when setting or getting values.
 
     .. note::
@@ -47,10 +47,9 @@ class _Config(collections.abc.MutableMapping):
 
     def __init__(self, filename):
         self._filename = filename
-        self._infos = {}    # see add_key()
+        self._infos = {}     # see add_key()
         self._values = {}
-        self.hooks = {}
-        self.anything_changed_hook = utils.CallbackHook(__name__)
+        self._callbacks = {}   # {(section, configkey): callback_list}
 
         # this is stored here to allow keeping unknown settings in the
         # setting files, this way if the user enables a plugin, disables
@@ -58,18 +57,20 @@ class _Config(collections.abc.MutableMapping):
         self._configparser = configparser.ConfigParser()
 
     def connect(self, section, key, callback, run_now=False):
-        """Handy way to do ``config.hooks[section, key].connect(callback)``.
+        """Schedule ``callback(value)`` to be called when a value changes.
 
-        The callback will also be called right away if ``run_now`` is True.
+        If *run_now* is True, ``callback(value)`` is also called
+        immediately when ``connect()`` is called. More than one callback
+        may be connected to the same ``(section, key)`` pair.
         """
-        self.hooks[section, key].connect(callback)
+        self._callbacks[section, key].append(callback)
         if run_now:
             callback(self[section, key])
         return callback
 
     def disconnect(self, section, key, callback):
-        """Same as ``config.hooks[section, key].disconnect(callback)``."""
-        self.hooks[section, key].disconnect(callback)
+        """Undo a :meth:`~connect` call."""
+        self._callbacks[section, key].remove(callback)
 
     def __setitem__(self, item, value):
         info = self._infos[item]
@@ -87,8 +88,17 @@ class _Config(collections.abc.MutableMapping):
         self._values[item] = value
         if value != old_value:
             log.debug("%r was set to %r, running callbacks", item, value)
-            self.hooks[item].run(value)
-            self.anything_changed_hook.run(section, key, value)
+
+            for callback in self._callbacks[item]:
+                try:
+                    callback(value)
+                except Exception:
+                    try:
+                        func_name = (callback.__module__ + '.' +
+                                     callback.__qualname__)
+                    except AttributeError:
+                        func_name = repr(callback)
+                    log.error("%s(%r) didn't work", func_name, value)
 
     def __getitem__(self, item):
         # this raises KeyError
@@ -152,7 +162,7 @@ class _Config(collections.abc.MutableMapping):
             default=default, validate=validator, reset=reset)
         info.from_string, info.to_string = converters
         self._infos[section, configkey] = info
-        self.hooks[section, configkey] = utils.CallbackHook(__name__)
+        self._callbacks[section, configkey] = []
 
     def add_bool_key(self, section, configkey, default, **kwargs):
         """A convenience method for adding Boolean keys.

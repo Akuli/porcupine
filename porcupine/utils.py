@@ -19,64 +19,6 @@ import porcupine
 log = logging.getLogger(__name__)
 
 
-class CallbackHook:
-    """Simple object that runs callbacks.
-
-    >>> hook = CallbackHook('whatever')
-    >>> @hook.connect
-    ... def user_callback(value):
-    ...     print("user_callback called with", value)
-    ...
-    >>> hook.run(123)       # usually porcupine does this
-    user_callback called with 123
-
-    You can hook multiple callbacks too:
-
-    >>> @hook.connect
-    ... def another_callback(value):
-    ...     print("another_callback called with", value)
-    ...
-    >>> hook.run(456)
-    user_callback called with 456
-    another_callback called with 456
-
-    Errors in the connected functions will be logged to
-    ``logging.getLogger(logname)``. The *unhandled_errors* argument
-    should be an iterable of exceptions that won't be handled.
-    """
-
-    def __init__(self, logname, *, unhandled_errors=()):
-        self._log = logging.getLogger(logname)
-        self._unhandled = tuple(unhandled_errors)  # isinstance() likes tuples
-        self.callbacks = []
-
-    def connect(self, callback):
-        """Schedule a function to be called when the hook is ran.
-
-        This appends *callback* to :attr:`~callbacks`. The *callback* is
-        also returned, so this can be used as a decorator.
-        """
-        self.callbacks.append(callback)
-        return callback
-
-    def disconnect(self, callback):
-        """Remove *callback* from :attr:`~callbacks`."""
-        self.callbacks.remove(callback)
-
-    def _handle_error(self, callback, error):
-        if isinstance(error, self._unhandled):
-            raise error
-        self._log.exception("%s doesn't work", nice_repr(callback))
-
-    def run(self, *args):
-        """Run ``callback(*args)`` for each connected callback."""
-        for callback in self.callbacks:
-            try:
-                callback(*args)
-            except Exception as e:
-                self._handle_error(callback, e)
-
-
 # pythonw.exe sets sys.stdout to None because there's no console window,
 # print still works because it checks if sys.stdout is None
 running_pythonw = (sys.stdout is None)
