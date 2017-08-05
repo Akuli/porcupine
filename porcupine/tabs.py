@@ -359,10 +359,10 @@ class FileTab(Tab):
 
         # path and filetype are set correctly below
         # TODO: try to guess the filetype from the content when path is None
-        self._path = None
-        self._filetype = filetypes.filetypes['Text only']
-        self.bind('<<PathChanged>>', self._guess_filetype, add=True)
+        self._path = path
+        self._guess_filetype()          # sets self._filetype
         self.bind('<<PathChanged>>', self._update_top_label, add=True)
+        self.bind('<<PathChanged>>', self._guess_filetype, add=True)
 
         # FIXME: wtf is this doing here?
         self.mainframe = tk.Frame(self)
@@ -378,6 +378,9 @@ class FileTab(Tab):
                   add=True)
         self.textwidget.bind('<<ContentChanged>>', self._update_top_label,
                              add=True)
+        if content is not None:
+            self.textwidget.insert('1.0', content)
+            self.textwidget.edit_reset()   # reset undo/redo
 
         # everything seems to work ok without this except that e.g.
         # pressing Ctrl+O in the text widget opens a file AND inserts a
@@ -396,11 +399,6 @@ class FileTab(Tab):
         self.textwidget.pack(side='right', fill='both', expand=True)
 
         self._findwidget = None
-
-        self.path = path
-        if content is not None:
-            self.textwidget.insert('1.0', content)
-            self.textwidget.edit_reset()   # reset undo/redo
 
         self.mark_saved()
         self._update_top_label()
@@ -484,7 +482,7 @@ class FileTab(Tab):
         self._filetype = filetype
         self.event_generate('<<FiletypeChanged>>')
 
-    def _guess_filetype(self, event):
+    def _guess_filetype(self, junk=None):
         if self.path is None:
             # there's no way to "unsave a file", but a plugin might do
             # that for whatever reason
