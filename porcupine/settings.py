@@ -10,7 +10,7 @@ import types
 import pygments.styles
 import pygments.util
 
-from porcupine import dirs, utils
+from porcupine import dirs
 
 log = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ the blank line above the cursor, and then on_enter() wouldn't do anything.
 """
 
 import porcupine
-from porcupine import tabs, utils
+from porcupine import tabs
 
 
 def leading_whitespace(string):

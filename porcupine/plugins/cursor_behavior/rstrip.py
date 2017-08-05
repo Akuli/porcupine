@@ -1,7 +1,7 @@
 """Remove trailing whitespace when enter is pressed."""
 
 import porcupine
-from porcupine import tabs, utils
+from porcupine import tabs
 
 
 def after_enter(textwidget):

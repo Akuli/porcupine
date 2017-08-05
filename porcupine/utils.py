@@ -171,7 +171,7 @@ def bind_tab_key(widget, on_tab, **bind_kwargs):
     ``'<Shift-Tab>'`` only works on Windows and Mac OSX. This function
     also works on X11.
     """
-    # there's something for this in more_functools, but it's a big 
+    # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
     def callback(shifted, event):
         return on_tab(event, shifted)

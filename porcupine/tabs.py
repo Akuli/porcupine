@@ -584,8 +584,6 @@ class FileTab(Tab):
 
 if __name__ == '__main__':
     # test/demo
-    from porcupine import utils
-
     root = tk.Tk()
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)

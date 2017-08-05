@@ -7,7 +7,7 @@ import pygments.styles
 import pygments.token
 
 import porcupine
-from porcupine import tabs, utils
+from porcupine import tabs
 from porcupine.settings import config
 
 
