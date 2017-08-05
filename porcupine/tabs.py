@@ -584,22 +584,32 @@ class FileTab(Tab):
 
 if __name__ == '__main__':
     # test/demo
+    from porcupine import utils
+
     root = tk.Tk()
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)
-    tabmgr.tab_changed_hook.connect(print)
+    tabmgr.bind('<<CurrentTabChanged>>',
+                lambda event: print(repr(event.widget.current_tab)))
 
     tk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
 
+    def on_ctrl_w(event):
+        if tabmgr.tabs:
+            tabmgr.current_tab.close()
+
+    root.bind('<Control-w>', on_ctrl_w)
     for keysym, callback in tabmgr.bindings:
-        root.bind(keysym, (lambda event, c=callback: c()))
+        root.bind(keysym, callback)
 
     for i in range(1, 6):
         tab = Tab(tabmgr)
         tab.label['text'] = "tab %d" % i
+        tabmgr.add_tab(tab)
+
         text = tk.Text(tab)
         text.pack()
         text.insert('1.0', "this is the content of tab %d" % i)
-        tabmgr.add_tab(tab)
+        #utils.copy_bindings(tabmgr, text)
 
     root.mainloop()
