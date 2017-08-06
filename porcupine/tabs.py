@@ -167,7 +167,11 @@ class TabManager(tk.Frame):
             # current tab for some other reason
             self.current_tab = tab
 
+        # i have no idea wtf is going on here but when adding a FileTab of
+        # an empty file the event_generate does nothing without the update()
+        self.update()
         self.event_generate('<<NewTab>>')
+
         return tab
 
     def close_tab(self, tab):
@@ -345,7 +349,7 @@ class FileTab(Tab):
         Like ``<<PathChanged>>``, but for :attr:`~filetype`.
     """
 
-    def __init__(self, manager, content=None, *, path=None):
+    def __init__(self, manager, content='', *, path=None):
         super().__init__(manager)
         self.top_label['text'] = "New File"
         self._orig_label_fg = self.top_label['fg']
@@ -372,7 +376,7 @@ class FileTab(Tab):
                   add=True)
         self.textwidget.bind('<<ContentChanged>>', self._update_top_label,
                              add=True)
-        if content is not None:
+        if content:
             self.textwidget.insert('1.0', content)
             self.textwidget.edit_reset()   # reset undo/redo
 
