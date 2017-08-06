@@ -100,7 +100,7 @@ class Highlighter:
         self._on_config_changed()
         self.textwidget.after(50, self._do_highlights)
 
-    def destroy(self, junk=None):
+    def on_destroy(self, junk=None):
         config.disconnect('Editing', 'pygments_style', self._on_config_changed)
         config.disconnect('Font', 'family', self._on_config_changed)
         config.disconnect('Font', 'size', self._on_config_changed)
@@ -191,7 +191,7 @@ def on_new_tab(event):
     tab.bind('<<FiletypeChanged>>', highlighter.highlight_all, add=True)
     tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all,
                         add=True)
-    tab.bind('<Destroy>', highlighter.destroy, add=True)
+    tab.bind('<Destroy>', highlighter.on_destroy, add=True)
     highlighter.highlight_all()
 
 
@@ -226,4 +226,4 @@ if __name__ == '__main__':
     try:
         root.mainloop()
     finally:
-        highlighter.destroy()
+        highlighter.on_destroy()

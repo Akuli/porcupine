@@ -250,19 +250,6 @@ class TabManager(tk.Frame):
         except IndexError:
             pass
 
-    # TODO: don't rely on this?
-    def destroy(self):
-        """Close all tabs and destroy all remaining child widgets.
-
-        Tkinter calls this automatically when the tab manager's parent
-        widget is destroyed.
-        """
-        # need to loop over a copy because closing a tab also removes it
-        # from self.tabs
-        for tab in self.tabs.copy():
-            self.close_tab(tab)
-        super().destroy()
-
 
 class Tab(tk.Frame):
     """A tab widget that can be added to :class:`TabManager`.

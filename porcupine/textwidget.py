@@ -142,10 +142,10 @@ class ThemedText(HandyText):
         config.connect('Editing', 'pygments_style', self._set_style,
                        run_now=True)
 
-    # tkinter seems to call this automatically
-    def destroy(self):
-        config.disconnect('Editing', 'pygments_style', self._set_style)
-        super().destroy()
+        def on_destroy(event):
+            config.disconnect('Editing', 'pygments_style', self._set_style)
+
+        self.bind('<Destroy>', on_destroy, add=True)
 
     def _set_style(self, name):
         style = pygments.styles.get_style_by_name(name)
