@@ -105,8 +105,11 @@ class TabManager(tk.Frame):
         if self.current_tab is None:
             self.no_tabs_frame.pack_forget()
         else:
-            self.current_tab._topframe['relief'] = 'raised'
-            self.current_tab.pack_forget()
+            # self.current_tab has been destroyed if this is called from
+            # close_tab(), in that case do nothing
+            if self.current_tab in self.tabs:
+                self.current_tab._topframe['relief'] = 'raised'
+                self.current_tab.pack_forget()
 
         # and then replace it with the new tab or no tabs message
         if tab is None:
@@ -174,10 +177,8 @@ class TabManager(tk.Frame):
         manager later.
         """
         if tab is self.current_tab:
-            # go to next or previous tab if there are other tabs,
-            # otherwise unselect the tab
-            if not (self.select_right() or self.select_left()):
-                self.current_tab = None
+            # go to next or previous tab if there are other tabs
+            there_are_other_tabs = self.select_right() or self.select_left()
 
         tab.destroy()
         tab._topframe.destroy()
@@ -188,6 +189,12 @@ class TabManager(tk.Frame):
         del self.tabs[where]
         for i in range(where, len(self.tabs)):
             self.tabs[i]._topframe.grid(column=i)
+
+        if not there_are_other_tabs:
+            # this must be done after deleting the tab from self.tabs to
+            # make sure that <<CurrentTabChanged>> handlers can use
+            # tabmanager.tabs to check if there are any tabs
+            self.current_tab = None
 
     def _select_next_to(self, diff, roll_over):
         if len(self.tabs) < 2:
