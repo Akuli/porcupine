@@ -1,9 +1,9 @@
-"""Indenting and dedenting automatically.
+"""Indenting and dedenting automatically."""
 
-This must be ran *after* stripping the trailing whitespace because
-otherwise pressing enter twice would strip all trailing whitespace from
-the blank line above the cursor, and then on_enter() wouldn't do anything.
-"""
+# without this, pressing enter twice would strip all trailing whitespace
+# from the blank line above the cursor, and then after_enter() wouldn't
+# do anything
+setup_before = ['rstrip']
 
 import porcupine
 from porcupine import tabs
@@ -46,7 +46,7 @@ def on_new_tab(event):
         def bind_callback(event):
             tab.textwidget.after_idle(after_enter, tab.textwidget)
 
-        tab.textwidget.bind('<Return>', bind_callback)
+        tab.textwidget.bind('<Return>', bind_callback, add=True)
 
 
 def setup():

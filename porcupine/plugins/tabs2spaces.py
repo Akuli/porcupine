@@ -1,8 +1,14 @@
 """Convert tabs to spaces when needed.
 
-This is done by handling all Tab events and forwarding them to
-textwidget.MainText.indent and textwidget.MainText.dedent. This plugin
-must be loaded after all other plugins that bind tab or shift+tab.
+.. note::
+    This plugin binds Tab and Shift-Tab, and always returns ``'break'``.
+    If you are writing a plugin that binds Tab or Shift-Tab too, it
+    **must** be set up before this plugin. For example::
+
+        setup_before = ['tabs2spaces']
+
+    As a side note, if your plugin binds ``<Shift-Tab>`` it should
+    probably use :func:`porcupine.utils.bind_tab_key` instead.
 """
 
 import porcupine

@@ -3,8 +3,10 @@
 import porcupine
 from porcupine import tabs, utils
 
+setup_before = ['tabs2spaces']      # see tabs2spaces.py
 
-def on_tab(event, shifted):
+
+def on_tab_key(event, shifted):
     try:
         start_index, end_index = map(str, event.widget.tag_ranges('sel'))
     except ValueError as e:
@@ -36,7 +38,7 @@ def on_tab(event, shifted):
 def on_new_tab(event):
     tab = event.widget.tabs[-1]
     if isinstance(tab, tabs.FileTab):
-        utils.bind_tab_key(tab.textwidget, on_tab, add=True)
+        utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
 
 
 def setup():

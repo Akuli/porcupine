@@ -4,6 +4,8 @@ import re
 import porcupine
 from porcupine import tabs, utils
 
+setup_before = ['tabs2spaces']      # see tabs2spaces.py
+
 
 class AutoCompleter:
 
