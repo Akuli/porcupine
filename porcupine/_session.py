@@ -75,7 +75,7 @@ def quit():
     This function makes sure that all tabs can be closed by calling
     their :meth:`can_be_closed() <porcupine.tabs.Tab.can_be_closed>`
     methods. If they can, all tabs are
-    :meth:`closed <porcupine.tabs.TabManager.close_tab>` and the main 
+    :meth:`closed <porcupine.tabs.TabManager.close_tab>` and the main
     window is destroyed.
     """
     for tab in _tab_manager.tabs:
