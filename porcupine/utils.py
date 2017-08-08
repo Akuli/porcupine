@@ -107,7 +107,6 @@ def invert_color(color):
 
 # this is currently not used anywhere, but i spent a while figuring out
 # how to do this and it might be useful in the future
-# TODO: document this in docs/utils.rst
 @contextlib.contextmanager
 def temporary_bind(widget, sequence, func):
     """Bind and unbind a callback.
@@ -162,7 +161,7 @@ def bind_tab_key(widget, on_tab, **bind_kwargs):
             # tab, and False otherwise
             ...
 
-        utils.bind_tab(some_widget, on_tab, add=True)
+        utils.bind_tab_key(some_widget, on_tab, add=True)
 
     The ``event`` argument and ``on_tab()`` return values are treated
     just like with regular bindings.
@@ -212,10 +211,12 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
     be used to change the binding string. For example,
     ``prefixes='Control-'`` means that callback will be ran when the
     user holds down Control and rolls the wheel.
+
+    .. note::
+        This function has not been tested on OSX. If you have a Mac,
+        please try it out and let me know how much it sucked.
     """
-    # i needed to cheat and use stackoverflow, the man pages don't say
-    # what OSX does with MouseWheel events and i don't have an
-    # up-to-date OSX :( the non-x11 code should work on windows and osx
+    # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
     if widget.tk.call('tk', 'windowingsystem') == 'x11':
         def real_callback(event):
@@ -360,9 +361,7 @@ class Checkbox(tk.Checkbutton):
 
 
 def nice_repr(obj):
-    """Don't rely on this, this may be removed later.
-
-    Return a nice string representation of an object.
+    """Return a nice string representation of an object.
 
     >>> import time
     >>> nice_repr(time.strftime)

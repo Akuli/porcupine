@@ -6,23 +6,6 @@
 This module contains handy things that Porcupine uses internally and
 plugins can use freely.
 
-Callback Hook Classes
----------------------
-
-These classes are used for running callbacks in Porcupine:
-
-.. autoclass:: CallbackHook
-    :members:
-
-    .. attribute:: callbacks
-
-        A list of the connected functions. This is useful for things
-        like checking if something is connected::
-
-            >>> hook = CallbackHook('whatever')
-            >>> hook.connect(print)
-            >>> hook.callbacks == [print]
-            True
 
 Information about Python
 ------------------------
@@ -41,20 +24,39 @@ Information about Python
     :data:`sys.executable`. This should point to the real python.exe
     when running in pythonw.exe.
 
+
 Tkinter Utilities
 -----------------
 
-.. autoclass:: Checkbox
-.. autofunction:: get_window
-.. autofunction:: get_root
-.. autofunction:: copy_bindings
 .. autofunction:: bind_mouse_wheel
+.. autofunction:: bind_tab_key
+.. autofunction:: copy_bindings
+.. autoclass:: Checkbox
 .. autofunction:: run_in_thread
 .. autofunction:: get_image
-.. autofunction:: errordialog
+
+.. function:: quote(argument)
+   Add quotes around an argument of a command.
+
+   This function is equivalent to :func:`shlex.quote` on non-Windows systems,
+   and on Windows it adds double quotes in a similar way. This is useful for
+   running commands in the Windows command prompt or a POSIX-compatible shell.
+
 
 Miscellaneous
 -------------
 
 .. autofunction:: backup_open
 .. autofunction:: invert_color
+
+
+Don't-use-this functions
+------------------------
+
+I might remove these functions later, and they are there because some part of
+Porcupine still uses them or these functions do something that was difficult
+to implement.
+
+.. autofunction:: errordialog
+.. autofunction:: temporary_bind
+.. autofunction:: nice_repr

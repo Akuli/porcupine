@@ -30,20 +30,6 @@ class InvalidValue(Exception):
 
 
 class _Config(collections.abc.MutableMapping):
-    """A dictionary-like object for storing settings.
-
-    The config object behaves like a ``{(section, configkey): value}``
-    dictionary where *section* and *configkey* are strings, but it also
-    supports running callbacks when the values change, validating the
-    values and default values. Note that ``config['key', 'value']`` does
-    the same thing as ``config[('key', 'value')]``, so usually you don't
-    need to use parentheses when setting or getting values.
-
-    .. note::
-        If you use threads, don't set config values from other threads
-        than the main thread. Setting values may run callbacks that need
-        to do something with tkinter.
-    """
 
     def __init__(self, filename):
         self._filename = filename
@@ -59,7 +45,7 @@ class _Config(collections.abc.MutableMapping):
     def connect(self, section, key, callback, run_now=False):
         """Schedule ``callback(value)`` to be called when a value changes.
 
-        If *run_now* is True, ``callback(value)`` is also called
+        If *run_now* is True, ``callback(current_value)`` is also called
         immediately when ``connect()`` is called. More than one callback
         may be connected to the same ``(section, key)`` pair.
         """
@@ -123,7 +109,7 @@ class _Config(collections.abc.MutableMapping):
         raise TypeError("cannot delete setting keys")
 
     def __iter__(self):
-        return iter(self._infos)
+        return iter(self._infos.keys())
 
     def __len__(self):
         return len(self._infos)
@@ -131,10 +117,6 @@ class _Config(collections.abc.MutableMapping):
     def add_key(self, section, configkey, default=None, *,
                 converters=(str, str), validator=None, reset=True):
         """Add a new valid key to the config.
-
-        Unlike with regular dictionaries, you need to add keys to the
-        config before you can set them to a value. This method does
-        that.
 
         ``config[section, configkey]`` will be *default* unless
         something else is specified.
@@ -150,8 +132,9 @@ class _Config(collections.abc.MutableMapping):
         :exc:`.InvalidValue` exception.
 
         If *reset* is False, :meth:`reset` won't do anything to the
-        value. This is useful for things that are not controlled with
-        the setting dialog, like ``pygments_style``.
+        value. The setting dialog has a button that runs :meth:`reset`,
+        so this is is useful for things that are not controlled with the
+        setting dialog, like ``pygments_style``.
         """
         # the font validators require a tkinter root window and this
         # needs to run at import time (no root window yet)
@@ -183,7 +166,7 @@ class _Config(collections.abc.MutableMapping):
         automatically add a validator that makes sure that the value is
         minimum, maximum or something between them. Of course, you can
         also use a custom *validator* with or without the
-        minimum-maximum validator.
+        minimum-maximum validator, and only one of *minimum* or *maximum*.
         """
         def the_real_validator(value):
             if minimum is not None and value < minimum:

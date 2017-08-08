@@ -22,9 +22,6 @@ log = logging.getLogger(__name__)
 class TabManager(tk.Frame):
     """A simple but awesome tab widget.
 
-    The tabs attribute is meant to be read-only. The results of
-    modifying it are undefined.
-
     Virtual events:
 
     ``<<NewTab>>``
@@ -42,6 +39,40 @@ class TabManager(tk.Frame):
         the currently selected tab.
 
         .. seealso:: :attr:`~current_tab`
+
+    .. attribute:: tabs
+
+        List of Tab objects in the tab manager.
+
+        Don't modify this list yourself, use methods like
+        :meth:`~move_left`, :meth:`~move_right`, :meth:`~add_tab` or
+        :meth:`~close_tab` instead.
+
+    .. attribute:: no_tabs_frame
+
+        This widget is displayed when there are no tabs. By default,
+        Porcupine adds a welcome message into this. You can remove the
+        content of this frame and replace it with your own thing in a
+        plugin, but **don't** set this to another widget like
+        ``tabmanager.no_tabs_frame = something``.
+
+    .. attribute:: current_tab
+
+        The tab that the user has currently selected.
+
+        This is None when there are no tabs. You can set this to select
+        a tab, like this::
+
+            tabmanager.current_tab = some_tab
+
+    .. attribute:: current_index
+
+        .. warning:: Don't use this attribute. I may remove it later.
+
+        The index of :attr:`~current_tab` in :attr:`~tabs`.
+
+        Setting this raises :exc:`IndexError` if the index is too big or
+        too small. Negative indexes are not supported.
     """
 
     def __init__(self, *args, **kwargs):
@@ -88,11 +119,6 @@ class TabManager(tk.Frame):
 
     @property
     def current_tab(self):
-        """The tab that the user has currently selected.
-
-        This is None when there are no tabs. Don't set this if there are
-        no tabs.
-        """
         return self._current_tab
 
     @current_tab.setter
@@ -124,11 +150,6 @@ class TabManager(tk.Frame):
 
     @property
     def current_index(self):
-        """The index of :attr:`current_tab` in :attr:`.tabs`.
-
-        Setting this raises :exc:`IndexError` if the index is too big or
-        too small. Negative indexes are not supported.
-        """
         if self.current_tab is None:
             return None
         return self.tabs.index(self.current_tab)
@@ -141,7 +162,7 @@ class TabManager(tk.Frame):
         self.current_tab = self.tabs[index]
 
     def add_tab(self, tab, make_current=True):
-        """Append a :class:`Tab` to this tab manager.
+        """Append a :class:`.Tab` to this tab manager.
 
         If ``tab.equivalent(existing_tab)`` returns True for any
         ``existing_tab`` that is already in the tab manager, then that
@@ -151,7 +172,8 @@ class TabManager(tk.Frame):
         If *make_current* is True, then :attr:`current_tab` is set to
         the tab that is returned.
 
-        .. seealso:: :meth:`.Tab.equivalent` and :meth:`.Tab.close`.
+        .. seealso::
+            The :meth:`.Tab.equivalent` and :meth:`~close_tab` methods.
         """
         assert tab not in self.tabs, "cannot add the same tab twice"
         for existing_tab in self.tabs:
@@ -179,6 +201,8 @@ class TabManager(tk.Frame):
 
         The tab is also destroyed, so it cannot be added back to the tab
         manager later.
+
+        .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
         if tab is self.current_tab:
             # go to next or previous tab if there are other tabs
@@ -263,9 +287,38 @@ class TabManager(tk.Frame):
 
 
 class Tab(tk.Frame):
-    """A tab widget that can be added to :class:`TabManager`.
+    """A tab widget that can be added to TabManager.
 
-    Use ``tab.master`` to get the tab manager of a tab.
+    You can easily create custom kinds of tabs by inheriting from this
+    class. Here's a very minimal but complete example plugin:
+
+        import tkinter as tk
+        import porcupine
+        from porcupine import tabs
+
+        class HelloTab(tabs.Tab):
+            def __init__(self, manager):
+                super().__init__(manager)
+                self.top_label['text'] = "Hello"
+                tk.Label(self, text="Hello World!").pack()
+
+        def new_hello_tab():
+            manager = porcupine.get_tab_manager()
+            manager.add_tab(HelloTab(manager))
+
+        def setup():
+            porcupine.add_action(new_hello_tab, 'Hello/New Hello Tab')
+
+    .. attribute:: master
+
+        Tkinter sets this to the parent widget. Use this attribute to
+        access the :class:`TabManager` of a tab.
+
+    .. attribute:: top_label
+
+        This is the label in the top of the tab manager, next to the red
+        close button. For example, :class:`FileTabs <.FileTab>` display
+        the file name in this label.
     """
 
     def __init__(self, manager):
@@ -298,8 +351,9 @@ class Tab(tk.Frame):
     def can_be_closed(self):
         """Check if this tab can be closed.
 
-        This always returns True by default. You can override this in a
-        subclass.
+        By default, this always returns True, but you can override this
+        in a subclass to do something more interesting. See
+        :meth:`.FileTab.can_be_closed` for an example.
         """
         return True
 
@@ -335,18 +389,44 @@ class Tab(tk.Frame):
 class FileTab(Tab):
     """A tab that represents an opened file.
 
-    The tab will have *content* in it by default when it's opened. If
-    *path* is given, the file will be saved there when the user presses
-    Ctrl+S; otherwise the user will be asked to choose a path.
+    The tab will have content in it by default when it’s opened. If
+    *path* is given, the file will be saved there when Ctrl+S is
+    pressed. Otherwise this becomes a "New File" tab.
+
+    For example, you can open a file from a path like this:
+
+        from porcupine import tabs, utils
+        from porcupine.settings import config
+
+        with open(your_path, 'r', encoding=config['Files', 'encoding']) \
+as file:
+            content = file.read()
+
+        tabmanager = utils.get_tab_manager()
+        tab = tabs.FileTab(tabmanager, content, path=your_path)
+        tabmanager.add_tab(tab)
 
     Virtual events:
 
-    ``<<PathChanged>>``
-        This runs when :attr:`~path` is set to a new value. Use
-        ``event.widget.path`` to get the new path.
+        ``<<PathChanged>>``
+            This runs when :attr:`~path` is set to a new value. Use
+            ``event.widget.path`` to get the new path.
 
-    ``<<FiletypeChanged>>``
-        Like ``<<PathChanged>>``, but for :attr:`~filetype`.
+        ``<<FiletypeChanged>>``
+            Like ``<<PathChanged>>``, but for :attr:`~filetype`.
+
+    .. attribute:: path
+
+        Path to where this file is currently saved, as a string.
+
+        This is None if the file has never been saved, and otherwise
+        this should be always set to an absolute path.
+
+    .. attribute:: filetype
+
+        A value from :data:`porcupine.filetypes.filetypes`.
+
+        Setting this runs the ``<<FiletypeChanged>>`` virtual event.
     """
 
     def __init__(self, manager, content='', *, path=None):
@@ -368,6 +448,7 @@ class FileTab(Tab):
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
+        # TODO: document this
         self.textwidget = textwidget.MainText(
             self.mainframe, self._filetype, width=1, height=1,
             wrap='none', undo=True)
@@ -404,16 +485,17 @@ class FileTab(Tab):
     def equivalent(self, other):
         """Return True if *self* and *other* are saved to the same place.
 
-        This returns False if *other* is not a FileTab or the
-        :attr:`path` attributes of both tabs are None.
+        This method overrides :meth:`Tab.can_be_closed` and returns
+        False if other is not a FileTab or the path of at least one of
+        the tabs is None. If neither path is None, this returns True if
+        the paths point to the same file. This way, it's possible to
+        have multiple "New File" tabs.
         """
         # this used to have hasattr(other, "path") instead of isinstance
         # but it screws up if a plugin defines something different with
         # a path attribute, for example, a debugger plugin might have
         # tabs that represent files and they might need to be opened at
         # the same time as FileTabs are
-        # note that this returns False when the paths of both tabs are
-        # None, so it's possible to have multiple "New File" tabs
         return (isinstance(other, FileTab) and
                 self.path is not None and
                 other.path is not None and
@@ -431,27 +513,20 @@ class FileTab(Tab):
         return result.hexdigest()
 
     def mark_saved(self):
-        """Make the tab look like it's saved.
-
-        This makes :meth:`is_saved` return True.
-        """
+        """Make :meth:`is_saved` return True."""
         self._save_hash = self._get_hash()
-        self._update_top_label()
+        self._update_top_label()      # TODO: add a virtual event for this?
 
     def is_saved(self):
         """Return False if the text has changed since previous save.
 
-        Use :meth:`mark_saved` to set this.
+        This is set to False automagically when the content is modified.
+        Use :meth:`mark_saved` to set this to True.
         """
         return self._get_hash() == self._save_hash
 
     @property
     def path(self):
-        """Path to where this file is currently saved.
-
-        This is None if the file has never been saved, and otherwise
-        this should be always set to an absolute path.
-        """
         return self._path
 
     @path.setter
@@ -471,7 +546,6 @@ class FileTab(Tab):
 
     @property
     def filetype(self):
-        """A value from :data:`porcupine.filetypes.filetypes`."""
         return self._filetype
 
     @filetype.setter
@@ -498,10 +572,14 @@ class FileTab(Tab):
             self.top_label['fg'] = 'red'
 
     def can_be_closed(self):
-        """If needed, display a "wanna save?" dialog and save.
+        """
+        This overrides :meth:`Tab.can_be_closed` in order to display a
+        save dialog.
 
-        Return False if the user cancels and True otherwise. This
-        overrides :meth:`.Tab.can_be_closed`.
+        If the file has been saved, this returns True and the tab is
+        closed normally. Otherwise this method asks the user whether the
+        file should be saved, and returns False only if the user cancels
+        something (and thus wants to keep working on this file).
         """
         if self.is_saved():
             return True
@@ -521,6 +599,7 @@ class FileTab(Tab):
         # no was clicked, can be closed
         return True
 
+    # TODO: document the overriding
     def on_focus(self):
         self.textwidget.focus()
 
@@ -573,7 +652,7 @@ class FileTab(Tab):
 
     # TODO: turn this into a plugin!
     def find(self):
-        """This method will probably be removed soon. Don't use it."""
+        """This method will hopefully be removed soon. Don't use it."""
         if self._findwidget is None:
             log.debug("find widget not created yet, creating it")
             self._findwidget = _find.Finder(self, self.textwidget)

@@ -22,10 +22,25 @@ _tab_manager = None
 
 
 def init(window):
-    """Set up Porcupine minimally.
+    """Set up Porcupine.
 
-    Running Porcupine normally runs this function and some other things.
-    See :source:`porcupine/__main__.py`.
+    Usually :source:`porcupine/__main__.py` calls this function and you
+    don't need to call it yourself. This function can still be useful if
+    you want to run Porcupine minimally from another Python program for
+    some reason.
+
+    The *window* argument can be a tkinter root window or a ``Toplevel``
+    widget.
+
+    Example::
+
+        import tkinter as tk
+        import porcupine
+
+        root = tk.Tk()
+        porcupine.init(root)
+        root.protocol('WM_DELETE_WINDOW', porcupine.quit)
+        root.mainloop()
     """
     global _main_window
     global _tab_manager
@@ -53,10 +68,15 @@ def init(window):
 
 
 def quit():
-    """If all tabs can be closed, close them and destroy the main window.
+    """
+    Calling this function is equivalent to clicking the X button in the
+    corner of the window.
 
-    .. seealso:: :meth:`porcupine.tabs.Tab.can_be_closed`,
-                 :func:`~get_main_window`
+    This function makes sure that all tabs can be closed by calling
+    their :meth:`can_be_closed() <porcupine.tabs.Tab.can_be_closed>`
+    methods. If they can, all tabs are
+    :meth:`closed <porcupine.tabs.TabManager.close_tab>` and the main 
+    window is destroyed.
     """
     for tab in _tab_manager.tabs:
         if not tab.can_be_closed():
@@ -243,8 +263,8 @@ def _setup_actions():
                    run_now=True)
 
 
-def new_file():
-    """Add a "New File" tab to the tab manager."""
+def new_file(content=''):
+    """Add a "New File" tab to the tab manager with the given content in it."""
     _tab_manager.add_tab(tabs.FileTab(_tab_manager))
 
 
@@ -284,13 +304,6 @@ def add_action(callback, menupath=None, keyboard_shortcut=(None, None),
     with. If you want to allow no tabs at all, add None to this list.
     The menuitem will be disabled and the binding won't do anything when
     the current tab is not of a compatible type.
-
-    Example::
-
-        def print_hello():
-            print("hello")
-
-        porcupine.add_action(print_hello, "Hello/Hello World")
     """
     tabtypes = tuple((
         # isinstance(None, type(None)) is True
@@ -307,11 +320,7 @@ def add_action(callback, menupath=None, keyboard_shortcut=(None, None),
         menuindex = menu.index('end')
 
         def tab_changed(event):
-            try:
-                enable = isinstance(_tab_manager.tabs[-1], tabtypes)
-            except IndexError:
-                # no tabs
-                enable = False
+            enable = isinstance(_tab_manager.current_tab, tabtypes)
             menu.entryconfig(
                 menuindex, state=('normal' if enable else 'disabled'))
 
