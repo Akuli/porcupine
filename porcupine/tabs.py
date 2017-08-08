@@ -290,7 +290,7 @@ class Tab(tk.Frame):
     """A tab widget that can be added to TabManager.
 
     You can easily create custom kinds of tabs by inheriting from this
-    class. Here's a very minimal but complete example plugin:
+    class. Here's a very minimal but complete example plugin::
 
         import tkinter as tk
         import porcupine
