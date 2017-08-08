@@ -109,23 +109,24 @@ Here are the widgets that Porcupine itself creates without any plugins:
 .. |1| unicode:: \x2776
 .. |2| unicode:: \x2777
 .. |3| unicode:: \x2778
+.. |4| unicode:: \x2779
 
-Main window (the whole image)
+|1| Main Window
    Everything is inside this widget. Usually it's a ``tkinter.Tk`` root
    window, but it may be a ``Toplevel`` widget as well. You can
    access this widget with :func:`porcupine.get_main_window`.
 
-Menu bar (|1|)
+|2| Menu Bar
    The :mod:`porcupine.menubar` module contains functions for accessing this
    widget and adding more items to it. However, most of the time it's easiest
    to use :func:`porcupine.add_action` as shown above.
 
-Tab manager (|2|)
+|3| Tab Manager
    This widget contains tabs (see below), and a welcome message when there are
    no tabs to display. This widget is a :class:`porcupine.tabs.TabManager` and
    can be accessed with :func:`porcupine.get_tab_manager`.
 
-A tab (|3|)
+|4| A Tab
    Tabs are :class:`porcupine.tabs.Tab` widgets, and you can access them with
    the tab manager's :attr:`tabs <porcupine.tabs.TabManager.tabs>` attribute.
    This tab is a :class:`porcupine.tabs.FileTab` because it represents a new
