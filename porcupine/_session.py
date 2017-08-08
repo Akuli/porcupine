@@ -9,7 +9,7 @@ import pygments.styles
 import pygments.token
 
 import porcupine
-from porcupine import (dialogs, dirs, filetypes, menubar,
+from porcupine import (_dialogs, dirs, filetypes, menubar,
                        settingdialog, tabs, utils)
 from porcupine.settings import config
 
@@ -129,8 +129,7 @@ def _make_welcome_msg(frame):
 
 def _setup_actions():
     def open_files():
-        defaultdir = os.getcwd()      # FIXME
-        for path in dialogs.open_files(defaultdir):
+        for path in _dialogs.open_files():
             try:
                 open_file(path)
             except (OSError, UnicodeError) as e:

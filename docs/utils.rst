@@ -58,6 +58,7 @@ Miscellaneous
 .. autofunction:: backup_open
 
 .. function:: quote(argument)
+
    Add quotes around an argument of a command.
 
    This function is equivalent to :func:`shlex.quote` on non-Windows systems,
@@ -69,9 +70,9 @@ Don't-use-this functions
 ------------------------
 
 I might remove these functions later, and they are there because some part of
-Porcupine still uses them or these functions do something that was difficult
-to implement.
+Porcupine still uses them, the function does something that was difficult to
+implement or I'm planning on rewriting the whole function in an incompabile way
+later.
 
 .. autofunction:: errordialog
 .. autofunction:: temporary_bind
-.. autofunction:: nice_repr

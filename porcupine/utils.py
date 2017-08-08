@@ -288,9 +288,6 @@ atexit.register(get_image.cache_clear)
 def errordialog(title, message, monospace_text=None):
     """This is a lot like ``tkinter.messagebox.showerror``.
 
-    Don't rely on this, I'll probably move this to
-    :mod:`porcupine.dialogs` later.
-
     This function can be called with or without creating a root window
     first. If *monospace_text* is not None, it will be displayed below
     the message in a ``tkinter.Text`` widget.
@@ -378,21 +375,6 @@ class Checkbox(tk.Checkbutton):
         super().__init__(*args, **kwargs)
         if self['selectcolor'] == self['foreground'] == '#ffffff':
             self['selectcolor'] = self['background']
-
-
-def nice_repr(obj):
-    """Return a nice string representation of an object.
-
-    >>> import time
-    >>> nice_repr(time.strftime)
-    'time.strftime'
-    >>> nice_repr(object())     # doctest: +ELLIPSIS
-    '<object object at 0x...>'
-    """
-    try:
-        return obj.__module__ + '.' + obj.__qualname__
-    except AttributeError:
-        return repr(obj)
 
 
 @contextlib.contextmanager

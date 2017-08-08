@@ -12,8 +12,9 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
+# FIXME: the damn find thing should be a plugin...
 import porcupine
-from porcupine import dialogs, filetypes, _find, textwidget, utils
+from porcupine import _dialogs, _find, filetypes, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -644,7 +645,7 @@ as file:
         Returns True if the file was saved, and False if the user
         cancelled the dialog.
         """
-        path = dialogs.save_as(old_path=self.path)
+        path = _dialogs.save_as(self.path)
         if path is None:
             return False
         self.path = path
