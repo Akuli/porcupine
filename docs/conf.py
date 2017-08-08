@@ -4,14 +4,14 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 import porcupine
 
-sys.path.insert(0, os.path.abspath('.'))   # for github_links
+sys.path.insert(0, os.path.abspath('.'))
 extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.autodoc',
-    'github_links',
+    'extensions',       # my extensions.py
 ]
 
 source_suffix = '.rst'

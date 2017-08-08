@@ -29,6 +29,7 @@ Everything that you can use in plugins is documented here.
 
       porcupine
       tabs
+      textwidget
       dialogs
       dirs
       filetypes

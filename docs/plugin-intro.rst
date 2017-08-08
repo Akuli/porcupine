@@ -143,6 +143,8 @@ Here are the widgets that Porcupine itself creates without any plugins:
 That should be plenty of useful links for you to get started with things.
 
 
+.. _virtual-events:
+
 Virtual Events
 --------------
 
@@ -175,9 +177,9 @@ there are a few things that you should be aware of.
 Use add=True
 ^^^^^^^^^^^^
 
-When you bind something in a plugin and another plugin might need to bind as
-well, use the ``add=True`` argument to ``bind()``. For example, let's
-say you have something like this::
+When you bind something that another plugin might need to bind as well, use the
+``add=True`` argument to ``bind()``. For example, let's say you have something
+like this::
 
    def callback1(event):
        print("lol")

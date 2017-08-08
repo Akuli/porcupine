@@ -22,9 +22,8 @@ log = logging.getLogger(__name__)
 class TabManager(tk.Frame):
     """A simple but awesome tab widget.
 
-    Virtual events:
+    .. virtualevent:: <<NewTab>>
 
-    ``<<NewTab>>``
         This runs after a new tab has been added to this tab manager
         with :meth:`~add_tab`. The tab is always added to the end of
         :attr:`~tabs`, so you can access it with
@@ -33,7 +32,8 @@ class TabManager(tk.Frame):
         Bind to the ``<Destroy>`` event of the tab if you want to clean
         up something when the tab is closed.
 
-    ``<<CurrentTabChanged>>``
+    .. virtualevent:: <<CurrentTabChanged>>
+
         This runs when the user selects another tab or Porcupine does it
         for some reason. Use ``event.widget.current_tab`` to get or set
         the currently selected tab.
@@ -406,14 +406,15 @@ as file:
         tab = tabs.FileTab(tabmanager, content, path=your_path)
         tabmanager.add_tab(tab)
 
-    Virtual events:
+    .. virtualevent:: <<PathChanged>>
 
-        ``<<PathChanged>>``
-            This runs when :attr:`~path` is set to a new value. Use
-            ``event.widget.path`` to get the new path.
+        This runs when :attr:`~path` is set to a new value. Use
+        ``event.widget.path`` to get the new path.
 
-        ``<<FiletypeChanged>>``
-            Like ``<<PathChanged>>``, but for :attr:`~filetype`.
+    .. virtualevent:: <<FiletypeChanged>>
+
+        Like ``<<PathChanged>>``, but for :attr:`~filetype`. Use
+        ``event.widget.filetype`` to access the new file type.
 
     .. attribute:: path
 

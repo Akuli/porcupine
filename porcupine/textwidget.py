@@ -1,5 +1,3 @@
-"""The big text widget in the middle of the editor."""
-
 import functools
 import tkinter as tk
 import tkinter.font as tkfont
@@ -15,9 +13,8 @@ class HandyText(tk.Text):
 
     All arguments are passed to ``tkinter.Text``.
 
-    Virtual events:
+    .. virtualevent:: <<ContentChanged>>
 
-    ``<<ContentChanged>>``
         This event is generated when the text in the widget is modified
         in any way, and it's implemented with ``<<Modified>>``. Unlike
         ``<<Modified>>``, this event is simply generated every time the
@@ -26,10 +23,12 @@ class HandyText(tk.Text):
 
         .. note::
             Don't use ``<<Modified>>`` or ``edit_modified()`` with
-            HandyText. That would conflict with the
-            ``<<ContentChanged>>`` implementation.
+            HandyText. They would conflict with the
+            ``<<ContentChanged>>`` implementation, and
+            ``<<ContentChanged>>`` is easier to use in general.
 
-    ``<<CursorMoved>>``
+    .. virtualevent:: <<CursorMoved>>
+
         This event is generated every time the user moves the cursor or
         it's moved with a method of the text widget. Use
         ``textwidget.index('insert')`` to find the current cursor
@@ -59,7 +58,9 @@ class HandyText(tk.Text):
         self.cursor_has_moved()
 
     def cursor_has_moved(self):
-        """Call this when the cursor may have moved.
+        """
+        Call this when the cursor may have moved and the text widget
+        hasn't noticed it for some reason.
 
         This does nothing if the cursor hasn't actually moved, so you
         don't need to worry about calling this too often.
@@ -96,17 +97,21 @@ class HandyText(tk.Text):
         super().mark_set(*args, **kwargs)
         self.cursor_has_moved()
 
-    def iter_chunks(self):
-        """Iterate over the content as 100-line chunks.
+    def iter_chunks(self, n=100):
+        r"""Iterate over the content as chunks of *n* lines.
 
-        This does not break lines in the middle or yield empty strings.
+        Each yielded line ends with a ``\n`` character. Lines are not
+        broken down the middle, and ``''`` is never yielded.
+
+        Note that the last chunk is less than *n* lines long unless the
+        total number of lines is divisible by *n*.
         """
-        start = 1     # this is not a mistake
+        start = 1     # this is not a mistake, line numbers start at 1
         while True:
-            end = start + 100
+            end = start + n
             if self.index('%d.0' % end) == self.index('end'):
-                # '%d.0' % start can be 'end - 1 char' in some corner
-                # cases, let's not yield an empty string
+                # '%d.0' % start can be 'end - 1 char' in a corner
+                # case, let's not yield an empty string
                 last_chunk = self.get('%d.0' % start, 'end - 1 char')
                 if last_chunk:
                     yield last_chunk
@@ -118,23 +123,24 @@ class HandyText(tk.Text):
     def iter_lines(self):
         r"""Iterate over the content as lines.
 
-        The trailing ``\n`` character is always included.
+        The trailing ``\n`` characters of each line are included.
         """
         for chunk in self.iter_chunks():
-            yield from chunk.splitlines(True)
+            yield from chunk.splitlines(keepends=True)
 
 
 # this can be used for implementing other themed things too, e.g. the
 # line number plugin
 class ThemedText(HandyText):
-    """A text widget that uses a Pygments style's colors.
+    """A :class:`.HandyText` subclass that uses the Pygments style's colors.
 
-    This is useful for things like the
-    :github:`line number plugin <plugins/linenumbers.py>`.
+    You can use this class just like :class:`.HandyText`, it takes care
+    of switching the colors by itself. This is useful for things like
+    :source:`porcupine/plugins/linenumbers.py`.
 
     .. seealso::
         Syntax highlighting is implemented with Pygments in
-        :github:`plugins/highlight.py`.
+        :source:`porcupine/plugins/highlight.py`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -151,8 +157,8 @@ class ThemedText(HandyText):
         style = pygments.styles.get_style_by_name(name)
         bg = style.background_color
 
-        # yes, style.default_style is a '#rrggbb' string or with some
-        # themes an empty string (undocumented)
+        # yes, style.default_style can be '#rrggbb', '' or nonexistent
+        # this is undocumented
         #
         #   >>> from pygments.styles import *
         #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
@@ -160,16 +166,13 @@ class ThemedText(HandyText):
         #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
         #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
         #    '#222222', '', '', '', '???', '']
-        #
-        # this falls back to the background inverted, and it's currently
-        # used only in the line numbers
         fg = getattr(style, 'default_style', '') or utils.invert_color(bg)
 
         self['fg'] = fg
         self['bg'] = bg
         self['insertbackground'] = fg  # cursor color
 
-        # TODO: do something nicer here :(
+        # this is actually not too bad :D
         self['selectforeground'] = bg
         self['selectbackground'] = fg
 
@@ -183,6 +186,8 @@ class MainText(ThemedText):
         super().__init__(parent, **kwargs)
         self.set_filetype(filetype)
 
+        # FIXME: lots of things have been turned into plugins, but
+        # there's still wayyyy too much stuff in here...
         partial = functools.partial     # pep8 line length
         self.bind('<BackSpace>', partial(self._on_delete, False))
         self.bind('<Control-BackSpace>', partial(self._on_delete, True))
