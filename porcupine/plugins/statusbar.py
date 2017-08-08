@@ -28,10 +28,7 @@ class StatusBar(tk.Frame):
         tab.textwidget.bind('<<CursorMoved>>', self.do_update, add=True)
 
     def on_tab_changed(self, event):
-        if event.widget.tabs:
-            self._current_tab = event.widget.tabs[-1]
-        else:
-            self._current_tab = None
+        self._current_tab = event.widget.current_tab
         self.do_update()
 
     # this is do_update() because tkinter has a method called update()
