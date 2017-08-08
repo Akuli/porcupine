@@ -99,10 +99,7 @@ def main():
 
         info("deleting the temporary directory")
 
-    print()
-    print('*' * 70)
-    print("Done! Now run 'git push origin gh-pages' to upload the "
-          "documentation.")
+    run('git', 'push', 'origin', 'gh-pages')
 
 
 if __name__ == '__main__':
