@@ -9,7 +9,7 @@ import sys
 import tkinter as tk
 
 import porcupine
-from porcupine import _ipc, _logs, _pluginloader, dirs
+from porcupine import _ipc, _logs, _pluginloader, dirs, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -39,43 +39,63 @@ def queue_opener(queue):
     window.after(200, queue_opener, queue)
 
 
-def main():
-    # sys.argv[0] is '__main__.py', so we can't use that as the prog
-    # these hard-coded progs are wrong in some situations, but at least
-    # better than '__main__.py'
-    if platform.system() == 'Windows':
-        prog = 'py -m porcupine'
-    else:
-        prog = '%s -m porcupine' % os.path.basename(sys.executable)
+_EPILOG = r"""
+Examples:
+  %(prog)s                    # run Porcupine normally
+  %(prog)s file1.py file2.js  # open the given files on startup
+  %(prog)s --no-plugins       # understand the power of plugins
+  %(prog)s --verbose          # produce lots of nerdy output
+"""
 
+
+def main():
     parser = argparse.ArgumentParser(
-        prog=prog, description=porcupine.__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        prog=('%s -m porcupine' % utils.short_python_command),
+        epilog=_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         '-v', '--version', action='version',
         version=("Porcupine %s" % porcupine.__version__),
         help="display the Porcupine version number and exit")
     parser.add_argument(
-        'file', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
+        'files', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         type=argparse.FileType("r"),
         help="open these files when Porcupine starts, - means stdin")
-    parser.add_argument(
-        '--verbose', action='store_true',
-        help="print same debugging messages to stderr as to log file")
-    parser.add_argument(
+
+    plugingroup = parser.add_mutually_exclusive_group()
+    plugingroup.add_argument(
+        '--no-plugins', action='store_false', dest='yes_plugins',
+        help=("don't load the plugins, this is useful for "
+              "understanding how much can be done with plugins"))
+    plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
         help=("respect setup_after, but otherwise setup the plugins "
               "in a random order instead of alphabetical order"))
+
+    loggroup = parser.add_mutually_exclusive_group()
+    loggroup.add_argument(
+        '--logfile', type=argparse.FileType('w'),
+        help=("write logs to this file, defaults to a .txt file in %s"
+              % dirs.cachedir))
+    loggroup.add_argument(
+        '--verbose', dest='logfile', action='store_const', const=sys.stderr,
+        help="use stderr as the log file")
+
     args = parser.parse_args()
 
     filelist = []
-
-    for f in args.file:
-        with f:
-            if f == sys.stdin:
-                filelist.append((None, f.read()))
-            else:
-                filelist.append((os.path.abspath(f.name), f.read()))
+    for file in args.files:
+        if file is sys.stdin:
+            # don't close stdin so it's possible to do this:
+            #
+            #   $ porcupine - -
+            #   bla bla bla
+            #   ^D
+            #   bla bla
+            #   ^D
+            filelist.append((None, file.read()))
+        else:
+            with file:
+                filelist.append((os.path.abspath(file.name), file.read()))
 
     try:
         if filelist:
@@ -93,7 +113,7 @@ def main():
         pass
 
     dirs.makedirs()
-    _logs.setup(verbose=args.verbose)
+    _logs.setup(args.logfile)
     log.info("starting Porcupine %s on %s", porcupine.__version__,
              platform.platform().replace('-', ' '))
     log.info("running on Python %d.%d.%d from %s",
@@ -105,7 +125,8 @@ def main():
     root.geometry(config['GUI', 'default_size'])
     root.protocol('WM_DELETE_WINDOW', porcupine.quit)
 
-    _pluginloader.load(shuffle=args.shuffle_plugins)
+    if args.yes_plugins:
+        _pluginloader.load(shuffle=args.shuffle_plugins)
 
     # see queue_opener()
     for path, content in filelist:

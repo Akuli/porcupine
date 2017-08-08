@@ -23,29 +23,52 @@ log = logging.getLogger(__name__)
 # print still works because it checks if sys.stdout is None
 running_pythonw = (sys.stdout is None)
 
-# this is a hack :(
-python = sys.executable
+python_executable = sys.executable
 if running_pythonw and sys.executable.lower().endswith(r'\pythonw.exe'):
-    # get rid of the 'w'
+    # get rid of the 'w' and hope for the best...
     _possible_python = sys.executable[:-5] + sys.executable[-4:]
     if os.path.isfile(_possible_python):
-        python = _possible_python
+        python_executable = _possible_python
 
-# get rid of symlinks and make it absolute
-python = os.path.realpath(python)
+
+def _find_short_python():
+    if platform.system() == 'Windows':
+        # windows python uses a py.exe launcher program in system32
+        expected = 'Python %d.%d.%d' % sys.version_info[:3]
+
+        try:
+            for python in ['py', 'py -%d' % sys.version_info[0],
+                           'py -%d.%d' % sys.version_info[:2]]:
+                # command strings aren't different from lists of
+                # arguments on windows, the subprocess module just
+                # quotes lists anyway (see subprocess.list2cmdline)
+                got = subprocess.check_output('%s --version' % python)
+                if expected.encode('ascii') == got.strip():
+                    return python
+        except (OSError, subprocess.CalledProcessError):
+            # something's wrong with py.exe 0_o it probably doesn't
+            # exist at all and we got a FileNotFoundError
+            pass
+
+    else:
+        for python in ['python', 'python%d' % sys.version_info[0],
+                       'python%d.%d' % sys.version_info[:2]]:
+            # os.path.samefile() does the right thing with symlinks
+            path = shutil.which(python)
+            if path is not None and os.path.samefile(path, sys.executable):
+                return python
+
+    # use the full path as a fallback
+    return python_executable
+
+
+short_python_command = _find_short_python()
 
 
 # TODO: document quote()
 if platform.system() == 'Windows':
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string):
-        """Like shlex.quote, but for Windows.
-
-        >>> quote('test')
-        'test'
-        >>> quote('test thing')
-        '"test thing"'
-        """
         result = []
         needquote = False
         bs_buf = []
@@ -84,7 +107,6 @@ else:
     from shlex import quote    # noqa
 
 
-# TODO: add this to docs/utils.rst
 def invert_color(color):
     """Return a color with opposite red, green and blue values.
 
@@ -105,8 +127,6 @@ def invert_color(color):
     return '#%02x%02x%02x' % (r, g, b)
 
 
-# this is currently not used anywhere, but i spent a while figuring out
-# how to do this and it might be useful in the future
 @contextlib.contextmanager
 def temporary_bind(widget, sequence, func):
     """Bind and unbind a callback.

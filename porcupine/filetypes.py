@@ -123,36 +123,6 @@ def guess_filetype(filename):
     return filetypes[temp_lexer.name]
 
 
-def _find_short_python_command():
-    if platform.system() == 'Windows':
-        # windows python uses a py.exe launcher program in system32
-        expected = 'Python %d.%d.%d' % sys.version_info[:3]
-        try:
-            for python in ['py', 'py -%d' % sys.version_info[0],
-                           'py -%d.%d' % sys.version_info[:2]]:
-                # command strings aren't different from lists of
-                # arguments on windows, the subprocess module just
-                # quotes lists anyway (see subprocess.list2cmdline)
-                got = subprocess.check_output('%s --version' % python)
-                if expected.encode('ascii') == got.strip():
-                    return python
-        except (OSError, subprocess.CalledProcessError):
-            # something's wrong with py.exe 0_o it probably doesn't
-            # exist at all and we got a FileNotFoundError
-            pass
-
-    else:
-        for python in ['python', 'python%d' % sys.version_info[0],
-                       'python%d.%d' % sys.version_info[:2]]:
-            # os.path.samefile() does the right thing with symlinks
-            path = shutil.which(python)
-            if path is not None and os.path.samefile(path, utils.python):
-                return python
-
-    # use full path as a fallback
-    return utils.python
-
-
 # default values of the DEFAULT section
 _DEFAULT_DEFAULTS = {
     'tabs2spaces': 'yes',
@@ -187,11 +157,10 @@ def _set_stupid_defaults(config):
 
     config['Makefile'] = {'tabs2spaces': 'no'}
 
-    python = _find_short_python_command()
     config['Python'] = {
         'max_line_length': '79',
-        'run_command': '%s {file}' % python,
-        'lint_command': '%s -m flake8 {file}' % python,
+        'run_command': '%s {file}' % utils.short_python_command,
+        'lint_command': '%s -m flake8 {file}' % utils.short_python_command,
     }
 
     # 79 comes from documentation-style-guide-sphinx.readthedocs.io

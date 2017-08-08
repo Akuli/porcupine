@@ -66,21 +66,17 @@ class _ClosingStreamHandler(logging.StreamHandler):
         self.stream.close()
 
 
-def setup(verbose):
-    printformat = logging.Formatter("%(name)s: %(message)s")
-    fileformat = logging.Formatter(
-        "[PID {} %(levelname)s] %(name)s: %(message)s"
-        .format(os.getpid()))
+def setup(file=None):
+    if file is None:
+        handler = _ClosingStreamHandler(_open_log_file())
+    elif file in (sys.stdout, sys.stderr):
+        # somehow closing these files just feels wrong
+        handler = StreamHandler(file)
+    else:
+        handler = _ClosingStreamHandler(file)
 
-    printhandler = logging.StreamHandler()
-    printhandler.setLevel(logging.DEBUG if verbose else logging.WARNING)
-    printhandler.setFormatter(fileformat if verbose else printformat)
-
-    filehandler = _ClosingStreamHandler(_open_log_file())
-    filehandler.setLevel(logging.DEBUG)
-    filehandler.setFormatter(fileformat)
-
-    logging.basicConfig(
-        level=logging.DEBUG,
-        handlers=[printhandler, filehandler],
-    )
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter(
+        "[PID {} %(levelname)s] %(name)s: %(message)s".format(os.getpid())
+    ))
+    logging.basicConfig(level=logging.DEBUG, handlers=[handler])

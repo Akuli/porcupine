@@ -27,9 +27,9 @@ run_script = os.path.join(os.path.abspath(__path__[0]), run_script)
 
 def _windows_run(path):
     if path is None:
-        command = [utils.python]
+        command = [utils.python_executable]
     else:
-        command = [utils.python, run_script, path]
+        command = [utils.python_executable, run_script, path]
 
     if not utils.running_pythonw:
         # windows wants to run python in the same terminal that
@@ -43,7 +43,8 @@ def _windows_run(path):
 def _osx_terminal_app_run(path):
     if path is None:
         # this is easy because we don't need to pass arguments
-        subprocess.Popen(['open', '-a', 'Terminal.app', utils.python])
+        subprocess.Popen(['open', '-a', 'Terminal.app',
+                          utils.python_executable])
         return
 
     # passing arguments is not easy, these things are wrong with this:
@@ -54,7 +55,8 @@ def _osx_terminal_app_run(path):
     #    OSX versions need to change their terminal settings
     # big thanks to go|dfish for testing this code!
     dirname, basename = os.path.split(path)
-    command = [run_script, '--dont-wait', utils.python, dirname, basename]
+    command = [run_script, '--dont-wait', utils.python_executable,
+               dirname, basename]
 
     quoted_command = ' '.join(map(shlex.quote, command))
     with tempfile.NamedTemporaryFile(
@@ -72,7 +74,7 @@ def _osx_terminal_app_run(path):
 def _x11_like_run(path):
     terminal = os.environ.get('TERMINAL', 'x-terminal-emulator')
     if path is None:
-        subprocess.Popen([terminal, '-e', utils.python])
+        subprocess.Popen([terminal, '-e', utils.python_executable])
         return
 
     # sometimes x-terminal-emulator points to mate-terminal.wrapper,
@@ -92,7 +94,7 @@ def _x11_like_run(path):
             terminal = 'mate-terminal'
 
     dirname, basename = os.path.split(path)
-    command = [run_script, utils.python, dirname, basename]
+    command = [run_script, utils.python_executable, dirname, basename]
     quoted_command = ' '.join(map(shlex.quote, command))
     subprocess.Popen([terminal, '-e', quoted_command])
 

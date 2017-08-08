@@ -14,15 +14,30 @@ Information about Python
 
     This is True if Python is running in pythonw.exe on Windows.
 
-    The pythonw.exe program runs Python scripts without a command
+    The ``pythonw.exe`` program runs Python scripts without a command
     prompt, so you need to check for that when doing things like
     starting a new command prompt from Python.
 
-.. data:: python
+.. data:: python_executable
 
-    If :data:`.running_pythonw` is False, this is
-    :data:`sys.executable`. This should point to the real python.exe
-    when running in pythonw.exe.
+   Like :data:`sys.executable`, but this should also be correct on
+   ``pythonw.exe``.
+
+.. data:: short_python_command
+
+   A short command for running the Python that Porcupine is running on.
+
+   This may contain arguments. For example, this might be ``'py -3'`` on a
+   Windows system that has both Python 2 and Python 3 installed, and Python 2
+   is the default.
+
+   Note that this is quoted already if it needs quoting, and should *not* be
+   quoted more. For example, this example is **bad**::
+
+      subprocess.call([utils.short_python_command, 'blah', 'blah'])
+
+   Use :data:`python_executable` if you want to do a :func:`subprocess.call` or
+   something like that.
 
 
 Tkinter Utilities
@@ -35,19 +50,19 @@ Tkinter Utilities
 .. autofunction:: run_in_thread
 .. autofunction:: get_image
 
+
+Miscellaneous
+-------------
+
+.. autofunction:: invert_color
+.. autofunction:: backup_open
+
 .. function:: quote(argument)
    Add quotes around an argument of a command.
 
    This function is equivalent to :func:`shlex.quote` on non-Windows systems,
    and on Windows it adds double quotes in a similar way. This is useful for
    running commands in the Windows command prompt or a POSIX-compatible shell.
-
-
-Miscellaneous
--------------
-
-.. autofunction:: backup_open
-.. autofunction:: invert_color
 
 
 Don't-use-this functions
