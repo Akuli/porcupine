@@ -290,7 +290,7 @@ class TabManager(tk.Frame):
 
 
 class Tab(tk.Frame):
-    """A tab widget that can be added to TabManager.
+    r"""A tab widget that can be added to TabManager.
 
     You can easily create custom kinds of tabs by inheriting from this
     class. Here's a very minimal but complete example plugin::
@@ -312,6 +312,24 @@ class Tab(tk.Frame):
         def setup():
             porcupine.add_action(new_hello_tab, 'Hello/New Hello Tab')
 
+    .. attribute:: status
+
+        A human-readable string for showing in e.g. a status bar.
+
+        The status message can also contain multiple tab-separated
+        things, e.g. ``"File 'thing.py'\tLine 12, column 34"``.
+
+        This is ``''`` by default, but that can be changed like
+        ``tab.status = something_new``.
+
+        If you're writing something like a status bar, make sure to
+        handle ``\t`` characters and bind ``<<StatusChanged>>``.
+
+    .. virtualevent:: <<StatusChanged>>
+
+        This event is generated when :attr:`status` is set to a new
+        value. Use ``event.widget.status`` to access the current status.
+
     .. attribute:: master
 
         Tkinter sets this to the parent widget. Use this attribute to
@@ -326,6 +344,7 @@ class Tab(tk.Frame):
 
     def __init__(self, manager):
         super().__init__(manager)
+        self._status = ''
 
         def select_me(event):
             manager.current_tab = self
@@ -351,12 +370,26 @@ class Tab(tk.Frame):
         utils.bind_mouse_wheel(self.top_label, manager._on_wheel)
         utils.bind_mouse_wheel(closebutton, manager._on_wheel)
 
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, new_status):
+        self._status = new_status
+        self.event_generate('<<StatusChanged>>')
+
     def can_be_closed(self):
         """Check if this tab can be closed.
 
         By default, this always returns True, but you can override this
         in a subclass to do something more interesting. See
         :meth:`.FileTab.can_be_closed` for an example.
+
+        .. TODO: we need some way to link to virtual event docs -_-
+
+        .. seealso::
+            The ``<<StatusChanged>>`` virtual event, documented above.
         """
         return True
 
@@ -396,7 +429,7 @@ class FileTab(Tab):
     *path* is given, the file will be saved there when Ctrl+S is
     pressed. Otherwise this becomes a "New File" tab.
 
-    For example, you can open a file from a path like this:
+    For example, you can open a file from a path like this::
 
         from porcupine import tabs, utils
         from porcupine.settings import config
@@ -442,7 +475,7 @@ as file:
         # path and filetype are set correctly below
         # TODO: try to guess the filetype from the content when path is None
         self._path = path
-        self._guess_filetype()          # sets self._filetype
+        self._guess_filetype()          # this sets self._filetype
         self.bind('<<PathChanged>>', self._update_top_label, add=True)
         self.bind('<<PathChanged>>', self._guess_filetype, add=True)
 
@@ -461,9 +494,14 @@ as file:
                   add=True)
         self.textwidget.bind('<<ContentChanged>>', self._update_top_label,
                              add=True)
+
         if content:
             self.textwidget.insert('1.0', content)
             self.textwidget.edit_reset()   # reset undo/redo
+
+        self.bind('<<PathChanged>>', self._update_status, add=True)
+        self.bind('<<FiletypeChanged>>', self._update_status, add=True)
+        self.textwidget.bind('<<CursorMoved>>', self._update_status, add=True)
 
         # everything seems to work ok without this except that e.g.
         # pressing Ctrl+O in the text widget opens a file AND inserts a
@@ -485,6 +523,7 @@ as file:
 
         self.mark_saved()
         self._update_top_label()
+        self._update_status()
 
     def equivalent(self, other):
         """Return True if *self* and *other* are saved to the same place.
@@ -574,6 +613,16 @@ as file:
             self.top_label['fg'] = self._orig_label_fg
         else:
             self.top_label['fg'] = 'red'
+
+    def _update_status(self, junk=None):
+        if self.path is None:
+            start = "New file"
+        else:
+            start = "File '%s'" % self.path
+        line, column = self.textwidget.index('insert').split('.')
+
+        self.status = "%s, %s\tLine %s, column %s" % (
+            start, self.filetype.name, line, column)
 
     def can_be_closed(self):
         """

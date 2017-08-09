@@ -8,58 +8,63 @@ from porcupine import tabs
 # not all INFO messages are something that users should see all the time
 
 
+# this widget is kind of weird
+class LabelWithEmptySpaceAtLeft(tk.Label):
+
+    def __init__(self, master):
+        self._spacer = tk.Frame(master)
+        self._spacer.pack(side='left', expand=True)
+        super().__init__(master)
+        self.pack(side='left')
+
+    def destroy(self):
+        self._spacer.destroy()
+        super().destroy()
+
+
 class StatusBar(tk.Frame):
 
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, tabmanager, **kwargs):
         super().__init__(parent, **kwargs)
+
+        self._tab_manager = tabmanager
+        tabmanager.bind('<<NewTab>>', self.on_new_tab, add=True)
+        tabmanager.bind('<<CurrentTabChanged>>', self.do_update, add=True)
         self._current_tab = None
 
-        self._file_label = tk.Label(self)
-        self._file_label.pack(side='left')
-        self._cursor_label = tk.Label(self)
-        self._cursor_label.pack(side='right')
+        # each label for each tab-separated thing
+        self.labels = [tk.Label(self)]
+        self.labels[0].pack(side='left')
 
-    def on_new_tab(self, event):
-        # do_update() can get called more often than necessary, but it
-        # doesn't matter
-        tab = event.widget.tabs[-1]
-        if isinstance(tab, tabs.FileTab):
-            tab.bind('<<PathChanged>>', self.do_update, add=True)
-            tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
-            tab.textwidget.bind('<<CursorMoved>>', self.do_update, add=True)
+    def set_text(self, tab_separated_text):
+        parts = tab_separated_text.split('\t')
+        while len(self.labels) > len(parts):
+            # there's always at least one part, the label added in
+            # __init__ is not destroyed here
+            self.labels.pop().destroy()
+        while len(self.labels) < len(parts):
+            self.labels.append(LabelWithEmptySpaceAtLeft(self))
 
-    def on_tab_changed(self, event):
-        self._current_tab = event.widget.current_tab
-        self.do_update()
+        for label, text in zip(self.labels, parts):
+            label['text'] = text
 
     # this is do_update() because tkinter has a method called update()
     def do_update(self, junk=None):
-        if self._current_tab is None:
-            self._file_label['text'] = ("Welcome to Porcupine %s!"
-                                        % porcupine.__version__)
-            self._cursor_label['text'] = ""
-            return
-
-        if (isinstance(self._current_tab, tabs.FileTab) and
-                self._current_tab.path is not None):
-            self._file_label['text'] = "File '%s'" % self._current_tab.path
+        if self._tab_manager._current_tab is None:
+            self.set_text("Welcome to Porcupine %s!" % porcupine.__version__)
         else:
-            # the top label's text is usually "New File"
-            self._file_label['text'] = self._current_tab.top_label['text']
+            self.set_text(self._tab_manager._current_tab.status)
 
-        if isinstance(self._current_tab, tabs.FileTab):
-            # TODO: add a drop-down (or up?) menu for choosing the filetype
-            self._file_label['text'] += ", " + self._current_tab.filetype.name
-            cursor = self._current_tab.textwidget.index('insert').split('.')
-            self._cursor_label['text'] = "Line %s, column %s" % tuple(cursor)
-        else:
-            self._cursor_label['text'] = ''
+    def on_new_tab(self, event):
+        event.widget.tabs[-1].bind('<<StatusChanged>>', self.do_update)
+        # <<CurrentTabChanged>> will take care of calling do_update()
 
 
 def setup():
     # TODO: add a frame to the main window for plugins to add stuff like
     # this?
-    statusbar = StatusBar(porcupine.get_main_window(), relief='sunken')
+    statusbar = StatusBar(porcupine.get_main_window(),
+                          porcupine.get_tab_manager(), relief='sunken')
     statusbar.pack(side='bottom', fill='x')
     statusbar.do_update()
 
