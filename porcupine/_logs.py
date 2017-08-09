@@ -2,6 +2,7 @@ import itertools
 import logging
 import os
 import platform
+import sys
 
 if platform.system() == 'Windows':  # noqa
     import msvcrt
@@ -71,7 +72,7 @@ def setup(file=None):
         handler = _ClosingStreamHandler(_open_log_file())
     elif file in (sys.stdout, sys.stderr):
         # somehow closing these files just feels wrong
-        handler = StreamHandler(file)
+        handler = logging.StreamHandler(file)
     else:
         handler = _ClosingStreamHandler(file)
 
