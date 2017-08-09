@@ -23,9 +23,10 @@ class StatusBar(tk.Frame):
         # do_update() can get called more often than necessary, but it
         # doesn't matter
         tab = event.widget.tabs[-1]
-        tab.bind('<<PathChanged>>', self.do_update, add=True)
-        tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
-        tab.textwidget.bind('<<CursorMoved>>', self.do_update, add=True)
+        if isinstance(tab, tabs.FileTab):
+            tab.bind('<<PathChanged>>', self.do_update, add=True)
+            tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
+            tab.textwidget.bind('<<CursorMoved>>', self.do_update, add=True)
 
     def on_tab_changed(self, event):
         self._current_tab = event.widget.current_tab

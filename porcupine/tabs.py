@@ -205,9 +205,11 @@ class TabManager(tk.Frame):
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
+        current_tab_will_be_none = False
         if tab is self.current_tab:
             # go to next or previous tab if there are other tabs
-            there_are_other_tabs = self.select_right() or self.select_left()
+            if not (self.select_right() or self.select_left()):
+                current_tab_will_be_none = True
 
         tab.destroy()
         tab._topframe.destroy()
@@ -219,10 +221,10 @@ class TabManager(tk.Frame):
         for i in range(where, len(self.tabs)):
             self.tabs[i]._topframe.grid(column=i)
 
-        if not there_are_other_tabs:
-            # this must be done after deleting the tab from self.tabs to
-            # make sure that <<CurrentTabChanged>> handlers can use
-            # tabmanager.tabs to check if there are any tabs
+        # this must be done after deleting the tab from self.tabs to
+        # make sure that <<CurrentTabChanged>> handlers can use
+        # tabmanager.tabs to check if there are any tabs
+        if current_tab_will_be_none:
             self.current_tab = None
 
     def _select_next_to(self, diff, roll_over):
