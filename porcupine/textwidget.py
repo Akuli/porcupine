@@ -13,7 +13,7 @@ class HandyText(tk.Text):
 
     All arguments are passed to ``tkinter.Text``.
 
-    .. virtualevent:: <<ContentChanged>>
+    .. virtualevent:: ContentChanged
 
         This event is generated when the text in the widget is modified
         in any way, and it's implemented with ``<<Modified>>``. Unlike
@@ -27,7 +27,7 @@ class HandyText(tk.Text):
             ``<<ContentChanged>>`` implementation, and
             ``<<ContentChanged>>`` is easier to use in general.
 
-    .. virtualevent:: <<CursorMoved>>
+    .. virtualevent:: CursorMoved
 
         This event is generated every time the user moves the cursor or
         it's moved with a method of the text widget. Use

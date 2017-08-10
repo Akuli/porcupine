@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 class TabManager(tk.Frame):
     """A simple but awesome tab widget.
 
-    .. virtualevent:: <<NewTab>>
+    .. virtualevent:: NewTab
 
         This runs after a new tab has been added to this tab manager
         with :meth:`~add_tab`. The tab is always added to the end of
@@ -33,7 +33,7 @@ class TabManager(tk.Frame):
         Bind to the ``<Destroy>`` event of the tab if you want to clean
         up something when the tab is closed.
 
-    .. virtualevent:: <<CurrentTabChanged>>
+    .. virtualevent:: CurrentTabChanged
 
         This runs when the user selects another tab or Porcupine does it
         for some reason. Use ``event.widget.current_tab`` to get or set
@@ -312,6 +312,11 @@ class Tab(tk.Frame):
         def setup():
             porcupine.add_action(new_hello_tab, 'Hello/New Hello Tab')
 
+    .. virtualevent:: StatusChanged
+
+        This event is generated when :attr:`status` is set to a new
+        value. Use ``event.widget.status`` to access the current status.
+
     .. attribute:: status
 
         A human-readable string for showing in e.g. a status bar.
@@ -325,12 +330,7 @@ class Tab(tk.Frame):
         .. TODO: we need some way to link to virtual event docs -_-
 
         If you're writing something like a status bar, make sure to
-        handle ``\t`` characters and bind ``<<StatusChanged>>``.
-
-    .. virtualevent:: <<StatusChanged>>
-
-        This event is generated when :attr:`status` is set to a new
-        value. Use ``event.widget.status`` to access the current status.
+        handle ``\t`` characters and bind :virtevt:`~StatusChanged`.
 
     .. attribute:: master
 
@@ -439,14 +439,14 @@ as file:
         tab = tabs.FileTab(tabmanager, content, path=your_path)
         tabmanager.add_tab(tab)
 
-    .. virtualevent:: <<PathChanged>>
+    .. virtualevent:: PathChanged
 
         This runs when :attr:`~path` is set to a new value. Use
         ``event.widget.path`` to get the new path.
 
-    .. virtualevent:: <<FiletypeChanged>>
+    .. virtualevent:: FiletypeChanged
 
-        Like ``<<PathChanged>>``, but for :attr:`~filetype`. Use
+        Like :virtevt:`~PathChanged`, but for :attr:`~filetype`. Use
         ``event.widget.filetype`` to access the new file type.
 
     .. attribute:: path
@@ -460,7 +460,7 @@ as file:
 
         A value from :data:`porcupine.filetypes.filetypes`.
 
-        Setting this runs the ``<<FiletypeChanged>>`` virtual event.
+        Setting this runs :virtevt:`~FiletypeChanged`.
     """
 
     def __init__(self, manager, content='', *, path=None):
