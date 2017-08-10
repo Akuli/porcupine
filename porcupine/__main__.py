@@ -39,6 +39,20 @@ def queue_opener(queue):
     window.after(200, queue_opener, queue)
 
 
+# this is based on argparse._HelpAction
+class _PrintPlugindirAction(argparse.Action):
+
+    def __init__(self, option_strings, dest=argparse.SUPPRESS,
+                 default=argparse.SUPPRESS, help=None):
+        super().__init__(option_strings=option_strings, dest=dest,
+                         default=default, nargs=0, help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        print("You can install plugins here:\n\n    %s\n"
+              % porcupine.plugins.__path__[0])
+        parser.exit()
+
+
 _EPILOG = r"""
 Examples:
   %(prog)s                    # run Porcupine normally
@@ -52,10 +66,14 @@ def main():
     parser = argparse.ArgumentParser(
         prog=('%s -m porcupine' % utils.short_python_command),
         epilog=_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
+
     parser.add_argument(
         '-v', '--version', action='version',
         version=("Porcupine %s" % porcupine.__version__),
         help="display the Porcupine version number and exit")
+    parser.add_argument(
+        '--print-plugindir', action=_PrintPlugindirAction,
+        help="find out where to install custom plugins")
     parser.add_argument(
         'files', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         type=argparse.FileType("r"),
