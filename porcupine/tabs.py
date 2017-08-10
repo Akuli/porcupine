@@ -14,7 +14,7 @@ import traceback
 
 # FIXME: the damn find thing should be a plugin...
 import porcupine
-from porcupine import _dialogs, _find, filetypes, textwidget, utils
+from porcupine import _dialogs, filetypes, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -524,8 +524,6 @@ as file:
         self.scrollbar.pack(side='right', fill='y')
         self.textwidget.pack(side='right', fill='both', expand=True)
 
-        self._findwidget = None
-
         self.mark_saved()
         self._update_top_label()
         self._update_status()
@@ -707,14 +705,6 @@ as file:
         self.path = path
         self.save()
         return True
-
-    # TODO: turn this into a plugin!
-    def find(self):
-        """This method will hopefully be removed soon. Don't use it."""
-        if self._findwidget is None:
-            log.debug("find widget not created yet, creating it")
-            self._findwidget = _find.Finder(self, self.textwidget)
-        self._findwidget.pack(fill='x')
 
 
 if __name__ == '__main__':

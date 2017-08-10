@@ -1,8 +1,13 @@
 """Find/replace widget."""
-
 import tkinter as tk
+import weakref
+import logging
 
+import porcupine
 from porcupine import utils
+
+log = logging.getLogger(__name__)
+find_widgets = weakref.WeakKeyDictionary()
 
 
 class Finder(tk.Frame):
@@ -132,18 +137,23 @@ class Finder(tk.Frame):
             count += 1
 
         if count == 1:
-            self._statuslabel['text'] = "Replaced 1 occurance."
+            self._statuslabel['text'] = "Replaced 1 occurence."
         else:
-            self._statuslabel['text'] = "Replaced %d occurances." % count
+            self._statuslabel['text'] = "Replaced %d occurences." % count
 
 
-if __name__ == '__main__':
-    from porcupine.settings import config
-    root = tk.Tk()
-    config.load()
-    text = tk.Text(root)
-    text.insert('1.0', 'asdf ' * 10)
-    text.pack(fill='both', expand=True)
-    finder = Finder(root, text)
-    finder.pack(fill='x')
-    root.mainloop()
+def find():
+    tab_manager = porcupine.get_tab_manager()
+    tab = tab_manager.current_tab
+
+    if tab not in find_widgets:
+        log.debug("find widget not created yet for tab %r, creating it", tab)
+        find_widgets[tab] = Finder(tab, tab.textwidget)
+
+    find_widgets[tab].pack(fill='x')
+
+
+def setup():
+    porcupine.add_action(find,
+                         "Edit/Find and Replace", ("Ctrl+F", '<Control-f>'),
+                         tabtypes=[porcupine.tabs.FileTab])
