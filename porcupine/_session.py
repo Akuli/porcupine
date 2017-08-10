@@ -1,6 +1,5 @@
 import functools
 import logging
-import os
 import tkinter as tk
 import traceback
 import webbrowser
@@ -178,11 +177,6 @@ def _setup_actions():
     add_action(textmethod('select_all'), "Edit/Select All",
                ("Ctrl+A", '<Control-a>'), tabtypes=[tabs.FileTab])
     menubar.get_menu("Edit").add_separator()
-
-    # TODO: make this a plugin!
-    add_action((lambda: _tab_manager.current_tab.find()),
-               "Edit/Find and Replace", ("Ctrl+F", '<Control-f>'),
-               tabtypes=[tabs.FileTab])
 
     # TODO: make sure that things added by plugins appear here,
     # before the separator and "Porcupine Settings" (see get_menu)
