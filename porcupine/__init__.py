@@ -15,7 +15,7 @@ their keyboard shortcuts.
 """
 
 
-version_info = (0, 33, 0)        # this is updated with bump.py
+version_info = (0, 33, 1)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'

@@ -322,6 +322,8 @@ class Tab(tk.Frame):
         This is ``''`` by default, but that can be changed like
         ``tab.status = something_new``.
 
+        .. TODO: we need some way to link to virtual event docs -_-
+
         If you're writing something like a status bar, make sure to
         handle ``\t`` characters and bind ``<<StatusChanged>>``.
 
@@ -385,11 +387,6 @@ class Tab(tk.Frame):
         By default, this always returns True, but you can override this
         in a subclass to do something more interesting. See
         :meth:`.FileTab.can_be_closed` for an example.
-
-        .. TODO: we need some way to link to virtual event docs -_-
-
-        .. seealso::
-            The ``<<StatusChanged>>`` virtual event, documented above.
         """
         return True
 
