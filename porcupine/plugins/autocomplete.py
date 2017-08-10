@@ -33,11 +33,7 @@ def register_completer(filetype_name, function):
     :data:`porcupine.filetypes.filetypes`. Using this decorator multiple
     times with the same *filetype_name* overrides previous decoratings.
     """
-    def inner(func):
-        _AutoCompleter._suffix_finders[filetype_name] = func
-        return func
-
-    return inner
+    _suffix_finders[filetype_name] = function
 
 
 def _jedi_suffix_finder(source, line, column):
@@ -102,18 +98,21 @@ class _AutoCompleter:
         source = self.tab.textwidget.get("1.0", "end - 1 char")
         cursor_pos = self.tab.textwidget.index("insert")
         line, col = map(int, cursor_pos.split("."))
-        return collections.deque(finder(source, line, col))
+        return finder(source, line, col)
 
     def _complete(self, rotation):
         self._completing = True
 
         if self._suffixes is None:
             self._startpos = self.tab.textwidget.index('insert')
-            self._suffixes = self._find_suffixes()
-            if self._suffixes is None:
+
+            suffixes = self._find_suffixes()
+            if suffixes is None:
                 # no completable characters before the cursor, just give
                 # up and allow doing something else on this tab press
                 return None
+
+            self._suffixes = collections.deque(suffixes)
             self._suffixes.appendleft('')  # end of completions
 
         self._suffixes.rotate(rotation)

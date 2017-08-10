@@ -26,4 +26,5 @@ def jedi_completer(source, line, column):
 
 
 def setup():
-    autocomplete.register_completer("Python", jedi_completer)
+    if jedi is not None:
+        autocomplete.register_completer("Python", jedi_completer)
