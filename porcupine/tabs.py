@@ -449,6 +449,14 @@ as file:
         Like :virtevt:`~PathChanged`, but for :attr:`~filetype`. Use
         ``event.widget.filetype`` to access the new file type.
 
+    .. attribute:: textwidget
+
+        The central text widget of the tab.
+
+        Currently this is a :class:`porcupine.textwidget.MainText`, but
+        this is guaranteed to always be a
+        :class:`HandyText <porcupine.textwidget.HandyText>`.
+
     .. attribute:: path
 
         Path to where this file is currently saved, as a string.

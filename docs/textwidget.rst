@@ -1,5 +1,5 @@
-:mod:`porcupine.textwidget` --- The tab manager and tabs in it
-==============================================================
+:mod:`porcupine.textwidget` --- Handy ``tkinter.Text`` subclasses
+=================================================================
 
 .. module:: porcupine.textwidget
 
