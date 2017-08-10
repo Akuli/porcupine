@@ -46,6 +46,12 @@ Here's a summary of the commands for inpatient people :)
 
 ## FAQ
 
+### Help! Porcupine doesn't work.
+
+Please [update Porcupine](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#updating-porcupine).
+If it still doesn't work, [let me know by creating an issue on
+GitHub](http://github.com/Akuli/porcupine/issues/new).
+
 ### Why not use editor X?
 
 Because Porcupine is better.
@@ -68,14 +74,19 @@ See [porcupine/plugins/](porcupine/plugins/)X.py.
 
 ### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
 
-It probably doesn't, but [it's easy to write a
-plugin](https://akuli.github.io/porcupine/plugin-intro.html) if you know how to
-use tkinter. If you don't, you can [create an issue on
-GitHub](https://github.com/Akuli/porcupine/issues/new) and I *may* write the
-plugin for you if I feel like it.
+Maybe it can. See [the more_plugins directory](more_plugins/).
 
-### Help! Porcupine doesn't work.
+If you don't find what you are looking for you can [write your own
+plugin](https://akuli.github.io/porcupine/plugin-intro.html) if you know
+how to use tkinter. If you don't, you can [create an issue on
+GitHub](https://github.com/Akuli/porcupine/issues/new) and I *may* write
+the plugin for you if I feel like it.
 
-Please [update Porcupine](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#updating-porcupine).
-If it still doesn't work, [let me know by creating an issue on
-GitHub](http://github.com/Akuli/porcupine/issues/new).
+### Can I play tetris with Porcupine?
+
+Yes. See [more_plugins](more_plugins/).
+
+### Is Porcupine an Emacs?
+
+No. There's a reason why it doesn't come with the plugins in
+[more_plugins](more_plugins/).

@@ -4,6 +4,11 @@ Welcome to Porcupine's plugin API documentation!
 This documentation is all about writing your own Porcupine plugins in Python
 to make Porcupine do something fun that it doesn't do by default.
 
+If you write a nice plugin, please share it with me! I'm interested to see what
+you have made. Just `create an issue on GitHub <https://github.com/Akuli/porcupine/issues/new>`_
+and we can add your plugin to the :source:`more_plugins` directory. You can
+also create a pull request if you have done that before.
+
 
 The Tutorial
 ------------
