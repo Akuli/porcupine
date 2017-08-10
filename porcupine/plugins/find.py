@@ -1,5 +1,4 @@
 """Find/replace widget."""
-import logging
 import re
 import tkinter as tk
 import weakref
@@ -7,7 +6,6 @@ import weakref
 import porcupine
 from porcupine import utils
 
-log = logging.getLogger(__name__)
 find_widgets = weakref.WeakKeyDictionary()
 
 
@@ -169,7 +167,6 @@ def find():
     tab = tab_manager.current_tab
 
     if tab not in find_widgets:
-        log.debug("find widget not created yet for tab %r, creating it", tab)
         find_widgets[tab] = Finder(tab, tab.textwidget)
         tab.textwidget.bind("<<ContentChanged>>",
                             lambda _: find_widgets[tab].reset())
