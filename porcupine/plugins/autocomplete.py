@@ -97,7 +97,7 @@ class _AutoCompleter:
 
         finder = _suffix_finders.get(self.tab.filetype.name)
         if finder is None:
-            return self._generic_suffix_finder()
+            return self._fallback_suffix_finder()
 
         source = self.tab.textwidget.get("1.0", "end - 1 char")
         cursor_pos = self.tab.textwidget.index("insert")
