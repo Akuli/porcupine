@@ -64,8 +64,7 @@ class Finder(tk.Frame):
 
     # reset this when showing
     def pack(self, *args, **kwargs):
-        self._statuslabel['text'] = ''
-        self._find_entry.focus()
+        self.reset()
         super().pack(*args, **kwargs)
 
     def _next_match(self):
@@ -158,6 +157,8 @@ class Finder(tk.Frame):
             self._statuslabel['text'] = "Replaced %d occurences." % count
 
     def reset(self):
+        self._statuslabel['text'] = ''
+        self._find_entry.focus()
         self._last_pattern = None
         self._matches = None
 
