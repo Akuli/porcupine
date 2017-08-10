@@ -1,10 +1,15 @@
 import collections
 import re
 
+import jedi
+
 import porcupine
 from porcupine import tabs, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
+
+# Some jedi settings.
+jedi.settings.add_bracket_after_function = True
 
 
 class AutoCompleter:
@@ -19,26 +24,21 @@ class AutoCompleter:
         before_cursor = self.textwidget.get('insert linestart', 'insert')
         after_cursor = self.textwidget.get('insert', 'insert lineend')
 
-        match = re.search('\w+$', before_cursor)
-        if match is None:
-            # can't autocomplete based on this
+        if re.match(r"^\s*$", before_cursor) is not None:
+            # If the line is just whitespace, or empty, we want to indent.
             return None
-        prefix = match.group(0)
+        elif re.match(r"\w+", after_cursor) is None:
+            line, col = map(int, self.textwidget.index("insert").split("."))
+            source = self.textwidget.get("1.0", "end - 1 char")
 
-        # Tcl's regexes don't support \b or a sane way of grouping so
-        # they are kind of useless for this. I guess I should implement
-        # this with Tcl regexes too and check which is faster :)
-        result = set()
-        for chunk in self.textwidget.iter_chunks():
-            for match in re.finditer(r'\b' + prefix + r'(\w+)', chunk):
-                result.add(match.group(1))
+            script = jedi.Script(source, line, col)
+            completions = (c.complete for c in script.completions())
 
-        # if the cursor is in the middle of a word, that word must not
-        # be completed, e.g. if the user types abcdef and moves the
-        # cursor between c and d, we must not autocomplete to abcdefdef
-        result.discard(re.search('^\w*', after_cursor).group(0))
+            # Jedi automatically sorts its completions.
+            return collections.deque(completions)
 
-        return collections.deque(sorted(result, key=str.casefold))
+        # We don't want to complete in the middle of a word.
+        return collections.deque()
 
     def _complete(self, rotation):
         self._completing = True
@@ -81,7 +81,7 @@ class AutoCompleter:
 def on_new_tab(event):
     # TODO: autocomplete in other kinds of tabs too?
     tab = event.widget.tabs[-1]
-    if isinstance(tab, tabs.FileTab):
+    if isinstance(tab, tabs.FileTab) and tab.filetype.name == "Python":
         completer = AutoCompleter(tab.textwidget)
         utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
         tab.textwidget.bind('<<CursorMoved>>', completer.reset, add=True)
