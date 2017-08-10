@@ -36,10 +36,46 @@ Here's a summary of the commands for inpatient people :)
 
 ### Windows
 
-    py -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
+    py -m pip install --user http://goo.gl/SnlfHw
     pyw -m porcupine
 
 ### Other operating systems
 
-    python3 -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
+    python3 -m pip install --user http://goo.gl/SnlfHw
     python3 -m porcupine &
+
+## FAQ
+
+### Why not use editor X?
+
+Because Porcupine is better.
+
+### Is Porcupine based on IDLE?
+
+Of course not. IDLE is an awful mess that you should stay far away from.
+
+### Why did you create a new editor?
+
+Because I can.
+
+### Why did you create a new editor in tkinter?
+
+Because I can.
+
+### How does feature X work?
+
+See [porcupine/plugins/](porcupine/plugins/)X.py.
+
+### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
+
+It probably doesn't, but [it's easy to write a
+plugin](https://akuli.github.io/porcupine/plugin-intro.html) if you know how to
+use tkinter. If you don't, you can [create an issue on
+GitHub](https://github.com/Akuli/porcupine/issues/new) and I *may* write the
+plugin for you if I feel like it.
+
+### Help! Porcupine doesn't work.
+
+Please [update Porcupine](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#updating-porcupine).
+If it still doesn't work, [let me know by creating an issue on
+GitHub](http://github.com/Akuli/porcupine/issues/new).
