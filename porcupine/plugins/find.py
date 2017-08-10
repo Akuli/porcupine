@@ -164,15 +164,16 @@ class Finder(tk.Frame):
 
 
 def find():
-    tab_manager = porcupine.get_tab_manager()
-    tab = tab_manager.current_tab
+    current_tab = porcupine.get_tab_manager().current_tab
+    find_widgets[current_tab].pack(fill='x')
 
-    if tab not in find_widgets:
-        find_widgets[tab] = Finder(tab, tab.textwidget)
-        tab.textwidget.bind("<<ContentChanged>>",
-                            lambda _: find_widgets[tab].reset())
 
-    find_widgets[tab].pack(fill='x')
+def on_new_tab(event):
+    tab = event.widget.current_tab
+
+    find_widgets[tab] = Finder(tab, tab.textwidget)
+    tab.textwidget.bind("<<ContentChanged>>",
+                        lambda _: find_widgets[tab].reset())
 
 
 def on_tab_changed(event):
@@ -186,4 +187,5 @@ def setup():
                          "Edit/Find and Replace", ("Ctrl+F", '<Control-f>'),
                          tabtypes=[porcupine.tabs.FileTab])
     tab_manager = porcupine.get_tab_manager()
+    tab_manager.bind("<<NewTab>>", on_new_tab)
     tab_manager.bind("<<CurrentTabChanged>>", on_tab_changed)
