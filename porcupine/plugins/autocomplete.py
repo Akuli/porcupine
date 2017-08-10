@@ -12,35 +12,20 @@ setup_before = ['tabs2spaces']      # see tabs2spaces.py
 jedi.settings.add_bracket_after_function = True
 
 
+def _jedi_suffix_finder(source, line, col):
+    # TODO: Make this into its own module.
+    script = jedi.Script(source, line, col)
+    return (c.complete for c in script.completions())
+
+
 class AutoCompleter:
+    suffix_finders = {"Python": _jedi_suffix_finder}
 
     def __init__(self, tab):
         self.tab = tab
         self._startpos = None
         self._suffixes = None
         self._completing = False    # avoid recursion
-
-    def _jedi_suffix_finder(self):
-        before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
-        after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
-
-        if re.match(r"^\s*$", before_cursor) is not None:
-            # If the line is just whitespace, or empty, we want to indent.
-            return None
-        elif re.match(r"\w+", after_cursor) is None:
-            line, col = map(int, self.tab.textwidget.index("insert").split("."))
-            source = self.tab.textwidget.get("1.0", "end - 1 char")
-
-            script = jedi.Script(source, line, col)
-            completions = (c.complete for c in script.completions())
-
-            # Jedi automatically sorts its completions.
-            return collections.deque(completions)
-
-        # We don't want to complete in the middle of a word.
-        return collections.deque()
-
-    suffix_finders = {"Python": _jedi_suffix_finder}
 
     def _generic_suffix_finder(self):
         before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
@@ -68,18 +53,24 @@ class AutoCompleter:
         return collections.deque(sorted(result, key=str.casefold))
 
     def _find_suffixes(self):
-        # We don't pass `self._generic_suffix_finder` as the default argument
-        # here because the values of the suffix_finders dictionary are unbound
-        # methods, while `self._generic_suffix_finder` is a bound method.
-        # Basically this means that we need to pass self when we get something
-        # from the dictionary, and we don't need to pass self when calling a
-        # method directly.
-        finder = self.suffix_finders.get(self.tab.filetype.name)
+        before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
+        after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
 
-        if finder is None:
-            return self._generic_suffix_finder()
-        else:
-            return finder(self)
+        if re.match(r"^\s*$", before_cursor) is not None:
+            # If the line is just whitespace, or empty, we want to indent.
+            return None
+        elif re.match(r"\w+", after_cursor) is None:
+            finder = self.suffix_finders.get(self.tab.filetype.name)
+
+            if finder is None:
+                return self._generic_suffix_finder()
+
+            line, col = map(int, self.tab.textwidget.index("insert").split("."))
+            source = self.tab.textwidget.get("1.0", "end - 1 char")
+            return collections.deque(finder(source, line, col))
+
+        # We don't want to complete in the middle of a word.
+        return collections.deque()
 
     def _complete(self, rotation):
         self._completing = True
@@ -130,3 +121,15 @@ def on_new_tab(event):
 
 def setup():
     porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
+
+
+def completer(filetype):
+    """
+    Decorator that allows you to add a syntax completer for a specific filetype
+    """
+
+    def _inner(func):
+        AutoCompleter.suffix_finders[filetype] = func
+        return func
+
+    return _inner
