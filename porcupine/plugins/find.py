@@ -173,7 +173,8 @@ def on_new_tab(event):
 
     find_widgets[tab] = Finder(tab, tab.textwidget)
     tab.textwidget.bind("<<ContentChanged>>",
-                        lambda _: find_widgets[tab].reset())
+                        lambda _: find_widgets[tab].reset(),
+                        add=True)
 
 
 def on_tab_changed(event):
@@ -187,5 +188,5 @@ def setup():
                          "Edit/Find and Replace", ("Ctrl+F", '<Control-f>'),
                          tabtypes=[porcupine.tabs.FileTab])
     tab_manager = porcupine.get_tab_manager()
-    tab_manager.bind("<<NewTab>>", on_new_tab)
-    tab_manager.bind("<<CurrentTabChanged>>", on_tab_changed)
+    tab_manager.bind("<<NewTab>>", on_new_tab, add=True)
+    tab_manager.bind("<<CurrentTabChanged>>", on_tab_changed, add=True)
