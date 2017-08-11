@@ -39,7 +39,8 @@ def queue_opener(queue):
     window.after(200, queue_opener, queue)
 
 
-# this is based on argparse._HelpAction
+# these actions are based on argparse's source code
+
 class _PrintPlugindirAction(argparse.Action):
 
     def __init__(self, option_strings, dest=argparse.SUPPRESS,
@@ -53,10 +54,29 @@ class _PrintPlugindirAction(argparse.Action):
         parser.exit()
 
 
+# "porcupine -n a b c -n" works, but unfortunately "porcupine a -n b" doesn't
+class _ExtendAction(argparse.Action):
+
+    def __init__(self, option_strings, dest, nargs=None, const=None,
+                 default=None, type=None, choices=None, required=False,
+                 help=None, metavar=None):
+        assert nargs != 0 and (const is None or nargs == argparse.OPTIONAL)
+        super().__init__(option_strings=option_strings, dest=dest, nargs=nargs,
+                         const=const, default=default, type=type,
+                         choices=choices, required=required, help=help,
+                         metavar=metavar)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest) is None:
+            setattr(namespace, self.dest, [])
+        getattr(namespace, self.dest).extend(values)
+
+
 _EPILOG = r"""
 Examples:
   %(prog)s                    # run Porcupine normally
   %(prog)s file1.py file2.js  # open the given files on startup
+  %(prog)s -nnn               # create 3 new files
   %(prog)s --no-plugins       # understand the power of plugins
   %(prog)s --verbose          # produce lots of nerdy output
 """
@@ -75,9 +95,12 @@ def main():
         '--print-plugindir', action=_PrintPlugindirAction,
         help="find out where to install custom plugins")
     parser.add_argument(
-        'files', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
-        type=argparse.FileType("r"),
+        'files', metavar='FILES', action=_ExtendAction,
+        nargs=argparse.ZERO_OR_MORE, type=argparse.FileType("r"),
         help="open these files when Porcupine starts, - means stdin")
+    parser.add_argument(
+        '-n', '--new-file', dest='files', action='append_const', const=None,
+        help='create a "New File" tab; may be specified multiple times')
 
     plugingroup = parser.add_mutually_exclusive_group()
     plugingroup.add_argument(
@@ -86,14 +109,15 @@ def main():
               "understanding how much can be done with plugins"))
     plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
-        help=("respect setup_after, but otherwise setup the plugins "
-              "in a random order instead of alphabetical order"))
+        help=("respect setup_before and setup_after, but otherwise setup the "
+              "plugins in a random order instead of sorting by name "
+              "alphabetically"))
 
     loggroup = parser.add_mutually_exclusive_group()
     loggroup.add_argument(
         '--logfile', type=argparse.FileType('w'),
-        help=("write logs to this file, defaults to a .txt file in %s"
-              % dirs.cachedir))
+        help=("write information about what Porcupine is doing to this file, "
+              "defaults to a .txt file in %s" % dirs.cachedir))
     loggroup.add_argument(
         '--verbose', dest='logfile', action='store_const', const=sys.stderr,
         help="use stderr as the log file")
@@ -111,6 +135,9 @@ def main():
             #   bla bla
             #   ^D
             filelist.append((None, file.read()))
+        elif file is None:
+            # -n or --new-file was used
+            filelist.append((None, ''))
         else:
             with file:
                 filelist.append((os.path.abspath(file.name), file.read()))
