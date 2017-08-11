@@ -9,6 +9,7 @@ import os
 import pkgutil
 import platform
 import shutil
+import subprocess
 import sys
 import threading
 import tkinter as tk
