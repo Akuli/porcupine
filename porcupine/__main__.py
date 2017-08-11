@@ -35,7 +35,20 @@ def queue_opener(queue):
 
     window = porcupine.get_main_window()
     if gonna_focus:
-        window.focus_set()      # FIXME
+        if window.tk.call('tk', 'windowingsystem') == 'win32':
+            window.deiconify()
+        else:
+            # this isn't as easy as you might think it is... focus_force
+            # focuses the window but doesn't move it to the front, and
+            # the -topmost wm attribute only works for lifting the
+            # window temporarily
+            # if you know how to do this without flashing the window
+            # like this then please let me know
+            geometry = window.geometry()
+            window.withdraw()
+            window.deiconify()
+            window.geometry(geometry)
+
     window.after(200, queue_opener, queue)
 
 
