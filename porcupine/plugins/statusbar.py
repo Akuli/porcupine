@@ -70,5 +70,3 @@ def setup():
 
     tabmanager = porcupine.get_tab_manager()
     tabmanager.bind('<<NewTab>>', statusbar.on_new_tab, add=True)
-    tabmanager.bind('<<CurrentTabChanged>>', statusbar.on_tab_changed,
-                    add=True)
