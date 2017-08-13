@@ -49,6 +49,34 @@ class TabManager(tk.Frame):
         :meth:`~move_left`, :meth:`~move_right`, :meth:`~add_tab` or
         :meth:`~close_tab` instead.
 
+        .. note::
+            Detached tabs are not in this list, so you can't use this
+            for doing something to each tab. However, :virtevt:`~NewTab`
+            is guaranteed to work as explained above, so you can keep
+            track of the tabs like this if you really need to::
+
+                import porcupine
+                from porcupine import tabs
+
+                # don't name this "tabs", see the imports above
+                all_tabs = []     
+
+                def on_new_tab(event):
+                    tab = event.widget.tabs[-1]
+                    all_tabs.append(tab)
+                    tab.bind('<Destroy>',
+                             lambda event: all_tabs.remove(tab),
+                             add=True)
+
+                def setup():
+                    porcupine.get_tab_manager().bind(\
+'<<NewTab>>', on_new_tab, add=True)
+
+    .. attribute:: detached_tabs
+
+        These tabs have been detached from the main Porcupine window.
+        As with :attr:`~tabs`, don't modify this list yourself.
+
     .. attribute:: no_tabs_frame
 
         This widget is displayed when there are no tabs. By default,
@@ -85,9 +113,10 @@ class TabManager(tk.Frame):
         self._topframeframe.pack(fill='x')
         utils.bind_mouse_wheel(self._topframeframe, self._on_wheel)
 
-        #: List of :class:`.Tab` objects. This is supposed to be
-        #: read-only, don't modify this.
+        # this class does nothing to detached_tabs, the Tab objects add
+        # and remove themselves from it when they detach and attach
         self.tabs = []
+        self.detached_tabs = []
 
         self._current_tab = None
         self.no_tabs_frame = tk.Frame(self)
@@ -162,6 +191,14 @@ class TabManager(tk.Frame):
             raise IndexError
         self.current_tab = self.tabs[index]
 
+    def _add_attaching_tab(self, tab, make_current=True):
+        tab._topframe.grid(row=0, column=len(self.tabs))
+        self.tabs.append(tab)
+        if self.current_tab is None or make_current:
+            # this is the first tab or it's supposed to become the
+            # current tab for some other reason
+            self.current_tab = tab
+
     def add_tab(self, tab, make_current=True):
         """Append a :class:`.Tab` to this tab manager.
 
@@ -183,19 +220,35 @@ class TabManager(tk.Frame):
                     self.current_tab = existing_tab
                 return existing_tab
 
-        tab._topframe.grid(row=0, column=len(self.tabs))
-        self.tabs.append(tab)
-        if self.current_tab is None or make_current:
-            # this is the first tab or it's supposed to become the
-            # current tab for some other reason
-            self.current_tab = tab
-
-        # i have no idea wtf is going on here but when adding a FileTab of
-        # an empty file the event_generate does nothing without the update()
+        # the update() is needed in some cases because virtual events
+        # don't run if the widget isn't visible yet
+        self._add_attaching_tab(tab, make_current)
         self.update()
         self.event_generate('<<NewTab>>')
-
         return tab
+
+    def _remove_detaching_tab(self, tab):
+        current_tab_will_be_none = False
+        if tab is self.current_tab:
+            # go to next or previous tab if there are other tabs
+            if not (self.select_right() or self.select_left()):
+                current_tab_will_be_none = True
+
+        tab._topframe.grid_forget()
+        where = self.tabs.index(tab)
+        del self.tabs[where]
+
+        # make sure everything's gridded in the right place, this
+        # doesn't do anything immediately visible but it keeps things
+        # simple
+        for i in range(where, len(self.tabs)):
+            self.tabs[i]._topframe.grid(column=i)
+
+        # this must be done after deleting the tab from self.tabs to
+        # make sure that <<CurrentTabChanged>> handlers can use
+        # tabmanager.tabs to check if there are any tabs
+        if current_tab_will_be_none:
+            self.current_tab = None
 
     def close_tab(self, tab):
         """Remove a tab from the tab manager.
@@ -205,27 +258,8 @@ class TabManager(tk.Frame):
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
-        current_tab_will_be_none = False
-        if tab is self.current_tab:
-            # go to next or previous tab if there are other tabs
-            if not (self.select_right() or self.select_left()):
-                current_tab_will_be_none = True
-
+        self._remove_detaching_tab(tab)
         tab.destroy()
-        tab._topframe.destroy()
-
-        # the grid columns of topframes of tabs after this change, so we
-        # need to take care of that
-        where = self.tabs.index(tab)
-        del self.tabs[where]
-        for i in range(where, len(self.tabs)):
-            self.tabs[i]._topframe.grid(column=i)
-
-        # this must be done after deleting the tab from self.tabs to
-        # make sure that <<CurrentTabChanged>> handlers can use
-        # tabmanager.tabs to check if there are any tabs
-        if current_tab_will_be_none:
-            self.current_tab = None
 
     def _select_next_to(self, diff, roll_over):
         if len(self.tabs) < 2:
@@ -312,6 +346,12 @@ class Tab(tk.Frame):
         def setup():
             porcupine.add_action(new_hello_tab, 'Hello/New Hello Tab')
 
+    There are no hooks that run when detaching or attaching the tab
+    because you shouldn't need to worry about it. The implementation
+    doesn't destroy the widgets and create them again or anything like
+    that. However, you can check if a tab is detached with
+    :attr:`~TabManager.detached_tabs`.
+
     .. virtualevent:: StatusChanged
 
         This event is generated when :attr:`status` is set to a new
@@ -351,13 +391,25 @@ class Tab(tk.Frame):
         def select_me(event):
             manager.current_tab = self
 
-        self._topframe = tk.Frame(manager._topframeframe, relief='raised',
+        def add_top_bindings(widget):
+            widget.bind('<Button-1>', select_me, add=True)
+            widget.bind('<Button1-Motion>', self._on_drag, add=True)
+            widget.bind('<ButtonRelease-1>', self._on_drop, add=True)
+            utils.bind_mouse_wheel(widget, manager._on_wheel, add=True)
+
+        self._topframe = tk.Frame(manager._topframeframe,
                                   border=1, padx=10, pady=3)
-        self._topframe.bind('<Button-1>', select_me)
+        self.bind('<Destroy>', (lambda event: self._topframe.destroy()),
+                  add=True)
+        add_top_bindings(self._topframe)
 
         self.top_label = tk.Label(self._topframe)
         self.top_label.pack(side='left')
-        self.top_label.bind('<Button-1>', select_me)
+        add_top_bindings(self.top_label)
+
+        manager.bind('<<CurrentTabChanged>>',
+                     self._update_top_relief, add=True)
+        self._update_top_relief()
 
         def _close_if_can(event):
             if self.can_be_closed():
@@ -368,9 +420,73 @@ class Tab(tk.Frame):
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', _close_if_can)
 
-        utils.bind_mouse_wheel(self._topframe, manager._on_wheel)
-        utils.bind_mouse_wheel(self.top_label, manager._on_wheel)
-        utils.bind_mouse_wheel(closebutton, manager._on_wheel)
+        self._help_window = tk.Toplevel()
+        self._help_window.withdraw()
+        self._help_window.overrideredirect(True)
+
+        label = tk.Label(
+            self._help_window, fg='black', bg='#ffff99',
+            padx=5, pady=5, text="Drop the tab here\nto detach it...")
+        label.pack()
+        self._label_size = (label.winfo_reqwidth(), label.winfo_reqheight())
+
+        self._attach_tcl_command = self.register(self._attach)
+
+    def _update_top_relief(self, event=None):
+        if self.master.current_tab is self:
+            self._topframe['relief'] = 'sunken'
+        else:
+            # self._topframe is destroyed if the tab is being closed, so
+            # we need to check for that
+            if self in self.master.tabs:       # not closed
+                self._topframe['relief'] = 'raised'
+
+    # drag and drop and detach stuff
+    def _on_drag(self, event):
+        window = self.winfo_toplevel()
+
+        # event.x_root and event.y_root are relative to the whole
+        # screen, these are relative to the window
+        mouse_x = event.x_root - window.winfo_x()
+        mouse_y = event.y_root - window.winfo_y()
+
+        if (0 < mouse_x < window.winfo_width() and
+                0 < mouse_y < window.winfo_height()):
+            self._help_window.withdraw()
+        else:
+            x = event.x_root - self._label_size[0] // 2     # centered
+            y = event.y_root - self._label_size[1] - 10     # 10px above cursor
+            self._help_window.deiconify()
+            self._help_window.geometry('+%d+%d' % (x, y))
+
+    def _on_drop(self, event):
+        if self._help_window.state() != 'withdrawn':
+            # let's get detached :D
+            self._help_window.withdraw()
+            self.master._remove_detaching_tab(self)
+
+            # only toplevels and root windows have wm methods :(
+            window = self.winfo_toplevel()   # must be before the wm manage
+            self.tk.call('wm', 'manage', self)
+            self.tk.call('wm', 'title', self, self.top_label['text'])  # FIXME
+            self.tk.call('wm', 'protocol', self, 'WM_DELETE_WINDOW',
+                         self._attach_tcl_command)
+
+            # center the detached window on the main window
+            width, height = 400, 300      # TODO: don't hard-code this
+            x = max(event.x_root - width//2, 0)
+            y = max(event.y_root - height//2, 0)
+            self.tk.call('wm', 'geometry', self,
+                         '%dx%d+%d+%d' % (width, height, x, y))
+
+            self.on_focus()
+            self.master.detached_tabs.append(self)
+
+    def _attach(self):
+        self.tk.call('wm', 'forget', self)
+        self.master._add_attaching_tab(self)
+        self.on_focus()
+        self.master.detached_tabs.remove(self)
 
     @property
     def status(self):
