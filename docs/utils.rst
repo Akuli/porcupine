@@ -32,7 +32,7 @@ Information about Python
    is the default.
 
    Note that this is quoted already if it needs quoting, and should *not* be
-   quoted more. For example, this example is **bad**::
+   quoted more. For example, this code is **bad**::
 
       subprocess.call([utils.short_python_command, 'blah', 'blah'])
 
@@ -45,6 +45,7 @@ Tkinter Utilities
 
 .. autofunction:: bind_mouse_wheel
 .. autofunction:: bind_tab_key
+.. autofunction:: bind_data_event
 .. autofunction:: copy_bindings
 .. autoclass:: Checkbox
 .. autofunction:: run_in_thread

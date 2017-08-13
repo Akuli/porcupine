@@ -207,23 +207,6 @@ def bind_tab_key(widget, on_tab, **bind_kwargs):
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)
 
 
-def copy_bindings(widget1, widget2):
-    """Add all bindings of *widget1* to *widget2*.
-
-    You may need to call ``copy_bindings(porcupine.get_main_window(), widget)``
-    on widgets that can be focused by clicking them, like ``Text`` and
-    ``Entry`` widgets. Porcupine's keyboard bindings return ``'break'``
-    and are bound to the main window, and thus work by default, but in
-    some cases returning ``'break'`` doesn't do anything when the focus
-    is in another widget inside the main window.
-    """
-    # tkinter's bind() can do quite a few different things depending
-    # on how it's invoked
-    for keysym in widget1.bind():
-        tcl_command = widget1.bind(keysym)
-        widget2.bind(keysym, tcl_command)
-
-
 def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
     """Bind mouse wheel events to callback.
 
@@ -255,6 +238,68 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
 
         widget.bind('<{}MouseWheel>'.format(prefixes),
                     real_callback, **bind_kwargs)
+
+
+def bind_data_event(widget, sequence, func, *, add=False):
+    """Bind a virtual event that supports passing data to a callback function.
+
+    This is a lot like ``widget.bind(sequence, func, add=add)``, except
+    that the function's argument will be the value of a *data* argument
+    passed to ``event_generate()`` instead of a ``tkinter.Event``
+    object. This function is needed because ``Event`` objects don't have
+    a *data* attribute for some reason, even on Python 3.7.
+
+    Example::
+
+        import tkinter as tk
+        from porcupine import utils
+
+        root = tk.Tk()
+        root.update()   # the widget must be visible for virtual events to work
+        utils.bind_data_event(root, '<<Hello>>', print, add=True)
+        root.event_generate('<<Hello>>', data="hello")   # runs print("hello")
+
+    Note that the data is always converted to a string. The *add*
+    argument is False by default for consistency with tkinter's
+    ``bind()`` method.
+
+    .. seealso::
+        The *data* option is documented as ``-data string`` in
+        :man:`event(3tk)`.
+    """
+    # %d means data here, not digit
+    # i could escape this with %%d or {{ }} instead of the .replace, but
+    # it would be overkill imo
+    bind_script = '''
+    # make sure that returning 'break' works, tkinter does this too
+    if {"[FUNCNAME %d]" == "break"} {
+        break
+    }
+    '''.replace('FUNCNAME', widget.register(func))
+
+    # add=True doesn't work if the second argument to bind() is a string -_-
+    # bind(3tk) says: "If script is prefixed with a "+", then it is
+    # appended to any existing binding for sequence"
+    if add:
+        bind_script = '+' + bind_script
+    widget.tk.call('bind', str(widget), sequence, bind_script)
+
+
+def copy_bindings(widget1, widget2):
+    """Add all bindings of *widget1* to *widget2*.
+
+    You may need to call ``copy_bindings(porcupine.get_main_window(), widget)``
+    on widgets that can be focused by clicking them, like ``Text`` and
+    ``Entry`` widgets. Porcupine's keyboard bindings return ``'break'``
+    and are bound to the main window, and thus work by default, but in
+    some cases returning ``'break'`` doesn't do anything when the focus
+    is in another widget inside the main window.
+    """
+    # tkinter's bind() can do quite a few different things depending
+    # on how it's invoked
+    for keysym in widget1.bind():
+        tcl_command = widget1.bind(keysym)
+        widget2.bind(keysym, tcl_command)
 
 
 # FIXME: is lru_cache() guaranteed to hold references? tkinter's images
