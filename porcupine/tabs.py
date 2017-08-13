@@ -50,27 +50,8 @@ class TabManager(tk.Frame):
         :meth:`~close_tab` instead.
 
         .. note::
-            Detached tabs are not in this list, so you can't use this
-            for doing something to each tab. However, :virtevt:`~NewTab`
-            is guaranteed to work as explained above, so you can keep
-            track of the tabs like this if you really need to::
-
-                import porcupine
-                from porcupine import tabs
-
-                # don't name this "tabs", see the imports above
-                all_tabs = []     
-
-                def on_new_tab(event):
-                    tab = event.widget.tabs[-1]
-                    all_tabs.append(tab)
-                    tab.bind('<Destroy>',
-                             lambda event: all_tabs.remove(tab),
-                             add=True)
-
-                def setup():
-                    porcupine.get_tab_manager().bind(\
-'<<NewTab>>', on_new_tab, add=True)
+            Detached tabs are not in this list. See
+            :attr:`~detached_tabs`.
 
     .. attribute:: detached_tabs
 
