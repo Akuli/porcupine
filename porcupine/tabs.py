@@ -14,7 +14,7 @@ import traceback
 
 # FIXME: the damn find thing should be a plugin...
 import porcupine
-from porcupine import _dialogs, filetypes, textwidget, utils
+from porcupine import _detach, _dialogs, filetypes, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
@@ -304,8 +304,32 @@ class TabManager(tk.Frame):
             pass
 
 
+class _TabDetacher(_detach.Detacher):
+
+    def __init__(self, tab):
+        self.tab = tab
+        super().__init__(tab)
+
+    def detach(self, x, y):
+        self.tab.master._remove_detaching_tab(self.tab)
+        super().detach(x, y)
+        self.tab.master.detached_tabs.append(self.tab)
+        self.tab.on_focus()
+
+        # FIXME: the title isn't updated when top_label's title is changed
+        self.tab.tk.call('wm', 'title', self.tab, self.tab.top_label['text'])
+        self.tab.tk.call('wm', 'protocol', self.tab, 'WM_DELETE_WINDOW',
+                         self.tab.register(self.attach))
+
+    def attach(self):
+        super().attach()
+        self.tab.master.detached_tabs.remove(self.tab)
+        self.tab.master._add_attaching_tab(self.tab)
+        self.tab.on_focus()
+
+
 class Tab(tk.Frame):
-    r"""A tab widget that can be added to TabManager.
+    r"""Base class for widgets that can be added to TabManager.
 
     You can easily create custom kinds of tabs by inheriting from this
     class. Here's a very minimal but complete example plugin::
@@ -348,8 +372,6 @@ class Tab(tk.Frame):
         This is ``''`` by default, but that can be changed like
         ``tab.status = something_new``.
 
-        .. TODO: we need some way to link to virtual event docs -_-
-
         If you're writing something like a status bar, make sure to
         handle ``\t`` characters and bind :virtevt:`~StatusChanged`.
 
@@ -367,15 +389,21 @@ class Tab(tk.Frame):
 
     def __init__(self, manager):
         super().__init__(manager)
+
+        # the main window bindings are meant to be set on the current
+        # toplevel window, so they must be there when the tab is detached
+        utils.copy_bindings(porcupine.get_main_window(), self)
+
         self._status = ''
+        self._detacher = _TabDetacher(self)
 
         def select_me(event):
             manager.current_tab = self
 
         def add_top_bindings(widget):
             widget.bind('<Button-1>', select_me, add=True)
-            widget.bind('<Button1-Motion>', self._on_drag, add=True)
-            widget.bind('<ButtonRelease-1>', self._on_drop, add=True)
+            widget.bind('<Button1-Motion>', self._detacher.on_drag, add=True)
+            widget.bind('<ButtonRelease-1>', self._detacher.on_drop, add=True)
             utils.bind_mouse_wheel(widget, manager._on_wheel, add=True)
 
         self._topframe = tk.Frame(manager._topframeframe,
@@ -401,18 +429,6 @@ class Tab(tk.Frame):
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', _close_if_can)
 
-        self._help_window = tk.Toplevel()
-        self._help_window.withdraw()
-        self._help_window.overrideredirect(True)
-
-        label = tk.Label(
-            self._help_window, fg='black', bg='#ffff99',
-            padx=5, pady=5, text="Drop the tab here\nto detach it...")
-        label.pack()
-        self._label_size = (label.winfo_reqwidth(), label.winfo_reqheight())
-
-        self._attach_tcl_command = self.register(self._attach)
-
     def _update_top_relief(self, event=None):
         if self.master.current_tab is self:
             self._topframe['relief'] = 'sunken'
@@ -421,53 +437,6 @@ class Tab(tk.Frame):
             # we need to check for that
             if self in self.master.tabs:       # not closed
                 self._topframe['relief'] = 'raised'
-
-    # drag and drop and detach stuff
-    def _on_drag(self, event):
-        window = self.winfo_toplevel()
-
-        # event.x_root and event.y_root are relative to the whole
-        # screen, these are relative to the window
-        mouse_x = event.x_root - window.winfo_x()
-        mouse_y = event.y_root - window.winfo_y()
-
-        if (0 < mouse_x < window.winfo_width() and
-                0 < mouse_y < window.winfo_height()):
-            self._help_window.withdraw()
-        else:
-            x = event.x_root - self._label_size[0] // 2     # centered
-            y = event.y_root - self._label_size[1] - 10     # 10px above cursor
-            self._help_window.deiconify()
-            self._help_window.geometry('+%d+%d' % (x, y))
-
-    def _on_drop(self, event):
-        if self._help_window.state() != 'withdrawn':
-            # let's get detached :D
-            self._help_window.withdraw()
-            self.master._remove_detaching_tab(self)
-
-            # only toplevels and root windows have wm methods :(
-            window = self.winfo_toplevel()   # must be before the wm manage
-            self.tk.call('wm', 'manage', self)
-            self.tk.call('wm', 'title', self, self.top_label['text'])  # FIXME
-            self.tk.call('wm', 'protocol', self, 'WM_DELETE_WINDOW',
-                         self._attach_tcl_command)
-
-            # center the detached window on the main window
-            width, height = 400, 300      # TODO: don't hard-code this
-            x = max(event.x_root - width//2, 0)
-            y = max(event.y_root - height//2, 0)
-            self.tk.call('wm', 'geometry', self,
-                         '%dx%d+%d+%d' % (width, height, x, y))
-
-            self.on_focus()
-            self.master.detached_tabs.append(self)
-
-    def _attach(self):
-        self.tk.call('wm', 'forget', self)
-        self.master._add_attaching_tab(self)
-        self.on_focus()
-        self.master.detached_tabs.remove(self)
 
     @property
     def status(self):
