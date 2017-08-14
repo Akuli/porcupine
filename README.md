@@ -70,7 +70,8 @@ Because I can.
 
 ### How does feature X work?
 
-See [porcupine/plugins/](porcupine/plugins/)X.py.
+See [porcupine/](porcupine/)X.py or
+[porcupine/plugins/](porcupine/plugins/)X.py.
 
 ### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
 
@@ -88,5 +89,4 @@ Yes. See [more_plugins](more_plugins/).
 
 ### Is Porcupine an Emacs?
 
-No. There's a reason why it doesn't come with the plugins in
-[more_plugins](more_plugins/).
+Not by default, but you can [install more plugins](more_plugins/).
