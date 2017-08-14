@@ -14,6 +14,7 @@ import sys
 import pygments.lexer
 import pygments.lexers
 import pygments.token
+import pygments.util     # for ClassNotFound
 
 from porcupine import dirs, utils
 
@@ -115,7 +116,11 @@ def guess_filetype(filename):
 
     # sometimes pygments uses python 3 lexer correctly and we must not
     # do weird workarounds
-    temp_lexer = pygments.lexers.get_lexer_for_filename(filename)
+    try:
+        temp_lexer = pygments.lexers.get_lexer_for_filename(filename)
+    except pygments.util.ClassNotFound:
+        return filetypes['Text only']
+
     if temp_lexer.name == 'Python 3':
         return filetypes['Python']
     if temp_lexer.name == 'Python 3.0 Traceback':
