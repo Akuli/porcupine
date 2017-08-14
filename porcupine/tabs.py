@@ -12,7 +12,6 @@ import tkinter as tk
 from tkinter import messagebox
 import traceback
 
-# FIXME: the damn find thing should be a plugin...
 import porcupine
 from porcupine import _detach, _dialogs, filetypes, textwidget, utils
 from porcupine.settings import config
@@ -232,14 +231,26 @@ class TabManager(tk.Frame):
             self.current_tab = None
 
     def close_tab(self, tab):
-        """Remove a tab from the tab manager.
+        """Destroy a tab without calling :meth:`~Tab.can_be_closed`.
 
-        The tab is also destroyed, so it cannot be added back to the tab
-        manager later.
+        This can also be used to close detached tabs. The closed tab
+        cannot be added back to the tab manager later.
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
-        self._remove_detaching_tab(tab)
+        if tab in self.detached_tabs:
+            # the tab is a toplevel and thus it's notified of its
+            # childrens' events and stuff bound to <Destroy> also run
+            # once for each child widget (with event.widget set to the
+            # child), so we'll untoplevelify it first to prevent that
+            # and keep plugins simple
+            # this wasn't easy to discover, i spent quite a while trying
+            # to figure out what was wrong
+            tab.tk.call('wm', 'forget', tab)
+            self.detached_tabs.remove(tab)
+        else:
+            self._remove_detaching_tab(tab)
+
         tab.destroy()
 
     def _select_next_to(self, diff, roll_over):

@@ -77,19 +77,14 @@ def quit():
     :meth:`closed <porcupine.tabs.TabManager.close_tab>` and the main
     window is destroyed.
     """
-    for tab in _tab_manager.tabs + _tab_manager.detached_tabs:
+    all_tabs = _tab_manager.tabs + _tab_manager.detached_tabs
+    for tab in all_tabs:
         if not tab.can_be_closed():
             return
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    # the copies are needed because attaching and closing tabs modifies
-    # the lists that are being looped over
-    # FIXME: TabManager.close_tab() should also handle detached
-    #        tabs, using _attach() here is shit
-    for tab in _tab_manager.detached_tabs.copy():
-        tab._attach()
-    for tab in _tab_manager.tabs.copy():
+    for tab in all_tabs:
         _tab_manager.close_tab(tab)
     _main_window.destroy()
 
