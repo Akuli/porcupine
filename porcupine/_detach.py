@@ -1,15 +1,27 @@
+import functools
 import tkinter as tk
+
+
+def _mouse_is_on(widget):
+    # all coordinates are relative to the screen
+    x, y = widget.winfo_pointerxy()
+    left = widget.winfo_rootx()
+    top = widget.winfo_rooty()
+    right = left + widget.winfo_width()
+    bottom = top + widget.winfo_height()
+    return left < x < right and top < y < bottom
 
 
 class Detacher:
 
-    def __init__(self, frame):
-        self._frame = frame
+    def __init__(self, labelframe: tk.LabelFrame):
+        self.labelframe = labelframe
+        self._main_window = labelframe.winfo_toplevel()   # type: tk.Widget
 
         self._help_windows = {}   # {key: (help_window, width, height)}
         for key, text in [
                 ('detach', "Drop the tab here\nto detach it..."),
-                ('attach', "Drop the tab here to\nattach it back...")]:
+                ('attach', "Drop the tab here\nto attach it back...")]:
             window = tk.Toplevel()
             window.withdraw()
             window.overrideredirect(True)
@@ -21,30 +33,45 @@ class Detacher:
             self._help_windows[key] = (
                 window, label.winfo_reqwidth(), label.winfo_reqheight())
 
-    def on_drag(self, event):
-        """Bind some widget's <Button1-Motion> to this."""
-        main_window = self._frame.winfo_toplevel()
-        help_window, width, height = self._help_windows['detach']
+    # because explicit is better than implicit
+    def _get_help_window(self, key) -> tk.Toplevel:
+        return self._help_windows[key][0]
 
-        # event.x_root and event.y_root are relative to the whole
-        # screen, these are relative to the window
-        mouse_x = event.x_root - main_window.winfo_x()
-        mouse_y = event.y_root - main_window.winfo_y()
+    def _on_drag(self, key, event):
+        help_window, width, height = self._help_windows[key]
 
-        if (0 < mouse_x < main_window.winfo_width() and
-                0 < mouse_y < main_window.winfo_height()):
-            help_window.withdraw()
+        if key == 'detach':
+            # dragging anywhere outside the main window is ok
+            ready2go = (not _mouse_is_on(self._main_window))
         else:
-            x = event.x_root - width//2     # noqa  # centered
-            y = event.y_root - height - 10     # 10px above cursor
+            # ideally this would check if the labelframe is on top of a
+            # visible part of the main window, but this is fine for now
+            assert key == 'attach'
+            ready2go = (_mouse_is_on(self._main_window) and
+                        not _mouse_is_on(self.labelframe))
+
+        if ready2go:
+            x = event.x_root - width//2      # centered    # noqa
+            y = event.y_root - height - 10   # 10px above cursor
             help_window.deiconify()
             help_window.geometry('+%d+%d' % (x, y))
+        else:
+            help_window.withdraw()
 
-    def on_drop(self, event):
+    on_detaching_drag = functools.partialmethod(_on_drag, 'detach')
+    on_attaching_drag = functools.partialmethod(_on_drag, 'attach')
+
+    def on_detaching_drop(self, event):
         """Bind some widget's <ButtonRelease-1> to this."""
-        help_window, *size = self._help_windows['detach']
-        if help_window.state() != 'withdrawn':
+        if self._get_help_window('detach').state() != 'withdrawn':
+            self._get_help_window('detach').withdraw()
             self.detach(event.x_root, event.y_root)
+
+    def on_attaching_drop(self, event):
+        """Bind some widget's <ButtonRelease-1> to this when detached."""
+        if self._get_help_window('attach').state() != 'withdrawn':
+            self._get_help_window('attach').withdraw()
+            self.attach()
 
     def detach(self, x, y):
         """Pop off the window.
@@ -52,64 +79,72 @@ class Detacher:
         The window is centered on x and y, treated as relative to the whole
         screen. Usually they come from a mouse event's x_root and y_root.
         """
-        help_window, *size = self._help_windows['detach']
-        help_window.withdraw()
 
         # only toplevels and root windows have wm methods :(
-        window = self._frame.winfo_toplevel()   # must be before the wm manage
-        self._frame.tk.call('wm', 'manage', self._frame)
+        self.labelframe.tk.call('wm', 'manage', self.labelframe)
+        self.labelframe.tk.call('wm', 'deiconify', self.labelframe)
 
-        # center the detached window on the main window
+        # center the detached window on the cursor
         width, height = 400, 300      # TODO: don't hard-code this
         left = max(x - width//2, 0)       # noqa
-        top = max(y - height//2, 0)      # noqa
-        self._frame.tk.call('wm', 'geometry', self._frame,
-                            '{}x{}+{}+{}'.format(width, height, left, top))
+        top = max(y - height//2, 0)       # noqa
+        self.labelframe.tk.call('wm', 'geometry', self.labelframe,
+                                '%dx%d+%d+%d' % (width, height, left, top))
 
     def attach(self):
         """Undo a detach()."""
-        self._frame.tk.call('wm', 'forget', self._frame)
+        self.labelframe.tk.call('wm', 'forget', self.labelframe)
 
 
 if __name__ == '__main__':
+    # example usage
     class ExampleDetacher(Detacher):
 
-        def __init__(self, frame, dragger):
-            super().__init__(frame)
-            self._dragger = dragger
-            self._dragger['text'] = "Drag me somewhere..."
+        def __init__(self, labelframe):
+            super().__init__(labelframe)
+
+            # hide the fact that it's a label frame
+            self.labelframe['border'] = 0
 
         def detach(self, *args):
             print("detaching")
             super().detach(*args)
-            self._dragger['text'] = "Now it's detached!"
 
-            # examples of other customizations: change title and make
-            # the closing button attach the frame back
-            self._frame.tk.call('wm', 'title', self._frame, "Detached Frame")
-            self._frame.tk.call(
-                'wm', 'protocol', self._frame, 'WM_DELETE_WINDOW',
-                self._frame.register(self.attach))
+            top_label = tk.Label(self.labelframe, text="Drag this back",
+                                 padx=10, pady=5, relief='sunken')
+            top_label.bind('<Button1-Motion>', self.on_attaching_drag)
+            top_label.bind('<ButtonRelease-1>', self.on_attaching_drop)
+
+            labelframe['border'] = 2
+            labelframe['labelwidget'] = top_label
+
+            self.labelframe.tk.call(
+                'wm', 'title', self.labelframe, "Detached Tab")
+            self.labelframe.tk.call(
+                'wm', 'protocol', self.labelframe, 'WM_DELETE_WINDOW',
+                self.labelframe.register(self.attach))
 
         def attach(self):
             print("attaching")
             super().attach()
-            self._frame.pack()
-            self._dragger['text'] = "Drag me somewhere..."
+            self.labelframe['border'] = 0
+            self.labelframe['labelwidget'] = ''
+            self.labelframe.pack()
 
     root = tk.Tk()
 
-    frame = tk.Frame()
-    frame.pack()
-    text = tk.Text(frame, width=50, height=15)
+    labelframe = tk.LabelFrame(border=0)
+    labelframe.pack()
+    text = tk.Text(labelframe, width=50, height=15)
     text.insert("end", "bla bla bla")
     text.pack()
 
-    dragger = tk.Label(root, padx=10, pady=10, border=1, relief='raised')
+    dragger = tk.Label(root, text="Drag me somewhere...",
+                       padx=10, pady=10, border=1, relief='raised')
     dragger.pack()
 
-    detacher = ExampleDetacher(frame, dragger)
-    dragger.bind('<Button1-Motion>', detacher.on_drag)
-    dragger.bind('<ButtonRelease-1>', detacher.on_drop)
+    detacher = ExampleDetacher(labelframe)
+    dragger.bind('<Button1-Motion>', detacher.on_detaching_drag)
+    dragger.bind('<ButtonRelease-1>', detacher.on_detaching_drop)
 
     root.mainloop()

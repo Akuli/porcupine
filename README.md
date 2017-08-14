@@ -34,6 +34,9 @@ There are detailed installation instructions in [the Porcupine
 Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
 Here's a summary of the commands for inpatient people :)
 
+Make sure you have Python 3.4 or newer installed, and run these commands
+on a command prompt, PowerShell or terminal:
+
 ### Windows
 
     py -m pip install --user http://goo.gl/SnlfHw
