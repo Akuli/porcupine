@@ -1,5 +1,5 @@
 import sys
-assert sys.version_info >= (3, 3), "Porcupine requires Python 3.3 or newer"  # noqa
+assert sys.version_info >= (3, 4), "Porcupine requires Python 3.3 or newer"  # noqa
 import os
 import re
 import tkinter      # noqa  # just to make sure it's there

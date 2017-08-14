@@ -317,9 +317,30 @@ class TabManager(tk.Frame):
 
 class _TabDetacher(_detach.Detacher):
 
+    # explicit > implicit, so self.tab > self.labelframe
     def __init__(self, tab):
-        self.tab = tab
         super().__init__(tab)
+        self.tab = tab
+
+        # this label is displayed as the tab's labelwidget when needed,
+        # and it automagically gets the same config as the real top
+        # label (but no bindings)
+        self._top_label = tk.Label(tab, padx=10, pady=5,
+                                   border=tab['border'], relief='sunken')
+        self._top_label.bind('<Button1-Motion>', self.on_attaching_drag)
+        self._top_label.bind('<ButtonRelease-1>', self.on_attaching_drop)
+        tab.top_label.bind('<Configure>', self._update_top_label, add=True)
+
+        # the tab's border is usually 0 so it doesn't look like a
+        # LabelFrame, but it's restored back to the original border when
+        # the tab is detached
+        self._orig_border = tab['border']
+        tab['border'] = 0
+
+        # highlightthickness is space on the outside of the visible
+        # border line, padx and pady are on the inside
+        tab['highlightcolor'] = tab['highlightbackground'] = tab['background']
+        tab['highlightthickness'] = tab['padx'] = tab['pady'] = 0
 
     def detach(self, x, y):
         self.tab.master._remove_detaching_tab(self.tab)
@@ -327,19 +348,41 @@ class _TabDetacher(_detach.Detacher):
         self.tab.master.detached_tabs.append(self.tab)
         self.tab.on_focus()
 
-        # FIXME: the title isn't updated when top_label's title is changed
-        self.tab.tk.call('wm', 'title', self.tab, self.tab.top_label['text'])
+        self.tab['labelwidget'] = self._top_label
+        self.tab['border'] = self._orig_border
+        self.tab['highlightthickness'] = 2
+        self.tab['padx'] = self.tab['pady'] = 7
+
         self.tab.tk.call('wm', 'protocol', self.tab, 'WM_DELETE_WINDOW',
-                         self.tab.register(self.attach))
+                         self.tab.register(self._maybe_close))
+        self._update_top_label()
 
     def attach(self):
+        self.tab['labelwidget'] = ''
+        self.tab['border'] = 0
+        tab['highlightthickness'] = tab['padx'] = tab['pady'] = 0
         super().attach()
+
         self.tab.master.detached_tabs.remove(self.tab)
         self.tab.master._add_attaching_tab(self.tab)
         self.tab.on_focus()
 
+    def _update_top_label(self, event=None):
+        for key, value in dict(self.tab.top_label).items():
+            # some keys are handled specially by our top label
+            if key not in {'padx', 'pady', 'relief'}:
+                self._top_label[key] = value
 
-class Tab(tk.Frame):
+        if self.tab in self.tab.master.detached_tabs:
+            self.tab.tk.call('wm', 'title', self.tab,
+                             self._top_label['text'])
+
+    def _maybe_close(self):
+        if self.tab.can_be_closed():
+            self.tab.master.close_tab(self.tab)
+
+
+class Tab(tk.LabelFrame):
     r"""Base class for widgets that can be added to TabManager.
 
     You can easily create custom kinds of tabs by inheriting from this
@@ -364,9 +407,9 @@ class Tab(tk.Frame):
 
     There are no hooks that run when detaching or attaching the tab
     because you shouldn't need to worry about it. The implementation
-    doesn't destroy the widgets and create them again or anything like
-    that. However, you can check if a tab is detached with
-    :attr:`~TabManager.detached_tabs`.
+    doesn't destroy the widgets and create them again or anything that
+    stupid, but you can check if a tab is detached with
+    :attr:`.TabManager.detached_tabs`.
 
     .. virtualevent:: StatusChanged
 
@@ -406,30 +449,17 @@ class Tab(tk.Frame):
         utils.copy_bindings(porcupine.get_main_window(), self)
 
         self._status = ''
-        self._detacher = _TabDetacher(self)
 
         def select_me(event):
-            manager.current_tab = self
+            # detached tabs are always "selected" in their own window
+            if self not in manager.detached_tabs:
+                manager.current_tab = self
 
-        def add_top_bindings(widget):
-            widget.bind('<Button-1>', select_me, add=True)
-            widget.bind('<Button1-Motion>', self._detacher.on_drag, add=True)
-            widget.bind('<ButtonRelease-1>', self._detacher.on_drop, add=True)
-            utils.bind_mouse_wheel(widget, manager._on_wheel, add=True)
-
+        # the manager will grid _topframe later
         self._topframe = tk.Frame(manager._topframeframe,
                                   border=1, padx=10, pady=3)
-        self.bind('<Destroy>', (lambda event: self._topframe.destroy()),
-                  add=True)
-        add_top_bindings(self._topframe)
-
         self.top_label = tk.Label(self._topframe)
         self.top_label.pack(side='left')
-        add_top_bindings(self.top_label)
-
-        manager.bind('<<CurrentTabChanged>>',
-                     self._update_top_relief, add=True)
-        self._update_top_relief()
 
         def _close_if_can(event):
             if self.can_be_closed():
@@ -439,6 +469,28 @@ class Tab(tk.Frame):
             self._topframe, image=utils.get_image('closebutton.gif'))
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', _close_if_can)
+
+        def add_top_bindings(widget):
+            widget.bind('<Button-1>', select_me, add=True)
+            widget.bind('<Button1-Motion>',
+                        self._detacher.on_detaching_drag, add=True)
+            widget.bind('<ButtonRelease-1>',
+                        self._detacher.on_detaching_drop, add=True)
+            utils.bind_mouse_wheel(widget, manager._on_wheel, add=True)
+
+        self._detacher = _TabDetacher(self)
+        add_top_bindings(self._topframe)
+
+        # the topframe is not in the tab, so it's not destroyed when the
+        # tab is destroyed
+        self.bind('<Destroy>', (lambda event: self._topframe.destroy()),
+                  add=True)
+
+        add_top_bindings(self.top_label)
+
+        manager.bind('<<CurrentTabChanged>>',
+                     self._update_top_relief, add=True)
+        self._update_top_relief()
 
     def _update_top_relief(self, event=None):
         if self.master.current_tab is self:
