@@ -359,8 +359,8 @@ class _TabDetacher(_detach.Detacher):
 
     def attach(self):
         self.tab['labelwidget'] = ''
-        self.tab['border'] = 0
-        tab['highlightthickness'] = tab['padx'] = tab['pady'] = 0
+        self.tab['border'] = self.tab['highlightthickness'] = 0
+        self.tab['padx'] = self.tab['pady'] = 0
         super().attach()
 
         self.tab.master.detached_tabs.remove(self.tab)

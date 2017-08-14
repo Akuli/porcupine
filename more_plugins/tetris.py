@@ -1,11 +1,11 @@
 # TODO: add a pause feature (maybe pressing p or something?)
-from functools import partialmethod    # requires Python 3.4 or newer
+import functools
 import itertools
 import random
 import tkinter as tk
 
 import porcupine
-from porcupine import utils
+from porcupine import tabs, utils
 
 WIDTH = 10
 HEIGHT = 20
@@ -77,9 +77,9 @@ class Block:
         self.y += deltay
         return True
 
-    move_left = partialmethod(_move, -1, 0)
-    move_right = partialmethod(_move, +1, 0)
-    move_down = partialmethod(_move, 0, -1)
+    move_left = functools.partialmethod(_move, -1, 0)
+    move_right = functools.partialmethod(_move, +1, 0)
+    move_down = functools.partialmethod(_move, 0, -1)
 
     def move_down_all_the_way(self):
         while self.move_down():
@@ -133,8 +133,8 @@ class Game:
 
     def __init__(self):
         self.moving_block = None
-        self.frozen_squares = {}   # {(x, y): block_shape}
-        self.score = 0
+        self.frozen_squares = {}   # {(x, y): shape_letter}
+        self.score = 0      # each new block increments score
         self.add_block()
 
     @property
@@ -211,7 +211,7 @@ COLORS = {
 }
 
 
-class TetrisTab(porcupine.tabs.Tab):
+class TetrisTab(tabs.Tab):
 
     def __init__(self, manager):
         super().__init__(manager)
@@ -224,10 +224,12 @@ class TetrisTab(porcupine.tabs.Tab):
             relief='ridge', bg='black', takefocus=True)
         self._canvas.pack()
 
-        for key in ['A', 'a', 'S', 's', 'D', 'd', 'F', 'f',
-                    'Left', 'Right', 'Up', 'Down', 'Return', 'space']:
-            self._canvas.bind('<' + key + '>', self._move, add=True)
-        self._canvas.bind('<F2>', self.new_game)
+        # this also requires binding on the tab when the tab is detached
+        for key in ['<A>', '<a>', '<S>', '<s>', '<D>', '<d>', '<F>', '<f>',
+                    '<Left>', '<Right>', '<Up>', '<Down>', '<Return>',
+                    '<space>', '<F2>']:
+            self._canvas.bind(key, self._on_key, add=True)
+            self.bind(key, self._on_key, add=True)
 
         self._canvas_content = {}
         for x in range(WIDTH):
@@ -241,6 +243,23 @@ class TetrisTab(porcupine.tabs.Tab):
         self._timeout_id = None
         self._game_over_id = None
         self.new_game()
+
+    def _on_key(self, event):
+        if event.keysym in {'A', 'a', 'Left'}:
+            self._game.moving_block.move_left()
+        elif event.keysym in {'D', 'd', 'Right'}:
+            self._game.moving_block.move_right()
+        elif event.keysym in {'Return', 'Up'}:
+            self._game.moving_block.rotate()
+        elif event.keysym in {'space', 'Down'}:
+            self._game.moving_block.move_down_all_the_way()
+        elif event.keysym == 'F2':
+            self.new_game()
+        else:
+            raise ValueError("unknown keysym %r" % event.keysym)
+
+        self._refresh()
+        return 'break'
 
     def _refresh(self):
         for (x, y), item_id in self._canvas_content.items():
@@ -264,22 +283,6 @@ class TetrisTab(porcupine.tabs.Tab):
         self._game = Game()
         self._refresh()
         self._on_timeout()
-
-    def _move(self, event):
-        if self.master.current_tab is not self:
-            # the events are meant for some other tab
-            return None
-
-        if event.keysym in {'A', 'a', 'Left'}:
-            self._game.moving_block.move_left()
-        if event.keysym in {'D', 'd', 'Right'}:
-            self._game.moving_block.move_right()
-        if event.keysym in {'Return', 'Up'}:
-            self._game.moving_block.rotate()
-        if event.keysym in {'space', 'Down'}:
-            self._game.moving_block.move_down_all_the_way()
-        self._refresh()
-        return 'break'
 
     def _on_timeout(self):
         self._game.do_something()

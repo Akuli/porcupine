@@ -79,13 +79,15 @@ class Detacher:
         The window is centered on x and y, treated as relative to the whole
         screen. Usually they come from a mouse event's x_root and y_root.
         """
-
         # only toplevels and root windows have wm methods :(
         self.labelframe.tk.call('wm', 'manage', self.labelframe)
         self.labelframe.tk.call('wm', 'deiconify', self.labelframe)
 
         # center the detached window on the cursor
-        width, height = 400, 300      # TODO: don't hard-code this
+        # there's a bit more borders than winfo_reqstuff says, 100 is
+        # more than enough but making it a bit bigger doesn't hurt
+        width = max(self.tab.winfo_reqwidth() + 100, 400)
+        height = max(self.tab.winfo_reqheight() + 100, 300)
         left = max(x - width//2, 0)       # noqa
         top = max(y - height//2, 0)       # noqa
         self.labelframe.tk.call('wm', 'geometry', self.labelframe,
