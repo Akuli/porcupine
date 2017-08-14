@@ -297,9 +297,11 @@ def copy_bindings(widget1, widget2):
     """
     # tkinter's bind() can do quite a few different things depending
     # on how it's invoked
-    for keysym in widget1.bind():
-        tcl_command = widget1.bind(keysym)
-        widget2.bind(keysym, tcl_command)
+    for sequence in widget1.bind():
+        tcl_command = widget1.bind(sequence)
+
+        # add=True doesn't work if the command is a string :(
+        widget2.tk.call('bind', widget2, sequence, '+' + tcl_command)
 
 
 # FIXME: is lru_cache() guaranteed to hold references? tkinter's images
