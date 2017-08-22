@@ -1,4 +1,4 @@
-"""Handy utility functions and classes."""
+"""Handy utility functions."""
 
 import atexit
 import base64
@@ -361,21 +361,22 @@ def errordialog(title, message, monospace_text=None):
     big_frame = ttk.Frame(window)
     big_frame.pack(fill='both', expand=True)
 
-    label = ttk.Label(big_frame, text=message, height=5)
+    label = ttk.Label(big_frame, text=message)
 
     if monospace_text is None:
         label.pack(fill='both', expand=True)
         geometry = '250x150'
     else:
         label.pack(anchor='center')
-        # there's no ttk.Text 0_o
-        text = tkinter.Text(window, width=1, height=1)
+        # there's no ttk.Text 0_o this looks very different from
+        # everything else and it sucks :(
+        text = tkinter.Text(big_frame, width=1, height=1)
         text.pack(fill='both', expand=True)
         text.insert('1.0', monospace_text)
         text['state'] = 'disabled'
         geometry = '400x300'
 
-    button = ttk.Button(window, text="OK", width=6, command=window.destroy)
+    button = ttk.Button(big_frame, text="OK", command=window.destroy)
     button.pack(pady=10)
 
     window.title(title)
