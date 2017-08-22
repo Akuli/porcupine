@@ -16,6 +16,7 @@ import tkinter as tk
 import traceback
 
 import porcupine
+from porcupine import dirs
 
 log = logging.getLogger(__name__)
 
@@ -304,33 +305,33 @@ def copy_bindings(widget1, widget2):
         widget2.tk.call('bind', widget2, sequence, '+' + tcl_command)
 
 
-# FIXME: is lru_cache() guaranteed to hold references? tkinter's images
-# use __del__ and it's important to hold a reference to them as long as
-# they're used somewhere
-@functools.lru_cache()
-def get_image(filename):
-    """Create a ``tkinter.PhotoImage`` from a file in ``porcupine/images``.
-
-    This function is cached and the cache holds references to all
-    returned images, so there's no need to worry about calling this
-    function too many times or keeping references to the returned
-    images.
-    """
-    # only gif images should be added to porcupine/images, other image
-    # formats don't work with old Tk versions
-    data = pkgutil.get_data('porcupine', 'images/' + filename)
-    return tk.PhotoImage(format='gif', data=base64.b64encode(data))
-
-
-# cpython exits like this:
+# tkinter images destroy themselves on __del__. here's how cpython exits:
+#
 #   1) atexit callbacks run
-#   2) module globals are set to None (wtf lol)
+#   2) module globals are set to None (lol)
 #   3) all objects are destroyed and __del__ methods run
 #
-# the problem here is that tkinter.Image.__del__ does "except TclError",
-# but tkinter.TclError is already None, it's not a big deal but this
-# silences those errors
-atexit.register(get_image.cache_clear)
+# tkinter.Image.__del__ destroys the image, and that uses
+# "except TclError". this causes means two things:
+#
+#   - it's necessary to hold references to the images to avoid calling
+#     __del__ while they're being used somewhere
+#   - the images must be destroyed before step 2 above
+_images = []
+atexit.register(_images.clear)
+
+
+# TODO: document this behavior
+def _init_images():
+    for filename in os.listdir(os.path.join(dirs.installdir, 'images')):
+        no_ext, ext = os.path.splitext(filename)
+        # only gif images should be added to porcupine/images, other
+        # image formats don't work with old Tk versions
+        if ext == '.gif':
+            image = tk.PhotoImage(
+                name=('img_' + no_ext),
+                file=os.path.join(dirs.installdir, 'images', filename))
+            _images.append(image)
 
 
 def errordialog(title, message, monospace_text=None):

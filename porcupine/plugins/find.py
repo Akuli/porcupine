@@ -49,7 +49,7 @@ class Finder(tk.Frame):
         self._statuslabel = tk.Label(self)
         self._statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
 
-        closebutton = tk.Label(self, image=utils.get_image('closebutton.gif'))
+        closebutton = tk.Label(self, image='img_closebutton')
         closebutton.grid(row=0, column=2, sticky='ne')
         closebutton.bind('<Button-1>', lambda event: self.pack_forget())
 
