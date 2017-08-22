@@ -1,4 +1,4 @@
-import tkinter as tk
+import tkinter
 
 import porcupine.menubar
 
@@ -9,7 +9,7 @@ def on_var_changed(variable_name, junk, trace_mode):
 
 
 def setup():
-    var = tk.BooleanVar()
+    var = tkinter.BooleanVar()
     var.trace('w', on_var_changed)
 
     def toggle_var(junk):

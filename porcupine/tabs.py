@@ -8,18 +8,18 @@ import functools
 import hashlib
 import logging
 import os
-import tkinter as tk
-from tkinter import messagebox
+import tkinter
+from tkinter import ttk, messagebox
 import traceback
 
 import porcupine
-from porcupine import _detach, _dialogs, filetypes, textwidget, utils
+from porcupine import _dialogs, filetypes, textwidget, utils
 from porcupine.settings import config
 
 log = logging.getLogger(__name__)
 
 
-class TabManager(tk.Frame):
+class TabManager(ttk.Frame):
     """A simple but awesome tab widget.
 
     .. virtualevent:: NewTab
@@ -47,15 +47,6 @@ class TabManager(tk.Frame):
         Don't modify this list yourself, use methods like
         :meth:`~move_left`, :meth:`~move_right`, :meth:`~add_tab` or
         :meth:`~close_tab` instead.
-
-        .. note::
-            Detached tabs are not in this list. See
-            :attr:`~detached_tabs`.
-
-    .. attribute:: detached_tabs
-
-        These tabs have been detached from the main Porcupine window.
-        As with :attr:`~tabs`, don't modify this list yourself.
 
     .. attribute:: no_tabs_frame
 
@@ -89,17 +80,14 @@ class TabManager(tk.Frame):
 
         # no, this is not a find/replace error, topframeframe is a frame
         # that contains topframes
-        self._topframeframe = tk.Frame(self)
+        self._topframeframe = ttk.Frame(self)
         self._topframeframe.pack(fill='x')
         utils.bind_mouse_wheel(self._topframeframe, self._on_wheel)
 
-        # this class does nothing to detached_tabs, the Tab objects add
-        # and remove themselves from it when they detach and attach
         self.tabs = []
-        self.detached_tabs = []
 
         self._current_tab = None
-        self.no_tabs_frame = tk.Frame(self)
+        self.no_tabs_frame = ttk.Frame(self)
         self.no_tabs_frame.pack(fill='both', expand=True)
 
         def on_page_updown(shifted, event):
@@ -171,14 +159,6 @@ class TabManager(tk.Frame):
             raise IndexError
         self.current_tab = self.tabs[index]
 
-    def _add_attaching_tab(self, tab, make_current=True):
-        tab._topframe.grid(row=0, column=len(self.tabs))
-        self.tabs.append(tab)
-        if self.current_tab is None or make_current:
-            # this is the first tab or it's supposed to become the
-            # current tab for some other reason
-            self.current_tab = tab
-
     def add_tab(self, tab, make_current=True):
         """Append a :class:`.Tab` to this tab manager.
 
@@ -200,14 +180,26 @@ class TabManager(tk.Frame):
                     self.current_tab = existing_tab
                 return existing_tab
 
+        tab._topframe.grid(row=0, column=len(self.tabs))
+        self.tabs.append(tab)
+        if self.current_tab is None or make_current:
+            # this is the first tab or it's supposed to become the
+            # current tab for some other reason
+            self.current_tab = tab
+
         # the update() is needed in some cases because virtual events
         # don't run if the widget isn't visible yet
-        self._add_attaching_tab(tab, make_current)
         self.update()
         self.event_generate('<<NewTab>>')
         return tab
 
-    def _remove_detaching_tab(self, tab):
+    def close_tab(self, tab):
+        """Destroy a tab without calling :meth:`~Tab.can_be_closed`.
+
+        The closed tab cannot be added back to the tab manager later.
+
+        .. seealso:: The :meth:`.Tab.can_be_closed` method.
+        """
         current_tab_will_be_none = False
         if tab is self.current_tab:
             # go to next or previous tab if there are other tabs
@@ -229,27 +221,6 @@ class TabManager(tk.Frame):
         # tabmanager.tabs to check if there are any tabs
         if current_tab_will_be_none:
             self.current_tab = None
-
-    def close_tab(self, tab):
-        """Destroy a tab without calling :meth:`~Tab.can_be_closed`.
-
-        This can also be used to close detached tabs. The closed tab
-        cannot be added back to the tab manager later.
-
-        .. seealso:: The :meth:`.Tab.can_be_closed` method.
-        """
-        if tab in self.detached_tabs:
-            # the tab is a toplevel and thus it's notified of its
-            # childrens' events and stuff bound to <Destroy> also run
-            # once for each child widget (with event.widget set to the
-            # child), so we'll untoplevelify it first to prevent that
-            # and keep plugins simple
-            # this wasn't easy to discover, i spent quite a while trying
-            # to figure out what was wrong
-            tab.tk.call('wm', 'forget', tab)
-            self.detached_tabs.remove(tab)
-        else:
-            self._remove_detaching_tab(tab)
 
         tab.destroy()
 
@@ -315,74 +286,7 @@ class TabManager(tk.Frame):
             pass
 
 
-class _TabDetacher(_detach.Detacher):
-
-    # explicit > implicit, so self.tab > self.labelframe
-    def __init__(self, tab):
-        super().__init__(tab)
-        self.tab = tab
-
-        # this label is displayed as the tab's labelwidget when needed,
-        # and it automagically gets the same config as the real top
-        # label (but no bindings)
-        self._top_label = tk.Label(tab, padx=10, pady=5,
-                                   border=tab['border'], relief='sunken')
-        self._top_label.bind('<Button1-Motion>', self.on_attaching_drag)
-        self._top_label.bind('<ButtonRelease-1>', self.on_attaching_drop)
-        tab.top_label.bind('<Configure>', self._update_top_label, add=True)
-
-        # the tab's border is usually 0 so it doesn't look like a
-        # LabelFrame, but it's restored back to the original border when
-        # the tab is detached
-        self._orig_border = tab['border']
-        tab['border'] = 0
-
-        # highlightthickness is space on the outside of the visible
-        # border line, padx and pady are on the inside
-        tab['highlightcolor'] = tab['highlightbackground'] = tab['background']
-        tab['highlightthickness'] = tab['padx'] = tab['pady'] = 0
-
-    def detach(self, x, y):
-        self.tab.master._remove_detaching_tab(self.tab)
-        super().detach(x, y)
-        self.tab.master.detached_tabs.append(self.tab)
-        self.tab.on_focus()
-
-        self.tab['labelwidget'] = self._top_label
-        self.tab['border'] = self._orig_border
-        self.tab['highlightthickness'] = 2
-        self.tab['padx'] = self.tab['pady'] = 7
-
-        self.tab.tk.call('wm', 'protocol', self.tab, 'WM_DELETE_WINDOW',
-                         self.tab.register(self._maybe_close))
-        self._update_top_label()
-
-    def attach(self):
-        self.tab['labelwidget'] = ''
-        self.tab['border'] = self.tab['highlightthickness'] = 0
-        self.tab['padx'] = self.tab['pady'] = 0
-        super().attach()
-
-        self.tab.master.detached_tabs.remove(self.tab)
-        self.tab.master._add_attaching_tab(self.tab)
-        self.tab.on_focus()
-
-    def _update_top_label(self, event=None):
-        for key, value in dict(self.tab.top_label).items():
-            # some keys are handled specially by our top label
-            if key not in {'padx', 'pady', 'relief'}:
-                self._top_label[key] = value
-
-        if self.tab in self.tab.master.detached_tabs:
-            self.tab.tk.call('wm', 'title', self.tab,
-                             self._top_label['text'])
-
-    def _maybe_close(self):
-        if self.tab.can_be_closed():
-            self.tab.master.close_tab(self.tab)
-
-
-class Tab(tk.LabelFrame):
+class Tab(ttk.LabelFrame):
     r"""Base class for widgets that can be added to TabManager.
 
     You can easily create custom kinds of tabs by inheriting from this
@@ -404,12 +308,6 @@ class Tab(tk.LabelFrame):
 
         def setup():
             porcupine.add_action(new_hello_tab, 'Hello/New Hello Tab')
-
-    There are no hooks that run when detaching or attaching the tab
-    because you shouldn't need to worry about it. The implementation
-    doesn't destroy the widgets and create them again or anything that
-    stupid, but you can check if a tab is detached with
-    :attr:`.TabManager.detached_tabs`.
 
     .. virtualevent:: StatusChanged
 
@@ -444,41 +342,30 @@ class Tab(tk.LabelFrame):
     def __init__(self, manager):
         super().__init__(manager)
 
-        # the main window bindings are meant to be set on the current
-        # toplevel window, so they must be there when the tab is detached
-        utils.copy_bindings(porcupine.get_main_window(), self)
-
         self._status = ''
 
         def select_me(event):
-            # detached tabs are always "selected" in their own window
-            if self not in manager.detached_tabs:
-                manager.current_tab = self
+            manager.current_tab = self
 
         # the manager will grid _topframe later
-        self._topframe = tk.Frame(manager._topframeframe,
-                                  border=1, padx=10, pady=3)
-        self.top_label = tk.Label(self._topframe)
+        self._topframe = ttk.Frame(manager._topframeframe,
+                                   border=1)
+        self.top_label = ttk.Label(self._topframe)
         self.top_label.pack(side='left')
 
         def _close_if_can(event):
             if self.can_be_closed():
                 manager.close_tab(self)
 
-        closebutton = tk.Label(
+        closebutton = ttk.Label(
             self._topframe, image=utils.get_image('closebutton.gif'))
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', _close_if_can)
 
         def add_top_bindings(widget):
             widget.bind('<Button-1>', select_me, add=True)
-            widget.bind('<Button1-Motion>',
-                        self._detacher.on_detaching_drag, add=True)
-            widget.bind('<ButtonRelease-1>',
-                        self._detacher.on_detaching_drop, add=True)
             utils.bind_mouse_wheel(widget, manager._on_wheel, add=True)
 
-        self._detacher = _TabDetacher(self)
         add_top_bindings(self._topframe)
 
         # the topframe is not in the tab, so it's not destroyed when the
@@ -602,8 +489,7 @@ as file:
 
     def __init__(self, manager, content='', *, path=None):
         super().__init__(manager)
-        self.top_label['text'] = "New File"
-        self._orig_label_fg = self.top_label['fg']
+
         self._save_hash = None
 
         # path and filetype are set correctly below
@@ -614,7 +500,7 @@ as file:
         self.bind('<<PathChanged>>', self._guess_filetype, add=True)
 
         # FIXME: wtf is this doing here?
-        self.mainframe = tk.Frame(self)
+        self.mainframe = ttk.Frame(self)
         self.mainframe.pack(fill='both', expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
@@ -644,7 +530,7 @@ as file:
 
         # the scrollbar is exposed for things like line numbers, see
         # plugins/linenumbers.py
-        self.scrollbar = tk.Scrollbar(self.mainframe)
+        self.scrollbar = ttk.Scrollbar(self.mainframe)
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
 
@@ -738,13 +624,12 @@ as file:
             self.filetype = filetypes.guess_filetype(self.path)
 
     def _update_top_label(self, junk=None):
-        if self.path is not None:
-            self.top_label['text'] = os.path.basename(self.path)
-
-        if self.is_saved():
-            self.top_label['fg'] = self._orig_label_fg
-        else:
-            self.top_label['fg'] = 'red'
+        text = 'New File' if self.path is None else os.path.basename(self.path)
+        if not self.is_saved():
+            # TODO: figure out how to make the label red in ttk instead
+            # of stupid stars
+            text = '*' + text + '*'
+        self.top_label['text'] = text
 
     def _update_status(self, junk=None):
         if self.path is None:
@@ -838,13 +723,13 @@ as file:
 
 if __name__ == '__main__':
     # test/demo
-    root = tk.Tk()
+    root = tkinter.Tk()
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)
     tabmgr.bind('<<CurrentTabChanged>>',
                 lambda event: print(repr(event.widget.current_tab)))
 
-    tk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
+    ttk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
 
     def on_ctrl_w(event):
         if tabmgr.tabs:    # current_tab is not None
@@ -859,7 +744,8 @@ if __name__ == '__main__':
         tab.top_label['text'] = "tab %d" % i
         tabmgr.add_tab(tab)
 
-        text = tk.Text(tab)
+        # there's no ttk.Text 0_o
+        text = tkinter.Text(tab)
         text.pack()
         text.insert('1.0', "this is the content of tab %d" % i)
         #utils.copy_bindings(tabmgr, text)

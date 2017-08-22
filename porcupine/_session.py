@@ -1,6 +1,7 @@
 import functools
 import logging
-import tkinter as tk
+import tkinter
+from tkinter import ttk
 import traceback
 import webbrowser
 
@@ -33,10 +34,10 @@ def init(window):
 
     Example::
 
-        import tkinter as tk
+        import tkinter
         import porcupine
 
-        root = tk.Tk()
+        root = tkinter.Tk()
         porcupine.init(root)
         root.protocol('WM_DELETE_WINDOW', porcupine.quit)
         root.mainloop()
@@ -77,14 +78,14 @@ def quit():
     :meth:`closed <porcupine.tabs.TabManager.close_tab>` and the main
     window is destroyed.
     """
-    all_tabs = _tab_manager.tabs + _tab_manager.detached_tabs
-    for tab in all_tabs:
+    for tab in _tab_manager.tabs:
         if not tab.can_be_closed():
             return
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    for tab in all_tabs:
+    # closing tabs removes them from the tabs list, that's why copying
+    for tab in _tab_manager.tabs.copy():
         _tab_manager.close_tab(tab)
     _main_window.destroy()
 
@@ -110,11 +111,11 @@ def _make_welcome_msg(frame):
         for chunk in porcupine.__doc__.split('\n\n')
     )
 
-    inner_frame = tk.Frame(frame)
+    inner_frame = ttk.Frame(frame)
     inner_frame.place(relx=0.5, rely=0.5, anchor='center')   # float in center
-    tk.Label(inner_frame, font=('', 16, ''),
-             text="Welcome to Porcupine!\n").pack()
-    tk.Label(inner_frame, font=('', 12, ''), text=description).pack()
+    ttk.Label(inner_frame, font=('', 16, ''),
+              text="Welcome to Porcupine!\n").pack()
+    ttk.Label(inner_frame, font=('', 12, ''), text=description).pack()
 
     def on_resize(event):
         # 0.9 adds little borders
@@ -216,7 +217,7 @@ def _setup_actions():
     add_link("Help/Read Porcupine's code on GitHub",
              "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
-    stylenamevar = tk.StringVar()
+    stylenamevar = tkinter.StringVar()
     for name in sorted(pygments.styles.get_all_styles()):
         # the command runs config['Editing', 'pygments_style'] = name
         options = {

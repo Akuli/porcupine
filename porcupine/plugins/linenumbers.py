@@ -1,7 +1,5 @@
 """Line numbers for tkinter's Text widget."""
 
-import tkinter as tk
-
 import porcupine
 from porcupine import tabs
 from porcupine.textwidget import ThemedText
@@ -101,9 +99,10 @@ def setup():
 
 
 if __name__ == '__main__':
+    import tkinter
     from porcupine.settings import config
 
-    root = tk.Tk()
+    root = tkinter.Tk()
     config.load()
 
     text = ThemedText(root)

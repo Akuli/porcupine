@@ -1,6 +1,6 @@
 """Maximum line length marker for Tkinter's text widget."""
 
-import tkinter as tk
+import tkinter
 import tkinter.font as tkfont
 
 import pygments.styles
@@ -15,7 +15,10 @@ class LongLineMarker:
 
     def __init__(self, filetab):
         self.tab = filetab
-        self.frame = tk.Frame(filetab.textwidget, width=1)
+
+        # this must not be a ttk frame because the background color
+        # comes from the pygments style, not from the ttk theme
+        self.frame = tkinter.Frame(filetab.textwidget, width=1)
         self._height = 0        # on_configure() will run later
 
     def setup(self):

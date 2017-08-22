@@ -22,7 +22,6 @@ __copyright__ = 'Copyright (c) 2017 Akuli'
 __license__ = 'MIT'
 
 
-# this stuff is exposed here
 from porcupine._session import (    # noqa
     init, quit, get_main_window, get_tab_manager,
     new_file, open_file, add_action)

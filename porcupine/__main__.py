@@ -6,7 +6,7 @@ import os
 import platform
 from queue import Empty         # queue is a handy variable name
 import sys
-import tkinter as tk
+import tkinter
 
 import porcupine
 from porcupine import _ipc, _logs, _pluginloader, dirs, utils
@@ -177,7 +177,7 @@ def main():
     log.info("running on Python %d.%d.%d from %s",
              *(list(sys.version_info[:3]) + [sys.executable]))
 
-    root = tk.Tk()
+    root = tkinter.Tk()
     porcupine.init(root)
     root.title("Porcupine")
     root.geometry(config['GUI', 'default_size'])

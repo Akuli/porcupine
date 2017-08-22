@@ -1,9 +1,7 @@
 """A dialog for changing the settings."""
-# This uses ttk widgets instead of tk widgets because it needs
-# ttk.Combobox anyway and mixing the widgets looks inconsistent.
 
 import os
-import tkinter as tk
+import tkinter
 from tkinter import ttk, messagebox
 import tkinter.font as tkfont
 
@@ -38,7 +36,8 @@ class Triangle(ttk.Label):
         # i'm not sure why this _fake_img reference doesn't cause
         # similar problems as functools.lru_cache() in utils.get_image()
         # (see the comments there for weird stuff)
-        self._fake_img = tk.PhotoImage(width=img.width(), height=img.height())
+        self._fake_img = tkinter.PhotoImage(
+            width=img.width(), height=img.height())
         self['image'] = self._fake_img
 
     def show(self):
@@ -54,7 +53,7 @@ class Checkbutton(ttk.Checkbutton):
     def __init__(self, parent, configkey, **kwargs):
         super().__init__(parent, **kwargs)
         self._key = configkey
-        self._var = self['variable'] = tk.BooleanVar()
+        self._var = self['variable'] = tkinter.BooleanVar()
         self._var.trace('w', self._to_config)
         config.connect(*configkey, callback=self._var.set, run_now=True)
 
@@ -77,7 +76,7 @@ class Entry(ttk.Frame):
         self._triangle.pack(side='right')
 
         self._key = configkey
-        self._var = self.entry['textvariable'] = tk.StringVar()
+        self._var = self.entry['textvariable'] = tkinter.StringVar()
         self._var.trace('w', self._to_config)
         config.connect(*configkey, callback=self._var.set, run_now=True)
 
@@ -100,7 +99,7 @@ class Spinbox(ttk.Frame):
         self._triangle.pack(side='right')
 
         self._key = configkey
-        self._var = self['textvariable'] = tk.StringVar()
+        self._var = self['textvariable'] = tkinter.StringVar()
         self._var.trace('w', self._to_config)
 
         # self._var.set() will be called with an integer, but tkinter
@@ -125,8 +124,8 @@ class FontSelector(ttk.Frame):
     def __init__(self, parentwidget, **kwargs):
         super().__init__(parentwidget, **kwargs)
 
-        self._familyvar = tk.StringVar()
-        self._sizevar = tk.StringVar()
+        self._familyvar = tkinter.StringVar()
+        self._sizevar = tkinter.StringVar()
         familycombo = ttk.Combobox(self, textvariable=self._familyvar,
                                    width=15, values=self._get_families())
         familycombo.pack(side='left')
@@ -204,7 +203,7 @@ def init():
     global _dialog
     assert _dialog is None, "init() was called twice"
 
-    _dialog = tk.Toplevel(porcupine.get_main_window())
+    _dialog = tkinter.Toplevel()
     _dialog.transient(porcupine.get_main_window())
     _dialog.withdraw()
     _dialog.title("Porcupine Settings")
@@ -271,7 +270,7 @@ def init():
 if __name__ == '__main__':
     from porcupine import _logs
 
-    root = tk.Tk()
+    root = tkinter.Tk()
     root.withdraw()
     config.load()
     _logs.setup(verbose=True)
