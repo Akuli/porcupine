@@ -215,7 +215,7 @@ class TetrisTab(tabs.Tab):
 
     def __init__(self, manager):
         super().__init__(manager)
-        self.top_label['text'] = "Tetris"
+        self.title = "Tetris"
 
         # the takefocus thing is important, it's hard to bind the keys
         # correctly without it
