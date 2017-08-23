@@ -57,6 +57,7 @@ def init(window):
     for binding, callback in _tab_manager.bindings:
         window.bind(binding, callback, add=True)
 
+    utils._init_images()
     filetypes.init()
     dirs.makedirs()
     config.load()

@@ -34,7 +34,7 @@ class Triangle(ttk.Label):
 
         width = self.tk.call('image', 'width', 'img_triangle')
         height = self.tk.call('image', 'height', 'img_triangle')
-        self._fake_img = tk.PhotoImage(width=width, height=height)
+        self._fake_img = tkinter.PhotoImage(width=width, height=height)
         self['image'] = self._fake_img
 
     def show(self):

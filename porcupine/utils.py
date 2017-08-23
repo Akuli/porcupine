@@ -329,7 +329,7 @@ def _init_images():
         # only gif images should be added to porcupine/images, other
         # image formats don't work with old Tk versions
         if ext == '.gif':
-            image = tk.PhotoImage(
+            image = tkinter.PhotoImage(
                 name=('img_' + no_ext),
                 file=os.path.join(dirs.installdir, 'images', filename))
             _images.append(image)
