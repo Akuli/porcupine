@@ -15,10 +15,13 @@ Installing these plugins is easy:
 3. Restart Porcupine.
 4. Customize the plugin if you don't like it.
 
-| File              | Description                   | Notes     |
-| ----------------- | ----------------------------- | --------- |
-| pythonprompt.py   | Simple `>>>` prompt tab.      | (1), (2)  |
-| tetris.py         | Fun tetris game.              |           |
+| File              | Description                                   | Notes     |
+| ----------------- | --------------------------------------------- | --------- |
+| pythonprompt.py   | Simple `>>>` prompt tab.                      | (1), (2)  |
+| tetris.py         | Fun tetris game.                              |           |
+| ttkthemes.py      | Use [RedFantom's ttkthemes][] in Porcupine.   |           |
+
+[RedFantom's ttkthemes]: https://github.com/RedFantom/ttkthemes
 
 Notes:
 1. Does not work on Windows.
