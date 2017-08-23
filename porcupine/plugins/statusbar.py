@@ -23,8 +23,8 @@ class LabelWithEmptySpaceAtLeft(ttk.Label):
 
 class StatusBar(ttk.Frame):
 
-    def __init__(self, tab, **kwargs):
-        super().__init__(tab, **kwargs)
+    def __init__(self, tab):
+        super().__init__(tab)
         # one label for each tab-separated thing
         self.labels = [ttk.Label(self)]
         self.labels[0].pack(side='left')
@@ -49,7 +49,7 @@ class StatusBar(ttk.Frame):
 
 def on_new_tab(event):
     tab = event.widget.tabs[-1]
-    StatusBar(tab, relief='sunken').pack(side='bottom', fill='x')
+    StatusBar(tab).pack(side='bottom', fill='x')
 
 
 def setup():
