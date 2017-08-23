@@ -93,8 +93,7 @@ class TabManager(ttk.Notebook):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.bind('<<NotebookTabChanged>>',
-                  lambda event: self.event_generate('<<CurrentTabChanged>>'))
+        self.bind('<<NotebookTabChanged>>', self._on_tab_selected, add=True)
         self.bind('<Button-1>', self._on_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
 
@@ -167,7 +166,8 @@ class TabManager(ttk.Notebook):
             self.select(tab)
 
     def _on_tab_selected(self, event):
-        self.current_tab.on_focus()
+        if self.current_tab is not None:
+            self.current_tab.on_focus()
         self.event_generate('<<CurrentTabChanged>>')
 
     @property
@@ -222,7 +222,6 @@ class TabManager(ttk.Notebook):
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
-        print("closing")
         if tab is self.current_tab:
             # go to next or previous tab if possible
             self.select_right() or self.select_left()
