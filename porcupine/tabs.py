@@ -19,30 +19,6 @@ from porcupine.settings import config
 log = logging.getLogger(__name__)
 
 
-def _init_style(tkapp):
-    utils._init_images()
-    tkapp.eval('''
-    # img_closebutton is images/closebutton.gif, see utils._init_images
-    ttk::style element create closebutton image img_closebutton
-    ttk::style layout TabManager { TabManager.client }
-    ttk::style layout TabManager.Tab {
-        TabManager.tab -children {
-            TabManager.focus -children {
-                # repeating this makes the border thicker, let me know
-                # if you have a better idea
-                TabManager.border -border yes -children {
-                TabManager.border -border yes -children {
-                TabManager.border -border yes -children {
-                    TabManager.padding -children {
-                        TabManager.label -side left
-                        TabManager.closebutton -side left
-                    }
-                }}}
-            }
-        }
-    }''')
-
-
 class TabManager(ttk.Notebook):
     """A simple but awesome tab widget.
 
@@ -117,12 +93,6 @@ class TabManager(ttk.Notebook):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        try:
-            self['style'] = 'TabManager'
-        except tkinter.TclError:
-            _init_style(self.tk)
-            self['style'] = 'TabManager'
-
         self.bind('<<NotebookTabChanged>>',
                   lambda event: self.event_generate('<<CurrentTabChanged>>'))
         self.bind('<Button-1>', self._on_click, add=True)
@@ -147,9 +117,22 @@ class TabManager(ttk.Notebook):
             self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
     def _on_click(self, event):
-        if self.identify(event.x, event.y) == 'closebutton':
-            index = self.index('@%d,%d' % (event.x, event.y))
-            self.close_tab(self.tabs[index])
+        if self.identify(event.x, event.y) != 'label':
+            # something else than the top label was clicked
+            return
+
+        # find the right edge of the label, hopefully there's no padding
+        right = event.x
+        while self.identify(right, event.y) == 'label':
+            right += 1
+
+        # the image is on the right edge of the label
+        image_width = int(self.tk.call('image', 'width', 'img_closebutton'))
+        if event.x + image_width >= right:
+            # the close button was clicked
+            tab = self.tabs[self.index('@%d,%d' % (event.x, event.y))]
+            if tab.can_be_closed():
+                self.close_tab(tab)
 
     def _on_page_updown(self, shifted, event):
         if shifted:
@@ -221,7 +204,10 @@ class TabManager(ttk.Notebook):
                     self.current_tab = existing_tab
                 return existing_tab
 
-        self.add(tab, text=tab.title)
+        # img_closebutton is from images/closebutton.gif, see
+        # utils._init_images()
+        self.add(tab, text=tab.title, image='img_closebutton',
+                 compound='right')
 
         # the update() is needed in some cases because virtual events
         # don't run if the widget isn't visible yet
