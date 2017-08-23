@@ -357,8 +357,7 @@ class Tab(ttk.LabelFrame):
             if self.can_be_closed():
                 manager.close_tab(self)
 
-        closebutton = ttk.Label(
-            self._topframe, image=utils.get_image('closebutton.gif'))
+        closebutton = ttk.Label(self._topframe, image='img_closebutton')
         closebutton.pack(side='left')
         closebutton.bind('<Button-1>', _close_if_can)
 

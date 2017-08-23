@@ -31,17 +31,14 @@ class Triangle(ttk.Label):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        img = utils.get_image('triangle.gif')
 
-        # i'm not sure why this _fake_img reference doesn't cause
-        # similar problems as functools.lru_cache() in utils.get_image()
-        # (see the comments there for weird stuff)
-        self._fake_img = tkinter.PhotoImage(
-            width=img.width(), height=img.height())
+        width = self.tk.call('image', 'width', 'img_triangle')
+        height = self.tk.call('image', 'height', 'img_triangle')
+        self._fake_img = tk.PhotoImage(width=width, height=height)
         self['image'] = self._fake_img
 
     def show(self):
-        self['image'] = utils.get_image('triangle.gif')
+        self['image'] = 'img_triangle'
 
     def hide(self):
         self['image'] = self._fake_img
