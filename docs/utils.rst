@@ -6,6 +6,8 @@
 This module contains handy things that Porcupine uses internally and
 plugins can use freely.
 
+.. TODO: document the img_stuff API
+
 
 Information about Python
 ------------------------
@@ -49,7 +51,6 @@ Tkinter Utilities
 .. autofunction:: copy_bindings
 .. autoclass:: Checkbox
 .. autofunction:: run_in_thread
-.. autofunction:: get_image
 
 
 Miscellaneous
