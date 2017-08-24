@@ -24,6 +24,8 @@ Python::
    >>> print(porcupine.plugins.__path__[0])
    /home/akuli/.config/porcupine/plugins
 
+You can also use ``--print-plugins`` as shown :source:`here <more_plugins/>`.
+
 Of course, your plugins are probably not in ``/home/akuli/.config/porcupine/plugins``,
 so you need to run the above commands yourself to find out where your plugins
 should go. Rest of this tutorial calls this place **the plugin directory**.
