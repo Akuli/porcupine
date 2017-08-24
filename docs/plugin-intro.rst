@@ -59,6 +59,8 @@ Some details:
       ``porcupine.add_action(hello, 'Run/Hello')``.
    *  Usually plugins are files, but directories with an ``__init__.py`` in them
       work as well.
+   *  Plugins can be imported like ``import porcupine.plugins.hello``.
+      That's how Porcupine loads them.
    *  File and directory names starting with ``_`` are ignored.
    *  Each plugin must define a ``setup()`` function. If your plugin is a package,
       the ``setup()`` function must be exposed in ``__init__.py``. Porcupine calls
