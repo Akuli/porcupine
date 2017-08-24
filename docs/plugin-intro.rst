@@ -24,6 +24,8 @@ Python::
    >>> print(porcupine.plugins.__path__[0])
    /home/akuli/.config/porcupine/plugins
 
+You can also use ``--print-plugins`` as shown :source:`here <more_plugins/>`.
+
 Of course, your plugins are probably not in ``/home/akuli/.config/porcupine/plugins``,
 so you need to run the above commands yourself to find out where your plugins
 should go. You can also use `porcupine --print-plugindir` as shown
@@ -61,6 +63,8 @@ Some details:
       ``porcupine.add_action(hello, 'Run/Hello')``.
    *  Usually plugins are files, but directories with an ``__init__.py`` in them
       work as well.
+   *  Plugins can be imported like ``import porcupine.plugins.hello``.
+      That's how Porcupine loads them.
    *  File and directory names starting with ``_`` are ignored.
    *  Each plugin must define a ``setup()`` function. If your plugin is a package,
       the ``setup()`` function must be exposed in ``__init__.py``. Porcupine calls
