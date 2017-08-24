@@ -36,9 +36,12 @@ class LineNumbers(ThemedText):
         self.insert('1.0', " 1")    # this is always there
         self['state'] = 'disabled'  # must be after the insert
         self._linecount = 1
-        self.bind('<Button-1>', self._on_click)
-        self.bind('<Double-Button-1>', self._on_double_click)
-        self.bind('<Button1-Motion>', self._on_drag)
+
+        self._clicked_place = None
+        self.bind('<Button-1>', self._on_click, add=True)
+        self.bind('<ButtonRelease-1>', self._on_unclick, add=True)
+        self.bind('<Double-Button-1>', self._on_double_click, add=True)
+        self.bind('<Button1-Motion>', self._on_drag, add=True)
 
     def do_update(self, *junk):
         """This should be ran when the line count changes."""
@@ -63,6 +66,9 @@ class LineNumbers(ThemedText):
         self._clicked_place = self.textwidget.index('insert')
         return 'break'
 
+    def _on_unclick(self, event):
+        self._clicked_place = None
+
     def _on_double_click(self, event):
         # select the line the cursor is on, including trailing newline
         self.textwidget.tag_remove('sel', '1.0', 'end')
@@ -70,6 +76,11 @@ class LineNumbers(ThemedText):
         return 'break'
 
     def _on_drag(self, event):
+        if self._clicked_place is None:
+            # the user pressed down the mouse button and then moved the
+            # mouse over the line numbers
+            return 'break'
+
         # select multiple lines
         self.textwidget.mark_set('insert', '@0,%d' % event.y)
         start = 'insert'
