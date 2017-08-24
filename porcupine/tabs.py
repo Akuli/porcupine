@@ -208,6 +208,8 @@ class TabManager(ttk.Notebook):
         # utils._init_images()
         self.add(tab, text=tab.title, image='img_closebutton',
                  compound='right')
+        if make_current:
+            self.current_tab = tab
 
         # the update() is needed in some cases because virtual events
         # don't run if the widget isn't visible yet
