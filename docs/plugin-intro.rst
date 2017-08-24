@@ -26,7 +26,9 @@ Python::
 
 Of course, your plugins are probably not in ``/home/akuli/.config/porcupine/plugins``,
 so you need to run the above commands yourself to find out where your plugins
-should go. Rest of this tutorial calls this place **the plugin directory**.
+should go. You can also use `porcupine --print-plugindir` as shown
+:source:`here <more_plugins/>`. Rest of this tutorial calls this place
+**the plugin directory**.
 
 Your plugin directory is empty by default. The plugins that come with Porcupine
 are installed in a different place::
