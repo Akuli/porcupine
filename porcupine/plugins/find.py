@@ -1,6 +1,7 @@
 """Find/replace widget."""
 import re
-import tkinter as tk
+import tkinter
+from tkinter import ttk
 import weakref
 
 import porcupine
@@ -9,7 +10,7 @@ from porcupine import utils
 find_widgets = weakref.WeakKeyDictionary()
 
 
-class Finder(tk.Frame):
+class Finder(ttk.Frame):
     """A widget for finding and replacing text.
 
     Use the pack geometry manager with this widget.
@@ -24,12 +25,12 @@ class Finder(tk.Frame):
         self.grid_columnconfigure(1, weight=1)
         self._textwidget = textwidget
 
-        entrygrid = tk.Frame(self)
+        entrygrid = ttk.Frame(self)
         entrygrid.grid(row=0, column=0)
         self._find_entry = self._add_entry(entrygrid, 0, "Find:", self.find)
         self._replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
 
-        buttonframe = tk.Frame(self)
+        buttonframe = ttk.Frame(self)
         buttonframe.grid(row=1, column=0, sticky='we')
         buttons = [
             ("Find", self.find),
@@ -38,24 +39,24 @@ class Finder(tk.Frame):
             ("Replace all", self.replace_all),
         ]
         for text, command in buttons:
-            button = tk.Button(buttonframe, text=text, command=command)
+            button = ttk.Button(buttonframe, text=text, command=command)
             button.pack(side='left', fill='x', expand=True)
 
-        self._full_words_var = tk.BooleanVar()
-        checkbox = utils.Checkbox(self, text="Full words only",
-                                  variable=self._full_words_var)
+        self._full_words_var = tkinter.BooleanVar()
+        checkbox = ttk.Checkbutton(self, text="Full words only",
+                                   variable=self._full_words_var)
         checkbox.grid(row=0, column=1, sticky='nw')
 
-        self._statuslabel = tk.Label(self)
+        self._statuslabel = ttk.Label(self)
         self._statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
 
-        closebutton = tk.Label(self, image='img_closebutton')
+        closebutton = ttk.Label(self, image='img_closebutton')
         closebutton.grid(row=0, column=2, sticky='ne')
         closebutton.bind('<Button-1>', lambda event: self.pack_forget())
 
     def _add_entry(self, frame, row, text, callback=None):
-        tk.Label(frame, text=text).grid(row=row, column=0)
-        entry = tk.Entry(frame, width=35, font='TkFixedFont')
+        ttk.Label(frame, text=text).grid(row=row, column=0)
+        entry = ttk.Entry(frame, width=35, font='TkFixedFont')
         entry.bind('<Escape>', lambda event: self.pack_forget())
         if callback is not None:
             entry.bind('<Return>', lambda event: callback())

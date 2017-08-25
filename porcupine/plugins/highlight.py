@@ -9,7 +9,6 @@
 
 import multiprocessing
 import queue
-import tkinter as tk
 import tkinter.font as tkfont
 
 import pygments.styles
@@ -201,6 +200,7 @@ def setup():
 
 if __name__ == '__main__':
     # simple test
+    import tkinter
     from porcupine.settings import load as load_settings
 
     def on_modified(event):
@@ -209,9 +209,9 @@ if __name__ == '__main__':
         text.bind('<<Modified>>', on_modified)
         text.after_idle(highlighter.highlight_all)
 
-    root = tk.Tk()
+    root = tkinter.Tk()
     load_settings()     # must be after creating root window
-    text = tk.Text(root, insertbackground='red')
+    text = tkinter.Text(root, insertbackground='red')
     text.pack(fill='both', expand=True)
     text.bind('<<Modified>>', on_modified)
 

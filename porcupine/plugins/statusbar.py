@@ -1,4 +1,4 @@
-import tkinter as tk
+from tkinter import ttk
 
 import porcupine
 
@@ -8,10 +8,10 @@ import porcupine
 
 
 # this widget is kind of weird
-class LabelWithEmptySpaceAtLeft(tk.Label):
+class LabelWithEmptySpaceAtLeft(ttk.Label):
 
     def __init__(self, master):
-        self._spacer = tk.Frame(master)
+        self._spacer = ttk.Frame(master)
         self._spacer.pack(side='left', expand=True)
         super().__init__(master)
         self.pack(side='left')
@@ -21,12 +21,12 @@ class LabelWithEmptySpaceAtLeft(tk.Label):
         super().destroy()
 
 
-class StatusBar(tk.Frame):
+class StatusBar(ttk.Frame):
 
-    def __init__(self, tab, **kwargs):
-        super().__init__(tab, **kwargs)
+    def __init__(self, tab):
+        super().__init__(tab)
         # one label for each tab-separated thing
-        self.labels = [tk.Label(self)]
+        self.labels = [ttk.Label(self)]
         self.labels[0].pack(side='left')
 
         tab.bind('<<StatusChanged>>', self.do_update, add=True)
@@ -49,7 +49,7 @@ class StatusBar(tk.Frame):
 
 def on_new_tab(event):
     tab = event.widget.tabs[-1]
-    StatusBar(tab, relief='sunken').pack(side='bottom', fill='x')
+    StatusBar(tab).pack(side='bottom', fill='x')
 
 
 def setup():

@@ -1,4 +1,4 @@
-"""Handy utility functions and classes."""
+"""Handy utility functions."""
 
 import atexit
 import base64
@@ -12,7 +12,8 @@ import shutil
 import subprocess
 import sys
 import threading
-import tkinter as tk
+import tkinter
+from tkinter import ttk
 import traceback
 
 import porcupine
@@ -252,12 +253,12 @@ def bind_data_event(widget, sequence, func, *, add=False):
 
     Example::
 
-        import tkinter as tk
+        import tkinter
         from porcupine import utils
 
-        root = tk.Tk()
-        root.update()   # the widget must be visible for virtual events to work
+        root = tkinter.Tk()
         utils.bind_data_event(root, '<<Hello>>', print, add=True)
+        root.update()   # the widget must be visible for virtual events to work
         root.event_generate('<<Hello>>', data="hello")   # runs print("hello")
 
     Note that the data is always converted to a string. The *add*
@@ -328,7 +329,7 @@ def _init_images():
         # only gif images should be added to porcupine/images, other
         # image formats don't work with old Tk versions
         if ext == '.gif':
-            image = tk.PhotoImage(
+            image = tkinter.PhotoImage(
                 name=('img_' + no_ext),
                 file=os.path.join(dirs.installdir, 'images', filename))
             _images.append(image)
@@ -351,25 +352,32 @@ def errordialog(title, message, monospace_text=None):
     """
     root = porcupine.get_main_window()
     if root is None:
-        window = tk.Tk()
+        window = tkinter.Tk()
     else:
-        window = tk.Toplevel()
+        window = tkinter.Toplevel()
         window.transient(root)
 
-    label = tk.Label(window, text=message, height=5)
+    # there's nothing but this frame in the window because ttk widgets
+    # may use a different background color than the window
+    big_frame = ttk.Frame(window)
+    big_frame.pack(fill='both', expand=True)
+
+    label = ttk.Label(big_frame, text=message)
 
     if monospace_text is None:
         label.pack(fill='both', expand=True)
         geometry = '250x150'
     else:
         label.pack(anchor='center')
-        text = tk.Text(window, width=1, height=1)
+        # there's no ttk.Text 0_o this looks very different from
+        # everything else and it sucks :(
+        text = tkinter.Text(big_frame, width=1, height=1)
         text.pack(fill='both', expand=True)
         text.insert('1.0', monospace_text)
         text['state'] = 'disabled'
         geometry = '400x300'
 
-    button = tk.Button(window, text="OK", width=6, command=window.destroy)
+    button = ttk.Button(big_frame, text="OK", command=window.destroy)
     button.pack(pady=10)
 
     window.title(title)
@@ -410,20 +418,6 @@ def run_in_thread(blocking_function, done_callback):
     thread = threading.Thread(target=thread_target)
     thread.start()
     root.after_idle(check)
-
-
-class Checkbox(tk.Checkbutton):
-    """Like ``tkinter.Checkbutton``, but works with my dark GTK+ theme.
-
-    Tkinter's Checkbutton displays a white checkmark on a white
-    background on my dark GTK+ theme (BlackMATE on Mate 1.8). This class
-    fixes that.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self['selectcolor'] == self['foreground'] == '#ffffff':
-            self['selectcolor'] = self['background']
 
 
 @contextlib.contextmanager

@@ -15,14 +15,13 @@ their keyboard shortcuts.
 """
 
 
-version_info = (0, 41, 0)        # this is updated with bump.py
+version_info = (0, 42, 0)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'
 __license__ = 'MIT'
 
 
-# this stuff is exposed here
 from porcupine._session import (    # noqa
     init, quit, get_main_window, get_tab_manager,
     new_file, open_file, add_action)

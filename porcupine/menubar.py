@@ -1,12 +1,13 @@
-import tkinter as tk
+import tkinter
 
 _menubar = None
 _submenus = {}     # {(menu, label): submenu}
 
 
+# there's no ttk.Menu and tkinter.Menu looks a little different :(
 def init():
     global _menubar
-    _menubar = tk.Menu()
+    _menubar = tkinter.Menu()
     get_menu("Help")    # see comments in get_menu()
 
 
@@ -30,7 +31,7 @@ def get_menu(label_path):
         try:
             current_menu = _submenus[(current_menu, label)]
         except KeyError:
-            submenu = tk.Menu(tearoff=False)
+            submenu = tkinter.Menu(tearoff=False)
             add_kwargs = {'label': label, 'menu': submenu}
 
             if (current_menu is _menubar and
