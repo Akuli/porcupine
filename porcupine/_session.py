@@ -53,7 +53,6 @@ def init(window):
 
     _tab_manager = tabs.TabManager(window)
     _tab_manager.pack(fill='both', expand=True)
-    _make_welcome_msg(_tab_manager.no_tabs_frame)
     for binding, callback in _tab_manager.bindings:
         window.bind(binding, callback, add=True)
 
@@ -104,26 +103,6 @@ def get_tab_manager():
     if _tab_manager is None:
         raise RuntimeError("%s.init() wasn't called" % __name__)
     return _tab_manager
-
-
-def _make_welcome_msg(frame):
-    description = '\n\n'.join(
-        ' '.join(chunk.split())    # convert all whitespace to single spaces
-        for chunk in porcupine.__doc__.split('\n\n')
-    )
-
-    inner_frame = ttk.Frame(frame)
-    inner_frame.place(relx=0.5, rely=0.5, anchor='center')   # float in center
-    ttk.Label(inner_frame, font=('', 16, ''),
-              text="Welcome to Porcupine!\n").pack()
-    ttk.Label(inner_frame, font=('', 12, ''), text=description).pack()
-
-    def on_resize(event):
-        # 0.9 adds little borders
-        for label in inner_frame.winfo_children():
-            label['wraplength'] = 0.9 * event.width
-
-    frame.bind('<Configure>', on_resize, add=True)
 
 
 def _setup_actions():
