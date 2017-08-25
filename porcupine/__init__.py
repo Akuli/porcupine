@@ -1,26 +1,17 @@
-# this docstring doesn't contain a one-line summary because _session.py
-# uses it in the welcome message
-"""
-Porcupine is a simple, beginner-friendly editor for writing Python code.
-If you ever used anything like Notepad, Microsoft Word or LibreOffice
-Writer before, you will feel right at home.
+"""Porcupine is a simple editor.
 
-You can create a new file by pressing Ctrl+N or open an existing file by
-pressing Ctrl+O. The file name will be displayed in red if the file has
-been changed and you can save the file with Ctrl+S. Then you can run the
-file by pressing F5.
+You are probably reading this because you want to learn how Porcupine
+works or write fun plugins for it. I recommend getting started with the
+plugin API documentation:
 
-See the menus at the top of the editor for other things you can do and
-their keyboard shortcuts.
+    https://akuli.github.io/porcupine/
 """
 
-
-version_info = (0, 42, 0)        # this is updated with bump.py
+version_info = (0, 43, 0)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'
 __license__ = 'MIT'
-
 
 from porcupine._session import (    # noqa
     init, quit, get_main_window, get_tab_manager,

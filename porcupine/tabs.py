@@ -48,14 +48,6 @@ class TabManager(ttk.Notebook):
         :meth:`~move_left`, :meth:`~move_right`, :meth:`~add_tab` or
         :meth:`~close_tab` instead.
 
-    .. attribute:: no_tabs_frame
-
-        This widget is displayed when there are no tabs. By default,
-        Porcupine adds a welcome message into this. You can remove the
-        content of this frame and replace it with your own thing in a
-        plugin, but **don't** set this to another widget like
-        ``tabmanager.no_tabs_frame = something``.
-
     .. attribute:: current_tab
 
         The tab that the user has currently selected.
@@ -96,9 +88,6 @@ class TabManager(ttk.Notebook):
         self.bind('<<NotebookTabChanged>>', self._on_tab_selected, add=True)
         self.bind('<Button-1>', self._on_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
-
-        # TODO: use this somewhere
-        self.no_tabs_frame = ttk.Frame(self)
 
         # These can be bound in a parent widget. This doesn't use
         # enable_traversal() because we want more bindings than it
@@ -710,8 +699,6 @@ if __name__ == '__main__':
     tabmgr.pack(fill='both', expand=True)
     tabmgr.bind('<<CurrentTabChanged>>',
                 lambda event: print(repr(event.widget.current_tab)))
-
-    ttk.Label(tabmgr.no_tabs_frame, text="u have no open tabs :(").pack()
 
     def on_ctrl_w(event):
         if tabmgr.tabs:    # current_tab is not None
