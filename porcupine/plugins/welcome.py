@@ -55,7 +55,6 @@ class WelcomeMessageDisplayer:
         tab.bind('<Destroy>', self._on_tab_closed, add=True)
 
     def _on_tab_closed(self, event):
-        print("wolo")
         if not self.tabmanager.tabs:
             self._message.place(relx=0.5, rely=0.5, anchor='center')
             self._message_showing = True

@@ -254,10 +254,14 @@ class TabManager(ttk.Notebook):
         # it's important to move the second tab back instead of moving
         # the other tab forward because insert(number_of_tabs, tab)
         # doesn't work for some reason
-        tab_string = self.tabs()[last_index]
+        tab = self.tabs[last_index]
         options = self.tab(last_index)
+        selected = (tab is self.current_tab)
+
         self.forget(last_index)
-        self.insert(last_index - 1, tab_string, **options)
+        self.insert(last_index - 1, tab, **options)
+        if selected:
+            self.current_tab = tab
 
     def move_left(self):
         """Move the current tab left if possible.
