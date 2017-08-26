@@ -66,7 +66,6 @@ class _Pane(ttk.Notebook):
                 another_pane.select().on_focus()
             else:
                 # no, this is the last pane in the whole tab manager
-                assert self.master._current_pane is self
                 self.master._current_pane = None
 
             self.master.forget(self)
@@ -182,13 +181,11 @@ class TabManager(ttk.PanedWindow):
         too small. Negative indexes are not supported.
 
     .. method:: add(child, **kw)
-    .. method:: forget(child)
-    .. method:: identify(x, y)
     .. method:: insert(pos, child, **kw)
     .. method:: pane(pane, option=None, **kw)
     .. method:: panecget(child, option)
-    .. method:: paneconfigure(tagOrId, cnf=None, **kw)
     .. method:: paneconfig(tagOrId, cnf=None, **kw)
+    .. method:: paneconfigure(tagOrId, cnf=None, **kw)
     .. method:: panes()
     .. method:: proxy(*args)
     .. method:: proxy_coord()
@@ -234,8 +231,6 @@ class TabManager(ttk.PanedWindow):
         # manager is in
         self.winfo_toplevel().bind(
             '<FocusIn>', self._on_maybe_pane_selected, add=True)
-
-        self.bind('<<CurrentTabChanged>>', lambda e: print(self.current_tab), add=True)   # for debugging
 
     def _on_page_updown(self, shifted, diff, event):
         if self._current_pane is not None:
