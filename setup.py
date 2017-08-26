@@ -47,7 +47,7 @@ setup(
         'porcupine': ['images/*'],
     },
     entry_points={
-        'gui_scripts': ['porcupine = porcupine.__main__:main'],
+        'gui_scripts': ['porcu = porcupine.__main__:main'],
     },
     zip_safe=False,
     **find_metadata()       # must not end with , before python 3.5

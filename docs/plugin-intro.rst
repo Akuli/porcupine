@@ -24,13 +24,11 @@ Python::
    >>> print(porcupine.plugins.__path__[0])
    /home/akuli/.config/porcupine/plugins
 
-You can also use ``--print-plugins`` as shown :source:`here <more_plugins/>`.
+You can also use ``--print-plugindir`` as shown :source:`here <more_plugins/>`.
 
 Of course, your plugins are probably not in ``/home/akuli/.config/porcupine/plugins``,
 so you need to run the above commands yourself to find out where your plugins
-should go. You can also use `porcupine --print-plugindir` as shown
-:source:`here <more_plugins/>`. Rest of this tutorial calls this place
-**the plugin directory**.
+should go. Rest of this tutorial calls this place **the plugin directory**.
 
 Your plugin directory is empty by default. The plugins that come with Porcupine
 are installed in a different place::
@@ -95,7 +93,11 @@ This tutorial is all about writing *more* plugins, but we'll start by running
 Porcupine with *no* plugins at all just to get an idea of how much can be done
 with plugins. Open a command prompt or terminal and run this command on it::
 
-   porcupine --no-plugins
+   porcu --no-plugins
+
+If the ``porcu`` command doesn't work you can use ``pyw -m porcupine`` or
+``python3 -m porcupine`` instead of ``porcu`` as shown
+`here <https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#installing-porcupine>`_.
 
 This will run Porcupine without any plugins, and it is minimal. You can edit
 files with it, but that's about it. Plugins can do **a lot**.
