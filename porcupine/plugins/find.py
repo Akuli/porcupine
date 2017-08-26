@@ -5,7 +5,7 @@ from tkinter import ttk
 import weakref
 
 import porcupine
-from porcupine import utils
+from porcupine import tabs, utils
 
 find_widgets = weakref.WeakKeyDictionary()
 
@@ -170,12 +170,12 @@ def find():
 
 
 def on_new_tab(event):
-    tab = event.widget.current_tab
-
-    find_widgets[tab] = Finder(tab, tab.textwidget)
-    tab.textwidget.bind("<<ContentChanged>>",
-                        lambda _: find_widgets[tab].reset(),
-                        add=True)
+    tab = event.widget.tabs[-1]
+    if isinstance(tab, tabs.FileTab):
+        find_widgets[tab] = Finder(tab.bottom_frame, tab.textwidget)
+        tab.textwidget.bind("<<ContentChanged>>",
+                            lambda _: find_widgets[tab].reset(),
+                            add=True)
 
 
 def on_tab_changed(event):
@@ -187,7 +187,7 @@ def on_tab_changed(event):
 def setup():
     porcupine.add_action(find,
                          "Edit/Find and Replace", ("Ctrl+F", '<Control-f>'),
-                         tabtypes=[porcupine.tabs.FileTab])
+                         tabtypes=[tabs.FileTab])
     tab_manager = porcupine.get_tab_manager()
     tab_manager.bind("<<NewTab>>", on_new_tab, add=True)
     tab_manager.bind("<<CurrentTabChanged>>", on_tab_changed, add=True)

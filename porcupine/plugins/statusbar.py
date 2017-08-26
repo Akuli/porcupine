@@ -23,8 +23,9 @@ class LabelWithEmptySpaceAtLeft(ttk.Label):
 
 class StatusBar(ttk.Frame):
 
-    def __init__(self, tab):
-        super().__init__(tab)
+    def __init__(self, master, tab):
+        super().__init__(master)
+        self.tab = tab
         # one label for each tab-separated thing
         self.labels = [ttk.Label(self)]
         self.labels[0].pack(side='left')
@@ -34,7 +35,7 @@ class StatusBar(ttk.Frame):
 
     # this is do_update() because tkinter has a method called update()
     def do_update(self, junk=None):
-        parts = self.master.status.split('\t')
+        parts = self.tab.status.split('\t')
 
         # there's always at least one part, the label added in
         # __init__ is not destroyed here
@@ -49,7 +50,7 @@ class StatusBar(ttk.Frame):
 
 def on_new_tab(event):
     tab = event.widget.tabs[-1]
-    StatusBar(tab).pack(side='bottom', fill='x')
+    StatusBar(tab.bottom_frame, tab).pack(side='bottom', fill='x')
 
 
 def setup():

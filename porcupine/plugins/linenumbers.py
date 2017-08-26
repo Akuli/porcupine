@@ -98,7 +98,7 @@ def on_new_tab(event):
     if not isinstance(tab, tabs.FileTab):
         return
 
-    linenumbers = LineNumbers(tab.mainframe, tab.textwidget)
+    linenumbers = LineNumbers(tab.left_frame, tab.textwidget)
     linenumbers.pack(side='left', fill='y')
     ScrollManager(tab.scrollbar, tab.textwidget, [linenumbers]).enable()
     tab.textwidget.bind('<<ContentChanged>>', linenumbers.do_update, add=True)
@@ -117,9 +117,9 @@ if __name__ == '__main__':
     config.load()
 
     text = ThemedText(root)
+    text.pack(side='right', fill='both', expand=True)
     linenumbers = LineNumbers(root, text)
     linenumbers.pack(side='left', fill='y')
-    text.pack(side='left', fill='both', expand=True)
 
     def on_lineno_change(event):
         text.after_idle(linenumbers.do_update)

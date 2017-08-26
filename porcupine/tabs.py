@@ -430,10 +430,20 @@ class Tab(ttk.Frame):
         def setup():
             porcupine.add_action(new_hello_tab, 'Hello/New Hello Tab')
 
+    Note that you need to use the pack geometry manager when creating
+    custom tabs. If you want to use grid or place you can create a frame
+    inside the tab, pack it with ``fill='both', expand=True`` and do
+    whatever you want inside it.
+
     .. virtualevent:: StatusChanged
 
         This event is generated when :attr:`status` is set to a new
         value. Use ``event.widget.status`` to access the current status.
+
+    .. attribute:: title
+
+        This is the title of the tab, next to the red close button. You
+        can set and get this attribute easily.
 
     .. attribute:: status
 
@@ -453,16 +463,35 @@ class Tab(ttk.Frame):
         Tkinter sets this to the parent widget. Use this attribute to
         access the :class:`TabManager` of a tab.
 
-    .. attribute:: title
+    .. attribute:: top_frame
+    .. attribute:: bottom_frame
+    .. attribute:: left_frame
+    .. attribute:: right_frame
 
-        This is the title of the tab, next to the red close button. You
-        can set and get this attribute easily.
+        These are ``ttk.Frame`` widgets that are packed to each side of
+        the frame. Plugins add different kinds of things to these, for
+        example, :source:`the statusbar <porcupine/plugins/statusbar.py>`
+        is a widget in ``bottom_frame``.
+
+        These frames should contain no widgets when Porcupine is running
+        without plugins. Use pack when adding things here.
     """
 
     def __init__(self, manager):
         super().__init__(manager)
         self._status = ''
         self._title = ''
+
+        # top and bottom frames must be packed first because this way
+        # they extend past other frames in the corners
+        self.top_frame = ttk.Frame(self)
+        self.bottom_frame = ttk.Frame(self)
+        self.left_frame = ttk.Frame(self)
+        self.right_frame = ttk.Frame(self)
+        self.top_frame.pack(side='top', fill='x')
+        self.bottom_frame.pack(side='bottom', fill='x')
+        self.left_frame.pack(side='left', fill='y')
+        self.right_frame.pack(side='right', fill='y')
 
     @property
     def status(self):
@@ -566,18 +595,27 @@ as file:
         this is guaranteed to always be a
         :class:`HandyText <porcupine.textwidget.HandyText>`.
 
+    .. attribute:: scrollbar
+
+        This is the ``ttk.Scrollbar`` widget next to :attr:`.textwidget`.
+
+        Things like :source:`the line number plugin <porcupine/plugins/linenum\
+bers.py>` use this attribute.
+
     .. attribute:: path
 
-        Path to where this file is currently saved, as a string.
+        The path where this file is currently saved.
 
         This is None if the file has never been saved, and otherwise
-        this should be always set to an absolute path.
+        an absolute path as a string.
+
+        .. seealso:: The :virtevt:`.PathChanged` virtual event.
 
     .. attribute:: filetype
 
         A value from :data:`porcupine.filetypes.filetypes`.
 
-        Setting this runs :virtevt:`~FiletypeChanged`.
+        .. seealso:: The :virtevt:`.FiletypeChanged` virtual event.
     """
 
     def __init__(self, manager, content='', *, path=None):
@@ -589,23 +627,19 @@ as file:
         # TODO: try to guess the filetype from the content when path is None
         self._path = path
         self._guess_filetype()          # this sets self._filetype
-        self.bind('<<PathChanged>>', self._update_top_label, add=True)
+        self.bind('<<PathChanged>>', self._update_title, add=True)
         self.bind('<<PathChanged>>', self._guess_filetype, add=True)
-
-        # FIXME: wtf is this doing here?
-        self.mainframe = ttk.Frame(self)
-        self.mainframe.pack(fill='both', expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         # TODO: document this
         self.textwidget = textwidget.MainText(
-            self.mainframe, self._filetype, width=1, height=1,
-            wrap='none', undo=True)
+            self, self._filetype, width=1, height=1, wrap='none', undo=True)
+        self.textwidget.pack(side='left', fill='both', expand=True)
         self.bind('<<FiletypeChanged>>',
                   lambda event: self.textwidget.set_filetype(self.filetype),
                   add=True)
-        self.textwidget.bind('<<ContentChanged>>', self._update_top_label,
+        self.textwidget.bind('<<ContentChanged>>', self._update_title,
                              add=True)
 
         if content:
@@ -621,19 +655,13 @@ as file:
         # newline (Tk inserts a newline by default)
         utils.copy_bindings(porcupine.get_main_window(), self.textwidget)
 
-        # the scrollbar is exposed for things like line numbers, see
-        # plugins/linenumbers.py
-        self.scrollbar = ttk.Scrollbar(self.mainframe)
+        self.scrollbar = ttk.Scrollbar(self)
+        self.scrollbar.pack(side='left', fill='y')
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
 
-        # these are packed right-to-left because the linenumbers are at
-        # left and can be pack_forgot()ten
-        self.scrollbar.pack(side='right', fill='y')
-        self.textwidget.pack(side='right', fill='both', expand=True)
-
         self.mark_saved()
-        self._update_top_label()
+        self._update_title()
         self._update_status()
 
     def equivalent(self, other):
@@ -669,7 +697,7 @@ as file:
     def mark_saved(self):
         """Make :meth:`is_saved` return True."""
         self._save_hash = self._get_hash()
-        self._update_top_label()      # TODO: add a virtual event for this?
+        self._update_title()      # TODO: add a virtual event for this?
 
     def is_saved(self):
         """Return False if the text has changed since previous save.
@@ -716,7 +744,7 @@ as file:
         else:
             self.filetype = filetypes.guess_filetype(self.path)
 
-    def _update_top_label(self, junk=None):
+    def _update_title(self, junk=None):
         text = 'New File' if self.path is None else os.path.basename(self.path)
         if not self.is_saved():
             # TODO: figure out how to make the label red in ttk instead
