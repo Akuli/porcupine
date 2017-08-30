@@ -442,12 +442,6 @@ def _init():
     general.add_entry('encoding', "Encoding of opened and saved files:")
     general.connect('encoding', _validate_encoding)
 
-    # TODO: pluginify this!
-    general.add_option('add_trailing_newline', True)
-    general.add_checkbutton(
-        'add_trailing_newline',
-        "Make sure that files end with an empty line when saving")
-
     general.add_option('pygments_style', 'default', reset=False)
     general.connect('pygments_style', _validate_pygments_style_name)
 

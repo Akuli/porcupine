@@ -79,9 +79,6 @@ The "General" section has these options by default (but you can add more, see
          general_config = settings.get_section('General')
          the_style = styles.get_style_by_name(general_config['pygments_style'])
 
-   ``add_trailing_newline``
-      Don't use this. It will probably be removed soon.
-
 The "File Types" section contains no options by default.
 
 

@@ -585,6 +585,10 @@ class FileTab(Tab):
         Like :virtevt:`~PathChanged`, but for :attr:`~filetype`. Use
         ``event.widget.filetype`` to access the new file type.
 
+    .. virtualevent:: Save
+
+        This runs before the file is saved with the :meth:`save` method.
+
     .. attribute:: textwidget
 
         The central text widget of the tab.
@@ -795,30 +799,24 @@ bers.py>` use this attribute.
     def on_focus(self):
         self.textwidget.focus()
 
+    # TODO: returning None on errors kinda sucks
     def save(self):
-        """Save the file.
+        """Save the file to the current :attr:`path`.
 
         This calls :meth:`save_as` if :attr:`path` is None, and returns
         False if the user cancels the save as dialog. None is returned
-        on errors, and True is returned in all other cases.
+        on errors, and True is returned in all other cases. In other
+        words, this returns True if saving succeeded.
+
+        .. seealso:: The :virtevt:`Save` event.
         """
         if self.path is None:
             return self.save_as()
 
-        config = settings.get_section('General')
+        self.event_generate('<<Save>>')
 
-        # TODO: turn this into a plugin!
-        if self.textwidget.get('end - 2 chars', 'end - 1 char') != '\n':
-            # doesn't end with a \n yet
-            if config['add_trailing_newline']:
-                # make sure we don't move the cursor, IDLE does it and
-                # it's annoying
-                here = self.textwidget.index('insert')
-                self.textwidget.insert('end - 1 char', '\n')
-                self.textwidget.mark_set('insert', here)
-
+        encoding = settings.get_section('General')['encoding']
         try:
-            encoding = config['encoding']
             with utils.backup_open(self.path, 'w', encoding=encoding) as f:
                 for chunk in self.textwidget.iter_chunks():
                     f.write(chunk)
