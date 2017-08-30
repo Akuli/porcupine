@@ -9,8 +9,7 @@ import sys
 import tkinter
 
 import porcupine
-from porcupine import _ipc, _logs, _pluginloader, dirs, utils
-from porcupine.settings import config
+from porcupine import _ipc, _logs, _pluginloader, settings, dirs, utils
 
 log = logging.getLogger(__name__)
 
@@ -180,7 +179,7 @@ def main():
     root = tkinter.Tk()
     porcupine.init(root)
     root.title("Porcupine")
-    root.geometry(config['GUI', 'default_size'])
+    root.geometry('650x500')     # TODO: make a plugin instead of hard-coding
     root.protocol('WM_DELETE_WINDOW', porcupine.quit)
 
     if args.yes_plugins:
@@ -198,7 +197,7 @@ def main():
         try:
             root.mainloop()
         finally:
-            config.save()
+            settings.save()
 
     log.info("exiting Porcupine successfully")
 

@@ -3,94 +3,179 @@
 
 .. module:: porcupine.settings
 
-This module managers Porcupine's settings.
+This module manages Porcupine's settings and the *Porcupine Settings* dialog
+in the *Edit* menu.
 
-.. warning::
-   Don't use this module in plugins. I'll probably change how the settings
-   work later. This module is documented here just because Porcupine's code
-   uses it and you might be reading it.
+.. |triangle| image:: ../porcupine/images/triangle.gif
 
 
-The config
-----------
+Getting Started
+---------------
 
-The ``config`` variable is set to an object that behaves like a
-``{(section, configkey): value}`` dictionary where *section* and
-*configkey* are strings. The config object also support things like
-default values and running callbacks when something changes. Note that
-``config['section', 'key']`` does the same thing as
-``config[('section', 'key')]``, so usually you don't need to use
-parentheses when setting or getting values.
+The settings are divided into **sections**. Each section is shown as
+a tab in the setting dialog. You can also create your own sections.
 
-.. note::
-   If you use threads, don't set config values from other threads
-   than the main thread. Setting values may run callbacks that need
-   to do something with tkinter.
+.. autofunction:: porcupine.settings.get_section
 
-Currently the config contains these keys:
+For example, you can do this::
 
-   ``config['Font', 'family']`` and ``config['Font', 'size']``
-      The current font family and size as an integer and a string,
-      respectively.
+   from porcupine import settings
 
-      Porcupine also keeps the current font in a special font named
-      ``TkFixedFont`` that ``Text`` widgets use by default. If you need to
-      access these config values it's easiest to just use that::
+   general_config = settings.get_section('General')   # get an existing section
+   wat_config = settings.get_section('Wat Wat')       # create a new section
+
+Then you can do this::
+
+   def read_some_file():
+       with open(some_path, 'r', encoding=general_config['encoding']) as file:
+           return file.read()
+
+   wat_config.add_option('wat_on_startup', default=True)
+   wat_config.add_checkbutton('wat_on_startup', "Do wat on startup")
+
+   def setup():
+       if wat_config['wat_on_startup']:
+           print("Wat Wat!")
+
+The sections behave a lot like dictionaries, so if you can do something with
+a dict you can probably do it with a section object as well.
+
+One restriction is that you can only use :mod:`json` compatible values,
+like strings, integers, floats and bools. I don't recommend lists and dicts
+because they're mutable; for example, after ``section['key'] = []``, the
+:meth:`connect() <section.connect>` callbacks don't run if you do
+``section['key'].append('wat')``.
+
+The "General" section has these options by default (but you can add more, see
+`Adding Options`_ below):
+
+   ``encoding``
+      This encoding should be used when reading and writing the user's files.
+      The default value is ``'UTF-8'``.
+
+   ``font_family`` and ``font_size``
+      The current font family and size as a string and an integer.
+
+      Porcupine also keeps these settings in a special font named
+      ``TkFixedFont``, so if you want to use this font in a widget just
+      pass it a ``font='TkFixedFont'`` option. ``Text`` widgets use
+      ``TkFixedFont`` by default.
+
+      Do this if you need a ``Font`` object instead of the font name as a
+      string::
 
          import tkinter.font as tkfont
 
          fixedfont = tkfont.Font(name='TkFixedFont', exists=True)
 
-   ``config['Files', 'encoding']``
-      This is a string that should be like
-      ``open(..., encoding=config['Files', 'encoding'])`` when opening a file
-      for editing.
-
-   ``config['Files', 'add_trailing_newline']``
-      If this boolean is True, Porcupine makes sure that each file ends with a
-      newline before saving.
-
-      This really should be a plugin, not a config option.
-
-   ``config['Editing', 'pygments_style']``
-      Name of a Pygments style, not the style object itself.
+   ``pygments_style``
+      Name of the current Pygments style, not the style object itself.
 
       Use this config value like this::
 
-         from porcupine.settings import config
-         import pygments.styles
+         from porcupine import settings
+         from pygments import styles
 
-         the_style = pygments.styles.get_style_by_name(config['Editing', 'pygments_style'])
+         general_config = settings.get_section('General')
+         the_style = styles.get_style_by_name(general_config['pygments_style'])
 
-   ``config['GUI', 'default_size']``
-      The default size of the main window as a Tk geometry string,
-      e.g. ``'300x400'``.
+   ``add_trailing_newline``
+      Don't use this. It will probably be removed soon.
 
-
-Adding More Keys
-^^^^^^^^^^^^^^^^
-
-Unlike with dictionaries, you need to add keys to the config
-before you can set them to a value. The config also keeps track of default
-values for you and lets you specify functions that check new values.
-
-..  documenting methods from an instance like this seems to work,
-    i'll fix this if this breaks in a newer sphinx
-
-.. automethod:: porcupine.settings.config.add_key
-.. automethod:: porcupine.settings.config.add_bool_key
-.. automethod:: porcupine.settings.config.add_int_key
+The "File Types" section contains no options by default.
 
 
-Running Callbacks
-^^^^^^^^^^^^^^^^^
+Callbacks
+---------
 
-.. automethod:: porcupine.settings.config.connect
-.. automethod:: porcupine.settings.config.disconnect
+Section objects also support running callbacks when a value is changed. For
+example, this annoying plugin warns the user when the encoding is set to
+ASCII in the setting dialog::
+
+   from tkinter import messagebox
+   from porcupine import settings
+
+   general_config = settings.get_section('General')
 
 
-Other things
-^^^^^^^^^^^^
+   def on_encoding_changed(encoding):
+       if encoding.upper() == 'ASCII':
+           messagebox.showwarning("ASCII Warning", "ASCII doesn't do æøå!")
 
-.. automethod:: porcupine.settings.config.reset
-.. autoexception:: porcupine.settings.InvalidValue
+   def setup():
+       # add run_now=True if you want to display the warning when
+       # Porcupine starts with encoding set to ASCII
+       general_config.connect('encoding', on_encoding_changed)
+
+.. note::
+   There's nothing wrong with using tkinter things like
+   ``messagebox.showwarning()`` in callback functions, but tkinter isn't
+   thread-safe so you must not set config values from threads if you use
+   :mod:`threading`.
+
+.. automethod:: section.connect
+.. automethod:: section.disconnect
+
+
+Adding Options
+--------------
+
+Unlike with dictionaries, you need to add options to the sections before you
+can assign more values to it. This way Porcupine can easily keep track of
+default values and let you easily add things to the setting dialog.
+
+.. automethod:: section.add_option
+.. automethod:: section.reset
+
+
+Validating
+^^^^^^^^^^
+
+Let's say that you want to store a string in a section. Typically the user
+changes string values with e.g. an entry, but you probably don't want to allow
+any strings. For example, the only correct values of an ``indent`` option might
+be ``'tabs'`` and ``'spaces'``.
+
+.. autoexception:: InvalidValue
+
+
+Adding Widgets
+^^^^^^^^^^^^^^
+
+These methods add a widget to the setting dialog. Unless otherwise mentioned,
+the *text* argument is a string displayed on the left side of the widget, and a
+|triangle| is displayed on the right side if the user chooses an invalid value.
+
+.. automethod:: section.add_checkbutton
+.. automethod:: section.add_entry
+.. automethod:: section.add_combobox
+.. automethod:: section.add_spinbox
+
+
+Custom Widgets
+^^^^^^^^^^^^^^
+
+If the convenience methods above are not enough for your needs you can also add
+any widgets you want to the setting dialog.
+
+You should take care of these things:
+
+   * The section's value is updated immediately when the user does something to
+     the widget.
+   * The widget itself is updated immediately when the section's value changes
+     (e.g. with the reset button).
+
+Many widgets take a ``textvariable`` option that can be set to a
+``tkinter.StringVar``, and it does just that -- the widget gets updated when it
+changes, and the ``StringVar`` gets updated when the widget changes.
+
+.. automethod:: section.get_var(key, var_type=tkinter.StringVar)
+.. automethod:: section.add_frame
+
+.. attribute:: section.content_frame
+
+   This ``ttk.Frame`` represents a tab in the setting dialog. All of the above
+   convenience methods and :meth:`add_frame` pack widgets into this.
+
+   You can also add your own widgets to this frame. Usually it's best to pack
+   them like ``widget.pack(fill='x')`` for consistency with other widgets.

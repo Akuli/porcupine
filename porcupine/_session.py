@@ -9,9 +9,7 @@ import pygments.styles
 import pygments.token
 
 import porcupine
-from porcupine import (_dialogs, dirs, filetypes, menubar,
-                       settingdialog, tabs, utils)
-from porcupine.settings import config
+from porcupine import _dialogs, dirs, filetypes, menubar, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -51,16 +49,14 @@ def init(window):
         raise RuntimeError("%s.init() was called twice" % __name__)
     _main_window = window    # get_main_window() works from now on
 
+    utils._init_images()
+    filetypes.init()
+    dirs.makedirs()
+
     _tab_manager = tabs.TabManager(window)
     _tab_manager.pack(fill='both', expand=True)
     for binding, callback in _tab_manager.bindings:
         window.bind(binding, callback, add=True)
-
-    utils._init_images()
-    filetypes.init()
-    dirs.makedirs()
-    config.load()
-    settingdialog.init()
 
     menubar.init()
     window['menu'] = menubar.get_menu(None)
@@ -157,10 +153,11 @@ def _setup_actions():
                ("Ctrl+A", '<Control-a>'), tabtypes=[tabs.FileTab])
     menubar.get_menu("Edit").add_separator()
 
-    # TODO: make sure that things added by plugins appear here,
-    # before the separator and "Porcupine Settings" (see get_menu)
+    # FIXME: this separator thing is a mess :(
     menubar.get_menu("Edit").add_separator()
-    add_action(settingdialog.show, "Edit/Porcupine Settings...")
+    add_action(
+        functools.partial(settings.show_dialog, porcupine.get_main_window()),
+        "Edit/Porcupine Settings...")
 
     menubar.get_menu("Color Themes")   # this goes between Edit and View
 
@@ -197,14 +194,18 @@ def _setup_actions():
     add_link("Help/Read Porcupine's code on GitHub",
              "https://github.com/Akuli/porcupine/tree/master/porcupine")
 
-    stylenamevar = tkinter.StringVar()
+    # TODO: loading the styles takes a long time on startup... try to
+    # make it asynchronous without writing too complicated code?
+    config = settings.get_section('General')
     for name in sorted(pygments.styles.get_all_styles()):
-        # the command runs config['Editing', 'pygments_style'] = name
+        if name.islower():
+            label = name.replace('-', ' ').replace('_', ' ').title()
+        else:
+            label = name
+
         options = {
-            'label': name.replace('-', ' ').replace('_', ' ').title(),
-            'value': name, 'variable': stylenamevar,
-            'command': functools.partial(
-                config.__setitem__, ('Editing', 'pygments_style'), name),
+            'label': label, 'value': name,
+            'variable': config.get_var('pygments_style'),
         }
 
         style = pygments.styles.get_style_by_name(name)
@@ -231,9 +232,6 @@ def _setup_actions():
 
         menubar.get_menu("Color Themes").add_radiobutton(**options)
 
-    config.connect('Editing', 'pygments_style', stylenamevar.set,
-                   run_now=True)
-
 
 def new_file(content=''):
     """Add a "New File" tab to the tab manager with the given content in it."""
@@ -251,8 +249,9 @@ def open_file(path, content=None):
 
     At least one of *path* and *content* must be non-None.
     """
+    config = settings.get_section('General')
     if content is None:
-        with open(path, 'r', encoding=config['Files', 'encoding']) as file:
+        with open(path, 'r', encoding=config['encoding']) as file:
             content = file.read()
 
     _tab_manager.add_tab(tabs.FileTab(_tab_manager, content, path=path))

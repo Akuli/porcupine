@@ -14,8 +14,7 @@ from tkinter import ttk, messagebox
 import traceback
 
 import porcupine
-from porcupine import _dialogs, filetypes, textwidget, utils
-from porcupine.settings import config
+from porcupine import _dialogs, filetypes, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
@@ -566,11 +565,10 @@ class FileTab(Tab):
 
     For example, you can open a file from a path like this::
 
-        from porcupine import tabs, utils
-        from porcupine.settings import config
+        from porcupine import settings, tabs, utils
 
-        with open(your_path, 'r', encoding=config['Files', 'encoding']) \
-as file:
+        config = settings.get_section('General')
+        with open(your_path, 'r', encoding=config['encoding']) as file:
             content = file.read()
 
         tabmanager = utils.get_tab_manager()
@@ -684,8 +682,11 @@ bers.py>` use this attribute.
                 os.path.samefile(self.path, other.path))
 
     def _get_hash(self):
+        # superstitious omg-optimization
+        config = settings.get_section('General')
+        encoding = config['encoding']
+
         result = hashlib.md5()
-        encoding = config['Files', 'encoding']   # superstitious speed-up
         for chunk in self.textwidget.iter_chunks():
             chunk = chunk.encode(encoding, errors='replace')
             result.update(chunk)
@@ -804,10 +805,12 @@ bers.py>` use this attribute.
         if self.path is None:
             return self.save_as()
 
+        config = settings.get_section('General')
+
+        # TODO: turn this into a plugin!
         if self.textwidget.get('end - 2 chars', 'end - 1 char') != '\n':
             # doesn't end with a \n yet
-            # TODO: turn this into a plugin
-            if config['Files', 'add_trailing_newline']:
+            if config['add_trailing_newline']:
                 # make sure we don't move the cursor, IDLE does it and
                 # it's annoying
                 here = self.textwidget.index('insert')
@@ -815,7 +818,7 @@ bers.py>` use this attribute.
                 self.textwidget.mark_set('insert', here)
 
         try:
-            encoding = config['Files', 'encoding']
+            encoding = config['encoding']
             with utils.backup_open(self.path, 'w', encoding=encoding) as f:
                 for chunk in self.textwidget.iter_chunks():
                     f.write(chunk)

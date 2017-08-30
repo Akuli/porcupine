@@ -111,10 +111,8 @@ def setup():
 
 if __name__ == '__main__':
     import tkinter
-    from porcupine.settings import config
 
     root = tkinter.Tk()
-    config.load()
 
     text = ThemedText(root)
     text.pack(side='right', fill='both', expand=True)

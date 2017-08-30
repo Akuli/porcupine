@@ -49,8 +49,15 @@ Tkinter Utilities
 .. autofunction:: bind_tab_key
 .. autofunction:: bind_data_event
 .. autofunction:: copy_bindings
-.. autoclass:: Checkbox
 .. autofunction:: run_in_thread
+
+.. class:: Spinbox
+
+   This is a Ttk version of ``tkinter.Spinbox``.
+
+   Ttk has a ``spinbox`` widget, but there's no ``tkinter.ttk.Spinbox``
+   yet (perhaps the ttk spinbox is a new thing and tkinter hasn't been
+   updated yet). This class should behave mostly like ``tkinter.Spinbox``.
 
 
 Miscellaneous

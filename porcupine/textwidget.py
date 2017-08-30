@@ -4,8 +4,7 @@ import tkinter.font as tkfont
 
 import pygments.styles
 
-from porcupine import utils
-from porcupine.settings import config, InvalidValue
+from porcupine import settings, utils
 
 
 class HandyText(tk.Text):
@@ -145,11 +144,12 @@ class ThemedText(HandyText):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        config.connect('Editing', 'pygments_style', self._set_style,
-                       run_now=True)
+        settings.get_section('General').connect(
+            'pygments_style', self._set_style, run_now=True)
 
         def on_destroy(event):
-            config.disconnect('Editing', 'pygments_style', self._set_style)
+            settings.get_section('General').disconnect(
+                'pygments_style', self._set_style)
 
         self.bind('<Destroy>', on_destroy, add=True)
 
@@ -226,12 +226,14 @@ class MainText(ThemedText):
         self['tabs'] = str(font.measure(' ' * filetype.indent_size))
 
     def on_wheel(self, direction):
+        config = settings.get_section('General')
         if direction == 'reset':
-            config.reset(('Font', 'size'))
+            config.reset('font_size')
             return
+
         try:
-            config['Font', 'size'] += (1 if direction == 'up' else -1)
-        except InvalidValue:
+            config['font_size'] += (1 if direction == 'up' else -1)
+        except settings.InvalidValue:
             pass
 
     def _on_delete(self, control_down, event, shifted=False):

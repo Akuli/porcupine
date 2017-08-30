@@ -7,8 +7,9 @@ import pygments.styles
 import pygments.token
 
 import porcupine
-from porcupine import tabs
-from porcupine.settings import config
+from porcupine import settings, tabs
+
+config = settings.get_section('General')
 
 
 class LongLineMarker:
@@ -22,19 +23,18 @@ class LongLineMarker:
         self._height = 0        # on_configure() will run later
 
     def setup(self):
-        config.connect('Font', 'family', self.do_update)
-        config.connect('Font', 'size', self.do_update)
-        config.connect('Editing', 'pygments_style',
-                       self.on_style_changed, run_now=True)
+        config.connect('font_family', self.do_update)
+        config.connect('font_size', self.do_update)
+        config.connect('pygments_style', self.on_style_changed, run_now=True)
         self.tab.textwidget.bind('<Configure>', self.on_configure, add=True)
         self.tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
         self.tab.bind('<Destroy>', self.on_destroy, add=True)
         self.do_update()
 
     def on_destroy(self, event):
-        config.disconnect('Font', 'family', self.do_update)
-        config.disconnect('Font', 'size', self.do_update)
-        config.disconnect('Editing', 'pygments_style', self.on_style_changed)
+        config.disconnect('font_family', self.do_update)
+        config.disconnect('font_size', self.do_update)
+        config.disconnect('pygments_style', self.on_style_changed)
 
     def do_update(self, junk=None):
         column = self.tab.filetype.max_line_length

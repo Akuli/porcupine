@@ -306,6 +306,30 @@ def copy_bindings(widget1, widget2):
         widget2.tk.call('bind', widget2, sequence, '+' + tcl_command)
 
 
+# see docs/utils.rst for explanation and docs
+try:
+    Spinbox = ttk.Spinbox
+except AttributeError:
+    try:
+        Spinbox = ttk.SpinBox
+    except AttributeError:
+        # this is based on the code of ttk.Combobox, if tkinter changes so
+        # that this breaks then ttk.Spinbox will be probably added as well
+        class Spinbox(ttk.Entry):
+
+            def __init__(self, master=None, *, from_=None, **kwargs):
+                if from_ is not None:
+                    kwargs['from'] = from_  # this actually works
+                super().__init__(master, 'ttk::spinbox', **kwargs)
+
+            def configure(self, *args, **kwargs):
+                if 'from_' in kwargs:
+                    kwargs['from'] = kwargs.pop('from_')
+                return super().configure(*args, **kwargs)
+
+            config = configure
+
+
 # tkinter images destroy themselves on __del__. here's how cpython exits:
 #
 #   1) atexit callbacks run

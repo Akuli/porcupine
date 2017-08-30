@@ -16,8 +16,9 @@ import pygments.token
 import pygments.util   # only for ClassNotFound, the docs say that it's here
 
 import porcupine
-from porcupine import filetypes, tabs
-from porcupine.settings import config
+from porcupine import filetypes, settings, tabs
+
+config = settings.get_section('General')
 
 
 def _list_all_token_types(tokentype):
@@ -93,16 +94,16 @@ class Highlighter:
                     weight=('bold' if bold else 'normal'),
                     slant=('italic' if italic else 'roman'))
 
-        config.connect('Editing', 'pygments_style', self._on_config_changed)
-        config.connect('Font', 'family', self._on_config_changed)
-        config.connect('Font', 'size', self._on_config_changed)
+        config.connect('pygments_style', self._on_config_changed)
+        config.connect('font_family', self._on_config_changed)
+        config.connect('font_size', self._on_config_changed)
         self._on_config_changed()
         self.textwidget.after(50, self._do_highlights)
 
     def on_destroy(self, junk=None):
-        config.disconnect('Editing', 'pygments_style', self._on_config_changed)
-        config.disconnect('Font', 'family', self._on_config_changed)
-        config.disconnect('Font', 'size', self._on_config_changed)
+        config.disconnect('pygments_style', self._on_config_changed)
+        config.disconnect('font_family', self._on_config_changed)
+        config.disconnect('font_size', self._on_config_changed)
 
         #print("terminating", repr(self.pygmentizer.process))
         self.pygmentizer.process.terminate()
@@ -124,9 +125,7 @@ class Highlighter:
         # http://pygments.org/docs/formatterdevelopment/#styles
         # all styles seem to yield all token types when iterated over,
         # so we should always end up with the same tags configured
-        style = pygments.styles.get_style_by_name(
-            config['Editing', 'pygments_style'])
-
+        style = pygments.styles.get_style_by_name(config['pygments_style'])
         for tokentype, infodict in style:
             # this doesn't use underline and border
             # i don't like random underlines in my code and i don't know
