@@ -1,12 +1,10 @@
 """Handy utility functions."""
 
 import atexit
-import base64
 import contextlib
 import functools
 import logging
 import os
-import pkgutil
 import platform
 import shutil
 import subprocess

@@ -7,9 +7,6 @@ import os
 import platform
 import re
 import shlex
-import shutil
-import subprocess
-import sys
 
 import pygments.lexer
 import pygments.lexers
@@ -167,6 +164,8 @@ def _set_stupid_defaults(config):
         'run_command': '%s {file}' % utils.short_python_command,
         'lint_command': '%s -m flake8 {file}' % utils.short_python_command,
     }
+
+    config['Tcl'] = {'indent_size': '3'}
 
     # 79 comes from documentation-style-guide-sphinx.readthedocs.io
     config['reStructuredText'] = {

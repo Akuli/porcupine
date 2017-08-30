@@ -5,7 +5,7 @@ from tkinter import ttk
 import weakref
 
 import porcupine
-from porcupine import tabs, utils
+from porcupine import tabs
 
 find_widgets = weakref.WeakKeyDictionary()
 

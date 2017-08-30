@@ -1,7 +1,5 @@
 import functools
 import logging
-import tkinter
-from tkinter import ttk
 import traceback
 import webbrowser
 
@@ -46,7 +44,7 @@ def init(window):
     assert [_main_window, _tab_manager].count(None) != 1, (
         "porcupine seems to be partially initialized")
     if _main_window is not None:
-        raise RuntimeError("%s.init() was called twice" % __name__)
+        raise RuntimeError("porcupine.init() was called twice")
     _main_window = window    # get_main_window() works from now on
 
     utils._init_images()
@@ -89,7 +87,7 @@ def quit():
 def get_main_window():
     """Return the widget passed to :func:`~init`."""
     if _main_window is None:
-        raise RuntimeError("%s.init() wasn't called" % __name__)
+        raise RuntimeError("porcupine.init() wasn't called")
     return _main_window
 
 
@@ -97,7 +95,7 @@ def get_tab_manager():
     """Return the :class:`porcupine.tabs.TabManager` widget in the main window.
     """  # these are on a separate line because pep-8 line length
     if _tab_manager is None:
-        raise RuntimeError("%s.init() wasn't called" % __name__)
+        raise RuntimeError("porcupine.init() wasn't called")
     return _tab_manager
 
 

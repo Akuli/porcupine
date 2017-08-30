@@ -39,22 +39,22 @@ class InvalidValue(Exception):
         wat_config.add_option('indent', default='spaces')
         wat_config.connect('indent', validate_indent)
 
+    .. note::
+        Be sure to connect validator callbacks before anything else is
+        connected. The callbacks are ran in the same order as they are
+        connected, and running other callbacks with an invalid value is
+        probably not what you want.
+
     There's no need to do checks like ``isinstance(indent, str)``.
     Python is a dynamically typed language.
-
-    Be sure to connect validator callbacks before anything else is
-    connected. The callbacks are ran in the order they are connected,
-    and running other callbacks with an invalid value is probably not
-    what you want.
 
     You can also catch ``InvalidValue`` to check if setting a value
     succeeded::
 
-        config = settings.get_section('General')
         try:
-            config['font_size'] = 1
+            wat_config['indent'] = 'wat wat'
         except InvalidValue:
-            print("1px font size would be unreadably tiny!")
+            print("'wat wat' is not a valid indent :(")
     """
 
 
