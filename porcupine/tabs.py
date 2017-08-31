@@ -1,9 +1,5 @@
 r"""Tabs as in browser tabs, not \t characters."""
 
-# Yes, I am aware of ``ttk.Notebook`` but it's way too limited for
-# Porcupine. I can't even add a closing button or change the color of
-# the top label.
-
 import functools
 import hashlib
 import itertools
@@ -559,7 +555,7 @@ class Tab(ttk.Frame):
 class FileTab(Tab):
     """A tab that represents an opened file.
 
-    The tab will have content in it by default when it’s opened. If
+    The tab will have content in it by default when it's opened. If
     *path* is given, the file will be saved there when Ctrl+S is
     pressed. Otherwise this becomes a "New File" tab.
 
