@@ -7,12 +7,11 @@ plugin API documentation:
     https://akuli.github.io/porcupine/
 """
 
-version_info = (0, 48, 0)        # this is updated with bump.py
+version_info = (0, 49, 0)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'
 __license__ = 'MIT'
 
-from porcupine._session import (    # noqa
-    init, quit, get_main_window, get_tab_manager,
-    new_file, open_file, add_action)
+from porcupine._session import (init, quit, add_action,
+                                get_main_window, get_tab_manager)

@@ -1,3 +1,3 @@
 The images come from these places:
-- closebutton.gif: http://www.freestockphotos.biz/stockphoto/15106
+- closebutton.gif: https://github.com/Akuli/porcupine/issues/11#issuecomment-325196837
 - triangle.gif:    https://cdn.pixabay.com/photo/2012/04/14/15/13/danger-34250_960_720.png
