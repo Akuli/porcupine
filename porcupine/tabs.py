@@ -559,17 +559,7 @@ class FileTab(Tab):
     *path* is given, the file will be saved there when Ctrl+S is
     pressed. Otherwise this becomes a "New File" tab.
 
-    For example, you can open a file from a path like this::
-
-        from porcupine import settings, tabs, utils
-
-        config = settings.get_section('General')
-        with open(your_path, 'r', encoding=config['encoding']) as file:
-            content = file.read()
-
-        tabmanager = utils.get_tab_manager()
-        tab = tabs.FileTab(tabmanager, content, path=your_path)
-        tabmanager.add_tab(tab)
+    If you want to read a file and open a new tab from 
 
     .. virtualevent:: PathChanged
 
@@ -616,7 +606,7 @@ bers.py>` use this attribute.
         .. seealso:: The :virtevt:`.FiletypeChanged` virtual event.
     """
 
-    def __init__(self, manager, content='', *, path=None):
+    def __init__(self, manager, content='', path=None):
         super().__init__(manager)
 
         self._save_hash = None
@@ -661,6 +651,21 @@ bers.py>` use this attribute.
         self.mark_saved()
         self._update_title()
         self._update_status()
+
+    @classmethod
+    def open_file(cls, manager, path):
+        """Read a file and return a new FileTab object.
+
+        Use this constructor if you want to open an existing file from a
+        path and let the user edit it.
+
+        :exc:`UnicodeError` or :exc:`OSError` is raised if reading the
+        file fails.
+        """
+        config = settings.get_section('General')
+        with open(path, 'r', encoding=config['encoding']) as file:
+            content = file.read()
+        return cls(manager, content, path)
 
     def equivalent(self, other):
         """Return True if *self* and *other* are saved to the same place.

@@ -9,7 +9,7 @@ import sys
 import tkinter
 
 import porcupine
-from porcupine import _ipc, _logs, _pluginloader, settings, dirs, utils
+from porcupine import _ipc, _logs, _pluginloader, dirs, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +22,12 @@ def _iter_queue(queue):
             break
 
 
+def open_file(path, content):
+    if (path, content) != (None, None):
+        tabmanager = porcupine.get_tab_manager()
+        tabmanager.add_tab(tabs.FileTab(tabmanager, content, path))
+
+
 def queue_opener(queue):
     gonna_focus = False
     for path, content in _iter_queue(queue):
@@ -29,8 +35,7 @@ def queue_opener(queue):
         # arguments, then path and content are None and we just focus
         # the editor window
         gonna_focus = True
-        if (path, content) != (None, None):
-            porcupine.open_file(path, content)
+        open_file(path, content)
 
     window = porcupine.get_main_window()
     if gonna_focus:
@@ -187,8 +192,7 @@ def main():
 
     # see queue_opener()
     for path, content in filelist:
-        if (path, content) != (None, None):
-            porcupine.open_file(path, content)
+        open_file(path, content)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the try/with/finally/whatever the whole thing

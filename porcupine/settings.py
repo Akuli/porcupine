@@ -16,7 +16,7 @@ import pygments.styles
 import pygments.util
 
 import porcupine
-from porcupine import dirs, utils
+from porcupine import dirs, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -457,7 +457,9 @@ def _init():
         add=True)
 
     def edit_it():
-        porcupine.open_file(os.path.join(dirs.configdir, 'filetypes.ini'))
+        path = os.path.join(dirs.configdir, 'filetypes.ini')
+        manager = porcupine.get_tab_manager()
+        manager.add_tab(tabs.FileTab.open_file(manager, path))
         _dialog.withdraw()
 
     ttk.Button(filetypes.content_frame, text="Edit filetypes.ini",

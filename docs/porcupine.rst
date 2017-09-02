@@ -20,21 +20,6 @@ these functions do.
 .. autofunction:: add_action
 
 
-Really high-level file API
---------------------------
-
-These functions create :class:`FileTab <porcupine.tabs.FileTab>` objects
-and add them to the tab manager.
-
-.. warning::
-   I may remove these functions later because they really don't do much (see
-   the [source] links at right). Use :class:`porcupine.tabs.FileTab` directly
-   instead of these functions.
-
-.. autofunction:: porcupine.new_file
-.. autofunction:: porcupine.open_file
-
-
 Session stuff
 -------------
 

@@ -11,8 +11,7 @@ from porcupine import _dialogs, dirs, filetypes, menubar, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
-# global state makes some things a lot easier, e.g.
-# "porcupine.open_file(path)"
+# global state makes some things a lot easier
 _main_window = None
 _tab_manager = None
 
@@ -100,15 +99,20 @@ def get_tab_manager():
 
 
 def _setup_actions():
+    def new_file():
+        _tab_manager.add_tab(tabs.FileTab(_tab_manager))
+
     def open_files():
         for path in _dialogs.open_files():
             try:
-                open_file(path)
-            except (OSError, UnicodeError) as e:
+                tab = tabs.FileTab.open_file(_tab_manager, path)
+            except (UnicodeError, OSError) as e:
                 log.exception("opening '%s' failed", path)
                 utils.errordialog(type(e).__name__, "Opening failed!",
                                   traceback.format_exc())
                 continue
+
+            _tab_manager.add_tab(tab)
 
     def close_current_tab():
         if _tab_manager.current_tab.can_be_closed():
@@ -229,30 +233,6 @@ def _setup_actions():
         options['background'] = options['activeforeground'] = bg
 
         menubar.get_menu("Color Themes").add_radiobutton(**options)
-
-
-def new_file(content=''):
-    """Add a "New File" tab to the tab manager with the given content in it."""
-    _tab_manager.add_tab(tabs.FileTab(_tab_manager))
-
-
-def open_file(path, content=None):
-    """Open an existing file in Porcupine.
-
-    If *path* is None, the content will be inserted to a "New File" tab.
-
-    If *content* is None, it will be read from the *path* using
-    :func:`open`. In that case, :exc:`UnicodeError` or :exc:`OSError`
-    may be raised.
-
-    At least one of *path* and *content* must be non-None.
-    """
-    config = settings.get_section('General')
-    if content is None:
-        with open(path, 'r', encoding=config['encoding']) as file:
-            content = file.read()
-
-    _tab_manager.add_tab(tabs.FileTab(_tab_manager, content, path=path))
 
 
 def add_action(callback, menupath=None, keyboard_shortcut=(None, None),
