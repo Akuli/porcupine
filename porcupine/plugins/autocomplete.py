@@ -2,8 +2,7 @@
 import collections
 import re
 
-import porcupine
-from porcupine import tabs, utils
+from porcupine import get_tab_manager, tabs, utils
 
 __all__ = ['register_completer']
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
@@ -133,7 +132,7 @@ class _AutoCompleter:
 
 def on_new_tab(event):
     # TODO: autocomplete in other kinds of tabs too?
-    tab = event.widget.tabs[-1]
+    tab = event.data_widget
     if isinstance(tab, tabs.FileTab):
         completer = _AutoCompleter(tab)
         utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
@@ -141,4 +140,4 @@ def on_new_tab(event):
 
 
 def setup():
-    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

@@ -3,7 +3,7 @@
 import re
 from tkinter import ttk
 
-import porcupine
+from porcupine import get_tab_manager, utils
 
 
 RAW_MESSAGE = """
@@ -27,38 +27,28 @@ MESSAGE = re.sub(r'(.)\n(.)', r'\1 \2', RAW_MESSAGE.strip())
 # this is a class just to avoid globals (lol)
 class WelcomeMessageDisplayer:
 
-    def __init__(self, tabmanager):
-        self.tabmanager = tabmanager
-
-        self._message = ttk.Frame(tabmanager)
+    def __init__(self):
+        self._message = ttk.Frame(get_tab_manager())
+        self._message.place(relx=0.5, rely=0.5, anchor='center')
         ttk.Label(self._message, text="Welcome to Porcupine!\n",
                   font=('', 16, '')).pack()
         ttk.Label(self._message, text=MESSAGE, font=('', 14, '')).pack()
 
-        self._message.place(relx=0.5, rely=0.5, anchor='center')
-        self._message_showing = True
-
-    def setup(self):
-        self.tabmanager.bind('<Configure>', self._update_wrap_length, add=True)
-        self.tabmanager.bind('<<NewTab>>', self._on_new_tab, add=True)
-
-    def _update_wrap_length(self, event):
+    def update_wraplen(self, event):
         for label in self._message.winfo_children():
             label['wraplength'] = event.width * 0.9     # small borders
 
-    def _on_new_tab(self, event):
-        if self._message_showing:
-            self._message.place_forget()
-            self._message_showing = False
-
-        tab = event.widget.tabs[-1]
-        tab.bind('<Destroy>', self._on_tab_closed, add=True)
+    def on_new_tab(self, event):
+        self._message.place_forget()
+        event.data_widget.bind('<Destroy>', self._on_tab_closed, add=True)
 
     def _on_tab_closed(self, event):
-        if not self.tabmanager.tabs:
+        if not get_tab_manager().tabs:
             self._message.place(relx=0.5, rely=0.5, anchor='center')
-            self._message_showing = True
 
 
 def setup():
-    WelcomeMessageDisplayer(porcupine.get_tab_manager()).setup()
+    displayer = WelcomeMessageDisplayer()
+    get_tab_manager().bind('<Configure>', displayer.update_wraplen, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>',
+                         displayer.on_new_tab, add=True)

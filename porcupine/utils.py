@@ -1,6 +1,7 @@
 """Handy utility functions."""
 
 import atexit
+import collections
 import contextlib
 import functools
 import logging
@@ -66,7 +67,6 @@ def _find_short_python():
 short_python_command = _find_short_python()
 
 
-# TODO: document quote()
 if platform.system() == 'Windows':
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string):
@@ -240,49 +240,72 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
                     real_callback, **bind_kwargs)
 
 
-def bind_data_event(widget, sequence, func, *, add=False):
-    """Bind a virtual event that supports passing data to a callback function.
+def bind_with_data(widget, sequence, callback, add=False):
+    """
+    Like ``widget.bind(sequence, callback)``, but supports the ``data``
+    argument of ``event_generate()``.
 
-    This is a lot like ``widget.bind(sequence, func, add=add)``, except
-    that the function's argument will be the value of a *data* argument
-    passed to ``event_generate()`` instead of a ``tkinter.Event``
-    object. This function is needed because ``Event`` objects don't have
-    a *data* attribute for some reason, even on Python 3.7.
+    Here's an example::
 
-    Example::
-
-        import tkinter
         from porcupine import utils
 
-        root = tkinter.Tk()
-        utils.bind_data_event(root, '<<Hello>>', print, add=True)
-        root.update()   # the widget must be visible for virtual events to work
-        root.event_generate('<<Hello>>', data="hello")   # runs print("hello")
+        def on_wutwut(event):
+            print(event.data)
 
-    Note that the data is always converted to a string. The *add*
-    argument is False by default for consistency with tkinter's
-    ``bind()`` method.
+        utils.bind_with_data(some_widget, '<<Thingy>>', on_wutwut, add=True)
 
-    .. seealso::
-        The *data* option is documented as ``-data string`` in
-        :man:`event(3tk)`.
+        # this prints 'wut wut'
+        some_widget.event_generate('<<Thingy>>', data='wut wut')
+
+    Note that everything is a string in Tcl, so tkinter ``str()``'s the data.
+
+    The event objects have all the attributes that tkinter events
+    usually have, and these additional attributes:
+
+        ``data``
+            See the above example.
+
+        ``data_int`` and ``data_float``
+            These are set to ``int(event.data)`` and ``float(event.data)``,
+            or None if ``data`` is not a valid integer or float.
+
+        ``data_widget``
+            If a widget was passed as ``data`` to ``event_generate()``,
+            this is that widget. Otherwise this is None.
     """
-    # %d means data here, not digit
-    # i could escape this with %%d or {{ }} instead of the .replace, but
-    # it would be overkill imo
-    bind_script = '''
-    # make sure that returning 'break' works, tkinter does this too
-    if {"[FUNCNAME %d]" == "break"} {
-        break
-    }
-    '''.replace('FUNCNAME', widget.register(func))
+    # tkinter creates event objects normally and appends them to the
+    # deque, then run_callback() adds data_blablabla attributes to the
+    # event objects and runs callback(event)
+    event_objects = collections.deque()
+    widget.bind(sequence, event_objects.append, add=add)
 
-    # add=True doesn't work if the second argument to bind() is a string -_-
-    # bind(3tk) says: "If script is prefixed with a "+", then it is
-    # appended to any existing binding for sequence"
-    if add:
-        bind_script = '+' + bind_script
-    widget.tk.call('bind', str(widget), sequence, bind_script)
+    def run_the_callback(data_string):
+        event = event_objects.popleft()
+        event.data = data_string
+
+        try:
+            event.data_int = int(data_string)
+        except ValueError:
+            event.data_int = None
+
+        try:
+            event.data_float = float(data_string)
+        except ValueError:
+            event.data_float = None
+
+        try:
+            event.data_widget = widget.nametowidget(data_string)
+        # nametowidget raises KeyError when the widget is unknown, but
+        # that feels like an implementation detail
+        except Exception:
+            event.data_widget = None
+
+        return callback(event)      # may return 'break'
+
+    # tkinter's bind() ignores the add argument when the callback is a
+    # string :(
+    widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
+                   % (widget, sequence, widget.register(run_the_callback)))
 
 
 def copy_bindings(widget1, widget2):

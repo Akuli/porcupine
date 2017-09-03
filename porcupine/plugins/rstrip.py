@@ -1,7 +1,6 @@
 """Remove trailing whitespace when enter is pressed."""
 
-import porcupine
-from porcupine import tabs
+from porcupine import get_tab_manager, tabs, utils
 
 
 def after_enter(textwidget):
@@ -14,13 +13,14 @@ def after_enter(textwidget):
 
 
 def on_new_tab(event):
-    tab = event.widget.tabs[-1]
-    if isinstance(tab, tabs.FileTab):
-        def bind_callback(event):
-            tab.textwidget.after_idle(after_enter, tab.textwidget)
+    if isinstance(event.data_widget, tabs.FileTab):
+        textwidget = event.data_widget.textwidget
 
-        tab.textwidget.bind('<Return>', bind_callback, add=True)
+        def bind_callback(event):
+            textwidget.after_idle(after_enter, textwidget)
+
+        textwidget.bind('<Return>', bind_callback, add=True)
 
 
 def setup():
-    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

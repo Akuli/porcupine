@@ -1,7 +1,6 @@
 """Line numbers for tkinter's Text widget."""
 
-import porcupine
-from porcupine import tabs
+from porcupine import get_tab_manager, tabs, utils
 from porcupine.textwidget import ThemedText
 
 
@@ -94,7 +93,7 @@ class LineNumbers(ThemedText):
 
 
 def on_new_tab(event):
-    tab = event.widget.tabs[-1]
+    tab = event.data_widget      # pep8 line length
     if not isinstance(tab, tabs.FileTab):
         return
 
@@ -106,7 +105,7 @@ def on_new_tab(event):
 
 
 def setup():
-    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 
 
 if __name__ == '__main__':

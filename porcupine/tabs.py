@@ -133,10 +133,9 @@ class TabManager(ttk.PanedWindow):
 
     .. virtualevent:: NewTab
 
-        This runs after a new tab has been added to this tab manager
-        with :meth:`~add_tab`. The tab is always added to the end of
-        :attr:`~tabs`, so you can access it with
-        ``event.widget.tabs[-1]``.
+        This runs when a new tab has been added to the tab manager with
+        :meth:`add_tab`. Use :func:`~porcupine.utils.bind_with_data` and
+        ``event.data_widget`` to access the tab that was added.
 
         Bind to the ``<Destroy>`` event of the tab if you want to clean
         up something when the tab is closed.
@@ -330,9 +329,7 @@ class TabManager(ttk.PanedWindow):
                 return existing_tab
 
         if self.panes():
-            # FIXME: the tab shouldn't be guaranteed to be the last tab
-            # in self.tabs -_-
-            self._current_pane = self.panes()[-1]
+            self._current_pane = self.panes()[0]
             self._current_pane.add_tab(tab)
         else:
             self._add_pane(tab)
@@ -343,7 +340,7 @@ class TabManager(ttk.PanedWindow):
         # the update() is needed in some cases because virtual events
         # don't run if the widget isn't visible yet
         self.update()
-        self.event_generate('<<NewTab>>')
+        self.event_generate('<<NewTab>>', data=tab)
         return tab
 
     def close_tab(self, tab):
@@ -853,7 +850,7 @@ if __name__ == '__main__':
     tabmgr = TabManager(root)
     tabmgr.pack(fill='both', expand=True)
     tabmgr.bind('<<NewTab>>',
-                lambda event: print("added tab", tabmgr.tabs[-1].i),
+                lambda event: print("added tab", event.data_widget.i),
                 add=True)
     tabmgr.bind('<<CurrentTabChanged>>',
                 lambda event: print("selected", event.widget.current_tab.i),

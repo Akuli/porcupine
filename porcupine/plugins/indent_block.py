@@ -1,7 +1,6 @@
 """Allow selecting multiple lines and indenting them all at once."""
 
-import porcupine
-from porcupine import tabs, utils
+from porcupine import get_tab_manager, tabs, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
 
@@ -36,10 +35,9 @@ def on_tab_key(event, shifted):
 
 
 def on_new_tab(event):
-    tab = event.widget.tabs[-1]
-    if isinstance(tab, tabs.FileTab):
-        utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
+    if isinstance(event.data_widget, tabs.FileTab):
+        utils.bind_tab_key(event.data_widget.textwidget, on_tab_key, add=True)
 
 
 def setup():
-    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

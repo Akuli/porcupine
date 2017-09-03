@@ -11,8 +11,7 @@
     probably use :func:`porcupine.utils.bind_tab_key` instead.
 """
 
-import porcupine
-from porcupine import tabs, utils
+from porcupine import get_tab_manager, tabs, utils
 
 
 def on_tab(event, shift_pressed):
@@ -29,10 +28,9 @@ def on_tab(event, shift_pressed):
 
 
 def on_new_tab(event):
-    tab = event.widget.tabs[-1]
-    if isinstance(tab, tabs.FileTab):
-        utils.bind_tab_key(tab.textwidget, on_tab, add=True)
+    if isinstance(event.data_widget, tabs.FileTab):
+        utils.bind_tab_key(event.data_widget.textwidget, on_tab, add=True)
 
 
 def setup():
-    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

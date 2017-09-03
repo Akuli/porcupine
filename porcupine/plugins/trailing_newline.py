@@ -1,7 +1,6 @@
 """Add a trailing newline character to files when saving."""
 
-import porcupine
-from porcupine import tabs
+from porcupine import get_tab_manager, tabs, utils
 
 
 def on_save(event):
@@ -15,10 +14,9 @@ def on_save(event):
 
 
 def on_new_tab(event):
-    tab = event.widget.tabs[-1]
-    if isinstance(tab, tabs.FileTab):
-        tab.bind('<<Save>>', on_save, add=True)
+    if isinstance(event.data_widget, tabs.FileTab):
+        event.data_widget.bind('<<Save>>', on_save, add=True)
 
 
 def setup():
-    porcupine.get_tab_manager().bind('<<NewTab>>', on_new_tab, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
