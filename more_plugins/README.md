@@ -6,24 +6,52 @@ play tetris in Porcupine you're in the right place!
 
 Installing these plugins is easy:
 
-1. Figure out where to put the plugins by running this on a terminal or
-   command prompt:
+1. Figure out where to put the plugins by running this on a terminal,
+   command prompt or PowerShell:
 
-        porcupine --print-plugindir
+        porcu --print-plugindir
+
+   If the `porcu` command doesn't work use `py -m porcupine` on Windows or
+   `python3 -m porcupine` on other operating systems instead.
 
 2. Copy/paste a plugin file to your plugin directory.
 3. Restart Porcupine.
 4. Customize the plugin if you don't like it.
 
-| File                  | Description                                               | Dependencies (1)                  |
-| --------------------- | --------------------------------------------------------- | --------------------------------- |
-| pythonprompt.py (2)   | Simple `>>>` prompt tab.                                  |                                   |
-| tetris.py             | Fun tetris game.                                          |                                   |
-| ttkthemes.py (3)      | Nicer colors for everything else than the main text area. | `python -m pip install ttkthemes` |
+| File              | Description                                               | Notes |
+| ----------------- | --------------------------------------------------------- | ----- |
+| pythonprompt.py   | Simple `>>>` prompt tab.                                  | 1.    |
+| terminal.py       | Run a terminal inside Porcupine as a tab.                 | 2.    |
+| tetris.py         | Fun tetris game.                                          |       |
+| ttkthemes.py      | Nicer colors for everything else than the main text area. | 3.    |
 
 Notes:
-1. The plugin doesn't work if you haven't ran this command yet. Replace
-   `python` with `py` on Windows and `python3` on other operating systems.
-2. This plugin does not work. It should be fixed soon.
-3. [Click here](https://github.com/RedFantom/ttkthemes/wiki/Themes) to get
-   an idea of what different themes look like.
+
+1.  This plugin does not work. It should be fixed soon.
+
+2.  This plugin is kind of annoying, but perhaps better than nothing.
+
+    You need to install xterm if you want to use this plugin. That's easy if
+    you are using Linux. For example, if you're using a Debian-based
+    distribution (e.g. Mint or Ubuntu), run this command:
+
+        sudo apt install xterm
+
+    As far as I know, xterm can be somehow installed on Mac OSX but not on
+    Windows. Even if you manage to install xterm on these operating systems
+    the plugin will refuse to work, and if you remove the warning it probably
+    won't work anyway.
+
+    However, if you manage to get xterm or some other terminal to work inside a
+    tkinter program on Windows or OSX I'd be happy to update this plugin!
+
+3.  [Click here](https://github.com/RedFantom/ttkthemes/wiki/Themes) to get
+    an idea of what different themes look like.
+
+    If you are using Windows, run this command before installing the plugin:
+
+        py -m pip install --user ttkthemes
+
+    Use this command on other operating systems:
+
+        python3 -m pip install --user ttkthemes
