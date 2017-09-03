@@ -7,7 +7,7 @@ plugin API documentation:
     https://akuli.github.io/porcupine/
 """
 
-version_info = (0, 51, 1)        # this is updated with bump.py
+version_info = (0, 51, 2)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'

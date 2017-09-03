@@ -59,6 +59,7 @@ class _Pane(ttk.Notebook):
                 except IndexError:
                     another_pane = all_panes[all_panes.index(self) - 1]
                 another_pane.select().on_focus()
+                self.master._current_pane = another_pane   # just to be sure
             else:
                 # no, this is the last pane in the whole tab manager
                 self.master._current_pane = None
