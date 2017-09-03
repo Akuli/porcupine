@@ -272,6 +272,9 @@ class TabManager(ttk.PanedWindow):
         pane.add_tab(initial_tab)
         self.insert(where, pane, weight=1)
 
+        if self._current_pane is None:
+            self._current_pane = pane
+
     def _on_maybe_pane_selected(self, event):
         for pane in self.panes():
             if str(event.widget).startswith(str(pane.select()) + '.'):
