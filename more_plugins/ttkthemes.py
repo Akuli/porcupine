@@ -30,5 +30,3 @@ def setup():
     for theme in sorted(style.get_themes()):
         menu.add_radiobutton(label=theme.title(), value=theme,
                              variable=config.get_var('ttk_theme'))
-
-    theme_var.trace('w', functools.partial(on_theme_changed, style, theme_var))
