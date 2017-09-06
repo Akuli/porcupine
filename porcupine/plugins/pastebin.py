@@ -48,7 +48,11 @@ def paste_to_termbin(code, origin):
         url = sock.recv(1024)
         if url.startswith(b'Use netcat'):
             raise RuntimeError("sending to termbin failed (got %r)" % url)
-        return url.decode('utf-8').strip()
+
+        # today termbin adds zero bytes to my URL's 0_o it hasn't done
+        # it before
+        # i've never seen it add \r but i'm not surprised if it adds it
+        return url.rstrip(b'\n\r\0').decode('ascii')
 
 
 if requests is not None:
