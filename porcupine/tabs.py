@@ -471,6 +471,20 @@ class Tab(ttk.Frame):
 
         These frames should contain no widgets when Porcupine is running
         without plugins. Use pack when adding things here.
+
+    .. method:: get_state()
+    .. classmethod:: from_state(tabmanager, state)
+
+        These methods allow opening the same tabs when Porcupine is
+        restarted. :source:`The restart plugin <porcupine/plugins/restart.py>`
+        calls the ``get_state()`` methods of all tabs, and after the
+        restart, it calls ``from_state(tabmanager, the_state)`` to
+        create new, equivalent tabs. The state must be picklable.
+
+        .. TODO: "picklable" should be a link
+
+        These methods don't exist by default, so the tab is not restored
+        after a restart.
     """
 
     def __init__(self, manager):
@@ -843,6 +857,17 @@ bers.py>` use this attribute.
         self.path = path
         self.save()
         return True
+
+    def get_state(self):
+        return (self.path, self.textwidget.index('insert'))
+
+    @classmethod
+    def from_state(cls, manager, state):
+        path, cursor_pos = state
+        tab = cls.open_file(manager, path)
+        tab.textwidget.mark_set('insert', cursor_pos)
+        tab.textwidget.see('insert')
+        return tab
 
 
 if __name__ == '__main__':
