@@ -182,7 +182,6 @@ def main():
 
     root = tkinter.Tk()
     root.title("Porcupine")
-    root.geometry('650x500')     # TODO: make a plugin instead of hard-coding
     root.protocol('WM_DELETE_WINDOW', _session.quit)
 
     filetypes.init()
