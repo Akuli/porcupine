@@ -39,10 +39,16 @@ def load(shuffle=False):
         # dependencies and setup_funcs
         plugin_infos[name] = (setup_before, setup_after, setup)
 
+    # setup_before and setup_after may contain names of plugins that are
+    # not installed because they are for controlling the loading order,
+    # not for requiring dependencies
+    def valid_name(name):
+        return name in plugin_infos
+
     dependencies = {name: set() for name in plugin_infos}
     for name, (setup_before, setup_after, setup) in plugin_infos.items():
-        dependencies[name].update(setup_after)
-        for reverse_dependency in setup_before:
+        dependencies[name].update(filter(valid_name, setup_after))
+        for reverse_dependency in filter(valid_name, setup_before):
             dependencies[reverse_dependency].add(name)
 
     # the toposort will partially work even if there's a circular

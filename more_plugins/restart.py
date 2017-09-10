@@ -1,25 +1,27 @@
-import pickle
+# TODO: remember which split pane each tab was in
 import os
+import pickle
+import pkgutil
 
 from porcupine import dirs, get_main_window, get_tab_manager
+from porcupine.plugins import __path__ as plugin_paths
+
+# setup() must be called after setting up everything else
+setup_after = [
+    name for finder, name, ispkg in pkgutil.iter_modules(plugin_paths)
+    if 'porcupine.plugins.' + name != __name__
+]
 
 # TODO: figure out which file extension is best for pickled files
-STATE_FILE = os.path.join(dirs.cachedir, 'state.pickle')
+STATE_FILE = os.path.join(dirs.cachedir, 'restart_state.pickle')
 
 
-# TODO: add a nice API for doing this :(
-def add_quit_callback(func):
-    window = get_main_window()
-    old_command = window.protocol('WM_DELETE_WINDOW')
-    new_command = window.register(func) + '\n' + old_command
-    window.protocol('WM_DELETE_WINDOW', new_command)
-
-
-def save_states():
+def save_states(junk_event):
     states = []
     for tab in get_tab_manager().tabs:
-        if hasattr(tab, 'get_state') and hasattr(type(tab), 'from_state'):
-            states.append((type(tab), tab.get_state()))
+        state = tab.get_state()
+        if state is not None:
+            states.append((type(tab), state))
 
     with open(STATE_FILE, 'wb') as file:
         pickle.dump(states, file)
@@ -27,7 +29,7 @@ def save_states():
 
 def setup():
     # this must run even if loading tabs from states below fails
-    add_quit_callback(save_states)
+    get_main_window().bind('<<PorcupineQuit>>', save_states, add=True)
 
     try:
         with open(STATE_FILE, 'rb') as file:
@@ -35,11 +37,6 @@ def setup():
     except FileNotFoundError:
         states = []
 
-    # TODO: add a way to require this plugin to run after *all* other
-    # plugins to the extent possible instead of delaying 500ms
-    def tabs_from_state():
-        for tab_class, state in states:
-            tab = tab_class.from_state(get_tab_manager(), state)
-            get_tab_manager().add_tab(tab)
-
-    get_main_window().after(500, tabs_from_state)
+    for tab_class, state in states:
+        tab = tab_class.from_state(get_tab_manager(), state)
+        get_tab_manager().add_tab(tab)

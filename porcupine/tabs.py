@@ -471,20 +471,6 @@ class Tab(ttk.Frame):
 
         These frames should contain no widgets when Porcupine is running
         without plugins. Use pack when adding things here.
-
-    .. method:: get_state()
-    .. classmethod:: from_state(tabmanager, state)
-
-        These methods allow opening the same tabs when Porcupine is
-        restarted. :source:`The restart plugin <porcupine/plugins/restart.py>`
-        calls the ``get_state()`` methods of all tabs, and after the
-        restart, it calls ``from_state(tabmanager, the_state)`` to
-        create new, equivalent tabs. The state must be picklable.
-
-        .. TODO: "picklable" should be a link
-
-        These methods don't exist by default, so the tab is not restored
-        after a restart.
     """
 
     def __init__(self, manager):
@@ -565,6 +551,30 @@ class Tab(ttk.Frame):
                         return False
         """
         return False
+
+    def get_state(self):
+        """Override this method to support opening a similar tab after \
+restarting Porcupine.
+
+        When Porcupine is closed,
+        :source:`the restart plugin <porcupine/plugins/restart.py>`
+        calls :meth:`get_state` methods of all tabs, and after starting
+        Porcupine again it calls :meth:`from_state` methods.
+
+        The returned state can be any picklable object. If it's None,
+        the tab will not be restored at all after restarting, and by
+        default, :meth:`get_state` always returns None.
+        """
+        return None
+
+    @classmethod
+    def from_state(cls, state):
+        """Create a new tab from the return value of :meth:`get_state`.
+
+        Be sure to override this if you override :meth:`get_state`.
+        """
+        raise NotImplementedError(
+            "from_state() wasn't overrided but get_state() was overrided")
 
 
 class FileTab(Tab):
@@ -859,6 +869,8 @@ bers.py>` use this attribute.
         return True
 
     def get_state(self):
+        if self.path is None:
+            return None
         return (self.path, self.textwidget.index('insert'))
 
     @classmethod

@@ -47,11 +47,11 @@ def quit():
     Calling this function is equivalent to clicking the X button in the
     corner of the window.
 
-    This function makes sure that all tabs can be closed by calling
-    their :meth:`can_be_closed() <porcupine.tabs.Tab.can_be_closed>`
-    methods. If they can, all tabs are
-    :meth:`closed <porcupine.tabs.TabManager.close_tab>` and the main
-    window is destroyed.
+    First the :meth:`~porcupine.tabs.Tab.can_be_closed` method of each
+    tab is called. If all tabs can be closed, a ``<<PorcupineQuit>>``
+    virtual event is generated on the main window, all tabs are closed
+    with :meth:`~porcupine.tabs.TabManager.close_tab` and widgets are
+    destroyed.
     """
     for tab in _tab_manager.tabs:
         if not tab.can_be_closed():
@@ -59,9 +59,14 @@ def quit():
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
+    _main_window.event_generate('<<PorcupineQuit>>')
+
     # closing tabs removes them from the tabs list, that's why copying
     for tab in _tab_manager.tabs.copy():
         _tab_manager.close_tab(tab)
+
+    # all widgets are in the main window, so destroying the main window
+    # should destroy everything
     _main_window.destroy()
 
 
