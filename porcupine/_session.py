@@ -16,50 +16,32 @@ _main_window = None
 _tab_manager = None
 
 
-def init(window):
-    """Set up Porcupine.
-
-    Usually :source:`porcupine/__main__.py` calls this function and you
-    don't need to call it yourself. This function can still be useful if
-    you want to run Porcupine minimally from another Python program for
-    some reason.
-
-    The *window* argument can be a tkinter root window or a ``Toplevel``
-    widget.
-
-    Example::
-
-        import tkinter
-        import porcupine
-
-        root = tkinter.Tk()
-        porcupine.init(root)
-        root.protocol('WM_DELETE_WINDOW', porcupine.quit)
-        root.mainloop()
-    """
+# get_main_window() and get_tab_manager() work only if this has been called
+def init(main_window, tab_manager):
     global _main_window
     global _tab_manager
 
-    assert [_main_window, _tab_manager].count(None) != 1, (
-        "porcupine seems to be partially initialized")
-    if _main_window is not None:
-        raise RuntimeError("porcupine.init() was called twice")
-    _main_window = window    # get_main_window() works from now on
-
-    utils._init_images()
-    filetypes.init()
-    dirs.makedirs()
-
-    _tab_manager = tabs.TabManager(window)
-    _tab_manager.pack(fill='both', expand=True)
-    for binding, callback in _tab_manager.bindings:
-        window.bind(binding, callback, add=True)
-
-    menubar.init()
-    window['menu'] = menubar.get_menu(None)
-    _setup_actions()
+    assert _main_window is None and _tab_manager is None
+    _main_window = main_window
+    _tab_manager = tab_manager
 
 
+def get_main_window():
+    """Return the tkinter root window that Porcupine is using."""
+    if _main_window is None:
+        raise RuntimeError("Porcupine is not running")
+    return _main_window
+
+
+def get_tab_manager():
+    """Return the :class:`porcupine.tabs.TabManager` widget in the main window.
+    """  # these are on a separate line because pep-8 line length
+    if _tab_manager is None:
+        raise RuntimeError("Porcupine is not running")
+    return _tab_manager
+
+
+# TODO: add some way to run callbacks when this function is called
 def quit():
     """
     Calling this function is equivalent to clicking the X button in the
@@ -83,22 +65,7 @@ def quit():
     _main_window.destroy()
 
 
-def get_main_window():
-    """Return the widget passed to :func:`~init`."""
-    if _main_window is None:
-        raise RuntimeError("porcupine.init() wasn't called")
-    return _main_window
-
-
-def get_tab_manager():
-    """Return the :class:`porcupine.tabs.TabManager` widget in the main window.
-    """  # these are on a separate line because pep-8 line length
-    if _tab_manager is None:
-        raise RuntimeError("porcupine.init() wasn't called")
-    return _tab_manager
-
-
-def _setup_actions():
+def setup_actions():
     def new_file():
         _tab_manager.add_tab(tabs.FileTab(_tab_manager))
 

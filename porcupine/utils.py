@@ -371,8 +371,8 @@ atexit.register(_images.clear)
 def _init_images():
     for filename in os.listdir(os.path.join(dirs.installdir, 'images')):
         no_ext, ext = os.path.splitext(filename)
-        # only gif images should be added to porcupine/images, other
-        # image formats don't work with old Tk versions
+
+        # this could be modified to also accept .png because Tk 8.4 supports it
         if ext == '.gif':
             image = tkinter.PhotoImage(
                 name=('img_' + no_ext),

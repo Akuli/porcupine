@@ -1,3 +1,4 @@
+# TODO: move this stuff to _session.py?
 import tkinter
 
 _menubar = None
@@ -5,10 +6,13 @@ _submenus = {}     # {(menu, label): submenu}
 
 
 # there's no ttk.Menu and tkinter.Menu looks a little different :(
-def init():
+
+# this function is called in __main__.py (lol)
+def _init():
     global _menubar
     _menubar = tkinter.Menu()
     get_menu("Help")    # see comments in get_menu()
+    return _menubar
 
 
 def get_menu(label_path):
@@ -17,11 +21,9 @@ def get_menu(label_path):
     The *label_path* should be a ``/``-separated string of menu labels;
     for example, ``'File/Stuff'`` is a Stuff submenu under the File
     menu. Submenus are created automatically as needed.
-
-    The menubar itself is returned if *label_path* is None.
     """
     if _menubar is None:
-        raise RuntimeError("%s.init() wasn't called" % __name__)
+        raise RuntimeError("Porcupine is not running")
 
     if label_path is None:
         return _menubar

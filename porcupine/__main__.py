@@ -9,7 +9,8 @@ import sys
 import tkinter
 
 import porcupine
-from porcupine import _ipc, _logs, _pluginloader, dirs, settings, tabs, utils
+from porcupine import (_ipc, _logs, _pluginloader, _session,
+                       dirs, filetypes, menubar, settings, tabs, utils)
 
 log = logging.getLogger(__name__)
 
@@ -22,25 +23,23 @@ def _iter_queue(queue):
             break
 
 
-def open_file(path, content):
+def open_file(path, content, tabmanager):
     if (path, content) != (None, None):
-        tabmanager = porcupine.get_tab_manager()
         tabmanager.add_tab(tabs.FileTab(tabmanager, content, path))
 
 
-def queue_opener(queue):
+def queue_opener(queue, main_window, tabmanager):
     gonna_focus = False
     for path, content in _iter_queue(queue):
         # if porcupine is running and the user runs it again without any
         # arguments, then path and content are None and we just focus
         # the editor window
         gonna_focus = True
-        open_file(path, content)
+        open_file(path, content, tabmanager)
 
-    window = porcupine.get_main_window()
     if gonna_focus:
-        if window.tk.call('tk', 'windowingsystem') == 'win32':
-            window.deiconify()
+        if main_window.tk.call('tk', 'windowingsystem') == 'win32':
+            main_window.deiconify()
         else:
             # this isn't as easy as you might think it is... focus_force
             # focuses the window but doesn't move it to the front, and
@@ -48,12 +47,12 @@ def queue_opener(queue):
             # window temporarily
             # if you know how to do this without flashing the window
             # like this then please let me know
-            geometry = window.geometry()
-            window.withdraw()
-            window.deiconify()
-            window.geometry(geometry)
+            geometry = main_window.geometry()
+            main_window.withdraw()
+            main_window.deiconify()
+            main_window.geometry(geometry)
 
-    window.after(200, queue_opener, queue)
+    main_window.after(200, queue_opener, queue, main_window, tabmanager)
 
 
 # these actions are based on argparse's source code
@@ -182,22 +181,33 @@ def main():
              *(list(sys.version_info[:3]) + [sys.executable]))
 
     root = tkinter.Tk()
-    porcupine.init(root)
     root.title("Porcupine")
     root.geometry('650x500')     # TODO: make a plugin instead of hard-coding
-    root.protocol('WM_DELETE_WINDOW', porcupine.quit)
+    root.protocol('WM_DELETE_WINDOW', _session.quit)
+
+    filetypes.init()
+    utils._init_images()
+    root['menu'] = menubar._init()
+
+    tabmanager = tabs.TabManager(root)
+    tabmanager.pack(fill='both', expand=True)
+    for binding, callback in tabmanager.bindings:
+        root.bind(binding, callback, add=True)
+
+    _session.init(root, tabmanager)
+    _session.setup_actions()
 
     if args.yes_plugins:
         _pluginloader.load(shuffle=args.shuffle_plugins)
 
     # see queue_opener()
     for path, content in filelist:
-        open_file(path, content)
+        open_file(path, content, tabmanager)
 
     # the user can change the settings only if we get here, so there's
-    # no need to wrap the try/with/finally/whatever the whole thing
+    # no need to wrap the whole thing in try/with/finally/whatever
     with _ipc.session() as queue:
-        root.after_idle(queue_opener, queue)
+        root.after_idle(queue_opener, queue, root, tabmanager)
         try:
             root.mainloop()
         finally:

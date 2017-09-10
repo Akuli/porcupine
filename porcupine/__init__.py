@@ -13,5 +13,5 @@ __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017 Akuli'
 __license__ = 'MIT'
 
-from porcupine._session import (init, quit, add_action,
+from porcupine._session import (quit, add_action,
                                 get_main_window, get_tab_manager)

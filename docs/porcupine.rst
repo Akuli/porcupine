@@ -7,10 +7,6 @@ Doing ``import porcupine`` gives you access to the things documented here. It
 *may* work for other submodules too, but it's recommended to be more specific
 when importing them, like ``from porcupine import tabs``.
 
-
-Stuff that the intro covers too
--------------------------------
-
 If you haven't read :ref:`the plugin writing introduction <plugin-intro>` yet
 I recommend reading it first. Then you'll have a much better idea about what
 these functions do.
@@ -18,13 +14,7 @@ these functions do.
 .. autofunction:: get_main_window
 .. autofunction:: get_tab_manager
 .. autofunction:: add_action
-
-
-Session stuff
--------------
-
 .. autofunction:: porcupine.quit
-.. autofunction:: porcupine.init
 
 
 Version Information
