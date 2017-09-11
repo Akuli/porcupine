@@ -8,7 +8,6 @@ import os
 from tkinter import filedialog
 
 import porcupine
-from porcupine import tabs
 
 
 last_options = {}
@@ -20,8 +19,9 @@ def _dialog(action, last_path):
     # TODO: allow configuring which file types are shown
     options = {'filetypes': [("All files", "*")]}
 
+    # the mro thing is there to avoid import cycles (lol)
     tab = porcupine.get_tab_manager().current_tab
-    if isinstance(tab, tabs.FileTab):
+    if any(cls.__name__ == 'FileTab' for cls in type(tab).__mro__):
         if tab.filetype.patterns:
             options['filetypes'].insert(
                 0, ("%s files" % tab.filetype.name, tab.filetype.patterns))

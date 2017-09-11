@@ -16,7 +16,7 @@ import pygments.styles
 import pygments.util
 
 import porcupine
-from porcupine import dirs, tabs, utils
+from porcupine import dirs, utils
 
 log = logging.getLogger(__name__)
 
@@ -457,6 +457,10 @@ def _init():
         add=True)
 
     def edit_it():
+        # porcupine/tabs.py imports this file
+        # these local imports feel so evil xD  MUHAHAHAA!!!
+        from porcupine import tabs
+
         path = os.path.join(dirs.configdir, 'filetypes.ini')
         manager = porcupine.get_tab_manager()
         manager.add_tab(tabs.FileTab.open_file(manager, path))
