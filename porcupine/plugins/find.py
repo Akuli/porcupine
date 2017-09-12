@@ -1,16 +1,15 @@
 """Find/replace widget."""
 import re
-import tkinter
-from tkinter import ttk
+import tkinter as tk
 import weakref
 
 import porcupine
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import utils, tabs
 
 find_widgets = weakref.WeakKeyDictionary()
 
 
-class Finder(ttk.Frame):
+class Finder(tk.Frame):
     """A widget for finding and replacing text.
 
     Use the pack geometry manager with this widget.
@@ -25,12 +24,12 @@ class Finder(ttk.Frame):
         self.grid_columnconfigure(1, weight=1)
         self._textwidget = textwidget
 
-        entrygrid = ttk.Frame(self)
+        entrygrid = tk.Frame(self)
         entrygrid.grid(row=0, column=0)
         self._find_entry = self._add_entry(entrygrid, 0, "Find:", self.find)
         self._replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
 
-        buttonframe = ttk.Frame(self)
+        buttonframe = tk.Frame(self)
         buttonframe.grid(row=1, column=0, sticky='we')
         buttons = [
             ("Find", self.find),
@@ -39,24 +38,24 @@ class Finder(ttk.Frame):
             ("Replace all", self.replace_all),
         ]
         for text, command in buttons:
-            button = ttk.Button(buttonframe, text=text, command=command)
+            button = tk.Button(buttonframe, text=text, command=command)
             button.pack(side='left', fill='x', expand=True)
 
-        self._full_words_var = tkinter.BooleanVar()
-        checkbox = ttk.Checkbutton(self, text="Full words only",
-                                   variable=self._full_words_var)
+        self._full_words_var = tk.BooleanVar()
+        checkbox = utils.Checkbox(self, text="Full words only",
+                                  variable=self._full_words_var)
         checkbox.grid(row=0, column=1, sticky='nw')
 
-        self._statuslabel = ttk.Label(self)
+        self._statuslabel = tk.Label(self)
         self._statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
 
-        closebutton = ttk.Label(self, image='img_closebutton')
+        closebutton = tk.Label(self, image=utils.get_image('closebutton.gif'))
         closebutton.grid(row=0, column=2, sticky='ne')
         closebutton.bind('<Button-1>', lambda event: self.pack_forget())
 
     def _add_entry(self, frame, row, text, callback=None):
-        ttk.Label(frame, text=text).grid(row=row, column=0)
-        entry = ttk.Entry(frame, width=35, font='TkFixedFont')
+        tk.Label(frame, text=text).grid(row=row, column=0)
+        entry = tk.Entry(frame, width=35, font='TkFixedFont')
         entry.bind('<Escape>', lambda event: self.pack_forget())
         if callback is not None:
             entry.bind('<Return>', lambda event: callback())
@@ -68,7 +67,7 @@ class Finder(ttk.Frame):
         self.reset()
         super().pack(*args, **kwargs)
 
-    def _next_match(self):
+    def _next_match(self, start_from=0):
         what = self._find_entry.get()
         full_words = self._full_words_var.get()
 
@@ -80,20 +79,32 @@ class Finder(ttk.Frame):
         else:
             regexp = re.escape(what)
 
+        found_matches = True
+
         if self._last_pattern != regexp:
             matches = []
             for y, line in enumerate(self._textwidget.iter_lines()):
+                if y < start_from:
+                    continue
+
                 for match in re.finditer(regexp, line):
                     matches.append((y + 1, match.start(),
                                     match.end() - match.start()))
 
+            found_matches = bool(self._matches)
             self._last_pattern = regexp
             self._matches = iter(matches)
 
-        return next(self._matches, None)
+        # If we have exhausted our matches, and there were matches before, we
+        # restart the finding process.
+        next_match = next(self._matches, None)
+        if found_matches and next_match is None:
+            self._last_pattern = None
+            return self._next_match()
+        return next_match
 
-    def find(self):
-        match = self._next_match()
+    def find(self, start_from=0):
+        match = self._next_match(start_from)
 
         if match is not None:
             self._statuslabel['text'] = ''
@@ -108,9 +119,9 @@ class Finder(ttk.Frame):
             self._textwidget.mark_set('insert', start)
             self._textwidget.see(start)
             return True
-        else:
-            self._statuslabel['text'] = "I can't find it :("
-            return False
+
+        self._statuslabel['text'] = "I can't find it :("
+        return False
 
     def replace(self):
         find_text = self._find_entry.get()
@@ -138,15 +149,32 @@ class Finder(ttk.Frame):
         self._textwidget.tag_add('sel', start, new_end)
 
     def replace_and_find(self):
+        # We do this weird trickery with starting from the line the last
+        # replacement was on because we don't want to get stuck in an infinite
+        # loop when the replacement contains the pattern.
+        line, _ = map(int, self._textwidget.index("insert").split("."))
         self.replace()
-        self.find()
+
+        # If we wanted to start from the same line, we'd say line - 1.
+        # Here we want the line after the current one, so we just say line.
+        # This is cause tkinter's lines are 1-based but self.find takes 0-based
+        # lines.
+        # TODO: Should this cycle?
+        self.find(start_from=line)
 
     def replace_all(self):
         old_cursor_pos = self._textwidget.index("insert")
 
+        # See replace_and_find for an explanation as to why we do this weird
+        # keeping-track-of-the-line trickery.
         count = 0
-        while self.find():
+        line = 1
+        while self.find(line):
             self.replace()
+
+            # See replace_and_find for an explanation as to why we don't
+            # subtract from the line.
+            line, _ = map(int, self._textwidget.index("insert").split("."))
             count += 1
 
         self._textwidget.tag_remove('sel', '1.0', 'end')
@@ -170,9 +198,10 @@ def find():
 
 
 def on_new_tab(event):
-    tab = event.data_widget
+    tab = event.widget.current_tab
+
     if isinstance(tab, tabs.FileTab):
-        find_widgets[tab] = Finder(tab.bottom_frame, tab.textwidget)
+        find_widgets[tab] = Finder(tab, tab.textwidget)
         tab.textwidget.bind("<<ContentChanged>>",
                             lambda _: find_widgets[tab].reset(),
                             add=True)
@@ -187,6 +216,7 @@ def on_tab_changed(event):
 def setup():
     porcupine.add_action(find,
                          "Edit/Find and Replace", ("Ctrl+F", '<Control-f>'),
-                         tabtypes=[tabs.FileTab])
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-    get_tab_manager().bind('<<CurrentTabChanged>>', on_tab_changed, add=True)
+                         tabtypes=[porcupine.tabs.FileTab])
+    tab_manager = porcupine.get_tab_manager()
+    tab_manager.bind("<<NewTab>>", on_new_tab, add=True)
+    tab_manager.bind("<<CurrentTabChanged>>", on_tab_changed, add=True)
