@@ -371,9 +371,7 @@ atexit.register(_images.clear)
 def _init_images():
     for filename in os.listdir(os.path.join(dirs.installdir, 'images')):
         no_ext, ext = os.path.splitext(filename)
-
-        # this could be modified to also accept .png because Tk 8.4 supports it
-        if ext == '.gif':
+        if ext in ('.gif', '.png'):     # Tk 8.4 supports at least these
             image = tkinter.PhotoImage(
                 name=('img_' + no_ext),
                 file=os.path.join(dirs.installdir, 'images', filename))
