@@ -1,9 +1,11 @@
 """Simple welcome message."""
 
+import random
 import re
+import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, utils
+from porcupine import get_main_window, get_tab_manager, utils
 
 
 RAW_MESSAGE = """
@@ -23,28 +25,51 @@ their keyboard shortcuts.
 # replace single newlines with spaces
 MESSAGE = re.sub(r'(.)\n(.)', r'\1 \2', RAW_MESSAGE.strip())
 
+BORDER_SIZE = 30    # pixels
+
 
 # this is a class just to avoid globals (lol)
 class WelcomeMessageDisplayer:
 
     def __init__(self):
-        self._message = ttk.Frame(get_tab_manager())
-        self._message.place(relx=0.5, rely=0.5, anchor='center')
-        ttk.Label(self._message, text="Welcome to Porcupine!\n",
-                  font=('', 16, '')).pack()
-        ttk.Label(self._message, text=MESSAGE, font=('', 14, '')).pack()
+        self._image = tkinter.PhotoImage()
+
+        # make it about 200 pixels wide by taking every magic'th pixel
+        magic = int(self._image.tk.eval('image width img_logo')) // 200
+        self._image.tk.eval(
+            '%s copy img_logo -subsample %d %d' % (self._image, magic, magic))
+
+        self._frame = ttk.Frame(get_tab_manager())
+
+        top = ttk.Frame(self._frame)
+        top.pack(fill='x', padx=(BORDER_SIZE, 0))
+        ttk.Label(top, image=self._image).pack(side='right')
+
+        # TODO: better way to center the label in its space?
+        centerer = ttk.Frame(top)
+        centerer.pack(fill='both', expand=True)
+        self.title_label = ttk.Label(
+            centerer, text="Welcome to Porcupine!", font=('', 18, 'bold'))
+        self.title_label.place(relx=0.5, rely=0.5, anchor='center')
+
+        self.message_label = ttk.Label(
+            self._frame, text=MESSAGE, font=('', 14, ''))
+        self.message_label.pack()
+
+        self._on_tab_closed()
 
     def update_wraplen(self, event):
-        for label in self._message.winfo_children():
-            label['wraplength'] = event.width * 0.9     # small borders
+        self.title_label['wraplength'] = (
+            event.width - self._image.width() - BORDER_SIZE)
+        self.message_label['wraplength'] = event.width - 2*BORDER_SIZE
 
     def on_new_tab(self, event):
-        self._message.place_forget()
+        self._frame.pack_forget()
         event.data_widget.bind('<Destroy>', self._on_tab_closed, add=True)
 
-    def _on_tab_closed(self, event):
+    def _on_tab_closed(self, event=None):
         if not get_tab_manager().tabs:
-            self._message.place(relx=0.5, rely=0.5, anchor='center')
+            self._frame.pack(fill='both', expand=True)
 
 
 def setup():
