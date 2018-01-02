@@ -39,14 +39,12 @@ class PygmentizerProcess:
         self.process.start()
 
     # returns {str(tokentype): [start1, end1, start2, end2, ...]}
-    # TODO: send the actual FileType object instead of its name when
-    # FileTypes will support pickling
-    def _pygmentize(self, filetype_name, code):
+    def _pygmentize(self, filetype, code):
         # pygments doesn't include any info about where the tokens are
         # so we need to do it manually :(
         lineno = 1
         column = 0
-        lexer = filetypes.filetypes[filetype_name].get_lexer()
+        lexer = filetype.get_lexer(stripnl=False)
 
         result = {}
         for tokentype, string in lexer.get_tokens(code):
@@ -79,9 +77,9 @@ class PygmentizerProcess:
 
 class Highlighter:
 
-    def __init__(self, textwidget, filetype_name_getter):
+    def __init__(self, textwidget, filetype_getter):
         self.textwidget = textwidget
-        self._get_filetype_name = filetype_name_getter
+        self._get_filetype = filetype_getter
         self.pygmentizer = PygmentizerProcess()
 
         # the tags use fonts from here
@@ -176,7 +174,7 @@ class Highlighter:
 
     def highlight_all(self, junk=None):
         code = self.textwidget.get('1.0', 'end - 1 char')
-        self.pygmentizer.in_queue.put([self._get_filetype_name(), code])
+        self.pygmentizer.in_queue.put([self._get_filetype(), code])
 
 
 def on_new_tab(event):
@@ -184,7 +182,7 @@ def on_new_tab(event):
     if not isinstance(tab, tabs.FileTab):
         return
 
-    highlighter = Highlighter(tab.textwidget, (lambda: tab.filetype.name))
+    highlighter = Highlighter(tab.textwidget, (lambda: tab.filetype))
     tab.bind('<<FiletypeChanged>>', highlighter.highlight_all, add=True)
     tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all,
                         add=True)
@@ -199,6 +197,7 @@ def setup():
 
 if __name__ == '__main__':
     # simple test
+    # FIXME: doesnt work
     import tkinter
     from porcupine.settings import load as load_settings
 
@@ -216,7 +215,8 @@ if __name__ == '__main__':
 
     # The theme doesn't display perfectly here because the highlighter
     # only does tags, not foreground, background etc. See textwidget.py.
-    highlighter = Highlighter(text, (lambda: 'Python'))
+    highlighter = Highlighter(
+        text, (lambda: filetypes.get_filetype_by_name('Python')))
 
     with open(__file__, 'r') as f:
         text.insert('1.0', f.read())

@@ -1,12 +1,19 @@
 """Everything related to filetypes.ini."""
+# TODO: support shebangs like a modern editor should??
+
+import collections
 import configparser
-import functools
+import fnmatch
+import importlib
 import itertools
 import logging
+import mimetypes
 import os
 import platform
 import re
 import shlex
+import traceback
+import urllib.request   # for pathname2url, mimetypes wants urls
 
 import pygments.lexer
 import pygments.lexers
@@ -15,180 +22,368 @@ import pygments.util     # for ClassNotFound
 
 from porcupine import dirs, utils
 
-_FILETYPES_DOT_INI = os.path.join(dirs.configdir, 'filetypes.ini')
+
+_STUPID_DEFAULTS = '''\
+# This is Porcupine's filetype configuration file. You can edit this file
+# freely to suit your needs. Restart Porcupine to apply your changes to this
+# file.
+#
+# Filetype names in [square brackets] can be anything you want, but note that
+# some Porcupine plugins may expect specific names. For example, a
+# Python-specific plugin might do nothing unless the current filetype's name is
+# Python. The [DEFAULT] section is special; if something is omitted in any
+# other section, the [DEFAULT] value will be used instead.
+#
+# Valid keys:
+#   filename_patterns   space-separated list of patterns like *.py or *.txt
+#   mimetypes           space-separated list of MIME types
+#   pygments_lexer      for syntax highlighting, see below
+#   tabs2spaces         yes or no
+#   indent_size         number of spaces or tab width, positive integer
+#   max_line_length     positive integer or 0 for no limit
+#   compile_command     see below
+#   run_command         see below
+#   lint_command        see below
+#
+# If any of these are not specified, the values in the [DEFAULT] section will
+# be used instead.
+#
+# As you can see, Porcupine can detect the correct filetype based on the
+# filename or the MIME type. You can just use filename_patterns if you don't
+# know what MIME types are. If no matching filetype is found but the Pygments
+# highlighting library (see below) knows something about the file, Porcupine
+# uses it and values in the [DEFAULT] section. The [DEFAULT] section will be
+# used if Pygments knows nothing about the file.
+#
+# Set pygments_lexer_name to pygments.lexers.SomethingLexer or the full name of
+# any other importable Python class. Note that Pygments lets you omit the part
+# after pygments.lexers; e.g. pygments.lexers.Python3Lexer is equivalent to
+# pygments.lexers.python.Python3Lexer. Here's a list of lexers that Pygments
+# comes with:  http://pygments.org/docs/lexers/
+#
+# These substitutions are performed to the commands:
+#   {file}      path to source file, e.g. "hello world.tar.gz"
+#   {no_ext}    {file} without last extension, e.g. "hello world.tar"
+#   {no_exts}   {file} without any extensions, e.g. "hello world"
+#   {{          literal {
+#   }}          literal }
+#
+# Redirections like > or | don't work. The command is split into an argument
+# list before substituting in the filenames, so spaces in filenames don't cause
+# issues. For example, if {file} is 'hello world.txt', then this...
+#
+#   tar -cf {no_ext}.tar {file}
+#
+# ...is equivalent to this command:
+#
+#   tar cf "hello world.tar" "hello world.txt"
+#
+
+[DEFAULT]
+# indentation settings are like they are because most people like them this
+# way, not because i like them this way
+filename_patterns =
+mimetypes =
+pygments_lexer = pygments.lexers.TextLexer
+tabs2spaces = yes
+indent_size = 4
+max_line_length = 0
+compile_command =
+run_command =
+lint_command =
+
+[Python]
+mimetypes = text/x-python application/x-python text/x-python3 application/x-py\
+thon3
+pygments_lexer = pygments.lexers.Python3Lexer
+
+# pep8-based brainwashing: KITTENS DIE IF YOU USE WRONG STYLE
+tabs2spaces = yes
+indent_size = 4
+max_line_length = 79
+
+# flake8 is the default because pylint doesn't like my code :/ </3
+run_command = %(python)s {file}
+lint_command = %(python)s -m flake8
+
+# any style settings for some of these freely indentable languages would make
+# some people hate me
+[C]
+mimetypes = text/x-csrc text/x-chdr
+pygments_lexer = pygments.lexers.CLexer
+compile_command = cc {file} -Wall -Wextra -std=c99 -o %(exe)s
+run_command = %(runexe)s
+
+[C++]
+mimetypes = text/x-c++hdr text/x-c++src
+pygments_lexer = pygments.lexers.CppLexer
+compile_command = c++ {file} -Wall -Wextra --std=c++98 -o %(exe)s
+run_command = %(runexe)s
+
+[Java]
+mimetypes = text/x-java
+pygments_lexer = pygments.lexers.JavaLexer
+compile_command = javac {file}
+run_command = java {no_ext}
+
+# almost everyone seems to use 2 space indents in javascript
+[JavaScript]
+mimetypes = application/javascript application/x-javascript text/javascript te\
+xt/x-javascript
+pygments_lexer = pygments.lexers.JavascriptLexer
+tabs2spaces = yes
+indent_size = 2
+run_command = node {file}
+
+[Makefile]
+# python doesn't seem to support a Makefile mimetype by default
+filename_patterns = Makefile makefile Makefile.* makefile.*
+pygments_lexer = pygments.lexers.MakefileLexer
+# make doesn't work with spaces
+tabs2spaces = no
+run_command = make
+
+# tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
+[Tcl]
+mimetypes = text/x-tcl text/x-script.tcl application/x-tcl
+pygments_lexer = pygments.lexers.TclLexer
+indent_size = 3
+tabs2spaces = yes
+run_command = tclsh {file}
+
+[JSON]
+mimetypes = application/json
+pygments_lexer = pygments.lexers.JsonLexer
+indent_size = 4
+tabs2spaces = yes
+
+# there are no official mime types for rst or markdown
+[reStructuredText]
+filename_patterns = *.rst
+pygments_lexer = pygments.lexers.RstLexer
+
+[Markdown]
+filename_patterns = *.md *.markdown
+mimetypes = text/x-markdown
+pygments_lexer = pygments.lexers.MarkdownLexer
+''' % {
+    'python': utils.short_python_command,
+    'exe': '{no_ext}.exe' if platform.system() == 'Windows' else '{no_ext}',
+    'runexe': ('{no_ext}.exe' if platform.system() == 'Windows'
+               else './{no_ext}'),
+}
+
+
 log = logging.getLogger(__name__)
+_INI_FILE_PATH = os.path.join(dirs.configdir, 'filetypes.ini')
+
+# on startup, all file types specified in the config file are loaded to
+# _config and _filetypes, and new filetypes are added to them if the
+# user opens a file that doesn't match any of the existing file types
+# _config is never saved back to filetypes.ini
+_config = configparser.ConfigParser()
+
+# ordered to make sure that filetypes loaded from filetypes.ini are used
+# when possible
+_filetypes = collections.OrderedDict()     # {name: FileType}
+
+
+# FileType.__init__ raises this, str()'ing this error returns an option name
+class _OptionError(Exception):
+    pass
 
 
 class FileType:
-    """The values of :data:`~filetypes` are FileType objects.
 
-    Don't create filetype objects yourself. Porcupine loads all Pygments
-    lexers into :data:`~filetypes` by default, so you should `create a
-    Pygments lexer <http://pygments.org/docs/lexerdevelopment/>`_ instead.
-
-    .. attribute:: name
-
-        This attribute is always set to the key of :data:`filetypes` so
-        that ``filetypes[some_file_type.name]`` should be always
-        ``some_file_type``.
-
-    .. attribute:: patterns
-
-        List of :mod:`fnmatch` pattern strings, like ``'*.py'`` or
-        ``'Makefile'``.
-
-    .. attribute:: mimetypes
-
-        List of mimetype strings, e.g.
-        ``['application/x-javascript', 'text/x-javascript']``.
-
-    .. attribute:: tabs2spaces
-    .. attribute:: indent_size
-    .. attribute:: max_line_length
-    .. attribute:: compile_command
-    .. attribute:: run_command
-    .. attribute:: lint_command
-
-        These attributes correspond to the values defined in
-        ``filetypes.ini``. ``tabs2spaces`` is True or False, and the
-        ``indent_size`` and ``max_line_length`` attributes are integers.
-        The commands are strings and they may be empty.
-    """
-
-    __slots__ = ('name', 'patterns', 'mimetypes', '_lexer_getter',
-                 'tabs2spaces', 'indent_size', 'max_line_length',
-                 'compile_command', 'run_command', 'lint_command')
-
-    def __init__(self, name, lexer_getter, patterns, mimetypes,
-                 config_section):
+    def __init__(self, name):
+        assert name not in _filetypes and name in _config
+        section = _config[name]
         self.name = name
-        self._lexer_getter = lexer_getter
-        self.patterns = list(patterns)
-        self.mimetypes = list(mimetypes)
+        self.filename_patterns = section['filename_patterns'].split()
+        self.mimetypes = section['mimetypes'].split()
 
-        self.tabs2spaces = config_section.getboolean('tabs2spaces')
-        self.indent_size = config_section.getint('indent_size')
-        self.max_line_length = config_section.getint('max_line_length')
-        self.compile_command = config_section['compile_command']
-        self.run_command = config_section['run_command']
-        self.lint_command = config_section['lint_command']
+        # this is kind of verbose, but not too bad imo
+        # unknown options are ignored, newer porcupines might have more
+        # keys and this way it should be possible to use the same config
+        # file painlessly with different porcupines
 
-    def get_lexer(self):
-        """Return a Pygments lexer object for files of this type."""
-        return self._lexer_getter()
+        try:
+            modulename, classname = section['pygments_lexer'].rsplit('.', 1)
+            module = importlib.import_module(modulename)
+            self._pygments_lexer_class = getattr(module, classname)
+        # this can import arbitrary modules, anything can go wrong
+        except Exception as e:
+            raise _OptionError('pygments_lexer') from e
 
-    @staticmethod
-    def substitute_command(template, file):
-        """Create an argument list for e.g. :func:`subprocess.call`.
+        try:
+            self.tabs2spaces = section.getboolean('tabs2spaces')
+            if self.tabs2spaces is None:
+                assert name == 'DEFAULT'
+                raise ValueError("missing tabs2spaces")
+        except ValueError as e:
+            raise _OptionError('tabs2spaces') from e
 
-        :param str template: A value of :attr:`.compile_command`,
-                             :attr:`.run_command` or :attr:`.lint_command`.
-        :param str file: Path to the source file, without quotes.
-        :return: List of strings.
-        """
+        try:
+            self.indent_size = section.getint('indent_size')
+            if self.indent_size is None:
+                assert name == 'DEFAULT'
+                raise ValueError("missing tabs2spaces")
+            if self.indent_size <= 0:
+                raise ValueError("indent_size must be positive")
+        except ValueError as e:
+            raise _OptionError('indent_size') from e
+
+        try:
+            self.max_line_length = section.getint('max_line_length')
+            if self.max_line_length < 0:
+                raise ValueError("max_line_length must be 0 or positive")
+        except ValueError as e:
+            raise _OptionError('max_line_length') from e
+
+        for something_command in ['compile_command', 'run_command',
+                                  'lint_command']:
+            if self.has_command(something_command):
+                try:
+                    self.get_command(something_command, 'whatever')
+                # str.format seems to raise ValueError and KeyError
+                except (KeyError, ValueError) as e:
+                    raise _OptionError(something_command) from e
+
+    # TODO: support passing more options in the config file
+    def get_lexer(self, **kwargs):
+        return self._pygments_lexer_class(**kwargs)
+
+    def has_command(self, something_command):
+        return bool(_config[self.name][something_command].strip())
+
+    def get_command(self, something_command, filepath):
+        template = _config[self.name][something_command]
         format_args = {
-            'file': file,
-            'no_ext': os.path.splitext(file)[0],
-            'no_exts': re.search(r'^\.*[^\.]*', file).group(0),
+            'file': filepath,
+            'no_ext': os.path.splitext(filepath)[0],
+            'no_exts': re.search(r'^\.*[^\.]*', filepath).group(0),
         }
-
-        # the template must be split into parts so that '{no_ext}.o'
-        # turns into '"hello world.o"' when no_ext is 'hello world'
-        # shlex.split supports single and double quotes
-        return [part.format(**format_args)
-                for part in shlex.split(template)]
-
-
-filetypes = {}      # this is {filetype.name: filetype}, see init()
+        result = [part.format(**format_args) for part in shlex.split(template)]
+        assert result
+        return result
 
 
 def guess_filetype(filename):
     """Return a FileType object based on a file name."""
     try:
-        if os.path.samefile(filename, _FILETYPES_DOT_INI):
-            return filetypes['Porcupine filetypes.ini']
+        if os.path.samefile(filename, _INI_FILE_PATH):
+            return _filetypes['Porcupine filetypes.ini']
     except FileNotFoundError:
         # the file doesn't exist yet
         pass
 
-    # sometimes pygments uses python 3 lexer correctly and we must not
-    # do weird workarounds
+    mimetype = mimetypes.guess_type(urllib.request.pathname2url(filename))[0]
+    for filetype in _filetypes.values():
+        if mimetype in filetype.mimetypes:
+            return filetype
+        if any(fnmatch.fnmatch(filename, pattern)
+               for pattern in filetype.filename_patterns):
+            return filetype
+
+    # create a new filetype automagically if nothing else works
     try:
-        temp_lexer = pygments.lexers.get_lexer_for_filename(filename)
+        lexer = pygments.lexers.get_lexer_for_mimetype(mimetype)
     except pygments.util.ClassNotFound:
-        return filetypes['Text only']
+        try:
+            lexer = pygments.lexers.get_lexer_for_filename(filename)
+        except pygments.util.ClassNotFound:
+            # ok, there will be no highlighting with default settings
+            return _filetypes['DEFAULT']
 
-    if temp_lexer.name == 'Python 3':
-        return filetypes['Python']
-    if temp_lexer.name == 'Python 3.0 Traceback':
-        return filetypes['Python Traceback']
-    return filetypes[temp_lexer.name]
+    name = lexer.name + ' (not from filetypes.ini)'
+    if name in _filetypes:
+        return _filetypes[name]
+
+    _config[name] = {
+        'filename_patterns': ' '.join(lexer.filenames),
+        'mimetypes': ' '.join(lexer.mimetypes),
+        'pygments_lexer': type(lexer).__module__ + '.' + type(lexer).__name__,
+    }
+    _filetypes[name] = FileType(name)       # uses the _config
+    return _filetypes[name]
 
 
-# default values of the DEFAULT section
-_DEFAULT_DEFAULTS = {
-    'tabs2spaces': 'yes',
-    'indent_size': '4',
-    'max_line_length': '0',
-    'compile_command': '',
-    'run_command': '',
-    'lint_command': '',
-}
+def get_filetype_by_name(name):
+    """Find and return a filetype object by its ``name`` attribute."""
+    return _filetypes[name]
 
 
-def _set_stupid_defaults(config):
-    config['DEFAULT'] = _DEFAULT_DEFAULTS
+def get_all_filetypes():
+    """Return a list of all loaded filetypes."""
+    return list(_filetypes.values())
 
-    # TODO: this assumes mingw in %PATH% on windows :D
-    # FIXME: c99 is probably not a valid c++ standard
-    compiled = ('{no_ext}.exe' if platform.system() == 'Windows'
-                else './{no_ext}')
-    template = '%s {file} -Wall -Wextra -std=c99 -o ' + compiled
-    for language, compiler in [('C', 'cc'), ('C++', 'c++')]:
-        config[language] = {
-            'compile_command': template % compiler,
-            'run_command': compiled,
+
+# TODO: should this be _non_public?
+def init():
+    assert (not _filetypes), "cannot init() twice"
+
+    # rest of this code doesn't check for missing values, so everything
+    # must be set to something at least in DEFAULT
+    stupid = configparser.ConfigParser()
+    stupid.read_string(_STUPID_DEFAULTS)
+    _config['DEFAULT'] = stupid['DEFAULT']
+
+    try:
+        # config.read() suppresses exceptions
+        with open(_INI_FILE_PATH, 'r', encoding='utf-8') as file:
+            _config.read_file(file)
+    except FileNotFoundError:
+        # the config has nothing but the stupid defaults in it right now
+        log.info("filetypes.ini not found, creating it")
+        _config.read_string(_STUPID_DEFAULTS)
+        with open(_INI_FILE_PATH, 'w', encoding='utf-8') as file:
+            file.write(_STUPID_DEFAULTS)
+    except (OSError, UnicodeError, configparser.Error) as err:
+        # full tracebacks are ugly and this is supposed to be visible to users
+        log.error("%s in filetypes.ini: %s", type(err).__name__, err)
+        log.debug("default filetypes will be used instead")
+        log.debug("here's the full traceback", exc_info=True)
+        _config.read_string(_STUPID_DEFAULTS)
+
+    # make sure that the DEFAULT section is first, its values must be
+    # valid when validating other sections
+    for section_name in (['DEFAULT'] + _config.sections()):
+        while True:
+            try:
+                filetype = FileType(section_name)
+            except _OptionError as e:
+                # e.__cause__ is the error that option_error was raised in
+                # FileType.__init__, str(e) is the option name
+                log.error("invalid %r value in [%s]", str(e), section_name)
+                log.debug("here's the full traceback\n%s", ''.join(
+                    traceback.format_exception(type(e.__cause__), e.__cause__,
+                                               e.__cause__.__traceback__)))
+                if section_name == 'DEFAULT':
+                    stupid = configparser.ConfigParser()
+                    stupid.read_string(_STUPID_DEFAULTS)
+                    _config['DEFAULT'][str(e)] = stupid['DEFAULT'][str(e)]
+                else:
+                    del _config[section_name][str(e)]  # use DEFAULT's value
+            else:
+                _filetypes[section_name] = filetype
+                break
+
+    if 'Porcupine filetypes.ini' not in _filetypes:
+        _config['Porcupine filetypes.ini'] = {
+            'pygments_lexer': __name__ + '._FiletypesDotIniLexer',
         }
-
-    # TODO: something nicer for finding node
-    config['JavaScript'] = {'indent_size': '2'}
-    if os.path.isfile('/etc/debian_version'):
-        config['JavaScript']['run_command'] = 'nodejs {file}'
-    else:
-        config['JavaScript']['run_command'] = 'node {file}'
-
-    config['Makefile'] = {'tabs2spaces': 'no'}
-
-    config['Python'] = {
-        'max_line_length': '79',
-        'run_command': '%s {file}' % utils.short_python_command,
-        'lint_command': '%s -m flake8 {file}' % utils.short_python_command,
-    }
-
-    config['Tcl'] = {'indent_size': '3'}
-
-    # 79 comes from documentation-style-guide-sphinx.readthedocs.io
-    config['reStructuredText'] = {
-        'indent_size': '3',
-        'max_line_length': '79'
-    }
+        _filetypes['Porcupine filetypes.ini'] = FileType(   # stupid pep8 >:(
+            'Porcupine filetypes.ini')
 
 
 # unlike pygments.lexers.IniLexer, this highlights correct keys and
 # values in filetypes.ini specially
 class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
+
+    # these are probably not needed
     name = 'Porcupine filetypes.ini'
     aliases = ['porcupine-filetypes']
-    filenames = []      # see guess_filetype() above
-
-    # this is done with a callback to allow creating this class without
-    # calling init()
-    def header_callback(lexer, match):
-        # highlight correct filetype names specially
-        if match.group(1) in filetypes or match.group(1) == 'DEFAULT':
-            yield (match.start(), pygments.token.Keyword, match.group(0))
-        else:
-            yield (match.start(), pygments.token.Text, match.group(0))
+    filenames = []
 
     def key_val_pair(key, value, key_token=pygments.token.Name.Builtin,
                      value_token=pygments.token.String):
@@ -202,143 +397,16 @@ class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
 
     tokens = {'root': list(itertools.chain(
         [(r'\s*#.*?$', pygments.token.Comment)],
-        [(r'\[(.*?)\]$', header_callback)],
+        [(r'\[(.*?)\]$', pygments.token.Keyword)],
+        key_val_pair(r'filename_patterns', r'.*'),
+        key_val_pair(r'mimetypes', r'.*'),      # TODO
+        key_val_pair(r'pygments_lexer', r'.*'),      # TODO
         key_val_pair(r'tabs2spaces', r'yes|no'),
         key_val_pair(r'indent_size', r'[1-9][0-9]*'),        # positive int
         key_val_pair(r'max_line_length', r'0|[1-9][0-9]*'),  # non-negative int
-        key_val_pair(r'(?:compile|run|lint)_command', r'.*'),
+        key_val_pair(r'(?:compile|run|lint)_command', r'.*'),   # TODO
+
+        # less red error tokens
         key_val_pair(r'.*?', r'.*?', pygments.token.Text, pygments.token.Text),
-        [(r'.+?$', pygments.token.Text)],       # less red error tokens
+        [(r'.+?$', pygments.token.Text)],
     ))}
-
-
-# i experimented with using the mimetypes module and the pygments
-# mimetypes to get even more filename patterns, but that sucked because
-# '.c' is a 'text/plain' extension according to the mimetypes module
-def _get_pygments_lexers():
-    for name, aliases, patterns, mimetypes in pygments.lexers.get_all_lexers():
-        # pygments hates python 3 :(
-        if name in {'Python', 'Python Traceback'}:     # these are python 2
-            continue
-
-        lexer_options = {}
-        if name == 'Python 3':
-            name = 'Python'
-            aliases += tuple(pygments.lexers.PythonLexer.aliases)
-            patterns += tuple(pygments.lexers.PythonLexer.filenames)
-            mimetypes += tuple(pygments.lexers.PythonLexer.mimetypes)
-        elif name == 'Python 3.0 Traceback':   # not really specific to 3.0
-            name = 'Python Traceback'
-            aliases += tuple(pygments.lexers.PythonTracebackLexer.aliases)
-            patterns += tuple(pygments.lexers.PythonTracebackLexer.filenames)
-            mimetypes += tuple(pygments.lexers.PythonTracebackLexer.mimetypes)
-        elif name == 'Python console session':
-            lexer_options['python3'] = True
-
-        # longer name aliases are less likely to conflict with each other
-        lexer_name = max(aliases, key=len)
-        lexer_getter = functools.partial(
-            pygments.lexers.get_lexer_by_name, lexer_name, **lexer_options)
-        yield [name, lexer_getter, patterns, mimetypes]
-
-    yield ['Porcupine filetypes.ini', _FiletypesDotIniLexer, (), ()]
-
-
-def _validate_value(section_name, section, option, getter,
-                    minimum=None, command=False):
-    try:
-        if getter is None:
-            value = section[option]
-        else:
-            value = getter(option)
-
-        if minimum is not None and value < minimum:
-            raise ValueError
-        if command:
-            FileType.substitute_command(value, 'whatever.tar.gz')
-
-    except ValueError:
-        # the error might come from getter() or substitute_command()
-        log.error("invalid %r value %r in [%s]",
-                  option, section[option], section_name)
-        if section_name == 'DEFAULT':
-            section[option] = _DEFAULT_DEFAULTS[option]
-        else:
-            del section[option]        # use the DEFAULT section's value
-
-
-# unknown sections and keys are intentionally ignored, newer porcupines
-# might have more keys and this way the same config file can be used
-# painlessly in different porcupine and pygments versions
-def _config2filetypes(config):
-    # make sure that 'DEFAULT' is first, its values must be valid when
-    # _validate_value() is called with other sections
-    for name in (['DEFAULT'] + config.sections()):
-        section = config[name]
-        validate = functools.partial(_validate_value, name, section)
-        validate('tabs2spaces', section.getboolean)
-        validate('indent_size', section.getint, minimum=1)
-        validate('max_line_length', section.getint, minimum=0)
-        validate('compile_command', None, command=True)
-        validate('run_command', None, command=True)
-        validate('lint_command', None, command=True)
-
-    for name, *args in _get_pygments_lexers():
-        # setdefault return value is useless, this is a small bug
-        config.setdefault(name, {})
-        all_args = [name] + args + [config[name]]
-        yield FileType(*all_args)
-
-
-# TODO: add a link to porcupine's docs about this file when the docs are
-# ready for it
-_comments = '''\
-# This is Porcupine's filetype configuration file. You can edit this
-# file freely to suit your needs.
-#
-# Valid keys:
-#   tabs2spaces         yes or no
-#   indent_size         number of spaces or tab width, positive integer
-#   max_line_length     positive integer or 0 for no limit
-#   compile_command     see below
-#   run_command         see below
-#   lint_command        see below
-#
-# If any of these are not specified, the values in the DEFAULT section
-# will be used instead.
-#
-# The command options will be executed in %(cmd or shell)s. These
-# substitutions are performed (file paths are quoted correctly):
-#   {file}      path to source file, e.g. "hello world.tar.gz"
-#   {no_ext}    {file} without last extension, e.g. "hello world.tar"
-#   {no_exts}   {file} without any extensions, e.g. "hello world"
-#
-# Restart Porcupine to apply your changes to this file.
-''' % {'cmd or shell': ('command prompt' if platform.system() == 'Windows'
-                        else 'bash')}
-
-
-def init():
-    """Create :class:`FileType` objects and add them to :data:`~filetypes`."""
-    assert (not filetypes), "cannot init() twice"
-
-    config = configparser.ConfigParser(interpolation=None)
-    _set_stupid_defaults(config)
-
-    try:
-        # config.read() suppresses exceptions
-        with open(_FILETYPES_DOT_INI, 'r', encoding='utf-8') as f:
-            config.read_file(f)
-    except FileNotFoundError:
-        # the config has nothing but the stupid defaults in it right now
-        log.info("filetypes.ini not found, creating it")
-        with open(_FILETYPES_DOT_INI, 'w', encoding='utf-8') as f:
-            print(_comments, file=f)
-            config.write(f)
-    except (OSError, UnicodeError, configparser.Error) as err:
-        # full tracebacks are ugly and this is supposed to be visible to users
-        log.error("%s in filetypes.ini: %s", type(err).__name__, err)
-        log.debug("here's the full traceback", exc_info=True)
-
-    filetypes.update({filetype.name: filetype
-                      for filetype in _config2filetypes(config)})

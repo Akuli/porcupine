@@ -4,30 +4,32 @@ what would be a good default directory and/or file.
 """
 
 import functools
+import mimetypes
 import os
 from tkinter import filedialog
 
-import porcupine
+import porcupine.filetypes
 
 
 last_options = {}
 
 
 def _dialog(action, last_path):
-    # pygments supports so many different kinds of file types that
-    # showing them all would be insane
-    # TODO: allow configuring which file types are shown
-    options = {'filetypes': [("All files", "*")]}
+    options = {}
+
+    # this is generated here because opening a file of a type supported
+    # by Pygments creates a new filetype object (see filetypes.py)
+    options['filetypes'] = [("All files", "*")]
+    for filetype in porcupine.filetypes.get_all_filetypes():
+        if filetype.name not in {'DEFAULT', 'Porcupine filetypes.ini'}:
+            patterns = list(filetype.filename_patterns)
+            for mimetype in filetype.mimetypes:
+                patterns.extend(mimetypes.guess_all_extensions(mimetype))
+            options['filetypes'].append((filetype.name, ' '.join(patterns)))
 
     # the mro thing is there to avoid import cycles (lol)
     tab = porcupine.get_tab_manager().current_tab
     if any(cls.__name__ == 'FileTab' for cls in type(tab).__mro__):
-        if tab.filetype.patterns:
-            options['filetypes'].insert(
-                0, ("%s files" % tab.filetype.name, tab.filetype.patterns))
-        elif 'filetypes' in last_options:
-            options['filetypes'] = last_options['filetypes']
-
         if tab.path is not None:
             options['initialdir'] = os.path.dirname(tab.path)
         elif 'initialdir' in last_options:

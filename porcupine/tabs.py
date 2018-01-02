@@ -593,7 +593,7 @@ class FileTab(Tab):
 
     .. virtualevent:: FiletypeChanged
 
-        Like :virtevt:`~PathChanged`, but for :attr:`~filetype`. Use
+        Like :virtevt:`PathChanged`, but for :attr:`filetype`. Use
         ``event.widget.filetype`` to access the new file type.
 
     .. virtualevent:: Save
@@ -622,13 +622,13 @@ bers.py>` use this attribute.
         This is None if the file has never been saved, and otherwise
         an absolute path as a string.
 
-        .. seealso:: The :virtevt:`.PathChanged` virtual event.
+        .. seealso:: The :virtevt:`PathChanged` virtual event.
 
     .. attribute:: filetype
 
-        A value from :data:`porcupine.filetypes.filetypes`.
+        A filetype object from :mod:`porcupine.filetypes`.
 
-        .. seealso:: The :virtevt:`.FiletypeChanged` virtual event.
+        .. seealso:: The :virtevt:`FiletypeChanged` virtual event.
     """
 
     def __init__(self, manager, content='', path=None):
@@ -763,15 +763,13 @@ bers.py>` use this attribute.
 
     @filetype.setter
     def filetype(self, filetype):
-        assert filetype in filetypes.filetypes.values()
+        # hopefully it's a real filetype object
         self._filetype = filetype
         self.event_generate('<<FiletypeChanged>>')
 
     def _guess_filetype(self, junk=None):
         if self.path is None:
-            # there's no way to "unsave a file", but a plugin might do
-            # that for whatever reason
-            self.filetype = filetypes.filetypes['Text only']
+            self.filetype = filetypes.get_filetype_by_name('DEFAULT')
         else:
             self.filetype = filetypes.guess_filetype(self.path)
 
@@ -785,13 +783,16 @@ bers.py>` use this attribute.
 
     def _update_status(self, junk=None):
         if self.path is None:
-            start = "New file"
+            part1 = "New file"
         else:
-            start = "File '%s'" % self.path
-        line, column = self.textwidget.index('insert').split('.')
+            part1 = "File '%s'" % self.path
+        if self._filetype.name != 'DEFAULT':
+            part1 += ", " + self._filetype.name
 
-        self.status = "%s, %s\tLine %s, column %s" % (
-            start, self.filetype.name, line, column)
+        part2 = "Line %s, column %s" % tuple(
+            self.textwidget.index('insert').split('.'))
+
+        self.status = part1 + '\t' + part2
 
     def can_be_closed(self):
         """
