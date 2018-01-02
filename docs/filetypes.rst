@@ -88,7 +88,7 @@ Filetype objects have these attributes and methods:
 
     Keyword arguments are passed to the lexer class.
 
-.. method:: somefiletype.get_command(something_command, filepath)
+.. method:: somefiletype.get_command(something_command, basename)
 
     Return a list of a program and arguments for compiling, running or linting
     a file.
@@ -96,8 +96,10 @@ Filetype objects have these attributes and methods:
     The returned list is compatible with e.g. the :mod:`subprocess` module.
 
     *something_command* argument must be ``'compile_command'``,
-    ``'run_command'`` or ``'lint_command'``, and *filepath* should be a path to
-    the file as a string.
+    ``'run_command'`` or ``'lint_command'``, and *basename* should be a path to
+    the file as a string relative to the file's location. For example, the
+    *basename* of ``'/home/akuli/test.py'`` is ``'test.py'``, but the command
+    returned by this method should be ran in ``/home/akuli/``.
 
 .. method:: somefiletype.has_command(something_command)
 

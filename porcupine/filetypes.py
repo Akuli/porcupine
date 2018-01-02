@@ -256,12 +256,13 @@ class FileType:
     def has_command(self, something_command):
         return bool(_config[self.name][something_command].strip())
 
-    def get_command(self, something_command, filepath):
+    def get_command(self, something_command, basename):
+        assert os.sep not in basename, "%r is not a basename" % basename
         template = _config[self.name][something_command]
         format_args = {
-            'file': filepath,
-            'no_ext': os.path.splitext(filepath)[0],
-            'no_exts': re.search(r'^\.*[^\.]*', filepath).group(0),
+            'file': basename,
+            'no_ext': os.path.splitext(basename)[0],
+            'no_exts': re.search(r'^\.*[^\.]*', basename).group(0),
         }
         result = [part.format(**format_args) for part in shlex.split(template)]
         assert result

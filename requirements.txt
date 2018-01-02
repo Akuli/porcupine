@@ -14,3 +14,7 @@ pygments>=1.6
 
 # CircularDependencyError was added in 1.5, see changelog in pypi
 toposort>=1.5
+
+# colored output on windows, might be used for something later
+# ubuntu 14.04 comes with colorama 0.2.5 in repos
+colorama>=0.2.5

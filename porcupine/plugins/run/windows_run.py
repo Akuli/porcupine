@@ -1,16 +1,21 @@
 # this is a python script because handling Ctrl+C interrupts in batch
 # scripts seems to be impossible
 
+import colorama
 import os
 import subprocess
 import sys
 
-prog, path = sys.argv
-dirname, basename = os.path.split(path)
+
+colorama.init()
+
+prog, blue_message, directory, *command = sys.argv
+print(colorama.Fore.BLUE + blue_message + colorama.Fore.RESET)
 try:
-    subprocess.call([sys.executable, basename], cwd=dirname)
+    subprocess.call(command, cwd=directory)
 except KeyboardInterrupt:
-    # the subprocess already printed the traceback
+    # the subprocess should have already printed any traceback or
+    # whatever it might want to print
     pass
 
 print()
