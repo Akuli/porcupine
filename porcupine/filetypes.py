@@ -287,6 +287,10 @@ def guess_filetype(filename):
 
     # create a new filetype automagically if nothing else works
     try:
+        if mimetype is None:
+            # this is the easiest way to handle this corner case i came
+            # up with
+            raise pygments.util.ClassNotFound
         lexer = pygments.lexers.get_lexer_for_mimetype(mimetype)
     except pygments.util.ClassNotFound:
         try:
