@@ -184,7 +184,7 @@ def main():
     root.title("Porcupine")
     root.protocol('WM_DELETE_WINDOW', _session.quit)
 
-    filetypes.init()
+    filetypes._init()
     utils._init_images()
     root['menu'] = menubar._init()
 

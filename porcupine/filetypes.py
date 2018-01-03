@@ -185,15 +185,15 @@ _config = configparser.ConfigParser()
 
 # ordered to make sure that filetypes loaded from filetypes.ini are used
 # when possible
-_filetypes = collections.OrderedDict()     # {name: FileType}
+_filetypes = collections.OrderedDict()     # {name: _FileType}
 
 
-# FileType.__init__ raises this, str()'ing this error returns an option name
+# _FileType.__init__ raises this, str()'ing this error returns an option name
 class _OptionError(Exception):
     pass
 
 
-class FileType:
+class _FileType:
 
     def __init__(self, name):
         assert name not in _filetypes and name in _config
@@ -270,7 +270,7 @@ class FileType:
 
 
 def guess_filetype(filename):
-    """Return a FileType object based on a file name."""
+    """Return a filetype object for a file name."""
     try:
         if os.path.samefile(filename, _INI_FILE_PATH):
             return _filetypes['Porcupine filetypes.ini']
@@ -309,7 +309,7 @@ def guess_filetype(filename):
         'mimetypes': ' '.join(lexer.mimetypes),
         'pygments_lexer': type(lexer).__module__ + '.' + type(lexer).__name__,
     }
-    _filetypes[name] = FileType(name)       # uses the _config
+    _filetypes[name] = _FileType(name)       # uses the _config
     return _filetypes[name]
 
 
@@ -323,8 +323,7 @@ def get_all_filetypes():
     return list(_filetypes.values())
 
 
-# TODO: should this be _non_public?
-def init():
+def _init():
     assert (not _filetypes), "cannot init() twice"
 
     # rest of this code doesn't check for missing values, so everything
@@ -355,10 +354,10 @@ def init():
     for section_name in (['DEFAULT'] + _config.sections()):
         while True:
             try:
-                filetype = FileType(section_name)
+                filetype = _FileType(section_name)
             except _OptionError as e:
                 # e.__cause__ is the error that option_error was raised in
-                # FileType.__init__, str(e) is the option name
+                # _FileType.__init__, str(e) is the option name
                 log.error("invalid %r value in [%s]", str(e), section_name)
                 log.debug("here's the full traceback\n%s", ''.join(
                     traceback.format_exception(type(e.__cause__), e.__cause__,
@@ -377,7 +376,7 @@ def init():
         _config['Porcupine filetypes.ini'] = {
             'pygments_lexer': __name__ + '._FiletypesDotIniLexer',
         }
-        _filetypes['Porcupine filetypes.ini'] = FileType(   # stupid pep8 >:(
+        _filetypes['Porcupine filetypes.ini'] = _FileType(   # stupid pep8 >:(
             'Porcupine filetypes.ini')
 
 
