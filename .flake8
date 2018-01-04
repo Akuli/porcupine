@@ -4,4 +4,8 @@
 #
 # E265 is "block comment should start with '# '", this is disabled to
 # allow commenting out lines with no space after #
-ignore = E402,E265
+#
+# E226 is "missing whitespace around arithmetic operator", i think
+# "a + b*c" is much more readable than "a + b * c" while "a + (b * c)"
+# is a bit too verbose
+ignore = E402,E265,E226

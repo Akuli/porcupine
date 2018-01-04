@@ -34,7 +34,7 @@ have these attributes:
 .. attribute:: any_action.binding
 
     A string suitable for tkinter's ``bind()`` method, e.g. ``'<Control-n>'``.
-    :source:`The menubar plugin <porcupine/plugins/menubar>` uses
+    :source:`The menubar plugin <porcupine/plugins/menubar.py>` uses
     :func:`porcupine.utils.get_keyboard_shortcut` when it displays things like
     ``Ctrl+N`` next to *New File*. Can be None for no binding.
 

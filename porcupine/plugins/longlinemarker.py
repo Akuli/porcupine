@@ -6,7 +6,6 @@ import tkinter.font as tkfont
 import pygments.styles
 import pygments.token
 
-import porcupine
 from porcupine import get_tab_manager, settings, tabs, utils
 
 config = settings.get_section('General')

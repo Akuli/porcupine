@@ -1,5 +1,5 @@
-import operator
 import tkinter
+import warnings
 
 import porcupine
 from porcupine import tabs
@@ -82,7 +82,9 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                 action.enabled = isinstance(tab, tabtypes)
 
         if filetype_names is not None:
-            def enable_or_disable(junk_event=None):
+            # the noqa comment is needed because flake8 thinks this is
+            # a "redefinition of unused 'enable_or_disable'"
+            def enable_or_disable(junk_event=None):     # noqa
                 tab = porcupine.get_tab_manager().current_tab
                 if isinstance(tab, tabs.FileTab):
                     action.enabled = tab.filetype.name in filetype_names
@@ -136,7 +138,7 @@ def add_yesno(path, default=None, keyboard_binding=None, *,
     If *var* is given, it should be a ``tkinter.BooleanVar`` and it's
     used as the ``var`` of the option; otherwise a new ``BooleanVar`` is
     created. *default* should be True or False, but it may be omitted if
-    *var* is specified. 
+    *var* is specified.
     """
     if var is None:
         if default is None:
@@ -151,7 +153,7 @@ def add_yesno(path, default=None, keyboard_binding=None, *,
 def add_choice(path, choices, default=None, *, var=None, **kwargs):
     """Add an action for choosing one from a list of choices.
 
-    :source:`The menubar plugin <porcupine/plugins/menubar>` displays
+    :source:`The menubar plugin <porcupine/plugins/menubar.py>` displays
     these actions as submenus that contain radio button items.
 
     If given, *default* should be an element of *choices*. It defaults

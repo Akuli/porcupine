@@ -190,7 +190,6 @@ def on_new_tab(event):
     highlighter.highlight_all()
 
 
-
 def setup():
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 

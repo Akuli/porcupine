@@ -2,7 +2,6 @@
 # TODO: support compiling and linting somehow in the editor window
 # TODO: display the status code when the program finishes?
 
-import functools
 import logging
 import os
 import platform
@@ -137,6 +136,8 @@ def setup():
 
 if __name__ == '__main__':
     # simple test
+    import sys
+
     with tempfile.TemporaryDirectory() as tempdir:
         script = os.path.join(tempdir, 'hello.py')
         with open(script, 'w') as f:

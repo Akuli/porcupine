@@ -3,11 +3,7 @@ import logging
 import traceback
 import webbrowser
 
-import pygments.styles
-import pygments.token
-
-import porcupine
-from porcupine import _dialogs, actions, dirs, filetypes, settings, tabs, utils
+from porcupine import _dialogs, actions, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +104,7 @@ def setup_actions():
     # TODO: is Edit the best possible place for this?
     actions.add_command(
         "Edit/Porcupine Settings...",
-        functools.partial(settings.show_dialog, porcupine.get_main_window()))
+        functools.partial(settings.show_dialog, get_main_window()))
 
     def change_font_size(how):
         config = settings.get_section('General')

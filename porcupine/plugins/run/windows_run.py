@@ -2,7 +2,6 @@
 # scripts seems to be impossible
 
 import colorama
-import os
 import subprocess
 import sys
 

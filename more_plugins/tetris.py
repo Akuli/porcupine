@@ -64,8 +64,8 @@ class Block:
 
     def bumps(self, x, y):
         return (x not in range(WIDTH)
-                or y < 0
-                or (x, y) in self._game.frozen_squares)
+                or y < 0       # noqa
+                or (x, y) in self._game.frozen_squares)   # noqa
 
     def _move(self, deltax, deltay):
         for x, y in self.get_coords():

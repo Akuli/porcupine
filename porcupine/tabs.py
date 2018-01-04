@@ -66,11 +66,12 @@ class _Pane(ttk.Notebook):
                 self.master._current_pane = None
                 generate_the_event = True
 
-            # the event_generate must be after telling the tab manager
-            # to forget about this pane, otherwise it complains that
-            # _current_pane was set to None even though there are panes
             self.master.forget(self)
-            self.master.event_generate('<<CurrentTabChanged>>')
+            if generate_the_event:
+                # must be after telling the tab manager to forget about
+                # this pane, otherwise it complains that _current_pane
+                # was set to None even though there are panes
+                self.master.event_generate('<<CurrentTabChanged>>')
             self.destroy()
 
     # diff should be +1 for selecting a tab at right or -1 for left
@@ -588,7 +589,8 @@ class FileTab(Tab):
     *path* is given, the file will be saved there when Ctrl+S is
     pressed. Otherwise this becomes a "New File" tab.
 
-    If you want to read a file and open a new tab from 
+    If you want to read a file and open a new tab from it, use
+    :meth:`open_file`. It uses things like the user's encoding settings.
 
     .. virtualevent:: PathChanged
 

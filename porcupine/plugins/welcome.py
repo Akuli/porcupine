@@ -1,11 +1,10 @@
 """Simple welcome message."""
 
-import random
 import re
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_main_window, get_tab_manager, utils
+from porcupine import get_tab_manager, utils
 
 
 RAW_MESSAGE = """
@@ -61,7 +60,7 @@ class WelcomeMessageDisplayer:
     def update_wraplen(self, event):
         self.title_label['wraplength'] = (
             event.width - self._image.width() - BORDER_SIZE)
-        self.message_label['wraplength'] = event.width - 2*BORDER_SIZE
+        self.message_label['wraplength'] = event.width - 2*BORDER_SIZE  # noqa
 
     def on_new_tab(self, event):
         self._frame.pack_forget()

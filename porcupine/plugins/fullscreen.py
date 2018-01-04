@@ -1,5 +1,3 @@
-import tkinter
-
 from porcupine import actions, get_main_window
 
 
