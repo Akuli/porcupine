@@ -2,7 +2,7 @@ import tkinter
 import warnings
 
 import porcupine
-from porcupine import tabs
+from porcupine import tabs, utils
 
 
 _actions = {}
@@ -99,6 +99,9 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                 if isinstance(tab, tabs.FileTab):
                     tab.bind('<<FiletypeChanged>>', enable_or_disable,
                              add=True)
+
+            utils.bind_with_data(porcupine.get_tab_manager(),
+                                 '<<NewTab>>', on_new_tab, add=True)
 
         enable_or_disable()
         porcupine.get_tab_manager().bind(

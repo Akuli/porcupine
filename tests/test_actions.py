@@ -206,29 +206,36 @@ def test_tabtypes(porcusession, tabmanager, action_path):
     assert action2.enabled
 
 
-#def test_filetype_names(porcusession, tabmanager, action_path, filetypes):
-#    # make sure these filetypes exist
-#    filetypes.get_filetype_by_name('C')
-#    filetypes.get_filetype_by_name('Java')
-#    filetypes.get_filetype_by_name('Python')
-#    filetypes.get_filetype_by_name('DEFAULT')   # the plain text filetype
-#
-#    filetab = tabs.FileTab(tabmanager)
-#    othertab = tabs.Tab(tabmanager)
-#
-#    action = actions.add_yesno(action_path, True,
-#                               filetype_names=['C', 'Python'])
-#    assert not action.enabled
-#
-#    tabmanager.add_tab(othertab)
-#    assert not action.enabled
-#    tabmanager.close_tab(othertab)
-#    assert not action.enabled
-#
-#    tabmanager.add_tab(filetab)
-#    assert not action.enabled
-#    filetab.filetype = filetypes.get_filetype_by_name('Java')
-#    assert not action.enabled
-#    filetab.filetype = filetypes.get_filetype_by_name('C')
-#    assert not action.enabled
-#    filetab.filetype = 
+def test_filetype_names(porcusession, tabmanager, action_path, filetypes):
+    # make sure these filetypes exist
+    filetypes.get_filetype_by_name('C')
+    filetypes.get_filetype_by_name('Java')
+    filetypes.get_filetype_by_name('Python')
+    filetypes.get_filetype_by_name('DEFAULT')   # the plain text filetype
+
+    filetab = tabs.FileTab(tabmanager)
+    othertab = tabs.Tab(tabmanager)
+
+    action = actions.add_yesno(action_path, True,
+                               filetype_names=['C', 'Python'])
+    assert not action.enabled
+
+    tabmanager.add_tab(othertab)
+    assert tabmanager.current_tab is othertab
+    assert not action.enabled
+
+    tabmanager.add_tab(filetab)
+    assert tabmanager.current_tab is filetab
+    assert not action.enabled
+
+    filetab.filetype = filetypes.get_filetype_by_name('Java')
+    assert not action.enabled
+    filetab.filetype = filetypes.get_filetype_by_name('C')
+    assert action.enabled
+
+    tabmanager.close_tab(filetab)
+    tabmanager.update()
+    assert not action.enabled
+    tabmanager.close_tab(othertab)
+    tabmanager.update()
+    assert not action.enabled
