@@ -4,7 +4,7 @@ import tkinter
 
 import pytest
 
-from porcupine import actions, get_main_window, get_tab_manager, tabs, utils
+from porcupine import actions, get_main_window, tabs, utils
 
 
 _action_path_counter = itertools.count()
@@ -69,9 +69,8 @@ def test_add_command_and_stuff(porcusession, action_path):
         assert action.callback is callback
         assert not hasattr(action, 'var')
         assert not hasattr(action, 'choices')
-        assert (        # pep8: indents don't need to be 4 spaces here
-         repr(action) == str(action) ==
-         "<Action object '" + action_path + "': kind='command', enabled=True>")
+        assert (repr(action) == str(action) == "<Action object '" +
+                action_path + "': kind='command', enabled=True>")
 
         action.enabled = False
         assert disable_events.pop().data == action_path
