@@ -15,8 +15,8 @@ import types
 import pygments.styles
 import pygments.util
 
-import porcupine
-from porcupine import dirs, utils
+import porcupine    # for get_tab_manager()
+from porcupine import dirs, images, utils
 
 log = logging.getLogger(__name__)
 
@@ -183,15 +183,14 @@ class _ConfigSection(collections.abc.MutableMapping):
         """Undo a :meth:`~connect` call."""
         self._infos[key].callbacks.remove(callback)
 
-    # returns an image the same size as img_triangle, but empty
+    # returns an image the same size as the triangle image, but empty
     @staticmethod
-    def _get_fake_triangle(any_widget, *, cache=[]):
+    def _get_fake_triangle(cache=[]):
         if not cache:
             cache.append(tkinter.PhotoImage(
-                width=any_widget.tk.call('image', 'width', 'img_triangle'),
-                height=any_widget.tk.call('image', 'height', 'img_triangle'),
-            ))
-            atexit.register(cache.clear)     # see utils._init_images
+                width=images.get('triangle').width(),
+                height=images.get('triangle').height()))
+            atexit.register(cache.clear)     # see images/__init__.py
         return cache[0]
 
     def get_var(self, key, var_type=tkinter.StringVar):
@@ -267,9 +266,9 @@ class _ConfigSection(collections.abc.MutableMapping):
 
             def on_errorvar_changed(*junk):
                 if errorvar.get():
-                    triangle_label['image'] = 'img_triangle'
+                    triangle_label['image'] = images.get('triangle')
                 else:
-                    triangle_label['image'] = self._get_fake_triangle(frame)
+                    triangle_label['image'] = self._get_fake_triangle()
 
             errorvar.trace('w', on_errorvar_changed)
             on_errorvar_changed()

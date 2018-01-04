@@ -4,7 +4,7 @@ import re
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, utils
+from porcupine import get_tab_manager, images, utils
 
 
 RAW_MESSAGE = """
@@ -31,15 +31,11 @@ BORDER_SIZE = 30    # pixels
 class WelcomeMessageDisplayer:
 
     def __init__(self):
-        self._image = tkinter.PhotoImage()
-
         # make it about 200 pixels wide by taking every magic'th pixel
-        magic = int(self._image.tk.eval('image width img_logo')) // 200
-        self._image.tk.eval(
-            '%s copy img_logo -subsample %d %d' % (self._image, magic, magic))
+        magic = images.get('logo').width() // 200
+        self._image = images.get('logo').subsample(magic)
 
         self._frame = ttk.Frame(get_tab_manager())
-
         top = ttk.Frame(self._frame)
         top.pack(fill='x', padx=(BORDER_SIZE, 0))
         ttk.Label(top, image=self._image).pack(side='right')

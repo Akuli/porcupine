@@ -4,7 +4,7 @@ import tkinter
 from tkinter import ttk
 import weakref
 
-from porcupine import actions, get_tab_manager, tabs, utils
+from porcupine import actions, get_tab_manager, images, tabs, utils
 
 find_widgets = weakref.WeakKeyDictionary()
 
@@ -49,7 +49,7 @@ class Finder(ttk.Frame):
         self._statuslabel = ttk.Label(self)
         self._statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
 
-        closebutton = ttk.Label(self, image='img_closebutton')
+        closebutton = ttk.Label(self, image=images.get('closebutton'))
         closebutton.grid(row=0, column=2, sticky='ne')
         closebutton.bind('<Button-1>', lambda event: self.pack_forget())
 

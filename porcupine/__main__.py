@@ -186,7 +186,6 @@ def main():
     root.protocol('WM_DELETE_WINDOW', _session.quit)
 
     filetypes._init()
-    utils._init_images()
     _session.init(root)
     _session.setup_actions()
 

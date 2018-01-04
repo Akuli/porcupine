@@ -10,7 +10,7 @@ from tkinter import ttk, messagebox
 import traceback
 
 import porcupine
-from porcupine import _dialogs, filetypes, settings, textwidget, utils
+from porcupine import _dialogs, filetypes, images, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
@@ -40,9 +40,7 @@ class _Pane(ttk.Notebook):
 
     # a customized version of add()
     def add_tab(self, tab):
-        # img_closebutton is from images/closebutton.gif, see
-        # utils._init_images()
-        self.add(tab, text=tab.title, image='img_closebutton',
+        self.add(tab, text=tab.title, image=images.get('closebutton'),
                  compound='right')
         tab.tkraise(self)      # make sure it's visible
 
@@ -120,8 +118,7 @@ class _Pane(ttk.Notebook):
 
         # hopefully the image is on the right edge of the label and
         # there's no padding :O
-        image_width = int(self.tk.call('image', 'width', 'img_closebutton'))
-        if event.x + image_width >= right:
+        if event.x + images.get('closebutton').width() >= right:
             # the close button was clicked
             tab = self.tabs()[self.index('@%d,%d' % (event.x, event.y))]
             if tab.can_be_closed():

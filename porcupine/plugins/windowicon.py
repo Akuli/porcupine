@@ -1,6 +1,6 @@
-import porcupine
+from porcupine import get_main_window, images
 
 
 def setup():
-    window = porcupine.get_main_window()
-    window.tk.call('wm', 'iconphoto', window, 'img_logo')
+    window = get_main_window()
+    window.tk.call('wm', 'iconphoto', window, images.get('logo'))

@@ -357,33 +357,6 @@ except AttributeError:
             config = configure
 
 
-# tkinter images destroy themselves on __del__. here's how cpython exits:
-#
-#   1) atexit callbacks run
-#   2) module globals are set to None (lol)
-#   3) all objects are destroyed and __del__ methods run
-#
-# tkinter.Image.__del__ destroys the image, and that uses
-# "except TclError". this causes means two things:
-#
-#   - it's necessary to hold references to the images to avoid calling
-#     __del__ while they're being used somewhere
-#   - the images must be destroyed before step 2 above
-_images = []
-atexit.register(_images.clear)
-
-
-# TODO: document this behavior
-def _init_images():
-    for filename in os.listdir(os.path.join(dirs.installdir, 'images')):
-        no_ext, ext = os.path.splitext(filename)
-        if ext in ('.gif', '.png'):     # Tk 8.4 supports at least these
-            image = tkinter.PhotoImage(
-                name=('img_' + no_ext),
-                file=os.path.join(dirs.installdir, 'images', filename))
-            _images.append(image)
-
-
 def errordialog(title, message, monospace_text=None):
     """This is a lot like ``tkinter.messagebox.showerror``.
 
