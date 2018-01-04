@@ -143,6 +143,16 @@ pygments_lexer = pygments.lexers.MakefileLexer
 tabs2spaces = no
 run_command = make
 
+# TODO: Windows batch files and powershell files
+
+# TODO: this really needs a shebang when porcupine will support them
+# i'm not trying to discriminate anyone with pygments_lexer and
+# run_command, change them if you want to
+[Shell]
+filename_patterns = *.sh
+pygments_lexer = pygments.lexers.BashLexer
+run_command = bash {file}
+
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
 mimetypes = text/x-tcl text/x-script.tcl application/x-tcl
