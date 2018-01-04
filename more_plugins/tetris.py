@@ -4,8 +4,7 @@ import itertools
 import random
 import tkinter as tk
 
-import porcupine
-from porcupine import tabs, utils
+from porcupine import actions, get_tab_manager, tabs, utils
 
 WIDTH = 10
 HEIGHT = 20
@@ -304,10 +303,7 @@ class TetrisTab(tabs.Tab):
         self._canvas.focus_force()
 
 
-def play_tetris():
-    manager = porcupine.get_tab_manager()
-    manager.add_tab(TetrisTab(manager))
-
-
 def setup():
-    porcupine.add_action(play_tetris, 'Games/Tetris')
+    actions.add_command(
+        "Games/Tetris",
+        lambda: get_tab_manager().add_tab(TetrisTab(get_tab_manager())))

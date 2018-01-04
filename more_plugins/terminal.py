@@ -3,7 +3,7 @@ import subprocess
 import tkinter
 from tkinter import messagebox
 
-from porcupine import add_action, get_tab_manager, tabs
+from porcupine import actions, get_tab_manager, tabs
 
 
 def start_xterm():
@@ -36,6 +36,8 @@ def start_xterm():
 def setup():
     # it's possible to run full X11 on a Mac, so this is better than
     # e.g. platform.system()
+    # FIXME: i think it's possible to run xterm in aqua? would that
+    # work here?
     if get_tab_manager().tk.call('tk', 'windowingsystem') != 'x11':
         # TODO: more noob-friendly "u have the wrong os lel" message?
         messagebox.showerror(
@@ -43,4 +45,4 @@ def setup():
             "Sorry, the terminal plugin only works on X11 :(")
         return
 
-    add_action(start_xterm, "Tools/Terminal", ('Ctrl+Shift+T', '<Control-T>'))
+    actions.add_command("Tools/Terminal", start_xterm, '<Control-T>')

@@ -8,6 +8,7 @@ import logging
 import os
 import platform
 import shutil
+import string as string_module      # string is used as a variable name
 import subprocess
 import sys
 import threading
@@ -504,6 +505,40 @@ def backup_open(path, *args, **kwargs):
         yield open(path, *args, **kwargs)
 
 
-if __name__ == '__main__':
-    import doctest
-    print(doctest.testmod())
+def get_keyboard_shortcut(binding):
+    """Convert a Tk binding string to a format that most people are used to.
+
+    >>> get_keyboard_shortcut('<Control-c>')
+    'Ctrl+C'
+    >>> get_keyboard_shortcut('<Control-C>')
+    'Ctrl+Shift+C'
+    >>> get_keyboard_shortcut('<Control-0>')
+    'Ctrl+Zero'
+    >>> get_keyboard_shortcut('<Control-1>')
+    'Ctrl+1'
+    >>> get_keyboard_shortcut('<F11>')
+    'F11'
+    """
+    # TODO: handle more corner cases, see bind(3tk)
+    parts = binding.lstrip('<').rstrip('>').split('-')
+    result = []
+
+    for part in parts:
+        if part == 'Control':
+            # TODO: i think this is supposed to use the command symbol
+            # on OSX? i don't have a mac
+            result.append('Ctrl')
+        # tk doesnt like e.g. <Control-ö>, that's why ascii only here
+        elif len(part) == 1 and part in string_module.ascii_lowercase:
+            result.append(part.upper())
+        elif len(part) == 1 and part in string_module.ascii_uppercase:
+            result.append('Shift')
+            result.append(part)
+        elif part == '0':
+            # 0 and O look too much like each other
+            result.append('Zero')
+        else:
+            # good enough guess :D
+            result.append(part.capitalize())
+
+    return '+'.join(result)

@@ -13,8 +13,7 @@ import tempfile
 import tkinter as tk
 from tkinter import messagebox
 
-import porcupine
-from porcupine import tabs, utils
+from porcupine import actions, filetypes, get_tab_manager, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -95,7 +94,7 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
 def run(workingdir, command):
     blue_message = ' '.join(map(utils.quote, command))
 
-    widget = porcupine.get_main_window()    # any tk widget would work
+    widget = get_tab_manager()    # any tkinter widget works
     windowingsystem = widget.tk.call('tk', 'windowingsystem')
 
     if windowingsystem == 'win32':
@@ -107,7 +106,8 @@ def run(workingdir, command):
 
 
 def run_this_file():
-    filetab = porcupine.get_tab_manager().current_tab
+    filetab = get_tab_manager().current_tab
+    assert isinstance(filetab, tabs.FileTab)
     if filetab.path is None or not filetab.is_saved():
         filetab.save()
         if filetab.path is None:
@@ -129,9 +129,10 @@ def run_this_file():
 
 
 def setup():
-    open_prompt = functools.partial(run, None)
-    porcupine.add_action(run_this_file, "Run/Run File", ("F5", "<F5>"),
-                         [tabs.FileTab])
+    runnable = [filetype.name for filetype in filetypes.get_all_filetypes()
+                if filetype.has_command('run_command')]
+    actions.add_command("Run/Run File", run_this_file, '<F5>',
+                        filetype_names=runnable)
 
 
 if __name__ == '__main__':
@@ -142,6 +143,7 @@ if __name__ == '__main__':
             print("print('hello world')", file=f)
 
         root = tk.Tk()
-        button = tk.Button(root, text="run", command=lambda: run(script))
+        button = tk.Button(root, text="run",
+                           command=lambda: run('.', [sys.executable, script]))
         button.pack()
         root.mainloop()

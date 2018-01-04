@@ -177,7 +177,8 @@ class ThemedText(HandyText):
         self['selectbackground'] = fg
 
 
-# TODO: remove useless cursor_has_moved() calls
+# TODO: remove useless cursor_has_moved() calls? then again, they don't
+# matter in any way
 class MainText(ThemedText):
     """Don't use this. It may be changed later."""
 
@@ -200,17 +201,25 @@ class MainText(ThemedText):
         self.bind('<parenright>', self._on_closing_brace, add=True)
         self.bind('<bracketright>', self._on_closing_brace, add=True)
         self.bind('<braceright>', self._on_closing_brace, add=True)
-        self.bind('<Control-z>', self.undo)
-        self.bind('<Control-y>', self.redo)
-        self.bind('<Control-x>', self.cut)
-        self.bind('<Control-c>', self.copy)
-        self.bind('<Control-v>', self.paste)
-        self.bind('<Control-a>', self.select_all)
 
-        self.bind('<Control-plus>', lambda event: self.on_wheel('up'))
-        self.bind('<Control-minus>', lambda event: self.on_wheel('down'))
-        self.bind('<Control-0>', lambda event: self.on_wheel('reset'))
-        utils.bind_mouse_wheel(self, self.on_wheel, prefixes='Control-')
+        # most other things work by default, but these don't
+        self.bind('<Control-v>', self._paste)
+        self.bind('<Control-y>', self._redo)
+        self.bind('<Control-a>', self._select_all)
+
+        utils.bind_mouse_wheel(self, self._on_ctrl_wheel, prefixes='Control-')
+
+    # TODO: _session.py contains similar code, maybe reuse it here?
+    def _on_ctrl_wheel(self, direction):
+        config = settings.get_section('General')
+        if direction == 'reset':
+            config.reset('font_size')
+            return
+
+        try:
+            config['font_size'] += (1 if direction == 'up' else -1)
+        except settings.InvalidValue:
+            pass
 
     def set_filetype(self, filetype):
         self._filetype = filetype
@@ -224,17 +233,6 @@ class MainText(ThemedText):
         # seems to work :)
         font = tkfont.Font(name=self['font'], exists=True)
         self['tabs'] = str(font.measure(' ' * filetype.indent_size))
-
-    def on_wheel(self, direction):
-        config = settings.get_section('General')
-        if direction == 'reset':
-            config.reset('font_size')
-            return
-
-        try:
-            config['font_size'] += (1 if direction == 'up' else -1)
-        except settings.InvalidValue:
-            pass
 
     def _on_delete(self, control_down, event, shifted=False):
         """This runs when the user presses backspace or delete."""
@@ -341,35 +339,14 @@ class MainText(ThemedText):
         self.delete('%d.%d' % (lineno, start), '%d.%d' % (lineno, end))
         return True
 
-    def undo(self, event=None):
-        try:
-            self.edit_undo()
-        except tk.TclError:     # nothing to undo
-            return
-        self.cursor_has_moved()
+    def _redo(self, event):
+        self.event_generate('<<Redo>>')   # runs cursor_has_moved, see __init__
         return 'break'
 
-    def redo(self, event=None):
-        try:
-            self.edit_redo()
-        except tk.TclError:     # nothing to redo
-            return
-        self.cursor_has_moved()
-        return 'break'
+    def _paste(self, event):
+        self.event_generate('<<Paste>>')  # runs cursor_has_moved, see __init__
 
-    def cut(self, event=None):
-        self.event_generate('<<Cut>>')
-        return 'break'
-
-    def copy(self, event=None):
-        self.event_generate('<<Copy>>')
-        return 'break'
-
-    def paste(self, event=None):
-        self.event_generate('<<Paste>>')
-
-        # Without this, pasting while some text is selected is annoying
-        # because the selected text doesn't go away :(
+        # by default, selected text doesn't go away when pasting
         try:
             sel_start, sel_end = self.tag_ranges('sel')
         except ValueError:
@@ -380,6 +357,6 @@ class MainText(ThemedText):
 
         return 'break'
 
-    def select_all(self, event=None):
+    def _select_all(self, event):
         self.tag_add('sel', '1.0', 'end - 1 char')
         return 'break'

@@ -3,13 +3,17 @@
 Introduction to Writing Plugins
 ===============================
 
-
 Porcupine is written in Python 3, and it can be extended a lot by writing
 plugins for it in Python 3. Writing plugins is easy, but this tutorial and
 Porcupine's API documentation assume
 `basic tkinter skills <https://github.com/Akuli/tkinter-tutorial>`_.
 
 .. TODO: add stuff like events and bindings to the tkinter tutorial?
+
+.. warning::
+    If you are an experienced tkinter user and you don't want to read this
+    whole tutorial, read at least
+    :ref:`the pitfall section <plugin-intro-pitfalls>`.
 
 
 Where are the plugins?
@@ -20,9 +24,9 @@ Porcupine are installed along with it, but Porcupine also creates a user-wide
 ``plugins`` folder in its config directory. You can check where it is using
 Python::
 
-   >>> import porcupine.plugins
-   >>> print(porcupine.plugins.__path__[0])
-   /home/akuli/.config/porcupine/plugins
+    >>> import porcupine.plugins
+    >>> print(porcupine.plugins.__path__[0])
+    /home/akuli/.config/porcupine/plugins
 
 You can also use ``--print-plugindir`` as shown :source:`here <more_plugins/>`.
 
@@ -33,8 +37,8 @@ should go. Rest of this tutorial calls this place **the plugin directory**.
 Your plugin directory is empty by default. The plugins that come with Porcupine
 are installed in a different place::
 
-   >>> print(porcupine.plugins.__path__[1])
-   /home/akuli/.local/lib/python3.7/site-packages/porcupine/plugins
+    >>> print(porcupine.plugins.__path__[1])
+    /home/akuli/.local/lib/python3.7/site-packages/porcupine/plugins
 
 
 Hello World!
@@ -42,14 +46,14 @@ Hello World!
 
 Create a ``hello.py`` to your plugin directory, and add this code to it::
 
-   from tkinter import messagebox
-   import porcupine
+    from tkinter import messagebox
+    from porcupine import actions
 
-   def hello():
-       messagebox.showinfo("Hello", "Hello World!")
+    def hello():
+        messagebox.showinfo("Hello", "Hello World!")
 
-   def setup():
-       porcupine.add_action(hello, 'Hello/Hello World')
+    def setup():
+        actions.add_command("Hello/Hello World", hello)
 
 Restart Porcupine. You should see a new *Hello* menu in the menubar with a
 *Hello World* button in it. Clicking that button runs the ``hello()``
@@ -57,17 +61,18 @@ function.
 
 Some details:
 
-   *  You can also add actions to menus that Porcupine created, like
-      ``porcupine.add_action(hello, 'Run/Hello')``.
-   *  Usually plugins are files, but directories with an ``__init__.py`` in them
+    * You can also add actions to menus that Porcupine created, like
+      ``actions.add_command("Run/Hello", hello)``. See :mod:`porcupine.actions`
+      for more documentation about actions.
+    * Usually plugins are files, but directories with an ``__init__.py`` in them
       work as well.
-   *  Plugins can be imported like ``import porcupine.plugins.hello``.
+    * Plugins can be imported like ``import porcupine.plugins.hello``.
       That's how Porcupine loads them.
-   *  File and directory names starting with ``_`` are ignored.
-   *  Each plugin must define a ``setup()`` function. If your plugin is a package,
+    * File and directory names starting with ``_`` are ignored.
+    * Each plugin must define a ``setup()`` function. If your plugin is a package,
       the ``setup()`` function must be exposed in ``__init__.py``. Porcupine calls
       this function on startup before opening any tabs.
-   *  Plugins are imported in an arbitary order, but you can control the order that
+    * Plugins are imported in an arbitary order, but you can control the order that
       the setup functions are called in. For example, you could add this code to
       ``hello.py``::
 
@@ -99,8 +104,11 @@ If the ``porcu`` command doesn't work you can use ``pyw -m porcupine`` or
 ``python3 -m porcupine`` instead of ``porcu`` as shown
 `here <https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#installing-porcupine>`_.
 
-This will run Porcupine without any plugins, and it is minimal. You can edit
-files with it, but that's about it. Plugins can do **a lot**.
+This will run Porcupine without any plugins, and in fact, it's just an empty
+window with *nothing* inside it! However, actions are a part of Porcupine (even
+though :source:`the menubar <porcupine/plugins/menubar.py>` that usually
+displays them is a plugin), so you can e.g. press Ctrl+N to create a new file
+or Ctrl+S to save it.
 
 
 Porcupine's Widgets
@@ -117,38 +125,25 @@ Here are the widgets that Porcupine itself creates without any plugins:
 .. |1| unicode:: \x2776
 .. |2| unicode:: \x2777
 .. |3| unicode:: \x2778
-.. |4| unicode:: \x2779
 
 |1| Main Window
-   Everything is inside this widget. Usually it's a ``tkinter.Tk`` root
-   window, but it may be a ``Toplevel`` widget as well. You can
-   access this widget with :func:`porcupine.get_main_window`.
+   Everything is inside this widget. Usually it's a ``tkinter.Tk`` root window,
+   but it might be a ``Toplevel`` widget in a future version of Porcupine. You
+   can access this widget with :func:`porcupine.get_main_window`.
 
-|2| Menu Bar
-   The :mod:`porcupine.menubar` module contains functions for accessing this
-   widget and adding more items to it. However, most of the time it's easiest
-   to use :func:`porcupine.add_action` as shown above.
+|2| Tab Manager
+   This widget contains tabs (as in browser tabs, not ``\t`` characters), and
+   :source:`the welcome plugin <porcupine/plugins/welcome.py>` displays a
+   welcome message in it when there are no tabs. This widget is a
+   :class:`porcupine.tabs.TabManager` and can be accessed with
+   :func:`porcupine.get_tab_manager`.
 
-|3| Tab Manager
-   This widget contains tabs (see below), and a welcome message when there are
-   no tabs to display. This widget is a :class:`porcupine.tabs.TabManager` and
-   can be accessed with :func:`porcupine.get_tab_manager`.
-
-|4| A Tab
+|3| A Tab
    Tabs are :class:`porcupine.tabs.Tab` widgets, and you can access them with
    the tab manager's :attr:`tabs <porcupine.tabs.TabManager.tabs>` attribute.
    This tab is a :class:`porcupine.tabs.FileTab` because it represents a new
-   file. The text widget and scroll bar are just widgets packed inside the tab.
-   The ``New File`` label can be accessed with the tab's
-   :attr:`top_label <porcupine.tabs.Tab.top_label>` attribute, but it's not
-   packed inside the tab.
-
-   Not all tabs need to be file tabs. In fact, you can easily create custom
-   kinds of tabs that contain any Tk widgets. See :mod:`porcupine.tabs`
-   for more instructions.
-
-
-That should be plenty of useful links for you to get started with things.
+   file, but you can also create custom tabs that contain any tkinter widgets.
+   See :mod:`porcupine.tabs` for more documentation about tabs.
 
 
 .. _virtual-events:
@@ -172,8 +167,10 @@ to them in plugins.
 Be careful to spell virtual event names correctly. We didn't really define the
 ``<<PrintHi>>`` event anywhere, so if we spell ``<PrintHi>>`` correctly in one
 place and misspell it like ``<<PirntHi>>`` somewhere else we don't get any
-errors. Porcupine's autocompletion is useful for this.
+errors.
 
+
+.. _plugin-intro-pitfalls:
 
 Potential Pitfalls
 ------------------
@@ -218,7 +215,7 @@ Binding Key Presses
 ^^^^^^^^^^^^^^^^^^^
 
 If you want to bind a key press **globally** you should use
-:func:`porcupine.add_action` in most cases, but you can also bind on the main
+:mod:`porcupine.actions` in most cases, but you can also bind on the main
 window, like this::
 
    def print_hello(event):

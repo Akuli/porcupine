@@ -1,8 +1,7 @@
 import platform
 import subprocess
 
-import porcupine
-from porcupine import tabs, utils
+from porcupine import actions, get_tab_manager, utils
 
 
 def run_autopep8(code):
@@ -43,8 +42,8 @@ def run_autopep8(code):
     return output.decode('utf-8')
 
 
-def on_click():
-    widget = porcupine.get_tab_manager().current_tab.textwidget
+def callback():
+    widget = get_tab_manager().current_tab.textwidget
     before = widget.get('1.0', 'end - 1 char')
     after = run_autopep8(before)
     if after is None:
@@ -60,4 +59,4 @@ def on_click():
 
 
 def setup():
-    porcupine.add_action(on_click, "Tools/autopep8", tabtypes=[tabs.FileTab])
+    actions.add_command("Tools/autopep8", callback, filetype_names=["Python"])

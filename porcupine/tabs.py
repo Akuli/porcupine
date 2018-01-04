@@ -60,11 +60,17 @@ class _Pane(ttk.Notebook):
                     another_pane = all_panes[all_panes.index(self) - 1]
                 another_pane.select().on_focus()
                 self.master._current_pane = another_pane   # just to be sure
+                generate_the_event = False
             else:
                 # no, this is the last pane in the whole tab manager
                 self.master._current_pane = None
+                generate_the_event = True
 
+            # the event_generate must be after telling the tab manager
+            # to forget about this pane, otherwise it complains that
+            # _current_pane was set to None even though there are panes
             self.master.forget(self)
+            self.master.event_generate('<<CurrentTabChanged>>')
             self.destroy()
 
     # diff should be +1 for selecting a tab at right or -1 for left
@@ -409,22 +415,20 @@ class Tab(ttk.Frame):
     You can easily create custom kinds of tabs by inheriting from this
     class. Here's a very minimal but complete example plugin::
 
-        import tkinter as tk
-        import porcupine
-        from porcupine import tabs
+        from tkinter import ttk
+        from porcupine import actions, get_tab_manager, tabs
 
         class HelloTab(tabs.Tab):
             def __init__(self, manager):
                 super().__init__(manager)
                 self.title = "Hello"
-                tk.Label(self, text="Hello World!").pack()
+                ttk.Label(self, text="Hello World!").pack()
 
         def new_hello_tab():
-            manager = porcupine.get_tab_manager()
-            manager.add_tab(HelloTab(manager))
+            get_tab_manager().add_tab(HelloTab(get_tab_manager()))
 
         def setup():
-            porcupine.add_action(new_hello_tab, 'Hello/New Hello Tab')
+            actions.add_command('Hello/New Hello Tab', new_hello_tab)
 
     Note that you need to use the pack geometry manager when creating
     custom tabs. If you want to use grid or place you can create a frame

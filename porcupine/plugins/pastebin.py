@@ -1,3 +1,4 @@
+# remember to update this file if the pythonprompt plugin will work some day
 # FIXME: this is way too python-specific :(
 
 import functools
@@ -13,9 +14,9 @@ try:
 except ImportError:
     requests = None
 
-import porcupine
-from porcupine import tabs, utils
+from porcupine import actions, get_main_window, get_tab_manager, tabs, utils
 from porcupine import __version__ as _porcupine_version
+
 try:
     from porcupine.plugins import pythonprompt
 except ImportError:
@@ -23,10 +24,6 @@ except ImportError:
 
 
 log = logging.getLogger(__name__)
-
-# this makes the "Run" menu always appear before the "Pastebin to" menu,
-# most people need the run menu more than the pastebin menu
-setup_after = ['run']
 
 _pastebins = {}
 
@@ -191,7 +188,7 @@ class Paste:
 
     def make_please_wait_window(self):
         window = self.please_wait_window = tkinter.Toplevel()
-        window.transient(porcupine.get_main_window())
+        window.transient(get_main_window())
         window.title("Pasting...")
         window.geometry('350x150')
         window.resizable(False, False)
@@ -213,7 +210,7 @@ class Paste:
         progressbar.start()
 
     def start(self):
-        window = porcupine.get_main_window()
+        window = get_main_window()
         busy_status = window.tk.call('tk', 'busy', 'status', window)
         if window.getboolean(busy_status):
             # we are already pasting something somewhere or something
@@ -230,7 +227,7 @@ class Paste:
         utils.run_in_thread(paste_it, self.done_callback)
 
     def done_callback(self, success, result):
-        window = porcupine.get_main_window()
+        window = get_main_window()
         window.tk.call('tk', 'busy', 'forget', window)
         self.please_wait_window.destroy()
 
@@ -252,7 +249,7 @@ class Paste:
 
 
 def start_pasting(pastebin_name):
-    tab = porcupine.get_tab_manager().current_tab
+    tab = get_tab_manager().current_tab
     try:
         code = tab.textwidget.get('sel.first', 'sel.last')
     except tkinter.TclError:
@@ -273,6 +270,6 @@ def setup():
         tabtypes.append(pythonprompt.PromptTab)
 
     for name in sorted(_pastebins, key=str.casefold):
-        assert '/' not in name, "porcupine.add_action() needs to be fixed"
+        assert '/' not in name, "porcupine.actions needs to be fixed"
         callback = functools.partial(start_pasting, name)
-        porcupine.add_action(callback, "Share/" + name, tabtypes=tabtypes)
+        actions.add_command("Share/" + name, callback, tabtypes=tabtypes)

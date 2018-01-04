@@ -13,7 +13,6 @@ these functions do.
 
 .. autofunction:: get_main_window
 .. autofunction:: get_tab_manager
-.. autofunction:: add_action
 .. autofunction:: porcupine.quit
 
 

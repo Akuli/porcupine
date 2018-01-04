@@ -1,8 +1,9 @@
 # see also: https://github.com/RedFantom/ttkthemes
+# TODO: capitalize theme names in menu items?
 import functools
 import tkinter
 
-from porcupine import menubar, settings
+from porcupine import actions, settings
 import ttkthemes
 
 config = settings.get_section('General')
@@ -25,8 +26,5 @@ def setup():
     config.add_option('ttk_theme', default_theme, reset=False)
     config.connect('ttk_theme', functools.partial(on_theme_changed, style),
                    run_now=True)
-
-    menu = menubar.get_menu('Ttk Themes')
-    for theme in sorted(style.get_themes()):
-        menu.add_radiobutton(label=theme.title(), value=theme,
-                             variable=config.get_var('ttk_theme'))
+    actions.add_choice("Ttk Themes", sorted(style.get_themes()),
+                       var=config.get_var('ttk_theme'))

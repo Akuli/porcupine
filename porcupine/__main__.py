@@ -10,7 +10,7 @@ import tkinter
 
 import porcupine
 from porcupine import (_ipc, _logs, _pluginloader, _session,
-                       dirs, filetypes, menubar, settings, tabs, utils)
+                       dirs, filetypes, settings, tabs, utils)
 
 log = logging.getLogger(__name__)
 
@@ -186,7 +186,6 @@ def main():
 
     filetypes._init()
     utils._init_images()
-    root['menu'] = menubar._init()
 
     tabmanager = tabs.TabManager(root)
     tabmanager.pack(fill='both', expand=True)

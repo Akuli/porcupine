@@ -47,6 +47,8 @@ The ``porcupine.filetypes`` module
 This module exposes an API for things that are defined in ``filetypes.ini``.
 
 
+.. _filetype-objects:
+
 Filetype Objects
 ^^^^^^^^^^^^^^^^
 
