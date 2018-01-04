@@ -175,7 +175,6 @@ pygments_lexer = pygments.lexers.MarkdownLexer
 
 
 log = logging.getLogger(__name__)
-_INI_FILE_PATH = os.path.join(dirs.configdir, 'filetypes.ini')
 
 # on startup, all file types specified in the config file are loaded to
 # _config and _filetypes, and new filetypes are added to them if the
@@ -186,6 +185,12 @@ _config = configparser.ConfigParser()
 # ordered to make sure that filetypes loaded from filetypes.ini are used
 # when possible
 _filetypes = collections.OrderedDict()     # {name: _FileType}
+
+
+# this cannot be a global variable because tests load this module
+# and THEN change dirs.configdir
+def _get_ini_path():
+    return os.path.join(dirs.configdir, 'filetypes.ini')
 
 
 # _FileType.__init__ raises this, str()'ing this error returns an option name
@@ -272,7 +277,7 @@ class _FileType:
 def guess_filetype(filename):
     """Return a filetype object for a file name."""
     try:
-        if os.path.samefile(filename, _INI_FILE_PATH):
+        if os.path.samefile(filename, _get_ini_path()):
             return _filetypes['Porcupine filetypes.ini']
     except FileNotFoundError:
         # the file doesn't exist yet
@@ -334,13 +339,13 @@ def _init():
 
     try:
         # config.read() suppresses exceptions
-        with open(_INI_FILE_PATH, 'r', encoding='utf-8') as file:
+        with open(_get_ini_path(), 'r', encoding='utf-8') as file:
             _config.read_file(file)
     except FileNotFoundError:
         # the config has nothing but the stupid defaults in it right now
         log.info("filetypes.ini not found, creating it")
         _config.read_string(_STUPID_DEFAULTS)
-        with open(_INI_FILE_PATH, 'w', encoding='utf-8') as file:
+        with open(_get_ini_path(), 'w', encoding='utf-8') as file:
             file.write(_STUPID_DEFAULTS)
     except (OSError, UnicodeError, configparser.Error) as err:
         # full tracebacks are ugly and this is supposed to be visible to users

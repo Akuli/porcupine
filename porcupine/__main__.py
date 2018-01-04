@@ -23,19 +23,20 @@ def _iter_queue(queue):
             break
 
 
-def open_file(path, content, tabmanager):
+def open_file(path, content):
     if (path, content) != (None, None):
+        tabmanager = porcupine.get_tab_manager()
         tabmanager.add_tab(tabs.FileTab(tabmanager, content, path))
 
 
-def queue_opener(queue, main_window, tabmanager):
+def queue_opener(queue, main_window):
     gonna_focus = False
     for path, content in _iter_queue(queue):
         # if porcupine is running and the user runs it again without any
         # arguments, then path and content are None and we just focus
         # the editor window
         gonna_focus = True
-        open_file(path, content, tabmanager)
+        open_file(path, content)
 
     if gonna_focus:
         if main_window.tk.call('tk', 'windowingsystem') == 'win32':
@@ -52,7 +53,7 @@ def queue_opener(queue, main_window, tabmanager):
             main_window.deiconify()
             main_window.geometry(geometry)
 
-    main_window.after(200, queue_opener, queue, main_window, tabmanager)
+    main_window.after(200, queue_opener, queue, main_window)
 
 
 # these actions are based on argparse's source code
@@ -186,13 +187,7 @@ def main():
 
     filetypes._init()
     utils._init_images()
-
-    tabmanager = tabs.TabManager(root)
-    tabmanager.pack(fill='both', expand=True)
-    for binding, callback in tabmanager.bindings:
-        root.bind(binding, callback, add=True)
-
-    _session.init(root, tabmanager)
+    _session.init(root)
     _session.setup_actions()
 
     if args.yes_plugins:
@@ -200,12 +195,12 @@ def main():
 
     # see queue_opener()
     for path, content in filelist:
-        open_file(path, content, tabmanager)
+        open_file(path, content)
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the whole thing in try/with/finally/whatever
     with _ipc.session() as queue:
-        root.after_idle(queue_opener, queue, root, tabmanager)
+        root.after_idle(queue_opener, queue, root)
         try:
             root.mainloop()
         finally:

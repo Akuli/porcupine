@@ -13,13 +13,18 @@ _tab_manager = None
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
-def init(main_window, tab_manager):
+def init(main_window):
     global _main_window
     global _tab_manager
-
     assert _main_window is None and _tab_manager is None
+
+    tabmanager = tabs.TabManager(main_window)
+    tabmanager.pack(fill='both', expand=True)
+    for binding, callback in tabmanager.bindings:
+        main_window.bind(binding, callback, add=True)
+
     _main_window = main_window
-    _tab_manager = tab_manager
+    _tab_manager = tabmanager
 
 
 def get_main_window():

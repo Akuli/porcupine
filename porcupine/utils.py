@@ -129,6 +129,76 @@ def invert_color(color):
     return '#%02x%02x%02x' % (r, g, b)
 
 
+def bind_with_data(widget, sequence, callback, add=False):
+    """
+    Like ``widget.bind(sequence, callback)``, but supports the ``data``
+    argument of ``event_generate()``.
+
+    Here's an example::
+
+        from porcupine import utils
+
+        def on_wutwut(event):
+            print(event.data)
+
+        utils.bind_with_data(some_widget, '<<Thingy>>', on_wutwut, add=True)
+
+        # this prints 'wut wut'
+        some_widget.event_generate('<<Thingy>>', data='wut wut')
+
+    Note that everything is a string in Tcl, so tkinter ``str()``'s the data.
+
+    The event objects have all the attributes that tkinter events
+    usually have, and these additional attributes:
+
+        ``data``
+            See the above example.
+
+        ``data_int`` and ``data_float``
+            These are set to ``int(event.data)`` and ``float(event.data)``,
+            or None if ``data`` is not a valid integer or float.
+
+        ``data_widget``
+            If a widget was passed as ``data`` to ``event_generate()``,
+            this is that widget. Otherwise this is None.
+    """
+    # tkinter creates event objects normally and appends them to the
+    # deque, then run_callback() adds data_blablabla attributes to the
+    # event objects and runs callback(event)
+    event_objects = collections.deque()
+    widget.bind(sequence, event_objects.append, add=add)
+
+    def run_the_callback(data_string):
+        event = event_objects.popleft()
+        event.data = data_string
+
+        try:
+            event.data_int = int(data_string)
+        except ValueError:
+            event.data_int = None
+
+        try:
+            event.data_float = float(data_string)
+        except ValueError:
+            event.data_float = None
+
+        try:
+            event.data_widget = widget.nametowidget(data_string)
+        # nametowidget raises KeyError when the widget is unknown, but
+        # that feels like an implementation detail
+        except Exception:
+            event.data_widget = None
+
+        return callback(event)      # may return 'break'
+
+    # tkinter's bind() ignores the add argument when the callback is a
+    # string :(
+    funcname = widget.register(run_the_callback)
+    widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
+                   % (widget, sequence, funcname))
+    return funcname
+
+
 @contextlib.contextmanager
 def temporary_bind(widget, sequence, func):
     """Bind and unbind a callback.
@@ -152,10 +222,13 @@ def temporary_bind(widget, sequence, func):
         # everything else still runs
 
     Calls to this function may be nested, and other things can be bound
-    inside the ``with`` block.
+    inside the ``with`` block as long as ``add=True`` is used.
+
+    The event objects support the same additional attributes as those
+    from :func:`bind_with_data`.
     """
     not_bound_commands = widget.bind(sequence)
-    tcl_command = widget.bind(sequence, func, add=True)
+    tcl_command = bind_with_data(widget, sequence, func, add=True)
     bound_commands = widget.bind(sequence)
     assert bound_commands.startswith(not_bound_commands)
     new_things = bound_commands[len(not_bound_commands):]
@@ -239,74 +312,6 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
 
         widget.bind('<{}MouseWheel>'.format(prefixes),
                     real_callback, **bind_kwargs)
-
-
-def bind_with_data(widget, sequence, callback, add=False):
-    """
-    Like ``widget.bind(sequence, callback)``, but supports the ``data``
-    argument of ``event_generate()``.
-
-    Here's an example::
-
-        from porcupine import utils
-
-        def on_wutwut(event):
-            print(event.data)
-
-        utils.bind_with_data(some_widget, '<<Thingy>>', on_wutwut, add=True)
-
-        # this prints 'wut wut'
-        some_widget.event_generate('<<Thingy>>', data='wut wut')
-
-    Note that everything is a string in Tcl, so tkinter ``str()``'s the data.
-
-    The event objects have all the attributes that tkinter events
-    usually have, and these additional attributes:
-
-        ``data``
-            See the above example.
-
-        ``data_int`` and ``data_float``
-            These are set to ``int(event.data)`` and ``float(event.data)``,
-            or None if ``data`` is not a valid integer or float.
-
-        ``data_widget``
-            If a widget was passed as ``data`` to ``event_generate()``,
-            this is that widget. Otherwise this is None.
-    """
-    # tkinter creates event objects normally and appends them to the
-    # deque, then run_callback() adds data_blablabla attributes to the
-    # event objects and runs callback(event)
-    event_objects = collections.deque()
-    widget.bind(sequence, event_objects.append, add=add)
-
-    def run_the_callback(data_string):
-        event = event_objects.popleft()
-        event.data = data_string
-
-        try:
-            event.data_int = int(data_string)
-        except ValueError:
-            event.data_int = None
-
-        try:
-            event.data_float = float(data_string)
-        except ValueError:
-            event.data_float = None
-
-        try:
-            event.data_widget = widget.nametowidget(data_string)
-        # nametowidget raises KeyError when the widget is unknown, but
-        # that feels like an implementation detail
-        except Exception:
-            event.data_widget = None
-
-        return callback(event)      # may return 'break'
-
-    # tkinter's bind() ignores the add argument when the callback is a
-    # string :(
-    widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
-                   % (widget, sequence, widget.register(run_the_callback)))
 
 
 def copy_bindings(widget1, widget2):

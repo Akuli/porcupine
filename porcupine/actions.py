@@ -26,7 +26,7 @@ class _Action:
         elif kind == 'yesno':
             self.var = var
         else:
-            raise AssertionError("this shouldn't happen")
+            raise AssertionError("this shouldn't happen")  # pragma: no cover
 
     def __repr__(self):
         return '<Action object %r: kind=%r, enabled=%r>' % (
@@ -49,9 +49,10 @@ class _Action:
             porcupine.get_main_window().event_generate(event, data=self.path)
 
     def _var_set_check(self, *junk):
-        if self.var.get() not in self.choices:
+        value = self.var.get()
+        if value not in self.choices:
             warnings.warn("the var of %r was set to %r which is not one "
-                          "of the choices" % self, RuntimeWarning)
+                          "of the choices" % (self, value), RuntimeWarning)
 
 
 def _add_any_action(path, kind, callback_or_choices, binding, var, *,
@@ -61,6 +62,8 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
     if filetype_names is not None and tabtypes is not None:
         # python raises TypeError when it comes to invalid arguments
         raise TypeError("only one of filetype_names and tabtypes can be used")
+    if path in _actions:
+        raise RuntimeError("there's already an action with path %r" % path)
 
     # event_generate must be before setting action.enabled, this way
     # plugins get a chance to do something to the new action before it's
@@ -145,6 +148,8 @@ def add_yesno(path, default=None, keyboard_binding=None, *,
             raise TypeError("specify default or var")
         var = tkinter.BooleanVar()
         var.set(default)
+    elif default is not None:
+        var.set(default)
 
     return _add_any_action(path, 'yesno', default,
                            keyboard_binding, var, **kwargs)
@@ -165,10 +170,21 @@ def add_choice(path, choices, default=None, *, var=None, **kwargs):
     created.
     """
     if var is None:
-        var = tkinter.StringVar()
         if default is None:
             default = choices[0]
+        elif default not in choices:
+            raise ValueError("default value %r is not in choices" % (default,))
+        var = tkinter.StringVar()
         var.set(default)
+    else:
+        if var.get() not in choices:
+            raise ValueError("the var's current value %r is not in choices"
+                             % var.get())
+        if default is not None:
+            if default not in choices:
+                raise ValueError("default value %r is not in choices"
+                                 % (default,))
+            var.set(default)
 
     return _add_any_action(path, 'choice', choices, None, var, **kwargs)
 
