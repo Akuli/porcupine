@@ -100,15 +100,13 @@ ASCII in the setting dialog::
            messagebox.showwarning("ASCII Warning", "ASCII doesn't do æøå!")
 
    def setup():
-       # add run_now=True if you want to display the warning when
-       # Porcupine starts with encoding set to ASCII
+       # this runs on_encoding_changed(general_config['encoding'])
+       # see the note about run_now below
        general_config.connect('encoding', on_encoding_changed)
 
-.. note::
-   There's nothing wrong with using tkinter things like
-   ``messagebox.showwarning()`` in callback functions, but tkinter isn't
-   thread-safe so you must not set config values from threads if you use
-   :mod:`threading`.
+There's nothing wrong with using tkinter things like
+``messagebox.showwarning()`` in callback functions, but tkinter isn't
+thread-safe so you must not set config values from threads.
 
 .. automethod:: section.connect
 .. automethod:: section.disconnect
