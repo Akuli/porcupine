@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
+# usage: ./bash_run.sh [--dont-wait] MESSAGE DIRECTORY COMMAND ARGUMENT ...
 # echo MESSAGE in blue, run COMMAND with ARGUMENTS in DIRECTORY and
 # optionally do a "press enter to continue" thingy
-# usage: bash_run.sh [--dont-wait] MESSAGE DIRECTORY COMMAND ARGUMENT ...
+#
 # the shebang says bash instead of sh because bash seems to handle SIGINT
 # better than Debian's /bin/sh (which is a symlink to /bin/dash)
 
-if test "$1" = --dont-wait; then
+if [ "$1" = --dont-wait ]; then
     wait=no
     shift
 else
@@ -17,10 +18,17 @@ cd "$2"
 command="$3"
 shift 3
 "$command" "$@"
+returncode=$?
 
-if test $wait = yes; then
-    echo ""
-    echo "-----------------------------"
-    echo "Your program completed. Press Enter to close this window..."
+echo ""
+echo "-----------------------------"
+if [ $returncode = 0 ]; then
+    echo "The program completed successfully."
+else
+    echo "The program failed with status $returncode."
+fi
+
+if [ $wait = yes ]; then
+    echo "Press Enter to close this window..."
     read junk
 fi

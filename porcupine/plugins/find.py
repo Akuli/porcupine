@@ -98,7 +98,6 @@ class Finder(ttk.Frame):
             self._statuslabel['text'] = ''
 
             line, col, match_len = match
-
             start = "%d.%d" % (line, col)
             end = "%s + %d chars" % (start, match_len)
 

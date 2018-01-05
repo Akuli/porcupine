@@ -104,7 +104,7 @@ max_line_length = 79
 
 # flake8 is the default because pylint doesn't like my code :/ </3
 run_command = %(python)s {file}
-lint_command = %(python)s -m flake8
+lint_command = %(python)s -m flake8 {file}
 
 # any style settings for some of these freely indentable languages would make
 # some people hate me
