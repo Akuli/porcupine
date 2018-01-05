@@ -91,9 +91,10 @@ class Highlighter:
                     weight=('bold' if bold else 'normal'),
                     slant=('italic' if italic else 'roman'))
 
-        config.connect('pygments_style', self._on_config_changed)
-        config.connect('font_family', self._on_config_changed)
-        config.connect('font_size', self._on_config_changed)
+        config.connect('pygments_style', self._on_config_changed,
+                       run_now=False)
+        config.connect('font_family', self._on_config_changed, run_now=False)
+        config.connect('font_size', self._on_config_changed, run_now=False)
         self._on_config_changed()
         self.textwidget.after(50, self._do_highlights)
 

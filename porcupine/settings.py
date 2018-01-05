@@ -166,18 +166,36 @@ class _ConfigSection(collections.abc.MutableMapping):
         """
         self[key] = self._infos[key].default
 
-    def connect(self, key, callback, run_now=False):
+    def connect(self, key, callback, run_now=True):
         """
         Schedule ``callback(section[key])`` to be called when the value
         of an option changes.
 
         If *run_now* is True, ``callback(section[key])`` is also called
-        immediately when ``connect()`` is called. More than one callback
-        can be connected to the same key.
+        immediately when ``connect()`` is called, and the option is
+        reset if the callback raises :exc:`InvalidValue`.
+
+        .. note::
+            *run_now* is True by default, so if you don't want to run
+            the callback right away you need an explicit
+            ``run_now=False``.
+
+        More than one callback can be connected to the same key.
         """
-        self._infos[key].callbacks.append(callback)
         if run_now:
-            callback(self[key])
+            try:
+                callback(self[key])
+            except InvalidValue:
+                try:
+                    func_name = (callback.__module__ + '.' +
+                                 callback.__qualname__)
+                except AttributeError:
+                    func_name = repr(callback)
+                log.warning(
+                    "%s: %r value %r is invalid according to %s, resetting"
+                    % (self._name, key, self[key], func_name))
+                self.reset(key)
+        self._infos[key].callbacks.append(callback)
 
     def disconnect(self, key, callback):
         """Undo a :meth:`~connect` call."""
@@ -224,8 +242,9 @@ class _ConfigSection(collections.abc.MutableMapping):
         def var2config(*junk):
             try:
                 value = var.get()
-            except tkinter.TclError:
+            except (tkinter.TclError, ValueError):
                 # example: var_type is IntVar and the actual value is 'lol'
+                # not-very-latest pythons use int() and raise ValueError
                 info.errorvar.set(True)
                 return
 
@@ -237,7 +256,7 @@ class _ConfigSection(collections.abc.MutableMapping):
 
             info.errorvar.set(False)
 
-        self.connect(key, var.set, run_now=True)
+        self.connect(key, var.set)      # runs var.set
         var.trace('w', var2config)
 
         self._var_cache[key] = var
@@ -430,11 +449,9 @@ def _init():
     # when font_family changes:  fixedfont['family'] = new_family
     # when font_size changes:    fixedfont['size'] = new_size
     general.connect(
-        'font_family', functools.partial(fixedfont.__setitem__, 'family'),
-        run_now=True)
+        'font_family', functools.partial(fixedfont.__setitem__, 'family'))
     general.connect(
-        'font_size', functools.partial(fixedfont.__setitem__, 'size'),
-        run_now=True)
+        'font_size', functools.partial(fixedfont.__setitem__, 'size'))
 
     # TODO: allow file-specific encodings if someone complains about this
     general.add_option('encoding', 'UTF-8')

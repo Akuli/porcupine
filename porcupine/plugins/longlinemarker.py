@@ -22,9 +22,9 @@ class LongLineMarker:
         self._height = 0        # on_configure() will run later
 
     def setup(self):
-        config.connect('font_family', self.do_update)
-        config.connect('font_size', self.do_update)
-        config.connect('pygments_style', self.on_style_changed, run_now=True)
+        config.connect('font_family', self.do_update, run_now=False)
+        config.connect('font_size', self.do_update, run_now=False)
+        config.connect('pygments_style', self.on_style_changed)
         self.tab.textwidget.bind('<Configure>', self.on_configure, add=True)
         self.tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
         self.tab.bind('<Destroy>', self.on_destroy, add=True)
