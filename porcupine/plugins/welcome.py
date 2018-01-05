@@ -8,14 +8,13 @@ from porcupine import get_tab_manager, images, utils
 
 
 RAW_MESSAGE = """
-Porcupine is a simple, beginner-friendly editor for writing Python code.
-If you ever used anything like Notepad, Microsoft Word or LibreOffice
-Writer before, you will feel right at home.
+Porcupine is a simple, beginner-friendly editor. If you ever used
+anything like Notepad, Microsoft Word or LibreOffice Writer before, you
+will feel right at home.
 
-You can create a new file by pressing Ctrl+N or open an existing file by
-pressing Ctrl+O. The file name will be displayed in red if the file has
-been changed and you can save the file with Ctrl+S. Then you can run the
-file by pressing F5.
+To get started, create a new file by pressing Ctrl+N or open an existing
+file by pressing Ctrl+O. You can save the file with Ctrl+S or run a
+program by pressing F5.
 
 See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
@@ -34,8 +33,9 @@ class WelcomeMessageDisplayer:
         # make it about 200 pixels wide by taking every magic'th pixel
         magic = images.get('logo').width() // 200
         self._image = images.get('logo').subsample(magic)
-
         self._frame = ttk.Frame(get_tab_manager())
+
+        # pad only on left side so the image goes as far right as possible
         top = ttk.Frame(self._frame)
         top.pack(fill='x', padx=(BORDER_SIZE, 0))
         ttk.Label(top, image=self._image).pack(side='right')
@@ -44,12 +44,12 @@ class WelcomeMessageDisplayer:
         centerer = ttk.Frame(top)
         centerer.pack(fill='both', expand=True)
         self.title_label = ttk.Label(
-            centerer, text="Welcome to Porcupine!", font=('', 18, 'bold'))
+            centerer, text="Welcome to Porcupine!", font=('', 25, 'bold'))
         self.title_label.place(relx=0.5, rely=0.5, anchor='center')
 
         self.message_label = ttk.Label(
             self._frame, text=MESSAGE, font=('', 14, ''))
-        self.message_label.pack()
+        self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()
 
