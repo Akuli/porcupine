@@ -36,7 +36,12 @@ it shows up as an empty window!
 
 ## Installing Porcupine
 
+There are [more detailed instructions on Porcupine
+Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
+
 ### Debian-based Linux distributions (e.g. Ubuntu, Mint)
+
+Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip
     python3 -m pip install --user http://goo.gl/SnlfHw
@@ -50,7 +55,7 @@ command:
     python3 -m pip install --user http://goo.gl/SnlfHw
     python3 -m porcupine &
 
-### OSX
+### Mac OSX
 
 I don't have a Mac. If you have a Mac, you can help me a lot by installing
 Porcupine and letting me know how well it works.
@@ -67,13 +72,6 @@ installed. Then open PowerShell or command prompt, and run these commands:
 
     py -m pip install --user http://goo.gl/SnlfHw
     pyw -m porcupine
-
-### Other operating systems
-
-    python3 -m pip install --user http://goo.gl/SnlfHw
-
-There are [more detailed instructions on Porcupine
-Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
 
 ## FAQ
 
