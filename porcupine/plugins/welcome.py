@@ -48,7 +48,7 @@ class WelcomeMessageDisplayer:
         self.title_label.place(relx=0.5, rely=0.5, anchor='center')
 
         self.message_label = ttk.Label(
-            self._frame, text=MESSAGE, font=('', 14, ''))
+            self._frame, text=MESSAGE, font=('', 15, ''))
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()

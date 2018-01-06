@@ -2,7 +2,7 @@ from porcupine import get_main_window, settings
 
 
 config = settings.get_section('General')
-config.add_option('default_geometry', '650x500', reset=False)
+config.add_option('default_geometry', '650x600', reset=False)
 
 
 def save_geometry(event):
