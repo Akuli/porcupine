@@ -69,6 +69,7 @@ Filetype objects have these attributes and methods:
 
 .. attribute:: somefiletype.filename_patterns
 .. attribute:: somefiletype.mimetypes
+.. attribute:: somefiletype.shebang_regex
 .. attribute:: somefiletype.tabs2spaces
 .. attribute:: somefiletype.indent_size
 .. attribute:: somefiletype.max_line_length
@@ -76,13 +77,17 @@ Filetype objects have these attributes and methods:
     See your ``filetype.ini`` for details regarding each attribute. Types or
     possible values are listed here:
 
-    ========================    ====================
+    ========================    ========================================
     ``filename_patterns``       list of strings
     ``mimetypes``               list of strings
+    ``shebang_regex``           a regex object from :func:`re.compile`
     ``tabs2spaces``             True or False
     ``indent_size``             int
     ``max_line_length``         int
-    ========================    ====================
+    ========================    ========================================
+
+    If no ``shebang_regex`` is given in ``filetypes.ini``, ``shebang_regex`` is
+    set to a regex object that matches nothing.
 
 .. method:: somefiletype.get_lexer(**kwargs)
 

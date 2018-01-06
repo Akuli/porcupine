@@ -1,5 +1,4 @@
-"""Everything related to filetypes.ini."""
-# TODO: support shebangs like a modern editor should??
+"""Stuff related to filetypes.ini."""
 
 import collections
 import configparser
@@ -37,6 +36,7 @@ _STUPID_DEFAULTS = '''\
 # Valid keys:
 #   filename_patterns   space-separated list of patterns like *.py or *.txt
 #   mimetypes           space-separated list of MIME types
+#   shebang_regex       regular expression for shebangs
 #   pygments_lexer      for syntax highlighting, see below
 #   tabs2spaces         yes or no
 #   indent_size         number of spaces or tab width, positive integer
@@ -45,19 +45,27 @@ _STUPID_DEFAULTS = '''\
 #   run_command         see below
 #   lint_command        see below
 #
-# If any of these are not specified, the values in the [DEFAULT] section will
-# be used instead.
-#
 # As you can see, Porcupine can detect the correct filetype based on the
-# filename or the MIME type. You can just use filename_patterns if you don't
-# know what MIME types are. If no matching filetype is found but the Pygments
-# highlighting library (see below) knows something about the file, Porcupine
-# uses it and values in the [DEFAULT] section. The [DEFAULT] section will be
-# used if Pygments knows nothing about the file.
+# filename, MIME type or shebang. Use filename_patterns if you don't know what
+# MIME types, shebangs and regexes are; * means anything, so '*.txt' means
+# anything that ends with '.txt'.
+#
+# The shebang regex can contain anything accepted by Python's re module that
+# matches any part of a shebang, or empty for no shebang checking. If you want
+# to match the full shebang including the #! part, put it between ^ and $
+# characters. Run help('re') in Python for more info about Python's regexes.
+# Arguments starting with - are removed from the shebang before checking, so a
+# regex like '^#!/blah/blah$' matches the shebang '#!/blah/blah --wat'.
+#
+# If no matching filetype is found but the Pygments highlighting library (see
+# below) knows something about the file, Porcupine uses it and values in the
+# [DEFAULT] section. Porcupine displays these filetypes with ' (not from
+# filetypes.ini)' at the end of their names. The [DEFAULT] section is used if
+# Pygments knows nothing about the file.
 #
 # Set pygments_lexer_name to pygments.lexers.SomethingLexer or the full name of
-# any other importable Python class. Note that Pygments lets you omit the part
-# after pygments.lexers; e.g. pygments.lexers.Python3Lexer is equivalent to
+# any other Pygments lexer class. Note that Pygments lets you omit the part
+# after pygments.lexers, e.g. pygments.lexers.Python3Lexer is equivalent to
 # pygments.lexers.python.Python3Lexer. Here's a list of lexers that Pygments
 # comes with:  http://pygments.org/docs/lexers/
 #
@@ -84,6 +92,7 @@ _STUPID_DEFAULTS = '''\
 # way, not because i like them this way
 filename_patterns =
 mimetypes =
+shebang_regex =
 pygments_lexer = pygments.lexers.TextLexer
 tabs2spaces = yes
 indent_size = 4
@@ -95,6 +104,7 @@ lint_command =
 [Python]
 mimetypes = text/x-python application/x-python text/x-python3 application/x-py\
 thon3
+shebang_regex = python(\d(\.\d)?)?$
 pygments_lexer = pygments.lexers.Python3Lexer
 
 # pep8-based brainwashing: KITTENS DIE IF YOU USE WRONG STYLE
@@ -144,18 +154,19 @@ tabs2spaces = no
 run_command = make
 
 # TODO: Windows batch files and powershell files
-
-# TODO: this really needs a shebang when porcupine will support them
 # i'm not trying to discriminate anyone with pygments_lexer and
 # run_command, change them if you want to
+# shebang_regex is partly copy/pasted from nano's default config
 [Shell]
 filename_patterns = *.sh
+shebang_regex = ((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$
 pygments_lexer = pygments.lexers.BashLexer
 run_command = bash {file}
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
 mimetypes = text/x-tcl text/x-script.tcl application/x-tcl
+shebang_regex = (wi|tcl)sh$
 pygments_lexer = pygments.lexers.TclLexer
 indent_size = 3
 tabs2spaces = yes
@@ -190,7 +201,9 @@ log = logging.getLogger(__name__)
 # _config and _filetypes, and new filetypes are added to them if the
 # user opens a file that doesn't match any of the existing file types
 # _config is never saved back to filetypes.ini
-_config = configparser.ConfigParser()
+#
+# interpolation=None allows using % signs in the config
+_config = configparser.ConfigParser(interpolation=None)
 
 # ordered to make sure that filetypes loaded from filetypes.ini are used
 # when possible
@@ -211,16 +224,22 @@ class _OptionError(Exception):
 class _FileType:
 
     def __init__(self, name):
-        assert name not in _filetypes and name in _config
+        assert name not in _filetypes
         section = _config[name]
         self.name = name
         self.filename_patterns = section['filename_patterns'].split()
         self.mimetypes = section['mimetypes'].split()
 
         # this is kind of verbose, but not too bad imo
-        # unknown options are ignored, newer porcupines might have more
-        # keys and this way it should be possible to use the same config
-        # file painlessly with different porcupines
+
+        if section['shebang_regex']:
+            try:
+                self.shebang_regex = re.compile(section['shebang_regex'])
+            except re.error as e:
+                raise _OptionError('shebang_regex') from e
+        else:
+            # regex that matches nothing
+            self.shebang_regex = re.compile(r'before start of string^')
 
         try:
             modulename, classname = section['pygments_lexer'].rsplit('.', 1)
@@ -289,16 +308,38 @@ def guess_filetype(filename):
     try:
         if os.path.samefile(filename, _get_ini_path()):
             return _filetypes['Porcupine filetypes.ini']
-    except FileNotFoundError:
+    except OSError:
         # the file doesn't exist yet
         pass
 
+    try:
+        # the shebang is read as utf-8 because the filetype config file
+        # is utf-8
+        with open(filename, 'r', encoding='utf-8') as file:
+            if file.read(2) == '#!':
+                # it has a shebang: read until \n but at most 1000
+                # bytes, remove trailing whitespace
+                shebang_line = '#!' + file.readline(1000).rstrip()
+            else:
+                shebang_line = None
+    except (UnicodeError, OSError):
+        shebang_line = None
+
+    if shebang_line is not None:
+        # remove arguments: "#!/bla/bla -t --bleh" becomes "#!/bla/bla"
+        shebang_line = re.sub(r'\s-.*$', '', shebang_line)
+
     mimetype = mimetypes.guess_type(urllib.request.pathname2url(filename))[0]
+
     for filetype in _filetypes.values():
         if mimetype in filetype.mimetypes:
             return filetype
         if any(fnmatch.fnmatch(filename, pattern)
                for pattern in filetype.filename_patterns):
+            return filetype
+        if (filetype.shebang_regex is not None and
+                shebang_line is not None and
+                filetype.shebang_regex.search(shebang_line) is not None):
             return filetype
 
     # create a new filetype automagically if nothing else works
@@ -312,8 +353,12 @@ def guess_filetype(filename):
         try:
             lexer = pygments.lexers.get_lexer_for_filename(filename)
         except pygments.util.ClassNotFound:
-            # ok, there will be no highlighting with default settings
-            return _filetypes['DEFAULT']
+            # can we use the shebang?
+            if shebang_line is None:
+                return _filetypes['DEFAULT']
+            lexer = pygments.lexers.guess_lexer(shebang_line)
+            if isinstance(lexer, pygments.lexers.TextLexer):
+                return _filetypes['DEFAULT']
 
     name = lexer.name + ' (not from filetypes.ini)'
     if name in _filetypes:
