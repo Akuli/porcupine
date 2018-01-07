@@ -22,6 +22,8 @@ import pygments.util     # for ClassNotFound
 from porcupine import dirs, utils
 
 
+log = logging.getLogger(__name__)
+
 _STUPID_DEFAULTS = '''\
 # This is Porcupine's filetype configuration file. You can edit this file
 # freely to suit your needs. Restart Porcupine to apply your changes to this
@@ -80,7 +82,7 @@ _STUPID_DEFAULTS = '''\
 # list before substituting in the filenames, so spaces in filenames don't cause
 # issues. For example, if {file} is 'hello world.txt', then this...
 #
-#   tar -cf {no_ext}.tar {file}
+#   tar cf {no_ext}.tar {file}
 #
 # ...is equivalent to this command:
 #
@@ -146,7 +148,6 @@ indent_size = 2
 run_command = node {file}
 
 [Makefile]
-# python doesn't seem to support a Makefile mimetype by default
 filename_patterns = Makefile makefile Makefile.* makefile.*
 pygments_lexer = pygments.lexers.MakefileLexer
 # make doesn't work with spaces
@@ -193,9 +194,6 @@ pygments_lexer = pygments.lexers.MarkdownLexer
     'runexe': ('{no_ext}.exe' if platform.system() == 'Windows'
                else './{no_ext}'),
 }
-
-
-log = logging.getLogger(__name__)
 
 # on startup, all file types specified in the config file are loaded to
 # _config and _filetypes, and new filetypes are added to them if the
@@ -383,11 +381,47 @@ def get_all_filetypes():
     return list(_filetypes.values())
 
 
+def _add_missing_mimetypes():
+    # many of these are missing on windows
+    need_to_know = {
+        # extension: possible_mimetype
+        # if the extension is detected as some other mime type it's ok
+        # unless this is running on windows and that other mime type is
+        # 'text/plain' because by default, windows detects e.g. .py
+        # files as 'text/plain'
+        '.py': 'text/x-python',
+        '.c': 'text/x-csrc',
+        '.h': 'text/x-chdr',
+        '.c++': 'text/x-c++src',
+        '.cpp': 'text/x-c++src',
+        '.cxx': 'text/x-c++src',
+        '.cc': 'text/x-c++src',
+        '.h++': 'text/x-c++hdr',
+        '.hpp': 'text/x-c++hdr',
+        '.hxx': 'text/x-c++hdr',
+        '.hh': 'text/x-c++hdr',
+        '.java': 'text/x-java',
+        '.js': 'application/javascript',
+        '.sh': 'application/x-sh',
+        '.tcl': 'application/x-tcl',
+        '.json': 'application/json',
+    }
+
+    for extension, mimetype in need_to_know.items():
+        guess = mimetypes.guess_type('whatever' + extension)[0]
+        if guess is None or (platform.system() == 'Windows' and
+                             guess == 'text/plain'):
+            log.debug('adding MIME type %r for extension %r',
+                      mimetype, ext)
+            mimetypes.add_type(mimetype, ext)
+
+
 def _init():
     assert (not _filetypes), "cannot init() twice"
+    _add_missing_mimetypes()
 
     # rest of this code doesn't check for missing values, so everything
-    # must be set to something at least in DEFAULT
+    # must be set to at least something in DEFAULT
     stupid = configparser.ConfigParser()
     stupid.read_string(_STUPID_DEFAULTS)
     _config['DEFAULT'] = stupid['DEFAULT']
