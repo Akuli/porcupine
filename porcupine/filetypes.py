@@ -417,15 +417,12 @@ def _add_missing_mimetypes():
 
 
 def _init():
-    assert (not _filetypes), "cannot init() twice"
+    assert (not _filetypes), "cannot _init() twice"
     _add_missing_mimetypes()
-
-    # rest of this code doesn't check for missing values, so everything
-    # must be set to at least something in DEFAULT
     stupid = configparser.ConfigParser()
     stupid.read_string(_STUPID_DEFAULTS)
-    _config['DEFAULT'] = stupid['DEFAULT']
 
+    log.debug("trying to load '%s'", _get_ini_path())
     try:
         # config.read() suppresses exceptions
         with open(_get_ini_path(), 'r', encoding='utf-8') as file:
@@ -442,6 +439,28 @@ def _init():
         log.debug("default filetypes will be used instead")
         log.debug("here's the full traceback", exc_info=True)
         _config.read_string(_STUPID_DEFAULTS)
+    else:
+        # neither of the except things ran, everything succeeded
+        # old porcupines created config files that didn't have all the
+        # keys they need to have for this porcupine
+        # stupid['DEFAULT'] and _config['DEFAULT'] behave like dicts
+        missing_keys = set(stupid['DEFAULT']) - set(_config['DEFAULT'])
+        print(set(stupid['DEFAULT']), set(_config['DEFAULT']), missing_keys)
+        if missing_keys:
+            log.error("the [DEFAULT] section in filetypes.ini does not "
+                      "contain %s", ', '.join(missing_keys))
+            log.error("default settings will be used for missing things")
+
+            # _config is already loaded from filetypes.ini, so must make
+            # sure anything that came from there is not overrided: read
+            # the stupid defaults first and override with filetypes.ini
+            # duck-typing: configparsers behave like dicts
+            merger = configparser.ConfigParser()
+            merger.read_dict(stupid)
+            merger.read_dict(_config)
+            _config.read_dict(merger)
+        else:
+            log.debug("loaded filetypes.ini successfully")
 
     # make sure that the DEFAULT section is first, its values must be
     # valid when validating other sections
@@ -476,6 +495,7 @@ def _init():
 
 # unlike pygments.lexers.IniLexer, this highlights correct keys and
 # values in filetypes.ini specially
+# FIXME: this is outdated >:(
 class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
 
     # these are probably not needed
