@@ -117,7 +117,7 @@ def run_command(workingdir, command, succeeded_callback=do_nothing):
             del _no_terminal_runners[str(tab)]
 
         closebutton = tkinter.Label(
-            runner.textwidget, image=images.get('closebutton'))
+            runner.textwidget, image=images.get('closebutton'), cursor='hand2')
         closebutton.bind('<Button-1>', on_close)
         closebutton.place(relx=1, rely=0, anchor='ne')
 

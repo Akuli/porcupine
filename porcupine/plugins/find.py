@@ -49,7 +49,8 @@ class Finder(ttk.Frame):
         self._statuslabel = ttk.Label(self)
         self._statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
 
-        closebutton = ttk.Label(self, image=images.get('closebutton'))
+        closebutton = ttk.Label(self, image=images.get('closebutton'),
+                                cursor='hand2')
         closebutton.grid(row=0, column=2, sticky='ne')
         closebutton.bind('<Button-1>', lambda event: self.pack_forget())
 
