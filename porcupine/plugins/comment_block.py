@@ -1,7 +1,5 @@
 """Comment out multiple lines easily in languages like Python or Bash."""
 
-import functools
-
 from porcupine import actions, get_tab_manager, tabs, utils
 
 # update the code if you add a filetype that doesn't use # as comment prefix

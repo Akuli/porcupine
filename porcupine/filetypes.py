@@ -412,8 +412,8 @@ def _add_missing_mimetypes():
         if guess is None or (platform.system() == 'Windows' and
                              guess == 'text/plain'):
             log.debug('adding MIME type %r for extension %r',
-                      mimetype, ext)
-            mimetypes.add_type(mimetype, ext)
+                      mimetype, extension)
+            mimetypes.add_type(mimetype, extension)
 
 
 def _init():

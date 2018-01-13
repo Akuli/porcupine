@@ -1,7 +1,6 @@
 """Simple welcome message."""
 
 import re
-import tkinter
 from tkinter import ttk
 
 from porcupine import get_tab_manager, images, utils

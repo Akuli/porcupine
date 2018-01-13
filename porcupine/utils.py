@@ -1,6 +1,5 @@
 """Handy utility functions."""
 
-import atexit
 import collections
 import contextlib
 import functools
@@ -17,7 +16,6 @@ from tkinter import ttk
 import traceback
 
 import porcupine
-from porcupine import dirs
 
 log = logging.getLogger(__name__)
 
