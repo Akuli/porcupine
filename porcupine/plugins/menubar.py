@@ -1,4 +1,3 @@
-import functools
 import tkinter
 
 from porcupine import get_main_window, actions, utils
@@ -63,13 +62,16 @@ class MenubarHandler:
                 submenu.add_radiobutton(label=choice, variable=action.var)
 
         self._items[action.path] = (menu, menu.index('end'))
+        self.on_enable_disable(action.path)
 
     def on_new_action(self, event):
         self.setup_action(actions.get_action(event.data))
 
-    def on_enable_disable(self, new_state, event):
-        menu, index = self._items[event.data]
-        menu.entryconfig(index, state=new_state)
+    def on_enable_disable(self, action_path):
+        action = actions.get_action(action_path)
+        menu, index = self._items[action_path]
+        menu.entryconfig(
+            index, state=('normal' if action.enabled else 'disabled'))
 
 
 def setup():
@@ -81,10 +83,10 @@ def setup():
         window, '<<NewAction>>', menubar.on_new_action, add=True)
     utils.bind_with_data(
         window, '<<ActionEnabled>>',
-        functools.partial(menubar.on_enable_disable, 'normal'), add=True)
+        (lambda event: menubar.on_enable_disable(event.data)), add=True)
     utils.bind_with_data(
         window, '<<ActionDisabled>>',
-        functools.partial(menubar.on_enable_disable, 'disabled'), add=True)
+        (lambda event: menubar.on_enable_disable(event.data)), add=True)
 
     for action in actions.get_all_actions():
         menubar.setup_action(action)
