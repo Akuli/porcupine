@@ -43,7 +43,7 @@ def run_autopep8(code):
 
 
 def callback():
-    widget = get_tab_manager().current_tab.textwidget
+    widget = get_tab_manager().select().textwidget
     before = widget.get('1.0', 'end - 1 char')
     after = run_autopep8(before)
     if after is None:

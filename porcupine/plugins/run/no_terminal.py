@@ -105,7 +105,7 @@ _no_terminal_runners = {}       # {str(tab): NoTerminalRunner}
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(workingdir, command, succeeded_callback=do_nothing):
-    tab = get_tab_manager().current_tab
+    tab = get_tab_manager().select()
     try:
         runner = _no_terminal_runners[str(tab)]
     except KeyError:

@@ -18,7 +18,7 @@ STATE_FILE = os.path.join(dirs.cachedir, 'restart_state.pickle')
 
 def save_states(junk_event):
     states = []
-    for tab in get_tab_manager().tabs:
+    for tab in get_tab_manager().tabs():
         state = tab.get_state()
         if state is not None:
             states.append((type(tab), state))

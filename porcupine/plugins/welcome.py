@@ -63,7 +63,7 @@ class WelcomeMessageDisplayer:
         event.data_widget.bind('<Destroy>', self._on_tab_closed, add=True)
 
     def _on_tab_closed(self, event=None):
-        if not get_tab_manager().tabs:
+        if not get_tab_manager().tabs():
             self._frame.pack(fill='both', expand=True)
 
 

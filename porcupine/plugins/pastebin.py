@@ -249,7 +249,7 @@ class Paste:
 
 
 def start_pasting(pastebin_name):
-    tab = get_tab_manager().current_tab
+    tab = get_tab_manager().select()
     try:
         code = tab.textwidget.get('sel.first', 'sel.last')
     except tkinter.TclError:

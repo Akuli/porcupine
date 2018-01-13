@@ -81,14 +81,14 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
             )
 
             def enable_or_disable(junk_event=None):
-                tab = porcupine.get_tab_manager().current_tab
+                tab = porcupine.get_tab_manager().select()
                 action.enabled = isinstance(tab, tabtypes)
 
         if filetype_names is not None:
             # the noqa comment is needed because flake8 thinks this is
             # a "redefinition of unused 'enable_or_disable'"
             def enable_or_disable(junk_event=None):     # noqa
-                tab = porcupine.get_tab_manager().current_tab
+                tab = porcupine.get_tab_manager().select()
                 if isinstance(tab, tabs.FileTab):
                     action.enabled = tab.filetype.name in filetype_names
                 else:
@@ -105,7 +105,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
 
         enable_or_disable()
         porcupine.get_tab_manager().bind(
-            '<<CurrentTabChanged>>', enable_or_disable, add=True)
+            '<<NotebookTabChanged>>', enable_or_disable, add=True)
 
     # TODO: custom keyboard bindings with a config file or something
     if binding is not None:

@@ -164,8 +164,7 @@ class Finder(ttk.Frame):
 
 
 def find():
-    current_tab = get_tab_manager().current_tab
-    find_widgets[current_tab].pack(fill='x')
+    find_widgets[get_tab_manager().select()].pack(fill='x')
 
 
 def on_new_tab(event):
@@ -178,13 +177,13 @@ def on_new_tab(event):
 
 
 def on_tab_changed(event):
-    current_tab = event.widget.current_tab
-    if current_tab in find_widgets:
-        find_widgets[current_tab].reset()
+    selected_tab = event.widget.select()
+    if selected_tab in find_widgets:
+        find_widgets[selected_tab].reset()
 
 
 def setup():
     actions.add_command("Edit/Find and Replace", find, '<Control-f>',
                         tabtypes=[tabs.FileTab])
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-    get_tab_manager().bind('<<CurrentTabChanged>>', on_tab_changed, add=True)
+    get_tab_manager().bind('<<NotebookTabChanged>>', on_tab_changed, add=True)

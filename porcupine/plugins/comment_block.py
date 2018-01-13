@@ -9,7 +9,7 @@ filetype_names = ['Python', 'Makefile', 'Shell', 'Tcl']
 
 
 def comment_or_uncomment():
-    tab = get_tab_manager().current_tab
+    tab = get_tab_manager().select()
     if tab.filetype.name not in filetype_names:
         # add '#' normally
         return None

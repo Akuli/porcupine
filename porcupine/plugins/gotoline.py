@@ -4,7 +4,7 @@ from porcupine import actions, get_tab_manager, tabs
 
 
 def gotoline():
-    tab = get_tab_manager().current_tab
+    tab = get_tab_manager().select()
 
     # simpledialog isn't ttk yet, but it's not a huge problem imo
     # TODO: what if lineno is 0 or negative?

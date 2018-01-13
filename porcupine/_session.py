@@ -54,16 +54,14 @@ def quit():
     with :meth:`~porcupine.tabs.TabManager.close_tab` and widgets are
     destroyed.
     """
-    for tab in _tab_manager.tabs:
+    for tab in _tab_manager.tabs():
         if not tab.can_be_closed():
             return
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
     _main_window.event_generate('<<PorcupineQuit>>')
-
-    # closing tabs removes them from the tabs list, that's why copying
-    for tab in _tab_manager.tabs.copy():
+    for tab in _tab_manager.tabs():
         _tab_manager.close_tab(tab)
 
     # all widgets are in the main window, so destroying the main window
@@ -87,22 +85,23 @@ def setup_actions():
 
             _tab_manager.add_tab(tab)
 
-    def close_current_tab():
-        if _tab_manager.current_tab.can_be_closed():
-            _tab_manager.close_tab(_tab_manager.current_tab)
+    def close_selected_tab():
+        tab = _tab_manager.select()
+        if tab.can_be_closed():
+            _tab_manager.close_tab(tab)
 
     # TODO: allow adding separators to menus
     actions.add_command("File/New File", new_file, '<Control-n>')
     actions.add_command("File/Open", open_files, '<Control-o>')
-    actions.add_command("File/Save", (lambda: _tab_manager.current_tab.save()),
+    actions.add_command("File/Save", (lambda: _tab_manager.select().save()),
                         '<Control-s>', tabtypes=[tabs.FileTab])
     actions.add_command("File/Save As...",
-                        (lambda: _tab_manager.current_tab.save_as()),
+                        (lambda: _tab_manager.select().save_as()),
                         '<Control-S>', tabtypes=[tabs.FileTab])
 
     # TODO: disable File/Quit when there are tabs, it's too easy to hit
     # Ctrl+Q accidentally
-    actions.add_command("File/Close", close_current_tab, '<Control-w>',
+    actions.add_command("File/Close", close_selected_tab, '<Control-w>',
                         tabtypes=[tabs.Tab])
     actions.add_command("File/Quit", quit, '<Control-q>')
 

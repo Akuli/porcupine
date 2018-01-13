@@ -16,95 +16,69 @@ log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
 
 
-class _Pane(ttk.Notebook):
-    """One element of the split view."""
+class TabManager(ttk.Notebook):
+    """A simple but awesome tab widget.
 
-    def __init__(self, manager):
-        super().__init__(manager)
+    This widget inherits from ``ttk.Notebook``. All widgets added to
+    this should be :class:`Tab` objects.
+
+    .. virtualevent:: NewTab
+
+        This runs when a new tab has been added to the tab manager with
+        :meth:`add_tab`. Use :func:`~porcupine.utils.bind_with_data` and
+        ``event.data_widget`` to access the tab that was added.
+
+        Bind to the ``<Destroy>`` event of the tab if you want to clean
+        up something when the tab is closed.
+
+    .. virtualevent:: NotebookTabChanged
+
+        This runs when the user selects another tab or Porcupine does it
+        for some reason. Use ``event.widget.select()`` to get the
+        currently selected tab.
+
+        This virtual event has ``Notebook`` prefixed in its name because
+        it's inherited from ``ttk.Notebook`` and whoever created it
+        wanted to add some boilerplate. I think something like
+        ``<<SelectedTabChanged>>`` would be a better name.
+
+        .. seealso:: :meth:`select`
+
+    .. method:: add(child, **kw)
+    .. method:: enable_traversal()
+    .. method:: forget(tab_id)
+    .. method:: hide(tab_id)
+    .. method:: insert(pos, child, **kw)
+    .. method:: tab(tab_id, option=None, **kw)
+
+        Don't use these methods. They are inherited from
+        ``ttk.Notebook``, and :class:`TabManager` has other methods for
+        doing what is usually done with these methods.
+
+        .. seealso::
+            :meth:`add_tab`, :meth:`close_tab`, :attr:`Tab.title`
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # These can be bound in a parent widget. This doesn't use
+        # enable_traversal() because we want more bindings than it
+        # creates.
+        # TODO: document these?
+        partial = functools.partial     # pep-8 line length
+        self.bindings = [
+            ('<Control-Prior>', partial(self._on_page_updown, False, -1)),
+            ('<Control-Next>', partial(self._on_page_updown, False, +1)),
+            ('<Control-Shift-Prior>', partial(self._on_page_updown, True, -1)),
+            ('<Control-Shift-Next>', partial(self._on_page_updown, True, +1)),
+        ]
+        for number in range(1, 10):
+            callback = functools.partial(self._on_alt_n, number)
+            self.bindings.append(('<Alt-Key-%d>' % number, callback))
+
         self.bind('<Button-1>', self._on_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
-
-    # tkinter's tabs() returns widget names (strings) instead of actual
-    # widgets, this implementation str()'s everything anyway because
-    # tkinter might be fixed some day
-    def tabs(self):
-        return tuple(self.nametowidget(str(tab)) for tab in super().tabs())
-
-    # similar fix
-    def select(self, tab_id=None):
-        if tab_id is None:
-            return self.nametowidget(str(super().select()))
-
-        super().select(tab_id)
-        return None
-
-    # a customized version of add()
-    def add_tab(self, tab):
-        self.add(tab, text=tab.title, image=images.get('closebutton'),
-                 compound='right')
-        tab.tkraise(self)      # make sure it's visible
-
-    # this is lol
-    def remove_tab(self, tab):
-        self.forget(tab)
-        if self.index('end') == 0:
-            # no more tabs, get rid of this pane because a pane with no tabs
-            # in it would suck... but first, can we select another pane?
-            all_panes = self.master.panes()
-            if len(all_panes) >= 2:
-                try:
-                    another_pane = all_panes[all_panes.index(self) + 1]
-                except IndexError:
-                    another_pane = all_panes[all_panes.index(self) - 1]
-                another_pane.select().on_focus()
-                self.master._current_pane = another_pane   # just to be sure
-                generate_the_event = False
-            else:
-                # no, this is the last pane in the whole tab manager
-                self.master._current_pane = None
-                generate_the_event = True
-
-            self.master.forget(self)
-            if generate_the_event:
-                # must be after telling the tab manager to forget about
-                # this pane, otherwise it complains that _current_pane
-                # was set to None even though there are panes
-                self.master.event_generate('<<CurrentTabChanged>>')
-            self.destroy()
-
-    # diff should be +1 for selecting a tab at right or -1 for left
-    def select_next_to(self, diff):
-        assert diff in {1, -1}, repr(diff)
-        index = self.index(self.select())
-        try:
-            self.select(index + diff)
-            return True
-        except tkinter.TclError:   # should be "Slave index n out of bounds"
-            return False
-
-    def move_next_to(self, diff):
-        assert diff in {1, -1}, repr(diff)
-        i1 = self.index(self.select())
-        i2 = i1 + diff
-        if i1 > i2:
-            i1, i2 = i2, i1
-
-        if i1 < 0 or i2 >= self.index('end'):
-            return False
-
-        # it's important to move the second tab back instead of moving
-        # the other tab forward because insert(number_of_tabs, tab)
-        # doesn't work for some reason
-        tab = self.tabs()[i2]
-        options = self.tab(i2)
-        selected = (tab is self.select())    # TODO: optimize-cleanup?
-
-        self.forget(i2)
-        self.insert(i1, tab, **options)
-        if selected:
-            self.select(tab)
-
-        return True
 
     def _on_click(self, event):
         if self.identify(event.x, event.y) != 'label':
@@ -126,196 +100,52 @@ class _Pane(ttk.Notebook):
                 self.master.close_tab(tab)
 
     def _on_wheel(self, direction):
-        diffs = {'up': -1, 'down': +1}
-        self.select_next_to(diffs[direction])
-
-
-class TabManager(ttk.PanedWindow):
-    """A simple but awesome tab widget.
-
-    This widget is a lot like ``ttk.Notebook``, but this class also
-    implements split views and only :class:`Tab` can be added to this.
-
-    .. virtualevent:: NewTab
-
-        This runs when a new tab has been added to the tab manager with
-        :meth:`add_tab`. Use :func:`~porcupine.utils.bind_with_data` and
-        ``event.data_widget`` to access the tab that was added.
-
-        Bind to the ``<Destroy>`` event of the tab if you want to clean
-        up something when the tab is closed.
-
-    .. virtualevent:: CurrentTabChanged
-
-        This runs when the user selects another tab or Porcupine does it
-        for some reason. Use ``event.widget.current_tab`` to get or set
-        the currently selected tab.
-
-        .. seealso:: :attr:`~current_tab`
-
-    .. attribute:: tabs
-
-        List of Tab objects in the tab manager.
-
-        Don't modify this list yourself, use methods like
-        :meth:`~move_left`, :meth:`~move_right`, :meth:`~add_tab` or
-        :meth:`~close_tab` instead.
-
-    .. attribute:: current_tab
-
-        The tab that the user has currently selected.
-
-        This is None when there are no tabs. You can set this to select
-        a tab, like this::
-
-            tabmanager.current_tab = some_tab
-
-    .. attribute:: current_index
-
-        .. warning:: Don't use this attribute. I may remove it later.
-
-        The index of :attr:`~current_tab` in :attr:`~tabs`.
-
-        Setting this raises :exc:`IndexError` if the index is too big or
-        too small. Negative indexes are not supported.
-
-    .. method:: add(child, **kw)
-    .. method:: insert(pos, child, **kw)
-    .. method:: pane(pane, option=None, **kw)
-    .. method:: panecget(child, option)
-    .. method:: paneconfig(tagOrId, cnf=None, **kw)
-    .. method:: paneconfigure(tagOrId, cnf=None, **kw)
-    .. method:: panes()
-    .. method:: proxy(*args)
-    .. method:: proxy_coord()
-    .. method:: proxy_forget()
-    .. method:: proxy_place(x, y)
-    .. method:: remove(child)
-    .. method:: sash(*args)
-    .. method:: sash_coord(index)
-    .. method:: sash_mark(index)
-    .. method:: sash_place(index, x, y)
-    .. method:: sashpos(index, newpos=None)
-
-        Don't use these methods. Currently ``TabManager`` inherits from
-        ``ttk.PanedWindow``, but that may be changed later. These methods
-        come from ``PanedWindow``.
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('orient', 'horizontal')
-        super().__init__(*args, **kwargs)
-        self._current_pane = None
-
-        # These can be bound in a parent widget. This doesn't use
-        # enable_traversal() because we want more bindings than it
-        # creates.
-        # TODO: document these?
-        partial = functools.partial     # pep-8 line length
-        self.bindings = [
-            ('<Control-Prior>', partial(self._on_page_updown, False, -1)),
-            ('<Control-Next>', partial(self._on_page_updown, False, +1)),
-            ('<Control-Shift-Prior>', partial(self._on_page_updown, True, -1)),
-            ('<Control-Shift-Next>', partial(self._on_page_updown, True, +1)),
-            ('<Alt-Left>', partial(self._on_alt_arrow, False, -1)),
-            ('<Alt-Right>', partial(self._on_alt_arrow, False, +1)),
-            ('<Shift-Alt-Left>', partial(self._on_alt_arrow, True, -1)),
-            ('<Shift-Alt-Right>', partial(self._on_alt_arrow, True, +1)),
-        ]
-        for number in range(1, 10):
-            callback = functools.partial(self._on_alt_n, number)
-            self.bindings.append(('<Alt-Key-%d>' % number, callback))
-
-        # this bind all <FocusIn> events of the window that the tab
-        # manager is in
-        self.winfo_toplevel().bind(
-            '<FocusIn>', self._on_maybe_pane_selected, add=True)
+        self.select_another_tab({'up': -1, 'down': +1}[direction])
 
     def _on_page_updown(self, shifted, diff, event):
-        if self._current_pane is not None:
-            if shifted:
-                self._current_pane.move_next_to(diff)
-            else:
-                self._current_pane.select_next_to(diff)
-        return 'break'
-
-    def _on_alt_arrow(self, shifted, diff, event):
-        if self._current_pane is None:
-            # no tabs
-            assert not self.panes(), "_current_tab wasn't set correctly"
-            return 'break'
-
         if shifted:
-            self._move_to_another_pane(diff)
+            self.move_selected_tab(diff)
         else:
-            # select another pane
-            panes = self.panes()    # superstitious optimizations ftw
-            current_index = panes.index(self._current_pane)
-            new_index = current_index + diff
-            panes[new_index % len(panes)].select().on_focus()
-
+            self.select_another_tab(diff)
         return 'break'
 
     def _on_alt_n(self, n, event):
         try:
-            self.current_tab = self.tabs[n - 1]
+            self.select(n - 1)
             return 'break'
-        except IndexError:
+        except tkinter.TclError:        # index out of bounds
             return None
 
-    # similar fix as in _Pane
-    def panes(self):
-        return tuple(self.nametowidget(str(pane)) for pane in super().panes())
+    # fixing tkinter weirdness: some methods returns widget names as
+    # strings instead of widget objects, these str() everything anyway
+    # because tkinter might be fixed some day
+    def select(self, tab_id=None):
+        """Select the given tab as if the user clicked it.
 
-    def _add_pane(self, initial_tab, where='end'):
-        if where == len(self.panes()):
-            # yes, this is needed
-            where = 'end'
+        If ``tab_id`` is not given, this returns the currently selected
+        tab or None if there are no tabs.
+        """
+        if tab_id is None:
+            selected = super().select()
+            if not selected:        # no tabs, selected == ''
+                return None
+            return self.nametowidget(str(selected))
 
-        pane = _Pane(self)
-        pane.bind('<<NotebookTabChanged>>', self._on_tab_selected, add=True)
-        pane.add_tab(initial_tab)
-        self.insert(where, pane, weight=1)
+        # the tab can be e.g. an index, that's why two super() calls
+        super().select(tab_id)
+        tab = self.nametowidget(super().select())
+        tab.on_focus()
+        return None
 
-        if self._current_pane is None:
-            self._current_pane = pane
-
-    def _on_maybe_pane_selected(self, event):
-        for pane in self.panes():
-            if str(event.widget).startswith(str(pane.select()) + '.'):
-                # something in the pane's current tab was selected
-                if self._current_pane is not pane:
-                    self._current_pane = pane
-                    self.event_generate('<<CurrentTabChanged>>')
-                break
-
-    def _on_tab_selected(self, event):
-        if event.widget is self._current_pane:
-            event.widget.select().on_focus()
-            self.event_generate('<<CurrentTabChanged>>')
-
-    @property
     def tabs(self):
-        return list(_flatten(pane.tabs() for pane in self.panes()))
+        """Return a tuple of tabs in the tab manager.
 
-    @property
-    def current_tab(self):
-        if self._current_pane is None:
-            assert not self.panes(), "_current_pane wasn't set correctly"
-            return None
-        return self._current_pane.select()
+        This returns a tuple instead of a list for compatibility with
+        tkinter.
+        """
+        return tuple(self.nametowidget(str(tab)) for tab in super().tabs())
 
-    @current_tab.setter
-    def current_tab(self, tab):
-        for pane in self.panes():
-            if tab in pane.tabs():
-                pane.select(tab)
-                tab.on_focus()
-                return
-
-        raise ValueError("unknown tab %r" % (tab,))
-
-    def add_tab(self, tab, make_current=True):
+    def add_tab(self, tab, select=True):
         """Append a :class:`.Tab` to this tab manager.
 
         If ``tab.equivalent(existing_tab)`` returns True for any
@@ -323,27 +153,23 @@ class TabManager(ttk.PanedWindow):
         existing tab is returned. Otherwise *tab* is added to the tab
         manager and returned.
 
-        If *make_current* is True, then :attr:`current_tab` is set to
-        the tab that is returned.
+        If *select* is True, then the returned tab is selected
+        with :meth:`~select`.
 
         .. seealso::
             The :meth:`.Tab.equivalent` and :meth:`~close_tab` methods.
         """
-        assert tab not in self.tabs, "cannot add the same tab twice"
-        for existing_tab in self.tabs:
+        assert tab not in self.tabs(), "cannot add the same tab twice"
+        for existing_tab in self.tabs():
             if tab.equivalent(existing_tab):
-                if make_current:
-                    self.current_tab = existing_tab
+                if select:
+                    self.select(existing_tab)
                 return existing_tab
 
-        if self.panes():
-            self._current_pane = self.panes()[0]
-            self._current_pane.add_tab(tab)
-        else:
-            self._add_pane(tab)
-
-        if make_current:
-            self.current_tab = tab
+        self.add(tab, text=tab.title, image=images.get('closebutton'),
+                 compound='right')
+        if select:
+            self.select(tab)
 
         # the update() is needed in some cases because virtual events
         # don't run if the widget isn't visible yet
@@ -358,55 +184,63 @@ class TabManager(ttk.PanedWindow):
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
-        # which pane is this tab in?
-        for pane in self.panes():
-            if tab in pane.tabs():
-                break
-        else:
-            raise ValueError("unknown tab " + repr(tab))
-
-        pane.remove_tab(tab)     # may get rid of the whole pane
+        self.forget(tab)
         tab.destroy()
 
-    # moves the current tab to another pane, creating a new pane if needed
-    def _move_to_another_pane(self, diff):
-        """Move the currently selected tab to another pane.
+    def select_another_tab(self, diff):
+        """Try to select another tab next to the currently selected tab.
 
-        The diff should be +1 for moving right or -1 for moving left.
-        New panes are created automatically when needed.
+        *diff* should be ``1`` for selecting a tab at right or ``-1``
+        for left. This returns True if another tab was selected and
+        False if the current tab is already the leftmost tab or there
+        are no tabs.
         """
-        assert diff in {+1, -1}, repr(diff)
-        panes = self.panes()    # superstitious optimizations ftw
-        current_index = panes.index(self._current_pane)
-        tab = self._current_pane.select()
+        assert diff in {1, -1}, repr(diff)
+        if not self.tabs():
+            return False
 
-        if (current_index + diff) in range(len(panes)):
-            # remove_tab() will get rid of the whole pane if it contains
-            # only one tab, so it's important NOT to update panes to the
-            # new value of self.panes() (without changing the index)
-            self._current_pane.remove_tab(tab)
-            panes[current_index + diff].add_tab(tab)
-            panes[current_index + diff].select(tab)
-            tab.on_focus()
+        index = self.index(self.select())
+        try:
+            self.select(index + diff)
+            return True
+        except tkinter.TclError:   # should be "Slave index n out of bounds"
+            return False
 
-        elif len(self._current_pane.tabs()) == 1:
-            # corner case: if there's just one tab in the pane then
-            # moving it to a new pane would do nothing but create
-            # more corner cases :D yay, corner cases
-            pass
+    def move_selected_tab(self, diff):
+        """Try to move the currently selected tab left or right.
 
-        else:
-            # create a new pane
-            self._current_pane.remove_tab(tab)   # FIXME !!!!
-            if diff == 1:
-                self._add_pane(tab, current_index + 1)
-            else:
-                self._add_pane(tab, current_index)
-            tab.on_focus()    # FIXME: this doesn't work 0_o very weird
+        *diff* should be ``1`` for moving to right or ``-1`` for left.
+        This returns True if the tab was moved and False if there was no
+        room for moving it or there are no tabs.
+        """
+        assert diff in {1, -1}, repr(diff)
+        if not self.tabs():
+            return False
+
+        # TODO: this can probably be simplified
+        i1 = self.index(self.select())
+        i2 = i1 + diff
+        if i1 > i2:
+            i1, i2 = i2, i1
+
+        if i1 < 0 or i2 >= self.index('end'):
+            return False
+
+        # it's important to move the second tab back instead of moving
+        # the other tab forward because insert(number_of_tabs, tab)
+        # doesn't work for some reason
+        tab = self.tabs()[i2]
+        options = self.tab(i2)
+        selected = (tab is self.select())
+
+        self.forget(i2)
+        self.insert(i1, tab, **options)
+        if selected:
+            self.select(tab)
+
+        return True
 
 
-# tabs are initialized into the tab manager, but adding them to a pane
-# in the tab manager still works
 class Tab(ttk.Frame):
     r"""Base class for widgets that can be added to TabManager.
 
@@ -507,13 +341,8 @@ class Tab(ttk.Frame):
     @title.setter
     def title(self, text):
         self._title = text
-
-        # this is here because accessing _non_public tab manager methods
-        # from here wouldn't be good style (lol)
-        for pane in self.master.panes():
-            if self in pane.tabs():
-                pane.tab(self, text=text)
-                break
+        if self in self.master.tabs():
+            self.master.tab(self, text=text)
 
     def can_be_closed(self):
         """
@@ -897,13 +726,13 @@ if __name__ == '__main__':
     tabmgr.bind('<<NewTab>>',
                 lambda event: print("added tab", event.data_widget.i),
                 add=True)
-    tabmgr.bind('<<CurrentTabChanged>>',
-                lambda event: print("selected", event.widget.current_tab.i),
+    tabmgr.bind('<<NotebookTabChanged>>',
+                lambda event: print("selected", event.widget.select().i),
                 add=True)
 
     def on_ctrl_w(event):
-        if tabmgr.tabs:    # current_tab is not None
-            tabmgr.close_tab(tabmgr.current_tab)
+        if tabmgr.tabs():
+            tabmgr.close_tab(tabmgr.select())
 
     root.bind('<Control-w>', on_ctrl_w)
     for keysym, callback in tabmgr.bindings:

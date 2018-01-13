@@ -28,7 +28,7 @@ def _dialog(action, last_path):
             options['filetypes'].append((filetype.name, ' '.join(patterns)))
 
     # the mro thing is there to avoid import cycles (lol)
-    tab = porcupine.get_tab_manager().current_tab
+    tab = porcupine.get_tab_manager().select()
     if any(cls.__name__ == 'FileTab' for cls in type(tab).__mro__):
         if tab.path is not None:
             options['initialdir'] = os.path.dirname(tab.path)
