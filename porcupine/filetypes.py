@@ -445,7 +445,6 @@ def _init():
         # keys they need to have for this porcupine
         # stupid['DEFAULT'] and _config['DEFAULT'] behave like dicts
         missing_keys = set(stupid['DEFAULT']) - set(_config['DEFAULT'])
-        print(set(stupid['DEFAULT']), set(_config['DEFAULT']), missing_keys)
         if missing_keys:
             log.error("the [DEFAULT] section in filetypes.ini does not "
                       "contain %s", ', '.join(missing_keys))
