@@ -16,6 +16,8 @@ def on_theme_changed(style, theme_name):
         raise settings.InvalidValue(str(e)) from None
 
 
+# TODO: find a magic way to optimize this? it's not too slow, but it
+# could be better
 def setup():
     style = ttkthemes.ThemedStyle()
 
@@ -24,7 +26,6 @@ def setup():
     default_theme = style.tk.eval('return $ttk::currentTheme')
 
     config.add_option('ttk_theme', default_theme, reset=False)
-    config.connect('ttk_theme', functools.partial(on_theme_changed, style),
-                   run_now=True)
+    config.connect('ttk_theme', functools.partial(on_theme_changed, style))
     actions.add_choice("Ttk Themes", sorted(style.get_themes()),
                        var=config.get_var('ttk_theme'))

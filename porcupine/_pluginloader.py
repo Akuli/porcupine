@@ -7,6 +7,7 @@ import importlib
 import logging
 import pkgutil
 import random
+import time
 
 import toposort
 
@@ -25,7 +26,7 @@ def load(shuffle=False):
 
     plugin_infos = {}    # {name: (setup_before, setup_after, setup_func)}
     for name in plugin_names.copy():
-        log.debug("importing %s", name)
+        start = time.time()
         try:
             module = importlib.import_module('porcupine.plugins.' + name)
             setup_before = set(getattr(module, 'setup_before', []))
@@ -34,6 +35,9 @@ def load(shuffle=False):
         except Exception:
             log.exception("problem with importing %s", name)
             continue
+
+        duration = time.time() - start
+        log.debug("imported %s in %.3f milliseconds", name, duration*1000)
 
         # now we know that the plugin is ok, we can add its stuff to
         # dependencies and setup_funcs
@@ -68,8 +72,12 @@ def load(shuffle=False):
 
     for name in loading_order:
         *junk, setup = plugin_infos[name]
-        log.debug("running %s.setup()", name)
+
+        start = time.time()
         try:
             setup()
         except Exception:
             log.exception("%s.setup() doesn't work", name)
+
+        duration = time.time() - start
+        log.debug("ran %s.setup() in %.3f milliseconds", name, duration*1000)

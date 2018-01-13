@@ -29,15 +29,12 @@ BORDER_SIZE = 30    # pixels
 class WelcomeMessageDisplayer:
 
     def __init__(self):
-        # make it about 200 pixels wide by taking every magic'th pixel
-        magic = images.get('logo').width() // 200
-        self._image = images.get('logo').subsample(magic)
         self._frame = ttk.Frame(get_tab_manager())
 
         # pad only on left side so the image goes as far right as possible
         top = ttk.Frame(self._frame)
         top.pack(fill='x', padx=(BORDER_SIZE, 0))
-        ttk.Label(top, image=self._image).pack(side='right')
+        ttk.Label(top, image=images.get('logo-200x200')).pack(side='right')
 
         # TODO: better way to center the label in its space?
         centerer = ttk.Frame(top)
@@ -53,8 +50,10 @@ class WelcomeMessageDisplayer:
         self._on_tab_closed()
 
     def update_wraplen(self, event):
+        # images.get('logo-200x200').width() is always 200, but
+        # hard-coding is bad
         self.title_label['wraplength'] = (
-            event.width - self._image.width() - BORDER_SIZE)
+            event.width - images.get('logo-200x200').width() - BORDER_SIZE)
         self.message_label['wraplength'] = event.width - 2*BORDER_SIZE  # noqa
 
     def on_new_tab(self, event):
