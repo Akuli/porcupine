@@ -237,7 +237,6 @@ class Paste:
         utils.run_in_thread(paste_it, self.done_callback)
 
     def done_callback(self, success, result):
-        window = get_main_window()
         tk_busy_forget()
         self.please_wait_window.destroy()
 
@@ -246,7 +245,7 @@ class Paste:
             dialog = SuccessDialog(result)
             dialog.title("Pasting Succeeded")
             dialog.geometry('450x150')
-            dialog.transient(window)
+            dialog.transient(get_main_window())
             dialog.wait_window()
         else:
             # result is the traceback as a string
