@@ -23,6 +23,26 @@ except ImportError:
     pythonprompt = None
 
 
+if tkinter.TkVersion >= 8.6:    # yes, it's a float in tkinter
+    def tk_busy_status():
+        win = get_main_window()  # pep8 79 chars: window would B 2 long varname
+        return win.getboolean(win.tk.call('tk', 'busy', 'status', win))
+
+    def tk_busy_hold():
+        get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
+
+    def tk_busy_forget():
+        get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
+
+else:
+    # TODO: gray out something?
+    def tk_busy_hold():
+        pass
+
+    def tk_busy_forget():
+        pass
+
+
 log = logging.getLogger(__name__)
 
 _pastebins = {}
@@ -53,7 +73,6 @@ def paste_to_termbin(code, origin):
 
 
 if requests is not None:
-    # TODO: add porcupine version here if there will be a version number
     session = requests.Session()
     session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
@@ -210,17 +229,8 @@ class Paste:
         progressbar.start()
 
     def start(self):
-        window = get_main_window()
-        busy_status = window.tk.call('tk', 'busy', 'status', window)
-        if window.getboolean(busy_status):
-            # we are already pasting something somewhere or something
-            # else is being done
-            log.info("'tk busy status %s' returned 1", window)
-            return
-
         log.debug("starting to paste to %s", self.pastebin_name)
-
-        window.tk.call('tk', 'busy', 'hold', window)
+        tk_busy_hold()
         self.make_please_wait_window()
         paste_it = functools.partial(
             _pastebins[self.pastebin_name], self.content, self.origin)
@@ -228,7 +238,7 @@ class Paste:
 
     def done_callback(self, success, result):
         window = get_main_window()
-        window.tk.call('tk', 'busy', 'forget', window)
+        tk_busy_forget()
         self.please_wait_window.destroy()
 
         if success:
