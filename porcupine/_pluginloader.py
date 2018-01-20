@@ -16,12 +16,18 @@ from porcupine.plugins import __path__ as plugin_paths
 log = logging.getLogger(__name__)
 
 
-def load(shuffle=False):
+def load(shuffle=False, no=()):
     # contains names like 'fullscreen', not 'porcupine.plugins.fullscreen'
     plugin_names = {
         name for finder, name, is_pkg in pkgutil.iter_modules(plugin_paths)
         if not name.startswith('_')
     }
+    print(plugin_names)
+    for name in no:
+        if name in plugin_names:
+            plugin_names.remove(name)
+        else:
+            log.warning("no plugin named %r, cannot load without it", name)
     log.info("found %d plugins", len(plugin_names))
 
     plugin_infos = {}    # {name: (setup_before, setup_after, setup_func)}

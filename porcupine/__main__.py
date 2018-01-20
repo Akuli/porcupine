@@ -125,6 +125,10 @@ def main():
         help=("don't load the plugins, this is useful for "
               "understanding how much can be done with plugins"))
     plugingroup.add_argument(
+        '--without-plugin', action='append', default=[],
+        help=("don't load the given plugin, e.g. --without-plugin=highlight "
+              "runs Porcupine without syntax highlighting"))
+    plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
         help=("respect setup_before and setup_after, but otherwise setup the "
               "plugins in a random order instead of sorting by name "
@@ -190,7 +194,8 @@ def main():
     _session.setup_actions()
 
     if args.yes_plugins:
-        _pluginloader.load(shuffle=args.shuffle_plugins)
+        _pluginloader.load(shuffle=args.shuffle_plugins,
+                           no=args.without_plugin)
 
     # see queue_opener()
     for path, content in filelist:
