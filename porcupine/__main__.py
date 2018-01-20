@@ -100,6 +100,8 @@ Examples:
 
 
 def main():
+    _logs.setup()
+
     parser = argparse.ArgumentParser(
         prog=('%s -m porcupine' % utils.short_python_command),
         epilog=_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -179,7 +181,6 @@ def main():
         pass
 
     dirs.makedirs()
-    _logs.setup(args.logfile)
     log.info("starting Porcupine %s on %s", porcupine.__version__,
              platform.platform().replace('-', ' '))
     log.info("running on Python %d.%d.%d from %s",
