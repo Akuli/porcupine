@@ -99,8 +99,13 @@ Examples:
 
 
 def main():
+    if os.path.basename(sys.argv[0]) == '__main__.py':
+        prog = '%s -m porcupine' % porcupine.utils.short_python_command
+    else:
+        prog = os.path.basename(sys.argv[0])    # argparse default
     parser = argparse.ArgumentParser(
-        epilog=_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
+        prog=prog, epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument(
         '-v', '--version', action='version',
@@ -111,20 +116,21 @@ def main():
         help="find out where to install custom plugins")
     parser.add_argument(
         'files', metavar='FILES', action=_ExtendAction,
+        # FIXME: this uses the system-default encoding :/
         nargs=argparse.ZERO_OR_MORE, type=argparse.FileType("r"),
         help="open these files when Porcupine starts, - means stdin")
     parser.add_argument(
         '-n', '--new-file', dest='files', action='append_const', const=None,
-        help='create a "New File" tab; may be specified multiple times')
+        help='create a "New File" tab, may be given multiple times')
 
-    plugingroup = parser.add_mutually_exclusive_group()
+    plugingroup = parser.add_argument_group("plugin loading options")
     plugingroup.add_argument(
         '--no-plugins', action='store_false', dest='yes_plugins',
-        help=("don't load the plugins, this is useful for "
+        help=("don't load any plugins, this is useful for "
               "understanding how much can be done with plugins"))
     plugingroup.add_argument(
-        '--without-plugin', action='append', default=[],
-        help=("don't load the given plugin, e.g. --without-plugin=highlight "
+        '--without-plugin', metavar='PLUGIN', action='append', default=[],
+        help=("don't load PLUGIN, e.g. --without-plugin=highlight "
               "runs Porcupine without syntax highlighting"))
     plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
@@ -132,8 +138,7 @@ def main():
               "plugins in a random order instead of sorting by name "
               "alphabetically"))
 
-    loggroup = parser.add_mutually_exclusive_group()
-    loggroup.add_argument(
+    parser.add_argument(
         '--verbose', action='store_true',
         help=("print all logging messages to stderr, only warnings and errors "
               "are printed by default"))

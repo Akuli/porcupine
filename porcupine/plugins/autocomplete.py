@@ -55,7 +55,6 @@ def _fallback_completer(tab):
     # this with Tcl regexes too and check which is faster :)
     result = collections.Counter()
     for chunk in tab.textwidget.iter_chunks():
-        print([prefix])
         result.update(re.findall(r'\b' + prefix + r'(\w+)', chunk))
 
     # if the cursor is in the middle of a word, that word must not
@@ -81,10 +80,8 @@ class _AutoCompleter:
         before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
         after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
 
-        print([before_cursor])
         if re.search(r'\S$', before_cursor) is None:
             # let other plugins handle this however they want to
-            print("give up")
             return None
         if re.search(r'^\w', after_cursor) is not None:
             # don't complete in the middle of a word
