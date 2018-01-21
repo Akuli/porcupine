@@ -3,6 +3,7 @@ import itertools
 import logging
 import os
 import platform
+import shlex
 import shutil
 import subprocess
 import sys
@@ -25,17 +26,17 @@ def _remove_old_logs():
             os.remove(path)
 
 
-# running lsb_release takes about 0.12 seconds on this system => thread it :DDD
-# no really i want things to start up as quickly as possible and logging
-# is thread-safe so why not
-def _run_lsb_release():
+def _run_command(command):
     try:
-        output = subprocess.check_output(['lsb_release', '-a'],
+        output = subprocess.check_output(shlex.split(command),
                                          stderr=subprocess.STDOUT)
-        log.info("output from 'lsb_release -a':\n%s",
+        log.info("output from '%s':\n%s", command,
                  output.decode('utf-8', errors='replace'))
+    except FileNotFoundError as e:
+        log.info("cannot run '%s': %s", command, e)
     except (subprocess.CalledProcessError, OSError):
-        log.warning("unexpected error when calling lsb_release", exc_info=True)
+        log.warning("unexpected error when running '%s'", command,
+                    exc_info=True)
 
 
 def setup(verbose):
@@ -61,16 +62,19 @@ def setup(verbose):
                         handlers=[print_handler, file_handler],
                         format="[%(levelname)s] %(name)s: %(message)s")
 
-    log.info("starting Porcupine %s from '%s'", porcupine.__version__,
-             porcupine.__path__[0])
-    log.info("PID %d, log file '%s'", os.getpid(), logfile_path)
-    log.info("running on Python %d.%d.%d from '%s'",
-             *(list(sys.version_info[:3]) + [sys.executable]))
-    log.info("platform.system() returned %r", platform.system())
-    if shutil.which('lsb_release') is not None:
-        threading.Thread(target=_run_lsb_release).start()
-    else:   # e.g. windows
-        log.info("platform.platform() returned %r", platform.platform())
+    log.debug("starting Porcupine %s from '%s'", porcupine.__version__,
+              porcupine.__path__[0])
+    log.debug("PID %d, log file '%s'", os.getpid(), logfile_path)
+    log.debug("running on Python %d.%d.%d from '%s'",
+              *(list(sys.version_info[:3]) + [sys.executable]))
+    log.debug("platform.system() returned %r", platform.system())
+    log.debug("platform.platform() returned %r", platform.platform())
+    if platform.system() != 'Windows':
+        # lsb_release is a python script on ubuntu so running it takes
+        # about 0.12 seconds on this system, i really want porcupine to
+        # start as fast as possible
+        _run_command('uname -a')
+        threading.Thread(target=_run_command, args=['lsb_release -a']).start()
 
     # don't fail to run if old logs can't be deleted for some reason
     try:
