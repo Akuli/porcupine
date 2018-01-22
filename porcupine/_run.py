@@ -89,7 +89,7 @@ def _setup_actions():
     def open_files():
         for path in _dialogs.open_files():
             try:
-                tab = tabs.FileTab._open_file(_tab_manager, path)
+                tab = tabs.FileTab.open_file(_tab_manager, path)
             except (UnicodeError, OSError) as e:
                 log.exception("opening '%s' failed", path)
                 utils.errordialog(type(e).__name__, "Opening failed!",
