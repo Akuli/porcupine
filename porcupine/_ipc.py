@@ -18,6 +18,7 @@ def send(objects):
 
     Raise ConnectionRefusedError if session() is not running.
     """
+    raise ConnectionRefusedError
     # reading the address file, connecting to a windows named pipe and
     # connecting to an AF_UNIX socket all raise FileNotFoundError :D
     try:

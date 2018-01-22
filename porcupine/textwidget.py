@@ -209,7 +209,7 @@ class MainText(ThemedText):
 
         utils.bind_mouse_wheel(self, self._on_ctrl_wheel, prefixes='Control-')
 
-    # TODO: _session.py contains similar code, maybe reuse it here?
+    # TODO: _run.py contains similar code, maybe reuse it here?
     def _on_ctrl_wheel(self, direction):
         config = settings.get_section('General')
         if direction == 'reset':

@@ -1,58 +1,14 @@
-"""Run Porcupine."""
+"""Parse arguments and run Porcupine using ``_run.py``."""
 
 import argparse
 import logging
 import os
-from queue import Empty         # queue is a handy variable name
 import sys
-import tkinter
 
-import porcupine
-from porcupine import (_ipc, _logs, _pluginloader, _session, dirs, filetypes,
-                       settings, tabs)
+from porcupine import _ipc, pluginloader, get_tab_manager, tabs, utils
+import porcupine.plugins    # .plugins for porcupine.plugins.__path__
 
 log = logging.getLogger(__name__)
-
-
-def _iter_queue(queue):
-    while True:
-        try:
-            yield queue.get(block=False)
-        except Empty:
-            break
-
-
-def open_file(path, content):
-    if (path, content) != (None, None):
-        tabmanager = porcupine.get_tab_manager()
-        tabmanager.add_tab(tabs.FileTab(tabmanager, content, path))
-
-
-def queue_opener(queue, main_window):
-    gonna_focus = False
-    for path, content in _iter_queue(queue):
-        # if porcupine is running and the user runs it again without any
-        # arguments, then path and content are None and we just focus
-        # the editor window
-        gonna_focus = True
-        open_file(path, content)
-
-    if gonna_focus:
-        if main_window.tk.call('tk', 'windowingsystem') == 'win32':
-            main_window.deiconify()
-        else:
-            # this isn't as easy as you might think it is... focus_force
-            # focuses the window but doesn't move it to the front, and
-            # the -topmost wm attribute only works for lifting the
-            # window temporarily
-            # if you know how to do this without flashing the window
-            # like this then please let me know
-            geometry = main_window.geometry()
-            main_window.withdraw()
-            main_window.deiconify()
-            main_window.geometry(geometry)
-
-    main_window.after(200, queue_opener, queue, main_window)
 
 
 # these actions are based on argparse's source code
@@ -100,7 +56,7 @@ Examples:
 
 def main():
     if os.path.basename(sys.argv[0]) == '__main__.py':
-        prog = '%s -m porcupine' % porcupine.utils.short_python_command
+        prog = '%s -m porcupine' % utils.short_python_command
     else:
         prog = os.path.basename(sys.argv[0])    # argparse default
     parser = argparse.ArgumentParser(
@@ -145,9 +101,6 @@ def main():
 
     args = parser.parse_args()
 
-    dirs.makedirs()
-    _logs.setup(args.verbose)
-
     filelist = []
     for file in args.files:
         if file is sys.stdin:
@@ -181,31 +134,23 @@ def main():
         # connect to
         pass
 
-    root = tkinter.Tk()
-    root.title("Porcupine")
-    root.protocol('WM_DELETE_WINDOW', _session.quit)
-
-    filetypes._init()
-    _session.init(root)
-    _session.setup_actions()
-
+    porcupine.init(verbose_logging=args.verbose)
     if args.yes_plugins:
-        _pluginloader.load(shuffle=args.shuffle_plugins,
-                           no=args.without_plugin)
+        plugin_names = pluginloader.find_plugins()
+        log.info("found %d plugins", len(plugin_names))
+        for name in args.without_plugin:
+            if name in plugin_names:
+                plugin_names.remove(name)
+            else:
+                log.warning("no plugin named %r, cannot load without it", name)
 
-    # see queue_opener()
+        pluginloader.load(plugin_names, shuffle=args.shuffle_plugins)
+
+    tabmanager = get_tab_manager()
     for path, content in filelist:
-        open_file(path, content)
+        tabmanager.add_tab(tabs.FileTab(tabmanager, content, path))
 
-    # the user can change the settings only if we get here, so there's
-    # no need to wrap the whole thing in try/with/finally/whatever
-    with _ipc.session() as queue:
-        root.after_idle(queue_opener, queue, root)
-        try:
-            root.mainloop()
-        finally:
-            settings.save()
-
+    porcupine.run()
     log.info("exiting Porcupine successfully")
 
 

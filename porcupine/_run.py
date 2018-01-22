@@ -1,37 +1,53 @@
+"""The main window and tab manager globals are here."""
+
 import functools
 import logging
+from queue import Empty         # queue is a handy variable name
+import tkinter
 import traceback
 import webbrowser
 
-from porcupine import _dialogs, actions, settings, tabs, utils
+from porcupine import (_dialogs, _ipc, _logs, actions, filetypes, dirs,
+                       settings, tabs, utils)
 
 log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier
-_main_window = None
+_root = None
 _tab_manager = None
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
-def init(main_window):
-    global _main_window
+def init(verbose_logging=False):
+    """Get everything ready for running Porcupine.
+
+    The *verbose_logging* option corresponds to the ``--verbose``
+    argument. Run ``porcu --help`` for more information about it.
+    """
+    global _root
     global _tab_manager
-    assert _main_window is None and _tab_manager is None
+    if _root is not None or _tab_manager is not None:
+        raise RuntimeError("cannot init() twice")
 
-    tabmanager = tabs.TabManager(main_window)
-    tabmanager.pack(fill='both', expand=True)
-    for binding, callback in tabmanager.bindings:
-        main_window.bind(binding, callback, add=True)
+    dirs.makedirs()
+    _logs.setup(verbose_logging)
+    _root = tkinter.Tk()
+    _root.protocol('WM_DELETE_WINDOW', quit)
+    filetypes._init()
 
-    _main_window = main_window
-    _tab_manager = tabmanager
+    _tab_manager = tabs.TabManager(_root)
+    _tab_manager.pack(fill='both', expand=True)
+    for binding, callback in _tab_manager.bindings:
+        _root.bind(binding, callback, add=True)
+
+    _setup_actions()
 
 
 def get_main_window():
     """Return the tkinter root window that Porcupine is using."""
-    if _main_window is None:
+    if _root is None:
         raise RuntimeError("Porcupine is not running")
-    return _main_window
+    return _root
 
 
 def get_tab_manager():
@@ -46,7 +62,7 @@ def get_tab_manager():
 def quit():
     """
     Calling this function is equivalent to clicking the X button in the
-    corner of the window.
+    corner of the main window.
 
     First the :meth:`~porcupine.tabs.Tab.can_be_closed` method of each
     tab is called. If all tabs can be closed, a ``<<PorcupineQuit>>``
@@ -60,23 +76,20 @@ def quit():
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    _main_window.event_generate('<<PorcupineQuit>>')
+    _root.event_generate('<<PorcupineQuit>>')
     for tab in _tab_manager.tabs():
         _tab_manager.close_tab(tab)
-
-    # all widgets are in the main window, so destroying the main window
-    # should destroy everything
-    _main_window.destroy()
+    _root.destroy()
 
 
-def setup_actions():
+def _setup_actions():
     def new_file():
         _tab_manager.add_tab(tabs.FileTab(_tab_manager))
 
     def open_files():
         for path in _dialogs.open_files():
             try:
-                tab = tabs.FileTab.open_file(_tab_manager, path)
+                tab = tabs.FileTab._open_file(_tab_manager, path)
             except (UnicodeError, OSError) as e:
                 log.exception("opening '%s' failed", path)
                 utils.errordialog(type(e).__name__, "Opening failed!",
@@ -108,7 +121,7 @@ def setup_actions():
     # TODO: is Edit the best possible place for this?
     actions.add_command(
         "Edit/Porcupine Settings...",
-        functools.partial(settings.show_dialog, get_main_window()))
+        functools.partial(settings.show_dialog, _root))
 
     def change_font_size(how):
         config = settings.get_section('General')
@@ -152,3 +165,57 @@ def setup_actions():
              "https://github.com/Akuli/python-tutorial/blob/master/README.md")
     add_link("Help/Python Help/Official Python documentation",
              "https://docs.python.org/")
+
+
+def _iter_queue(queue):
+    while True:
+        try:
+            yield queue.get(block=False)
+        except Empty:
+            break
+
+
+def _open_file(path, content):
+    if (path, content) != (None, None):
+        _tab_manager.add_tab(tabs.FileTab(_tab_manager, content, path))
+
+
+def _queue_opener(queue):
+    gonna_focus = False
+    for path, content in _iter_queue(queue):
+        # if porcupine is running and the user runs it again without any
+        # arguments, then path and content are None and we just focus
+        # the window
+        gonna_focus = True
+        _open_file(path, content)
+
+    if gonna_focus:
+        if _root.tk.call('tk', 'windowingsystem') == 'win32':
+            _root.deiconify()
+        else:
+            # this isn't as easy as you might think it is... focus_force
+            # focuses the window but doesn't move it to the front, and
+            # the -topmost wm attribute only works for lifting the
+            # window temporarily
+            # if you know how to do this without flashing the window
+            # like this then please let me know
+            geometry = _root.geometry()
+            _root.withdraw()
+            _root.deiconify()
+            _root.geometry(geometry)
+
+    _root.after(200, _queue_opener, queue)
+
+
+def run():
+    if _root is None:
+        raise RuntimeError("init() wasn't called")
+
+    # the user can change the settings only if we get here, so there's
+    # no need to wrap the whole thing in try/with/finally/whatever
+    with _ipc.session() as queue:
+        _root.after_idle(_queue_opener, queue)
+        try:
+            _root.mainloop()
+        finally:
+            settings.save()

@@ -29,4 +29,5 @@ if (os.path.isdir(os.path.join(here, '..', '.git')) and
     except (OSError, subprocess.CalledProcessError, UnicodeError):
         pass
 
-from porcupine._session import quit, get_main_window, get_tab_manager   # noqa
+from porcupine._run import (init, run, quit, get_main_window,
+                            get_tab_manager)   # noqa
