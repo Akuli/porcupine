@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 # global state makes some things a lot easier
 _root = None
 _tab_manager = None
+_init_kwargs = {}
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
@@ -24,6 +25,8 @@ def init(verbose_logging=False):
     The *verbose_logging* option corresponds to the ``--verbose``
     argument. Run ``porcu --help`` for more information about it.
     """
+    _init_kwargs.update(locals())   # not too hacky IMO
+
     global _root
     global _tab_manager
     if _root is not None or _tab_manager is not None:
@@ -41,6 +44,18 @@ def init(verbose_logging=False):
         _root.bind(binding, callback, add=True)
 
     _setup_actions()
+
+
+def get_init_kwargs():
+    """Return a dictionary of the keyword arguments that were passed to :func:\
+`init`.
+
+    This is useful for invoking :func:`init` again in exactly the same
+    way.
+    """
+    if not _init_kwargs:
+        raise RuntimeError("init() wasn't called")
+    return _init_kwargs
 
 
 def get_main_window():

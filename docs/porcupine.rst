@@ -40,6 +40,7 @@ Note that the plugins assume that :func:`porcupine.init` has been called, so
 they must be loaded after calling :func:`init`.
 
 .. autofunction:: init
+.. autofunction:: get_init_kwargs
 .. autofunction:: run
 .. autofunction:: quit
 

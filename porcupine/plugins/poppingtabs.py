@@ -8,7 +8,7 @@ import tempfile
 import tkinter
 
 import porcupine
-from porcupine import get_main_window, get_tab_manager, pluginloader, settings
+from porcupine import pluginloader, settings
 
 
 POPUP_SIZE = (600, 400)
@@ -60,13 +60,14 @@ class PopManager:
         top = event.y_root - self._label.winfo_reqheight()      # above cursor
         self._window.geometry('+%d+%d' % (left, top))
 
+    # FIXME: when to return break??? also on_drop
     def on_drag(self, event):
         if _is_on_window(event):
             self._window.withdraw()
             return
 
         if self._dragged_state is NOT_DRAGGING:
-            tab = get_tab_manager().select()
+            tab = porcupine.get_tab_manager().select()
             if tab is None:
                 # no tabs to pop up
                 self._dragged_state = NO_TABS
@@ -90,7 +91,7 @@ class PopManager:
         if not (_is_on_window(event) or
                 self._dragged_state in SPECIAL_STATES):
             # a valid state, let's pop it off :D
-            plugin_names = porcupine.pluginloader.get_loaded_plugins()
+            plugin_names = pluginloader.get_loaded_plugins()
 
             # these plugins are not suitable for popups
             for bad_plugin in ['restart', 'geometry']:
@@ -99,40 +100,46 @@ class PopManager:
 
             tab, state = self._dragged_state
             message = (type(tab), state, plugin_names,
-                       event.x_root, event.y_root)
+                       porcupine.get_init_kwargs(), event.x_root, event.y_root)
             with tempfile.NamedTemporaryFile(delete=False) as file:
                 pickle.dump(message, file)
 
             settings.save()     # let the new process use up-to-date settings
             subprocess.Popen([sys.executable, '-m', __name__, file.name])
-            get_tab_manager().close_tab(tab)
+            porcupine.get_tab_manager().close_tab(tab)
 
         self._dragged_state = NOT_DRAGGING
 
 
 def setup():
     manager = PopManager()
-    get_tab_manager().bind('<Button1-Motion>', manager.on_drag)
-    get_tab_manager().bind('<ButtonRelease-1>', manager.on_drop)
+    porcupine.get_tab_manager().bind(
+        '<Button1-Motion>', manager.on_drag, add=True)
+    porcupine.get_tab_manager().bind(
+        '<ButtonRelease-1>', manager.on_drop, add=True)
 
 
 def _run_popped_up_process():
     # TODO: what if this fails?? then the user may lose important stuff?
     prog, state_path = sys.argv
     with open(state_path, 'rb') as file:
-        (tabtype, state, plugin_names, mousex, mousey) = pickle.load(file)
+        (tabtype, state, plugin_names, init_kwargs,
+         mousex, mousey) = pickle.load(file)
 
-    porcupine.init()
+    porcupine.init(**init_kwargs)
 
     # center the window around the mouse
     width, height = POPUP_SIZE
     top = mousey - height//2
     left = mousex - height//2
-    get_main_window().geometry('%dx%d+%d+%d' % (width, height, left, top))
+    porcupine.get_main_window().geometry(
+        '%dx%d+%d+%d' % (width, height, left, top))
 
     pluginloader.load(plugin_names)
-    get_tab_manager().add_tab(tabtype.from_state(get_tab_manager(), state))
-    os.remove(state_path)
+    tabmanager = porcupine.get_tab_manager()
+    tabmanager.add_tab(tabtype.from_state(tabmanager, state))
+
+    os.remove(state_path)    # TODO: comment why this is last
     porcupine.run()
 
 
