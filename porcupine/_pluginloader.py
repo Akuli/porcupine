@@ -73,7 +73,7 @@ def load(shuffle=False, no=()):
                 names.sort()
             loading_order.extend(names)
     except toposort.CircularDependencyError as e:
-        parts = map("{} depends on {}".format, e.data.items())
+        parts = ("%s depends on %s" % item for item in e.data.items())
         log.error("circular dependency: %s", ', '.join(parts))
 
     for name in loading_order:
