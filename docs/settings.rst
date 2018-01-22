@@ -15,7 +15,7 @@ Getting Started
 The settings are divided into **sections**. Each section is shown as
 a tab in the setting dialog. You can also create your own sections.
 
-.. autofunction:: porcupine.settings.get_section
+.. autofunction:: get_section
 
 For example, you can do this::
 
@@ -174,3 +174,14 @@ changes, and the ``StringVar`` gets updated when the widget changes.
 
    You can also add your own widgets to this frame. Usually it's best to pack
    them like ``widget.pack(fill='x')`` for consistency with other widgets.
+
+
+Rarely Needed Functions
+-----------------------
+
+These functions are exposed here for unusual things like
+:source:`the poppingtabs plugin <porcupine/plugins/poppingtabs.py>`. You
+probably don't need these.
+
+.. autofunction:: show_dialog
+.. autofunction:: save

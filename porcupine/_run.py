@@ -119,9 +119,7 @@ def _setup_actions():
     actions.add_command("File/Quit", quit, '<Control-q>')
 
     # TODO: is Edit the best possible place for this?
-    actions.add_command(
-        "Edit/Porcupine Settings...",
-        functools.partial(settings.show_dialog, _root))
+    actions.add_command("Edit/Porcupine Settings...", settings.show_dialog)
 
     def change_font_size(how):
         config = settings.get_section('General')

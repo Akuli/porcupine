@@ -8,7 +8,7 @@ import tempfile
 import tkinter
 
 import porcupine
-from porcupine import get_main_window, get_tab_manager, pluginloader
+from porcupine import get_main_window, get_tab_manager, pluginloader, settings
 
 
 POPUP_SIZE = (600, 400)
@@ -103,6 +103,7 @@ class PopManager:
             with tempfile.NamedTemporaryFile(delete=False) as file:
                 pickle.dump(message, file)
 
+            settings.save()     # let the new process use up-to-date settings
             subprocess.Popen([sys.executable, '-m', __name__, file.name])
             get_tab_manager().close_tab(tab)
 

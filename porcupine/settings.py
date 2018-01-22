@@ -15,8 +15,15 @@ import types
 import pygments.styles
 import pygments.util
 
-import porcupine    # for get_tab_manager()
+# get_main_window and get_tab_manager must not be imported from
+# porcupine because it imports this before exposing the getter
+# functions, and the getter functions cannot be imported from
+# porcupine._run because that imports this file (lol)
+# that's why "import porcupine"
+import porcupine
 from porcupine import dirs, images, utils
+
+
 
 log = logging.getLogger(__name__)
 
@@ -486,7 +493,11 @@ def _init():
                command=edit_it).pack(anchor='center')
 
 
-def show_dialog(window):
+def show_dialog():
+    """Show the "Porcupine Settings" dialog.
+
+    This function is called when the user opens the dialog from the menu.
+    """
     _init()
 
     # hide sections with no widgets in the content_frame
@@ -497,11 +508,16 @@ def show_dialog(window):
         else:
             _notebook.hide(section.content_frame)
 
-    _dialog.transient(window)
+    _dialog.transient(porcupine.get_main_window())
     _dialog.deiconify()
 
 
 def save():
+    """Save the settings to the config file.
+
+    Note that :func:`porcupine.run` always calls this before it returns,
+    so usually you don't need to worry about this yourself.
+    """
     if _loaded_json:
         # there's something to save
         # if two porcupines are running and the user changes settings
