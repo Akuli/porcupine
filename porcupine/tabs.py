@@ -398,7 +398,7 @@ restarting Porcupine.
         return None
 
     @classmethod
-    def from_state(cls, state):
+    def from_state(cls, manager, state):
         """Create a new tab from the return value of :meth:`get_state`.
 
         Be sure to override this if you override :meth:`get_state`.
