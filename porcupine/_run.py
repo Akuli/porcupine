@@ -7,7 +7,7 @@ import tkinter
 import traceback
 import webbrowser
 
-from porcupine import (_dialogs, _ipc, _logs, actions, filetypes, dirs,
+from porcupine import (_dialogs, _logs, actions, filetypes, dirs,
                        settings, tabs, utils)
 
 log = logging.getLogger(__name__)
@@ -175,47 +175,13 @@ def _iter_queue(queue):
             break
 
 
-def _open_file(path, content):
-    if (path, content) != (None, None):
-        _tab_manager.add_tab(tabs.FileTab(_tab_manager, content, path))
-
-
-def _queue_opener(queue):
-    gonna_focus = False
-    for path, content in _iter_queue(queue):
-        # if porcupine is running and the user runs it again without any
-        # arguments, then path and content are None and we just focus
-        # the window
-        gonna_focus = True
-        _open_file(path, content)
-
-    if gonna_focus:
-        if _root.tk.call('tk', 'windowingsystem') == 'win32':
-            _root.deiconify()
-        else:
-            # this isn't as easy as you might think it is... focus_force
-            # focuses the window but doesn't move it to the front, and
-            # the -topmost wm attribute only works for lifting the
-            # window temporarily
-            # if you know how to do this without flashing the window
-            # like this then please let me know
-            geometry = _root.geometry()
-            _root.withdraw()
-            _root.deiconify()
-            _root.geometry(geometry)
-
-    _root.after(200, _queue_opener, queue)
-
-
 def run():
     if _root is None:
         raise RuntimeError("init() wasn't called")
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the whole thing in try/with/finally/whatever
-    with _ipc.session() as queue:
-        _root.after_idle(_queue_opener, queue)
-        try:
-            _root.mainloop()
-        finally:
-            settings.save()
+    try:
+        _root.mainloop()
+    finally:
+        settings.save()

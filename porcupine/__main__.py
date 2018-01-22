@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-from porcupine import _ipc, pluginloader, get_tab_manager, tabs, utils
+from porcupine import pluginloader, get_tab_manager, tabs, utils
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
 
 log = logging.getLogger(__name__)
@@ -118,21 +118,6 @@ def main():
         else:
             with file:
                 filelist.append((os.path.abspath(file.name), file.read()))
-
-    try:
-        if filelist:
-            _ipc.send(filelist)
-            print("The", ("file" if len(filelist) == 1 else "files"),
-                  "will be opened in the already running Porcupine.")
-        else:
-            # see queue_opener()
-            _ipc.send([(None, None)])
-            print("Porcupine is already running.")
-        return
-    except ConnectionRefusedError:
-        # not running yet, become the Porcupine that other Porcupines
-        # connect to
-        pass
 
     porcupine.init(verbose_logging=args.verbose)
     if args.yes_plugins:
