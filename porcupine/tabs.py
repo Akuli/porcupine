@@ -96,8 +96,7 @@ class TabManager(ttk.Notebook):
             # the close button was clicked
             tab = self.tabs()[self.index('@%d,%d' % (event.x, event.y))]
             if tab.can_be_closed():
-                # self.master is the tab manager
-                self.master.close_tab(tab)
+                self.close_tab(tab)
 
     def _on_wheel(self, direction):
         self.select_another_tab({'up': -1, 'down': +1}[direction])
