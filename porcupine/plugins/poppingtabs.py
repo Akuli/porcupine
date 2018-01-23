@@ -5,6 +5,7 @@ import pickle
 import subprocess
 import sys
 import tempfile
+import threading
 import tkinter
 
 import porcupine
@@ -14,9 +15,9 @@ from porcupine import pluginloader, settings
 POPUP_SIZE = (600, 400)
 
 # special state markers
-NOT_DRAGGING = object()
 NO_TABS = object()
 NOT_POPPABLE = object()
+NOT_DRAGGING = object()
 SPECIAL_STATES = {NO_TABS, NOT_POPPABLE, NOT_DRAGGING}
 
 
@@ -60,7 +61,8 @@ class PopManager:
         top = event.y_root - self._label.winfo_reqheight()      # above cursor
         self._window.geometry('+%d+%d' % (left, top))
 
-    # FIXME: when to return break??? also on_drop
+    # no need to return 'break' imo, other plugins are free to follow
+    # drags and drops
     def on_drag(self, event):
         if _is_on_window(event):
             self._window.withdraw()
@@ -105,8 +107,12 @@ class PopManager:
                 pickle.dump(message, file)
 
             settings.save()     # let the new process use up-to-date settings
-            subprocess.Popen([sys.executable, '-m', __name__, file.name])
+            process = subprocess.Popen([sys.executable, '-m', __name__,
+                                        file.name])
             porcupine.get_tab_manager().close_tab(tab)
+
+            # don't exit python until the subprocess exits
+            threading.Thread(target=process.wait).start()
 
         self._dragged_state = NOT_DRAGGING
 
@@ -120,7 +126,6 @@ def setup():
 
 
 def _run_popped_up_process():
-    # TODO: what if this fails?? then the user may lose important stuff?
     prog, state_path = sys.argv
     with open(state_path, 'rb') as file:
         (tabtype, state, plugin_names, init_kwargs,
@@ -139,7 +144,14 @@ def _run_popped_up_process():
     tabmanager = porcupine.get_tab_manager()
     tabmanager.add_tab(tabtype.from_state(tabmanager, state))
 
-    os.remove(state_path)    # TODO: comment why this is last
+    # the state file is not removed earlier because if anything above
+    # fails, it still exists and can be recovered like this:
+    #
+    #   $ python3 -m porcupine.plugins.poppingtabs /path/to/the/state/file
+    #
+    # most of the time this should "just work", so user-unfriendliness
+    # is not a huge problem
+    os.remove(state_path)
     porcupine.run()
 
 

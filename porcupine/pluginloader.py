@@ -123,4 +123,4 @@ der.
     This is useful for plugins that need to start a new Porcupine
     process and load plugins in that.
     """
-    return list(_loaded_names)
+    return _loaded_names.copy()
