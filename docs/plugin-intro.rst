@@ -199,9 +199,9 @@ like this::
 ``callback2`` discarded the old binding. Everything would be fine
 if we had done this instead::
 
-   some_widget.bind('<Control-Return>', callback1, add=True)
-   some_widget.bind('<Control-Return>', callback2, add=True)
-   # now they're both bound
+    some_widget.bind('<Button-1>', callback1, add=True)
+    some_widget.bind('<Button-1>', callback2, add=True)
+    # now they're both bound
 
 Unfortunately tkinter's ``unbind()`` method is stupid and it unbinds
 everything, regardless of the second argument passed into it (see
