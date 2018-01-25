@@ -123,6 +123,10 @@ class TwoRotationsBlock(Block):
             new_shape = next(self._rotations)
             for x, y in new_shape:
                 if self.bumps(self.x + x, self.y + y):
+                    # restore self._rotations back to the state before
+                    # calling this method to make things look like
+                    # nothing happened
+                    next(self._rotations)
                     return False
             self.shape = new_shape
             return True
@@ -147,7 +151,7 @@ class Game:
         return 300 - (30 * self.level)
 
     def add_block(self):
-        letter = random.choice(list(SHAPES))
+        letter = random.choice(list(SHAPES.keys()))
         if letter == 'O':
             self.moving_block = NonRotatingBlock(self, letter)
         elif letter in {'I', 'S', 'Z'}:
@@ -241,7 +245,6 @@ class TetrisTab(tabs.Tab):
 
         self._timeout_id = None
         self._game_over_id = None
-        self.new_game()
 
     def _on_key(self, event):
         if event.keysym in {'A', 'a', 'Left'}:
@@ -272,7 +275,7 @@ class TetrisTab(tabs.Tab):
         self.status = "Score %d, level %d" % (
             self._game.score, self._game.level)
 
-    def new_game(self, junk_event=None):
+    def new_game(self):
         if self._timeout_id is not None:
             self.after_cancel(self._timeout_id)
         if self._game_over_id is not None:
@@ -302,8 +305,22 @@ class TetrisTab(tabs.Tab):
         # yes, this needs force for some reason
         self._canvas.focus_force()
 
+    def get_state(self):
+        return self._game       # it should be picklable
+
+    @classmethod
+    def from_state(cls, manager, game: Game):
+        self = cls(manager)
+        self._game = game
+        self._timeout_id = self._canvas.after(game.delay, self._on_timeout)
+        return self
+
+
+def play_tetris():
+    tab = TetrisTab(get_tab_manager())
+    tab.new_game()
+    get_tab_manager().add_tab(tab)
+
 
 def setup():
-    actions.add_command(
-        "Games/Tetris",
-        lambda: get_tab_manager().add_tab(TetrisTab(get_tab_manager())))
+    actions.add_command("Games/Tetris", play_tetris)
