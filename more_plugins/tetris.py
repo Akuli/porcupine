@@ -139,6 +139,7 @@ class Game:
         self.frozen_squares = {}   # {(x, y): shape_letter}
         self.score = 0      # each new block increments score
         self.add_block()
+        self.paused = False     # only used outside this class definition
 
     @property
     def level(self):
@@ -230,7 +231,7 @@ class TetrisTab(tabs.Tab):
         # this also requires binding on the tab when the tab is detached
         for key in ['<A>', '<a>', '<S>', '<s>', '<D>', '<d>', '<F>', '<f>',
                     '<Left>', '<Right>', '<Up>', '<Down>', '<Return>',
-                    '<space>', '<F2>']:
+                    '<space>', '<F2>', '<P>', '<p>']:
             self._canvas.bind(key, self._on_key, add=True)
             self.bind(key, self._on_key, add=True)
 
@@ -251,10 +252,13 @@ class TetrisTab(tabs.Tab):
             self._game.moving_block.move_left()
         elif event.keysym in {'D', 'd', 'Right'}:
             self._game.moving_block.move_right()
-        elif event.keysym in {'Return', 'Up'}:
+        elif event.keysym in {'W', 'w', 'Return', 'Up'}:
             self._game.moving_block.rotate()
-        elif event.keysym in {'space', 'Down'}:
+        elif event.keysym in {'S', 's', 'space', 'Down'}:
             self._game.moving_block.move_down_all_the_way()
+        elif event.keysym in {'P', 'p'}:
+            if not self._game.game_over():
+                self._game.paused = (not self._game.paused)
         elif event.keysym == 'F2':
             self.new_game()
         else:
@@ -287,6 +291,11 @@ class TetrisTab(tabs.Tab):
         self._on_timeout()
 
     def _on_timeout(self):
+        if self._game.paused:
+            self._timeout_id = self._canvas.after(
+                self._game.delay, self._on_timeout)
+            return
+
         self._game.do_something()
         self._refresh()
 
@@ -309,9 +318,10 @@ class TetrisTab(tabs.Tab):
         return self._game       # it should be picklable
 
     @classmethod
-    def from_state(cls, manager, game: Game):
+    def from_state(cls, manager, game):
         self = cls(manager)
         self._game = game
+        self._refresh()
         self._timeout_id = self._canvas.after(game.delay, self._on_timeout)
         return self
 
