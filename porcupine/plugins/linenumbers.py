@@ -72,7 +72,6 @@ class LineNumbers(ThemedText):
 
 
 def _setup_scrolling(main_text, other_text):
-    print(locals())
     # do nothing when mouse is wheeled on other_text
     other_text['yscrollcommand'] = lambda start, end: (
         other_text.yview_moveto(main_text.yview()[0]))
