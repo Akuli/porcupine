@@ -1,5 +1,6 @@
 """Dragging tabs out of a Porcupine window."""
 
+import logging
 import os
 import pickle
 import subprocess
@@ -10,6 +11,8 @@ import tkinter
 
 import porcupine
 from porcupine import pluginloader, settings
+
+log = logging.getLogger(__name__)
 
 
 POPUP_SIZE = (600, 400)
@@ -92,29 +95,41 @@ class PopManager:
         self._window.withdraw()
         if not (_is_on_window(event) or
                 self._dragged_state in SPECIAL_STATES):
-            # a valid state, let's pop it off :D
+            log.info("popping off a tab")
             plugin_names = pluginloader.get_loaded_plugins()
-
-            # these plugins are not suitable for popups
             for bad_plugin in ['restart', 'geometry']:
+                # these plugins are not suitable for popups
                 if bad_plugin in plugin_names:
                     plugin_names.remove(bad_plugin)
 
             tab, state = self._dragged_state
-            message = (type(tab), state, plugin_names,
+            required_size = (tab.winfo_reqwidth(), tab.winfo_reqheight())
+            message = (type(tab), state, plugin_names, required_size,
                        porcupine.get_init_kwargs(), event.x_root, event.y_root)
             with tempfile.NamedTemporaryFile(delete=False) as file:
+                log.debug("writing dumped state to '%s'", file)
                 pickle.dump(message, file)
 
             settings.save()     # let the new process use up-to-date settings
             process = subprocess.Popen([sys.executable, '-m', __name__,
                                         file.name])
+            log.debug("started subprocess with PID %d", process.pid)
             porcupine.get_tab_manager().close_tab(tab)
 
-            # don't exit python until the subprocess exits
-            threading.Thread(target=process.wait).start()
+            # don't exit python until the subprocess exits, also log stuff
+            threading.Thread(target=self._waiter_thread,
+                             args=[process]).start()
 
         self._dragged_state = NOT_DRAGGING
+
+    def _waiter_thread(self, process):
+        status = process.wait()
+        if status == 0:
+            log.debug("subprocess with PID %d exited successfully",
+                      process.pid)
+        else:
+            log.warning("subprocess with PID %d exited with status %d",
+                        process.pid, status)
 
 
 def setup():
@@ -128,17 +143,20 @@ def setup():
 def _run_popped_up_process():
     prog, state_path = sys.argv
     with open(state_path, 'rb') as file:
-        (tabtype, state, plugin_names, init_kwargs,
+        (tabtype, state, plugin_names, required_size, init_kwargs,
          mousex, mousey) = pickle.load(file)
 
     porcupine.init(**init_kwargs)
 
     # center the window around the mouse
     width, height = POPUP_SIZE
+    reqwidth, reqheight = required_size
+    reqheight += 50     # for stuff outside tabs
+
     top = mousey - height//2
     left = mousex - height//2
-    porcupine.get_main_window().geometry(
-        '%dx%d+%d+%d' % (width, height, left, top))
+    porcupine.get_main_window().geometry('%dx%d+%d+%d' % (
+        max(width, reqwidth), max(height, reqheight), left, top))
 
     pluginloader.load(plugin_names)
     tabmanager = porcupine.get_tab_manager()
