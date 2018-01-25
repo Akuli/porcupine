@@ -77,8 +77,14 @@ class TabManager(ttk.Notebook):
             callback = functools.partial(self._on_alt_n, number)
             self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
+        self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
         self.bind('<Button-1>', self._on_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
+
+    def _focus_selected_tab(self, event):
+        tab = self.select()
+        if tab is not None:
+            tab.on_focus()
 
     def _on_click(self, event):
         if self.identify(event.x, event.y) != 'label':
@@ -132,8 +138,6 @@ class TabManager(ttk.Notebook):
 
         # the tab can be e.g. an index, that's why two super() calls
         super().select(tab_id)
-        tab = self.nametowidget(super().select())
-        tab.on_focus()
         return None
 
     def tabs(self):
