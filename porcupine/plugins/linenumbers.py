@@ -1,30 +1,9 @@
 """Line numbers for tkinter's Text widget."""
 
+import functools
+
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.textwidget import ThemedText
-
-
-class ScrollManager:
-    """Scroll two text widgets with one scrollbar."""
-
-    def __init__(self, scrollbar, main_widget, other_widgets):
-        self._scrollbar = scrollbar
-        self._main_widget = main_widget
-        self._widgets = [main_widget] + other_widgets
-
-    def enable(self):
-        self._scrollbar['command'] = self._yview
-        for widget in self._widgets:
-            widget['yscrollcommand'] = self._set
-
-    def _yview(self, *args):
-        for widget in self._widgets:
-            widget.yview(*args)
-
-    def _set(self, beginning, end):
-        self._scrollbar.set(beginning, end)
-        for widget in self._widgets:
-            widget.yview('moveto', beginning)
 
 
 class LineNumbers(ThemedText):
@@ -92,6 +71,21 @@ class LineNumbers(ThemedText):
         return 'break'
 
 
+def _setup_scrolling(main_text, other_text):
+    print(locals())
+    # do nothing when mouse is wheeled on other_text
+    other_text['yscrollcommand'] = lambda start, end: (
+        other_text.yview_moveto(main_text.yview()[0]))
+
+    # also scroll other_text when main_text's scrolling position changes
+    old_command = main_text['yscrollcommand']   # a tcl command string
+    assert isinstance(old_command, str)
+    main_text['yscrollcommand'] = lambda start, end: (
+        main_text.tk.call(old_command, start, end),
+        other_text.yview_moveto(start),
+    )
+
+
 def on_new_tab(event):
     tab = event.data_widget      # pep8 line length
     if not isinstance(tab, tabs.FileTab):
@@ -99,7 +93,7 @@ def on_new_tab(event):
 
     linenumbers = LineNumbers(tab.left_frame, tab.textwidget)
     linenumbers.pack(side='left', fill='y')
-    ScrollManager(tab.scrollbar, tab.textwidget, [linenumbers]).enable()
+    _setup_scrolling(tab.textwidget, linenumbers)
     tab.textwidget.bind('<<ContentChanged>>', linenumbers.do_update, add=True)
     linenumbers.do_update()
 

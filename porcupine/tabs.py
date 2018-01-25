@@ -700,18 +700,37 @@ bers.py>` use this attribute.
         self.save()
         return True
 
+    # FIXME: don't ignore undo history :/
     def get_state(self):
-        if self.path is None:
-            return None
-        return (self.path, self.textwidget.index('insert'))
+        # e.g. "New File" tabs are saved even though the .path is None
+        if self.is_saved() and self.path is not None:
+            # this is really saved
+            content = None
+        else:
+            content = self.textwidget.get('1.0', 'end - 1 char')
+
+        return (self.path, content, self._save_hash,
+                self.textwidget.index('insert'))
 
     @classmethod
     def from_state(cls, manager, state):
-        path, cursor_pos = state
-        tab = cls.open_file(manager, path)
-        tab.textwidget.mark_set('insert', cursor_pos)
-        tab.textwidget.see('insert')
-        return tab
+        path, content, save_hash, cursor_pos = state
+        if content is None:
+            # nothing has changed since saving, read from the saved file
+            self = cls.open_file(manager, path)
+        else:
+            self = cls(manager, content, path)
+
+        # the title depends on the saved hash
+        self._save_hash = save_hash
+        self._update_title()
+
+        # this seems to work well enough
+        self.textwidget.mark_set('insert', cursor_pos)
+        self.textwidget.see('insert linestart')
+        self.textwidget.see('insert linestart + 5 lines')
+        self.textwidget.see('insert linestart - 5 lines')
+        return self
 
 
 if __name__ == '__main__':
