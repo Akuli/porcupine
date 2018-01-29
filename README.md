@@ -23,6 +23,8 @@ Here's a list of the most important features:
 - Find/replace
 - Simple setting dialog
 - Multiple files can be opened at the same time like tabs in a web browser
+- The tabs can be dragged out of the window to open a new Porcupine window
+  conveniently
 - Status bar that shows current line and column numbers
 
 [Pygments]: http://pygments.org/
@@ -72,6 +74,18 @@ installed. Then open PowerShell or command prompt, and run these commands:
 
     py -m pip install --user http://goo.gl/SnlfHw
     pyw -m porcupine
+
+### Development Install
+
+If you want to do changes to Porcupine yourself, I recommend installing git and
+then downloading Porcupine like this:
+
+    git clone https://github.com/Akuli/porcupine
+    cd porcupine
+    python3 -m pip install -r requirements.txt
+    python3 -m porcupine
+
+Use `py` instead of `python3` on Windows.
 
 ## FAQ
 
