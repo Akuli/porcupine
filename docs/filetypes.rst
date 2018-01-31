@@ -23,20 +23,15 @@ settings or running commands.
     ``filetypes.ini`` don't actually do anything. I'll update
     :source:`porcupine/plugins/run` to support them some day.
 
-Porcupine creates a ``filetypes.ini`` when it's started for the first time. By
-default, it contains instructions for editing the file as comments and the
-default settings that Porcupine is using.
-
-An easy way to edit ``filetypes.ini`` is to open *Porcupine Settings* from the
-*Edit* menu and click the *Edit filetypes.ini* button. Then follow the
-instructions in the beginning of the file.
+Porcupine creates a ``filetypes.ini`` when it's started for the first time. You
+can edit it easily by opening *Porcupine Settings* from the *Edit* menu and
+clicking the *Edit filetypes.ini* button. Then follow the instructions in the
+beginning of the file.
 
 If your ``filetypes.ini`` contains something invalid, Porcupine will print a
-warning message to the terminal or command prompt and start normally.
-(Currently seeing the message requires using ``porcu --verbose``, but hopefully
-I'll fix that some day). If you want to reset all changes you have done to
-``filetypes.ini``, just delete it and restart Porcupine to create a new
-``filetypes.ini``.
+warning message to the terminal or command prompt and start normally. If you
+want to reset all changes you have done to ``filetypes.ini``, just delete it
+and restart Porcupine. It will create a new ``filetypes.ini``.
 
 
 The ``porcupine.filetypes`` module
