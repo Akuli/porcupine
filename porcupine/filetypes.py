@@ -236,8 +236,7 @@ class _FileType:
             except re.error as e:
                 raise _OptionError('shebang_regex') from e
         else:
-            # regex that matches nothing
-            self.shebang_regex = re.compile(r'before start of string^')
+            self.shebang_regex = re.compile(r'this regex matches nothing^')
 
         try:
             modulename, classname = section['pygments_lexer'].rsplit('.', 1)
