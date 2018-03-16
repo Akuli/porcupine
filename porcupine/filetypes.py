@@ -331,7 +331,7 @@ def guess_filetype(filename):
     for filetype in _filetypes.values():
         if mimetype in filetype.mimetypes:
             return filetype
-        if any(fnmatch.fnmatch(filename, pattern)
+        if any(fnmatch.fnmatch(os.path.basename(filename), pattern)
                for pattern in filetype.filename_patterns):
             return filetype
         if (filetype.shebang_regex is not None and
