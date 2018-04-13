@@ -7,15 +7,13 @@ import threading
 
 User = collections.namedtuple("User", ["nick", "user", "host"])
 Server = collections.namedtuple("Server", ["name"])
-_Message = collections.namedtuple("_Message", ["sender", "command", "args"])
+_Message = collections.namedtuple(
+    "_Message", ["sender", "sender_is_server", "command", "args"])
 
 
 class IrcEvent(enum.Enum):
     # The comments above each enum value represent the parameters they should
     # come with.
-
-    # ()
-    connected = enum.auto()
 
     # (channel)
     self_joined = enum.auto()
@@ -99,12 +97,16 @@ class IrcCore:
             sender, command, *args = line.split(" ")
             sender = sender[1:]
             if "!" in sender:
-                nick, sender = sender.split("!", 1)
-                user, host = sender.split("@", 1)
-                sender = User(nick, user, host)
+                # use user_and_host.split('@', 1) to separate user and host
+                # TODO: include more stuff about the user than the nick?
+                sender, user_and_host = sender.split("!", 1)
+                sender_is_server = False
             else:
-                sender = Server(sender)
+                # leave sender as is
+                sender_is_server = True
         else:
+            # assume server???
+            sender_is_server = True
             sender = None
             command, *args = line.split(" ")
         for n, arg in enumerate(args):
@@ -113,7 +115,7 @@ class IrcCore:
                 temp.append(" ".join(args[n:])[1:])
                 args = temp
                 break
-        return _Message(sender, command, args)
+        return _Message(sender, sender_is_server, command, args)
 
     def _mainloop(self):
         while self._running:
@@ -138,7 +140,7 @@ class IrcCore:
                     reason = msg.args[1] if len(msg.args) >= 2 else None
                     self.event_queue.put((IrcEvent.user_parted,
                                           msg.sender, channel, reason))
-                elif isinstance(msg.sender, Server):
+                elif msg.sender_is_server:
                     self.event_queue.put((IrcEvent.server_message,
                                           msg.sender, msg.command, msg.args))
                 else:
@@ -170,18 +172,6 @@ class IrcCore:
             self._send("NICK", self.nick)
             self._send("USER", self.nick, "0", "*", ":" + self.nick)
 
-            while True:
-                line = self._recv_line()
-                if line.startswith("PING"):
-                    self._send(line.replace("PING", "PONG", 1))
-                    continue
-                msg = self._split_line(line)
-                # rfc2812: "The server sends Replies 001 to 004 to a user upon
-                #           successful registration."
-                if msg.command == "001":   # RPL_WELCOME is 001
-                    break
-
-            self.event_queue.put((IrcEvent.connected,))
             threading.Thread(target=self._add_messages_to_internal_queue).start()
             threading.Thread(target=self._mainloop).start()
 
@@ -210,5 +200,8 @@ if __name__ == '__main__':
         print(event)
         if event[0] == IrcEvent.self_joined:
             core._send('WHO ##testingggggg')
-        if event[0] == IrcEvent.connected:
-            core.join_channel('##testingggggg')
+        if event[0] == IrcEvent.server_message:
+            server, command, args = event[1:]
+            print('*****', args)
+            if command == '376':    # end of motd
+                core.join_channel('##testingggggg')
