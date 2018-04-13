@@ -1,4 +1,3 @@
-#onnect
 import collections
 import enum
 import queue
@@ -36,6 +35,9 @@ class IrcEvent(enum.Enum):
     # (sender, recipient, text)
     recieved_privmsg = enum.auto()
 
+    # (sender_server, command, args)
+    server_message = enum.auto()
+
 
 class _IrcInternalEvent(enum.Enum):
     got_message = enum.auto()
@@ -58,12 +60,6 @@ class IrcCore:
 
         self._internal_queue = queue.Queue()
         self.event_queue = queue.Queue()
-
-    def __del__(self):
-        # We shouldn't really use __del__, but just in case we get the
-        # chance...
-        self._running = False
-        self._send("QUIT :Goodbye!")
 
     def _send(self, *parts):
         data = " ".join(parts).encode("utf-8") + b"\r\n"
@@ -88,6 +84,9 @@ class IrcCore:
         # recieved messages.
         while self._running:
             line = self._recv_line()
+            if not line:
+                # i'm not sure when this runs, but it runs sometimes
+                continue
             if line.startswith("PING"):
                 self._send(line.replace("PING", "PONG", 1))
                 continue
@@ -128,17 +127,25 @@ class IrcCore:
                                           msg.sender, recipient, text))
                 elif msg.command == "JOIN":
                     [channel] = msg.args
-                    self.event_queue.put((IrcEvent.user_joined,
-                                          msg.sender, channel))
+                    if (isinstance(msg.sender, User) and
+                            msg.sender.nick == self.nick):
+                        self.event_queue.put((IrcEvent.self_joined, channel))
+                    else:
+                        self.event_queue.put((IrcEvent.user_joined,
+                                              msg.sender, channel))
                 elif msg.command == "PART":
                     channel = msg.args[0]
                     reason = msg.args[1] if len(msg.args) >= 2 else None
                     self.event_queue.put((IrcEvent.user_parted,
                                           msg.sender, channel, reason))
+                elif isinstance(msg.sender, Server):
+                    self.event_queue.put((IrcEvent.server_message,
+                                          msg.sender, msg.command, msg.args))
+                else:
+                    print('**', msg)
             elif event == _IrcInternalEvent.should_join:
                 [channel] = args
                 self._send("JOIN", channel)
-                self.event_queue.put((IrcEvent.self_joined, channel))
             elif event == _IrcInternalEvent.should_part:
                 channel, reason = args
                 if reason is None:
@@ -169,7 +176,9 @@ class IrcCore:
                     self._send(line.replace("PING", "PONG", 1))
                     continue
                 msg = self._split_line(line)
-                if msg.command == "001":
+                # rfc2812: "The server sends Replies 001 to 004 to a user upon
+                #           successful registration."
+                if msg.command == "001":   # RPL_WELCOME is 001
                     break
 
             self.event_queue.put((IrcEvent.connected,))
@@ -199,5 +208,7 @@ if __name__ == '__main__':
     while True:
         event = core.event_queue.get()
         print(event)
+        if event[0] == IrcEvent.self_joined:
+            core._send('WHO ##testingggggg')
         if event[0] == IrcEvent.connected:
             core.join_channel('##testingggggg')
