@@ -164,18 +164,16 @@ class IrcCore:
 
             self._internal_queue.task_done()
 
+    # if an exception occurs while connecting, it's raised right away
+    # run this in a thread if you don't want blocking
+    # this starts the main loop
     def connect(self):
-        # We separate this into its own sub-worker instead of using the queues
-        # for _mainloop because this *must* happen before mainloop.
-        def worker():
-            self._sock.connect((self.host, self.port))
-            self._send("NICK", self.nick)
-            self._send("USER", self.nick, "0", "*", ":" + self.nick)
+        self._sock.connect((self.host, self.port))
+        self._send("NICK", self.nick)
+        self._send("USER", self.nick, "0", "*", ":" + self.nick)
 
-            threading.Thread(target=self._add_messages_to_internal_queue).start()
-            threading.Thread(target=self._mainloop).start()
-
-        threading.Thread(target=worker).start()
+        threading.Thread(target=self._add_messages_to_internal_queue).start()
+        threading.Thread(target=self._mainloop).start()
 
     def join_channel(self, channel):
         self._internal_queue.put((_IrcInternalEvent.should_join, channel))
