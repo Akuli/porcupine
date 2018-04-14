@@ -74,7 +74,6 @@ class IrcCore:
         self.nick = nick
 
         self._sock = socket.socket()
-
         self._linebuffer = collections.deque()
 
         self._internal_queue = queue.Queue()
@@ -87,14 +86,19 @@ class IrcCore:
     def _recv_line(self):
         if not self._linebuffer:
             data = bytearray()
-            while not data.endswith(b"\r\n"):
+
+            # this accepts both \r\n and \n because b'blah blah\r\n' ends
+            # with b'\n'
+            while not data.endswith(b"\n"):
                 chunk = self._sock.recv(4096)
                 if chunk:
                     data += chunk
                 else:
                     raise RuntimeError("Server closed the connection!")
-            lines = data.decode("utf-8", errors='replace').split("\r\n")
+
+            lines = data.decode("utf-8", errors='replace').splitlines()
             self._linebuffer.extend(lines)
+
         return self._linebuffer.popleft()
 
     def _add_messages_to_internal_queue(self):
