@@ -51,7 +51,7 @@ class IrcEvent(enum.Enum):
     sent_privmsg = enum.auto()
 
     # (sender_nick_or_channel, recipient, text)
-    recieved_privmsg = enum.auto()
+    received_privmsg = enum.auto()
 
     # (sender_server, command, args)
     server_message = enum.auto()
@@ -121,7 +121,7 @@ class IrcCore:
     def _add_messages_to_internal_queue(self):
         # We need to have this function because it would be very complicated to
         # wait on two different queues, one for requests to send stuff and one
-        # recieved messages.
+        # received messages.
         while self._running:
             line = self._recv_line()
             if not line:
@@ -166,7 +166,7 @@ class IrcCore:
                 [msg] = args
                 if msg.command == "PRIVMSG":
                     recipient, text = msg.args
-                    self.event_queue.put((IrcEvent.recieved_privmsg,
+                    self.event_queue.put((IrcEvent.received_privmsg,
                                           msg.sender, recipient, text))
 
                 elif msg.command == "JOIN":
@@ -300,7 +300,7 @@ if __name__ == '__main__':
         print(event)
         if event[0] == IrcEvent.self_quit:
             break
-        if event[0] == IrcEvent.recieved_privmsg and event[-1] == 'asd':
+        if event[0] == IrcEvent.received_privmsg and event[-1] == 'asd':
             core.part_channel('##testingggggg', 'bye')
             core.quit()
         if event[0] == IrcEvent.server_message:

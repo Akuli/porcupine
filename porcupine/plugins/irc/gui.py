@@ -1,4 +1,3 @@
-import enum
 import queue
 import time
 import tkinter
@@ -168,23 +167,30 @@ class IrcWidget(ttk.PanedWindow):
 
             if event == backend.IrcEvent.self_joined:
                 channel, nicklist = event_args
-                chanview = ChannelLikeView(self, channel, users=nicklist)
-                self.add_channel_like(chanview)
+                self.add_channel_like(ChannelLikeView(self, channel, nicklist))
 
             elif event == backend.IrcEvent.self_parted:
                 [channel] = event_args
                 self.remove_channel_like(self._channel_likes[channel])
 
             elif event == backend.IrcEvent.sent_privmsg:
-                channel_or_nick, msg = event_args
-                if channel_or_nick not in self._channel_likes:
+                recipient, msg = event_args
+                if recipient not in self._channel_likes:
                     # start of a new PM conversation with a nick
-                    assert not channel_or_nick.startswith('#')
-                    self._channel_likes[channel_or_nick] = ChannelLikeView(
-                        self, channel_or_nick)
+                    assert not recipient.startswith('#')
+                    self.add_channel_like(ChannelLikeView(self, recipient))
 
-                self._channel_likes[channel_or_nick].add_message(
+                self._channel_likes[recipient].add_message(
                     self._core.nick, msg)
+
+            elif event == backend.IrcEvent.received_privmsg:
+                # sender and recipient are channels or nicks
+                sender, recipient, msg = event_args
+                if recipient not in self._channel_likes:
+                    assert not recipient.startswith('#')
+                    self.add_channel_like(ChannelLikeView(self, recipient))
+                self._channel_likes[recipient].add_message(
+                    sender, msg)
 
             elif event == backend.IrcEvent.server_message:
                 server, command, args = event_args
