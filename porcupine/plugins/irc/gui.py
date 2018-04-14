@@ -66,11 +66,18 @@ class IrcWidget(ttk.PanedWindow):
         entry.bind('<Return>', self._on_enter_pressed)
 
     def _on_enter_pressed(self, event):
-        command = event.widget.get()
+        msg = event.widget.get()
         event.widget.delete(0, 'end')
 
-        match = __import__('re').search(r'^(/\w+) (.*)$', command)   # lol
-        assert match   # lol lol
+        match = __import__('re').search(r'^(/\w+) (.*)$', msg)   # lol
+        if not match:
+            if self._current_channel_like.name is None:   # the server
+                self._current_channel_like.add_message(
+                    '*', "Cannot send messages here :(")
+            else:
+                self._core.send_privmsg(self._current_channel_like.name, msg)
+            return
+
         if match.group(1) == '/join':
             self._core.join_channel(match.group(2))
         elif match.group(1) == '/part':
@@ -168,6 +175,17 @@ class IrcWidget(ttk.PanedWindow):
                 [channel] = event_args
                 self.remove_channel_like(self._channel_likes[channel])
 
+            elif event == backend.IrcEvent.sent_privmsg:
+                channel_or_nick, msg = event_args
+                if channel_or_nick not in self._channel_likes:
+                    # start of a new PM conversation with a nick
+                    assert not channel_or_nick.startswith('#')
+                    self._channel_likes[channel_or_nick] = ChannelLikeView(
+                        self, channel_or_nick)
+
+                self._channel_likes[channel_or_nick].add_message(
+                    self._core.nick, msg)
+
             elif event == backend.IrcEvent.server_message:
                 server, command, args = event_args
                 ircwidget._channel_likes[None].add_message(
@@ -182,6 +200,13 @@ class IrcWidget(ttk.PanedWindow):
 
         self.after(100, self.handle_events)
 
+    def part_all_channels_and_quit(self):
+        for name in self._channel_likes.keys():
+            if name is not None and name.startswith('#'):
+                # TODO: add a reason here?
+                self._core.part_channel(name)
+        self._core.quit()
+
 
 if __name__ == '__main__':
     core = backend.IrcCore('chat.freenode.net', 6667, 'testieeeeeeeeeee')
@@ -192,6 +217,6 @@ if __name__ == '__main__':
     ircwidget.pack(fill='both', expand=True)
     ircwidget.add_channel_like(ChannelLikeView(ircwidget, None))
     ircwidget.handle_events()
-    root.protocol('WM_DELETE_WINDOW', core.quit)
+    root.protocol('WM_DELETE_WINDOW', ircwidget.part_all_channels_and_quit)
 
     root.mainloop()

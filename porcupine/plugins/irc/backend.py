@@ -283,9 +283,9 @@ class IrcCore:
         self._internal_queue.put((_IrcInternalEvent.should_part,
                                   channel, reason))
 
-    def send_privmsg(self, recipient, text):
+    def send_privmsg(self, nick_or_channel, text):
         self._internal_queue.put((_IrcInternalEvent.should_send_privmsg,
-                                  recipient, text))
+                                  nick_or_channel, text))
 
     # part all channels before calling this
     def quit(self):
