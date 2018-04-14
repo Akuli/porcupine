@@ -11,69 +11,45 @@ _Message = collections.namedtuple(
     "_Message", ["sender", "sender_is_server", "command", "args"])
 
 # from rfc1459
-RPL_ENDOFMOTD = '376'
-RPL_NAMREPLY = '353'
-RPL_ENDOFNAMES = '366'
+_RPL_ENDOFMOTD = '376'
+_RPL_NAMREPLY = '353'
+_RPL_ENDOFNAMES = '366'
 
 
-class IrcEvent(enum.Enum):
-    # The comments above each enum value represent the parameters they should
-    # come with.
+# The comments represent the parameters that the events come with.
+# Notes:
+#    [1] IrcCore.nick is updated before this event is generated.
+#    [2] reason can be None.
+#    [3] If you want to handle these, add the code to this file, not so that
+#        this creates unknown_messages that are parsed elsewhere.
+#        Currently AT LEAST these things cause unknown messages:
+#            * KICK
+#            * MODE (ban, op, voice etc)
+#            * INVITE
+IrcEvent = enum.Enum('IrcEvent', [
+    'self_joined',          # (channel, nicklist)
+    'self_changed_nick',    # (old_nick, new_nick)  [1]
+    'self_parted',          # (channel)
+    'self_quit',            # ()
+    'user_joined',          # (nick, channel)
+    'user_changed_nick',    # (old_nick, new_nick)
+    'user_parted',          # (sender_nick, channel, reason)
+    'user_quit',            # (sender_nick, reason)  [2]
 
-    # (channel, nicklist)
-    self_joined = enum.auto()
+    'sent_privmsg',         # (recipient, text)
+    'received_privmsg',     # (sender, recipient, text)
+    'server_message',       # (sender_server, command, args)
+    'unknown_message',      # (sender_nick, command, args)  [3]
+])
 
-    # (old_nick, new_nick)
-    # IrcCore.nick is updated before this event is generated
-    self_changed_nick = enum.auto()
-
-    # (channel)
-    self_parted = enum.auto()
-
-    # ()
-    self_quit = enum.auto()
-
-    # (sender_nick, channel)
-    user_joined = enum.auto()
-
-    # (old_nick, new_nick)
-    user_changed_nick = enum.auto()
-
-    # (sender_nick, channel, reason)
-    # reason can be None
-    user_parted = enum.auto()
-
-    # (sender_nick, reason)
-    # reason can be None
-    user_quit = enum.auto()
-
-    # (recipient, text)
-    sent_privmsg = enum.auto()
-
-    # (sender_nick_or_channel, recipient, text)
-    received_privmsg = enum.auto()
-
-    # (sender_server, command, args)
-    server_message = enum.auto()
-
-    # (sender_nick, command, args)
-    # if you want to handle some of these, add the code to this file
-    # not so that this creates an unknown_message that is parsed elsewhere
-    # currently AT LEAST these things cause unknown messages:
-    #    * KICK
-    #    * MODE (ban, op, voice etc)
-    #    * INVITE
-    unknown_message = enum.auto()
-
-
-class _IrcInternalEvent(enum.Enum):
-    got_message = enum.auto()
-
-    should_join = enum.auto()
-    should_part = enum.auto()
-    should_quit = enum.auto()
-    should_send_privmsg = enum.auto()
-    should_change_nick = enum.auto()
+_IrcInternalEvent = enum.Enum('_IrcInternalEvent', [
+    'got_message',
+    'should_join',
+    'should_part',
+    'should_quit',
+    'should_send_privmsg',
+    'should_change_nick',
+])
 
 
 class IrcCore:
@@ -210,7 +186,7 @@ class IrcCore:
                                               msg.sender, reason))
 
                 elif msg.sender_is_server:
-                    if msg.command == RPL_NAMREPLY:
+                    if msg.command == _RPL_NAMREPLY:
                         # TODO: wtf are the first 2 args?
                         # rfc1459 doesn't mention them, but freenode
                         # gives 4-element msg.args lists
@@ -220,7 +196,7 @@ class IrcCore:
                         self._names_replys[channel].extend(
                             name.lstrip('@+') for name in names.split())
 
-                    elif msg.command == RPL_ENDOFNAMES:
+                    elif msg.command == _RPL_ENDOFNAMES:
                         # joining a channel finished
                         channel, human_readable_message = msg.args[-2:]
                         nicks = self._names_replys.pop(channel)
@@ -317,5 +293,5 @@ if __name__ == '__main__':
             core.quit()
         if event[0] == IrcEvent.server_message:
             server, command, args = event[1:]
-            if command == RPL_ENDOFMOTD:
+            if command == _RPL_ENDOFMOTD:
                 core.join_channel('##testingggggg')
