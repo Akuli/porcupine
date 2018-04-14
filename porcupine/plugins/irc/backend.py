@@ -23,7 +23,7 @@ class IrcEvent(enum.Enum):
     # (channel, nicklist)
     self_joined = enum.auto()
 
-    # (channel, reason)
+    # (channel)
     self_parted = enum.auto()
 
     # ()
@@ -176,8 +176,7 @@ class IrcCore:
                     channel = msg.args[0]
                     reason = msg.args[1] if len(msg.args) >= 2 else None
                     if msg.sender == self.nick:
-                        self.event_queue.put((IrcEvent.self_parted,
-                                              channel, reason))
+                        self.event_queue.put((IrcEvent.self_parted, channel))
                     else:
                         self.event_queue.put((IrcEvent.user_parted,
                                               msg.sender, channel, reason))
