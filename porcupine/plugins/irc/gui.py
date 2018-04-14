@@ -1,3 +1,5 @@
+# strongly inspired by xchat :)
+# hexchat is a fork of xchat, its developers didn't invent the gui layout
 import queue
 import time
 import tkinter
@@ -22,21 +24,72 @@ class ChannelLikeView:
                                        state='disabled')
 
         if users is None:
-            self._userlist = None
+            self.userlist = None
             self.userlistbox = None
         else:
             # why is there no ttk listbox :(
             # bigpanedw adds this to itself when needed
-            self._userlist = list(users)
+            self.userlist = list(users)
+            self.userlist.sort(key=str.casefold)
             self.userlistbox = tkinter.Listbox(ircwidget, width=15)
-            self.userlistbox.insert('end', *self._userlist)
+            self.userlistbox.insert('end', *self.userlist)
+
+    def destroy_widgets(self):
+        self.textwidget.destroy()
+        if self.userlistbox is not None:
+            self.userlistbox.destroy()
 
     def add_message(self, sender, message):
+        # scroll down all the way if the user hasn't scrolled up manually
+        do_the_scroll = (self.textwidget.yview()[1] == 1.0)
+
         now = time.strftime('%H:%M')
         self.textwidget['state'] = 'normal'
         self.textwidget.insert(
-            'end', '[%s] %22s | %s\n' % (now, sender, message))
+            'end', '[%s] %25s | %s\n' % (now, '<' + sender + '>', message))
         self.textwidget['state'] = 'disabled'
+
+        if do_the_scroll:
+            self.textwidget.see('end')
+
+    def on_join(self, nick):
+        assert self.name.startswith('#'), "on_join() is for channels only"
+
+        # TODO: a better algorithm?
+        #       timsort is good, but maybe sorting every time is not?
+        self.userlist.append(nick)
+        self.userlist.sort(key=str.casefold)
+        index = self.userlist.index(nick)
+        self.userlistbox.insert(index, nick)
+
+        self.add_message('*', "%s joined %s." % (nick, self.name))
+
+    def on_part(self, nick, reason):
+        assert self.name.startswith('#'), "on_part() is for channels only"
+
+        index = self.userlist.index(nick)
+        del self.userlist[index]
+        self.userlistbox.delete(index)
+
+        msg = "%s left %s." % (nick, self.name)
+        if reason is not None:
+            msg = "%s (%s)" % (msg, reason)
+        self.add_message('*', msg)
+
+    def on_quit(self, nick, reason):
+        if self.name.startswith('#'):   # this is a channel
+            index = self.userlist.index(nick)
+            del self.userlist[index]
+            self.userlistbox.delete(index)
+        else:  # this is a PM conversation
+            if self.name != nick:
+                # this conversation is between the user and someone else
+                return
+
+        msg = "%s quit." % nick
+        if reason is not None:
+            msg = "%s (%s)" % (msg, reason)
+        self.add_message('*', msg)
 
 
 class IrcWidget(ttk.PanedWindow):
@@ -46,9 +99,6 @@ class IrcWidget(ttk.PanedWindow):
         super().__init__(master, **kwargs)
         self._core = irc_core
         self._on_quit = on_quit
-
-        self._channel_likes = {}   # {channel_like.name: channel_like}
-        self._current_channel_like = None  # selected in self._channel_selector
 
         self._channel_selector = tkinter.Listbox(self, width=15)
         self._channel_selector.bind('<<ListboxSelect>>', self._on_selection)
@@ -60,15 +110,23 @@ class IrcWidget(ttk.PanedWindow):
         entryframe = ttk.Frame(self._middle_pane)
         entryframe.pack(side='bottom', fill='x')
         ttk.Label(entryframe, text=irc_core.nick).pack(side='left')
-        entry = ttk.Entry(entryframe)
-        entry.pack(side='left', fill='x', expand=True)
-        entry.bind('<Return>', self._on_enter_pressed)
+        self._entry = ttk.Entry(entryframe)
+        self._entry.pack(side='left', fill='x', expand=True)
+        self._entry.bind('<Return>', self._on_enter_pressed)
+
+        self._channel_likes = {}   # {channel_like.name: channel_like}
+        self._current_channel_like = None  # selected in self._channel_selector
+
+        self.add_channel_like(ChannelLikeView(self, None))
+
+    def focus_the_entry(self):
+        self._entry.focus_force()
 
     def _on_enter_pressed(self, event):
         msg = event.widget.get()
         event.widget.delete(0, 'end')
 
-        match = __import__('re').search(r'^(/\w+) (.*)$', msg)   # lol
+        match = __import__('re').search(r'^(/\w+)(?: (.*))?$', msg)   # lol
         if not match:
             if self._current_channel_like.name is None:   # the server
                 self._current_channel_like.add_message(
@@ -80,7 +138,13 @@ class IrcWidget(ttk.PanedWindow):
         if match.group(1) == '/join':
             self._core.join_channel(match.group(2))
         elif match.group(1) == '/part':
-            self._core.part_channel(match.group(2))
+            if match.group(2) is None:
+                channel = self._current_channel_like.name
+                if channel is None or not channel.startswith('#'):
+                    raise ValueError
+            else:
+                channel = match.group(2)
+            self._core.part_channel(channel)
         else:
             raise ValueError
 
@@ -120,7 +184,7 @@ class IrcWidget(ttk.PanedWindow):
         if channel_like.name is None:
             # the special server channel-like
             assert len(self._channel_likes) == 1
-            self._channel_selector.insert('end', self._core.host)
+            self._channel_selector.insert('end', "Server: " + self._core.host)
         else:
             self._channel_selector.insert('end', channel_like.name)
         self._select_index('end')
@@ -143,6 +207,7 @@ class IrcWidget(ttk.PanedWindow):
         index = self._channel_selector.get(0, 'end').index(channel_like.name)
         self._channel_selector.delete(index)
         del self._channel_likes[channel_like.name]
+        channel_like.destroy_widgets()
 
     # this must be called when someone that the user is PM'ing with
     # changes nick
@@ -169,9 +234,43 @@ class IrcWidget(ttk.PanedWindow):
                 channel, nicklist = event_args
                 self.add_channel_like(ChannelLikeView(self, channel, nicklist))
 
+            # TODO: self_changed_nick
+
             elif event == backend.IrcEvent.self_parted:
                 [channel] = event_args
                 self.remove_channel_like(self._channel_likes[channel])
+
+            elif event == backend.IrcEvent.self_quit:
+                self._on_quit()
+                return      # don't run self.handle_events again
+
+            elif event == backend.IrcEvent.user_joined:
+                nick, channel = event_args
+                self._channel_likes[channel].on_join(nick)
+
+            # TODO: user_changed_nick
+
+            elif event == backend.IrcEvent.user_parted:
+                nick, channel, reason = event_args
+                self._channel_likes[channel].on_part(nick, reason)
+
+            elif event == backend.IrcEvent.user_quit:
+                nick, reason = event_args
+                assert not nick.startswith('#')
+
+                # list() is needed to make a copy
+                # self._channel_likes is modified in the loop
+                for channel_like in list(self._channel_likes.values()):
+                    # skip the server channel-like
+                    if channel_like.name is None:
+                        continue
+
+                    # show a quit message if the user was on this channel
+                    # or if this is a PM conversation with that user
+                    if (nick == channel_like.name or
+                            (channel_like.userlist is not None and
+                             nick in channel_like.userlist)):
+                        channel_like.on_quit(nick, reason)
 
             elif event == backend.IrcEvent.sent_privmsg:
                 recipient, msg = event_args
@@ -186,20 +285,24 @@ class IrcWidget(ttk.PanedWindow):
             elif event == backend.IrcEvent.received_privmsg:
                 # sender and recipient are channels or nicks
                 sender, recipient, msg = event_args
-                if recipient not in self._channel_likes:
-                    assert not recipient.startswith('#')
-                    self.add_channel_like(ChannelLikeView(self, recipient))
-                self._channel_likes[recipient].add_message(
+
+                if recipient == self._core.nick:     # PM
+                    channel_like_name = sender   # whoever sent this
+                    if sender not in self._channel_likes:
+                        # create a new channel-like for the conversation
+                        self.add_channel_like(ChannelLikeView(self, sender))
+                else:  # the message has been sent to an entire channel
+                    assert recipient.startswith('#')
+                    channel_like_name = recipient
+
+                self._channel_likes[channel_like_name].add_message(
                     sender, msg)
 
-            elif event == backend.IrcEvent.server_message:
+            elif event in {backend.IrcEvent.server_message,
+                           backend.IrcEvent.unknown_message}:
                 server, command, args = event_args
                 ircwidget._channel_likes[None].add_message(
                     server, ' '.join(args))
-
-            elif event == backend.IrcEvent.self_quit:
-                self._on_quit()
-                return      # don't run self.handle_events again
 
             else:
                 raise ValueError("unknown event type " + repr(event))
@@ -221,8 +324,9 @@ if __name__ == '__main__':
     root = tkinter.Tk()
     ircwidget = IrcWidget(root, core, root.destroy)
     ircwidget.pack(fill='both', expand=True)
-    ircwidget.add_channel_like(ChannelLikeView(ircwidget, None))
+
     ircwidget.handle_events()
+    ircwidget.focus_the_entry()
     root.protocol('WM_DELETE_WINDOW', ircwidget.part_all_channels_and_quit)
 
     root.mainloop()

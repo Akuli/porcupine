@@ -23,12 +23,12 @@ class IrcEvent(enum.Enum):
     # (channel, nicklist)
     self_joined = enum.auto()
 
-    # (channel)
-    self_parted = enum.auto()
-
     # (old_nick, new_nick)
     # IrcCore.nick gets updated automatically
     self_changed_nick = enum.auto()
+
+    # (channel)
+    self_parted = enum.auto()
 
     # ()
     self_quit = enum.auto()
@@ -36,12 +36,12 @@ class IrcEvent(enum.Enum):
     # (sender_nick, channel)
     user_joined = enum.auto()
 
+    # (old_nick, new_nick)
+    user_changed_nick = enum.auto()
+
     # (sender_nick, channel, reason)
     # reason can be None
     user_parted = enum.auto()
-
-    # (old_nick, new_nick)
-    user_changed_nick = enum.auto()
 
     # (sender_nick, reason)
     # reason can be None
