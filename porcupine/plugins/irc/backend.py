@@ -24,7 +24,7 @@ class IrcEvent(enum.Enum):
     self_joined = enum.auto()
 
     # (old_nick, new_nick)
-    # IrcCore.nick gets updated automatically
+    # IrcCore.nick is updated before this event is generated
     self_changed_nick = enum.auto()
 
     # (channel)
@@ -73,6 +73,7 @@ class _IrcInternalEvent(enum.Enum):
     should_part = enum.auto()
     should_quit = enum.auto()
     should_send_privmsg = enum.auto()
+    should_change_nick = enum.auto()
 
 
 class IrcCore:
@@ -257,6 +258,10 @@ class IrcCore:
                 self._send("PRIVMSG", recipient, ":" + text)
                 self.event_queue.put((IrcEvent.sent_privmsg, recipient, text))
 
+            elif event == _IrcInternalEvent.should_change_nick:
+                [new_nick] = args
+                self._send("NICK", new_nick)
+
             else:
                 raise RuntimeError("Unrecognized internal event!")
 
@@ -286,6 +291,13 @@ class IrcCore:
     def send_privmsg(self, nick_or_channel, text):
         self._internal_queue.put((_IrcInternalEvent.should_send_privmsg,
                                   nick_or_channel, text))
+
+    # this doesn't change self.nick right away, but .nick is updated
+    # when the nick name has actually changed
+    # emits a self_changed_nick event on success
+    def change_nick(self, new_nick):
+        self._internal_queue.put((_IrcInternalEvent.should_change_nick,
+                                  new_nick))
 
     # part all channels before calling this
     def quit(self):

@@ -91,6 +91,90 @@ class ChannelLikeView:
             msg = "%s (%s)" % (msg, reason)
         self.add_message('*', msg)
 
+    def _userlist_replace(self, old, new):
+        old_index = self.userlist.index(old)
+        was_selected = (old_index in self.userlistbox.curselection())
+        self.userlistbox.delete(old_index)
+
+        self.userlist[old_index] = new     # replace the old value efficiently
+        self.userlist.sort()
+
+        new_index = self.userlist.index(new)
+        self.userlistbox.insert(new_index, new)
+        if was_selected:
+            self.userlistbox.selection_set(new_index)
+
+    # must be ran when this user has successfully changed nick
+    def on_self_changed_nick(self, old, new):
+        # if this is a channel, update the list of nicks
+        if self.userlist is not None:
+            self._userlist_replace(old, new)
+
+        # notify about the nick change everywhere, no ifs in front of this
+        self.add_message('*', "You are now known as %s." % new)
+
+    # must be ran when another user changes nick, AFTER changing self.name
+    def on_user_changed_nick(self, old, new):
+        if self.name is None:
+            # no need to do anything on the server channel-like
+            return
+
+        if self.userlist is None:
+            # PM chat, only notify of the nick change if chatting with
+            # that nick
+            assert not self.name.startswith('#')
+            if self.name != new:
+                return
+        else:
+            # a channel, update the user list
+            assert self.name.startswith('#')
+            if old not in self.userlist:
+                return
+            self._userlist_replace(old, new)
+
+        self.add_message('*', "%s is now known as %s." % (old, new))
+
+
+def ask_new_nick(parent, old_nick):
+    dialog = tkinter.Toplevel()
+    content = ttk.Frame(dialog)
+    content.pack(fill='both', expand=True)
+
+    ttk.Label(content, text="Enter a new nickname here:").place(
+        relx=0.5, rely=0.1, anchor='center')
+
+    entry = ttk.Entry(content)
+    entry.place(relx=0.5, rely=0.3, anchor='center')
+    entry.insert(0, old_nick)
+
+    ttk.Label(content, text="The same nick will be used on all channels.",
+              justify='center', wraplength=150).place(
+        relx=0.5, rely=0.6, anchor='center')
+
+    buttonframe = ttk.Frame(content, borderwidth=5)
+    buttonframe.place(relx=1.0, rely=1.0, anchor='se')
+
+    result = old_nick
+
+    def ok(junk_event=None):
+        nonlocal result
+        result = entry.get()
+        dialog.destroy()
+
+    ttk.Button(buttonframe, text="OK", command=ok).pack(side='left')
+    ttk.Button(buttonframe, text="Cancel",
+               command=dialog.destroy).pack(side='left')
+    entry.bind('<Return>', (lambda junk_event: ok()))
+    entry.bind('<Escape>', (lambda junk_event: dialog.destroy()))
+
+    dialog.geometry('250x150')
+    dialog.resizable(False, False)
+    dialog.transient(parent)
+    entry.focus()
+    dialog.wait_window()
+
+    return result
+
 
 class IrcWidget(ttk.PanedWindow):
 
@@ -109,9 +193,12 @@ class IrcWidget(ttk.PanedWindow):
 
         entryframe = ttk.Frame(self._middle_pane)
         entryframe.pack(side='bottom', fill='x')
-        ttk.Label(entryframe, text=irc_core.nick).pack(side='left')
+        # TODO: add a tooltip to the button, it's not very obvious
+        self._nickbutton = ttk.Button(entryframe, text=irc_core.nick,
+                                      command=self._show_change_nick_dialog)
+        self._nickbutton.pack(side='left')
         self._entry = ttk.Entry(entryframe)
-        self._entry.pack(side='left', fill='x', expand=True)
+        self._entry.pack(side='left', fill='both', expand=True)
         self._entry.bind('<Return>', self._on_enter_pressed)
 
         self._channel_likes = {}   # {channel_like.name: channel_like}
@@ -120,7 +207,12 @@ class IrcWidget(ttk.PanedWindow):
         self.add_channel_like(ChannelLikeView(self, None))
 
     def focus_the_entry(self):
-        self._entry.focus_force()
+        self._entry.focus()
+
+    def _show_change_nick_dialog(self):
+        new_nick = ask_new_nick(self.winfo_toplevel(), self._core.nick)
+        if new_nick != self._core.nick:
+            self._core.change_nick(new_nick)
 
     def _on_enter_pressed(self, event):
         msg = event.widget.get()
@@ -137,6 +229,8 @@ class IrcWidget(ttk.PanedWindow):
 
         if match.group(1) == '/join':
             self._core.join_channel(match.group(2))
+        elif match.group(1) == '/nick':
+            self._core.change_nick(match.group(2))
         elif match.group(1) == '/part':
             if match.group(2) is None:
                 channel = self._current_channel_like.name
@@ -213,6 +307,10 @@ class IrcWidget(ttk.PanedWindow):
     # changes nick
     # channels and the special server channel-like can't be renamed
     def rename_channel_like(self, old_name, new_name):
+        if new_name in self._channel_likes:
+            # unlikely to ever happen... lol
+            self.remove_channel_like(self._channel_likes[new_name])
+
         self._channel_likes[new_name] = self._channel_likes.pop(old_name)
         self._channel_likes[new_name].name = new_name
 
@@ -234,7 +332,11 @@ class IrcWidget(ttk.PanedWindow):
                 channel, nicklist = event_args
                 self.add_channel_like(ChannelLikeView(self, channel, nicklist))
 
-            # TODO: self_changed_nick
+            elif event == backend.IrcEvent.self_changed_nick:
+                old, new = event_args
+                self._nickbutton['text'] = new
+                for channel_like in self._channel_likes.values():
+                    channel_like.on_self_changed_nick(old, new)
 
             elif event == backend.IrcEvent.self_parted:
                 [channel] = event_args
@@ -248,7 +350,13 @@ class IrcWidget(ttk.PanedWindow):
                 nick, channel = event_args
                 self._channel_likes[channel].on_join(nick)
 
-            # TODO: user_changed_nick
+            elif event == backend.IrcEvent.user_changed_nick:
+                old, new = event_args
+                if old in self._channel_likes:   # a PM conversation
+                    self.rename_channel_like(old, new)
+
+                for channel_like in self._channel_likes.values():
+                    channel_like.on_user_changed_nick(old, new)
 
             elif event == backend.IrcEvent.user_parted:
                 nick, channel, reason = event_args
@@ -258,9 +366,7 @@ class IrcWidget(ttk.PanedWindow):
                 nick, reason = event_args
                 assert not nick.startswith('#')
 
-                # list() is needed to make a copy
-                # self._channel_likes is modified in the loop
-                for channel_like in list(self._channel_likes.values()):
+                for channel_like in self._channel_likes.values():
                     # skip the server channel-like
                     if channel_like.name is None:
                         continue
@@ -318,7 +424,7 @@ class IrcWidget(ttk.PanedWindow):
 
 
 if __name__ == '__main__':
-    core = backend.IrcCore('chat.freenode.net', 6667, 'testieeeeeeeeeee')
+    core = backend.IrcCore('chat.freenode.net', 6667, 'testieeeee')
     core.connect()
 
     root = tkinter.Tk()
