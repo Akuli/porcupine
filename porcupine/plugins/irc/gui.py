@@ -289,14 +289,19 @@ class IrcWidget(ttk.PanedWindow):
             return
 
         # i didn't find a better way to find a listbox index by name
-        index = self._channel_selector.get(0, 'end').index(
-            self._current_channel_like.name)
+        if self._current_channel_like.name is None:
+            index = 0
+        else:
+            index = self._channel_selector.get(0, 'end').index(
+                self._current_channel_like.name)
         if index == len(self._channel_likes) - 1:   # last channel-like
             self._select_index(index - 1)
         else:
             self._select_index(index + 1)
 
     def remove_channel_like(self, channel_like):
+        assert channel_like.name is not None, ("cannot remove the "
+                                               "server channel-like")
         self.select_something_else(channel_like)
         index = self._channel_selector.get(0, 'end').index(channel_like.name)
         self._channel_selector.delete(index)
@@ -307,6 +312,8 @@ class IrcWidget(ttk.PanedWindow):
     # changes nick
     # channels and the special server channel-like can't be renamed
     def rename_channel_like(self, old_name, new_name):
+        assert old_name is not None and new_name is not None, (
+            "cannot remove the server channel-like")
         if new_name in self._channel_likes:
             # unlikely to ever happen... lol
             self.remove_channel_like(self._channel_likes[new_name])
