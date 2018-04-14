@@ -1,4 +1,6 @@
 import enum
+import queue
+import time
 import tkinter
 from tkinter import ttk
 
@@ -14,8 +16,9 @@ class ChannelLike:
         self.name = name
 
         # width and height are minimums
-        # IrcWidget's pack lets this stretch
-        self.textwidget = tkinter.Text(ircwidget, width=1, height=1)
+        # IrcWidget packs this and lets this stretch
+        self.textwidget = tkinter.Text(ircwidget, width=1, height=1,
+                                       state='disabled')
 
         if users is None:
             self.userlist = None
@@ -27,13 +30,20 @@ class ChannelLike:
             self.userlistbox = tkinter.Listbox(ircwidget, width=15)
             self.userlistbox.insert('end', *self.userlist)
 
+    def add_message(self, sender, message):
+        now = time.strftime('%H:%M')
+        self.textwidget['state'] = 'normal'
+        self.textwidget.insert(
+            'end', '[%s] %15s | %s\n' % (now, sender, message))
+        self.textwidget['state'] = 'disabled'
+
 
 class IrcWidget(ttk.PanedWindow):
 
-    def __init__(self, master, nick, **kwargs):
+    def __init__(self, master, irc_core, **kwargs):
         kwargs.setdefault('orient', 'horizontal')
         super().__init__(master, **kwargs)
-        self.nick = nick
+        self.core = irc_core
 
         self.channel_likes = {}   # {channel_like.name: channel_like}
         self.current_channel_like = None   # selected in self.channel_selector
@@ -47,7 +57,7 @@ class IrcWidget(ttk.PanedWindow):
 
         entryframe = ttk.Frame(self._middle_pane)
         entryframe.pack(side='bottom', fill='x')
-        ttk.Label(entryframe, text=nick).pack(side='left')
+        ttk.Label(entryframe, text=irc_core.nick).pack(side='left')
         entry = ttk.Entry(entryframe)
         entry.pack(side='left', fill='x', expand=True)
 
@@ -63,7 +73,7 @@ class IrcWidget(ttk.PanedWindow):
         if channel_like.name is None:
             # the special server channel-like
             assert len(self.channel_likes) == 1
-            self.channel_selector.insert('end', "The Server")
+            self.channel_selector.insert('end', self.core.host)
         else:
             self.channel_selector.insert('end', channel_like.name)
         self._select_index('end')
@@ -128,15 +138,33 @@ class IrcWidget(ttk.PanedWindow):
 
 
 if __name__ == '__main__':
+    import backend
+
+    core = backend.IrcCore('chat.freenode.net', 6667, 'testieeeeeeeeeee')
+    core.connect()
+
     root = tkinter.Tk()
-    ircwidget = IrcWidget(root, 'asd')
+    ircwidget = IrcWidget(root, core)
     ircwidget.pack(fill='both', expand=True)
 
     ircwidget.add_channel_like(ChannelLike(ircwidget, None))
-    lol = ChannelLike(ircwidget, "##lol", ['a', 'b'])
-    ircwidget.add_channel_like(lol)
-    ircwidget.add_channel_like(ChannelLike(ircwidget, "##asd", ['x', 'y']))
-    ircwidget.rename_channel_like('##lol', '##loooool')
-    ircwidget.rename_channel_like('##asd', '##asdfghj')
+
+    def handle_events():
+        while True:
+            try:
+                event, *event_args = core.event_queue.get(block=False)
+            except queue.Empty:
+                break
+
+            if event == backend.IrcEvent.server_message:
+                server, command, args = event_args
+                ircwidget.channel_likes[None].add_message(
+                    server, ' '.join(args))
+            else:
+                raise ValueError("unknown event type " + repr(event))
+
+        root.after(100, handle_events)
+
+    handle_events()
 
     root.mainloop()
