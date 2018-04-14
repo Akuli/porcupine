@@ -1,3 +1,5 @@
+# based on a thing that myst wrote for me
+# thanks myst :)   https://github.com/PurpleMyst/
 import collections
 import enum
 import queue
@@ -24,6 +26,10 @@ class IrcEvent(enum.Enum):
     # (channel)
     self_parted = enum.auto()
 
+    # (old_nick, new_nick)
+    # IrcCore.nick gets updated automatically
+    self_changed_nick = enum.auto()
+
     # ()
     self_quit = enum.auto()
 
@@ -34,6 +40,9 @@ class IrcEvent(enum.Enum):
     # reason can be None
     user_parted = enum.auto()
 
+    # (old_nick, new_nick)
+    user_changed_nick = enum.auto()
+
     # (sender_nick, reason)
     # reason can be None
     user_quit = enum.auto()
@@ -41,7 +50,7 @@ class IrcEvent(enum.Enum):
     # (recipient, text)
     sent_privmsg = enum.auto()
 
-    # (sender, recipient, text)
+    # (sender_nick_or_channel, recipient, text)
     recieved_privmsg = enum.auto()
 
     # (sender_server, command, args)
@@ -179,6 +188,17 @@ class IrcCore:
                         self.event_queue.put((IrcEvent.user_parted,
                                               msg.sender, channel, reason))
 
+                elif msg.command == "NICK":
+                    old = msg.sender
+                    [new] = msg.args
+                    if old == self.nick:
+                        self.nick = new
+                        self.event_queue.put((IrcEvent.self_changed_nick,
+                                              old, new))
+                    else:
+                        self.event_queue.put((IrcEvent.user_changed_nick,
+                                              old, new))
+
                 elif msg.command == "QUIT":
                     reason = msg.args[0] if msg.args else None
                     if msg.sender == self.nick:
@@ -229,6 +249,7 @@ class IrcCore:
             elif event == _IrcInternalEvent.should_quit:
                 assert not args
                 self._send("QUIT")
+                self._running = False
 
             elif event == _IrcInternalEvent.should_send_privmsg:
                 recipient, text = args
@@ -239,6 +260,8 @@ class IrcCore:
                 raise RuntimeError("Unrecognized internal event!")
 
             self._internal_queue.task_done()
+
+        self.event_queue.put((IrcEvent.self_quit,))
 
     # if an exception occurs while connecting, it's raised right away
     # run this in a thread if you don't want blocking
