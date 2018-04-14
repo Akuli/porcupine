@@ -12,13 +12,15 @@ _Message = collections.namedtuple(
 
 # from rfc1459
 RPL_ENDOFMOTD = '376'
+RPL_NAMREPLY = '353'
+RPL_ENDOFNAMES = '366'
 
 
 class IrcEvent(enum.Enum):
     # The comments above each enum value represent the parameters they should
     # come with.
 
-    # (channel)
+    # (channel, nicklist)
     self_joined = enum.auto()
 
     # (channel, reason)
@@ -78,6 +80,14 @@ class IrcCore:
 
         self._internal_queue = queue.Queue()
         self.event_queue = queue.Queue()
+
+        # TODO: is automagic RPL_NAMREPLY in an rfc??
+        # TODO: what do the rfc's say about huge NAMES replies?
+        #
+        # servers seem to send RPL_NAMREPLY followed by RPL_ENDOFNAMES when a
+        # client connects
+        # the replies are collected here before emitting a self_joined event
+        self._names_replys = {}   # {channel: [nick1, nick2, ...]}
 
     def _send(self, *parts):
         data = " ".join(parts).encode("utf-8") + b"\r\n"
@@ -151,13 +161,17 @@ class IrcCore:
                     recipient, text = msg.args
                     self.event_queue.put((IrcEvent.recieved_privmsg,
                                           msg.sender, recipient, text))
+
                 elif msg.command == "JOIN":
                     [channel] = msg.args
                     if msg.sender == self.nick:
-                        self.event_queue.put((IrcEvent.self_joined, channel))
+                        # there are plenty of comments in other
+                        # _names_replys code
+                        self._names_replys[channel] = []
                     else:
                         self.event_queue.put((IrcEvent.user_joined,
                                               msg.sender, channel))
+
                 elif msg.command == "PART":
                     channel = msg.args[0]
                     reason = msg.args[1] if len(msg.args) >= 2 else None
@@ -178,8 +192,26 @@ class IrcCore:
                                               msg.sender, reason))
 
                 elif msg.sender_is_server:
-                    self.event_queue.put((IrcEvent.server_message,
-                                          msg.sender, msg.command, msg.args))
+                    if msg.command == RPL_NAMREPLY:
+                        # TODO: wtf are the first 2 args?
+                        # rfc1459 doesn't mention them, but freenode
+                        # gives 4-element msg.args lists
+                        channel, names = msg.args[-2:]
+
+                        # TODO: don't ignore @ and + prefixes
+                        self._names_replys[channel].extend(
+                            name.lstrip('@+') for name in names.split())
+
+                    elif msg.command == RPL_ENDOFNAMES:
+                        # joining a channel finished
+                        channel, human_readable_message = msg.args[-2:]
+                        nicks = self._names_replys.pop(channel)
+                        self.event_queue.put((IrcEvent.self_joined, nicks))
+
+                    else:
+                        self.event_queue.put((
+                            IrcEvent.server_message,
+                            msg.sender, msg.command, msg.args))
 
                 else:
                     self.event_queue.put((IrcEvent.unknown_message,
@@ -250,8 +282,6 @@ if __name__ == '__main__':
         if event[0] == IrcEvent.recieved_privmsg and event[-1] == 'asd':
             core.part_channel('##testingggggg', 'bye')
             core.quit()
-        if event[0] == IrcEvent.self_joined:
-            core._send('WHO ##testingggggg')
         if event[0] == IrcEvent.server_message:
             server, command, args = event[1:]
             if command == RPL_ENDOFMOTD:
