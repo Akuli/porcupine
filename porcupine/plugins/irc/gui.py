@@ -36,7 +36,7 @@ class ChannelLike:
         now = time.strftime('%H:%M')
         self.textwidget['state'] = 'normal'
         self.textwidget.insert(
-            'end', '[%s] %15s | %s\n' % (now, sender, message))
+            'end', '[%s] %22s | %s\n' % (now, sender, message))
         self.textwidget['state'] = 'disabled'
 
 
@@ -153,6 +153,7 @@ class IrcWidget(ttk.PanedWindow):
 
             elif event == backend.IrcEvent.self_quit:
                 self._on_quit()
+                return      # don't run self.handle_events again
 
             else:
                 raise ValueError("unknown event type " + repr(event))
@@ -169,5 +170,6 @@ if __name__ == '__main__':
     ircwidget.pack(fill='both', expand=True)
     ircwidget.add_channel_like(ChannelLike(ircwidget, None))
     ircwidget.handle_events()
+    root.protocol('WM_DELETE_WINDOW', core.quit)
 
     root.mainloop()
