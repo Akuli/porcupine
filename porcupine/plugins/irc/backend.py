@@ -5,8 +5,6 @@ import socket
 import threading
 
 
-User = collections.namedtuple("User", ["nick", "user", "host"])
-Server = collections.namedtuple("Server", ["name"])
 _Message = collections.namedtuple(
     "_Message", ["sender", "sender_is_server", "command", "args"])
 
