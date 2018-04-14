@@ -35,8 +35,8 @@ class IrcWidget(ttk.PanedWindow):
         super().__init__(master, **kwargs)
         self.nick = nick
 
-        self.channel_likes = []
-        self.current_channel_like = None
+        self.channel_likes = {}   # {channel_like.name: channel_like}
+        self.current_channel_like = None   # selected in self.channel_selector
 
         self.channel_selector = tkinter.Listbox(self, width=15)
         self.channel_selector.bind('<<ListboxSelect>>', self._on_selection)
@@ -52,7 +52,8 @@ class IrcWidget(ttk.PanedWindow):
         entry.pack(side='left', fill='x', expand=True)
 
     def add_channel_like(self, channel_like):
-        self.channel_likes.append(channel_like)
+        assert channel_like.name not in self.channel_likes
+        self.channel_likes[channel_like.name] = channel_like
 
         if channel_like.name is None:
             # the special server channel-like
@@ -65,24 +66,36 @@ class IrcWidget(ttk.PanedWindow):
         self.channel_selector.event_generate('<<ListboxSelect>>')
 
     def remove_channel_like(self, channel_like):
-        index = self.channel_likes.index(channel_like)
+        del self.channel_likes[channel_like.name]
+
+        # i didn't find a better way to delete a listbox item by name
+        index = self.channel_selector.get(0, 'end').index(channel_like.name)
         was_last = (index == len(self.channel_likes) - 1)
-        del self.channel_likes[index]
+        was_selected = (index in self.channel_selector.curselection())
+
+        # must be after the index stuff above
         self.channel_selector.delete(index)
 
-        self.channel_selector.selection_clear(0, 'end')
-        if was_last:
-            self.channel_selector.selection_set('end')
-        else:
-            # there's an item after the item that got deleted
-            # after deleting, the indexes are shifted by 1, so this selects
-            # the element after the deleted element
-            self.channel_selector.selection_set(index)
-        self.channel_selector.event_generate('<<ListboxSelect>>')
+        if was_selected:
+            # select another item
+            self.channel_selector.selection_clear(0, 'end')
+            if was_last:
+                self.channel_selector.selection_set('end')
+            else:
+                # there's an item after the item that got deleted
+                # after deleting, the indexes are shifted by 1, so this
+                # selects the element after the deleted element
+                self.channel_selector.selection_set(index)
+            self.channel_selector.event_generate('<<ListboxSelect>>')
 
     def _on_selection(self, event):
-        (index,) = event.widget.curselection()
-        new_channel_like = self.channel_likes[index]
+        (index,) = self.channel_selector.curselection()
+        if index == 0:   # the special server channel-like
+            new_channel_like = self.channel_likes[None]
+        else:
+            new_channel_like = self.channel_likes[self.channel_selector.get(
+                index)]   # pep8 line length makes for weird-looking code
+
         if self.current_channel_like is new_channel_like:
             return
 
@@ -101,27 +114,6 @@ class IrcWidget(ttk.PanedWindow):
 
 
 if __name__ == '__main__':
-#    import functools
-#    big = ttk.Frame(tkinter.Tk())
-#    big.pack(fill='both', expand=True)
-#
-#    lol = ttk.Label(big, text="lol")
-#
-#    def move(area):
-#        lol.pack_forget()
-#        lol.pack(in_=area)
-#        lol.tkraise(area)     # make sure it's visible
-#
-#    area1 = ttk.Frame(big)
-#    area1.pack(side='left', fill='both', expand=True)
-#    area2 = ttk.Frame(big)
-#    area2.pack(side='left', fill='both', expand=True)
-#
-#    ttk.Button(area1, text="asd", command=functools.partial(move, area1)).pack()
-#    ttk.Button(area2, text="asd", command=functools.partial(move, area2)).pack()
-#
-#    tkinter.mainloop()
-
     root = tkinter.Tk()
     ircwidget = IrcWidget(root, 'asd')
     ircwidget.pack(fill='both', expand=True)
