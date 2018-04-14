@@ -7,12 +7,12 @@ from tkinter import ttk
 import backend
 
 
-# represents the server, a channel or a PM conversation
-class ChannelLike:
+# represents the IRC server, a channel or a PM conversation
+class ChannelLikeView:
 
     # users is None if this is not a channel
     # name is a nick or channel name, or None if this is the first
-    # ChannelLike ever created, used for server messages
+    # ChannelLikeView ever created, used for server messages
     def __init__(self, ircwidget, name, users=None):
         # if someone changes nick, IrcWidget takes care of updating .name
         self.name = name
@@ -63,57 +63,20 @@ class IrcWidget(ttk.PanedWindow):
         ttk.Label(entryframe, text=irc_core.nick).pack(side='left')
         entry = ttk.Entry(entryframe)
         entry.pack(side='left', fill='x', expand=True)
+        entry.bind('<Return>', self._on_enter_pressed)
 
-    def _select_index(self, index):
-        self._channel_selector.selection_clear(0, 'end')
-        self._channel_selector.selection_set(index)
-        self._channel_selector.event_generate('<<ListboxSelect>>')
+    def _on_enter_pressed(self, event):
+        command = event.widget.get()
+        event.widget.delete(0, 'end')
 
-    def add_channel_like(self, channel_like):
-        assert channel_like.name not in self._channel_likes
-        self._channel_likes[channel_like.name] = channel_like
-
-        if channel_like.name is None:
-            # the special server channel-like
-            assert len(self._channel_likes) == 1
-            self._channel_selector.insert('end', self._core.host)
+        match = __import__('re').search(r'^(/\w+) (.*)$', command)   # lol
+        assert match   # lol lol
+        if match.group(1) == '/join':
+            self._core.join_channel(match.group(2))
+        elif match.group(1) == '/part':
+            self._core.part_channel(match.group(2))
         else:
-            self._channel_selector.insert('end', channel_like.name)
-        self._select_index('end')
-
-    def remove_channel_like(self, channel_like):
-        del self._channel_likes[channel_like.name]
-
-        # i didn't find a better way to delete a listbox item by name
-        index = self._channel_selector.get(0, 'end').index(channel_like.name)
-        was_last = (index == len(self._channel_likes) - 1)
-        was_selected = (index in self._channel_selector.curselection())
-
-        # must be after the index stuff above
-        self._channel_selector.delete(index)
-
-        if was_selected:
-            # select another item instead
-            if was_last:
-                self._select_index('end')
-            else:
-                # deleting shifts indexes by 1, so this selects the
-                # element after the deleted element
-                self._select_index(index)
-
-    # this must be called when someone that the user is PM'ing with
-    # changes nick
-    # channels and the special server channel-like can't be renamed
-    def rename_channel_like(self, old_name, new_name):
-        self._channel_likes[new_name] = self._channel_likes.pop(old_name)
-        self._channel_likes[new_name].name = new_name
-
-        index = self._channel_selector.get(0, 'end').index(old_name)
-        was_selected = (index in self._channel_selector.curselection())
-        self._channel_selector.delete(index)
-        self._channel_selector.insert(index, new_name)
-        if was_selected:
-            self._select_index('end')
+            raise ValueError
 
     def _on_selection(self, event):
         (index,) = self._channel_selector.curselection()
@@ -139,6 +102,56 @@ class IrcWidget(ttk.PanedWindow):
 
         self._current_channel_like = new_channel_like
 
+    def _select_index(self, index):
+        self._channel_selector.selection_clear(0, 'end')
+        self._channel_selector.selection_set(index)
+        self._channel_selector.event_generate('<<ListboxSelect>>')
+
+    def add_channel_like(self, channel_like):
+        assert channel_like.name not in self._channel_likes
+        self._channel_likes[channel_like.name] = channel_like
+
+        if channel_like.name is None:
+            # the special server channel-like
+            assert len(self._channel_likes) == 1
+            self._channel_selector.insert('end', self._core.host)
+        else:
+            self._channel_selector.insert('end', channel_like.name)
+        self._select_index('end')
+
+    # https://xkcd.com/1960/
+    def select_something_else(self, than_this_channel_like):
+        if than_this_channel_like is not self._current_channel_like:
+            return
+
+        # i didn't find a better way to find a listbox index by name
+        index = self._channel_selector.get(0, 'end').index(
+            self._current_channel_like.name)
+        if index == len(self._channel_likes) - 1:   # last channel-like
+            self._select_index(index - 1)
+        else:
+            self._select_index(index + 1)
+
+    def remove_channel_like(self, channel_like):
+        self.select_something_else(channel_like)
+        index = self._channel_selector.get(0, 'end').index(channel_like.name)
+        self._channel_selector.delete(index)
+        del self._channel_likes[channel_like.name]
+
+    # this must be called when someone that the user is PM'ing with
+    # changes nick
+    # channels and the special server channel-like can't be renamed
+    def rename_channel_like(self, old_name, new_name):
+        self._channel_likes[new_name] = self._channel_likes.pop(old_name)
+        self._channel_likes[new_name].name = new_name
+
+        index = self._channel_selector.get(0, 'end').index(old_name)
+        was_selected = (index in self._channel_selector.curselection())
+        self._channel_selector.delete(index)
+        self._channel_selector.insert(index, new_name)
+        if was_selected:
+            self._select_index(index)
+
     def handle_events(self):
         while True:
             try:
@@ -146,7 +159,16 @@ class IrcWidget(ttk.PanedWindow):
             except queue.Empty:
                 break
 
-            if event == backend.IrcEvent.server_message:
+            if event == backend.IrcEvent.self_joined:
+                channel, nicklist = event_args
+                chanview = ChannelLikeView(self, channel, users=nicklist)
+                self.add_channel_like(chanview)
+
+            elif event == backend.IrcEvent.self_parted:
+                [channel] = event_args
+                self.remove_channel_like(self._channel_likes[channel])
+
+            elif event == backend.IrcEvent.server_message:
                 server, command, args = event_args
                 ircwidget._channel_likes[None].add_message(
                     server, ' '.join(args))
@@ -168,7 +190,7 @@ if __name__ == '__main__':
     root = tkinter.Tk()
     ircwidget = IrcWidget(root, core, root.destroy)
     ircwidget.pack(fill='both', expand=True)
-    ircwidget.add_channel_like(ChannelLike(ircwidget, None))
+    ircwidget.add_channel_like(ChannelLikeView(ircwidget, None))
     ircwidget.handle_events()
     root.protocol('WM_DELETE_WINDOW', core.quit)
 

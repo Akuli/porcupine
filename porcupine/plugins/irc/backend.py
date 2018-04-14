@@ -223,7 +223,8 @@ class IrcCore:
                         # joining a channel finished
                         channel, human_readable_message = msg.args[-2:]
                         nicks = self._names_replys.pop(channel)
-                        self.event_queue.put((IrcEvent.self_joined, nicks))
+                        self.event_queue.put((IrcEvent.self_joined,
+                                              channel, nicks))
 
                     else:
                         self.event_queue.put((
