@@ -10,6 +10,9 @@ Server = collections.namedtuple("Server", ["name"])
 _Message = collections.namedtuple(
     "_Message", ["sender", "sender_is_server", "command", "args"])
 
+# from rfc1459
+RPL_ENDOFMOTD = '376'
+
 
 class IrcEvent(enum.Enum):
     # The comments above each enum value represent the parameters they should
@@ -21,11 +24,19 @@ class IrcEvent(enum.Enum):
     # (channel, reason)
     self_parted = enum.auto()
 
-    # (sender, channel)
+    # ()
+    self_quit = enum.auto()
+
+    # (sender_nick, channel)
     user_joined = enum.auto()
 
-    # (sender, channel, reason)
+    # (sender_nick, channel, reason)
+    # reason can be None
     user_parted = enum.auto()
+
+    # (sender_nick, reason)
+    # reason can be None
+    user_quit = enum.auto()
 
     # (recipient, text)
     sent_privmsg = enum.auto()
@@ -36,12 +47,22 @@ class IrcEvent(enum.Enum):
     # (sender_server, command, args)
     server_message = enum.auto()
 
+    # (sender_nick, command, args)
+    # if you want to handle some of these, add the code to this file
+    # not so that this creates an unknown_message that is parsed elsewhere
+    # currently AT LEAST these things cause unknown messages:
+    #    * KICK
+    #    * MODE (ban, op, voice etc)
+    #    * INVITE
+    unknown_message = enum.auto()
+
 
 class _IrcInternalEvent(enum.Enum):
     got_message = enum.auto()
 
     should_join = enum.auto()
     should_part = enum.auto()
+    should_quit = enum.auto()
     should_send_privmsg = enum.auto()
 
 
@@ -105,8 +126,7 @@ class IrcCore:
                 # leave sender as is
                 sender_is_server = True
         else:
-            # assume server???
-            sender_is_server = True
+            sender_is_server = True   # TODO: when does this code run?
             sender = None
             command, *args = line.split(" ")
         for n, arg in enumerate(args):
@@ -129,8 +149,7 @@ class IrcCore:
                                           msg.sender, recipient, text))
                 elif msg.command == "JOIN":
                     [channel] = msg.args
-                    if (isinstance(msg.sender, User) and
-                            msg.sender.nick == self.nick):
+                    if msg.sender == self.nick:
                         self.event_queue.put((IrcEvent.self_joined, channel))
                     else:
                         self.event_queue.put((IrcEvent.user_joined,
@@ -138,27 +157,51 @@ class IrcCore:
                 elif msg.command == "PART":
                     channel = msg.args[0]
                     reason = msg.args[1] if len(msg.args) >= 2 else None
-                    self.event_queue.put((IrcEvent.user_parted,
-                                          msg.sender, channel, reason))
+                    if msg.sender == self.nick:
+                        self.event_queue.put((IrcEvent.self_parted,
+                                              channel, reason))
+                    else:
+                        self.event_queue.put((IrcEvent.user_parted,
+                                              msg.sender, channel, reason))
+
+                elif msg.command == "QUIT":
+                    reason = msg.args[0] if msg.args else None
+                    if msg.sender == self.nick:
+                        self.event_queue.put((IrcEvent.self_quit,))
+                        self._running = False
+                    else:
+                        self.event_queue.put((IrcEvent.user_quit,
+                                              msg.sender, reason))
+
                 elif msg.sender_is_server:
                     self.event_queue.put((IrcEvent.server_message,
                                           msg.sender, msg.command, msg.args))
+
                 else:
-                    print('**', msg)
+                    self.event_queue.put((IrcEvent.unknown_message,
+                                          msg.sender, msg.command, msg.args))
+
             elif event == _IrcInternalEvent.should_join:
                 [channel] = args
                 self._send("JOIN", channel)
+
             elif event == _IrcInternalEvent.should_part:
                 channel, reason = args
                 if reason is None:
                     self._send("PART", channel)
                 else:
+                    # FIXME: the reason thing doesn't seem to work
                     self._send("PART", channel, ":" + reason)
-                self.event_queue.put((IrcEvent.self_parted, channel, reason))
+
+            elif event == _IrcInternalEvent.should_quit:
+                assert not args
+                self._send("QUIT")
+
             elif event == _IrcInternalEvent.should_send_privmsg:
                 recipient, text = args
                 self._send("PRIVMSG", recipient, ":" + text)
                 self.event_queue.put((IrcEvent.sent_privmsg, recipient, text))
+
             else:
                 raise RuntimeError("Unrecognized internal event!")
 
@@ -170,6 +213,7 @@ class IrcCore:
     def connect(self):
         self._sock.connect((self.host, self.port))
         self._send("NICK", self.nick)
+        # TODO: allow specifying different nick and realname
         self._send("USER", self.nick, "0", "*", ":" + self.nick)
 
         threading.Thread(target=self._add_messages_to_internal_queue).start()
@@ -186,8 +230,9 @@ class IrcCore:
         self._internal_queue.put((_IrcInternalEvent.should_send_privmsg,
                                   recipient, text))
 
+    # part all channels before calling this
     def quit(self):
-        self._running = False
+        self._internal_queue.put((_IrcInternalEvent.should_quit,))
 
 
 if __name__ == '__main__':
@@ -196,10 +241,14 @@ if __name__ == '__main__':
     while True:
         event = core.event_queue.get()
         print(event)
+        if event[0] == IrcEvent.self_quit:
+            break
+        if event[0] == IrcEvent.recieved_privmsg and event[-1] == 'asd':
+            core.part_channel('##testingggggg', 'bye')
+            core.quit()
         if event[0] == IrcEvent.self_joined:
             core._send('WHO ##testingggggg')
         if event[0] == IrcEvent.server_message:
             server, command, args = event[1:]
-            print('*****', args)
-            if command == '376':    # end of motd
+            if command == RPL_ENDOFMOTD:
                 core.join_channel('##testingggggg')
