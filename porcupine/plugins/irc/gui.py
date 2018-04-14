@@ -84,9 +84,8 @@ class IrcWidget(ttk.PanedWindow):
             if was_last:
                 self._select_index('end')
             else:
-                # there's an item after the item that got deleted
-                # after deleting, the indexes are shifted by 1, so this
-                # selects the element after the deleted element
+                # deleting shifts indexes by 1, so this selects the
+                # element after the deleted element
                 self._select_index(index)
 
     # this must be called when someone that the user is PM'ing with
