@@ -51,6 +51,11 @@ class IrcWidget(ttk.PanedWindow):
         entry = ttk.Entry(entryframe)
         entry.pack(side='left', fill='x', expand=True)
 
+    def _select_index(self, index):
+        self.channel_selector.selection_clear(0, 'end')
+        self.channel_selector.selection_set(index)
+        self.channel_selector.event_generate('<<ListboxSelect>>')
+
     def add_channel_like(self, channel_like):
         assert channel_like.name not in self.channel_likes
         self.channel_likes[channel_like.name] = channel_like
@@ -61,9 +66,7 @@ class IrcWidget(ttk.PanedWindow):
             self.channel_selector.insert('end', "The Server")
         else:
             self.channel_selector.insert('end', channel_like.name)
-        self.channel_selector.selection_clear(0, 'end')
-        self.channel_selector.selection_set('end')
-        self.channel_selector.event_generate('<<ListboxSelect>>')
+        self._select_index('end')
 
     def remove_channel_like(self, channel_like):
         del self.channel_likes[channel_like.name]
@@ -77,16 +80,28 @@ class IrcWidget(ttk.PanedWindow):
         self.channel_selector.delete(index)
 
         if was_selected:
-            # select another item
-            self.channel_selector.selection_clear(0, 'end')
+            # select another item instead
             if was_last:
-                self.channel_selector.selection_set('end')
+                self._select_index('end')
             else:
                 # there's an item after the item that got deleted
                 # after deleting, the indexes are shifted by 1, so this
                 # selects the element after the deleted element
-                self.channel_selector.selection_set(index)
-            self.channel_selector.event_generate('<<ListboxSelect>>')
+                self._select_index(index)
+
+    # this must be called when someone that the user is PM'ing with
+    # changes nick
+    # channels and the special server channel-like can't be renamed
+    def rename_channel_like(self, old_name, new_name):
+        self.channel_likes[new_name] = self.channel_likes.pop(old_name)
+        self.channel_likes[new_name].name = new_name
+
+        index = self.channel_selector.get(0, 'end').index(old_name)
+        was_selected = (index in self.channel_selector.curselection())
+        self.channel_selector.delete(index)
+        self.channel_selector.insert(index, new_name)
+        if was_selected:
+            self._select_index('end')
 
     def _on_selection(self, event):
         (index,) = self.channel_selector.curselection()
@@ -122,6 +137,7 @@ if __name__ == '__main__':
     lol = ChannelLike(ircwidget, "##lol", ['a', 'b'])
     ircwidget.add_channel_like(lol)
     ircwidget.add_channel_like(ChannelLike(ircwidget, "##asd", ['x', 'y']))
-    ircwidget.remove_channel_like(lol)
+    ircwidget.rename_channel_like('##lol', '##loooool')
+    ircwidget.rename_channel_like('##asd', '##asdfghj')
 
     root.mainloop()
