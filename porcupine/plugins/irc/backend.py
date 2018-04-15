@@ -151,9 +151,8 @@ class IrcCore:
 
     def _mainloop(self):
         while self._running:
-            print('_mainloop: getting from the queue...')
             event, *args = self._internal_queue.get()
-            print('_mainloop: got an event from the queue')
+            log.debug("got an internal %r event", event)
 
             if event == _IrcInternalEvent.got_message:
                 [msg] = args

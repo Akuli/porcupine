@@ -26,10 +26,8 @@ class IrcTab(tabs.Tab):
 
 def open_irc():
     irc_core = connectdialog.run(get_main_window())
-    if irc_core is None:    # cancelled
-        return
-
-    get_tab_manager().add_tab(IrcTab(get_tab_manager(), irc_core))
+    if irc_core is not None:    # not cancelled
+        get_tab_manager().add_tab(IrcTab(get_tab_manager(), irc_core))
 
 
 def setup():

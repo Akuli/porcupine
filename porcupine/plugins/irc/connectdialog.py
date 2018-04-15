@@ -16,8 +16,12 @@ log = logging.getLogger(__name__)
 #       freenode and current username suck
 class ConnectDialogContent(ttk.Frame):
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, on_cancel_or_after_connect, **kwargs):
         super().__init__(master, **kwargs)
+        self._on_cancel_or_after_connect = on_cancel_or_after_connect
+
+        self.result = None   # will be set to the IrcCore, see connect()
+
         self._rownumber = 0
         self.grid_columnconfigure(0, minsize=60)
         self.grid_columnconfigure(1, weight=1)
@@ -59,15 +63,22 @@ class ConnectDialogContent(ttk.Frame):
         self._bottomframe = ttk.Frame(self)
         self._bottomframe.grid(row=31, column=0, columnspan=4,
                                padx=5, pady=5, sticky='we')
-        self.cancelbutton = ttk.Button(self._bottomframe, text="Cancel")
-        self.cancelbutton.pack(side='right')
-        self.okbutton = ttk.Button(self._bottomframe, text="Connect!")
-        self.okbutton.pack(side='right')
+
+        ttk.Button(self._bottomframe, text="Cancel",
+                   command=self.cancel).pack(side='right')
+        ttk.Button(self._bottomframe, text="Connect!",
+                   command=self.connect).pack(side='right')
+
+    def _setup_entry_bindings(self, entry):
+        entry.bind('<Return>', self.connect, add=True)
+        entry.bind('<Escape>', self.cancel, add=True)
 
     def _add_row(self, label, widget):
         ttk.Label(self, text=label).grid(row=self._rownumber, column=0,
                                          sticky='w')
         widget.grid(row=self._rownumber, column=1, columnspan=3, sticky='we')
+        if isinstance(widget, ttk.Entry):
+            self._setup_entry_bindings(widget)
         self._rownumber += 1
 
     def _on_nick_changed(self, *junk):
@@ -85,9 +96,10 @@ class ConnectDialogContent(ttk.Frame):
         self._server_entry.grid_configure(columnspan=1)
         ttk.Label(self, text="Port:").grid(row=0, column=2)
         self._port_entry.grid(row=0, column=3)
+        self._setup_entry_bindings(self._port_entry)
 
         self._add_row("Username:", self._username_entry)
-        self._add_row("Real name: *", self._realname_entry)
+        self._add_row("Real* name:", self._realname_entry)
 
         infolabel = ttk.Label(self, text=(
             "* This doesn't need to be your real name.\n"
@@ -98,10 +110,15 @@ class ConnectDialogContent(ttk.Frame):
 
         self.event_generate('<<MoreOptions>>')
 
-    def connect(self, callback):
-        """Create an IrcCore and run callback(the connected core) on success.
+    def cancel(self, junk_event=None):
+        self._on_cancel_or_after_connect()
 
-        On error, this shows a message box and doesn't call the callback.
+    def connect(self, junk_event=None):
+        """Create an IrcCore.
+
+        On success, this sets self.result to the connected core and
+        calls on_cancel_or_after_connect(), and on error this shows an
+        error message instead.
         """
         # TODO: is realname allowed to be empty?
         for what, value in [("server", self._server_entry.get()),
@@ -160,7 +177,8 @@ class ConnectDialogContent(ttk.Frame):
             progressbar.destroy()
 
             if succeeded:
-                callback(core)
+                self.result = core
+                self._on_cancel_or_after_connect()
             else:
                 # result is a traceback string
                 log.error("connecting to %s:%d failed\n%s",
@@ -177,23 +195,14 @@ def run(transient_to):
     """Returns a connected IrcCore, or None if the user cancelled."""
     dialog = tkinter.Toplevel()
 
-    result = None
-
-    def on_connect_success(core):
-        nonlocal result
-        result = core
-        dialog.destroy()
-
-    content = ConnectDialogContent(dialog)
+    content = ConnectDialogContent(dialog, dialog.destroy)
     content.pack(fill='both', expand=True)
-    content.okbutton['command'] = functools.partial(
-        content.connect, on_connect_success)
-    content.cancelbutton['command'] = dialog.destroy
 
     dialog.title("Connect to IRC")
     dialog.resizable(False, False)
     dialog.geometry('350x200')
     content.bind('<<MoreOptions>>', (lambda event: dialog.geometry('350x250')))
     dialog.transient(transient_to)
+
     dialog.wait_window()
-    return result
+    return content.result

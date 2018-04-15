@@ -8,7 +8,7 @@ import time
 import tkinter
 from tkinter import ttk
 
-from . import backend
+from . import backend, commands
 
 
 # represents the IRC server, a channel or a PM conversation
@@ -198,6 +198,7 @@ class IrcWidget(ttk.PanedWindow):
         kwargs.setdefault('orient', 'horizontal')
         super().__init__(master, **kwargs)
         self._core = irc_core
+        self._command_handler = commands.CommandHandler(irc_core)
         self._on_quit = on_quit
 
         self._channel_selector = tkinter.Listbox(self, width=15)
@@ -231,32 +232,15 @@ class IrcWidget(ttk.PanedWindow):
             self._core.change_nick(new_nick)
 
     def _on_enter_pressed(self, event):
-        msg = event.widget.get()
+        response = self._command_handler.handle_command(
+            self._current_channel_like.name, event.widget.get())
         event.widget.delete(0, 'end')
 
-        match = __import__('re').search(r'^(/\w+)(?: (.*))?$', msg)   # lol
-        if not match:
-            if self._current_channel_like.name is None:   # the server
-                self._current_channel_like.add_message(
-                    '*', "Cannot send messages here :(")
-            else:
-                self._core.send_privmsg(self._current_channel_like.name, msg)
-            return
-
-        if match.group(1) == '/join':
-            self._core.join_channel(match.group(2))
-        elif match.group(1) == '/nick':
-            self._core.change_nick(match.group(2))
-        elif match.group(1) == '/part':
-            if match.group(2) is None:
-                channel = self._current_channel_like.name
-                if channel is None or not channel.startswith('#'):
-                    raise ValueError
-            else:
-                channel = match.group(2)
-            self._core.part_channel(channel)
-        else:
-            raise ValueError
+        if response is not None:
+            command, *args = response
+            assert command is commands.SHOW_MESSAGE
+            [message] = args
+            self._current_channel_like.add_message('*', message)
 
     def _on_selection(self, event):
         (index,) = self._channel_selector.curselection()
