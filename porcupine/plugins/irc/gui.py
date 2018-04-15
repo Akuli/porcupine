@@ -1,11 +1,14 @@
 # strongly inspired by xchat :)
 # hexchat is a fork of xchat, its developers didn't invent the gui layout
+#
+# TODO: seems like channel names don't need to start with #
+#       https://tools.ietf.org/html/rfc2812#section-2.3.1
 import queue
 import time
 import tkinter
 from tkinter import ttk
 
-import backend
+from . import backend
 
 
 # represents the IRC server, a channel or a PM conversation
@@ -35,11 +38,13 @@ class ChannelLikeView:
             self.userlistbox.insert('end', *self.userlist)
 
     def destroy_widgets(self):
+        """This is called by IrcWidget.remove_channel_like()."""
         self.textwidget.destroy()
         if self.userlistbox is not None:
             self.userlistbox.destroy()
 
     def add_message(self, sender, message):
+        """Add a message to self.textwidget."""
         # scroll down all the way if the user hasn't scrolled up manually
         do_the_scroll = (self.textwidget.yview()[1] == 1.0)
 
@@ -53,6 +58,7 @@ class ChannelLikeView:
             self.textwidget.see('end')
 
     def on_join(self, nick):
+        """Called when another user joins this channel."""
         assert self.name.startswith('#'), "on_join() is for channels only"
 
         # TODO: a better algorithm?
@@ -65,6 +71,7 @@ class ChannelLikeView:
         self.add_message('*', "%s joined %s." % (nick, self.name))
 
     def on_part(self, nick, reason):
+        """Called when another user leaves this channel."""
         assert self.name.startswith('#'), "on_part() is for channels only"
 
         index = self.userlist.index(nick)
@@ -77,6 +84,11 @@ class ChannelLikeView:
         self.add_message('*', msg)
 
     def on_quit(self, nick, reason):
+        """Called when a user that was on this channel quits the whole IRC.
+
+        This is also called if the channel-like is not a channel, but it
+        represents a PM conversation with the quitting user.
+        """
         if self.name.startswith('#'):   # this is a channel
             index = self.userlist.index(nick)
             del self.userlist[index]
@@ -104,8 +116,8 @@ class ChannelLikeView:
         if was_selected:
             self.userlistbox.selection_set(new_index)
 
-    # must be ran when this user has successfully changed nick
     def on_self_changed_nick(self, old, new):
+        """Called after the user of this thing changes nick successfully."""
         # if this is a channel, update the list of nicks
         if self.userlist is not None:
             self._userlist_replace(old, new)
@@ -115,6 +127,10 @@ class ChannelLikeView:
 
     # must be ran when another user changes nick, AFTER changing self.name
     def on_user_changed_nick(self, old, new):
+        """Called after anyone has changed nick.
+
+        This must be called AFTER updating self.name.
+        """
         if self.name is None:
             # no need to do anything on the server channel-like
             return
@@ -329,6 +345,7 @@ class IrcWidget(ttk.PanedWindow):
             self._select_index(index)
 
     def handle_events(self):
+        """Call this once to start processing events from the core."""
         while True:
             try:
                 event, *event_args = self._core.event_queue.get(block=False)
@@ -414,7 +431,7 @@ class IrcWidget(ttk.PanedWindow):
             elif event in {backend.IrcEvent.server_message,
                            backend.IrcEvent.unknown_message}:
                 server, command, args = event_args
-                ircwidget._channel_likes[None].add_message(
+                self._channel_likes[None].add_message(
                     server, ' '.join(args))
 
             else:
@@ -423,6 +440,7 @@ class IrcWidget(ttk.PanedWindow):
         self.after(100, self.handle_events)
 
     def part_all_channels_and_quit(self):
+        """Call this to get out of IRC."""
         for name in self._channel_likes.keys():
             if name is not None and name.startswith('#'):
                 # TODO: add a reason here?
@@ -430,16 +448,16 @@ class IrcWidget(ttk.PanedWindow):
         self._core.quit()
 
 
-if __name__ == '__main__':
-    core = backend.IrcCore('chat.freenode.net', 6667, 'testieeeee')
-    core.connect()
-
-    root = tkinter.Tk()
-    ircwidget = IrcWidget(root, core, root.destroy)
-    ircwidget.pack(fill='both', expand=True)
-
-    ircwidget.handle_events()
-    ircwidget.focus_the_entry()
-    root.protocol('WM_DELETE_WINDOW', ircwidget.part_all_channels_and_quit)
-
-    root.mainloop()
+#if __name__ == '__main__':
+#    core = backend.IrcCore('chat.freenode.net', 6667, 'testieeeee')
+#    core.connect()
+#
+#    root = tkinter.Tk()
+#    ircwidget = IrcWidget(root, core, root.destroy)
+#    ircwidget.pack(fill='both', expand=True)
+#
+#    ircwidget.handle_events()
+#    ircwidget.focus_the_entry()
+#    root.protocol('WM_DELETE_WINDOW', ircwidget.part_all_channels_and_quit)
+#
+#    root.mainloop()
