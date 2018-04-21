@@ -3,6 +3,9 @@
 #
 # TODO: seems like channel names don't need to start with #
 #       https://tools.ietf.org/html/rfc2812#section-2.3.1
+import collections.abc
+import hashlib
+import os
 import queue
 import time
 import tkinter
@@ -11,12 +14,52 @@ from tkinter import ttk
 from . import backend, commands
 
 
+# because tkinter sucks
+class TreeviewWrapper(collections.abc.MutableSequence):
+
+    def __init__(self, treeview):
+        self.widget = treeview
+        self._items = []
+
+    def __len__(self):
+        return len(self._items)
+
+    def __getitem__(self, index):
+        return self._items[index]
+
+    def __delitem__(self, index):
+        self.widget.delete(self._items[index])
+        del self._items[index]
+
+    def insert(self, index, value):
+        self.widget.insert('', index, value, text=value)
+        self._items.insert(index, value)
+
+    def __setitem__(self, index, new_value):
+        # preserve as much info of the old value as possible
+        # TODO: preserve selections
+        item_options = self.widget.item(self._items[index])
+
+        del self[index]
+        self.insert(index, new_value)
+
+        # don't restore the old text, which was the old value
+        # self.insert() has set a new text
+        del item_options['text']
+        self.widget.item(new_value, **item_options)
+
+
+# channel-like views are listed in the gui at left
+# this is the name of the special server channel-like
+# this random MD5 is veeery unlikely to collide with anyone's nick
+_SERVER_VIEW_NAME = hashlib.md5(os.urandom(3)).hexdigest()
+
+
 # represents the IRC server, a channel or a PM conversation
 class ChannelLikeView:
 
     # users is None if this is not a channel
-    # name is a nick or channel name, or None if this is the first
-    # ChannelLikeView ever created, used for server messages
+    # name is a nick or channel name, nick name for PMS or _SERVER_VIEW_NAME
     def __init__(self, ircwidget, name, users=None):
         # if someone changes nick, IrcWidget takes care of updating .name
         self.name = name
@@ -28,20 +71,17 @@ class ChannelLikeView:
 
         if users is None:
             self.userlist = None
-            self.userlistbox = None
         else:
-            # why is there no ttk listbox :(
-            # bigpanedw adds this to itself when needed
-            self.userlist = list(users)
-            self.userlist.sort(key=str.casefold)
-            self.userlistbox = tkinter.Listbox(ircwidget, width=15)
-            self.userlistbox.insert('end', *self.userlist)
+            # bigpanedw adds the treeview to itself when needed
+            treeview = ttk.Treeview(ircwidget, show='tree', selectmode='none')
+            self.userlist = TreeviewWrapper(treeview)
+            self.userlist.extend(sorted(users, key=str.casefold))
 
     def destroy_widgets(self):
         """This is called by IrcWidget.remove_channel_like()."""
         self.textwidget.destroy()
-        if self.userlistbox is not None:
-            self.userlistbox.destroy()
+        if self.userlist is not None:
+            self.userlist.widget.destroy()
 
     def add_message(self, sender, message):
         """Add a message to self.textwidget."""
@@ -63,20 +103,17 @@ class ChannelLikeView:
 
         # TODO: a better algorithm?
         #       timsort is good, but maybe sorting every time is not?
-        self.userlist.append(nick)
-        self.userlist.sort(key=str.casefold)
-        index = self.userlist.index(nick)
-        self.userlistbox.insert(index, nick)
+        nicks = list(self.userlist)
+        nicks.append(nick)
+        nicks.sort(key=str.casefold)
+        self.userlist.insert(nicks.index(nick), nick)
 
         self.add_message('*', "%s joined %s." % (nick, self.name))
 
     def on_part(self, nick, reason):
         """Called when another user leaves this channel."""
         assert self.name.startswith('#'), "on_part() is for channels only"
-
-        index = self.userlist.index(nick)
-        del self.userlist[index]
-        self.userlistbox.delete(index)
+        self.userlist.remove(nick)
 
         msg = "%s left %s." % (nick, self.name)
         if reason is not None:
@@ -90,9 +127,7 @@ class ChannelLikeView:
         represents a PM conversation with the quitting user.
         """
         if self.name.startswith('#'):   # this is a channel
-            index = self.userlist.index(nick)
-            del self.userlist[index]
-            self.userlistbox.delete(index)
+            self.userlist.remove(nick)
         else:  # this is a PM conversation
             if self.name != nick:
                 # this conversation is between the user and someone else
@@ -103,35 +138,21 @@ class ChannelLikeView:
             msg = "%s (%s)" % (msg, reason)
         self.add_message('*', msg)
 
-    def _userlist_replace(self, old, new):
-        old_index = self.userlist.index(old)
-        was_selected = (old_index in self.userlistbox.curselection())
-        self.userlistbox.delete(old_index)
-
-        self.userlist[old_index] = new     # replace the old value efficiently
-        self.userlist.sort()
-
-        new_index = self.userlist.index(new)
-        self.userlistbox.insert(new_index, new)
-        if was_selected:
-            self.userlistbox.selection_set(new_index)
-
     def on_self_changed_nick(self, old, new):
         """Called after the user of this thing changes nick successfully."""
         # if this is a channel, update the list of nicks
         if self.userlist is not None:
-            self._userlist_replace(old, new)
+            self.userlist[self.userlist.index(old)] = new
 
         # notify about the nick change everywhere, no ifs in front of this
         self.add_message('*', "You are now known as %s." % new)
 
-    # must be ran when another user changes nick, AFTER changing self.name
     def on_user_changed_nick(self, old, new):
         """Called after anyone has changed nick.
 
         This must be called AFTER updating self.name.
         """
-        if self.name is None:
+        if self.name == _SERVER_VIEW_NAME:
             # no need to do anything on the server channel-like
             return
 
@@ -146,7 +167,7 @@ class ChannelLikeView:
             assert self.name.startswith('#')
             if old not in self.userlist:
                 return
-            self._userlist_replace(old, new)
+            self.userlist[self.userlist.index(old)] = new
 
         self.add_message('*', "%s is now known as %s." % (old, new))
 
@@ -221,7 +242,7 @@ class IrcWidget(ttk.PanedWindow):
         self._channel_likes = {}   # {channel_like.name: channel_like}
         self._current_channel_like = None  # selected in self._channel_selector
 
-        self.add_channel_like(ChannelLikeView(self, None))
+        self.add_channel_like(ChannelLikeView(self, _SERVER_VIEW_NAME))
 
     def focus_the_entry(self):
         self._entry.focus()
@@ -245,7 +266,7 @@ class IrcWidget(ttk.PanedWindow):
     def _on_selection(self, event):
         (index,) = self._channel_selector.curselection()
         if index == 0:   # the special server channel-like
-            new_channel_like = self._channel_likes[None]
+            new_channel_like = self._channel_likes[_SERVER_VIEW_NAME]
         else:
             new_channel_like = self._channel_likes[self._channel_selector.get(
                 index)]   # pep8 line length makes for weird-looking code
@@ -255,14 +276,14 @@ class IrcWidget(ttk.PanedWindow):
 
         if self._current_channel_like is not None:
             # not running for the first time
-            if self._current_channel_like.userlistbox is not None:
-                self.remove(self._current_channel_like.userlistbox)
+            if self._current_channel_like.userlist is not None:
+                self.remove(self._current_channel_like.userlist.widget)
             self._current_channel_like.textwidget.pack_forget()
 
         new_channel_like.textwidget.pack(
             in_=self._middle_pane, side='top', fill='both', expand=True)
-        if new_channel_like.userlistbox is not None:
-            self.add(new_channel_like.userlistbox, weight=0)
+        if new_channel_like.userlist is not None:
+            self.add(new_channel_like.userlist.widget, weight=0)
 
         self._current_channel_like = new_channel_like
 
@@ -275,8 +296,7 @@ class IrcWidget(ttk.PanedWindow):
         assert channel_like.name not in self._channel_likes
         self._channel_likes[channel_like.name] = channel_like
 
-        if channel_like.name is None:
-            # the special server channel-like
+        if channel_like.name == _SERVER_VIEW_NAME:
             assert len(self._channel_likes) == 1
             self._channel_selector.insert('end', "Server: " + self._core.host)
         else:
@@ -289,7 +309,7 @@ class IrcWidget(ttk.PanedWindow):
             return
 
         # i didn't find a better way to find a listbox index by name
-        if self._current_channel_like.name is None:
+        if self._current_channel_like.name == _SERVER_VIEW_NAME:
             index = 0
         else:
             index = self._channel_selector.get(0, 'end').index(
@@ -300,8 +320,8 @@ class IrcWidget(ttk.PanedWindow):
             self._select_index(index + 1)
 
     def remove_channel_like(self, channel_like):
-        assert channel_like.name is not None, ("cannot remove the "
-                                               "server channel-like")
+        assert channel_like.name != _SERVER_VIEW_NAME, ("cannot remove the "
+                                                        "server channel-like")
         self.select_something_else(channel_like)
         index = self._channel_selector.get(0, 'end').index(channel_like.name)
         self._channel_selector.delete(index)
@@ -312,8 +332,10 @@ class IrcWidget(ttk.PanedWindow):
     # changes nick
     # channels and the special server channel-like can't be renamed
     def rename_channel_like(self, old_name, new_name):
-        assert old_name is not None and new_name is not None, (
-            "cannot remove the server channel-like")
+        # yes, this passes the pep8 lint
+        assert (old_name != _SERVER_VIEW_NAME and
+                new_name != _SERVER_VIEW_NAME), ("cannot rename the "
+                                                 "server channel-like")
         if new_name in self._channel_likes:
             # unlikely to ever happen... lol
             self.remove_channel_like(self._channel_likes[new_name])
@@ -375,8 +397,7 @@ class IrcWidget(ttk.PanedWindow):
                 assert not nick.startswith('#')
 
                 for channel_like in self._channel_likes.values():
-                    # skip the server channel-like
-                    if channel_like.name is None:
+                    if channel_like.name == _SERVER_VIEW_NAME:
                         continue
 
                     # show a quit message if the user was on this channel
@@ -415,7 +436,7 @@ class IrcWidget(ttk.PanedWindow):
             elif event in {backend.IrcEvent.server_message,
                            backend.IrcEvent.unknown_message}:
                 server, command, args = event_args
-                self._channel_likes[None].add_message(
+                self._channel_likes[_SERVER_VIEW_NAME].add_message(
                     server, ' '.join(args))
 
             else:
@@ -425,8 +446,9 @@ class IrcWidget(ttk.PanedWindow):
 
     def part_all_channels_and_quit(self):
         """Call this to get out of IRC."""
+        assert not _SERVER_VIEW_NAME.startswith('#')
         for name in self._channel_likes.keys():
-            if name is not None and name.startswith('#'):
+            if name.startswith('#'):
                 # TODO: add a reason here?
                 self._core.part_channel(name)
         self._core.quit()
