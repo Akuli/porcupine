@@ -14,7 +14,7 @@ from tkinter import ttk
 from . import backend, commands
 
 
-# because tkinter sucks
+# because tkinter sucks at this
 class TreeviewWrapper(collections.abc.MutableSequence):
 
     def __init__(self, treeview):
