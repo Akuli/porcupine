@@ -12,6 +12,7 @@ import tkinter
 from tkinter import ttk
 
 from . import backend, commands
+from porcupine import images
 
 
 # because tkinter sucks at this
@@ -305,10 +306,17 @@ class IrcWidget(ttk.PanedWindow):
 
         self._channel_selector.append(channel_like.name)
         self._channel_selector.widget.selection_set(channel_like.name)
+
         if channel_like.name == _SERVER_VIEW_ID:
             assert len(self._channel_likes) == 1
             self._channel_selector.widget.item(
-                _SERVER_VIEW_ID, text=("Server: " + self._core.host))
+                channel_like.name, text=("Server: " + self._core.host))
+        elif channel_like.name.startswith('#'):
+            self._channel_selector.widget.item(
+                channel_like.name, image=images.get('hashtagbubble-20x20'))
+        else:
+            self._channel_selector.widget.item(
+                channel_like.name, image=images.get('face-20x20'))
 
     def remove_channel_like(self, channel_like):
         assert channel_like.name != _SERVER_VIEW_ID, ("cannot remove the "
@@ -320,7 +328,6 @@ class IrcWidget(ttk.PanedWindow):
     # this must be called when someone that the user PM's with changes nick
     # channels and the special server channel-like can't be renamed
     def rename_channel_like(self, old_name, new_name):
-        # yes, this passes the pep8 lint
         assert old_name != _SERVER_VIEW_ID and new_name != _SERVER_VIEW_ID, (
             "cannot rename the server channel-like")
 
