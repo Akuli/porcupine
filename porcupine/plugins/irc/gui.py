@@ -448,6 +448,9 @@ class IrcWidget(ttk.PanedWindow):
             elif event in {backend.IrcEvent.server_message,
                            backend.IrcEvent.unknown_message}:
                 server, command, args = event_args
+                if sender is None:
+                    # TODO: when does this happen?
+                    sender = '???'
                 self._channel_likes[_SERVER_VIEW_ID].add_message(
                     server, ' '.join(args))
 
