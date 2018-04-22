@@ -24,7 +24,6 @@ import porcupine
 from porcupine import dirs, images, utils
 
 
-
 log = logging.getLogger(__name__)
 
 

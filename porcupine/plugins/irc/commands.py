@@ -141,4 +141,3 @@ class CommandHandler:
             message = message.replace('//', '/', 1)
         self.irc_core.send_privmsg(current_channel_or_nick, message)
         return None
-

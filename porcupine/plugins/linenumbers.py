@@ -1,7 +1,5 @@
 """Line numbers for tkinter's Text widget."""
 
-import functools
-
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.textwidget import ThemedText
 
