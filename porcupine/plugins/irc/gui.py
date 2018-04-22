@@ -27,25 +27,25 @@ class TreeviewWrapper(collections.abc.MutableSequence):
 
     def __init__(self, treeview):
         self.widget = treeview
-        self._items = []
 
     def __len__(self):
-        return len(self._items)
+        # tkinter uses a children attribute for another thing, so the method
+        # that calls 'pathname children item' from ttk_treeview(3tk) is
+        # named get_children()
+        return len(self.widget.get_children(''))
 
     def __getitem__(self, index):
-        return self._items[index]
+        return self.widget.get_children('')[index]
 
     def __delitem__(self, index):
-        self.widget.delete(self._items[index])
-        del self._items[index]
+        self.widget.delete(self.widget.get_children('')[index])
 
     def insert(self, index, value):
         self.widget.insert('', index, value, text=value)
-        self._items.insert(index, value)
 
     def __setitem__(self, index, new_value):
         # preserve as much info of the old value as possible
-        item_options = self.widget.item(self._items[index])
+        item_options = self.widget.item(self.widget.get_children('')[index])
         was_selected = (self[index] in self.widget.selection())
 
         del self[index]
