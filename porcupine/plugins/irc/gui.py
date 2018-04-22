@@ -7,6 +7,8 @@ import collections.abc
 import hashlib
 import os
 import queue
+import re
+import string
 import time
 import tkinter
 from tkinter import ttk
@@ -229,16 +231,24 @@ def ask_new_nick(parent, old_nick):
     return result
 
 
+def _nick_mentioned(nick, message):
+    # https://tools.ietf.org/html/rfc2812#section-2.3.1
+    special = re.escape(r'[]\`_^{|}')
+    nick_regex = r'[A-Za-z%s][A-Za-z0-9-%s]*' % (special, special)
+    return (nick in re.findall(nick_regex, message))
+
+
 class IrcWidget(ttk.PanedWindow):
 
     def __init__(self, master, irc_core, on_quit, **kwargs):
         kwargs.setdefault('orient', 'horizontal')
         super().__init__(master, **kwargs)
-        self._core = irc_core
+        self.core = irc_core
         self._command_handler = commands.CommandHandler(irc_core)
         self._on_quit = on_quit
 
         treeview = ttk.Treeview(self, show='tree', selectmode='browse')
+        treeview.tag_configure('new_message', foreground='red')
         treeview.bind('<<TreeviewSelect>>', self._on_selection)
         self.add(treeview, weight=0)   # don't stretch
         self._channel_selector = TreeviewWrapper(treeview)
@@ -262,13 +272,20 @@ class IrcWidget(ttk.PanedWindow):
         self.add_channel_like(ChannelLikeView(self, _SERVER_VIEW_ID))
         # from now on, _current_channel_like is never None
 
+        # if this is True, new message notifications are generated whenever
+        # someone mentions the current nick in a message
+        # if this is False, notifications for the currently selected channel or
+        # PM chat are not generated
+        # this is set to True when the IRC tab is not selected
+        self.current_channel_like_notify = False
+
     def focus_the_entry(self):
         self._entry.focus()
 
     def _show_change_nick_dialog(self):
-        new_nick = ask_new_nick(self.winfo_toplevel(), self._core.nick)
-        if new_nick != self._core.nick:
-            self._core.change_nick(new_nick)
+        new_nick = ask_new_nick(self.winfo_toplevel(), self.core.nick)
+        if new_nick != self.core.nick:
+            self.core.change_nick(new_nick)
 
     def _on_enter_pressed(self, event):
         response = self._command_handler.handle_command(
@@ -299,6 +316,7 @@ class IrcWidget(ttk.PanedWindow):
             self.add(new_channel_like.userlist.widget, weight=0)
 
         self._current_channel_like = new_channel_like
+        self.mark_seen()
 
     def add_channel_like(self, channel_like):
         assert channel_like.name not in self._channel_likes
@@ -310,7 +328,7 @@ class IrcWidget(ttk.PanedWindow):
         if channel_like.name == _SERVER_VIEW_ID:
             assert len(self._channel_likes) == 1
             self._channel_selector.widget.item(
-                channel_like.name, text=("Server: " + self._core.host))
+                channel_like.name, text=self.core.host)
         elif channel_like.name.startswith('#'):
             self._channel_selector.widget.item(
                 channel_like.name, image=images.get('hashtagbubble-20x20'))
@@ -345,7 +363,7 @@ class IrcWidget(ttk.PanedWindow):
         """Call this once to start processing events from the core."""
         while True:
             try:
-                event, *event_args = self._core.event_queue.get(block=False)
+                event, *event_args = self.core.event_queue.get(block=False)
             except queue.Empty:
                 break
 
@@ -406,20 +424,23 @@ class IrcWidget(ttk.PanedWindow):
                     self.add_channel_like(ChannelLikeView(self, recipient))
 
                 self._channel_likes[recipient].add_message(
-                    self._core.nick, msg)
+                    self.core.nick, msg)
 
             elif event == backend.IrcEvent.received_privmsg:
                 # sender and recipient are channels or nicks
                 sender, recipient, msg = event_args
 
-                if recipient == self._core.nick:     # PM
-                    channel_like_name = sender   # whoever sent this
+                if recipient == self.core.nick:     # PM
                     if sender not in self._channel_likes:
                         # create a new channel-like for the conversation
                         self.add_channel_like(ChannelLikeView(self, sender))
+                    self._new_message_notify(sender)
+                    channel_like_name = sender
                 else:  # the message has been sent to an entire channel
                     assert recipient.startswith('#')
                     channel_like_name = recipient
+                    if _nick_mentioned(self.core.nick, msg):
+                        self._new_message_notify(channel_like_name)
 
                 self._channel_likes[channel_like_name].add_message(
                     sender, msg)
@@ -435,14 +456,53 @@ class IrcWidget(ttk.PanedWindow):
 
         self.after(100, self.handle_events)
 
+    def _new_message_notify(self, channel_like_name):
+        # privmsgs shouldn't come from the server, and this should be only
+        # called on privmsgs
+        # TODO: /me's and stuff should also call this when they are supported
+        assert channel_like_name != _SERVER_VIEW_ID
+
+        if (channel_like_name == self._current_channel_like.name and
+                not self.current_channel_like_notify):
+            return
+
+        self._channel_selector.widget.item(channel_like_name,
+                                           tags='new_message')
+        self.event_generate('<<NotSeenCountChanged>>')
+
+    def mark_seen(self):
+        """Make the currently selected channel-like not red in the list.
+
+        This should be called when the user has a chance to read new
+        messages in the channel-like.
+        """
+        if self._current_channel_like.name != _SERVER_VIEW_ID:
+            # TODO: don't erase all tags if there will be other tags later
+            self._channel_selector.widget.item(
+                self._current_channel_like.name, tags='')
+            self.event_generate('<<NotSeenCountChanged>>')
+
+    def not_seen_count(self):
+        """Returns the number of channel-likes that are shown in red.
+
+        A <<NotSeenCountChanged>> event is generated when the value may
+        have changed.
+        """
+        result = 0
+        for name in (self._channel_likes.keys() - {_SERVER_VIEW_ID}):
+            tags = self._channel_selector.widget.item(name, 'tags')
+            if 'new_message' in tags:
+                result += 1
+        return result
+
     def part_all_channels_and_quit(self):
         """Call this to get out of IRC."""
         assert not _SERVER_VIEW_ID.startswith('#')
         for name in self._channel_likes.keys():
             if name.startswith('#'):
                 # TODO: add a reason here?
-                self._core.part_channel(name)
-        self._core.quit()
+                self.core.part_channel(name)
+        self.core.quit()
 
 
 #if __name__ == '__main__':
