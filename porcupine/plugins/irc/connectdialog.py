@@ -1,8 +1,9 @@
 import functools
 import getpass    # for getting the user name
 import logging
+import re
 import tkinter
-from tkinter import messagebox, ttk
+from tkinter import ttk
 
 from porcupine import utils
 
@@ -26,17 +27,15 @@ class ConnectDialogContent(ttk.Frame):
         self.grid_columnconfigure(0, minsize=60)
         self.grid_columnconfigure(1, weight=1)
 
-        self._server_entry = ttk.Entry(self)
-        self._server_entry.insert(0, 'chat.freenode.net')
+        self._server_entry = self._create_entry()
         self._add_row("Server:", self._server_entry)
 
-        self._channel_entry = ttk.Entry(self)
+        self._channel_entry = self._create_entry()
         self._add_row("Channel:", self._channel_entry)
 
-        self._nickvar = tkinter.StringVar()
-        self._nickvar.set(getpass.getuser())
-        self._nickvar.trace('w', self._on_nick_changed)
-        self._add_row("Nickname:", ttk.Entry(self, textvariable=self._nickvar))
+        self._nick_entry = self._create_entry()
+        self._nick_entry.var.trace('w', self._on_nick_changed)
+        self._add_row("Nickname:", self._nick_entry)
 
         button = ttk.Button(self, text="More options...")
         button['command'] = functools.partial(self._show_more, button)
@@ -44,12 +43,10 @@ class ConnectDialogContent(ttk.Frame):
                     sticky='w', padx=5, pady=5)
         # leave self._rownumber untouched
 
-        # _show_more() actually shows these
-        self._username_entry = ttk.Entry(self)
-        self._realname_entry = ttk.Entry(self)
-        self._on_nick_changed()
-        self._port_entry = ttk.Entry(self, width=8)
-        self._port_entry.insert(0, '6667')
+        # _show_more() grids these
+        self._username_entry = self._create_entry()
+        self._realname_entry = self._create_entry()
+        self._port_entry = self._create_entry(width=8)
 
         # big row makes sure that this is always below everything
         self._statuslabel = ttk.Label(self)
@@ -66,26 +63,16 @@ class ConnectDialogContent(ttk.Frame):
 
         ttk.Button(self._bottomframe, text="Cancel",
                    command=self.cancel).pack(side='right')
-        ttk.Button(self._bottomframe, text="Connect!",
-                   command=self.connect).pack(side='right')
+        self._connectbutton = ttk.Button(
+            self._bottomframe, text="Connect!", command=self.connect)
+        self._connectbutton.pack(side='right')
 
-    def _setup_entry_bindings(self, entry):
-        entry.bind('<Return>', self.connect, add=True)
-        entry.bind('<Escape>', self.cancel, add=True)
-
-    def _add_row(self, label, widget):
-        ttk.Label(self, text=label).grid(row=self._rownumber, column=0,
-                                         sticky='w')
-        widget.grid(row=self._rownumber, column=1, columnspan=3, sticky='we')
-        if isinstance(widget, ttk.Entry):
-            self._setup_entry_bindings(widget)
-        self._rownumber += 1
-
-    def _on_nick_changed(self, *junk):
-        self._username_entry.delete(0, 'end')
-        self._username_entry.insert(0, self._nickvar.get())
-        self._realname_entry.delete(0, 'end')
-        self._realname_entry.insert(0, self._nickvar.get())
+        # now everything's ready for _validate()
+        # all of these call validate()
+        self._server_entry.var.set('chat.freenode.net')
+        self._nick_entry.var.set(getpass.getuser())
+        self._port_entry.var.set('6667')
+        self._on_nick_changed()
 
     # TODO: 2nd alternative for nicknames
     # rest of the code should also handle nickname errors better
@@ -110,8 +97,79 @@ class ConnectDialogContent(ttk.Frame):
 
         self.event_generate('<<MoreOptions>>')
 
+    def _create_entry(self, **kwargs):
+        var = kwargs['textvariable'] = tkinter.StringVar()
+        var.trace('w', self._validate)
+        entry = ttk.Entry(self, **kwargs)
+        entry.var = var     # because this is handy
+        return entry
+
+    def _setup_entry_bindings(self, entry):
+        entry.bind('<Return>', self.connect, add=True)
+        entry.bind('<Escape>', self.cancel, add=True)
+
+    def _add_row(self, label, widget):
+        ttk.Label(self, text=label).grid(row=self._rownumber, column=0,
+                                         sticky='w')
+        widget.grid(row=self._rownumber, column=1, columnspan=3, sticky='we')
+        if isinstance(widget, ttk.Entry):
+            self._setup_entry_bindings(widget)
+        self._rownumber += 1
+
+    def _on_nick_changed(self, *junk):
+        # these call self._validate()
+        self._username_entry.var.set(self._nick_entry.get())
+        self._realname_entry.var.set(self._nick_entry.get())
+
     def cancel(self, junk_event=None):
         self._on_cancel_or_after_connect()
+
+    def _validate(self, *junk):
+        # this will be re-enabled if everything's ok
+        self._connectbutton['state'] = 'disabled'
+
+        if not self._server_entry.get():
+            self._statuslabel['text'] = "Please specify a server."
+            return False
+        if not self._nick_entry.get():
+            self._statuslabel['text'] = "Please specify a nickname."
+            return False
+        if not self._username_entry.get():
+            self._statuslabel['text'] = "Please specify a username."
+            return False
+        # TODO: can realname be empty?
+
+        if not re.search('^' + backend.NICK_REGEX + '$',
+                         self._nick_entry.get()):
+            self._statuslabel['text'] = ("'%s' is not a valid nickname." %
+                                         self._nick_entry.get())
+            return False
+
+        # if the channel entry is empty, no channels are joined
+        channels = self._channel_entry.get().split()
+        for channel in channels:
+            if not re.fullmatch(backend.CHANNEL_REGEX, channel):
+                self._statuslabel['text'] = (
+                    "'%s' is not a valid channel name." % channel)
+
+                # see comments of backend.CHANNEL_REGEX
+                if not channel.startswith(('&', '#', '+', '!')):
+                    # the user probably doesn't know what (s)he's doing
+                    self._statuslabel['text'] += (
+                        " Usually channel names start with a # character.")
+                return False
+
+        try:
+            port = int(self._port_entry.get())
+            if port <= 0:
+                raise ValueError
+        except ValueError:
+            self._statuslabel['text'] = "The port must be a positive integer."
+            return False
+
+        self._statuslabel['text'] = ''
+        self._connectbutton['state'] = 'normal'
+        return True
 
     def connect(self, junk_event=None):
         """Create an IrcCore.
@@ -120,38 +178,7 @@ class ConnectDialogContent(ttk.Frame):
         calls on_cancel_or_after_connect(), and on error this shows an
         error message instead.
         """
-        # TODO: is realname allowed to be empty?
-        for what, value in [("server", self._server_entry.get()),
-                            ("nickname", self._nickvar.get()),
-                            ("username", self._username_entry.get()),
-                            ("realname", self._realname_entry.get()),
-                            ("channel", self._channel_entry.get())]:
-            if not value:
-                # all of these are correct: "a server", "a nickname",
-                # "a username", "a channel"
-                # so we can use 'a %s'
-                messagebox.showerror(
-                    "Missing %s" % what,
-                    "Please specify a %s and try again." % what)
-                return
-
-        # this sucks, see rfc2812
-        if not self._channel_entry.get().startswith('#'):
-            messagebox.showerror(
-                "Invalid channel name",
-                "Channel names must start with a # character.")
-            return
-
-        try:
-            port = int(self._port_entry.get())
-            if port <= 0:
-                raise ValueError
-        except ValueError:
-            messagebox.showerror(
-                "Invalid port number",
-                "'%s' is not a positive integer." % self._port_entry.get())
-            return
-
+        assert self._validate()
         disabled = self.winfo_children() + self._bottomframe.winfo_children()
         disabled.remove(self._bottomframe)
         disabled.remove(self._statuslabel)
@@ -166,9 +193,10 @@ class ConnectDialogContent(ttk.Frame):
         # creating an IrcCore creates a socket, but that shouldn't block
         # toooo much
         core = backend.IrcCore(
-            self._server_entry.get(), port, self._nickvar.get(),
-            self._username_entry.get(), self._realname_entry.get(),
-            autojoin=[self._channel_entry.get()])
+            self._server_entry.get(), int(self._port_entry.get()),
+            self._nick_entry.get(), self._username_entry.get(),
+            self._realname_entry.get(),
+            autojoin=self._channel_entry.get().split())
 
         # this will be ran from tk's event loop
         def on_connect_done(succeeded, result):
@@ -194,15 +222,15 @@ class ConnectDialogContent(ttk.Frame):
 def run(transient_to):
     """Returns a connected IrcCore, or None if the user cancelled."""
     dialog = tkinter.Toplevel()
-
     content = ConnectDialogContent(dialog, dialog.destroy)
     content.pack(fill='both', expand=True)
 
-    dialog.title("Connect to IRC")
-    dialog.resizable(False, False)
-    dialog.geometry('350x200')
-    content.bind('<<MoreOptions>>', (lambda event: dialog.geometry('350x250')))
-    dialog.transient(transient_to)
+    dialog.minsize(350, 200)
+    content.bind('<<MoreOptions>>',
+                 lambda junk_event: dialog.minsize(350, 250),
+                 add=True)
 
+    dialog.title("Connect to IRC")
+    dialog.transient(transient_to)
     dialog.wait_window()
     return content.result

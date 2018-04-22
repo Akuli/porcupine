@@ -4,6 +4,7 @@ import collections
 import enum
 import logging
 import queue
+import re
 import socket
 import threading
 
@@ -17,6 +18,18 @@ _Message = collections.namedtuple(
 _RPL_ENDOFMOTD = '376'
 _RPL_NAMREPLY = '353'
 _RPL_ENDOFNAMES = '366'
+
+# https://tools.ietf.org/html/rfc2812#section-2.3.1
+# unlike in the rfc, nicks are limited to 16 characters at least on freenode
+# 15 is 16-1 where 1 is the first character
+_special = re.escape(r'[]\`_^{|}')
+NICK_REGEX = r'[A-Za-z%s][A-Za-z0-9-%s]{0,15}' % (_special, _special)
+
+# https://tools.ietf.org/html/rfc2812#section-1.3
+# at least freenode and spotchat disallow a channel named #
+#    <siren.de.SpotChat.org> | toottootttt # Channel # is forbidden: Bad
+#                              Channel Name, exposes client bugs
+CHANNEL_REGEX = r'[&#+!][^ \x07,]{1,49}'
 
 
 # The comments represent the parameters that the events come with.

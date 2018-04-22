@@ -8,7 +8,6 @@ import hashlib
 import os
 import queue
 import re
-import string
 import time
 import tkinter
 from tkinter import ttk
@@ -69,13 +68,14 @@ class TreeviewWrapper(collections.abc.MutableSequence):
 # channel-like views are listed in the gui at left
 # this is the name of the special server channel-like
 # this random MD5 is veeery unlikely to collide with anyone's nick
+# nicks also have a length limit that is way smaller than this
 _SERVER_VIEW_ID = hashlib.md5(os.urandom(3)).hexdigest()
 
 
 # represents the IRC server, a channel or a PM conversation
 class ChannelLikeView:
 
-    # users is None if this is not a channel
+    # users is a list of nicks or None if this is not a channel
     # name is a nick or channel name, nick name for PMS or _SERVER_VIEW_ID
     def __init__(self, ircwidget, name, users=None):
         # if someone changes nick, IrcWidget takes care of updating .name
@@ -94,6 +94,10 @@ class ChannelLikeView:
                                     selectmode='extended')
             self.userlist = TreeviewWrapper(treeview)
             self.userlist.extend(sorted(users, key=str.casefold))
+
+    # 'wat.is_channel()' is way more readable than 'wat.userlist is not None'
+    def is_channel(self):
+        return (self.userlist is not None)
 
     def destroy_widgets(self):
         """This is called by IrcWidget.remove_channel_like()."""
@@ -117,7 +121,7 @@ class ChannelLikeView:
 
     def on_join(self, nick):
         """Called when another user joins this channel."""
-        assert self.name.startswith('#'), "on_join() is for channels only"
+        assert self.is_channel()
 
         # TODO: a better algorithm?
         #       timsort is good, but maybe sorting every time is not?
@@ -130,7 +134,7 @@ class ChannelLikeView:
 
     def on_part(self, nick, reason):
         """Called when another user leaves this channel."""
-        assert self.name.startswith('#'), "on_part() is for channels only"
+        assert self.is_channel()
         self.userlist.remove(nick)
 
         msg = "%s left %s." % (nick, self.name)
@@ -144,9 +148,9 @@ class ChannelLikeView:
         This is also called if the channel-like is not a channel, but it
         represents a PM conversation with the quitting user.
         """
-        if self.name.startswith('#'):   # this is a channel
+        if self.is_channel():
             self.userlist.remove(nick)
-        else:  # this is a PM conversation
+        else:  # a PM conversation
             if self.name != nick:
                 # this conversation is between the user and someone else
                 return
@@ -174,18 +178,14 @@ class ChannelLikeView:
             # no need to do anything on the server channel-like
             return
 
-        if self.userlist is None:
-            # PM chat, only notify of the nick change if chatting with
-            # that nick
-            assert not self.name.startswith('#')
-            if self.name != new:
-                return
-        else:
-            # a channel, update the user list
-            assert self.name.startswith('#')
+        if self.is_channel():
             if old not in self.userlist:
                 return
             self.userlist[self.userlist.index(old)] = new
+        else:
+            # PM chat, only display the nick change if chatting with that nick
+            if self.name != new:
+                return
 
         self.add_message('*', "%s is now known as %s." % (old, new))
 
@@ -229,13 +229,6 @@ def ask_new_nick(parent, old_nick):
     dialog.wait_window()
 
     return result
-
-
-def _nick_mentioned(nick, message):
-    # https://tools.ietf.org/html/rfc2812#section-2.3.1
-    special = re.escape(r'[]\`_^{|}')
-    nick_regex = r'[A-Za-z%s][A-Za-z0-9-%s]*' % (special, special)
-    return (nick in re.findall(nick_regex, message))
 
 
 class IrcWidget(ttk.PanedWindow):
@@ -329,7 +322,7 @@ class IrcWidget(ttk.PanedWindow):
             assert len(self._channel_likes) == 1
             self._channel_selector.widget.item(
                 channel_like.name, text=self.core.host)
-        elif channel_like.name.startswith('#'):
+        elif channel_like.is_channel():
             self._channel_selector.widget.item(
                 channel_like.name, image=images.get('hashtagbubble-20x20'))
         else:
@@ -403,7 +396,6 @@ class IrcWidget(ttk.PanedWindow):
 
             elif event == backend.IrcEvent.user_quit:
                 nick, reason = event_args
-                assert not nick.startswith('#')
 
                 for channel_like in self._channel_likes.values():
                     if channel_like.name == _SERVER_VIEW_ID:
@@ -420,7 +412,7 @@ class IrcWidget(ttk.PanedWindow):
                 recipient, msg = event_args
                 if recipient not in self._channel_likes:
                     # start of a new PM conversation with a nick
-                    assert not recipient.startswith('#')
+                    assert not re.fullmatch(backend.CHANNEL_REGEX, recipient)
                     self.add_channel_like(ChannelLikeView(self, recipient))
 
                 self._channel_likes[recipient].add_message(
@@ -437,9 +429,14 @@ class IrcWidget(ttk.PanedWindow):
                     self._new_message_notify(sender)
                     channel_like_name = sender
                 else:  # the message has been sent to an entire channel
-                    assert recipient.startswith('#')
+                    assert re.fullmatch(backend.CHANNEL_REGEX, recipient)
                     channel_like_name = recipient
-                    if _nick_mentioned(self.core.nick, msg):
+
+                    # this handles corner cases nicely
+                    # funnydude123 must not be notified when someone mentions
+                    # funny or dude, but we can't use \b because nicknames can
+                    # be non-wordy, e.g. {-o-} or `^\_
+                    if self.core.nick in re.findall(backend.NICK_REGEX, msg):
                         self._new_message_notify(channel_like_name)
 
                 self._channel_likes[channel_like_name].add_message(
@@ -448,9 +445,9 @@ class IrcWidget(ttk.PanedWindow):
             elif event in {backend.IrcEvent.server_message,
                            backend.IrcEvent.unknown_message}:
                 server, command, args = event_args
-                if sender is None:
+                if server is None:
                     # TODO: when does this happen?
-                    sender = '???'
+                    server = '???'
                 self._channel_likes[_SERVER_VIEW_ID].add_message(
                     server, ' '.join(args))
 
@@ -500,9 +497,11 @@ class IrcWidget(ttk.PanedWindow):
 
     def part_all_channels_and_quit(self):
         """Call this to get out of IRC."""
-        assert not _SERVER_VIEW_ID.startswith('#')
-        for name in self._channel_likes.keys():
-            if name.startswith('#'):
+        # the channel is not parted right away, self.core just puts a thing to
+        # a queue and does the actual parting later
+        # that's why there's no need to copy the items
+        for name, channel_like in self._channel_likes.items():
+            if channel_like.is_channel():
                 # TODO: add a reason here?
                 self.core.part_channel(name)
         self.core.quit()
