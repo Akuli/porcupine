@@ -1,12 +1,12 @@
+import collections
 import tkinter
 import warnings
-from collections import OrderedDict
 
 import porcupine
 from porcupine import tabs, utils
 
 
-_actions = OrderedDict()
+_actions = collections.OrderedDict()
 
 
 class _Action:
