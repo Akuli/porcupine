@@ -127,6 +127,86 @@ def invert_color(color):
     return '#%02x%02x%02x' % (r, g, b)
 
 
+class _TooltipManager:
+
+    # This needs to be shared by all instances because there's only one
+    # mouse pointer.
+    tipwindow = None
+
+    def __init__(self, widget):
+        widget.bind('<Enter>', self.enter, add=True)
+        widget.bind('<Leave>', self.leave, add=True)
+        widget.bind('<Motion>', self.motion, add=True)
+        self.widget = widget
+        self.got_mouse = False
+        self.text = None
+
+    @classmethod
+    def destroy_tipwindow(cls, junk_event=None):
+        if cls.tipwindow is not None:
+            cls.tipwindow.destroy()
+            cls.tipwindow = None
+
+    def enter(self, event):
+        # For some reason, toplevels get also notified of their
+        # childrens' events.
+        if event.widget is self.widget:
+            self.destroy_tipwindow()
+            self.got_mouse = True
+            self.widget.after(1000, self.show)
+
+    def leave(self, event):
+        if event.widget is self.widget:
+            self.destroy_tipwindow()
+            self.got_mouse = False
+
+    def motion(self, event):
+        self.mousex = event.x_root
+        self.mousey = event.y_root
+
+    def show(self):
+        if not self.got_mouse:
+            return
+
+        self.destroy_tipwindow()
+        if self.text is not None:
+            tipwindow = type(self).tipwindow = tkinter.Toplevel()
+            tipwindow.geometry('+%d+%d' % (self.mousex+10, self.mousey-10))
+            tipwindow.bind('<Motion>', self.destroy_tipwindow)
+            tipwindow.overrideredirect(True)
+
+            # If you modify this, make sure to always define either no
+            # colors at all or both foreground and background. Otherwise
+            # the label will have light text on a light background or
+            # dark text on a dark background on some systems.
+            tkinter.Label(tipwindow, text=self.text, border=3,
+                          fg='black', bg='white').pack()
+
+
+def set_tooltip(widget, text):
+    """A simple tooltip implementation with tkinter.
+
+    After calling ``set_tooltip(some_widget, "hello")``, "hello" will be
+    displayed in a small window when the user moves the mouse over the
+    widget and waits for 1 second. Do ``set_tooltip(some_widget, None)``
+    to get rid of a tooltip.
+
+    If you have read some of IDLE's source code (if you haven't, that's
+    good; IDLE's source code is ugly), you might be wondering what this
+    thing has to do with ``idlelib/tooltip.py``. Don't worry, I didn't
+    copy/paste any code from idlelib and I didn't read idlelib while I
+    wrote the tooltip code! Idlelib is awful and I don't want to use
+    anything from it in my editor.
+    """
+    if text is None:
+        if hasattr(widget, '_tooltip_manager'):
+            widget._tooltip_manager.text = None
+    else:
+        if not hasattr(widget, '_tooltip_manager'):
+            widget._tooltip_manager = _TooltipManager(widget)
+        widget._tooltip_manager.text = text
+
+
 def bind_with_data(widget, sequence, callback, add=False):
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``

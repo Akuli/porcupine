@@ -45,6 +45,7 @@ Information about Python
 Tkinter Utilities
 -----------------
 
+.. autofunction:: set_tooltip
 .. autofunction:: bind_mouse_wheel
 .. autofunction:: bind_tab_key
 .. autofunction:: bind_with_data

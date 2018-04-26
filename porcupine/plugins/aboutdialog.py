@@ -1,11 +1,13 @@
 import functools
 import itertools
+import os
 import re
 import tkinter
 from tkinter import ttk
+from urllib.request import pathname2url
 import webbrowser
 
-from porcupine import actions, get_main_window, images
+from porcupine import actions, dirs, get_main_window, images, utils
 from porcupine import __version__ as porcupine_version
 
 
@@ -62,7 +64,10 @@ class _AboutDialogContent(ttk.Frame):
             self._add_minimal_markdown(text_chunk)
         self._textwidget['state'] = 'disabled'     # disallow writing more text
 
-        ttk.Label(self, image=images.get('logo-200x200')).pack(anchor='e')
+        label = ttk.Label(self, image=images.get('logo-200x200'))
+        label.pack(anchor='e')
+        utils.set_tooltip(label, "Click to view in full size")
+        label.bind('<Button-1>', self.show_huge_logo)
 
     def _add_minimal_markdown(self, text):
         parts = []   # contains strings and link regex matches
@@ -98,6 +103,14 @@ class _AboutDialogContent(ttk.Frame):
 
     def _open_link(self, href, junk_event):
         webbrowser.open(href)
+
+    def show_huge_logo(self, junk_event):
+        # TODO: add a better way for finding the path?
+        path = os.path.join(dirs.installdir, 'images', 'logo.gif')
+
+        # TODO: is the browser a good choice? how about e.g. xdg-open?
+        #       this seems to magically xdg-open on my system 0_o
+        webbrowser.open('file://' + pathname2url(path))
 
 
 def show_about_dialog():
