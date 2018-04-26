@@ -28,6 +28,11 @@ Links:
 \N{bullet} [Porcupine on GitHub](https://github.com/Akuli/porcupine)
 \N{bullet} [Plugin API documentation for Python \
 programmers](https://akuli.github.io/porcupine/)
+
+Porcupine is available under the MIT license. It means that you can do \
+pretty much anything you want with it as long as you distribute the \
+LICENSE file with it. [Click \
+here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 """.format(version=porcupine_version)
 
 
@@ -47,7 +52,7 @@ class _AboutDialogContent(ttk.Frame):
         ttk_bg = self.tk.eval('ttk::style lookup TLabel.label -background')
 
         self._textwidget = tkinter.Text(
-            self, width=50, height=16, font='TkDefaultFont',
+            self, width=60, height=18, font='TkDefaultFont',
             wrap='word', borderwidth=0, relief='flat',
             foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
         self._textwidget.pack(fill='both', expand=True, padx=5, pady=5)
@@ -64,7 +69,8 @@ class _AboutDialogContent(ttk.Frame):
             self._add_minimal_markdown(text_chunk)
         self._textwidget['state'] = 'disabled'     # disallow writing more text
 
-        label = ttk.Label(self, image=images.get('logo-200x200'))
+        label = ttk.Label(self, image=images.get('logo-200x200'),
+                          cursor='hand2')
         label.pack(anchor='e')
         utils.set_tooltip(label, "Click to view in full size")
         label.bind('<Button-1>', self.show_huge_logo)
