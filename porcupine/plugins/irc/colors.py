@@ -91,8 +91,18 @@ def _parse_styles(text):
             yield (substring, fg, bg, bold, underline)
 
 
+# python's string hashes use a randomization by default, so hash('a')
+# returns a different value after restarting python
+def _nick_hash(nick):
+    # http://www.cse.yorku.ca/~oz/hash.html
+    hash_ = 5381
+    for c in nick:
+        hash_ = hash_*33 + ord(c)
+    return hash_
+
+
 def color_nick(nick):
-    color = _NICK_COLORS[hash(nick) % len(_NICK_COLORS)]
+    color = _NICK_COLORS[_nick_hash(nick) % len(_NICK_COLORS)]
     return _BOLD + _COLOR + str(color) + nick + _BACK_TO_NORMAL
 
 
