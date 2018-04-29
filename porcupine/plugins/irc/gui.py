@@ -12,7 +12,7 @@ import time
 import tkinter
 from tkinter import ttk
 
-from . import backend, commands
+from . import backend, colors, commands
 from porcupine import images
 
 
@@ -83,8 +83,8 @@ class ChannelLikeView:
 
         # width and height are minimums
         # IrcWidget packs this and lets this stretch
-        self.textwidget = tkinter.Text(ircwidget, width=1, height=1,
-                                       state='disabled')
+        self.textwidget = colors.ColoredText(ircwidget, width=1, height=1,
+                                             state='disabled')
 
         if users is None:
             self.userlist = None
@@ -105,19 +105,34 @@ class ChannelLikeView:
         if self.userlist is not None:
             self.userlist.widget.destroy()
 
-    def add_message(self, sender, message):
+    def add_message(self, sender, message, automagic_nick_coloring=False):
         """Add a message to self.textwidget."""
         # scroll down all the way if the user hasn't scrolled up manually
         do_the_scroll = (self.textwidget.yview()[1] == 1.0)
 
-        now = time.strftime('%H:%M')
+        # nicks are limited to 16 characters at least on freenode
+        # len(sender) > 16 is not a problem:
+        #    >>> ' ' * (-3)
+        #    ''
+        padding = ' ' * (16 - len(sender))
+
         self.textwidget['state'] = 'normal'
-        self.textwidget.insert(
-            'end', '[%s] %25s | %s\n' % (now, '<' + sender + '>', message))
+        self.textwidget.insert('end', '[%s] %s' % (
+            time.strftime('%H:%M'), padding))
+        self.textwidget.colored_insert('end', colors.color_nick(sender))
+        self.textwidget.insert('end', ' | ')
+        if self.userlist is None or not automagic_nick_coloring:
+            self.textwidget.colored_insert('end', message)
+        else:
+            self.textwidget.nicky_insert('end', message, list(self.userlist))
+        self.textwidget.insert('end', '\n')
         self.textwidget['state'] = 'disabled'
 
         if do_the_scroll:
             self.textwidget.see('end')
+
+    def on_privmsg(self, sender, message):
+        self.add_message(sender, message, automagic_nick_coloring=True)
 
     def on_join(self, nick):
         """Called when another user joins this channel."""
@@ -130,14 +145,15 @@ class ChannelLikeView:
         nicks.sort(key=str.casefold)
         self.userlist.insert(nicks.index(nick), nick)
 
-        self.add_message('*', "%s joined %s." % (nick, self.name))
+        self.add_message('*', "%s joined %s." % (
+            colors.color_nick(nick), self.name))
 
     def on_part(self, nick, reason):
         """Called when another user leaves this channel."""
         assert self.is_channel()
         self.userlist.remove(nick)
 
-        msg = "%s left %s." % (nick, self.name)
+        msg = "%s left %s." % (colors.color_nick(nick), self.name)
         if reason is not None:
             msg = "%s (%s)" % (msg, reason)
         self.add_message('*', msg)
@@ -155,7 +171,7 @@ class ChannelLikeView:
                 # this conversation is between the user and someone else
                 return
 
-        msg = "%s quit." % nick
+        msg = "%s quit." % colors.color_nick(nick)
         if reason is not None:
             msg = "%s (%s)" % (msg, reason)
         self.add_message('*', msg)
@@ -167,7 +183,8 @@ class ChannelLikeView:
             self.userlist[self.userlist.index(old)] = new
 
         # notify about the nick change everywhere, no ifs in front of this
-        self.add_message('*', "You are now known as %s." % new)
+        self.add_message('*', "You are now known as %s." % colors.color_nick(
+            new))   # lol pep8
 
     def on_user_changed_nick(self, old, new):
         """Called after anyone has changed nick.
@@ -187,7 +204,8 @@ class ChannelLikeView:
             if self.name != new:
                 return
 
-        self.add_message('*', "%s is now known as %s." % (old, new))
+        self.add_message('*', "%s is now known as %s." % (
+            colors.color_nick(old), colors.color_nick(new)))
 
 
 def ask_new_nick(parent, old_nick):
@@ -415,8 +433,7 @@ class IrcWidget(ttk.PanedWindow):
                     assert not re.fullmatch(backend.CHANNEL_REGEX, recipient)
                     self.add_channel_like(ChannelLikeView(self, recipient))
 
-                self._channel_likes[recipient].add_message(
-                    self.core.nick, msg)
+                self._channel_likes[recipient].on_privmsg(self.core.nick, msg)
 
             elif event == backend.IrcEvent.received_privmsg:
                 # sender and recipient are channels or nicks
@@ -439,16 +456,18 @@ class IrcWidget(ttk.PanedWindow):
                     if self.core.nick in re.findall(backend.NICK_REGEX, msg):
                         self._new_message_notify(channel_like_name)
 
-                self._channel_likes[channel_like_name].add_message(
-                    sender, msg)
+                self._channel_likes[channel_like_name].on_privmsg(sender, msg)
 
+            # TODO: do something to unknown messages!! maybe log in backend?
             elif event in {backend.IrcEvent.server_message,
                            backend.IrcEvent.unknown_message}:
                 server, command, args = event_args
                 if server is None:
                     # TODO: when does this happen?
                     server = '???'
-                self._channel_likes[_SERVER_VIEW_ID].add_message(
+
+                # not strictly a privmsg, but handled the same way
+                self._channel_likes[_SERVER_VIEW_ID].on_privmsg(
                     server, ' '.join(args))
 
             else:
