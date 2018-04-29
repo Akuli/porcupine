@@ -6,6 +6,7 @@ import functools
 import logging
 import os
 import platform
+import shlex
 import shutil
 import string as string_module      # string is used as a variable name
 import subprocess
@@ -104,7 +105,8 @@ if platform.system() == 'Windows':
         return ''.join(result)
 
 else:
-    from shlex import quote    # noqa
+    def quote(string):
+        return shlex.quote(string)
 
 
 def invert_color(color):
