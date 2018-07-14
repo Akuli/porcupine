@@ -90,6 +90,15 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
     else:
         log.debug("using $TERMINAL, it's set to %r" % terminal)
 
+    # Ellusion told me on irc that porcupine didn't find his
+    # xfce4-terminal, and turned out he had no x-terminal-emulator...
+    # i'm not sure why, but this should work
+    #
+    # well, turns out he's using arch, so... anything could be wrong
+    if (shutil.which(terminal) is None and
+            shutil.which('xfce4-terminal') is not None):
+        terminal = 'xfce4-terminal'
+
     if shutil.which(terminal) is None:
         messagebox.showerror(
             "%r not found" % terminal,
