@@ -26,10 +26,7 @@ def _dialog(action, last_path):
             for mimetype in filetype.mimetypes:
                 patterns.extend(mimetypes.guess_all_extensions(mimetype))
 
-        # TODO: does passing a tuple of patterns work?
-        #       the tkinter user inside me says that it will work because Tcl
-        #       arrays are just space-separated strings
-        options['filetypes'].append((filetype.name, ' '.join(patterns)))
+        options['filetypes'].append((filetype.name, tuple(patterns)))
 
     # the mro thing is there to avoid import cycles (lol)
     tab = porcupine.get_tab_manager().select()
