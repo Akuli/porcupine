@@ -32,8 +32,8 @@ _STUPID_DEFAULTS = '''\
 # Filetype names in [square brackets] can be anything you want, but note that
 # some Porcupine plugins may expect specific names. For example, a
 # Python-specific plugin might do nothing unless the current filetype's name is
-# Python. The [DEFAULT] section is special; if something is omitted in any
-# other section, the [DEFAULT] value will be used instead.
+# Python. The [Plain Text] section is special; if something is omitted in any
+# other section, the [Plain Text] value will be used instead.
 #
 # Valid keys:
 #   filename_patterns   space-separated list of patterns like *.py or *.txt
@@ -61,8 +61,8 @@ _STUPID_DEFAULTS = '''\
 #
 # If no matching filetype is found but the Pygments highlighting library (see
 # below) knows something about the file, Porcupine uses it and values in the
-# [DEFAULT] section. Porcupine displays these filetypes with ' (not from
-# filetypes.ini)' at the end of their names. The [DEFAULT] section is used if
+# [Plain Text] section. Porcupine displays these filetypes with ' (not from
+# filetypes.ini)' at the end of their names. The [Plain Text] section is used if
 # Pygments knows nothing about the file.
 #
 # Set pygments_lexer_name to pygments.lexers.SomethingLexer or the full name of
@@ -89,7 +89,7 @@ _STUPID_DEFAULTS = '''\
 #   tar cf "hello world.tar" "hello world.txt"
 #
 
-[DEFAULT]
+[Plain Text]
 # indentation settings are like they are because most people like them this
 # way, not because i like them this way
 filename_patterns =
@@ -201,7 +201,8 @@ pygments_lexer = pygments.lexers.MarkdownLexer
 # _config is never saved back to filetypes.ini
 #
 # interpolation=None allows using % signs in the config
-_config = configparser.ConfigParser(interpolation=None)
+_config = configparser.ConfigParser(
+    interpolation=None, default_section='Plain Text')
 
 # ordered to make sure that filetypes loaded from filetypes.ini are used
 # when possible
@@ -248,17 +249,13 @@ class _FileType:
 
         try:
             self.tabs2spaces = section.getboolean('tabs2spaces')
-            if self.tabs2spaces is None:
-                assert name == 'DEFAULT'
-                raise ValueError("missing tabs2spaces")
+            assert self.tabs2spaces is not None
         except ValueError as e:
             raise _OptionError('tabs2spaces') from e
 
         try:
             self.indent_size = section.getint('indent_size')
-            if self.indent_size is None:
-                assert name == 'DEFAULT'
-                raise ValueError("missing tabs2spaces")
+            assert self.indent_size is not None
             if self.indent_size <= 0:
                 raise ValueError("indent_size must be positive")
         except ValueError as e:
@@ -352,10 +349,10 @@ def guess_filetype(filename):
         except pygments.util.ClassNotFound:
             # can we use the shebang?
             if shebang_line is None:
-                return _filetypes['DEFAULT']
+                return _filetypes['Plain Text']
             lexer = pygments.lexers.guess_lexer(shebang_line)
             if isinstance(lexer, pygments.lexers.TextLexer):
-                return _filetypes['DEFAULT']
+                return _filetypes['Plain Text']
 
     name = lexer.name + ' (not from filetypes.ini)'
     if name in _filetypes:
@@ -418,7 +415,7 @@ def _add_missing_mimetypes():
 def _init():
     assert (not _filetypes), "cannot _init() twice"
     _add_missing_mimetypes()
-    stupid = configparser.ConfigParser()
+    stupid = configparser.ConfigParser(default_section='Plain Text')
     stupid.read_string(_STUPID_DEFAULTS)
 
     log.debug("trying to load '%s'", _get_ini_path())
@@ -440,29 +437,53 @@ def _init():
         _config.read_string(_STUPID_DEFAULTS)
     else:
         # neither of the except things ran, everything succeeded
+        # now we get to take care of some backwards compatibility stuff :D
+
+        # in the past, Porcupine used 'DEFAULT' instead of 'Plain Text'
+        if 'DEFAULT' in _config:
+            log.warning("filetypes.ini contains a deprecated [DEFAULT] "
+                        "section, consider renaming it to [Plain Text]")
+            # _config.pop seems to be broken
+            plain_text = dict(_config['DEFAULT'])
+            del _config['DEFAULT']
+            _config['Plain Text'] = plain_text
+
         # old porcupines created config files that didn't have all the
         # keys they need to have for this porcupine
-        # stupid['DEFAULT'] and _config['DEFAULT'] behave like dicts
-        missing_keys = set(stupid['DEFAULT']) - set(_config['DEFAULT'])
+        # stupid['Plain Text'] and _config['Plain Text'] behave like dicts
+        missing_keys = set(stupid['Plain Text']) - set(_config['Plain Text'])
         if missing_keys:
-            log.error("the [DEFAULT] section in filetypes.ini does not "
-                      "contain %s", ', '.join(missing_keys))
-            log.error("default settings will be used for missing things")
+            log.error("the [Plain Text] section in filetypes.ini does not "
+                      "contain %s, Porcupine's defaults will be used for "
+                      "missing keys", ', '.join(missing_keys))
 
             # _config is already loaded from filetypes.ini, so must make
             # sure anything that came from there is not overrided: read
             # the stupid defaults first and override with filetypes.ini
             # duck-typing: configparsers behave like dicts
-            merger = configparser.ConfigParser()
+            merger = configparser.ConfigParser(default_section='Plain Text')
             merger.read_dict(stupid)
             merger.read_dict(_config)
             _config.read_dict(merger)
         else:
             log.debug("loaded filetypes.ini successfully")
 
-    # make sure that the DEFAULT section is first, its values must be
+    # file types are displayed in the menu, and / is a special character in
+    # menu items
+    for section_name in _config.sections():
+        if '/' in section_name:
+            log.warning(
+                "%r is not a valid filetype name because it contains a /",
+                section_name)
+
+            # _config.pop(section_name) doesn't work for some reason
+            section = dict(_config[section_name])
+            del _config[section_name]
+            _config[section_name.replace('/', '_')] = section
+
+    # make sure that the Plain Text section is first, its values must be
     # valid when validating other sections
-    for section_name in (['DEFAULT'] + _config.sections()):
+    for section_name in (['Plain Text'] + _config.sections()):
         while True:
             try:
                 filetype = _FileType(section_name)
@@ -473,12 +494,13 @@ def _init():
                 log.debug("here's the full traceback\n%s", ''.join(
                     traceback.format_exception(type(e.__cause__), e.__cause__,
                                                e.__cause__.__traceback__)))
-                if section_name == 'DEFAULT':
-                    stupid = configparser.ConfigParser()
+                if section_name == 'Plain Text':
+                    stupid = configparser.ConfigParser(
+                        default_section='Plain Text')
                     stupid.read_string(_STUPID_DEFAULTS)
-                    _config['DEFAULT'][str(e)] = stupid['DEFAULT'][str(e)]
+                    _config['Plain Text'][str(e)] = stupid['Plain Text'][str(e)]
                 else:
-                    del _config[section_name][str(e)]  # use DEFAULT's value
+                    del _config[section_name][str(e)]  # use Plain Text's value
             else:
                 _filetypes[section_name] = filetype
                 break

@@ -21,11 +21,15 @@ def _dialog(action, last_path):
     # by Pygments creates a new filetype object (see filetypes.py)
     options['filetypes'] = [("All files", "*")]
     for filetype in porcupine.filetypes.get_all_filetypes():
-        if filetype.name not in {'DEFAULT', 'Porcupine filetypes.ini'}:
-            patterns = list(filetype.filename_patterns)
+        patterns = list(filetype.filename_patterns)
+        if filetype.name not in {'Plain Text', 'Porcupine filetypes.ini'}:
             for mimetype in filetype.mimetypes:
                 patterns.extend(mimetypes.guess_all_extensions(mimetype))
-            options['filetypes'].append((filetype.name, ' '.join(patterns)))
+
+        # TODO: does passing a tuple of patterns work?
+        #       the tkinter user inside me says that it will work because Tcl
+        #       arrays are just space-separated strings
+        options['filetypes'].append((filetype.name, ' '.join(patterns)))
 
     # the mro thing is there to avoid import cycles (lol)
     tab = porcupine.get_tab_manager().select()

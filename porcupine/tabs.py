@@ -604,7 +604,7 @@ bers.py>` use this attribute.
 
     def _guess_filetype(self, junk=None):
         if self.path is None:
-            self.filetype = filetypes.get_filetype_by_name('DEFAULT')
+            self.filetype = filetypes.get_filetype_by_name('Plain Text')
         else:
             self.filetype = filetypes.guess_filetype(self.path)
 
@@ -621,7 +621,7 @@ bers.py>` use this attribute.
             part1 = "New file"
         else:
             part1 = "File '%s'" % self.path
-        if self._filetype.name != 'DEFAULT':
+        if self._filetype.name != 'Plain Text':
             part1 += ", " + self._filetype.name
 
         part2 = "Line %s, column %s" % tuple(
