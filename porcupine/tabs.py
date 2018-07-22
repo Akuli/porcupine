@@ -146,6 +146,10 @@ class TabManager(ttk.Notebook):
         This returns a tuple instead of a list for compatibility with
         tkinter.
         """
+        # tkinter has a bug that makes the original tabs() return widget name
+        # strings instead of widget objects, and this str()'s the tabs just in
+        # case it is fixed later: str(widget object) and str(widget name) both
+        # give the widget name consistently
         return tuple(self.nametowidget(str(tab)) for tab in super().tabs())
 
     def add_tab(self, tab, select=True):
