@@ -61,7 +61,13 @@ class MenubarHandler:
             for choice in action.choices:
                 submenu.add_radiobutton(label=choice, variable=action.var)
 
-        self._items[action.path] = (menu, menu.index('end'))
+        index = menu.index('end')
+        if menu is self.main_menu:
+            # TODO: figure out why this is needed for the main menu, but not
+            #       for submenus
+            index -= 1
+
+        self._items[action.path] = (menu, index)
         self.on_enable_disable(action.path)
 
     def on_new_action(self, event):

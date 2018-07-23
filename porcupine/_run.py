@@ -136,6 +136,8 @@ def _setup_actions():
     # TODO: is Edit the best possible place for this?
     actions.add_command("Edit/Porcupine Settings...", settings.show_dialog)
 
+    _setup_filetype_actions()
+
     def change_font_size(how):
         config = settings.get_section('General')
         if how == 'reset':
@@ -178,6 +180,33 @@ def _setup_actions():
              "https://github.com/Akuli/python-tutorial/blob/master/README.md")
     add_link("Help/Python Help/Official Python documentation",
              "https://docs.python.org/")
+
+
+# this is not a plugin because i want the filetypes menu before the menus added
+# by plugins (lol)
+# TODO: look into pluginifying this?
+def _setup_filetype_actions():
+    var = tkinter.StringVar()
+    var.set(filetypes.get_all_filetypes()[0].name)
+
+    def select_another_filetype(*junk):
+        _tab_manager.select().filetype = filetypes.get_filetype_by_name(
+            var.get())
+
+    var.trace('w', select_another_filetype)
+
+    # this is complicated-ish because there are multiple tabs but 1 var
+    def update_var_from_tab(*junk):
+        tab = _tab_manager.select()
+        if isinstance(tab, tabs.FileTab):
+            var.set(tab.filetype.name)
+
+    _tab_manager.bind('<<NotebookTabChanged>>', update_var_from_tab, add=True)
+
+    actions.add_choice(
+        'Filetypes',
+        [filetype.name for filetype in filetypes.get_all_filetypes()],
+        var=var, tabtypes=[tabs.FileTab])
 
 
 def _iter_queue(queue):

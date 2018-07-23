@@ -478,9 +478,10 @@ bers.py>` use this attribute.
         # path and filetype are set correctly below
         # TODO: try to guess the filetype from the content when path is None
         self._path = path
-        self._guess_filetype()          # this sets self._filetype
+        self._filetype = filetypes.get_filetype_by_name('Plain Text')
+        self._guess_filetype()          # may set self._filetype
         self.bind('<<PathChanged>>', self._update_title, add=True)
-        self.bind('<<PathChanged>>', self._guess_filetype, add=True)
+        self.bind('<<PathChanged>>', self._guess_filetype_if_needed, add=True)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
@@ -600,17 +601,28 @@ bers.py>` use this attribute.
     def filetype(self):
         return self._filetype
 
+    # weird things might happen if filetype is of the wrong type
     @filetype.setter
     def filetype(self, filetype):
-        # hopefully it's a real filetype object
-        self._filetype = filetype
-        self.event_generate('<<FiletypeChanged>>')
+        # it's easier to write code that don't recurse infinitely if
+        # 'tab.filetype = tab.filetype' does nothing
+        if filetype is not self._filetype:
+            self._filetype = filetype
+            self.event_generate('<<FiletypeChanged>>')
 
-    def _guess_filetype(self, junk=None):
+    def _guess_filetype(self):
         if self.path is None:
             self.filetype = filetypes.get_filetype_by_name('Plain Text')
         else:
+            # FIXME: this may read the shebang from the file, but the file
+            #        might not be saved yet because save_as() sets self.path
+            #        before saving, and that's when this runs
             self.filetype = filetypes.guess_filetype(self.path)
+
+    def _guess_filetype_if_needed(self, junk_event):
+        if self.filetype.name == 'Plain Text':
+            # the user probably hasn't set the filetype
+            self._guess_filetype()
 
     def _update_title(self, junk=None):
         text = 'New File' if self.path is None else os.path.basename(self.path)
