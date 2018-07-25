@@ -18,11 +18,6 @@ your ``filetypes.ini`` configuration file. This way it will show up on the
 "Files of type" menu, but you can also set up other stuff such as indentation
 settings or running commands.
 
-.. note::
-    Currently the compiling, running and linting commands specified in
-    ``filetypes.ini`` don't actually do anything. I'll update
-    :source:`porcupine/plugins/run` to support them some day.
-
 Porcupine creates a ``filetypes.ini`` when it's started for the first time. You
 can edit it easily by opening *Porcupine Settings* from the *Edit* menu and
 clicking the *Edit filetypes.ini* button. Then follow the instructions in the
