@@ -22,6 +22,7 @@ import pygments.util
 # that's why "import porcupine"
 import porcupine
 from porcupine import dirs, images, utils
+from porcupine.filetypes import get_all_filetypes
 
 
 log = logging.getLogger(__name__)
@@ -468,15 +469,20 @@ def _init():
     general.connect('pygments_style', _validate_pygments_style_name)
 
     filetypes = get_section('File Types')
-    label = ttk.Label(filetypes.content_frame, text=(
-        "Currently there's no GUI for changing filetype specific "
-        "settings, but they're stored in filetypes.ini and you can "
-        "edit it yourself."))
-    label.pack(fill='x')
+    label1 = ttk.Label(filetypes.content_frame, text=(
+        "Currently there's no GUI for changing filetype specific settings, "
+        "but they're stored in filetypes.ini and you can edit it yourself."))
+    label2 = ttk.Label(filetypes.content_frame, text=(
+        "\nYou can use the following option to choose which filetype "
+        "Porcupine should use when you create a new file in Porcupine. You "
+        "can change the filetype after creating the file clicking Filetypes "
+        "in the menu bar."))
     filetypes.content_frame.bind(      # automatic wrapping
         '<Configure>',
-        lambda event: label.config(wraplength=event.width),
-        add=True)
+        lambda event: {   # have fun figuring out why javascripty { } works
+            label1.config(wraplength=event.width),
+            label2.config(wraplength=event.width),
+        }, add=True)
 
     def edit_it():
         # porcupine/tabs.py imports this file
@@ -488,8 +494,15 @@ def _init():
         manager.add_tab(tabs.FileTab.open_file(manager, path))
         _dialog.withdraw()
 
+    label1.pack(fill='x')
     ttk.Button(filetypes.content_frame, text="Edit filetypes.ini",
                command=edit_it).pack(anchor='center')
+    label2.pack(fill='x')
+
+    names = [filetype.name for filetype in get_all_filetypes()]
+    filetypes.add_option('default_filetype', 'Plain Text')
+    filetypes.add_combobox('default_filetype', names,
+                           "Default filetype for new files:")
 
 
 def show_dialog():

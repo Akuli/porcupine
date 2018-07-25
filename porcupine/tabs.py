@@ -475,11 +475,8 @@ bers.py>` use this attribute.
 
         self._save_hash = None
 
-        # path and filetype are set correctly below
-        # TODO: try to guess the filetype from the content when path is None
         self._path = path
-        self._filetype = filetypes.get_filetype_by_name('Plain Text')
-        self._guess_filetype()          # may set self._filetype
+        self._guess_filetype()          # sets self._filetype
         self.bind('<<PathChanged>>', self._update_title, add=True)
         self.bind('<<PathChanged>>', self._guess_filetype_if_needed, add=True)
 
@@ -604,15 +601,23 @@ bers.py>` use this attribute.
     # weird things might happen if filetype is of the wrong type
     @filetype.setter
     def filetype(self, filetype):
-        # it's easier to write code that don't recurse infinitely if
-        # 'tab.filetype = tab.filetype' does nothing
-        if filetype is not self._filetype:
-            self._filetype = filetype
-            self.event_generate('<<FiletypeChanged>>')
+        try:
+            # it's easier to write code that don't recurse infinitely if
+            # 'tab.filetype = tab.filetype' does nothing
+            if filetype is self._filetype:
+                return
+        except AttributeError:
+            # this happens when called from _guess_filetype, and self._filetype
+            # hasn't been set yet
+            pass
+
+        self._filetype = filetype
+        self.event_generate('<<FiletypeChanged>>')
 
     def _guess_filetype(self):
         if self.path is None:
-            self.filetype = filetypes.get_filetype_by_name('Plain Text')
+            name = settings.get_section('File Types')['default_filetype']
+            self.filetype = filetypes.get_filetype_by_name(name)
         else:
             # FIXME: this may read the shebang from the file, but the file
             #        might not be saved yet because save_as() sets self.path
@@ -634,16 +639,14 @@ bers.py>` use this attribute.
 
     def _update_status(self, junk=None):
         if self.path is None:
-            part1 = "New file"
+            prefix = "New file"
         else:
-            part1 = "File '%s'" % self.path
-        if self._filetype.name != 'Plain Text':
-            part1 += ", " + self._filetype.name
+            prefix = "File '%s'" % self.path
+        line, column = self.textwidget.index('insert').split('.')
 
-        part2 = "Line %s, column %s" % tuple(
-            self.textwidget.index('insert').split('.'))
-
-        self.status = part1 + '\t' + part2
+        self.status = "%s, %s\tLine %s, column %s" % (
+            prefix, self.filetype.name,
+            line, column)
 
     def can_be_closed(self):
         """
