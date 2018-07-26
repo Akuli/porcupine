@@ -468,6 +468,50 @@ bers.py>` use this attribute.
         A filetype object from :mod:`porcupine.filetypes`.
 
         .. seealso:: The :virtevt:`FiletypeChanged` virtual event.
+
+    .. attribute:: completer_callback
+
+        A callback function that is called when autocompleting, or None for no
+        autocompletion. None is the default value. This should take 1 argument,
+        which is the ``FileTab``, and they should return an iterable of strings
+        that can be inserted *after* the current cursor position.
+
+        Here is a simple and dumb completer function::
+
+            import re
+
+            def all_words_in_file_completer(tab):
+                # if the file contains 'a sd|toot' where | is the cursor, this
+                # will be 'a sd'
+                before_cursor = tab.textwidget.get('insert linestart', 'insert\
+')
+
+                # and prefix will be 'sd'
+                match = re.search(r'\w+', before_cursor)
+                if match is None:
+                    # there are no wordy characters before the cursor
+                    return []
+                prefix = match.group(0)
+
+                full_content = tab.textwidget.get('1.0', 'end - 1 char')
+                all_words = re.findall(r'\w+', full_content)
+                suffixes = [word[len(prefix):] for word in all_words
+                            if word.startswith(prefix)]
+                return suffixes
+
+        This is the *only* built-in autocompleting thing that Porcupine has,
+        and everything else related to autocompleting is done in plugins. There
+        are two kinds of autocompleting plugins:
+
+            1. Plugins that set the ``completer_callback`` attribute of
+               ``FileTab``s.
+            2. Plugins that run the ``completer_callback`` e.g. when the user
+               presses tab.
+
+        Separating things this way is good because you can have *multiple*
+        "type 1" completer plugins, maybe one for Java and another for Python,
+        but you need just *one* "type 2" plugin that can work with any "type 1"
+        plugin.
     """
 
     def __init__(self, manager, content='', path=None):
@@ -513,6 +557,8 @@ bers.py>` use this attribute.
         self.mark_saved()
         self._update_title()
         self._update_status()
+
+        self.completer = None
 
     @classmethod
     def open_file(cls, manager, path):

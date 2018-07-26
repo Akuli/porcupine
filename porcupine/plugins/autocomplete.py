@@ -1,71 +1,10 @@
-# TODO: document this module's simple register_completer() api
 import collections
 import re
 
 from porcupine import get_tab_manager, tabs, utils
 
-__all__ = ['register_completer']
+
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
-
-_completers = {}
-
-
-def register_completer(filetype_name, function):
-    """Add a syntax completer for a specific filetype.
-
-    Use like this::
-
-        from porcupine.plugins import autocomplete
-
-        def java_completer(tab):
-            # Do whatever you need to do with the text widget. For example:
-            full_content = tab.textwidget.get('1.0', 'end - 1 char')
-            cursor_line, cursor_col = map(int, tab.textwidget.index('insert')\
-.split('.'))
-
-            # This should return an iterable of things that can be inserted
-            # after the current cursor position, or e.g. [] for no completions.
-
-        def setup():
-            autocomplete.register_completer("Java", java_completer)
-
-    The ``tab`` argument to *function* is a :class:`porcupine.tabs.Filetab`.
-
-    The *filetype_name* should be a key of
-    :data:`porcupine.filetypes.filetypes`. Registering multiple completers
-    for the same *filetype_name* overrides previous registrations.
-    """
-    _completers[filetype_name] = function
-
-
-def _fallback_completer(tab):
-    """Find all words in file, sorted by frequency."""
-    before_cursor = tab.textwidget.get('insert linestart', 'insert')
-    after_cursor = tab.textwidget.get('insert', 'insert lineend')
-
-    match = re.search(r'\w+$', before_cursor)
-    if match is None:
-        # can't autocomplete based on this
-        return None
-    prefix = match.group(0)
-
-    # find unique words starting with the prefix
-    # Tcl's regexes don't support \b or a sane way of grouping so
-    # they are kind of useless for this. I guess I should implement
-    # this with Tcl regexes too and check which is faster :)
-    result = collections.Counter()
-    for chunk in tab.textwidget.iter_chunks():
-        result.update(re.findall(r'\b' + prefix + r'(\w+)', chunk))
-
-    # if the cursor is in the middle of a word, that word must not
-    # be completed, e.g. if the user types abcdef and moves the
-    # cursor between c and d, we must not autocomplete to abcdefdef
-    try:
-        del result[re.search(r'^\w*', after_cursor).group(0)]
-    except KeyError:
-        pass
-
-    return sorted(result, key=result.get, reverse=True)
 
 
 class _AutoCompleter:
@@ -77,6 +16,10 @@ class _AutoCompleter:
         self._completing = False    # avoid recursion
 
     def _find_suffixes(self):
+        if self.tab.completer is None:
+            # let other plugins handle this however they want to
+            return None
+
         before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
         after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
 
@@ -87,9 +30,7 @@ class _AutoCompleter:
             # don't complete in the middle of a word
             return []
 
-        completer = _completers.get(self.tab.filetype.name,
-                                    _fallback_completer)
-        return completer(self.tab)
+        return self.tab.completer(self.tab)
 
     def _complete(self, rotation):
         self._completing = True

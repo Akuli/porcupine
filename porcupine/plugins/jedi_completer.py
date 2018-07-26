@@ -12,7 +12,7 @@ Or like this on other operating systems::
 
 import logging
 import os
-from porcupine import dirs, utils
+from porcupine import dirs, get_tab_manager, tabs, utils
 from porcupine.plugins import autocomplete
 
 try:
@@ -36,8 +36,28 @@ def jedi_completer(tab):
     return (c.complete for c in script.completions())
 
 
+def on_filetype_changed(event, *, tab=None):
+    if tab is None:
+        tab = event.widget
+
+    if tab.filetype.name == 'Python':
+        print("Jedi Completer Enabled")
+        tab.completer = jedi_completer
+    else:
+        print("Jedi Completer Disabled")
+        if tab.completer is jedi_completer:
+            tab.completer = None
+
+
+def on_new_tab(event):
+    tab = event.data_widget
+    tab.bind('<<FiletypeChanged>>', on_filetype_changed, add=True)
+    on_filetype_changed(None, tab=tab)
+
+
 def setup():
     if jedi is not None:
         jedi.settings.cache_directory = os.path.join(dirs.cachedir, 'jedi')
         jedi.settings.case_insensitive_completion = False
-        autocomplete.register_completer("Python", jedi_completer)
+        utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab,
+                             add=True)
