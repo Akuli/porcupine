@@ -1,66 +1,162 @@
-import difflib
+# TODO: Instead of relying on a python language server to be running on
+# localhost:8080, run our own one locally via subprocess
+import socket
+import os
+import urllib.request
+import typing as t
+from collections import Counter
 
-from porcupine import get_tab_manager, tabs, utils
+import sansio_lsp_client as lsp
 
+import porcupine
+from porcupine.tabs import Tab, FileTab
 
-# this thing's line numbers start at 0
-def index_to_line_column(index, text):
-    lineno = text.count('\n', 0, index)
-    column = index - (text.rfind('\n', 0, index) + 1)
-    return (lineno, column)
+client: t.Optional[lsp.Client] = None
+events: t.Optional[t.Iterator[lsp.Event]] = None
 
-
-class LangServerHandler:
-
-    def __init__(self, tab):
-        self.tab = tab
-        self.full_code = tab.textwidget.get('1.0', 'end - 1 char')
-
-    # langserver protocol wants to keep track of text insertions and deletions,
-    # and this is the best way to do it in porcupine because tkinter
-    def on_content_changed(self, event):
-        new_code = self.tab.textwidget.get('1.0', 'end - 1 char')
-        matcher = difflib.SequenceMatcher(a=self.full_code, b=new_code)
-
-        for (delete_equal_replace_or_insert,
-             old_start, old_end, new_start, new_end) in matcher.get_opcodes():
-            if delete_equal_replace_or_insert == 'equal':
-                continue
-
-            replacement = new_code[new_start:new_end]
-
-            how_many_deleted = old_end - old_start
-            how_many_inserted = new_end - new_start
-
-            # it's important to use new_start for everything because that is
-            # the start value that represents the state of the code after
-            # applying the previous edits... note that this code runs in a
-            # loop, and the changes are applied in order
-            #
-            # think of this like:
-            #    new_code[new_start:new_end] = old_code[old_start:old_end]
-            #
-            # and after that:
-            #    new_code[new_start:end] == old_code[old_start:old_end]
-            end = new_start + how_many_deleted
-
-            start_lineno, start_column = index_to_line_column(
-                new_start, new_code)
-            end_lineno, end_column = index_to_line_column(end, new_code)
-            print("replace from %d:%d to %d:%d with %r" % (
-                start_lineno, start_column, end_lineno, end_column,
-                replacement))
-
-        self.full_code = new_code
+tab_versions: t.Counter[str] = Counter()
 
 
-def on_new_tab(event):
-    tab = event.data_widget
-    if isinstance(tab, tabs.FileTab):
-        handler = LangServerHandler(tab)
-        tab.textwidget.bind('<<ContentChanged>>', handler.on_content_changed,
-                            add=True)
+def tab_uri(tab: FileTab) -> str:
+    return "file://" + urllib.request.pathname2url(os.path.abspath(tab.path))
 
+
+def tab_text(tab: FileTab) -> str:
+    return tab.textwidget.get("1.0", "end - 1 char")
+
+
+def tab_position(tab: FileTab) -> lsp.Position:
+    line, column = map(int, tab.textwidget.index("insert").split("."))
+    return lsp.Position(line=line - 1, character=column)
+
+
+def lsp_pos_to_tk_pos(pos: lsp.Position) -> str:
+    return "{}.{}".format(pos.line + 1, pos.character)
+
+
+def lsp_events(
+    host: str = "localhost", port: int = 8080
+) -> t.Iterator[lsp.Event]:
+    sock = socket.socket()
+    sock.connect((host, port))
+
+    while True:
+        sock.sendall(client.send())
+
+        data = sock.recv(4096)
+        if not data:
+            break
+
+        try:
+            events = client.recv(data)
+        except lsp.IncompleteResponseError:
+            continue
+
+        yield from events
+
+
+def on_new_tab(event) -> None:
+    tab: Tab = event.data_widget
+
+    if isinstance(tab, FileTab):
+        uri = tab_uri(tab)
+
+        client.did_open(
+            lsp.TextDocumentItem(
+                uri=uri,
+                languageId="Python",
+                version=tab_versions[uri],
+                text=tab_text(tab),
+            )
+        )
+
+        porcupine.utils.bind_with_data(
+            tab.textwidget,
+            "<<ContentChanged>>",
+            lambda _: on_tab_changed(tab),
+            add=True,
+        )
+
+        on_file_type_changed(tab)
+        porcupine.utils.bind_with_data(
+            tab.textwidget,
+            "<<FiletypeChanged>>",
+            lambda e: on_file_type_changed(e.widget),
+            add=True,
+        )
+
+
+def on_tab_changed(tab: FileTab) -> None:
+    uri = tab_uri(tab)
+    text = tab_text(tab)
+
+    # FIXME: Only send the text that changed, not the whole new text.
+    tab_versions[uri] += 1
+    client.did_change(
+        text_document=lsp.VersionedTextDocumentIdentifier(
+            version=tab_versions[uri], uri=uri
+        ),
+        content_changes=[lsp.TextDocumentContentChangeEvent(text=text)],
+    )
+
+    for event in events:
+        if isinstance(event, lsp.PublishDiagnostics):
+            print("Diagnostics:")
+            print(event)
+            break
+        else:
+            print("Unknown event while waiting for diagnostics")
+            print(event)
+
+
+def completions(tab: FileTab) -> t.Iterator[t.Tuple[str, str, str]]:
+    uri = tab_uri(tab)
+
+    client.completions(
+        text_document_position=lsp.TextDocumentPosition(
+            textDocument=lsp.TextDocumentIdentifier(uri=uri),
+            position=tab_position(tab),
+        ),
+        context=lsp.CompletionContext(
+            triggerKind=lsp.CompletionTriggerKind.INVOKED
+        ),
+    )
+
+    for event in events:
+        if isinstance(event, lsp.Completion):
+            items = event.completion_list.items
+
+            for item in items:
+                text_edit: lsp.TextEdit = item.textEdit
+
+                start = lsp_pos_to_tk_pos(text_edit.range.start)
+                end = lsp_pos_to_tk_pos(text_edit.range.end)
+
+                yield (start, end, text_edit.newText)
+        else:
+            print("Unknown event while completing")
+            print(event)
+
+
+def on_file_type_changed(tab: FileTab) -> None:
+    if tab.filetype.name == "Python":
+        tab.completer = completions
+    elif tab.completer is completions:
+        tab.completer = None
 
 def setup():
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    global client, events
+    client = lsp.Client()
+    events = lsp_events()
+
+    for event in events:
+        if isinstance(event, lsp.Initialized):
+            break
+        else:
+            print("Unknown event while initializing")
+            print(event)
+
+    tab_manager = porcupine.get_tab_manager()
+    porcupine.utils.bind_with_data(
+        tab_manager, "<<NewTab>>", on_new_tab, add=True
+    )
