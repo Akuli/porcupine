@@ -33,7 +33,8 @@ def jedi_completer(tab):
 
     # the source is already unicode, so jedi doesn't need an encoding
     script = jedi.Script(source, line, column, path=tab.path)
-    return (c.complete for c in script.completions())
+    suffixes = (c.complete for c in script.completions())
+    return ((cursor_pos, cursor_pos, suffix) for suffix in suffixes)
 
 
 def on_filetype_changed(event, *, tab=None):

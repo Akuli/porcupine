@@ -473,8 +473,15 @@ bers.py>` use this attribute.
 
         A callback function that is called when autocompleting, or None for no
         autocompletion. None is the default value. This should take 1 argument,
-        which is the ``FileTab``, and they should return an iterable of strings
-        that can be inserted *after* the current cursor position.
+        which is the ``FileTab``. Completer functions should return an iterable
+        of ``(start, end, text)`` tuples where ``start`` and ``end`` are
+        tkinter positions, e.g. ``'123.45'`` for column 45 (0-based) of line
+        123 (1-based), and ``text`` is a string that the characters between
+        ``start`` and ``end`` will be replaced after completing. A simple
+        completer plugin might do the completions like this:
+
+            textwidget.delete(start, end)
+            textwidget.insert(start, text)
 
         Here is a simple and dumb completer function::
 
@@ -497,7 +504,14 @@ bers.py>` use this attribute.
                 all_words = re.findall(r'\w+', full_content)
                 suffixes = [word[len(prefix):] for word in all_words
                             if word.startswith(prefix)]
-                return suffixes
+
+                # it's important to store the current cursor position here
+                # because plugins that insert the completions may change it
+                cursor_pos = tab.textwidget.index('insert')
+
+                # almost done!
+                return [(cursor_pos, cursor_pos, suffix)
+                        for suffix in suffixes]
 
         This is the *only* built-in autocompleting thing that Porcupine has,
         and everything else related to autocompleting is done in plugins. There
