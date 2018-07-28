@@ -1,5 +1,6 @@
 import sys
 import typing as t
+import difflib
 import subprocess
 import porcupine
 
@@ -40,6 +41,7 @@ class Client:
                     version=self._version,
                 )
             )
+            self._previous_text = tab_text(self._tab)
 
             self._set_completer()
 
@@ -69,21 +71,48 @@ class Client:
         self._process = self._start_process()
         self._unhandled_events.clear()
 
+    # XXX(PurpleMyst): I'm not sure this method works? I just copy-pasted
+    # Akuli's old code and changed it a bit.
+    def _calculate_change_events(self, old_code: str, new_code: str) -> lsp.List[lsp.TextDocumentContentChangeEvent]:
+        matcher = difflib.SequenceMatcher(a=old_code, b=new_code)
+        events = []
+
+        def index_to_position(index: int, text: str) -> lsp.Position:
+            line = text.count('\n', 0, index)
+            character = index - (text.rfind('\n', 0, index) + 1)
+            return lsp.Position(line=line, character=character)
+
+        for (opcode, old_start, old_end, new_start, new_end) in matcher.get_opcodes():
+            if opcode == 'equal':
+                continue
+
+            replacement = new_code[new_start:new_end]
+
+            how_many_deleted = old_end - old_start
+            how_many_inserted = new_end - new_start
+            end = new_start + how_many_deleted
+
+            start_pos = index_to_position(new_start, new_code)
+            end_pos = index_to_position(end, new_code)
+
+            events.append(lsp.TextDocumentContentChangeEvent.change_range(
+                change_start=start_pos,
+                change_end=end_pos,
+                change_text=replacement,
+                old_text=old_code,
+            ))
+        return events
+
     def _content_changed(self):
         self._version += 1
 
-        # XXX(PurpleMyst): We currently send out the whole document every
-        # time anything changes. This sucks. We should fix this, however my
-        # library `sansio_lsp_client` currently doesn't support anything but
-        # this. I'll fix that pseudo-bug ASAP then we can fix this.
         self._lsp_client.did_change(
             text_document=lsp.VersionedTextDocumentIdentifier(
                 uri=tab_uri(self._tab), version=self._version
             ),
-            content_changes=[
-                lsp.TextDocumentContentChangeEvent(text=tab_text(self._tab))
-            ],
+            content_changes=self._calculate_change_events(self._previous_text, tab_text(self._tab)),
         )
+        self._previous_text = tab_text(self._tab)
 
         # TODO(PurpleMyst): Handle `lsp.PublishDiagnostics`.
         # TODO(PurpleMyst): Cancel the request if the user types more before we
