@@ -170,12 +170,12 @@ def test_replace(filetab_and_finder):
     #       bindings do it and it should create a nice status message
 
     click(find_button(finder, "Next match"))
-    assert str(replace_this_button['state']) == 'enabled'
+    assert str(replace_this_button['state']) == 'normal'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7')]
 
     click(replace_this_button)
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'toot asd'
-    assert str(replace_this_button['state']) == 'enabled'
+    assert str(replace_this_button['state']) == 'normal'
     assert finder.get_match_ranges() == [('1.5', '1.8')]
 
     click(replace_this_button)
@@ -201,18 +201,18 @@ def test_replace(filetab_and_finder):
                                          ('1.8', '1.11')]
 
     click(find_button(finder, "Next match"))
-    assert str(replace_this_button['state']) == 'enabled'
+    assert str(replace_this_button['state']) == 'normal'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
 
     click(replace_this_button)
-    assert str(replace_this_button['state']) == 'enabled'
+    assert str(replace_this_button['state']) == 'normal'
     assert finder.statuslabel['text'] == (
         "Replaced a match.\nThere are 2 more matches.")
     assert finder.get_match_ranges() == [('1.5', '1.8'), ('1.9', '1.12')]
 
     click(replace_this_button)
-    assert str(replace_this_button['state']) == 'enabled'
+    assert str(replace_this_button['state']) == 'normal'
     assert finder.statuslabel['text'] == (
         "Replaced a match.\nThere is 1 more match.")
     assert finder.get_match_ranges() == [('1.10', '1.13')]
@@ -237,11 +237,11 @@ def test_replace_asd_with_asd(filetab_and_finder):
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7')]
 
     click(find_button(finder, "Next match"))
-    assert str(replace_this_button['state']) == 'enabled'
+    assert str(replace_this_button['state']) == 'normal'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7')]
 
     click(replace_this_button)
-    assert str(replace_this_button['state']) == 'enabled'
+    assert str(replace_this_button['state']) == 'normal'
     assert finder.statuslabel['text'] == (
         "Replaced a match.\nThere is 1 more match.")
     assert finder.get_match_ranges() == [('1.4', '1.7')]

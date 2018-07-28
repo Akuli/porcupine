@@ -108,7 +108,7 @@ class Finder(ttk.Frame):
             return
 
         if (start, end) in self.get_match_ranges():
-            self._replace_this_button['state'] = 'enabled'
+            self._replace_this_button['state'] = 'normal'
         else:
             self._replace_this_button['state'] = 'disabled'
 
