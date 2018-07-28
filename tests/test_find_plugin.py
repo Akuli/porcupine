@@ -81,12 +81,14 @@ def test_initial_button_states(filetab_and_finder):
     finder = filetab_and_finder[1]
 
     # all buttons should be disabled because the find entry is empty
+    assert finder.statuslabel['text'] == "Type something to find."
     for button in find_buttons(finder):
         assert str(button['state']) == 'disabled'
 
     # i had a bug that occurred when typing something to the find area and
     # backspacing it out because it called highlight_all_matches()
     finder.highlight_all_matches()
+    assert finder.statuslabel['text'] == "Type something to find."
     for button in find_buttons(finder):
         assert str(button['state']) == 'disabled'
 
