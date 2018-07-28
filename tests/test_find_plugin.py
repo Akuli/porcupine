@@ -1,4 +1,5 @@
 # TODO: test overlapping matches
+
 import contextlib
 import itertools
 import random
@@ -51,7 +52,7 @@ def test_finding(filetab_and_finder):
         # irl but not in tests, even with update()
         finder.find_entry.insert(0, substring)
         finder.highlight_all_matches()
-        result = list(map(str, filetab.textwidget.tag_ranges('find_match')))
+        result = list(map(str, filetab.textwidget.tag_ranges('find_highlight')))
         finder.find_entry.delete(0, 'end')
         return result
 
@@ -61,29 +62,19 @@ def test_finding(filetab_and_finder):
         '2.2', '2.4',       # thIS is fun
         '2.5', '2.7',       # this IS fun
     ]
+    assert finder.statuslabel['text'] == "Found 4 matches."
+
     assert search_for('n') == [
         '2.10', '2.11',     # fuN
     ]
+    assert finder.statuslabel['text'] == "Found 1 match."
 
     # corner case: match in the beginning of file
     assert search_for('this is a') == ['1.0', '1.9']
+    assert finder.statuslabel['text'] == "Found 1 match."
 
-
-def test_set_status(filetab_and_finder):
-    finder = filetab_and_finder[1]
-    old_fg = str(finder.statuslabel['foreground'])
-
-    finder.set_status("hello")
-    assert str(finder.statuslabel['foreground']) == old_fg
-    assert finder.statuslabel['text'] == "hello"
-
-    finder.set_status("omg", error=True)
-    assert str(finder.statuslabel['foreground']) == 'red'
-    assert finder.statuslabel['text'] == "omg"
-
-    finder.set_status("hello")
-    assert str(finder.statuslabel['foreground']) == old_fg
-    assert finder.statuslabel['text'] == "hello"
+    assert search_for('this is not anywhere in the test text') == []
+    assert finder.statuslabel['text'] == "Found no matches :("
 
 
 def click_button(parent_widget, button_text):
@@ -142,12 +133,12 @@ def test_previous_and_next_match_buttons(filetab_and_finder):
         ('2.4', '2.7'),
     ]
 
-    tag_locations = filetab.textwidget.tag_ranges('find_match')
+    tag_locations = filetab.textwidget.tag_ranges('find_highlight')
     flatten = itertools.chain.from_iterable
     assert list(map(str, tag_locations)) == list(flatten(selecteds))
 
     index = 0
-    for lol in range(500):  # many times back and forth to check corner cases
+    for lol in range(500):   # many times back and forth to check corner cases
         if random.choice([True, False]):
             click_button(finder, "Previous match")
             index = (index - 1) % len(selecteds)
