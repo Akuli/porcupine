@@ -146,8 +146,9 @@ class Finder(ttk.Frame):
             # searching at the beginning of a match gives that match, not
             # the next match, so we need + 1 char... unless we are looking
             # at the beginning of the file, and to avoid infinite
-            # recursion, we haven't done it before
-            if start_index == '1.0' and count == 0:
+            # recursion, we check for that by checking if we have done it
+            # before
+            if count == 0:
                 search_arg = start_index
             else:
                 search_arg = '%s + 1 char' % start_index
