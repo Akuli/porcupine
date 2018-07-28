@@ -65,6 +65,7 @@ class Client:
         porcupine.utils.run_in_thread(_async_init, lambda *_: ...)
 
     def _filetype_changed(self):
+        self._version = 0
         self._process = self._start_process()
         self._unhandled_events.clear()
 
@@ -108,6 +109,14 @@ class Client:
     # before diagnostics are implemented.
     def _wait_for_event(self, event_type: t.Type[E]) -> E:
         while True:
+            # We check if the event is already in `self._unhandled_events`
+            # before doing anything so that if a previous call got our event
+            # we don't have to wait for more data to be sent over the line.
+            for i, event in enumerate(self._unhandled_events):
+                if isinstance(event, event_type):
+                    del self._unhandled_events[i]
+                    return event
+
             self._process.stdin.write(self._lsp_client.send())
             self._process.stdin.flush()
 
@@ -124,11 +133,6 @@ class Client:
 
             self._unhandled_events.extend(events)
 
-            for i, event in enumerate(self._unhandled_events):
-                if isinstance(event, event_type):
-                    del self._unhandled_events[i]
-                    return event
-
     def get_completions(self) -> t.Iterator[t.Tuple[str, str, str]]:
         self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
@@ -139,9 +143,10 @@ class Client:
             )
         )
 
-        completion_items = self._wait_for_event(
+        completion_event = self._wait_for_event(
             lsp.Completion
-        ).completion_list.items
+        )
+        completion_items = completion_event.completion_list.items
         for item in completion_items:
             if item.textEdit is not None:
                 start = lsp_pos_to_tk_pos(item.textEdit.range.start)
