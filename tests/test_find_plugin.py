@@ -105,12 +105,13 @@ def test_finding(filetab_and_finder):
         result = list(map(str, filetab.textwidget.tag_ranges('find_highlight')))
         finder.find_entry.delete(0, 'end')
 
-        state1 = str(find_button(finder, "Previous match")['state'])
-        state2 = str(find_button(finder, "Next match")['state'])
+        states = {str(find_button(finder, text)['state'])
+                  for text in ["Previous match", "Next match", "Replace all"]}
+        assert len(states) == 1, "not all buttons have the same state"
         if finder.statuslabel['text'] == "Found no matches :(":
-            assert state1 == state2 == 'disabled'
+            assert states == {'disabled'}
         else:
-            assert state1 == state2 == 'normal'
+            assert states == {'normal'}
 
         return result
 
@@ -145,14 +146,16 @@ def test_basic_statuses_and_previous_and_next_match_buttons(
     finder.highlight_all_matches()
     assert finder.statuslabel['text'] == "Found no matches :("
 
-    for text in ["Previous match", "Next match"]:
+    for text in ["Previous match", "Next match", "Replace all"]:
         button = find_button(finder, text)
         assert str(button['state']) == 'disabled'
 
-        # the button is disabled, but key bindings may call its command anyway
-        finder.statuslabel['text'] = "this should be overwritten"
-        click(button)
-        assert finder.statuslabel['text'] == "No matches found!"
+        if text != "Replace all":
+            # the button is disabled, but key bindings may call its command
+            # anyway
+            finder.statuslabel['text'] = "this should be overwritten"
+            click(button)
+            assert finder.statuslabel['text'] == "No matches found!"
 
     finder.find_entry.delete(0, 'end')
     finder.find_entry.insert(0, "asd")
@@ -199,9 +202,10 @@ def test_replace(filetab_and_finder):
     filetab.textwidget.insert('1.0', "asd asd asd")
     finder.find_entry.insert(0, "asd")
     finder.replace_entry.insert(0, "asda")
-    replace_this_button = find_button(finder, "Replace this match")
     prev_button = find_button(finder, "Previous match")
     next_button = find_button(finder, "Next match")
+    replace_this_button = find_button(finder, "Replace this match")
+    replace_all_button = find_button(finder, "Replace all")
 
     finder.highlight_all_matches()
     assert str(replace_this_button['state']) == 'disabled'
@@ -238,6 +242,7 @@ def test_replace(filetab_and_finder):
     assert str(replace_this_button['state']) == 'disabled'
     assert str(prev_button['state']) == 'disabled'
     assert str(next_button['state']) == 'disabled'
+    assert str(replace_all_button['state']) == 'disabled'
     assert finder.statuslabel['text'] == "Replaced the last match."
     assert finder.get_match_ranges() == []
 
@@ -302,5 +307,15 @@ def test_replace_all(filetab_and_finder):
     assert str(replace_this_button['state']) == 'disabled'
     assert str(prev_button['state']) == 'disabled'
     assert str(next_button['state']) == 'disabled'
+    assert str(replace_all_button['state']) == 'disabled'
     assert finder.statuslabel['text'] == "Replaced 2 matches."
     assert finder.get_match_ranges() == []
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'asda asda asda'
+
+    filetab.textwidget.delete('1.3', 'end')
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'asd'
+    finder.highlight_all_matches()
+    assert str(replace_all_button['state']) == 'normal'
+    click(replace_all_button)
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'asda'
+    assert finder.statuslabel['text'] == "Replaced 1 match."

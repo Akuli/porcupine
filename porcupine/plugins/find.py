@@ -108,22 +108,23 @@ class Finder(ttk.Frame):
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self):
-        prev_next_state = 'normal' if self.get_match_ranges() else 'disabled'
+        matches_something_state = (
+            'normal' if self.get_match_ranges() else 'disabled')
 
         try:
             start, end = map(str, self._textwidget.tag_ranges('sel'))
         except ValueError:
-            replace_state = 'disabled'
+            replace_this_state = 'disabled'
         else:   # no, elif doesn't work here
             if (start, end) in self.get_match_ranges():
-                replace_state = 'normal'
+                replace_this_state = 'normal'
             else:
-                replace_state = 'disabled'
+                replace_this_state = 'disabled'
 
-        self._previous_button['state'] = prev_next_state
-        self._next_button['state'] = prev_next_state
-        self._replace_this_button['state'] = replace_state
-        self._replace_all_button['state'] = replace_state
+        self._previous_button['state'] = matches_something_state
+        self._next_button['state'] = matches_something_state
+        self._replace_this_button['state'] = replace_this_state
+        self._replace_all_button['state'] = matches_something_state
 
     def highlight_all_matches(self, *junk):
         # clear previous highlights
@@ -239,7 +240,6 @@ class Finder(ttk.Frame):
                 "Replaced a match.\nThere are %d more matches." % left)
 
     def _replace_all(self):
-        assert str(self._replace_this_button['state']) == 'normal'
         match_ranges = self.get_match_ranges()
 
         # must do this backwards because replacing may screw up indexes AFTER
