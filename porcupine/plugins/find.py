@@ -39,7 +39,7 @@ class Finder(ttk.Frame):
         self.find_entry.bind('<Shift-Return>', self._go_to_previous_match)
         self.find_entry.bind('<Return>', self._go_to_next_match)
 
-        self._replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
+        self.replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
 
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=1, column=0, sticky='we')
@@ -91,7 +91,7 @@ class Finder(ttk.Frame):
 
     # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
     # gives a list of (start, end) pairs
-    def _get_match_ranges(self):
+    def get_match_ranges(self):
         starts_and_ends = list(
             map(str, self._textwidget.tag_ranges('find_highlight')))
         assert len(starts_and_ends) % 2 == 0
@@ -107,7 +107,7 @@ class Finder(ttk.Frame):
             self._replace_this_button['state'] = 'disabled'
             return
 
-        if (start, end) in self._get_match_ranges():
+        if (start, end) in self.get_match_ranges():
             self._replace_this_button['state'] = 'enabled'
         else:
             self._replace_this_button['state'] = 'disabled'
@@ -161,7 +161,7 @@ class Finder(ttk.Frame):
         self._textwidget.see(start)
 
     def _go_to_next_match(self, junk_event=None):
-        pairs = self._get_match_ranges()
+        pairs = self.get_match_ranges()
         if not pairs:
             self.statuslabel['text'] = "No matches found!"
             return
@@ -180,7 +180,7 @@ class Finder(ttk.Frame):
 
     # see _go_to_next_match for comments
     def _go_to_previous_match(self, junk_event=None):
-        pairs = self._get_match_ranges()
+        pairs = self.get_match_ranges()
         if not pairs:
             self.statuslabel['text'] = "No matches found!"
             return
@@ -199,24 +199,31 @@ class Finder(ttk.Frame):
     def _replace_this_match(self):
         try:
             start, end = map(str, self._textwidget.tag_ranges('sel'))
-            if (start, end) not in self._get_match_ranges():
+            if (start, end) not in self.get_match_ranges():
                 raise ValueError
         except ValueError:
             self.statuslabel['text'] = (
                 'Click "Previous match" or "Next match" first.')
             return
 
-        # _update_replace_button() must not be moved after .replace, think
-        # about what happens when you replace 'asd' with 'asd'
-        # TODO: test 'asd' --> 'asd' replace
+        # highlighted areas must not be moved after .replace, think about what
+        # happens when you replace 'asd' with 'asd'
         self._textwidget.tag_remove('find_highlight', start, end)
         self._update_replace_button()
-        self._textwidget.replace(start, end, self._replace_entry.get())
+        self._textwidget.replace(start, end, self.replace_entry.get())
 
         self._textwidget.mark_set('insert', start)   # TODO: test this
         self._go_to_next_match()
-        if self.statuslabel['text'] == "No matches found!":
-            self.statuslabel['text'] = "No more matches."   # TODO: test this
+
+        left = len(self.get_match_ranges())
+        if left == 0:
+            self.statuslabel['text'] = "Replaced the last match."
+        elif left == 1:
+            self.statuslabel['text'] = (
+                "Replaced a match. There is 1 more match.")
+        else:
+            self.statuslabel['text'] = (
+                "Replaced a match. There are %d more matches." % left)
 
 
 def find():
