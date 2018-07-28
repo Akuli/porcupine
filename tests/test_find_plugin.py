@@ -1,4 +1,8 @@
+# TODO: test overlapping matches
 import contextlib
+import itertools
+import random
+from tkinter import ttk
 
 import pytest
 
@@ -44,7 +48,7 @@ def test_finding(filetab_and_finder):
 
     def search_for(substring):
         # i thought highlight_all_matches() would run automatically, it works
-        # irl but not in this test, even with update()
+        # irl but not in tests, even with update()
         finder.find_entry.insert(0, substring)
         finder.highlight_all_matches()
         result = list(map(str, filetab.textwidget.tag_ranges('find_match')))
@@ -80,3 +84,80 @@ def test_set_status(filetab_and_finder):
     finder.set_status("hello")
     assert str(finder.statuslabel['foreground']) == old_fg
     assert finder.statuslabel['text'] == "hello"
+
+
+def click_button(parent_widget, button_text):
+    def recurser(widget):
+        count = 0
+        if isinstance(widget, ttk.Button) and widget['text'] == button_text:
+            widget.tk.call(widget['command'])
+            count += 1
+        for child in widget.winfo_children():
+            count += recurser(child)
+        return count
+
+    assert recurser(parent_widget) == 1  # exactly 1 button was found & clicked
+
+
+# porcusession to avoid creating a root window that messes things up
+def test_click_button_util(porcusession):
+    frame = ttk.Frame()
+    result = []
+    ttk.Button(frame, text="Asd", command=(lambda: result.append(1))).pack()
+    ttk.Button(ttk.Frame(frame),   # more nesting
+               text="Toot", command=(lambda: result.append(2))).pack()
+    click_button(frame, "Asd")
+    click_button(frame, "Toot")
+    ttk.Button(frame, text="Asd", command=(lambda: result.append(1))).pack()
+    assert result == [1, 2]
+
+    with pytest.raises(AssertionError):
+        click_button(frame, "Asd")
+
+
+def test_previous_and_next_match_buttons(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert('1.0', 'asd asd asd\nasd asd')
+    filetab.textwidget.mark_set('insert', '1.0')
+
+    finder.find_entry.insert(0, "no matches for this")
+    finder.highlight_all_matches()
+    click_button(finder, "Next match")
+    assert finder.statuslabel['text'] == "No matches found!"
+    finder.find_entry.delete(0, 'end')
+
+    finder.find_entry.insert(0, "asd")
+    finder.highlight_all_matches()
+
+    def get_selected():
+        start, end = filetab.textwidget.tag_ranges('sel')
+        assert filetab.textwidget.index('insert') == str(start)
+        return (str(start), str(end))
+
+    selecteds = [
+        ('1.0', '1.3'),
+        ('1.4', '1.7'),
+        ('1.8', '1.11'),
+        ('2.0', '2.3'),
+        ('2.4', '2.7'),
+    ]
+
+    tag_locations = filetab.textwidget.tag_ranges('find_match')
+    flatten = itertools.chain.from_iterable
+    assert list(map(str, tag_locations)) == list(flatten(selecteds))
+
+    # do it many times back and forth to cover corner cases
+    index = 0
+    for lol in range(10):
+        button_text, index_diff = random.choice([
+            ("Previous match", -1),
+            ("Next match", 1),
+        ])
+        index += index_diff
+        index %= len(selecteds)
+        print(selecteds[index], button_text, index)
+
+        click_button(finder, button_text)
+        filetab.update()
+        assert finder.statuslabel['text'] == ""
+        assert selecteds[index] == get_selected()

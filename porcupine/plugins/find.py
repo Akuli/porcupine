@@ -32,20 +32,21 @@ class Finder(ttk.Frame):
         find_var.trace('w', self.highlight_all_matches)
         self.find_entry.lol = find_var     # because cpython gc
 
+        self.find_entry.bind('<Shift-Return>', self._go_to_previous_match)
+        self.find_entry.bind('<Return>', self._go_to_next_match)
+
         #self._replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
 
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=1, column=0, sticky='we')
-        buttons = [
+
+        button_spec = [
+            ("Previous match", self._go_to_previous_match),
+            ("Next match", self._go_to_next_match),
         ]
-        for text, command in buttons:
+        for text, command in button_spec:
             button = ttk.Button(buttonframe, text=text, command=command)
             button.pack(side='left', fill='x', expand=True)
-
-        #self._full_words_var = tk.BooleanVar()
-        #checkbox = ttk.Checkbutton(self, text="Full words only",
-        #                           variable=self._full_words_var)
-        #checkbox.grid(row=0, column=1, sticky='nw')
 
         self.statuslabel = ttk.Label(self)
         self.statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
@@ -93,35 +94,95 @@ class Finder(ttk.Frame):
         # clear previous highlights
         self._textwidget.tag_remove('find_match', '1.0', 'end')
 
-        count = 0
         looking4 = self.find_entry.get()
-        if looking4:        # don't search for empty string
-            start_index = '1.0'
-            while True:
-                # searching at the beginning of a match gives that match, not
-                # the next match, so we need + 1 char... unless we are looking
-                # at the beginning of the file, and to avoid infinite
-                # recursion, we haven't done it before
-                if start_index == '1.0' and count == 0:
-                    search_arg = start_index
-                else:
-                    search_arg = '%s + 1 char' % start_index
+        if not looking4:        # don't search for empty string
+            self.set_status("")
+            return
 
-                start_index = self._textwidget.search(
-                    looking4, search_arg, 'end')
-                if not start_index:
-                    # no more matches
-                    break
+        count = 0
+        start_index = '1.0'
 
-                self._textwidget.tag_add(
-                    'find_match', start_index,
-                    '%s + %d chars' % (start_index, len(looking4)))
-                count += 1
+        while True:
+            # searching at the beginning of a match gives that match, not
+            # the next match, so we need + 1 char... unless we are looking
+            # at the beginning of the file, and to avoid infinite
+            # recursion, we haven't done it before
+            if start_index == '1.0' and count == 0:
+                search_arg = start_index
+            else:
+                search_arg = '%s + 1 char' % start_index
 
-        if count == 1:
-            self.statuslabel['text'] = "Found 1 match."
+            start_index = self._textwidget.search(
+                looking4, search_arg, 'end')
+            if not start_index:
+                # no more matches
+                break
+
+            self._textwidget.tag_add(
+                'find_match', start_index,
+                '%s + %d chars' % (start_index, len(looking4)))
+            count += 1
+
+        if count == 0:
+            self.set_status("Found no matches :(", error=True)
+        elif count == 1:
+            self.set_status("Found 1 match.")
         else:
-            self.statuslabel['text'] = "Found %d matches." % count
+            self.set_status("Found %d matches." % count)
+
+    def _get_match_ranges(self):
+        starts_and_ends = self._textwidget.tag_ranges('find_match')
+        if not starts_and_ends:
+            self.set_status("No matches found!")
+            return None
+
+        # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
+        # gives a list of (start, end) pairs
+        assert len(starts_and_ends) % 2 == 0
+        pairs = list(zip(starts_and_ends[0::2], starts_and_ends[1::2]))
+        assert pairs
+        return pairs
+
+    def _go_to_next_match(self, junk_event=None):
+        pairs = self._get_match_ranges()
+        if pairs is None:
+            return
+
+        # find first pair that starts after the cursor
+        for start, end in pairs:
+            if self._textwidget.compare(start, '>', 'insert'):
+                self._select_range(start, end)
+                break
+        else:
+            # reached end of file, use the first match
+            self._select_range(*pairs[0])
+
+        self.set_status("")
+        return 'break'
+
+    # see _go_to_next_match for comments
+    def _go_to_previous_match(self, junk_event=None):
+        pairs = self._get_match_ranges()
+        if pairs is None:
+            return
+
+        for start, end in reversed(pairs):
+            if self._textwidget.compare(start, '<', 'insert'):
+                self._select_range(start, end)
+                break
+        else:
+            self._select_range(*pairs[-1])
+
+        self.set_status("")
+        return 'break'
+
+
+    def _select_range(self, start, end):
+        self._textwidget.tag_lower('find_match', 'sel')  # make sure sel shows
+        self._textwidget.tag_remove('sel', '1.0', 'end')
+        self._textwidget.tag_add('sel', start, end)
+        self._textwidget.mark_set('insert', start)
+        self._textwidget.see(start)
 
 
 def find():
