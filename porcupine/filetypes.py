@@ -485,6 +485,7 @@ def _init():
     # valid when validating other sections
     for section_name in (['Plain Text'] + _config.sections()):
         while True:
+            # FIXME: what if multiple values are incorrect?
             try:
                 filetype = _FileType(section_name)
             except _OptionError as e:
