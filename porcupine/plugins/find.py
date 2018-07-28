@@ -28,6 +28,10 @@ class Finder(ttk.Frame):
         self.grid_columnconfigure(1, weight=1)
         self._textwidget = textwidget
 
+        # TODO: use the pygments theme somehow?
+        textwidget.tag_config('find_highlight',
+                              foreground='black', background='yellow')
+
         entrygrid = ttk.Frame(self)
         entrygrid.grid(row=0, column=0)
 
@@ -44,16 +48,18 @@ class Finder(ttk.Frame):
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=1, column=0, sticky='we')
 
+        self._previous_button = ttk.Button(buttonframe, text="Previous match",
+                                           command=self._go_to_previous_match)
+        self._next_button = ttk.Button(buttonframe, text="Next match",
+                                       command=self._go_to_next_match)
         self._replace_this_button = ttk.Button(
             buttonframe, text="Replace this match",
-            command=self._replace_this_match, state='disabled')
+            command=self._replace_this_match)
 
-        pack_kwargs = {'side': 'left', 'fill': 'x', 'expand': True}
-        ttk.Button(buttonframe, text="Previous match",
-                   command=self._go_to_previous_match).pack(**pack_kwargs)
-        ttk.Button(buttonframe, text="Next match",
-                   command=self._go_to_next_match).pack(**pack_kwargs)
-        self._replace_this_button.pack(**pack_kwargs)
+        self._previous_button.pack(side='left', fill='x', expand=True)
+        self._next_button.pack(side='left', fill='x', expand=True)
+        self._replace_this_button.pack(side='left', fill='x', expand=True)
+        self._update_buttons()
 
         self.statuslabel = ttk.Label(self)
         self.statuslabel.grid(row=0, column=1, rowspan=2, sticky='nswe')
@@ -65,10 +71,6 @@ class Finder(ttk.Frame):
         # TODO: figure out why images don't work in tests
         if 'pytest' not in sys.modules:     # pragma: no cover
             closebutton['image'] = images.get('closebutton')
-
-        # TODO: use the pygments theme somehow?
-        textwidget.tag_config('find_highlight',
-                              foreground='black', background='yellow')
 
     def _add_entry(self, frame, row, text):
         ttk.Label(frame, text=text).grid(row=row, column=0)
@@ -98,9 +100,13 @@ class Finder(ttk.Frame):
         pairs = list(zip(starts_and_ends[0::2], starts_and_ends[1::2]))
         return pairs
 
-    # must be called when replacing becomes possible or impossible, i.e. when
-    # find_highlight areas or the selection changes
-    def _update_replace_button(self):
+    # must be called when going to another match or replacing becomes possible
+    # or impossible, i.e. when find_highlight areas or the selection changes
+    def _update_buttons(self):
+        prev_next_state = 'normal' if self.get_match_ranges() else 'disabled'
+        self._previous_button['state'] = prev_next_state
+        self._next_button['state'] = prev_next_state
+
         try:
             start, end = map(str, self._textwidget.tag_ranges('sel'))
         except ValueError:
@@ -145,7 +151,7 @@ class Finder(ttk.Frame):
                 '%s + %d chars' % (start_index, len(looking4)))
             count += 1
 
-        self._update_replace_button()
+        self._update_buttons()
         if count == 0:
             self.statuslabel['text'] = "Found no matches :("
         elif count == 1:
@@ -176,7 +182,7 @@ class Finder(ttk.Frame):
             self._select_range(*pairs[0])
 
         self.statuslabel['text'] = ""
-        self._update_replace_button()
+        self._update_buttons()
 
     # see _go_to_next_match for comments
     def _go_to_previous_match(self, junk_event=None):
@@ -193,7 +199,7 @@ class Finder(ttk.Frame):
             self._select_range(*pairs[-1])
 
         self.statuslabel['text'] = ""
-        self._update_replace_button()
+        self._update_buttons()
         return
 
     def _replace_this_match(self):
@@ -209,7 +215,7 @@ class Finder(ttk.Frame):
         # highlighted areas must not be moved after .replace, think about what
         # happens when you replace 'asd' with 'asd'
         self._textwidget.tag_remove('find_highlight', start, end)
-        self._update_replace_button()
+        self._update_buttons()
         self._textwidget.replace(start, end, self.replace_entry.get())
 
         self._textwidget.mark_set('insert', start)   # TODO: test this
