@@ -47,7 +47,7 @@ class Finder(ttk.Frame):
         self.replace_entry.bind('<Return>', self._replace_this)
 
         buttonframe = ttk.Frame(self)
-        buttonframe.grid(row=1, column=0, sticky='we')
+        buttonframe.grid(row=1, column=0, columnspan=2, sticky='we')
 
         self._previous_button = ttk.Button(buttonframe, text="Previous match",
                                            command=self._go_to_previous_match)
@@ -60,10 +60,10 @@ class Finder(ttk.Frame):
             buttonframe, text="Replace all",
             command=self._replace_all)
 
-        self._previous_button.pack(side='left', fill='x', expand=True)
-        self._next_button.pack(side='left', fill='x', expand=True)
-        self._replace_this_button.pack(side='left', fill='x', expand=True)
-        self._replace_all_button.pack(side='left', fill='x', expand=True)
+        self._previous_button.pack(side='left')
+        self._next_button.pack(side='left')
+        self._replace_this_button.pack(side='left')
+        self._replace_all_button.pack(side='left')
         self._update_buttons()
 
         self.statuslabel = ttk.Label(self)
@@ -81,7 +81,7 @@ class Finder(ttk.Frame):
         textwidget.bind('<<Selection>>', self._update_buttons, add=True)
 
     def _add_entry(self, frame, row, text):
-        ttk.Label(frame, text=text).grid(row=row, column=0)
+        ttk.Label(frame, text=text).grid(row=row, column=0, sticky='w')
         entry = ttk.Entry(frame, width=35, font='TkFixedFont')
         entry.bind('<Escape>', self.hide)
         entry.grid(row=row, column=1, sticky='we')
