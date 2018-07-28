@@ -3,13 +3,12 @@
 # TODO: full words only option
 # FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
 
-import re
 import sys
 import tkinter as tk
 from tkinter import ttk
 import weakref
 
-from porcupine import actions, get_tab_manager, images, tabs, utils
+from porcupine import actions, get_tab_manager, images, tabs
 
 
 # keys are tabs, values are Finder widgets
@@ -50,9 +49,9 @@ class Finder(ttk.Frame):
         buttonframe.grid(row=1, column=0, columnspan=2, sticky='we')
 
         self.previous_button = ttk.Button(buttonframe, text="Previous match",
-                                           command=self._go_to_previous_match)
+                                          command=self._go_to_previous_match)
         self.next_button = ttk.Button(buttonframe, text="Next match",
-                                       command=self._go_to_next_match)
+                                      command=self._go_to_next_match)
         self.replace_this_button = ttk.Button(
             buttonframe, text="Replace this match",
             command=self._replace_this)
@@ -173,7 +172,8 @@ class Finder(ttk.Frame):
             self.statuslabel['text'] = "Found %d matches." % count
 
     def _select_range(self, start, end):
-        self._textwidget.tag_lower('find_highlight', 'sel')  # make sure sel shows
+        # the tag_lower makes sure sel shows up, hiding find_highlight under it
+        self._textwidget.tag_lower('find_highlight', 'sel')
         self._textwidget.tag_remove('sel', '1.0', 'end')
         self._textwidget.tag_add('sel', start, end)
         self._textwidget.mark_set('insert', start)

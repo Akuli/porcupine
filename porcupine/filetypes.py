@@ -62,8 +62,8 @@ _STUPID_DEFAULTS = '''\
 # If no matching filetype is found but the Pygments highlighting library (see
 # below) knows something about the file, Porcupine uses it and values in the
 # [Plain Text] section. Porcupine displays these filetypes with ' (not from
-# filetypes.ini)' at the end of their names. The [Plain Text] section is used if
-# Pygments knows nothing about the file.
+# filetypes.ini)' at the end of their names. The [Plain Text] section is used
+# if Pygments knows nothing about the file.
 #
 # Set pygments_lexer_name to pygments.lexers.SomethingLexer or the full name of
 # any other Pygments lexer class. Note that Pygments lets you omit the part
@@ -488,8 +488,8 @@ def _init():
             try:
                 filetype = _FileType(section_name)
             except _OptionError as e:
-                # e.__cause__ is the error that option_error was raised in
-                # _FileType.__init__, str(e) is the option name
+                # e.__cause__ is the error that e was was raised from, str(e)
+                # is the option name
                 log.error("invalid %r value in [%s]", str(e), section_name)
                 log.debug("here's the full traceback\n%s", ''.join(
                     traceback.format_exception(type(e.__cause__), e.__cause__,
@@ -498,7 +498,9 @@ def _init():
                     stupid = configparser.ConfigParser(
                         default_section='Plain Text')
                     stupid.read_string(_STUPID_DEFAULTS)
-                    _config['Plain Text'][str(e)] = stupid['Plain Text'][str(e)]
+
+                    _config['Plain Text'][str(e)] = (   # pep8 line length
+                        stupid['Plain Text'][str(e)])
                 else:
                     del _config[section_name][str(e)]  # use Plain Text's value
             else:

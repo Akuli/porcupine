@@ -1,6 +1,5 @@
 # TODO: test overlapping matches
 
-import contextlib
 import itertools
 import random
 from tkinter import ttk
@@ -83,7 +82,8 @@ def test_finding(filetab_and_finder):
         # irl but not in tests, even with update()
         finder.find_entry.insert(0, substring)
         finder.highlight_all_matches()
-        result = list(map(str, filetab.textwidget.tag_ranges('find_highlight')))
+        result = list(
+            map(str, filetab.textwidget.tag_ranges('find_highlight')))
         finder.find_entry.delete(0, 'end')
 
         buttons = [finder.previous_button, finder.next_button,
