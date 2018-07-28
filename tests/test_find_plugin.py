@@ -319,3 +319,23 @@ def test_replace_all(filetab_and_finder):
     click(replace_all_button)
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'asda'
     assert finder.statuslabel['text'] == "Replaced 1 match."
+
+
+def test_selecting_messing_up_button_disableds(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert('end', "asd")
+    replace_this_button = find_button(finder, "Replace this match")
+    next_match_button = find_button(finder, "Next match")
+
+    finder.find_entry.insert(0, "asd")
+    finder.highlight_all_matches()
+
+    click(next_match_button)
+    assert str(replace_this_button['state']) == 'normal'
+
+    # "Replace this match" doesn't make sense after changing the selection
+    # because no match is selected to be the "this" match
+    filetab.textwidget.tag_remove('sel', '1.2', 'end')
+    filetab.update()
+    assert filetab.textwidget.get('sel.first', 'sel.last') == 'as'
+    assert str(replace_this_button['state']) == 'disabled'

@@ -77,6 +77,9 @@ class Finder(ttk.Frame):
         if 'pytest' not in sys.modules:     # pragma: no cover
             closebutton['image'] = images.get('closebutton')
 
+        # explained in test_find_plugin.py
+        textwidget.bind('<<Selection>>', self._update_buttons, add=True)
+
     def _add_entry(self, frame, row, text):
         ttk.Label(frame, text=text).grid(row=row, column=0)
         entry = ttk.Entry(frame, width=35, font='TkFixedFont')
@@ -107,7 +110,7 @@ class Finder(ttk.Frame):
 
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
-    def _update_buttons(self):
+    def _update_buttons(self, junk_event=None):
         matches_something_state = (
             'normal' if self.get_match_ranges() else 'disabled')
 
