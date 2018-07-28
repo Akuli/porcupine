@@ -49,21 +49,21 @@ class Finder(ttk.Frame):
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=1, column=0, columnspan=2, sticky='we')
 
-        self._previous_button = ttk.Button(buttonframe, text="Previous match",
+        self.previous_button = ttk.Button(buttonframe, text="Previous match",
                                            command=self._go_to_previous_match)
-        self._next_button = ttk.Button(buttonframe, text="Next match",
+        self.next_button = ttk.Button(buttonframe, text="Next match",
                                        command=self._go_to_next_match)
-        self._replace_this_button = ttk.Button(
+        self.replace_this_button = ttk.Button(
             buttonframe, text="Replace this match",
             command=self._replace_this)
-        self._replace_all_button = ttk.Button(
+        self.replace_all_button = ttk.Button(
             buttonframe, text="Replace all",
             command=self._replace_all)
 
-        self._previous_button.pack(side='left')
-        self._next_button.pack(side='left')
-        self._replace_this_button.pack(side='left')
-        self._replace_all_button.pack(side='left')
+        self.previous_button.pack(side='left')
+        self.next_button.pack(side='left')
+        self.replace_this_button.pack(side='left')
+        self.replace_all_button.pack(side='left')
         self._update_buttons()
 
         self.statuslabel = ttk.Label(self)
@@ -124,10 +124,10 @@ class Finder(ttk.Frame):
             else:
                 replace_this_state = 'disabled'
 
-        self._previous_button['state'] = matches_something_state
-        self._next_button['state'] = matches_something_state
-        self._replace_this_button['state'] = replace_this_state
-        self._replace_all_button['state'] = matches_something_state
+        self.previous_button['state'] = matches_something_state
+        self.next_button['state'] = matches_something_state
+        self.replace_this_button['state'] = replace_this_state
+        self.replace_all_button['state'] = matches_something_state
 
     def highlight_all_matches(self, *junk):
         # clear previous highlights
@@ -218,7 +218,7 @@ class Finder(ttk.Frame):
         return
 
     def _replace_this(self):
-        if str(self._replace_this_button['state']) == 'disabled':
+        if str(self.replace_this_button['state']) == 'disabled':
             self.statuslabel['text'] = (
                 'Click "Previous match" or "Next match" first.')
             return
