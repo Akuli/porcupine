@@ -78,8 +78,15 @@ def test_button_utils(porcusession):
 
 
 def test_initial_button_states(filetab_and_finder):
-    # all buttons should be disabled
     finder = filetab_and_finder[1]
+
+    # all buttons should be disabled because the find entry is empty
+    for button in find_buttons(finder):
+        assert str(button['state']) == 'disabled'
+
+    # i had a bug that occurred when typing something to the find area and
+    # backspacing it out because it called highlight_all_matches()
+    finder.highlight_all_matches()
     for button in find_buttons(finder):
         assert str(button['state']) == 'disabled'
 

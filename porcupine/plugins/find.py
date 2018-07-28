@@ -124,6 +124,7 @@ class Finder(ttk.Frame):
 
         looking4 = self.find_entry.get()
         if not looking4:        # don't search for empty string
+            self._update_buttons()
             self.statuslabel['text'] = ""
             return
 
