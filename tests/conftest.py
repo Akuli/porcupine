@@ -12,7 +12,8 @@ import tkinter
 import pytest
 
 # these must be after the above hack
-from porcupine import _session, dirs, get_main_window, get_tab_manager
+import porcupine
+from porcupine import dirs, get_main_window, get_tab_manager
 from porcupine import filetypes as filetypes_module
 
 # TODO: something else will be needed when testing the filetypes
@@ -33,19 +34,20 @@ def porcusession():
 
     root = tkinter.Tk()
     root.withdraw()
-    _session.init(root)
+    porcupine.init(root)
     yield
-    _session.quit()
+    porcupine.quit()
+    root.destroy()
 
 
+# TODO: can this be deleted safely?
 @pytest.fixture(scope='session')
 def filetypes(porcusession):
-    filetypes_module._init()
-    return filetypes_module   # avoid importing as filetypes_module elsewhere
+    return filetypes_module
 
 
 @pytest.fixture
 def tabmanager(porcusession):
-    assert not get_tab_manager().tabs, "something hasn't cleaned up its tabs"
+    assert not get_tab_manager().tabs(), "something hasn't cleaned up its tabs"
     yield get_tab_manager()
-    assert not get_tab_manager().tabs, "the test didn't clean up its tabs"
+    assert not get_tab_manager().tabs(), "the test didn't clean up its tabs"
