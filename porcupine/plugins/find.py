@@ -56,7 +56,7 @@ class Finder(ttk.Frame):
         self._replace_this_button.pack(**pack_kwargs)
 
         self.statuslabel = ttk.Label(self)
-        self.statuslabel.grid(row=1, column=1, columnspan=2, sticky='nswe')
+        self.statuslabel.grid(row=0, column=1, rowspan=2, sticky='nswe')
 
         closebutton = ttk.Label(self, cursor='hand2')
         closebutton.grid(row=0, column=2, sticky='ne')
@@ -220,10 +220,10 @@ class Finder(ttk.Frame):
             self.statuslabel['text'] = "Replaced the last match."
         elif left == 1:
             self.statuslabel['text'] = (
-                "Replaced a match. There is 1 more match.")
+                "Replaced a match.\nThere is 1 more match.")
         else:
             self.statuslabel['text'] = (
-                "Replaced a match. There are %d more matches." % left)
+                "Replaced a match.\nThere are %d more matches." % left)
 
 
 def find():
