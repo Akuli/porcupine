@@ -13,7 +13,7 @@ import pytest
 
 # these must be after the above hack
 import porcupine
-from porcupine import dirs, get_main_window, get_tab_manager
+from porcupine import dirs, get_main_window, get_tab_manager, pluginloader
 from porcupine import filetypes as filetypes_module
 
 # TODO: something else will be needed when testing the filetypes
@@ -35,6 +35,11 @@ def porcusession():
     root = tkinter.Tk()
     root.withdraw()
     porcupine.init(root)
+
+    plugin_names = pluginloader.find_plugins()
+    plugin_names.remove('restart')   # this plugins opens tabs
+    pluginloader.load(plugin_names, shuffle=True)
+
     yield
     porcupine.quit()
     root.destroy()
