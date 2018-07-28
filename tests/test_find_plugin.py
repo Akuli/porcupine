@@ -183,35 +183,6 @@ def test_basic_statuses_and_previous_and_next_match_buttons(
 
 
 def test_replace(filetab_and_finder):
-    filetab, finder = filetab_and_finder
-    filetab.textwidget.insert('1.0', "asd asd")
-    finder.replace_entry.insert(0, "toot")
-    replace_this_button = find_button(finder, "Replace this match")
-    assert str(replace_this_button['state']) == 'disabled'
-
-    finder.find_entry.insert(0, "asd")
-    finder.highlight_all_matches()
-    assert str(replace_this_button['state']) == 'disabled'
-
-    # TODO: click the button anyway, even though it's disabled, the key
-    #       bindings do it and it should create a nice status message
-
-    click(find_button(finder, "Next match"))
-    assert str(replace_this_button['state']) == 'normal'
-    assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7')]
-
-    click(replace_this_button)
-    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'toot asd'
-    assert str(replace_this_button['state']) == 'normal'
-    assert finder.get_match_ranges() == [('1.5', '1.8')]
-
-    click(replace_this_button)
-    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'toot toot'
-    assert str(replace_this_button['state']) == 'disabled'
-    assert finder.get_match_ranges() == []
-
-
-def test_replace(filetab_and_finder):
     # replacing 'asd' with 'asda' tests corner cases well because:
     #   - 'asda' contains 'asd', so must avoid infinite loops
     #   - replacing 'asd' with 'asda' throws off indexes after the replaced
@@ -228,6 +199,9 @@ def test_replace(filetab_and_finder):
     assert str(replace_this_button['state']) == 'disabled'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
+
+    # TODO: click the button anyway, even though it's disabled, the key
+    #       bindings do it and it should create a nice status message
 
     click(find_button(finder, "Next match"))
     assert str(replace_this_button['state']) == 'normal'
