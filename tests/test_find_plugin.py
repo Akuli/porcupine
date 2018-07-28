@@ -146,18 +146,14 @@ def test_previous_and_next_match_buttons(filetab_and_finder):
     flatten = itertools.chain.from_iterable
     assert list(map(str, tag_locations)) == list(flatten(selecteds))
 
-    # do it many times back and forth to cover corner cases
     index = 0
-    for lol in range(10):
-        button_text, index_diff = random.choice([
-            ("Previous match", -1),
-            ("Next match", 1),
-        ])
-        index += index_diff
-        index %= len(selecteds)
-        print(selecteds[index], button_text, index)
+    for lol in range(500):  # many times back and forth to check corner cases
+        if random.choice([True, False]):
+            click_button(finder, "Previous match")
+            index = (index - 1) % len(selecteds)
+        else:
+            click_button(finder, "Next match")
+            index = (index + 1) % len(selecteds)
 
-        click_button(finder, button_text)
-        filetab.update()
         assert finder.statuslabel['text'] == ""
         assert selecteds[index] == get_selected()
