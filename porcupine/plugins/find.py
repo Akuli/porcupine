@@ -55,14 +55,18 @@ class Finder(ttk.Frame):
         self._replace_this_button = ttk.Button(
             buttonframe, text="Replace this match",
             command=self._replace_this_match)
+        self._replace_all_button = ttk.Button(
+            buttonframe, text="Replace all",
+            command=self._replace_all)
 
         self._previous_button.pack(side='left', fill='x', expand=True)
         self._next_button.pack(side='left', fill='x', expand=True)
         self._replace_this_button.pack(side='left', fill='x', expand=True)
+        self._replace_all_button.pack(side='left', fill='x', expand=True)
         self._update_buttons()
 
         self.statuslabel = ttk.Label(self)
-        self.statuslabel.grid(row=0, column=1, rowspan=2, sticky='nswe')
+        self.statuslabel.grid(row=0, column=1, sticky='nswe')
 
         closebutton = ttk.Label(self, cursor='hand2')
         closebutton.grid(row=0, column=2, sticky='ne')
@@ -104,19 +108,21 @@ class Finder(ttk.Frame):
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self):
         prev_next_state = 'normal' if self.get_match_ranges() else 'disabled'
-        self._previous_button['state'] = prev_next_state
-        self._next_button['state'] = prev_next_state
 
         try:
             start, end = map(str, self._textwidget.tag_ranges('sel'))
         except ValueError:
-            self._replace_this_button['state'] = 'disabled'
-            return
+            replace_state = 'disabled'
+        else:   # no, elif doesn't work here
+            if (start, end) in self.get_match_ranges():
+                replace_state = 'normal'
+            else:
+                replace_state = 'disabled'
 
-        if (start, end) in self.get_match_ranges():
-            self._replace_this_button['state'] = 'normal'
-        else:
-            self._replace_this_button['state'] = 'disabled'
+        self._previous_button['state'] = prev_next_state
+        self._next_button['state'] = prev_next_state
+        self._replace_this_button['state'] = replace_state
+        self._replace_all_button['state'] = replace_state
 
     def highlight_all_matches(self, *junk):
         # clear previous highlights
@@ -204,17 +210,14 @@ class Finder(ttk.Frame):
         return
 
     def _replace_this_match(self):
-        try:
-            start, end = map(str, self._textwidget.tag_ranges('sel'))
-            if (start, end) not in self.get_match_ranges():
-                raise ValueError
-        except ValueError:
+        if str(self._replace_this_button['state']) == 'disabled':
             self.statuslabel['text'] = (
                 'Click "Previous match" or "Next match" first.')
             return
 
         # highlighted areas must not be moved after .replace, think about what
         # happens when you replace 'asd' with 'asd'
+        start, end = self._textwidget.tag_ranges('sel')
         self._textwidget.tag_remove('find_highlight', start, end)
         self._update_buttons()
         self._textwidget.replace(start, end, self.replace_entry.get())
@@ -231,6 +234,23 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel['text'] = (
                 "Replaced a match.\nThere are %d more matches." % left)
+
+    def _replace_all(self):
+        assert str(self._replace_this_button['state']) == 'normal'
+        match_ranges = self.get_match_ranges()
+
+        # must do this backwards because replacing may screw up indexes AFTER
+        # the replaced place
+        for start, end in reversed(match_ranges):
+            self._textwidget.replace(start, end, self.replace_entry.get())
+        self._textwidget.tag_remove('find_highlight', '1.0', 'end')
+        self._update_buttons()
+
+        if len(match_ranges) == 1:
+            self.statuslabel['text'] = "Replaced 1 match."
+        else:
+            self.statuslabel['text'] = ("Replaced %d matches." %
+                                        len(match_ranges))
 
 
 def find():
