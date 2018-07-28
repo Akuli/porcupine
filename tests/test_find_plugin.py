@@ -144,11 +144,19 @@ def test_basic_statuses_and_previous_and_next_match_buttons(
     finder.find_entry.insert(0, "no matches for this")
     finder.highlight_all_matches()
     assert finder.statuslabel['text'] == "Found no matches :("
-    click(find_button(finder, "Next match"))
-    assert finder.statuslabel['text'] == "No matches found!"
-    finder.find_entry.delete(0, 'end')
 
+    for text in ["Previous match", "Next match"]:
+        button = find_button(finder, text)
+        assert str(button['state']) == 'disabled'
+
+        # the button is disabled, but key bindings may call its command anyway
+        finder.statuslabel['text'] = "this should be overwritten"
+        click(button)
+        assert finder.statuslabel['text'] == "No matches found!"
+
+    finder.find_entry.delete(0, 'end')
     finder.find_entry.insert(0, "asd")
+
     finder.highlight_all_matches()
     assert finder.statuslabel['text'] == "Found 5 matches."
 
@@ -200,8 +208,11 @@ def test_replace(filetab_and_finder):
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
 
-    # TODO: click the button anyway, even though it's disabled, the key
-    #       bindings do it and it should create a nice status message
+    # the button is disabled, but key bindings can still call its callback, and
+    # the callback should set a nice message to statuslabel
+    click(replace_this_button)
+    assert finder.statuslabel['text'] == (
+        'Click "Previous match" or "Next match" first.')
 
     click(find_button(finder, "Next match"))
     assert str(replace_this_button['state']) == 'normal'
@@ -249,7 +260,7 @@ def test_replace_asd_with_asd(filetab_and_finder):
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7')]
 
     click(replace_this_button)
-    assert str(replace_this_button['state']) == 'normal'
+    assert str(replace_this_button['state'])== 'normal'
     assert finder.statuslabel['text'] == (
         "Replaced a match.\nThere is 1 more match.")
     assert finder.get_match_ranges() == [('1.4', '1.7')]
@@ -275,9 +286,6 @@ def test_replace_all(filetab_and_finder):
     assert str(replace_this_button['state']) == 'disabled'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
-
-    # TODO: click the button anyway, even though it's disabled, the key
-    #       bindings do it and it should create a nice status message
 
     click(find_button(finder, "Next match"))
     assert str(replace_this_button['state']) == 'normal'

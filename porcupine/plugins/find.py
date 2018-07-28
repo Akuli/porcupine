@@ -40,10 +40,11 @@ class Finder(ttk.Frame):
         find_var.trace('w', self.highlight_all_matches)
         self.find_entry.lol = find_var     # because cpython gc
 
+        self.replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
+
         self.find_entry.bind('<Shift-Return>', self._go_to_previous_match)
         self.find_entry.bind('<Return>', self._go_to_next_match)
-
-        self.replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
+        self.replace_entry.bind('<Return>', self._replace_this)
 
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=1, column=0, sticky='we')
@@ -54,7 +55,7 @@ class Finder(ttk.Frame):
                                        command=self._go_to_next_match)
         self._replace_this_button = ttk.Button(
             buttonframe, text="Replace this match",
-            command=self._replace_this_match)
+            command=self._replace_this)
         self._replace_all_button = ttk.Button(
             buttonframe, text="Replace all",
             command=self._replace_all)
@@ -176,6 +177,8 @@ class Finder(ttk.Frame):
     def _go_to_next_match(self, junk_event=None):
         pairs = self.get_match_ranges()
         if not pairs:
+            # the "Next match" button is disabled in this case, but the key
+            # binding of the find entry is not
             self.statuslabel['text'] = "No matches found!"
             return
 
@@ -209,7 +212,7 @@ class Finder(ttk.Frame):
         self._update_buttons()
         return
 
-    def _replace_this_match(self):
+    def _replace_this(self):
         if str(self._replace_this_button['state']) == 'disabled':
             self.statuslabel['text'] = (
                 'Click "Previous match" or "Next match" first.')
