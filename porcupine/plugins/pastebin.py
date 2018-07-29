@@ -14,11 +14,6 @@ import requests
 from porcupine import actions, get_main_window, get_tab_manager, tabs, utils
 from porcupine import __version__ as _porcupine_version
 
-try:
-    from porcupine.plugins import pythonprompt
-except ImportError:
-    pythonprompt = None
-
 
 if tkinter.TkVersion >= 8.6:    # yes, it's a float in tkinter
     def tk_busy_hold():
@@ -48,9 +43,8 @@ def pastebin(name):
     return inner
 
 
-# the origin argument is always a path to a file, None or '>>>'
 @pastebin("termbin.com")
-def paste_to_termbin(code, origin):
+def paste_to_termbin(code, path):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(('termbin.com', 9999))
         sock.send(code.encode('utf-8'))
@@ -67,11 +61,9 @@ def paste_to_termbin(code, origin):
 session = requests.Session()
 session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
+
 @pastebin("dpaste.com")
-def paste_to_dpaste_com(code, origin):
-    # dpaste's syntax highlighting for interactive sessions grays out
-    # the output annoyingly :( we'll just use the python3 syntax for
-    # everything
+def paste_to_dpaste_com(code, path):
     response = session.post('http://dpaste.com/api/v2/', data={
         'content': code,
         'syntax': 'python3',
@@ -79,8 +71,9 @@ def paste_to_dpaste_com(code, origin):
     response.raise_for_status()
     return response.text.strip()
 
+
 @pastebin("dpaste.de")
-def paste_to_dpaste_de(code, origin):
+def paste_to_dpaste_de(code, path):
     # docs: http://dpaste.readthedocs.io/en/latest/api.html
     # the docs tell to post to http://dpaste.de/api/ but they use
     # https://... in the examples 0_o only the https version works
@@ -92,51 +85,29 @@ def paste_to_dpaste_de(code, origin):
     response.raise_for_status()
     return response.text.strip()
 
-@pastebin("Ghostbin")
-def paste_to_ghostbin(code, origin):
-    # docs: https://ghostbin.com/paste/p3qcy
-    if origin == '>>>':
-        syntax = 'pycon'
-    else:
-        syntax = 'python3'
 
+@pastebin("Ghostbin")
+def paste_to_ghostbin(code, path):
+    # docs: https://ghostbin.com/paste/p3qcy
     response = session.post(
         'https://ghostbin.com/paste/new',
         data={'text': code},
         params={
             'expire': '30d',
-            'lang': syntax,
+            'lang': 'python3',
         },
     )
     response.raise_for_status()
     return response.url
 
-@pastebin("GitHub Gist")
-def paste_to_github_gist(code, origin):
-    # docs: https://developer.github.com/v3/gists/#create-a-gist
-    if origin == '>>>':
-        gist_file = 'python-session.txt'      # this sucks :(
-    elif origin is None:
-        gist_file = 'new-file.py'
-    else:
-        gist_file = os.path.basename(origin)
-
-    response = session.post('https://api.github.com/gists', json={
-        'public': False,
-        'files': {gist_file: {'content': code}},
-    })
-    response.raise_for_status()
-    return response.json()['html_url']
 
 @pastebin("Paste ofCode")
-def paste_to_paste_ofcode(code, origin):
-    if origin == '>>>':
-        syntax = 'pycon'
-    else:
-        syntax = 'python3'
+def paste_to_paste_ofcode(code, path):
+    # PurpleMyst figured out this stuff a long time ago... it's not documented
+    # anywhere, but it has worked for i think over a year now
     response = session.post('http://paste.ofcode.org/', data={
         'code': code,
-        'language': syntax,
+        'language': 'python3',
         'notabot': 'most_likely',   # lol
     })
     response.raise_for_status()
@@ -190,10 +161,10 @@ class SuccessDialog(tkinter.Toplevel):
 
 class Paste:
 
-    def __init__(self, pastebin_name, code, origin):
+    def __init__(self, pastebin_name, code, path):
         self.pastebin_name = pastebin_name
         self.content = code
-        self.origin = origin
+        self.path = path
         self.please_wait_window = None
 
     def make_please_wait_window(self):
@@ -224,7 +195,7 @@ class Paste:
         tk_busy_hold()
         self.make_please_wait_window()
         paste_it = functools.partial(
-            pastebins[self.pastebin_name], self.content, self.origin)
+            pastebins[self.pastebin_name], self.content, self.path)
         utils.run_in_thread(paste_it, self.done_callback)
 
     def done_callback(self, success, result):
@@ -256,20 +227,11 @@ def start_pasting(pastebin_name):
         # nothing is selected, pastebin everything
         code = tab.textwidget.get('1.0', 'end - 1 char')
 
-    if isinstance(tab, tabs.FileTab):
-        origin = tab.path
-    else:
-        origin = '>>>'      # FIXME
-
-    Paste(pastebin_name, code, origin).start()
+    Paste(pastebin_name, code, tab.path).start()
 
 
 def setup():
-    tabtypes = [tabs.FileTab]
-    if pythonprompt is not None:
-        tabtypes.append(pythonprompt.PromptTab)
-
     for name in sorted(pastebins, key=str.casefold):
-        assert '/' not in name, "porcupine.actions needs to be fixed"
+        assert '/' not in name
         callback = functools.partial(start_pasting, name)
-        actions.add_command("Share/" + name, callback, tabtypes=tabtypes)
+        actions.add_command("Share/" + name, callback, tabtypes=[tabs.FileTab])

@@ -51,9 +51,6 @@ def test_dpaste_dot_de():
 
 
 # TODO: test ghostbin, its API doesn't seem to work today
-# TODO: get rid of github gist, they stopped supporting anonymous gists at some
-#       point and i don't feel like using their auth stuff because many other
-#       good pastebins are also supported
 
 
 # Paste ofCode doesn't seem to have any kind of nice text-only urls, so parsing
