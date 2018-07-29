@@ -1,4 +1,9 @@
+import random
 import re
+import threading
+import time
+import tkinter
+import traceback
 import types
 
 import pytest
@@ -9,6 +14,7 @@ except ImportError:
     BeautifulSoup = None
 
 import porcupine.plugins.pastebin as pastebin_module
+from porcupine import actions
 
 
 BLAH_BLAH = "Hello World!\nThis is a test.\n"
@@ -101,3 +107,93 @@ def test_success_dialog(monkeypatch):
     dialog.open_in_browser()
     assert not dialog.winfo_exists()
     assert opened == ['http://example.com/poop']
+
+
+def test_paste_class(monkeypatch, filetab):
+    original_thread = threading.current_thread()
+
+    called = False
+
+    def lol_pastebin(code, path):
+        nonlocal called
+        assert not called, "the pastebin function was called more than once"
+        called = True
+
+        assert code == 'test code'
+        assert path == 'test path'
+        assert threading.current_thread() is not original_thread
+        time.sleep(1)   # try to cover corner cases
+        return 'test url'
+
+    monkeypatch.setitem(pastebin_module.pastebins, 'Lol', lol_pastebin)
+
+    all_done = False
+
+    def fake_wait_window_method_which_is_called_when_everything_is_done(self):
+        nonlocal all_done
+        assert self.title() == "Pasting Succeeded"
+        self.destroy()
+        all_done = True
+
+    monkeypatch.setattr(
+        pastebin_module.SuccessDialog, 'wait_window',
+        fake_wait_window_method_which_is_called_when_everything_is_done)
+
+    paste = pastebin_module.Paste('Lol', 'test code', 'test path')
+    paste.start()
+    while not all_done:
+        filetab.update()
+
+
+# this test assumes that utils.run_in_thread works
+def test_paste_error_handling(monkeypatch, caplog):
+    traceback_string = "Traceback (most recent call last):\nblah blah blah"
+    paste = pastebin_module.Paste('Lol', 'test code', 'test path')
+
+    # because i'm lazy
+    paste.please_wait_window = tkinter.Toplevel()
+    monkeypatch.setattr(pastebin_module, 'tk_busy_forget', (lambda: None))
+
+    errordialog_calls = []
+    monkeypatch.setattr(pastebin_module, 'utils', types.SimpleNamespace(
+        errordialog=lambda *args, **kwargs: {
+            errordialog_calls.append(args),
+            errordialog_calls.append(kwargs),
+        }))
+
+    caplog.clear()
+    paste.done_callback(False, traceback_string)
+
+    assert errordialog_calls == [
+        ("Pasting Failed",
+         "Check your internet connection and try again.\n\n" +
+         "Here's the full error message:"),
+        {'monospace_text': traceback_string},
+    ]
+    assert len(caplog.records) == 1
+    assert traceback_string in caplog.records[0].message
+
+
+def test_start_pasting_with_actions(monkeypatch, filetab):
+    called = []
+
+    class FakePaste:
+        def __init__(self, pastebin_name, code, path):
+            self.started = 0
+            assert code == ''
+            assert path is None     # because the filetab hasn't been saved
+            self._pastebin_name = pastebin_name
+
+        def start(self):
+            called.append(self._pastebin_name)
+
+    monkeypatch.setattr(pastebin_module, 'Paste', FakePaste)
+
+    pastebin_names = list(pastebin_module.pastebins.keys())
+    random.shuffle(pastebin_names)
+
+    for name in pastebin_names:
+        action = actions.get_action('Share/%s' % name)
+        assert action.enabled
+        action.callback()
+    assert called == pastebin_names

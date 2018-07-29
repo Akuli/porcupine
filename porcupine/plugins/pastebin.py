@@ -22,7 +22,7 @@ if tkinter.TkVersion >= 8.6:    # yes, it's a float in tkinter
     def tk_busy_forget():
         get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
 
-else:
+else:    # pragma: no cover
     # TODO: gray out something?
     def tk_busy_hold():
         pass
