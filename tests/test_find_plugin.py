@@ -11,14 +11,6 @@ from porcupine.plugins import find
 
 
 @pytest.fixture
-def filetab(porcusession, tabmanager):
-    tab = tabs.FileTab(get_tab_manager())
-    get_tab_manager().add_tab(tab)
-    yield tab
-    get_tab_manager().close_tab(tab)
-
-
-@pytest.fixture
 def filetab_and_finder(filetab):
     actions.get_action('Edit/Find and Replace').callback()
     return (filetab, find.finders[filetab])

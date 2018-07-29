@@ -11,9 +11,9 @@ import tkinter
 
 import pytest
 
-# these must be after the above hack
 import porcupine
-from porcupine import dirs, get_main_window, get_tab_manager, pluginloader
+from porcupine import (dirs, get_main_window, get_tab_manager, tabs,
+                       pluginloader)
 from porcupine import filetypes as filetypes_module
 
 # TODO: something else will be needed when testing the filetypes
@@ -56,3 +56,11 @@ def tabmanager(porcusession):
     assert not get_tab_manager().tabs(), "something hasn't cleaned up its tabs"
     yield get_tab_manager()
     assert not get_tab_manager().tabs(), "the test didn't clean up its tabs"
+
+
+@pytest.fixture
+def filetab(porcusession, tabmanager):
+    tab = tabs.FileTab(tabmanager)
+    tabmanager.add_tab(tab)
+    yield tab
+    tabmanager.close_tab(tab)
