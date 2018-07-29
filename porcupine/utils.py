@@ -275,6 +275,15 @@ def bind_with_data(widget, sequence, callback, add=False):
         ``data_widget``
             If a widget was passed as ``data`` to ``event_generate()``,
             this is that widget. Otherwise this is None.
+        ``data_tuple(converter1, converter2, ...)``
+            If a string from :func:`.create_tcl_list` is passed to
+            ``event_generate()``, this splits the list back to the strings
+            passed to :func:`.create_tcl_list` and optionally converts them to
+            other types like ``converter(string_value)``. For example,
+            ``event.data_tuple(int, int, str, float)`` returns a 4-tuple with
+            types ``(int, int, str, float)``, throwing an error if some of the
+            elements can't be converted or the iterable passed to
+            :func:`.create_tcl_list` didn't contain exactly 4 elements.
     """
     # tkinter creates event objects normally and appends them to the
     # deque, then run_callback() adds data_blablabla attributes to the
@@ -285,6 +294,23 @@ def bind_with_data(widget, sequence, callback, add=False):
     def run_the_callback(data_string):
         event = event_objects.popleft()
         event.data = data_string
+
+        # TODO: test this
+        try:
+            split_result = event.widget.tk.splitlist(data_string)
+        except tkinter.TclError:
+            event.data_tuple = None
+        else:
+            def data_tuple(*converters):
+                if len(split_result) != len(converters):
+                    raise ValueError(
+                        "the event data has %d elements, but %d converters "
+                        "were given" % (len(split_result), len(converters)))
+                return tuple(
+                    converter(string)
+                    for converter, string in zip(converters, split_result))
+
+            event.data_tuple = data_tuple
 
         try:
             event.data_int = int(data_string)
@@ -311,6 +337,21 @@ def bind_with_data(widget, sequence, callback, add=False):
     widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
                    % (widget, sequence, funcname))
     return funcname
+
+
+# TODO: document this
+# TODO: test this
+def create_tcl_list(iterable):
+    widget = porcupine.get_main_window()      # any widget would do
+
+    # in tcl, 'join [list x y z]' returns 'x y z', but 'join [list x]'
+    # converts x to a string... let's do that, tkinter converts python tuples
+    # to tcl lists
+    python_tuple = tuple(map(str, iterable))
+    result = widget.tk.call('join', (python_tuple,))
+    assert isinstance(result, str)
+    assert widget.tk.splitlist(result) == python_tuple
+    return result
 
 
 @contextlib.contextmanager
