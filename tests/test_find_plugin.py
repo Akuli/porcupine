@@ -205,13 +205,13 @@ def test_replace(filetab_and_finder):
     click(finder.replace_this_button)
     assert str(finder.replace_this_button['state']) == 'normal'
     assert finder.statuslabel['text'] == (
-        "Replaced a match.\nThere are 2 more matches.")
+        "Replaced a match. There are 2 more matches.")
     assert finder.get_match_ranges() == [('1.5', '1.8'), ('1.9', '1.12')]
 
     click(finder.replace_this_button)
     assert str(finder.replace_this_button['state']) == 'normal'
     assert finder.statuslabel['text'] == (
-        "Replaced a match.\nThere is 1 more match.")
+        "Replaced a match. There is 1 more match.")
     assert finder.get_match_ranges() == [('1.10', '1.13')]
 
     assert str(finder.previous_button['state']) == 'normal'
@@ -245,7 +245,7 @@ def test_replace_asd_with_asd(filetab_and_finder):
     click(finder.replace_this_button)
     assert str(finder.replace_this_button['state']) == 'normal'
     assert finder.statuslabel['text'] == (
-        "Replaced a match.\nThere is 1 more match.")
+        "Replaced a match. There is 1 more match.")
     assert finder.get_match_ranges() == [('1.4', '1.7')]
 
     click(finder.replace_this_button)
@@ -273,7 +273,7 @@ def test_replace_all(filetab_and_finder):
     click(finder.replace_this_button)
     assert str(finder.replace_this_button['state']) == 'normal'
     assert finder.statuslabel['text'] == (
-        "Replaced a match.\nThere are 2 more matches.")
+        "Replaced a match. There are 2 more matches.")
     assert finder.get_match_ranges() == [('1.5', '1.8'), ('1.9', '1.12')]
 
     click(finder.replace_all_button)

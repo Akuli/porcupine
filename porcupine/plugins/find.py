@@ -23,30 +23,44 @@ class Finder(ttk.Frame):
 
     def __init__(self, parent, textwidget, **kwargs):
         super().__init__(parent, **kwargs)
-
-        self.grid_columnconfigure(1, weight=1)
         self._textwidget = textwidget
+
+        # grid layout:
+        #         column 0        column 1     column 2        column 3
+        #     ,---------------------------------------------------------------.
+        # row0|     Find:     | text entry    |       | [x] Full words only   |
+        #     |---------------|---------------|-------|-----------------------|
+        # row1| Replace with: | text entry    |       | [x] Ignore case       |
+        #     |---------------------------------------------------------------|
+        # row2| button frame, this thing contains a bunch of buttons          |
+        #     |---------------------------------------------------------------|
+        # row3| status label with useful-ish text                             |
+        #     |---------------------------------------------------------------|
+        # row4| separator                                                     |
+        #     `---------------------------------------------------------------'
+        #
+        # note that column 2 is used just for spacing, the separator helps
+        # distinguish this from e.g. status bar below this
+        self.grid_columnconfigure(2, minsize=30)
+        self.grid_columnconfigure(3, weight=1)
 
         # TODO: use the pygments theme somehow?
         textwidget.tag_config('find_highlight',
                               foreground='black', background='yellow')
 
-        entrygrid = ttk.Frame(self)
-        entrygrid.grid(row=0, column=0)
-
-        self.find_entry = self._add_entry(entrygrid, 0, "Find:")
+        self.find_entry = self._add_entry(0, "Find:")
         find_var = self.find_entry['textvariable'] = tk.StringVar()
         find_var.trace('w', self.highlight_all_matches)
         self.find_entry.lol = find_var     # because cpython gc
 
-        self.replace_entry = self._add_entry(entrygrid, 1, "Replace with:")
+        self.replace_entry = self._add_entry(1, "Replace with:")
 
         self.find_entry.bind('<Shift-Return>', self._go_to_previous_match)
         self.find_entry.bind('<Return>', self._go_to_next_match)
         self.replace_entry.bind('<Return>', self._replace_this)
 
         buttonframe = ttk.Frame(self)
-        buttonframe.grid(row=1, column=0, columnspan=2, sticky='we')
+        buttonframe.grid(row=2, column=0, columnspan=4, sticky='we')
 
         self.previous_button = ttk.Button(buttonframe, text="Previous match",
                                           command=self._go_to_previous_match)
@@ -65,11 +79,19 @@ class Finder(ttk.Frame):
         self.replace_all_button.pack(side='left')
         self._update_buttons()
 
+        ttk.Checkbutton(self, text="Full words only").grid(
+            row=0, column=3, sticky='w')
+        ttk.Checkbutton(self, text="Ignore case").grid(
+            row=1, column=3, sticky='w')
+
         self.statuslabel = ttk.Label(self)
-        self.statuslabel.grid(row=0, column=1, sticky='nswe')
+        self.statuslabel.grid(row=3, column=0, columnspan=4, sticky='we')
+
+        ttk.Separator(self, orient='horizontal').grid(
+            row=4, column=0, columnspan=4, sticky='we')
 
         closebutton = ttk.Label(self, cursor='hand2')
-        closebutton.grid(row=0, column=2, sticky='ne')
+        closebutton.place(relx=1, rely=0, anchor='ne')
         closebutton.bind('<Button-1>', self.hide)
 
         # TODO: figure out why images don't work in tests
@@ -79,9 +101,9 @@ class Finder(ttk.Frame):
         # explained in test_find_plugin.py
         textwidget.bind('<<Selection>>', self._update_buttons, add=True)
 
-    def _add_entry(self, frame, row, text):
-        ttk.Label(frame, text=text).grid(row=row, column=0, sticky='w')
-        entry = ttk.Entry(frame, width=35, font='TkFixedFont')
+    def _add_entry(self, row, text):
+        ttk.Label(self, text=text).grid(row=row, column=0, sticky='w')
+        entry = ttk.Entry(self, width=35, font='TkFixedFont')
         entry.bind('<Escape>', self.hide)
         entry.grid(row=row, column=1, sticky='we')
         return entry
@@ -238,10 +260,10 @@ class Finder(ttk.Frame):
             self.statuslabel['text'] = "Replaced the last match."
         elif left == 1:
             self.statuslabel['text'] = (
-                "Replaced a match.\nThere is 1 more match.")
+                "Replaced a match. There is 1 more match.")
         else:
             self.statuslabel['text'] = (
-                "Replaced a match.\nThere are %d more matches." % left)
+                "Replaced a match. There are %d more matches." % left)
 
     def _replace_all(self):
         match_ranges = self.get_match_ranges()
