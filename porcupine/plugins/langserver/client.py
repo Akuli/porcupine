@@ -30,8 +30,6 @@ class Client:
         self._process = self._start_process()
 
         def _async_init():
-            self._wait_for_event(lsp.Initialized)
-
             self._lsp_client.did_open(
                 lsp.TextDocumentItem(
                     uri=tab_uri(self._tab),
@@ -60,10 +58,10 @@ class Client:
                 "<<ContentChanged>>", lambda *_: self._content_changed()
             )
 
-        # FIXME(PurpleMyst): Any exceptions that `_async_init` raises
-        # shouldn't be ignored.
-        # Fun fact: `pass` can't be in place of `...`
-        porcupine.utils.run_in_thread(_async_init, lambda *_: ...)
+        porcupine.utils.run_in_thread(
+            lambda: self._wait_for_event(lsp.Initialized),
+            lambda *_: _async_init(),
+        )
 
     def _filetype_changed(self):
         self._version = 0
@@ -77,7 +75,9 @@ class Client:
             text_document=lsp.VersionedTextDocumentIdentifier(
                 uri=tab_uri(self._tab), version=self._version
             ),
-            content_changes=lsp.calculate_change_events(self._previous_text, tab_text(self._tab)),
+            content_changes=lsp.calculate_change_events(
+                self._previous_text, tab_text(self._tab)
+            ),
         )
         self._previous_text = tab_text(self._tab)
 
@@ -139,9 +139,7 @@ class Client:
             )
         )
 
-        completion_event = self._wait_for_event(
-            lsp.Completion
-        )
+        completion_event = self._wait_for_event(lsp.Completion)
         completion_items = completion_event.completion_list.items
         for item in completion_items:
             if item.textEdit is not None:
