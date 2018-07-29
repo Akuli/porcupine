@@ -9,10 +9,7 @@ import tkinter
 from tkinter import ttk
 import webbrowser
 
-try:
-    import requests
-except ImportError:
-    requests = None
+import requests
 
 from porcupine import actions, get_main_window, get_tab_manager, tabs, utils
 from porcupine import __version__ as _porcupine_version
@@ -24,10 +21,6 @@ except ImportError:
 
 
 if tkinter.TkVersion >= 8.6:    # yes, it's a float in tkinter
-    def tk_busy_status():
-        win = get_main_window()  # pep8 79 chars: window would B 2 long varname
-        return win.getboolean(win.tk.call('tk', 'busy', 'status', win))
-
     def tk_busy_hold():
         get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
 
@@ -44,13 +37,12 @@ else:
 
 
 log = logging.getLogger(__name__)
-
-_pastebins = {}
+pastebins = {}
 
 
 def pastebin(name):
     def inner(function):
-        _pastebins[name] = function
+        pastebins[name] = function
         return function
 
     return inner
@@ -72,84 +64,83 @@ def paste_to_termbin(code, origin):
         return url.rstrip(b'\n\r\0').decode('ascii')
 
 
-if requests is not None:
-    session = requests.Session()
-    session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
+session = requests.Session()
+session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
-    @pastebin("dpaste.com")
-    def paste_to_dpaste_com(code, origin):
-        # dpaste's syntax highlighting for interactive sessions grays out
-        # the output annoyingly :( we'll just use the python3 syntax for
-        # everything
-        response = session.post('http://dpaste.com/api/v2/', data={
-            'content': code,
-            'syntax': 'python3',
-        })
-        response.raise_for_status()
-        return response.text.strip()
+@pastebin("dpaste.com")
+def paste_to_dpaste_com(code, origin):
+    # dpaste's syntax highlighting for interactive sessions grays out
+    # the output annoyingly :( we'll just use the python3 syntax for
+    # everything
+    response = session.post('http://dpaste.com/api/v2/', data={
+        'content': code,
+        'syntax': 'python3',
+    })
+    response.raise_for_status()
+    return response.text.strip()
 
-    @pastebin("dpaste.de")
-    def paste_to_dpaste_de(code, origin):
-        # docs: http://dpaste.readthedocs.io/en/latest/api.html
-        # the docs tell to post to http://dpaste.de/api/ but they use
-        # https://... in the examples 0_o only the https version works
-        response = session.post('https://dpaste.de/api/', data={
-            'content': code,
-            # lexer defaults to 'python'
-            'format': 'url',
-        })
-        response.raise_for_status()
-        return response.text.strip()
+@pastebin("dpaste.de")
+def paste_to_dpaste_de(code, origin):
+    # docs: http://dpaste.readthedocs.io/en/latest/api.html
+    # the docs tell to post to http://dpaste.de/api/ but they use
+    # https://... in the examples 0_o only the https version works
+    response = session.post('https://dpaste.de/api/', data={
+        'content': code,
+        # lexer defaults to 'python'
+        'format': 'url',
+    })
+    response.raise_for_status()
+    return response.text.strip()
 
-    @pastebin("Ghostbin")
-    def paste_to_ghostbin(code, origin):
-        # docs: https://ghostbin.com/paste/p3qcy
-        if origin == '>>>':
-            syntax = 'pycon'
-        else:
-            syntax = 'python3'
+@pastebin("Ghostbin")
+def paste_to_ghostbin(code, origin):
+    # docs: https://ghostbin.com/paste/p3qcy
+    if origin == '>>>':
+        syntax = 'pycon'
+    else:
+        syntax = 'python3'
 
-        response = session.post(
-            'https://ghostbin.com/paste/new',
-            data={'text': code},
-            params={
-                'expire': '30d',
-                'lang': syntax,
-            },
-        )
-        response.raise_for_status()
-        return response.url
+    response = session.post(
+        'https://ghostbin.com/paste/new',
+        data={'text': code},
+        params={
+            'expire': '30d',
+            'lang': syntax,
+        },
+    )
+    response.raise_for_status()
+    return response.url
 
-    @pastebin("GitHub Gist")
-    def paste_to_github_gist(code, origin):
-        # docs: https://developer.github.com/v3/gists/#create-a-gist
-        if origin == '>>>':
-            gist_file = 'python-session.txt'      # this sucks :(
-        elif origin is None:
-            gist_file = 'new-file.py'
-        else:
-            gist_file = os.path.basename(origin)
+@pastebin("GitHub Gist")
+def paste_to_github_gist(code, origin):
+    # docs: https://developer.github.com/v3/gists/#create-a-gist
+    if origin == '>>>':
+        gist_file = 'python-session.txt'      # this sucks :(
+    elif origin is None:
+        gist_file = 'new-file.py'
+    else:
+        gist_file = os.path.basename(origin)
 
-        response = session.post('https://api.github.com/gists', json={
-            'public': False,
-            'files': {gist_file: {'content': code}},
-        })
-        response.raise_for_status()
-        return response.json()['html_url']
+    response = session.post('https://api.github.com/gists', json={
+        'public': False,
+        'files': {gist_file: {'content': code}},
+    })
+    response.raise_for_status()
+    return response.json()['html_url']
 
-    @pastebin("Paste ofCode")
-    def paste_to_paste_ofcode(code, origin):
-        if origin == '>>>':
-            syntax = 'pycon'
-        else:
-            syntax = 'python3'
-        response = session.post('http://paste.ofcode.org/', data={
-            'code': code,
-            'language': syntax,
-            'notabot': 'most_likely',   # lol
-        })
-        response.raise_for_status()
-        return response.url
+@pastebin("Paste ofCode")
+def paste_to_paste_ofcode(code, origin):
+    if origin == '>>>':
+        syntax = 'pycon'
+    else:
+        syntax = 'python3'
+    response = session.post('http://paste.ofcode.org/', data={
+        'code': code,
+        'language': syntax,
+        'notabot': 'most_likely',   # lol
+    })
+    response.raise_for_status()
+    return response.url
 
 
 class SuccessDialog(tkinter.Toplevel):
@@ -174,8 +165,8 @@ class SuccessDialog(tkinter.Toplevel):
         self._select_all()
 
         button_info = [
-            ("Open in browser", self._open_browser),
-            ("Copy to clipboard", self._to_clipboard),
+            ("Open in browser", self.open_in_browser),
+            ("Copy to clipboard", self.copy_to_clipboard),
             ("Close this dialog", self.destroy),
         ]
         buttonframe = ttk.Frame(self)
@@ -188,11 +179,11 @@ class SuccessDialog(tkinter.Toplevel):
         self._entry.selection_range(0, 'end')
         return ('break' if breaking else None)
 
-    def _open_browser(self):
+    def open_in_browser(self):
         webbrowser.open(self.url)
         self.destroy()
 
-    def _to_clipboard(self):
+    def copy_to_clipboard(self):
         self.clipboard_clear()
         self.clipboard_append(self.url)
 
@@ -233,7 +224,7 @@ class Paste:
         tk_busy_hold()
         self.make_please_wait_window()
         paste_it = functools.partial(
-            _pastebins[self.pastebin_name], self.content, self.origin)
+            pastebins[self.pastebin_name], self.content, self.origin)
         utils.run_in_thread(paste_it, self.done_callback)
 
     def done_callback(self, success, result):
@@ -278,7 +269,7 @@ def setup():
     if pythonprompt is not None:
         tabtypes.append(pythonprompt.PromptTab)
 
-    for name in sorted(_pastebins, key=str.casefold):
+    for name in sorted(pastebins, key=str.casefold):
         assert '/' not in name, "porcupine.actions needs to be fixed"
         callback = functools.partial(start_pasting, name)
         actions.add_command("Share/" + name, callback, tabtypes=tabtypes)
