@@ -124,23 +124,51 @@ def test_finding(filetab_and_finder):
     assert finder.statuslabel['text'] == "Found no matches :("
 
 
-def test_ignore_case_checkbox(filetab_and_finder):
+def test_ignore_case_and_full_words_only(filetab_and_finder):
     filetab, finder = filetab_and_finder
-    filetab.textwidget.insert('end', "Asd asd asD")
 
     def find_stuff():
         finder.highlight_all_matches()
         return list(
             map(str, filetab.textwidget.tag_ranges('find_highlight')))
 
-    finder.find_entry.insert(0, "asD")
-    assert find_stuff() == ['1.8', '1.11']
+    filetab.textwidget.insert('1.0', "Asd asd dasd asd asda asd ASDA ASD")
+    finder.find_entry.insert(0, "asd")
+
+    assert find_stuff() == [
+        '1.4', '1.7',
+        '1.9', '1.12',
+        '1.13', '1.16',
+        '1.17', '1.20',
+        '1.22', '1.25',
+    ]
+
+    finder.full_words_var.set(True)
+    assert find_stuff() == [
+        '1.4', '1.7',
+        '1.13', '1.16',
+        '1.22', '1.25',
+    ]
 
     finder.ignore_case_var.set(True)
     assert find_stuff() == [
         '1.0', '1.3',
         '1.4', '1.7',
-        '1.8', '1.11',
+        '1.13', '1.16',
+        '1.22', '1.25',
+        '1.31', '1.34',
+    ]
+
+    finder.full_words_var.set(False)
+    assert find_stuff() == [
+        '1.0', '1.3',
+        '1.4', '1.7',
+        '1.9', '1.12',
+        '1.13', '1.16',
+        '1.17', '1.20',
+        '1.22', '1.25',
+        '1.26', '1.29',
+        '1.31', '1.34',
     ]
 
 

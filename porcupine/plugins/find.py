@@ -3,6 +3,7 @@
 # TODO: full words only option
 # FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
 
+import re
 import sys
 import tkinter as tk
 from tkinter import ttk
@@ -157,18 +158,18 @@ class Finder(ttk.Frame):
         self.replace_this_button['state'] = replace_this_state
         self.replace_all_button['state'] = matches_something_state
 
-    def highlight_all_matches(self, *junk):
-        # clear previous highlights
-        self._textwidget.tag_remove('find_highlight', '1.0', 'end')
+    def _get_matches_to_highlight(self, looking4):
+        search_opts = {'nocase': self.ignore_case_var.get()}
+        if self.full_words_var.get():
+            # tk doesn't have python-style \b, but it has \m and \M that match
+            # the beginning and end of word, see re_syntax(3tcl)
+            search_arg = r'\m' + looking4 + r'\M'
+            search_opts['regexp'] = True
+        else:
+            search_arg = looking4
 
-        looking4 = self.find_entry.get()
-        if not looking4:        # don't search for empty string
-            self._update_buttons()
-            self.statuslabel['text'] = "Type something to find."
-            return
-
-        count = 0
         start_index = '1.0'
+        first_time = True
 
         while True:
             # searching at the beginning of a match gives that match, not
@@ -176,18 +177,40 @@ class Finder(ttk.Frame):
             # at the beginning of the file, and to avoid infinite
             # recursion, we check for that by checking if we have done it
             # before
-            if count == 0:
-                search_arg = start_index
+            if first_time:
+                start_index_for_search = start_index
+                first_time = False
             else:
-                search_arg = '%s + 1 char' % start_index
+                start_index_for_search = '%s + 1 char' % start_index
 
             start_index = self._textwidget.search(
-                looking4, search_arg, 'end',
-                nocase=self.ignore_case_var.get())
+                search_arg, start_index_for_search, 'end', **search_opts)
             if not start_index:
                 # no more matches
                 break
+            yield start_index
 
+    def highlight_all_matches(self, *junk):
+        # clear previous highlights
+        self._textwidget.tag_remove('find_highlight', '1.0', 'end')
+
+        looking4 = self.find_entry.get()
+        if not looking4:    # don't search for empty string
+            self._update_buttons()
+            self.statuslabel['text'] = "Type something to find."
+            return
+        if self.full_words_var.get():
+            # check for non-wordy characters
+            match = re.search(r'\W', looking4)
+            if match is not None:
+                self._update_buttons()
+                self.statuslabel['text'] = ('The search string can\'t contain '
+                                            '"%s" when "Full words only" is '
+                                            'checked.' % match.group(0))
+                return
+
+        count = 0
+        for start_index in self._get_matches_to_highlight(looking4):
             self._textwidget.tag_add(
                 'find_highlight', start_index,
                 '%s + %d chars' % (start_index, len(looking4)))
