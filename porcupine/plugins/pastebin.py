@@ -49,7 +49,7 @@ def paste_to_termbin(code, path):
         sock.connect(('termbin.com', 9999))
         sock.send(code.encode('utf-8'))
         url = sock.recv(1024)
-        if url.startswith(b'Use netcat'):
+        if url.startswith(b'Use netcat'):   # pragma: no cover
             raise RuntimeError("sending to termbin failed (got %r)" % url)
 
         # today termbin adds zero bytes to my URL's 0_o it hasn't done
