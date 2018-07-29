@@ -36,6 +36,15 @@ here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 """.format(version=porcupine_version)
 
 
+def show_huge_logo(junk_event=None):
+    # TODO: add a better way for finding the path?
+    path = os.path.join(dirs.installdir, 'images', 'logo.gif')
+
+    # TODO: is the browser a good choice? how about e.g. xdg-open?
+    #       this seems to magically xdg-open on my system 0_o
+    webbrowser.open('file://' + pathname2url(path))
+
+
 class _AboutDialogContent(ttk.Frame):
 
     def __init__(self, *args, **kwargs):
@@ -73,7 +82,7 @@ class _AboutDialogContent(ttk.Frame):
                           cursor='hand2')
         label.pack(anchor='e')
         utils.set_tooltip(label, "Click to view in full size")
-        label.bind('<Button-1>', self.show_huge_logo)
+        label.bind('<Button-1>', show_huge_logo)
 
     def _add_minimal_markdown(self, text):
         parts = []   # contains strings and link regex matches
@@ -109,14 +118,6 @@ class _AboutDialogContent(ttk.Frame):
 
     def _open_link(self, href, junk_event):
         webbrowser.open(href)
-
-    def show_huge_logo(self, junk_event):
-        # TODO: add a better way for finding the path?
-        path = os.path.join(dirs.installdir, 'images', 'logo.gif')
-
-        # TODO: is the browser a good choice? how about e.g. xdg-open?
-        #       this seems to magically xdg-open on my system 0_o
-        webbrowser.open('file://' + pathname2url(path))
 
 
 def show_about_dialog():
