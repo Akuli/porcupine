@@ -79,10 +79,17 @@ class Finder(ttk.Frame):
         self.replace_all_button.pack(side='left')
         self._update_buttons()
 
-        ttk.Checkbutton(self, text="Full words only").grid(
-            row=0, column=3, sticky='w')
-        ttk.Checkbutton(self, text="Ignore case").grid(
-            row=1, column=3, sticky='w')
+        self.full_words_var = tk.BooleanVar()
+        self.full_words_var.trace('w', self.highlight_all_matches)
+        self.ignore_case_var = tk.BooleanVar()
+        self.ignore_case_var.trace('w', self.highlight_all_matches)
+
+        ttk.Checkbutton(
+            self, text="Full words only", variable=self.full_words_var).grid(
+                row=0, column=3, sticky='w')
+        ttk.Checkbutton(
+            self, text="Ignore case", variable=self.ignore_case_var).grid(
+                row=1, column=3, sticky='w')
 
         self.statuslabel = ttk.Label(self)
         self.statuslabel.grid(row=3, column=0, columnspan=4, sticky='we')
@@ -175,7 +182,8 @@ class Finder(ttk.Frame):
                 search_arg = '%s + 1 char' % start_index
 
             start_index = self._textwidget.search(
-                looking4, search_arg, 'end')
+                looking4, search_arg, 'end',
+                nocase=self.ignore_case_var.get())
             if not start_index:
                 # no more matches
                 break

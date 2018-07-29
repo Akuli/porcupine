@@ -73,6 +73,11 @@ def test_initial_button_states(filetab_and_finder):
         assert str(button['state']) == 'disabled'
 
 
+def test_initial_checkbox_states(filetab_and_finder):
+    finder = filetab_and_finder[1]
+    assert not finder.ignore_case_var.get()
+
+
 def test_finding(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert('end', "this is a test\nthis is fun")
@@ -115,8 +120,28 @@ def test_finding(filetab_and_finder):
     assert search_for('this is a') == ['1.0', '1.9']
     assert finder.statuslabel['text'] == "Found 1 match."
 
-    assert search_for('this is not anywhere in the test text') == []
+    assert search_for('This Is A') == []
     assert finder.statuslabel['text'] == "Found no matches :("
+
+
+def test_ignore_case_checkbox(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert('end', "Asd asd asD")
+
+    def find_stuff():
+        finder.highlight_all_matches()
+        return list(
+            map(str, filetab.textwidget.tag_ranges('find_highlight')))
+
+    finder.find_entry.insert(0, "asD")
+    assert find_stuff() == ['1.8', '1.11']
+
+    finder.ignore_case_var.set(True)
+    assert find_stuff() == [
+        '1.0', '1.3',
+        '1.4', '1.7',
+        '1.8', '1.11',
+    ]
 
 
 def test_basic_statuses_and_previous_and_next_match_buttons(
