@@ -2,6 +2,7 @@ import sys
 import typing as t
 import subprocess
 import porcupine
+import threading
 
 import sansio_lsp_client as lsp
 from porcupine.tabs import FileTab
@@ -11,6 +12,7 @@ from .utils import (
     tab_text,
     tab_position,
     lsp_pos_to_tk_pos,
+    tk_pos_to_lsp_pos,
     find_overlap_start,
 )
 
@@ -25,6 +27,7 @@ class Client:
         self._tab = tab
         self._version = 0
         self._unhandled_events = []
+        self._event_lock = threading.Lock()
         self._lsp_client = lsp.Client()
 
         self._process = self._start_process()
@@ -38,7 +41,6 @@ class Client:
                     version=self._version,
                 )
             )
-            self._previous_text = tab_text(self._tab)
 
             self._set_completer()
 
@@ -54,8 +56,11 @@ class Client:
             self._tab.bind(
                 "<<FiletypeChanged>>", lambda *_: self._filetype_changed()
             )
-            self._tab.textwidget.bind(
-                "<<ContentChanged>>", lambda *_: self._content_changed()
+
+            porcupine.utils.bind_with_data(
+                self._tab.textwidget,
+                "<<ContentChanged>>",
+                self._content_changed,
             )
 
         porcupine.utils.run_in_thread(
@@ -63,25 +68,45 @@ class Client:
             lambda *_: _async_init(),
         )
 
-    def _filetype_changed(self):
+    def _filetype_changed(self) -> None:
         self._version = 0
         self._process = self._start_process()
         self._unhandled_events.clear()
 
-    def _content_changed(self):
+    def _content_changed(self, event):
         self._version += 1
 
-        self._lsp_client.did_change(
-            text_document=lsp.VersionedTextDocumentIdentifier(
-                uri=tab_uri(self._tab), version=self._version
-            ),
-            content_changes=lsp.calculate_change_events(
-                self._previous_text, tab_text(self._tab)
-            ),
-        )
-        self._previous_text = tab_text(self._tab)
+        start, end, range_length, new_text = event.data_tuple(str, str, int, str)
+        start = tk_pos_to_lsp_pos(start)
+        end = tk_pos_to_lsp_pos(end)
 
-        # TODO(PurpleMyst): Handle `lsp.PublishDiagnostics`.
+        with self._event_lock:
+            self._lsp_client.did_change(
+                text_document=lsp.VersionedTextDocumentIdentifier(
+                    uri=tab_uri(self._tab), version=self._version
+                ),
+                content_changes=[
+                    lsp.TextDocumentContentChangeEvent(
+                        text=new_text,
+                        range=lsp.Range(start=start, end=end),
+                        rangeLength=range_length,
+                    )
+                ],
+            )
+
+        def _handle_diagnostics(success: bool, result: t.Union[lsp.PublishDiagnostics, str]) -> None:
+            if not success:
+                print(result)
+                return
+            diagnostics = result.diagnostics
+
+            # TODO(PurpleMyst): Actually show these somewhere.
+
+        porcupine.utils.run_in_thread(
+            lambda: self._wait_for_event(lsp.PublishDiagnostics),
+            _handle_diagnostics
+        )
+
         # TODO(PurpleMyst): Cancel the request if the user types more before we
         # get a response. This might be *very* hard.
 
@@ -104,40 +129,43 @@ class Client:
     # FIXME(PurpleMyst): This method is currently not thread safe. It should be
     # before diagnostics are implemented.
     def _wait_for_event(self, event_type: t.Type[E]) -> E:
-        while True:
-            # We check if the event is already in `self._unhandled_events`
-            # before doing anything so that if a previous call got our event
-            # we don't have to wait for more data to be sent over the line.
-            for i, event in enumerate(self._unhandled_events):
-                if isinstance(event, event_type):
-                    del self._unhandled_events[i]
-                    return event
+        with self._event_lock:
+            while True:
+                # We check if the event is already in `self._unhandled_events`
+                # before doing anything so that if a previous call got our
+                # event we don't have to wait for more data to be sent
+                # over the line.
+                for i, event in enumerate(self._unhandled_events):
+                    if isinstance(event, event_type):
+                        del self._unhandled_events[i]
+                        return event
 
-            self._process.stdin.write(self._lsp_client.send())
-            self._process.stdin.flush()
+                self._process.stdin.write(self._lsp_client.send())
+                self._process.stdin.flush()
 
-            data = self._process.stdout.readline()
-            try:
-                events = self._lsp_client.recv(data)
-            except lsp.IncompleteResponseError as e:
-                if e.missing_bytes is not None:
-                    events = self._lsp_client.recv(
-                        self._process.stdout.read(e.missing_bytes)
-                    )
-                else:
-                    continue
+                data = self._process.stdout.readline()
+                try:
+                    events = self._lsp_client.recv(data)
+                except lsp.IncompleteResponseError as e:
+                    if e.missing_bytes is not None:
+                        events = self._lsp_client.recv(
+                            self._process.stdout.read(e.missing_bytes)
+                        )
+                    else:
+                        continue
 
-            self._unhandled_events.extend(events)
+                self._unhandled_events.extend(events)
 
     def get_completions(self) -> t.Iterator[t.Tuple[str, str, str]]:
-        self._lsp_client.completions(
-            text_document_position=lsp.TextDocumentPosition(
-                textDocument=lsp.VersionedTextDocumentIdentifier(
-                    uri=tab_uri(self._tab), version=self._version
-                ),
-                position=tab_position(self._tab),
+        with self._event_lock:
+            self._lsp_client.completions(
+                text_document_position=lsp.TextDocumentPosition(
+                    textDocument=lsp.VersionedTextDocumentIdentifier(
+                        uri=tab_uri(self._tab), version=self._version
+                    ),
+                    position=tab_position(self._tab),
+                )
             )
-        )
 
         completion_event = self._wait_for_event(lsp.Completion)
         completion_items = completion_event.completion_list.items

@@ -24,6 +24,11 @@ def lsp_pos_to_tk_pos(pos: lsp.Position) -> str:
     return "{}.{}".format(pos.line + 1, pos.character)
 
 
+def tk_pos_to_lsp_pos(pos: str) -> lsp.Position:
+    line, character = map(int, pos.split("."))
+    return lsp.Position(line = line - 1, character = character)
+
+
 # XXX(PurpleMyst): I added `case_insensitive` as a keyword parameter because
 # `pyls` is case-insensitive, but I'm not sure other language servers are or
 # what the spec says.
