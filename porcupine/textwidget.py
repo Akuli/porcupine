@@ -64,6 +64,35 @@ class HandyText(tk.Text):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        #       /\
+        #      /  \  WARNING: serious tkinter magic coming up
+        #     / !! \          proceed at your own risk
+        #    /______\
+        #
+        # this irc conversation might give you an idea of how this works:
+        #
+        #    <Akuli> __Myst__, why do you want to know how it works?
+        #    <__Myst__> Akuli: cause it seems cool
+        #    <Akuli> there's 0 reason to docment it in the langserver
+        #    <Akuli> ok i can explain :)
+        #    <Akuli> in tcl, all statements are command calls
+        #    <Akuli> set x lol    ;# set variable x to string lol
+        #    <Akuli> set is a command, x and lol are strings
+        #    <Akuli> adding stuff to widgets is also command calls
+        #    <Akuli> .textwidget insert end hello   ;# add hello to the text
+        #            widget
+        #    <Akuli> my magic renames the textwidget command to
+        #            actual_widget_command, and creates a fake text widget
+        #            command that tkinter calls instead
+        #    <Akuli> then this fake command checks for all possible widget
+        #            commands that can move the cursor or change the content
+        #    <Akuli> making sense?
+        #    <__Myst__> ooh
+        #    <__Myst__> so it's like you're proxying actual calls to the text
+        #               widget and calculating change events based on that?
+        #    <Akuli> yes
+        #    <__Myst__> very cool
+
         # cursor_cb is called whenever the cursor position may have changed,
         # and change_cb is called whenever the content of the text widget may
         # have changed
@@ -73,7 +102,7 @@ class HandyText(tk.Text):
         # all widget stuff is implemented in python and in tcl as calls to a
         # tcl command named str(self), and replacing that with a custom command
         # is a very powerful way to do magic; for example, moving the cursor
-        # with arrow keys calls the insert widget command :D
+        # with arrow keys calls the 'mark set' widget command :D
         actual_widget_command = str(self) + '_actual_widget'
         self.tk.call('rename', str(self), actual_widget_command)
 
