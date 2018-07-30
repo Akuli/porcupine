@@ -76,10 +76,6 @@ class HandyText(tk.Text):
         # with arrow keys calls the insert widget command :D
         actual_widget_command = str(self) + '_actual_widget'
         self.tk.call('rename', str(self), actual_widget_command)
-        self.tk.eval('proc %(fake_widget)s {args} {%(actual_widget)s {*}$args}' % {
-            'fake_widget': str(self),
-            'actual_widget': actual_widget_command,
-        })
 
         # this part is tcl because i couldn't get a python callback to work
         self.tk.eval('''
@@ -256,7 +252,6 @@ class HandyText(tk.Text):
         @self.after_idle       # yes, this works
         def this_runs_after_changes():
             for change in changes:
-                print("Content changed:", change)
                 self.event_generate('<<ContentChanged>>',
                                     data=utils.create_tcl_list(change))
 
@@ -268,7 +263,6 @@ class HandyText(tk.Text):
 
         if new_pos != self._old_cursor_pos:
             self._old_cursor_pos = new_pos
-            print("Cursor moved to", new_pos)
             self.event_generate('<<CursorMoved>>')
 
     def iter_chunks(self, n=100):
