@@ -77,15 +77,7 @@ installed. Then open PowerShell or command prompt, and run these commands:
 
 ### Development Install
 
-If you want to do changes to Porcupine yourself, I recommend installing git and
-then downloading Porcupine like this:
-
-    git clone https://github.com/Akuli/porcupine
-    cd porcupine
-    python3 -m pip install -r requirements.txt
-    python3 -m porcupine
-
-Use `py` instead of `python3` on Windows.
+See [below](#developing-porcupine).
 
 ## FAQ
 
@@ -120,3 +112,54 @@ Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
 ### Is Porcupine an Emacs?
 Not by default, but you can [install more plugins](more_plugins/).
+
+
+## Developing Porcupine
+
+If you are interested in doing something to Porcupine yourself, that's awesome!
+[The plugin API docs](https://akuli.github.io/porcupine/) will help you get
+started. Even if you are not going to write Porcupine plugins or do anything
+related to plugins, they will probably give you an idea of how things are done
+in Porcupine.
+
+If you want to develop porcupine, install [git](https://git-scm.com/), and then
+set up an environment for developing Porcupine like this:
+
+    git clone https://github.com/Akuli/porcupine
+    cd porcupine
+    python3 -m venv env
+    . env/bin/activate
+    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
+    pip install --editable .
+
+Now running `porcu` should start Porcupine. If you change some of Porcupine's
+code in the `porcupine` directory and you run `porcu` again, your changes
+should be visible right away.
+
+If you are using Windows, you need to use `py` instead of `python3`. You also
+need to do something else instead of `. env/bin/activate`, but I don't remember
+what. Sorry :(
+
+After doing some development and closing the terminal that you set up the
+environment in, you can go back to the environment by `cd`'ing to the correct
+place and running `. env/bin/activate` again. You can run `deactivate` to undo
+the `. env/bin/activate`.
+
+Here is a list of the commands I use when developing Porcupine:
+- Git commands. I'll assume that you know how to use Git and GitHub.
+- `python3 -m pytest` runs tests. You will see lots of weird stuff happening
+  while testing, and that's expected.
+- `coverage run --include="porcupine/*" -m pytest` followed by `coverage html`
+  creates a report of test coverage. Open `htmlcov/index.html` in your favorite
+  browser to view it. If you don't have anything else to do, you can write more
+  tests and try to improve the coverage :D
+- `cd docs` followed by `sphinx-build . _build` creates HTML documentation.
+  Open `docs/_build/index.html` in your favorite browser to view it.
+
+I also use these commands, but **I don't recommend running these yourself.**
+Instead, ask me to run them if you need to.
+- `python3 docs/publish.py` uploads the documentation to
+  https://akuli.github.io/porcupine/ .
+- `python3 bump.py major_or_minor_or_patch` increments the version number and
+  invokes `git commit`. Be sure to `git push` and `git push --tags` after this.
