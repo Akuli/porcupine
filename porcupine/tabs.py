@@ -127,8 +127,9 @@ class TabManager(ttk.Notebook):
     def select(self, tab_id=None):
         """Select the given tab as if the user clicked it.
 
-        If ``tab_id`` is not given, this returns the currently selected
-        tab or None if there are no tabs.
+        Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
+        given, this returns the currently selected tab or None if there are no
+        tabs.
         """
         if tab_id is None:
             selected = super().select()

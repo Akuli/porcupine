@@ -19,8 +19,8 @@ def var_value_to_tab(var, *junk):
 # changes ANY tab's filetype; changing the filetype of some other tab than the
 # currently selected tab runs this, but it doesn't matter
 def tab_filetype_to_var(var, junk_event):
-    selected_tab = get_tab_manager().select()
-    if selected_tab is not None:
+    selected_tab = get_tab_manager().select()   # may be None
+    if isinstance(selected_tab, tabs.FileTab):
         var.set(selected_tab.filetype.name)
 
 

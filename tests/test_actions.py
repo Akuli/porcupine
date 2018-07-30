@@ -186,23 +186,25 @@ def test_tabtypes(porcusession, tabmanager, action_path):
 
     tabmanager.add_tab(tab1)
     tabmanager.update()
-    assert tabmanager.current_tab is tab1
+    assert tabmanager.select() is tab1
     assert not action.enabled
 
     tabmanager.add_tab(tab2)
     tabmanager.update()
-    assert tabmanager.current_tab is tab2
+    assert tabmanager.select() is tab2
     assert action.enabled
 
     action2 = actions.add_yesno(action_path + '2', True, tabtypes=[Tab2, None])
     assert action2.enabled
 
     tabmanager.close_tab(tab2)
-    assert tabmanager.current_tab is tab1
+    assert tabmanager.select() is tab1
     tabmanager.update()
     assert not action2.enabled
 
     tabmanager.close_tab(tab1)
+    assert tabmanager.select() is None
+    tabmanager.update()       # process virtual events
     assert action2.enabled
 
 
@@ -211,7 +213,7 @@ def test_filetype_names(porcusession, tabmanager, action_path, filetypes):
     filetypes.get_filetype_by_name('C')
     filetypes.get_filetype_by_name('Java')
     filetypes.get_filetype_by_name('Python')
-    filetypes.get_filetype_by_name('DEFAULT')   # the plain text filetype
+    filetypes.get_filetype_by_name('Plain Text')
 
     filetab = tabs.FileTab(tabmanager)
     othertab = tabs.Tab(tabmanager)
@@ -221,11 +223,11 @@ def test_filetype_names(porcusession, tabmanager, action_path, filetypes):
     assert not action.enabled
 
     tabmanager.add_tab(othertab)
-    assert tabmanager.current_tab is othertab
+    assert tabmanager.select() is othertab
     assert not action.enabled
 
     tabmanager.add_tab(filetab)
-    assert tabmanager.current_tab is filetab
+    assert tabmanager.select() is filetab
     assert not action.enabled
 
     filetab.filetype = filetypes.get_filetype_by_name('Java')
