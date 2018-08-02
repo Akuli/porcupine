@@ -12,8 +12,6 @@ import urllib.request
 import venv
 import zipfile
 
-import requests
-
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
 
