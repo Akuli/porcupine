@@ -9,6 +9,7 @@ import sys
 import tempfile
 import tkinter
 import urllib.request
+import venv
 import zipfile
 
 import requests
@@ -46,6 +47,7 @@ def download_standalone_python():
         temp_zip.seek(0)
 
         print(r"Extracting to winbuild\python...")
+        os.mkdir(r'winbuild\python')
         with zipfile.ZipFile(temp_zip) as zip_object:
             zip_object.extractall(r'winbuild\python')
 
@@ -63,8 +65,8 @@ def unzip_stdlib():
     os.remove(zip_path)
 
 
-def run_python(args):
-    subprocess.call([r'winbuild\python\python.exe'] + args)
+def run_python(args, *, python=r'winbuild\python\python.exe'):
+    subprocess.check_call([python] + args)
 
 
 def run_pip(args, *, pip=('-m', 'pip')):
@@ -113,6 +115,25 @@ def install_tkinter():
     shutil.copytree(os.path.join(sys.prefix, 'tcl'), r'winbuild\lib')
 
 
+def run_tests():
+    print("Installing virtualenv temporarily...")
+    shutil.copytree(venv.__path__[0], r'winbuild\python\venv')
+
+    print("Creating a virtual env for tests...")
+    run_python(['-m', 'venv', r'winbuild\env'])
+
+    print("Installing pytest to the virtual env...")
+    run_python(['-m', 'pip', 'install', 'pytest'],
+               python=r'winbuild\env\Scripts\python.exe')
+
+    print("Running pytest...")
+    run_python(['-m', 'pytest'], python=r'winbuild\env\Scripts\python.exe')
+
+    print("Deleting temporary files...")
+    shutil.rmtree(r'winbuild\env')
+    shutil.rmtree(r'winbuild\python\venv')
+
+
 def main():
     try:
         os.mkdir('winbuild')
@@ -121,12 +142,12 @@ def main():
         shutil.rmtree('winbuild')
         os.mkdir(r'winbuild')
 
-    os.mkdir(r'winbuild\python')
     download_standalone_python()
     unzip_stdlib()
     install_pip()
     install_tkinter()
     install_porcupine()
+    run_tests()
 
 
 if __name__ == '__main__':
