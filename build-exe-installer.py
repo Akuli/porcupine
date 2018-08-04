@@ -39,6 +39,9 @@ def find_metadata():
 
 
 def get_frozen_requirements_in_a_crazy_way():
+    print("Creating a temporary virtualenv and installing everything into it "
+          "in order to get output from 'pip freeze' to figure out which "
+          "dependencies to bundle...")
     subprocess.check_call([sys.executable, '-m', 'venv', 'temp_env'])
 
     try:
@@ -99,19 +102,23 @@ def create_pynsist_cfg():
         'files': 'porcupine/images\nlib',
     }
 
+    print("Creating pynsist.cfg...")
     with open('pynsist.cfg', 'w') as file:
         parser.write(file)
 
 
 def run_pynsist():
+    print("Running pynsist...")
     subprocess.check_call([sys.executable, '-m', 'nsist', 'pynsist.cfg'])
 
 
 def main():
-    try:
-        shutil.rmtree(r'build\nsis')
-    except FileNotFoundError:
-        pass
+    for path in [r'build\nsis', 'pynsist_pkgs', 'lib']:
+        try:
+            shutil.rmtree(path)
+            print("Deleted", path)
+        except FileNotFoundError:
+            pass
 
     create_pynsist_cfg()
     copy_tkinter_files()
