@@ -93,3 +93,4 @@ ENV/
 .pytest_cache
 installer.cfg
 temp_env/
+pynsist_pkgs/

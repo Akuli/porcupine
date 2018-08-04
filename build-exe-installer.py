@@ -1,6 +1,7 @@
 # FIXME: this contains copy/pasta from setup.py
 import configparser
 import os
+import pathlib
 import platform
 import re
 import shutil
@@ -54,6 +55,35 @@ def get_frozen_requirements_in_a_crazy_way():
             if not requirement.lower().startswith('porcupine==')]
 
 
+def mkdir_empty(path):
+    try:
+        os.mkdir(path)
+    except FileExistsError:
+        shutil.rmtree(path)
+        os.mkdir(path)
+
+
+# this url is on 2 lines because pep8, copy/paste them together
+#
+#    https://github.com/takluyver/pynsist/blob/master/doc/faq.rst#packaging-wit
+#    h-tkinter
+def copy_tkinter_files():
+    shutil.copytree(os.path.join(sys.prefix, 'tcl'), 'lib')
+
+    # basic pathlib... need to convert between Paths and strings a lot
+    # i'm using pathlib because sys.prefix might contain a * and it would screw
+    # up globbing, unless i use glob.escape
+    mkdir_empty('pynsist_pkgs')
+    dlldir = pathlib.Path(sys.prefix) / 'DLLs'
+    for file in list(dlldir.glob('tk*.dll')) + list(dlldir.glob('tcl*.dll')):
+        file = str(file)
+        shutil.copy(file, 'pynsist_pkgs')
+
+    shutil.copy(str(dlldir / '_tkinter.pyd'), 'pynsist_pkgs')
+    shutil.copy(os.path.join(sys.prefix, 'libs', '_tkinter.lib'),
+                'pynsist_pkgs')
+
+
 def create_pynsist_cfg():
     parser = configparser.ConfigParser()
     parser['Application'] = {
@@ -68,7 +98,8 @@ def create_pynsist_cfg():
     }
     parser['Include'] = {
         'pypi_wheels': '\n'.join(get_frozen_requirements_in_a_crazy_way()),
-        'files': 'porcupine/images',
+        'packages': 'tkinter\n_tkinter',
+        'files': 'porcupine/images\nlib',
     }
 
     with open('pynsist.cfg', 'w') as file:
@@ -80,7 +111,13 @@ def run_pynsist():
 
 
 def main():
+    try:
+        shutil.rmtree(r'build\nsis')
+    except FileNotFoundError:
+        pass
+
     create_pynsist_cfg()
+    copy_tkinter_files()
     run_pynsist()
 
 
