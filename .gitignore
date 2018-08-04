@@ -91,5 +91,5 @@ ENV/
 
 # other stuff i have needed to add
 .pytest_cache
-winbuild/
+windows-build/
 porcupine-setup.exe
