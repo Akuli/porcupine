@@ -36,6 +36,16 @@ def find_metadata():
     return result
 
 
+def get_frozen_requirements_in_a_crazy_way():
+    subprocess.check_call([sys.executable, '-m', 'venv', 'temp_env'])
+    subprocess.check_call([
+        r'temp_env\Scripts\python.exe', '-m',
+        'pip', 'install', '-r', 'requirements.txt'])
+    return subprocess.check_output([
+        r'temp_env\Scripts\python.exe', '-m', 'pip', 'freeze'
+    ]).decode('utf-8').strip().splitlines()
+
+
 def create_pynsist_cfg():
     parser = configparser.ConfigParser()
     parser['Application'] = {
@@ -49,7 +59,7 @@ def create_pynsist_cfg():
         'version': '%d.%d.%d' % sys.version_info[:3],
     }
     parser['Include'] = {
-        'pypi_wheels': '\n'.join(get_requirements()),
+        'pypi_wheels': '\n'.join(get_frozen_requirements_in_a_crazy_way()),
         'files': 'porcupine/images',
     }
 
