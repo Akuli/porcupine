@@ -1,4 +1,5 @@
 import contextlib
+import glob
 import os
 import pathlib      # is useful sometimes... although i hate it mostly
 import platform
@@ -20,6 +21,12 @@ assert platform.system() == 'Windows', "this script must be ran on windows"
 # struct.calcsize returns the size in bytes, so need *8 to get bits
 BITS = struct.calcsize('P') * 8
 assert BITS in {32, 64}
+
+
+INNO_SETUP_COMPILER = r"C:\Program Files\Inno Setup 5\ISCC.exe"
+assert os.path.exists(INNO_SETUP_COMPILER), (
+    "Inno Setup is not installed, or it has been installed to an unusual "
+    "location and " + __file__ + " needs to be updated")
 
 
 @contextlib.contextmanager
@@ -53,7 +60,7 @@ def download_standalone_python():
 def unzip_stdlib():
     # i don't know why, but i got setuptools errors without extracting the
     # zip that contains the standard library
-    zip_path = r'winbuild\python\python%d%d.zip' % sys.version_info[:2]
+    [zip_path] = glob.glob(r'winbuild\python\python*.zip')
     print("Extracting %s..." % zip_path)
     with zipfile.ZipFile(zip_path, 'r') as zip_object:
         zip_object.extractall(r'winbuild\python')
@@ -132,6 +139,18 @@ def run_tests():
     shutil.rmtree(r'winbuild\python\venv')
 
 
+def delete_pycaches():
+    print("Deleting Python cache files...")
+    for root, dirs, files in os.walk(r'winbuild\python'):
+        if '__pycache__' in dirs:
+            shutil.rmtree(os.path.join(root, '__pycache__'))
+            dirs.remove('__pycache__')   # don't try to do anything to it
+
+
+def create_setup_exe():
+    subprocess.check_call([INNO_SETUP_COMPILER, 'innosetup.iss'])
+
+
 def main():
     try:
         os.mkdir('winbuild')
@@ -146,6 +165,9 @@ def main():
     install_tkinter()
     install_porcupine()
     run_tests()
+
+    delete_pycaches()
+    create_setup_exe()
 
 
 if __name__ == '__main__':
