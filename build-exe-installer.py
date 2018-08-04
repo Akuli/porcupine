@@ -17,11 +17,9 @@ import zipfile
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
 
-# looking at help('struct'), 'P' is a C type capable of holding a pointer,
-# which is 32 bits on a 32-bit windows or 64 bits on a 64-bit windows, but
-# struct.calcsize returns the size in bytes, so need *8 to get bits
-BITS = struct.calcsize('P') * 8
-assert BITS in {32, 64}
+# most stackoverflow answers are wrong here, as usual... a 32-bit python on a
+# 64-bit system must set BITS to 64 here
+BITS = 64 if '64' in platform.machine() else 32
 
 
 def find_inno_setup_compiler():
