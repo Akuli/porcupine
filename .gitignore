@@ -91,6 +91,4 @@ ENV/
 
 # other stuff i have needed to add
 .pytest_cache
-windows-build/
-porcupine-setup.exe
-innosetup-temp.iss
+installer.cfg
