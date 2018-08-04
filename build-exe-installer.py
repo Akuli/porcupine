@@ -161,7 +161,7 @@ def create_setup_exe():
                     innosetup.write(line)
 
     subprocess.check_call([INNO_SETUP_COMPILER,
-                           r'windows-build\innosetup.iss'])
+                           'innosetup-temp.iss'])
 
 
 def main():
