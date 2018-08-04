@@ -102,6 +102,7 @@ def copy_tkinter_files():
 
 
 def create_ico_file():
+    print(r"Converting porcupine\images\logo-200x200.gif to .ico format...")
     logo = PIL.Image.open(r'porcupine\images\logo-200x200.gif')
     logo.save('porcupine-logo.ico')
 
