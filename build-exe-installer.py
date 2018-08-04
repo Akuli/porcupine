@@ -48,7 +48,7 @@ def get_frozen_requirements_in_a_crazy_way():
             r'temp_env\Scripts\python.exe', '-m', 'pip', 'freeze'
         ]).decode('utf-8').strip().splitlines()
     finally:
-        shutil.rmtree('temp_venv')
+        shutil.rmtree('temp_env')
 
     return [requirement for requirement in frozen
             if not requirement.lower().startswith('porcupine==')]

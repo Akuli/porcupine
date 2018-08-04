@@ -92,3 +92,4 @@ ENV/
 # other stuff i have needed to add
 .pytest_cache
 installer.cfg
+temp_env/
