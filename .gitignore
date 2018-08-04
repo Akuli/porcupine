@@ -92,5 +92,5 @@ ENV/
 # other stuff i have needed to add
 .pytest_cache
 installer.cfg
-temp_env/
+porcupine-logo.ico
 pynsist_pkgs/

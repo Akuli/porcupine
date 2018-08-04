@@ -10,6 +10,8 @@ import struct
 import subprocess
 import sys
 
+import PIL.Image
+
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
 
@@ -99,13 +101,18 @@ def copy_tkinter_files():
                 'pynsist_pkgs')
 
 
+def create_ico_file():
+    logo = PIL.Image.open(r'porcupine\images\logo-200x200.gif')
+    logo.save('porcupine-logo.ico')
+
+
 def create_pynsist_cfg():
     parser = configparser.ConfigParser()
     parser['Application'] = {
         'name': 'Porcupine',
         'version': find_metadata()['version'],
         'entry_point': 'porcupine.__main__:main',    # setup.py copy pasta
-        # TODO: icon
+        'icon': 'porcupine-logo.ico',
         'license_file': 'LICENSE',
     }
     parser['Python'] = {
@@ -135,8 +142,9 @@ def main():
         except FileNotFoundError:
             pass
 
-    create_pynsist_cfg()
     copy_tkinter_files()
+    create_ico_file()
+    create_pynsist_cfg()
     run_pynsist()
 
 
