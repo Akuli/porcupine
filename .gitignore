@@ -93,3 +93,4 @@ ENV/
 .pytest_cache
 windows-build/
 porcupine-setup.exe
+innosetup-temp.iss

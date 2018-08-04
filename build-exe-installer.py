@@ -152,7 +152,7 @@ def delete_pycaches():
 
 def create_setup_exe():
     with open('innosetup.iss', 'r') as template:
-        with open(r'windows-build\innosetup.iss', 'w') as innosetup:
+        with open(r'innosetup-temp.iss', 'w') as innosetup:
             for line in template:
                 if line.startswith('#define PorcupineVersion'):
                     innosetup.write('#define PorcupineVersion "%d.%d.%d"\n'
