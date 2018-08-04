@@ -36,7 +36,7 @@ def find_metadata():
     return result
 
 
-def create_pynsist_cfg(python_version):
+def create_pynsist_cfg():
     parser = configparser.ConfigParser()
     parser['Application'] = {
         'name': 'Porcupine',
