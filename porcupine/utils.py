@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
 # TODO: document this
-_running_in_nsis = (
+_installed_with_pynsist = (
     platform.system() == 'Windows' and
     os.path.dirname(sys.executable).lower().endswith(r'\porcupine\python'))
 
@@ -34,7 +34,7 @@ if platform.system() == 'Windows':
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
         running_pythonw = True
-    elif (_running_in_nsis and
+    elif (_installed_with_pynsist and
           sys.stdout is sys.stderr and
           isinstance(sys.stdout.name, str) and   # not sure if it can be None
           os.path.dirname(sys.stdout.name) == os.environ['APPDATA']):
