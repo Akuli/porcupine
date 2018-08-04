@@ -63,10 +63,7 @@ def mkdir_empty(path):
         os.mkdir(path)
 
 
-# this url is on 2 lines because pep8, copy/paste them together
-#
-#    https://github.com/takluyver/pynsist/blob/master/doc/faq.rst#packaging-wit
-#    h-tkinter
+# https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
 def copy_tkinter_files():
     shutil.copytree(os.path.join(sys.prefix, 'tcl'), 'lib')
 
