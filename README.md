@@ -137,14 +137,13 @@ Now running `porcu` should start Porcupine. If you change some of Porcupine's
 code in the `porcupine` directory and you run `porcu` again, your changes
 should be visible right away.
 
-If you are using Windows, you need to use `py` instead of `python3`. You also
-need to do something else instead of `. env/bin/activate`, but I don't remember
-what. Sorry :(
-
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct
 place and running `. env/bin/activate` again. You can run `deactivate` to undo
 the `. env/bin/activate`.
+
+If you are using Windows, you need to use `py` instead of `python3` and
+`env\Scripts\activate.bat` instead of `. env/bin/activate`.
 
 Here is a list of the commands I use when developing Porcupine:
 - Git commands. I'll assume that you know how to use Git and GitHub.
