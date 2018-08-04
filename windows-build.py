@@ -13,6 +13,8 @@ import urllib.request
 import venv
 import zipfile
 
+import porcupine
+
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
 
@@ -149,7 +151,17 @@ def delete_pycaches():
 
 
 def create_setup_exe():
-    subprocess.check_call([INNO_SETUP_COMPILER, 'innosetup.iss'])
+    with open('innosetup.iss', 'r') as template:
+        with open(r'windows-build\innosetup.iss', 'w') as innosetup:
+            for line in template:
+                if line.startswith('#define PorcupineVersion'):
+                    innosetup.write('#define PorcupineVersion "%d.%d.%d"\n'
+                                    % porcupine.version_info)
+                else:
+                    innosetup.write(line)
+
+    subprocess.check_call([INNO_SETUP_COMPILER,
+                           r'windows-build\innosetup.iss'])
 
 
 def main():
