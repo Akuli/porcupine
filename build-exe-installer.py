@@ -3,6 +3,7 @@ import glob
 import os
 import pathlib      # is useful sometimes... although i hate it mostly
 import platform
+import re
 import shutil
 import struct
 import subprocess
@@ -12,8 +13,6 @@ import tkinter
 import urllib.request
 import venv
 import zipfile
-
-import porcupine
 
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
@@ -29,6 +28,18 @@ INNO_SETUP_COMPILER = r"C:\Program Files\Inno Setup 5\ISCC.exe"
 assert os.path.exists(INNO_SETUP_COMPILER), (
     "Inno Setup is not installed, or it has been installed to an unusual "
     "location and " + __file__ + " needs to be updated")
+
+
+def get_porcu_version():
+    # can't import porcupine because dependencies are not necessarily
+    # installed yet
+    print("Checking Porcupine version with 'git tag'...")
+    output = subprocess.check_output(['git', 'tag'])
+
+    matches = re.finditer(rb'^v(\d+)\.(\d+)\.(\d+)$', output,
+                          flags=re.MULTILINE)
+    versions = (tuple(map(int, match.groups())) for match in matches)
+    return max(versions)
 
 
 @contextlib.contextmanager
@@ -151,15 +162,17 @@ def delete_pycaches():
 
 
 def create_setup_exe():
+    print("Creating innosetup-temp.iss...")
     with open('innosetup.iss', 'r') as template:
         with open('innosetup-temp.iss', 'w') as innosetup:
             for line in template:
                 if line.startswith('#define PorcupineVersion'):
                     innosetup.write('#define PorcupineVersion "%d.%d.%d"\n'
-                                    % porcupine.version_info)
+                                    % get_porcu_version())
                 else:
                     innosetup.write(line)
 
+    print("Running Inno Setup...")
     subprocess.check_call([INNO_SETUP_COMPILER,
                            'innosetup-temp.iss'])
 
