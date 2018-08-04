@@ -24,10 +24,18 @@ BITS = struct.calcsize('P') * 8
 assert BITS in {32, 64}
 
 
-INNO_SETUP_COMPILER = r"C:\Program Files\Inno Setup 5\ISCC.exe"
-assert os.path.exists(INNO_SETUP_COMPILER), (
-    "Inno Setup is not installed, or it has been installed to an unusual "
-    "location and " + __file__ + " needs to be updated")
+def find_inno_setup_compiler():
+    print("Looking for ISCC.exe...")
+    # TODO: is there a better way to do this? is the path e.g. in registry?
+    possible_paths = [
+        r"C:\Program Files\Inno Setup 5\ISCC.exe",
+        r"C:\Program Files (x86)\Inno Setup 5\ISCC.exe",
+    ]
+    for path in possible_paths:
+        if os.path.isfile(path):
+            return path
+    raise ValueError("Inno Setup's ISCC.exe was not found in any of these "
+                     "locations:\n" + '\n'.join(possible_paths))
 
 
 def get_porcu_version():
@@ -172,9 +180,10 @@ def create_setup_exe():
                 else:
                     innosetup.write(line)
 
+    iscc = find_inno_setup_compiler()
+
     print("Running Inno Setup...")
-    subprocess.check_call([INNO_SETUP_COMPILER,
-                           'innosetup-temp.iss'])
+    subprocess.check_call([iscc, 'innosetup-temp.iss'])
 
 
 def main():
