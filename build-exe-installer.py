@@ -3,6 +3,7 @@ import configparser
 import os
 import platform
 import re
+import shutil
 import subprocess
 import sys
 
@@ -38,12 +39,19 @@ def find_metadata():
 
 def get_frozen_requirements_in_a_crazy_way():
     subprocess.check_call([sys.executable, '-m', 'venv', 'temp_env'])
-    subprocess.check_call([
-        r'temp_env\Scripts\python.exe', '-m',
-        'pip', 'install', '-r', 'requirements.txt'])
-    return subprocess.check_output([
-        r'temp_env\Scripts\python.exe', '-m', 'pip', 'freeze'
-    ]).decode('utf-8').strip().splitlines()
+
+    try:
+        subprocess.check_call([
+            r'temp_env\Scripts\python.exe', '-m',
+            'pip', 'install', '-r', 'requirements.txt'])
+        frozen = subprocess.check_output([
+            r'temp_env\Scripts\python.exe', '-m', 'pip', 'freeze'
+        ]).decode('utf-8').strip().splitlines()
+    finally:
+        shutil.rmtree('temp_venv')
+
+    return [requirement for requirement in frozen
+            if not requirement.lower().startswith('porcupine==')]
 
 
 def create_pynsist_cfg():
