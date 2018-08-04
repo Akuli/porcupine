@@ -6,11 +6,21 @@ import pathlib
 import platform
 import re
 import shutil
+import struct
 import subprocess
 import sys
 
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
+
+
+# it's possible to run a 32-bit python on a 64-bit installer, but it would
+# probably screw up tkinter dll stuff... looking at help('struct'),
+# struct.calcsize('P') returns the size of a pointer, which is 32 bits or 64
+# bits depending on the python, and 32 bits == 4 bytes
+assert not (struct.calcsize('P') == 4 and '64' in platform.machine()), (
+    "this script can't be ran with 32-bit Python on a 64-bit Windows, "
+    "install a 64-bit Python instead")
 
 
 # setup.py copy pasta
@@ -40,7 +50,7 @@ def find_metadata():
 
 
 # info("asd") prints "build-exe-installer.py: asd"
-info = functools.partial(info, sys.argv[0] + ':')
+info = functools.partial(print, sys.argv[0] + ':')
 
 
 def get_frozen_requirements_in_a_crazy_way():
