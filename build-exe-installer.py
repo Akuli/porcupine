@@ -152,7 +152,7 @@ def delete_pycaches():
 
 def create_setup_exe():
     with open('innosetup.iss', 'r') as template:
-        with open(r'innosetup-temp.iss', 'w') as innosetup:
+        with open('innosetup-temp.iss', 'w') as innosetup:
             for line in template:
                 if line.startswith('#define PorcupineVersion'):
                     innosetup.write('#define PorcupineVersion "%d.%d.%d"\n'
@@ -170,7 +170,7 @@ def main():
     except FileExistsError:
         print("Removing old windows-build directory...")
         shutil.rmtree('windows-build')
-        os.mkdir(r'windows-build')
+        os.mkdir('windows-build')
 
     download_standalone_python()
     unzip_stdlib()
