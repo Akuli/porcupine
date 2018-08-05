@@ -85,7 +85,7 @@ def mkdir_empty(path):
 
 # https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
 def copy_tkinter_files():
-    print("Copying tkinter files...")
+    info("Copying tkinter files...")
     shutil.copytree(os.path.join(sys.prefix, 'tcl'), 'lib')
 
     # basic pathlib... need to convert between Paths and strings a lot
@@ -103,7 +103,7 @@ def copy_tkinter_files():
 
 
 def create_ico_file():
-    print(r"Converting porcupine\images\logo-200x200.gif to .ico format...")
+    info(r"Converting porcupine\images\logo-200x200.gif to .ico format...")
     logo = PIL.Image.open(r'porcupine\images\logo-200x200.gif')
     logo.save('porcupine-logo.ico')
 
