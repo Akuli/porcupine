@@ -122,8 +122,8 @@ started. Even if you are not going to write Porcupine plugins or do anything
 related to plugins, they will probably give you an idea of how things are done
 in Porcupine.
 
-If you want to develop porcupine, install [git](https://git-scm.com/), and then
-set up an environment for developing Porcupine like this:
+If you want to develop porcupine, install Python 3.4 or newer and
+[git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/Akuli/porcupine
     cd porcupine
@@ -162,3 +162,74 @@ Instead, ask me to run them if you need to.
   https://akuli.github.io/porcupine/ .
 - `python3 bump.py major_or_minor_or_patch` increments the version number and
   invokes `git commit`. Be sure to `git push` and `git push --tags` after this.
+
+
+## Building the Windows installer
+
+It's possible to create a `porcupine-setup.exe` that installs Porcupine with a
+nice setup wizard that Windows users are familiar with. This is not the
+recommended way to install Porcupine yet because I don't know where I could
+upload the installers yet so people could just click a link to download.
+
+You need a Windows for creating the installer. You can use real computers, but
+I like to use virtual machines because I can run a 32-bit *and* a 64-bit
+virtual machine in a 64-bit operating system, and I don't need to have Windows
+installed on a real computer.
+
+Install VirtualBox and download [one of these things from
+Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/).
+The `x86` things are 32-bit Windowses, and `x64`s are 64-bit. Usually I build a
+32-bit installer and a 64-bit installer, so I need two virtual machines.
+
+If you don't have a really fast internet, it takes a while to download a
+virtual machine. Play tetris with the tetris plugin (see
+[more_plugins](more_plugins/)) while you are waiting.
+
+The virtual machine comes as a zip. You can use Python to extract it:
+
+    cd Downloads       # or wherever the downloaded zip ended up
+    python3 -m zipfile -e TheZipFile.zip .
+
+It will take a while, but not long enough for a tetris :( You should end up
+with a `.ova` file in your Downloads folder. Start VirtualBox and click
+"Import Appliance..." in the "File" menu. Select the `.ova` file and click
+"Next" a couple times. Play more tetris.
+
+Start the virtual machine by double-clicking it at left. If you downloaded
+Windows 10, be aware that it uses a **lot** of RAM, about 4GB on my system.
+It's also quite slow, so you may need to play tetris while it starts up.
+
+Install these programs in the virtual machine:
+- Git: https://git-scm.com/
+- Python: https://www.python.org/
+- NSIS: http://nsis.sourceforge.net/Download
+
+Clicking the biggest "Download" and "Next" buttons works most of the time, but
+watch out for these things:
+- You need Python 3.5 or newer. Even though Porcupine itself runs on Python
+  3.4, the Windows installer needs an "embeddable zip file" from Python's
+  download page. They are new in Python 3.5.
+- If you are creating a 64-bit Porcupine installer, be sure to get a 64-bit
+  Python! At the time of writing this thing (August 2018), you need to first
+  click "All releases" on the Python website, and then the newest Python, and
+  finally scroll down and click either one of the "Windows x86-64 *something*
+  installer" links.
+
+Now you are ready to build the executable! Open a command prompt and run some
+commands:
+
+    git clone https://github.com/Akuli/porcupine
+    cd porcupine
+    py -m pip install pillow pynsist
+    py build-exe-installer.py
+
+Note that this does *not* work in a virtualenv. I don't feel like figuring out
+why right now.
+
+Now you should have an exe that installs a Porcupine. The last command should
+prints the filename at the end of its output, and it seems to be always
+`build\nsis\Porcupine_X.Y.Z.exe` where `X.Y.Z` is the Porcupine version.
+
+The installer requires **Windows Vista or newer**, it does not work on XP :( If
+you are a religious Windows XP fan, you can still use Porcupine on XP; you just
+need to install Python 3.4 and install Porcupine with pip.
