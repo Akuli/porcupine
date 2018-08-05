@@ -58,6 +58,7 @@ def load(plugin_names, shuffle=False):
 
     plugin_infos = {}    # {name: (setup_before, setup_after, setup_func)}
     for name in plugin_names:
+        log.debug("trying to import plugin: %s", name)
         start = time.time()
         try:
             module = importlib.import_module('porcupine.plugins.' + name)
