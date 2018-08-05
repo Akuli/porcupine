@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-from porcupine import pluginloader, get_tab_manager, tabs, utils
+from porcupine import _logs, pluginloader, get_tab_manager, tabs, utils
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
 
 log = logging.getLogger(__name__)
@@ -97,7 +97,8 @@ def main():
     parser.add_argument(
         '--verbose', action='store_true',
         help=("print all logging messages to stderr, only warnings and errors "
-              "are printed by default"))
+              "are printed by default (but all messages always go to a log "
+              "file in %s as well)" % _logs.LOG_DIR))
 
     args = parser.parse_args()
 
