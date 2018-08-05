@@ -210,7 +210,7 @@ watch out for these things:
   3.4, the Windows installer needs an "embeddable zip file" from Python's
   download page. They are new in Python 3.5.
 - If you are creating a 64-bit Porcupine installer, be sure to get a 64-bit
-  Python! At the time of writing this thing (August 2018), you need to first
+  Python. At the time of writing this thing (August 2018), you need to first
   click "All releases" on the Python website, and then the newest Python, and
   finally scroll down and click either one of the "Windows x86-64 *something*
   installer" links.
@@ -224,7 +224,8 @@ commands:
     py build-exe-installer.py
 
 Note that this does *not* work in a virtualenv. I don't feel like figuring out
-why right now.
+why right now. Pip will probably complain about stuff not in PATH, but it's OK,
+you don't need to do anything to fix the complaints.
 
 Now you should have an exe that installs a Porcupine. The last command should
 prints the filename at the end of its output, and it seems to be always
