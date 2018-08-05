@@ -26,7 +26,8 @@ if (os.path.isdir(os.path.join(here, '..', '.git')) and
     try:
         __version__ += '-git-' + subprocess.check_output(
             ['git', 'log', '--pretty=format:%h', '-n', '1']).decode('ascii')
-    except (OSError, subprocess.CalledProcessError, UnicodeError):
+    except (OSError, subprocess.CalledProcessError,
+            UnicodeError):   # pragma: no cover
         pass
 
 from porcupine._run import (init, get_init_kwargs, run, quit, get_main_window,
