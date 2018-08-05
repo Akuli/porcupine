@@ -21,9 +21,45 @@ import porcupine
 log = logging.getLogger(__name__)
 
 
-# pythonw.exe sets sys.stdout to None because there's no console window,
-# print still works because it checks if sys.stdout is None
-running_pythonw = (sys.stdout is None)
+# nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
+# TODO: document this
+_installed_with_pynsist = (
+    platform.system() == 'Windows' and
+    os.path.dirname(sys.executable).lower().endswith(r'\porcupine\python'))
+
+
+if platform.system() == 'Windows':
+    running_pythonw = True
+    if sys.stdout is None and sys.stderr is None:
+        # running in pythonw.exe so there's no console window, print still
+        # works because it checks if sys.stdout is None
+        running_pythonw = True
+    elif (_installed_with_pynsist and
+          sys.stdout is sys.stderr and
+          isinstance(sys.stdout.name, str) and   # not sure if it can be None
+          os.path.dirname(sys.stdout.name) == os.environ['APPDATA']):
+        # pynsist generates a script that does this:
+        #
+        #   sys.stdout = sys.stderr = open(blablabla, 'w', **kw)
+        #
+        # where blablabla is a file directly in %APPDATA%... that's dumb and
+        # non-standard imo, and not suitable for porcupine because porcupine
+        # takes care of that itself, so... let's undo what it just did
+        #
+        # TODO: actually take care of the stuff by adding a custom
+        #       sys.excepthook, rn exceptions are ignored!
+        # TODO: it's possible to write a custom startup script, do that? there
+        #       are docs somewhere
+        sys.stdout.close()
+        os.remove(sys.stdout.name)
+        sys.stdout = None
+        sys.stderr = None
+    else:
+        # seems like python was started from e.g. a cmd or powershell
+        running_pythonw = False
+else:
+    running_pythonw = False
+
 
 python_executable = sys.executable
 if running_pythonw and sys.executable.lower().endswith(r'\pythonw.exe'):

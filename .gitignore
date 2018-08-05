@@ -89,4 +89,8 @@ ENV/
 .ropeproject
 
 
+# other stuff i have needed to add
 .pytest_cache
+porcupine-logo.ico
+pynsist_pkgs/
+pynsist.cfg

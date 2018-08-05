@@ -77,15 +77,7 @@ installed. Then open PowerShell or command prompt, and run these commands:
 
 ### Development Install
 
-If you want to do changes to Porcupine yourself, I recommend installing git and
-then downloading Porcupine like this:
-
-    git clone https://github.com/Akuli/porcupine
-    cd porcupine
-    python3 -m pip install -r requirements.txt
-    python3 -m porcupine
-
-Use `py` instead of `python3` on Windows.
+See [below](#developing-porcupine).
 
 ## FAQ
 
@@ -120,3 +112,125 @@ Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
 ### Is Porcupine an Emacs?
 Not by default, but you can [install more plugins](more_plugins/).
+
+
+## Developing Porcupine
+
+If you are interested in doing something to Porcupine yourself, that's awesome!
+[The plugin API docs](https://akuli.github.io/porcupine/) will help you get
+started. Even if you are not going to write Porcupine plugins or do anything
+related to plugins, they will probably give you an idea of how things are done
+in Porcupine.
+
+If you want to develop porcupine, install Python 3.4 or newer and
+[git](https://git-scm.com/), and run these commands:
+
+    git clone https://github.com/Akuli/porcupine
+    cd porcupine
+    python3 -m venv env
+    . env/bin/activate
+    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
+    pip install --editable .
+
+Now running `porcu` should start Porcupine. If you change some of Porcupine's
+code in the `porcupine` directory and you run `porcu` again, your changes
+should be visible right away.
+
+After doing some development and closing the terminal that you set up the
+environment in, you can go back to the environment by `cd`'ing to the correct
+place and running `. env/bin/activate` again. You can run `deactivate` to undo
+the `. env/bin/activate`.
+
+If you are using Windows, you need to use `py` instead of `python3` and
+`env\Scripts\activate.bat` instead of `. env/bin/activate`.
+
+Here is a list of the commands I use when developing Porcupine:
+- Git commands. I'll assume that you know how to use Git and GitHub.
+- `python3 -m pytest` runs tests. You will see lots of weird stuff happening
+  while testing, and that's expected.
+- `coverage run --include="porcupine/*" -m pytest` followed by `coverage html`
+  creates a report of test coverage. Open `htmlcov/index.html` in your favorite
+  browser to view it. If you don't have anything else to do, you can write more
+  tests and try to improve the coverage :D
+- `cd docs` followed by `sphinx-build . _build` creates HTML documentation.
+  Open `docs/_build/index.html` in your favorite browser to view it.
+
+I also use these commands, but **I don't recommend running these yourself.**
+Instead, ask me to run them if you need to.
+- `python3 docs/publish.py` uploads the documentation to
+  https://akuli.github.io/porcupine/ .
+- `python3 bump.py major_or_minor_or_patch` increments the version number and
+  invokes `git commit`. Be sure to `git push` and `git push --tags` after this.
+
+
+## Building the Windows installer
+
+It's possible to create a `porcupine-setup.exe` that installs Porcupine with a
+nice setup wizard that Windows users are familiar with. This is not the
+recommended way to install Porcupine yet because I don't know where I could
+upload the installers yet so people could just click a link to download.
+
+You need a Windows for creating the installer. You can use real computers, but
+I like to use virtual machines because I can run a 32-bit *and* a 64-bit
+virtual machine in a 64-bit operating system, and I don't need to have Windows
+installed on a real computer.
+
+Install VirtualBox and download [one of these things from
+Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/).
+The `x86` things are 32-bit Windowses, and `x64`s are 64-bit. Usually I build a
+32-bit installer and a 64-bit installer, so I need two virtual machines.
+
+If you don't have a really fast internet, it takes a while to download a
+virtual machine. Play tetris with the tetris plugin (see
+[more_plugins](more_plugins/)) while you are waiting.
+
+The virtual machine comes as a zip. You can use Python to extract it:
+
+    cd Downloads       # or wherever the downloaded zip ended up
+    python3 -m zipfile -e TheZipFile.zip .
+
+It will take a while, but not long enough for a tetris :( You should end up
+with a `.ova` file in your Downloads folder. Start VirtualBox and click
+"Import Appliance..." in the "File" menu. Select the `.ova` file and click
+"Next" a couple times. Play more tetris.
+
+Start the virtual machine by double-clicking it at left. If you downloaded
+Windows 10, be aware that it uses a **lot** of RAM, about 4GB on my system.
+It's also quite slow, so you may need to play tetris while it starts up.
+
+Install these programs in the virtual machine:
+- Git: https://git-scm.com/
+- Python: https://www.python.org/
+- NSIS: http://nsis.sourceforge.net/Download
+
+Clicking the biggest "Download" and "Next" buttons works most of the time, but
+watch out for these things:
+- You need Python 3.5 or newer. Even though Porcupine itself runs on Python
+  3.4, the Windows installer needs an "embeddable zip file" from Python's
+  download page. They are new in Python 3.5.
+- If you are creating a 64-bit Porcupine installer, be sure to get a 64-bit
+  Python. At the time of writing this thing (August 2018), you need to first
+  click "All releases" on the Python website, and then the newest Python, and
+  finally scroll down and click either one of the "Windows x86-64 *something*
+  installer" links.
+
+Now you are ready to build the executable! Open a command prompt and run some
+commands:
+
+    git clone https://github.com/Akuli/porcupine
+    cd porcupine
+    py -m pip install pillow pynsist
+    py build-exe-installer.py
+
+Note that this does *not* work in a virtualenv. I don't feel like figuring out
+why right now. Pip will probably complain about stuff not in PATH, but it's OK,
+you don't need to do anything to fix the complaints.
+
+Now you should have an exe that installs a Porcupine. The last command should
+prints the filename at the end of its output, and it seems to be always
+`build\nsis\Porcupine_X.Y.Z.exe` where `X.Y.Z` is the Porcupine version.
+
+The installer requires **Windows Vista or newer**, it does not work on XP :( If
+you are a religious Windows XP fan, you can still use Porcupine on XP; you just
+need to install Python 3.4 and install Porcupine with pip.
