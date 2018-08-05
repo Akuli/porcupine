@@ -4,11 +4,11 @@ import functools
 import logging
 from queue import Empty         # queue is a handy variable name
 import tkinter
+from tkinter import filedialog
 import traceback
 import webbrowser
 
-from porcupine import (_dialogs, _logs, actions, filetypes, dirs,
-                       settings, tabs, utils)
+from porcupine import _logs, actions, filetypes, dirs, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -102,7 +102,15 @@ def _setup_actions():
         _tab_manager.add_tab(tabs.FileTab(_tab_manager))
 
     def open_files():
-        for path in _dialogs.open_files():
+        paths = filedialog.askopenfilenames(
+            **filetypes.get_filedialog_kwargs())
+
+        # tkinter returns '' if the user cancels, and i'm arfaid that python
+        # devs might "fix" a future version to return None
+        if not paths:
+            return
+
+        for path in paths:
             try:
                 tab = tabs.FileTab.open_file(_tab_manager, path)
             except (UnicodeError, OSError) as e:

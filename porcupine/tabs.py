@@ -6,11 +6,11 @@ import itertools
 import logging
 import os
 import tkinter
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import traceback
 
 import porcupine
-from porcupine import _dialogs, filetypes, images, settings, textwidget, utils
+from porcupine import filetypes, images, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
@@ -717,9 +717,11 @@ bers.py>` use this attribute.
         Returns True if the file was saved, and False if the user
         cancelled the dialog.
         """
-        path = _dialogs.save_as(self.path)
-        if path is None:
+        path = filedialog.asksaveasfilename(
+            **filetypes.get_filedialog_kwargs())
+        if not path:     # it may be '' because tkinter
             return False
+
         self.path = path
         self.save()
         return True

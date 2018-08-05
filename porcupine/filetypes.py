@@ -19,6 +19,9 @@ import pygments.lexers
 import pygments.token
 import pygments.util     # for ClassNotFound
 
+# 'import porcupine' is for porcupine.get_main_window(), can't use a from
+# import because import cycles
+import porcupine
 from porcupine import dirs, utils
 
 
@@ -375,6 +378,43 @@ def get_filetype_by_name(name):
 def get_all_filetypes():
     """Return a list of all loaded filetypes."""
     return list(_filetypes.values())
+
+
+# TODO: add this to docs/something.rst
+def get_filedialog_kwargs():
+    """This is a way to run tkinter dialogs that display the filetypes and ext\
+ensions that Porcupine supports.
+
+    This function returns a dictionary of keyword arguments suitable for
+    functions in ``tkinter.filedialog``. Example::
+
+        from tkinter import filedialog
+        from porcupine.filetypes import get_filedialog_kwargs
+
+        filenames = filedialog.askopenfilenames(**get_filedialog_kwargs())
+        for filename in filenames:
+            print("Opening", filename)
+
+    You can use this function with other ``tkinter.filedialog`` functions as
+    well.
+    """
+    result = [("All files", "*")]
+    for filetype in get_all_filetypes():
+        patterns = list(filetype.filename_patterns)
+        if filetype.name not in {'Plain Text', 'Porcupine filetypes.ini'}:
+            for mimetype in filetype.mimetypes:
+                patterns.extend(mimetypes.guess_all_extensions(mimetype))
+
+        result.append((filetype.name, tuple(patterns)))
+
+    widget = porcupine.get_main_window()   # any widget would do
+    if len(result) == 1 and widget.tk.call('tk', 'windowingsystem') == 'aqua':
+        # there's a bug that makes python crash with this list on osx, and osx
+        # creates a huge error message that complains about an empty parameter
+        # list... so it seems like osx ignores ("All files", "*") and disallows
+        # empty filetypes lists
+        return {}
+    return {'filetypes': result}
 
 
 def _add_missing_mimetypes():
