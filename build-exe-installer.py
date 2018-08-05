@@ -15,8 +15,7 @@ import PIL.Image
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
 
-
-# it's possible to run a 32-bit python on a 64-bit installer, but it would
+# it's possible to run a 32-bit python on a 64-bit windows, but it would
 # probably screw up tkinter dll stuff... looking at help('struct'),
 # struct.calcsize('P') returns the size of a pointer, which is 32 bits or 64
 # bits depending on the python, and 32 bits == 4 bytes
