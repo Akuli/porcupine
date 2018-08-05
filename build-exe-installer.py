@@ -85,6 +85,7 @@ def mkdir_empty(path):
 
 # https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
 def copy_tkinter_files():
+    print("Copying tkinter files...")
     shutil.copytree(os.path.join(sys.prefix, 'tcl'), 'lib')
 
     # basic pathlib... need to convert between Paths and strings a lot
