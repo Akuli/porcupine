@@ -87,12 +87,15 @@ def main():
     plugingroup.add_argument(
         '--without-plugin', metavar='PLUGIN', action='append', default=[],
         help=("don't load PLUGIN, e.g. --without-plugin=highlight "
-              "runs Porcupine without syntax highlighting"))
+              "runs Porcupine without syntax highlighting, multiple "
+              "--without-plugins can be given"))
     plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
         help=("respect setup_before and setup_after, but otherwise setup the "
               "plugins in a random order instead of sorting by name "
-              "alphabetically"))
+              "alphabetically, useful for making sure that your plugin's "
+              "setup_before and setup_after define everything needed; usually "
+              "plugins are not shuffled in order to make the UI consistent"))
 
     parser.add_argument(
         '--verbose', action='store_true',
