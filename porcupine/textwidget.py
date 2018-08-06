@@ -115,6 +115,24 @@ class HandyText(tk.Text):
             # see text(3tk) for all possible subcommands
             set subcommand [lindex $args 0]
 
+            # issue #5: don't let the cursor to go to the very top or bottom of
+            # the view
+            if {$subcommand == "see"} {
+                # cleaned_index is always a "LINE.COLUMN" string
+                set cleaned_index [%(actual_widget)s index [lindex $args 1]]
+
+                # from text(3tk): "If index is far out of view, then the
+                # command centers index in the window." and we want to center
+                # it correctly, so first go to the center, then a few
+                # characters around it, and finally back to center because it
+                # feels less error-prone that way
+                %(actual_widget)s see $cleaned_index
+                %(actual_widget)s see "$cleaned_index - 4 lines"
+                %(actual_widget)s see "$cleaned_index + 4 lines"
+                %(actual_widget)s see $cleaned_index
+                return
+            }
+
             set cursor_may_have_moved 0
 
             # only these subcommands can change the text, but they can also
