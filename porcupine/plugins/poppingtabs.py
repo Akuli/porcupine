@@ -35,7 +35,7 @@ def _is_on_window(event):
             (window_top < event.y_root < window_bottom))
 
 
-# TODO: add doctests or something?
+# TODO: tests
 def _2lines(string):
     # convert a space in the middle into a newline
     words = string.split()

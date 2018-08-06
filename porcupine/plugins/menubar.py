@@ -3,7 +3,7 @@ import tkinter
 from porcupine import get_main_window, actions, utils
 
 
-class MenubarHandler:
+class MenuManager:
 
     def __init__(self):
         self.main_menu = tkinter.Menu(tearoff=False)
@@ -63,8 +63,8 @@ class MenubarHandler:
 
         index = menu.index('end')
         if menu is self.main_menu:
-            # TODO: figure out why this is needed for the main menu, but not
-            #       for submenus
+            # yes, this is needed for the main menu, but not for submenus...
+            # i have no idea why, and i don't care
             index -= 1
 
         self._items[action.path] = (menu, index)
@@ -82,7 +82,7 @@ class MenubarHandler:
 
 def setup():
     window = get_main_window()
-    menubar = MenubarHandler()
+    menubar = MenuManager()
     window['menu'] = menubar.main_menu
 
     utils.bind_with_data(

@@ -73,7 +73,6 @@ def get_tab_manager():
     return _tab_manager
 
 
-# TODO: add some way to run callbacks when this function is called
 def quit():
     """
     Calling this function is equivalent to clicking the X button in the
@@ -126,7 +125,8 @@ def _setup_actions():
         if tab.can_be_closed():
             _tab_manager.close_tab(tab)
 
-    # TODO: allow adding separators to menus
+    # TODO: an API for adding separators to menus nicely? or just recommend
+    #       putting related items in a submenu?
     actions.add_command("File/New File", new_file, '<Control-n>')
     actions.add_command("File/Open", open_files, '<Control-o>')
     actions.add_command("File/Save", (lambda: _tab_manager.select().save()),
@@ -141,10 +141,13 @@ def _setup_actions():
                         tabtypes=[tabs.Tab])
     actions.add_command("File/Quit", quit, '<Control-q>')
 
-    # TODO: is Edit the best possible place for this?
+    # TODO: is Edit the best possible place for this? maybe a Settings menu
+    #       that could also contain plugin-specific settings, and maybe even
+    #       things like ttk themes and color styles?
     actions.add_command("Edit/Porcupine Settings...", settings.show_dialog)
 
     def change_font_size(how):
+        # TODO: i think there is similar code in a couple other places too
         config = settings.get_section('General')
         if how == 'reset':
             config.reset('font_size')
@@ -156,7 +159,6 @@ def _setup_actions():
 
     # these work only with filetabs because that way the size change is
     # noticable
-    # TODO: maybe these shouldn't be bound globally?
     actions.add_command(
         "View/Bigger Font", functools.partial(change_font_size, 'bigger'),
         '<Control-plus>', tabtypes=[tabs.FileTab])
@@ -170,9 +172,7 @@ def _setup_actions():
     def add_link(path, url):
         actions.add_command(path, functools.partial(webbrowser.open, url))
 
-    # TODO: an about dialog that shows porcupine version, Python version
-    #       and where porcupine is installed
-    # TODO: porcupine starring button
+    # TODO: porcupine starring button?
     add_link("Help/Porcupine Wiki",
              "https://github.com/Akuli/porcupine/wiki")
     add_link("Help/Report a problem or request a feature",

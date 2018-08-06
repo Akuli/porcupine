@@ -1,14 +1,4 @@
-# TODO: create docs/pluginloader.rst
-"""Loads plugins from ``porcupine.plugins``.
-
-A plugin name is the plugin's name without the module, e.g. ``highlight``
-instead of ``porcupine.plugins.highlight``.
-
-On startup, Porcupine loads plugins roughly like this::
-
-    names = pluginloader.find_plugins()
-    pluginloader.load_plugins(names)
-"""
+"""Loads plugins from ``porcupine.plugins``."""
 # many things are wrapped in try/except here to allow writing Porcupine
 # plugins using Porcupine, so Porcupine must run if the plugins are
 # broken
@@ -52,7 +42,7 @@ def load(plugin_names, shuffle=False):
     useful for making sure that the plugins don't rely on the sorting.
 
     Any exceptions from the plugins are caught and logged, so there's no
-    need to wrap calls to this function in ``try``,``except``.
+    need to wrap calls to this function in ``try,except``.
     """
     assert not _loaded_names, "cannot load() twice"
 
@@ -118,10 +108,14 @@ def load(plugin_names, shuffle=False):
 
 
 def get_loaded_plugins():
-    """Return a list of plugin names that have been loaded in their loading or\
-der.
+    """Return a list of plugin names that have been loaded successfully.
 
-    This is useful for plugins that need to start a new Porcupine
-    process and load plugins in that.
+    This is useful for writing plugins that need to start a new Porcupine
+    process and load the same plugins in the new process. See
+    :source:`porcupine/plugins/poppingtabs.py` for an example.
+
+    The returned list is in loading order, and mutating the returned list
+    doesn't break anything.
     """
+    # TODO: test the mutating thing
     return _loaded_names.copy()

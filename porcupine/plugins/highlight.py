@@ -5,7 +5,6 @@
 # TODO: if a tag goes all the way to end of line, extend it past it to
 #       hide the lagging at least a little bit (if we're not
 #       highlighting it line by line
-# TODO: better support for different languages in the rest of the editor
 
 import multiprocessing
 import queue

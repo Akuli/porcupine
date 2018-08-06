@@ -460,7 +460,7 @@ def _init():
     general.connect(
         'font_size', functools.partial(fixedfont.__setitem__, 'size'))
 
-    # TODO: allow file-specific encodings if someone complains about this
+    # TODO: file-specific encodings
     general.add_option('encoding', 'UTF-8')
     general.add_entry('encoding', "Encoding of opened and saved files:")
     general.connect('encoding', _validate_encoding)

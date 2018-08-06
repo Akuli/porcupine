@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 class NoTerminalRunner:
 
     def __init__(self, master):
-        # TODO: better coloring
+        # TODO: better coloring that follows the pygments theme
         self.textwidget = tkinter.Text(master, height=12, state='disabled')
         self.textwidget.tag_config('info', foreground='blue')
         self.textwidget.tag_config('output')    # use default colors

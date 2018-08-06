@@ -1,6 +1,5 @@
 """Find/replace widget."""
 
-# TODO: full words only option
 # FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
 
 import re
@@ -232,6 +231,7 @@ class Finder(ttk.Frame):
         self._textwidget.mark_set('insert', start)
         self._textwidget.see(start)
 
+    # TODO: adjust scrolling accordingly
     def _go_to_next_match(self, junk_event=None):
         pairs = self.get_match_ranges()
         if not pairs:
@@ -283,7 +283,7 @@ class Finder(ttk.Frame):
         self._update_buttons()
         self._textwidget.replace(start, end, self.replace_entry.get())
 
-        self._textwidget.mark_set('insert', start)   # TODO: test this
+        self._textwidget.mark_set('insert', start)
         self._go_to_next_match()
 
         left = len(self.get_match_ranges())

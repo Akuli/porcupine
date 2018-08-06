@@ -37,11 +37,13 @@ here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 
 
 def show_huge_logo(junk_event=None):
-    # TODO: add a better way for finding the path?
     path = os.path.join(dirs.installdir, 'images', 'logo.gif')
+    assert os.path.isfile(path)
 
-    # TODO: is the browser a good choice? how about e.g. xdg-open?
-    #       this seems to magically xdg-open on my system 0_o
+    # web browsers are good at displaying large images, and webbrowser.open
+    # actually tries xdg-open first, so this will be used on linux if an image
+    # viewer program is installed, and i guess that other platforms just open
+    # up a web browser or something
     webbrowser.open('file://' + pathname2url(path))
 
 

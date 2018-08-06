@@ -280,7 +280,9 @@ class _FileType:
                 except (KeyError, ValueError) as e:
                     raise _OptionError(something_command) from e
 
-    # TODO: support passing more options in the config file
+    # TODO: support passing more options in the config file? useful for lexers
+    #       like pygments.lexers.PythonConsoleLexer, which takes an optional
+    #       python3 argument
     def get_lexer(self, **kwargs):
         return self._pygments_lexer_class(**kwargs)
 
@@ -380,7 +382,6 @@ def get_all_filetypes():
     return list(_filetypes.values())
 
 
-# TODO: add this to docs/something.rst
 def get_filedialog_kwargs():
     """This is a way to run tkinter dialogs that display the filetypes and ext\
 ensions that Porcupine supports.

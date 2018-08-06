@@ -7,7 +7,7 @@ On startup, Porcupine loads plugins roughly like this (after calling
 :func:`porcupine.init`)::
 
     from porcupine import pluginloader
-    pluginloader.load_plugins(pluginloader.find_plugins())
+    pluginloader.load(pluginloader.find_plugins())
 
 :source:`The real code <porcupine/__main__.py>` is a little more complicated
 than that because the behaviour can be changed with command-line arguments, but

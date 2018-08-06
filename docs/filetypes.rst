@@ -111,3 +111,4 @@ Functions
 .. autofunction:: guess_filetype
 .. autofunction:: get_filetype_by_name
 .. autofunction:: get_all_filetypes
+.. autofunction:: get_filedialog_kwargs

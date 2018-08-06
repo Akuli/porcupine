@@ -65,7 +65,7 @@ class TabManager(ttk.Notebook):
         # These can be bound in a parent widget. This doesn't use
         # enable_traversal() because we want more bindings than it
         # creates.
-        # TODO: document these?
+        # TODO: document self.bindings?
         partial = functools.partial     # pep-8 line length
         self.bindings = [
             ('<Control-Prior>', partial(self._on_page_updown, False, -1)),
@@ -214,6 +214,7 @@ class TabManager(ttk.Notebook):
         except tkinter.TclError:   # should be "Slave index n out of bounds"
             return False
 
+    # TODO: test this
     def move_selected_tab(self, diff):
         """Try to move the currently selected tab left or right.
 
@@ -225,7 +226,7 @@ class TabManager(ttk.Notebook):
         if not self.tabs():
             return False
 
-        # TODO: this can probably be simplified
+        # this could be simplified, but it's nice and readable now
         i1 = self.index(self.select())
         i2 = i1 + diff
         if i1 > i2:
@@ -483,7 +484,6 @@ bers.py>` use this attribute.
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
-        # TODO: document this
         self.textwidget = textwidget.MainText(
             self, self._filetype, width=1, height=1, wrap='none', undo=True)
         self.textwidget.pack(side='left', fill='both', expand=True)
@@ -566,7 +566,7 @@ bers.py>` use this attribute.
     def mark_saved(self):
         """Make :meth:`is_saved` return True."""
         self._save_hash = self._get_hash()
-        self._update_title()      # TODO: add a virtual event for this?
+        self._update_title()     # TODO: add a virtual event for this if needed
 
     def is_saved(self):
         """Return False if the text has changed since previous save.
@@ -634,7 +634,7 @@ bers.py>` use this attribute.
         text = 'New File' if self.path is None else os.path.basename(self.path)
         if not self.is_saved():
             # TODO: figure out how to make the label red in ttk instead
-            # of stupid stars
+            #       of stupid stars
             text = '*' + text + '*'
         self.title = text
 
@@ -677,11 +677,12 @@ bers.py>` use this attribute.
         # no was clicked, can be closed
         return True
 
-    # TODO: document the overriding
     def on_focus(self):
+        """This override of :meth:`Tab.on_focus` focuses the :attr:`textwidget\
+`."""
         self.textwidget.focus()
 
-    # TODO: returning None on errors kinda sucks
+    # TODO: returning None on errors kinda sucks, maybe a handle_errors kwarg?
     def save(self):
         """Save the file to the current :attr:`path`.
 

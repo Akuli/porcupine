@@ -1,4 +1,4 @@
-# TODO: document this module's simple register_completer() api
+# this will be replaced with langserver support soon™
 import collections
 import re
 
@@ -128,7 +128,6 @@ class _AutoCompleter:
 
 
 def on_new_tab(event):
-    # TODO: autocomplete in other kinds of tabs too?
     tab = event.data_widget
     if isinstance(tab, tabs.FileTab):
         completer = _AutoCompleter(tab)

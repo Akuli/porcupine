@@ -122,7 +122,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                 # things by default
                 return 'break'
 
-        # TODO: display a warning if it's already bound?
+        # TODO: display a warning if it's already bound
         porcupine.get_main_window().bind(binding, bind_callback, add=True)
 
     return action

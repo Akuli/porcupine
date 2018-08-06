@@ -1,6 +1,5 @@
 # this is a python script because handling Ctrl+C interrupts in batch
 # scripts seems to be impossible
-# TODO: test this script!
 
 import colorama
 import subprocess

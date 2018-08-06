@@ -1,4 +1,4 @@
-# TODO: remember which split pane each tab was in
+# TODO: remember which tab was selected
 import os
 import pickle
 import pkgutil
@@ -12,8 +12,8 @@ setup_after = [
     if 'porcupine.plugins.' + name != __name__
 ]
 
-# TODO: figure out which file extension is best for pickled files
-STATE_FILE = os.path.join(dirs.cachedir, 'restart_state.pickle')
+# https://fileinfo.com/extension/pkl
+STATE_FILE = os.path.join(dirs.cachedir, 'restart_state.pkl')
 
 
 def save_states(junk_event):

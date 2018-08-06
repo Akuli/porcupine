@@ -46,8 +46,6 @@ if platform.system() == 'Windows':
         # non-standard imo, and not suitable for porcupine because porcupine
         # takes care of that itself, so... let's undo what it just did
         #
-        # TODO: actually take care of the stuff by adding a custom
-        #       sys.excepthook, rn exceptions are ignored!
         # TODO: it's possible to write a custom startup script, do that? there
         #       are docs somewhere
         sys.stdout.close()
@@ -613,7 +611,7 @@ def get_keyboard_shortcut(binding):
     >>> get_keyboard_shortcut('<F11>')
     'F11'
     """
-    # TODO: handle more corner cases, see bind(3tk)
+    # TODO: handle more corner cases? see bind(3tk)
     parts = binding.lstrip('<').rstrip('>').split('-')
     result = []
 
@@ -622,7 +620,7 @@ def get_keyboard_shortcut(binding):
             # TODO: i think this is supposed to use the command symbol
             # on OSX? i don't have a mac
             result.append('Ctrl')
-        # tk doesnt like e.g. <Control-ö>, that's why ascii only here
+        # tk doesnt like e.g. <Control-ö> :( that's why ascii only here
         elif len(part) == 1 and part in string_module.ascii_lowercase:
             result.append(part.upper())
         elif len(part) == 1 and part in string_module.ascii_uppercase:

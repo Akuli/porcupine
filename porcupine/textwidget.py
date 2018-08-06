@@ -79,7 +79,8 @@ class HandyText(tk.Text):
             self._cursorpos = self.index('insert')
             self.event_generate('<<CursorMoved>>')
 
-    # TODO: override more movy methods
+    # this is not perfect, but the langserver branch has a much better way to
+    # do this
     @functools.wraps(tk.Text.insert)
     def insert(self, *args, **kwargs):
         super().insert(*args, **kwargs)
@@ -177,8 +178,6 @@ class ThemedText(HandyText):
         self['selectbackground'] = fg
 
 
-# TODO: remove useless cursor_has_moved() calls? then again, they don't
-# matter in any way
 class MainText(ThemedText):
     """Don't use this. It may be changed later."""
 
@@ -209,7 +208,7 @@ class MainText(ThemedText):
 
         utils.bind_mouse_wheel(self, self._on_ctrl_wheel, prefixes='Control-')
 
-    # TODO: _run.py contains similar code, maybe reuse it here?
+    # TODO: the run plugin contains similar code, maybe reuse it somehow?
     def _on_ctrl_wheel(self, direction):
         config = settings.get_section('General')
         if direction == 'reset':
@@ -282,7 +281,7 @@ class MainText(ThemedText):
     def _on_closing_brace(self, event):
         """Dedent automatically."""
         self.dedent('insert')
-        self.after_idle(self.cursor_has_moved)    # TODO: do we need this?
+        self.after_idle(self.cursor_has_moved)
 
     def indent(self, location):
         """Insert indentation character(s) at the given location."""

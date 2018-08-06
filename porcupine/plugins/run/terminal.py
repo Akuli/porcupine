@@ -21,7 +21,7 @@ else:
 
 
 # getting this to work in powershell turned out to be hard :(
-# TODO: test this
+# TODO: tests
 def _run_in_windows_cmd(blue_message, workingdir, command):
     log.debug("using Windows command prompt")
 

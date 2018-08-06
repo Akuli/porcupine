@@ -28,7 +28,9 @@ def after_enter(textwidget):
 
     # we can't strip trailing whitespace before this because then
     # pressing enter twice would get rid of all indentation
-    # TODO: make this language-specific instead of always using python stuff
+    # TODO: make this language-specific instead of always using python
+    #       stuff, but note that some languages like yaml have python-like
+    #       indentation-based syntax
     prevline = prevline.strip()
     if prevline.endswith((':', '(', '[', '{')):
         # start of a new block
