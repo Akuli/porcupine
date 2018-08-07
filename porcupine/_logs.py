@@ -12,7 +12,7 @@ from porcupine import dirs
 
 log = logging.getLogger(__name__)
 LOG_DIR = os.path.join(dirs.cachedir, 'logs')    # used in __main__.py
-_FILENAME_FORMAT = '%Y-%m-%dT%H:%M:%S.txt'
+_FILENAME_FORMAT = '%Y-%m-%dT%H-%M-%S.txt'
 
 
 def _remove_old_logs():
