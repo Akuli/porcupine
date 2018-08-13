@@ -2,11 +2,11 @@ import os.path
 import urllib.request
 
 
-def tab_uri(tab) -> str:
+def tab_uri(tab):
     return "file://" + urllib.request.pathname2url(os.path.abspath(tab.path))
 
 
-def tab_text(tab) -> str:
+def tab_text(tab):
     return tab.textwidget.get("1.0", "end - 1 char")
 
 

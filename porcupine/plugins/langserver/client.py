@@ -1,5 +1,4 @@
 import sys
-import subprocess
 import threading
 import queue
 
@@ -32,7 +31,9 @@ class Client:
         self._client.notification_handler("textDocument/publishDiagnostics")(
             self._publish_diagnostics
         )
-        self._client.response_handler("textDocument/completion")(self._completions_response)
+        self._client.response_handler("textDocument/completion")(
+            self._completions_response
+        )
 
         command = self.SERVER_COMMANDS[self.tab.filetype.name]
 
@@ -40,9 +41,7 @@ class Client:
             print("No command is known for", self.tab.filetype.name)
             return
 
-        self._client.connect_to_process(
-            *command
-        )
+        self._client.connect_to_process(*command)
         self._client.request(
             "initialize",
             {"rootUri": None, "processId": None, "capabilities": {}},
@@ -75,7 +74,7 @@ class Client:
             )
 
             self.tab.bind(
-                "<<FiletypeChanged>>", lambda *_: self._filetype_changed()
+                "<<FiletypeChanged>>", lambda *_: self._on_filetype_changed()
             )
 
             porcupine.utils.bind_with_data(
@@ -100,7 +99,7 @@ class Client:
     def _initialize_response(self, _request, _response):
         self._initialize_response_event.set()
 
-    def _filetype_changed(self) -> None:
+    def _on_filetype_changed(self) -> None:
         raise RuntimeError("Don't change the filetype!!!")
 
     def _content_changed(self, event):
@@ -129,22 +128,23 @@ class Client:
             },
         )
 
-        # TODO(PurpleMyst): Cancel the request if the user types more before we
-        # get a response. This might be *very* hard.
-
     def _porcufy_completion_item(self, item):
-        if item.get("textEdit") is not None:
-            start = lsp_pos_to_tk_pos(item["textEdit"]["range"]["start"])
-            end = lsp_pos_to_tk_pos(item["textEdit"]["range"]["end"])
-            new_text = item["textEdit"]["newText"]
-        elif item.get("insertText") is not None:
+        if "textEdit" in item:
+            edit = item["textEdit"]
+            edit_range = edit["range"]
+
+            start = lsp_pos_to_tk_pos(edit_range["start"])
+            end = lsp_pos_to_tk_pos(edit_range["end"])
+            new_text = edit["newText"]
+        elif "insertText" in item:
+            new_text = item["insertText"]
+
             line, _ = map(int, self.tab.textwidget.index("insert").split("."))
             start, end = find_overlap_start(
                 line,
                 self.tab.textwidget.get("insert linestart", "insert"),
-                item["insertText"],
+                new_text,
             )
-            new_text = item["insertText"]
         else:
             raise RuntimeError(
                 "Completion item %r had neither textEdit nor insertText"
