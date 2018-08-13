@@ -1,5 +1,5 @@
 import sys
-import threading
+import functools
 import queue
 
 import kieli
@@ -23,86 +23,108 @@ class Client:
 
         self._version = 0
 
-        self._initialize_response_event = threading.Event()
-        self._completions_queue = queue.Queue()
-
         self._client = kieli.LSPClient()
-        self._client.response_handler("initialize")(self._initialize_response)
-        self._client.notification_handler("textDocument/publishDiagnostics")(
-            self._publish_diagnostics
-        )
-        self._client.response_handler("textDocument/completion")(
-            self._completions_response
+
+        self._client.notification_handler(
+            "textDocument/publishDiagnostics", print
         )
 
         command = self.SERVER_COMMANDS[self.tab.filetype.name]
-
         if command is None:
             print("No command is known for", self.tab.filetype.name)
             return
-
         self._client.connect_to_process(*command)
-        self._client.request(
-            "initialize",
-            {"rootUri": None, "processId": None, "capabilities": {}},
+
+        self._coroutines = queue.Queue()
+        self._start_kernel()
+        self._start_coroutine(self._initialize_lsp)
+
+    def _start_kernel(self):
+        root = porcupine.utils.get_main_window()
+        interval = 100
+
+        def worker():
+            while True:
+                try:
+                    coro, value = self._coroutines.get_nowait()
+                except queue.Empty:
+                    break
+
+                try:
+                    client_call = coro.send(value)
+                except StopIteration:
+                    # XXX: Should we give the return value to someone?
+                    continue
+
+                if client_call["action"] == "request":
+                    self._client.request(
+                        client_call["method"], client_call["params"]
+                    )
+
+                    # XXX: Should we define this somewhere else?
+                    def callback(coro, request, response):
+                        self._coroutines.put((coro, (request, response)))
+
+                    self._client.response_handler(
+                        client_call["method"],
+                        functools.partial(callback, coro),
+                    )
+                elif client_call["action"] == "notify":
+                    self._client.notify(
+                        client_call["method"], client_call["params"]
+                    )
+                    self._coroutines.put((coro, None))
+                else:
+                    raise RuntimeError(
+                        "Unsupported action %r." % client_call["action"]
+                    )
+
+            root.after(interval, worker)
+
+        root.after(interval, worker)
+
+    def _start_coroutine(self, func, *args, **kwargs):
+        coro = func(*args, **kwargs)
+        self._coroutines.put((coro, None))
+
+    # coroutine
+    def _initialize_lsp(self):
+        yield {
+            "action": "request",
+            "method": "initialize",
+            "params": {"rootUri": None, "processId": None, "capabilities": {}},
+        }
+
+        yield {
+            "action": "notify",
+            "method": "textDocument/didOpen",
+            "params": {
+                "textDocument": {
+                    "uri": tab_uri(self.tab),
+                    "languageId": self.tab.filetype.name.lower(),
+                    "version": self._version,
+                    "text": tab_text(self.tab),
+                }
+            },
+        }
+
+        # TODO(PurpleMyst): Initialization takes forever. While a printout
+        # is fine for development, we probably should add a little spinny
+        # thing somewhere.
+        print("Language server for {!r} is initialized.".format(self.tab.path))
+
+        self.tab.bind(
+            "<<FiletypeChanged>>", lambda *_: self._on_filetype_changed()
         )
 
-        def _on_initialize_response(success, data):
-            assert success, data
-
-            self._client.notify(
-                "textDocument/didOpen",
-                {
-                    "textDocument": {
-                        "uri": tab_uri(self.tab),
-                        "languageId": self.tab.filetype.name.lower(),
-                        "version": self._version,
-                        "text": tab_text(self.tab),
-                    }
-                },
-            )
-
-            self.tab.completer = lambda *_: self.get_completions()
-
-            # TODO(PurpleMyst): Initialization takes forever. While a printout
-            # is fine for development, we probably should add a little spinny
-            # thing somewhere.
-            print(
-                "Language server for {!r} is initialized.".format(
-                    self.tab.path
-                )
-            )
-
-            self.tab.bind(
-                "<<FiletypeChanged>>", lambda *_: self._on_filetype_changed()
-            )
-
-            porcupine.utils.bind_with_data(
-                self.tab.textwidget,
-                "<<ContentChanged>>",
-                self._content_changed,
-            )
-
-        porcupine.utils.run_in_thread(
-            self._initialize_response_event.wait, _on_initialize_response
+        porcupine.utils.bind_with_data(
+            self.tab.textwidget, "<<ContentChanged>>", self._on_content_changed
         )
-
-    def _publish_diagnostics(self, notification):
-        print("Diagnostics:", notification.params, sep="\n")
-
-    def _completions_response(self, _request, response):
-        print("Completions response:", response)
-
-        assert not response.result["isIncomplete"]
-        self._completions_queue.put(response.result["items"])
-
-    def _initialize_response(self, _request, _response):
-        self._initialize_response_event.set()
 
     def _on_filetype_changed(self) -> None:
         raise RuntimeError("Don't change the filetype!!!")
 
-    def _content_changed(self, event):
+    def _on_content_changed(self, event):
         self._version += 1
 
         start, end, range_length, new_text = event.data_tuple(
@@ -153,18 +175,22 @@ class Client:
 
         return (start, end, new_text)
 
+    # coroutine
     def get_completions(self):
-        self._client.request(
-            "textDocument/completion",
-            {
+        completion_items = yield {
+            "action": "request",
+            "method": "textDocument/completion",
+            "params": {
                 "textDocument": {
                     "uri": tab_uri(self.tab),
                     "version": self._version,
                 },
                 "position": tab_position(self.tab),
             },
-        )
+        }
+        completions = map(self._porcufy_completion_item, completion_items)
 
-        completion_items = self._completions_queue.get()
-        for item in completion_items:
-            yield self._porcufy_completion_item(item)
+        if hasattr(self.tab, "set_completions"):
+            self.tab.set_completions(completions)
+        else:
+            print("Completions:", list(completions))
