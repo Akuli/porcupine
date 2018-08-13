@@ -1,10 +1,11 @@
 import sys
 import subprocess
-import porcupine
+import threading
 import queue
 
 import kieli
 
+import porcupine
 from .utils import (
     tab_uri,
     tab_text,
@@ -23,6 +24,7 @@ class Client:
 
         self._version = 0
 
+        self._initialize_response_event = threading.Event()
         self._completions_queue = queue.Queue()
 
         self._client = kieli.LSPClient()
@@ -39,16 +41,8 @@ class Client:
             "initialize", {"rootUri": None, "processId": None, "capabilities": {}}
         )
 
-    def _publish_diagnostics(self, notification):
-        print("Diagnostics:", notification.params, sep="\n")
+        self._initialize_response_event.wait()
 
-    def _completions_response(self, _request, response):
-        print("Completions response:", response)
-
-        assert not response.result["isIncomplete"]
-        self._completions_queue.put(response.result["items"])
-
-    def _initialize_response(self, _request, _response):
         self._client.notify(
             "textDocument/didOpen",
             {
@@ -60,8 +54,6 @@ class Client:
                 }
             },
         )
-
-        # I sure hope we can do this stuff in a non tkinter thread.
 
         self.tab.completer = lambda *_: self.get_completions()
 
@@ -77,6 +69,18 @@ class Client:
         porcupine.utils.bind_with_data(
             self.tab.textwidget, "<<ContentChanged>>", self._content_changed
         )
+
+    def _publish_diagnostics(self, notification):
+        print("Diagnostics:", notification.params, sep="\n")
+
+    def _completions_response(self, _request, response):
+        print("Completions response:", response)
+
+        assert not response.result["isIncomplete"]
+        self._completions_queue.put(response.result["items"])
+
+    def _initialize_response(self, _request, _response):
+        self._initialize_response_event.set()
 
     def _filetype_changed(self) -> None:
         raise RuntimeError("Don't change the filetype!!!")
