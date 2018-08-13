@@ -33,9 +33,14 @@ class Client:
             self._publish_diagnostics
         )
 
-        stdin, stdout = self._start_process()
+        command = self.SERVER_COMMANDS[self.tab.filetype.name]
+
+        if command is None:
+            print("No command is known for", self.tab.filetype.name)
+            return
+
         self._client.connect_to_process(
-            *self.SERVER_COMMANDS[self.tab.filetype.name]
+            *command
         )
         self._client.request(
             "initialize",
@@ -125,17 +130,6 @@ class Client:
 
         # TODO(PurpleMyst): Cancel the request if the user types more before we
         # get a response. This might be *very* hard.
-
-    def _start_process(self):
-        try:
-            command = self.SERVER_COMMANDS[self.tab.filetype.name]
-        except KeyError:
-            return None
-
-        process = subprocess.Popen(
-            command, stdin=subprocess.PIPE, stdout=subprocess.PIPE
-        )
-        return (process.stdin, process.stdout)
 
     def _porcufy_completion_item(self, item):
         if item.get("textEdit") is not None:
