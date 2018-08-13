@@ -40,7 +40,7 @@ class Client:
         self._start_coroutine(self._initialize_lsp)
 
     def _start_kernel(self):
-        root = porcupine.utils.get_main_window()
+        root = porcupine.get_main_window()
         interval = 100
 
         def worker():
@@ -112,6 +112,8 @@ class Client:
         # is fine for development, we probably should add a little spinny
         # thing somewhere.
         print("Language server for {!r} is initialized.".format(self.tab.path))
+
+        self.tab.completer = lambda *_: self._start_coroutine(self.get_completions)
 
         self.tab.bind(
             "<<FiletypeChanged>>", lambda *_: self._on_filetype_changed()
