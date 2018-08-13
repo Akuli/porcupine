@@ -38,36 +38,48 @@ class Client:
             *self.SERVER_COMMANDS[self.tab.filetype.name]
         )
         self._client.request(
-            "initialize", {"rootUri": None, "processId": None, "capabilities": {}}
+            "initialize",
+            {"rootUri": None, "processId": None, "capabilities": {}},
         )
 
-        self._initialize_response_event.wait()
+        def _on_initialize_response(success, data):
+            assert success, data
 
-        self._client.notify(
-            "textDocument/didOpen",
-            {
-                "textDocument": {
-                    "uri": tab_uri(self.tab),
-                    "languageId": self.tab.filetype.name.lower(),
-                    "version": self._version,
-                    "text": tab_text(self.tab),
-                }
-            },
-        )
+            self._client.notify(
+                "textDocument/didOpen",
+                {
+                    "textDocument": {
+                        "uri": tab_uri(self.tab),
+                        "languageId": self.tab.filetype.name.lower(),
+                        "version": self._version,
+                        "text": tab_text(self.tab),
+                    }
+                },
+            )
 
-        self.tab.completer = lambda *_: self.get_completions()
+            self.tab.completer = lambda *_: self.get_completions()
 
-        # TODO(PurpleMyst): Initialization takes forever. While a printout
-        # is fine for development, we probably should add a little spinny
-        # thing somewhere.
-        print("Language server for {!r} is initialized.".format(self.tab.path))
+            # TODO(PurpleMyst): Initialization takes forever. While a printout
+            # is fine for development, we probably should add a little spinny
+            # thing somewhere.
+            print(
+                "Language server for {!r} is initialized.".format(
+                    self.tab.path
+                )
+            )
 
-        self.tab.bind(
-            "<<FiletypeChanged>>", lambda *_: self._filetype_changed()
-        )
+            self.tab.bind(
+                "<<FiletypeChanged>>", lambda *_: self._filetype_changed()
+            )
 
-        porcupine.utils.bind_with_data(
-            self.tab.textwidget, "<<ContentChanged>>", self._content_changed
+            porcupine.utils.bind_with_data(
+                self.tab.textwidget,
+                "<<ContentChanged>>",
+                self._content_changed,
+            )
+
+        porcupine.utils.run_in_thread(
+            self._initialize_response_event.wait, _on_initialize_response
         )
 
     def _publish_diagnostics(self, notification):
