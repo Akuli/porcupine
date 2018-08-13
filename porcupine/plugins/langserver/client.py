@@ -25,12 +25,19 @@ class Client:
 
         self._completions_queue = queue.Queue()
 
-        stdin, stdout = self._start_process()
-        self._client = kieli.LSPClient(stdin, stdout)
+        self._client = kieli.LSPClient()
         self._client.response_handler("initialize")(self._initialize_response)
         # self._client.notification_handler("textDocument/publishDiagnostics")(
         #     self._publish_diagnostics
         # )
+
+        stdin, stdout = self._start_process()
+        self._client.connect_to_process(
+            *self.SERVER_COMMANDS[self.tab.filetype.name]
+        )
+        self._client.request(
+            "notify", {"rootUri": None, "processId": None, "capabilities": {}}
+        )
 
     def _publish_diagnostics(self, notification):
         print("Diagnostics:", notification.params, sep="\n")
@@ -54,14 +61,14 @@ class Client:
             },
         )
 
+        # I sure hope we can do this stuff in a non tkinter thread.
+
         self.tab.completer = lambda *_: self.get_completions()
 
         # TODO(PurpleMyst): Initialization takes forever. While a printout
         # is fine for development, we probably should add a little spinny
         # thing somewhere.
-        print(
-            "Language server for {!r} is initialized.".format(self.tab.path)
-        )
+        print("Language server for {!r} is initialized.".format(self.tab.path))
 
         self.tab.bind(
             "<<FiletypeChanged>>", lambda *_: self._filetype_changed()
