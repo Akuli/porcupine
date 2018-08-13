@@ -46,29 +46,29 @@ class Client:
             "textDocument/didOpen",
             {
                 "textDocument": {
-                    "uri": tab_uri(self._tab),
-                    "languageId": self._tab.filetype.name.lower(),
+                    "uri": tab_uri(self.tab),
+                    "languageId": self.tab.filetype.name.lower(),
                     "version": self._version,
-                    "text": tab_text(self._tab),
+                    "text": tab_text(self.tab),
                 }
             },
         )
 
-        self._tab.completer = lambda *_: self.get_completions()
+        self.tab.completer = lambda *_: self.get_completions()
 
         # TODO(PurpleMyst): Initialization takes forever. While a printout
         # is fine for development, we probably should add a little spinny
         # thing somewhere.
         print(
-            "Language server for {!r} is initialized.".format(self._tab.path)
+            "Language server for {!r} is initialized.".format(self.tab.path)
         )
 
-        self._tab.bind(
+        self.tab.bind(
             "<<FiletypeChanged>>", lambda *_: self._filetype_changed()
         )
 
         porcupine.utils.bind_with_data(
-            self._tab.textwidget, "<<ContentChanged>>", self._content_changed
+            self.tab.textwidget, "<<ContentChanged>>", self._content_changed
         )
 
     def _filetype_changed(self) -> None:
@@ -87,7 +87,7 @@ class Client:
             "textDocument/didChange",
             {
                 "textDocument": {
-                    "uri": tab_uri(self._tab),
+                    "uri": tab_uri(self.tab),
                     "version": self._version,
                 },
                 "contentChanges": [
@@ -105,7 +105,7 @@ class Client:
 
     def _start_process(self):
         try:
-            command = self.SERVER_COMMANDS[self._tab.filetype.name]
+            command = self.SERVER_COMMANDS[self.tab.filetype.name]
         except KeyError:
             return None
 
@@ -120,10 +120,10 @@ class Client:
             end = lsp_pos_to_tk_pos(item["textEdit"]["range"]["end"])
             new_text = item["textEdit"]["newText"]
         elif item.get("insertText") is not None:
-            line, _ = map(int, self._tab.textwidget.index("insert").split("."))
+            line, _ = map(int, self.tab.textwidget.index("insert").split("."))
             start, end = find_overlap_start(
                 line,
-                self._tab.textwidget.get("insert linestart", "insert"),
+                self.tab.textwidget.get("insert linestart", "insert"),
                 item["insertText"],
             )
             new_text = item["insertText"]
@@ -140,10 +140,10 @@ class Client:
             "textDocument/completion",
             {
                 "textDocument": {
-                    "uri": tab_uri(self._tab),
+                    "uri": tab_uri(self.tab),
                     "version": self._version,
                 },
-                "position": tab_position(self._tab),
+                "position": tab_position(self.tab),
             },
         )
 
