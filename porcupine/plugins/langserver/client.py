@@ -32,6 +32,7 @@ class Client:
         self._client.notification_handler("textDocument/publishDiagnostics")(
             self._publish_diagnostics
         )
+        self._client.response_handler("textDocument/completion")(self._completions_response)
 
         command = self.SERVER_COMMANDS[self.tab.filetype.name]
 
