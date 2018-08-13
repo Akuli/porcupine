@@ -27,16 +27,16 @@ class Client:
 
         self._client = kieli.LSPClient()
         self._client.response_handler("initialize")(self._initialize_response)
-        # self._client.notification_handler("textDocument/publishDiagnostics")(
-        #     self._publish_diagnostics
-        # )
+        self._client.notification_handler("textDocument/publishDiagnostics")(
+            self._publish_diagnostics
+        )
 
         stdin, stdout = self._start_process()
         self._client.connect_to_process(
             *self.SERVER_COMMANDS[self.tab.filetype.name]
         )
         self._client.request(
-            "notify", {"rootUri": None, "processId": None, "capabilities": {}}
+            "initialize", {"rootUri": None, "processId": None, "capabilities": {}}
         )
 
     def _publish_diagnostics(self, notification):
