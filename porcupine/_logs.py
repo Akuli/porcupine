@@ -65,7 +65,6 @@ def setup(verbose):
         file_handler.setLevel(logging.DEBUG)
         print_handler = logging.StreamHandler(sys.stderr)
         print_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
-        handlers = [print_handler, file_handler]
 
     handlers = [file_handler]
     file_handler.setFormatter(logging.Formatter(
