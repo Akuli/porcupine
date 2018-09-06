@@ -57,7 +57,10 @@ class Finder(ttk.Frame):
 
         self.find_entry.bind('<Shift-Return>', self._go_to_previous_match)
         self.find_entry.bind('<Return>', self._go_to_next_match)
-        self.replace_entry.bind('<Return>', self._replace_this)
+
+        # commented out because pressing tab in self.find_entry unselects the
+        # text in textwidget for some reason
+        #self.replace_entry.bind('<Return>', self._replace_this)
 
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=2, column=0, columnspan=4, sticky='we')
@@ -270,7 +273,7 @@ class Finder(ttk.Frame):
         self._update_buttons()
         return
 
-    def _replace_this(self):
+    def _replace_this(self, junk_event=None):
         if str(self.replace_this_button['state']) == 'disabled':
             self.statuslabel['text'] = (
                 'Click "Previous match" or "Next match" first.')
