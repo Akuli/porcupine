@@ -440,9 +440,9 @@ def _init():
     general = get_section('General')   # type: _ConfigSection
 
     fixedfont = tkfont.Font(name='TkFixedFont', exists=True)
-    font_families = [family for family in tkfont.families()
+    font_families = sorted(family for family in tkfont.families()
                      # i get weird fonts starting with @ on windows
-                     if not family.startswith('@')]
+                     if not family.startswith('@'))
 
     general.add_option('font_family', fixedfont.actual('family'))
     general.add_combobox('font_family', font_families, "Font Family:",
