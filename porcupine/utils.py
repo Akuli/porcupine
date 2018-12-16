@@ -469,25 +469,6 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
                     real_callback, **bind_kwargs)
 
 
-def copy_bindings(widget1, widget2):
-    """Add all bindings of *widget1* to *widget2*.
-
-    You may need to call ``copy_bindings(porcupine.get_main_window(), widget)``
-    on widgets that can be focused by clicking them, like ``Text`` and
-    ``Entry`` widgets. Porcupine's keyboard bindings return ``'break'``
-    and are bound to the main window, and thus work by default, but in
-    some cases returning ``'break'`` doesn't do anything when the focus
-    is in another widget inside the main window.
-    """
-    # tkinter's bind() can do quite a few different things depending
-    # on how it's invoked
-    for sequence in widget1.bind():
-        tcl_command = widget1.bind(sequence)
-
-        # add=True doesn't work if the command is a string :(
-        widget2.tk.call('bind', widget2, sequence, '+' + tcl_command)
-
-
 # see docs/utils.rst for explanation and docs
 try:
     Spinbox = ttk.Spinbox

@@ -49,7 +49,6 @@ Tkinter Utilities
 .. autofunction:: bind_mouse_wheel
 .. autofunction:: bind_tab_key
 .. autofunction:: bind_with_data
-.. autofunction:: copy_bindings
 .. autofunction:: get_keyboard_shortcut
 .. autofunction:: run_in_thread
 

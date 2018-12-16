@@ -177,7 +177,6 @@ class PromptTab(tabs.Tab):
 def setup(editor):
     def start_prompt():
         tab = PromptTab(editor.tabmanager)
-        utils.copy_bindings(editor, tab.textwidget)
         editor.tabmanager.add_tab(tab)
         editor.tabmanager.current_tab = tab
 

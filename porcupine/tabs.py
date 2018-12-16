@@ -501,11 +501,6 @@ bers.py>` use this attribute.
         self.bind('<<FiletypeChanged>>', self._update_status, add=True)
         self.textwidget.bind('<<CursorMoved>>', self._update_status, add=True)
 
-        # everything seems to work ok without this except that e.g.
-        # pressing Ctrl+O in the text widget opens a file AND inserts a
-        # newline (Tk inserts a newline by default)
-        utils.copy_bindings(porcupine.get_main_window(), self.textwidget)
-
         self.scrollbar = ttk.Scrollbar(self)
         self.scrollbar.pack(side='left', fill='y')
         self.textwidget['yscrollcommand'] = self.scrollbar.set
