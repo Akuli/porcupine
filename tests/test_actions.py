@@ -120,25 +120,25 @@ def test_add_yesno(porcusession, action_path):
     with action_events() as (new_events, enable_events, disable_events):
         root = get_main_window()
 
-        action = actions.add_yesno(action_path, True, '<<Test>>')
+        # a <<Test>> virtual event doesn't work for some reason, so i chose
+        # <Control-p>, where p is a somewhat randomly chosen letter
+        action = actions.add_yesno(action_path, True, '<Control-p>')
         assert new_events.pop().data == action_path
         assert action.var.get()
-        root.event_generate('<<Test>>')
+        root.event_generate('<Control-p>')
         assert not action.var.get()
 
         action.enabled = False
         assert disable_events.pop().data == action_path
         assert not action.var.get()
-        root.event_generate('<<Test>>')
+        root.event_generate('<Control-p>')
         assert not action.var.get()
 
         action.enabled = True
         assert enable_events.pop().data == action_path
         assert not action.var.get()
-        root.event_generate('<<Test>>')
+        root.event_generate('<Control-p>')
         assert action.var.get()
-
-    root.unbind('<<Test>>')
 
 
 def test_add_choice(porcusession, action_path):
