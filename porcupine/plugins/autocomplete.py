@@ -2,7 +2,9 @@
 import collections
 import re
 
-from porcupine import get_tab_manager, tabs, utils
+import pythotk as tk
+
+from porcupine import get_tab_manager, tabs
 
 __all__ = ['register_completer']
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
@@ -40,8 +42,9 @@ def register_completer(filetype_name, function):
 
 def _fallback_completer(tab):
     """Find all words in file, sorted by frequency."""
-    before_cursor = tab.textwidget.get('insert linestart', 'insert')
-    after_cursor = tab.textwidget.get('insert', 'insert lineend')
+    cursor = tab.textwidget.marks['insert']
+    before_cursor = tab.textwidget.get(cursor.linestart(), cursor)
+    after_cursor = tab.textwidget.get(cursor, cursor.lineend())
 
     match = re.search(r'\w+$', before_cursor)
     if match is None:
@@ -53,9 +56,19 @@ def _fallback_completer(tab):
     # Tcl's regexes don't support \b or a sane way of grouping so
     # they are kind of useless for this. I guess I should implement
     # this with Tcl regexes too and check which is faster :)
+    #
+    # update: now i know that tk's regexes have features similar to \b, maybe
+    # they wouldn't be useless after all?
     result = collections.Counter()
-    for chunk in tab.textwidget.iter_chunks():
-        result.update(re.findall(r'\b' + prefix + r'(\w+)', chunk))
+    start = tab.textwidget.start
+
+    while True:
+        end = start.forward(lines=1)
+        if start == end:
+            break
+        line = tab.textwidget.get(start, end)
+        result.update(re.findall(r'\b' + prefix + r'(\w+)', line))
+        start = end
 
     # if the cursor is in the middle of a word, that word must not
     # be completed, e.g. if the user types abcdef and moves the
@@ -77,8 +90,9 @@ class _AutoCompleter:
         self._completing = False    # avoid recursion
 
     def _find_suffixes(self):
-        before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
-        after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
+        cursor = self.tab.textwidget.marks['insert']
+        before_cursor = self.tab.textwidget.get(cursor.linestart(), cursor)
+        after_cursor = self.tab.textwidget.get(cursor, cursor.lineend())
 
         if re.search(r'\S$', before_cursor) is None:
             # let other plugins handle this however they want to
@@ -101,39 +115,39 @@ class _AutoCompleter:
                 # up and allow doing something else on this tab press
                 return None
 
-            self._startpos = self.tab.textwidget.index('insert')
+            self._startpos = self.tab.textwidget.marks['insert']
             self._suffixes = collections.deque(suffixes)
             self._suffixes.appendleft('')  # end of completions
 
         self._suffixes.rotate(rotation)
-        self.tab.textwidget.delete(self._startpos, 'insert')
-        self.tab.textwidget.mark_set('insert', self._startpos)
+        self.tab.textwidget.delete(self._startpos,
+                                   self.tab.textwidget.marks['insert'])
+        self.tab.textwidget.marks['insert'] = self._startpos
         self.tab.textwidget.insert(self._startpos, self._suffixes[0])
 
         self._completing = False
         return 'break'
 
-    def on_tab(self, event, shifted):
-        if event.widget.tag_ranges('sel'):
+    def on_tab(self, shifted):
+        if self.tab.textwidget.get_tag('sel').ranges():
             # something's selected, autocompleting is probably not the
             # right thing to do
             return None
         return self._complete(1 if shifted else -1)
 
-    def reset(self, *junk):
+    def reset(self):
         # deleting and inserting from _complete() runs this, so this
         # must do nothing if we're currently completing
         if not self._completing:
             self._suffixes = None
 
 
-def on_new_tab(event):
-    tab = event.data_widget
+def on_new_tab(tab):
     if isinstance(tab, tabs.FileTab):
         completer = _AutoCompleter(tab)
-        utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
-        tab.textwidget.bind('<<CursorMoved>>', completer.reset, add=True)
+        tk.extras.bind_tab_key(tab.textwidget, completer.on_tab)
+        tab.textwidget.bind('<<CursorMoved>>', completer.reset)
 
 
 def setup():
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().on_new_tab.connect(on_new_tab)
