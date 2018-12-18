@@ -469,13 +469,12 @@ def _init():
         "Porcupine should use when you create a new file in Porcupine. You "
         "can change the filetype after creating the file clicking Filetypes "
         "in the menu bar."))
-    filetypes_section.content_frame.bind(      # automatic wrapping
-        '<Configure>',
-        lambda event: {   # have fun figuring out why javascripty { } works
-            label1.config(wraplength=event.width),
-            label2.config(wraplength=event.width),
-        },
-        event=True)
+
+    def wrap_automatically(event):
+        label1.config['wraplength'] = label2.config['wraplength'] = event.width
+
+    filetypes_section.content_frame.bind(
+        '<Configure>', wrap_automatically, event=True)
 
     def edit_it():
         # porcupine/tabs.py imports this file
