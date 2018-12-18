@@ -1,6 +1,8 @@
 import platform
 import subprocess
 
+import pythotk as tk
+
 from porcupine import actions, get_tab_manager, utils
 
 
@@ -43,19 +45,20 @@ def run_autopep8(code):
 
 
 def callback():
-    widget = get_tab_manager().select().textwidget
-    before = widget.get('1.0', 'end - 1 char')
+    widget = get_tab_manager().selected_tab.textwidget
+    before = widget.get()
     after = run_autopep8(before)
     if after is None:
         # error
         return
 
     if before != after:
-        widget['autoseparators'] = False
-        widget.delete('1.0', 'end - 1 char')
-        widget.insert('1.0', after)
-        widget.edit_separator()
-        widget['autoseparators'] = True
+        widget.config['autoseparators'] = False
+        widget.delete(widget.start, widget.end)
+        widget.insert(widget.start, after)
+        # TODO: add 'edit separator' to pythotk
+        tk.tcl_call(None, widget, 'edit', 'separator')
+        widget.config['autoseparators'] = True
 
 
 def setup():
