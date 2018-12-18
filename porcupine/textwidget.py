@@ -46,7 +46,7 @@ class HandyText(tk.Text):
 
         This event is generated every time the user moves the cursor or
         it's moved with a method of the text widget. Use
-        ``textwidget.index('insert')`` to find the current cursor
+        ``textwidget.marks['insert']`` to find the current cursor
         position.
     """
 
@@ -408,7 +408,7 @@ class MainText(ThemedText):
                     plan_a = (cursor.linestart(), cursor)
                     plan_b = (cursor.back(chars=1), cursor)
 
-                if self.index(plan_a[0]) == self.index(plan_a[1]):
+                if plan_a[0] == plan_a[1]:
                     # nothing can be deleted with plan a
                     self.delete(*plan_b)
                 else:
