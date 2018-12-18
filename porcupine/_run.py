@@ -3,17 +3,17 @@
 import functools
 import logging
 from queue import Empty         # queue is a handy variable name
-import tkinter
-from tkinter import filedialog
 import traceback
 import webbrowser
 
-from porcupine import _logs, actions, filetypes, dirs, settings, tabs, utils
+import pythotk as tk
+
+from porcupine import _logs, actions, dirs, filetypes, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier
-_root = None
+_main_window = None
 _tab_manager = None
 _init_kwargs = {}
 
@@ -27,21 +27,22 @@ def init(verbose_logging=False):
     """
     _init_kwargs.update(locals())   # not too hacky IMO
 
-    global _root
+    global _main_window
     global _tab_manager
-    if _root is not None or _tab_manager is not None:
+    if _main_window is not None or _tab_manager is not None:
         raise RuntimeError("cannot init() twice")
 
     dirs.makedirs()
     _logs.setup(verbose_logging)
-    _root = tkinter.Tk()
-    _root.protocol('WM_DELETE_WINDOW', quit)
+    _main_window = tk.Window()
+    _main_window.on_delete_window.disconnect(tk.quit)
+    _main_window.on_delete_window.connect(quit)
     filetypes._init()
 
-    _tab_manager = tabs.TabManager(_root)
+    _tab_manager = tabs.TabManager(_main_window)
     _tab_manager.pack(fill='both', expand=True)
     for binding, callback in _tab_manager.bindings:
-        _root.bind(binding, callback, add=True)
+        _main_window.toplevel.bind(binding, callback)
 
     _setup_actions()
 
@@ -60,9 +61,9 @@ def get_init_kwargs():
 
 def get_main_window():
     """Return the tkinter root window that Porcupine is using."""
-    if _root is None:
+    if _main_window is None:
         raise RuntimeError("Porcupine is not running")
-    return _root
+    return _main_window
 
 
 def get_tab_manager():
@@ -84,30 +85,29 @@ def quit():
     with :meth:`~porcupine.tabs.TabManager.close_tab` and widgets are
     destroyed.
     """
-    for tab in _tab_manager.tabs():
+    # TODO: a more powerful quit check api instead of hard-coded tab can be
+    # closed stuff
+    for tab in _tab_manager:
         if not tab.can_be_closed():
             return
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    _root.event_generate('<<PorcupineQuit>>')
-    for tab in _tab_manager.tabs():
-        _tab_manager.close_tab(tab)
-    _root.destroy()
+    _main_window.event_generate('<<PorcupineQuit>>')
+    for tab in _tab_manager:
+        tab.close()
+    tk.quit()
 
 
 def _setup_actions():
     def new_file():
-        _tab_manager.add_tab(tabs.FileTab(_tab_manager))
+        _tab_manager.append_and_select(tabs.FileTab(_tab_manager))
 
     def open_files():
-        paths = filedialog.askopenfilenames(
+        paths = tk.dialog.open_multiple_files(
             **filetypes.get_filedialog_kwargs())
-
-        # tkinter returns '' if the user cancels, and i'm arfaid that python
-        # devs might "fix" a future version to return None
         if not paths:
-            return
+            return None
 
         for path in paths:
             try:
@@ -118,21 +118,21 @@ def _setup_actions():
                                   traceback.format_exc())
                 continue
 
-            _tab_manager.add_tab(tab)
+            _tab_manager.append_and_select(tab)
 
     def close_selected_tab():
-        tab = _tab_manager.select()
+        tab = _tab_manager.selected_tab
         if tab.can_be_closed():
-            _tab_manager.close_tab(tab)
+            tab.close()
 
     # TODO: an API for adding separators to menus nicely? or just recommend
     #       putting related items in a submenu?
     actions.add_command("File/New File", new_file, '<Control-n>')
     actions.add_command("File/Open", open_files, '<Control-o>')
-    actions.add_command("File/Save", (lambda: _tab_manager.select().save()),
+    actions.add_command("File/Save", lambda: _tab_manager.selected_tab.save(),
                         '<Control-s>', tabtypes=[tabs.FileTab])
     actions.add_command("File/Save As...",
-                        (lambda: _tab_manager.select().save_as()),
+                        (lambda: _tab_manager.selected_tab.save_as()),
                         '<Control-S>', tabtypes=[tabs.FileTab])
 
     # TODO: disable File/Quit when there are tabs, it's too easy to hit
@@ -197,12 +197,12 @@ def _iter_queue(queue):
 
 
 def run():
-    if _root is None:
+    if _main_window is None:
         raise RuntimeError("init() wasn't called")
 
     # the user can change the settings only if we get here, so there's
     # no need to wrap the whole thing in try/with/finally/whatever
     try:
-        _root.mainloop()
+        tk.run()
     finally:
         settings.save()

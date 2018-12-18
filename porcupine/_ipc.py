@@ -18,7 +18,7 @@ def send(objects):
 
     Raise ConnectionRefusedError if session() is not running.
     """
-    raise ConnectionRefusedError
+    raise ConnectionRefusedError   # TODO: should this be removed or something?
     # reading the address file, connecting to a windows named pipe and
     # connecting to an AF_UNIX socket all raise FileNotFoundError :D
     try:

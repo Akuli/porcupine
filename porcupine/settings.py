@@ -1,28 +1,22 @@
-import atexit
 import codecs
 import collections.abc
-import functools
 import json
 import logging
 import os
 import sys
-import tkinter
-import tkinter.font as tkfont
-from tkinter import messagebox, ttk
 import types
 
-# the pygments stuff is just for _validate_pygments_style_name()
 import pygments.styles
-import pygments.util
+import pygments.util    # contains an exception that pygments raises
+import pythotk as tk
 
-# get_main_window and get_tab_manager must not be imported from
+# get_main_window must be imported from
 # porcupine because it imports this before exposing the getter
 # functions, and the getter functions cannot be imported from
 # porcupine._run because that imports this file (lol)
 # that's why "import porcupine"
 import porcupine
-from porcupine import dirs, images, utils
-from porcupine.filetypes import get_all_filetypes
+from porcupine import dirs, filetypes, images
 
 
 log = logging.getLogger(__name__)
@@ -90,13 +84,14 @@ class _ConfigSection(collections.abc.MutableMapping):
 
     def __init__(self, name):
         if _notebook is None:
-            raise RuntimeError("%s.init() wasn't called" % __name__)
+            raise RuntimeError("%s._init() wasn't called" % __name__)
 
-        self.content_frame = ttk.Frame(_notebook)
-        _notebook.add(self.content_frame, text=name)
+        self.content_frame = tk.Frame(_notebook)
+        self.notebook_tab = tk.NotebookTab(self.content_frame, text=name)
+        _notebook.append(self.notebook_tab)
 
         self._name = name
-        self._infos = {}        # see add_option()
+        self._infos = {}
         self._var_cache = {}
 
     def add_option(self, key, default, *, reset=True):
@@ -114,11 +109,13 @@ class _ConfigSection(collections.abc.MutableMapping):
             reset button resets only the settings that are shown in the
             dialog.
         """
+        var = tk.BooleanVar()   # true when the triangle is showing
+        var.set(False)
         self._infos[key] = types.SimpleNamespace(
             default=default,        # not validated
             reset=reset,
             callbacks=[],
-            errorvar=tkinter.BooleanVar(),  # true when the triangle is showing
+            errorvar=var,
         )
 
     def __setitem__(self, key, value):
@@ -209,17 +206,18 @@ class _ConfigSection(collections.abc.MutableMapping):
         self._infos[key].callbacks.remove(callback)
 
     # returns an image the same size as the triangle image, but empty
+    # the image can't be e.g. a global variable because pythotk must not get
+    # initialized when this is imported
     @staticmethod
     def _get_fake_triangle(cache=[]):
         if not cache:
-            cache.append(tkinter.PhotoImage(
-                width=images.get('triangle').width(),
-                height=images.get('triangle').height()))
-            atexit.register(cache.clear)     # see images/__init__.py
+            cache.append(tk.Image(
+                width=images.get('triangle').width,
+                height=images.get('triangle').height))
         return cache[0]
 
-    def get_var(self, key, var_type=tkinter.StringVar):
-        """Return a tkinter variable that is bound to an option.
+    def get_var(self, key, var_type=tk.StringVar):
+        """Return a pythotk variable that is bound to an option.
 
         Changing the value of the variable updates the config section,
         and changing the value in the section also sets the variable's
@@ -227,8 +225,8 @@ class _ConfigSection(collections.abc.MutableMapping):
 
         This returns a ``StringVar`` by default, but you can use the
         ``var_type`` argument to change that. For example,
-        ``var_type=tkinter.BooleanVar`` is suitable for an option that
-        is meant to be True or False.
+        ``var_type=tk.BooleanVar`` is suitable for an option that is meant to
+        be True or False.
 
         If an invalid value is set to the variable, it is not set to the
         section but the triangles in the frames returned by
@@ -246,12 +244,10 @@ class _ConfigSection(collections.abc.MutableMapping):
         info = self._infos[key]
         var = var_type()
 
-        def var2config(*junk):
+        def var2config(junk):
             try:
                 value = var.get()
-            except (tkinter.TclError, ValueError):
-                # example: var_type is IntVar and the actual value is 'lol'
-                # not-very-latest pythons use int() and raise ValueError
+            except ValueError:
                 info.errorvar.set(True)
                 return
 
@@ -264,13 +260,13 @@ class _ConfigSection(collections.abc.MutableMapping):
             info.errorvar.set(False)
 
         self.connect(key, var.set)      # runs var.set
-        var.trace('w', var2config)
+        var.write_trace.connect(var2config)
 
         self._var_cache[key] = var
         return var
 
     def add_frame(self, triangle_key):
-        """Add a ``ttk.Frame`` to the dialog and return it.
+        """Add a :class:`pythotk.Frame` to the dialog and return it.
 
         The frame will contain a label that displays a |triangle| when
         the value of the variable from :meth:`get_var` is invalid. The
@@ -279,42 +275,42 @@ class _ConfigSection(collections.abc.MutableMapping):
         For example, :meth:`add_checkbutton` works roughly like this::
 
             frame = section.add_frame(key)
-            var = section.get_var(key, tkinter.BooleanVar)
-            ttk.Checkbutton(frame, text=text, variable=var).pack(side='left')
+            var = section.get_var(key, tk.BooleanVar)
+            tk.Checkbutton(frame, text, variable=var).pack(side='left')
         """
-        frame = ttk.Frame(self.content_frame)
+        frame = tk.Frame(self.content_frame)
         frame.pack(fill='x')
 
         if triangle_key is not None:
             errorvar = self._infos[triangle_key].errorvar
-            triangle_label = ttk.Label(frame)
+            triangle_label = tk.Label(frame)
             triangle_label.pack(side='right')
 
-            def on_errorvar_changed(*junk):
-                if errorvar.get():
-                    triangle_label['image'] = images.get('triangle')
+            def on_errorvar_changed(var):
+                if var.get():
+                    triangle_label.config['image'] = images.get('triangle')
                 else:
-                    triangle_label['image'] = self._get_fake_triangle()
+                    triangle_label.config['image'] = self._get_fake_triangle()
 
-            errorvar.trace('w', on_errorvar_changed)
-            on_errorvar_changed()
+            errorvar.write_trace.connect(on_errorvar_changed)
+            on_errorvar_changed(errorvar)
 
         return frame
 
     def add_checkbutton(self, key, text):
-        """Add a ``ttk.Checkbutton`` that sets an option to a bool."""
-        var = self.get_var(key, tkinter.BooleanVar)
-        ttk.Checkbutton(self.add_frame(key), text=text,
-                        variable=var).pack(side='left')
+        """Add a :class:`pythotk.Checkbutton` that sets an option to a bool."""
+        var = self.get_var(key, tk.BooleanVar)
+        tk.Checkbutton(self.add_frame(key), text=text,
+                       variable=var).pack(side='left')
 
     def add_entry(self, key, text):
-        """Add a ``ttk.Entry`` that sets an option to a string."""
+        """Add a :class:`pythotk.Entry` that sets an option to a string."""
         frame = self.add_frame(key)
-        ttk.Label(frame, text=text).pack(side='left')
-        ttk.Entry(frame, textvariable=self.get_var(key)).pack(side='right')
+        tk.Label(frame, text=text).pack(side='left')
+        tk.Entry(frame, textvariable=self.get_var(key)).pack(side='right')
 
     def add_combobox(self, key, choices, text, *, case_sensitive=True):
-        """Add a ``ttk.Combobox`` that sets an option to a string.
+        """Add a :class:`pythotk.Combobox` that sets an option to a string.
 
         The combobox will contain each string in *choices*.
 
@@ -334,14 +330,12 @@ class _ConfigSection(collections.abc.MutableMapping):
         self.connect(key, validator)
 
         frame = self.add_frame(key)
-        ttk.Label(frame, text=text).pack(side='left')
-        ttk.Combobox(frame, values=choices,
-                     textvariable=self.get_var(key)).pack(side='right')
+        tk.Label(frame, text=text).pack(side='left')
+        tk.Combobox(frame, values=choices,
+                    textvariable=self.get_var(key)).pack(side='right')
 
     def add_spinbox(self, key, minimum, maximum, text):
-        """
-        Add a :class:`utils.Spinbox <porcupine.utils.Spinbox>` that sets
-        an option to an integer.
+        """Add a :class:`pythotk.Spinbox` that sets an option to an integer.
 
         The *minimum* and *maximum* arguments are used as the bounds for
         the spinbox. A `validator callback <Validating>`_ that makes
@@ -359,9 +353,9 @@ class _ConfigSection(collections.abc.MutableMapping):
         self.connect(key, validator)
 
         frame = self.add_frame(key)
-        ttk.Label(frame, text=text).pack(side='left')
-        utils.Spinbox(frame, textvariable=self.get_var(key, tkinter.IntVar),
-                      from_=minimum, to=maximum).pack(side='right')
+        tk.Label(frame, text=text).pack(side='left')
+        tk.Spinbox(frame, textvariable=self.get_var(key, tk.IntVar),
+                   from_=minimum, to=maximum).pack(side='right')
 
 
 def _needs_reset():
@@ -374,22 +368,23 @@ def _needs_reset():
 
 def _do_reset():
     if not _needs_reset:
-        messagebox.showinfo("Reset Settings",
-                            "You are already using the default settings.")
+        tk.dialog.info("Reset Settings",
+                       "You are already using the default settings.",
+                       parent=_dialog)
         return
 
-    if not messagebox.askyesno(
-            "Reset Settings", "Are you sure you want to reset all settings?",
-            parent=_dialog):
+    if not tk.dialog.yes_no("Reset Settings",
+                            "Are you sure you want to reset all settings?",
+                            parent=_dialog):
         return
 
     for section in _sections.values():
         for key, info in section._infos.items():
             if info.reset:
                 section[key] = info.default
-    messagebox.showinfo(
-        "Reset Settings", "All settings were reset to defaults.",
-        parent=_dialog)
+
+    tk.dialog.info("Reset Settings", "All settings were reset to defaults.",
+                   parent=_dialog)
 
 
 def _validate_encoding(name):
@@ -414,21 +409,19 @@ def _init():
         # already initialized
         return
 
-    _dialog = tkinter.Toplevel()
+    _dialog = tk.Window("Porcupine Settings")
     _dialog.withdraw()        # hide it for now
-    _dialog.title("Porcupine Settings")
-    _dialog.protocol('WM_DELETE_WINDOW', _dialog.withdraw)
-    _dialog.geometry('500x350')
+    _dialog.on_delete_window.disconnect(tk.quit)
+    _dialog.on_delete_window.connect(_dialog.withdraw)
+    _dialog.geometry(500, 350)
 
-    big_frame = ttk.Frame(_dialog)
-    big_frame.pack(fill='both', expand=True)
-    _notebook = ttk.Notebook(big_frame)
+    _notebook = tk.Notebook(_dialog)
     _notebook.pack(fill='both', expand=True)
-    ttk.Separator(big_frame).pack(fill='x')
-    buttonframe = ttk.Frame(big_frame)
+    tk.Separator(_dialog).pack(fill='x')
+    buttonframe = tk.Frame(_dialog)
     buttonframe.pack(fill='x')
     for text, command in [("Reset", _do_reset), ("OK", _dialog.withdraw)]:
-        ttk.Button(buttonframe, text=text, command=command).pack(side='right')
+        tk.Button(buttonframe, text=text, command=command).pack(side='right')
 
     assert not _loaded_json
     try:
@@ -439,12 +432,10 @@ def _init():
 
     general = get_section('General')   # type: _ConfigSection
 
-    fixedfont = tkfont.Font(name='TkFixedFont', exists=True)
-    font_families = sorted(family for family in tkfont.families()
-                     # i get weird fonts starting with @ on windows
-                     if not family.startswith('@'))
+    fixedfont = tk.NamedFont('TkFixedFont')
+    font_families = sorted(tk.Font.families())
 
-    general.add_option('font_family', fixedfont.actual('family'))
+    general.add_option('font_family', fixedfont.family)
     general.add_combobox('font_family', font_families, "Font Family:",
                          case_sensitive=False)
 
@@ -453,12 +444,13 @@ def _init():
     general.add_option('font_size', 10)
     general.add_spinbox('font_size', 3, 1000, "Font Size:")
 
-    # when font_family changes:  fixedfont['family'] = new_family
-    # when font_size changes:    fixedfont['size'] = new_size
+    # when font_family changes:  fixedfont.family = new_family
+    # when font_size changes:    fixedfont.size = new_size
+    # FIXME: should create a new font instead of using TkFixedFont for these
     general.connect(
-        'font_family', functools.partial(fixedfont.__setitem__, 'family'))
+        'font_family', lambda family: setattr(fixedfont, 'family', family))
     general.connect(
-        'font_size', functools.partial(fixedfont.__setitem__, 'size'))
+        'font_size', lambda size: setattr(fixedfont, 'size', size))
 
     # TODO: file-specific encodings
     general.add_option('encoding', 'UTF-8')
@@ -468,41 +460,44 @@ def _init():
     general.add_option('pygments_style', 'default', reset=False)
     general.connect('pygments_style', _validate_pygments_style_name)
 
-    filetypes = get_section('File Types')
-    label1 = ttk.Label(filetypes.content_frame, text=(
+    filetypes_section = get_section('File Types')
+    label1 = tk.Label(filetypes_section.content_frame, (
         "Currently there's no GUI for changing filetype specific settings, "
         "but they're stored in filetypes.ini and you can edit it yourself."))
-    label2 = ttk.Label(filetypes.content_frame, text=(
+    label2 = tk.Label(filetypes_section.content_frame, (
         "\nYou can use the following option to choose which filetype "
         "Porcupine should use when you create a new file in Porcupine. You "
         "can change the filetype after creating the file clicking Filetypes "
         "in the menu bar."))
-    filetypes.content_frame.bind(      # automatic wrapping
+    filetypes_section.content_frame.bind(      # automatic wrapping
         '<Configure>',
         lambda event: {   # have fun figuring out why javascripty { } works
             label1.config(wraplength=event.width),
             label2.config(wraplength=event.width),
-        }, add=True)
+        },
+        event=True)
 
     def edit_it():
         # porcupine/tabs.py imports this file
         # these local imports feel so evil xD  MUHAHAHAA!!!
-        from porcupine import tabs
+        from porcupine import get_tab_manager, tabs
 
         path = os.path.join(dirs.configdir, 'filetypes.ini')
-        manager = porcupine.get_tab_manager()
-        manager.add_tab(tabs.FileTab.open_file(manager, path))
+        manager = get_tab_manager()
+        filetab = tabs.FileTab.open_file(manager, path)
+        manager.append(filetab)
+        manager.selected_tab = filetab
         _dialog.withdraw()
 
     label1.pack(fill='x')
-    ttk.Button(filetypes.content_frame, text="Edit filetypes.ini",
-               command=edit_it).pack(anchor='center')
+    tk.Button(filetypes_section.content_frame, text="Edit filetypes.ini",
+              command=edit_it).pack(anchor='center')
     label2.pack(fill='x')
 
-    names = [filetype.name for filetype in get_all_filetypes()]
-    filetypes.add_option('default_filetype', 'Plain Text')
-    filetypes.add_combobox('default_filetype', names,
-                           "Default filetype for new files:")
+    names = [filetype.name for filetype in filetypes.get_all_filetypes()]
+    filetypes_section.add_option('default_filetype', 'Plain Text')
+    filetypes_section.add_combobox('default_filetype', names,
+                                   "Default filetype for new files:")
 
 
 def show_dialog():
@@ -513,14 +508,14 @@ def show_dialog():
     _init()
 
     # hide sections with no widgets in the content_frame
-    # add and hide preserve order and title texts
+    # hide() and unhide() preserve order
     for name, section in _sections.items():
         if section.content_frame.winfo_children():
-            _notebook.add(section.content_frame)
+            section.notebook_tab.unhide()
         else:
-            _notebook.hide(section.content_frame)
+            section.notebook_tab.hide()
 
-    _dialog.transient(porcupine.get_main_window())
+    _dialog.transient = porcupine.get_main_window()
     _dialog.deiconify()
 
 

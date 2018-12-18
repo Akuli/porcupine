@@ -137,7 +137,7 @@ def main():
 
     tabmanager = get_tab_manager()
     for path, content in filelist:
-        tabmanager.add_tab(tabs.FileTab(tabmanager, content, path))
+        tabmanager.append_and_select(tabs.FileTab(tabmanager, content, path))
 
     porcupine.run()
     log.info("exiting Porcupine successfully")

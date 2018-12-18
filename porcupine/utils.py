@@ -1,20 +1,16 @@
 """Handy utility functions."""
 
-import collections
 import contextlib
-import functools
 import logging
 import os
 import platform
 import shlex
 import shutil
-import string as string_module      # string is used as a variable name
+import string as string_module
 import subprocess
 import sys
-import threading
-import tkinter
-from tkinter import ttk
-import traceback
+
+import pythotk as tk
 
 import porcupine
 
@@ -143,300 +139,16 @@ else:
         return shlex.quote(string)
 
 
-def invert_color(color):
-    """Return a color with opposite red, green and blue values.
-
-    Example: ``invert_color('white')`` is ``'#000000'`` (black).
-
-    This function uses tkinter for converting the color to RGB. That's
-    why a tkinter root window must have been created, but *color* can be
-    any Tk-compatible color string, like a color name or a ``'#rrggbb'``
-    string.
-
-    The return value is always a ``'#rrggbb`` string (also compatible
-    with Tk).
+def invert_color(color: tk.Color):
     """
-    # tkinter uses 16-bit colors for some reason, so gotta convert them
-    # to 8-bit (with >> 8)
-    widget = porcupine.get_main_window()
-    r, g, b = (0xff - (value >> 8) for value in widget.winfo_rgb(color))
-    return '#%02x%02x%02x' % (r, g, b)
+    Return a :class:`pythotk.Color` with opposite red, green and blue values.
 
-
-class _TooltipManager:
-
-    # This needs to be shared by all instances because there's only one
-    # mouse pointer.
-    tipwindow = None
-
-    def __init__(self, widget):
-        widget.bind('<Enter>', self.enter, add=True)
-        widget.bind('<Leave>', self.leave, add=True)
-        widget.bind('<Motion>', self.motion, add=True)
-        self.widget = widget
-        self.got_mouse = False
-        self.text = None
-
-    @classmethod
-    def destroy_tipwindow(cls, junk_event=None):
-        if cls.tipwindow is not None:
-            cls.tipwindow.destroy()
-            cls.tipwindow = None
-
-    def enter(self, event):
-        # For some reason, toplevels get also notified of their
-        # childrens' events.
-        if event.widget is self.widget:
-            self.destroy_tipwindow()
-            self.got_mouse = True
-            self.widget.after(1000, self.show)
-
-    def leave(self, event):
-        if event.widget is self.widget:
-            self.destroy_tipwindow()
-            self.got_mouse = False
-
-    def motion(self, event):
-        self.mousex = event.x_root
-        self.mousey = event.y_root
-
-    def show(self):
-        if not self.got_mouse:
-            return
-
-        self.destroy_tipwindow()
-        if self.text is not None:
-            tipwindow = type(self).tipwindow = tkinter.Toplevel()
-            tipwindow.geometry('+%d+%d' % (self.mousex+10, self.mousey-10))
-            tipwindow.bind('<Motion>', self.destroy_tipwindow)
-            tipwindow.overrideredirect(True)
-
-            # If you modify this, make sure to always define either no
-            # colors at all or both foreground and background. Otherwise
-            # the label will have light text on a light background or
-            # dark text on a dark background on some systems.
-            tkinter.Label(tipwindow, text=self.text, border=3,
-                          fg='black', bg='white').pack()
-
-
-def set_tooltip(widget, text):
-    """A simple tooltip implementation with tkinter.
-
-    After calling ``set_tooltip(some_widget, "hello")``, "hello" will be
-    displayed in a small window when the user moves the mouse over the
-    widget and waits for 1 second. Do ``set_tooltip(some_widget, None)``
-    to get rid of a tooltip.
-
-    If you have read some of IDLE's source code (if you haven't, that's
-    good; IDLE's source code is ugly), you might be wondering what this
-    thing has to do with ``idlelib/tooltip.py``. Don't worry, I didn't
-    copy/paste any code from idlelib and I didn't read idlelib while I
-    wrote the tooltip code! Idlelib is awful and I don't want to use
-    anything from it in my editor.
+    Example: ``invert_color(pythotk.Color('white')) == pythotk.color('black')``
     """
-    if text is None:
-        if hasattr(widget, '_tooltip_manager'):
-            widget._tooltip_manager.text = None
-    else:
-        if not hasattr(widget, '_tooltip_manager'):
-            widget._tooltip_manager = _TooltipManager(widget)
-        widget._tooltip_manager.text = text
+    return tk.Color(0xff - color.red, 0xff - color.green, 0xff - color.blue)
 
 
-def bind_with_data(widget, sequence, callback, add=False):
-    """
-    Like ``widget.bind(sequence, callback)``, but supports the ``data``
-    argument of ``event_generate()``.
-
-    Here's an example::
-
-        from porcupine import utils
-
-        def on_wutwut(event):
-            print(event.data)
-
-        utils.bind_with_data(some_widget, '<<Thingy>>', on_wutwut, add=True)
-
-        # this prints 'wut wut'
-        some_widget.event_generate('<<Thingy>>', data='wut wut')
-
-    Note that everything is a string in Tcl, so tkinter ``str()``'s the data.
-
-    The event objects have all the attributes that tkinter events
-    usually have, and these additional attributes:
-
-        ``data``
-            See the above example.
-
-        ``data_int`` and ``data_float``
-            These are set to ``int(event.data)`` and ``float(event.data)``,
-            or None if ``data`` is not a valid integer or float.
-
-        ``data_widget``
-            If a widget was passed as ``data`` to ``event_generate()``,
-            this is that widget. Otherwise this is None.
-        ``data_tuple(converter1, converter2, ...)``
-            If a string from :func:`.create_tcl_list` is passed to
-            ``event_generate()``, this splits the list back to the strings
-            passed to :func:`.create_tcl_list` and optionally converts them to
-            other types like ``converter(string_value)``. For example,
-            ``event.data_tuple(int, int, str, float)`` returns a 4-tuple with
-            types ``(int, int, str, float)``, throwing an error if some of the
-            elements can't be converted or the iterable passed to
-            :func:`.create_tcl_list` didn't contain exactly 4 elements.
-    """
-    # tkinter creates event objects normally and appends them to the
-    # deque, then run_callback() adds data_blablabla attributes to the
-    # event objects and runs callback(event)
-    event_objects = collections.deque()
-    widget.bind(sequence, event_objects.append, add=add)
-
-    def run_the_callback(data_string):
-        event = event_objects.popleft()
-        event.data = data_string
-
-        # TODO: test this
-        try:
-            split_result = event.widget.tk.splitlist(data_string)
-        except tkinter.TclError:
-            event.data_tuple = None
-        else:
-            def data_tuple(*converters):
-                if len(split_result) != len(converters):
-                    raise ValueError(
-                        "the event data has %d elements, but %d converters "
-                        "were given" % (len(split_result), len(converters)))
-                return tuple(
-                    converter(string)
-                    for converter, string in zip(converters, split_result))
-
-            event.data_tuple = data_tuple
-
-        try:
-            event.data_int = int(data_string)
-        except ValueError:
-            event.data_int = None
-
-        try:
-            event.data_float = float(data_string)
-        except ValueError:
-            event.data_float = None
-
-        try:
-            event.data_widget = widget.nametowidget(data_string)
-        # nametowidget raises KeyError when the widget is unknown, but
-        # that feels like an implementation detail
-        except Exception:
-            event.data_widget = None
-
-        return callback(event)      # may return 'break'
-
-    # tkinter's bind() ignores the add argument when the callback is a
-    # string :(
-    funcname = widget.register(run_the_callback)
-    widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
-                   % (widget, sequence, funcname))
-    return funcname
-
-
-# TODO: document this
-# TODO: test this
-def create_tcl_list(iterable):
-    widget = porcupine.get_main_window()      # any widget would do
-
-    # in tcl, 'join [list x y z]' returns 'x y z', but 'join [list x]'
-    # converts x to a string... let's do that, tkinter converts python tuples
-    # to tcl lists
-    python_tuple = tuple(map(str, iterable))
-    result = widget.tk.call('join', (python_tuple,))
-    assert isinstance(result, str)
-    assert widget.tk.splitlist(result) == python_tuple
-    return result
-
-
-@contextlib.contextmanager
-def temporary_bind(widget, sequence, func):
-    """Bind and unbind a callback.
-
-    It's possible (and in Porcupine plugins, highly recommended) to use
-    ``add=True`` when binding. This way more than one function can be
-    bound to the same key sequence at the same time.
-
-    Unfortunately tkinter provodes no good way to unbind functions bound
-    with ``add=True`` one by one, and the ``unbind()`` method always
-    unbinds *everything* (see the source code). This function only
-    unbinds the function it bound, and doesn't touch anything else.
-
-    Use this as a context manager, like this::
-
-        with utils.temporary_bind(some_widget, '<Button-1>', on_click):
-            # now clicking the widget runs on_click() and whatever was
-            # bound before (unless on_click() returns 'break')
-            ...
-        # now on_click() doesn't run when the widget is clicked, but
-        # everything else still runs
-
-    Calls to this function may be nested, and other things can be bound
-    inside the ``with`` block as long as ``add=True`` is used.
-
-    The event objects support the same additional attributes as those
-    from :func:`bind_with_data`.
-    """
-    not_bound_commands = widget.bind(sequence)
-    tcl_command = bind_with_data(widget, sequence, func, add=True)
-    bound_commands = widget.bind(sequence)
-    assert bound_commands.startswith(not_bound_commands)
-    new_things = bound_commands[len(not_bound_commands):]
-
-    try:
-        yield
-    finally:
-        # other stuff might be bound too while this thing was yielding
-        bound_and_stuff = widget.bind(sequence)
-        assert bound_and_stuff.count(new_things) == 1
-        widget.bind(sequence, bound_and_stuff.replace(new_things, ''))
-
-        # unbind() does this too to avoid memory leaks
-        widget.deletecommand(tcl_command)
-
-
-# this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
-def bind_tab_key(widget, on_tab, **bind_kwargs):
-    """A convenience function for binding Tab and Shift+Tab.
-
-    Use this function like this::
-
-        def on_tab(event, shifted):
-            # shifted is True if the user held down shift while pressing
-            # tab, and False otherwise
-            ...
-
-        utils.bind_tab_key(some_widget, on_tab, add=True)
-
-    The ``event`` argument and ``on_tab()`` return values are treated
-    just like with regular bindings.
-
-    Binding ``'<Tab>'`` works just fine everywhere, but binding
-    ``'<Shift-Tab>'`` only works on Windows and Mac OSX. This function
-    also works on X11.
-    """
-    # there's something for this in more_functools, but it's a big
-    # dependency for something this simple imo
-    def callback(shifted, event):
-        return on_tab(event, shifted)
-
-    if widget.tk.call('tk', 'windowingsystem') == 'x11':
-        # even though the event keysym says Left, holding down the right
-        # shift and pressing tab also works :D
-        shift_tab = '<ISO_Left_Tab>'
-    else:
-        shift_tab = '<Shift-Tab>'
-
-    widget.bind('<Tab>', functools.partial(callback, False), **bind_kwargs)
-    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)
-
-
-def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
+def bind_mouse_wheel(widget, callback, *, prefixes=''):
     """Bind mouse wheel events to callback.
 
     The callback will be called like ``callback(direction)`` where
@@ -451,14 +163,14 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
     """
     # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
-    if widget.tk.call('tk', 'windowingsystem') == 'x11':
+    if tk.windowingsystem() == 'x11':
         def real_callback(event):
-            callback('up' if event.num == 4 else 'down')
+            callback('up' if event.button == 4 else 'down')
 
         widget.bind('<{}Button-4>'.format(prefixes),
-                    real_callback, **bind_kwargs)
+                    real_callback, event=True)
         widget.bind('<{}Button-5>'.format(prefixes),
-                    real_callback, **bind_kwargs)
+                    real_callback, event=True)
 
     else:
         # TODO: test this on OSX
@@ -466,31 +178,7 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
             callback('up' if event.delta > 0 else 'down')
 
         widget.bind('<{}MouseWheel>'.format(prefixes),
-                    real_callback, **bind_kwargs)
-
-
-# see docs/utils.rst for explanation and docs
-try:
-    Spinbox = ttk.Spinbox
-except AttributeError:
-    try:
-        Spinbox = ttk.SpinBox
-    except AttributeError:
-        # this is based on the code of ttk.Combobox, if tkinter changes so
-        # that this breaks then ttk.Spinbox will be probably added as well
-        class Spinbox(ttk.Entry):
-
-            def __init__(self, master=None, *, from_=None, **kwargs):
-                if from_ is not None:
-                    kwargs['from'] = from_  # this actually works
-                super().__init__(master, 'ttk::spinbox', **kwargs)
-
-            def configure(self, *args, **kwargs):
-                if 'from_' in kwargs:
-                    kwargs['from'] = kwargs.pop('from_')
-                return super().configure(*args, **kwargs)
-
-            config = configure
+                    real_callback, event=True)
 
 
 def errordialog(title, message, monospace_text=None):
@@ -508,74 +196,31 @@ def errordialog(title, message, monospace_text=None):
             utils.errordialog("Oh no", "Doing something failed!",
                               traceback.format_exc())
     """
-    root = porcupine.get_main_window()
-    if root is None:
-        window = tkinter.Tk()
-    else:
-        window = tkinter.Toplevel()
-        window.transient(root)
+    porcu_main_window = porcupine.get_main_window()
+    window = tk.Window()
+    window.transient = porcu_main_window
 
-    # there's nothing but this frame in the window because ttk widgets
-    # may use a different background color than the window
-    big_frame = ttk.Frame(window)
-    big_frame.pack(fill='both', expand=True)
-
-    label = ttk.Label(big_frame, text=message)
+    label = tk.Label(window, message)
 
     if monospace_text is None:
         label.pack(fill='both', expand=True)
-        geometry = '250x150'
+        size = (250, 150)
     else:
         label.pack(anchor='center')
         # there's no ttk.Text 0_o this looks very different from
         # everything else and it sucks :(
-        text = tkinter.Text(big_frame, width=1, height=1)
+        text = tk.Text(window, width=1, height=1)
         text.pack(fill='both', expand=True)
-        text.insert('1.0', monospace_text)
-        text['state'] = 'disabled'
-        geometry = '400x300'
+        text.insert(text.start, monospace_text)
+        text.config['state'] = 'disabled'
+        size = (400, 300)
 
-    button = ttk.Button(big_frame, text="OK", command=window.destroy)
+    button = tk.Button(window, text="OK", command=window.destroy)
     button.pack(pady=10)
 
-    window.title(title)
-    window.geometry(geometry)
+    window.title = title
+    window.geometry(*size)
     window.wait_window()
-
-
-def run_in_thread(blocking_function, done_callback):
-    """Run ``blocking_function()`` in another thread.
-
-    If the *blocking_function* raises an error,
-    ``done_callback(False, traceback)`` will be called where *traceback*
-    is the error message as a string. If no errors are raised,
-    ``done_callback(True, result)`` will be called where *result* is the
-    return value from *blocking_function*. The *done_callback* is always
-    called from Tk's main loop, so it can do things with Tkinter widgets
-    unlike *blocking_function*.
-    """
-    root = porcupine.get_main_window()
-    result = []     # [success, result]
-
-    def thread_target():
-        # the logging module uses locks so calling it from another
-        # thread should be safe
-        try:
-            value = blocking_function()
-            result[:] = [True, value]
-        except Exception as e:
-            result[:] = [False, traceback.format_exc()]
-
-    def check():
-        if thread.is_alive():
-            # let's come back and check again later
-            root.after(100, check)
-        else:
-            done_callback(*result)
-
-    thread = threading.Thread(target=thread_target)
-    thread.start()
-    root.after_idle(check)
 
 
 @contextlib.contextmanager
@@ -616,6 +261,7 @@ def backup_open(path, *args, **kwargs):
             os.remove(backuppath)
 
     else:
+        # FIXME: does this close the file?
         yield open(path, *args, **kwargs)
 
 

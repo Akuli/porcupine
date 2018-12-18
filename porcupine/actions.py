@@ -1,6 +1,7 @@
 import collections
-import tkinter
 import warnings
+
+import pythotk as tk
 
 import porcupine
 from porcupine import tabs, utils
@@ -23,7 +24,7 @@ class _Action:
         elif kind == 'choice':
             self.var = var
             self.choices = callback_or_choices
-            self.var.trace('w', self._var_set_check)
+            self.var.write_trace.connect(self._var_set_check)
         elif kind == 'yesno':
             self.var = var
         else:
@@ -39,7 +40,7 @@ class _Action:
 
     @enabled.setter
     def enabled(self, is_enabled):
-        # omitting this check might cause confusing behavior
+        # omitting this check might cause hard-to-find bugs
         if not isinstance(is_enabled, bool):
             raise TypeError("enabled should be True or False, not %r"
                             % (is_enabled,))
@@ -49,8 +50,8 @@ class _Action:
             event = '<<ActionEnabled>>' if is_enabled else '<<ActionDisabled>>'
             porcupine.get_main_window().event_generate(event, data=self.path)
 
-    def _var_set_check(self, *junk):
-        value = self.var.get()
+    def _var_set_check(self, var):
+        value = var.get()
         if value not in self.choices:
             warnings.warn("the var of %r was set to %r which is not one "
                           "of the choices" % (self, value), RuntimeWarning)
@@ -82,7 +83,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
             )
 
             def enable_or_disable(junk_event=None):
-                tab = porcupine.get_tab_manager().select()
+                tab = porcupine.get_tab_manager().selected_tab
                 action.enabled = isinstance(tab, tabtypes)
 
         if filetype_names is not None:
@@ -95,24 +96,21 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                 else:
                     action.enabled = False
 
-            def on_new_tab(event):
-                tab = event.data_widget
+            def on_new_tab(tab):
                 if isinstance(tab, tabs.FileTab):
-                    tab.bind('<<FiletypeChanged>>', enable_or_disable,
-                             add=True)
+                    tab.on_filetype_changed.connect(enable_or_disable)
 
-            utils.bind_with_data(porcupine.get_tab_manager(),
-                                 '<<NewTab>>', on_new_tab, add=True)
+            porcupine.get_tab_manager().on_new_tab.connect(on_new_tab)
 
         enable_or_disable()
         porcupine.get_tab_manager().bind(
-            '<<NotebookTabChanged>>', enable_or_disable, add=True)
+            '<<NotebookTabChanged>>', enable_or_disable)
 
     # TODO: custom keyboard bindings with a config file or something
     if binding is not None:
         assert kind in {'command', 'yesno'}, repr(kind)
 
-        def bind_callback(event):
+        def bind_callback():
             if action.enabled:
                 if kind == 'command':
                     action.callback()
@@ -123,8 +121,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                 return 'break'
 
         # TODO: display a warning if it's already bound?
-        widget = porcupine.get_main_window()    # any widget would do
-        widget.bind_all(binding, bind_callback, add=True)
+        tk.Widget.bind_class(binding, bind_callback)
 
         # text widgets are tricky, by default they insert a newline on ctrl+o,
         # and i discovered how it works in a Tcl session:
@@ -144,8 +141,18 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
         #    wish8.6 [~]
         #
         # this is done to all action bindings instead of just <Control-o> to
-        # avoid any issues with other bindings
-        widget.tk.call('bind', 'Text', binding, '')
+        # avoid any issues with other bindings, kind of a hack but it works
+        tcl_code = tk.tcl_call(str, 'bind', 'Text', binding).split('\n')
+        filtered_code = []
+
+        ignore = True
+        for line in tcl_code:
+            if 'pythotk_command_' in line:   # lol
+                ignore = False
+            if not ignore:
+                filtered_code.append(line)
+
+        tk.tcl_call(None, 'bind', 'Text', binding, '\n'.join(filtered_code))
 
     return action
 
@@ -172,7 +179,7 @@ def add_yesno(path, default=None, keyboard_binding=None, *,
     if var is None:
         if default is None:
             raise TypeError("specify default or var")
-        var = tkinter.BooleanVar()
+        var = tk.BooleanVar()
         var.set(default)
     elif default is not None:
         var.set(default)
@@ -200,7 +207,7 @@ def add_choice(path, choices, default=None, *, var=None, **kwargs):
             default = choices[0]
         elif default not in choices:
             raise ValueError("default value %r is not in choices" % (default,))
-        var = tkinter.StringVar()
+        var = tk.StringVar()
         var.set(default)
     else:
         if var.get() not in choices:

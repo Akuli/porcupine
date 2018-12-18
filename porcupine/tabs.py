@@ -1,69 +1,50 @@
 r"""Tabs as in browser tabs, not \t characters."""
+# TODO: user more callback objects and less virtual events?
 
 import functools
 import hashlib
-import itertools
 import logging
 import os
-import tkinter
-from tkinter import ttk, messagebox, filedialog
 import traceback
 
-import porcupine
+import pythotk as tk
+
 from porcupine import filetypes, images, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
-_flatten = itertools.chain.from_iterable
 
 
-class TabManager(ttk.Notebook):
+class TabManager(tk.Notebook):
     """A simple but awesome tab widget.
 
-    This widget inherits from ``ttk.Notebook``. All widgets added to
-    this should be :class:`Tab` objects.
+    This widget inherits from :class:`pythotk.Notebook`. All tabs added to this
+    should be :class:`Tab` objects.
 
-    .. virtualevent:: NewTab
+    .. warning::
+        Don't do something to a tab after adding it to a tab manager. This code
+        is **BAD**::
 
-        This runs when a new tab has been added to the tab manager with
-        :meth:`add_tab`. Use :func:`~porcupine.utils.bind_with_data` and
-        ``event.data_widget`` to access the tab that was added.
+            tab_manager.append(new_tab)
+            new_tab.something.something()     # what if new_tab was closed?
+
+        See :meth:`.Tab.equivalent` documentation for an explanation.
+
+    .. attribute:: on_new_tab
+
+        A :class:`pythotk.Callback` that runs with a new tab as an argument
+        when a new tab has been added to the tab manager.
 
         Bind to the ``<Destroy>`` event of the tab if you want to clean
         up something when the tab is closed.
-
-    .. virtualevent:: NotebookTabChanged
-
-        This runs when the user selects another tab or Porcupine does it
-        for some reason. Use ``event.widget.select()`` to get the
-        currently selected tab.
-
-        This virtual event has ``Notebook`` prefixed in its name because
-        it's inherited from ``ttk.Notebook`` and whoever created it
-        wanted to add some boilerplate. I think something like
-        ``<<SelectedTabChanged>>`` would be a better name.
-
-        .. seealso:: :meth:`select`
-
-    .. method:: add(child, **kw)
-    .. method:: enable_traversal()
-    .. method:: forget(tab_id)
-    .. method:: hide(tab_id)
-    .. method:: insert(pos, child, **kw)
-    .. method:: tab(tab_id, option=None, **kw)
-
-        Don't use these methods. They are inherited from
-        ``ttk.Notebook``, and :class:`TabManager` has other methods for
-        doing what is usually done with these methods.
-
-        .. seealso::
-            :meth:`add_tab`, :meth:`close_tab`, :attr:`Tab.title`
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # These can be bound in a parent widget. This doesn't use
-        # enable_traversal() because we want more bindings than it
+        self.on_new_tab = tk.Callback()
+
+        # These can be bound in a parent widget without event=True. This
+        # doesn't use enable_traversal() because we want more bindings than it
         # creates.
         # TODO: document self.bindings?
         partial = functools.partial     # pep-8 line length
@@ -77,142 +58,74 @@ class TabManager(ttk.Notebook):
             callback = functools.partial(self._on_alt_n, number)
             self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
-        self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
-        self.bind('<Button-1>', self._on_click, add=True)
-        utils.bind_mouse_wheel(self, self._on_wheel, add=True)
+        self.bind('<<NotebookTabChanged>>', self._on_tab_changed)
+        self.bind('<Button-1>', self._on_click, event=True)
+        utils.bind_mouse_wheel(self, self._on_wheel)
 
-    def _focus_selected_tab(self, event):
-        tab = self.select()
-        if tab is not None:
-            tab.on_focus()
+    def _on_tab_changed(self):
+        if self.selected_tab is not None:
+            self.selected_tab.on_focus()
 
     def _on_click(self, event):
-        if self.identify(event.x, event.y) != 'label':
+        # TODO: add identify to pythotk
+        def identify(x, y):
+            return tk.tcl_call(str, self, 'identify', x, y)
+
+        if identify(event.x, event.y) != 'label':
             # something else than the top label was clicked
             return
 
+        # TODO: add looking up a tab by coordinates to pythotk
+        def coords2tab(x, y):
+            index = tk.tcl_call(int, self, 'index', '@%d,%d' % (x, y))
+            return None if index is None else self[index]
+
         # find the right edge of the label
         right = event.x
-        while self.identify(right, event.y) == 'label':
+        while identify(right, event.y) == 'label':
             right += 1
 
         # hopefully the image is on the right edge of the label and
         # there's no padding :O
-        if event.x + images.get('closebutton').width() >= right:
+        if event.x + images.get('closebutton').width >= right:
             # the close button was clicked
-            tab = self.tabs()[self.index('@%d,%d' % (event.x, event.y))]
+            tab = coords2tab(event.x, event.y)
             if tab.can_be_closed():
-                self.close_tab(tab)
+                self.remove(tab)
 
     def _on_wheel(self, direction):
         self.select_another_tab({'up': -1, 'down': +1}[direction])
 
-    def _on_page_updown(self, shifted, diff, event):
+    def _on_page_updown(self, shifted, diff):
         if shifted:
             self.move_selected_tab(diff)
         else:
             self.select_another_tab(diff)
-        return 'break'
 
     def _on_alt_n(self, n, event):
-        try:
-            self.select(n - 1)
-            return 'break'
-        except tkinter.TclError:        # index out of bounds
-            return None
+        if n-1 in range(len(self)):
+            self.selected_tab = self[n-1]
+            return True
 
-    # fixing tkinter weirdness: some methods returns widget names as
-    # strings instead of widget objects, these str() everything anyway
-    # because tkinter might be fixed some day
-    def select(self, tab_id=None):
-        """Select the given tab as if the user clicked it.
-
-        Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
-        given, this returns the currently selected tab or None if there are no
-        tabs.
-        """
-        if tab_id is None:
-            selected = super().select()
-            if not selected:        # no tabs, selected == ''
-                return None
-            return self.nametowidget(str(selected))
-
-        # the tab can be e.g. an index, that's why two super() calls
-        super().select(tab_id)
-        return None
-
-    def tabs(self):
-        """Return a tuple of tabs in the tab manager.
-
-        This returns a tuple instead of a list for compatibility with
-        tkinter.
-        """
-        # tkinter has a bug that makes the original tabs() return widget name
-        # strings instead of widget objects, and this str()'s the tabs just in
-        # case it is fixed later: str(widget object) and str(widget name) both
-        # give the widget name consistently
-        return tuple(self.nametowidget(str(tab)) for tab in super().tabs())
-
-    def add_tab(self, tab, select=True):
-        """Append a :class:`.Tab` to this tab manager.
-
-        If ``tab.equivalent(existing_tab)`` returns True for any
-        ``existing_tab`` that is already in the tab manager, then that
-        existing tab is returned. Otherwise *tab* is added to the tab
-        manager and returned.
-
-        If *select* is True, then the returned tab is selected
-        with :meth:`~select`.
-
-        .. seealso::
-            The :meth:`.Tab.equivalent` and :meth:`~close_tab` methods.
-        """
-        assert tab not in self.tabs(), "cannot add the same tab twice"
-        for existing_tab in self.tabs():
-            if tab.equivalent(existing_tab):
-                if select:
-                    self.select(existing_tab)
-                return existing_tab
-
-        self.add(tab, text=tab.title, image=images.get('closebutton'),
-                 compound='right')
-        if select:
-            self.select(tab)
-
-        # the update() is needed in some cases because virtual events
-        # don't run if the widget isn't visible yet
-        self.update()
-        self.event_generate('<<NewTab>>', data=tab)
-        return tab
-
-    def close_tab(self, tab):
-        """Destroy a tab without calling :meth:`~Tab.can_be_closed`.
-
-        The closed tab cannot be added back to the tab manager later.
-
-        .. seealso:: The :meth:`.Tab.can_be_closed` method.
-        """
-        self.forget(tab)
-        tab.destroy()
+        return False
 
     def select_another_tab(self, diff):
         """Try to select another tab next to the currently selected tab.
 
         *diff* should be ``1`` for selecting a tab at right or ``-1``
-        for left. This returns True if another tab was selected and
-        False if the current tab is already the leftmost tab or there
-        are no tabs.
+        for left. This returns True if another tab was selected, and
+        False if the current tab is already the leftmost or rightmost tab or
+        there are no tabs.
         """
         assert diff in {1, -1}, repr(diff)
-        if not self.tabs():
-            return False
 
-        index = self.index(self.select())
-        try:
-            self.select(index + diff)
-            return True
-        except tkinter.TclError:   # should be "Slave index n out of bounds"
-            return False
+        if self.selected_tab is not None:
+            index = self.index(self.selected_tab)
+            if index + diff in range(len(self)):
+                self.selected_tab = self[index + diff]
+                return True
+
+        return False
 
     # TODO: test this
     def move_selected_tab(self, diff):
@@ -223,68 +136,80 @@ class TabManager(ttk.Notebook):
         room for moving it or there are no tabs.
         """
         assert diff in {1, -1}, repr(diff)
-        if not self.tabs():
-            return False
 
-        # this could be simplified, but it's nice and readable now
-        i1 = self.index(self.select())
-        i2 = i1 + diff
-        if i1 > i2:
-            i1, i2 = i2, i1
+        if self.selected_tab is not None:
+            index = self.index(self.selected_tab)
+            if index + diff in range(len(self)):
+                # yes, this works, and also preserves selected_tab
+                self.insert(index, self[index + diff])
+                return True
 
-        if i1 < 0 or i2 >= self.index('end'):
-            return False
+        return False
 
-        # it's important to move the second tab back instead of moving
-        # the other tab forward because insert(number_of_tabs, tab)
-        # doesn't work for some reason
-        tab = self.tabs()[i2]
-        options = self.tab(i2)
-        selected = (tab is self.select())
+    # empty docstring prevents this from showing up to sphinx
+    def insert(self, index, tab):
+        """"""
+        assert isinstance(tab, Tab)
+        if tab in self:
+            # move an existing tab instead of adding a new tab
+            super().insert(index, tab)
+            return
 
-        self.forget(i2)
-        self.insert(i1, tab, **options)
-        if selected:
-            self.select(tab)
+        for old_tab in self:
+            # refactoring note: must be tab.equivalent(old_tab) and not
+            # old_tab.equivalent(tab), explained in Tab.equivalent docs
+            if tab.equivalent(old_tab):
+                tab.close()
+                self.__info_for_append_and_select = old_tab    # this is dumb
+                return
 
-        return True
+        # now we know that the tab should be actually added
+        super().insert(index, tab)
+        self.on_new_tab.run(tab)
+
+    def append_and_select(self, tab):
+        """
+        Like the :meth:`pythotk.append_and_select` method this overrides, but
+        works correctly with :meth:`~.Tab.equivalent` stuff.
+        """
+        self.append(tab)
+        if tab.closed:
+            self.selected_tab = self.__info_for_append_and_select
+        else:
+            self.selected_tab = tab
 
 
-class Tab(ttk.Frame):
-    r"""Base class for widgets that can be added to TabManager.
+class Tab(tk.NotebookTab):
+    r"""Base class for tabs that can be added to TabManager.
+
+    This class inherits from :class:`pythotk.NotebookTab`, but pythotk tabs
+    that are not instances of this class cannot be added to a
+    :class:`.TabManager`.
 
     You can easily create custom kinds of tabs by inheriting from this
     class. Here's a very minimal but complete example plugin::
 
-        from tkinter import ttk
+        import pythotk as tk
         from porcupine import actions, get_tab_manager, tabs
 
         class HelloTab(tabs.Tab):
             def __init__(self, manager):
-                super().__init__(manager)
-                self.title = "Hello"
-                ttk.Label(self, text="Hello World!").pack()
+                super().__init__(manager, title="Hello")
+                tk.Label(self.content, "Hello World!").pack()
 
         def new_hello_tab():
-            get_tab_manager().add_tab(HelloTab(get_tab_manager()))
+            manager = get_tab_manager()
+            manager.append_and_select(HelloTab(manager))
 
         def setup():
             actions.add_command('Hello/New Hello Tab', new_hello_tab)
 
-    Note that you need to use the pack geometry manager when creating
-    custom tabs. If you want to use grid or place you can create a frame
-    inside the tab, pack it with ``fill='both', expand=True`` and do
-    whatever you want inside it.
+    All initialization keyword arguments are passed to
+    :class:`pythotk.NotebookTab`.
 
-    .. virtualevent:: StatusChanged
+    .. attribute:: closed
 
-        This event is generated when :attr:`status` is set to a new
-        value. Use ``event.widget.status`` to access the current status.
-
-    .. attribute:: title
-
-        This is the title of the tab, next to the red close button. You
-        can set and get this attribute easily.
+        True if the tab has been closed (see :meth:`.close`), False otherwise.
 
     .. attribute:: status
 
@@ -297,42 +222,54 @@ class Tab(ttk.Frame):
         ``tab.status = something_new``.
 
         If you're writing something like a status bar, make sure to
-        handle ``\t`` characters and bind :virtevt:`~StatusChanged`.
+        handle ``\t`` characters and use :attr:`on_status_changed`.
 
-    .. attribute:: master
+    .. attribute:: on_status_changed
 
-        Tkinter sets this to the parent widget. Use this attribute to
-        access the :class:`TabManager` of a tab.
+        A :class:`pythotk.Callback` that runs with no arguments when
+        :attr:`status` is set to a new value.
+
+    .. attribute:: content
+
+        A frame that represents the content of the tab. You can add anything
+        you want into this, and you can use any geometry manager you want.
 
     .. attribute:: top_frame
     .. attribute:: bottom_frame
     .. attribute:: left_frame
     .. attribute:: right_frame
 
-        These are ``ttk.Frame`` widgets that are packed to each side of
-        the frame. Plugins add different kinds of things to these, for
-        example, :source:`the statusbar <porcupine/plugins/statusbar.py>`
+        These are frame widgets that are packed to each side of the
+        :attr:`.content` frame. Plugins add different kinds of things to these,
+        for example, :source:`the statusbar <porcupine/plugins/statusbar.py>`
         is a widget in ``bottom_frame``.
 
-        These frames should contain no widgets when Porcupine is running
+        These frames contain no widgets when Porcupine is running
         without plugins. Use pack when adding things here.
     """
 
-    def __init__(self, manager):
-        super().__init__(manager)
+    def __init__(self, manager, **kwargs):
+        super().__init__(tk.Frame(manager), image=images.get('closebutton'),
+                         compound='right', **kwargs)
+
         self._status = ''
-        self._title = ''
+        self._closed = False
+
+        self.on_status_changed = tk.Callback()
 
         # top and bottom frames must be packed first because this way
         # they extend past other frames in the corners
-        self.top_frame = ttk.Frame(self)
-        self.bottom_frame = ttk.Frame(self)
-        self.left_frame = ttk.Frame(self)
-        self.right_frame = ttk.Frame(self)
+        self.top_frame = tk.Frame(self.widget)
+        self.bottom_frame = tk.Frame(self.widget)
+        self.left_frame = tk.Frame(self.widget)
+        self.right_frame = tk.Frame(self.widget)
         self.top_frame.pack(side='top', fill='x')
         self.bottom_frame.pack(side='bottom', fill='x')
         self.left_frame.pack(side='left', fill='y')
         self.right_frame.pack(side='right', fill='y')
+
+        self.content = tk.Frame(self.widget)
+        self.content.pack(fill='both', expand=True)
 
     @property
     def status(self):
@@ -341,17 +278,12 @@ class Tab(ttk.Frame):
     @status.setter
     def status(self, new_status):
         self._status = new_status
-        self.event_generate('<<StatusChanged>>')
+        self.on_status_changed.run()
 
+    # makes this read-only, prevents rare but hard-to-debug bugs
     @property
-    def title(self):
-        return self._title
-
-    @title.setter
-    def title(self, text):
-        self._title = text
-        if self in self.master.tabs():
-            self.master.tab(self, text=text)
+    def closed(self):
+        return self._closed
 
     def can_be_closed(self):
         """
@@ -361,8 +293,27 @@ class Tab(ttk.Frame):
         By default, this always returns True, but you can override this
         in a subclass to do something more interesting. See
         :meth:`.FileTab.can_be_closed` for an example.
+
+        When this method has returned True and it's time to actually close the
+        tab, the tab is removed from the tab manager and all of its widgets are
+        destroyed. Use their ``<Destroy>`` events to run callbacks when this
+        happens.
         """
         return True
+
+    def close(self):
+        """Removes the tab from the manager and destroys all the tab's widgets.
+
+        No error is raised if the tab is not in the tab manager. If you are
+        going to call this, consider also using :meth:`.can_be_closed`. If you
+        are going to override this, consider using ``<Destroy>`` events of the
+        tab's widgets instead.
+        """
+        manager = self.widget.parent
+        if self in manager:
+            manager.remove(self)
+        self.widget.destroy()
+        self._closed = True
 
     def on_focus(self):
         """This is called when the tab is selected.
@@ -372,23 +323,21 @@ class Tab(ttk.Frame):
         """
 
     def equivalent(self, other):
-        """This is explained in :meth:`.TabManager.add_tab`.
+        """
+        This is a way to prevent having multiple tabs that do the same thing.
 
-        This always returns False by default, but you can override it in
-        a subclass. For example::
+        For example, if you open a file, and then you try to open that same
+        file again, porcupine doesn't display a new file tab; instead, it
+        selects the file tab that was already there. In :class:`.FileTab`, this
+        method is overrided so that it returns True if *other* is a FileTab
+        that represents the same file, and False otherwise.
 
-            class MyCoolTab(tabs.Tab):
-                ...
-
-                def equivalent(self, other):
-                    if isinstance(other, MyCoolTab):
-                        # other can be used instead of this tab if its
-                        # thingy is same as this tab's thingy
-                        return (self.thingy == other.thingy)
-                    else:
-                        # MyCoolTabs are never equivalent to other kinds
-                        # of tabs
-                        return False
+        If a new tab is being added to :class:`TabManager` but there's
+        already an equivalent tab in the manager, :class:`TabManager` closes
+        the new tab. The equivalence is checked like
+        ``new_tab.equivalent(old_tab)``, not ``old_tab.equivalent(new_tab)``.
+        This difference could be useful for implementing tabs that are
+        equivalent with tabs of other types for whatever reason.
         """
         return False
 
@@ -420,26 +369,17 @@ restarting Porcupine.
 class FileTab(Tab):
     """A tab that represents an opened file.
 
-    The tab will have content in it by default when it's opened. If
+    The tab will have *content* in it by default when it's opened. If
     *path* is given, the file will be saved there when Ctrl+S is
     pressed. Otherwise this becomes a "New File" tab.
 
     If you want to read a file and open a new tab from it, use
     :meth:`open_file`. It uses things like the user's encoding settings.
 
-    .. virtualevent:: PathChanged
+    .. attribute:: on_save
 
-        This runs when :attr:`~path` is set to a new value. Use
-        ``event.widget.path`` to get the new path.
-
-    .. virtualevent:: FiletypeChanged
-
-        Like :virtevt:`PathChanged`, but for :attr:`filetype`. Use
-        ``event.widget.filetype`` to access the new file type.
-
-    .. virtualevent:: Save
-
-        This runs before the file is saved with the :meth:`save` method.
+        A :class:`pythotk.Callback` that runs with no arguments before the file
+        is saved with the :meth:`save` method.
 
     .. attribute:: textwidget
 
@@ -463,48 +403,60 @@ bers.py>` use this attribute.
         This is None if the file has never been saved, and otherwise
         an absolute path as a string.
 
-        .. seealso:: The :virtevt:`PathChanged` virtual event.
+    .. attribute:: on_path_changed
+
+        A :class:`pythotk.Callback` that runs with no arguments when
+        :attr:`path` is set to a new value.
 
     .. attribute:: filetype
 
         A filetype object from :mod:`porcupine.filetypes`.
 
-        .. seealso:: The :virtevt:`FiletypeChanged` virtual event.
+    .. attribute:: on_filetype_changed
+
+        A :class:`pythotk.Callback` that runs with no arguments when
+        :attr:`filetype` is set to a new value.
     """
 
     def __init__(self, manager, content='', path=None):
         super().__init__(manager)
 
+        self.on_path_changed = tk.Callback()
+        self.on_filetype_changed = tk.Callback()
+        self.on_save = tk.Callback()
+
         self._save_hash = None
 
         self._path = path
         self._guess_filetype()          # sets self._filetype
-        self.bind('<<PathChanged>>', self._update_title, add=True)
-        self.bind('<<PathChanged>>', self._guess_filetype_if_needed, add=True)
+        self.on_path_changed.connect(self._update_title)
+        self.on_path_changed.connect(self._guess_filetype_if_needed)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
-            self, self._filetype, width=1, height=1, wrap='none', undo=True)
+            self.content, self._filetype, width=1, height=1, wrap='none',
+            undo=True)
         self.textwidget.pack(side='left', fill='both', expand=True)
-        self.bind('<<FiletypeChanged>>',
-                  lambda event: self.textwidget.set_filetype(self.filetype),
-                  add=True)
-        self.textwidget.bind('<<ContentChanged>>', self._update_title,
-                             add=True)
+        self.on_filetype_changed.connect(
+            lambda: self.textwidget.set_filetype(self.filetype))
+        self.textwidget.bind('<<ContentChanged>>', self._update_title)
 
         if content:
-            self.textwidget.insert('1.0', content)
-            self.textwidget.edit_reset()   # reset undo/redo
+            self.textwidget.insert(self.textwidget.start, content)
 
-        self.bind('<<PathChanged>>', self._update_status, add=True)
-        self.bind('<<FiletypeChanged>>', self._update_status, add=True)
-        self.textwidget.bind('<<CursorMoved>>', self._update_status, add=True)
+            # this resets undo and redo
+            # TODO: add 'edit reset' to pythotk
+            tk.tcl_call(None, self.textwidget, 'edit', 'reset')
 
-        self.scrollbar = ttk.Scrollbar(self)
+        self.on_path_changed.connect(self._update_status)
+        self.on_filetype_changed.connect(self._update_status)
+        self.textwidget.bind('<<CursorMoved>>', self._update_status)
+
+        self.scrollbar = tk.Scrollbar(self.content)
         self.scrollbar.pack(side='left', fill='y')
-        self.textwidget['yscrollcommand'] = self.scrollbar.set
-        self.scrollbar['command'] = self.textwidget.yview
+        self.textwidget.config['yscrollcommand'].connect(self.scrollbar.set)
+        self.scrollbar.config['command'].connect(self.textwidget.yview)
 
         self.mark_saved()
         self._update_title()
@@ -539,6 +491,8 @@ bers.py>` use this attribute.
         # a path attribute, for example, a debugger plugin might have
         # tabs that represent files and they might need to be opened at
         # the same time as FileTabs are
+        #
+        # TODO: handle cases where the file has been deleted
         return (isinstance(other, FileTab) and
                 self.path is not None and
                 other.path is not None and
@@ -575,6 +529,7 @@ bers.py>` use this attribute.
     def path(self):
         return self._path
 
+    # TODO: assert that the tab is absolute or make it absolute?
     @path.setter
     def path(self, new_path):
         if self.path is None and new_path is None:
@@ -588,7 +543,7 @@ bers.py>` use this attribute.
 
         self._path = new_path
         if it_changes:
-            self.event_generate('<<PathChanged>>')
+            self.on_path_changed.run()
 
     @property
     def filetype(self):
@@ -608,7 +563,7 @@ bers.py>` use this attribute.
             pass
 
         self._filetype = filetype
-        self.event_generate('<<FiletypeChanged>>')
+        self.on_filetype_changed.run()
 
     def _guess_filetype(self):
         if self.path is None:
@@ -620,25 +575,30 @@ bers.py>` use this attribute.
             #        before saving, and that's when this runs
             self.filetype = filetypes.guess_filetype(self.path)
 
-    def _guess_filetype_if_needed(self, junk_event):
+    def _guess_filetype_if_needed(self):
         if self.filetype.name == 'Plain Text':
             # the user probably hasn't set the filetype
             self._guess_filetype()
 
-    def _update_title(self, junk=None):
+    def _update_title(self):
         text = 'New File' if self.path is None else os.path.basename(self.path)
         if not self.is_saved():
             # TODO: figure out how to make the label red in ttk instead
             #       of stupid stars
             text = '*' + text + '*'
-        self.title = text
+
+        if self in self.widget.parent:
+            # the tab is in the tab manager
+            self.config['text'] = text
+        else:
+            self.initial_options['text'] = text
 
     def _update_status(self, junk=None):
         if self.path is None:
             prefix = "New file"
         else:
             prefix = "File '%s'" % self.path
-        line, column = self.textwidget.index('insert').split('.')
+        line, column = self.textwidget.marks['insert']
 
         self.status = "%s, %s\tLine %s, column %s" % (
             prefix, self.filetype.name,
@@ -662,15 +622,16 @@ bers.py>` use this attribute.
         else:
             msg = ("Do you want to save your changes to %s?"
                    % os.path.basename(self.path))
-        answer = messagebox.askyesnocancel("Close file", msg)
-        if answer is None:
-            # cancel
+
+        answer = tk.dialog.yes_no_cancel("Close file", msg)
+        if answer == 'cancel':
             return False
-        if answer:
-            # yes
+        if answer == 'yes':
             return self.save()
-        # no was clicked, can be closed
-        return True
+        if answer == 'no':
+            # can be closed
+            return True
+        assert False    # pragma: no cover
 
     def on_focus(self):
         """This override of :meth:`Tab.on_focus` focuses the :attr:`textwidget\
@@ -686,12 +647,12 @@ bers.py>` use this attribute.
         on errors, and True is returned in all other cases. In other
         words, this returns True if saving succeeded.
 
-        .. seealso:: The :virtevt:`Save` event.
+        .. seealso:: :attr:`.on_save`
         """
         if self.path is None:
             return self.save_as()
 
-        self.event_generate('<<Save>>')
+        self.on_save.run()
 
         encoding = settings.get_section('General')['encoding']
         try:
@@ -713,9 +674,8 @@ bers.py>` use this attribute.
         Returns True if the file was saved, and False if the user
         cancelled the dialog.
         """
-        path = filedialog.asksaveasfilename(
-            **filetypes.get_filedialog_kwargs())
-        if not path:     # it may be '' because tkinter
+        path = tk.dialog.save_file(**filetypes.get_filedialog_kwargs())
+        if path is None:
             return False
 
         self.path = path
@@ -757,38 +717,34 @@ bers.py>` use this attribute.
 
 if __name__ == '__main__':
     # test/demo
-    from porcupine.utils import _init_images
-    root = tkinter.Tk()
-    _init_images()
+    window = tk.Window()
 
-    tabmgr = TabManager(root)
+    tabmgr = TabManager(window)
     tabmgr.pack(fill='both', expand=True)
-    tabmgr.bind('<<NewTab>>',
-                lambda event: print("added tab", event.data_widget.i),
-                add=True)
+    tabmgr.on_new_tab.connect(lambda tab: print("added tab", tab.i))
     tabmgr.bind('<<NotebookTabChanged>>',
-                lambda event: print("selected", event.widget.select().i),
-                add=True)
+                lambda: print("selected", tabmgr.selected_tab.i))
 
     def on_ctrl_w(event):
         if tabmgr.tabs():
             tabmgr.close_tab(tabmgr.select())
 
-    root.bind('<Control-w>', on_ctrl_w)
+    window.bind('<Control-w>', on_ctrl_w)
     for keysym, callback in tabmgr.bindings:
-        root.bind(keysym, callback)
+        window.toplevel.bind(keysym, callback)
 
+    import itertools
     def add_new_tab(counter=itertools.count(1)):
         tab = Tab(tabmgr)
         tab.i = next(counter)     # tabmgr doesn't care about this
         tab.title = "tab %d" % tab.i
-        tabmgr.add_tab(tab)
+        tabmgr.append_and_select(tab)
 
-        text = tkinter.Text(tab)
-        text.pack()
-        text.insert('1.0', "this is the content of tab %d" % tab.i)
+        text = tk.Text(tab.content)
+        text.pack(fill='both', expand=True)
+        text.insert(text.start, "this is the content of tab %d" % tab.i)
 
-    ttk.Button(root, text="add a new tab", command=add_new_tab).pack()
+    tk.Button(window, text="add a new tab", command=add_new_tab).pack()
     add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab()
-    root.geometry('300x200')
-    root.mainloop()
+    window.geometry(300, 200)
+    tk.run()
