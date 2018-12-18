@@ -2,12 +2,12 @@ import functools
 import itertools
 import os
 import re
-import tkinter
-from tkinter import ttk
 from urllib.request import pathname2url
 import webbrowser
 
-from porcupine import actions, dirs, get_main_window, images, utils
+import pythotk as tk
+
+from porcupine import actions, dirs, get_main_window, images
 from porcupine import __version__ as porcupine_version
 
 
@@ -15,9 +15,11 @@ _BORING_TEXT = """
 This is porcupine {version}.
 
 Porcupine is a simple but powerful and configurable text editor written in \
-Python using the notorious tkinter GUI library. It started as a \
-proof-of-concept of a somewhat good editor written in tkinter, but nowadays \
-it's a tool I use at work every day.
+Python using my [pythotk](https://github.com/Akuli/pythotk) library. It \
+started as a proof-of-concept of a somewhat good editor written in tkinter, \
+but it became a tool that I used every day at work. Later I created pythotk \
+and ported porcupine to use that instead, because pythotk is much nicer to \
+work with than tkinter.
 
 I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. See \
 [the contributor \
@@ -36,7 +38,7 @@ here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 """.format(version=porcupine_version)
 
 
-def show_huge_logo(junk_event=None):
+def show_huge_logo():
     path = os.path.join(dirs.installdir, 'images', 'logo.gif')
     assert os.path.isfile(path)
 
@@ -47,22 +49,29 @@ def show_huge_logo(junk_event=None):
     webbrowser.open('file://' + pathname2url(path))
 
 
-class _AboutDialogContent(ttk.Frame):
+# unlike webbrowser.open, this returns None
+def open_url(url):
+    webbrowser.open(url)
+
+
+class _AboutDialogContent(tk.Frame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        big_label = ttk.Label(self, font=('', 16, ''), text="About Porcupine")
+        big_label = tk.Label(self, font=('', 16, ''), text="About Porcupine")
         big_label.pack(pady=5)
 
-        # python's ttk::style api sucks
+        # pythotk doesn't have a ttk::style api yet
         # this doesn't update when the user changes the ttk theme
         # but who would open the about dialog and then change theme?
         # makes no sense
-        ttk_fg = self.tk.eval('ttk::style lookup TLabel.label -foreground')
-        ttk_bg = self.tk.eval('ttk::style lookup TLabel.label -background')
+        ttk_fg = tk.tcl_eval(
+            tk.Color, 'ttk::style lookup TLabel.label -foreground')
+        ttk_bg = tk.tcl_eval(
+            tk.Color, 'ttk::style lookup TLabel.label -background')
 
-        self._textwidget = tkinter.Text(
+        self._textwidget = tk.Text(
             self, width=60, height=18, font='TkDefaultFont',
             wrap='word', borderwidth=0, relief='flat',
             foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
@@ -70,20 +79,25 @@ class _AboutDialogContent(ttk.Frame):
 
         # http://effbot.org/zone/tkinter-text-hyperlink.htm
         # that tutorial is almost as old as i am, but it's still usable
-        self._textwidget.tag_configure('link', foreground='blue',
-                                       underline=True)
-        self._textwidget.tag_bind('link', '<Enter>', self._enter_link)
-        self._textwidget.tag_bind('link', '<Leave>', self._leave_link)
-        self._link_tag_names = map('link-{}'.format, itertools.count())
+        link = self._textwidget.get_tag('link')
+        link['foreground'] = 'blue'
+        link['underline'] = True
+        link.bind('<Enter>', self._enter_link)
+        link.bind('<Leave>', self._leave_link)
+
+        self._link_tags = (self._textwidget.get_tag('link-' + str(number))
+                           for number in itertools.count())
 
         for text_chunk in _BORING_TEXT.strip().split('\n\n'):
             self._add_minimal_markdown(text_chunk)
-        self._textwidget['state'] = 'disabled'     # disallow writing more text
 
-        label = ttk.Label(self, image=images.get('logo-200x200'),
-                          cursor='hand2')
+        # don't allow the user to write more text
+        self._textwidget.config['state'] = 'disabled'
+
+        label = tk.Label(self, image=images.get('logo-200x200'),
+                         cursor='hand2')
         label.pack(anchor='e')
-        utils.set_tooltip(label, "Click to view in full size")
+        tk.extras.set_tooltip(label, "Click to view in full size")
         label.bind('<Button-1>', show_huge_logo)
 
     def _add_minimal_markdown(self, text):
@@ -96,41 +110,44 @@ class _AboutDialogContent(ttk.Frame):
             previous_end = link.end()
         parts.append(text[previous_end:])
 
-        if self._textwidget.index('end - 1 char') != '1.0':
-            # not the first time something is inserted
-            self._textwidget.insert('end', '\n\n')
+        if self._textwidget.start != self._textwidget.end:
+            self._textwidget.insert(self._textwidget.end, '\n\n')
 
         for part in parts:
             if isinstance(part, str):
-                self._textwidget.insert('end', part)
+                self._textwidget.insert(self._textwidget.end, part)
             else:
                 # a link
                 text, href = part.groups()
-                tag = next(self._link_tag_names)
-                self._textwidget.tag_bind(
-                    tag, '<Button-1>',
-                    functools.partial(self._open_link, href))
-                self._textwidget.insert('end', text, ['link', tag])
+                tag = next(self._link_tags)
+                tag.bind('<Button-1>', functools.partial(open_url, href))
+                self._textwidget.insert(
+                    self._textwidget.end, text,
+                    [self._textwidget.get_tag('link'), tag])
 
-    def _enter_link(self, junk_event):
-        self._textwidget.config(cursor='hand2')
+    def _enter_link(self):
+        self._textwidget.config['cursor'] = 'hand2'
 
-    def _leave_link(self, junk_event):
-        self._textwidget.config(cursor='')
-
-    def _open_link(self, href, junk_event):
-        webbrowser.open(href)
+    def _leave_link(self):
+        self._textwidget.config['cursor'] = ''
 
 
 def show_about_dialog():
-    dialog = tkinter.Toplevel()
+    dialog = tk.Window("About Porcupine")
+    dialog.transient = get_main_window()
+
     content = _AboutDialogContent(dialog)
     content.pack(fill='both', expand=True)
 
-    content.update()       # make sure that the winfo stuff works
-    dialog.minsize(content.winfo_reqwidth(), content.winfo_reqheight())
-    dialog.title("About Porcupine")
-    dialog.transient(get_main_window())
+    tk.update()       # make sure that the winfo stuff works
+    # TODO: add to pythotk:
+    #   * winfo reqwidth
+    #   * winfo reqheight
+    #   * wm minsize
+    tk.tcl_eval(None, '''
+    wm minsize %s [winfo reqwidth %s] [winfo reqheight %s]
+    ''' % (dialog.toplevel.to_tcl(), content.to_tcl(), content.to_tcl()))
+
     dialog.wait_window()
 
 
