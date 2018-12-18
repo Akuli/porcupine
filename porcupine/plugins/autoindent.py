@@ -1,11 +1,13 @@
-"""Indenting and dedenting automatically."""
+"""Indenting and dedenting automatically when enter is pressed."""
+
+import pythotk as tk
+
+from porcupine import get_tab_manager, tabs, utils
 
 # without this, pressing enter twice would strip all trailing whitespace
 # from the blank line above the cursor, and then after_enter() wouldn't
 # do anything
 setup_before = ['rstrip']
-
-from porcupine import get_tab_manager, tabs, utils
 
 
 def leading_whitespace(string):
@@ -22,9 +24,9 @@ def leading_whitespace(string):
 
 def after_enter(textwidget):
     """Indent or dedent the current line automatically if needed."""
-    lineno = int(textwidget.index('insert').split('.')[0])
-    prevline = textwidget.get('%d.0 - 1 line' % lineno, '%d.0' % lineno)
-    textwidget.insert('insert', leading_whitespace(prevline))
+    linestart = textwidget.marks['insert'].linestart()
+    prevline = textwidget.get(linestart.back(lines=1), linestart)
+    textwidget.insert(textwidget.marks['insert'], leading_whitespace(prevline))
 
     # we can't strip trailing whitespace before this because then
     # pressing enter twice would get rid of all indentation
@@ -34,25 +36,23 @@ def after_enter(textwidget):
     prevline = prevline.strip()
     if prevline.endswith((':', '(', '[', '{')):
         # start of a new block
-        textwidget.indent('insert')
+        textwidget.indent(textwidget.marks['insert'])
     elif (prevline in {'return', 'break', 'pass', 'continue'} or
           prevline.startswith(('return ', 'raise '))):
         # must be end of a block
-        textwidget.dedent('insert')
+        textwidget.dedent(textwidget.marks['insert'])
 
 
-def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        textwidget = event.data_widget.textwidget
+def on_new_tab(tab):
+    if isinstance(tab, tabs.FileTab):
+        def bind_callback():
+            tk.after_idle(after_enter, args=[tab.textwidget])
 
-        def bind_callback(event):
-            textwidget.after_idle(after_enter, textwidget)
-
-        textwidget.bind('<Return>', bind_callback, add=True)
+        tab.textwidget.bind('<Return>', bind_callback)
 
 
 def setup():
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().on_new_tab.connect(on_new_tab)
 
 
 if __name__ == '__main__':
