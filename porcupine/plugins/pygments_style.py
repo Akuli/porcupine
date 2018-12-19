@@ -3,6 +3,7 @@
 import threading
 
 import pygments.styles
+import pythotk as tk
 
 from porcupine import actions, get_main_window, settings
 
@@ -32,26 +33,23 @@ from porcupine import actions, get_main_window, settings
 #        menubar.get_menu("Color Themes").add_radiobutton(**options)
 
 
+@tk.make_thread_safe
+def on_styles_loaded(styles):
+    config = settings.get_section('General')
+    actions.add_choice("Color Styles", styles,
+                       var=config.get_var('pygments_style'))
+
+
 # threading this gives a significant speed improvement on startup
 # on this system, setup() took 0.287940 seconds before adding threads
 # and 0.000371 seconds after adding threads
-def load_styles_to_list(target_list):
-    target_list.extend(pygments.styles.get_all_styles())    # slow
-    target_list.sort()
+def load_styles_to_list():
+    styles = list(pygments.styles.get_all_styles())    # slow
+    styles.sort()
+    on_styles_loaded(styles)
 
 
 def setup():
-    config = settings.get_section('General')
-    styles = []
-    thread = threading.Thread(target=load_styles_to_list, args=[styles])
+    thread = threading.Thread(target=load_styles_to_list)
     thread.daemon = True     # i don't care wtf happens to this
     thread.start()
-
-    def check_if_it_finished():
-        if thread.is_alive():
-            get_main_window().after(200, check_if_it_finished)
-        else:
-            actions.add_choice(
-                "Color Styles", styles, var=config.get_var('pygments_style'))
-
-    get_main_window().after(200, check_if_it_finished)
