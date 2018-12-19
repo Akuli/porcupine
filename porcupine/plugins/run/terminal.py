@@ -6,7 +6,8 @@ import shlex
 import shutil
 import subprocess
 import tempfile
-from tkinter import messagebox
+
+import pythotk as tk
 
 from porcupine import get_main_window, utils
 
@@ -81,7 +82,7 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
             terminal = shutil.which('xfce4-terminal')
             if terminal is None:
                 # not much more can be done
-                messagebox.showerror(
+                tk.dialog.error(
                     "x-terminal-emulator not found",
                     "Cannot find x-terminal-emulator in $PATH. "
                     "Are you sure that you have a terminal installed?")
@@ -103,7 +104,7 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
         log.debug("using $TERMINAL, it's set to %r" % terminal)
 
     if shutil.which(terminal) is None:
-        messagebox.showerror(
+        tk.dialog.error(
             "%r not found" % terminal,
             "Cannot find %r in $PATH. "
             "Try setting $TERMINAL to a path to a working terminal program."
@@ -121,12 +122,9 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
 def run_command(workingdir, command):
     blue_message = ' '.join(map(utils.quote, command))
 
-    widget = get_main_window()    # any tkinter widget works
-    windowingsystem = widget.tk.call('tk', 'windowingsystem')
-
-    if windowingsystem == 'win32':
+    if tk.windowingsystem() == 'win32':
         _run_in_windows_cmd(blue_message, workingdir, command)
-    elif windowingsystem == 'aqua' and not os.environ.get('TERMINAL', ''):
+    elif tk.windowingsystem() == 'aqua' and not os.environ.get('TERMINAL', ''):
         _run_in_osx_terminal_app(blue_message, workingdir, command)
     else:
         _run_in_x11_like_terminal(blue_message, workingdir, command)

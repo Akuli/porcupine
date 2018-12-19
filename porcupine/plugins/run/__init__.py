@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def do_something_to_this_file(something):
-    tab = get_tab_manager().select()
+    tab = get_tab_manager().selected_tab
     assert isinstance(tab, tabs.FileTab)
     if tab.path is None or not tab.is_saved():
         tab.save()

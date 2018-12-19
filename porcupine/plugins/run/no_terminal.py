@@ -1,10 +1,11 @@
 """Run commands within the Porcupine window."""
 
 import logging
-import queue
 import subprocess
 import threading
-import tkinter
+import weakref
+
+import pythotk as tk
 
 from porcupine import get_tab_manager, images, utils
 
@@ -15,77 +16,66 @@ class NoTerminalRunner:
 
     def __init__(self, master):
         # TODO: better coloring that follows the pygments theme
-        self.textwidget = tkinter.Text(master, height=12, state='disabled')
-        self.textwidget.tag_config('info', foreground='blue')
-        self.textwidget.tag_config('output')    # use default colors
-        self.textwidget.tag_config('error', foreground='red')
+        self.textwidget = tk.Text(master, height=12, state='disabled')
+        self.textwidget.get_tag('info')['foreground'] = 'blue'
+        # 'output' tag uses default colors
+        self.textwidget.get_tag('error')['foreground'] = 'red'
 
-        self._output_queue = queue.Queue()
         self._running_process = None
-        self._queue_clearer()
 
-    def _runner_thread(self, workingdir, command, succeeded_callback):
+    def thread_target_run(self, workingdir, command, succeeded_callback):
         process = None
 
-        def emit_message(kind, msg):
+        @tk.make_thread_safe
+        def show_messages(*messages):
+            # FIXME: how is this supposed to work?
             if process is not None and self._running_process is not process:
-                # another _run_command() is already running
+                # another thread_target_run() is already running
                 return
-            self._output_queue.put((kind, msg))
 
-        emit_message('clear', None)
-        emit_message('info', ' '.join(map(utils.quote, command)) + '\n')
+            self.textwidget.config['state'] = 'normal'
+            for tag_or_clear, text in messages:
+                if tag_or_clear == 'clear':
+                    self.textwidget.delete(self.textwidget.start,
+                                           self.textwidget.end)
+                else:
+                    tag_object = self.textwidget.get_tag(tag_or_clear)
+                    self.textwidget.insert(self.textwidget.end, text,
+                                           tag_object)
+            self.textwidget.config['state'] = 'disabled'
+
+        show_messages(
+            ('clear', None),
+            ('info', ' '.join(map(utils.quote, command)) + '\n'),
+        )
 
         try:
             process = self._running_process = subprocess.Popen(
                 command, cwd=workingdir,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         except OSError as e:
-            emit_message('error', '%s: %s\n' % (type(e).__name__, e))
-            log.debug("here's full traceback", exc_info=True)
+            show_messages(
+                ('error', '%s: %s\n' % (type(e).__name__, e)),
+            )
+            log.debug("error when running command without terminal",
+                      exc_info=True)
             return
 
         for line in process.stdout:
             # TODO: is utf-8 the correct choice on all platforms?
-            emit_message('output', line.decode('utf-8', errors='replace'))
+            show_messages(
+                ('output', line.decode('utf-8', errors='replace')),
+            )
         process.communicate()    # make sure process.returncode is set
 
         if process.returncode == 0:
             # can't do succeeded_callback() here because this is running
             # in a thread and succeeded_callback() does tkinter stuff
-            emit_message('info', "The process completed successfully.")
-            emit_message('run', succeeded_callback)
+            show_messages(('info', "The process completed successfully."))
+            tk.make_thread_safe(succeeded_callback)()
         else:
-            emit_message('error', "The process failed with status %d."
-                         % process.returncode)
-
-    def run_command(self, *args):
-        # this is a daemon thread because i don't care what the fuck
-        # happens to it when python exits
-        threading.Thread(target=self._runner_thread,
-                         args=args, daemon=True).start()
-
-    def _queue_clearer(self):
-        items = []
-        while True:
-            try:
-                items.append(self._output_queue.get(block=False))
-            except queue.Empty:
-                break
-
-        if items:
-            self.textwidget['state'] = 'normal'
-            for message_kind, value in items:
-                if message_kind == 'clear':
-                    self.textwidget.delete('1.0', 'end')
-                elif message_kind == 'run':
-                    value()
-                else:
-                    # value is text and message_kind is a tag
-                    self.textwidget.insert('end', value, message_kind)
-            self.textwidget['state'] = 'disabled'
-
-        self.textwidget.after(100, self._queue_clearer)
+            show_messages(('error', ("The process failed with status %d."
+                                     % process.returncode)))
 
     def destroy(self, junk_event=None):
         self.textwidget.destroy()
@@ -99,27 +89,31 @@ def do_nothing():
     pass
 
 
-# str(tab) is the Tk widget path, guaranteed to be unique
-_no_terminal_runners = {}       # {str(tab): NoTerminalRunner}
+_no_terminal_runners = weakref.WeakKeyDictionary()    # {tab: NoTerminalRunner}
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(workingdir, command, succeeded_callback=do_nothing):
-    tab = get_tab_manager().select()
+    tab = get_tab_manager().selected_tab
     try:
-        runner = _no_terminal_runners[str(tab)]
+        runner = _no_terminal_runners[tab]
     except KeyError:
         runner = NoTerminalRunner(tab.bottom_frame)
-        _no_terminal_runners[str(tab)] = runner
+        _no_terminal_runners[tab] = runner
 
-        def on_close(event):
+        def on_close():
             runner.destroy()
-            del _no_terminal_runners[str(tab)]
+            del _no_terminal_runners[tab]
 
-        closebutton = tkinter.Label(
+        closebutton = tk.Label(
             runner.textwidget, image=images.get('closebutton'), cursor='hand2')
         closebutton.bind('<Button-1>', on_close)
         closebutton.place(relx=1, rely=0, anchor='ne')
 
     runner.textwidget.pack(side='top', fill='x')
-    runner.run_command(workingdir, command, succeeded_callback)
+
+    # this is a daemon thread because i don't care what the fuck
+    # happens to it when python exits
+    threading.Thread(target=runner.thread_target_run,
+                     args=[workingdir, command, succeeded_callback],
+                     daemon=True).start()
