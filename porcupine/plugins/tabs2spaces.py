@@ -11,26 +11,32 @@
     probably use :func:`porcupine.utils.bind_tab_key` instead.
 """
 
+# TODO: should this even be a plugin? the actual tabs to spaces conversion is
+#       done by indent() and dedent(), and this just makes sure that they are
+#       called when tab is pressed
+
+import pythotk as tk
+
 from porcupine import get_tab_manager, tabs, utils
 
 
-def on_tab(event, shift_pressed):
-    if not event.widget.tag_ranges('sel'):
+def on_tab(shift_pressed, event):
+    if not event.widget.get_tag('sel').ranges():
         # nothing selected
         if shift_pressed:
-            event.widget.dedent('insert')
+            event.widget.dedent(event.widget.marks['insert'])
         else:
-            event.widget.indent('insert')
+            event.widget.indent(event.widget.marks['insert'])
 
     # don't insert a tab when it's not supposed to be inserted, or if
     # shift is pressed down, don't move focus out of the widget
     return 'break'
 
 
-def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        utils.bind_tab_key(event.data_widget.textwidget, on_tab, add=True)
+def on_new_tab(tab):
+    if isinstance(tab, tabs.FileTab):
+        tk.extras.bind_tab_key(tab.textwidget, on_tab, event=True)
 
 
 def setup():
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().on_new_tab.connect(on_new_tab)
