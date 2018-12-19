@@ -7,7 +7,8 @@ import subprocess
 import sys
 import tempfile
 import threading
-import tkinter
+
+import pythotk as tk
 
 import porcupine
 from porcupine import pluginloader, settings
@@ -26,16 +27,17 @@ SPECIAL_STATES = {NO_TABS, NOT_POPPABLE, NOT_DRAGGING}
 
 def _is_on_window(event):
     window = event.widget.winfo_toplevel()
-    window_left = window.winfo_x()
+    # TODO: add winfo_x and winfo_y to pythotk
+    window_left = tk.tcl_call(int, 'winfo', 'x', window)
+    window_top = tk.tcl_call(int, 'winfo', 'y', window)
     window_right = window_left + window.winfo_width()
-    window_top = window.winfo_y()
     window_bottom = window_top + window.winfo_height()
 
-    return ((window_left < event.x_root < window_right) and
-            (window_top < event.y_root < window_bottom))
+    return ((window_left < event.rootx < window_right) and
+            (window_top < event.rooty < window_bottom))
 
 
-# TODO: tests
+# TODO: tests?
 def _2lines(string):
     # convert a space in the middle into a newline
     words = string.split()
@@ -46,23 +48,29 @@ def _2lines(string):
 class PopManager:
 
     def __init__(self):
-        self._window = tkinter.Toplevel()
+        self._window = tk.Toplevel()
         self._window.withdraw()
-        self._window.overrideredirect(True)
 
-        # this is not ttk because i want it to look yellowish
-        self._label = tkinter.Label(self._window, fg='#000', bg='#ffc')
-        self._label.pack()
+        # TODO: add overrideredirect to pythotk
+        tk.tcl_call(None, 'wm', 'overrideredirect', self._window, True)
+
+        # the label is not ttk because i want it to look yellowish
+        self._label_path = self._window.to_tcl() + '.label'
+        tk.tcl_call(None, 'label', self._label_path,
+                    '-fg', '#000', '-bg', '#ffc')
+        tk.tcl_call(None, 'pack', self._label_path)
 
         self._dragged_state = NOT_DRAGGING
 
     def _show_tooltip(self, event):
-        if self._window.state() == 'withdrawn':
+        if self._window.wm_state == 'withdrawn':
             self._window.deiconify()
 
-        left = event.x_root - (self._label.winfo_reqwidth() // 2)  # centered
-        top = event.y_root - self._label.winfo_reqheight()      # above cursor
-        self._window.geometry('+%d+%d' % (left, top))
+        width = tk.tcl_call(int, 'winfo', 'reqwidth', self._label_path)
+        height = tk.tcl_call(int, 'winfo', 'reqheight', self._label_path)
+        self._window.geometry(
+            x=(event.rootx - (width // 2)),     # centered
+            y=(event.rooty - height))           # above cursor
 
     # no need to return 'break' imo, other plugins are free to follow
     # drags and drops
@@ -72,7 +80,7 @@ class PopManager:
             return
 
         if self._dragged_state is NOT_DRAGGING:
-            tab = porcupine.get_tab_manager().select()
+            tab = porcupine.get_tab_manager().selected_tab
             if tab is None:
                 # no tabs to pop up
                 self._dragged_state = NO_TABS
@@ -82,12 +90,12 @@ class PopManager:
             state = tab.get_state()
             if state is None:
                 self._dragged_state = NOT_POPPABLE
-                self._label['text'] = _2lines(
-                    "This tab cannot be popped up.")
+                tk.tcl_call(None, self._label_path, 'configure', '-text',
+                            _2lines("This tab cannot be popped up."))
             else:
                 self._dragged_state = (tab, state)
-                self._label['text'] = _2lines(
-                    "Drop the tab here to pop it up...")
+                tk.tcl_call(None, self._label_path, 'configure', '-text',
+                            _2lines("Drop the tab here to pop it up..."))
 
         self._show_tooltip(event)
 
@@ -103,9 +111,13 @@ class PopManager:
                     plugin_names.remove(bad_plugin)
 
             tab, state = self._dragged_state
-            required_size = (tab.winfo_reqwidth(), tab.winfo_reqheight())
-            message = (type(tab), state, plugin_names, required_size,
-                       porcupine.get_init_kwargs(), event.x_root, event.y_root)
+
+            # TODO: add winfo_reqwidth and winfo_reqheight to pythotk
+            reqwidth = tk.tcl_call(int, 'winfo', 'reqwidth', tab.content)
+            reqheight = tk.tcl_call(int, 'winfo', 'reqheight', tab.content)
+
+            message = (type(tab), state, plugin_names, (reqwidth, reqheight),
+                       porcupine.get_init_kwargs(), event.rootx, event.rooty)
             with tempfile.NamedTemporaryFile(delete=False) as file:
                 log.debug("writing dumped state to '%s'", file)
                 pickle.dump(message, file)
@@ -114,7 +126,11 @@ class PopManager:
             process = subprocess.Popen([sys.executable, '-m', __name__,
                                         file.name])
             log.debug("started subprocess with PID %d", process.pid)
-            porcupine.get_tab_manager().close_tab(tab)
+
+            # TODO: should the subprocess send some kind of 'deleted' message
+            #       to this process, and then this process wouldn't close the
+            #       tab until it receives the message?
+            tab.close()
 
             # don't exit python until the subprocess exits, also log stuff
             threading.Thread(target=self._waiter_thread,
@@ -135,9 +151,9 @@ class PopManager:
 def setup():
     manager = PopManager()
     porcupine.get_tab_manager().bind(
-        '<Button1-Motion>', manager.on_drag, add=True)
+        '<Button1-Motion>', manager.on_drag, event=True)
     porcupine.get_tab_manager().bind(
-        '<ButtonRelease-1>', manager.on_drop, add=True)
+        '<ButtonRelease-1>', manager.on_drop, event=True)
 
 
 def _run_popped_up_process():
@@ -155,12 +171,12 @@ def _run_popped_up_process():
 
     top = mousey - height//2
     left = mousex - height//2
-    porcupine.get_main_window().geometry('%dx%d+%d+%d' % (
-        max(width, reqwidth), max(height, reqheight), left, top))
+    porcupine.get_main_window().geometry(
+        max(width, reqwidth), max(height, reqheight), left, top)
 
     pluginloader.load(plugin_names)
     tabmanager = porcupine.get_tab_manager()
-    tabmanager.add_tab(tabtype.from_state(tabmanager, state))
+    tabmanager.append_and_select(tabtype.from_state(tabmanager, state))
 
     # the state file is not removed earlier because if anything above
     # fails, it still exists and can be recovered like this:

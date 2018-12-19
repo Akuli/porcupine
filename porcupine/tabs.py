@@ -698,10 +698,10 @@ bers.py>` use this attribute.
             # this is really saved
             content = None
         else:
-            content = self.textwidget.get('1.0', 'end - 1 char')
+            content = self.textwidget.get()
 
         return (self.path, content, self._save_hash,
-                self.textwidget.index('insert'))
+                tuple(self.textwidget.marks['insert']))
 
     @classmethod
     def from_state(cls, manager, state):
@@ -717,10 +717,11 @@ bers.py>` use this attribute.
         self._update_title()
 
         # this seems to work well enough
-        self.textwidget.mark_set('insert', cursor_pos)
-        self.textwidget.see('insert linestart')
-        self.textwidget.see('insert linestart + 5 lines')
-        self.textwidget.see('insert linestart - 5 lines')
+        self.textwidget.marks['insert'] = cursor_pos
+
+        # TODO: add see to pythotk
+        tk.tcl_call(None, self.textwidget, 'see', 'insert')
+
         return self
 
 
