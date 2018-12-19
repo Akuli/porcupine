@@ -484,8 +484,7 @@ def _init():
         path = os.path.join(dirs.configdir, 'filetypes.ini')
         manager = get_tab_manager()
         filetab = tabs.FileTab.open_file(manager, path)
-        manager.append(filetab)
-        manager.selected_tab = filetab
+        manager.append_and_select(filetab)
         _dialog.withdraw()
 
     label1.pack(fill='x')
