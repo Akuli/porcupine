@@ -1,9 +1,14 @@
 """Simple welcome message."""
 
 import re
-from tkinter import ttk
 
-from porcupine import get_tab_manager, images, utils
+import pythotk as tk
+
+from porcupine import get_tab_manager, images
+
+# refuse to run without the geometry plugin because this thing does very weird
+# things without it, try it and see to find out
+import porcupine.plugins.geometry   # noqa
 
 
 RAW_MESSAGE = """
@@ -29,44 +34,42 @@ BORDER_SIZE = 30    # pixels
 class WelcomeMessageDisplayer:
 
     def __init__(self):
-        self._frame = ttk.Frame(get_tab_manager())
+        self._frame = tk.Frame(get_tab_manager())
 
         # pad only on left side so the image goes as far right as possible
-        top = ttk.Frame(self._frame)
+        top = tk.Frame(self._frame)
         top.pack(fill='x', padx=(BORDER_SIZE, 0))
-        ttk.Label(top, image=images.get('logo-200x200')).pack(side='right')
+        tk.Label(top, image=images.get('logo-200x200')).pack(side='right')
 
         # TODO: better way to center the label in its space?
-        centerer = ttk.Frame(top)
+        centerer = tk.Frame(top)
         centerer.pack(fill='both', expand=True)
-        self.title_label = ttk.Label(
-            centerer, text="Welcome to Porcupine!", font=('', 25, 'bold'))
+        self.title_label = tk.Label(centerer, "Welcome to Porcupine!",
+                                    font=('', 25, 'bold'))
         self.title_label.place(relx=0.5, rely=0.5, anchor='center')
 
-        self.message_label = ttk.Label(
-            self._frame, text=MESSAGE, font=('', 15, ''))
+        self.message_label = tk.Label(self._frame, MESSAGE, font=('', 15, ''))
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()
 
     def update_wraplen(self, event):
-        # images.get('logo-200x200').width() is always 200, but
+        # images.get('logo-200x200').width is always 200, but
         # hard-coding is bad
-        self.title_label['wraplength'] = (
-            event.width - images.get('logo-200x200').width() - BORDER_SIZE)
-        self.message_label['wraplength'] = event.width - 2*BORDER_SIZE  # noqa
+        self.title_label.config['wraplength'] = (
+            event.width - images.get('logo-200x200').width - BORDER_SIZE)
+        self.message_label.config['wraplength'] = event.width - 2 * BORDER_SIZE
 
-    def on_new_tab(self, event):
+    def on_new_tab(self, tab):
         self._frame.pack_forget()
-        event.data_widget.bind('<Destroy>', self._on_tab_closed, add=True)
+        tab.widget.bind('<Destroy>', self._on_tab_closed)
 
-    def _on_tab_closed(self, event=None):
-        if not get_tab_manager().tabs():
+    def _on_tab_closed(self):
+        if not get_tab_manager():
             self._frame.pack(fill='both', expand=True)
 
 
 def setup():
     displayer = WelcomeMessageDisplayer()
-    get_tab_manager().bind('<Configure>', displayer.update_wraplen, add=True)
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>',
-                         displayer.on_new_tab, add=True)
+    get_tab_manager().bind('<Configure>', displayer.update_wraplen, event=True)
+    get_tab_manager().on_new_tab.connect(displayer.on_new_tab)
