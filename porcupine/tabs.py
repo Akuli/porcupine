@@ -268,6 +268,15 @@ class Tab(tk.NotebookTab):
         self.left_frame.pack(side='left', fill='y')
         self.right_frame.pack(side='right', fill='y')
 
+        # https://wiki.tcl-lang.org/page/frame "Frame does not shrink to 1
+        # height if last children is unpacked/ungridded"
+        # this bug was hard to find, and it only happened when there was
+        # only 1 plugin using a frame
+        tk.Frame(self.top_frame).pack()
+        tk.Frame(self.bottom_frame).pack()
+        tk.Frame(self.left_frame).pack()
+        tk.Frame(self.right_frame).pack()
+
         self.content = tk.Frame(self.widget)
         self.content.pack(fill='both', expand=True)
 
