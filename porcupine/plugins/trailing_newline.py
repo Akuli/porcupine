@@ -6,9 +6,10 @@ from porcupine import get_tab_manager, tabs
 
 
 def on_save(textwidget):
-    if textwidget.get(textwidget.end.back(chars=1), textwidget.end) != '\n':
-        # doesn't end with a \n yet, be sure not to annoyingly move the
-        # cursor like IDLE does
+    last_char = textwidget.get(textwidget.end.back(chars=1), textwidget.end)
+    if last_char not in {'\n', ''}:
+        # doesn't end with a \n yet and is not empty file
+        # be sure not to annoyingly move the cursor like IDLE does
         cursor = textwidget.marks['insert']
         textwidget.insert(textwidget.end, '\n')
         textwidget.marks['insert'] = cursor
