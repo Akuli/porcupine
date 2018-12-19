@@ -16,9 +16,9 @@ setup_after = [
 STATE_FILE = os.path.join(dirs.cachedir, 'restart_state.pkl')
 
 
-def save_states(junk_event):
+def save_states():
     states = []
-    for tab in get_tab_manager().tabs():
+    for tab in get_tab_manager():
         state = tab.get_state()
         if state is not None:
             states.append((type(tab), state))
@@ -29,7 +29,7 @@ def save_states(junk_event):
 
 def setup():
     # this must run even if loading tabs from states below fails
-    get_main_window().bind('<<PorcupineQuit>>', save_states, add=True)
+    get_main_window().bind('<<PorcupineQuit>>', save_states)
 
     try:
         with open(STATE_FILE, 'rb') as file:
@@ -39,4 +39,4 @@ def setup():
 
     for tab_class, state in states:
         tab = tab_class.from_state(get_tab_manager(), state)
-        get_tab_manager().add_tab(tab)
+        get_tab_manager().append(tab)
