@@ -154,6 +154,11 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
 
         tk.tcl_call(None, 'bind', 'Text', binding, '\n'.join(filtered_code))
 
+        # this other thing is needed for ctrl+w, it seems to be bound
+        # differently so the above code doesn't handle it, i don't know how
+        # it's bound
+        tk.Text.bind_class(binding, bind_callback)
+
     return action
 
 
