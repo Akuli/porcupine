@@ -1,14 +1,21 @@
+import pythotk as tk
+
 from porcupine import get_main_window, settings
 
 
-config = settings.get_section('General')
-config.add_option('default_geometry', '650x600', reset=False)
+config = settings.get_section('Window Size and Location')
+config.add_option('width', 650, reset=False)
+config.add_option('height', 600, reset=False)
+config.add_option('x', None, reset=False)
+config.add_option('y', None, reset=False)
 
 
-def save_geometry(event):
-    config['default_geometry'] = event.widget.geometry()
+def save_geometry():
+    namedtuple = get_main_window().geometry()
+    config['width'], config['height'], config['x'], config['y'] = namedtuple
 
 
 def setup():
-    get_main_window().geometry(config['default_geometry'])
-    get_main_window().bind('<<PorcupineQuit>>', save_geometry, add=True)
+    get_main_window().geometry(
+        config['width'], config['height'], config['x'], config['y'])
+    get_main_window().bind('<<PorcupineQuit>>', save_geometry)
