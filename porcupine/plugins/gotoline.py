@@ -1,20 +1,78 @@
-from tkinter import simpledialog
+import pythotk as tk
 
 from porcupine import actions, get_tab_manager, tabs
 
 
+# TODO: add something like this to pythotk.extras, tkinter has
+#       tkinter.simpledialog for doing these things
+class IntegerDialog:
+
+    def __init__(self, title, text):
+        self.window = tk.Window(title)
+        self.window.on_delete_window.disconnect(tk.quit)
+        self.window.on_delete_window.connect(self.on_cancel)
+
+        self.var = tk.StringVar()
+
+        tk.Label(self.window, text).grid(row=0, column=0, columnspan=2)
+        entry = tk.Entry(self.window, textvariable=self.var)
+        entry.grid(row=1, column=0, columnspan=2)
+        entry.bind('<Return>', self.on_ok)
+        entry.bind('<Escape>', self.on_cancel)
+
+        self.ok_button = tk.Button(self.window, "OK", self.on_ok)
+        self.ok_button.grid(row=3, column=0)
+        tk.Button(self.window, "Cancel", self.on_cancel).grid(row=3, column=1)
+
+        self.window.grid_rows[0].config['weight'] = 1
+        self.window.grid_rows[2].config['weight'] = 1
+        for column in self.window.grid_columns:
+            column.config['weight'] = 1
+
+        self.result = None
+        self.var.write_trace.connect(self.on_var_changed)
+        self.var.set("")
+
+        entry.focus()
+
+    def on_var_changed(self, var):
+        try:
+            self.result = int(var.get())
+            self.ok_button.config['state'] = 'normal'
+        except ValueError:
+            self.ok_button.config['state'] = 'disabled'
+
+    def on_ok(self):
+        # this state check is needed because <Return> is bound to this, and
+        # that binding can run even if the button is disabled
+        if self.ok_button.config['state'] == 'normal':
+            self.window.destroy()
+
+    def on_cancel(self):
+        self.result = None
+        self.window.destroy()
+
+    def run(self):
+        self.window.wait_window()
+        return self.result
+
+
 def gotoline():
-    tab = get_tab_manager().select()
+    tab = get_tab_manager().selected_tab
 
     # simpledialog isn't ttk yet, but it's not a huge problem imo
-    lineno = simpledialog.askinteger(
-        "Go to Line", "Type a line number and press Enter:")
+    lineno = IntegerDialog(
+        "Go to Line", "Type a line number and press Enter:").run()
     if lineno is not None:    # not cancelled
         # there's no need to do a bounds check because tk ignores out-of-bounds
         # text indexes
-        column = tab.textwidget.index('insert').split('.')[1]
-        tab.textwidget.mark_set('insert', '%d.%s' % (lineno, column))
-        tab.textwidget.see('insert')
+        column = tab.textwidget.marks['insert'].column
+        tab.textwidget.marks['insert'] = (
+            lineno, tab.textwidget.marks['insert'].column)
+
+        # TODO: add see to pythotk
+        tk.tcl_call(None, tab.textwidget, 'see',
+                    tab.textwidget.marks['insert'])
 
     tab.on_focus()
 
