@@ -34,6 +34,7 @@ def init(verbose_logging=False):
 
     dirs.makedirs()
     _logs.setup(verbose_logging)
+    tk.init_threads()
     _main_window = tk.Window()
     _main_window.on_delete_window.disconnect(tk.quit)
     _main_window.on_delete_window.connect(quit)

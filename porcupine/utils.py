@@ -181,12 +181,15 @@ def bind_mouse_wheel(widget, callback, *, prefixes=''):
                     real_callback, event=True)
 
 
+@tk.make_thread_safe
 def errordialog(title, message, monospace_text=None):
     """This is a lot like ``tkinter.messagebox.showerror``.
 
     This function can be called with or without creating a root window
     first. If *monospace_text* is not None, it will be displayed below
     the message in a ``tkinter.Text`` widget.
+
+    This function can be called from a thread.
 
     Example::
 
