@@ -12,6 +12,7 @@ Or like this on other operating systems::
 
 import logging
 import os
+
 from porcupine import dirs, utils
 from porcupine.plugins import autocomplete
 
@@ -27,9 +28,8 @@ except ImportError:
 
 
 def jedi_completer(tab):
-    source = tab.textwidget.get("1.0", "end - 1 char")
-    cursor_pos = tab.textwidget.index("insert")
-    line, column = map(int, cursor_pos.split("."))
+    source = tab.textwidget.get()
+    line, column = tab.textwidget.marks["insert"]
 
     # the source is already unicode, so jedi doesn't need an encoding
     script = jedi.Script(source, line, column, path=tab.path)
