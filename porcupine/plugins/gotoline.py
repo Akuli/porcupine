@@ -64,15 +64,12 @@ def gotoline():
     lineno = IntegerDialog(
         "Go to Line", "Type a line number and press Enter:").run()
     if lineno is not None:    # not cancelled
-        # there's no need to do a bounds check because tk ignores out-of-bounds
-        # text indexes
+        # there's no need to do a bounds check because tk handles out-of-bounds
+        # text indexes nicely
         column = tab.textwidget.marks['insert'].column
         tab.textwidget.marks['insert'] = (
             lineno, tab.textwidget.marks['insert'].column)
-
-        # TODO: add see to pythotk
-        tk.tcl_call(None, tab.textwidget, 'see',
-                    tab.textwidget.marks['insert'])
+        tab.textwidget.see(tab.textwidget.marks['insert'])
 
     tab.on_focus()
 

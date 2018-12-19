@@ -716,12 +716,8 @@ bers.py>` use this attribute.
         self._save_hash = save_hash
         self._update_title()
 
-        # this seems to work well enough
         self.textwidget.marks['insert'] = cursor_pos
-
-        # TODO: add see to pythotk
-        tk.tcl_call(None, self.textwidget, 'see', 'insert')
-
+        self.textwidget.see(self.textwidget.marks['insert'])
         return self
 
 

@@ -232,8 +232,7 @@ class Finder(tk.Frame):
         self._textwidget.get_tag('sel').remove()
         self._textwidget.get_tag('sel').add(start, end)
         self._textwidget.marks['insert'] = start
-        # TODO: add see to pythotk
-        tk.tcl_call(None, self._textwidget, 'see', start)
+        self._textwidget.see(start)
 
     # TODO: adjust scrolling accordingly
     def _go_to_next_match(self):
