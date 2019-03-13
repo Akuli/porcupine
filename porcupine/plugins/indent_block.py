@@ -1,6 +1,6 @@
 """Allow selecting multiple lines and indenting them all at once."""
 
-import pythotk as tk
+import teek as tk
 
 from porcupine import get_tab_manager, tabs
 

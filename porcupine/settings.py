@@ -8,7 +8,8 @@ import types
 
 import pygments.styles
 import pygments.util    # contains an exception that pygments raises
-import pythotk as tk
+import teek as tk
+teek=tk
 
 # get_main_window must be imported from
 # porcupine because it imports this before exposing the getter
@@ -86,8 +87,8 @@ class _ConfigSection(collections.abc.MutableMapping):
         if _notebook is None:
             raise RuntimeError("%s._init() wasn't called" % __name__)
 
-        self.content_frame = tk.Frame(_notebook)
-        self.notebook_tab = tk.NotebookTab(self.content_frame, text=name)
+        self.content_frame = teek.Frame(_notebook)
+        self.notebook_tab = teek.NotebookTab(self.content_frame, text=name)
         _notebook.append(self.notebook_tab)
 
         self._name = name
@@ -109,7 +110,7 @@ class _ConfigSection(collections.abc.MutableMapping):
             reset button resets only the settings that are shown in the
             dialog.
         """
-        var = tk.BooleanVar()   # true when the triangle is showing
+        var = teek.BooleanVar()   # true when the triangle is showing
         var.set(False)
         self._infos[key] = types.SimpleNamespace(
             default=default,        # not validated
@@ -206,7 +207,7 @@ class _ConfigSection(collections.abc.MutableMapping):
         self._infos[key].callbacks.remove(callback)
 
     # returns an image the same size as the triangle image, but empty
-    # the image can't be e.g. a global variable because pythotk must not get
+    # the image can't be e.g. a global variable because teek must not get
     # initialized when this is imported
     @staticmethod
     def _get_fake_triangle(cache=[]):
@@ -411,7 +412,7 @@ def _init():
 
     _dialog = tk.Window("Porcupine Settings")
     _dialog.withdraw()        # hide it for now
-    _dialog.on_delete_window.disconnect(tk.quit)
+    #_dialog.on_delete_window.disconnect(tk.quit)
     _dialog.on_delete_window.connect(_dialog.withdraw)
     _dialog.geometry(500, 350)
 

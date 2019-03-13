@@ -10,7 +10,7 @@ import string as string_module
 import subprocess
 import sys
 
-import pythotk as tk
+import teek as tk
 
 import porcupine
 

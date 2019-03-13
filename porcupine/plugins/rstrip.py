@@ -1,6 +1,6 @@
 """Remove trailing whitespace when enter is pressed."""
 
-import pythotk as tk
+import teek as tk
 
 from porcupine import get_tab_manager, tabs
 

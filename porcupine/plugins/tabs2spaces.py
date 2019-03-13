@@ -15,7 +15,7 @@
 #       done by indent() and dedent(), and this just makes sure that they are
 #       called when tab is pressed
 
-import pythotk as tk
+import teek as tk
 
 from porcupine import get_tab_manager, tabs, utils
 

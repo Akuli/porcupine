@@ -2,7 +2,7 @@ import atexit
 import functools
 import os
 
-import pythotk as tk
+import teek as tk
 
 
 # __path__[0] is the directory where this __init__.py is

@@ -1,4 +1,4 @@
-import pythotk as tk
+import teek as tk
 
 from porcupine import get_main_window, settings
 

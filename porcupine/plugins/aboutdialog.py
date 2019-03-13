@@ -5,7 +5,7 @@ import re
 from urllib.request import pathname2url
 import webbrowser
 
-import pythotk as tk
+import teek as tk
 
 from porcupine import actions, dirs, get_main_window, images
 from porcupine import __version__ as porcupine_version

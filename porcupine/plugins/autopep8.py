@@ -1,7 +1,7 @@
 import platform
 import subprocess
 
-import pythotk as tk
+import teek as tk
 
 from porcupine import actions, get_tab_manager, utils
 

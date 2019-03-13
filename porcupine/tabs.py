@@ -7,7 +7,7 @@ import logging
 import os
 import traceback
 
-import pythotk as tk
+import teek as tk
 
 from porcupine import filetypes, images, settings, textwidget, utils
 
@@ -189,7 +189,7 @@ class Tab(tk.NotebookTab):
     You can easily create custom kinds of tabs by inheriting from this
     class. Here's a very minimal but complete example plugin::
 
-        import pythotk as tk
+        import teek as tk
         from porcupine import actions, get_tab_manager, tabs
 
         class HelloTab(tabs.Tab):

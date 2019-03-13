@@ -3,7 +3,7 @@
 
 import pygments.styles
 import pygments.token
-import pythotk as tk
+import teek as tk
 
 from porcupine import get_tab_manager, settings, tabs
 

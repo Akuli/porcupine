@@ -1,7 +1,7 @@
 import collections
 import warnings
 
-import pythotk as tk
+import teek
 
 import porcupine
 from porcupine import tabs, utils
@@ -121,7 +121,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                 return 'break'
 
         # TODO: display a warning if it's already bound?
-        tk.Widget.bind_class(binding, bind_callback)
+        teek.Widget.bind_class(binding, bind_callback)
 
         # text widgets are tricky, by default they insert a newline on ctrl+o,
         # and i discovered how it works in a Tcl session:
@@ -142,7 +142,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
         #
         # this is done to all action bindings instead of just <Control-o> to
         # avoid any issues with other bindings, kind of a hack but it works
-        tcl_code = tk.tcl_call(str, 'bind', 'Text', binding).split('\n')
+        tcl_code = teek.tcl_call(str, 'bind', 'Text', binding).split('\n')
         filtered_code = []
 
         ignore = True
@@ -152,12 +152,12 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
             if not ignore:
                 filtered_code.append(line)
 
-        tk.tcl_call(None, 'bind', 'Text', binding, '\n'.join(filtered_code))
+        teek.tcl_call(None, 'bind', 'Text', binding, '\n'.join(filtered_code))
 
         # this other thing is needed for ctrl+w, it seems to be bound
         # differently so the above code doesn't handle it, i don't know how
         # it's bound
-        tk.Text.bind_class(binding, bind_callback)
+        teek.Text.bind_class(binding, bind_callback)
 
     return action
 
@@ -184,7 +184,7 @@ def add_yesno(path, default=None, keyboard_binding=None, *,
     if var is None:
         if default is None:
             raise TypeError("specify default or var")
-        var = tk.BooleanVar()
+        var = teek.BooleanVar()
         var.set(default)
     elif default is not None:
         var.set(default)
@@ -212,7 +212,7 @@ def add_choice(path, choices, default=None, *, var=None, **kwargs):
             default = choices[0]
         elif default not in choices:
             raise ValueError("default value %r is not in choices" % (default,))
-        var = tk.StringVar()
+        var = teek.StringVar()
         var.set(default)
     else:
         if var.get() not in choices:

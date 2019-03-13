@@ -8,7 +8,7 @@ import sys
 import tempfile
 import threading
 
-import pythotk as tk
+import teek as tk
 
 import porcupine
 from porcupine import pluginloader, settings

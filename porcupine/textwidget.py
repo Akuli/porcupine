@@ -2,7 +2,7 @@ import functools
 import operator
 
 import pygments.styles
-import pythotk as tk
+import teek as tk
 
 from porcupine import settings, utils
 

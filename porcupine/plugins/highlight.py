@@ -12,7 +12,7 @@ import queue
 import pygments.styles
 import pygments.token
 import pygments.util   # only for ClassNotFound, the docs say that it's here
-import pythotk as tk
+import teek as tk
 
 from porcupine import filetypes, get_tab_manager, settings, tabs, utils
 

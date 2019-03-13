@@ -9,7 +9,7 @@ import threading
 import traceback
 import webbrowser
 
-import pythotk as tk
+import teek as tk
 import requests
 
 from porcupine import actions, get_main_window, get_tab_manager, tabs, utils

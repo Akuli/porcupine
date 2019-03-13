@@ -18,7 +18,7 @@ import pygments.lexer
 import pygments.lexers
 import pygments.token
 import pygments.util     # for ClassNotFound
-import pythotk as tk
+import teek
 
 from porcupine import dirs, utils
 
@@ -387,10 +387,10 @@ ensions that Porcupine supports.
     This function returns a dictionary of keyword arguments suitable for
     functions in :mod:`pythotk.dialog`. Example::
 
-        import pythotk as tk
+        import teek
         from porcupine.filetypes import get_filedialog_kwargs
 
-        filenames = tk.dialog.open_multiple_files(**get_filedialog_kwargs())
+        filenames = teek.dialog.open_multiple_files(**get_filedialog_kwargs())
         for filename in filenames:
             print("Opening", filename)
 
@@ -406,7 +406,7 @@ ensions that Porcupine supports.
 
         result.append((filetype.name, tuple(patterns)))
 
-    if len(result) == 1 and tk.windowingsystem() == 'aqua':
+    if len(result) == 1 and teek.windowingsystem() == 'aqua':
         # there's a bug that makes python crash with this list on osx, and osx
         # creates a huge error message that complains about an empty parameter
         # list... so it seems like osx ignores ("All files", "*") and disallows

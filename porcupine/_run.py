@@ -6,7 +6,7 @@ from queue import Empty         # queue is a handy variable name
 import traceback
 import webbrowser
 
-import pythotk as tk
+import teek
 
 from porcupine import _logs, actions, dirs, filetypes, settings, tabs, utils
 
@@ -34,9 +34,9 @@ def init(verbose_logging=False):
 
     dirs.makedirs()
     _logs.setup(verbose_logging)
-    tk.init_threads()
-    _main_window = tk.Window()
-    _main_window.on_delete_window.disconnect(tk.quit)
+    teek.init_threads()
+    _main_window = teek.Window()
+    #_main_window.on_delete_window.disconnect(teek.quit)
     _main_window.on_delete_window.connect(quit)
     filetypes._init()
 
@@ -97,7 +97,7 @@ def quit():
     _main_window.event_generate('<<PorcupineQuit>>')
     for tab in _tab_manager:
         tab.close()
-    tk.quit()
+    teek.quit()
 
 
 def _setup_actions():
@@ -105,7 +105,7 @@ def _setup_actions():
         _tab_manager.append_and_select(tabs.FileTab(_tab_manager))
 
     def open_files():
-        paths = tk.dialog.open_multiple_files(
+        paths = teek.dialog.open_multiple_files(
             **filetypes.get_filedialog_kwargs())
         if not paths:
             return None
@@ -204,6 +204,6 @@ def run():
     # the user can change the settings only if we get here, so there's
     # no need to wrap the whole thing in try/with/finally/whatever
     try:
-        tk.run()
+        teek.run()
     finally:
         settings.save()

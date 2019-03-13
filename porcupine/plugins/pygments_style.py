@@ -3,7 +3,7 @@
 import threading
 
 import pygments.styles
-import pythotk as tk
+import teek as tk
 
 from porcupine import actions, get_main_window, settings
 
