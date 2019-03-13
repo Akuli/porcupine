@@ -91,7 +91,7 @@ class TabManager(tk.Notebook):
             # the close button was clicked
             tab = coords2tab(event.x, event.y)
             if tab.can_be_closed():
-                self.remove(tab)
+                tab.close()
 
     def _on_wheel(self, direction):
         self.select_another_tab({'up': -1, 'down': +1}[direction])
