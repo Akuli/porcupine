@@ -64,9 +64,8 @@ The "General" section has these options by default (but you can add more, see
       Do this if you need a ``Font`` object instead of the font name as a
       string::
 
-         import tkinter.font as tkfont
-
-         fixedfont = tkfont.Font(name='TkFixedFont', exists=True)
+         import teek
+         fixedfont = teek.NamedFont('TkFixedFont')
 
    ``pygments_style``
       Name of the current Pygments style, not the style object itself.
