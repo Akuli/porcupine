@@ -381,11 +381,11 @@ def get_all_filetypes():
 
 
 def get_filedialog_kwargs():
-    """This is a way to run pythotk dialogs that display the filetypes and ext\
-ensions that Porcupine supports.
+    """This is a way to run teek dialogs that display the filetypes and extens\
+ions that Porcupine supports.
 
     This function returns a dictionary of keyword arguments suitable for
-    functions in :mod:`pythotk.dialog`. Example::
+    functions in :mod:`teek.dialog`. Example::
 
         import teek
         from porcupine.filetypes import get_filedialog_kwargs
@@ -394,7 +394,7 @@ ensions that Porcupine supports.
         for filename in filenames:
             print("Opening", filename)
 
-    You can use this function with other :mod:`pythotk.dialog` filename dialog
+    You can use this function with other :mod:`teek.dialog` filename dialog
     functions as well.
     """
     result = [("All files", "*")]
@@ -412,7 +412,7 @@ ensions that Porcupine supports.
         # list... so it seems like osx ignores ("All files", "*") and disallows
         # empty filetypes lists
         #
-        # TODO: try to fix this in pythotk?
+        # TODO: try to fix this in teek?
         return {}
     return {'filetypes': result}
 

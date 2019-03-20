@@ -5,7 +5,7 @@ import subprocess
 import threading
 import weakref
 
-import teek as tk
+import teek
 
 from porcupine import get_tab_manager, images, utils
 
@@ -16,7 +16,7 @@ class NoTerminalRunner:
 
     def __init__(self, master):
         # TODO: better coloring that follows the pygments theme
-        self.textwidget = tk.Text(master, height=12, state='disabled')
+        self.textwidget = teek.Text(master, height=12, state='disabled')
         self.textwidget.get_tag('info')['foreground'] = 'blue'
         # 'output' tag uses default colors
         self.textwidget.get_tag('error')['foreground'] = 'red'
@@ -26,7 +26,7 @@ class NoTerminalRunner:
     def thread_target_run(self, workingdir, command, succeeded_callback):
         process = None
 
-        @tk.make_thread_safe
+        @teek.make_thread_safe
         def show_messages(*messages):
             # FIXME: how is this supposed to work?
             if process is not None and self._running_process is not process:
@@ -72,7 +72,7 @@ class NoTerminalRunner:
             # can't do succeeded_callback() here because this is running
             # in a thread and succeeded_callback() does tkinter stuff
             show_messages(('info', "The process completed successfully."))
-            tk.make_thread_safe(succeeded_callback)()
+            teek.make_thread_safe(succeeded_callback)()
         else:
             show_messages(('error', ("The process failed with status %d."
                                      % process.returncode)))
@@ -105,7 +105,7 @@ def run_command(workingdir, command, succeeded_callback=do_nothing):
             runner.destroy()
             del _no_terminal_runners[tab]
 
-        closebutton = tk.Label(
+        closebutton = teek.Label(
             runner.textwidget, image=images.get('closebutton'), cursor='hand2')
         closebutton.bind('<Button-1>', on_close)
         closebutton.place(relx=1, rely=0, anchor='ne')

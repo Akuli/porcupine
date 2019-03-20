@@ -2,15 +2,15 @@ import functools
 import operator
 
 import pygments.styles
-import teek as tk
+import teek
 
 from porcupine import settings, utils
 
 
-class HandyText(tk.Text):
-    r"""Like :class:`pythotk.Text`, but with some handy features.
+class HandyText(teek.Text):
+    r"""Like :class:`teek.Text`, but with some handy features.
 
-    All arguments are passed to :class:`pythotk.Text`.
+    All arguments are passed to :class:`teek.Text`.
 
     .. virtualevent:: ContentChanged
 
@@ -83,21 +83,21 @@ class HandyText(tk.Text):
         #    <__Myst__> very cool
         #
         # the irc conversation has gotten a bit outdated:
-        #   * it says tkinter, but nowadays porcupine uses pythotk
+        #   * it says tkinter, but nowadays porcupine uses teek
         #   * actual_widget_command was self.to_tcl() + '_actual_widget'
 
         # cursor_cb is called whenever the cursor position may have changed,
         # and change_cb is called whenever the content of the text widget may
         # have changed
-        change_cb_command = tk.create_command(self._change_cb, [str],
-                                              extra_args_type=str)
-        cursor_cb_command = tk.create_command(self._cursor_cb, [])
+        change_cb_command = teek.create_command(self._change_cb, [str],
+                                                extra_args_type=str)
+        cursor_cb_command = teek.create_command(self._cursor_cb, [])
         self.command_list.append(change_cb_command)
         self.command_list.append(cursor_cb_command)
 
         # this part is tcl because i couldn't get a python callack to work for
         # some reason
-        tk.tcl_eval(None, '''
+        teek.tcl_eval(None, '''
         rename %(widget)s %(actual_widget)s
 
         proc %(widget)s {args} {
@@ -183,7 +183,7 @@ class HandyText(tk.Text):
         if subcommand == 'delete':
             # "All indices are first checked for validity before any deletions
             # are made." they are already validated, but rest of this code
-            # works with pythotk TextIndex objects
+            # works with teek TextIndex objects
             # not everything works in corner cases without this
             args = [self.TextIndex.from_tcl(arg) for arg in args]
 
@@ -274,7 +274,7 @@ class HandyText(tk.Text):
         # some plugins expect <<ContentChanged>> events to occur after changing
         # the content in the editor, but the tcl code in __init__ needs them to
         # run before, so here is the solution
-        @tk.after_idle       # yes, this works
+        @teek.after_idle       # yes, this works
         def this_runs_after_changes():
             for change in changes:
                 self.event_generate('<<ContentChanged>>', data=change)
@@ -314,7 +314,7 @@ class ThemedText(HandyText):
 
     def _set_style(self, name):
         style = pygments.styles.get_style_by_name(name)
-        bg = tk.Color(style.background_color)
+        bg = teek.Color(style.background_color)
 
         # yes, style.default_style can be '#rrggbb', '' or nonexistent
         # this is undocumented
@@ -326,7 +326,7 @@ class ThemedText(HandyText):
         #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
         #    '#222222', '', '', '', '???', '']
         if getattr(style, 'default_style', ''):
-            fg = tk.Color(style.default_style)
+            fg = teek.Color(style.default_style)
         else:
             fg = utils.invert_color(bg)
 
@@ -390,7 +390,7 @@ class MainText(ThemedText):
         #
         # my version is kind of minimal compared to that example, but it
         # seems to work :)
-        font = tk.NamedFont('TkFixedFont')
+        font = teek.NamedFont('TkFixedFont')
         self.config['tabs'] = str(font.measure(' ' * filetype.indent_size))
 
     def _on_delete(self, control_down, event, *, shifted=False):

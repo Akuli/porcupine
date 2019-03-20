@@ -7,17 +7,17 @@ import logging
 import os
 import traceback
 
-import teek as tk
+import teek
 
 from porcupine import filetypes, images, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 
 
-class TabManager(tk.Notebook):
+class TabManager(teek.Notebook):
     """A simple but awesome tab widget.
 
-    This widget inherits from :class:`pythotk.Notebook`. All tabs added to this
+    This widget inherits from :class:`teek.Notebook`. All tabs added to this
     should be :class:`Tab` objects.
 
     .. warning::
@@ -31,7 +31,7 @@ class TabManager(tk.Notebook):
 
     .. attribute:: on_new_tab
 
-        A :class:`pythotk.Callback` that runs with a new tab as an argument
+        A :class:`teek.Callback` that runs with a new tab as an argument
         when a new tab has been added to the tab manager.
 
         Bind to the ``<Destroy>`` event of the tab if you want to clean
@@ -41,7 +41,7 @@ class TabManager(tk.Notebook):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.on_new_tab = tk.Callback()
+        self.on_new_tab = teek.Callback()
 
         # These can be bound in a parent widget without event=True. This
         # doesn't use enable_traversal() because we want more bindings than it
@@ -67,17 +67,17 @@ class TabManager(tk.Notebook):
             self.selected_tab.on_focus()
 
     def _on_click(self, event):
-        # TODO: add identify to pythotk
+        # TODO: add identify to teek
         def identify(x, y):
-            return tk.tcl_call(str, self, 'identify', x, y)
+            return teek.tcl_call(str, self, 'identify', x, y)
 
         if identify(event.x, event.y) != 'label':
             # something else than the top label was clicked
             return
 
-        # TODO: add looking up a tab by coordinates to pythotk
+        # TODO: add looking up a tab by coordinates to teek
         def coords2tab(x, y):
-            index = tk.tcl_call(int, self, 'index', '@%d,%d' % (x, y))
+            index = teek.tcl_call(int, self, 'index', '@%d,%d' % (x, y))
             return None if index is None else self[index]
 
         # find the right edge of the label
@@ -169,7 +169,7 @@ class TabManager(tk.Notebook):
 
     def append_and_select(self, tab):
         """
-        Like the :meth:`pythotk.append_and_select` method this overrides, but
+        Like the :meth:`teek.Text.append_and_select` method this overrides, but
         works correctly with :meth:`~.Tab.equivalent` stuff.
         """
         self.append(tab)
@@ -179,23 +179,23 @@ class TabManager(tk.Notebook):
             self.selected_tab = tab
 
 
-class Tab(tk.NotebookTab):
+class Tab(teek.NotebookTab):
     r"""Base class for tabs that can be added to TabManager.
 
-    This class inherits from :class:`pythotk.NotebookTab`, but pythotk tabs
+    This class inherits from :class:`teek.NotebookTab`, but teek tabs
     that are not instances of this class cannot be added to a
     :class:`.TabManager`.
 
     You can easily create custom kinds of tabs by inheriting from this
     class. Here's a very minimal but complete example plugin::
 
-        import teek as tk
+        import teek
         from porcupine import actions, get_tab_manager, tabs
 
         class HelloTab(tabs.Tab):
             def __init__(self, manager):
                 super().__init__(manager, title="Hello")
-                tk.Label(self.content, "Hello World!").pack()
+                teek.Label(self.content, "Hello World!").pack()
 
         def new_hello_tab():
             manager = get_tab_manager()
@@ -205,7 +205,7 @@ class Tab(tk.NotebookTab):
             actions.add_command('Hello/New Hello Tab', new_hello_tab)
 
     All initialization keyword arguments are passed to
-    :class:`pythotk.NotebookTab`.
+    :class:`teek.NotebookTab`.
 
     .. attribute:: closed
 
@@ -226,7 +226,7 @@ class Tab(tk.NotebookTab):
 
     .. attribute:: on_status_changed
 
-        A :class:`pythotk.Callback` that runs with no arguments when
+        A :class:`teek.Callback` that runs with no arguments when
         :attr:`status` is set to a new value.
 
     .. attribute:: content
@@ -249,20 +249,20 @@ class Tab(tk.NotebookTab):
     """
 
     def __init__(self, manager, **kwargs):
-        super().__init__(tk.Frame(manager), image=images.get('closebutton'),
+        super().__init__(teek.Frame(manager), image=images.get('closebutton'),
                          compound='right', **kwargs)
 
         self._status = ''
         self._closed = False
 
-        self.on_status_changed = tk.Callback()
+        self.on_status_changed = teek.Callback()
 
         # top and bottom frames must be packed first because this way
         # they extend past other frames in the corners
-        self.top_frame = tk.Frame(self.widget)
-        self.bottom_frame = tk.Frame(self.widget)
-        self.left_frame = tk.Frame(self.widget)
-        self.right_frame = tk.Frame(self.widget)
+        self.top_frame = teek.Frame(self.widget)
+        self.bottom_frame = teek.Frame(self.widget)
+        self.left_frame = teek.Frame(self.widget)
+        self.right_frame = teek.Frame(self.widget)
         self.top_frame.pack(side='top', fill='x')
         self.bottom_frame.pack(side='bottom', fill='x')
         self.left_frame.pack(side='left', fill='y')
@@ -272,12 +272,12 @@ class Tab(tk.NotebookTab):
         # height if last children is unpacked/ungridded"
         # this bug was hard to find, and it only happened when there was
         # only 1 plugin using a frame
-        tk.Frame(self.top_frame).pack()
-        tk.Frame(self.bottom_frame).pack()
-        tk.Frame(self.left_frame).pack()
-        tk.Frame(self.right_frame).pack()
+        teek.Frame(self.top_frame).pack()
+        teek.Frame(self.bottom_frame).pack()
+        teek.Frame(self.left_frame).pack()
+        teek.Frame(self.right_frame).pack()
 
-        self.content = tk.Frame(self.widget)
+        self.content = teek.Frame(self.widget)
         self.content.pack(fill='both', expand=True)
 
     @property
@@ -387,7 +387,7 @@ class FileTab(Tab):
 
     .. attribute:: on_save
 
-        A :class:`pythotk.Callback` that runs with no arguments before the file
+        A :class:`teek.Callback` that runs with no arguments before the file
         is saved with the :meth:`save` method.
 
     .. attribute:: textwidget
@@ -414,7 +414,7 @@ bers.py>` use this attribute.
 
     .. attribute:: on_path_changed
 
-        A :class:`pythotk.Callback` that runs with no arguments when
+        A :class:`teek.Callback` that runs with no arguments when
         :attr:`path` is set to a new value.
 
     .. attribute:: filetype
@@ -423,16 +423,16 @@ bers.py>` use this attribute.
 
     .. attribute:: on_filetype_changed
 
-        A :class:`pythotk.Callback` that runs with no arguments when
+        A :class:`teek.Callback` that runs with no arguments when
         :attr:`filetype` is set to a new value.
     """
 
     def __init__(self, manager, content='', path=None):
         super().__init__(manager)
 
-        self.on_path_changed = tk.Callback()
-        self.on_filetype_changed = tk.Callback()
-        self.on_save = tk.Callback()
+        self.on_path_changed = teek.Callback()
+        self.on_filetype_changed = teek.Callback()
+        self.on_save = teek.Callback()
 
         self._save_hash = None
 
@@ -456,14 +456,14 @@ bers.py>` use this attribute.
             self.textwidget.insert(self.textwidget.start, content)
 
             # this resets undo and redo
-            # TODO: add 'edit reset' to pythotk
-            tk.tcl_call(None, self.textwidget, 'edit', 'reset')
+            # TODO: add 'edit reset' to teek
+            teek.tcl_call(None, self.textwidget, 'edit', 'reset')
 
         self.on_path_changed.connect(self._update_status)
         self.on_filetype_changed.connect(self._update_status)
         self.textwidget.bind('<<CursorMoved>>', self._update_status)
 
-        self.scrollbar = tk.Scrollbar(self.content)
+        self.scrollbar = teek.Scrollbar(self.content)
         self.scrollbar.pack(side='left', fill='y')
         self.textwidget.config['yscrollcommand'].connect(self.scrollbar.set)
         self.scrollbar.config['command'].connect(self.textwidget.yview)
@@ -633,7 +633,7 @@ bers.py>` use this attribute.
             msg = ("Do you want to save your changes to %s?"
                    % os.path.basename(self.path))
 
-        answer = tk.dialog.yes_no_cancel("Close file", msg)
+        answer = teek.dialog.yes_no_cancel("Close file", msg)
         if answer == 'cancel':
             return False
         if answer == 'yes':
@@ -684,7 +684,7 @@ bers.py>` use this attribute.
         Returns True if the file was saved, and False if the user
         cancelled the dialog.
         """
-        path = tk.dialog.save_file(**filetypes.get_filedialog_kwargs())
+        path = teek.dialog.save_file(**filetypes.get_filedialog_kwargs())
         if path is None:
             return False
 
@@ -724,7 +724,7 @@ bers.py>` use this attribute.
 
 if __name__ == '__main__':
     # test/demo
-    window = tk.Window()
+    window = teek.Window()
 
     tabmgr = TabManager(window)
     tabmgr.pack(fill='both', expand=True)
@@ -741,17 +741,18 @@ if __name__ == '__main__':
         window.toplevel.bind(keysym, callback)
 
     import itertools
+
     def add_new_tab(counter=itertools.count(1)):
         tab = Tab(tabmgr)
         tab.i = next(counter)     # tabmgr doesn't care about this
         tab.title = "tab %d" % tab.i
         tabmgr.append_and_select(tab)
 
-        text = tk.Text(tab.content)
+        text = teek.Text(tab.content)
         text.pack(fill='both', expand=True)
         text.insert(text.start, "this is the content of tab %d" % tab.i)
 
-    tk.Button(window, text="add a new tab", command=add_new_tab).pack()
+    teek.Button(window, text="add a new tab", command=add_new_tab).pack()
     add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab()
     window.geometry(300, 200)
-    tk.run()
+    teek.run()

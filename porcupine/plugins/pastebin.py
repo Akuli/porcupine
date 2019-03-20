@@ -9,14 +9,14 @@ import threading
 import traceback
 import webbrowser
 
-import teek as tk
+import teek
 import requests
 
 from porcupine import actions, get_main_window, get_tab_manager, tabs, utils
 from porcupine import __version__ as _porcupine_version
 
 
-if tk.TK_VERSION >= (8, 6):
+if teek.TK_VERSION >= (8, 6):
     @contextlib.contextmanager
     def busy(widget):
         with widget.busy():
@@ -113,18 +113,18 @@ def paste_to_paste_ofcode(code, path):
     return response.url
 
 
-class SuccessDialog(tk.Window):
+class SuccessDialog(teek.Window):
 
-    @tk.make_thread_safe
+    @teek.make_thread_safe
     def __init__(self, url, **kwargs):
         super().__init__("Pasting Succeeded", **kwargs)
         self.url = url
 
-        label = tk.Label(self, text="Here's your link:")
+        label = teek.Label(self, text="Here's your link:")
         label.place(relx=0.5, rely=0.15, anchor='center')
 
         breaky_select_all = functools.partial(self._select_all, breaking=True)
-        entry = self._entry = tk.Entry(self, justify='center')
+        entry = self._entry = teek.Entry(self, justify='center')
         entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
         entry.text = url
         entry.config['state'] = 'readonly'     # must be after the insert
@@ -137,21 +137,21 @@ class SuccessDialog(tk.Window):
             ("Copy to clipboard", self.copy_to_clipboard),
             ("Close this dialog", self.destroy),
         ]
-        buttonframe = tk.Frame(self)
+        buttonframe = teek.Frame(self)
         buttonframe.place(relx=0.5, rely=0.8, anchor='center', relwidth=1)
         for text, callback in button_info:
-            button = tk.Button(buttonframe, text=text, command=callback)
+            button = teek.Button(buttonframe, text=text, command=callback)
             button.pack(side='left', expand=True)
 
         self.geometry(450, 150)
         self.transient = get_main_window()
 
-        self.on_delete_window.disconnect(tk.quit)
+        self.on_delete_window.disconnect(teek.quit)
         self.on_delete_window.connect(self.destroy)
 
     def _select_all(self, breaking=False):
-        # TODO: add 'selection range' to pythotk
-        tk.tcl_call(None, self._entry, 'selection', 'range', 0, 'end')
+        # TODO: add 'selection range' to teek
+        teek.tcl_call(None, self._entry, 'selection', 'range', 0, 'end')
         return ('break' if breaking else None)
 
     def open_in_browser(self):
@@ -159,9 +159,9 @@ class SuccessDialog(tk.Window):
         self.destroy()
 
     def copy_to_clipboard(self):
-        # TODO: add clipboard support to pythotk
-        tk.tcl_call(None, 'clipboard', 'clear')
-        tk.tcl_call(None, 'clipboard', 'append', '--', self.url)
+        # TODO: add clipboard support to teek
+        teek.tcl_call(None, 'clipboard', 'clear')
+        teek.tcl_call(None, 'clipboard', 'append', '--', self.url)
 
 
 class Paste:
@@ -171,25 +171,25 @@ class Paste:
         self.content = code
         self.path = path
 
-        window = self.please_wait_window = tk.Window("Pasting...")
+        window = self.please_wait_window = teek.Window("Pasting...")
         window.transient = get_main_window()
         window.geometry(350, 150)
-        # TODO: add 'wm resizable' to pythotk
-        tk.tcl_call(None, 'wm', 'resizable', window.toplevel, False, False)
+        # TODO: add 'wm resizable' to teek
+        teek.tcl_call(None, 'wm', 'resizable', window.toplevel, False, False)
 
         # make the close button do nothing, there's no good way to cancel this
         # forcefully :(
-        window.on_delete_window.disconnect(tk.quit)
+        window.on_delete_window.disconnect(teek.quit)
 
-        content = tk.Frame(window)
+        content = teek.Frame(window)
         content.pack(fill='both', expand=True)
 
-        label = tk.Label(
+        label = teek.Label(
             content, font=('', 12, ''),
             text=("Pasting to %s, please wait..." % self.pastebin_name))
         label.pack(expand=True)
 
-        progressbar = tk.Progressbar(content, mode='indeterminate')
+        progressbar = teek.Progressbar(content, mode='indeterminate')
         progressbar.pack(fill='x', padx=15, pady=15)
         progressbar.start()
 
@@ -217,7 +217,7 @@ def start_pasting(pastebin_name):
     tab = get_tab_manager().selected_tab
     # only pastebin the selected code, if some code is selected
     try:
-        # TODO: add support to sel.first and sel.last to pythotk
+        # TODO: add support to sel.first and sel.last to teek
         [(start, end)] = tab.textwidget.get_tag('sel').ranges()
     except ValueError:
         start = tab.textwidget.start

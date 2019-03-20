@@ -1,6 +1,6 @@
-import teek as tk
+import teek
 
-from porcupine import get_tab_manager, utils
+from porcupine import get_tab_manager
 
 # i have experimented with a logging handler that displays logging
 # messages in the label, but it's not as good idea as it sounds like,
@@ -8,27 +8,27 @@ from porcupine import get_tab_manager, utils
 
 
 # this widget is kind of weird
-class LabelWithEmptySpaceAtLeft(tk.Label):
+class LabelWithEmptySpaceAtLeft(teek.Label):
 
     def __init__(self, master):
-        self._spacer = tk.Frame(master)
+        self._spacer = teek.Frame(master)
         self._spacer.pack(side='left', expand=True)
         super().__init__(master)
         self.pack(side='left')
 
-    # i don't want to override destroy() because pythotk can call it too
+    # i don't want to override destroy() because teek can call it too
     def destroy_me(self):
         self._spacer.destroy()
         self.destroy()
 
 
-class StatusBar(tk.Frame):
+class StatusBar(teek.Frame):
 
     def __init__(self, master, tab):
         super().__init__(master)
         self.tab = tab
         # one label for each tab-separated thing
-        self.labels = [tk.Label(self)]
+        self.labels = [teek.Label(self)]
         self.labels[0].pack(side='left')
 
         tab.on_status_changed.connect(self.update)

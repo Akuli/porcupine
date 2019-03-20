@@ -1,6 +1,6 @@
 """Allow selecting multiple lines and indenting them all at once."""
 
-import teek as tk
+from teek.extras import cross_platform
 
 from porcupine import get_tab_manager, tabs
 
@@ -39,7 +39,7 @@ def on_tab_key(shifted, event):
 
 def on_new_tab(tab):
     if isinstance(tab, tabs.FileTab):
-        tk.extras.bind_tab_key(tab.textwidget, on_tab_key, event=True)
+        cross_platform.bind_tab_key(tab.textwidget, on_tab_key, event=True)
 
 
 def setup():

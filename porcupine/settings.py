@@ -8,8 +8,7 @@ import types
 
 import pygments.styles
 import pygments.util    # contains an exception that pygments raises
-import teek as tk
-teek=tk     # FIXME
+import teek
 
 # get_main_window must be imported from
 # porcupine because it imports this before exposing the getter
@@ -212,13 +211,13 @@ class _ConfigSection(collections.abc.MutableMapping):
     @staticmethod
     def _get_fake_triangle(cache=[]):
         if not cache:
-            cache.append(tk.Image(
+            cache.append(teek.Image(
                 width=images.get('triangle').width,
                 height=images.get('triangle').height))
         return cache[0]
 
-    def get_var(self, key, var_type=tk.StringVar):
-        """Return a pythotk variable that is bound to an option.
+    def get_var(self, key, var_type=teek.StringVar):
+        """Return a teek variable that is bound to an option.
 
         Changing the value of the variable updates the config section,
         and changing the value in the section also sets the variable's
@@ -226,7 +225,7 @@ class _ConfigSection(collections.abc.MutableMapping):
 
         This returns a ``StringVar`` by default, but you can use the
         ``var_type`` argument to change that. For example,
-        ``var_type=tk.BooleanVar`` is suitable for an option that is meant to
+        ``var_type=teek.BooleanVar`` is suitable for an option that is meant to
         be True or False.
 
         If an invalid value is set to the variable, it is not set to the
@@ -267,7 +266,7 @@ class _ConfigSection(collections.abc.MutableMapping):
         return var
 
     def add_frame(self, triangle_key):
-        """Add a :class:`pythotk.Frame` to the dialog and return it.
+        """Add a :class:`teek.Frame` to the dialog and return it.
 
         The frame will contain a label that displays a |triangle| when
         the value of the variable from :meth:`get_var` is invalid. The
@@ -276,15 +275,15 @@ class _ConfigSection(collections.abc.MutableMapping):
         For example, :meth:`add_checkbutton` works roughly like this::
 
             frame = section.add_frame(key)
-            var = section.get_var(key, tk.BooleanVar)
-            tk.Checkbutton(frame, text, variable=var).pack(side='left')
+            var = section.get_var(key, teek.BooleanVar)
+            teek.Checkbutton(frame, text, variable=var).pack(side='left')
         """
-        frame = tk.Frame(self.content_frame)
+        frame = teek.Frame(self.content_frame)
         frame.pack(fill='x')
 
         if triangle_key is not None:
             errorvar = self._infos[triangle_key].errorvar
-            triangle_label = tk.Label(frame)
+            triangle_label = teek.Label(frame)
             triangle_label.pack(side='right')
 
             def on_errorvar_changed(var):
@@ -299,19 +298,19 @@ class _ConfigSection(collections.abc.MutableMapping):
         return frame
 
     def add_checkbutton(self, key, text):
-        """Add a :class:`pythotk.Checkbutton` that sets an option to a bool."""
-        var = self.get_var(key, tk.BooleanVar)
-        tk.Checkbutton(self.add_frame(key), text=text,
-                       variable=var).pack(side='left')
+        """Add a :class:`teek.Checkbutton` that sets an option to a bool."""
+        var = self.get_var(key, teek.BooleanVar)
+        teek.Checkbutton(self.add_frame(key), text=text,
+                         variable=var).pack(side='left')
 
     def add_entry(self, key, text):
-        """Add a :class:`pythotk.Entry` that sets an option to a string."""
+        """Add a :class:`teek.Entry` that sets an option to a string."""
         frame = self.add_frame(key)
-        tk.Label(frame, text=text).pack(side='left')
-        tk.Entry(frame, textvariable=self.get_var(key)).pack(side='right')
+        teek.Label(frame, text=text).pack(side='left')
+        teek.Entry(frame, textvariable=self.get_var(key)).pack(side='right')
 
     def add_combobox(self, key, choices, text, *, case_sensitive=True):
-        """Add a :class:`pythotk.Combobox` that sets an option to a string.
+        """Add a :class:`teek.Combobox` that sets an option to a string.
 
         The combobox will contain each string in *choices*.
 
@@ -331,12 +330,12 @@ class _ConfigSection(collections.abc.MutableMapping):
         self.connect(key, validator)
 
         frame = self.add_frame(key)
-        tk.Label(frame, text=text).pack(side='left')
-        tk.Combobox(frame, values=choices,
-                    textvariable=self.get_var(key)).pack(side='right')
+        teek.Label(frame, text=text).pack(side='left')
+        teek.Combobox(frame, values=choices,
+                      textvariable=self.get_var(key)).pack(side='right')
 
     def add_spinbox(self, key, minimum, maximum, text):
-        """Add a :class:`pythotk.Spinbox` that sets an option to an integer.
+        """Add a :class:`teek.Spinbox` that sets an option to an integer.
 
         The *minimum* and *maximum* arguments are used as the bounds for
         the spinbox. A `validator callback <Validating>`_ that makes
@@ -354,9 +353,9 @@ class _ConfigSection(collections.abc.MutableMapping):
         self.connect(key, validator)
 
         frame = self.add_frame(key)
-        tk.Label(frame, text=text).pack(side='left')
-        tk.Spinbox(frame, textvariable=self.get_var(key, tk.IntVar),
-                   from_=minimum, to=maximum).pack(side='right')
+        teek.Label(frame, text=text).pack(side='left')
+        teek.Spinbox(frame, textvariable=self.get_var(key, teek.IntVar),
+                     from_=minimum, to=maximum).pack(side='right')
 
 
 def _needs_reset():
@@ -368,15 +367,15 @@ def _needs_reset():
 
 
 def _do_reset():
-    if not _needs_reset:
-        tk.dialog.info("Reset Settings",
-                       "You are already using the default settings.",
-                       parent=_dialog)
+    if not _needs_reset():
+        teek.dialog.info("Reset Settings",
+                         "You are already using the default settings.",
+                         parent=_dialog)
         return
 
-    if not tk.dialog.yes_no("Reset Settings",
-                            "Are you sure you want to reset all settings?",
-                            parent=_dialog):
+    if not teek.dialog.yes_no("Reset Settings",
+                              "Are you sure you want to reset all settings?",
+                              parent=_dialog):
         return
 
     for section in _sections.values():
@@ -384,8 +383,8 @@ def _do_reset():
             if info.reset:
                 section[key] = info.default
 
-    tk.dialog.info("Reset Settings", "All settings were reset to defaults.",
-                   parent=_dialog)
+    teek.dialog.info("Reset Settings", "All settings were reset to defaults.",
+                     parent=_dialog)
 
 
 def _validate_encoding(name):
@@ -410,18 +409,18 @@ def _init():
         # already initialized
         return
 
-    _dialog = tk.Window("Porcupine Settings")
+    _dialog = teek.Window("Porcupine Settings")
     _dialog.withdraw()        # hide it for now
     _dialog.on_delete_window.connect(_dialog.withdraw)
     _dialog.geometry(500, 350)
 
-    _notebook = tk.Notebook(_dialog)
+    _notebook = teek.Notebook(_dialog)
     _notebook.pack(fill='both', expand=True)
-    tk.Separator(_dialog).pack(fill='x')
-    buttonframe = tk.Frame(_dialog)
+    teek.Separator(_dialog).pack(fill='x')
+    buttonframe = teek.Frame(_dialog)
     buttonframe.pack(fill='x')
     for text, command in [("Reset", _do_reset), ("OK", _dialog.withdraw)]:
-        tk.Button(buttonframe, text=text, command=command).pack(side='right')
+        teek.Button(buttonframe, text=text, command=command).pack(side='right')
 
     assert not _loaded_json
     try:
@@ -432,8 +431,8 @@ def _init():
 
     general = get_section('General')   # type: _ConfigSection
 
-    fixedfont = tk.NamedFont('TkFixedFont')
-    font_families = sorted(tk.Font.families())
+    fixedfont = teek.NamedFont('TkFixedFont')
+    font_families = sorted(teek.Font.families())
 
     general.add_option('font_family', fixedfont.family)
     general.add_combobox('font_family', font_families, "Font Family:",
@@ -461,10 +460,10 @@ def _init():
     general.connect('pygments_style', _validate_pygments_style_name)
 
     filetypes_section = get_section('File Types')
-    label1 = tk.Label(filetypes_section.content_frame, (
+    label1 = teek.Label(filetypes_section.content_frame, (
         "Currently there's no GUI for changing filetype specific settings, "
         "but they're stored in filetypes.ini and you can edit it yourself."))
-    label2 = tk.Label(filetypes_section.content_frame, (
+    label2 = teek.Label(filetypes_section.content_frame, (
         "\nYou can use the following option to choose which filetype "
         "Porcupine should use when you create a new file in Porcupine. You "
         "can change the filetype after creating the file clicking Filetypes "
@@ -488,8 +487,8 @@ def _init():
         _dialog.withdraw()
 
     label1.pack(fill='x')
-    tk.Button(filetypes_section.content_frame, text="Edit filetypes.ini",
-              command=edit_it).pack(anchor='center')
+    teek.Button(filetypes_section.content_frame, text="Edit filetypes.ini",
+                command=edit_it).pack(anchor='center')
     label2.pack(fill='x')
 
     names = [filetype.name for filetype in filetypes.get_all_filetypes()]

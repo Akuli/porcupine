@@ -1,6 +1,6 @@
 """Remove trailing whitespace when enter is pressed."""
 
-import teek as tk
+import teek
 
 from porcupine import get_tab_manager, tabs
 
@@ -17,7 +17,7 @@ def after_enter(textwidget):
 def on_new_tab(tab):
     if isinstance(tab, tabs.FileTab):
         def bind_callback():
-            tk.after_idle(after_enter, args=[tab.textwidget])
+            teek.after_idle(after_enter, args=[tab.textwidget])
 
         tab.textwidget.bind('<Return>', bind_callback)
 

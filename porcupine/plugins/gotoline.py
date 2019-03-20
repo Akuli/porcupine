@@ -1,28 +1,29 @@
-import teek as tk
+import teek
 
 from porcupine import actions, get_tab_manager, tabs
 
 
-# TODO: add something like this to pythotk.extras, tkinter has
+# TODO: add something like this to teek.extras, tkinter has
 #       tkinter.simpledialog for doing these things
 class IntegerDialog:
 
     def __init__(self, title, text):
-        self.window = tk.Window(title)
-        self.window.on_delete_window.disconnect(tk.quit)
+        self.window = teek.Window(title)
+        self.window.on_delete_window.disconnect(teek.quit)  # FIXME: this work?
         self.window.on_delete_window.connect(self.on_cancel)
 
-        self.var = tk.StringVar()
+        self.var = teek.StringVar()
 
-        tk.Label(self.window, text).grid(row=0, column=0, columnspan=2)
-        entry = tk.Entry(self.window, textvariable=self.var)
+        teek.Label(self.window, text).grid(row=0, column=0, columnspan=2)
+        entry = teek.Entry(self.window, textvariable=self.var)
         entry.grid(row=1, column=0, columnspan=2)
         entry.bind('<Return>', self.on_ok)
         entry.bind('<Escape>', self.on_cancel)
 
-        self.ok_button = tk.Button(self.window, "OK", self.on_ok)
+        self.ok_button = teek.Button(self.window, "OK", self.on_ok)
         self.ok_button.grid(row=3, column=0)
-        tk.Button(self.window, "Cancel", self.on_cancel).grid(row=3, column=1)
+        teek.Button(self.window, "Cancel", self.on_cancel).grid(
+            row=3, column=1)
 
         self.window.grid_rows[0].config['weight'] = 1
         self.window.grid_rows[2].config['weight'] = 1
@@ -66,7 +67,7 @@ def gotoline():
     if lineno is not None:    # not cancelled
         # there's no need to do a bounds check because tk handles out-of-bounds
         # text indexes nicely
-        column = tab.textwidget.marks['insert'].column
+        # TODO: test this?
         tab.textwidget.marks['insert'] = (
             lineno, tab.textwidget.marks['insert'].column)
         tab.textwidget.see(tab.textwidget.marks['insert'])

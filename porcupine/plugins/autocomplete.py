@@ -2,7 +2,7 @@
 import collections
 import re
 
-import teek as tk
+import teek
 
 from porcupine import get_tab_manager, tabs
 
@@ -145,7 +145,7 @@ class _AutoCompleter:
 def on_new_tab(tab):
     if isinstance(tab, tabs.FileTab):
         completer = _AutoCompleter(tab)
-        tk.extras.bind_tab_key(tab.textwidget, completer.on_tab)
+        teek.extras.bind_tab_key(tab.textwidget, completer.on_tab)
         tab.textwidget.bind('<<CursorMoved>>', completer.reset)
 
 

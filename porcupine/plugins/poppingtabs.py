@@ -8,7 +8,7 @@ import sys
 import tempfile
 import threading
 
-import teek as tk
+import teek
 
 import porcupine
 from porcupine import pluginloader, settings
@@ -27,9 +27,9 @@ SPECIAL_STATES = {NO_TABS, NOT_POPPABLE, NOT_DRAGGING}
 
 def _is_on_window(event):
     window = event.widget.winfo_toplevel()
-    # TODO: add winfo_x and winfo_y to pythotk
-    window_left = tk.tcl_call(int, 'winfo', 'x', window)
-    window_top = tk.tcl_call(int, 'winfo', 'y', window)
+    # TODO: add winfo_x and winfo_y to teek
+    window_left = teek.tcl_call(int, 'winfo', 'x', window)
+    window_top = teek.tcl_call(int, 'winfo', 'y', window)
     window_right = window_left + window.winfo_width()
     window_bottom = window_top + window.winfo_height()
 
@@ -48,17 +48,17 @@ def _2lines(string):
 class PopManager:
 
     def __init__(self):
-        self._window = tk.Toplevel()
+        self._window = teek.Toplevel()
         self._window.withdraw()
 
-        # TODO: add overrideredirect to pythotk
-        tk.tcl_call(None, 'wm', 'overrideredirect', self._window, True)
+        # TODO: add overrideredirect to teek
+        teek.tcl_call(None, 'wm', 'overrideredirect', self._window, True)
 
         # the label is not ttk because i want it to look yellowish
         self._label_path = self._window.to_tcl() + '.label'
-        tk.tcl_call(None, 'label', self._label_path,
-                    '-fg', '#000', '-bg', '#ffc')
-        tk.tcl_call(None, 'pack', self._label_path)
+        teek.tcl_call(None, 'label', self._label_path,
+                      '-fg', '#000', '-bg', '#ffc')
+        teek.tcl_call(None, 'pack', self._label_path)
 
         self._dragged_state = NOT_DRAGGING
 
@@ -66,8 +66,8 @@ class PopManager:
         if self._window.wm_state == 'withdrawn':
             self._window.deiconify()
 
-        width = tk.tcl_call(int, 'winfo', 'reqwidth', self._label_path)
-        height = tk.tcl_call(int, 'winfo', 'reqheight', self._label_path)
+        width = teek.tcl_call(int, 'winfo', 'reqwidth', self._label_path)
+        height = teek.tcl_call(int, 'winfo', 'reqheight', self._label_path)
         self._window.geometry(
             x=(event.rootx - (width // 2)),     # centered
             y=(event.rooty - height))           # above cursor
@@ -90,12 +90,12 @@ class PopManager:
             state = tab.get_state()
             if state is None:
                 self._dragged_state = NOT_POPPABLE
-                tk.tcl_call(None, self._label_path, 'configure', '-text',
-                            _2lines("This tab cannot be popped up."))
+                teek.tcl_call(None, self._label_path, 'configure', '-text',
+                              _2lines("This tab cannot be popped up."))
             else:
                 self._dragged_state = (tab, state)
-                tk.tcl_call(None, self._label_path, 'configure', '-text',
-                            _2lines("Drop the tab here to pop it up..."))
+                teek.tcl_call(None, self._label_path, 'configure', '-text',
+                              _2lines("Drop the tab here to pop it up..."))
 
         self._show_tooltip(event)
 
@@ -112,9 +112,9 @@ class PopManager:
 
             tab, state = self._dragged_state
 
-            # TODO: add winfo_reqwidth and winfo_reqheight to pythotk
-            reqwidth = tk.tcl_call(int, 'winfo', 'reqwidth', tab.content)
-            reqheight = tk.tcl_call(int, 'winfo', 'reqheight', tab.content)
+            # TODO: add winfo_reqwidth and winfo_reqheight to teek
+            reqwidth = teek.tcl_call(int, 'winfo', 'reqwidth', tab.content)
+            reqheight = teek.tcl_call(int, 'winfo', 'reqheight', tab.content)
 
             message = (type(tab), state, plugin_names, (reqwidth, reqheight),
                        porcupine.get_init_kwargs(), event.rootx, event.rooty)

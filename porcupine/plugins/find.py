@@ -3,10 +3,9 @@
 # FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
 
 import re
-import sys
 import weakref
 
-import teek as tk
+import teek
 
 from porcupine import actions, get_tab_manager, images, tabs
 
@@ -15,13 +14,13 @@ from porcupine import actions, get_tab_manager, images, tabs
 finders = weakref.WeakKeyDictionary()
 
 
-class Finder(tk.Frame):
+class Finder(teek.Frame):
     """A widget for finding and replacing text.
 
     Use the pack geometry manager with this widget.
     """
 
-    def __init__(self, parent, textwidget: tk.Text, **kwargs):
+    def __init__(self, parent, textwidget: teek.Text, **kwargs):
         super().__init__(parent, **kwargs)
         self._textwidget = textwidget
 
@@ -48,7 +47,7 @@ class Finder(tk.Frame):
         self._highlight_tag['background'] = 'yellow'
 
         self.find_entry = self._add_entry(0, "Find:")
-        find_var = self.find_entry.config['textvariable'] = tk.StringVar()
+        find_var = self.find_entry.config['textvariable'] = teek.StringVar()
         find_var.write_trace.connect(self.highlight_all_matches)
 
         self.replace_entry = self._add_entry(1, "Replace with:")
@@ -61,17 +60,17 @@ class Finder(tk.Frame):
         # FIXME
         #self.replace_entry.bind('<Return>', self._replace_this)
 
-        buttonframe = tk.Frame(self)
+        buttonframe = teek.Frame(self)
         buttonframe.grid(row=2, column=0, columnspan=4, sticky='we')
 
-        self.previous_button = tk.Button(buttonframe, text="Previous match",
-                                         command=self._go_to_previous_match)
-        self.next_button = tk.Button(buttonframe, text="Next match",
-                                     command=self._go_to_next_match)
-        self.replace_this_button = tk.Button(
+        self.previous_button = teek.Button(buttonframe, text="Previous match",
+                                           command=self._go_to_previous_match)
+        self.next_button = teek.Button(buttonframe, text="Next match",
+                                       command=self._go_to_next_match)
+        self.replace_this_button = teek.Button(
             buttonframe, text="Replace this match",
             command=self._replace_this)
-        self.replace_all_button = tk.Button(
+        self.replace_all_button = teek.Button(
             buttonframe, text="Replace all",
             command=self._replace_all)
 
@@ -81,28 +80,28 @@ class Finder(tk.Frame):
         self.replace_all_button.pack(side='left')
         self._update_buttons()
 
-        self.full_words_var = tk.BooleanVar()
+        self.full_words_var = teek.BooleanVar()
         self.full_words_var.set(False)
         self.full_words_var.write_trace.connect(self.highlight_all_matches)
-        self.ignore_case_var = tk.BooleanVar()
+        self.ignore_case_var = teek.BooleanVar()
         self.ignore_case_var.set(False)
         self.ignore_case_var.write_trace.connect(self.highlight_all_matches)
 
-        tk.Checkbutton(
+        teek.Checkbutton(
             self, text="Full words only", variable=self.full_words_var).grid(
                 row=0, column=3, sticky='w')
-        tk.Checkbutton(
+        teek.Checkbutton(
             self, text="Ignore case", variable=self.ignore_case_var).grid(
                 row=1, column=3, sticky='w')
 
-        self.statuslabel = tk.Label(self)
+        self.statuslabel = teek.Label(self)
         self.statuslabel.grid(row=3, column=0, columnspan=4, sticky='we')
 
-        tk.Separator(self, orient='horizontal').grid(
+        teek.Separator(self, orient='horizontal').grid(
             row=4, column=0, columnspan=4, sticky='we')
 
-        closebutton = tk.Label(self, cursor='hand2',
-                               image=images.get('closebutton'))
+        closebutton = teek.Label(self, cursor='hand2',
+                                 image=images.get('closebutton'))
         closebutton.place(relx=1, rely=0, anchor='ne')
         closebutton.bind('<Button-1>', self.hide)
 
@@ -113,8 +112,8 @@ class Finder(tk.Frame):
         textwidget.bind('<<Selection>>', self._update_buttons)
 
     def _add_entry(self, row, text):
-        tk.Label(self, text=text).grid(row=row, column=0, sticky='w')
-        entry = tk.Entry(self, width=35, font='TkFixedFont')
+        teek.Label(self, text=text).grid(row=row, column=0, sticky='w')
+        entry = teek.Entry(self, width=35, font='TkFixedFont')
         entry.bind('<Escape>', self.hide)
         entry.grid(row=row, column=1, sticky='we')
         return entry
@@ -181,10 +180,10 @@ class Finder(tk.Frame):
             else:
                 start_index_for_search = start_index.forward(chars=1)
 
-            # TODO: add search to pythotk
+            # TODO: add search to teek
             args = search_opts + ['--', search_arg, start_index_for_search,
                                   self._textwidget.end]
-            start_index = tk.tcl_call(
+            start_index = teek.tcl_call(
                 self._textwidget.TextIndex, self._textwidget, 'search', *args)
             if start_index is None:
                 # no more matches
@@ -226,9 +225,9 @@ class Finder(tk.Frame):
 
     def _select_range(self, start, end):
         # the tag_lower makes sure sel shows up, hiding _highlight_tag under it
-        # TODO: add tag lower to pythotk
-        tk.tcl_call(None, self._textwidget, 'tag', 'lower',
-                    self._highlight_tag, 'sel')
+        # TODO: add tag lower to teek
+        teek.tcl_call(None, self._textwidget, 'tag', 'lower',
+                      self._highlight_tag, 'sel')
         self._textwidget.get_tag('sel').remove()
         self._textwidget.get_tag('sel').add(start, end)
         self._textwidget.marks['insert'] = start

@@ -5,7 +5,7 @@ The menubar plugin shows these as a "Filetypes" menu.
 
 import functools
 
-import teek as tk
+import teek
 
 from porcupine import actions, filetypes, get_tab_manager, tabs
 
@@ -36,7 +36,7 @@ def on_new_tab(var, tab):
 
 
 def setup():
-    var = tk.StringVar()
+    var = teek.StringVar()
 
     # this initial value isn't shown anywhere, it just needs to be set to
     # something to avoid an error in actions.add_choice

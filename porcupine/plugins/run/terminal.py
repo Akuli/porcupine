@@ -7,9 +7,9 @@ import shutil
 import subprocess
 import tempfile
 
-import teek as tk
+import teek
 
-from porcupine import get_main_window, utils
+from porcupine import utils
 
 
 log = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
             terminal = shutil.which('xfce4-terminal')
             if terminal is None:
                 # not much more can be done
-                tk.dialog.error(
+                teek.dialog.error(
                     "x-terminal-emulator not found",
                     "Cannot find x-terminal-emulator in $PATH. "
                     "Are you sure that you have a terminal installed?")
@@ -104,7 +104,7 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
         log.debug("using $TERMINAL, it's set to %r" % terminal)
 
     if shutil.which(terminal) is None:
-        tk.dialog.error(
+        teek.dialog.error(
             "%r not found" % terminal,
             "Cannot find %r in $PATH. "
             "Try setting $TERMINAL to a path to a working terminal program."
@@ -122,9 +122,10 @@ def _run_in_x11_like_terminal(blue_message, workingdir, command):
 def run_command(workingdir, command):
     blue_message = ' '.join(map(utils.quote, command))
 
-    if tk.windowingsystem() == 'win32':
+    if teek.windowingsystem() == 'win32':
         _run_in_windows_cmd(blue_message, workingdir, command)
-    elif tk.windowingsystem() == 'aqua' and not os.environ.get('TERMINAL', ''):
+    elif (teek.windowingsystem() == 'aqua' and
+          not os.environ.get('TERMINAL', '')):
         _run_in_osx_terminal_app(blue_message, workingdir, command)
     else:
         _run_in_x11_like_terminal(blue_message, workingdir, command)

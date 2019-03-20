@@ -1,8 +1,7 @@
-import atexit
 import functools
 import os
 
-import teek as tk
+import teek
 
 
 # __path__[0] is the directory where this __init__.py is
@@ -11,8 +10,8 @@ images_dir = os.path.abspath(__path__[0])
 
 @functools.lru_cache()
 def get(name):
-    """Load a :class:`pythotk.Image`` from an image file that comes with Porcu\
-pine.
+    """
+    Load a :class:`teek.Image`` from an image file that comes with Porcupine.
 
     The name should be the name of a file in :source:`porcupine/images`
     without the extension, e.g. ``'triangle'``. If this function is
@@ -25,4 +24,4 @@ pine.
         raise FileNotFoundError("no image file named %r" % name)
     assert len(files) == 1, "there are multiple %r files" % name
 
-    return tk.Image(file=os.path.join(images_dir, files[0]))
+    return teek.Image(file=os.path.join(images_dir, files[0]))

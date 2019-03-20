@@ -1,8 +1,8 @@
 """Indenting and dedenting automatically when enter is pressed."""
 
-import teek as tk
+import teek
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, tabs
 
 # without this, pressing enter twice would strip all trailing whitespace
 # from the blank line above the cursor, and then after_enter() wouldn't
@@ -46,7 +46,7 @@ def after_enter(textwidget):
 def on_new_tab(tab):
     if isinstance(tab, tabs.FileTab):
         def bind_callback():
-            tk.after_idle(after_enter, args=[tab.textwidget])
+            teek.after_idle(after_enter, args=[tab.textwidget])
 
         tab.textwidget.bind('<Return>', bind_callback)
 

@@ -1,7 +1,7 @@
 import platform
 import subprocess
 
-import teek as tk
+import teek
 
 from porcupine import actions, get_tab_manager, utils
 
@@ -56,8 +56,8 @@ def callback():
         widget.config['autoseparators'] = False
         widget.delete(widget.start, widget.end)
         widget.insert(widget.start, after)
-        # TODO: add 'edit separator' to pythotk
-        tk.tcl_call(None, widget, 'edit', 'separator')
+        # TODO: add 'edit separator' to teek
+        teek.tcl_call(None, widget, 'edit', 'separator')
         widget.config['autoseparators'] = True
 
 

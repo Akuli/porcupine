@@ -10,7 +10,7 @@ import string as string_module
 import subprocess
 import sys
 
-import teek as tk
+import teek
 
 import porcupine
 
@@ -139,13 +139,13 @@ else:
         return shlex.quote(string)
 
 
-def invert_color(color: tk.Color):
+def invert_color(color: teek.Color):
     """
-    Return a :class:`pythotk.Color` with opposite red, green and blue values.
+    Return a :class:`teek.Color` with opposite red, green and blue values.
 
-    Example: ``invert_color(pythotk.Color('white')) == pythotk.color('black')``
+    Example: ``invert_color(teek.Color('white')) == teek.color('black')``
     """
-    return tk.Color(0xff - color.red, 0xff - color.green, 0xff - color.blue)
+    return teek.Color(0xff - color.red, 0xff - color.green, 0xff - color.blue)
 
 
 def bind_mouse_wheel(widget, callback, *, prefixes=''):
@@ -163,7 +163,7 @@ def bind_mouse_wheel(widget, callback, *, prefixes=''):
     """
     # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
-    if tk.windowingsystem() == 'x11':
+    if teek.windowingsystem() == 'x11':
         def real_callback(event):
             callback('up' if event.button == 4 else 'down')
 
@@ -181,7 +181,7 @@ def bind_mouse_wheel(widget, callback, *, prefixes=''):
                     real_callback, event=True)
 
 
-@tk.make_thread_safe
+@teek.make_thread_safe
 def errordialog(title, message, monospace_text=None):
     """This is a lot like ``tkinter.messagebox.showerror``.
 
@@ -200,10 +200,10 @@ def errordialog(title, message, monospace_text=None):
                               traceback.format_exc())
     """
     porcu_main_window = porcupine.get_main_window()
-    window = tk.Window()
+    window = teek.Window()
     window.transient = porcu_main_window
 
-    label = tk.Label(window, message)
+    label = teek.Label(window, message)
 
     if monospace_text is None:
         label.pack(fill='both', expand=True)
@@ -212,13 +212,13 @@ def errordialog(title, message, monospace_text=None):
         label.pack(anchor='center')
         # there's no ttk.Text 0_o this looks very different from
         # everything else and it sucks :(
-        text = tk.Text(window, width=1, height=1)
+        text = teek.Text(window, width=1, height=1)
         text.pack(fill='both', expand=True)
         text.insert(text.start, monospace_text)
         text.config['state'] = 'disabled'
         size = (400, 300)
 
-    button = tk.Button(window, text="OK", command=window.destroy)
+    button = teek.Button(window, text="OK", command=window.destroy)
     button.pack(pady=10)
 
     window.title = title

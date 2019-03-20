@@ -1,4 +1,4 @@
-import teek as tk
+import teek
 
 from porcupine import get_main_window, actions, utils
 
@@ -6,7 +6,7 @@ from porcupine import get_main_window, actions, utils
 class MenuManager:
 
     def __init__(self):
-        self.main_menu = tk.Menu()
+        self.main_menu = teek.Menu()
         self._submenus = {}         # {(menu, label): submenu}
         self.get_menu("Help")       # see comments in get_menu()
         self._items = {}            # {path: MenuItem}
@@ -17,8 +17,8 @@ class MenuManager:
             try:
                 current_menu = self._submenus[(current_menu, label)]
             except KeyError:
-                submenu = tk.Menu()
-                submenu_item = tk.MenuItem(label, submenu)
+                submenu = teek.Menu()
+                submenu_item = teek.MenuItem(label, submenu)
 
                 # make sure that the help menu is always last, like
                 # in most other programs
@@ -47,16 +47,16 @@ class MenuManager:
                 action.binding)
 
         if action.kind == 'command':
-            item = tk.MenuItem(menulabel, action.callback, **kwargs)
+            item = teek.MenuItem(menulabel, action.callback, **kwargs)
         elif action.kind == 'yesno':
-            item = tk.MenuItem(menulabel, action.var, **kwargs)
+            item = teek.MenuItem(menulabel, action.var, **kwargs)
         else:
             assert action.kind == 'choice'
 
             # yes, each choice item gets a separate submenu
-            submenu_content = [tk.MenuItem(choice, action.var, choice)
+            submenu_content = [teek.MenuItem(choice, action.var, choice)
                                for choice in action.choices]
-            item = tk.MenuItem(menulabel, submenu_content)
+            item = teek.MenuItem(menulabel, submenu_content)
 
         menu.append(item)
         self._items[action_path] = item

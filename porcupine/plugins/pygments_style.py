@@ -3,9 +3,9 @@
 import threading
 
 import pygments.styles
-import teek as tk
+import teek
 
-from porcupine import actions, get_main_window, settings
+from porcupine import actions, settings
 
 # TODO: here's old code that created colored menu items, add it back
 #        style = pygments.styles.get_style_by_name(name)
@@ -33,7 +33,7 @@ from porcupine import actions, get_main_window, settings
 #        menubar.get_menu("Color Themes").add_radiobutton(**options)
 
 
-@tk.make_thread_safe
+@teek.make_thread_safe
 def on_styles_loaded(styles):
     config = settings.get_section('General')
     actions.add_choice("Color Styles", styles,

@@ -2,7 +2,7 @@
 
 import re
 
-import teek as tk
+import teek
 
 from porcupine import get_tab_manager, images
 
@@ -34,21 +34,22 @@ BORDER_SIZE = 30    # pixels
 class WelcomeMessageDisplayer:
 
     def __init__(self):
-        self._frame = tk.Frame(get_tab_manager())
+        self._frame = teek.Frame(get_tab_manager())
 
         # pad only on left side so the image goes as far right as possible
-        top = tk.Frame(self._frame)
+        top = teek.Frame(self._frame)
         top.pack(fill='x', padx=(BORDER_SIZE, 0))
-        tk.Label(top, image=images.get('logo-200x200')).pack(side='right')
+        teek.Label(top, image=images.get('logo-200x200')).pack(side='right')
 
         # TODO: better way to center the label in its space?
-        centerer = tk.Frame(top)
+        centerer = teek.Frame(top)
         centerer.pack(fill='both', expand=True)
-        self.title_label = tk.Label(centerer, "Welcome to Porcupine!",
-                                    font=('', 25, 'bold'))
+        self.title_label = teek.Label(centerer, "Welcome to Porcupine!",
+                                      font=('', 25, 'bold'))
         self.title_label.place(relx=0.5, rely=0.5, anchor='center')
 
-        self.message_label = tk.Label(self._frame, MESSAGE, font=('', 15, ''))
+        self.message_label = teek.Label(
+            self._frame, MESSAGE, font=('', 15, ''))
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()

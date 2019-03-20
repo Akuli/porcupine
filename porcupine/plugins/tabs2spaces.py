@@ -15,9 +15,9 @@
 #       done by indent() and dedent(), and this just makes sure that they are
 #       called when tab is pressed
 
-import teek as tk
+from teek.extras import cross_platform
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, tabs
 
 
 def on_tab(shift_pressed, event):
@@ -35,7 +35,7 @@ def on_tab(shift_pressed, event):
 
 def on_new_tab(tab):
     if isinstance(tab, tabs.FileTab):
-        tk.extras.bind_tab_key(tab.textwidget, on_tab, event=True)
+        cross_platform.bind_tab_key(tab.textwidget, on_tab, event=True)
 
 
 def setup():

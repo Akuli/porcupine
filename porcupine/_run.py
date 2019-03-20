@@ -2,7 +2,6 @@
 
 import functools
 import logging
-from queue import Empty         # queue is a handy variable name
 import traceback
 import webbrowser
 

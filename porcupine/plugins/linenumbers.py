@@ -1,6 +1,8 @@
 """Line numbers for text widget."""
 
-from porcupine import get_tab_manager, tabs, utils
+import teek
+
+from porcupine import get_tab_manager, tabs
 from porcupine.textwidget import ThemedText
 
 
@@ -38,9 +40,9 @@ class LineNumbers(ThemedText):
     def _on_click(self, event):
         # go to clicked line
         self.textwidget.get_tag('sel').remove()
-        # TODO: add @ support to pythotk
-        cursor_pos = tk.tcl_call(self.textwidget.TextIndex, self.textwidget,
-                                 'index', '@0,%d' % event.y)
+        # TODO: add @ support to teek
+        cursor_pos = teek.tcl_call(self.textwidget.TextIndex, self.textwidget,
+                                   'index', '@0,%d' % event.y)
         self._clicked_place = self.textwidget.marks['insert'] = cursor_pos
         return 'break'
 
@@ -61,9 +63,9 @@ class LineNumbers(ThemedText):
             return 'break'
 
         # select multiple lines
-        # TODO: add @ support to pythotk
-        cursor_pos = tk.tcl_call(self.textwidget.TextIndex, self.textwidget,
-                                 'index', '@0,%d' % event.y)
+        # TODO: add @ support to teek
+        cursor_pos = teek.tcl_call(self.textwidget.TextIndex, self.textwidget,
+                                   'index', '@0,%d' % event.y)
         self.textwidget.marks['insert'] = cursor_pos
 
         start = min(cursor_pos, self._clicked_place)

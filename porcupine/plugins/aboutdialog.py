@@ -5,7 +5,8 @@ import re
 from urllib.request import pathname2url
 import webbrowser
 
-import teek as tk
+import teek
+from teek.extras import tooltips
 
 from porcupine import actions, dirs, get_main_window, images
 from porcupine import __version__ as porcupine_version
@@ -15,10 +16,10 @@ _BORING_TEXT = """
 This is porcupine {version}.
 
 Porcupine is a simple but powerful and configurable text editor written in \
-Python using my [pythotk](https://github.com/Akuli/pythotk) library. It \
+Python using my [teek](https://github.com/Akuli/teek) library. It \
 started as a proof-of-concept of a somewhat good editor written in tkinter, \
-but it became a tool that I used every day at work. Later I created pythotk \
-and ported porcupine to use that instead, because pythotk is much nicer to \
+but it became a tool that I used every day at work. Later I created teek \
+and ported porcupine to use that instead, because teek is much nicer to \
 work with than tkinter.
 
 I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. See \
@@ -54,24 +55,24 @@ def open_url(url):
     webbrowser.open(url)
 
 
-class _AboutDialogContent(tk.Frame):
+class _AboutDialogContent(teek.Frame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        big_label = tk.Label(self, font=('', 16, ''), text="About Porcupine")
+        big_label = teek.Label(self, font=('', 16, ''), text="About Porcupine")
         big_label.pack(pady=5)
 
-        # pythotk doesn't have a ttk::style api yet
+        # teek doesn't have a ttk::style api yet
         # this doesn't update when the user changes the ttk theme
         # but who would open the about dialog and then change theme?
         # makes no sense
-        ttk_fg = tk.tcl_eval(
-            tk.Color, 'ttk::style lookup TLabel.label -foreground')
-        ttk_bg = tk.tcl_eval(
-            tk.Color, 'ttk::style lookup TLabel.label -background')
+        ttk_fg = teek.tcl_eval(
+            teek.Color, 'ttk::style lookup TLabel.label -foreground')
+        ttk_bg = teek.tcl_eval(
+            teek.Color, 'ttk::style lookup TLabel.label -background')
 
-        self._textwidget = tk.Text(
+        self._textwidget = teek.Text(
             self, width=60, height=18, font='TkDefaultFont',
             wrap='word', borderwidth=0, relief='flat',
             foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
@@ -94,10 +95,10 @@ class _AboutDialogContent(tk.Frame):
         # don't allow the user to write more text
         self._textwidget.config['state'] = 'disabled'
 
-        label = tk.Label(self, image=images.get('logo-200x200'),
-                         cursor='hand2')
+        label = teek.Label(self, image=images.get('logo-200x200'),
+                           cursor='hand2')
         label.pack(anchor='e')
-        tk.extras.set_tooltip(label, "Click to view in full size")
+        tooltips.set_tooltip(label, "Click to view in full size")
         label.bind('<Button-1>', show_huge_logo)
 
     def _add_minimal_markdown(self, text):
@@ -133,18 +134,18 @@ class _AboutDialogContent(tk.Frame):
 
 
 def show_about_dialog():
-    dialog = tk.Window("About Porcupine")
+    dialog = teek.Window("About Porcupine")
     dialog.transient = get_main_window()
 
     content = _AboutDialogContent(dialog)
     content.pack(fill='both', expand=True)
 
-    tk.update()       # make sure that the winfo stuff works
-    # TODO: add to pythotk:
+    teek.update()       # make sure that the winfo stuff works
+    # TODO: add to teek:
     #   * winfo reqwidth
     #   * winfo reqheight
     #   * wm minsize
-    tk.tcl_eval(None, '''
+    teek.tcl_eval(None, '''
     wm minsize %s [winfo reqwidth %s] [winfo reqheight %s]
     ''' % (dialog.toplevel.to_tcl(), content.to_tcl(), content.to_tcl()))
 

@@ -12,9 +12,9 @@ import queue
 import pygments.styles
 import pygments.token
 import pygments.util   # only for ClassNotFound, the docs say that it's here
-import teek as tk
+import teek
 
-from porcupine import filetypes, get_tab_manager, settings, tabs, utils
+from porcupine import get_tab_manager, settings, tabs
 
 config = settings.get_section('General')
 
@@ -87,7 +87,7 @@ class Highlighter:
         for bold in (True, False):
             for italic in (True, False):
                 # the fonts will be updated later, see _on_config_changed()
-                self._fonts[(bold, italic)] = tk.NamedFont(
+                self._fonts[(bold, italic)] = teek.NamedFont(
                     weight=('bold' if bold else 'normal'),
                     slant=('italic' if italic else 'roman'))
 
@@ -96,7 +96,7 @@ class Highlighter:
         config.connect('font_family', self._on_config_changed, run_now=False)
         config.connect('font_size', self._on_config_changed, run_now=False)
         self._on_config_changed()
-        tk.after(50, self._do_highlights)
+        teek.after(50, self._do_highlights)
 
     def on_destroy(self):
         config.disconnect('pygments_style', self._on_config_changed)
@@ -110,8 +110,8 @@ class Highlighter:
     def _on_config_changed(self, junk_config_value=None):
         # the text widget uses TkFixedFont
         for (bold, italic), font in self._fonts.items():
-            font.family = tk.NamedFont('TkFixedFont').family
-            font.size = tk.NamedFont('TkFixedFont').size
+            font.family = teek.NamedFont('TkFixedFont').family
+            font.size = teek.NamedFont('TkFixedFont').size
 
         # http://pygments.org/docs/formatterdevelopment/#styles
         # all styles seem to yield all token types when iterated over,
@@ -120,7 +120,7 @@ class Highlighter:
         for tokentype, infodict in style:
             # this doesn't use underline and border
             # i don't like random underlines in my code and i don't know
-            # how to implement the border with tkinter
+            # how to implement the border with tk
             key = (infodict['bold'], infodict['italic'])   # pep8 line length
             configs = {'font': self._fonts[key]}
             if infodict['color'] is None:
@@ -136,12 +136,12 @@ class Highlighter:
 
             # make sure that the selection tag takes precedence over our
             # token tag
-            # TODO: add 'tag lower' to pythotk
-            tk.tcl_call(None, self.textwidget, 'tag', 'lower',
-                        str(tokentype), 'sel')
+            # TODO: add 'tag lower' to teek
+            teek.tcl_call(None, self.textwidget, 'tag', 'lower',
+                          str(tokentype), 'sel')
 
     # handle things from the highlighting process
-    # TODO: use pythotk.init_threads() stuff here?
+    # TODO: use teek.init_threads() stuff here?
     def _do_highlights(self):
         # this check is kinda not necessary; turns out that quitting porcupine
         # stops this timeout, but i don't feel like relying on it
@@ -169,7 +169,7 @@ class Highlighter:
 
         # 50 milliseconds doesn't seem too bad, bigger timeouts tend to
         # make things laggy
-        tk.after(50, self._do_highlights)
+        teek.after(50, self._do_highlights)
 
     def highlight_all(self):
         code = self.textwidget.get()

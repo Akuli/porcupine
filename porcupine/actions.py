@@ -4,7 +4,7 @@ import warnings
 import teek
 
 import porcupine
-from porcupine import tabs, utils
+from porcupine import tabs
 
 
 _actions = collections.OrderedDict()
@@ -143,16 +143,8 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
         # this is done to all action bindings instead of just <Control-o> to
         # avoid any issues with other bindings, kind of a hack but it works
         tcl_code = teek.tcl_call(str, 'bind', 'Text', binding).split('\n')
-        filtered_code = []
-
-        ignore = True
-        for line in tcl_code:
-            if 'pythotk_command_' in line:   # lol
-                ignore = False
-            if not ignore:
-                filtered_code.append(line)
-
-        teek.tcl_call(None, 'bind', 'Text', binding, '\n'.join(filtered_code))
+        assert 'teek_command_' not in tcl_code, "lol"
+        teek.tcl_call(None, 'bind', 'Text', binding, '')
 
         # this other thing is needed for ctrl+w, it seems to be bound
         # differently so the above code doesn't handle it, i don't know how

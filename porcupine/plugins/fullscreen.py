@@ -1,12 +1,12 @@
-import teek as tk
+import teek
 
 from porcupine import actions, get_main_window
 
 
 def on_var_changed(var):
-    # TODO: add 'wm attributes' to pythotk
-    tk.tcl_call(None, 'wm', 'attributes', get_main_window().toplevel,
-                '-fullscreen', var.get())
+    # TODO: add 'wm attributes' to teek
+    teek.tcl_call(None, 'wm', 'attributes', get_main_window().toplevel,
+                  '-fullscreen', var.get())
 
 
 def setup():
