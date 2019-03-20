@@ -438,6 +438,7 @@ bers.py>` use this attribute.
 
         self._path = path
         self._guess_filetype()          # sets self._filetype
+
         self.on_path_changed.connect(self._update_title)
         self.on_path_changed.connect(self._guess_filetype_if_needed)
 

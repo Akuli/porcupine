@@ -6,6 +6,8 @@ from queue import Empty         # queue is a handy variable name
 import traceback
 import webbrowser
 
+import pygments.styles
+import pygments.util    # for ClassNotFound error
 import teek
 
 from porcupine import _logs, actions, dirs, filetypes, settings, tabs, utils
@@ -46,6 +48,8 @@ def init(verbose_logging=False):
         _main_window.toplevel.bind(binding, callback)
 
     _setup_actions()
+
+    _pygments_perf_hack()
 
 
 def get_init_kwargs():
@@ -189,12 +193,23 @@ def _setup_actions():
              "https://docs.python.org/")
 
 
-def _iter_queue(queue):
-    while True:
-        try:
-            yield queue.get(block=False)
-        except Empty:
-            break
+# creating new tabs was quite slow, and turns out it was pygments' fault
+# pygments delays loading all the possible styles as late as possible, which
+# was bad because it happened when a new tab was opened
+# i figured it would be less annoying to have a slight slowdown on startup than
+# when creating a new tab
+def _pygments_perf_hack():
+    # also, pygments.styles.get_style_by_name('fruity') won't do because that's
+    # a style that pygments comes with, but the problem occurs only with
+    # third-party styles that are loaded differently
+    try:
+        pygments.styles.get_style_by_name('aiosdjfioasjdfoijasodgjasoidjgoias')
+    except pygments.util.ClassNotFound:
+        pass
+    else:   # pragma: no cover
+        # wat, there is actually a style named like that? :D this would be lol,
+        # but no reason to make it an error
+        pass
 
 
 def run():

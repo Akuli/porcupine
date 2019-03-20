@@ -136,7 +136,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
         # preventing that is simple as binding it to nothing, and then they'll
         # do the bind_all thing as usual:
         #
-        #    wish8.6 [~]bind Text <Control-o>
+        #    wish8.6 [~]bind Text <Control-o> {}
         #    wish8.6 [~]bind Text <Control-o>     ;# empty string is returned
         #    wish8.6 [~]
         #

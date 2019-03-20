@@ -9,7 +9,7 @@ import types
 import pygments.styles
 import pygments.util    # contains an exception that pygments raises
 import teek as tk
-teek=tk
+teek=tk     # FIXME
 
 # get_main_window must be imported from
 # porcupine because it imports this before exposing the getter
@@ -412,7 +412,6 @@ def _init():
 
     _dialog = tk.Window("Porcupine Settings")
     _dialog.withdraw()        # hide it for now
-    #_dialog.on_delete_window.disconnect(tk.quit)
     _dialog.on_delete_window.connect(_dialog.withdraw)
     _dialog.geometry(500, 350)
 
