@@ -46,7 +46,7 @@ Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
 Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip
-    python3 -m pip install --user http://goo.gl/SnlfHw
+    python3 -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
     python3 -m porcupine &
 
 ### Other Linux distributions
@@ -54,7 +54,7 @@ Open a terminal and run these commands:
 Install Python 3.4 or newer with pip and tkinter somehow. Then run this
 command:
 
-    python3 -m pip install --user http://goo.gl/SnlfHw
+    python3 -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
     python3 -m porcupine &
 
 ### Mac OSX
@@ -72,7 +72,7 @@ Install Python 3.4 from [python.org](https://www.python.org/). Make sure that
 the "Install launchers for all users" box gets checked and tkinter gets
 installed. Then open PowerShell or command prompt, and run these commands:
 
-    py -m pip install --user http://goo.gl/SnlfHw
+    py -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
     pyw -m porcupine
 
 ### Development Install
