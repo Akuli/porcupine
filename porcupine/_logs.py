@@ -13,21 +13,23 @@ from porcupine import dirs
 log = logging.getLogger(__name__)
 LOG_DIR = os.path.join(dirs.cachedir, 'logs')    # used in __main__.py
 _FILENAME_FORMAT = '%Y-%m-%dT%H-%M-%S.txt'
+LOG_MAX_AGE_DAYS = 30
 
 
 def _remove_old_logs():
     for filename in os.listdir(LOG_DIR):
         try:
-            log_date = datetime.strptime(_FILENAME_FORMAT, filename)
+            log_date = datetime.strptime(filename, _FILENAME_FORMAT)
         except ValueError:
             log.info("%s contains a file with an unexpected name: %s",
                      LOG_DIR, filename)
             continue
 
         how_old = datetime.now() - log_date
-        if how_old > timedelta(days=3):
+        if how_old > timedelta(days=LOG_MAX_AGE_DAYS):
             path = os.path.join(LOG_DIR, filename)
-            log.info("%s is more than 3 days old, removing it", path)
+            log.info("%s is more than %d days old, removing",
+                     path, LOG_MAX_AGE_DAYS)
             os.remove(path)
 
 
