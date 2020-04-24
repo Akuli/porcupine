@@ -1,4 +1,5 @@
 import functools
+import json
 import tkinter as tk
 import tkinter.font as tkfont
 
@@ -20,37 +21,37 @@ class HandyText(tk.Text):
         like ``textwidget.edit_modified(False)`` or anything like that.
 
         If you want to know what changed and how, use
-        :func:`porcupine.utils.bind_with_data` and
-        ``event.data_tuple(str, str, int, str)``. The first 2 values of the
-        tuple are indexes in the text widget before the text change occurs, the
-        3rd value is the number of characters that were between the indexes
-        before deleting (including newlines) and the 4th value is the new text
-        as a string. So, if the text widget contains ``'hello world'``, then
-        this...
+        :func:`porcupine.utils.bind_with_data` and ``event.data_json()``.
+        Then ``event.data_json()`` will return a list containing dicts filled
+        with information. For example, this...
         ::
 
             # characters 0 to 5 on 1st line are the hello
             textwidget.replace('1.0', '1.5', 'toot')
 
         ...changes the ``'hello'`` to ``'toot'``, generating a
-        ``<<ContentChanged>>`` event with ``data_tuple(str, str, int, str)``
-        like this::
+        ``<<ContentChanged>>`` event with ``data_json()`` like this::
 
-            ('1.0', '1.5', 5, 'toot')
+            [{'start': '1.0',
+              'end': '1.5',
+              'old_text_len': 5,
+              'new_text', 'toot'}]
 
-        Note that is ``len('hello')``, not ``len('toot')``; it represents the
-        length of the old text.
+        Here ``old_text_len`` is ``len('hello')``, not ``len('toot')``.
 
-        Unlike you might think, the 5 is not redundant here. If the whole
-        ``'toot world'`` is changed to ``''``...
+        Unlike you might think, the ``old_text_len`` is not redundant. If the
+        whole ``'toot world'`` is deleted...
         ::
 
-            ('1.0', '1.10', 10, '')
+            [{'start': '1.0',
+              'end': '1.10',
+              'old_text_len': 10,
+              'new_text', ''}]
 
         ...then ``'1.10'`` is no longer a valid index in the text widget
         because it contains 0 characters (and 0 is less than 10). In this case,
         checking only the ``0`` of ``1.0`` and the ``10`` of ``1.10`` could be
-        used to calculate the 10, but that doesn't work right when changing a
+        used to calculate the 10, but that doesn't work right when changing
         multiple lines.
 
     .. virtualevent:: CursorMoved
@@ -182,6 +183,14 @@ class HandyText(tk.Text):
         # see _cursor_cb
         self._old_cursor_pos = self.index('insert')
 
+    def _create_change_dict(self, start, end, new_text):
+        return {
+            'start': start,
+            'end': end,
+            'old_text_len': len(self.get(start, end)),
+            'new_text': new_text,
+        }
+
     def _change_cb(self, subcommand, *args):
         # contains (start, end, old_length, new_text) tuples
         changes = []
@@ -218,6 +227,7 @@ class HandyText(tk.Text):
                      if self.compare(start, '<', end)]
 
             # "They [index pairs, aka ranges] are sorted [...]."
+            # TODO: use the fact that (line, column) tuples sort nicely?
             def sort_by_range_beginnings(self, pair):
                 (start1, _), (start2, _) = pair
                 if self.compare(start1, '>', start2):
@@ -249,7 +259,7 @@ class HandyText(tk.Text):
             # range so deleted text does not cause an undesired index shifting
             # side-effects."
             for start, end in reversed(pairs):
-                changes.append((start, end, len(self.get(start, end)), ''))
+                changes.append(self._create_change_dict(start, end, ''))
 
         # the man page's inserting section is also kind of a wall of
         # text, but not as bad as the delete
@@ -271,36 +281,33 @@ class HandyText(tk.Text):
             # omitted." i'm not sure what "in order" means here, but i tried
             # it, and 'textwidget.insert('1.0', 'asd', [], 'toot', [])' inserts
             # 'asdtoot', not 'tootasd'
-            inserted_text = ''.join(other_args[::2])
+            new_text = ''.join(other_args[::2])
 
-            changes.append((index, index, 0, inserted_text))
+            changes.append(self._create_change_dict(index, index, new_text))
 
         # an even smaller wall of text that mostly refers to insert and replace
         elif subcommand == 'replace':
             start, end, *other_args = args
             start = self.index(start)
             end = self.index(end)
-            inserted_text = ''.join(other_args[::2])
+            new_text = ''.join(other_args[::2])
 
             # didn't find in docs, but tcl throws an error for this
             assert self.compare(start, '<=', end)
 
-            changes.append((start, end, len(self.get(start, end)),
-                            inserted_text))
+            changes.append(self._create_change_dict(start, end, new_text))
 
         else:
             raise ValueError(
-                "the tcl code called _change_cb with unexpected subcommand: " +
-                subcommand)
+                "the tcl code called _change_cb with unexpected subcommand: "
+                + subcommand)       # noqa
 
         # some plugins expect <<ContentChanged>> events to occur after changing
         # the content in the editor, but the tcl code in __init__ needs them to
         # run before, so here is the solution
         @self.after_idle       # yes, this works
         def this_runs_after_changes():
-            for change in changes:
-                self.event_generate('<<ContentChanged>>',
-                                    data=utils.create_tcl_list(change))
+            self.event_generate('<<ContentChanged>>', data=json.dumps(changes))
 
     def _cursor_cb(self):
         # more implicit newline stuff

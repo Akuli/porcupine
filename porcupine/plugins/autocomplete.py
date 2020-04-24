@@ -1,71 +1,12 @@
 # this will be replaced with langserver support soon™
 import collections
+import itertools
+import json
 import re
 
 from porcupine import get_tab_manager, tabs, utils
 
-__all__ = ['register_completer']
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
-
-_completers = {}
-
-
-def register_completer(filetype_name, function):
-    """Add a syntax completer for a specific filetype.
-
-    Use like this::
-
-        from porcupine.plugins import autocomplete
-
-        def java_completer(tab):
-            # Do whatever you need to do with the text widget. For example:
-            full_content = tab.textwidget.get('1.0', 'end - 1 char')
-            cursor_line, cursor_col = map(int, tab.textwidget.index('insert')\
-.split('.'))
-
-            # This should return an iterable of things that can be inserted
-            # after the current cursor position, or e.g. [] for no completions.
-
-        def setup():
-            autocomplete.register_completer("Java", java_completer)
-
-    The ``tab`` argument to *function* is a :class:`porcupine.tabs.Filetab`.
-
-    The *filetype_name* should be a key of
-    :data:`porcupine.filetypes.filetypes`. Registering multiple completers
-    for the same *filetype_name* overrides previous registrations.
-    """
-    _completers[filetype_name] = function
-
-
-def _fallback_completer(tab):
-    """Find all words in file, sorted by frequency."""
-    before_cursor = tab.textwidget.get('insert linestart', 'insert')
-    after_cursor = tab.textwidget.get('insert', 'insert lineend')
-
-    match = re.search(r'\w+$', before_cursor)
-    if match is None:
-        # can't autocomplete based on this
-        return None
-    prefix = match.group(0)
-
-    # find unique words starting with the prefix
-    # Tcl's regexes don't support \b or a sane way of grouping so
-    # they are kind of useless for this. I guess I should implement
-    # this with Tcl regexes too and check which is faster :)
-    result = collections.Counter()
-    for chunk in tab.textwidget.iter_chunks():
-        result.update(re.findall(r'\b' + prefix + r'(\w+)', chunk))
-
-    # if the cursor is in the middle of a word, that word must not
-    # be completed, e.g. if the user types abcdef and moves the
-    # cursor between c and d, we must not autocomplete to abcdefdef
-    try:
-        del result[re.search(r'^\w*', after_cursor).group(0)]
-    except KeyError:
-        pass
-
-    return sorted(result, key=result.get, reverse=True)
 
 
 class _AutoCompleter:
@@ -74,43 +15,59 @@ class _AutoCompleter:
         self.tab = tab
         self._startpos = None
         self._suffixes = None
-        self._completing = False    # avoid recursion
+        self._id_counter = itertools.count()
+        self._waiting_for_response_id = None   # None means no response matches
 
-    def _find_suffixes(self):
-        before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
-        after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
+        # this is easy to understand but hard to explain
+        # see _put_completion_to_text_widget
+        self._can_reset_now = True
 
-        if re.search(r'\S$', before_cursor) is None:
-            # let other plugins handle this however they want to
-            return None
-        if re.search(r'^\w', after_cursor) is not None:
-            # don't complete in the middle of a word
-            return []
+    def _request_completions(self):
+        the_id = next(self._id_counter)
+        self._waiting_for_response_id = the_id
+        self.tab.event_generate('<<AutoCompletionRequest>>', data=json.dumps({
+            'id': the_id,
+        }))
 
-        completer = _completers.get(self.tab.filetype.name,
-                                    _fallback_completer)
-        return completer(self.tab)
-
-    def _complete(self, rotation):
-        self._completing = True
-
-        if self._suffixes is None:
-            suffixes = self._find_suffixes()
-            if suffixes is None:
-                # no completable characters before the cursor, just give
-                # up and allow doing something else on this tab press
-                return None
-
-            self._startpos = self.tab.textwidget.index('insert')
-            self._suffixes = collections.deque(suffixes)
-            self._suffixes.appendleft('')  # end of completions
-
-        self._suffixes.rotate(rotation)
+    def _put_first_suffix_to_text_widget(self):
+        self._can_reset_now = False
         self.tab.textwidget.delete(self._startpos, 'insert')
         self.tab.textwidget.mark_set('insert', self._startpos)
         self.tab.textwidget.insert(self._startpos, self._suffixes[0])
+        self._can_reset_now = True
 
-        self._completing = False
+    def receive_completions(self, event):
+        print('receiving xd')
+        info_dict = event.data_json()
+        if info_dict['id'] == self._waiting_for_response_id:
+            self._waiting_for_response_id = None
+            self._suffixes = collections.deque(info_dict['suffixes'])
+            self._suffixes.append('')   # end of completions
+            self._put_first_suffix_to_text_widget()
+
+    def _can_complete_here(self):
+        before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
+        after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
+
+        return (
+            # don't complete in beginning of line or with space before cursor
+            re.search(r'\S$', before_cursor)
+            # don't complete  in the beginning or middle of a word
+            and not re.search(r'^\w', after_cursor)         # noqa
+        )
+
+    def _complete(self, rotation):
+        if self._suffixes is None:
+            self._startpos = self.tab.textwidget.index('insert')
+            if not self._can_complete_here():
+                # let tabs2spaces and other plugins handle it
+                return None
+
+            self._request_completions()
+            return 'break'
+
+        self._suffixes.rotate(rotation)
+        self._put_first_suffix_to_text_widget()
         return 'break'
 
     def on_tab(self, event, shifted):
@@ -121,10 +78,9 @@ class _AutoCompleter:
         return self._complete(1 if shifted else -1)
 
     def reset(self, *junk):
-        # deleting and inserting from _complete() runs this, so this
-        # must do nothing if we're currently completing
-        if not self._completing:
+        if self._can_reset_now:
             self._suffixes = None
+            self._waiting_for_response_id = None
 
 
 def on_new_tab(event):
@@ -133,6 +89,8 @@ def on_new_tab(event):
         completer = _AutoCompleter(tab)
         utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
         tab.textwidget.bind('<<CursorMoved>>', completer.reset, add=True)
+        utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
+                             completer.receive_completions, add=True)
 
 
 def setup():

@@ -3,9 +3,12 @@
 import collections
 import contextlib
 import functools
+import json
 import logging
+import operator
 import os
 import platform
+import re
 import shlex
 import shutil
 import string as string_module      # string is used as a variable name
@@ -24,7 +27,7 @@ log = logging.getLogger(__name__)
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
 # TODO: document this
 _installed_with_pynsist = (
-    platform.system() == 'Windows' and
+    platform.system() == 'Windows' and      # noqa
     os.path.dirname(sys.executable).lower().endswith(r'\porcupine\python'))
 
 
@@ -34,9 +37,10 @@ if platform.system() == 'Windows':
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
         running_pythonw = True
-    elif (_installed_with_pynsist and
-          sys.stdout is sys.stderr and
-          isinstance(sys.stdout.name, str) and   # not sure if it can be None
+    elif (_installed_with_pynsist and       # noqa
+          sys.stdout is sys.stderr and      # noqa
+          # not sure if it can be None
+          isinstance(sys.stdout.name, str) and   # noqa
           os.path.dirname(sys.stdout.name) == os.environ['APPDATA']):
         # pynsist generates a script that does this:
         #
@@ -243,6 +247,28 @@ def set_tooltip(widget, text):
         widget._tooltip_manager.text = text
 
 
+# this is documented in bind_with_data()
+class _EventWithData(tkinter.Event):
+
+    # TODO: these are for backwards compat only, find usages and remove
+    data = property(operator.attrgetter('data_string'))
+    data_int = property(operator.attrgetter('data_json'))
+    data_float = property(operator.attrgetter('data_json'))
+
+    # TODO: should not have @property
+    @property
+    def data_widget(self):
+        return self.widget.nametowidget(self.data_string)
+
+    def data_json(self):
+        return json.loads(self.data_string)
+
+    def __repr__(self):
+        match = re.fullmatch(r'<(.*)>', super().__repr__())
+        assert match is not None
+        return '<%s data_string=%r>' % (match.group(1), self.data_string)
+
+
 def bind_with_data(widget, sequence, callback, add=False):
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``
@@ -253,7 +279,7 @@ def bind_with_data(widget, sequence, callback, add=False):
         from porcupine import utils
 
         def on_wutwut(event):
-            print(event.data)
+            print(event.data_string)
 
         utils.bind_with_data(some_widget, '<<Thingy>>', on_wutwut, add=True)
 
@@ -263,72 +289,38 @@ def bind_with_data(widget, sequence, callback, add=False):
     Note that everything is a string in Tcl, so tkinter ``str()``'s the data.
 
     The event objects have all the attributes that tkinter events
-    usually have, and these additional attributes:
+    usually have, and these additional attributes and methods:
 
-        ``data``
+        ``data_string``
             See the above example.
 
+        ``data``
+            Deprecated alias for ``data_string``.
+
         ``data_int`` and ``data_float``
-            These are set to ``int(event.data)`` and ``float(event.data)``,
-            or None if ``data`` is not a valid integer or float.
+            Deprecated aliases for ``data_json()``.
 
         ``data_widget``
             If a widget was passed as ``data`` to ``event_generate()``,
-            this is that widget. Otherwise this is None.
-        ``data_tuple(converter1, converter2, ...)``
-            If a string from :func:`.create_tcl_list` is passed to
-            ``event_generate()``, this splits the list back to the strings
-            passed to :func:`.create_tcl_list` and optionally converts them to
-            other types like ``converter(string_value)``. For example,
-            ``event.data_tuple(int, int, str, float)`` returns a 4-tuple with
-            types ``(int, int, str, float)``, throwing an error if some of the
-            elements can't be converted or the iterable passed to
-            :func:`.create_tcl_list` didn't contain exactly 4 elements.
+            this is that widget.
+
+        ``data_json()``
+            If ``json.dumps(something)`` was passed as ``data`` to
+            ``event_generate()``, then this returns the parsed JSON. Note that
+            this is a method; you need the ``()`` at the end when using this.
     """
     # tkinter creates event objects normally and appends them to the
     # deque, then run_callback() adds data_blablabla attributes to the
     # event objects and runs callback(event)
+    #
+    # TODO: is it possible to do this without a deque?
     event_objects = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
 
     def run_the_callback(data_string):
         event = event_objects.popleft()
-        event.data = data_string
-
-        # TODO: test this
-        try:
-            split_result = event.widget.tk.splitlist(data_string)
-        except tkinter.TclError:
-            event.data_tuple = None
-        else:
-            def data_tuple(*converters):
-                if len(split_result) != len(converters):
-                    raise ValueError(
-                        "the event data has %d elements, but %d converters "
-                        "were given" % (len(split_result), len(converters)))
-                return tuple(
-                    converter(string)
-                    for converter, string in zip(converters, split_result))
-
-            event.data_tuple = data_tuple
-
-        try:
-            event.data_int = int(data_string)
-        except ValueError:
-            event.data_int = None
-
-        try:
-            event.data_float = float(data_string)
-        except ValueError:
-            event.data_float = None
-
-        try:
-            event.data_widget = widget.nametowidget(data_string)
-        # nametowidget raises KeyError when the widget is unknown, but
-        # that feels like an implementation detail
-        except Exception:
-            event.data_widget = None
-
+        event.__class__ = _EventWithData    # evil haxor muhaha
+        event.data_string = data_string
         return callback(event)      # may return 'break'
 
     # tkinter's bind() ignores the add argument when the callback is a
@@ -337,21 +329,6 @@ def bind_with_data(widget, sequence, callback, add=False):
     widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
                    % (widget, sequence, funcname))
     return funcname
-
-
-# TODO: document this
-# TODO: test this
-def create_tcl_list(iterable):
-    widget = porcupine.get_main_window()      # any widget would do
-
-    # in tcl, 'join [list x y z]' returns 'x y z', but 'join [list x]'
-    # converts x to a string... let's do that, tkinter converts python tuples
-    # to tcl lists
-    python_tuple = tuple(map(str, iterable))
-    result = widget.tk.call('join', (python_tuple,))
-    assert isinstance(result, str)
-    assert widget.tk.splitlist(result) == python_tuple
-    return result
 
 
 @contextlib.contextmanager
@@ -555,7 +532,7 @@ def run_in_thread(blocking_function, done_callback):
     unlike *blocking_function*.
     """
     root = porcupine.get_main_window()
-    result = []     # [success, result]
+    result = []     # [success, value or traceback]
 
     def thread_target():
         # the logging module uses locks so calling it from another
@@ -563,7 +540,7 @@ def run_in_thread(blocking_function, done_callback):
         try:
             value = blocking_function()
             result[:] = [True, value]
-        except Exception as e:
+        except Exception:
             result[:] = [False, traceback.format_exc()]
 
     def check():
