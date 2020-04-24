@@ -9,7 +9,6 @@ import tkinter
 from tkinter import ttk, messagebox, filedialog
 import traceback
 
-import porcupine
 from porcupine import filetypes, images, settings, textwidget, utils
 
 log = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ setup_before = ['tabs2spaces']      # see tabs2spaces.py
 def on_tab_key(event, shifted):
     try:
         start_index, end_index = map(str, event.widget.tag_ranges('sel'))
-    except ValueError as e:
+    except ValueError:
         # nothing selected, allow doing other stuff
         return None
 

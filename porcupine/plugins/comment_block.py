@@ -14,7 +14,7 @@ def comment_or_uncomment():
 
     try:
         start_index, end_index = map(str, tab.textwidget.tag_ranges('sel'))
-    except ValueError as e:
+    except ValueError:
         # nothing selected, add '#' normally
         return None
 

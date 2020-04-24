@@ -1,5 +1,7 @@
 # remember to update this file if the pythonprompt plugin will work some day
 # FIXME: this is way too python-specific :(
+# FIXME: only two of the 5 pastebins still work, code needs updating
+# TODO: cancel button
 
 import functools
 import logging

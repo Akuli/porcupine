@@ -5,7 +5,6 @@ import contextlib
 import functools
 import json
 import logging
-import operator
 import os
 import platform
 import re

@@ -8,4 +8,8 @@
 # E226 is "missing whitespace around arithmetic operator", i think
 # "a + b*c" is much more readable than "a + b * c" while "a + (b * c)"
 # is a bit too verbose
-ignore = E402,E265,E226
+#
+# W503,W504 are line break before and after binary operator
+# pep8 allows both, although it has recommendations for when to use which
+# https://www.python.org/dev/peps/pep-0008/#should-a-line-break-before-or-after-a-binary-operator
+ignore = E402,E265,E226,W503,W504

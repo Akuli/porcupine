@@ -171,10 +171,9 @@ class LangServerClient:
 
 def on_new_tab(event):
     tab = event.data_widget()
-    if (    isinstance(tab, tabs.FileTab) and     # noqa
-            tab.path is not None and              # noqa
-            tab.path.endswith('.py')):            # noqa
-
+    if (isinstance(tab, tabs.FileTab)
+            and tab.path is not None
+            and tab.path.endswith('.py')):
         process = subprocess.Popen(
             ['pyls'],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
