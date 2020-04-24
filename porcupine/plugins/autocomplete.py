@@ -84,7 +84,7 @@ class _AutoCompleter:
 
 
 def on_new_tab(event):
-    tab = event.data_widget
+    tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         completer = _AutoCompleter(tab)
         utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)

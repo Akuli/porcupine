@@ -250,13 +250,6 @@ def set_tooltip(widget, text):
 # this is documented in bind_with_data()
 class _EventWithData(tkinter.Event):
 
-    # TODO: these are for backwards compat only, find usages and remove
-    data = property(operator.attrgetter('data_string'))
-    data_int = property(operator.attrgetter('data_json'))
-    data_float = property(operator.attrgetter('data_json'))
-
-    # TODO: should not have @property
-    @property
     def data_widget(self):
         return self.widget.nametowidget(self.data_string)
 
@@ -294,20 +287,13 @@ def bind_with_data(widget, sequence, callback, add=False):
         ``data_string``
             See the above example.
 
-        ``data``
-            Deprecated alias for ``data_string``.
-
-        ``data_int`` and ``data_float``
-            Deprecated aliases for ``data_json()``.
-
-        ``data_widget``
+        ``data_widget()``
             If a widget was passed as ``data`` to ``event_generate()``,
-            this is that widget.
+            then this returns that widget.
 
         ``data_json()``
             If ``json.dumps(something)`` was passed as ``data`` to
-            ``event_generate()``, then this returns the parsed JSON. Note that
-            this is a method; you need the ``()`` at the end when using this.
+            ``event_generate()``, then this returns the parsed JSON.
     """
     # tkinter creates event objects normally and appends them to the
     # deque, then run_callback() adds data_blablabla attributes to the

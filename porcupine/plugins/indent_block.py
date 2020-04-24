@@ -35,8 +35,9 @@ def on_tab_key(event, shifted):
 
 
 def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        utils.bind_tab_key(event.data_widget.textwidget, on_tab_key, add=True)
+    tab = event.data_widget()
+    if isinstance(tab, tabs.FileTab):
+        utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
 
 
 def setup():

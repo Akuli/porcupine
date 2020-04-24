@@ -14,7 +14,7 @@
 from porcupine import get_tab_manager, tabs, utils
 
 
-def on_tab(event, shift_pressed):
+def on_tab_key(event, shift_pressed):
     if not event.widget.tag_ranges('sel'):
         # nothing selected
         if shift_pressed:
@@ -28,8 +28,9 @@ def on_tab(event, shift_pressed):
 
 
 def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        utils.bind_tab_key(event.data_widget.textwidget, on_tab, add=True)
+    tab = event.data_widget()
+    if isinstance(tab, tabs.FileTab):
+        utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
 
 
 def setup():

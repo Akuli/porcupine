@@ -64,8 +64,9 @@ class LongLineMarker:
 
 
 def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        LongLineMarker(event.data_widget).setup()
+    tab = event.data_widget()
+    if isinstance(tab, tabs.FileTab):
+        LongLineMarker(tab).setup()
 
 
 def setup():

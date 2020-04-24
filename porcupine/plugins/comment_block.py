@@ -41,7 +41,7 @@ def comment_or_uncomment():
 
 
 def on_new_tab(event):
-    tab = event.data_widget
+    tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         # the '#' character seems to be a 'numbersign' in tk
         tab.textwidget.bind(

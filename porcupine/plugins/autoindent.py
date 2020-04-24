@@ -42,13 +42,12 @@ def after_enter(textwidget):
 
 
 def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        textwidget = event.data_widget.textwidget
-
+    tab = event.data_widget()
+    if isinstance(tab, tabs.FileTab):
         def bind_callback(event):
-            textwidget.after_idle(after_enter, textwidget)
+            tab.textwidget.after_idle(after_enter, tab.textwidget)
 
-        textwidget.bind('<Return>', bind_callback, add=True)
+        tab.textwidget.bind('<Return>', bind_callback, add=True)
 
 
 def setup():

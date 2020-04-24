@@ -14,8 +14,9 @@ def on_save(event):
 
 
 def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        event.data_widget.bind('<<Save>>', on_save, add=True)
+    tab = event.data_widget()
+    if isinstance(tab, tabs.FileTab):
+        tab.bind('<<Save>>', on_save, add=True)
 
 
 def setup():

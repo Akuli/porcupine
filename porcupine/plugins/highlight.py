@@ -178,7 +178,7 @@ class Highlighter:
 
 
 def on_new_tab(event):
-    tab = event.data_widget
+    tab = event.data_widget()
     if not isinstance(tab, tabs.FileTab):
         return
 

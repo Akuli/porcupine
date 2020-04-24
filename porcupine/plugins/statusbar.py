@@ -49,7 +49,7 @@ class StatusBar(ttk.Frame):
 
 
 def on_new_tab(event):
-    tab = event.data_widget
+    tab = event.data_widget()
     StatusBar(tab.bottom_frame, tab).pack(side='bottom', fill='x')
 
 

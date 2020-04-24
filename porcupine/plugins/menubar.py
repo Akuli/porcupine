@@ -71,7 +71,7 @@ class MenuManager:
         self.on_enable_disable(action.path)
 
     def on_new_action(self, event):
-        self.setup_action(actions.get_action(event.data))
+        self.setup_action(actions.get_action(event.data_string))
 
     def on_enable_disable(self, action_path):
         action = actions.get_action(action_path)
@@ -89,10 +89,10 @@ def setup():
         window, '<<NewAction>>', menubar.on_new_action, add=True)
     utils.bind_with_data(
         window, '<<ActionEnabled>>',
-        (lambda event: menubar.on_enable_disable(event.data)), add=True)
+        (lambda event: menubar.on_enable_disable(event.data_string)), add=True)
     utils.bind_with_data(
         window, '<<ActionDisabled>>',
-        (lambda event: menubar.on_enable_disable(event.data)), add=True)
+        (lambda event: menubar.on_enable_disable(event.data_string)), add=True)
 
     for action in actions.get_all_actions():
         menubar.setup_action(action)

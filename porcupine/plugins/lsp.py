@@ -32,7 +32,7 @@ def make_nonblocking(fileno):
 class LangServerClient:
 
     def __init__(self, file_tab, process):
-        self._file_tab = file_tab
+        self._tab = file_tab
         self._process = process
         self._lsp_client = lsp.Client(trace='verbose')
         self._completion_infos = {}
@@ -43,11 +43,11 @@ class LangServerClient:
         # values are porcupine's json info dicts
 
     def _get_uri(self):
-        assert self._file_tab.path is not None
-        return 'file://' + pathname2url(os.path.abspath(self._file_tab.path))
+        assert self._tab.path is not None
+        return 'file://' + pathname2url(os.path.abspath(self._tab.path))
 
     def _position_tk2lsp(self, tk_position_string, *, next_column=False):
-        # this can't use self._file_tab.textwidget.index, because it needs to
+        # this can't use self._tab.textwidget.index, because it needs to
         # handle text locations that don't exist anymore when text has been
         # deleted
         line, column = map(int, tk_position_string.split('.'))
@@ -103,7 +103,7 @@ class LangServerClient:
                 lsp.TextDocumentItem(
                     uri=self._get_uri(),
                     languageId='python',
-                    text=self._file_tab.textwidget.get('1.0', 'end - 1 char'),
+                    text=self._tab.textwidget.get('1.0', 'end - 1 char'),
                     version=0,
                 )
             )
@@ -117,7 +117,7 @@ class LangServerClient:
             info_dict['suffixes'] = [
                 item.label for item in lsp_event.completion_list.items
             ]
-            self._file_tab.event_generate(
+            self._tab.event_generate(
                 '<<AutoCompletionResponse>>', data=json.dumps(info_dict))
 
         elif isinstance(lsp_event, lsp.PublishDiagnostics):
@@ -136,7 +136,10 @@ class LangServerClient:
                 textDocument=lsp.TextDocumentIdentifier(uri=self._get_uri()),
                 # lsp line numbering starts at 0, tk line numbering starts at 1
                 # both column numberings start at 0
-                position=self._position_tk2lsp('insert', next_column=True),
+                position=self._position_tk2lsp(
+                    self._tab.textwidget.index('insert'),
+                    next_column=True,
+                ),
             ),
             context=lsp.CompletionContext(
                 triggerKind=lsp.CompletionTriggerKind.INVOKED,
@@ -167,11 +170,11 @@ class LangServerClient:
 
 
 def on_new_tab(event):
-    if (    isinstance(event.data_widget, tabs.FileTab) and     # noqa
-            event.data_widget.path is not None and              # noqa
-            event.data_widget.path.endswith('.py')):            # noqa
+    tab = event.data_widget()
+    if (    isinstance(tab, tabs.FileTab) and     # noqa
+            tab.path is not None and              # noqa
+            tab.path.endswith('.py')):            # noqa
 
-        tab = event.data_widget
         process = subprocess.Popen(
             ['pyls'],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
