@@ -1,4 +1,5 @@
 """Stuff related to filetypes.ini."""
+# TODO: replace all this with editorconfig
 
 import collections
 import configparser
@@ -39,16 +40,18 @@ _STUPID_DEFAULTS = '''\
 # other section, the [Plain Text] value will be used instead.
 #
 # Valid keys:
-#   filename_patterns   space-separated list of patterns like *.py or *.txt
-#   mimetypes           space-separated list of MIME types
-#   shebang_regex       regular expression for shebangs
-#   pygments_lexer      for syntax highlighting, see below
-#   tabs2spaces         yes or no
-#   indent_size         number of spaces or tab width, positive integer
-#   max_line_length     positive integer or 0 for no limit
-#   compile_command     see below
-#   run_command         see below
-#   lint_command        see below
+#   filename_patterns       space-separated list of patterns like *.py or *.txt
+#   mimetypes               space-separated list of MIME types
+#   shebang_regex           regular expression for shebangs
+#   pygments_lexer          for syntax highlighting, see below
+#   tabs2spaces             yes or no
+#   indent_size             number of spaces or tab width, positive integer
+#   max_line_length         positive integer or 0 for no limit
+#   langserver_command      command that starts langserver
+#   langserver_language_id  see below
+#   compile_command         see below
+#   run_command             see below
+#   lint_command            see below
 #
 # As you can see, Porcupine can detect the correct filetype based on the
 # filename, MIME type or shebang. Use filename_patterns if you don't know what
@@ -74,7 +77,7 @@ _STUPID_DEFAULTS = '''\
 # pygments.lexers.python.Python3Lexer. Here's a list of lexers that Pygments
 # comes with:  http://pygments.org/docs/lexers/
 #
-# These substitutions are performed to the commands:
+# These substitutions are performed to all commands except langserver_command:
 #   {file}      path to source file, e.g. "hello world.tar.gz"
 #   {no_ext}    {file} without last extension, e.g. "hello world.tar"
 #   {no_exts}   {file} without any extensions, e.g. "hello world"
@@ -91,6 +94,10 @@ _STUPID_DEFAULTS = '''\
 #
 #   tar cf "hello world.tar" "hello world.txt"
 #
+# If specified, the langserver_language_id should be an "Identifier" from the
+# table shown here:
+# https://microsoft.github.io/language-server-protocol/specifications/specific\
+ation-current/#textDocumentItem
 
 [Plain Text]
 # indentation settings are like they are because most people like them this
@@ -105,6 +112,8 @@ max_line_length = 0
 compile_command =
 run_command =
 lint_command =
+langserver_command =
+langserver_language_id =
 
 [Python]
 mimetypes = text/x-python application/x-python text/x-python3 application/x-py\
@@ -279,6 +288,14 @@ class _FileType:
                 # str.format seems to raise ValueError and KeyError
                 except (KeyError, ValueError) as e:
                     raise _OptionError(something_command) from e
+
+        self.langserver_command = section['langserver_command']
+        self.langserver_language_id = section['langserver_language_id']
+
+        if not self.langserver_command.strip():
+            self.langserver_command = None
+        if not self.langserver_language_id.strip():
+            self.langserver_language_id = None
 
     # TODO: support passing more options in the config file? useful for lexers
     #       like pygments.lexers.PythonConsoleLexer, which takes an optional
@@ -586,7 +603,7 @@ class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
         key_val_pair(r'tabs2spaces', r'yes|no'),
         key_val_pair(r'indent_size', r'[1-9][0-9]*'),        # positive int
         key_val_pair(r'max_line_length', r'0|[1-9][0-9]*'),  # non-negative int
-        key_val_pair(r'(?:compile|run|lint)_command', r'.*'),   # TODO
+        key_val_pair(r'(?:compile|run|lint|langserver)_command', r'.*'),
 
         # less red error tokens
         key_val_pair(r'.*?', r'.*?', pygments.token.Text, pygments.token.Text),

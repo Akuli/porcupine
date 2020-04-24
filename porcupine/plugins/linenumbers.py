@@ -84,7 +84,7 @@ def _setup_scrolling(main_text, other_text):
 
 
 def on_new_tab(event):
-    tab = event.data_widget      # pep8 line length
+    tab = event.data_widget()
     if not isinstance(tab, tabs.FileTab):
         return
 
