@@ -37,11 +37,17 @@ class _AutoCompleter:
         self._can_reset_now = True
 
     def receive_completions(self, event):
-        print('receiving xd')
         info_dict = event.data_json()
         if info_dict['id'] == self._waiting_for_response_id:
             self._waiting_for_response_id = None
-            self._suffixes = collections.deque(info_dict['suffixes'])
+
+            # filter out empty suffixes, they are quite confusing.
+            #
+            # For example, with pyls after 'import struct', try 'str' and
+            # press tab. It wants to autocomplete 'str' and 'struct'
+            self._suffixes = collections.deque(
+                suffix for suffix in info_dict['suffixes'] if suffix
+            )
             self._suffixes.append('')   # end of completions
             self._put_first_suffix_to_text_widget()
 
