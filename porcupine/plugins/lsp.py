@@ -75,9 +75,9 @@ def get_uri(tab):
 
 class LangServer:
 
-    def __init__(self, process, language_id, log):
+    def __init__(self, process, command, log):
         self._process = process
-        self._language_id = language_id
+        self._command = command
         self._lsp_client = lsp.Client(trace='verbose')
         self._completion_infos = {}
         self._version_counter = itertools.count()
@@ -112,7 +112,13 @@ class LangServer:
             return True
         elif received_bytes == b'':
             # yes, None and b'' seem to have a different meaning here
-            self._log.warning("langserver process crashed")
+            self._log.critical(
+                "langserver process started with command '%s' crashed",
+                self._command)
+            # TODO: restart it?
+
+            assert langservers[self._command] is self
+            del langservers[self._command]
             return False
 
         assert received_bytes
@@ -137,7 +143,7 @@ class LangServer:
         self._lsp_client.did_open(
             lsp.TextDocumentItem(
                 uri=get_uri(tab),
-                languageId=self._language_id,
+                languageId=tab.filetype.langserver_language_id,
                 text=tab.textwidget.get('1.0', 'end - 1 char'),
                 version=0,
             )
@@ -244,25 +250,28 @@ class LangServer:
         )
 
 
-langservers = {}    # keys are filetype objects
+# keys are running commands because the same langserver command might be useful
+# for multiple langservers
+langservers = {}
 
 
 def get_lang_server(filetype):
     if filetype is None:
         return None
 
-    try:
-        return langservers[filetype]
-    except KeyError:
-        pass
-
     if not (filetype.langserver_command and filetype.langserver_language_id):
         logging.getLogger(__name__).info(
             "langserver not configured for filetype " + filetype.name)
         return None
 
+    try:
+        return langservers[filetype.langserver_command]
+    except KeyError:
+        pass
+
     log = logging.getLogger(
-        __name__ + '.' + filetype.langserver_language_id)
+        __name__ + '.' +
+        re.sub(r'[^A-Za-z0-9]', '_', filetype.langserver_command))     # lol
 
     # avoid shell=True on non-windows to get process.pid to do the right thing
     #
@@ -290,9 +299,9 @@ def get_lang_server(filetype):
              filetype.langserver_command, process.pid)
 
     langserver = LangServer(
-        process, filetype.langserver_language_id, log)
+        process, filetype.langserver_command, log)
     langserver.run_stuff()
-    langservers[filetype] = langserver
+    langservers[filetype.langserver_command] = langserver
     return langserver
 
 
