@@ -74,7 +74,7 @@ class LangServer:
             return True
         elif received_bytes == b'':
             # yes, None and b'' seem to have a different meaning here
-            self._log.warning("lang server process died")
+            self._log.warning("langserver process crashed")
             return False
 
         assert received_bytes
@@ -105,41 +105,27 @@ class LangServer:
             )
         )
 
-    def _get_text_to_insert(self, prefix_len, lsp_completion_item):
-        # TODO: use textEdit when available (requires some refactoring)
-        if lsp_completion_item.insertText:
-            return lsp_completion_item.insertText
-        return lsp_completion_item.label
-
-    def _get_sort_text(self, lsp_completion_item):
-        if lsp_completion_item.sortText:
-            return lsp_completion_item.sortText
-        return lsp_completion_item.label
-
     def _handle_lsp_event(self, lsp_event):
         if isinstance(lsp_event, lsp.Initialized):
             self._log.info("langserver initialized, capabilities:\n%s",
-                            pprint.pformat(lsp_event.capabilities))
+                           pprint.pformat(lsp_event.capabilities))
 
             for tab in self.tabs_opened:
                 self._send_tab_opened_message(tab)
 
         elif isinstance(lsp_event, lsp.Shutdown):
-            self._log.warning("lang server process shutting down")
+            self._log.warning("langserver process shutting down")
             self._lsp_client.exit()
 
         elif isinstance(lsp_event, lsp.Completion):
             info_dict = self._completion_infos.pop(lsp_event.message_id)
             tab = info_dict.pop('tab')
 
-            for item in lsp_event.completion_list.items:
-                print(item)
-
             # this is "open to interpretation", as the lsp spec says
-            current_line = tab.textwidget.get('insert linestart', 'insert')
-            prefix_len = len(re.fullmatch('.*?(\w*)', current_line).group(1))
-
             # TODO: use textEdit when available (requires some refactoring)
+            current_line = tab.textwidget.get('insert linestart', 'insert')
+            prefix_len = len(re.fullmatch(r'.*?(\w*)', current_line).group(1))
+
             info_dict['suffixes'] = [
                 (item.insertText or item.label)[prefix_len:]
                 for item in sorted(
@@ -233,6 +219,8 @@ def get_lang_server(filetype):
         pass
 
     if not (filetype.langserver_command and filetype.langserver_language_id):
+        logging.getLogger(__name__).info(
+            "langserver not configured for filetype " + filetype.name)
         return None
 
     log = logging.getLogger(
@@ -275,7 +263,6 @@ def on_new_tab(event):
     if isinstance(tab, tabs.FileTab):
         langserver = get_lang_server(tab.filetype)
         if langserver is None:
-            print('no lang server')
             return
 
         utils.bind_with_data(tab, '<<AutoCompletionRequest>>',
