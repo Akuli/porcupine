@@ -289,7 +289,7 @@ class _FileType:
                 except (KeyError, ValueError) as e:
                     raise _OptionError(something_command) from e
 
-        self.langserver_command = section['langserver_command']
+        self.langserver_command = section['langserver_command'].strip()
         self.langserver_language_id = section['langserver_language_id']
 
         if not self.langserver_command.strip():

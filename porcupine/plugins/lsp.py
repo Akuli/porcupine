@@ -1,6 +1,5 @@
 # langserver plugin
 
-import fcntl
 import shlex
 import itertools
 import json
@@ -8,26 +7,65 @@ import logging
 import os
 import platform
 import pprint
+import queue as queue_module
 import re
 import subprocess
+import threading
 from urllib.request import pathname2url
+
+try:
+    import fcntl
+except ImportError:
+    # windows
+    fcntl = None
 
 from porcupine import get_tab_manager, tabs, utils
 import sansio_lsp_client as lsp
 
 
-# 2^10 = 1024 bytes was way too small, and with this chunk size, it still
-# sometimes takes two reads to get everything
-CHUNK_SIZE = 2**16
+def get_nonblocking_reader(file):
+    if fcntl is not None:
+        # this works because we don't use .readline()
+        # https://stackoverflow.com/a/1810703
+        old_flags = fcntl.fcntl(file.fileno(), fcntl.F_GETFL)
+        new_flags = old_flags | os.O_NONBLOCK
+        fcntl.fcntl(file.fileno(), fcntl.F_SETFL, new_flags)
 
+        # 1024 bytes was way too small, and with this chunk size, it
+        # still sometimes takes two reads to get everything
+        return lambda: file.read(64*1024)
 
-# TODO: windows
-def make_nonblocking(fileno):
-    # this works because we don't use .readilne()
-    # https://stackoverflow.com/a/1810703
-    old_flags = fcntl.fcntl(fileno, fcntl.F_GETFL)
-    new_flags = old_flags | os.O_NONBLOCK
-    fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
+    # rest of this is windows only code, why can't windows just have a nice way
+    # to make stuff not block?
+
+    queue = queue_module.Queue()
+    running = True
+
+    def put_to_queue():
+        while True:
+            # for whatever reason, nothing works unless i go ONE BYTE at a
+            # time.... this is a piece of shit
+            one_fucking_byte = file.read(1)
+            if not one_fucking_byte:
+                nonlocal running
+                running = False
+                break
+            queue.put(one_fucking_byte)
+
+    def get_from_queue():
+        buf = bytearray()
+        while True:
+            try:
+                buf += queue.get(block=False)
+            except queue_module.Empty:
+                break
+
+        if buf:
+            return bytes(buf)
+        return None if running else b''
+
+    threading.Thread(target=put_to_queue, daemon=True).start()
+    return get_from_queue
 
 
 def get_uri(tab):
@@ -45,8 +83,8 @@ class LangServer:
         self._version_counter = itertools.count()
         self._log = log
         self.tabs_opened = []      # list of tabs
-
-        make_nonblocking(self._process.stdout.fileno())
+        self._nonblocking_stdout_read = get_nonblocking_reader(
+            self._process.stdout)
 
     def _position_tk2lsp(self, tk_position_string, *, next_column=False):
         # this can't use tab.textwidget.index, because it needs to handle text
@@ -67,7 +105,7 @@ class LangServer:
         self._process.stdin.write(self._lsp_client.send())
         self._process.stdin.flush()
 
-        received_bytes = self._process.stdout.read(CHUNK_SIZE)
+        received_bytes = self._nonblocking_stdout_read()
 
         if received_bytes is None:
             # no data received
