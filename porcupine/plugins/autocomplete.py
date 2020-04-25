@@ -59,7 +59,7 @@ class _AutoCompleter:
             # don't complete in beginning of line or with space before cursor
             re.search(r'\S$', before_cursor)
             # don't complete  in the beginning or middle of a word
-            and not re.search(r'^\w', after_cursor)         # noqa
+            and not re.search(r'^\w', after_cursor)
         )
 
     def _complete(self, rotation):
