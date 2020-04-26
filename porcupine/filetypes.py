@@ -49,6 +49,8 @@ _STUPID_DEFAULTS = '''\
 #   max_line_length         positive integer or 0 for no limit
 #   langserver_command      command that starts langserver
 #   langserver_language_id  see below
+#   autocomplete_chars      space-separated character list to trigger autocomp\
+leting without pressing tab
 #   compile_command         see below
 #   run_command             see below
 #   lint_command            see below
@@ -114,6 +116,7 @@ run_command =
 lint_command =
 langserver_command =
 langserver_language_id =
+autocomplete_chars =
 
 [Python]
 mimetypes = text/x-python application/x-python text/x-python3 application/x-py\
@@ -129,6 +132,10 @@ max_line_length = 79
 # flake8 is the default because pylint doesn't like my code :/ </3
 run_command = %(python)s {file}
 lint_command = %(python)s -m flake8 {file}
+
+autocomplete_chars = .
+langserver_command = pyls
+langserver_language_id = python
 
 # any style settings for some of these freely indentable languages would make
 # some people hate me
@@ -288,6 +295,8 @@ class _FileType:
                 # str.format seems to raise ValueError and KeyError
                 except (KeyError, ValueError) as e:
                     raise _OptionError(something_command) from e
+
+        self.autocomplete_chars = section['autocomplete_chars'].split()
 
         self.langserver_command = section['langserver_command'].strip()
         self.langserver_language_id = section['langserver_language_id']

@@ -208,6 +208,9 @@ class AutoCompleter:
         self._filter_queue = ''
 
     def _request_suffixes(self):
+        self._endpos = self._tab.textwidget.index('insert')
+        print("requesting suffixes", self._endpos, self._filter_queue)
+
         the_id = next(self._id_counter)
         self._waiting_for_response_id = the_id
         self._filter_queue = ''
@@ -280,7 +283,6 @@ class AutoCompleter:
                 # let tabs2spaces and other plugins handle it
                 return None
 
-            self._endpos = self._tab.textwidget.index('insert')
             self._request_suffixes()
             return 'break'
 
@@ -314,6 +316,18 @@ class AutoCompleter:
                 else:
                     self._filter_queue = ''
                     self._waiting_for_response_id = None
+
+            if event.char in self._tab.filetype.autocomplete_chars:
+                def do_request():
+                    if ((not self.popup.is_completing())
+                            and self._can_complete_here()):
+                        self._request_suffixes()
+
+                # Tiny delay added for things like langserver, to make sure
+                # that langserver's change events get sent before completions
+                # are requested.
+                self._tab.after(10, do_request)
+
             return None
 
         if self._putting_suffix_to_text_widget:

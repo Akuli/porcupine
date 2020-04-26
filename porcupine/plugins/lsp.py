@@ -218,6 +218,8 @@ class LangServer:
                 ),
             ),
             context=lsp.CompletionContext(
+                # FIXME: this isn't always the case, porcupine can also trigger
+                #        it automagically
                 triggerKind=lsp.CompletionTriggerKind.INVOKED,
             ),
         )
