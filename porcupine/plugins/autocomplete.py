@@ -237,20 +237,12 @@ def on_new_tab(event):
 def setup():
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 
-    text_frame = SETTINGS.add_frame()
-    label = ttk.Label(text_frame, text=(
+    SETTINGS.add_label(
         # TODO: add documentation for setting up langserver and a link to
         #       that here
         "If autocompletion isn't working, make sure that you have langserver "
         "(or something else that works with the autocomplete plugin) set up "
-        "correctly."))
-    label.pack(fill='x', pady=10)
-
-    # TODO: this is copy/pasta from settings.py, add a more convenient way to
-    # create wrapping labels
-    text_frame.bind(
-        '<Configure>', (lambda event: label.config(wraplength=event.width)),
-        add=True)
+        "correctly.")
 
     SETTINGS.add_option('show_popup', True)
     SETTINGS.add_checkbutton(

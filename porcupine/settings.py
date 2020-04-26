@@ -302,6 +302,16 @@ class _ConfigSection(collections.abc.MutableMapping):
 
         return frame
 
+    # TODO: document this
+    def add_label(self, text):
+        frame = self.add_frame()
+        label = ttk.Label(frame, text=text)
+        label.pack(fill='x', pady=10)
+        frame.bind(
+            '<Configure>',
+            (lambda event: label.config(wraplength=event.width)), add=True)
+        return label
+
     def add_checkbutton(self, key, text):
         """Add a ``ttk.Checkbutton`` that sets an option to a bool."""
         var = self.get_var(key, tkinter.BooleanVar)
@@ -469,22 +479,6 @@ def _init():
     general.add_option('pygments_style', 'default', reset=False)
     general.connect('pygments_style', _validate_pygments_style_name)
 
-    filetypes = get_section('File Types')
-    label1 = ttk.Label(filetypes.content_frame, text=(
-        "Currently there's no GUI for changing filetype specific settings, "
-        "but they're stored in filetypes.ini and you can edit it yourself."))
-    label2 = ttk.Label(filetypes.content_frame, text=(
-        "You can use the following option to choose which filetype "
-        "Porcupine should use when you create a new file in Porcupine. You "
-        "can change the filetype after creating the file clicking Filetypes "
-        "in the menu bar."))
-    filetypes.content_frame.bind(      # automatic wrapping
-        '<Configure>',
-        lambda event: {   # have fun figuring out why javascripty { } works
-            label1.config(wraplength=event.width),
-            label2.config(wraplength=event.width),
-        }, add=True)
-
     def edit_it():
         # porcupine/tabs.py imports this file
         # these local imports feel so evil xD  MUHAHAHAA!!!
@@ -495,12 +489,19 @@ def _init():
         manager.add_tab(tabs.FileTab.open_file(manager, path))
         _dialog.withdraw()
 
-    label1.pack(fill='x', pady=10)
-    ttk.Button(filetypes.content_frame, text="Edit filetypes.ini",
+    filetypes = get_section('File Types')
+    filetypes.add_label(
+        "Currently there's no GUI for changing filetype specific settings, "
+        "but they're stored in filetypes.ini and you can edit it yourself.")
+    ttk.Button(filetypes.add_frame(), text="Edit filetypes.ini",
                command=edit_it).pack(anchor='center')
-    label2.pack(fill='x', pady=10)
 
     names = [filetype.name for filetype in get_all_filetypes()]
+    filetypes.add_label(
+        "You can use the following option to choose which filetype "
+        "Porcupine should use when you create a new file in Porcupine. You "
+        "can change the filetype after creating the file by clicking "
+        "Filetypes in the menu bar.")
     filetypes.add_option('default_filetype', 'Plain Text')
     filetypes.add_combobox('default_filetype', names,
                            "Default filetype for new files:")
