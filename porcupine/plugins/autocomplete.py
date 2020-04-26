@@ -12,6 +12,9 @@ setup_before = ['tabs2spaces']      # see tabs2spaces.py
 
 class AutoCompletionPopup:
 
+    # TODO: "type to filter" sort of thing
+    # TODO: page up, page down for completion list
+    # TODO: esc to close completion list
     def __init__(self, selected_callback):
         self._selected_callback = selected_callback
         self._completion_list = None
@@ -29,11 +32,18 @@ class AutoCompletionPopup:
 
         self._treeview = ttk.Treeview(
             self._toplevel, show='tree', selectmode='browse')
-        self._treeview.pack(fill='both', expand=True)
-
         self._treeview.bind('<Motion>', self._on_mouse_move)
-        self._toplevel.bind('<Button-1>', self._on_click)
+        self._treeview.bind('<Button-1>', self._on_click)
         self._treeview.bind('<<TreeviewSelect>>', self._on_select)
+
+        scrollbar = ttk.Scrollbar(self._toplevel)
+        self._treeview['yscrollcommand'] = scrollbar.set
+        scrollbar['command'] = self._treeview.yview
+
+        # scrollbar must be packed first, otherwise it may disappear when the
+        # window is too narrow (remove overrideredirect(True) to experiment)
+        scrollbar.pack(side='right', fill='y')
+        self._treeview.pack(side='left', fill='both', expand=True)
 
         # to avoid calling selected_callback more often than needed
         self._old_selection_item_id = None
@@ -41,15 +51,23 @@ class AutoCompletionPopup:
     def is_showing(self):
         return (self._completion_list is not None)
 
+    def _select_item(self, item_id):
+        self._treeview.selection_set(item_id)
+        self._treeview.see(item_id)
+
     def select_previous(self):
         prev_item = self._treeview.prev(self._treeview.selection())
-        self._treeview.selection_set(
-            prev_item if prev_item else self._treeview.get_children()[-1])
+        if prev_item:
+            self._select_item(prev_item)
+        else:
+            self._select_item(self._treeview.get_children()[-1])
 
     def select_next(self):
         next_item = self._treeview.next(self._treeview.selection())
-        self._treeview.selection_set(
-            next_item if next_item else self._treeview.get_children()[0])
+        if next_item:
+            self._select_item(next_item)
+        else:
+            self._select_item(self._treeview.get_children()[0])
 
     def _on_mouse_move(self, event):
         # ttk_treeview(3tk) says that 'identify row' is "Obsolescent synonym
@@ -81,7 +99,7 @@ class AutoCompletionPopup:
             self._treeview.insert('', 'end', id=str(index), text=completion)
 
         self._treeview.selection_set('0')
-        self._toplevel.geometry('150x200+%d+%d' % (x, y))
+        self._toplevel.geometry('250x200+%d+%d' % (x, y))
         self._toplevel.deiconify()
 
     # does nothing if already hidden
