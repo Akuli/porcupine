@@ -12,7 +12,6 @@ SETTINGS = settings.get_section("Autocomplete")
 
 class AutoCompletionPopup:
 
-    # FIXME: undo,redo
     # TODO: display descriptions next to the thing
     # FIXME: after struct.pa<Tab>, menu shows "ck" and "ck_into" in the menu
     # FIXME: io.string<Tab> completes to io.stringIO, first s should be S
@@ -209,7 +208,6 @@ class AutoCompleter:
 
     def _request_suffixes(self):
         self._endpos = self._tab.textwidget.index('insert')
-        print("requesting suffixes", self._endpos, self._filter_queue)
 
         the_id = next(self._id_counter)
         self._waiting_for_response_id = the_id
@@ -223,6 +221,7 @@ class AutoCompleter:
         }))
 
     def _put_suffix_to_text_widget(self, suffix):
+        self._tab.textwidget['autoseparators'] = False
         self._putting_suffix_to_text_widget = True
 
         try:
@@ -232,6 +231,7 @@ class AutoCompleter:
             self._endpos = self._tab.textwidget.index('insert')
             self._tab.textwidget.mark_set('insert', old_cursor_pos)
         finally:
+            self._tab.textwidget['autoseparators'] = True
             self._putting_suffix_to_text_widget = False
 
     def receive_suffixes(self, event):
@@ -300,6 +300,7 @@ class AutoCompleter:
         self._tab.textwidget.tag_remove('autocompletion', '1.0', 'end')
         self._tab.textwidget.mark_set('insert', self._endpos)
         self._waiting_for_response_id = None
+        self._tab.textwidget.edit_separator()
 
     def _reject(self):
         if self.popup.is_completing():
@@ -310,13 +311,6 @@ class AutoCompleter:
         its_just_a_letter = (len(event.char) == 1 and event.char.isprintable())
 
         if not self.popup.is_completing():
-            if self._waiting_for_response_id is not None:
-                if its_just_a_letter:
-                    self._filter_queue += event.char
-                else:
-                    self._filter_queue = ''
-                    self._waiting_for_response_id = None
-
             if event.char in self._tab.filetype.autocomplete_chars:
                 def do_request():
                     if ((not self.popup.is_completing())
@@ -327,6 +321,17 @@ class AutoCompleter:
                 # that langserver's change events get sent before completions
                 # are requested.
                 self._tab.after(10, do_request)
+
+                self._filter_queue = ''
+                self._waiting_for_response_id = None
+                return None
+
+            if self._waiting_for_response_id is not None:
+                if its_just_a_letter:
+                    self._filter_queue += event.char
+                else:
+                    self._filter_queue = ''
+                    self._waiting_for_response_id = None
 
             return None
 
