@@ -302,12 +302,20 @@ class HandyText(tk.Text):
                 "the tcl code called _change_cb with unexpected subcommand: "
                 + subcommand)       # noqa
 
+        # remove changes that don't actually do anything
+        changes = [
+            change for change in changes
+            if (change['start'] != change['end']
+                or change['old_text_len'] != 0
+                or change['new_text'])
+        ]
+
         # some plugins expect <<ContentChanged>> events to occur after changing
         # the content in the editor, but the tcl code in __init__ needs them to
         # run before, so here is the solution
-        @self.after_idle       # yes, this works
-        def this_runs_after_changes():
-            self.event_generate('<<ContentChanged>>', data=json.dumps(changes))
+        if changes:
+            self.after_idle(lambda: self.event_generate(
+                '<<ContentChanged>>', data=json.dumps(changes)))
 
     def _cursor_cb(self):
         # more implicit newline stuff

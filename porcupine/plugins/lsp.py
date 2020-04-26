@@ -168,8 +168,10 @@ class LangServer:
 
             # this is "open to interpretation", as the lsp spec says
             # TODO: use textEdit when available (requires some refactoring)
-            current_line = tab.textwidget.get('insert linestart', 'insert')
-            prefix_len = len(re.fullmatch(r'.*?(\w*)', current_line).group(1))
+            before_cursor = tab.textwidget.get(
+                '%s linestart' % info_dict['cursor_pos'],
+                info_dict['cursor_pos'])
+            prefix_len = len(re.fullmatch(r'.*?(\w*)', before_cursor).group(1))
 
             info_dict['suffixes'] = [
                 (item.insertText or item.label)[prefix_len:]
@@ -206,13 +208,13 @@ class LangServer:
             return
 
         tab = event.widget
+        info_dict = event.data_json()
+
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=get_uri(tab)),
-                # lsp line numbering starts at 0, tk line numbering starts at 1
-                # both column numberings start at 0
                 position=self._position_tk2lsp(
-                    tab.textwidget.index('insert'), next_column=True
+                    info_dict['cursor_pos'], next_column=True
                 ),
             ),
             context=lsp.CompletionContext(
@@ -221,7 +223,7 @@ class LangServer:
         )
 
         assert lsp_id not in self._completion_infos
-        self._completion_infos[lsp_id] = event.data_json()
+        self._completion_infos[lsp_id] = info_dict
         self._completion_infos[lsp_id]['tab'] = tab
 
     def send_change_events(self, event):
