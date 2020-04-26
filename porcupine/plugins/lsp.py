@@ -125,11 +125,12 @@ class LangServer:
         self._log.debug("got %d bytes of data", len(received_bytes))
 
         try:
-            # list() may be needed to make sure we get error immediately, if
-            # it is going to error
-            lsp_events = list(self._lsp_client.recv(received_bytes))
+            lsp_events = self._lsp_client.recv(received_bytes)
         except lsp.IncompleteResponseError:
             return True
+        except Exception:
+            self._log.exception("error while receiving lsp events")
+            lsp_events = []
 
         for lsp_event in lsp_events:
             try:
