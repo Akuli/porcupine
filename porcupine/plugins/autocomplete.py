@@ -5,9 +5,10 @@ import re
 import tkinter.font
 from tkinter import ttk
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, settings, tabs, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
+SETTINGS = settings.get_section("Autocomplete")
 
 
 class AutoCompletionPopup:
@@ -15,7 +16,7 @@ class AutoCompletionPopup:
     # TODO: "type to filter" sort of thing
     # TODO: page up, page down for completion list
     # TODO: display descriptions next to the thing
-    # TODO: make this configurable
+    # FIXME: after struct.pa<Tab>, menu shows "ck" and "ck_into" in the menu
     def __init__(self, selected_callback):
         self._selected_callback = selected_callback
         self._completion_list = None
@@ -101,7 +102,11 @@ class AutoCompletionPopup:
 
         self._treeview.selection_set('0')
         self._toplevel.geometry('250x200+%d+%d' % (x, y))
-        self._toplevel.deiconify()
+
+        # lazy way to implement auto completions without popup window: create
+        # all the widgets but never show them :D
+        if SETTINGS['show_popup']:
+            self._toplevel.deiconify()
 
     # does nothing if already hidden
     def hide(self):
@@ -231,3 +236,22 @@ def on_new_tab(event):
 
 def setup():
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+
+    text_frame = SETTINGS.add_frame()
+    label = ttk.Label(text_frame, text=(
+        # TODO: add documentation for setting up langserver and a link to
+        #       that here
+        "If autocompletion isn't working, make sure that you have langserver "
+        "(or something else that works with the autocomplete plugin) set up "
+        "correctly."))
+    label.pack(fill='x', pady=10)
+
+    # TODO: this is copy/pasta from settings.py, add a more convenient way to
+    # create wrapping labels
+    text_frame.bind(
+        '<Configure>', (lambda event: label.config(wraplength=event.width)),
+        add=True)
+
+    SETTINGS.add_option('show_popup', True)
+    SETTINGS.add_checkbutton(
+        'show_popup', "Show a popup window when autocompleting")

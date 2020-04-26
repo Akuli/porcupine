@@ -269,7 +269,7 @@ class _ConfigSection(collections.abc.MutableMapping):
         self._var_cache[key] = var
         return var
 
-    def add_frame(self, triangle_key):
+    def add_frame(self, triangle_key=None):
         """Add a ``ttk.Frame`` to the dialog and return it.
 
         The frame will contain a label that displays a |triangle| when
@@ -281,6 +281,7 @@ class _ConfigSection(collections.abc.MutableMapping):
             frame = section.add_frame(key)
             var = section.get_var(key, tkinter.BooleanVar)
             ttk.Checkbutton(frame, text=text, variable=var).pack(side='left')
+
         """
         frame = ttk.Frame(self.content_frame)
         frame.pack(fill='x')
@@ -473,7 +474,7 @@ def _init():
         "Currently there's no GUI for changing filetype specific settings, "
         "but they're stored in filetypes.ini and you can edit it yourself."))
     label2 = ttk.Label(filetypes.content_frame, text=(
-        "\nYou can use the following option to choose which filetype "
+        "You can use the following option to choose which filetype "
         "Porcupine should use when you create a new file in Porcupine. You "
         "can change the filetype after creating the file clicking Filetypes "
         "in the menu bar."))
@@ -494,10 +495,10 @@ def _init():
         manager.add_tab(tabs.FileTab.open_file(manager, path))
         _dialog.withdraw()
 
-    label1.pack(fill='x')
+    label1.pack(fill='x', pady=10)
     ttk.Button(filetypes.content_frame, text="Edit filetypes.ini",
                command=edit_it).pack(anchor='center')
-    label2.pack(fill='x')
+    label2.pack(fill='x', pady=10)
 
     names = [filetype.name for filetype in get_all_filetypes()]
     filetypes.add_option('default_filetype', 'Plain Text')
