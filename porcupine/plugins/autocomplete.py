@@ -1,59 +1,155 @@
-# this will be replaced with langserver support soon™
 import collections
 import itertools
 import json
 import re
+import tkinter.font
+from tkinter import ttk
 
 from porcupine import get_tab_manager, tabs, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
 
 
-class _AutoCompleter:
+class AutoCompletionPopup:
+
+    def __init__(self, selected_callback):
+        self._selected_callback = selected_callback
+        self._completion_list = None
+        self._toplevel = tkinter.Toplevel()
+        self._toplevel.withdraw()
+
+        # this makes the popup have no window border and stuff. From wm(3tk):
+        #
+        # "Setting the override-redirect flag for a window causes it to be
+        # ignored  by the window manager; among other things, this means that
+        # the window will not be reparented from the root window into a
+        # decorative frame and the user will not be able to manipulate the
+        # window using the normal window manager mechanisms.
+        self._toplevel.overrideredirect(True)
+
+        self._treeview = ttk.Treeview(
+            self._toplevel, show='tree', selectmode='browse')
+        self._treeview.pack(fill='both', expand=True)
+
+        self._treeview.bind('<Motion>', self._on_mouse_move)
+        self._toplevel.bind('<Button-1>', self._on_click)
+        self._treeview.bind('<<TreeviewSelect>>', self._on_select)
+
+        # to avoid calling selected_callback more often than needed
+        self._old_selection_item_id = None
+
+    def is_showing(self):
+        return (self._completion_list is not None)
+
+    def select_previous(self):
+        prev_item = self._treeview.prev(self._treeview.selection())
+        self._treeview.selection_set(
+            prev_item if prev_item else self._treeview.get_children()[-1])
+
+    def select_next(self):
+        next_item = self._treeview.next(self._treeview.selection())
+        self._treeview.selection_set(
+            next_item if next_item else self._treeview.get_children()[0])
+
+    def _on_mouse_move(self, event):
+        # ttk_treeview(3tk) says that 'identify row' is "Obsolescent synonym
+        # for pathname identify item", but tkinter doesn't have identify_item
+        hovered_id = self._treeview.identify_row(event.y)
+        if hovered_id:
+            self._treeview.selection_set(hovered_id)
+
+    def _on_click(self, event):
+        self.hide()
+
+    def _on_select(self, event):
+        if self.is_showing():
+            [item_id] = self._treeview.selection()
+            if item_id != self._old_selection_item_id:
+                self._selected_callback(self._completion_list[int(item_id)])
+                self._old_selection_item_id = item_id
+
+    def show(self, completion_list, x, y):
+        if self.is_showing():
+            # don't know when this would happen but why not handle it anyway
+            self.hide()
+
+        assert completion_list
+        self._completion_list = completion_list
+
+        for index, completion in enumerate(completion_list):
+            # note id=str(index)
+            self._treeview.insert('', 'end', id=str(index), text=completion)
+
+        self._treeview.selection_set('0')
+        self._toplevel.geometry('150x200+%d+%d' % (x, y))
+        self._toplevel.deiconify()
+
+    # does nothing if already hidden
+    def hide(self):
+        self._toplevel.withdraw()
+        self._treeview.delete(*self._treeview.get_children())
+        self._completion_list = None
+        self._old_selection_item_id = None
+
+
+class AutoCompleter:
 
     def __init__(self, tab):
-        self.tab = tab
+        self._tab = tab
         self._startpos = None
-        self._suffixes = None
         self._id_counter = itertools.count()
         self._waiting_for_response_id = None   # None means no response matches
 
         # this is easy to understand but hard to explain
-        # see _put_completion_to_text_widget
+        # ctrl+f _can_reset_now
         self._can_reset_now = True
+
+        self._popup = AutoCompletionPopup(self._put_suffix_to_text_widget)
 
     def _request_completions(self):
         the_id = next(self._id_counter)
         self._waiting_for_response_id = the_id
-        self.tab.event_generate('<<AutoCompletionRequest>>', data=json.dumps({
+        self._tab.event_generate('<<AutoCompletionRequest>>', data=json.dumps({
             'id': the_id,
         }))
 
-    def _put_first_suffix_to_text_widget(self):
+    def _put_suffix_to_text_widget(self, suffix):
         self._can_reset_now = False
-        self.tab.textwidget.delete(self._startpos, 'insert')
-        self.tab.textwidget.mark_set('insert', self._startpos)
-        self.tab.textwidget.insert(self._startpos, self._suffixes[0])
+        self._tab.textwidget.delete(self._startpos, 'insert')
+        self._tab.textwidget.mark_set('insert', self._startpos)
+        self._tab.textwidget.insert(self._startpos, suffix)
         self._can_reset_now = True
 
     def receive_completions(self, event):
         info_dict = event.data_json()
-        if info_dict['id'] == self._waiting_for_response_id:
-            self._waiting_for_response_id = None
+        if info_dict['id'] != self._waiting_for_response_id:
+            return
+        self._waiting_for_response_id = None
 
-            # filter out empty suffixes, they are quite confusing.
-            #
-            # For example, with pyls after 'import struct', try 'str' and
-            # press tab. It wants to autocomplete 'str' and 'struct'
-            self._suffixes = collections.deque(
-                suffix for suffix in info_dict['suffixes'] if suffix
-            )
-            self._suffixes.append('')   # end of completions
-            self._put_first_suffix_to_text_widget()
+        # filter out empty suffixes, they are quite confusing.
+        #
+        # For example, with pyls after 'import struct', type 'str' and
+        # press tab. It wants to autocomplete 'str' and 'struct'
+        suffixes = list(filter(bool, info_dict['suffixes']))
+        if not suffixes:
+            return
+
+        relative_x, relative_y = self._tab.textwidget.bbox('insert')[:2]
+
+        # tkinter doesn't provide a way to delete the font object, but it
+        # does __del__ magic
+        font_object = tkinter.font.Font(font=self._tab.textwidget['font'])
+        fsize = font_object.actual('size')
+
+        # TODO: see how pyls autocomplete the following line, jedi worked fine:
+        x = self._tab.textwidget.winfo_rootx() + relative_x
+        y = self._tab.textwidget.winfo_rooty() + relative_y + fsize + 10
+
+        self._popup.show(suffixes, x, y)
 
     def _can_complete_here(self):
-        before_cursor = self.tab.textwidget.get('insert linestart', 'insert')
-        after_cursor = self.tab.textwidget.get('insert', 'insert lineend')
+        before_cursor = self._tab.textwidget.get('insert linestart', 'insert')
+        after_cursor = self._tab.textwidget.get('insert', 'insert lineend')
 
         return (
             # don't complete in beginning of line or with space before cursor
@@ -62,9 +158,13 @@ class _AutoCompleter:
             and not re.search(r'^\w', after_cursor)
         )
 
-    def _complete(self, rotation):
-        if self._suffixes is None:
-            self._startpos = self.tab.textwidget.index('insert')
+    def on_tab(self, event, shifted):
+        if self._tab.textwidget.tag_ranges('sel'):
+            # something's selected, autocompleting is not the right thing to do
+            return None
+
+        if not self._popup.is_showing():
+            self._startpos = self._tab.textwidget.index('insert')
             if not self._can_complete_here():
                 # let tabs2spaces and other plugins handle it
                 return None
@@ -72,27 +172,22 @@ class _AutoCompleter:
             self._request_completions()
             return 'break'
 
-        self._suffixes.rotate(rotation)
-        self._put_first_suffix_to_text_widget()
+        if shifted:
+            self._popup.select_previous()
+        else:
+            self._popup.select_next()
         return 'break'
-
-    def on_tab(self, event, shifted):
-        if event.widget.tag_ranges('sel'):
-            # something's selected, autocompleting is probably not the
-            # right thing to do
-            return None
-        return self._complete(1 if shifted else -1)
 
     def reset(self, *junk):
         if self._can_reset_now:
-            self._suffixes = None
+            self._popup.hide()
             self._waiting_for_response_id = None
 
 
 def on_new_tab(event):
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        completer = _AutoCompleter(tab)
+        completer = AutoCompleter(tab)
         utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
         tab.textwidget.bind('<<CursorMoved>>', completer.reset, add=True)
         utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
