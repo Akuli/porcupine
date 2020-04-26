@@ -14,7 +14,8 @@ class AutoCompletionPopup:
 
     # TODO: "type to filter" sort of thing
     # TODO: page up, page down for completion list
-    # TODO: esc to close completion list
+    # TODO: display descriptions next to the thing
+    # TODO: make this configurable
     def __init__(self, selected_callback):
         self._selected_callback = selected_callback
         self._completion_list = None
@@ -119,8 +120,8 @@ class AutoCompleter:
         self._waiting_for_response_id = None   # None means no response matches
 
         # this is easy to understand but hard to explain
-        # ctrl+f _can_reset_now
-        self._can_reset_now = True
+        # ctrl+f _can_accept_now
+        self._can_accept_now = True
 
         self._popup = AutoCompletionPopup(self._put_suffix_to_text_widget)
 
@@ -132,11 +133,13 @@ class AutoCompleter:
         }))
 
     def _put_suffix_to_text_widget(self, suffix):
-        self._can_reset_now = False
-        self._tab.textwidget.delete(self._startpos, 'insert')
-        self._tab.textwidget.mark_set('insert', self._startpos)
-        self._tab.textwidget.insert(self._startpos, suffix)
-        self._can_reset_now = True
+        self._can_accept_now = False
+        try:
+            self._tab.textwidget.delete(self._startpos, 'insert')
+            self._tab.textwidget.mark_set('insert', self._startpos)
+            self._tab.textwidget.insert(self._startpos, suffix)
+        finally:
+            self._can_accept_now = True
 
     def receive_completions(self, event):
         info_dict = event.data_json()
@@ -196,10 +199,22 @@ class AutoCompleter:
             self._popup.select_next()
         return 'break'
 
-    def reset(self, *junk):
-        if self._can_reset_now:
+    def _accept(self):
+        if self._can_accept_now:
             self._popup.hide()
             self._waiting_for_response_id = None
+
+    def _reject(self):
+        self._put_suffix_to_text_widget('')
+        self._accept()
+
+    def on_cursor_moved(self, event):
+        self._accept()
+
+    def on_escape(self, event):
+        if self._popup.is_showing():
+            self._reject()
+            return 'break'
 
 
 def on_new_tab(event):
@@ -207,7 +222,9 @@ def on_new_tab(event):
     if isinstance(tab, tabs.FileTab):
         completer = AutoCompleter(tab)
         utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
-        tab.textwidget.bind('<<CursorMoved>>', completer.reset, add=True)
+        tab.textwidget.bind(
+            '<<CursorMoved>>', completer.on_cursor_moved, add=True)
+        tab.textwidget.bind('<Escape>', completer.on_escape, add=True)
         utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
                              completer.receive_completions, add=True)
 
