@@ -14,7 +14,6 @@ SETTINGS = settings.get_section("Autocomplete")
 class AutoCompletionPopup:
 
     # TODO: "type to filter" sort of thing
-    # TODO: page up, page down for completion list
     # TODO: display descriptions next to the thing
     # FIXME: after struct.pa<Tab>, menu shows "ck" and "ck_into" in the menu
     def __init__(self, selected_callback):
@@ -50,14 +49,21 @@ class AutoCompletionPopup:
         # to avoid calling selected_callback more often than needed
         self._old_selection_item_id = None
 
-    def is_showing(self):
+    # When tab is pressed with popups turned off in settings, this goes to a
+    # state where it's completing but not showing
+
+    def is_completing(self):
         return (self._completion_list is not None)
+
+    def is_showing(self):
+        return bool(self._toplevel.winfo_ismapped())
 
     def _select_item(self, item_id):
         self._treeview.selection_set(item_id)
         self._treeview.see(item_id)
 
     def select_previous(self):
+        assert self.is_completing()
         prev_item = self._treeview.prev(self._treeview.selection())
         if prev_item:
             self._select_item(prev_item)
@@ -65,11 +71,59 @@ class AutoCompletionPopup:
             self._select_item(self._treeview.get_children()[-1])
 
     def select_next(self):
+        assert self.is_completing()
         next_item = self._treeview.next(self._treeview.selection())
         if next_item:
             self._select_item(next_item)
         else:
             self._select_item(self._treeview.get_children()[0])
+
+    def on_page_up_down(self, event):
+        if not self.is_showing():
+            return None
+
+        page_count = {'Prior': -1, 'Next': 1}[event.keysym]
+        self._treeview.yview_scroll(page_count, 'pages')
+
+        # Now it has been scrolled, but the selection hasn't moved. The
+        # following code is not pretty, but tk doesn't expose the needed
+        # information very much (see generic/ttk/ttkTreeview.c in source repo).
+
+        # how tall is each element?
+        self._treeview.update()     # also needed for winfo_height()
+        item_height = None
+        for item in self._treeview.get_children():
+            bbox = self._treeview.bbox(item)
+            if bbox:
+                item_height = bbox[-1]
+                break
+        assert item_height is not None
+
+        # how many items are visible at a time?
+        item_count = self._treeview.winfo_height() // item_height
+        item_count -= 1     # no idea why it's off by 1
+
+        # find the correct item we want
+        [current_item] = self._treeview.selection()
+        method = {'Prior': self._treeview.prev,
+                  'Next': self._treeview.next}[event.keysym]
+        for lel in range(item_count):
+            new_item = method(current_item)
+            if not new_item:
+                break
+            current_item = new_item
+
+        self._select_item(current_item)
+        return 'break'
+
+    def on_arrow_key_up_down(self, event):
+        if not self.is_showing():
+            return None
+
+        method = {'Up': self.select_previous,
+                  'Down': self.select_next}[event.keysym]
+        method()
+        return 'break'
 
     def _on_mouse_move(self, event):
         # ttk_treeview(3tk) says that 'identify row' is "Obsolescent synonym
@@ -79,28 +133,29 @@ class AutoCompletionPopup:
             self._treeview.selection_set(hovered_id)
 
     def _on_click(self, event):
-        self.hide()
+        self.stop_completing()
 
     def _on_select(self, event):
-        if self.is_showing():
+        if self.is_completing():
             [item_id] = self._treeview.selection()
             if item_id != self._old_selection_item_id:
                 self._selected_callback(self._completion_list[int(item_id)])
                 self._old_selection_item_id = item_id
 
-    def show(self, completion_list, x, y):
-        if self.is_showing():
+    def start_completing(self, completion_list, x, y):
+        if self.is_completing():
             # don't know when this would happen but why not handle it anyway
-            self.hide()
+            self.stop_completing()
 
         assert completion_list
         self._completion_list = completion_list
 
         for index, completion in enumerate(completion_list):
-            # note id=str(index)
+            # id=str(index) is used in the rest of this class
             self._treeview.insert('', 'end', id=str(index), text=completion)
 
         self._treeview.selection_set('0')
+        self._treeview.see('0')
         self._toplevel.geometry('250x200+%d+%d' % (x, y))
 
         # lazy way to implement auto completions without popup window: create
@@ -108,8 +163,8 @@ class AutoCompletionPopup:
         if SETTINGS['show_popup']:
             self._toplevel.deiconify()
 
-    # does nothing if already hidden
-    def hide(self):
+    # does nothing if not currently completing
+    def stop_completing(self):
         self._toplevel.withdraw()
         self._treeview.delete(*self._treeview.get_children())
         self._completion_list = None
@@ -128,7 +183,7 @@ class AutoCompleter:
         # ctrl+f _can_accept_now
         self._can_accept_now = True
 
-        self._popup = AutoCompletionPopup(self._put_suffix_to_text_widget)
+        self.popup = AutoCompletionPopup(self._put_suffix_to_text_widget)
 
     def _request_completions(self):
         the_id = next(self._id_counter)
@@ -171,7 +226,7 @@ class AutoCompleter:
         x = self._tab.textwidget.winfo_rootx() + relative_x
         y = self._tab.textwidget.winfo_rooty() + relative_y + fsize + 10
 
-        self._popup.show(suffixes, x, y)
+        self.popup.start_completing(suffixes, x, y)
 
     def _can_complete_here(self):
         before_cursor = self._tab.textwidget.get('insert linestart', 'insert')
@@ -189,7 +244,7 @@ class AutoCompleter:
             # something's selected, autocompleting is not the right thing to do
             return None
 
-        if not self._popup.is_showing():
+        if not self.popup.is_completing():
             self._startpos = self._tab.textwidget.index('insert')
             if not self._can_complete_here():
                 # let tabs2spaces and other plugins handle it
@@ -199,25 +254,26 @@ class AutoCompleter:
             return 'break'
 
         if shifted:
-            self._popup.select_previous()
+            self.popup.select_previous()
         else:
-            self._popup.select_next()
+            self.popup.select_next()
         return 'break'
 
     def _accept(self):
         if self._can_accept_now:
-            self._popup.hide()
+            self.popup.stop_completing()
             self._waiting_for_response_id = None
 
     def _reject(self):
-        self._put_suffix_to_text_widget('')
-        self._accept()
+        if self.popup.is_completing():
+            self._put_suffix_to_text_widget('')
+            self._accept()
 
     def on_cursor_moved(self, event):
         self._accept()
 
     def on_escape(self, event):
-        if self._popup.is_showing():
+        if self.popup.is_completing():
             self._reject()
             return 'break'
 
@@ -226,12 +282,25 @@ def on_new_tab(event):
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         completer = AutoCompleter(tab)
+        utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
+                             completer.receive_completions, add=True)
+
         utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
         tab.textwidget.bind(
             '<<CursorMoved>>', completer.on_cursor_moved, add=True)
         tab.textwidget.bind('<Escape>', completer.on_escape, add=True)
-        utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
-                             completer.receive_completions, add=True)
+        tab.textwidget.bind(
+            '<Prior>', completer.popup.on_page_up_down, add=True)
+        tab.textwidget.bind(
+            '<Next>', completer.popup.on_page_up_down, add=True)
+        tab.textwidget.bind(
+            '<Up>', completer.popup.on_arrow_key_up_down, add=True)
+        tab.textwidget.bind(
+            '<Down>', completer.popup.on_arrow_key_up_down, add=True)
+
+        # stop completing when switching windows
+        tab.winfo_toplevel().bind(
+            '<FocusOut>', (lambda event: completer._reject()), add=True)
 
 
 def setup():
