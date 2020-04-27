@@ -54,7 +54,6 @@ def add_resize_handle(toplevel):
 class AutoCompletionPopup:
 
     # FIXME: io.string<Tab> completes to io.stringIO, first s should be S
-    # FIXME: closing porcupine while completion popup is visible
     def __init__(self, selected_callback):
         self._selected_callback = selected_callback
         self.completion_list = None
