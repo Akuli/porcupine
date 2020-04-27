@@ -5,7 +5,6 @@
 
 import functools
 import logging
-import os
 import socket
 import tkinter
 from tkinter import ttk

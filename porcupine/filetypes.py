@@ -121,7 +121,7 @@ autocomplete_chars =
 [Python]
 mimetypes = text/x-python application/x-python text/x-python3 application/x-py\
 thon3
-shebang_regex = python(\d(\.\d)?)?$
+shebang_regex = python(\\d(\\.\\d)?)?$
 pygments_lexer = pygments.lexers.Python3Lexer
 
 # pep8-based brainwashing: KITTENS DIE IF YOU USE WRONG STYLE
