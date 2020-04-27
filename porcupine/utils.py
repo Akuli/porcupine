@@ -477,6 +477,7 @@ def create_passive_text_widget(parent, **kwargs):
 
 
 # see docs/utils.rst for explanation and docs
+# TODO: there is ttk.Spinbox, starting at Python 3.7
 try:
     Spinbox = ttk.Spinbox
 except AttributeError:

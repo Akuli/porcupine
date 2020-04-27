@@ -51,7 +51,7 @@ Open a terminal and run these commands:
 
 ### Other Linux distributions
 
-Install Python 3.4 or newer with pip and tkinter somehow. Then run this
+Install Python 3.5 or newer with pip and tkinter somehow. Then run this
 command:
 
     python3 -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
@@ -68,7 +68,7 @@ I think you can download Python with tkinter from
 
 ### Windows
 
-Install Python 3.4 from [python.org](https://www.python.org/). Make sure that
+Install Python 3.5 or newer from [python.org](https://www.python.org/). Make sure that
 the "Install launchers for all users" box gets checked and tkinter gets
 installed. Then open PowerShell or command prompt, and run these commands:
 
@@ -122,7 +122,7 @@ started. Even if you are not going to write Porcupine plugins or do anything
 related to plugins, they will probably give you an idea of how things are done
 in Porcupine.
 
-If you want to develop porcupine, install Python 3.4 or newer and
+If you want to develop porcupine, install Python 3.5 or newer and
 [git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/Akuli/porcupine
@@ -206,9 +206,7 @@ Install these programs in the virtual machine:
 
 Clicking the biggest "Download" and "Next" buttons works most of the time, but
 watch out for these things:
-- You need Python 3.5 or newer. Even though Porcupine itself runs on Python
-  3.4, the Windows installer needs an "embeddable zip file" from Python's
-  download page. They are new in Python 3.5.
+- You need Python 3.5 or newer.
 - If you are creating a 64-bit Porcupine installer, be sure to get a 64-bit
   Python. At the time of writing this thing (August 2018), you need to first
   click "All releases" on the Python website, and then the newest Python, and
@@ -230,7 +228,3 @@ you don't need to do anything to fix the complaints.
 Now you should have an exe that installs a Porcupine. The last command should
 prints the filename at the end of its output, and it seems to be always
 `build\nsis\Porcupine_X.Y.Z.exe` where `X.Y.Z` is the Porcupine version.
-
-The installer requires **Windows Vista or newer**, it does not work on XP :( If
-you are a religious Windows XP fan, you can still use Porcupine on XP; you just
-need to install Python 3.4 and install Porcupine with pip.

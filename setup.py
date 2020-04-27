@@ -3,7 +3,7 @@ import tkinter
 import os
 import re
 
-assert sys.version_info >= (3, 4), "Porcupine requires Python 3.4 or newer"
+assert sys.version_info >= (3, 5), "Porcupine requires Python 3.5 or newer"
 assert tkinter.TkVersion >= 8.5, "Porcupine requires Tk 8.5 or newer"
 
 
