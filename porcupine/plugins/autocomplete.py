@@ -138,7 +138,6 @@ class AutoCompletionPopup:
             self.stop_completing(withdraw=False)
 
         assert completion_list
-        assert '' not in (compl['suffix'] for compl in completion_list)
         self.completion_list = completion_list
 
         for index, completion in enumerate(completion_list):
@@ -238,18 +237,20 @@ def mix_colors(color1, color2):
 
 
 def filter_completions(completions, filtering_prefix):
-    return [
-        dict(collections.ChainMap(
-            # override suffix with a chopped version
-            {'suffix': completion['suffix'][len(filtering_prefix):]},
-            completion,
-        ))
-        for completion in completions
+    def chop(string):
+        return string[len(filtering_prefix):]
 
-        # pyls compares case-insensitively here, match its behaviour
-        # TODO: lsp supports filterText which is likely meant for this?
-        if completion['suffix'].lower().startswith(filtering_prefix.lower())
-        and len(completion['suffix']) > len(filtering_prefix)
+    return [
+        # override suffix and filter_text with chopped versions
+        {
+            **completion,
+            'suffix': chop(completion['suffix']),
+            'filter_text': chop(completion['filter_text']),
+        }
+        for completion in completions
+        if completion['filter_text'].lower().startswith(
+            filtering_prefix.lower())
+        and chop(completion['filter_text']) != ''
     ]
 
 

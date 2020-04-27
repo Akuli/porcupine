@@ -227,6 +227,9 @@ class LangServer:
                 {
                     'display_text': item.label,
                     'suffix': (item.insertText or item.label)[prefix_len:],
+                    'filter_text': (item.filterText
+                                    or item.insertText
+                                    or item.label)[prefix_len:],
                     'documentation': item.documentation or item.label,
                 }
                 for item in sorted(
@@ -272,8 +275,6 @@ class LangServer:
             else:
                 # it was never fully started
                 self._process.kill()
-
-    # TODO: closing tabs
 
     def request_completions(self, event):
         if self._lsp_client.state != lsp.ClientState.NORMAL:
