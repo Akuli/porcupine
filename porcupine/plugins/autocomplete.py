@@ -53,7 +53,6 @@ def add_resize_handle(toplevel):
 
 class AutoCompletionPopup:
 
-    # TODO: remember pane sizes
     # FIXME: io.string<Tab> completes to io.stringIO, first s should be S
     # FIXME: closing porcupine while completion popup is visible
     def __init__(self, selected_callback):
@@ -73,13 +72,14 @@ class AutoCompletionPopup:
         #
         # I'm using Panedwindow here in case the PanedWindow alias is deleted
         # in a future version of python.
-        paned = ttk.Panedwindow(self._toplevel, orient='horizontal')
-        paned.pack(fill='both', expand=True)
+        self._panedwindow = ttk.Panedwindow(
+            self._toplevel, orient='horizontal')
+        self._panedwindow.pack(fill='both', expand=True)
 
-        left_pane = ttk.Frame(paned)
-        right_pane = ttk.Frame(paned)
-        paned.add(left_pane)
-        paned.add(right_pane)
+        left_pane = ttk.Frame(self._panedwindow)
+        right_pane = ttk.Frame(self._panedwindow)
+        self._panedwindow.add(left_pane)
+        self._panedwindow.add(right_pane)
 
         self.treeview = ttk.Treeview(
             left_pane, show='tree', selectmode='browse')
@@ -92,22 +92,34 @@ class AutoCompletionPopup:
         self._right_scrollbar = pack_with_scrollbar(self._doc_text)
 
         self._resize_handle = add_resize_handle(self._toplevel)
-        self._toplevel.bind('<Configure>', self._make_room_for_resize_handle)
+        self._toplevel.bind('<Configure>', self._on_anything_resized)
 
-    # When the separator is dragged all the way to left or the popup is
-    # resized to be narrow enough, the right scrollbar is no longer mapped
-    # (i.e. visible) but the left scrollbar must get out of the way of the
-    # resize handle. Otherwise the left scrollbar can go all the way to the
-    # bottom of the popup, but the right scrollbar must make room.
-    def _make_room_for_resize_handle(self, event):
+        # turns out to be best to get the initial divider position now.
+        # Otherwise it tends to get written to SETTINGS before it's read for
+        # the first time.
+        self._initial_divider_pos = SETTINGS['popup_divider_pos']
+
+    def _on_anything_resized(self, event):
+        # When the separator is dragged all the way to left or the popup is
+        # resized to be narrow enough, the right scrollbar is no longer mapped
+        # (i.e. visible) but the left scrollbar must get out of the way of the
+        # resize handle. Otherwise the left scrollbar can go all the way to the
+        # bottom of the popup, but the right scrollbar must make room.
         handle_height = self._resize_handle.winfo_height()
-
         if self._right_scrollbar.winfo_ismapped():
             self._left_scrollbar.pack(pady=[0, 0])
             self._right_scrollbar.pack(pady=[0, handle_height])
         else:
             self._left_scrollbar.pack(pady=[0, handle_height])
             self._right_scrollbar.pack(pady=[0, 0])
+
+        # winfo doesn't work very well when the widgets are not actually
+        # visible. Also, better to check _panedwindow, because for a tiny
+        # moment, the window is visible but _panedwindow isn't.
+        if self._panedwindow.winfo_ismapped():
+            SETTINGS['popup_window_width'] = self._toplevel.winfo_width()
+            SETTINGS['popup_window_height'] = self._toplevel.winfo_height()
+            SETTINGS['popup_divider_pos'] = self._panedwindow.sashpos(0)
 
     # When tab is pressed with popups turned off in settings, this goes to a
     # state where it's completing but not showing.
@@ -137,12 +149,20 @@ class AutoCompletionPopup:
 
         self._select_item('0')
         if popup_xy is not None:
-            self._toplevel.geometry('500x200+%d+%d' % popup_xy)
+            x, y = popup_xy
+            self._toplevel.geometry('%dx%d+%d+%d' % (
+                SETTINGS['popup_window_width'],
+                SETTINGS['popup_window_height'],
+                x, y))
 
         # lazy way to implement auto completion without popup window: create
         # all the widgets but never show them :D
         if SETTINGS['show_popup']:
             self._toplevel.deiconify()
+
+        # don't know why after_idle is needed, but it is
+        self._panedwindow.after_idle(
+            lambda: self._panedwindow.sashpos(0, self._initial_divider_pos))
 
     # does nothing if not currently completing
     def stop_completing(self, *, withdraw=True):
@@ -469,3 +489,7 @@ def setup():
     SETTINGS.add_option('show_popup', True)
     SETTINGS.add_checkbutton(
         'show_popup', "Show a popup window when autocompleting")
+
+    SETTINGS.add_option('popup_window_width', 500, reset=False)
+    SETTINGS.add_option('popup_window_height', 200, reset=False)
+    SETTINGS.add_option('popup_divider_pos', 200, reset=False)
