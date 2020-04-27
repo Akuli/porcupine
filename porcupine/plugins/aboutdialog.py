@@ -55,17 +55,8 @@ class _AboutDialogContent(ttk.Frame):
         big_label = ttk.Label(self, font=('', 16, ''), text="About Porcupine")
         big_label.pack(pady=5)
 
-        # python's ttk::style api sucks
-        # this doesn't update when the user changes the ttk theme
-        # but who would open the about dialog and then change theme?
-        # makes no sense
-        ttk_fg = self.tk.eval('ttk::style lookup TLabel.label -foreground')
-        ttk_bg = self.tk.eval('ttk::style lookup TLabel.label -background')
-
-        self._textwidget = tkinter.Text(
-            self, width=60, height=18, font='TkDefaultFont',
-            wrap='word', borderwidth=0, relief='flat',
-            foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
+        self._textwidget = utils.create_passive_text_widget(
+            self, width=60, height=18)
         self._textwidget.pack(fill='both', expand=True, padx=5, pady=5)
 
         # http://effbot.org/zone/tkinter-text-hyperlink.htm
@@ -76,9 +67,10 @@ class _AboutDialogContent(ttk.Frame):
         self._textwidget.tag_bind('link', '<Leave>', self._leave_link)
         self._link_tag_names = map('link-{}'.format, itertools.count())
 
+        self._textwidget['state'] = 'normal'
         for text_chunk in _BORING_TEXT.strip().split('\n\n'):
             self._add_minimal_markdown(text_chunk)
-        self._textwidget['state'] = 'disabled'     # disallow writing more text
+        self._textwidget['state'] = 'disabled'
 
         label = ttk.Label(self, image=images.get('logo-200x200'),
                           cursor='hand2')

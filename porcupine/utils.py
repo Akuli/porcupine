@@ -146,7 +146,8 @@ else:
         return shlex.quote(string)
 
 
-def invert_color(color):
+# i know, i shouldn't do math with rgb colors, but this is good enough
+def invert_color(color, *, black_or_white=False):
     """Return a color with opposite red, green and blue values.
 
     Example: ``invert_color('white')`` is ``'#000000'`` (black).
@@ -154,16 +155,24 @@ def invert_color(color):
     This function uses tkinter for converting the color to RGB. That's
     why a tkinter root window must have been created, but *color* can be
     any Tk-compatible color string, like a color name or a ``'#rrggbb'``
-    string.
-
-    The return value is always a ``'#rrggbb`` string (also compatible
+    string. The return value is always a ``'#rrggbb`` string (also compatible
     with Tk).
+
+    If ``black_or_white=True`` is set, then the result is always ``'#000000'``
+    (black) or ``'#ffffff'`` (white), depending on whether the color is bright
+    or dark.
     """
     # tkinter uses 16-bit colors for some reason, so gotta convert them
     # to 8-bit (with >> 8)
     widget = porcupine.get_main_window()
-    r, g, b = (0xff - (value >> 8) for value in widget.winfo_rgb(color))
-    return '#%02x%02x%02x' % (r, g, b)
+    r, g, b = (value >> 8 for value in widget.winfo_rgb(color))
+
+    if black_or_white:
+        average = (r + g + b)/3
+        print(average)
+        return '#ffffff' if average < 0x80 else '#000000'
+    else:
+        return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
 
 
 class _TooltipManager:
@@ -429,6 +438,42 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
 
         widget.bind('<{}MouseWheel>'.format(prefixes),
                     real_callback, **bind_kwargs)
+
+
+# TODO: document this
+def create_passive_text_widget(parent, **kwargs):
+    kwargs.setdefault('font', 'TkDefaultFont')
+    kwargs.setdefault('borderwidth', 0)
+    kwargs.setdefault('relief', 'flat')
+    kwargs.setdefault('wrap', 'word')       # TODO: remember to mention in docs
+    kwargs.setdefault('state', 'disabled')  # TODO: remember to mention in docs
+    text = tkinter.Text(parent, **kwargs)
+
+    def update_colors(event=None):
+        # python's ttk::style api sucks
+        ttk_fg = text.tk.eval('ttk::style lookup TLabel.label -foreground')
+        ttk_bg = text.tk.eval('ttk::style lookup TLabel.label -background')
+
+        if not ttk_fg and not ttk_bg:
+            # stupid ttk theme, it deserves this
+            ttk_fg = 'black'
+            ttk_bg = 'white'
+        elif not ttk_bg:
+            # this happens with e.g. elegance theme (more_plugins/ttkthemes.py)
+            ttk_bg = invert_color(ttk_fg, black_or_white=True)
+        elif not ttk_fg:
+            ttk_fg = invert_color(ttk_bg, black_or_white=True)
+
+        text['foreground'] = ttk_fg
+        text['background'] = ttk_bg
+        text['highlightbackground'] = ttk_bg
+
+    # even non-ttk widgets can handle <<ThemeChanged>>
+    # TODO: make sure that this works
+    text.bind('<<ThemeChanged>>', update_colors)
+    update_colors()
+
+    return text
 
 
 # see docs/utils.rst for explanation and docs

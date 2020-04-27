@@ -1,3 +1,4 @@
+import collections
 import itertools
 import json
 import re
@@ -10,48 +11,109 @@ setup_before = ['tabs2spaces']      # see tabs2spaces.py
 SETTINGS = settings.get_section("Autocomplete")
 
 
+def pack_with_scrollbar(widget):
+    scrollbar = ttk.Scrollbar(widget.master)
+    widget['yscrollcommand'] = scrollbar.set
+    scrollbar['command'] = widget.yview
+
+    # scroll bar must be packed first to make sure that it's always displayed
+    scrollbar.pack(side='right', fill='y')
+    widget.pack(side='left', fill='both', expand=True)
+    return scrollbar
+
+
+def add_resize_handle(toplevel):
+    between_mouse_and_window_corner = [0, 0]
+
+    # Doing this only in the beginning of resize ensures that if it's off by 1
+    # for whatever reason, then it will only ever be off by 1 pixel, rather
+    # than off by 1 pixel MORE for each resize event. If I put this to
+    # do_resize() instead, then for some reason, the window doesn't resize
+    # at all.
+    def begin_resize(event):
+        between_mouse_and_window_corner[:] = [
+            event.widget.winfo_width() - event.x,
+            event.widget.winfo_height() - event.y
+        ]
+
+    def do_resize(event):
+        x_offset, y_offset = between_mouse_and_window_corner
+        width = event.x_root - toplevel.winfo_rootx() + x_offset
+        height = event.y_root - toplevel.winfo_rooty() + y_offset
+
+        if width >= 0 and height >= 0:
+            toplevel.geometry('%dx%d' % (width, height))
+
+    handle = ttk.Label(toplevel, text="⇲")      # unicode awesomeness
+    handle.bind('<Button-1>', begin_resize)
+    handle.bind('<Button1-Motion>', do_resize)
+    handle.place(relx=1, rely=1, anchor='se')
+    return handle
+
+
 class AutoCompletionPopup:
 
-    # TODO: display descriptions next to the thing
-    # FIXME: after struct.pa<Tab>, menu shows "ck" and "ck_into" in the menu
+    # TODO: remember pane sizes
     # FIXME: io.string<Tab> completes to io.stringIO, first s should be S
+    # FIXME: closing porcupine while completion popup is visible
     def __init__(self, selected_callback):
         self._selected_callback = selected_callback
-        self.suffix_list = None
-        self._toplevel = tkinter.Toplevel()
-        self._toplevel.withdraw()
-
-        # this makes the popup have no window border and stuff. From wm(3tk):
-        #
-        # "Setting the override-redirect flag for a window causes it to be
-        # ignored  by the window manager; among other things, this means that
-        # the window will not be reparented from the root window into a
-        # decorative frame and the user will not be able to manipulate the
-        # window using the normal window manager mechanisms.
-        self._toplevel.overrideredirect(True)
-
-        self.treeview = ttk.Treeview(
-            self._toplevel, show='tree', selectmode='browse')
-        self.treeview.bind('<Motion>', self._on_mouse_move)
-        self.treeview.bind('<<TreeviewSelect>>', self._on_select)
-
-        scrollbar = ttk.Scrollbar(self._toplevel)
-        self.treeview['yscrollcommand'] = scrollbar.set
-        scrollbar['command'] = self.treeview.yview
-
-        # scrollbar must be packed first, otherwise it may disappear when the
-        # window is too narrow (remove overrideredirect(True) to experiment)
-        scrollbar.pack(side='right', fill='y')
-        self.treeview.pack(side='left', fill='both', expand=True)
+        self.completion_list = None
 
         # to avoid calling selected_callback more often than needed
         self._old_selection_item_id = None
+
+        self._toplevel = tkinter.Toplevel()
+        self._toplevel.withdraw()
+        self._toplevel.overrideredirect(True)
+
+        # from tkinter/ttk.py:
+        #
+        #   PanedWindow = Panedwindow # tkinter name compatibility
+        #
+        # I'm using Panedwindow here in case the PanedWindow alias is deleted
+        # in a future version of python.
+        paned = ttk.Panedwindow(self._toplevel, orient='horizontal')
+        paned.pack(fill='both', expand=True)
+
+        left_pane = ttk.Frame(paned)
+        right_pane = ttk.Frame(paned)
+        paned.add(left_pane)
+        paned.add(right_pane)
+
+        self.treeview = ttk.Treeview(
+            left_pane, show='tree', selectmode='browse')
+        self.treeview.bind('<Motion>', self._on_mouse_move)
+        self.treeview.bind('<<TreeviewSelect>>', self._on_select)
+        self._left_scrollbar = pack_with_scrollbar(self.treeview)
+
+        self._doc_text = utils.create_passive_text_widget(
+            right_pane, width=50, height=15, wrap='word')
+        self._right_scrollbar = pack_with_scrollbar(self._doc_text)
+
+        self._resize_handle = add_resize_handle(self._toplevel)
+        self._toplevel.bind('<Configure>', self._make_room_for_resize_handle)
+
+    # When the separator is dragged all the way to left or the popup is
+    # resized to be narrow enough, the right scrollbar is no longer mapped
+    # (i.e. visible) but the left scrollbar must get out of the way of the
+    # resize handle. Otherwise the left scrollbar can go all the way to the
+    # bottom of the popup, but the right scrollbar must make room.
+    def _make_room_for_resize_handle(self, event):
+        handle_height = self._resize_handle.winfo_height()
+
+        if self._right_scrollbar.winfo_ismapped():
+            self._left_scrollbar.pack(pady=[0, 0])
+            self._right_scrollbar.pack(pady=[0, handle_height])
+        else:
+            self._left_scrollbar.pack(pady=[0, handle_height])
+            self._right_scrollbar.pack(pady=[0, 0])
 
     # When tab is pressed with popups turned off in settings, this goes to a
     # state where it's completing but not showing.
 
     def is_completing(self):
-        return (self.suffix_list is not None)
+        return (self.completion_list is not None)
 
     def is_showing(self):
         return bool(self._toplevel.winfo_ismapped())
@@ -59,6 +121,37 @@ class AutoCompletionPopup:
     def _select_item(self, item_id):
         self.treeview.selection_set(item_id)
         self.treeview.see(item_id)
+
+    def start_completing(self, completion_list, popup_xy):
+        if self.is_completing():
+            self.stop_completing(withdraw=False)
+
+        assert completion_list
+        assert '' not in (compl['suffix'] for compl in completion_list)
+        self.completion_list = completion_list
+
+        for index, completion in enumerate(completion_list):
+            # id=str(index) is used in the rest of this class
+            self.treeview.insert('', 'end', id=str(index),
+                                 text=completion['display_text'])
+
+        self._select_item('0')
+        if popup_xy is not None:
+            self._toplevel.geometry('500x200+%d+%d' % popup_xy)
+
+        # lazy way to implement auto completion without popup window: create
+        # all the widgets but never show them :D
+        if SETTINGS['show_popup']:
+            self._toplevel.deiconify()
+
+    # does nothing if not currently completing
+    def stop_completing(self, *, withdraw=True):
+        if withdraw:
+            self._toplevel.withdraw()
+
+        self.treeview.delete(*self.treeview.get_children())
+        self.completion_list = None
+        self._old_selection_item_id = None
 
     def select_previous(self):
         assert self.is_completing()
@@ -81,37 +174,7 @@ class AutoCompletionPopup:
             return None
 
         page_count = {'Prior': -1, 'Next': 1}[event.keysym]
-        self.treeview.yview_scroll(page_count, 'pages')
-
-        # Now it has been scrolled, but the selection hasn't moved. The
-        # following code is not pretty, but tk doesn't expose the needed
-        # information very much (see generic/ttk/ttkTreeview.c in source repo).
-
-        # how tall is each element?
-        self.treeview.update()     # also needed for winfo_height()
-        item_height = None
-        for item in self.treeview.get_children():
-            bbox = self.treeview.bbox(item)
-            if bbox:
-                item_height = bbox[-1]
-                break
-        assert item_height is not None
-
-        # how many items are visible at a time?
-        item_count = self.treeview.winfo_height() // item_height
-        item_count -= 1     # no idea why it's off by 1
-
-        # find the correct item we want
-        [current_item] = self.treeview.selection()
-        method = {'Prior': self.treeview.prev,
-                  'Next': self.treeview.next}[event.keysym]
-        for lel in range(item_count):
-            new_item = method(current_item)
-            if not new_item:
-                break
-            current_item = new_item
-
-        self._select_item(current_item)
+        self._doc_text.yview_scroll(page_count, 'pages')
         return 'break'
 
     def on_arrow_key_up_down(self, event):
@@ -134,39 +197,13 @@ class AutoCompletionPopup:
         if self.is_completing():
             [item_id] = self.treeview.selection()
             if item_id != self._old_selection_item_id:
-                self._selected_callback(self.suffix_list[int(item_id)])
                 self._old_selection_item_id = item_id
+                completion = self.completion_list[int(item_id)]
 
-    def start_completing(self, suffix_list, popup_xy):
-        if self.is_completing():
-            self.stop_completing(withdraw=False)
-
-        assert suffix_list
-        assert '' not in suffix_list
-        self.suffix_list = suffix_list
-
-        for index, suffix in enumerate(suffix_list):
-            # id=str(index) is used in the rest of this class
-            self.treeview.insert('', 'end', id=str(index), text=suffix)
-
-        self.treeview.selection_set('0')
-        self.treeview.see('0')
-        if popup_xy is not None:
-            self._toplevel.geometry('250x200+%d+%d' % popup_xy)
-
-        # lazy way to implement auto suffixes without popup window: create
-        # all the widgets but never show them :D
-        if SETTINGS['show_popup']:
-            self._toplevel.deiconify()
-
-    # does nothing if not currently completing
-    def stop_completing(self, *, withdraw=True):
-        if withdraw:
-            self._toplevel.withdraw()
-
-        self.treeview.delete(*self.treeview.get_children())
-        self.suffix_list = None
-        self._old_selection_item_id = None
+                self._selected_callback(completion)
+                self._doc_text['state'] = 'normal'
+                self._doc_text.delete('1.0', 'end')
+                self._doc_text.insert('1.0', completion['documentation'])
 
 
 # yes, i know that i shouldn't do math with rgb colors
@@ -181,13 +218,19 @@ def mix_colors(color1, color2):
     return '#%02x%02x%02x' % (r >> 8, g >> 8, b >> 8)
 
 
-def filter_suffixes(suffixes, filtering_prefix):
+def filter_completions(completions, filtering_prefix):
     return [
-        suffix[len(filtering_prefix):]
-        for suffix in suffixes
+        dict(collections.ChainMap(
+            # override suffix with a chopped version
+            {'suffix': completion['suffix'][len(filtering_prefix):]},
+            completion,
+        ))
+        for completion in completions
+
         # pyls compares case-insensitively here, match its behaviour
-        if suffix.lower().startswith(filtering_prefix.lower())
-        and len(suffix) > len(filtering_prefix)
+        # TODO: lsp supports filterText which is likely meant for this?
+        if completion['suffix'].lower().startswith(filtering_prefix.lower())
+        and len(completion['suffix']) > len(filtering_prefix)
     ]
 
 
@@ -198,15 +241,16 @@ class AutoCompleter:
         self._endpos = None
         self._id_counter = itertools.count()
         self._waiting_for_response_id = None   # None means no response matches
-        self._putting_suffix_to_text_widget = False
-        self.popup = AutoCompletionPopup(self._put_suffix_to_text_widget)
+        self._putting_to_text_widget = False
+        self.popup = AutoCompletionPopup(
+            lambda completion: self._put_to_text_widget(completion['suffix']))
 
         # Because text can be typed while autocompletion request is being
         # processed. The goal is that typing 'foo.<tab>a' and 'foo.a<tab>'
         # should do the same thing.
         self._filter_queue = ''
 
-    def _request_suffixes(self):
+    def _request_completions(self):
         self._endpos = self._tab.textwidget.index('insert')
 
         the_id = next(self._id_counter)
@@ -220,9 +264,9 @@ class AutoCompleter:
             'cursor_pos': self._tab.textwidget.index('insert'),
         }))
 
-    def _put_suffix_to_text_widget(self, suffix):
+    def _put_to_text_widget(self, suffix):
         self._tab.textwidget['autoseparators'] = False
-        self._putting_suffix_to_text_widget = True
+        self._putting_to_text_widget = True
 
         try:
             old_cursor_pos = self._tab.textwidget.index('insert')
@@ -232,17 +276,18 @@ class AutoCompleter:
             self._tab.textwidget.mark_set('insert', old_cursor_pos)
         finally:
             self._tab.textwidget['autoseparators'] = True
-            self._putting_suffix_to_text_widget = False
+            self._putting_to_text_widget = False
 
-    def receive_suffixes(self, event):
+    def receive_completions(self, event):
         info_dict = event.data_json()
         if info_dict['id'] != self._waiting_for_response_id:
             return
         self._waiting_for_response_id = None
 
-        suffixes = filter_suffixes(info_dict['suffixes'], self._filter_queue)
+        completions = filter_completions(
+            info_dict['completions'], self._filter_queue)
         self._filter_queue = ''
-        if not suffixes:
+        if not completions:
             return
 
         relative_x, relative_y = self._tab.textwidget.bbox('insert')[:2]
@@ -256,7 +301,7 @@ class AutoCompleter:
         x = self._tab.textwidget.winfo_rootx() + relative_x
         y = self._tab.textwidget.winfo_rooty() + relative_y + fsize + 10
 
-        self.popup.start_completing(suffixes, (x, y))
+        self.popup.start_completing(completions, (x, y))
 
     # returns None if this isn't a place where it's good to autocomplete
     def _can_complete_here(self):
@@ -283,7 +328,7 @@ class AutoCompleter:
                 # let tabs2spaces and other plugins handle it
                 return None
 
-            self._request_suffixes()
+            self._request_completions()
             return 'break'
 
         if shifted:
@@ -304,7 +349,7 @@ class AutoCompleter:
 
     def _reject(self):
         if self.popup.is_completing():
-            self._put_suffix_to_text_widget('')
+            self._put_to_text_widget('')
             self._accept()
 
     def on_any_key(self, event):
@@ -315,7 +360,7 @@ class AutoCompleter:
                 def do_request():
                     if ((not self.popup.is_completing())
                             and self._can_complete_here()):
-                        self._request_suffixes()
+                        self._request_completions()
 
                 # Tiny delay added for things like langserver, to make sure
                 # that langserver's change events get sent before completions
@@ -335,7 +380,7 @@ class AutoCompleter:
 
             return None
 
-        if self._putting_suffix_to_text_widget:
+        if self._putting_to_text_widget:
             return None
 
         if not its_just_a_letter:
@@ -347,15 +392,16 @@ class AutoCompleter:
             return None
 
         # user typed a letter, let's filter through the list
-        suffixes = filter_suffixes(self.popup.suffix_list, event.char)
-        if not suffixes:
+        completions = filter_completions(
+            self.popup.completion_list, event.char)
+        if not completions:
             self._reject()
             return None
 
-        self._put_suffix_to_text_widget('')
+        self._put_to_text_widget('')
         self.popup.stop_completing(withdraw=False)
         self._tab.textwidget.insert('insert', event.char)
-        self.popup.start_completing(suffixes, None)
+        self.popup.start_completing(completions, None)
         return 'break'
 
     def on_enter(self, event):
@@ -381,7 +427,7 @@ def on_new_tab(event):
 
     completer = AutoCompleter(tab)
     utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
-                         completer.receive_suffixes, add=True)
+                         completer.receive_completions, add=True)
 
     # no idea why backspace has to be bound separately
     utils.bind_with_data(

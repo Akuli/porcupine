@@ -73,6 +73,12 @@ def get_uri(tab):
     return 'file://' + pathname2url(os.path.abspath(tab.path))
 
 
+def get_markup_content(string_or_lsp_markupcontent) -> str:
+    if isinstance(string_or_lsp_markupcontent, lsp.MarkupContent):
+        return string_or_lsp_markupcontent.value
+    return str(string_or_lsp_markupcontent)
+
+
 class LangServer:
 
     def __init__(self, process, command, log):
@@ -173,8 +179,12 @@ class LangServer:
                 info_dict['cursor_pos'])
             prefix_len = len(re.fullmatch(r'.*?(\w*)', before_cursor).group(1))
 
-            info_dict['suffixes'] = [
-                (item.insertText or item.label)[prefix_len:]
+            info_dict['completions'] = [
+                {
+                    'display_text': item.label,
+                    'suffix': (item.insertText or item.label)[prefix_len:],
+                    'documentation': item.documentation or item.label,
+                }
                 for item in sorted(
                     lsp_event.completion_list.items,
                     key=(lambda item: item.sortText or item.label),
