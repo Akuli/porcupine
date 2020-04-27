@@ -9,6 +9,7 @@ import platform
 import pprint
 import queue as queue_module
 import re
+import signal
 import subprocess
 import threading
 from urllib.request import pathname2url
@@ -79,6 +80,27 @@ def get_markup_content(string_or_lsp_markupcontent) -> str:
     return str(string_or_lsp_markupcontent)
 
 
+def exit_code_string(exit_code):
+    if exit_code >= 0:
+        return "exited with code %d" % exit_code
+
+    signal_number = abs(exit_code)
+    result = "was killed by signal %d" % signal_number
+
+    try:
+        result += " (" + signal.Signals(signal_number).name + ")"
+    except ValueError:
+        # unknown signal, e.g. signal.SIGRTMIN + 5
+        pass
+
+    return result
+
+
+# keys are running commands because the same langserver command might be useful
+# for multiple langservers
+langservers = {}
+
+
 class LangServer:
 
     def __init__(self, process, command, log):
@@ -91,6 +113,19 @@ class LangServer:
         self.tabs_opened = []      # list of tabs
         self._nonblocking_stdout_read = get_nonblocking_reader(
             self._process.stdout)
+        self._is_shutting_down_cleanly = False
+
+    def _is_in_langservers(self):
+        # This returns False if a langserver died and another one with the same
+        # command was launched.
+        return (langservers.get(self._command, None) is self)
+
+    def _get_removed_from_langservers(self):
+        # this is called more than necessary to make sure we don't end up with
+        # funny issues caused by unusable langservers
+        if self._is_in_langservers():
+            self._log.debug("getting removed from langservers")
+            del langservers[self._command]
 
     def _position_tk2lsp(self, tk_position_string, *, next_column=False):
         # this can't use tab.textwidget.index, because it needs to handle text
@@ -113,18 +148,26 @@ class LangServer:
 
         received_bytes = self._nonblocking_stdout_read()
 
+        # yes, None and b'' have a different meaning here
         if received_bytes is None:
             # no data received
             return True
         elif received_bytes == b'':
-            # yes, None and b'' seem to have a different meaning here
-            self._log.critical(
-                "langserver process started with command '%s' crashed",
-                self._command)
-            # TODO: restart it?
+            # it has died already, so .wait() doesn't actually wait for
+            # anything to happen. It's needed for getting return code.
+            exit_code = self._process.wait()
 
-            assert langservers[self._command] is self
-            del langservers[self._command]
+            if self._is_shutting_down_cleanly:
+                self._log.info(
+                    "langserver process terminated, %s",
+                    exit_code_string(exit_code))
+            else:
+                self._log.error(
+                    "langserver process terminated unexpectedly, %s",
+                    exit_code_string(exit_code))
+                # TODO: restart it?
+
+            self._get_removed_from_langservers()
             return False
 
         assert received_bytes
@@ -165,8 +208,9 @@ class LangServer:
                 self._send_tab_opened_message(tab)
 
         elif isinstance(lsp_event, lsp.Shutdown):
-            self._log.warning("langserver process shutting down")
+            self._log.debug("langserver sent Shutdown event")
             self._lsp_client.exit()
+            self._get_removed_from_langservers()
 
         elif isinstance(lsp_event, lsp.Completion):
             info_dict = self._completion_infos.pop(lsp_event.message_id)
@@ -204,9 +248,30 @@ class LangServer:
             get_tab_manager().after(50, self.run_stuff)
 
     def open_tab(self, tab):
+        self._log.debug("tab opened")
         self.tabs_opened.append(tab)
         if self._lsp_client.state == lsp.ClientState.NORMAL:
             self._send_tab_opened_message(tab)
+
+    def close_tab(self, tab):
+        if not self._is_in_langservers():
+            self._log.debug(
+                "a tab was closed, but langserver process is no longer "
+                "running (maybe it crashed?)")
+            return
+
+        self._log.debug("tab closed")
+        self.tabs_opened.remove(tab)
+        if not self.tabs_opened:
+            self._log.info("no more open tabs, shutting down")
+            self._is_shutting_down_cleanly = True
+            self._get_removed_from_langservers()
+
+            if self._lsp_client.state == lsp.ClientState.NORMAL:
+                self._lsp_client.shutdown()
+            else:
+                # it was never fully started
+                self._process.kill()
 
     # TODO: closing tabs
 
@@ -240,7 +305,9 @@ class LangServer:
 
     def send_change_events(self, event):
         if self._lsp_client.state != lsp.ClientState.NORMAL:
-            self._log.warning(
+            # The langserver will receive the actual content of the file once
+            # it starts.
+            self._log.debug(
                 "not sending change events because langserver state == %r",
                 self._lsp_client.state)
             return
@@ -263,11 +330,6 @@ class LangServer:
                 for info in event.data_json()
             ],
         )
-
-
-# keys are running commands because the same langserver command might be useful
-# for multiple langservers
-langservers = {}
 
 
 def get_lang_server(filetype):
@@ -331,6 +393,9 @@ def on_new_tab(event):
                              langserver.request_completions, add=True)
         utils.bind_with_data(tab.textwidget, '<<ContentChanged>>',
                              langserver.send_change_events, add=True)
+        tab.bind('<Destroy>', lambda event: langserver.close_tab(tab),
+                 add=True)
+
         langserver.open_tab(tab)
 
 
