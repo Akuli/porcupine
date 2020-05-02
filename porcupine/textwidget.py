@@ -62,8 +62,19 @@ class HandyText(tk.Text):
         position.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, master, *, create_peer_from=None, **kwargs):
+        super().__init__(master, **kwargs)
+
+        if create_peer_from is not None:
+            # Peer widgets are weird in tkinter. Text.peer_create takes in a
+            # widget Tcl name, and then creates a peer widget with that name.
+            # But if you want to create a tkinter widget, then you need to let
+            # the tkinter widget to create a Tcl widget with a name chosen by
+            # tkinter. That has happened above with the super() call. However,
+            # rest of what happens in this __init__ method must do stuff to the
+            # peer widget, rather than the widget that tkinter created.
+            self.destroy()      # goodbye stupid tkinter-created widget
+            create_peer_from.peer_create(self, **kwargs)
 
         #       /\
         #      /  \  WARNING: serious tkinter magic coming up
@@ -398,14 +409,16 @@ class ThemedText(HandyText):
         #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
         #    '#222222', '', '', '', '???', '']
         fg = getattr(style, 'default_style', '') or utils.invert_color(bg)
+        self.set_colors(fg, bg)
 
-        self['fg'] = fg
-        self['bg'] = bg
-        self['insertbackground'] = fg  # cursor color
+    # TODO: document this
+    def set_colors(self, foreground, background):
+        self['fg'] = foreground
+        self['bg'] = background
+        self['insertbackground'] = foreground  # cursor color
 
-        # this is actually not too bad :D
-        self['selectforeground'] = bg
-        self['selectbackground'] = fg
+        self['selectforeground'] = background
+        self['selectbackground'] = foreground
 
 
 class MainText(ThemedText):
