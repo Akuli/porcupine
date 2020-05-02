@@ -60,9 +60,9 @@ class AutoCompletionPopup:
         # to avoid calling selected_callback more often than needed
         self._old_selection_item_id = None
 
-        self._toplevel = tkinter.Toplevel()
-        self._toplevel.withdraw()
-        self._toplevel.overrideredirect(True)
+        self.toplevel = tkinter.Toplevel()
+        self.toplevel.withdraw()
+        self.toplevel.overrideredirect(True)
 
         # from tkinter/ttk.py:
         #
@@ -71,7 +71,7 @@ class AutoCompletionPopup:
         # I'm using Panedwindow here in case the PanedWindow alias is deleted
         # in a future version of python.
         self._panedwindow = ttk.Panedwindow(
-            self._toplevel, orient='horizontal')
+            self.toplevel, orient='horizontal')
         self._panedwindow.pack(fill='both', expand=True)
 
         left_pane = ttk.Frame(self._panedwindow)
@@ -89,8 +89,8 @@ class AutoCompletionPopup:
             right_pane, width=50, height=15, wrap='word')
         self._right_scrollbar = pack_with_scrollbar(self._doc_text)
 
-        self._resize_handle = add_resize_handle(self._toplevel)
-        self._toplevel.bind('<Configure>', self._on_anything_resized)
+        self._resize_handle = add_resize_handle(self.toplevel)
+        self.toplevel.bind('<Configure>', self._on_anything_resized)
 
         # turns out to be best to get the initial divider position now.
         # Otherwise it tends to get written to SETTINGS before it's read for
@@ -115,8 +115,8 @@ class AutoCompletionPopup:
         # visible. Also, better to check _panedwindow, because for a tiny
         # moment, the window is visible but _panedwindow isn't.
         if self._panedwindow.winfo_ismapped():
-            SETTINGS['popup_window_width'] = self._toplevel.winfo_width()
-            SETTINGS['popup_window_height'] = self._toplevel.winfo_height()
+            SETTINGS['popup_window_width'] = self.toplevel.winfo_width()
+            SETTINGS['popup_window_height'] = self.toplevel.winfo_height()
             SETTINGS['popup_divider_pos'] = self._panedwindow.sashpos(0)
 
     # When tab is pressed with popups turned off in settings, this goes to a
@@ -126,7 +126,7 @@ class AutoCompletionPopup:
         return (self.completion_list is not None)
 
     def is_showing(self):
-        return bool(self._toplevel.winfo_ismapped())
+        return bool(self.toplevel.winfo_ismapped())
 
     def _select_item(self, item_id):
         self.treeview.selection_set(item_id)
@@ -147,7 +147,7 @@ class AutoCompletionPopup:
         self._select_item('0')
         if popup_xy is not None:
             x, y = popup_xy
-            self._toplevel.geometry('%dx%d+%d+%d' % (
+            self.toplevel.geometry('%dx%d+%d+%d' % (
                 SETTINGS['popup_window_width'],
                 SETTINGS['popup_window_height'],
                 x, y))
@@ -155,7 +155,7 @@ class AutoCompletionPopup:
         # lazy way to implement auto completion without popup window: create
         # all the widgets but never show them :D
         if SETTINGS['show_popup']:
-            self._toplevel.deiconify()
+            self.toplevel.deiconify()
 
         # don't know why after_idle is needed, but it is
         self._panedwindow.after_idle(
@@ -164,7 +164,7 @@ class AutoCompletionPopup:
     # does nothing if not currently completing
     def stop_completing(self, *, withdraw=True):
         if withdraw:
-            self._toplevel.withdraw()
+            self.toplevel.withdraw()
 
         self.treeview.delete(*self.treeview.get_children())
         self.completion_list = None
@@ -473,6 +473,9 @@ def on_new_tab(event):
     tab.textwidget.bind(
         # any mouse button
         '<Button>', (lambda event: completer._reject()), add=True)
+
+    tab.bind('<Destroy>', (lambda event: completer.popup.toplevel.destroy()),
+             add=True)
 
 
 def setup():
