@@ -13,8 +13,8 @@ def after_enter(textwidget):
 
 
 def on_new_tab(event):
-    if isinstance(event.data_widget, tabs.FileTab):
-        textwidget = event.data_widget.textwidget
+    if isinstance(event.data_widget(), tabs.FileTab):
+        textwidget = event.data_widget().textwidget
 
         def bind_callback(event):
             textwidget.after_idle(after_enter, textwidget)
