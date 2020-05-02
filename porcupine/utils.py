@@ -164,7 +164,7 @@ def invert_color(color, *, black_or_white=False):
     """
     # tkinter uses 16-bit colors for some reason, so gotta convert them
     # to 8-bit (with >> 8)
-    widget = porcupine.get_main_window()
+    widget = porcupine.get_main_window()    # any widget would do
     r, g, b = (value >> 8 for value in widget.winfo_rgb(color))
 
     if black_or_white:
@@ -173,6 +173,15 @@ def invert_color(color, *, black_or_white=False):
         return '#ffffff' if average < 0x80 else '#000000'
     else:
         return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
+
+
+def mix_colors(color1, color2):
+    widget = porcupine.get_main_window()    # any widget would do
+    r, g, b = (
+        sum(pair) // 2     # average
+        for pair in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
+    )
+    return '#%02x%02x%02x' % (r >> 8, g >> 8, b >> 8)
 
 
 class _TooltipManager:

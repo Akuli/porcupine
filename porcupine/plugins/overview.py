@@ -32,27 +32,24 @@ def count_lines(textwidget):
 class Overview(ThemedText):
 
     def __init__(self, master, tab):
-        # To indicate the area visible in tab.textwidget, we can't use a tag,
-        # because tag configuration is the same for both widgets (except for
-        # one tag that we are already abusing). Instead, we put a transparent
-        # window on top of the text widget. Surprisingly, wm(3tk) says that
-        # the -alpha flag (aka transparent windows) works on "all platforms".
-        # I call this "vast" for "visible area showing thingy".
-        self._vast = tkinter.Toplevel()
-        self._vast.overrideredirect(True)
-
         # ThemedText.__init__ calls set_colors() which needs _vast
+        self._vast = []
+
         super().__init__(master, width=25, exportselection=False,
                          takefocus=False, create_peer_from=tab.textwidget,
                          yscrollcommand=self._update_vast)
         self._tab = tab
         self.tag_config('sel', foreground='', background='')
 
-        self._got_focus = True
+        # To indicate the area visible in tab.textwidget, we can't use a tag,
+        # because tag configuration is the same for both widgets (except for
+        # one tag that we are already abusing). Instead, we put a bunch of
+        # frames on top of the text widget to make up a border. I call this
+        # "vast" for "visible area showing thingies".
+        self._vast.extend(tkinter.Frame(self) for lel in range(4))
+        self.set_colors(*self._colors)
 
-        # no idea why -alpha must be set when it gets mapped, not before
-        self._vast.bind(
-            '<Map>', lambda event: self._vast.attributes('-alpha', 0.3))
+        self._got_focus = True
 
         tab.textwidget['yscrollcommand'] = (
             tab.register(self._scroll_callback) +
@@ -67,7 +64,8 @@ class Overview(ThemedText):
             '<Button-4>', '<Button-5>',             # mouse wheel
         ]
         for event_name in forward_list:
-            utils.forward_event(event_name, self._vast, self)
+            for frame in self._vast:
+                utils.forward_event(event_name, frame, self)
 
         # We want to prevent the user from selecting anything in self, because
         # of abusing the 'sel' tag. Binding <Button-1> and <Button1-Motion>
@@ -99,7 +97,6 @@ class Overview(ThemedText):
             self.after(50, self._scroll_callback)
 
     def _clean_up(self, junk_event):
-        self._vast.destroy()
         for binding in self._temporary_binds:
             binding.__exit__(None, None, None)
 
@@ -108,10 +105,13 @@ class Overview(ThemedText):
 
     # this overrides ThemedText.set_colors
     def set_colors(self, foreground, background):
+        self._colors = (foreground, background)
         self['foreground'] = foreground
         self['background'] = background
         self['inactiveselectbackground'] = background   # must be non-empty?
-        self._vast['background'] = foreground
+
+        for frame in self._vast:
+            frame['background'] = utils.mix_colors(foreground, background)
 
     def set_font(self, junk_value=None):
         self.tag_config('sel', font=(
@@ -159,11 +159,6 @@ class Overview(ThemedText):
             # view was created just a moment ago, set_font() hasn't ran yet
             return
 
-        # tab.master is the tab manager
-        if self._tab.master.select() is not self._tab or not self._got_focus:
-            self._vast.withdraw()
-            return
-
         (overview_scroll_relative_start,
          overview_scroll_relative_end,
          text_scroll_relative_start,
@@ -183,22 +178,21 @@ class Overview(ThemedText):
                     - overview_scroll_relative_start) * total_height
         vast_bottom = (text_scroll_relative_end
                        - overview_scroll_relative_start) * total_height
+        vast_height = (text_scroll_relative_end
+                       - text_scroll_relative_start) * total_height
 
-        if vast_top < 0:
-            vast_top = 0
-        if vast_bottom > self.winfo_height():
-            vast_bottom = self.winfo_height()
+        # no idea why 6
+        width = self.winfo_width() - 6
 
-        if vast_top < vast_bottom:
-            self._vast.deiconify()
-            self._vast.geometry('%dx%d+%d+%d' % (
-                self.winfo_width(),
-                vast_bottom - vast_top,
-                self.winfo_rootx(),
-                self.winfo_rooty() + vast_top,
-            ))
-        else:
-            self._vast.withdraw()
+        size = 3
+        self._vast[0].place(
+            x=0, y=vast_top, width=width, height=size)
+        self._vast[1].place(
+            x=0, y=vast_top, width=size, height=vast_height)
+        self._vast[2].place(
+            x=0, y=(vast_bottom - size), width=width, height=size)
+        self._vast[3].place(
+            x=(width - size), y=vast_top, width=size, height=vast_height)
 
         self.tag_add('sel', '1.0', 'end')
 

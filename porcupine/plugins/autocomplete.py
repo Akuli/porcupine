@@ -223,18 +223,6 @@ class AutoCompletionPopup:
                 self._doc_text.insert('1.0', completion['documentation'])
 
 
-# yes, i know that i shouldn't do math with rgb colors
-def mix_colors(color1, color2):
-    widget = get_tab_manager()      # any widget would do for this
-    r, g, b = (
-        sum(pair) // 2     # average
-        for pair in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
-    )
-
-    # tk uses 16-bit colors for some reason, converting to 8-bit
-    return '#%02x%02x%02x' % (r >> 8, g >> 8, b >> 8)
-
-
 def filter_completions(completions, filtering_prefix):
     def chop(string):
         return string[len(filtering_prefix):]
@@ -441,7 +429,7 @@ def on_new_tab(event):
     if not isinstance(tab, tabs.FileTab):
         return
 
-    tab.textwidget.tag_config('autocompletion', foreground=mix_colors(
+    tab.textwidget.tag_config('autocompletion', foreground=utils.mix_colors(
         tab.textwidget['fg'], tab.textwidget['bg']))
 
     completer = AutoCompleter(tab)
