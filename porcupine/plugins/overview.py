@@ -8,6 +8,8 @@ from porcupine.textwidget import ThemedText
 
 GENERAL = settings.get_section('General')
 
+LINE_THICKNESS = 1
+
 
 def count_lines(textwidget):
     return int(textwidget.index('end - 1 char').split('.')[0])
@@ -33,12 +35,13 @@ class Overview(ThemedText):
 
     def __init__(self, master, tab):
         # ThemedText.__init__ calls set_colors() which needs _vast
-        self._vast = []
 
         super().__init__(master, width=25, exportselection=False,
                          takefocus=False, create_peer_from=tab.textwidget,
                          yscrollcommand=self._update_vast)
         self._tab = tab
+        self._tab.textwidget['highlightthickness'] = LINE_THICKNESS
+
         self.tag_config('sel', foreground='', background='')
 
         # To indicate the area visible in tab.textwidget, we can't use a tag,
@@ -46,10 +49,13 @@ class Overview(ThemedText):
         # one tag that we are already abusing). Instead, we put a bunch of
         # frames on top of the text widget to make up a border. I call this
         # "vast" for "visible area showing thingies".
-        self._vast.extend(tkinter.Frame(self) for lel in range(4))
+        self._vast = [
+            tkinter.Frame(self),
+            tkinter.Frame(self),
+            tkinter.Frame(self),
+            tkinter.Frame(self),
+        ]
         self.set_colors(*self._colors)
-
-        self._got_focus = True
 
         tab.textwidget['yscrollcommand'] = (
             tab.register(self._scroll_callback) +
@@ -74,10 +80,6 @@ class Overview(ThemedText):
         self.bind('<Button1-Leave>', self._on_click_and_drag)
 
         self._temporary_binds = [
-            utils.temporary_bind(
-                self.winfo_toplevel(), '<FocusIn>', self._on_focus_in),
-            utils.temporary_bind(
-                self.winfo_toplevel(), '<FocusOut>', self._on_focus_out),
             utils.temporary_bind(
                 self.winfo_toplevel(), '<Configure>', self._update_vast),
             utils.temporary_bind(
@@ -105,13 +107,18 @@ class Overview(ThemedText):
 
     # this overrides ThemedText.set_colors
     def set_colors(self, foreground, background):
-        self._colors = (foreground, background)
+        if not hasattr(self, '_vast'):
+            # called from super().__init__, too early
+            self._colors = (foreground, background)
+            return
+
         self['foreground'] = foreground
         self['background'] = background
         self['inactiveselectbackground'] = background   # must be non-empty?
 
+        self._tab.textwidget['highlightcolor'] = foreground
         for frame in self._vast:
-            frame['background'] = utils.mix_colors(foreground, background)
+            frame['background'] = foreground
 
     def set_font(self, junk_value=None):
         self.tag_config('sel', font=(
@@ -181,18 +188,19 @@ class Overview(ThemedText):
         vast_height = (text_scroll_relative_end
                        - text_scroll_relative_start) * total_height
 
-        # no idea why 6
-        width = self.winfo_width() - 6
+        # no idea why 5
+        width = self.winfo_width() - 5
 
-        size = 3
         self._vast[0].place(
-            x=0, y=vast_top, width=width, height=size)
+            x=0, y=vast_top, width=width, height=LINE_THICKNESS)
         self._vast[1].place(
-            x=0, y=vast_top, width=size, height=vast_height)
+            x=0, y=vast_top, width=LINE_THICKNESS, height=vast_height)
         self._vast[2].place(
-            x=0, y=(vast_bottom - size), width=width, height=size)
+            x=0, y=(vast_bottom - LINE_THICKNESS),
+            width=width, height=LINE_THICKNESS)
         self._vast[3].place(
-            x=(width - size), y=vast_top, width=size, height=vast_height)
+            x=(width - LINE_THICKNESS), y=vast_top,
+            width=LINE_THICKNESS, height=vast_height)
 
         self.tag_add('sel', '1.0', 'end')
 
@@ -217,16 +225,6 @@ class Overview(ThemedText):
             self._update_vast()
 
         return 'break'
-
-    def _on_focus_in(self, event):
-        if event.widget is event.widget.winfo_toplevel():
-            self._got_focus = True
-            self._update_vast()
-
-    def _on_focus_out(self, event):
-        if event.widget is event.widget.winfo_toplevel():
-            self._got_focus = False
-            self._update_vast()
 
 
 def on_new_tab(event):
