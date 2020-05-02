@@ -500,8 +500,8 @@ bers.py>` use this attribute.
         self.bind('<<FiletypeChanged>>', self._update_status, add=True)
         self.textwidget.bind('<<CursorMoved>>', self._update_status, add=True)
 
-        self.scrollbar = ttk.Scrollbar(self)
-        self.scrollbar.pack(side='left', fill='y')
+        self.scrollbar = ttk.Scrollbar(self.right_frame)
+        self.scrollbar.pack(side='right', fill='y')
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
 
