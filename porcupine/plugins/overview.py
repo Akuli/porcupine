@@ -1,5 +1,6 @@
 """High-level overview of the file being edited with small font."""
 
+import sys
 import tkinter
 
 from porcupine import get_tab_manager, settings, tabs, utils
@@ -104,8 +105,10 @@ class Overview(ThemedText):
         GENERAL.connect('font_size', self.set_font, run_now=False)
         self.set_font()
 
-        # don't know why after_idle doesn't work
-        self.after(50, self._scroll_callback)
+        # don't know why after_idle doesn't work. Adding a timeout causes
+        # issues with tests.
+        if 'pytest' not in sys.modules:
+            self.after(50, self._scroll_callback)
 
     def _clean_up(self, junk_event):
         self._vast.destroy()

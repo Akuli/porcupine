@@ -96,7 +96,7 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                     action.enabled = False
 
             def on_new_tab(event):
-                tab = event.data_widget
+                tab = event.data_widget()
                 if isinstance(tab, tabs.FileTab):
                     tab.bind('<<FiletypeChanged>>', enable_or_disable,
                              add=True)

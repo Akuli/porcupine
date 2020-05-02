@@ -63,6 +63,7 @@ def porcusession():
 
     plugin_names = pluginloader.find_plugins()
     plugin_names.remove('restart')   # this plugins opens tabs
+    #plugin_names = []
     pluginloader.load(plugin_names, shuffle=True)
 
     yield

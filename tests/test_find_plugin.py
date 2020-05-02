@@ -36,6 +36,7 @@ def test_key_bindings_that_are_annoying_if_they_dont_work(filetab):
     assert filetab.focus_get() is finder.find_entry
 
     finder.hide()
+    filetab.update()
     assert filetab.focus_get() is filetab.textwidget
 
 
