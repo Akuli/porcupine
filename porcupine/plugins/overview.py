@@ -13,18 +13,6 @@ def count_lines(textwidget):
     return int(textwidget.index('end - 1 char').split('.')[0])
 
 
-def forward_event(event_name, from_, to):
-    def callback(event):
-        to.event_generate(
-            event_name,
-            # make the coordinates relative to the 'to' widget
-            x=(event.x_root - to.winfo_rootx()),
-            y=(event.y_root - to.winfo_rooty()),
-        )
-
-    from_.bind(event_name, callback, add=True)
-
-
 # We want self to have the same text content and colors as the main
 # text. We do this efficiently with a peer widget. See "PEER WIDGETS" in
 # text(3tk) for more.
@@ -79,7 +67,7 @@ class Overview(ThemedText):
             '<Button-4>', '<Button-5>',             # mouse wheel
         ]
         for event_name in forward_list:
-            forward_event(event_name, self._vast, self)
+            utils.forward_event(event_name, self._vast, self)
 
         # We want to prevent the user from selecting anything in self, because
         # of abusing the 'sel' tag. Binding <Button-1> and <Button1-Motion>

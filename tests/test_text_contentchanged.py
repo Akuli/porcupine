@@ -8,7 +8,7 @@ def text_and_events(porcusession):
     text = textwidget.HandyText(get_main_window(), undo=True)
 
     # peers can mess things up
-#    peer = textwidget.HandyText(get_main_window(), create_peer_from=text)
+    peer = textwidget.HandyText(get_main_window(), create_peer_from=text)
 
     events = []
     utils.bind_with_data(

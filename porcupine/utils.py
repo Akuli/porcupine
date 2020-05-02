@@ -310,6 +310,8 @@ def bind_with_data(widget, sequence, callback, add=False):
     # TODO: is it possible to do this without a deque?
     event_objects = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
+    # TODO: does the above bind get ever unbound so that it doesn't leak? see
+    #       tkinter's unbind method
 
     def run_the_callback(data_string):
         event = event_objects.popleft()
@@ -323,6 +325,27 @@ def bind_with_data(widget, sequence, callback, add=False):
     widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
                    % (widget, sequence, funcname))
     return funcname
+
+
+# TODO: document this
+def forward_event(event_name, from_, to, *, add=True):
+    def callback(event):
+        kwargs = {
+            # make the coordinates relative to the 'to' widget
+            'x': event.x_root - to.winfo_rootx(),
+            'y': event.y_root - to.winfo_rooty(),
+            # no need to specify rootx and rooty, because Tk can calculate them
+        }
+        if hasattr(event, 'data_string'):
+            kwargs['data'] = event.data_string
+
+        to.event_generate(event_name, **kwargs)
+
+    if event_name.startswith('<<'):
+        # virtual events support data
+        return bind_with_data(from_, event_name, callback, add=add)
+    else:
+        return from_.bind(event_name, callback, add=add)
 
 
 @contextlib.contextmanager

@@ -75,6 +75,7 @@ class HandyText(tk.Text):
             # peer widget, rather than the widget that tkinter created.
             self.destroy()      # goodbye stupid tkinter-created widget
             create_peer_from.peer_create(self, **kwargs)
+            utils.forward_event('<<ContentChanged>>', self, create_peer_from)
 
         #       /\
         #      /  \  WARNING: serious tkinter magic coming up
