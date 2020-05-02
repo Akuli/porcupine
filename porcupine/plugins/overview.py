@@ -1,5 +1,4 @@
 """High-level overview of the file being edited with small font."""
-# TODO: test this on other platforms than linux
 
 import tkinter
 
