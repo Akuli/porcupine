@@ -239,8 +239,9 @@ class HandyText(tk.Text):
 
             # "They [index pairs, aka ranges] are sorted [...]."
             # TODO: use the fact that (line, column) tuples sort nicely?
-            def sort_by_range_beginnings(self, pair):
-                (start1, _), (start2, _) = pair
+            def sort_by_range_beginnings(range1, range2):
+                start1, junk = range1
+                start2, junk = range2
                 if self.compare(start1, '>', start2):
                     return 1
                 if self.compare(start1, '<', start2):
@@ -261,9 +262,9 @@ class HandyText(tk.Text):
             # loop through pairs of pairs
             for i in range(len(pairs)-2, -1, -1):
                 (start1, end1), (start2, end2) = pairs[i:i+2]
-                if self.compare(end1, '<=', start2):
+                if self.compare(end1, '>=', start2):
                     # they overlap
-                    new_pair = merge_index_ranges(start1, end1, start2, start2)
+                    new_pair = merge_index_ranges(start1, end1, start2, end2)
                     pairs[i:i+2] = [new_pair]
 
             # "[...] and the text is removed from the last range to the first
@@ -303,12 +304,18 @@ class HandyText(tk.Text):
             end = self.index(end)
             new_text = ''.join(other_args[::2])
 
+            # more invisible newline garbage
+            if start == self.index('end'):
+                start = self.index('end - 1 char')
+            if end == self.index('end'):
+                end = self.index('end - 1 char')
+
             # didn't find in docs, but tcl throws an error for this
             assert self.compare(start, '<=', end)
 
             changes.append(self._create_change_dict(start, end, new_text))
 
-        else:
+        else:   # pragma: no cover
             raise ValueError(
                 "the tcl code called _change_cb with unexpected subcommand: "
                 + subcommand)       # noqa
