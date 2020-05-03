@@ -38,7 +38,7 @@ class Overview(ThemedText):
 
         super().__init__(master, width=25, exportselection=False,
                          takefocus=False, create_peer_from=tab.textwidget,
-                         yscrollcommand=self._update_vast)
+                         yscrollcommand=self._update_vast, wrap='none')
         self._tab = tab
         self._tab.textwidget['highlightthickness'] = LINE_THICKNESS
 
@@ -91,6 +91,7 @@ class Overview(ThemedText):
 
         GENERAL.connect('font_family', self.set_font, run_now=False)
         GENERAL.connect('font_size', self.set_font, run_now=False)
+        tab.bind('<<FiletypeChanged>>', self.set_font, add=True)
         self.set_font()
 
         # don't know why after_idle doesn't work. Adding a timeout causes
@@ -120,9 +121,14 @@ class Overview(ThemedText):
         for frame in self._vast:
             frame['background'] = foreground
 
-    def set_font(self, junk_value=None):
-        self.tag_config('sel', font=(
-            GENERAL['font_family'], round(GENERAL['font_size'] / 3), ''))
+    def set_font(self, junk_event_or_value=None):
+        font = (GENERAL['font_family'], round(GENERAL['font_size'] / 3), '')
+        how_to_show_tab = ' ' * self._tab.filetype.indent_size
+
+        # tkinter doesn't provide a better way to do font stuff than stupid
+        # font object
+        self['tabs'] = self.tk.call('font', 'measure', font, how_to_show_tab)
+        self.tag_config('sel', font=font)
         self._update_vast()
 
     def _scroll_callback(self):
