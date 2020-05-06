@@ -1,3 +1,6 @@
+# TODO: when no langserver, fallback autocompleting with "all words in file"
+# type thing
+
 import itertools
 import json
 import re

@@ -1,6 +1,7 @@
 # langserver plugin
+# FIXME: fileobj.read<Enter>, then wait for completions
 
-import shlex
+import collections
 import itertools
 import json
 import logging
@@ -9,6 +10,7 @@ import platform
 import pprint
 import queue as queue_module
 import re
+import shlex
 import signal
 import subprocess
 import threading
@@ -69,9 +71,34 @@ def get_nonblocking_reader(file):
     return get_from_queue
 
 
-def get_uri(tab):
-    assert tab.path is not None
-    return 'file://' + pathname2url(os.path.abspath(tab.path))
+def get_uri(path):
+    assert path is not None
+    return 'file://' + pathname2url(os.path.abspath(path))
+
+
+# TODO: add a configuration option for this, and make this a part of porcupine
+#       rather than something that every plugin has to implement
+# TODO: editorconfig support
+_PROJECT_ROOT_THINGS = ['editorconfig', '.git'] + [
+    readme + extension
+    for readme in ['README', 'readme', 'Readme', 'ReadMe']
+    for extension in ['', '.txt', '.md']
+]
+
+
+def find_project_root(project_file_path):
+    assert os.path.isabs(project_file_path)
+
+    path = project_file_path
+    while True:
+        parent = os.path.dirname(path)
+        if path == parent:      # shitty default
+            return os.path.dirname(project_file_path)
+        path = parent
+
+        if any(os.path.exists(os.path.join(path, thing))
+               for thing in _PROJECT_ROOT_THINGS):
+            return path
 
 
 def get_markup_content(string_or_lsp_markupcontent) -> str:
@@ -96,17 +123,22 @@ def exit_code_string(exit_code):
     return result
 
 
-# keys are running commands because the same langserver command might be useful
-# for multiple langservers
+# the information needed to identify running langservers. Each langserver
+# process takes a project rootUri.
+LangServerId = collections.namedtuple(
+    'LangServerId', ['command', 'project_root'])
+
+# keys are LangServerId, values LangServer
 langservers = {}
 
 
 class LangServer:
 
-    def __init__(self, process, command, log):
+    def __init__(self, process, langserver_id, log):
         self._process = process
-        self._command = command
-        self._lsp_client = lsp.Client(trace='verbose')
+        self._id = langserver_id
+        self._lsp_client = lsp.Client(
+            trace='verbose', root_uri=get_uri(langserver_id.project_root))
         self._completion_infos = {}
         self._version_counter = itertools.count()
         self._log = log
@@ -118,14 +150,14 @@ class LangServer:
     def _is_in_langservers(self):
         # This returns False if a langserver died and another one with the same
         # command was launched.
-        return (langservers.get(self._command, None) is self)
+        return (langservers.get(self._id, None) is self)
 
     def _get_removed_from_langservers(self):
         # this is called more than necessary to make sure we don't end up with
         # funny issues caused by unusable langservers
         if self._is_in_langservers():
             self._log.debug("getting removed from langservers")
-            del langservers[self._command]
+            del langservers[self._id]
 
     def _position_tk2lsp(self, tk_position_string, *, next_column=False):
         # this can't use tab.textwidget.index, because it needs to handle text
@@ -192,7 +224,7 @@ class LangServer:
     def _send_tab_opened_message(self, tab):
         self._lsp_client.did_open(
             lsp.TextDocumentItem(
-                uri=get_uri(tab),
+                uri=get_uri(tab.path),
                 languageId=tab.filetype.langserver_language_id,
                 text=tab.textwidget.get('1.0', 'end - 1 char'),
                 version=0,
@@ -243,6 +275,16 @@ class LangServer:
         elif isinstance(lsp_event, lsp.PublishDiagnostics):
             pass        # TODO
 
+        elif isinstance(lsp_event, lsp.LogMessage):
+            loglevel_dict = {
+                lsp.MessageType.LOG: logging.DEBUG,
+                lsp.MessageType.INFO: logging.INFO,
+                lsp.MessageType.WARNING: logging.WARNING,
+                lsp.MessageType.ERROR: logging.ERROR,
+            }
+            self._log.log(loglevel_dict[lsp_event.type],
+                          "message from langserver: %s", lsp_event.message)
+
         else:
             raise NotImplementedError(lsp_event)
 
@@ -288,7 +330,7 @@ class LangServer:
 
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
-                textDocument=lsp.TextDocumentIdentifier(uri=get_uri(tab)),
+                textDocument=lsp.TextDocumentIdentifier(uri=get_uri(tab.path)),
                 position=self._position_tk2lsp(
                     info_dict['cursor_pos'], next_column=True
                 ),
@@ -317,7 +359,7 @@ class LangServer:
         assert isinstance(tab, tabs.FileTab)
         self._lsp_client.did_change(
             text_document=lsp.VersionedTextDocumentIdentifier(
-                uri=get_uri(tab),
+                uri=get_uri(tab.path),
                 version=next(self._version_counter),
             ),
             content_changes=[
@@ -333,23 +375,24 @@ class LangServer:
         )
 
 
-def get_lang_server(filetype):
-    if filetype is None:
-        return None
-
+def get_lang_server(filetype, project_root):
     if not (filetype.langserver_command and filetype.langserver_language_id):
         logging.getLogger(__name__).info(
             "langserver not configured for filetype " + filetype.name)
         return None
 
+    langserver_id = LangServerId(filetype.langserver_command, project_root)
+
     try:
-        return langservers[filetype.langserver_command]
+        return langservers[langserver_id]
     except KeyError:
         pass
 
     log = logging.getLogger(
-        __name__ + '.' +
-        re.sub(r'[^A-Za-z0-9]', '_', filetype.langserver_command))     # lol
+        # this is lol
+        __name__ + '.' + re.sub(
+            r'[^A-Za-z0-9]', '_',
+            filetype.langserver_command + ' ' + project_root))
 
     # avoid shell=True on non-windows to get process.pid to do the right thing
     #
@@ -373,20 +416,24 @@ def get_lang_server(filetype):
             filetype.langserver_command)
         return None
 
-    log.info("Langserver process started with command '%s', PID %d",
-             filetype.langserver_command, process.pid)
+    log.info("Langserver process started with command '%s', PID %d, "
+             "for project root '%s'",
+             filetype.langserver_command, process.pid, project_root)
 
-    langserver = LangServer(
-        process, filetype.langserver_command, log)
+    langserver = LangServer(process, langserver_id, log)
     langserver.run_stuff()
-    langservers[filetype.langserver_command] = langserver
+    langservers[langserver_id] = langserver
     return langserver
 
 
 def on_new_tab(event):
-    tab = event.data_widget()
+    tab: tabs.Tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        langserver = get_lang_server(tab.filetype)
+        if tab.path is None or tab.filetype is None:
+            # TODO
+            return
+
+        langserver = get_lang_server(tab.filetype, find_project_root(tab.path))
         if langserver is None:
             return
 
