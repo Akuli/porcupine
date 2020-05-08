@@ -73,33 +73,18 @@ def paste_to_dpaste_com(code, path):
     return response.text.strip()
 
 
-@pastebin("dpaste.de")
+@pastebin("dpaste.org")
 def paste_to_dpaste_de(code, path):
     # docs: http://dpaste.readthedocs.io/en/latest/api.html
     # the docs tell to post to http://dpaste.de/api/ but they use
     # https://... in the examples 0_o only the https version works
-    response = session.post('https://dpaste.de/api/', data={
+    response = session.post('https://dpaste.org/api/', data={
         'content': code,
         # lexer defaults to 'python'
         'format': 'url',
     })
     response.raise_for_status()
     return response.text.strip()
-
-
-@pastebin("Ghostbin")
-def paste_to_ghostbin(code, path):
-    # docs: https://ghostbin.com/paste/p3qcy
-    response = session.post(
-        'https://ghostbin.com/paste/new',
-        data={'text': code},
-        params={
-            'expire': '30d',
-            'lang': 'python3',
-        },
-    )
-    response.raise_for_status()
-    return response.url
 
 
 @pastebin("Paste ofCode")
