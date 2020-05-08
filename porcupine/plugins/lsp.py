@@ -1,5 +1,7 @@
 # langserver plugin
 # FIXME: fileobj.read<Enter>, then wait for completions
+# TODO: sockets without specifying netcat as the command
+# TODO: CompletionProvider
 
 import collections
 import itertools
