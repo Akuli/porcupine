@@ -5,7 +5,7 @@ People often ask whether Porcupine supports language X.
 This file lists all the things that you may want to do for using Porcupine with a programming language.
 
 .. note::
-    Feel free to `create an issue on GitHub <https://github.com/Akuli/porcupine/issues/new>`
+    Feel free to `create an issue on GitHub <https://github.com/Akuli/porcupine/issues/new>`_
     if you get any issues when following this guide.
 
 
@@ -78,13 +78,13 @@ Then you can add this to ``filetypes.ini``::
     pygments_lexer = lexer_filename.LexerClass
 
 
-Autocompletions
----------------
+Autocompletions with langserver
+-------------------------------
 
-The preferred way to set up autocompletions with Porcupine is using a langserver.
-A langserver is a program that runs on your computer and doesn't use the internet at all,
+Porcupine's autocompletions work with a langserver.
+It's a program that runs on your computer and doesn't use the internet at all,
 unlike you might guess from the name.
-Porcupine then requests completions from the langserver and displays them to you.
+Porcupine requests completions from the langserver and displays them to you.
 
 Start by finding and installing a langserver for the programming language X.
 I don't have any more detailed instructions, because this depends a lot on which programming language is in question.
@@ -101,6 +101,21 @@ To find the correct ``langserver_language_id``, click
 `this link <https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocumentItem>`_
 and scroll down a bit.
 You should find a table of all valid ``langserver_language_id`` values.
+
+Many langservers have an option for whether to use stdio (also known as stdin and stdout) or a TCP socket.
+Choose stdio.
+
+Currently Porcupine doesn't support langservers with TCP sockets at all,
+but if the langserver doesn't support stdio and you need to use it with a TCP socket,
+you can use ``netcat`` to get it to work anyway.
+Add this to the filetype configuration::
+
+    langserver_command = nc localhost 1234
+
+Replace ``1234`` with whatever port the langserver process uses.
+If your system doesn't have netcat (also known as ``nc``), then install it,
+and if needed, replace ``nc`` with whatever command is needed for running netcat.
+Now run the langserver in another terminal before opening any files that need the langserver.
 
 
 Notes
