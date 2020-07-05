@@ -85,10 +85,10 @@ def main():
         help=("don't load any plugins, this is useful for "
               "understanding how much can be done with plugins"))
     plugingroup.add_argument(
-        '--without-plugin', metavar='PLUGIN', action='append', default=[],
-        help=("don't load PLUGIN, e.g. --without-plugin=highlight "
-              "runs Porcupine without syntax highlighting, multiple "
-              "--without-plugins can be given"))
+        '--without-plugins', metavar='PLUGINS', default='',
+        help=("don't load PLUGINS (see --print-plugindir), "
+              "e.g. --without-plugins=highlight disables syntax highlighting, "
+              "multiple plugin names can be given comma-separated"))
     plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
         help=("respect setup_before and setup_after, but otherwise setup the "
@@ -127,11 +127,14 @@ def main():
     if args.yes_plugins:
         plugin_names = pluginloader.find_plugins()
         log.info("found %d plugins", len(plugin_names))
-        for name in args.without_plugin:
-            if name in plugin_names:
-                plugin_names.remove(name)
-            else:
-                log.warning("no plugin named %r, cannot load without it", name)
+
+        if args.without_plugins:
+            for name in args.without_plugins.split(','):
+                if name in plugin_names:
+                    plugin_names.remove(name)
+                else:
+                    log.warning(
+                        "no plugin named %r, cannot load without it", name)
 
         pluginloader.load(plugin_names, shuffle=args.shuffle_plugins)
 
