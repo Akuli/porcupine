@@ -1,5 +1,4 @@
 # langserver plugin
-# FIXME: fileobj.read<Enter>, then wait for completions
 # TODO: sockets without specifying netcat as the command
 # TODO: CompletionProvider
 
@@ -67,6 +66,8 @@ def get_nonblocking_reader(file):
 
         if buf:
             return bytes(buf)
+
+        # this is how python's nonblocking .read() works
         return None if running else b''
 
     threading.Thread(target=put_to_queue, daemon=True).start()
@@ -251,7 +252,8 @@ class LangServer:
             tab = info_dict.pop('tab')
 
             # this is "open to interpretation", as the lsp spec says
-            # TODO: use textEdit when available (requires some refactoring)
+            # TODO: use textEdit when available (need to find langserver that
+            #       gives completions with textEdit for that to work)
             before_cursor = tab.textwidget.get(
                 '%s linestart' % info_dict['cursor_pos'],
                 info_dict['cursor_pos'])
@@ -260,7 +262,10 @@ class LangServer:
             info_dict['completions'] = [
                 {
                     'display_text': item.label,
-                    'suffix': (item.insertText or item.label)[prefix_len:],
+                    'replace_start': tab.textwidget.index(
+                        f"{info_dict['cursor_pos']} - {prefix_len} chars"),
+                    'replace_end': info_dict['cursor_pos'],
+                    'replace_text': item.insertText or item.label,
                     'filter_text': (item.filterText
                                     or item.insertText
                                     or item.label)[prefix_len:],
@@ -409,6 +414,7 @@ def get_lang_server(filetype, project_root):
         command = shlex.split(filetype.langserver_command)
 
     try:
+        # TODO: read and log stderr
         process = subprocess.Popen(
             command, shell=shell,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)

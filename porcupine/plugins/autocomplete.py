@@ -1,6 +1,5 @@
 # TODO: when no langserver, fallback autocompleting with "all words in file"
 #       type thing
-# TODO: backspacing
 # FIXME: trying to make more room for stuff on left
 #        side, resets when completion popup goes away
 # FIXME: window may go partially off screen
@@ -60,12 +59,8 @@ def add_resize_handle(toplevel):
 
 class AutoCompletionPopup:
 
-    # FIXME: io.string<Tab> completes to io.stringIO, first s should be S
-    def __init__(self, selected_callback):
-        self._selected_callback = selected_callback
-        self.completion_list = None
-
-        # to avoid calling selected_callback more often than needed
+    def __init__(self):
+        self._completion_list = None
         self._old_selection_item_id = None
 
         self.toplevel = tkinter.Toplevel()
@@ -131,7 +126,7 @@ class AutoCompletionPopup:
     # state where it's completing but not showing.
 
     def is_completing(self):
-        return (self.completion_list is not None)
+        return (self._completion_list is not None)
 
     def is_showing(self):
         return bool(self.toplevel.winfo_ismapped())
@@ -140,19 +135,35 @@ class AutoCompletionPopup:
         self.treeview.selection_set(item_id)
         self.treeview.see(item_id)
 
+    def _get_selected_completion(self):
+        if not self.is_completing():
+            return None
+
+        selected_ids = self.treeview.selection()
+        if not selected_ids:
+            return None
+
+        [the_id] = selected_ids
+        return self._completion_list[int(the_id)]
+
     def start_completing(self, completion_list, popup_xy):
         if self.is_completing():
             self.stop_completing(withdraw=False)
 
-        assert completion_list
-        self.completion_list = completion_list
+        self._completion_list = completion_list
 
-        for index, completion in enumerate(completion_list):
-            # id=str(index) is used in the rest of this class
-            self.treeview.insert('', 'end', id=str(index),
-                                 text=completion['display_text'])
+        if completion_list:
+            for index, completion in enumerate(completion_list):
+                # id=str(index) is used in the rest of this class
+                self.treeview.insert('', 'end', id=str(index),
+                                     text=completion['display_text'])
+            self._select_item('0')
+        else:
+            self._doc_text['state'] = 'normal'
+            self._doc_text.delete('1.0', 'end')
+            self._doc_text.insert('1.0', "No completions")
+            self._doc_text['state'] = 'disabled'
 
-        self._select_item('0')
         if popup_xy is not None:
             x, y = popup_xy
             self.toplevel.geometry('%dx%d+%d+%d' % (
@@ -170,16 +181,21 @@ class AutoCompletionPopup:
             lambda: self._panedwindow.sashpos(0, self._initial_divider_pos))
 
     # does nothing if not currently completing
+    # returns selected completion dict or None if no completions
     def stop_completing(self, *, withdraw=True):
+        selected = self._get_selected_completion()
+
         if withdraw:
             self.toplevel.withdraw()
-
         self.treeview.delete(*self.treeview.get_children())
-        self.completion_list = None
-        self._old_selection_item_id = None
+        self._completion_list = None
+
+        return selected
 
     def select_previous(self):
         assert self.is_completing()
+
+        # yes, this works if self.treeview.selection() returns empty tuple
         prev_item = self.treeview.prev(self.treeview.selection())
         if prev_item:
             self._select_item(prev_item)
@@ -219,104 +235,76 @@ class AutoCompletionPopup:
             self.treeview.selection_set(hovered_id)
 
     def _on_select(self, event):
-        if self.is_completing():
-            [item_id] = self.treeview.selection()
-            if item_id != self._old_selection_item_id:
-                self._old_selection_item_id = item_id
-                completion = self.completion_list[int(item_id)]
-
-                self._selected_callback(completion)
-                self._doc_text['state'] = 'normal'
-                self._doc_text.delete('1.0', 'end')
-                self._doc_text.insert('1.0', completion['documentation'])
+        completion = self._get_selected_completion()
+        if completion is not None:
+            self._doc_text['state'] = 'normal'
+            self._doc_text.delete('1.0', 'end')
+            self._doc_text.insert('1.0', completion['documentation'])
+            self._doc_text['state'] = 'disabled'
 
 
-def filter_completions(completions, filtering_prefix):
-    def chop(string):
-        return string[len(filtering_prefix):]
-
-    return [
-        # override suffix and filter_text with chopped versions
-        {
-            **completion,
-            'suffix': chop(completion['suffix']),
-            'filter_text': chop(completion['filter_text']),
-        }
-        for completion in completions
-        if completion['filter_text'].lower().startswith(
-            filtering_prefix.lower())
-        and chop(completion['filter_text']) != ''
-    ]
+# How this differs from using sometextwidget.compare(start, end):
+#   - This does the right thing if text has been deleted so that start and end
+#     no longer exist in the text widget.
+#   - Start and end must be in 'x.y' format.
+def text_index_less_than(index1, index2):
+    tuple1 = tuple(map(int, index1.split('.')))
+    tuple2 = tuple(map(int, index2.split('.')))
+    return (tuple1 < tuple2)
 
 
 class AutoCompleter:
 
     def __init__(self, tab):
         self._tab = tab
-        self._endpos = None
+        self._orig_cursorpos = None
         self._id_counter = itertools.count()
-        self._waiting_for_response_id = None   # None means no response matches
-        self._putting_to_text_widget = False
-        self.popup = AutoCompletionPopup(
-            lambda completion: self._put_to_text_widget(completion['suffix']))
-
-        # Because text can be typed while autocompletion request is being
-        # processed. The goal is that typing 'foo.<tab>a' and 'foo.a<tab>'
-        # should do the same thing.
-        self._filter_queue = ''
+        self._waiting_for_response_id = None
+        self.popup = AutoCompletionPopup()
 
     def _request_completions(self):
-        self._endpos = self._tab.textwidget.index('insert')
-
         the_id = next(self._id_counter)
         self._waiting_for_response_id = the_id
-        self._filter_queue = ''
+
+        # use this cursor pos when needed because while processing the
+        # completion request or filtering, user might type more
+        self._orig_cursorpos = self._tab.textwidget.index('insert')
 
         self._tab.event_generate('<<AutoCompletionRequest>>', data=json.dumps({
             'id': the_id,
-            # use this cursor pos in e.g. lsp.py, because while processing the
-            # completion request, user might type more
-            'cursor_pos': self._tab.textwidget.index('insert'),
+            'cursor_pos': self._orig_cursorpos,
         }))
 
-    def _put_to_text_widget(self, suffix):
-        self._tab.textwidget['autoseparators'] = False
-        self._putting_to_text_widget = True
-
-        try:
-            old_cursor_pos = self._tab.textwidget.index('insert')
-            self._tab.textwidget.delete('insert', self._endpos)
-            self._tab.textwidget.insert('insert', suffix, 'autocompletion')
-            self._endpos = self._tab.textwidget.index('insert')
-            self._tab.textwidget.mark_set('insert', old_cursor_pos)
-        finally:
-            self._tab.textwidget['autoseparators'] = True
-            self._putting_to_text_widget = False
-
+    # this might not run for all requests if e.g. langserver not configured
     def receive_completions(self, event):
         info_dict = event.data_json()
         if info_dict['id'] != self._waiting_for_response_id:
             return
         self._waiting_for_response_id = None
 
-        completions = filter_completions(
-            info_dict['completions'], self._filter_queue)
-        self._filter_queue = ''
-        if not completions:
-            return
-
-        relative_x, relative_y = self._tab.textwidget.bbox('insert')[:2]
-
         # tkinter doesn't provide a way to delete the font object, but it
         # does __del__ magic
         font_object = tkinter.font.Font(font=self._tab.textwidget['font'])
         fsize = font_object.actual('size')
 
-        # TODO: see how pyls autocomplete the following line, jedi worked fine:
+        # TODO: make sure that window is not off screen
+        relative_x, relative_y = self._tab.textwidget.bbox('insert')[:2]
         x = self._tab.textwidget.winfo_rootx() + relative_x
         y = self._tab.textwidget.winfo_rooty() + relative_y + fsize + 10
 
-        self.popup.start_completing(completions, (x, y))
+        self.unfiltered_completions = info_dict['completions']
+        self.popup.start_completing(self._get_filtered_completions(), (x, y))
+
+    # this doesn't work perfectly. After get<Tab>, getar_u matches
+    # getchar_unlocked but getch_u doesn't.
+    def _get_filtered_completions(self):
+        assert self._orig_cursorpos is not None
+        filter_text = self._tab.textwidget.get(self._orig_cursorpos, 'insert')
+
+        return [
+            completion for completion in self.unfiltered_completions
+            if filter_text.lower() in completion['filter_text']
+        ]
 
     # returns None if this isn't a place where it's good to autocomplete
     def _can_complete_here(self):
@@ -356,21 +344,38 @@ class AutoCompleter:
         if not self.popup.is_completing():
             return
 
-        self.popup.stop_completing()
-        self._tab.textwidget.tag_remove('autocompletion', '1.0', 'end')
-        self._tab.textwidget.mark_set('insert', self._endpos)
+        completion = self.popup.stop_completing()
+        if completion is not None:
+            assert self._orig_cursorpos is not None
+            self._tab.textwidget.delete(self._orig_cursorpos, 'insert')
+            self._tab.textwidget.replace(
+                completion['replace_start'], completion['replace_end'],
+                completion['replace_text'])
+
         self._waiting_for_response_id = None
-        self._tab.textwidget.edit_separator()
+        self._orig_cursorpos = None
 
     def _reject(self):
         if self.popup.is_completing():
-            self._put_to_text_widget('')
-            self._accept()
+            self.popup.stop_completing()
+            self._waiting_for_response_id = None
+            self._orig_cursorpos = None
 
     def on_any_key(self, event):
-        its_just_a_letter = (len(event.char) == 1 and event.char.isprintable())
+        if event.keysym.startswith('Shift'):
+            return
 
-        if not self.popup.is_completing():
+        if self.popup.is_completing():
+            # TODO: use language-specific identifier character?
+            its_just_a_letter = bool(re.fullmatch(r'\w', event.char))
+            if (not its_just_a_letter) and event.keysym != 'BackSpace':
+                self._reject()
+                return
+
+            # let the text get inserted before continuing
+            self._tab.textwidget.after_idle(self._filter_through_completions)
+
+        else:
             if event.char in self._tab.filetype.autocomplete_chars:
                 def do_request():
                     if ((not self.popup.is_completing())
@@ -381,64 +386,46 @@ class AutoCompleter:
                 # that langserver's change events get sent before completions
                 # are requested.
                 self._tab.after(10, do_request)
-
-                self._filter_queue = ''
                 self._waiting_for_response_id = None
-                return None
+                return
 
-            if self._waiting_for_response_id is not None:
-                if its_just_a_letter:
-                    self._filter_queue += event.char
-                else:
-                    self._filter_queue = ''
-                    self._waiting_for_response_id = None
+    # Completing should stop when newline is inserted with or without pressing
+    # the enter key. Pasting is one way to insert newline without enter press.
+    # Currently this works, but if you modify this code, then make sure that
+    # it still works.
+    #
+    # TODO: is it possible to write a test for this?
 
-            return None
+    def _filter_through_completions(self):
+        assert self._orig_cursorpos is not None
 
-        if self._putting_to_text_widget:
-            return None
-
-        if not its_just_a_letter:
-            # allow typing capital letters to filter through completions.
-            # On my system, the keysym is 'Shift_L' or 'Shift_R'.
-            if not event.keysym.startswith('Shift'):
-                self._reject()
-
-            return None
-
-        # user typed a letter, let's filter through the list
-        completions = filter_completions(
-            self.popup.completion_list, event.char)
-        if not completions:
+        # if cursor has moved back more since requesting completions: User
+        # has backspaced away a lot and likely doesn't want completions.
+        if text_index_less_than(
+                self._tab.textwidget.index('insert'), self._orig_cursorpos):
             self._reject()
-            return None
+            return
 
-        self._put_to_text_widget('')
         self.popup.stop_completing(withdraw=False)
-        self._tab.textwidget.insert('insert', event.char)
-        self.popup.start_completing(completions, None)
-        return 'break'
+        self.popup.start_completing(self._get_filtered_completions(), None)
 
     def on_enter(self, event):
-        if not self.popup.is_completing():
-            return None
-
-        self._accept()
-        return 'break'
+        if self.popup.is_completing():
+            self._accept()
+            return 'break'
+        return None
 
     def on_escape(self, event):
         if self.popup.is_completing():
             self._reject()
             return 'break'
+        return None
 
 
 def on_new_tab(event):
     tab = event.data_widget()
     if not isinstance(tab, tabs.FileTab):
         return
-
-    tab.textwidget.tag_config('autocompletion', foreground=utils.mix_colors(
-        tab.textwidget['fg'], tab.textwidget['bg']))
 
     completer = AutoCompleter(tab)
     utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
@@ -478,11 +465,9 @@ def setup():
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 
     SETTINGS.add_label(
-        # TODO: add documentation for setting up langserver and a link to
-        #       that here
+        # TODO: link to langserver setup docs here
         "If autocompletion isn't working, make sure that you have langserver "
-        "(or something else that works with the autocomplete plugin) set up "
-        "correctly.")
+        "set up correctly.")
 
     SETTINGS.add_option('show_popup', True)
     SETTINGS.add_checkbutton(
