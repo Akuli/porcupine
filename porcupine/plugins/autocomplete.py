@@ -188,11 +188,7 @@ class AutoCompletionPopup:
 
         if geometry is not None:
             self.toplevel.geometry(geometry)
-
-        # lazy way to implement auto completion without popup window: create
-        # all the widgets but never show them :D
-        if SETTINGS['show_popup']:
-            self.toplevel.deiconify()
+        self.toplevel.deiconify()
 
         # don't know why after_idle is needed, but it is
         self._panedwindow.after_idle(
@@ -482,10 +478,6 @@ def setup():
         # TODO: link to langserver setup docs here
         "If autocompletion isn't working, make sure that you have langserver "
         "set up correctly.")
-
-    SETTINGS.add_option('show_popup', True)
-    SETTINGS.add_checkbutton(
-        'show_popup', "Show a popup window when autocompleting")
 
     SETTINGS.add_option('popup_window_width', 500, reset=False)
     SETTINGS.add_option('popup_window_height', 200, reset=False)
