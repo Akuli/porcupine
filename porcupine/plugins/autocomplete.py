@@ -301,7 +301,7 @@ class AutoCompleter:
 
         return [
             completion for completion in self.unfiltered_completions
-            if filter_text.lower() in completion['filter_text']
+            if filter_text.lower() in completion['filter_text'].lower()
         ]
 
     # returns None if this isn't a place where it's good to autocomplete
