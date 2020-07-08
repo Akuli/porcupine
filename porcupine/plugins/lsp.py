@@ -104,10 +104,25 @@ def find_project_root(project_file_path):
             return path
 
 
-def get_markup_content(string_or_lsp_markupcontent) -> str:
-    if isinstance(string_or_lsp_markupcontent, lsp.MarkupContent):
-        return string_or_lsp_markupcontent.value
-    return str(string_or_lsp_markupcontent)
+def get_completion_item_doc(item):
+    if item.documentation:
+        # try this with clangd
+        #
+        #    // comment
+        #    void foo(int x, char c) { }
+        #
+        #    int main(void)
+        #    {
+        #        fo<Tab>
+        #    }
+        #
+        # without this check, this wouldn't show arguments of foo on right side
+        if item.documentation.startswith(item.label.strip()):
+            return item.documentation
+        else:
+            return item.label.strip() + '\n\n' + item.documentation
+
+    return item.label
 
 
 def exit_code_string(exit_code):
@@ -269,7 +284,7 @@ class LangServer:
                     'filter_text': (item.filterText
                                     or item.insertText
                                     or item.label)[prefix_len:],
-                    'documentation': item.documentation or item.label,
+                    'documentation': get_completion_item_doc(item),
                 }
                 for item in sorted(
                     lsp_event.completion_list.items,
