@@ -95,11 +95,6 @@ class AutoCompletionPopup:
         self._resize_handle = add_resize_handle(self.toplevel)
         self.toplevel.bind('<Configure>', self._on_anything_resized)
 
-        # turns out to be best to get the initial divider position now.
-        # Otherwise it tends to get written to SETTINGS before it's read for
-        # the first time.
-        self._initial_divider_pos = SETTINGS['popup_divider_pos']
-
     def _on_anything_resized(self, event):
         # When the separator is dragged all the way to left or the popup is
         # resized to be narrow enough, the right scrollbar is no longer mapped
@@ -114,14 +109,6 @@ class AutoCompletionPopup:
             self._left_scrollbar.pack(pady=[0, handle_height])
             self._right_scrollbar.pack(pady=[0, 0])
 
-        # winfo doesn't work very well when the widgets are not actually
-        # visible. Also, better to check _panedwindow, because for a tiny
-        # moment, the window is visible but _panedwindow isn't.
-        if self._panedwindow.winfo_ismapped():
-            SETTINGS['popup_window_width'] = self.toplevel.winfo_width()
-            SETTINGS['popup_window_height'] = self.toplevel.winfo_height()
-            SETTINGS['popup_divider_pos'] = self._panedwindow.sashpos(0)
-
     # When tab is pressed with popups turned off in settings, this goes to a
     # state where it's completing but not showing.
 
@@ -129,7 +116,9 @@ class AutoCompletionPopup:
         return (self._completion_list is not None)
 
     def is_showing(self):
-        return bool(self.toplevel.winfo_ismapped())
+        # don't know how only one of them could be mapped, checking to be sure
+        return bool(self.toplevel.winfo_ismapped() and
+                    self._panedwindow.winfo_ismapped())
 
     def _select_item(self, item_id):
         self.treeview.selection_set(item_id)
@@ -178,11 +167,17 @@ class AutoCompletionPopup:
 
         # don't know why after_idle is needed, but it is
         self._panedwindow.after_idle(
-            lambda: self._panedwindow.sashpos(0, self._initial_divider_pos))
+           lambda: self._panedwindow.sashpos(0, SETTINGS['popup_divider_pos']))
 
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
     def stop_completing(self, *, withdraw=True):
+        # putting this here avoids some bugs
+        if self.is_showing():
+            SETTINGS['popup_window_width'] = self.toplevel.winfo_width()
+            SETTINGS['popup_window_height'] = self.toplevel.winfo_height()
+            SETTINGS['popup_divider_pos'] = self._panedwindow.sashpos(0)
+
         selected = self._get_selected_completion()
 
         if withdraw:
