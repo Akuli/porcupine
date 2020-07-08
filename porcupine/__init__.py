@@ -15,7 +15,7 @@ import subprocess
 version_info = (0, 70, 0)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
-__copyright__ = 'Copyright (c) 2017-2018 Akuli'
+__copyright__ = 'Copyright (c) 2017-2020 Akuli'
 __license__ = 'MIT'
 
 # attach git stuff to the version if this isn't installed
