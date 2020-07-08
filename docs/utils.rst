@@ -54,11 +54,8 @@ Tkinter Utilities
 
 .. class:: Spinbox
 
-   This is a Ttk version of ``tkinter.Spinbox``.
-
-   Ttk has a ``spinbox`` widget, but there's no ``tkinter.ttk.Spinbox``
-   yet (perhaps the ttk spinbox is a new thing and tkinter hasn't been
-   updated yet). This class should behave mostly like ``tkinter.Spinbox``.
+   Starting with Python 3.7, this is ``tkinter.ttk.Spinbox``. On Python 3.6,
+   this class behaves just like ``tkinter.ttk.Spinbox`` on Python 3.7.
 
 
 Miscellaneous

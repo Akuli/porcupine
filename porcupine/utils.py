@@ -508,29 +508,23 @@ def create_passive_text_widget(parent, **kwargs):
     return text
 
 
-# see docs/utils.rst for explanation and docs
-# TODO: there is ttk.Spinbox, starting at Python 3.7
 try:
     Spinbox = ttk.Spinbox
 except AttributeError:
-    try:
-        Spinbox = ttk.SpinBox
-    except AttributeError:
-        # this is based on the code of ttk.Combobox, if tkinter changes so
-        # that this breaks then ttk.Spinbox will be probably added as well
-        class Spinbox(ttk.Entry):
+    # python 3.6 compat thing, written similarly to ttk.Combobox
+    class Spinbox(ttk.Entry):
 
-            def __init__(self, master=None, *, from_=None, **kwargs):
-                if from_ is not None:
-                    kwargs['from'] = from_  # this actually works
-                super().__init__(master, 'ttk::spinbox', **kwargs)
+        def __init__(self, master=None, *, from_=None, **kwargs):
+            if from_ is not None:
+                kwargs['from'] = from_  # this actually works
+            super().__init__(master, 'ttk::spinbox', **kwargs)
 
-            def configure(self, *args, **kwargs):
-                if 'from_' in kwargs:
-                    kwargs['from'] = kwargs.pop('from_')
-                return super().configure(*args, **kwargs)
+        def configure(self, *args, **kwargs):
+            if 'from_' in kwargs:
+                kwargs['from'] = kwargs.pop('from_')
+            return super().configure(*args, **kwargs)
 
-            config = configure
+        config = configure
 
 
 def errordialog(title, message, monospace_text=None):
