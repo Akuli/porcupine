@@ -128,22 +128,22 @@ If you want to develop porcupine, install Python 3.5 or newer and
     git clone https://github.com/Akuli/porcupine
     cd porcupine
     python3 -m venv env
-    . env/bin/activate
+    source env/bin/activate
     pip install -r requirements.txt
     pip install -r requirements-dev.txt
-    pip install --editable .
+    python3 -m porcupine
 
-Now running `porcu` should start Porcupine. If you change some of Porcupine's
+This should run Porcupine. If you change some of Porcupine's
 code in the `porcupine` directory and you run `porcu` again, your changes
 should be visible right away.
 
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct
-place and running `. env/bin/activate` again. You can run `deactivate` to undo
-the `. env/bin/activate`.
+place and running `source env/bin/activate` again. You can run `deactivate` to undo
+the `source env/bin/activate`.
 
 If you are using Windows, you need to use `py` instead of `python3` and
-`env\Scripts\activate.bat` instead of `. env/bin/activate`.
+`env\Scripts\activate.bat` instead of `source env/bin/activate`.
 
 Here is a list of the commands I use when developing Porcupine:
 - Git commands. I'll assume that you know how to use Git and GitHub.
