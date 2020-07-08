@@ -1,8 +1,5 @@
 # TODO: when no langserver, fallback autocompleting with "all words in file"
 #       type thing
-# FIXME: trying to make more room for stuff on left
-#        side, resets when completion popup goes away
-# FIXME: window may go partially off screen
 
 
 import itertools
