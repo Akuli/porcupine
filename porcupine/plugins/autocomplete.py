@@ -236,7 +236,7 @@ class AutoCompletionPopup:
             self._doc_text['state'] = 'disabled'
 
 
-# How this differs from using sometextwidget.compare(start, end):
+# How this differs from using sometextwidget.compare(start, '<', end):
 #   - This does the right thing if text has been deleted so that start and end
 #     no longer exist in the text widget.
 #   - Start and end must be in 'x.y' format.
