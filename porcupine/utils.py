@@ -169,7 +169,6 @@ def invert_color(color, *, black_or_white=False):
 
     if black_or_white:
         average = (r + g + b)/3
-        print(average)
         return '#ffffff' if average < 0x80 else '#000000'
     else:
         return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
