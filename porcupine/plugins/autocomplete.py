@@ -57,6 +57,39 @@ def add_resize_handle(toplevel):
     return handle
 
 
+def calculate_popup_geometry(textwidget):
+    (cursor_x, cursor_y,
+     cursor_width, cursor_height) = textwidget.bbox('insert')
+
+    # make coordinates relative to screen
+    cursor_x += textwidget.winfo_rootx()
+    cursor_y += textwidget.winfo_rooty()
+
+    # leave some space
+    cursor_y -= 5
+    cursor_height += 10
+
+    popup_width = SETTINGS['popup_window_width']
+    popup_height = SETTINGS['popup_window_height']
+    screen_width = textwidget.winfo_screenwidth()
+    screen_height = textwidget.winfo_screenheight()
+
+    # don't go off the screen to the right, leave space between popup
+    # and right side of window
+    x = min(screen_width - popup_width - 10, cursor_x)
+
+    if cursor_y + cursor_height + popup_height < screen_height:
+        # it fits below cursor, put it there
+        y = cursor_y + cursor_height
+    else:
+        # put it above cursor instead. If it doesn't fit there either,
+        # then y is also negative and the user has a tiny screen or a
+        # huge popup size.
+        y = cursor_y - popup_height
+
+    return f'{popup_width}x{popup_height}+{x}+{y}'
+
+
 class AutoCompletionPopup:
 
     def __init__(self):
@@ -135,7 +168,7 @@ class AutoCompletionPopup:
         [the_id] = selected_ids
         return self._completion_list[int(the_id)]
 
-    def start_completing(self, completion_list, popup_xy):
+    def start_completing(self, completion_list, geometry=None):
         if self.is_completing():
             self.stop_completing(withdraw=False)
 
@@ -153,12 +186,8 @@ class AutoCompletionPopup:
             self._doc_text.insert('1.0', "No completions")
             self._doc_text['state'] = 'disabled'
 
-        if popup_xy is not None:
-            x, y = popup_xy
-            self.toplevel.geometry('%dx%d+%d+%d' % (
-                SETTINGS['popup_window_width'],
-                SETTINGS['popup_window_height'],
-                x, y))
+        if geometry is not None:
+            self.toplevel.geometry(geometry)
 
         # lazy way to implement auto completion without popup window: create
         # all the widgets but never show them :D
@@ -274,19 +303,11 @@ class AutoCompleter:
         if info_dict['id'] != self._waiting_for_response_id:
             return
         self._waiting_for_response_id = None
-
-        # tkinter doesn't provide a way to delete the font object, but it
-        # does __del__ magic
-        font_object = tkinter.font.Font(font=self._tab.textwidget['font'])
-        fsize = font_object.actual('size')
-
-        # TODO: make sure that window is not off screen
-        relative_x, relative_y = self._tab.textwidget.bbox('insert')[:2]
-        x = self._tab.textwidget.winfo_rootx() + relative_x
-        y = self._tab.textwidget.winfo_rooty() + relative_y + fsize + 10
-
         self.unfiltered_completions = info_dict['completions']
-        self.popup.start_completing(self._get_filtered_completions(), (x, y))
+
+        self.popup.start_completing(
+            self._get_filtered_completions(),
+            calculate_popup_geometry(self._tab.textwidget))
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
@@ -400,7 +421,7 @@ class AutoCompleter:
             return
 
         self.popup.stop_completing(withdraw=False)
-        self.popup.start_completing(self._get_filtered_completions(), None)
+        self.popup.start_completing(self._get_filtered_completions())
 
     def on_enter(self, event):
         if self.popup.is_completing():
