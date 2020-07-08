@@ -194,21 +194,19 @@ class AutoCompletionPopup:
 
     def select_previous(self):
         assert self.is_completing()
-
-        # yes, this works if self.treeview.selection() returns empty tuple
-        prev_item = self.treeview.prev(self.treeview.selection())
-        if prev_item:
-            self._select_item(prev_item)
-        else:
-            self._select_item(self.treeview.get_children()[-1])
+        selected_ids = self.treeview.selection()
+        if selected_ids:
+            [the_id] = selected_ids
+            self._select_item(
+                self.treeview.prev(the_id) or self.treeview.get_children()[-1])
 
     def select_next(self):
         assert self.is_completing()
-        next_item = self.treeview.next(self.treeview.selection())
-        if next_item:
-            self._select_item(next_item)
-        else:
-            self._select_item(self.treeview.get_children()[0])
+        selected_ids = self.treeview.selection()
+        if selected_ids:
+            [the_id] = selected_ids
+            self._select_item(
+                self.treeview.next(the_id) or self.treeview.get_children()[0])
 
     def on_page_up_down(self, event):
         if not self.is_showing():
