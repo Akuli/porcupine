@@ -18,3 +18,6 @@ toposort>=1.5
 # colored output on windows, might be used for something else later
 # ubuntu 14.04 comes with colorama 0.2.5 in repos
 colorama>=0.2.5
+
+# for langserver
+sansio-lsp-client>=0.6.0
