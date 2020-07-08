@@ -3,7 +3,7 @@ import tkinter
 import os
 import re
 
-assert sys.version_info >= (3, 5), "Porcupine requires Python 3.5 or newer"
+assert sys.version_info >= (3, 6), "Porcupine requires Python 3.6 or newer"
 assert tkinter.TkVersion >= 8.5, "Porcupine requires Tk 8.5 or newer"
 
 
@@ -34,10 +34,11 @@ def find_metadata():
     return result
 
 
+# TODO: update the description here and in a few other places
 setup(
     name='Porcupine',
     description="An editor that sucks less than IDLE",
-    keywords='editor tkinter idle beginner suck',
+    keywords='editor tkinter idle beginner',
     url='https://github.com/Akuli/porcupine',
     install_requires=list(get_requirements()),
     packages=find_packages(),
@@ -50,5 +51,5 @@ setup(
         'gui_scripts': ['porcu = porcupine.__main__:main'],
     },
     zip_safe=False,
-    **find_metadata()       # must not end with , before python 3.5
+    **find_metadata(),
 )
