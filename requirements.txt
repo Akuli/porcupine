@@ -19,5 +19,8 @@ toposort>=1.5
 # ubuntu 14.04 comes with colorama 0.2.5 in repos
 colorama>=0.2.5
 
-# for langserver
-sansio-lsp-client>=0.6.0
+# for langserver. TODO: update this to point to pypi instead of my bugfix branch
+https://github.com/Akuli/sansio-lsp-client/archive/headerfix.zip
+
+# to have something hopefully work by default
+python-language-server
