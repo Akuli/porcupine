@@ -131,8 +131,8 @@ class _ConfigSection(collections.abc.MutableMapping):
             _loaded_json[self._name] = {key: value}
 
         if value != old_value:
-            log.debug("%s: %r was set to %r, running callbacks",
-                      self._name, key, value)
+            log.debug("%s: %r was set to %r, running %d callbacks",
+                      self._name, key, value, len(info.callbacks))
             for func in info.callbacks:
                 try:
                     func(value)
