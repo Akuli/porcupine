@@ -76,7 +76,7 @@ def get_ignored_files():
 
 
 def main():
-    if os.path.dirname(os.getcwd()) == 'docs':
+    if os.path.basename(os.getcwd()) == 'docs':
         info("running in docs dir, going up a level")
         os.chdir('..')
     if not os.path.isdir('docs'):
