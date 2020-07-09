@@ -228,3 +228,11 @@ you don't need to do anything to fix the complaints.
 Now you should have an exe that installs a Porcupine. The last command should
 prints the filename at the end of its output, and it seems to be always
 `build\nsis\Porcupine_X.Y.Z.exe` where `X.Y.Z` is the Porcupine version.
+
+
+## Publishing a new version of Porcupine
+
+Please ask me (Akuli) to do these things instead of doing them yourself.
+- Bump version number: `python3 bump.py`, `git push --tags origin master`, same without `--tags`
+- Build and publish updated docs: `docs/publish.py`
+- Update `porcupine.wiki` as needed
