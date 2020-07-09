@@ -88,34 +88,72 @@ Porcupine requests completions from the langserver and displays them to you.
 
 Start by finding and installing a langserver for the programming language X.
 I don't have any more detailed instructions, because this depends a lot on which programming language is in question.
+Search the internet.
 
 When the langserver is installed, you should be able to invoke it from the terminal or command prompt with some command.
-For example, typing ``pyls`` on the terminal starts the Python language server that I use,
-so I have this in my Python configuration in ``filetypes.ini``::
+For example, typing ``pyls`` on the terminal starts the
+`Python language server <https://github.com/palantir/python-language-server>`_
+that I use, so I have this in my Python configuration in ``filetypes.ini``::
 
+    [Python]
+    filename_patterns = *.py
+    ...
     langserver_command = pyls
     langserver_language_id = python
 
-Set ``langserver_command`` to whatever command you want.
+Set ``langserver_command`` to whatever command you want,
+specifying an absolute path if necessary.
 To find the correct ``langserver_language_id``, click
 `this link <https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocumentItem>`_
 and scroll down a bit.
 You should find a table of all valid ``langserver_language_id`` values.
 
-Many langservers have an option for whether to use stdio (also known as stdin and stdout) or a TCP socket.
-Choose stdio.
+Each langserver uses either stdio (also known as stdin and stdout)
+or a TCP socket.
+Some langservers have an option to choose this;
+for example, ``pyls --tcp`` uses a TCP socket but just ``pyls`` uses stdio.
+If it's possible to run the langserver with stdio, then I recommend doing that
+because configuring it should be as easy as the ``pyls`` example above.
 
-Currently Porcupine doesn't support langservers with TCP sockets at all,
-but if the langserver doesn't support stdio and you need to use it with a TCP socket,
-you can use ``netcat`` to get it to work anyway.
-Add this to the filetype configuration::
+If the langserver needs to be used with a TCP socket for whatever reason, then
+you need to configure Porcupine to use TCP as well.
+You also need to tell Porcupine which TCP port number the langserver uses.
+You can often figure this out by launching the langserver on the terminal
+(and interrupting it with Ctrl+C).
+This is the case with `javascript-typescript-langserver <https://github.com/sourcegraph/javascript-typescript-langserver>`_, for example::
 
-    langserver_command = nc localhost 1234
+    $ node /path/to/javascript-typescript-langserver/lib/language-server.js
+    DEBUG Spawning 2 workers
+    DEBUG Worker 1 (PID 7908) online
+    DEBUG Worker 2 (PID 7910) online
+    INFO  Listening for incoming LSP connections on 2089
+    INFO  Listening for incoming LSP connections on 2089
 
-Replace ``1234`` with whatever port the langserver process uses.
-If your system doesn't have netcat (also known as ``nc``), then install it,
-and if needed, replace ``nc`` with whatever command is needed for running netcat.
-Now run the langserver in another terminal before opening any files that need the langserver.
+Here the port being used is 2089, so the ``filetypes.ini`` configuration should look like this::
+
+    [JavaScript]
+    filename_patterns = *.js
+    ...
+    langserver_command = node /path/to/javascript-typescript-langserver/lib/language-server.js
+    langserver_language_id = javascript
+    langserver_port = 2089
+
+Sometimes you need to tell the langserver to be ``--verbose`` for getting the port.
+For example, `pyls <https://github.com/palantir/python-language-server>`_
+invoked with ``--tcp`` works like that::
+
+    $ pyls --tcp
+    (no output, Ctrl+C interrupt gives an error message)
+    $ pyls --tcp --verbose
+    2020-07-09 17:59:54,752 UTC - INFO - pyls.python_ls - Serving PythonLanguageServer on (127.0.0.1, 2087)
+
+The port number is 2087, at the end of the last line, so
+this is the configuration you need for using ``pyls`` with TCP
+(but it's easier to use it with stdio as shown above)::
+
+    langserver_command = pyls --tcp
+    langserver_language_id = python
+    langserver_port = 2087
 
 
 Notes
@@ -182,10 +220,14 @@ Filetype objects have these attributes and methods:
     ``max_line_length``             int
     ``langserver_command``          str
     ``langserver_language_id``      str
+    ``langserver_port``             int or None
     ============================    ========================================
 
     If no ``shebang_regex`` is given in ``filetypes.ini``, ``shebang_regex`` is
     set to a regex object that matches nothing.
+
+    Setting ``langserver_port`` to None means that stdin and stdout of the
+    langserver process will be used instead of a TCP socket.
 
 .. method:: somefiletype.get_lexer(**kwargs)
 

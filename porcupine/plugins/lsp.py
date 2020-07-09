@@ -1,20 +1,26 @@
 # langserver plugin
 # TODO: sockets without specifying netcat as the command
 # TODO: CompletionProvider
+# TODO: error reporting in gui somehow
 
 import collections
+import errno
 import itertools
 import json
 import logging
 import os
 import platform
 import pprint
-import queue as queue_module
+import queue
 import re
+import select
 import shlex
 import signal
+import socket
 import subprocess
 import threading
+import time
+import typing
 from urllib.request import pathname2url
 
 try:
@@ -27,51 +33,136 @@ from porcupine import get_tab_manager, tabs, utils
 import sansio_lsp_client as lsp
 
 
-def get_nonblocking_reader(file):
-    if fcntl is not None:
-        # this works because we don't use .readline()
-        # https://stackoverflow.com/a/1810703
-        old_flags = fcntl.fcntl(file.fileno(), fcntl.F_GETFL)
-        new_flags = old_flags | os.O_NONBLOCK
-        fcntl.fcntl(file.fileno(), fcntl.F_SETFL, new_flags)
+# 1024 bytes was way too small, and with this chunk size, it
+# still sometimes takes two reads to get everything (that's fine)
+CHUNK_SIZE = 64*1024
 
-        # 1024 bytes was way too small, and with this chunk size, it
-        # still sometimes takes two reads to get everything
-        return lambda: file.read(64*1024)
 
-    # rest of this is windows only code, why can't windows just have a nice way
-    # to make stuff not block?
+class SubprocessStdIO:
 
-    queue = queue_module.Queue()
-    running = True
+    def __init__(self, process):
+        self._process = process
 
-    def put_to_queue():
+        if fcntl is None:
+            self._read_queue = queue.Queue()
+            self._running = True
+            self._worker_thread = threading.Thread(
+                target=self._stdout_to_read_queue, daemon=True)
+            self._worker_thread.start()
+        else:
+            # this works because we don't use .readline()
+            # https://stackoverflow.com/a/1810703
+            fileno = process.stdout.fileno()
+            old_flags = fcntl.fcntl(fileno, fcntl.F_GETFL)
+            new_flags = old_flags | os.O_NONBLOCK
+            fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
+
+    # shitty windows code
+    def _stdout_to_read_queue(self):
         while True:
             # for whatever reason, nothing works unless i go ONE BYTE at a
             # time.... this is a piece of shit
             one_fucking_byte = file.read(1)
             if not one_fucking_byte:
-                nonlocal running
-                running = False
                 break
-            queue.put(one_fucking_byte)
+            self._read_queue.put(one_fucking_byte)
 
-    def get_from_queue():
-        buf = bytearray()
-        while True:
-            try:
-                buf += queue.get(block=False)
-            except queue_module.Empty:
-                break
+    # Return values:
+    #   - nonempty bytes object: data was read
+    #   - empty bytes object: process exited
+    #   - None: no data to read
+    def read(self):
+        if fcntl is None:
+            # shitty windows code
+            buf = bytearray()
+            while True:
+                try:
+                    buf += self._read_queue.get(block=False)
+                except queue.Empty:
+                    break
 
-        if buf:
+            if self._worker_thread.is_alive() and not buf:
+                return None
             return bytes(buf)
 
-        # this is how python's nonblocking .read() works
-        return None if running else b''
+        else:
+            return self._process.stdout.read(CHUNK_SIZE)
 
-    threading.Thread(target=put_to_queue, daemon=True).start()
-    return get_from_queue
+    def write(self, bytez):
+        self._process.stdin.write(bytez)
+        self._process.stdin.flush()
+
+
+def error_says_socket_not_connected(error: OSError):
+    if platform.system() == 'Windows':
+        # i tried socket.socket().recv(1024) on windows and this is what i got
+        return (error.winerror == 10057)
+    else:
+        return (error.errno == errno.ENOTCONN)
+
+
+class LocalhostSocketIO:
+
+    def __init__(self, port: int, log):
+        self._sock = socket.socket()
+
+        # This queue solves two problems:
+        #   - I don't feel like learning to do non-blocking send right now.
+        #   - It must be possible to .write() before the socket is connected.
+        #     The written bytes get sent when the socket connects.
+        self._send_queue = queue.Queue()
+
+        self._worker_thread = threading.Thread(
+            target=self._send_queue_to_socket, args=[port, log], daemon=True)
+        self._worker_thread.start()
+
+    def _send_queue_to_socket(self, port, log):
+        while True:
+            try:
+                self._sock.connect(('localhost', port))
+                log.info(f"connected to localhost:{port}")
+                break
+            except ConnectionRefusedError:
+                log.info(
+                    f"connecting to localhost:{port} failed, retrying soon")
+                time.sleep(0.5)
+
+        while True:
+            bytez = self._send_queue.get()
+            if bytez is None:
+                break
+            self._sock.sendall(bytez)
+
+    def write(self, bytez):
+        self._send_queue.put(bytez)
+
+    # Return values:
+    #   - nonempty bytes object: data was received
+    #   - empty bytes object: socket closed
+    #   - None: no data to receive
+    def read(self):
+        # figure out if we can read from the socket without blocking
+        # 0 is timeout, i.e. return immediately
+        #
+        # TODO: pass the correct non-block flag to recv instead?
+        #       does that work on windows?
+        can_read, can_write, error = select.select([self._sock], [], [], 0)
+        if self._sock not in can_read:
+            return None
+
+        try:
+            result = self._sock.recv(CHUNK_SIZE)
+        except OSError as e:
+            if error_says_socket_not_connected(e):
+                return None
+            raise e
+
+        if not result:
+            assert result == b''
+            # stop worker thread
+            if self._worker_thread.is_alive():
+                self._send_queue.put(None)
+        return result
 
 
 def get_uri(path):
@@ -141,18 +232,30 @@ def exit_code_string(exit_code):
     return result
 
 
+def _position_tk2lsp(tk_position_string, *, next_column=False):
+    # this can't use tab.textwidget.index, because it needs to handle text
+    # locations that don't exist anymore when text has been deleted
+    line, column = map(int, tk_position_string.split('.'))
+
+    if next_column:
+        # lsp wants this for autocompletions? (why lol)
+        next_column += 1
+
+    # lsp line numbering starts at 0
+    # tk line numbering starts at 1
+    # both column numberings start at 0
+    return lsp.Position(line=line-1, character=column)
+
+
 # the information needed to identify running langservers. Each langserver
 # process takes a project rootUri.
 LangServerId = collections.namedtuple(
-    'LangServerId', ['command', 'project_root'])
-
-# keys are LangServerId, values LangServer
-langservers = {}
+    'LangServerId', ['command', 'port', 'project_root'])
 
 
 class LangServer:
 
-    def __init__(self, process, langserver_id, log):
+    def __init__(self, process: subprocess.Popen, langserver_id, log):
         self._process = process
         self._id = langserver_id
         self._lsp_client = lsp.Client(
@@ -161,9 +264,12 @@ class LangServer:
         self._version_counter = itertools.count()
         self._log = log
         self.tabs_opened = []      # list of tabs
-        self._nonblocking_stdout_read = get_nonblocking_reader(
-            self._process.stdout)
         self._is_shutting_down_cleanly = False
+
+        if langserver_id.port is None:
+            self._io = SubprocessStdIO(process)
+        else:
+            self._io = LocalhostSocketIO(langserver_id.port, log)
 
     def _is_in_langservers(self):
         # This returns False if a langserver died and another one with the same
@@ -177,47 +283,58 @@ class LangServer:
             self._log.debug("getting removed from langservers")
             del langservers[self._id]
 
-    def _position_tk2lsp(self, tk_position_string, *, next_column=False):
-        # this can't use tab.textwidget.index, because it needs to handle text
-        # locations that don't exist anymore when text has been deleted
-        line, column = map(int, tk_position_string.split('.'))
+    # returns whether this should be called again later
+    def _ensure_langserver_process_quits_soon(self):
+        exit_code = self._process.poll()
+        if exit_code is None:
+            if self._lsp_client.state == lsp.ClientState.EXITED:
+                # process still running, but will exit soon. Let's make sure
+                # to log that when it happens so that if it doesn't exit for
+                # whatever reason, then that will be visible in logs.
+                self._log.debug("langserver process should stop soon")
+                get_tab_manager().after(
+                    500, self._ensure_langserver_process_quits_soon)
+                return
 
-        if next_column:
-            # lsp wants this for autocompletions? (why lol)
-            next_column += 1
+            # langserver doesn't want to exit, let's kill it
+            what_closed = (
+                'stdout' if self._id.port is None
+                else 'socket connection'
+            )
+            self._log.warn(
+                f"killing langserver process {self._process.pid} "
+                f"because {what_closed} has closed for some reason")
 
-        # lsp line numbering starts at 0
-        # tk line numbering starts at 1
-        # both column numberings start at 0
-        return lsp.Position(line=line-1, character=column)
+            self._process.kill()
+            exit_code = self._process.wait()
+
+        if self._is_shutting_down_cleanly:
+            self._log.info(
+                "langserver process terminated, %s",
+                exit_code_string(exit_code))
+        else:
+            self._log.error(
+                "langserver process terminated unexpectedly, %s",
+                exit_code_string(exit_code))
+
+        self._get_removed_from_langservers()
 
     # returns whether this should be ran again
     def _run_stuff_once(self):
-        self._process.stdin.write(self._lsp_client.send())
-        self._process.stdin.flush()
-
-        received_bytes = self._nonblocking_stdout_read()
+        self._io.write(self._lsp_client.send())
+        received_bytes = self._io.read()
 
         # yes, None and b'' have a different meaning here
         if received_bytes is None:
             # no data received
             return True
         elif received_bytes == b'':
-            # it has died already, so .wait() doesn't actually wait for
-            # anything to happen. It's needed for getting return code.
-            exit_code = self._process.wait()
-
-            if self._is_shutting_down_cleanly:
-                self._log.info(
-                    "langserver process terminated, %s",
-                    exit_code_string(exit_code))
-            else:
-                self._log.error(
-                    "langserver process terminated unexpectedly, %s",
-                    exit_code_string(exit_code))
-                # TODO: restart it?
-
-            self._get_removed_from_langservers()
+            # stdout or langserver socket is closed. Communicating with the
+            # langserver process is impossible, so this LangServer object and
+            # the process are useless.
+            #
+            # TODO: try to restart the langserver process?
+            self._ensure_langserver_process_quits_soon()
             return False
 
         assert received_bytes
@@ -353,7 +470,7 @@ class LangServer:
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=get_uri(tab.path)),
-                position=self._position_tk2lsp(
+                position=_position_tk2lsp(
                     info_dict['cursor_pos'], next_column=True
                 ),
             ),
@@ -387,8 +504,8 @@ class LangServer:
             content_changes=[
                 lsp.TextDocumentContentChangeEvent(
                     range=lsp.Range(
-                        start=self._position_tk2lsp(info['start']),
-                        end=self._position_tk2lsp(info['end']),
+                        start=_position_tk2lsp(info['start']),
+                        end=_position_tk2lsp(info['end']),
                     ),
                     text=info['new_text'],
                 )
@@ -397,13 +514,22 @@ class LangServer:
         )
 
 
+langservers: typing.Dict[LangServerId, LangServer] = {}
+
+
+# I was going to add code that checks if two langservers use the same port
+# number, but it's unnecessary: if a langserver tries to use a port number that
+# is already being used, then it should exit with an error message.
+
+
 def get_lang_server(filetype, project_root):
     if not (filetype.langserver_command and filetype.langserver_language_id):
         logging.getLogger(__name__).info(
             "langserver not configured for filetype " + filetype.name)
         return None
 
-    langserver_id = LangServerId(filetype.langserver_command, project_root)
+    langserver_id = LangServerId(
+        filetype.langserver_command, filetype.langserver_port, project_root)
 
     try:
         return langservers[langserver_id]

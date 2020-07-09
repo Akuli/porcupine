@@ -49,6 +49,7 @@ _STUPID_DEFAULTS = '''\
 #   max_line_length         positive integer or 0 for no limit
 #   langserver_command      command that starts langserver
 #   langserver_language_id  see below
+#   langserver_port         use this TCP port on localhost, empty means stdio
 #   autocomplete_chars      space-separated character list to trigger autocomp\
 leting without pressing tab
 #   compile_command         see below
@@ -116,6 +117,7 @@ run_command =
 lint_command =
 langserver_command =
 langserver_language_id =
+langserver_port =
 autocomplete_chars =
 
 [Python]
@@ -300,6 +302,19 @@ class _FileType:
 
         self.langserver_command = section['langserver_command'].strip()
         self.langserver_language_id = section['langserver_language_id']
+
+        if section['langserver_port']:
+            try:
+                self.langserver_port = section.getint('langserver_port')
+                if self.langserver_port <= 0:
+                    raise ValueError(
+                        "langserver_port must be "
+                        "a positive integer (port number) or "
+                        "empty (to use stdin and stdout instead of TCP)")
+            except ValueError as e:
+                raise _OptionError('max_line_length') from e
+        else:
+            self.langserver_port = None     # use stdio
 
         if not self.langserver_command.strip():
             self.langserver_command = None
@@ -613,6 +628,8 @@ class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
         key_val_pair(r'indent_size', r'[1-9][0-9]*'),        # positive int
         key_val_pair(r'max_line_length', r'0|[1-9][0-9]*'),  # non-negative int
         key_val_pair(r'(?:compile|run|lint|langserver)_command', r'.*'),
+        key_val_pair(r'langserver_language_id', r'.*'),
+        key_val_pair(r'langserver_port', r'\d+'),
 
         # less red error tokens
         key_val_pair(r'.*?', r'.*?', pygments.token.Text, pygments.token.Text),
