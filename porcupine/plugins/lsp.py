@@ -9,6 +9,7 @@ import itertools
 import json
 import logging
 import os
+import pathlib
 import platform
 import pprint
 import queue
@@ -27,10 +28,10 @@ try:
     import fcntl
 except ImportError:
     # windows
-    fcntl = None
+    fcntl = None    # type: ignore
 
-from porcupine import get_tab_manager, tabs, utils
-import sansio_lsp_client as lsp
+from porcupine import get_tab_manager, filetypes, tabs, utils
+import sansio_lsp_client as lsp     # type: ignore
 
 
 # 1024 bytes was way too small, and with this chunk size, it
@@ -40,11 +41,11 @@ CHUNK_SIZE = 64*1024
 
 class SubprocessStdIO:
 
-    def __init__(self, process):
+    def __init__(self, process: subprocess.Popen) -> None:
         self._process = process
 
         if fcntl is None:
-            self._read_queue = queue.Queue()
+            self._read_queue: queue.Queue[bytes] = queue.Queue()
             self._running = True
             self._worker_thread = threading.Thread(
                 target=self._stdout_to_read_queue, daemon=True)
@@ -52,17 +53,19 @@ class SubprocessStdIO:
         else:
             # this works because we don't use .readline()
             # https://stackoverflow.com/a/1810703
+            assert process.stdout is not None
             fileno = process.stdout.fileno()
             old_flags = fcntl.fcntl(fileno, fcntl.F_GETFL)
             new_flags = old_flags | os.O_NONBLOCK
             fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
 
     # shitty windows code
-    def _stdout_to_read_queue(self):
+    def _stdout_to_read_queue(self) -> None:
         while True:
             # for whatever reason, nothing works unless i go ONE BYTE at a
             # time.... this is a piece of shit
-            one_fucking_byte = file.read(1)
+            assert self._process.stdout is not None
+            one_fucking_byte = self._process.stdout.read(1)
             if not one_fucking_byte:
                 break
             self._read_queue.put(one_fucking_byte)
@@ -71,7 +74,7 @@ class SubprocessStdIO:
     #   - nonempty bytes object: data was read
     #   - empty bytes object: process exited
     #   - None: no data to read
-    def read(self):
+    def read(self) -> typing.Optional[bytes]:
         if fcntl is None:
             # shitty windows code
             buf = bytearray()
@@ -86,37 +89,39 @@ class SubprocessStdIO:
             return bytes(buf)
 
         else:
+            assert self._process.stdout is not None
             return self._process.stdout.read(CHUNK_SIZE)
 
-    def write(self, bytez):
+    def write(self, bytez: bytes) -> None:
+        assert self._process.stdin is not None
         self._process.stdin.write(bytez)
         self._process.stdin.flush()
 
 
-def error_says_socket_not_connected(error: OSError):
+def error_says_socket_not_connected(error: OSError) -> bool:
     if platform.system() == 'Windows':
         # i tried socket.socket().recv(1024) on windows and this is what i got
-        return (error.winerror == 10057)
+        return (error.winerror == 10057)    # type: ignore
     else:
         return (error.errno == errno.ENOTCONN)
 
 
 class LocalhostSocketIO:
 
-    def __init__(self, port: int, log):
+    def __init__(self, port: int, log: logging.Logger) -> None:
         self._sock = socket.socket()
 
         # This queue solves two problems:
         #   - I don't feel like learning to do non-blocking send right now.
         #   - It must be possible to .write() before the socket is connected.
         #     The written bytes get sent when the socket connects.
-        self._send_queue = queue.Queue()
+        self._send_queue: queue.Queue[typing.Optional[bytes]] = queue.Queue()
 
         self._worker_thread = threading.Thread(
             target=self._send_queue_to_socket, args=[port, log], daemon=True)
         self._worker_thread.start()
 
-    def _send_queue_to_socket(self, port, log):
+    def _send_queue_to_socket(self, port: int, log: logging.Logger) -> None:
         while True:
             try:
                 self._sock.connect(('localhost', port))
@@ -133,14 +138,14 @@ class LocalhostSocketIO:
                 break
             self._sock.sendall(bytez)
 
-    def write(self, bytez):
+    def write(self, bytez: bytes) -> None:
         self._send_queue.put(bytez)
 
     # Return values:
     #   - nonempty bytes object: data was received
     #   - empty bytes object: socket closed
     #   - None: no data to receive
-    def read(self):
+    def read(self) -> typing.Optional[bytes]:
         # figure out if we can read from the socket without blocking
         # 0 is timeout, i.e. return immediately
         #
@@ -165,11 +170,6 @@ class LocalhostSocketIO:
         return result
 
 
-def get_uri(path):
-    assert path is not None
-    return 'file://' + pathname2url(os.path.abspath(path))
-
-
 # TODO: add a configuration option for this, and make this a part of porcupine
 #       rather than something that every plugin has to implement
 # TODO: editorconfig support
@@ -180,22 +180,21 @@ _PROJECT_ROOT_THINGS = ['editorconfig', '.git'] + [
 ]
 
 
-def find_project_root(project_file_path):
-    assert os.path.isabs(project_file_path)
+def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
+    assert project_file_path.is_absolute()
 
     path = project_file_path
     while True:
-        parent = os.path.dirname(path)
+        parent = path.parent
         if path == parent:      # shitty default
-            return os.path.dirname(project_file_path)
+            return project_file_path.parent
         path = parent
 
-        if any(os.path.exists(os.path.join(path, thing))
-               for thing in _PROJECT_ROOT_THINGS):
+        if any((path / thing).exists() for thing in _PROJECT_ROOT_THINGS):
             return path
 
 
-def get_completion_item_doc(item):
+def get_completion_item_doc(item: lsp.CompletionItem) -> str:
     if item.documentation:
         # try this with clangd
         #
@@ -216,7 +215,7 @@ def get_completion_item_doc(item):
     return item.label
 
 
-def exit_code_string(exit_code):
+def exit_code_string(exit_code: int) -> str:
     if exit_code >= 0:
         return "exited with code %d" % exit_code
 
@@ -232,14 +231,10 @@ def exit_code_string(exit_code):
     return result
 
 
-def _position_tk2lsp(tk_position_string, *, next_column=False):
+def _position_tk2lsp(tk_position: str) -> lsp.Position:
     # this can't use tab.textwidget.index, because it needs to handle text
     # locations that don't exist anymore when text has been deleted
-    line, column = map(int, tk_position_string.split('.'))
-
-    if next_column:
-        # lsp wants this for autocompletions? (why lol)
-        next_column += 1
+    line, column = map(int, tk_position.split('.'))
 
     # lsp line numbering starts at 0
     # tk line numbering starts at 1
@@ -247,36 +242,45 @@ def _position_tk2lsp(tk_position_string, *, next_column=False):
     return lsp.Position(line=line-1, character=column)
 
 
-# the information needed to identify running langservers. Each langserver
-# process takes a project rootUri.
-LangServerId = collections.namedtuple(
-    'LangServerId', ['command', 'port', 'project_root'])
+class LangServerId(typing.NamedTuple):
+    command: str
+    port: typing.Optional[int]
+    project_root: pathlib.Path
 
 
 class LangServer:
 
-    def __init__(self, process: subprocess.Popen, langserver_id, log):
+    def __init__(
+            self,
+            process: subprocess.Popen,
+            the_id: LangServerId,
+            log: logging.Logger) -> None:
         self._process = process
-        self._id = langserver_id
+        self._id = the_id
         self._lsp_client = lsp.Client(
-            trace='verbose', root_uri=get_uri(langserver_id.project_root))
-        self._completion_infos = {}
+            trace='verbose', root_uri=the_id.project_root.as_uri())
+
+        # TODO: don't use typing.Any
+        self._completion_infos: typing.Dict[
+            int, typing.Dict[str, typing.Any]] = {}
+
         self._version_counter = itertools.count()
         self._log = log
-        self.tabs_opened = []      # list of tabs
+        self.tabs_opened: typing.List[tabs.FileTab] = []
         self._is_shutting_down_cleanly = False
 
-        if langserver_id.port is None:
+        self._io: typing.Union[SubprocessStdIO, LocalhostSocketIO]
+        if the_id.port is None:
             self._io = SubprocessStdIO(process)
         else:
-            self._io = LocalhostSocketIO(langserver_id.port, log)
+            self._io = LocalhostSocketIO(the_id.port, log)
 
-    def _is_in_langservers(self):
+    def _is_in_langservers(self) -> bool:
         # This returns False if a langserver died and another one with the same
         # command was launched.
         return (langservers.get(self._id, None) is self)
 
-    def _get_removed_from_langservers(self):
+    def _get_removed_from_langservers(self) -> None:
         # this is called more than necessary to make sure we don't end up with
         # funny issues caused by unusable langservers
         if self._is_in_langservers():
@@ -284,7 +288,7 @@ class LangServer:
             del langservers[self._id]
 
     # returns whether this should be called again later
-    def _ensure_langserver_process_quits_soon(self):
+    def _ensure_langserver_process_quits_soon(self) -> None:
         exit_code = self._process.poll()
         if exit_code is None:
             if self._lsp_client.state == lsp.ClientState.EXITED:
@@ -320,7 +324,7 @@ class LangServer:
         self._get_removed_from_langservers()
 
     # returns whether this should be ran again
-    def _run_stuff_once(self):
+    def _run_stuff_once(self) -> bool:
         self._io.write(self._lsp_client.send())
         received_bytes = self._io.read()
 
@@ -354,17 +358,17 @@ class LangServer:
 
         return True
 
-    def _send_tab_opened_message(self, tab):
+    def _send_tab_opened_message(self, tab: tabs.FileTab) -> None:
         self._lsp_client.did_open(
             lsp.TextDocumentItem(
-                uri=get_uri(tab.path),
+                uri=tab.path.as_uri(),
                 languageId=tab.filetype.langserver_language_id,
                 text=tab.textwidget.get('1.0', 'end - 1 char'),
                 version=0,
             )
         )
 
-    def _handle_lsp_event(self, lsp_event):
+    def _handle_lsp_event(self, lsp_event: lsp.Event) -> None:
         if isinstance(lsp_event, lsp.Initialized):
             self._log.info("langserver initialized, capabilities:\n%s",
                            pprint.pformat(lsp_event.capabilities))
@@ -387,7 +391,9 @@ class LangServer:
             before_cursor = tab.textwidget.get(
                 '%s linestart' % info_dict['cursor_pos'],
                 info_dict['cursor_pos'])
-            prefix_len = len(re.fullmatch(r'.*?(\w*)', before_cursor).group(1))
+            match = re.fullmatch(r'.*?(\w*)', before_cursor)
+            assert match is not None
+            prefix_len = len(match.group(1))
 
             info_dict['completions'] = [
                 {
@@ -425,17 +431,17 @@ class LangServer:
         else:
             raise NotImplementedError(lsp_event)
 
-    def run_stuff(self):
+    def run_stuff(self) -> None:
         if self._run_stuff_once():
             get_tab_manager().after(50, self.run_stuff)
 
-    def open_tab(self, tab):
+    def open_tab(self, tab: tabs.FileTab) -> None:
         self._log.debug("tab opened")
         self.tabs_opened.append(tab)
         if self._lsp_client.state == lsp.ClientState.NORMAL:
             self._send_tab_opened_message(tab)
 
-    def close_tab(self, tab):
+    def close_tab(self, tab: tabs.FileTab) -> None:
         if not self._is_in_langservers():
             self._log.debug(
                 "a tab was closed, but langserver process is no longer "
@@ -455,7 +461,7 @@ class LangServer:
                 # it was never fully started
                 self._process.kill()
 
-    def request_completions(self, event):
+    def request_completions(self, event: lsp.Event) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             self._log.warning(
                 "autocompletions requested but langserver state == %r",
@@ -467,10 +473,8 @@ class LangServer:
 
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
-                textDocument=lsp.TextDocumentIdentifier(uri=get_uri(tab.path)),
-                position=_position_tk2lsp(
-                    info_dict['cursor_pos'], next_column=True
-                ),
+                textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
+                position=_position_tk2lsp(info_dict['cursor_pos']),
             ),
             context=lsp.CompletionContext(
                 # FIXME: this isn't always the case, porcupine can also trigger
@@ -483,7 +487,7 @@ class LangServer:
         self._completion_infos[lsp_id] = info_dict
         self._completion_infos[lsp_id]['tab'] = tab
 
-    def send_change_events(self, event):
+    def send_change_events(self, event: lsp.Event) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             # The langserver will receive the actual content of the file once
             # it starts.
@@ -496,7 +500,7 @@ class LangServer:
         assert isinstance(tab, tabs.FileTab)
         self._lsp_client.did_change(
             text_document=lsp.VersionedTextDocumentIdentifier(
-                uri=get_uri(tab.path),
+                uri=tab.path.as_uri(),
                 version=next(self._version_counter),
             ),
             content_changes=[
@@ -520,17 +524,19 @@ langservers: typing.Dict[LangServerId, LangServer] = {}
 # is already being used, then it should exit with an error message.
 
 
-def get_lang_server(filetype, project_root):
+def get_lang_server(
+        filetype: filetypes.FileType,
+        project_root: pathlib.Path) -> typing.Optional[LangServer]:
     if not (filetype.langserver_command and filetype.langserver_language_id):
         logging.getLogger(__name__).info(
             "langserver not configured for filetype " + filetype.name)
         return None
 
-    langserver_id = LangServerId(
+    the_id = LangServerId(
         filetype.langserver_command, filetype.langserver_port, project_root)
 
     try:
-        return langservers[langserver_id]
+        return langservers[the_id]
     except KeyError:
         pass
 
@@ -538,13 +544,14 @@ def get_lang_server(filetype, project_root):
         # this is lol
         __name__ + '.' + re.sub(
             r'[^A-Za-z0-9]', '_',
-            filetype.langserver_command + ' ' + project_root))
+            filetype.langserver_command + ' ' + str(project_root)))
 
     # avoid shell=True on non-windows to get process.pid to do the right thing
     #
     # with shell=True it's the pid of the shell, not the pid of the program
     #
     # on windows, there is no shell and it's all about whether to quote or not
+    command: typing.Union[str, typing.List[str]]
     if platform.system() == 'Windows':
         shell = True
         command = filetype.langserver_command
@@ -567,13 +574,13 @@ def get_lang_server(filetype, project_root):
              "for project root '%s'",
              filetype.langserver_command, process.pid, project_root)
 
-    langserver = LangServer(process, langserver_id, log)
+    langserver = LangServer(process, the_id, log)
     langserver.run_stuff()
-    langservers[langserver_id] = langserver
+    langservers[the_id] = langserver
     return langserver
 
 
-def on_new_tab(event):
+def on_new_tab(event: utils.EventWithData) -> None:
     tab: tabs.Tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         if tab.path is None or tab.filetype is None:
@@ -594,5 +601,5 @@ def on_new_tab(event):
         langserver.open_tab(tab)
 
 
-def setup():
+def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

@@ -5,9 +5,11 @@ import hashlib
 import itertools
 import logging
 import os
+import pathlib
 import tkinter
 from tkinter import ttk, messagebox, filedialog
 import traceback
+import typing
 
 from porcupine import filetypes, images, settings, textwidget, utils
 
@@ -460,7 +462,7 @@ bers.py>` use this attribute.
         The path where this file is currently saved.
 
         This is None if the file has never been saved, and otherwise
-        an absolute path as a string.
+        an absolute path.
 
         .. seealso:: The :virtevt:`PathChanged` virtual event.
 
@@ -471,7 +473,8 @@ bers.py>` use this attribute.
         .. seealso:: The :virtevt:`FiletypeChanged` virtual event.
     """
 
-    def __init__(self, manager, content='', path=None):
+    def __init__(self, manager: TabManager, content: str = '',
+                 path: typing.Optional[pathlib.Path] = None) -> None:
         super().__init__(manager)
 
         self._save_hash = None
@@ -510,7 +513,7 @@ bers.py>` use this attribute.
         self._update_status()
 
     @classmethod
-    def open_file(cls, manager, path):
+    def open_file(cls, manager: TabManager, path: pathlib.Path):
         """Read a file and return a new FileTab object.
 
         Use this constructor if you want to open an existing file from a
@@ -524,7 +527,7 @@ bers.py>` use this attribute.
             content = file.read()
         return cls(manager, content, path)
 
-    def equivalent(self, other):
+    def equivalent(self, other: Tab):
         """Return True if *self* and *other* are saved to the same place.
 
         This method overrides :meth:`Tab.can_be_closed` and returns
@@ -609,7 +612,7 @@ bers.py>` use this attribute.
         self._filetype = filetype
         self.event_generate('<<FiletypeChanged>>')
 
-    def _guess_filetype(self):
+    def _guess_filetype(self) -> None:
         if self.path is None:
             name = settings.get_section('File Types')['default_filetype']
             self.filetype = filetypes.get_filetype_by_name(name)
@@ -754,40 +757,41 @@ bers.py>` use this attribute.
         return self
 
 
-if __name__ == '__main__':
-    # test/demo
-    from porcupine.utils import _init_images
-    root = tkinter.Tk()
-    _init_images()
+# outdated test/demo code
 
-    tabmgr = TabManager(root)
-    tabmgr.pack(fill='both', expand=True)
-    tabmgr.bind('<<NewTab>>',
-                lambda event: print("added tab", event.data_widget.i),
-                add=True)
-    tabmgr.bind('<<NotebookTabChanged>>',
-                lambda event: print("selected", event.widget.select().i),
-                add=True)
-
-    def on_ctrl_w(event):
-        if tabmgr.tabs():
-            tabmgr.close_tab(tabmgr.select())
-
-    root.bind('<Control-w>', on_ctrl_w)
-    for keysym, callback in tabmgr.bindings:
-        root.bind(keysym, callback)
-
-    def add_new_tab(counter=itertools.count(1)):
-        tab = Tab(tabmgr)
-        tab.i = next(counter)     # tabmgr doesn't care about this
-        tab.title = "tab %d" % tab.i
-        tabmgr.add_tab(tab)
-
-        text = tkinter.Text(tab)
-        text.pack()
-        text.insert('1.0', "this is the content of tab %d" % tab.i)
-
-    ttk.Button(root, text="add a new tab", command=add_new_tab).pack()
-    add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab()
-    root.geometry('300x200')
-    root.mainloop()
+#if __name__ == '__main__':
+#    from porcupine.utils import _init_images
+#    root = tkinter.Tk()
+#    _init_images()
+#
+#    tabmgr = TabManager(root)
+#    tabmgr.pack(fill='both', expand=True)
+#    tabmgr.bind('<<NewTab>>',
+#                lambda event: print("added tab", event.data_widget.i),
+#                add=True)
+#    tabmgr.bind('<<NotebookTabChanged>>',
+#                lambda event: print("selected", event.widget.select().i),
+#                add=True)
+#
+#    def on_ctrl_w(event):
+#        if tabmgr.tabs():
+#            tabmgr.close_tab(tabmgr.select())
+#
+#    root.bind('<Control-w>', on_ctrl_w)
+#    for keysym, callback in tabmgr.bindings:
+#        root.bind(keysym, callback)
+#
+#    def add_new_tab(counter=itertools.count(1)):
+#        tab = Tab(tabmgr)
+#        tab.i = next(counter)     # tabmgr doesn't care about this
+#        tab.title = "tab %d" % tab.i
+#        tabmgr.add_tab(tab)
+#
+#        text = tkinter.Text(tab)
+#        text.pack()
+#        text.insert('1.0', "this is the content of tab %d" % tab.i)
+#
+#    ttk.Button(root, text="add a new tab", command=add_new_tab).pack()
+#    add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab(), add_new_tab()
+#    root.geometry('300x200')
+#    root.mainloop()

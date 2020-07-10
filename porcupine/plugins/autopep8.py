@@ -1,27 +1,28 @@
 import platform
 import subprocess
+import typing
 
 from porcupine import actions, get_tab_manager, utils
 
 
-def run_autopep8(code):
+def run_autopep8(code: str) -> typing.Optional[str]:
     try:
-        import autopep8     # noqa
+        import autopep8     # type: ignore
     except ImportError:
         # this command is wrong in some cases, but most of the time
         # it's ok
         if platform.system() == 'Windows':
-            command = "py -m pip install autopep8"
-            app = 'command prompt or PowerShell'
+            pip_command = "py -m pip install autopep8"
+            terminal = 'command prompt or PowerShell'
         else:
-            command = "python3 -m pip install --user autopep8"
-            app = 'terminal'
+            pip_command = "python3 -m pip install --user autopep8"
+            terminal = 'a terminal'
 
         utils.errordialog(
             "Cannot find autopep8",
             "Looks like autopep8 is not installed.\n" +
-            "You can install it by running this command on a %s:" % app,
-            command)
+            f"You can install it by running this command on {terminal}:",
+            pip_command)
         return None
 
     # autopep8's main() does some weird signal stuff, so we'll run it in
@@ -42,7 +43,7 @@ def run_autopep8(code):
     return output.decode('utf-8')
 
 
-def callback():
+def callback() -> None:
     widget = get_tab_manager().select().textwidget
     before = widget.get('1.0', 'end - 1 char')
     after = run_autopep8(before)

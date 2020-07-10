@@ -5,7 +5,7 @@
 import itertools
 import json
 import re
-import tkinter.font
+import tkinter.font     # type: ignore
 from tkinter import ttk
 
 from porcupine import get_tab_manager, settings, tabs, utils

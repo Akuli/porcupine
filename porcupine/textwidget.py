@@ -1,9 +1,9 @@
 import functools
 import json
 import tkinter as tk
-import tkinter.font as tkfont
+import tkinter.font as tkfont   # type: ignore
 
-import pygments.styles
+import pygments.styles          # type: ignore
 
 from porcupine import settings, utils
 

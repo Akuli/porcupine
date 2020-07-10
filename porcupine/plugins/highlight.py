@@ -8,11 +8,10 @@
 
 import multiprocessing
 import queue
-import tkinter.font as tkfont
+import tkinter.font as tkfont   # type: ignore
 
-import pygments.styles
-import pygments.token
-import pygments.util   # only for ClassNotFound, the docs say that it's here
+import pygments.styles      # type: ignore
+import pygments.token       # type: ignore
 
 from porcupine import filetypes, get_tab_manager, settings, tabs, utils
 
@@ -194,34 +193,34 @@ def setup():
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 
 
-if __name__ == '__main__':
-    # simple test
-    # FIXME: doesnt work
-    import tkinter
-    from porcupine.settings import load as load_settings
+# some old testing code
 
-    def on_modified(event):
-        text.unbind('<<Modified>>')
-        text.edit_modified(False)
-        text.bind('<<Modified>>', on_modified)
-        text.after_idle(highlighter.highlight_all)
-
-    root = tkinter.Tk()
-    load_settings()     # must be after creating root window
-    text = tkinter.Text(root, insertbackground='red')
-    text.pack(fill='both', expand=True)
-    text.bind('<<Modified>>', on_modified)
-
-    # The theme doesn't display perfectly here because the highlighter
-    # only does tags, not foreground, background etc. See textwidget.py.
-    highlighter = Highlighter(
-        text, (lambda: filetypes.get_filetype_by_name('Python')))
-
-    with open(__file__, 'r') as f:
-        text.insert('1.0', f.read())
-    text.see('end')
-
-    try:
-        root.mainloop()
-    finally:
-        highlighter.on_destroy()
+#if __name__ == '__main__':
+#    import tkinter
+#    from porcupine.settings import load as load_settings
+#
+#    def on_modified(event):
+#        text.unbind('<<Modified>>')
+#        text.edit_modified(False)
+#        text.bind('<<Modified>>', on_modified)
+#        text.after_idle(highlighter.highlight_all)
+#
+#    root = tkinter.Tk()
+#    load_settings()     # must be after creating root window
+#    text = tkinter.Text(root, insertbackground='red')
+#    text.pack(fill='both', expand=True)
+#    text.bind('<<Modified>>', on_modified)
+#
+#    # The theme doesn't display perfectly here because the highlighter
+#    # only does tags, not foreground, background etc. See textwidget.py.
+#    highlighter = Highlighter(
+#        text, (lambda: filetypes.get_filetype_by_name('Python')))
+#
+#    with open(__file__, 'r') as f:
+#        text.insert('1.0', f.read())
+#    text.see('end')
+#
+#    try:
+#        root.mainloop()
+#    finally:
+#        highlighter.on_destroy()

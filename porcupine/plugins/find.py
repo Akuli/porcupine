@@ -12,7 +12,8 @@ from porcupine import actions, get_tab_manager, images, tabs
 
 
 # keys are tabs, values are Finder widgets
-finders = weakref.WeakKeyDictionary()
+finders: 'weakref.WeakKeyDictionary[tabs.FileTab, Finder]' = (
+    weakref.WeakKeyDictionary())
 
 
 class Finder(ttk.Frame):

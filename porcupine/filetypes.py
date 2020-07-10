@@ -1,7 +1,7 @@
 """Stuff related to filetypes.ini."""
 # TODO: replace all this with editorconfig
 
-import collections
+from collections import OrderedDict
 import configparser
 import fnmatch
 import importlib
@@ -9,16 +9,18 @@ import itertools
 import logging
 import mimetypes
 import os
+import pathlib
 import platform
 import re
 import shlex
 import traceback
+import typing
 import urllib.request   # for pathname2url, mimetypes wants urls
 
-import pygments.lexer
-import pygments.lexers
-import pygments.token
-import pygments.util     # for ClassNotFound
+import pygments.lexer   # type: ignore
+import pygments.lexers  # type: ignore
+import pygments.token   # type: ignore
+from pygments.util import ClassNotFound     # type: ignore
 
 # 'import porcupine' is for porcupine.get_main_window(), can't use a from
 # import because import cycles
@@ -227,23 +229,27 @@ _config = configparser.ConfigParser(
 
 # ordered to make sure that filetypes loaded from filetypes.ini are used
 # when possible
-_filetypes = collections.OrderedDict()     # {name: _FileType}
+#
+# there is typing.OrderedDict, but https://stackoverflow.com/a/43583996
+_filetypes: 'OrderedDict[str, FileType]' = OrderedDict()
 
 
 # this cannot be a global variable because tests load this module
 # and THEN change dirs.configdir
 def _get_ini_path():
-    return os.path.join(dirs.configdir, 'filetypes.ini')
+    return dirs.configdir / 'filetypes.ini'
 
 
-# _FileType.__init__ raises this, str()'ing this error returns an option name
+# FileType.__init__ raises this, str()'ing this error returns an option name
 class _OptionError(Exception):
     pass
 
 
-class _FileType:
+# this doesn't have underscore in front of name because typing and mypy
+# TODO: write that nicely to docs
+class FileType:
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         assert name not in _filetypes
         section = _config[name]
         self.name = name
@@ -300,6 +306,10 @@ class _FileType:
 
         self.autocomplete_chars = section['autocomplete_chars'].split()
 
+        self.langserver_port: typing.Optional[int]
+        self.langserver_command: typing.Optional[str]
+        self.langserver_language_id: typing.Optional[str]
+
         self.langserver_command = section['langserver_command'].strip()
         self.langserver_language_id = section['langserver_language_id']
 
@@ -343,19 +353,20 @@ class _FileType:
         return result
 
 
-def guess_filetype(filename):
+def guess_filetype(filepath: pathlib.Path) -> FileType:
     """Return a filetype object for a file name."""
     try:
-        if os.path.samefile(filename, _get_ini_path()):
+        if filepath.samefile(_get_ini_path()):
             return _filetypes['Porcupine filetypes.ini']
     except OSError:
         # the file doesn't exist yet
         pass
 
+    shebang_line: typing.Optional[str]
     try:
         # the shebang is read as utf-8 because the filetype config file
         # is utf-8
-        with open(filename, 'r', encoding='utf-8') as file:
+        with open(filepath, 'r', encoding='utf-8') as file:
             if file.read(2) == '#!':
                 # it has a shebang: read until \n but at most 1000
                 # bytes, remove trailing whitespace
@@ -369,12 +380,12 @@ def guess_filetype(filename):
         # remove arguments: "#!/bla/bla -t --bleh" becomes "#!/bla/bla"
         shebang_line = re.sub(r'\s-.*$', '', shebang_line)
 
-    mimetype = mimetypes.guess_type(urllib.request.pathname2url(filename))[0]
+    mimetype = mimetypes.guess_type(filepath.as_uri())[0]
 
     for filetype in _filetypes.values():
         if mimetype in filetype.mimetypes:
             return filetype
-        if any(fnmatch.fnmatch(os.path.basename(filename), pattern)
+        if any(fnmatch.fnmatch(os.path.basename(filepath), pattern)
                for pattern in filetype.filename_patterns):
             return filetype
         if (filetype.shebang_regex is not None and
@@ -387,12 +398,12 @@ def guess_filetype(filename):
         if mimetype is None:
             # this is the easiest way to handle this corner case i came
             # up with
-            raise pygments.util.ClassNotFound
+            raise ClassNotFound
         lexer = pygments.lexers.get_lexer_for_mimetype(mimetype)
-    except pygments.util.ClassNotFound:
+    except ClassNotFound:
         try:
-            lexer = pygments.lexers.get_lexer_for_filename(filename)
-        except pygments.util.ClassNotFound:
+            lexer = pygments.lexers.get_lexer_for_filename(filepath)
+        except ClassNotFound:
             # can we use the shebang?
             if shebang_line is None:
                 return _filetypes['Plain Text']
@@ -409,7 +420,7 @@ def guess_filetype(filename):
         'mimetypes': ' '.join(lexer.mimetypes),
         'pygments_lexer': type(lexer).__module__ + '.' + type(lexer).__name__,
     }
-    _filetypes[name] = _FileType(name)       # uses the _config
+    _filetypes[name] = FileType(name)       # uses the _config
     return _filetypes[name]
 
 
@@ -494,7 +505,7 @@ def _add_missing_mimetypes():
             mimetypes.add_type(mimetype, extension)
 
 
-def _init():
+def _init() -> None:
     assert (not _filetypes), "cannot _init() twice"
     _add_missing_mimetypes()
     stupid = configparser.ConfigParser(default_section='Plain Text')
@@ -503,19 +514,18 @@ def _init():
     log.debug("trying to load '%s'", _get_ini_path())
     try:
         # config.read() suppresses exceptions
-        with open(_get_ini_path(), 'r', encoding='utf-8') as file:
+        with _get_ini_path().open('r', encoding='utf-8') as file:
             _config.read_file(file)
     except FileNotFoundError:
         # the config has nothing but the stupid defaults in it right now
         log.info("filetypes.ini not found, creating it")
         _config.read_string(_STUPID_DEFAULTS)
-        with open(_get_ini_path(), 'w', encoding='utf-8') as file:
+        with _get_ini_path().open('w', encoding='utf-8') as file:
             file.write(_STUPID_DEFAULTS)
     except (OSError, UnicodeError, configparser.Error) as err:
         # full tracebacks are ugly and this is supposed to be visible to users
-        log.error("%s in filetypes.ini: %s", type(err).__name__, err)
-        log.debug("default filetypes will be used instead")
-        log.debug("here's the full traceback", exc_info=True)
+        log.exception(
+            "error in filetypes.ini, default filetypes will be used instead")
         _config.read_string(_STUPID_DEFAULTS)
     else:
         # neither of the except things ran, everything succeeded
@@ -569,14 +579,19 @@ def _init():
         while True:
             # FIXME: what if multiple values are incorrect?
             try:
-                filetype = _FileType(section_name)
+                filetype = FileType(section_name)
             except _OptionError as e:
                 # e.__cause__ is the error that e was was raised from, str(e)
                 # is the option name
+                error = e.__cause__
+                assert error is not None
                 log.error("invalid %r value in [%s]", str(e), section_name)
-                log.debug("here's the full traceback\n%s", ''.join(
-                    traceback.format_exception(type(e.__cause__), e.__cause__,
-                                               e.__cause__.__traceback__)))
+                log.debug("here's the full traceback\n%s",
+                    ''.join(traceback.format_exception(
+                        typing.cast(
+                            typing.Optional[typing.Type[BaseException]],
+                            type(error)),
+                        error, error.__traceback__)))
                 if section_name == 'Plain Text':
                     stupid = configparser.ConfigParser(
                         default_section='Plain Text')
@@ -594,7 +609,7 @@ def _init():
         _config['Porcupine filetypes.ini'] = {
             'pygments_lexer': __name__ + '._FiletypesDotIniLexer',
         }
-        _filetypes['Porcupine filetypes.ini'] = _FileType(   # stupid pep8 >:(
+        _filetypes['Porcupine filetypes.ini'] = FileType(   # stupid pep8 >:(
             'Porcupine filetypes.ini')
 
 
@@ -606,10 +621,13 @@ class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
     # these are probably not needed
     name = 'Porcupine filetypes.ini'
     aliases = ['porcupine-filetypes']
-    filenames = []
+    filenames: typing.List[str] = []
 
-    def key_val_pair(key, value, key_token=pygments.token.Name.Builtin,
-                     value_token=pygments.token.String):
+    def key_val_pair(
+            key: str,
+            value: str,
+            key_token=pygments.token.Name.Builtin,
+            value_token=pygments.token.String):
         for regex, token in [(value, value_token),
                              (r'.*?', pygments.token.Name)]:
             yield (

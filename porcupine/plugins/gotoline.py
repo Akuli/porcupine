@@ -1,4 +1,4 @@
-from tkinter import simpledialog
+from tkinter import simpledialog    # type: ignore
 
 from porcupine import actions, get_tab_manager, tabs
 

@@ -5,6 +5,7 @@
 # see also update(3tcl)
 
 import atexit
+import pathlib
 import shutil
 import tempfile
 import tkinter
@@ -18,8 +19,8 @@ from porcupine import filetypes as filetypes_module
 
 # TODO: something else will be needed when testing the filetypes
 tempdir = tempfile.mkdtemp()
-dirs.configdir = tempdir
-atexit.register(shutil.rmtree, tempdir)
+dirs.configdir = pathlib.Path(tempdir)
+atexit.register(shutil.rmtree, str(tempdir))
 del tempdir
 
 

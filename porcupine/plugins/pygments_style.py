@@ -2,7 +2,7 @@
 
 import threading
 
-import pygments.styles
+import pygments.styles      # type: ignore
 
 from porcupine import actions, get_main_window, settings
 

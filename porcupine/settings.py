@@ -7,13 +7,14 @@ import logging
 import os
 import sys
 import tkinter
-import tkinter.font as tkfont
+import tkinter.font as tkfont   # type: ignore
 from tkinter import messagebox, ttk
 import types
+import typing
 
 # the pygments stuff is just for _validate_pygments_style_name()
-import pygments.styles
-import pygments.util
+import pygments.styles      # type: ignore
+import pygments.util        # type: ignore
 
 # get_main_window and get_tab_manager must not be imported from
 # porcupine because it imports this before exposing the getter
@@ -66,10 +67,14 @@ class InvalidValue(Exception):
 
 
 # globals ftw
-_sections = {}
-_loaded_json = {}
-_dialog = None          # the "Porcupine Settings" window
-_notebook = None        # main widget in the dialog
+_sections: typing.Dict[str, '_ConfigSection'] = {}
+_loaded_json: typing.Dict[str, typing.Dict[str, typing.Union[str, int]]] = {}
+
+# the "Porcupine Settings" window
+_dialog: typing.Optional[tkinter.Toplevel] = None
+
+# main widget in the dialog
+_notebook: typing.Optional[ttk.Notebook] = None
 
 
 def get_section(section_name):

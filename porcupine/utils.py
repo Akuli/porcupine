@@ -53,8 +53,10 @@ if platform.system() == 'Windows':
         #       are docs somewhere
         sys.stdout.close()
         os.remove(sys.stdout.name)
-        sys.stdout = None
-        sys.stderr = None
+
+        # mypy doesn't know about setting std streams to None
+        sys.stdout = None   # type: ignore
+        sys.stderr = None   # type: ignore
     else:
         # seems like python was started from e.g. a cmd or powershell
         running_pythonw = False
@@ -264,7 +266,9 @@ def set_tooltip(widget, text):
 
 
 # this is documented in bind_with_data()
-class _EventWithData(tkinter.Event):
+#
+# TODO: mention this in docs, useful for mypy
+class EventWithData(tkinter.Event):
 
     def data_widget(self):
         return self.widget.nametowidget(self.data_string)
@@ -323,7 +327,7 @@ def bind_with_data(widget, sequence, callback, add=False):
 
     def run_the_callback(data_string):
         event = event_objects.popleft()
-        event.__class__ = _EventWithData    # evil haxor muhaha
+        event.__class__ = EventWithData    # evil haxor muhaha
         event.data_string = data_string
         return callback(event)      # may return 'break'
 
@@ -511,7 +515,7 @@ try:
     Spinbox = ttk.Spinbox
 except AttributeError:
     # python 3.6 compat thing, written similarly to ttk.Combobox
-    class Spinbox(ttk.Entry):
+    class Spinbox(ttk.Entry):   # type: ignore
 
         def __init__(self, master=None, *, from_=None, **kwargs):
             if from_ is not None:

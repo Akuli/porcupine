@@ -24,3 +24,6 @@ sansio-lsp-client==0.7.*
 
 # to have something hopefully work by default
 python-language-server
+
+# for autopep8 plugin
+autopep8

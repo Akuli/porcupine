@@ -3,7 +3,9 @@
 import argparse
 import logging
 import os
+import pathlib
 import sys
+import typing
 
 from porcupine import _logs, pluginloader, get_tab_manager, tabs, utils
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
@@ -54,7 +56,7 @@ Examples:
 """
 
 
-def main():
+def main() -> None:
     if os.path.basename(sys.argv[0]) == '__main__.py':
         prog = '%s -m porcupine' % utils.short_python_command
     else:
@@ -105,7 +107,9 @@ def main():
 
     args = parser.parse_args()
 
-    filelist = []
+    filelist: typing.List[typing.Tuple[
+        typing.Optional[pathlib.Path], str
+    ]] = []
     for file in args.files:
         if file is sys.stdin:
             # don't close stdin so it's possible to do this:
@@ -121,7 +125,8 @@ def main():
             filelist.append((None, ''))
         else:
             with file:
-                filelist.append((os.path.abspath(file.name), file.read()))
+                filelist.append(
+                    (pathlib.Path(file.name).absolute(), file.read()))
 
     porcupine.init(verbose_logging=args.verbose)
     if args.yes_plugins:

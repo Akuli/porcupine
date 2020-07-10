@@ -1,10 +1,10 @@
 """Maximum line length marker for Tkinter's text widget."""
 
 import tkinter
-import tkinter.font as tkfont
+import tkinter.font as tkfont   # type: ignore
 
-import pygments.styles
-import pygments.token
+import pygments.styles  # type: ignore
+import pygments.token   # type: ignore
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
