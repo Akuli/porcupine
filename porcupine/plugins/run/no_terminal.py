@@ -5,6 +5,7 @@ import queue
 import subprocess
 import threading
 import tkinter
+import typing
 
 from porcupine import get_tab_manager, images, utils
 
@@ -99,8 +100,8 @@ def do_nothing():
     pass
 
 
-# str(tab) is the Tk widget path, guaranteed to be unique
-_no_terminal_runners = {}       # {str(tab): NoTerminalRunner}
+# keys are tkinter widget paths from str(tab), they identify tabs uniquely
+_no_terminal_runners: typing.Dict[str, NoTerminalRunner] = {}
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
