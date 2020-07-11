@@ -1,6 +1,8 @@
+import tkinter
 from tkinter import ttk
+import typing
 
-from porcupine import get_tab_manager, utils
+from porcupine import get_tab_manager, tabs, utils
 
 # i have experimented with a logging handler that displays logging
 # messages in the label, but it's not as good idea as it sounds like,
@@ -10,20 +12,20 @@ from porcupine import get_tab_manager, utils
 # this widget is kind of weird
 class LabelWithEmptySpaceAtLeft(ttk.Label):
 
-    def __init__(self, master):
+    def __init__(self, master: tkinter.BaseWidget) -> None:
         self._spacer = ttk.Frame(master)
         self._spacer.pack(side='left', expand=True)
         super().__init__(master)
         self.pack(side='left')
 
-    def destroy(self):
+    def destroy(self) -> None:
         self._spacer.destroy()
         super().destroy()
 
 
 class StatusBar(ttk.Frame):
 
-    def __init__(self, master, tab):
+    def __init__(self, master: tkinter.BaseWidget, tab: tabs.Tab):
         super().__init__(master)
         self.tab = tab
         # one label for each tab-separated thing
@@ -34,7 +36,7 @@ class StatusBar(ttk.Frame):
         self.do_update()
 
     # this is do_update() because tkinter has a method called update()
-    def do_update(self, junk=None):
+    def do_update(self, junk: typing.Any = None) -> None:
         parts = self.tab.status.split('\t')
 
         # there's always at least one part, the label added in
@@ -48,10 +50,11 @@ class StatusBar(ttk.Frame):
             label['text'] = text
 
 
-def on_new_tab(event):
+def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
+    assert isinstance(tab, tabs.Tab)
     StatusBar(tab.bottom_frame, tab).pack(side='bottom', fill='x')
 
 
-def setup():
+def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

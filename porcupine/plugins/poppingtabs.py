@@ -8,23 +8,25 @@ import sys
 import tempfile
 import threading
 import tkinter
+import typing
 
 import porcupine
-from porcupine import pluginloader, settings
+from porcupine import pluginloader, settings, tabs
 
 log = logging.getLogger(__name__)
 
 
 POPUP_SIZE = (600, 400)
 
-# special state markers
-NO_TABS = object()
-NOT_POPPABLE = object()
-NOT_DRAGGING = object()
-SPECIAL_STATES = {NO_TABS, NOT_POPPABLE, NOT_DRAGGING}
+class SpecialState:
+    pass
+
+NO_TABS = SpecialState()
+NOT_POPPABLE = SpecialState()
+NOT_DRAGGING = SpecialState()
 
 
-def _is_on_window(event):
+def _is_on_window(event: tkinter.Event) -> bool:
     window = event.widget.winfo_toplevel()
     window_left = window.winfo_x()
     window_right = window_left + window.winfo_width()
@@ -36,7 +38,7 @@ def _is_on_window(event):
 
 
 # TODO: tests
-def _2lines(string):
+def _2lines(string: str) -> str:
     # convert a space in the middle into a newline
     words = string.split()
     center = len(words) // 2
@@ -45,7 +47,7 @@ def _2lines(string):
 
 class PopManager:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._window = tkinter.Toplevel()
         self._window.withdraw()
         self._window.overrideredirect(True)
@@ -54,9 +56,12 @@ class PopManager:
         self._label = tkinter.Label(self._window, fg='#000', bg='#ffc')
         self._label.pack()
 
-        self._dragged_state = NOT_DRAGGING
+        self._dragged_state: typing.Union[
+            SpecialState,
+            typing.Tuple[tabs.Tab, typing.Any],
+        ] = NOT_DRAGGING
 
-    def _show_tooltip(self, event):
+    def _show_tooltip(self, event: tkinter.Event) -> None:
         if self._window.state() == 'withdrawn':
             self._window.deiconify()
 
@@ -66,7 +71,7 @@ class PopManager:
 
     # no need to return 'break' imo, other plugins are free to follow
     # drags and drops
-    def on_drag(self, event):
+    def on_drag(self, event: tkinter.Event) -> None:
         if _is_on_window(event):
             self._window.withdraw()
             return
@@ -91,10 +96,9 @@ class PopManager:
 
         self._show_tooltip(event)
 
-    def on_drop(self, event):
+    def on_drop(self, event: tkinter.Event) -> None:
         self._window.withdraw()
-        if not (_is_on_window(event) or
-                self._dragged_state in SPECIAL_STATES):
+        if not (_is_on_window(event) or isinstance(self._dragged_state, SpecialState)):
             log.info("popping off a tab")
             plugin_names = pluginloader.get_loaded_plugins()
             for bad_plugin in ['restart', 'geometry']:
@@ -133,7 +137,7 @@ _run_popped_up_process()
 
         self._dragged_state = NOT_DRAGGING
 
-    def _waiter_thread(self, process):
+    def _waiter_thread(self, process: 'subprocess.Popen[bytes]') -> None:
         status = process.wait()
         if status == 0:
             log.debug("subprocess with PID %d exited successfully",
@@ -143,7 +147,7 @@ _run_popped_up_process()
                         process.pid, status)
 
 
-def setup():
+def setup() -> None:
     manager = PopManager()
     porcupine.get_tab_manager().bind(
         '<Button1-Motion>', manager.on_drag, add=True)
@@ -151,7 +155,7 @@ def setup():
         '<ButtonRelease-1>', manager.on_drop, add=True)
 
 
-def _run_popped_up_process():
+def _run_popped_up_process() -> None:
     prog, state_path = sys.argv
     with open(state_path, 'rb') as file:
         (tabtype, state, plugin_names, required_size, init_kwargs,

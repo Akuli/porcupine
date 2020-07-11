@@ -26,7 +26,7 @@ class TabManager(ttk.Notebook):
 
         This runs when a new tab has been added to the tab manager with
         :meth:`add_tab`. Use :func:`~porcupine.utils.bind_with_data` and
-        ``event.data_widget`` to access the tab that was added.
+        ``event.data_widget()`` to access the tab that was added.
 
         Bind to the ``<Destroy>`` event of the tab if you want to clean
         up something when the tab is closed.
@@ -134,7 +134,7 @@ class TabManager(ttk.Notebook):
     # ttk.Notebook. Hopefully it doesn't break any ttk.Notebook internals.
     def select(             # type: ignore
                 self, tab_id: typing.Union[None, int, 'Tab'] = None,
-            ) -> typing.Optional[Tab]:
+            ) -> typing.Optional['Tab']:
         """Select the given tab as if the user clicked it.
 
         Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
@@ -270,8 +270,8 @@ class TabManager(ttk.Notebook):
 
 # _FileTabT represents a subclass of FileTab. Don't know if there's a better
 # way to tell that to mypy than passing FileTab twice...
-_TabT = typing.TypeVar('_TabT', Tab, Tab)
-_FileTabT = typing.TypeVar('_FileTabT', FileTab, FileTab)
+_TabT = typing.TypeVar('_TabT', 'Tab', 'Tab')
+_FileTabT = typing.TypeVar('_FileTabT', 'FileTab', 'FileTab')
 
 
 class Tab(ttk.Frame):
@@ -708,10 +708,10 @@ bers.py>` use this attribute.
         # no was clicked, can be closed
         return True
 
-    def on_focus(self):
+    def on_focus(self) -> None:
         """This override of :meth:`Tab.on_focus` focuses the :attr:`textwidget\
 `."""
-        self.textwidget.focus()
+        self.textwidget.focus_set()
 
     # TODO: returning None on errors kinda sucks, maybe a handle_errors kwarg?
     def save(self) -> typing.Optional[bool]:
@@ -749,12 +749,13 @@ bers.py>` use this attribute.
         Returns True if the file was saved, and False if the user
         cancelled the dialog.
         """
-        path = filedialog.asksaveasfilename(
+        # type ignored because mypy **kwargs support isn't great
+        path: str = filedialog.asksaveasfilename(    # type: ignore
             **filetypes.get_filedialog_kwargs())
         if not path:     # it may be '' because tkinter
             return False
 
-        self.path = path
+        self.path = pathlib.Path(path)
         self.save()
         return True
 

@@ -42,11 +42,11 @@ CHUNK_SIZE = 64*1024
 
 class SubprocessStdIO:
 
-    def __init__(self, process: subprocess.Popen) -> None:
+    def __init__(self, process: 'subprocess.Popen[bytes]') -> None:
         self._process = process
 
         if fcntl is None:
-            self._read_queue: queue.Queue[bytes] = queue.Queue()
+            self._read_queue: 'queue.Queue[bytes]' = queue.Queue()
             self._running = True
             self._worker_thread = threading.Thread(
                 target=self._stdout_to_read_queue, daemon=True)
@@ -116,7 +116,7 @@ class LocalhostSocketIO:
         #   - I don't feel like learning to do non-blocking send right now.
         #   - It must be possible to .write() before the socket is connected.
         #     The written bytes get sent when the socket connects.
-        self._send_queue: queue.Queue[typing.Optional[bytes]] = queue.Queue()
+        self._send_queue: 'queue.Queue[typing.Optional[bytes]]' = queue.Queue()
 
         self._worker_thread = threading.Thread(
             target=self._send_queue_to_socket, args=[port, log], daemon=True)
@@ -206,11 +206,13 @@ def get_completion_item_doc(item: lsp.CompletionItem) -> str:
         #
         # without this check, this wouldn't show arguments of foo on right side
         if item.documentation.startswith(item.label.strip()):
-            return item.documentation
+            result = item.documentation
         else:
-            return item.label.strip() + '\n\n' + item.documentation
+            result = item.label.strip() + '\n\n' + item.documentation
+    else:
+        result = item.label
 
-    return item.label
+    return typing.cast(str, result)
 
 
 def exit_code_string(exit_code: int) -> str:
@@ -251,7 +253,7 @@ class LangServer:
 
     def __init__(
             self,
-            process: subprocess.Popen,
+            process: 'subprocess.Popen[bytes]',
             the_id: LangServerId,
             log: logging.Logger) -> None:
         self._process = process
@@ -383,7 +385,7 @@ class LangServer:
 
         elif isinstance(lsp_event, lsp.Completion):
             info_dict = self._completion_infos.pop(lsp_event.message_id)
-            tab = info_dict.pop('tab')
+            tab = typing.cast(tabs.FileTab, info_dict.pop('tab'))
 
             # this is "open to interpretation", as the lsp spec says
             # TODO: use textEdit when available (need to find langserver that

@@ -3,6 +3,7 @@
 import functools
 import logging
 import os
+import typing
 
 from porcupine import actions, filetypes, get_tab_manager, tabs
 
@@ -11,7 +12,7 @@ from . import terminal, no_terminal
 log = logging.getLogger(__name__)
 
 
-def do_something_to_this_file(something):
+def do_something_to_this_file(something: str) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     if tab.path is None or not tab.is_saved():
@@ -20,14 +21,16 @@ def do_something_to_this_file(something):
             # user cancelled a save as dialog
             return
 
-    workingdir, basename = os.path.split(tab.path)
+    workingdir = tab.path.parent
+    basename = tab.path.name
 
     if something == 'run':
         command = tab.filetype.get_command('run_command', basename)
         terminal.run_command(workingdir, command)
 
     elif something == 'compilerun':
-        def run_after_compile():
+        def run_after_compile() -> None:
+            assert isinstance(tab, tabs.FileTab)
             command = tab.filetype.get_command('run_command', basename)
             terminal.run_command(workingdir, command)
 
@@ -40,17 +43,17 @@ def do_something_to_this_file(something):
         no_terminal.run_command(workingdir, command)
 
 
-def get_filetype_names(has_what):
+def get_filetype_names(has_what: str) -> typing.Set[str]:
     return {filetype.name for filetype in filetypes.get_all_filetypes()
             if filetype.has_command(has_what)}
 
 
-def setup():
+def setup() -> None:
     compilable = get_filetype_names('compile_command')
     runnable = get_filetype_names('run_command')
     lintable = get_filetype_names('lint_command')
 
-    def create_callback(something):
+    def create_callback(something: str) -> typing.Callable[[], None]:
         return functools.partial(do_something_to_this_file, something)
 
     actions.add_command("Run/Compile", create_callback('compile'),

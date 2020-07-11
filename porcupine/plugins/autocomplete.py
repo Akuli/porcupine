@@ -5,8 +5,9 @@
 import itertools
 import json
 import re
-import tkinter.font     # type: ignore
+import tkinter
 from tkinter import ttk
+import typing
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -14,7 +15,8 @@ setup_before = ['tabs2spaces']      # see tabs2spaces.py
 SETTINGS = settings.get_section("Autocomplete")
 
 
-def pack_with_scrollbar(widget):
+def pack_with_scrollbar(
+        widget: typing.Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
     scrollbar = ttk.Scrollbar(widget.master)
     widget['yscrollcommand'] = scrollbar.set
     scrollbar['command'] = widget.yview
@@ -25,9 +27,44 @@ def pack_with_scrollbar(widget):
     return scrollbar
 
 
-def calculate_popup_geometry(textwidget):
+# TODO: avoid Any
+Completion = typing.Dict[str, typing.Any]
+
+
+def add_resize_handle(toplevel: tkinter.Toplevel) -> ttk.Label:
+    between_mouse_and_window_corner = [0, 0]
+
+    # Doing this only in the beginning of resize ensures that if it's off by 1
+    # for whatever reason, then it will only ever be off by 1 pixel, rather
+    # than off by 1 pixel MORE for each resize event. If I put this to
+    # do_resize() instead, then for some reason, the window doesn't resize
+    # at all.
+    def begin_resize(event: tkinter.Event) -> None:
+        between_mouse_and_window_corner[:] = [
+            event.widget.winfo_width() - event.x,
+            event.widget.winfo_height() - event.y
+        ]
+
+    def do_resize(event: tkinter.Event) -> None:
+        x_offset, y_offset = between_mouse_and_window_corner
+        width = event.x_root - toplevel.winfo_rootx() + x_offset
+        height = event.y_root - toplevel.winfo_rooty() + y_offset
+
+        if width >= 0 and height >= 0:
+            toplevel.geometry('%dx%d' % (width, height))
+
+    handle = ttk.Label(toplevel, text="⇲")      # unicode awesomeness
+    handle.bind('<Button-1>', begin_resize)
+    handle.bind('<Button1-Motion>', do_resize)
+    handle.place(relx=1, rely=1, anchor='se')
+    return handle
+
+
+def calculate_popup_geometry(textwidget: tkinter.Text) -> str:
+    bbox = textwidget.bbox('insert')
+    assert bbox is not None     # cursor must be visible
     (cursor_x, cursor_y,
-     cursor_width, cursor_height) = textwidget.bbox('insert')
+     cursor_width, cursor_height) = bbox
 
     # make coordinates relative to screen
     cursor_x += textwidget.winfo_rootx()
@@ -60,9 +97,8 @@ def calculate_popup_geometry(textwidget):
 
 class AutoCompletionPopup:
 
-    def __init__(self):
-        self._completion_list = None
-        self._old_selection_item_id = None
+    def __init__(self) -> None:
+        self._completion_list: typing.Optional[typing.List[Completion]] = None
 
         self.toplevel = tkinter.Toplevel()
         self.toplevel.withdraw()
@@ -97,7 +133,7 @@ class AutoCompletionPopup:
         self._resize_handle.place(relx=1, rely=1, anchor='se')
         self.toplevel.bind('<Configure>', self._on_anything_resized)
 
-    def _on_anything_resized(self, event):
+    def _on_anything_resized(self, junk: tkinter.Event) -> None:
         # When the separator is dragged all the way to left or the popup is
         # resized to be narrow enough, the right scrollbar is no longer mapped
         # (i.e. visible) but the left scrollbar must get out of the way of the
@@ -105,30 +141,31 @@ class AutoCompletionPopup:
         # bottom of the popup, but the right scrollbar must make room.
         handle_height = self._resize_handle.winfo_height()
         if self._right_scrollbar.winfo_ismapped():
-            self._left_scrollbar.pack(pady=[0, 0])
-            self._right_scrollbar.pack(pady=[0, handle_height])
+            self._left_scrollbar.pack(pady=(0, 0))
+            self._right_scrollbar.pack(pady=(0, handle_height))
         else:
-            self._left_scrollbar.pack(pady=[0, handle_height])
-            self._right_scrollbar.pack(pady=[0, 0])
+            self._left_scrollbar.pack(pady=(0, handle_height))
+            self._right_scrollbar.pack(pady=(0, 0))
 
     # When tab is pressed with popups turned off in settings, this goes to a
     # state where it's completing but not showing.
 
-    def is_completing(self):
+    def is_completing(self) -> bool:
         return (self._completion_list is not None)
 
-    def is_showing(self):
+    def is_showing(self) -> bool:
         # don't know how only one of them could be mapped, checking to be sure
         return bool(self.toplevel.winfo_ismapped() and
                     self._panedwindow.winfo_ismapped())
 
-    def _select_item(self, item_id):
+    def _select_item(self, item_id: str) -> None:
         self.treeview.selection_set(item_id)
         self.treeview.see(item_id)
 
-    def _get_selected_completion(self):
+    def _get_selected_completion(self) -> typing.Optional[Completion]:
         if not self.is_completing():
             return None
+        assert self._completion_list is not None
 
         selected_ids = self.treeview.selection()
         if not selected_ids:
@@ -137,7 +174,8 @@ class AutoCompletionPopup:
         [the_id] = selected_ids
         return self._completion_list[int(the_id)]
 
-    def start_completing(self, completion_list, geometry=None):
+    def start_completing(self, completion_list: typing.List[Completion],
+                         geometry: typing.Optional[str] = None) -> None:
         if self.is_completing():
             self.stop_completing(withdraw=False)
 
@@ -160,12 +198,15 @@ class AutoCompletionPopup:
         self.toplevel.deiconify()
 
         # don't know why after_idle is needed, but it is
-        self._panedwindow.after_idle(
-           lambda: self._panedwindow.sashpos(0, SETTINGS['popup_divider_pos']))
+        def set_correct_sashpos() -> None:
+            self._panedwindow.sashpos(0, SETTINGS['popup_divider_pos'])
+
+        self._panedwindow.after_idle(set_correct_sashpos)
 
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
-    def stop_completing(self, *, withdraw=True):
+    def stop_completing(
+            self, *, withdraw: bool = True) -> typing.Optional[Completion]:
         # putting this here avoids some bugs
         if self.is_showing():
             SETTINGS['popup_window_width'] = self.toplevel.winfo_width()
@@ -181,7 +222,7 @@ class AutoCompletionPopup:
 
         return selected
 
-    def select_previous(self):
+    def select_previous(self) -> None:
         assert self.is_completing()
         selected_ids = self.treeview.selection()
         if selected_ids:
@@ -189,7 +230,7 @@ class AutoCompletionPopup:
             self._select_item(
                 self.treeview.prev(the_id) or self.treeview.get_children()[-1])
 
-    def select_next(self):
+    def select_next(self) -> None:
         assert self.is_completing()
         selected_ids = self.treeview.selection()
         if selected_ids:
@@ -197,7 +238,7 @@ class AutoCompletionPopup:
             self._select_item(
                 self.treeview.next(the_id) or self.treeview.get_children()[0])
 
-    def on_page_up_down(self, event):
+    def on_page_up_down(self, event: tkinter.Event) -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
@@ -205,7 +246,7 @@ class AutoCompletionPopup:
         self._doc_text.yview_scroll(page_count, 'pages')
         return 'break'
 
-    def on_arrow_key_up_down(self, event):
+    def on_arrow_key_up_down(self, event: tkinter.Event) -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
@@ -214,14 +255,12 @@ class AutoCompletionPopup:
         method()
         return 'break'
 
-    def _on_mouse_move(self, event):
-        # ttk_treeview(3tk) says that 'identify row' is "Obsolescent synonym
-        # for pathname identify item", but tkinter doesn't have identify_item
+    def _on_mouse_move(self, event: tkinter.Event) -> None:
         hovered_id = self.treeview.identify_row(event.y)
         if hovered_id:
             self.treeview.selection_set(hovered_id)
 
-    def _on_select(self, event):
+    def _on_select(self, event: tkinter.Event) -> None:
         completion = self._get_selected_completion()
         if completion is not None:
             self._doc_text['state'] = 'normal'
@@ -234,7 +273,7 @@ class AutoCompletionPopup:
 #   - This does the right thing if text has been deleted so that start and end
 #     no longer exist in the text widget.
 #   - Start and end must be in 'x.y' format.
-def text_index_less_than(index1, index2):
+def text_index_less_than(index1: str, index2: str) -> bool:
     tuple1 = tuple(map(int, index1.split('.')))
     tuple2 = tuple(map(int, index2.split('.')))
     return (tuple1 < tuple2)
@@ -242,14 +281,14 @@ def text_index_less_than(index1, index2):
 
 class AutoCompleter:
 
-    def __init__(self, tab):
+    def __init__(self, tab: tabs.FileTab) -> None:
         self._tab = tab
-        self._orig_cursorpos = None
+        self._orig_cursorpos: typing.Optional[str] = None
         self._id_counter = itertools.count()
-        self._waiting_for_response_id = None
+        self._waiting_for_response_id: typing.Optional[int] = None
         self.popup = AutoCompletionPopup()
 
-    def _request_completions(self):
+    def _request_completions(self) -> None:
         the_id = next(self._id_counter)
         self._waiting_for_response_id = the_id
 
@@ -279,7 +318,7 @@ class AutoCompleter:
                 current_column >= initial_column)
 
     # this might not run for all requests if e.g. langserver not configured
-    def receive_completions(self, event):
+    def receive_completions(self, event: utils.EventWithData) -> None:
         info_dict = event.data_json()
         if info_dict['id'] != self._waiting_for_response_id:
             return
@@ -293,7 +332,7 @@ class AutoCompleter:
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
-    def _get_filtered_completions(self):
+    def _get_filtered_completions(self) -> typing.List[Completion]:
         assert self._orig_cursorpos is not None
         filter_text = self._tab.textwidget.get(self._orig_cursorpos, 'insert')
 
@@ -303,7 +342,7 @@ class AutoCompleter:
         ]
 
     # returns None if this isn't a place where it's good to autocomplete
-    def _can_complete_here(self):
+    def _can_complete_here(self) -> bool:
         before_cursor = self._tab.textwidget.get('insert linestart', 'insert')
         after_cursor = self._tab.textwidget.get('insert', 'insert lineend')
 
@@ -317,7 +356,7 @@ class AutoCompleter:
 
         return True
 
-    def on_tab(self, event, shifted):
+    def on_tab(self, event: tkinter.Event, shifted: bool) -> utils.BreakOrNone:
         if self._tab.textwidget.tag_ranges('sel'):
             # something's selected, autocompleting is not the right thing to do
             return None
@@ -336,7 +375,7 @@ class AutoCompleter:
             self.popup.select_next()
         return 'break'
 
-    def _accept(self):
+    def _accept(self) -> None:
         if not self.popup.is_completing():
             return
 
@@ -351,13 +390,13 @@ class AutoCompleter:
         self._waiting_for_response_id = None
         self._orig_cursorpos = None
 
-    def _reject(self):
+    def _reject(self) -> None:
         if self.popup.is_completing():
             self.popup.stop_completing()
             self._waiting_for_response_id = None
             self._orig_cursorpos = None
 
-    def on_any_key(self, event):
+    def on_any_key(self, event: tkinter.Event) -> None:
         if event.keysym.startswith('Shift'):
             return
 
@@ -373,14 +412,13 @@ class AutoCompleter:
 
         else:
             if event.char in self._tab.filetype.autocomplete_chars:
-                def do_request():
+                def do_request() -> None:
                     if ((not self.popup.is_completing())
                             and self._can_complete_here()):
                         self._request_completions()
 
-                # Tiny delay added for things like langserver, to make sure
-                # that langserver's change events get sent before completions
-                # are requested.
+                # Tiny delay added to make sure that langserver's change events
+                # get sent before completions are requested.
                 self._tab.after(10, do_request)
                 self._waiting_for_response_id = None
                 return
@@ -392,7 +430,7 @@ class AutoCompleter:
     #
     # TODO: is it possible to write a test for this?
 
-    def _filter_through_completions(self):
+    def _filter_through_completions(self) -> None:
         assert self._orig_cursorpos is not None
 
         # if cursor has moved back more since requesting completions: User
@@ -405,20 +443,20 @@ class AutoCompleter:
         self.popup.stop_completing(withdraw=False)
         self.popup.start_completing(self._get_filtered_completions())
 
-    def on_enter(self, event):
+    def on_enter(self, event: tkinter.Event) -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._accept()
             return 'break'
         return None
 
-    def on_escape(self, event):
+    def on_escape(self, event: tkinter.Event) -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._reject()
             return 'break'
         return None
 
 
-def on_new_tab(event):
+def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if not isinstance(tab, tabs.FileTab):
         return
@@ -457,7 +495,7 @@ def on_new_tab(event):
              add=True)
 
 
-def setup():
+def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 
     SETTINGS.add_label(

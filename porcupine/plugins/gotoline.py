@@ -3,8 +3,9 @@ from tkinter import simpledialog    # type: ignore
 from porcupine import actions, get_tab_manager, tabs
 
 
-def gotoline():
+def gotoline() -> None:
     tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
 
     # simpledialog isn't ttk yet, but it's not a huge problem imo
     lineno = simpledialog.askinteger(
@@ -19,6 +20,6 @@ def gotoline():
     tab.on_focus()
 
 
-def setup():
+def setup() -> None:
     actions.add_command("Edit/Go to Line", gotoline, '<Control-l>',
                         tabtypes=[tabs.FileTab])

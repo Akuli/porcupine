@@ -1,13 +1,18 @@
 """Comment out multiple lines easily in languages like Python or Bash."""
 
+import functools
+import tkinter
+import typing
+
 from porcupine import actions, get_tab_manager, tabs, utils
 
 # update the code if you add a filetype that doesn't use # as comment prefix
 filetype_names = ['Python', 'Makefile', 'Shell', 'Tcl']
 
 
-def comment_or_uncomment():
-    tab = get_tab_manager().select()
+def comment_or_uncomment(
+        tab: tabs.FileTab,
+        junk: typing.Optional[tkinter.Event] = None) -> utils.BreakOrNone:
     if tab.filetype.name not in filetype_names:
         # add '#' normally
         return None
@@ -40,17 +45,25 @@ def comment_or_uncomment():
     return 'break'
 
 
-def on_new_tab(event):
+def comment_or_uncomment_in_current_tab() -> None:
+    tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
+    comment_or_uncomment(tab)
+
+
+def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         # the '#' character seems to be a 'numbersign' in tk
         tab.textwidget.bind(
-            '<numbersign>', (lambda event: comment_or_uncomment()), add=True)
+            '<numbersign>', functools.partial(comment_or_uncomment, tab),
+            add=True)
 
 
-def setup():
+def setup() -> None:
     # the action's binding feature cannot be used because then typing
     # a '#' outside the main text widget inserts a # to the main widget
-    actions.add_command("Edit/Comment Block", comment_or_uncomment,
-                        filetype_names=filetype_names)
+    actions.add_command(
+        "Edit/Comment Block", comment_or_uncomment_in_current_tab,
+        filetype_names=filetype_names)
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

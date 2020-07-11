@@ -1,3 +1,5 @@
+import tkinter
+
 from porcupine import get_main_window, settings
 
 
@@ -5,10 +7,11 @@ config = settings.get_section('General')
 config.add_option('default_geometry', '650x600', reset=False)
 
 
-def save_geometry(event):
+def save_geometry(event: tkinter.Event) -> None:
+    assert isinstance(event.widget, (tkinter.Tk, tkinter.Toplevel))
     config['default_geometry'] = event.widget.geometry()
 
 
-def setup():
+def setup() -> None:
     get_main_window().geometry(config['default_geometry'])
     get_main_window().bind('<<PorcupineQuit>>', save_geometry, add=True)

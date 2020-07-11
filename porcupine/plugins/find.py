@@ -4,8 +4,9 @@
 
 import re
 import sys
-import tkinter as tk
+import tkinter
 from tkinter import ttk
+import typing
 import weakref
 
 from porcupine import actions, get_tab_manager, images, tabs
@@ -22,8 +23,10 @@ class Finder(ttk.Frame):
     Use the pack geometry manager with this widget.
     """
 
-    def __init__(self, parent, textwidget, **kwargs):
-        super().__init__(parent, **kwargs)
+    def __init__(
+            self, parent: tkinter.BaseWidget, textwidget: tkinter.Text,
+            **kwargs: typing.Any) -> None:
+        super().__init__(parent, **kwargs)      # type: ignore
         self._textwidget = textwidget
 
         # grid layout:
@@ -46,13 +49,15 @@ class Finder(ttk.Frame):
         self.grid_columnconfigure(3, weight=1)
 
         # TODO: use the pygments theme somehow?
-        textwidget.tag_config('find_highlight',
-                              foreground='black', background='yellow')
+        textwidget.tag_config(
+            'find_highlight', foreground='black', background='yellow')
 
         self.find_entry = self._add_entry(0, "Find:")
-        find_var = self.find_entry['textvariable'] = tk.StringVar()
-        find_var.trace('w', self.highlight_all_matches)
-        self.find_entry.lol = find_var     # because cpython gc
+        find_var = self.find_entry['textvariable'] = tkinter.StringVar()
+        find_var.trace_add('write', self.highlight_all_matches)
+
+        # because cpython gc
+        typing.cast(typing.Any, self.find_entry).lol = find_var
 
         self.replace_entry = self._add_entry(1, "Replace with:")
 
@@ -83,11 +88,14 @@ class Finder(ttk.Frame):
         self.replace_all_button.pack(side='left')
         self._update_buttons()
 
-        self.full_words_var = tk.BooleanVar()
-        self.full_words_var.trace('w', self.highlight_all_matches)
-        self.ignore_case_var = tk.BooleanVar()
-        self.ignore_case_var.trace('w', self.highlight_all_matches)
+        self.full_words_var = tkinter.BooleanVar()
+        self.full_words_var.trace_add('write', self.highlight_all_matches)
+        self.ignore_case_var = tkinter.BooleanVar()
+        self.ignore_case_var.trace_add('write', self.highlight_all_matches)
 
+        # TODO: add keyboard shortcut for "Full words only". I use it all the
+        #       time and reaching mouse is annoying. Tabbing through everything
+        #       is also annoying.
         ttk.Checkbutton(
             self, text="Full words only", variable=self.full_words_var).grid(
                 row=0, column=3, sticky='w')
@@ -112,19 +120,20 @@ class Finder(ttk.Frame):
         # explained in test_find_plugin.py
         textwidget.bind('<<Selection>>', self._update_buttons, add=True)
 
-    def _add_entry(self, row, text):
+    def _add_entry(self, row: int, text: str) -> ttk.Entry:
         ttk.Label(self, text=text).grid(row=row, column=0, sticky='w')
         entry = ttk.Entry(self, width=35, font='TkFixedFont')
         entry.bind('<Escape>', self.hide)
         entry.grid(row=row, column=1, sticky='we')
         return entry
 
-    def show(self):
+    def show(self) -> None:
         self.pack(fill='x')
         self.find_entry.focus_set()
         self.highlight_all_matches()
 
-    def hide(self, junk_event=None):
+    def hide(
+            self, junk: typing.Optional[tkinter.Event] = None) -> None:
         # remove previous highlights from highlight_all_matches
         self._textwidget.tag_remove('find_highlight', '1.0', 'end')
 
@@ -133,7 +142,7 @@ class Finder(ttk.Frame):
 
     # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
     # gives a list of (start, end) pairs
-    def get_match_ranges(self):
+    def get_match_ranges(self) -> typing.List[typing.Tuple[str, str]]:
         starts_and_ends = list(
             map(str, self._textwidget.tag_ranges('find_highlight')))
         assert len(starts_and_ends) % 2 == 0
@@ -142,7 +151,17 @@ class Finder(ttk.Frame):
 
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
-    def _update_buttons(self, junk_event=None):
+    def _update_buttons(
+            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+        # Literal is new in 3.8 and i don't typecheck with older than that in
+        # porcupine.
+        if sys.version_info >= (3, 8):
+            # TODO: document this trick
+            State = typing.Union[typing.Literal['normal'],
+                                 typing.Literal['disabled']]
+            matches_something_state: State
+            replace_this_state: State
+
         matches_something_state = (
             'normal' if self.get_match_ranges() else 'disabled')
 
@@ -161,15 +180,19 @@ class Finder(ttk.Frame):
         self.replace_this_button['state'] = replace_this_state
         self.replace_all_button['state'] = matches_something_state
 
-    def _get_matches_to_highlight(self, looking4):
-        search_opts = {'nocase': self.ignore_case_var.get()}
+    def _get_matches_to_highlight(self, looking4: str) -> typing.Iterator[str]:
+        nocase_opt = self.ignore_case_var.get()
         if self.full_words_var.get():
             # tk doesn't have python-style \b, but it has \m and \M that match
             # the beginning and end of word, see re_syntax(3tcl)
+            #
+            # TODO: are there \w characters that need to be escaped? this is
+            # validated in highlight_all_matches()
             search_arg = r'\m' + looking4 + r'\M'
-            search_opts['regexp'] = True
+            regexp_opt = True
         else:
             search_arg = looking4
+            regexp_opt = False
 
         start_index = '1.0'
         first_time = True
@@ -187,13 +210,14 @@ class Finder(ttk.Frame):
                 start_index_for_search = '%s + 1 char' % start_index
 
             start_index = self._textwidget.search(
-                search_arg, start_index_for_search, 'end', **search_opts)
+                search_arg, start_index_for_search, 'end',
+                nocase=nocase_opt, regexp=regexp_opt)
             if not start_index:
                 # no more matches
                 break
             yield start_index
 
-    def highlight_all_matches(self, *junk):
+    def highlight_all_matches(self, *junk: typing.Any) -> None:
         # clear previous highlights
         self._textwidget.tag_remove('find_highlight', '1.0', 'end')
 
@@ -227,7 +251,7 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel['text'] = "Found %d matches." % count
 
-    def _select_range(self, start, end):
+    def _select_range(self, start: str, end: str) -> None:
         # the tag_lower makes sure sel shows up, hiding find_highlight under it
         self._textwidget.tag_lower('find_highlight', 'sel')
         self._textwidget.tag_remove('sel', '1.0', 'end')
@@ -236,7 +260,8 @@ class Finder(ttk.Frame):
         self._textwidget.see(start)
 
     # TODO: adjust scrolling accordingly
-    def _go_to_next_match(self, junk_event=None):
+    def _go_to_next_match(
+            self, junk: typing.Optional[tkinter.Event] = None) -> None:
         pairs = self.get_match_ranges()
         if not pairs:
             # the "Next match" button is disabled in this case, but the key
@@ -257,7 +282,8 @@ class Finder(ttk.Frame):
         self._update_buttons()
 
     # see _go_to_next_match for comments
-    def _go_to_previous_match(self, junk_event=None):
+    def _go_to_previous_match(
+            self, junk: typing.Optional[tkinter.Event] = None) -> None:
         pairs = self.get_match_ranges()
         if not pairs:
             self.statuslabel['text'] = "No matches found!"
@@ -274,7 +300,8 @@ class Finder(ttk.Frame):
         self._update_buttons()
         return
 
-    def _replace_this(self, junk_event=None):
+    def _replace_this(
+            self, junk: typing.Optional[tkinter.Event] = None) -> None:
         if str(self.replace_this_button['state']) == 'disabled':
             self.statuslabel['text'] = (
                 'Click "Previous match" or "Next match" first.')
@@ -300,7 +327,7 @@ class Finder(ttk.Frame):
             self.statuslabel['text'] = (
                 "Replaced a match. There are %d more matches." % left)
 
-    def _replace_all(self):
+    def _replace_all(self) -> None:
         match_ranges = self.get_match_ranges()
 
         # must do this backwards because replacing may screw up indexes AFTER
@@ -317,7 +344,7 @@ class Finder(ttk.Frame):
                                         len(match_ranges))
 
 
-def find():
+def find() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     if tab not in finders:
@@ -325,6 +352,6 @@ def find():
     finders[tab].show()
 
 
-def setup():
+def setup() -> None:
     actions.add_command("Edit/Find and Replace", find, '<Control-f>',
                         tabtypes=[tabs.FileTab])

@@ -147,7 +147,7 @@ If you are using Windows, you need to use `py` instead of `python3` and
 
 Here is a list of the commands I use when developing Porcupine:
 - Git commands. I'll assume that you know how to use Git and GitHub.
-- Type checking with mypy: `MYPYPATH=my_stubs mypy porcupine/` (see also my_stubs/README.md)
+- Type checking with mypy: `MYPYPATH=my_stubs mypy --strict porcupine/` (see also my_stubs/README.md)
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
 - `coverage run --include="porcupine/*" -m pytest` followed by `coverage html`

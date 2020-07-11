@@ -4,6 +4,7 @@ import os
 import re
 import tkinter
 from tkinter import ttk
+import typing
 from urllib.request import pathname2url
 import webbrowser
 
@@ -36,23 +37,23 @@ here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 """.format(version=porcupine_version)
 
 
-def show_huge_logo(junk_event=None):
-    path = os.path.join(dirs.installdir, 'images', 'logo.gif')
-    assert os.path.isfile(path)
+def show_huge_logo(junk: typing.Optional[tkinter.Event] = None) -> None:
+    path = dirs.installdir / 'images' / 'logo.gif'
+    assert path.is_file()
 
-    # web browsers are good at displaying large images, and webbrowser.open
-    # actually tries xdg-open first, so this will be used on linux if an image
-    # viewer program is installed, and i guess that other platforms just open
-    # up a web browser or something
-    webbrowser.open('file://' + pathname2url(path))
+    # Web browsers are good at displaying large images, and webbrowser.open
+    # actually tries xdg-open first. So, if you're on linux and you have an
+    # image viewer installed, this should launch that. I guess it just opens up
+    # web browser on other platforms.
+    webbrowser.open(path.as_uri())
 
 
 class _AboutDialogContent(ttk.Frame):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: typing.Any, **kwargs: typing.Any):
         super().__init__(*args, **kwargs)
 
-        big_label = ttk.Label(self, font=('', 16, ''), text="About Porcupine")
+        big_label = ttk.Label(self, font=('', 16, ()), text="About Porcupine")
         big_label.pack(pady=5)
 
         self._textwidget = utils.create_passive_text_widget(
@@ -61,8 +62,7 @@ class _AboutDialogContent(ttk.Frame):
 
         # http://effbot.org/zone/tkinter-text-hyperlink.htm
         # that tutorial is almost as old as i am, but it's still usable
-        self._textwidget.tag_configure('link', foreground='blue',
-                                       underline=True)
+        self._textwidget.tag_config('link', foreground='blue', underline=True)
         self._textwidget.tag_bind('link', '<Enter>', self._enter_link)
         self._textwidget.tag_bind('link', '<Leave>', self._leave_link)
         self._link_tag_names = map('link-{}'.format, itertools.count())
@@ -78,8 +78,8 @@ class _AboutDialogContent(ttk.Frame):
         utils.set_tooltip(label, "Click to view in full size")
         label.bind('<Button-1>', show_huge_logo)
 
-    def _add_minimal_markdown(self, text):
-        parts = []   # contains strings and link regex matches
+    def _add_minimal_markdown(self, text: str) -> None:
+        parts: typing.List[typing.Union[str, typing.Match[str]]] = []
 
         previous_end = 0
         for link in re.finditer(r'\[(.+?)\]\((.+?)\)', text):
@@ -104,17 +104,17 @@ class _AboutDialogContent(ttk.Frame):
                     functools.partial(self._open_link, href))
                 self._textwidget.insert('end', text, ['link', tag])
 
-    def _enter_link(self, junk_event):
-        self._textwidget.config(cursor='hand2')
+    def _enter_link(self, junk_event: tkinter.Event) -> None:
+        self._textwidget['cursor'] = 'hand2'
 
-    def _leave_link(self, junk_event):
-        self._textwidget.config(cursor='')
+    def _leave_link(self, junk_event: tkinter.Event) -> None:
+        self._textwidget['cursor'] = ''
 
-    def _open_link(self, href, junk_event):
+    def _open_link(self, href: str, junk_event: tkinter.Event) -> None:
         webbrowser.open(href)
 
 
-def show_about_dialog():
+def show_about_dialog() -> None:
     dialog = tkinter.Toplevel()
     content = _AboutDialogContent(dialog)
     content.pack(fill='both', expand=True)
@@ -126,5 +126,5 @@ def show_about_dialog():
     dialog.wait_window()
 
 
-def setup():
+def setup() -> None:
     actions.add_command("Help/About Porcupine...", show_about_dialog)

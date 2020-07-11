@@ -1,7 +1,8 @@
 """Maximum line length marker for Tkinter's text widget."""
 
 import tkinter
-import tkinter.font as tkfont   # type: ignore
+import tkinter.font as tkfont
+import typing
 
 import pygments.styles  # type: ignore
 import pygments.token   # type: ignore
@@ -13,7 +14,7 @@ config = settings.get_section('General')
 
 class LongLineMarker:
 
-    def __init__(self, filetab):
+    def __init__(self, filetab: tabs.FileTab) -> None:
         self.tab = filetab
 
         # this must not be a ttk frame because the background color
@@ -21,7 +22,7 @@ class LongLineMarker:
         self.frame = tkinter.Frame(filetab.textwidget, width=1)
         self._height = 0        # on_configure() will run later
 
-    def setup(self):
+    def setup(self) -> None:
         config.connect('font_family', self.do_update, run_now=False)
         config.connect('font_size', self.do_update, run_now=False)
         config.connect('pygments_style', self.on_style_changed)
@@ -30,12 +31,12 @@ class LongLineMarker:
         self.tab.bind('<Destroy>', self.on_destroy, add=True)
         self.do_update()
 
-    def on_destroy(self, event):
+    def on_destroy(self, event: tkinter.Event) -> None:
         config.disconnect('font_family', self.do_update)
         config.disconnect('font_size', self.do_update)
         config.disconnect('pygments_style', self.on_style_changed)
 
-    def do_update(self, junk=None):
+    def do_update(self, junk: typing.Any = None) -> None:
         column = self.tab.filetype.max_line_length
         if column == 0:
             # maximum line length is disabled, see filetypes.ini docs
@@ -45,7 +46,7 @@ class LongLineMarker:
         where = font.measure(' ' * self.tab.filetype.max_line_length)
         self.frame.place(x=where, height=self._height)
 
-    def on_style_changed(self, name):
+    def on_style_changed(self, name: str) -> None:
         # do the same thing as porcupine's color theme menu does
         infos = dict(iter(pygments.styles.get_style_by_name(name)))
         for tokentype in [pygments.token.Error, pygments.token.Name.Exception]:
@@ -58,16 +59,17 @@ class LongLineMarker:
         # stupid fallback
         self.frame['bg'] = 'red'
 
-    def on_configure(self, event):
+    def on_configure(self, event: tkinter.Event) -> None:
+        assert event.height != '??'
         self._height = event.height
         self.do_update()
 
 
-def on_new_tab(event):
+def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         LongLineMarker(tab).setup()
 
 
-def setup():
+def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

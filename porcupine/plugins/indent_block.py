@@ -1,16 +1,20 @@
 """Allow selecting multiple lines and indenting them all at once."""
 
-from porcupine import get_tab_manager, tabs, utils
+import tkinter
+
+from porcupine import get_tab_manager, textwidget, tabs, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
 
 
-def on_tab_key(event, shifted):
+def on_tab_key(event: tkinter.Event, shifted: bool) -> None:
+    assert isinstance(event.widget, textwidget.MainText)
+
     try:
         start_index, end_index = map(str, event.widget.tag_ranges('sel'))
     except ValueError:
-        # nothing selected, allow doing other stuff
-        return None
+        # nothing selected
+        return
 
     start = int(start_index.split('.')[0])
     end = int(end_index.split('.')[0])
@@ -34,11 +38,11 @@ def on_tab_key(event, shifted):
     event.widget.tag_add('sel', '%d.0' % start, '%d.0' % end)
 
 
-def on_new_tab(event):
+def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
 
 
-def setup():
+def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

@@ -17,8 +17,8 @@ from porcupine.plugins import __path__ as plugin_paths
 log = logging.getLogger(__name__)
 
 
-def find_plugins():
-    """Return a set of names of plugins that can be loaded.
+def find_plugins() -> typing.Set[str]:
+    """Return names of plugins that can be loaded.
 
     Note that loading some of the returned plugins may fail.
     """
@@ -31,8 +31,8 @@ def find_plugins():
 _loaded_names: typing.List[str] = []
 
 
-def load(plugin_names: typing.List[str], shuffle: bool = False) -> None:
-    """Load plugins from an iterable of names.
+def load(plugin_names: typing.Iterable[str], shuffle: bool = False) -> None:
+    """Load plugins.
 
     The plugins are always ordered using their ``setup_before`` and
     ``setup_after`` lists. The *shuffle* argument determines what is
@@ -73,15 +73,13 @@ def load(plugin_names: typing.List[str], shuffle: bool = False) -> None:
     # setup_before and setup_after may contain names of plugins that are
     # not installed because they are for controlling the loading order,
     # not for requiring dependencies
-    def valid_name(name):
-        return name in plugin_infos
 
     dependencies: typing.Dict[str, typing.Set[str]] = {
         name: set() for name in plugin_infos
     }
     for name, (setup_before, setup_after, setup) in plugin_infos.items():
-        dependencies[name].update(filter(valid_name, setup_after))
-        for reverse_dependency in filter(valid_name, setup_before):
+        dependencies[name].update(setup_after & plugin_infos.keys())
+        for reverse_dependency in (setup_before & plugin_infos.keys()):
             dependencies[reverse_dependency].add(name)
 
     # the toposort will partially work even if there's a circular

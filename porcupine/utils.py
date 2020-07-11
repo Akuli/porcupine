@@ -301,7 +301,7 @@ class EventWithData(tkinter.Event):
 
 
 def bind_with_data(
-        widget: tkinter.Widget,
+        widget: tkinter.BaseWidget,
         sequence: str,
         callback: typing.Callable[[EventWithData], typing.Optional[str]],
         add: bool = False) -> str:
@@ -358,8 +358,7 @@ def bind_with_data(
     # tkinter's bind() ignores the add argument when the callback is a
     # string :(
     funcname = widget.register(run_the_callback)
-    tcl_interpreter = typing.cast(typing.Any, widget).tk
-    tcl_interpreter.eval(
+    widget.tk.eval(
         'bind %s %s {+ if {"[%s %%d]" == "break"} break }'
         % (widget, sequence, funcname))
     return funcname
@@ -388,7 +387,7 @@ def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
 
 @contextlib.contextmanager
 def temporary_bind(
-    widget: tkinter.Widget,
+    widget: tkinter.BaseWidget,
     sequence: str,
     func: typing.Callable[[tkinter.Event], typing.Optional[str]]
 ) -> typing.Iterator[None]:
@@ -468,8 +467,7 @@ def bind_tab_key(
             event: tkinter.Event) -> typing.Optional[typing.Literal['break']]:
         return on_tab(event, shifted)
 
-    tcl_interpreter = typing.cast(typing.Any, widget)
-    if tcl_interpreter.call('tk', 'windowingsystem') == 'x11':
+    if widget.tk.call('tk', 'windowingsystem') == 'x11':
         # even though the event keysym says Left, holding down the right
         # shift and pressing tab also works :D
         shift_tab = '<ISO_Left_Tab>'
@@ -500,8 +498,7 @@ def bind_mouse_wheel(
     """
     # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
-    tcl_interpreter = typing.cast(typing.Any, widget)
-    if tcl_interpreter.tk.call('tk', 'windowingsystem') == 'x11':
+    if widget.tk.call('tk', 'windowingsystem') == 'x11':
         def real_callback(event: tkinter.Event) -> None:
             callback('up' if event.num == 4 else 'down')
 
@@ -531,9 +528,8 @@ def create_passive_text_widget(
 
     def update_colors(junk: typing.Optional[tkinter.Event] = None) -> None:
         # tkinter's ttk::style api sucks so let's not use it
-        tcl_interp = typing.cast(typing.Any, text).tk
-        ttk_fg = tcl_interp.eval('ttk::style lookup TLabel.label -foreground')
-        ttk_bg = tcl_interp.eval('ttk::style lookup TLabel.label -background')
+        ttk_fg = text.tk.eval('ttk::style lookup TLabel.label -foreground')
+        ttk_bg = text.tk.eval('ttk::style lookup TLabel.label -background')
 
         if not ttk_fg and not ttk_bg:
             # stupid ttk theme, it deserves this
@@ -566,12 +562,12 @@ except AttributeError:
         def __init__(self, master, *, from_=None, **kwargs):     # type: ignore
             if from_ is not None:
                 kwargs['from'] = from_  # this actually works
-            super().__init__(master, 'ttk::spinbox', **kwargs)
+            super().__init__(master, 'ttk::spinbox', **kwargs)  # type: ignore
 
         def configure(self, *args, **kwargs):   # type: ignore
             if 'from_' in kwargs:
                 kwargs['from'] = kwargs.pop('from_')
-            return super().configure(*args, **kwargs)
+            return super().configure(*args, **kwargs)   # type: ignore
 
         config = configure
 

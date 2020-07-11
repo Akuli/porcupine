@@ -1,4 +1,6 @@
 import pathlib
+import _tkinter
+from tkinter import font
 from typing import (
     Any,        # use this sparingly lol
     Callable,
@@ -27,8 +29,43 @@ class Event:
     num: Union[int, Literal['??']]
     delta: int
     keysym: str     # can be '??'
+    char: str       # can be '??'
 
 _BindCallback = Callable[['Event'], Optional[Literal['break']]]
+
+_TraceModeString = Union[
+    Literal['read'],
+    Literal['write'], Literal['unset'],
+]
+_TraceMode = Union[
+    _TraceModeString,
+    List[_TraceModeString],
+    Tuple[_TraceModeString, ...],
+]
+
+class Variable:
+    def set(self, value: Any) -> None: ...
+    def get(self) -> Any: ...
+
+    # trace is deprecated, please use trace_add instead
+
+    # String arguments that the callback takes (see also trace man page)
+    #   - first argument: Tcl variable name
+    #   - second argument: seems to be always empty. Don't know how to make non-empty.
+    #   - third argument: same as first argument to trace
+    def trace_add(self, mode: _TraceMode, callback: Callable[[str, str, str], None]) -> str: ...
+
+class StringVar(Variable):
+    def set(self, value: str) -> None: ...
+    def get(self) -> str: ...
+
+class IntVar(Variable):
+    def set(self, value: int) -> None: ...
+    def get(self) -> int: ...
+
+class BooleanVar(Variable):
+    def set(self, value: bool) -> None: ...
+    def get(self) -> bool: ...
 
 # see Tk_GetAnchor man page
 _Anchor = Union[
@@ -51,28 +88,41 @@ _Relief = Union[
 # see Tk_GetPixels man page for what each suffix means
 #
 # this is also used in ttk.pyi
+#
+# TODO: rename to _ScreenUnits
 _ScreenDistance = Union[str, int, float]
+
+# see 'FONT DESCRIPTIONS' in font man page
+# _FontSpec is also used in ttk.pyi
+#
+# unfortunately Literal inside Tuple doesn't actualyl work... lol
+#_FontStyle = Union[
+#    Literal['normal'],
+#    Literal['bold'],
+#    Literal['roman'],
+#    Literal['italic'],
+#    Literal['underline'],
+#    Literal['overstrike'],
+#]
+_FontStyle = str
+_FontSpec = Union[
+    str,
+    font.Font,
+
+    # ('Helvetica', 16, 'bold')
+    # ('Helvetica', 16, ('bold', 'italic'))
+    # ('Helvetica', 16, ['bold', 'italic'])
+    # ('Helvetica', 16, [])
+    Tuple[str, int, _FontStyle],
+    Tuple[str, int, Tuple[_FontStyle, ...]],
+    Tuple[str, int, List[_FontStyle]],
+]
 
 _PackSide = Union[Literal['left'], Literal['right'], Literal['top'], Literal['bottom']]
 _PackFill = Union[Literal['none'], Literal['x'], Literal['y'], Literal['both']]
 _PackPad = Union[
     Tuple[_ScreenDistance, _ScreenDistance],    # (top, bottom) or (left, right)
     _ScreenDistance,                    # same value used for both
-]
-
-# there are several ways to specify a font, see font(3tk) man page
-_BoldOrStuff = Union[Literal['bold'], Literal['italic']]
-_FontSpec = Union[
-    # see font(3tk) man page for what this could be
-    str,
-
-    # ('Helvetica', 16, 'bold')
-    # ('Helvetica', 16, ('bold', 'italic'))
-    # ('Helvetica', 16, ['bold', 'italic'])
-    # ('Helvetica', 16, [])
-    Tuple[str, int, _BoldOrStuff],
-    Tuple[str, int, Tuple[_BoldOrStuff, ...]],
-    Tuple[str, int, List[_BoldOrStuff]],
 ]
 
 # Tkinter makes widgets behave like dicts for options, as in
@@ -146,14 +196,30 @@ class BaseWidget:
     def bind(self, sequence: str, func: str) -> None: ...
 
     def bind_all(self, sequence: str, func: _BindCallback, add: bool = ...) -> str: ...
+    def clipboard_clear(self) -> None: ...
+    def clipboard_append(self, string: str) -> None: ...
     def deletecommand(self, name: str) -> None: ...
     def destroy(self) -> None: ...
 
     # The data is str()ed, and it can be anything that has valid str(). Note
     # that str(some_widget) returns the widget's Tcl command name, which can be
     # e.g. passed to nametowidget.
-    def event_generate(self, sequence: str, *, x: int = ..., y: int = ..., data: Union[str, int, float, BaseWidget] = ...): ...
+    def event_generate(
+        self, sequence: str, *,
+        x: int = ...,
+        y: int = ...,
+        data: Union[str, int, float, BaseWidget] = ...,
+    ) -> None: ...
 
+    def focus_set(self) -> None: ...
+    def getvar(self, name: str = ...) -> Any: ...    # doesn't always return str
+    def grid_columnconfigure(
+        self, index: int, *,
+        minsize: _ScreenDistance = ...,
+        weight: int = ...,
+        uniform: str = ...,
+        pad: _ScreenDistance = ...,
+    ) -> None: ...
     def nametowidget(self, name: str) -> 'BaseWidget': ...
 
     # register() callbacks can do pretty much anything, can't do more specific type hints
@@ -162,9 +228,37 @@ class BaseWidget:
     def update(self) -> None: ...
     def wait_window(self) -> None: ...
     def winfo_children(self) -> List['BaseWidget']: ...
+    def winfo_ismapped(self) -> Union[Literal[0], Literal[1]]: ...  # weird that its not bool
     def winfo_rgb(self, color: str) -> Tuple[int, int, int]: ...
     def winfo_rootx(self) -> int: ...
     def winfo_rooty(self) -> int: ...
+    def winfo_toplevel(self) -> Union['Tk', 'Toplevel']: ...
+    def winfo_width(self) -> int: ...
+    def winfo_height(self) -> int: ...
+    def winfo_reqwidth(self) -> int: ...
+    def winfo_reqheight(self) -> int: ...
+    def winfo_screenwidth(self) -> int: ...
+    def winfo_screenheight(self) -> int: ...
+    def winfo_x(self) -> int: ...
+    def winfo_y(self) -> int: ...
+
+# all strings containing some of 'n', 's', 'w', 'e' with no duplicates
+_Sticky = Union[
+    Literal[''],
+    Literal['n'], Literal['s'], Literal['w'], Literal['e'],
+    Literal['ns'], Literal['nw'], Literal['ne'],
+    Literal['sn'], Literal['sw'], Literal['se'],
+    Literal['wn'], Literal['ws'], Literal['we'],
+    Literal['en'], Literal['es'], Literal['ew'],
+    Literal['nsw'], Literal['nse'], Literal['nws'], Literal['nwe'], Literal['nes'], Literal['new'],
+    Literal['snw'], Literal['sne'], Literal['swn'], Literal['swe'], Literal['sen'], Literal['sew'],
+    Literal['wns'], Literal['wne'], Literal['wsn'], Literal['wse'], Literal['wen'], Literal['wes'],
+    Literal['ens'], Literal['enw'], Literal['esn'], Literal['esw'], Literal['ewn'], Literal['ews'],
+    Literal['nswe'], Literal['nsew'], Literal['nwse'], Literal['nwes'], Literal['nesw'], Literal['news'],
+    Literal['snwe'], Literal['snew'], Literal['swne'], Literal['swen'], Literal['senw'], Literal['sewn'],
+    Literal['wnse'], Literal['wnes'], Literal['wsne'], Literal['wsen'], Literal['wens'], Literal['wesn'],
+    Literal['ensw'], Literal['enws'], Literal['esnw'], Literal['eswn'], Literal['ewns'], Literal['ewsn'],
+]
 
 # this class represents a widget that can be put inside another widget
 class Widget(BaseWidget):
@@ -178,43 +272,46 @@ class Widget(BaseWidget):
     # but there should never be any need to use those directly so why bother
     # with them here
     def __init__(self, master: BaseWidget) -> None: ...
+
+    def grid(
+        self, *,
+        column: int = ...,
+        columnspan: int = ...,
+        row: int = ...,
+        rowspan: int = ...,
+        sticky: _Sticky,
+        # TODO: figure out how 'in' is supposed to work
+        ipadx: _ScreenDistance = ...,
+        ipady: _ScreenDistance = ...,
+        # pad tuple means different paddings for left and right, or top and bottom
+        padx: Union[_ScreenDistance, Tuple[_ScreenDistance, _ScreenDistance]] = ...,
+        pady: Union[_ScreenDistance, Tuple[_ScreenDistance, _ScreenDistance]] = ...,
+    ) -> None: ...
+
     def pack(
         self, *,
         side: _PackSide = ...,
         fill: _PackFill = ...,
         anchor: _Anchor = ...,
         expand: bool = ...,
-        padx: _ScreenDistance = ...,
-        pady: _ScreenDistance = ...) -> None: ...
+        # pad tuple means different paddings for left and right, or top and bottom
+        padx: Union[_ScreenDistance, Tuple[_ScreenDistance, _ScreenDistance]] = ...,
+        pady: Union[_ScreenDistance, Tuple[_ScreenDistance, _ScreenDistance]] = ...
+    ) -> None: ...
+    def pack_forget(self) -> None: ...
 
-# TODO: what other protocol names are there?
-#       are some of these deprecated or supported only on some platforms?
-_WmProtocolName = Union[
-    Literal['WM_DELETE_WINDOW'],
-    Literal['WM_SAVE_YOURSELF'],
-    Literal['WM_TAKE_FOCUS'],
-]
-
-# stuff for Toplevel and Tk
-class Wm:
-    @overload
-    def geometry(self) -> str: ...
-    @overload
-    def geometry(self, newGeometry: str) -> Literal['']: ...
-
-    def overrideredirect(self, boolean: bool) -> None: ...
-    def protocol(self, name: _WmProtocolName, func: Callable[[], None]) -> Literal['']: ...
-    def title(self, string: str) -> Literal['']: ...
-    def transient(self, master: Wm) -> Literal['']: ...
-    def withdraw(self) -> Literal['']: ...
-    def deiconify(self) -> Literal['']: ...
-
-class Toplevel(BaseWidget, Wm): pass
-class Tk(BaseWidget, Wm):
-
-    # actually many widgets have this, but invoking it elsewhere doesn't make
-    # much sense
-    def mainloop(self) -> None: ...
+    def place(
+        self, *,
+        x: _ScreenDistance = ...,
+        y: _ScreenDistance = ...,
+        width: _ScreenDistance = ...,
+        height: _ScreenDistance = ...,
+        relx: float = ...,
+        rely: float = ...,
+        relwidth: float = ...,
+        relheight: float = ...,
+        anchor: _Anchor = ...,
+    ) -> None: ...
 
 class Label(Widget):
     def __init__(
@@ -222,13 +319,68 @@ class Label(Widget):
         text: str = ...,
         border: int = ...,
         fg: str = ...,
-        bg: str = ...) -> None: ...
+        bg: str = ...,
+        image: PhotoImage = ...,
+        cursor: str = ...,
+    ) -> None: ...
+
     @overload
     def __setitem__(self, opt: Literal['text'], val: str) -> None: ...
     @overload
     def __setitem__(self, opt: Literal['wraplength'], val: _ScreenDistance) -> None: ...
     @overload
     def __setitem__(self, opt: Literal['font'], val: _FontSpec) -> None: ...
+
+# see menu man page for what kind of strings are allowed
+_MenuIndex = Union[int, str]
+
+class Menu(Widget):
+    def __init__(self, *, tearoff: bool = ...) -> None: ...
+    def entryconfig(
+        self, index: _MenuIndex, *,
+        state: Union[Literal['normal'], Literal['active'], Literal['disabled']],
+    ) -> None: ...
+    def index(self, index: _MenuIndex) -> Optional[int]: ...
+    def insert_cascade(
+        self, index: _MenuIndex, *,
+        label: str = ...,
+        accelerator: str = ...,
+        menu: 'Menu' = ...,
+    ) -> None: ...
+    def add_cascade(
+        self, *, label: str = ..., accelerator: str = ...,
+        menu: 'Menu' = ...,
+    ) -> None: ...
+    def add_command(
+        self, *, label: str = ..., accelerator: str = ...,
+        command: Callable[[], None],
+    ) -> None: ...
+    def add_checkbutton(
+        self, *, label: str = ..., accelerator: str = ...,
+        variable: BooleanVar = ...,
+    ) -> None: ...
+    def add_radiobutton(
+        self, *, label: str = ..., accelerator: str = ...,
+        variable: StringVar = ...,
+    ) -> None: ...
+
+class YView:
+    @overload
+    def yview(self) -> Tuple[float, float]: ...
+    @overload
+    def yview(self, /, arg: Literal['moveto'], fraction: float) -> None: ...
+    @overload
+    def yview(self, /, arg: Literal['scroll'], number: int, what: Union[Literal['units'], Literal['pages']]) -> None: ...
+    @overload
+    def yview(self, /, arg: Literal['scroll'], number: _ScreenDistance, what: Literal['pixels']) -> None: ...
+
+    # i wish there was an easy way to do partialmethods
+    @overload
+    def yview_scroll(self, /, number: int, what: Union[Literal['units'], Literal['pages']]) -> None: ...
+    @overload
+    def yview_scroll(self, /, number: _ScreenDistance, what: Literal['pixels']) -> None: ...
+
+    def yview_moveto(self, fraction: float) -> None: ...
 
 _WrapMode = Union[Literal['none'], Literal['char'], Literal['word']]
 _TextWidgetState = Union[Literal['normal'], Literal['disabled']]
@@ -241,11 +393,9 @@ _CompareOp = Union[
 
 # Text.tag_ranges() returns Tcl_Objs that can be str()ed or passed to tkinter
 # wanting text indexes.
-class Tcl_Obj:
-    pass
-_TextIndex = Union[str, Tcl_Obj]
+_TextIndex = Union[str, _tkinter.Tcl_Obj]
 
-class Text(Widget):
+class Text(Widget, YView):
     def __init__(
         self, master: BaseWidget, *,
         width: int = ...,
@@ -265,13 +415,19 @@ class Text(Widget):
     @overload
     def __setitem__(self, opt: Literal['bg'], val: str) -> None: ...
     @overload
+    def __setitem__(self, opt: Literal['selectforeground'], val: str) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['selectbackground'], val: str) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['inactiveselectbackground'], val: str) -> None: ...
+    @overload
     def __setitem__(self, opt: Literal['insertbackground'], val: str) -> None: ...
     @overload
     def __setitem__(self, opt: Literal['highlightbackground'], val: str) -> None: ...
     @overload
-    def __setitem__(self, opt: Literal['selectforeground'], val: str) -> None: ...
+    def __setitem__(self, opt: Literal['highlightcolor'], val: str) -> None: ...
     @overload
-    def __setitem__(self, opt: Literal['selectbackground'], val: str) -> None: ...
+    def __setitem__(self, opt: Literal['highlightthickness'], val: _ScreenDistance) -> None: ...
     @overload
     def __setitem__(self, opt: Literal['state'], val: _TextWidgetState) -> None: ...
     @overload
@@ -279,17 +435,18 @@ class Text(Widget):
     @overload
     def __setitem__(self, opt: Literal['tabs'], val: List[str]) -> None: ...
     @overload
-    def __setitem__(self, opt: Literal['yscrollcommand'], val: Callable[[float, float], None]) -> None: ...
+    def __setitem__(self, opt: Literal['cursor'], val: str) -> None: ...
+
+    # TODO: belongs to YView but is currently copy/pasted to every subclasses
+    @overload
+    def __setitem__(self, opt: Literal['yscrollcommand'], val: Union[str, Callable[[float, float], None]]) -> None: ...
+    @overload
+    def __getitem__(self, opt: Literal['yscrollcommand']) -> str: ...
 
     @overload
-    def yview(self) -> Tuple[float, float]: ...
-    @overload
-    def yview(self, /, arg: Literal['moveto'], fraction: float) -> None: ...
-    @overload
-    def yview(self, /, arg: Literal['scroll'], number: int, what: Union[Literal['units'], Literal['pages']]) -> None: ...
-    @overload
-    def yview(self, /, arg: Literal['scroll'], number: _ScreenDistance, what: Literal['pixels']) -> None: ...
+    def __getitem__(self, opt: Literal['font']) -> str: ...
 
+    def bbox(self, index: _TextIndex) -> Optional[Tuple[int, int, int, int]]: ...
     def compare(self, index1: _TextIndex, op: _CompareOp, index2: _TextIndex) -> bool: ...
     def delete(self, index1: _TextIndex, index2: Optional[_TextIndex] = ...) -> None: ...
     def edit_reset(self) -> Literal['']: ...
@@ -298,7 +455,28 @@ class Text(Widget):
     def index(self, index: _TextIndex) -> str: ...
     def mark_set(self, markName: str, index: _TextIndex) -> str: ...
     def peer_create(self, newPathName: str) -> None: ...
+    def search(
+        self, pattern: str, index: _TextIndex, stopindex: _TextIndex = ..., *,
+        forwards: bool = ...,
+        backwards: bool = ...,
+        exact: bool = ...,
+        regexp: bool = ...,
+        nocase: bool = ...,
+        elide: bool = ...,
+        count: IntVar = ...,
+    ) -> str: ...       # returns empty string for no match
+
     def see(self, index: _TextIndex) -> None: ...
+    def tag_bind(self, tagName: str, sequence: str, func: _BindCallback, add: bool = ...) -> str: ...
+    def tag_cget(self, tagName: str, option: Literal['font']) -> str: ...
+    def tag_config(
+        self, tagName: str, *,
+        foreground: str = ...,
+        background: str = ...,
+        underline: bool = ...,
+        font: _FontSpec = ...,
+    ) -> None: ...
+    def tag_lower(self, tagName: str, belowThis: str = ...) -> None: ...
 
     # actual return type is currently Tcl_Obj which is kinda useless unless
     # str()ed, writing it as _TextIndex to make sure that if it's changed some
@@ -310,43 +488,84 @@ class Text(Widget):
 
     # these functions also take *args, but i have never seen code that uses those *args
     def insert(self, index: _TextIndex, chars: str, /, tag_list: _TagList = ...) -> None: ...
+    def replace(self, index1: _TextIndex, index2: _TextIndex, chars: str) -> None: ...
     def tag_add(self, tagName: str, index1: _TextIndex, /, index2: _TextIndex = ...) -> None: ...
+    def tag_remove(self, tagName: str, index1: _TextIndex, index2: _TextIndex = ...) -> None: ...
 
+class Frame(Widget):
+    def __init__(
+        self, master: BaseWidget, *,
+        width: _ScreenDistance = ...,
+        height: _ScreenDistance = ...,
+    ) -> None: ...
 
-class Frame(Widget): pass
+    @overload
+    def __setitem__(self, opt: Literal['foreground'], val: str) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['background'], val: str) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['fg'], val: str) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['bg'], val: str) -> None: ...
 
-_TraceModeString = Union[
-    Literal['read'],
-    Literal['write'], Literal['unset'],
+# TODO: what other protocol names are there?
+#       are some of these deprecated or supported only on some platforms?
+_WmProtocolName = Union[
+    Literal['WM_DELETE_WINDOW'],
+    Literal['WM_SAVE_YOURSELF'],
+    Literal['WM_TAKE_FOCUS'],
 ]
-_TraceMode = Union[
-    _TraceModeString,
-    List[_TraceModeString],
-    Tuple[_TraceModeString, ...],
+
+# see 'wm state' in wm man page
+_WmState = Union[
+    Literal['normal'],
+    Literal['icon'],
+    Literal['iconic'],
+    Literal['withdrawn'],
+    Literal['zoomed'],
 ]
 
-class Variable:
-    def set(self, value: Any) -> None: ...
-    def get(self) -> Any: ...
+_StupidBool = Union[Literal[0], Literal[1]]
 
-    # trace is deprecated, please use trace_add instead
+# stuff for Toplevel and Tk
+class Wm:
+    # TODO: overload other ways to call attributes()
+    def attributes(self, /, opt: Literal['-fullscreen'], val: bool) -> Literal['']: ...
 
-    # String arguments that the callback takes (see also trace man page)
-    #   - first argument: Tcl variable name
-    #   - second argument: seems to be always empty. Don't know how to make non-empty.
-    #   - third argument: same as first argument to trace
-    def trace_add(self, mode: _TraceMode, callback: Callable[[str, str, str], None]) -> str: ...
+    @overload
+    def geometry(self) -> str: ...
+    @overload
+    def geometry(self, newGeometry: str) -> Literal['']: ...
 
-class StringVar(Variable):
-    def set(self, value: str) -> None: ...
-    def get(self) -> str: ...
+    @overload
+    def state(self) -> _WmState: ...
+    @overload
+    def state(self, newstate: _WmState) -> Literal['']: ...
 
-class IntVar(Variable):
-    def set(self, value: int) -> None: ...
-    def get(self) -> int: ...
+    @overload
+    def minsize(self) -> Tuple[int, int]: ...
+    @overload
+    def minsize(self, width: int, height: int) -> None: ...
 
-class BooleanVar(Variable):
-    def set(self, value: bool) -> None: ...
-    def get(self) -> bool: ...
+    @overload
+    def resizable(self) -> Tuple[_StupidBool, _StupidBool]: ...
+    @overload
+    def resizable(self, width: bool, height: bool) -> Literal['']: ...
+
+    def overrideredirect(self, boolean: bool) -> None: ...
+    def protocol(self, name: _WmProtocolName, func: Callable[[], None]) -> Literal['']: ...
+    def title(self, string: str) -> Literal['']: ...
+    def transient(self, master: Wm) -> Literal['']: ...
+    def withdraw(self) -> Literal['']: ...
+    def deiconify(self) -> Literal['']: ...
+
+    def __setitem__(self, opt: Literal['menu'], val: Menu) -> None: ...
+
+class Toplevel(BaseWidget, Wm): pass
+
+class Tk(BaseWidget, Wm):
+    # actually many widgets have this, but invoking it elsewhere doesn't make
+    # much sense
+    def mainloop(self) -> None: ...
 
 def mainloop() -> None: ...

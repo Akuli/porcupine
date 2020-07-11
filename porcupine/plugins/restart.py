@@ -2,6 +2,7 @@
 import os
 import pickle
 import pkgutil
+import tkinter
 
 from porcupine import dirs, get_main_window, get_tab_manager
 from porcupine.plugins import __path__ as plugin_paths
@@ -16,7 +17,7 @@ setup_after = [
 STATE_FILE = os.path.join(dirs.cachedir, 'restart_state.pkl')
 
 
-def save_states(junk_event):
+def save_states(junk: tkinter.Event) -> None:
     states = []
     for tab in get_tab_manager().tabs():
         state = tab.get_state()
@@ -27,7 +28,7 @@ def save_states(junk_event):
         pickle.dump(states, file)
 
 
-def setup():
+def setup() -> None:
     # this must run even if loading tabs from states below fails
     get_main_window().bind('<<PorcupineQuit>>', save_states, add=True)
 

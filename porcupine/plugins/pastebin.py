@@ -5,9 +5,11 @@
 
 import functools
 import logging
+import pathlib
 import socket
 import tkinter
 from tkinter import ttk
+import typing
 import webbrowser
 
 import requests
@@ -16,28 +18,26 @@ from porcupine import actions, get_main_window, get_tab_manager, tabs, utils
 from porcupine import __version__ as _porcupine_version
 
 
-if tkinter.TkVersion >= 8.6:    # yes, it's a float in tkinter
-    def tk_busy_hold():
+# yes, TkVersion is a float lol
+# TODO: do something on Tk < 8.6?
+def tk_busy_hold() -> None:
+    if tkinter.TkVersion >= 8.6:
         get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
 
-    def tk_busy_forget():
+
+def tk_busy_forget() -> None:
+    if tkinter.TkVersion >= 8.6:
         get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
-
-else:    # pragma: no cover
-    # TODO: gray out something?
-    def tk_busy_hold():
-        pass
-
-    def tk_busy_forget():
-        pass
 
 
 log = logging.getLogger(__name__)
-pastebins = {}
+
+PastebinFunction = typing.Callable[[str, typing.Optional[pathlib.Path]], str]
+pastebins: typing.Dict[str, PastebinFunction] = {}
 
 
-def pastebin(name):
-    def inner(function):
+def pastebin(name: str) -> typing.Callable[[PastebinFunction], PastebinFunction]:
+    def inner(function: PastebinFunction) -> PastebinFunction:
         pastebins[name] = function
         return function
 
@@ -45,7 +45,7 @@ def pastebin(name):
 
 
 @pastebin("termbin.com")
-def paste_to_termbin(code, path):
+def paste_to_termbin(code: str, path: typing.Optional[pathlib.Path]) -> str:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(('termbin.com', 9999))
         sock.send(code.encode('utf-8'))
@@ -64,7 +64,7 @@ session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
 
 @pastebin("dpaste.com")
-def paste_to_dpaste_com(code, path):
+def paste_to_dpaste_com(code: str, path: typing.Optional[pathlib.Path]) -> str:
     response = session.post('http://dpaste.com/api/v2/', data={
         'content': code,
         'syntax': 'python3',
@@ -74,7 +74,7 @@ def paste_to_dpaste_com(code, path):
 
 
 @pastebin("dpaste.org")
-def paste_to_dpaste_de(code, path):
+def paste_to_dpaste_de(code: str, path: typing.Optional[pathlib.Path]) -> str:
     # docs: http://dpaste.readthedocs.io/en/latest/api.html
     # the docs tell to post to http://dpaste.de/api/ but they use
     # https://... in the examples 0_o only the https version works
@@ -87,8 +87,9 @@ def paste_to_dpaste_de(code, path):
     return response.text.strip()
 
 
+# TODO: delete this, doesn't work anymore, gives front page link
 @pastebin("Paste ofCode")
-def paste_to_paste_ofcode(code, path):
+def paste_to_paste_ofcode(code: str, path: typing.Optional[pathlib.Path]) -> str:
     # PurpleMyst figured out this stuff a long time ago... it's not documented
     # anywhere, but it has worked for i think over a year now
     response = session.post('http://paste.ofcode.org/', data={
@@ -102,8 +103,8 @@ def paste_to_paste_ofcode(code, path):
 
 class SuccessDialog(tkinter.Toplevel):
 
-    def __init__(self, url, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, url: str, *args: typing.Any, **kwargs: typing.Any):
+        super().__init__(*args, **kwargs)   # type: ignore
         self.url = url
 
         content = ttk.Frame(self)
@@ -132,28 +133,30 @@ class SuccessDialog(tkinter.Toplevel):
             button = ttk.Button(buttonframe, text=text, command=callback)
             button.pack(side='left', expand=True)
 
-    def _select_all(self, event=None, breaking=False):
+    def _select_all(self, junk: typing.Optional[tkinter.Event] = None,
+                    breaking: bool = False) -> utils.BreakOrNone:
         self._entry.selection_range(0, 'end')
         return ('break' if breaking else None)
 
-    def open_in_browser(self):
+    def open_in_browser(self) -> None:
         webbrowser.open(self.url)
         self.destroy()
 
-    def copy_to_clipboard(self):
+    def copy_to_clipboard(self) -> None:
         self.clipboard_clear()
         self.clipboard_append(self.url)
 
 
 class Paste:
 
-    def __init__(self, pastebin_name, code, path):
+    def __init__(self, pastebin_name: str,
+                 code: str, path: typing.Optional[pathlib.Path]) -> None:
         self.pastebin_name = pastebin_name
         self.content = code
         self.path = path
-        self.please_wait_window = None
+        self.please_wait_window: typing.Optional[tkinter.Toplevel] = None
 
-    def make_please_wait_window(self):
+    def make_please_wait_window(self) -> None:
         window = self.please_wait_window = tkinter.Toplevel()
         window.transient(get_main_window())
         window.title("Pasting...")
@@ -168,7 +171,7 @@ class Paste:
         content.pack(fill='both', expand=True)
 
         label = ttk.Label(
-            content, font=('', 12, ''),
+            content, font=('', 12, ()),
             text=("Pasting to %s, please wait..." % self.pastebin_name))
         label.pack(expand=True)
 
@@ -176,7 +179,7 @@ class Paste:
         progressbar.pack(fill='x', padx=15, pady=15)
         progressbar.start()
 
-    def start(self):
+    def start(self) -> None:
         log.debug("starting to paste to %s", self.pastebin_name)
         tk_busy_hold()
         self.make_please_wait_window()
@@ -184,8 +187,9 @@ class Paste:
             pastebins[self.pastebin_name], self.content, self.path)
         utils.run_in_thread(paste_it, self.done_callback)
 
-    def done_callback(self, success, result):
+    def done_callback(self, success: bool, result: str) -> None:
         tk_busy_forget()
+        assert self.please_wait_window is not None
         self.please_wait_window.destroy()
 
         if success:
@@ -205,8 +209,10 @@ class Paste:
                 monospace_text=result)
 
 
-def start_pasting(pastebin_name):
+def start_pasting(pastebin_name: str) -> None:
     tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
+
     try:
         code = tab.textwidget.get('sel.first', 'sel.last')
     except tkinter.TclError:
@@ -216,7 +222,7 @@ def start_pasting(pastebin_name):
     Paste(pastebin_name, code, tab.path).start()
 
 
-def setup():
+def setup() -> None:
     for name in sorted(pastebins, key=str.casefold):
         assert '/' not in name
         callback = functools.partial(start_pasting, name)

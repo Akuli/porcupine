@@ -1,7 +1,9 @@
 """Simple welcome message."""
 
 import re
+import tkinter
 from tkinter import ttk
+import typing
 
 from porcupine import get_tab_manager, images, utils
 
@@ -28,7 +30,7 @@ BORDER_SIZE = 30    # pixels
 # this is a class just to avoid globals (lol)
 class WelcomeMessageDisplayer:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._frame = ttk.Frame(get_tab_manager())
 
         # pad only on left side so the image goes as far right as possible
@@ -49,23 +51,24 @@ class WelcomeMessageDisplayer:
 
         self._on_tab_closed()
 
-    def update_wraplen(self, event):
-        # images.get('logo-200x200').width() is always 200, but
-        # hard-coding is bad
+    def update_wraplen(self, event: tkinter.Event) -> None:
+        assert event.width != '??'
+
+        # images.get('logo-200x200').width() is always 200, but hard-coding is bad
         self.title_label['wraplength'] = (
             event.width - images.get('logo-200x200').width() - BORDER_SIZE)
         self.message_label['wraplength'] = event.width - 2*BORDER_SIZE  # noqa
 
-    def on_new_tab(self, event):
+    def on_new_tab(self, event: utils.EventWithData) -> None:
         self._frame.pack_forget()
         event.data_widget().bind('<Destroy>', self._on_tab_closed, add=True)
 
-    def _on_tab_closed(self, event=None):
+    def _on_tab_closed(self, event: typing.Any = None) -> None:
         if not get_tab_manager().tabs():
             self._frame.pack(fill='both', expand=True)
 
 
-def setup():
+def setup() -> None:
     displayer = WelcomeMessageDisplayer()
     get_tab_manager().bind('<Configure>', displayer.update_wraplen, add=True)
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>',

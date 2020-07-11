@@ -1,7 +1,7 @@
 import functools
 import json
 import tkinter
-import tkinter.font as tkfont   # type: ignore
+import tkinter.font as tkfont
 import typing
 
 try:
@@ -135,17 +135,15 @@ class HandyText(tkinter.Text):
         change_cb_command = self.register(self._change_cb)
         cursor_cb_command = self.register(self._cursor_cb)
 
-        tcl_interpreter = typing.cast(typing.Any, self).tk
-
         # all widget stuff is implemented in python and in tcl as calls to a
         # tcl command named str(self), and replacing that with a custom command
         # is a very powerful way to do magic; for example, moving the cursor
         # with arrow keys calls the 'mark set' widget command :D
         actual_widget_command = str(self) + '_actual_widget'
-        tcl_interpreter.call('rename', str(self), actual_widget_command)
+        self.tk.call('rename', str(self), actual_widget_command)
 
         # this part is tcl because i couldn't get a python callback to work
-        tcl_interpreter.eval('''
+        self.tk.eval('''
         proc %(fake_widget)s {args} {
             #puts $args
 

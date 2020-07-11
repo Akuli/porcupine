@@ -2,7 +2,9 @@
 
 import functools
 import logging
+import pathlib
 from queue import Empty         # queue is a handy variable name
+import sys
 import tkinter
 from tkinter import filedialog
 import traceback
@@ -47,7 +49,8 @@ def init(verbose_logging: bool = False) -> None:
     _setup_actions()
 
 
-def get_init_kwargs():
+# TODO: avoid Any typing
+def get_init_kwargs() -> typing.Dict[str, typing.Any]:
     """Return a dictionary of the keyword arguments that were passed to :func:\
 `init`.
 
@@ -74,7 +77,7 @@ def get_tab_manager() -> tabs.TabManager:
     return _tab_manager
 
 
-def quit():
+def quit() -> None:
     """
     Calling this function is equivalent to clicking the X button in the
     corner of the main window.
@@ -85,6 +88,9 @@ def quit():
     with :meth:`~porcupine.tabs.TabManager.close_tab` and widgets are
     destroyed.
     """
+    assert _tab_manager is not None
+    assert _root is not None
+
     for tab in _tab_manager.tabs():
         if not tab.can_be_closed():
             return
@@ -97,20 +103,22 @@ def quit():
     _root.destroy()
 
 
-def _setup_actions():
-    def new_file():
+def _setup_actions() -> None:
+    def new_file() -> None:
+        assert _tab_manager is not None
         _tab_manager.add_tab(tabs.FileTab(_tab_manager))
 
-    def open_files():
-        paths = filedialog.askopenfilenames(
-            **filetypes.get_filedialog_kwargs())
+    def open_files() -> None:
+        kwargs = filetypes.get_filedialog_kwargs()
+        paths: typing.Sequence[str] = filedialog.askopenfilenames(**kwargs)  # type: ignore
 
         # tkinter returns '' if the user cancels, and i'm arfaid that python
         # devs might "fix" a future version to return None
         if not paths:
             return
 
-        for path in paths:
+        assert _tab_manager is not None
+        for path in map(pathlib.Path, paths):
             try:
                 tab = tabs.FileTab.open_file(_tab_manager, path)
             except (UnicodeError, OSError) as e:
@@ -121,8 +129,20 @@ def _setup_actions():
 
             _tab_manager.add_tab(tab)
 
-    def close_selected_tab():
+    def save_file(save_as: bool) -> None:
+        assert _tab_manager is not None
         tab = _tab_manager.select()
+        assert isinstance(tab, tabs.FileTab)
+
+        if save_as:
+            tab.save_as()
+        else:
+            tab.save()
+
+    def close_selected_tab() -> None:
+        assert _tab_manager is not None
+        tab = _tab_manager.select()
+        assert tab is not None      # handled by tabtypes=[tabs.Tab] below
         if tab.can_be_closed():
             _tab_manager.close_tab(tab)
 
@@ -130,10 +150,9 @@ def _setup_actions():
     #       putting related items in a submenu?
     actions.add_command("File/New File", new_file, '<Control-n>')
     actions.add_command("File/Open", open_files, '<Control-o>')
-    actions.add_command("File/Save", (lambda: _tab_manager.select().save()),
+    actions.add_command("File/Save", functools.partial(save_file, False),
                         '<Control-s>', tabtypes=[tabs.FileTab])
-    actions.add_command("File/Save As...",
-                        (lambda: _tab_manager.select().save_as()),
+    actions.add_command("File/Save As...", functools.partial(save_file, True),
                         '<Control-S>', tabtypes=[tabs.FileTab])
 
     # TODO: disable File/Quit when there are tabs, it's too easy to hit
@@ -147,7 +166,7 @@ def _setup_actions():
     #       things like ttk themes and color styles?
     actions.add_command("Edit/Porcupine Settings...", settings.show_dialog)
 
-    def change_font_size(how):
+    def change_font_size(how: str) -> None:
         # TODO: i think there is similar code in a couple other places too
         config = settings.get_section('General')
         if how == 'reset':
@@ -170,8 +189,11 @@ def _setup_actions():
         "View/Reset Font Size", functools.partial(change_font_size, 'reset'),
         '<Control-0>', tabtypes=[tabs.FileTab])
 
-    def add_link(path, url):
-        actions.add_command(path, functools.partial(webbrowser.open, url))
+    def add_link(path: str, url: str) -> None:
+        def callback() -> None:     # lambda doesn't work for this...
+            webbrowser.open(url)    # ...because this returns non-None and mypy
+
+        actions.add_command(path, callback)
 
     # TODO: porcupine starring button?
     add_link("Help/Porcupine Wiki",
@@ -189,15 +211,7 @@ def _setup_actions():
              "https://docs.python.org/")
 
 
-def _iter_queue(queue):
-    while True:
-        try:
-            yield queue.get(block=False)
-        except Empty:
-            break
-
-
-def run():
+def run() -> None:
     if _root is None:
         raise RuntimeError("init() wasn't called")
 

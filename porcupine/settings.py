@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 import tkinter
-import tkinter.font as tkfont   # type: ignore
+import tkinter.font as tkfont
 from tkinter import messagebox, ttk
 import types
 import typing
@@ -77,7 +77,7 @@ _dialog: typing.Optional[tkinter.Toplevel] = None
 _notebook: typing.Optional[ttk.Notebook] = None
 
 
-def get_section(section_name: str) -> _ConfigSection:
+def get_section(section_name: str) -> '_ConfigSection':
     """Return a section object, creating it if it doesn't exist yet.
 
     The *section_name* is a title of a tab in the *Porcupine Settings*

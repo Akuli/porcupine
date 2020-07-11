@@ -61,5 +61,5 @@ def callback() -> None:
         widget['autoseparators'] = True
 
 
-def setup():
+def setup() -> None:
     actions.add_command("Tools/autopep8", callback, filetype_names=["Python"])

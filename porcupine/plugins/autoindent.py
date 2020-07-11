@@ -5,10 +5,12 @@
 # do anything
 setup_before = ['rstrip']
 
-from porcupine import get_tab_manager, tabs, utils
+import tkinter
+
+from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
-def leading_whitespace(string):
+def leading_whitespace(string: str) -> str:
     r"""Return leading whitespace characters. Ignores trailing '\n'.
 
     >>> leading_whitespace('\t \t lel')
@@ -20,11 +22,11 @@ def leading_whitespace(string):
     return string[:count].rstrip('\n')
 
 
-def after_enter(textwidget):
+def after_enter(text: textwidget.MainText) -> None:
     """Indent or dedent the current line automatically if needed."""
-    lineno = int(textwidget.index('insert').split('.')[0])
-    prevline = textwidget.get('%d.0 - 1 line' % lineno, '%d.0' % lineno)
-    textwidget.insert('insert', leading_whitespace(prevline))
+    lineno = int(text.index('insert').split('.')[0])
+    prevline = text.get(f'{lineno}.0 - 1 line', f'{lineno}.0')
+    text.insert('insert', leading_whitespace(prevline))
 
     # we can't strip trailing whitespace before this because then
     # pressing enter twice would get rid of all indentation
@@ -34,23 +36,24 @@ def after_enter(textwidget):
     prevline = prevline.strip()
     if prevline.endswith((':', '(', '[', '{')):
         # start of a new block
-        textwidget.indent('insert')
+        text.indent('insert')
     elif (prevline in {'return', 'break', 'pass', 'continue'} or
           prevline.startswith(('return ', 'raise '))):
         # must be end of a block
-        textwidget.dedent('insert')
+        text.dedent('insert')
 
 
-def on_new_tab(event):
+def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        def bind_callback(event):
-            tab.textwidget.after_idle(after_enter, tab.textwidget)
+        def bind_callback(event: tkinter.Event) -> None:
+            tab: tabs.FileTab
+            tab.textwidget.after_idle(lambda: after_enter(tab.textwidget))
 
         tab.textwidget.bind('<Return>', bind_callback, add=True)
 
 
-def setup():
+def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 
 

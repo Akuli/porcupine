@@ -1,8 +1,11 @@
+# this file is currently not being used
+
 import contextlib
 from multiprocessing import connection
 import os
 import queue
 import threading
+import typing
 
 from porcupine import dirs
 
@@ -13,12 +16,11 @@ _ADDRESS_FILE = os.path.join(dirs.cachedir, 'ipc_address.txt')
 # conflict with each other
 # example addresses: r'\\.\pipe\pyc-1412-1-7hyryfd_',
 # '/tmp/pymp-_lk54sed/listener-4o8n1xrc',
-def send(objects):
+def send(objects: typing.List[typing.Any]) -> None:
     """Send objects from an iterable to a process running session().
 
     Raise ConnectionRefusedError if session() is not running.
     """
-    raise ConnectionRefusedError
     # reading the address file, connecting to a windows named pipe and
     # connecting to an AF_UNIX socket all raise FileNotFoundError :D
     try:
@@ -33,7 +35,8 @@ def send(objects):
             client.send(message)
 
 
-def _listener2queue(listener, object_queue):
+def _listener2queue(listener: connection.Listener,
+                    object_queue: 'queue.Queue[typing.Any]') -> None:
     """Accept connections. Receive and queue objects."""
     while True:
         try:
@@ -51,7 +54,7 @@ def _listener2queue(listener, object_queue):
 
 
 @contextlib.contextmanager
-def session():
+def session() -> typing.Iterator['queue.Queue[typing.Any]']:
     """Context manager that listens for send().
 
     Use this as a context manager:
@@ -61,7 +64,7 @@ def session():
             # start something that processes items in the queue and run
             # the application
     """
-    message_queue = queue.Queue()
+    message_queue: 'queue.Queue[typing.Any]' = queue.Queue()
     with connection.Listener() as listener:
         with open(_ADDRESS_FILE, 'w') as file:
             print(listener.address, file=file)

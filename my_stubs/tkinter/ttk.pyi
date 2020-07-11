@@ -1,4 +1,5 @@
 import tkinter
+import _tkinter
 from typing import (
     Any,        # use this sparingly lol
     Callable,
@@ -14,12 +15,19 @@ from typing import (
 
 class Widget(tkinter.Widget): pass
 class Frame(Widget): pass
-class Separator(Widget): pass
+class Separator(Widget):
+    def __init__(
+        self, master: tkinter.BaseWidget, *,
+        orient: Union[Literal['horizontal'], Literal['vertical']] = ...,
+    ) -> None: ...
 
 class Label(Widget):
     def __init__(
         self, master: tkinter.BaseWidget, *,
         text: str = ...,
+        image: tkinter.PhotoImage = ...,
+        cursor: str = ...,
+        font: tkinter._FontSpec = ...,
     ) -> None: ...
 
     @overload
@@ -36,12 +44,23 @@ class Checkbutton(Widget):
         variable: tkinter.BooleanVar = ...,
     ) -> None: ...
 
+# For __getitem__ of Literal['State'].
+#
+# Actual return type is currently Tcl_Obj which is kinda useless unless
+# it's str()ed. I'm writing it as union to make sure that if it's changed
+# some day then this code won't break. I recommend always str()ing the
+# return value.
+_StateFromGetItem = Union[_tkinter.Tcl_Obj, str]
+
 class Button(Widget):
     def __init__(
         self, master: tkinter.BaseWidget, *,
         text: str = ...,
         command: Callable[[], None] = ...,
     ) -> None: ...
+
+    def __getitem__(self, opt: Literal['state']) -> _StateFromGetItem: ...
+    def __setitem__(self, opt: Literal['state'], val: Union[Literal['normal'], Literal['disabled']]) -> None: ...
 
 _NotebookTabId = Union[
     # see TAB IDENTIFIERS in ttk_notebook man page
@@ -120,7 +139,7 @@ class Notebook(Widget):
     def identify(self, x: int, y: int) -> str: ...
 
     def index(self, tab_id: _NotebookTabId) -> int: ...
-    def insert(self, pos: Union[Literal['end'], int, tkinter.Widget], child: tkinter.Widget): ...
+    def insert(self, pos: Union[Literal['end'], int, tkinter.Widget], child: tkinter.Widget) -> None: ...
 
     @overload
     def select(self, tab_id: _NotebookTabId) -> Literal['']: ...
@@ -145,7 +164,18 @@ class Notebook(Widget):
 #
 # I use Panedwindow directly instead of a possibly confusing alias, so there's
 # no PanedWindow here.
-class Panedwindow(Widget): pass
+class Panedwindow(Widget):
+    def __init__(
+        self, master: tkinter.BaseWidget, *,
+        orient: Union[Literal['horizontal'], Literal['vertical']] = ...,
+    ) -> None: ...
+
+    def add(self, child: Widget, *, weight: int = ...) -> None: ...
+
+    @overload
+    def sashpos(self, index: int) -> int: ...
+    @overload
+    def sashpos(self, index: int, newpos: int) -> int: ...
 
 class Scrollbar(Widget):
     # There are many ways how the command may get called. Search for
@@ -156,11 +186,71 @@ class Scrollbar(Widget):
 
     def set(self, first: float, last: float) -> None: ...
 
+_TreeviewShowMode = Union[Literal['tree'], Literal['headings']]
+
+class Treeview(Widget, tkinter.YView):
+    def __init__(
+        self, master: tkinter.BaseWidget, *,
+        selectmode: Union[Literal['extended'], Literal['browse'], Literal['none']] = ...,
+        show: Union[_TreeviewShowMode, List[_TreeviewShowMode]] = ...,
+    ) -> None: ...
+
+    # TODO: belongs to YView but is currently copy/pasted to every subclasses
+    def __setitem__(self, opt: Literal['yscrollcommand'], val: Union[str, Callable[[float, float], None]]) -> None: ...
+    def __getitem__(self, opt: Literal['yscrollcommand']) -> str: ...
+
+    def delete(self, *args: str) -> None: ...
+    def get_children(self, item: str = ...) -> Tuple[str, ...]: ...
+
+    # ttk_treeview(3tk) says that 'identify row' is "Obsolescent synonym
+    # for pathname identify item", but tkinter doesn't have identify_item
+    def identify_row(self, y: int) -> str: ...      # may return empty string
+
+    def insert(
+        self, parent: str, index: Union[int, Literal['end']],
+        # tkinter supports both 'id' and 'iid' for the name of this arg. I like
+        # 'id' because it's less confusing, even though it's also a built-in
+        # function.
+        id: str = ...,
+        text: str = ...,
+    ) -> str: ...
+
+    # prev(first item) and next(last item) return empty string
+    def prev(self, item: str) -> str: ...
+    def next(self, item: str) -> str: ...
+
+    def see(self, item: str) -> None: ...
+    def selection(self) -> Tuple[str, ...]: ...
+    def selection_set(self, items: Union[str, List[str], Tuple[str]]) -> None: ...
+
+class Progressbar(Widget):
+    def __init__(
+        self, master: tkinter.BaseWidget, *,
+        mode: Union[Literal['determinate'], Literal['indeterminate']],
+    ) -> None: ...
+    def start(self, interval: int = ...) -> None: ...
+
+# see INDICES in entry man page for possible string values
+_EntryIndex = Union[str, int]
+
 class Entry(Widget):
     def __init__(
         self, master: tkinter.BaseWidget, *,
-        textvariable: tkinter.StringVar,
+        textvariable: tkinter.StringVar = ...,
+        font: tkinter._FontSpec = ...,
+        width: int = ...,
+        justify: Union[Literal['left'], Literal['center'], Literal['right']] = ...,
     ) -> None: ...
+    def get(self) -> str: ...
+    def insert(self, index: _EntryIndex, string: str) -> None: ...
+    def selection_range(self, start: _EntryIndex, end: _EntryIndex) -> None: ...
+
+    def __getitem__(self, opt: Literal['state']) -> _StateFromGetItem: ...
+
+    @overload
+    def __setitem__(self, opt: Literal['state'], val: Union[Literal['normal'], Literal['disabled'], Literal['readonly']]) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['textvariable'], val: tkinter.StringVar) -> None: ...
 
 class Combobox(Entry):
     def __init__(

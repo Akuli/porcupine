@@ -2,6 +2,7 @@
 
 import sys
 import tkinter
+import typing
 
 from porcupine import get_tab_manager, settings, tabs, utils
 from porcupine.textwidget import ThemedText
@@ -11,7 +12,7 @@ GENERAL = settings.get_section('General')
 LINE_THICKNESS = 1
 
 
-def count_lines(textwidget):
+def count_lines(textwidget: tkinter.Text) -> int:
     return int(textwidget.index('end - 1 char').split('.')[0])
 
 
@@ -33,7 +34,7 @@ def count_lines(textwidget):
 # This means that all of the text has to be selected all the time.
 class Overview(ThemedText):
 
-    def __init__(self, master, tab):
+    def __init__(self, master: tkinter.BaseWidget, tab: tabs.FileTab) -> None:
         # ThemedText.__init__ calls set_colors() which needs _vast
 
         super().__init__(master, width=25, exportselection=False,
@@ -99,7 +100,7 @@ class Overview(ThemedText):
         if 'pytest' not in sys.modules:
             self.after(50, self._scroll_callback)
 
-    def _clean_up(self, junk_event):
+    def _clean_up(self, junk: typing.Any) -> None:
         for binding in self._temporary_binds:
             binding.__exit__(None, None, None)
 
@@ -107,7 +108,7 @@ class Overview(ThemedText):
         GENERAL.disconnect('font_size', self.set_font)
 
     # this overrides ThemedText.set_colors
-    def set_colors(self, foreground, background):
+    def set_colors(self, foreground: str, background: str) -> None:
         if not hasattr(self, '_vast'):
             # called from super().__init__, too early
             self._colors = (foreground, background)
@@ -121,8 +122,11 @@ class Overview(ThemedText):
         for frame in self._vast:
             frame['background'] = foreground
 
-    def set_font(self, junk_event_or_value=None):
-        font = (GENERAL['font_family'], round(GENERAL['font_size'] / 3), '')
+    def set_font(self, junk: typing.Any = None) -> None:
+        font = (
+            typing.cast(str, GENERAL['font_family']),
+            round(GENERAL['font_size'] / 3),
+            ())
         how_to_show_tab = ' ' * self._tab.filetype.indent_size
 
         # tkinter doesn't provide a better way to do font stuff than stupid
@@ -131,21 +135,21 @@ class Overview(ThemedText):
         self.tag_config('sel', font=font)
         self._update_vast()
 
-    def _scroll_callback(self):
+    def _scroll_callback(self) -> None:
         first_visible_index = self._tab.textwidget.index('@0,0')
         last_visible_index = self._tab.textwidget.index('@0,10000000')
         self.see(first_visible_index)
         self.see(last_visible_index)
         self._update_vast()
 
-    def _do_math(self):
+    def _do_math(self) -> typing.Tuple[float, float, float, float, int, float, int]:
         # FIXME: this is a little bit off in very long files
 
         # tkinter doesn't provide a better way to look up font metrics without
         # creating a stupid font object
-        how_tall_are_lines_on_editor = self._tab.tk.call(
+        how_tall_are_lines_on_editor: int = self._tab.tk.call(
             'font', 'metrics', self._tab.textwidget['font'], '-linespace')
-        how_tall_are_lines_overview = self._tab.tk.call(
+        how_tall_are_lines_overview: int = self._tab.tk.call(
             'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace')
 
         (overview_scroll_relative_start,
@@ -167,7 +171,7 @@ class Overview(ThemedText):
                 how_many_lines_fit_on_editor,
                 total_height)
 
-    def _update_vast(self, *junk):
+    def _update_vast(self, *junk: typing.Any) -> None:
         if not self.tag_cget('sel', 'font'):
             # view was created just a moment ago, set_font() hasn't ran yet
             return
@@ -210,7 +214,7 @@ class Overview(ThemedText):
 
         self.tag_add('sel', '1.0', 'end')
 
-    def _on_click_and_drag(self, event):
+    def _on_click_and_drag(self, event: tkinter.Event) -> utils.BreakOrNone:
         (overview_scroll_relative_start,
          overview_scroll_relative_end,
          text_scroll_relative_start,
@@ -233,7 +237,7 @@ class Overview(ThemedText):
         return 'break'
 
 
-def on_new_tab(event):
+def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if not isinstance(tab, tabs.FileTab):
         return
@@ -242,5 +246,5 @@ def on_new_tab(event):
     overview.pack(fill='y', expand=True)
 
 
-def setup():
+def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

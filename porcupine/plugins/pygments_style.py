@@ -1,6 +1,7 @@
 """Add an action for choosing the Pygments style."""
 
 import threading
+import typing
 
 import pygments.styles      # type: ignore
 
@@ -35,19 +36,19 @@ from porcupine import actions, get_main_window, settings
 # threading this gives a significant speed improvement on startup
 # on this system, setup() took 0.287940 seconds before adding threads
 # and 0.000371 seconds after adding threads
-def load_styles_to_list(target_list):
+def load_styles_to_list(target_list: typing.List[str]) -> None:
     target_list.extend(pygments.styles.get_all_styles())    # slow
     target_list.sort()
 
 
-def setup():
+def setup() -> None:
     config = settings.get_section('General')
-    styles = []
+    styles: typing.List[str] = []
     thread = threading.Thread(target=load_styles_to_list, args=[styles])
     thread.daemon = True     # i don't care wtf happens to this
     thread.start()
 
-    def check_if_it_finished():
+    def check_if_it_finished() -> None:
         if thread.is_alive():
             get_main_window().after(200, check_if_it_finished)
         else:

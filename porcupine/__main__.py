@@ -17,12 +17,14 @@ log = logging.getLogger(__name__)
 
 class _PrintPlugindirAction(argparse.Action):
 
-    def __init__(self, option_strings, dest=argparse.SUPPRESS,
-                 default=argparse.SUPPRESS, help=None):
+    def __init__(   # type: ignore
+            self, option_strings, dest=argparse.SUPPRESS,
+            default=argparse.SUPPRESS, help=None):
         super().__init__(option_strings=option_strings, dest=dest,
                          default=default, nargs=0, help=help)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(   # type: ignore
+            self, parser, namespace, values, option_string=None):
         print("You can install plugins here:\n\n    %s\n"
               % porcupine.plugins.__path__[0])
         parser.exit()
@@ -31,16 +33,18 @@ class _PrintPlugindirAction(argparse.Action):
 # "porcupine -n a b c -n" works, but unfortunately "porcupine a -n b" doesn't
 class _ExtendAction(argparse.Action):
 
-    def __init__(self, option_strings, dest, nargs=None, const=None,
-                 default=None, type=None, choices=None, required=False,
-                 help=None, metavar=None):
+    def __init__(   # type: ignore
+            self, option_strings, dest, nargs=None, const=None,
+            default=None, type=None, choices=None, required=False,
+            help=None, metavar=None):
         assert nargs != 0 and (const is None or nargs == argparse.OPTIONAL)
         super().__init__(option_strings=option_strings, dest=dest, nargs=nargs,
                          const=const, default=default, type=type,
                          choices=choices, required=required, help=help,
                          metavar=metavar)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(   # type: ignore
+            self, parser, namespace, values, option_string=None):
         if getattr(namespace, self.dest) is None:
             setattr(namespace, self.dest, [])
         getattr(namespace, self.dest).extend(values)
