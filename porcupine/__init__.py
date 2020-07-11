@@ -30,5 +30,11 @@ if (os.path.isdir(os.path.join(here, '..', '.git')) and
             UnicodeError):   # pragma: no cover
         pass
 
-from porcupine._run import (init, get_init_kwargs, run, quit, get_main_window,
-                            get_tab_manager)   # noqa
+# mypy wants this instead of 'from porcupine._run import stuff'
+from porcupine import _run
+init = _run.init
+get_init_kwargs = _run.get_init_kwargs
+run = _run.run
+quit = _run.quit
+get_main_window = _run.get_main_window
+get_tab_manager = _run.get_tab_manager

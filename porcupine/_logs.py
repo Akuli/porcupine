@@ -6,6 +6,7 @@ import shlex
 import subprocess
 import sys
 import threading
+import typing
 
 import porcupine
 from porcupine import dirs
@@ -16,7 +17,7 @@ _FILENAME_FORMAT = '%Y-%m-%dT%H-%M-%S.txt'
 LOG_MAX_AGE_DAYS = 30
 
 
-def _remove_old_logs():
+def _remove_old_logs() -> None:
     for filename in os.listdir(LOG_DIR):
         try:
             log_date = datetime.strptime(filename, _FILENAME_FORMAT)
@@ -33,7 +34,7 @@ def _remove_old_logs():
             os.remove(path)
 
 
-def _run_command(command):
+def _run_command(command: str) -> None:
     try:
         output = subprocess.check_output(shlex.split(command),
                                          stderr=subprocess.STDOUT)
@@ -46,7 +47,7 @@ def _run_command(command):
                     exc_info=True)
 
 
-def setup(verbose):
+def setup(verbose: bool) -> None:
     os.makedirs(os.path.join(dirs.cachedir, 'logs'), exist_ok=True)
     logfile = os.path.join(dirs.cachedir, 'logs',
                            datetime.now().strftime(_FILENAME_FORMAT))
@@ -68,7 +69,7 @@ def setup(verbose):
         print_handler = logging.StreamHandler(sys.stderr)
         print_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
 
-    handlers = [file_handler]
+    handlers: typing.List[logging.Handler] = [file_handler]
     file_handler.setFormatter(logging.Formatter(
         '[%(asctime)s] %(name)s %(levelname)s: %(message)s'))
     if print_handler is not None:
@@ -81,11 +82,11 @@ def setup(verbose):
                         format="[%(levelname)s] %(name)s: %(message)s")
 
     log.debug("starting Porcupine %s from '%s'", porcupine.__version__,
-              porcupine.__path__[0])
+              typing.cast(typing.Any, porcupine).__path__[0])
     log.debug("log file: %s", logfile)
     log.debug("PID: %d", os.getpid())
     log.debug("running on Python %d.%d.%d from '%s'",
-              *(list(sys.version_info[:3]) + [sys.executable]))
+              *sys.version_info[:3], sys.executable)
     log.debug("platform.system() returned %r", platform.system())
     log.debug("platform.platform() returned %r", platform.platform())
     if platform.system() != 'Windows':

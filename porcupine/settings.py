@@ -77,7 +77,7 @@ _dialog: typing.Optional[tkinter.Toplevel] = None
 _notebook: typing.Optional[ttk.Notebook] = None
 
 
-def get_section(section_name):
+def get_section(section_name: str) -> _ConfigSection:
     """Return a section object, creating it if it doesn't exist yet.
 
     The *section_name* is a title of a tab in the *Porcupine Settings*
@@ -91,9 +91,23 @@ def get_section(section_name):
         return _sections[section_name]
 
 
-class _ConfigSection(collections.abc.MutableMapping):
+_CallbackType = typing.Callable[[typing.Any], None]
 
-    def __init__(self, name):
+# T represents a subclass of tkinter.Variable. Don't know if there's a better
+# way to tell that to mypy than passing tkinter.Variable twice...
+T = typing.TypeVar('T', tkinter.Variable, tkinter.Variable)
+
+
+class _OptionInfo(types.SimpleNamespace):
+    default: typing.Any     # not validated
+    reset: bool
+    callbacks: typing.List[typing.Callable[[typing.Any], None]]
+    errorvar: tkinter.BooleanVar
+
+
+class _ConfigSection(typing.MutableMapping[str, typing.Any]):
+
+    def __init__(self, name: str) -> None:
         if _notebook is None:
             raise RuntimeError("%s.init() wasn't called" % __name__)
 
@@ -101,10 +115,11 @@ class _ConfigSection(collections.abc.MutableMapping):
         _notebook.add(self.content_frame, text=name)
 
         self._name = name
-        self._infos = {}        # see add_option()
-        self._var_cache = {}
+        self._infos: typing.Dict[str, _OptionInfo] = {}
+        self._var_cache: typing.Dict[str, tkinter.Variable] = {}
 
-    def add_option(self, key, default, *, reset=True):
+    def add_option(self, key: str, default: typing.Any, *,
+                   reset: bool = True) -> None:
         """Add a new option without adding widgets to the setting dialog.
 
         ``section[key]`` will be *default* unless something else is
@@ -119,14 +134,14 @@ class _ConfigSection(collections.abc.MutableMapping):
             reset button resets only the settings that are shown in the
             dialog.
         """
-        self._infos[key] = types.SimpleNamespace(
+        self._infos[key] = _OptionInfo(
             default=default,        # not validated
             reset=reset,
             callbacks=[],
             errorvar=tkinter.BooleanVar(),  # true when the triangle is showing
         )
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: typing.Any) -> None:
         info = self._infos[key]
 
         old_value = self[key]
@@ -152,22 +167,23 @@ class _ConfigSection(collections.abc.MutableMapping):
                     log.exception("%s: %s(%r) didn't work", self._name,
                                   func_name, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> typing.Any:
         try:
             return _loaded_json[self._name][key]
         except KeyError:
             return self._infos[key].default
 
-    def __delitem__(self, key):    # the abc requires this
+    # the abc requires this
+    def __delitem__(self, key: str) -> typing.NoReturn:
         raise TypeError("cannot delete options")
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator[str]:
         return iter(self._infos.keys())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._infos)
 
-    def reset(self, key):
+    def reset(self, key: str) -> None:
         """Set ``section[key]`` back to the default value.
 
         The value is always reset to the *default* argument passed to
@@ -178,7 +194,8 @@ class _ConfigSection(collections.abc.MutableMapping):
         """
         self[key] = self._infos[key].default
 
-    def connect(self, key, callback, run_now=True):
+    def connect(self, key: str, callback: _CallbackType,
+                run_now: bool = True) -> None:
         """
         Schedule ``callback(section[key])`` to be called when the value
         of an option changes.
@@ -209,13 +226,14 @@ class _ConfigSection(collections.abc.MutableMapping):
                 self.reset(key)
         self._infos[key].callbacks.append(callback)
 
-    def disconnect(self, key, callback):
+    def disconnect(self, key: str, callback: _CallbackType) -> None:
         """Undo a :meth:`~connect` call."""
         self._infos[key].callbacks.remove(callback)
 
     # returns an image the same size as the triangle image, but empty
     @staticmethod
-    def _get_fake_triangle(cache=[]):
+    def _get_fake_triangle(
+            cache: typing.List[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
         if not cache:
             cache.append(tkinter.PhotoImage(
                 width=images.get('triangle').width(),
@@ -223,7 +241,10 @@ class _ConfigSection(collections.abc.MutableMapping):
             atexit.register(cache.clear)     # see images/__init__.py
         return cache[0]
 
-    def get_var(self, key, var_type=tkinter.StringVar):
+    def get_var(
+        self, key: str,
+        var_type: typing.Type[T] = tkinter.StringVar,
+    ) -> T:
         """Return a tkinter variable that is bound to an option.
 
         Changing the value of the variable updates the config section,
@@ -251,7 +272,7 @@ class _ConfigSection(collections.abc.MutableMapping):
         info = self._infos[key]
         var = var_type()
 
-        def var2config(*junk):
+        def var2config(*junk: typing.Any) -> None:
             try:
                 value = var.get()
             except (tkinter.TclError, ValueError):
@@ -269,12 +290,13 @@ class _ConfigSection(collections.abc.MutableMapping):
             info.errorvar.set(False)
 
         self.connect(key, var.set)      # runs var.set
-        var.trace('w', var2config)
+        var.trace_add('write', var2config)
 
         self._var_cache[key] = var
         return var
 
-    def add_frame(self, triangle_key=None):
+    def add_frame(
+            self, triangle_key: typing.Optional[str] = None) -> ttk.Frame:
         """Add a ``ttk.Frame`` to the dialog and return it.
 
         The frame will contain a label that displays a |triangle| when
@@ -296,40 +318,48 @@ class _ConfigSection(collections.abc.MutableMapping):
             triangle_label = ttk.Label(frame)
             triangle_label.pack(side='right')
 
-            def on_errorvar_changed(*junk):
+            def on_errorvar_changed(*junk: typing.Any) -> None:
                 if errorvar.get():
                     triangle_label['image'] = images.get('triangle')
                 else:
                     triangle_label['image'] = self._get_fake_triangle()
 
-            errorvar.trace('w', on_errorvar_changed)
+            errorvar.trace_add('write', on_errorvar_changed)
             on_errorvar_changed()
 
         return frame
 
     # TODO: document this
-    def add_label(self, text):
+    def add_label(self, text: str) -> ttk.Label:
         frame = self.add_frame()
         label = ttk.Label(frame, text=text)
         label.pack(fill='x', pady=10)
-        frame.bind(
-            '<Configure>',
-            (lambda event: label.config(wraplength=event.width)), add=True)
+
+        def wrap_on_resize(event: tkinter.Event) -> None:
+            assert event.width != '??'
+            label['wraplength'] = event.width
+
+        frame.bind('<Configure>', wrap_on_resize, add=True)
         return label
 
-    def add_checkbutton(self, key, text):
+    def add_checkbutton(self, key: str, text: str) -> None:
         """Add a ``ttk.Checkbutton`` that sets an option to a bool."""
         var = self.get_var(key, tkinter.BooleanVar)
+        assert isinstance(var, tkinter.BooleanVar)   # TODO: why this needed?
         ttk.Checkbutton(self.add_frame(key), text=text,
                         variable=var).pack(side='left')
 
-    def add_entry(self, key, text):
+    def add_entry(self, key: str, text: str) -> None:
         """Add a ``ttk.Entry`` that sets an option to a string."""
         frame = self.add_frame(key)
         ttk.Label(frame, text=text).pack(side='left')
-        ttk.Entry(frame, textvariable=self.get_var(key)).pack(side='right')
 
-    def add_combobox(self, key, choices, text, *, case_sensitive=True):
+        var = self.get_var(key)
+        assert isinstance(var, tkinter.StringVar)   # TODO: why this needed?
+        ttk.Entry(frame, textvariable=var).pack(side='right')
+
+    def add_combobox(self, key: str, choices: typing.List[str], text: str, *,
+                     case_sensitive: bool = True) -> None:
         """Add a ``ttk.Combobox`` that sets an option to a string.
 
         The combobox will contain each string in *choices*.
@@ -338,7 +368,7 @@ class _ConfigSection(collections.abc.MutableMapping):
         in *choices* is also added. If *case_sensitive* is False,
         :meth:`str.casefold` is used when comparing the strings.
         """
-        def validator(value):
+        def validator(value: str) -> None:
             if case_sensitive:
                 ok = (value in choices)
             else:
@@ -351,10 +381,14 @@ class _ConfigSection(collections.abc.MutableMapping):
 
         frame = self.add_frame(key)
         ttk.Label(frame, text=text).pack(side='left')
-        ttk.Combobox(frame, values=choices,
-                     textvariable=self.get_var(key)).pack(side='right')
 
-    def add_spinbox(self, key, minimum, maximum, text):
+        var = self.get_var(key)
+        assert isinstance(var, tkinter.StringVar)   # TODO: why this needed?
+        ttk.Combobox(frame, values=choices,
+                     textvariable=var).pack(side='right')
+
+    def add_spinbox(
+            self, key: str, minimum: int, maximum: int, text: str) -> None:
         """
         Add a :class:`utils.Spinbox <porcupine.utils.Spinbox>` that sets
         an option to an integer.
@@ -366,29 +400,32 @@ class _ConfigSection(collections.abc.MutableMapping):
         Note that *minimum* and *maximum* are inclusive, so
         ``minimum=3, maximum=5`` means that 3, 4 and 5 are valid values.
         """
-        def validator(value):
+        def validator(value: int) -> None:
             if value < minimum:
-                raise InvalidValue("%r is too small" % value)
+                raise InvalidValue(f"{value} is too small")
             if value > maximum:
-                raise InvalidValue("%r is too big" % value)
+                raise InvalidValue(f"{value} is too big")
 
         self.connect(key, validator)
 
         frame = self.add_frame(key)
         ttk.Label(frame, text=text).pack(side='left')
-        utils.Spinbox(frame, textvariable=self.get_var(key, tkinter.IntVar),
+
+        var = self.get_var(key, tkinter.IntVar)
+        assert isinstance(var, tkinter.IntVar)      # TODO: why is this needed?
+        utils.Spinbox(frame, textvariable=var,
                       from_=minimum, to=maximum).pack(side='right')
 
 
-def _needs_reset():
+def _needs_reset() -> bool:
     for section in _sections.values():
-        for key, info in section._info.items():
+        for key, info in section._infos.items():
             if info.default != section[key]:
                 return True
     return False
 
 
-def _do_reset():
+def _do_reset() -> None:
     if not _needs_reset:
         messagebox.showinfo("Reset Settings",
                             "You are already using the default settings.")
@@ -408,21 +445,21 @@ def _do_reset():
         parent=_dialog)
 
 
-def _validate_encoding(name):
+def _validate_encoding(name: str) -> None:
     try:
         codecs.lookup(name)
     except LookupError as e:
         raise InvalidValue from e
 
 
-def _validate_pygments_style_name(name):
+def _validate_pygments_style_name(name: str) -> None:
     try:
         pygments.styles.get_style_by_name(name)
     except pygments.util.ClassNotFound as e:
         raise InvalidValue(str(e)) from None
 
 
-def _init():
+def _init() -> None:
     global _dialog
     global _notebook
 
@@ -430,10 +467,18 @@ def _init():
         # already initialized
         return
 
+    # tkinter weirdness: withdraw returns '' but protocol callback needs to
+    # return None. Actually it works if it returns '', and the return value
+    # gets ignored, but this is the price one has to pay for accurate type
+    # hints.
+    def withdraw_the_dialog() -> None:
+        assert _dialog is not None
+        _dialog.withdraw()
+
     _dialog = tkinter.Toplevel()
     _dialog.withdraw()        # hide it for now
     _dialog.title("Porcupine Settings")
-    _dialog.protocol('WM_DELETE_WINDOW', _dialog.withdraw)
+    _dialog.protocol('WM_DELETE_WINDOW', withdraw_the_dialog)
     _dialog.geometry('500x350')
 
     big_frame = ttk.Frame(_dialog)
@@ -443,7 +488,7 @@ def _init():
     ttk.Separator(big_frame).pack(fill='x')
     buttonframe = ttk.Frame(big_frame)
     buttonframe.pack(fill='x')
-    for text, command in [("Reset", _do_reset), ("OK", _dialog.withdraw)]:
+    for text, command in [("Reset", _do_reset), ("OK", withdraw_the_dialog)]:
         ttk.Button(buttonframe, text=text, command=command).pack(side='right')
 
     assert not _loaded_json
@@ -484,14 +529,15 @@ def _init():
     general.add_option('pygments_style', 'default', reset=False)
     general.connect('pygments_style', _validate_pygments_style_name)
 
-    def edit_it():
+    def edit_it() -> None:
         # porcupine/tabs.py imports this file
         # these local imports feel so evil xD  MUHAHAHAA!!!
         from porcupine import tabs
 
-        path = os.path.join(dirs.configdir, 'filetypes.ini')
+        path = dirs.configdir / 'filetypes.ini'
         manager = porcupine.get_tab_manager()
         manager.add_tab(tabs.FileTab.open_file(manager, path))
+        assert _dialog is not None
         _dialog.withdraw()
 
     filetypes = get_section('File Types')
@@ -512,12 +558,14 @@ def _init():
                            "Default filetype for new files:")
 
 
-def show_dialog():
+def show_dialog() -> None:
     """Show the "Porcupine Settings" dialog.
 
     This function is called when the user opens the dialog from the menu.
     """
     _init()
+    assert _notebook is not None
+    assert _dialog is not None
 
     # hide sections with no widgets in the content_frame
     # add and hide preserve order and title texts
@@ -531,7 +579,7 @@ def show_dialog():
     _dialog.deiconify()
 
 
-def save():
+def save() -> None:
     """Save the settings to the config file.
 
     Note that :func:`porcupine.run` always calls this before it returns,

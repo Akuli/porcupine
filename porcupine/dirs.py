@@ -29,7 +29,7 @@ configdir: pathlib.Path = pathlib.Path(
 installdir = pathlib.Path(__file__).absolute().parent
 
 
-def makedirs():
+def makedirs() -> None:
     all_paths = [cachedir, configdir, configdir / 'plugins']
     for path in all_paths:
         path.mkdir(parents=True, exist_ok=True)

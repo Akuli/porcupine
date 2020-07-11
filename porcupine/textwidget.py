@@ -1,14 +1,29 @@
 import functools
 import json
-import tkinter as tk
+import tkinter
 import tkinter.font as tkfont   # type: ignore
+import typing
+
+try:
+    from typing import TypedDict
+except ImportError:
+    TypedDict = object
 
 import pygments.styles          # type: ignore
 
-from porcupine import settings, utils
+from porcupine import filetypes, settings, utils
 
 
-class HandyText(tk.Text):
+class ChangeDict(TypedDict):
+    # tkinter text widget indexes: 'line.column'
+    start: str
+    end: str
+
+    old_text_len: int
+    new_text: str
+
+
+class HandyText(tkinter.Text):
     """Like ``tkinter.Text``, but with some handy features.
 
     All arguments are passed to ``tkinter.Text``.
@@ -62,7 +77,9 @@ class HandyText(tk.Text):
         position.
     """
 
-    def __init__(self, master, *, create_peer_from=None, **kwargs):
+    def __init__(self, master: tkinter.Widget, *,
+                 create_peer_from: typing.Optional[tkinter.Text] = None,
+                 **kwargs: typing.Any) -> None:
         super().__init__(master, **kwargs)
 
         if create_peer_from is not None:
@@ -73,8 +90,14 @@ class HandyText(tk.Text):
             # tkinter. That has happened above with the super() call. However,
             # rest of what happens in this __init__ method must do stuff to the
             # peer widget, rather than the widget that tkinter created.
+            #
+            # peer_create type is ignored because there's no good way to deal
+            # with kwargs in mypy yet:
+            #
+            #    https://github.com/python/mypy/issues/6552
+            #
             self.destroy()      # goodbye stupid tkinter-created widget
-            create_peer_from.peer_create(self, **kwargs)
+            create_peer_from.peer_create(str(self), **kwargs)   # type: ignore
             utils.forward_event('<<ContentChanged>>', self, create_peer_from)
 
         #       /\
@@ -112,15 +135,17 @@ class HandyText(tk.Text):
         change_cb_command = self.register(self._change_cb)
         cursor_cb_command = self.register(self._cursor_cb)
 
+        tcl_interpreter = typing.cast(typing.Any, self).tk
+
         # all widget stuff is implemented in python and in tcl as calls to a
         # tcl command named str(self), and replacing that with a custom command
         # is a very powerful way to do magic; for example, moving the cursor
         # with arrow keys calls the 'mark set' widget command :D
         actual_widget_command = str(self) + '_actual_widget'
-        self.tk.call('rename', str(self), actual_widget_command)
+        tcl_interpreter.call('rename', str(self), actual_widget_command)
 
         # this part is tcl because i couldn't get a python callback to work
-        self.tk.eval('''
+        tcl_interpreter.eval('''
         proc %(fake_widget)s {args} {
             #puts $args
 
@@ -195,7 +220,9 @@ class HandyText(tk.Text):
         # see _cursor_cb
         self._old_cursor_pos = self.index('insert')
 
-    def _create_change_dict(self, start, end, new_text):
+    def _create_change_dict(
+            self,
+            start: str, end: str, new_text: str) -> ChangeDict:
         return {
             'start': start,
             'end': end,
@@ -203,7 +230,7 @@ class HandyText(tk.Text):
             'new_text': new_text,
         }
 
-    def _change_cb(self, subcommand, *args):
+    def _change_cb(self, subcommand: str, *args_tuple: str) -> None:
         # contains (start, end, old_length, new_text) tuples
         changes = []
 
@@ -214,7 +241,7 @@ class HandyText(tk.Text):
             # are made." they are already validated, but this doesn't hurt
             # imo... but note that rest of this code assumes that this is done!
             # not everything works in corner cases without this
-            args = [self.index(arg) for arg in args]
+            args = [self.index(arg) for arg in args_tuple]
 
             # tk has a funny abstraction of an invisible newline character at
             # the end of file, it's always there but nothing else uses it, so
@@ -230,7 +257,7 @@ class HandyText(tk.Text):
             if len(args) % 2 == 1:
                 args.append(self.index('%s + 1 char' % args[-1]))
             assert len(args) % 2 == 0
-            pairs = zip(args[0::2], args[1::2])   # an iterator, not a list yet
+            pairs = list(zip(args[0::2], args[1::2]))
 
             # "If index2 does not specify a position later in the text than
             # index1 then no characters are deleted."
@@ -240,7 +267,9 @@ class HandyText(tk.Text):
 
             # "They [index pairs, aka ranges] are sorted [...]."
             # TODO: use the fact that (line, column) tuples sort nicely?
-            def sort_by_range_beginnings(range1, range2):
+            def sort_by_range_beginnings(
+                    range1: typing.Tuple[str, str],
+                    range2: typing.Tuple[str, str]) -> int:
                 start1, junk = range1
                 start2, junk = range2
                 if self.compare(start1, '>', start2):
@@ -255,7 +284,9 @@ class HandyText(tk.Text):
             # longest range is used. If overlapping ranges are given, then they
             # will be merged into spans that do not cause deletion of text
             # outside the given ranges due to text shifted during deletion."
-            def merge_index_ranges(start1, end1, start2, end2):
+            def merge_index_ranges(
+                    start1: str, end1: str,
+                    start2: str, end2: str) -> typing.Tuple[str, str]:
                 start = start1 if self.compare(start1, '<', start2) else start2
                 end = end1 if self.compare(end1, '>', end2) else end2
                 return (start, end)
@@ -277,14 +308,14 @@ class HandyText(tk.Text):
         # the man page's inserting section is also kind of a wall of
         # text, but not as bad as the delete
         elif subcommand == 'insert':
-            index, *other_args = args
-            index = self.index(index)
+            text_index, *other_args = args_tuple
+            text_index = self.index(text_index)
 
             # "If index refers to the end of the text (the character after the
             # last newline) then the new text is inserted just before the last
             # newline instead."
-            if index == self.index('end'):
-                index = self.index('end - 1 char')
+            if text_index == self.index('end'):
+                text_index = self.index('end - 1 char')
 
             # we don't care about the tagList arguments to insert, but we need
             # to handle the other arguments nicely anyway: "If multiple
@@ -296,7 +327,8 @@ class HandyText(tk.Text):
             # 'asdtoot', not 'tootasd'
             new_text = ''.join(other_args[::2])
 
-            changes.append(self._create_change_dict(index, index, new_text))
+            changes.append(self._create_change_dict(
+                text_index, text_index, new_text))
 
         # an even smaller wall of text that mostly refers to insert and replace
         elif subcommand == 'replace':
@@ -336,7 +368,7 @@ class HandyText(tk.Text):
             self.after_idle(lambda: self.event_generate(
                 '<<ContentChanged>>', data=json.dumps(changes)))
 
-    def _cursor_cb(self):
+    def _cursor_cb(self) -> None:
         # more implicit newline stuff
         new_pos = self.index('insert')
         if new_pos == self.index('end'):
@@ -346,7 +378,7 @@ class HandyText(tk.Text):
             self._old_cursor_pos = new_pos
             self.event_generate('<<CursorMoved>>')
 
-    def iter_chunks(self, n=100):
+    def iter_chunks(self, n: int = 100) -> typing.Iterable[str]:
         r"""Iterate over the content as chunks of *n* lines.
 
         Each yielded line ends with a ``\n`` character. Lines are not
@@ -369,7 +401,7 @@ class HandyText(tk.Text):
             yield self.get('%d.0' % start, '%d.0' % end)
             start = end
 
-    def iter_lines(self):
+    def iter_lines(self) -> typing.Iterable[str]:
         r"""Iterate over the content as lines.
 
         The trailing ``\n`` characters of each line are included.
@@ -392,18 +424,18 @@ class ThemedText(HandyText):
         :source:`porcupine/plugins/highlight.py`.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         super().__init__(*args, **kwargs)
         settings.get_section('General').connect(
             'pygments_style', self._set_style, run_now=True)
 
-        def on_destroy(event):
+        def on_destroy(event: tkinter.Event) -> None:
             settings.get_section('General').disconnect(
                 'pygments_style', self._set_style)
 
         self.bind('<Destroy>', on_destroy, add=True)
 
-    def _set_style(self, name):
+    def _set_style(self, name: str) -> None:
         style = pygments.styles.get_style_by_name(name)
         bg = style.background_color
 
@@ -420,7 +452,7 @@ class ThemedText(HandyText):
         self.set_colors(fg, bg)
 
     # TODO: document this
-    def set_colors(self, foreground, background):
+    def set_colors(self, foreground: str, background: str) -> None:
         self['fg'] = foreground
         self['bg'] = background
         self['insertbackground'] = foreground  # cursor color
@@ -433,7 +465,11 @@ class MainText(ThemedText):
     """Don't use this. It may be changed later."""
 
     # the filetype is needed for setting the tab width and indenting
-    def __init__(self, parent, filetype, **kwargs):
+    def __init__(
+            self,
+            parent: tkinter.Widget,
+            filetype: filetypes.FileType,
+            **kwargs: typing.Any) -> None:
         super().__init__(parent, **kwargs)
         self.set_filetype(filetype)
 
@@ -459,7 +495,7 @@ class MainText(ThemedText):
         utils.bind_mouse_wheel(self, self._on_ctrl_wheel, prefixes='Control-')
 
     # TODO: the run plugin contains similar code, maybe reuse it somehow?
-    def _on_ctrl_wheel(self, direction):
+    def _on_ctrl_wheel(self, direction: str) -> None:
         config = settings.get_section('General')
         if direction == 'reset':
             config.reset('font_size')
@@ -470,7 +506,7 @@ class MainText(ThemedText):
         except settings.InvalidValue:
             pass
 
-    def set_filetype(self, filetype):
+    def set_filetype(self, filetype: filetypes.FileType) -> None:
         self._filetype = filetype
 
         # from the text(3tk) man page: "To achieve a different standard
@@ -481,9 +517,10 @@ class MainText(ThemedText):
         # my version is kind of minimal compared to that example, but it
         # seems to work :)
         font = tkfont.Font(name='TkFixedFont', exists=True)
-        self['tabs'] = str(font.measure(' ' * filetype.indent_size))
+        self['tabs'] = [str(font.measure(' ' * filetype.indent_size))]
 
-    def _on_delete(self, control_down, event, shifted=False):
+    def _on_delete(self, control_down: bool, event: tkinter.Event,
+                   shifted: bool = False) -> utils.BreakOrNone:
         """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
             # nothing is selected, we can do non-default stuff
@@ -528,11 +565,11 @@ class MainText(ThemedText):
 
         return None
 
-    def _on_closing_brace(self, event):
+    def _on_closing_brace(self, event: tkinter.Event) -> None:
         """Dedent automatically."""
         self.dedent('insert')
 
-    def indent(self, location):
+    def indent(self, location: str) -> None:
         """Insert indentation character(s) at the given location."""
         if not self._filetype.tabs2spaces:
             self.insert(location, '\t')
@@ -545,7 +582,7 @@ class MainText(ThemedText):
         spaces2add = spaces - (how_many_chars % spaces)
         self.insert(location, ' ' * spaces2add)
 
-    def dedent(self, location):
+    def dedent(self, location: str) -> bool:
         """Remove indentation character(s) if possible.
 
         This method tries to remove spaces intelligently so that
@@ -586,11 +623,11 @@ class MainText(ThemedText):
         self.delete('%d.%d' % (lineno, start), '%d.%d' % (lineno, end))
         return True
 
-    def _redo(self, event):
+    def _redo(self, event: tkinter.Event) -> utils.BreakOrNone:
         self.event_generate('<<Redo>>')
         return 'break'
 
-    def _paste(self, event):
+    def _paste(self, event: tkinter.Event) -> utils.BreakOrNone:
         self.event_generate('<<Paste>>')
 
         # by default, selected text doesn't go away when pasting
@@ -604,6 +641,6 @@ class MainText(ThemedText):
 
         return 'break'
 
-    def _select_all(self, event):
+    def _select_all(self, event: tkinter.Event) -> utils.BreakOrNone:
         self.tag_add('sel', '1.0', 'end - 1 char')
         return 'break'

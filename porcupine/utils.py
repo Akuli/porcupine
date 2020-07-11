@@ -6,6 +6,7 @@ import functools
 import json
 import logging
 import os
+import pathlib
 import platform
 import re
 import shlex
@@ -17,10 +18,19 @@ import threading
 import tkinter
 from tkinter import ttk
 import traceback
+import typing
 
 import porcupine
 
 log = logging.getLogger(__name__)
+
+
+# runtime will work on python < 3.8, mypy won't
+if typing.TYPE_CHECKING:
+    # python 3.8 feature
+    BreakOrNone = typing.Optional[typing.Literal['break']]
+else:
+    BreakOrNone = object
 
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
@@ -72,7 +82,7 @@ if running_pythonw and sys.executable.lower().endswith(r'\pythonw.exe'):
         python_executable = _possible_python
 
 
-def _find_short_python():
+def _find_short_python() -> str:
     if platform.system() == 'Windows':
         # windows python uses a py.exe launcher program in system32
         expected = 'Python %d.%d.%d' % sys.version_info[:3]
@@ -94,21 +104,23 @@ def _find_short_python():
     else:
         for python in ['python', 'python%d' % sys.version_info[0],
                        'python%d.%d' % sys.version_info[:2]]:
-            # os.path.samefile() does the right thing with symlinks
-            path = shutil.which(python)
-            if path is not None and os.path.samefile(path, sys.executable):
+            # samefile() does the right thing with symlinks
+            path_string = shutil.which(python)
+            if (path_string is not None and
+                    os.path.samefile(path_string, sys.executable)):
                 return python
 
     # use the full path as a fallback
     return python_executable
 
 
-short_python_command = _find_short_python()
+short_python_command: str = _find_short_python()
 
 
+quote: typing.Callable[[str], str]
 if platform.system() == 'Windows':
     # this is mostly copy/pasted from subprocess.list2cmdline
-    def quote(string):
+    def quote(string: str) -> str:
         result = []
         needquote = False
         bs_buf = []
@@ -144,12 +156,11 @@ if platform.system() == 'Windows':
         return ''.join(result)
 
 else:
-    def quote(string):
-        return shlex.quote(string)
+    from shlex import quote
 
 
 # i know, i shouldn't do math with rgb colors, but this is good enough
-def invert_color(color, *, black_or_white=False):
+def invert_color(color: str, *, black_or_white: bool = False) -> str:
     """Return a color with opposite red, green and blue values.
 
     Example: ``invert_color('white')`` is ``'#000000'`` (black).
@@ -176,7 +187,7 @@ def invert_color(color, *, black_or_white=False):
         return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
 
 
-def mix_colors(color1, color2):
+def mix_colors(color1: str, color2: str) -> str:
     widget = porcupine.get_main_window()    # any widget would do
     r, g, b = (
         sum(pair) // 2     # average
@@ -191,21 +202,22 @@ class _TooltipManager:
     # mouse pointer.
     tipwindow = None
 
-    def __init__(self, widget):
+    def __init__(self, widget: tkinter.Widget) -> None:
         widget.bind('<Enter>', self.enter, add=True)
         widget.bind('<Leave>', self.leave, add=True)
         widget.bind('<Motion>', self.motion, add=True)
         self.widget = widget
         self.got_mouse = False
-        self.text = None
+        self.text: typing.Optional[str] = None
 
     @classmethod
-    def destroy_tipwindow(cls, junk_event=None):
+    def destroy_tipwindow(
+            cls, junk_event: typing.Optional[tkinter.Event] = None) -> None:
         if cls.tipwindow is not None:
             cls.tipwindow.destroy()
             cls.tipwindow = None
 
-    def enter(self, event):
+    def enter(self, event: tkinter.Event) -> None:
         # For some reason, toplevels get also notified of their
         # childrens' events.
         if event.widget is self.widget:
@@ -213,16 +225,16 @@ class _TooltipManager:
             self.got_mouse = True
             self.widget.after(1000, self.show)
 
-    def leave(self, event):
+    def leave(self, event: tkinter.Event) -> None:
         if event.widget is self.widget:
             self.destroy_tipwindow()
             self.got_mouse = False
 
-    def motion(self, event):
+    def motion(self, event: tkinter.Event) -> None:
         self.mousex = event.x_root
         self.mousey = event.y_root
 
-    def show(self):
+    def show(self) -> None:
         if not self.got_mouse:
             return
 
@@ -241,7 +253,7 @@ class _TooltipManager:
                           fg='black', bg='white').pack()
 
 
-def set_tooltip(widget, text):
+def set_tooltip(widget: tkinter.Widget, text: str) -> None:
     """A simple tooltip implementation with tkinter.
 
     After calling ``set_tooltip(some_widget, "hello")``, "hello" will be
@@ -256,13 +268,17 @@ def set_tooltip(widget, text):
     wrote the tooltip code! Idlelib is awful and I don't want to use
     anything from it in my editor.
     """
-    if text is None:
-        if hasattr(widget, '_tooltip_manager'):
-            widget._tooltip_manager.text = None
-    else:
-        if not hasattr(widget, '_tooltip_manager'):
-            widget._tooltip_manager = _TooltipManager(widget)
-        widget._tooltip_manager.text = text
+
+    try:
+        manager: _TooltipManager = (
+            typing.cast(typing.Any, widget)._tooltip_manager)
+    except AttributeError:
+        if text is None:
+            return
+        manager = _TooltipManager(widget)
+        typing.cast(typing.Any, widget)._tooltip_manager = manager
+
+    manager.text = text
 
 
 # this is documented in bind_with_data()
@@ -270,19 +286,25 @@ def set_tooltip(widget, text):
 # TODO: mention this in docs, useful for mypy
 class EventWithData(tkinter.Event):
 
-    def data_widget(self):
+    data_string: str
+
+    def data_widget(self) -> tkinter.BaseWidget:
         return self.widget.nametowidget(self.data_string)
 
-    def data_json(self):
+    def data_json(self) -> typing.Any:
         return json.loads(self.data_string)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         match = re.fullmatch(r'<(.*)>', super().__repr__())
         assert match is not None
         return '<%s data_string=%r>' % (match.group(1), self.data_string)
 
 
-def bind_with_data(widget, sequence, callback, add=False):
+def bind_with_data(
+        widget: tkinter.Widget,
+        sequence: str,
+        callback: typing.Callable[[EventWithData], typing.Optional[str]],
+        add: bool = False) -> str:
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``
     argument of ``event_generate()``.
@@ -291,7 +313,7 @@ def bind_with_data(widget, sequence, callback, add=False):
 
         from porcupine import utils
 
-        def on_wutwut(event):
+        def on_wutwut(event: utils.EventWithData):
             print(event.data_string)
 
         utils.bind_with_data(some_widget, '<<Thingy>>', on_wutwut, add=True)
@@ -320,38 +342,42 @@ def bind_with_data(widget, sequence, callback, add=False):
     # event objects and runs callback(event)
     #
     # TODO: is it possible to do this without a deque?
-    event_objects = collections.deque()
+    event_objects: typing.Deque[
+        typing.Union[tkinter.Event, EventWithData]] = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
     # TODO: does the above bind get ever unbound so that it doesn't leak? see
     #       tkinter's unbind method
 
-    def run_the_callback(data_string):
+    def run_the_callback(data_string: str) -> typing.Optional[str]:
         event = event_objects.popleft()
         event.__class__ = EventWithData    # evil haxor muhaha
+        assert isinstance(event, EventWithData)
         event.data_string = data_string
         return callback(event)      # may return 'break'
 
     # tkinter's bind() ignores the add argument when the callback is a
     # string :(
     funcname = widget.register(run_the_callback)
-    widget.tk.eval('bind %s %s {+ if {"[%s %%d]" == "break"} break }'
-                   % (widget, sequence, funcname))
+    tcl_interpreter = typing.cast(typing.Any, widget).tk
+    tcl_interpreter.eval(
+        'bind %s %s {+ if {"[%s %%d]" == "break"} break }'
+        % (widget, sequence, funcname))
     return funcname
 
 
 # TODO: document this
-def forward_event(event_name, from_, to, *, add=True):
-    def callback(event):
-        kwargs = {
-            # make the coordinates relative to the 'to' widget
-            'x': event.x_root - to.winfo_rootx(),
-            'y': event.y_root - to.winfo_rooty(),
-            # no need to specify rootx and rooty, because Tk can calculate them
-        }
-        if hasattr(event, 'data_string'):
-            kwargs['data'] = event.data_string
+def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
+                  *, add: bool = True) -> str:
+    def callback(event: tkinter.Event) -> None:
+        # make the coordinates relative to the 'to' widget
+        x = event.x_root - to.winfo_rootx()
+        y = event.y_root - to.winfo_rooty()
+        # no need to specify rootx and rooty, because Tk can calculate them
 
-        to.event_generate(event_name, **kwargs)
+        if isinstance(event, EventWithData):
+            to.event_generate(event_name, x=x, y=y, data=event.data_string)
+        else:
+            to.event_generate(event_name, x=x, y=y)
 
     if event_name.startswith('<<'):
         # virtual events support data
@@ -361,7 +387,11 @@ def forward_event(event_name, from_, to, *, add=True):
 
 
 @contextlib.contextmanager
-def temporary_bind(widget, sequence, func):
+def temporary_bind(
+    widget: tkinter.Widget,
+    sequence: str,
+    func: typing.Callable[[tkinter.Event], typing.Optional[str]]
+) -> typing.Iterator[None]:
     """Bind and unbind a callback.
 
     It's possible (and in Porcupine plugins, highly recommended) to use
@@ -407,7 +437,12 @@ def temporary_bind(widget, sequence, func):
 
 
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
-def bind_tab_key(widget, on_tab, **bind_kwargs):
+def bind_tab_key(
+        widget: tkinter.Widget,
+        on_tab: typing.Callable[
+            [tkinter.Event, bool],
+            typing.Optional[typing.Literal['break']]],
+        **bind_kwargs: typing.Any) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 
     Use this function like this::
@@ -428,10 +463,13 @@ def bind_tab_key(widget, on_tab, **bind_kwargs):
     """
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
-    def callback(shifted, event):
+    def callback(
+            shifted: bool,
+            event: tkinter.Event) -> typing.Optional[typing.Literal['break']]:
         return on_tab(event, shifted)
 
-    if widget.tk.call('tk', 'windowingsystem') == 'x11':
+    tcl_interpreter = typing.cast(typing.Any, widget)
+    if tcl_interpreter.call('tk', 'windowingsystem') == 'x11':
         # even though the event keysym says Left, holding down the right
         # shift and pressing tab also works :D
         shift_tab = '<ISO_Left_Tab>'
@@ -442,7 +480,12 @@ def bind_tab_key(widget, on_tab, **bind_kwargs):
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)
 
 
-def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
+def bind_mouse_wheel(
+        widget: tkinter.Widget,
+        callback: typing.Callable[[str], None],
+        *,
+        prefixes: str = '',
+        **bind_kwargs: typing.Any) -> None:
     """Bind mouse wheel events to callback.
 
     The callback will be called like ``callback(direction)`` where
@@ -457,8 +500,9 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
     """
     # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
-    if widget.tk.call('tk', 'windowingsystem') == 'x11':
-        def real_callback(event):
+    tcl_interpreter = typing.cast(typing.Any, widget)
+    if tcl_interpreter.tk.call('tk', 'windowingsystem') == 'x11':
+        def real_callback(event: tkinter.Event) -> None:
             callback('up' if event.num == 4 else 'down')
 
         widget.bind('<{}Button-4>'.format(prefixes),
@@ -468,7 +512,7 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
 
     else:
         # TODO: test this on OSX
-        def real_callback(event):
+        def real_callback(event: tkinter.Event) -> None:
             callback('up' if event.delta > 0 else 'down')
 
         widget.bind('<{}MouseWheel>'.format(prefixes),
@@ -476,7 +520,8 @@ def bind_mouse_wheel(widget, callback, *, prefixes='', **bind_kwargs):
 
 
 # TODO: document this
-def create_passive_text_widget(parent, **kwargs):
+def create_passive_text_widget(
+        parent: tkinter.Widget, **kwargs: typing.Any) -> tkinter.Text:
     kwargs.setdefault('font', 'TkDefaultFont')
     kwargs.setdefault('borderwidth', 0)
     kwargs.setdefault('relief', 'flat')
@@ -484,10 +529,11 @@ def create_passive_text_widget(parent, **kwargs):
     kwargs.setdefault('state', 'disabled')  # TODO: remember to mention in docs
     text = tkinter.Text(parent, **kwargs)
 
-    def update_colors(event=None):
-        # python's ttk::style api sucks
-        ttk_fg = text.tk.eval('ttk::style lookup TLabel.label -foreground')
-        ttk_bg = text.tk.eval('ttk::style lookup TLabel.label -background')
+    def update_colors(junk: typing.Optional[tkinter.Event] = None) -> None:
+        # tkinter's ttk::style api sucks so let's not use it
+        tcl_interp = typing.cast(typing.Any, text).tk
+        ttk_fg = tcl_interp.eval('ttk::style lookup TLabel.label -foreground')
+        ttk_bg = tcl_interp.eval('ttk::style lookup TLabel.label -background')
 
         if not ttk_fg and not ttk_bg:
             # stupid ttk theme, it deserves this
@@ -517,12 +563,12 @@ except AttributeError:
     # python 3.6 compat thing, written similarly to ttk.Combobox
     class Spinbox(ttk.Entry):   # type: ignore
 
-        def __init__(self, master=None, *, from_=None, **kwargs):
+        def __init__(self, master, *, from_=None, **kwargs):     # type: ignore
             if from_ is not None:
                 kwargs['from'] = from_  # this actually works
             super().__init__(master, 'ttk::spinbox', **kwargs)
 
-        def configure(self, *args, **kwargs):
+        def configure(self, *args, **kwargs):   # type: ignore
             if 'from_' in kwargs:
                 kwargs['from'] = kwargs.pop('from_')
             return super().configure(*args, **kwargs)
@@ -530,7 +576,8 @@ except AttributeError:
         config = configure
 
 
-def errordialog(title, message, monospace_text=None):
+def errordialog(title: str, message: str,
+                monospace_text: typing.Optional[str] = None) -> None:
     """This is a lot like ``tkinter.messagebox.showerror``.
 
     This function can be called with or without creating a root window
@@ -580,7 +627,13 @@ def errordialog(title, message, monospace_text=None):
     window.wait_window()
 
 
-def run_in_thread(blocking_function, done_callback):
+T = typing.TypeVar('T')
+
+
+def run_in_thread(
+    blocking_function: typing.Callable[[], T],
+    done_callback: typing.Callable[[bool, typing.Union[str, T]], None],
+) -> None:
     """Run ``blocking_function()`` in another thread.
 
     If the *blocking_function* raises an error,
@@ -591,32 +644,43 @@ def run_in_thread(blocking_function, done_callback):
     called from Tk's main loop, so it can do things with Tkinter widgets
     unlike *blocking_function*.
     """
-    root = porcupine.get_main_window()
-    result = []     # [success, value or traceback]
+    root = porcupine.get_main_window()  # any widget would do
 
-    def thread_target():
+    value: typing.Optional[T] = None
+    error_traceback: typing.Optional[str] = None
+
+    def thread_target() -> None:
+        nonlocal value
+        nonlocal error_traceback
+
         # the logging module uses locks so calling it from another
         # thread should be safe
         try:
             value = blocking_function()
-            result[:] = [True, value]
         except Exception:
-            result[:] = [False, traceback.format_exc()]
+            error_traceback = traceback.format_exc()
 
-    def check():
+    def check() -> None:
         if thread.is_alive():
             # let's come back and check again later
             root.after(100, check)
         else:
-            done_callback(*result)
+            if error_traceback is None:
+                done_callback(True, typing.cast(T, value))
+            else:
+                done_callback(False, error_traceback)
 
     thread = threading.Thread(target=thread_target)
     thread.start()
     root.after_idle(check)
 
 
+# how to type hint context manager: https://stackoverflow.com/a/49736916
 @contextlib.contextmanager
-def backup_open(path, *args, **kwargs):
+def backup_open(
+    path: pathlib.Path,
+    *args: typing.Any, **kwargs: typing.Any,
+) -> typing.Iterator[typing.TextIO]:
     """Like :func:`open`, but uses a backup file if needed.
 
     This is useless with modes like ``'r'`` because they don't modify
@@ -632,31 +696,34 @@ def backup_open(path, *args, **kwargs):
 
     This automatically restores from the backup on failure.
     """
-    if os.path.exists(path):
+    if path.exists():
         # there's something to back up
-        name, ext = os.path.splitext(path)
-        while os.path.exists(name + ext):
-            name += '-backup'
-        backuppath = name + ext
+        #
+        # for backing up foo.py:
+        # if foo-backup.py, then use foo-backup-backup.py etc
+        backuppath = path
+        while backuppath.exists():
+            backuppath = backuppath.with_name(
+                backuppath.stem + '-backup' + backuppath.suffix)
 
-        log.info("backing up '%s' to '%s'", path, backuppath)
+        log.info(f"backing up '{path}' to '{backuppath}'")
         shutil.copy(path, backuppath)
 
         try:
-            yield open(path, *args, **kwargs)
+            yield path.open(*args, **kwargs)
         except Exception as e:
-            log.info("restoring '%s' from the backup", path)
-            shutil.move(backuppath, path)
+            log.info(f"restoring '{path}' from the backup")
+            shutil.move(str(backuppath), str(path))
             raise e
         else:
-            log.info("deleting '%s'" % backuppath)
-            os.remove(backuppath)
+            log.info(f"deleting '{backuppath}'")
+            backuppath.unlink()
 
     else:
-        yield open(path, *args, **kwargs)
+        yield path.open(*args, **kwargs)
 
 
-def get_keyboard_shortcut(binding):
+def get_keyboard_shortcut(binding: str) -> str:
     """Convert a Tk binding string to a format that most people are used to.
 
     >>> get_keyboard_shortcut('<Control-c>')

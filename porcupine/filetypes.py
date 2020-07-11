@@ -5,7 +5,6 @@ from collections import OrderedDict
 import configparser
 import fnmatch
 import importlib
-import itertools
 import logging
 import mimetypes
 import os
@@ -236,7 +235,7 @@ _filetypes: 'OrderedDict[str, FileType]' = OrderedDict()
 
 # this cannot be a global variable because tests load this module
 # and THEN change dirs.configdir
-def _get_ini_path():
+def _get_ini_path() -> pathlib.Path:
     return dirs.configdir / 'filetypes.ini'
 
 
@@ -334,19 +333,24 @@ class FileType:
     # TODO: support passing more options in the config file? useful for lexers
     #       like pygments.lexers.PythonConsoleLexer, which takes an optional
     #       python3 argument
-    def get_lexer(self, **kwargs):
+    def get_lexer(self, **kwargs: typing.Any) -> typing.Any:
         return self._pygments_lexer_class(**kwargs)
 
-    def has_command(self, something_command):
+    def has_command(self, something_command: str) -> bool:
         return bool(_config[self.name][something_command].strip())
 
-    def get_command(self, something_command, basename):
+    def get_command(
+            self, something_command: str, basename: str) -> typing.List[str]:
         assert os.sep not in basename, "%r is not a basename" % basename
         template = _config[self.name][something_command]
+
+        no_exts_match = re.search(r'^\.*[^\.]*', basename)
+        assert no_exts_match is not None
+
         format_args = {
             'file': basename,
             'no_ext': os.path.splitext(basename)[0],
-            'no_exts': re.search(r'^\.*[^\.]*', basename).group(0),
+            'no_exts': no_exts_match.group(0),
         }
         result = [part.format(**format_args) for part in shlex.split(template)]
         assert result
@@ -424,17 +428,17 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
     return _filetypes[name]
 
 
-def get_filetype_by_name(name):
+def get_filetype_by_name(name: str) -> FileType:
     """Find and return a filetype object by its ``name`` attribute."""
     return _filetypes[name]
 
 
-def get_all_filetypes():
+def get_all_filetypes() -> typing.List[FileType]:
     """Return a list of all loaded filetypes."""
     return list(_filetypes.values())
 
 
-def get_filedialog_kwargs():
+def get_filedialog_kwargs() -> typing.Dict[str, typing.Any]:
     """This is a way to run tkinter dialogs that display the filetypes and ext\
 ensions that Porcupine supports.
 
@@ -451,7 +455,12 @@ ensions that Porcupine supports.
     You can use this function with other ``tkinter.filedialog`` functions as
     well.
     """
-    result = [("All files", "*")]
+    result: typing.List[
+        typing.Tuple[
+            str,
+            typing.Union[str, typing.Tuple[str, ...]]  # tkinter works this way
+        ]
+    ] = [("All files", "*")]
     for filetype in get_all_filetypes():
         patterns = list(filetype.filename_patterns)
         if filetype.name not in {'Plain Text', 'Porcupine filetypes.ini'}:
@@ -470,7 +479,7 @@ ensions that Porcupine supports.
     return {'filetypes': result}
 
 
-def _add_missing_mimetypes():
+def _add_missing_mimetypes() -> None:
     # many of these are missing on windows
     need_to_know = {
         # extension: possible_mimetype
@@ -613,43 +622,44 @@ def _init() -> None:
             'Porcupine filetypes.ini')
 
 
+def _key_val_pair(
+    key: str,
+    value: str,
+    key_token: typing.Any = pygments.token.Name.Builtin,
+    value_token: typing.Any = pygments.token.String,
+) -> typing.Iterable[typing.Tuple[str, typing.Any]]:
+    for regex, token in [(value, value_token),
+                         (r'.*?', pygments.token.Name)]:
+        yield (
+            r'(%s)([^\S\n]*)(=)([^\S\n]*)(%s)$' % (key, regex),
+            pygments.lexer.bygroups(
+                key_token, pygments.token.Text,
+                pygments.token.Operator, pygments.token.Text, token))
+
+
 # unlike pygments.lexers.IniLexer, this highlights correct keys and
 # values in filetypes.ini specially
-# FIXME: this is outdated >:(
-class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):
+class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):     # type: ignore
 
     # these are probably not needed
     name = 'Porcupine filetypes.ini'
     aliases = ['porcupine-filetypes']
     filenames: typing.List[str] = []
 
-    def key_val_pair(
-            key: str,
-            value: str,
-            key_token=pygments.token.Name.Builtin,
-            value_token=pygments.token.String):
-        for regex, token in [(value, value_token),
-                             (r'.*?', pygments.token.Name)]:
-            yield (
-                r'(%s)([^\S\n]*)(=)([^\S\n]*)(%s)$' % (key, regex),
-                pygments.lexer.bygroups(
-                    key_token, pygments.token.Text,
-                    pygments.token.Operator, pygments.token.Text, token))
-
-    tokens = {'root': list(itertools.chain(
-        [(r'\s*#.*?$', pygments.token.Comment)],
-        [(r'\[(.*?)\]$', pygments.token.Keyword)],
-        key_val_pair(r'filename_patterns', r'.*'),
-        key_val_pair(r'mimetypes', r'.*'),      # TODO
-        key_val_pair(r'pygments_lexer', r'.*'),      # TODO
-        key_val_pair(r'tabs2spaces', r'yes|no'),
-        key_val_pair(r'indent_size', r'[1-9][0-9]*'),        # positive int
-        key_val_pair(r'max_line_length', r'0|[1-9][0-9]*'),  # non-negative int
-        key_val_pair(r'(?:compile|run|lint|langserver)_command', r'.*'),
-        key_val_pair(r'langserver_language_id', r'.*'),
-        key_val_pair(r'langserver_port', r'\d+'),
+    tokens = {'root': [
+        (r'\s*#.*?$', pygments.token.Comment),
+        (r'\[(.*?)\]$', pygments.token.Keyword),
+        *_key_val_pair(r'filename_patterns', r'.*'),
+        *_key_val_pair(r'mimetypes', r'.*'),
+        *_key_val_pair(r'pygments_lexer', r'.*'),      # TODO
+        *_key_val_pair(r'tabs2spaces', r'yes|no'),
+        *_key_val_pair(r'indent_size', r'[1-9][0-9]*'),        # positive int
+        *_key_val_pair(r'max_line_length', r'0|[1-9][0-9]*'),  # non-negative int
+        *_key_val_pair(r'(?:compile|run|lint|langserver)_command', r'.*'),
+        *_key_val_pair(r'langserver_language_id', r'.*'),
+        *_key_val_pair(r'langserver_port', r'\d+'),
 
         # less red error tokens
-        key_val_pair(r'.*?', r'.*?', pygments.token.Text, pygments.token.Text),
-        [(r'.+?$', pygments.token.Text)],
-    ))}
+        *_key_val_pair(r'.*?', r'.*?', pygments.token.Text, pygments.token.Text),
+        (r'.+?$', pygments.token.Text),
+    ]}

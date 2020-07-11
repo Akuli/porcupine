@@ -2,7 +2,7 @@ import platform
 import subprocess
 import typing
 
-from porcupine import actions, get_tab_manager, utils
+from porcupine import actions, get_tab_manager, tabs, utils
 
 
 def run_autopep8(code: str) -> typing.Optional[str]:
@@ -44,7 +44,9 @@ def run_autopep8(code: str) -> typing.Optional[str]:
 
 
 def callback() -> None:
-    widget = get_tab_manager().select().textwidget
+    selected_tab = get_tab_manager().select()
+    assert isinstance(selected_tab, tabs.FileTab)
+    widget = selected_tab.textwidget
     before = widget.get('1.0', 'end - 1 char')
     after = run_autopep8(before)
     if after is None:

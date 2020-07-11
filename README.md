@@ -147,7 +147,7 @@ If you are using Windows, you need to use `py` instead of `python3` and
 
 Here is a list of the commands I use when developing Porcupine:
 - Git commands. I'll assume that you know how to use Git and GitHub.
-- Type checking with mypy: `mypy porcupine`
+- Type checking with mypy: `MYPYPATH=my_stubs mypy porcupine/` (see also my_stubs/README.md)
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
 - `coverage run --include="porcupine/*" -m pytest` followed by `coverage html`
@@ -156,6 +156,13 @@ Here is a list of the commands I use when developing Porcupine:
   tests and try to improve the coverage :D
 - `cd docs` followed by `sphinx-build . _build` creates HTML documentation.
   Open `docs/_build/index.html` in your favorite browser to view it.
+
+Currently `mypy porcupine` relies on `typeshed` stuff that is so new that the latest mypy doesn't come with it yet,
+so you need to do this hack to get it to work:
+
+    cd env/lib/python3.7/site-packages/mypy
+    rm -r typeshed
+    git clone https://github.com/python/typeshed
 
 I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.

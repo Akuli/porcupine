@@ -6,6 +6,7 @@ from queue import Empty         # queue is a handy variable name
 import tkinter
 from tkinter import filedialog
 import traceback
+import typing
 import webbrowser
 
 from porcupine import _logs, actions, filetypes, dirs, settings, tabs, utils
@@ -13,13 +14,13 @@ from porcupine import _logs, actions, filetypes, dirs, settings, tabs, utils
 log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier
-_root = None
-_tab_manager = None
-_init_kwargs = {}
+_root: typing.Optional[tkinter.Tk] = None
+_tab_manager: typing.Optional[tabs.TabManager] = None
+_init_kwargs: typing.Dict[str, typing.Any] = {}
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
-def init(verbose_logging=False):
+def init(verbose_logging: bool = False) -> None:
     """Get everything ready for running Porcupine.
 
     The *verbose_logging* option corresponds to the ``--verbose``
@@ -58,14 +59,14 @@ def get_init_kwargs():
     return _init_kwargs
 
 
-def get_main_window():
+def get_main_window() -> tkinter.Tk:
     """Return the tkinter root window that Porcupine is using."""
     if _root is None:
         raise RuntimeError("Porcupine is not running")
     return _root
 
 
-def get_tab_manager():
+def get_tab_manager() -> tabs.TabManager:
     """Return the :class:`porcupine.tabs.TabManager` widget in the main window.
     """  # these are on a separate line because pep-8 line length
     if _tab_manager is None:

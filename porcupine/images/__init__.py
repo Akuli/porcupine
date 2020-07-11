@@ -29,7 +29,7 @@ _image_cache: typing.Dict[str, tkinter.PhotoImage] = {}
 atexit.register(_image_cache.clear)
 
 
-def get(name):
+def get(name: str) -> tkinter.PhotoImage:
     """Load a ``tkinter.PhotoImage`` from an image file that comes with Porcup\
 ine.
 

@@ -1,17 +1,28 @@
 import collections
 import tkinter
+import typing
 import warnings
 
 import porcupine
 from porcupine import tabs, utils
 
 
-_actions = collections.OrderedDict()
+_actions: 'collections.OrderedDict[str, Action]' = collections.OrderedDict()
 
 
-class _Action:
+class Action:
 
-    def __init__(self, path, kind, callback_or_choices, binding, var):
+    def __init__(
+            self,
+            path: str,
+            kind: str,
+            callback_or_choices: typing.Union[
+                typing.Callable[[], None],
+                typing.List[typing.Any],
+                None,
+            ],
+            binding: typing.Optional[str],
+            var: typing.Optional[tkinter.Variable]):
         self.path = path
         self.kind = kind
         self.binding = binding
@@ -19,26 +30,31 @@ class _Action:
 
         # this is less crap than subclassing would be
         if kind == 'command':
-            self.callback = callback_or_choices
+            assert not isinstance(callback_or_choices, list)
+            assert callback_or_choices is not None
+            self.callback: typing.Callable[[], None] = callback_or_choices
         elif kind == 'choice':
+            assert isinstance(callback_or_choices, list)
+            assert var is not None
             self.var = var
-            self.choices = callback_or_choices
-            self.var.trace('w', self._var_set_check)
+            self.choices: typing.List[typing.Any] = callback_or_choices
+            self.var.trace_add('write', self._var_set_check)
         elif kind == 'yesno':
+            assert var is not None
             self.var = var
         else:
             raise AssertionError("this shouldn't happen")  # pragma: no cover
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Action object %r: kind=%r, enabled=%r>' % (
             self.path, self.kind, self.enabled)
 
     @property
-    def enabled(self):
+    def enabled(self) -> bool:
         return self._enabled
 
     @enabled.setter
-    def enabled(self, is_enabled):
+    def enabled(self, is_enabled: bool) -> None:
         # omitting this check might cause confusing behavior
         if not isinstance(is_enabled, bool):
             raise TypeError("enabled should be True or False, not %r"
@@ -49,15 +65,28 @@ class _Action:
             event = '<<ActionEnabled>>' if is_enabled else '<<ActionDisabled>>'
             porcupine.get_main_window().event_generate(event, data=self.path)
 
-    def _var_set_check(self, *junk):
+    def _var_set_check(self, *junk: typing.Any) -> None:
         value = self.var.get()
         if value not in self.choices:
             warnings.warn("the var of %r was set to %r which is not one "
                           "of the choices" % (self, value), RuntimeWarning)
 
 
-def _add_any_action(path, kind, callback_or_choices, binding, var, *,
-                    filetype_names=None, tabtypes=None):
+def _add_any_action(
+        path: str,
+        kind: str,
+        callback_or_choices: typing.Union[
+            typing.Callable[[], None],
+            typing.List[typing.Any],
+            None,
+        ],
+        binding: typing.Optional[str],
+        var: typing.Optional[tkinter.Variable],
+        *,
+        filetype_names: typing.Optional[typing.List[str]] = None,
+        tabtypes: typing.Optional[typing.Sequence[
+            typing.Type[tabs.Tab]]] = None) -> Action:
+
     if path.startswith('/') or path.endswith('/'):
         raise ValueError("action paths must not start or end with /")
     if filetype_names is not None and tabtypes is not None:
@@ -69,33 +98,34 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
     # event_generate must be before setting action.enabled, this way
     # plugins get a chance to do something to the new action before it's
     # disabled
-    action = _Action(path, kind, callback_or_choices, binding, var)
+    action = Action(path, kind, callback_or_choices, binding, var)
     _actions[path] = action
     porcupine.get_main_window().event_generate('<<NewAction>>', data=path)
 
     if tabtypes is not None or filetype_names is not None:
         if tabtypes is not None:
-            tabtypes = tuple(
+            actual_tabtypes = tuple(
                 # None is the only type(None) object
                 type(None) if cls is None else cls
                 for cls in tabtypes
             )
 
-            def enable_or_disable(junk_event=None):
+            def enable_or_disable(
+                    junk_event: typing.Optional[tkinter.Event] = None) -> None:
                 tab = porcupine.get_tab_manager().select()
-                action.enabled = isinstance(tab, tabtypes)
+                action.enabled = isinstance(tab, actual_tabtypes)
 
         if filetype_names is not None:
-            # the noqa comment is needed because flake8 thinks this is
-            # a "redefinition of unused 'enable_or_disable'"
-            def enable_or_disable(junk_event=None):     # noqa
+            def enable_or_disable(
+                    junk_event: typing.Optional[tkinter.Event] = None) -> None:
                 tab = porcupine.get_tab_manager().select()
                 if isinstance(tab, tabs.FileTab):
+                    assert filetype_names is not None
                     action.enabled = tab.filetype.name in filetype_names
                 else:
                     action.enabled = False
 
-            def on_new_tab(event):
+            def on_new_tab(event: utils.EventWithData) -> None:
                 tab = event.data_widget()
                 if isinstance(tab, tabs.FileTab):
                     tab.bind('<<FiletypeChanged>>', enable_or_disable,
@@ -112,15 +142,17 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
     if binding is not None:
         assert kind in {'command', 'yesno'}, repr(kind)
 
-        def bind_callback(event):
+        def bind_callback(event: tkinter.Event) -> utils.BreakOrNone:
             if action.enabled:
                 if kind == 'command':
                     action.callback()
                 if kind == 'yesno':
-                    action.var.set(not action.var.get())
+                    var = typing.cast(tkinter.BooleanVar, action.var)
+                    var.set(not var.get())
                 # try to allow binding keys that are used for other
                 # things by default
                 return 'break'
+            return None
 
         # TODO: warning if it's already bound?
         #
@@ -134,7 +166,11 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
     return action
 
 
-def add_command(path, callback, keyboard_binding=None, **kwargs):
+def add_command(
+        path: str,
+        callback: typing.Callable[[], None],
+        keyboard_binding: typing.Optional[str] = None,
+        **kwargs: typing.Any) -> Action:
     """Add a simple action that runs ``callback()``.
 
     The returned action object has a ``callback`` attribute set to the
@@ -144,8 +180,12 @@ def add_command(path, callback, keyboard_binding=None, **kwargs):
                            keyboard_binding, None, **kwargs)
 
 
-def add_yesno(path, default=None, keyboard_binding=None, *,
-              var=None, **kwargs):
+def add_yesno(
+        path: str,
+        default: typing.Optional[bool] = None,
+        keyboard_binding: typing.Optional[str] = None, *,
+        var: typing.Optional[tkinter.BooleanVar] = None,
+        **kwargs: typing.Any) -> Action:
     """Add an action that appears as a checkbox item in the menubar.
 
     If *var* is given, it should be a ``tkinter.BooleanVar`` and it's
@@ -161,11 +201,17 @@ def add_yesno(path, default=None, keyboard_binding=None, *,
     elif default is not None:
         var.set(default)
 
-    return _add_any_action(path, 'yesno', default,
+    return _add_any_action(path, 'yesno', None,
                            keyboard_binding, var, **kwargs)
 
 
-def add_choice(path, choices, default=None, *, var=None, **kwargs):
+def add_choice(
+        path: str,
+        choices: typing.List[typing.Any],
+        default: typing.Optional[typing.Any] = None,
+        *,
+        var: typing.Optional[tkinter.Variable] = None,
+        **kwargs: typing.Any) -> Action:
     """Add an action for choosing one from a list of choices.
 
     :source:`The menubar plugin <porcupine/plugins/menubar.py>` displays
@@ -199,12 +245,12 @@ def add_choice(path, choices, default=None, *, var=None, **kwargs):
     return _add_any_action(path, 'choice', choices, None, var, **kwargs)
 
 
-def get_action(action_path):
+def get_action(action_path: str) -> Action:
     """Look up and return an existing action object by its path."""
     return _actions[action_path.rstrip('/')]
 
 
-def get_all_actions():
+def get_all_actions() -> typing.List[Action]:
     """Return a list of all existing action objects in arbitrary order.
 
     Note that plugins like :source:`the menubar <porcupine/plugins/menubar.py>`

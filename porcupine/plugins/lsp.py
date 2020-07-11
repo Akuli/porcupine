@@ -21,6 +21,7 @@ import socket
 import subprocess
 import threading
 import time
+import tkinter
 import typing
 from urllib.request import pathname2url
 
@@ -183,15 +184,12 @@ _PROJECT_ROOT_THINGS = ['editorconfig', '.git'] + [
 def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
     assert project_file_path.is_absolute()
 
-    path = project_file_path
-    while True:
-        parent = path.parent
-        if path == parent:      # shitty default
-            return project_file_path.parent
-        path = parent
-
+    for path in project_file_path.parents:
         if any((path / thing).exists() for thing in _PROJECT_ROOT_THINGS):
             return path
+
+    # shitty default
+    return project_file_path.parent
 
 
 def get_completion_item_doc(item: lsp.CompletionItem) -> str:
@@ -242,6 +240,7 @@ def _position_tk2lsp(tk_position: str) -> lsp.Position:
     return lsp.Position(line=line-1, character=column)
 
 
+# FIXME: two langservers with same command, same port, different project_root
 class LangServerId(typing.NamedTuple):
     command: str
     port: typing.Optional[int]
@@ -359,6 +358,7 @@ class LangServer:
         return True
 
     def _send_tab_opened_message(self, tab: tabs.FileTab) -> None:
+        assert tab.path is not None
         self._lsp_client.did_open(
             lsp.TextDocumentItem(
                 uri=tab.path.as_uri(),
@@ -498,6 +498,7 @@ class LangServer:
 
         tab = event.widget.master
         assert isinstance(tab, tabs.FileTab)
+        assert tab.path is not None
         self._lsp_client.did_change(
             text_document=lsp.VersionedTextDocumentIdentifier(
                 uri=tab.path.as_uri(),
@@ -581,7 +582,7 @@ def get_lang_server(
 
 
 def on_new_tab(event: utils.EventWithData) -> None:
-    tab: tabs.Tab = event.data_widget()
+    tab = typing.cast(tabs.Tab, event.data_widget())
     if isinstance(tab, tabs.FileTab):
         if tab.path is None or tab.filetype is None:
             # TODO
@@ -591,12 +592,17 @@ def on_new_tab(event: utils.EventWithData) -> None:
         if langserver is None:
             return
 
+        # mypy doesn't understand if i try to do this with lambda
+        def destroy_callback(event: tkinter.Event) -> None:
+            assert isinstance(tab, tabs.FileTab)
+            assert langserver is not None
+            langserver.close_tab(tab)
+
         utils.bind_with_data(tab, '<<AutoCompletionRequest>>',
                              langserver.request_completions, add=True)
         utils.bind_with_data(tab.textwidget, '<<ContentChanged>>',
                              langserver.send_change_events, add=True)
-        tab.bind('<Destroy>', lambda event: langserver.close_tab(tab),
-                 add=True)
+        tab.bind('<Destroy>', destroy_callback, add=True)
 
         langserver.open_tab(tab)
 
