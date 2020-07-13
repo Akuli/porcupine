@@ -15,7 +15,8 @@ from typing import (
 # yes, this is a float
 TkVersion: float = ...
 
-class TclError(Exception): ...
+class TclError(Exception):
+    pass
 
 # Tk uses the string '??' for missing things, and tkinter does it too
 class Event:
@@ -154,17 +155,6 @@ class PhotoImage:
     def height(self) -> int: ...
 
 
-class _TclInterpreter:
-    # TODO: can't get eval to return non-string, does it always return string?
-    #
-    #    >>> t.tk.call('set', 'foo', (1, 2, 3))
-    #    (1, 2, 3)
-    #    >>> t.tk.eval('return $foo')
-    #    '1 2 3'
-    def call(self, command: str, *args: Any) -> Any: ...
-    def eval(self, command: str) -> Any: ...
-
-
 # Widget possibly without pack, grid, place. Use this if you want to specify
 # any widget, including Toplevel and Tk, and use Widget if you want to specify
 # a child widget.
@@ -175,8 +165,8 @@ class BaseWidget:
     master: Optional['BaseWidget']
 
     # I don't think this is documented, but MANY sources online use this
-    # occationally
-    tk: _TclInterpreter
+    # occationally. Tkinter itself uses this everywhere.
+    tk: _tkinter.TkappType
 
     # TODO: passing arguments to after callbacks
     def after(self, ms: int, func: Callable[[], None]) -> str: ...
