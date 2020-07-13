@@ -8,6 +8,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    TypeVar,
     Union,
     overload,
 )
@@ -154,6 +155,11 @@ class PhotoImage:
     def width(self) -> int: ...
     def height(self) -> int: ...
 
+T1 = TypeVar('T1')
+T2 = TypeVar('T2')
+T3 = TypeVar('T3')
+T4 = TypeVar('T4')
+T5 = TypeVar('T5')
 
 # Widget possibly without pack, grid, place. Use this if you want to specify
 # any widget, including Toplevel and Tk, and use Widget if you want to specify
@@ -168,9 +174,34 @@ class BaseWidget:
     # occationally. Tkinter itself uses this everywhere.
     tk: _tkinter.TkappType
 
-    # TODO: passing arguments to after callbacks
-    def after(self, ms: int, func: Callable[[], None]) -> str: ...
-    def after_idle(self, func: Callable[[], None]) -> str: ...
+    # TODO: is there some way to avoid the copy/pasta or support an arbitrary
+    # number of arguments?
+    @overload
+    def after(self, ms: int, func: Callable[[                  ], None]                                                     ) -> str: ...
+    @overload
+    def after(self, ms: int, func: Callable[[T1                ], None], /, arg1: T1                                        ) -> str: ...
+    @overload
+    def after(self, ms: int, func: Callable[[T1, T2            ], None], /, arg1: T1, arg2: T2                              ) -> str: ...
+    @overload
+    def after(self, ms: int, func: Callable[[T1, T2, T3        ], None], /, arg1: T1, arg2: T2, arg3: T3                    ) -> str: ...
+    @overload
+    def after(self, ms: int, func: Callable[[T1, T2, T3, T4    ], None], /, arg1: T1, arg2: T2, arg3: T3, arg4: T4          ) -> str: ...
+    @overload
+    def after(self, ms: int, func: Callable[[T1, T2, T3, T4, T5], None], /, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5) -> str: ...
+
+    @overload
+    def after_idle(self, func: Callable[[                  ], None]                                                     ) -> str: ...
+    @overload
+    def after_idle(self, func: Callable[[T1                ], None], /, arg1: T1                                        ) -> str: ...
+    @overload
+    def after_idle(self, func: Callable[[T1, T2            ], None], /, arg1: T1, arg2: T2                              ) -> str: ...
+    @overload
+    def after_idle(self, func: Callable[[T1, T2, T3        ], None], /, arg1: T1, arg2: T2, arg3: T3                    ) -> str: ...
+    @overload
+    def after_idle(self, func: Callable[[T1, T2, T3, T4    ], None], /, arg1: T1, arg2: T2, arg3: T3, arg4: T4          ) -> str: ...
+    @overload
+    def after_idle(self, func: Callable[[T1, T2, T3, T4, T5], None], /, arg1: T1, arg2: T2, arg3: T3, arg4: T4, arg5: T5) -> str: ...
+
     def after_cancel(self, id: str) -> None: ...
 
     # add new binding

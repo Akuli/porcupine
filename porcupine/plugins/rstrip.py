@@ -20,7 +20,7 @@ def on_new_tab(event: utils.EventWithData) -> None:
         textwidget = tab.textwidget
 
         def bind_callback(event: tkinter.Event) -> None:
-            textwidget.after_idle(lambda: after_enter(textwidget))
+            textwidget.after_idle(after_enter, textwidget)
 
         textwidget.bind('<Return>', bind_callback, add=True)
 

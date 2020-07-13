@@ -637,7 +637,7 @@ def run_in_thread(
     """
     root = porcupine.get_main_window()  # any widget would do
 
-    value: typing.Optional[T] = None
+    value: T
     error_traceback: typing.Optional[str] = None
 
     def thread_target() -> None:
@@ -657,7 +657,7 @@ def run_in_thread(
             root.after(100, check)
         else:
             if error_traceback is None:
-                done_callback(True, typing.cast(T, value))
+                done_callback(True, value)
             else:
                 done_callback(False, error_traceback)
 
