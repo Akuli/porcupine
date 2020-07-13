@@ -1,11 +1,9 @@
 import functools
 import itertools
-import os
 import re
 import tkinter
 from tkinter import ttk
 import typing
-from urllib.request import pathname2url
 import webbrowser
 
 from porcupine import actions, dirs, get_main_window, images, utils

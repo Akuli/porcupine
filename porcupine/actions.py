@@ -110,14 +110,12 @@ def _add_any_action(
                 for cls in tabtypes
             )
 
-            def enable_or_disable(
-                    junk_event: typing.Optional[tkinter.Event] = None) -> None:
+            def enable_or_disable(junk: typing.Any = None) -> None:
                 tab = porcupine.get_tab_manager().select()
                 action.enabled = isinstance(tab, actual_tabtypes)
 
         if filetype_names is not None:
-            def enable_or_disable(
-                    junk_event: typing.Optional[tkinter.Event] = None) -> None:
+            def enable_or_disable(junk: typing.Any = None) -> None:     # noqa
                 tab = porcupine.get_tab_manager().select()
                 if isinstance(tab, tabs.FileTab):
                     assert filetype_names is not None

@@ -7,7 +7,7 @@ from porcupine import actions, get_tab_manager, tabs, utils
 
 def run_autopep8(code: str) -> typing.Optional[str]:
     try:
-        import autopep8     # type: ignore
+        import autopep8     # type: ignore      # noqa
     except ImportError:
         # this command is wrong in some cases, but most of the time
         # it's ok

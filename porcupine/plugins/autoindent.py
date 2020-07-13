@@ -48,7 +48,8 @@ def on_new_tab(event: utils.EventWithData) -> None:
     if isinstance(tab, tabs.FileTab):
         def bind_callback(event: tkinter.Event) -> None:
             assert isinstance(tab, tabs.FileTab)
-            tab.textwidget.after_idle(lambda: after_enter(tab.textwidget))
+            text = tab.textwidget
+            text.after_idle(lambda: after_enter(text))
 
         tab.textwidget.bind('<Return>', bind_callback, add=True)
 

@@ -4,7 +4,6 @@ import logging
 import pathlib
 import queue
 import subprocess
-import sys
 import threading
 import tkinter
 import typing
@@ -64,8 +63,7 @@ class NoTerminalRunner:
             emit_message(('info', "The process completed successfully."))
             emit_message(('run', succeeded_callback))
         else:
-            emit_message((
-             'error', f"The process failed with status {process.returncode}."))
+            emit_message(('error', f"The process failed with status {process.returncode}."))
 
     def run_command(self, workingdir: pathlib.Path, command: typing.List[str],
                     succeeded_callback: typing.Callable[[], None]) -> None:
@@ -105,7 +103,7 @@ class NoTerminalRunner:
 
         # Saving self._running_process to local var avoids race condition and
         # makes mypy happy.
-        process = self._running_process     
+        process = self._running_process
         if process is not None:
             process.kill()
 

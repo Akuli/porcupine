@@ -16,12 +16,10 @@ from porcupine import pluginloader, settings, tabs
 log = logging.getLogger(__name__)
 
 
-POPUP_SIZE = (600, 400)
-
 class SpecialState:
     pass
 
-NO_TABS = SpecialState()
+NO_TABS = SpecialState()        # noqa
 NOT_POPPABLE = SpecialState()
 NOT_DRAGGING = SpecialState()
 
@@ -163,11 +161,14 @@ def _run_popped_up_process() -> None:
 
     porcupine.init(**init_kwargs)
 
-    # center the window around the mouse
-    width, height = POPUP_SIZE
+    # stupid default size
+    width = 600
+    height = 400
+
     reqwidth, reqheight = required_size
     reqheight += 50     # for stuff outside tabs
 
+    # center the window around the mouse
     top = mousey - height//2
     left = mousex - height//2
     porcupine.get_main_window().geometry('%dx%d+%d+%d' % (

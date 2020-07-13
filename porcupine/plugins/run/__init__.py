@@ -2,7 +2,6 @@
 
 import functools
 import logging
-import os
 import typing
 
 from porcupine import actions, filetypes, get_tab_manager, tabs

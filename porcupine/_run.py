@@ -3,8 +3,6 @@
 import functools
 import logging
 import pathlib
-from queue import Empty         # queue is a handy variable name
-import sys
 import tkinter
 from tkinter import filedialog
 import traceback

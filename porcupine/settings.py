@@ -1,6 +1,5 @@
 import atexit
 import codecs
-import collections.abc
 import functools
 import json
 import logging

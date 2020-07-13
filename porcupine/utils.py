@@ -9,7 +9,6 @@ import os
 import pathlib
 import platform
 import re
-import shlex
 import shutil
 import string as string_module      # string is used as a variable name
 import subprocess
@@ -156,7 +155,7 @@ if platform.system() == 'Windows':
         return ''.join(result)
 
 else:
-    from shlex import quote
+    from shlex import quote     # noqa
 
 
 # i know, i shouldn't do math with rgb colors, but this is good enough

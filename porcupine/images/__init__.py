@@ -1,7 +1,6 @@
 """An API for accessing images."""
 
 import atexit
-import os
 import pathlib
 import tkinter
 import typing

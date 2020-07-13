@@ -12,9 +12,7 @@ import pathlib
 import platform
 import re
 import shlex
-import traceback
 import typing
-import urllib.request   # for pathname2url, mimetypes wants urls
 
 import pygments.lexer   # type: ignore
 import pygments.lexers  # type: ignore
@@ -531,8 +529,7 @@ def _init() -> None:
         _config.read_string(_STUPID_DEFAULTS)
         with _get_ini_path().open('w', encoding='utf-8') as file:
             file.write(_STUPID_DEFAULTS)
-    except (OSError, UnicodeError, configparser.Error) as err:
-        # full tracebacks are ugly and this is supposed to be visible to users
+    except (OSError, UnicodeError, configparser.Error):
         log.exception(
             "error in filetypes.ini, default filetypes will be used instead")
         _config.read_string(_STUPID_DEFAULTS)
@@ -594,13 +591,7 @@ def _init() -> None:
                 # is the option name
                 error = e.__cause__
                 assert error is not None
-                log.error("invalid %r value in [%s]", str(e), section_name)
-                log.debug("here's the full traceback\n%s",
-                    ''.join(traceback.format_exception(
-                        typing.cast(
-                            typing.Optional[typing.Type[BaseException]],
-                            type(error)),
-                        error, error.__traceback__)))
+                log.exception("invalid %r value in [%s]", str(e), section_name)
                 if section_name == 'Plain Text':
                     stupid = configparser.ConfigParser(
                         default_section='Plain Text')

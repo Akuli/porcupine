@@ -3,7 +3,6 @@
 # TODO: CompletionProvider
 # TODO: error reporting in gui somehow
 
-import collections
 import errno
 import itertools
 import json
@@ -23,7 +22,6 @@ import threading
 import time
 import tkinter
 import typing
-from urllib.request import pathname2url
 
 try:
     import fcntl

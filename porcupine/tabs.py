@@ -133,8 +133,8 @@ class TabManager(ttk.Notebook):
     # The ignore comment is to allow creating someting incompatible with
     # ttk.Notebook. Hopefully it doesn't break any ttk.Notebook internals.
     def select(             # type: ignore
-                self, tab_id: typing.Union[None, int, 'Tab'] = None,
-            ) -> typing.Optional['Tab']:
+        self, tab_id: typing.Union[None, int, 'Tab'] = None,
+    ) -> typing.Optional['Tab']:
         """Select the given tab as if the user clicked it.
 
         Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
