@@ -438,9 +438,7 @@ def temporary_bind(
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
         widget: tkinter.Widget,
-        on_tab: typing.Callable[
-            [tkinter.Event, bool],
-            typing.Optional[typing.Literal['break']]],
+        on_tab: typing.Callable[[tkinter.Event, bool], BreakOrNone],
         **bind_kwargs: typing.Any) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 
@@ -462,9 +460,7 @@ def bind_tab_key(
     """
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
-    def callback(
-            shifted: bool,
-            event: tkinter.Event) -> typing.Optional[typing.Literal['break']]:
+    def callback(shifted: bool, event: tkinter.Event) -> BreakOrNone:
         return on_tab(event, shifted)
 
     if widget.tk.call('tk', 'windowingsystem') == 'x11':

@@ -330,7 +330,7 @@ class HandyText(tkinter.Text):
 
         # an even smaller wall of text that mostly refers to insert and replace
         elif subcommand == 'replace':
-            start, end, *other_args = args
+            start, end, *other_args = args_tuple
             start = self.index(start)
             end = self.index(end)
             new_text = ''.join(other_args[::2])

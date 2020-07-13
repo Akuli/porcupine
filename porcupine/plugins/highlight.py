@@ -146,8 +146,8 @@ class Highlighter:
                 # empty string resets foreground
                 foreground=('' if infodict['color'] is None
                             else '#' + infodict['color']),
-                background=('' if infodict['color'] is None
-                            else '#' + infodict['color']),
+                background=('' if infodict['bgcolor'] is None
+                            else '#' + infodict['bgcolor']),
             )
 
             # make sure that the selection tag takes precedence over our

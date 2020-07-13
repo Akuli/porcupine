@@ -580,7 +580,7 @@ bers.py>` use this attribute.
         return (isinstance(other, FileTab) and
                 self.path is not None and
                 other.path is not None and
-                os.path.samefile(self.path, other.path))
+                self.path.samefile(other.path))
 
     def _get_hash(self) -> str:
         result = hashlib.md5()
