@@ -16,20 +16,20 @@ import sys
 import threading
 import tkinter
 from tkinter import ttk
-import traceback
 import typing
+import traceback
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 import porcupine
 
 log = logging.getLogger(__name__)
 
 
-# runtime will work on python < 3.8, mypy won't
-if typing.TYPE_CHECKING:
-    # python 3.8 feature
-    BreakOrNone = typing.Optional[typing.Literal['break']]
-else:
-    BreakOrNone = object
+BreakOrNone = typing.Optional[Literal['break']]
 
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python

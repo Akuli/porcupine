@@ -27,3 +27,6 @@ python-language-server
 
 # for autopep8 plugin
 autopep8
+
+# typing.Literal is new in python 3.8
+typing_extensions

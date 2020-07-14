@@ -6,8 +6,6 @@ what arguments of what types each tkinter method takes.
 
 ## Running mypy with my stubs
 
-Make sure that you have Python 3.8 or later.
-
 ```
 $ MYPYPATH=my_stubs mypy --strict porcupine/
 ```

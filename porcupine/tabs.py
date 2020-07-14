@@ -777,6 +777,7 @@ bers.py>` use this attribute.
         if content is None:
             # nothing has changed since saving, read from the saved file
             assert path is not None
+            assert isinstance(path, pathlib.Path)
             self = cls.open_file(manager, path)
         else:
             self = cls(manager, content, path)

@@ -46,7 +46,8 @@ Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
 Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip
-    python3 -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
+    python3 -m pip install --user --upgrade pip wheel
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/master.zip
     python3 -m porcupine &
 
 ### Other Linux distributions
@@ -54,7 +55,8 @@ Open a terminal and run these commands:
 Install Python 3.6 or newer with pip and tkinter somehow. Then run this
 command:
 
-    python3 -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
+    python3 -m pip install --user --upgrade pip wheel
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/master.zip
     python3 -m porcupine &
 
 ### Mac OSX
@@ -72,7 +74,8 @@ Install Python 3.6 or newer from [python.org](https://www.python.org/). Make sur
 the "Install launchers for all users" box gets checked and tkinter gets
 installed. Then open PowerShell or command prompt, and run these commands:
 
-    py -m pip install --user https://github.com/Akuli/porcupine/archive/master.zip
+    py -m pip install --user --upgrade pip wheel
+    py -m pip install https://github.com/Akuli/porcupine/archive/master.zip
     pyw -m porcupine
 
 ### Development Install
@@ -156,13 +159,6 @@ Here is a list of the commands I use when developing Porcupine:
   tests and try to improve the coverage :D
 - `cd docs` followed by `sphinx-build . _build` creates HTML documentation.
   Open `docs/_build/index.html` in your favorite browser to view it.
-
-Currently `mypy porcupine` relies on `typeshed` stuff that is so new that the latest mypy doesn't come with it yet,
-so you need to do this hack to get it to work:
-
-    cd env/lib/python3.7/site-packages/mypy
-    rm -r typeshed
-    git clone https://github.com/python/typeshed
 
 I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.

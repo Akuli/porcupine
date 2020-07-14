@@ -1,13 +1,14 @@
 import functools
 import json
+import sys
 import tkinter
 import tkinter.font as tkfont
 import typing
 
-try:
+if sys.version_info >= (3, 8):
     from typing import TypedDict
-except ImportError:
-    TypedDict = object
+else:
+    from typing_extensions import TypedDict
 
 import pygments.styles          # type: ignore
 

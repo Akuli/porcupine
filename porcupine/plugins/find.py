@@ -9,6 +9,11 @@ from tkinter import ttk
 import typing
 import weakref
 
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 from porcupine import actions, get_tab_manager, images, tabs
 
 
@@ -153,14 +158,10 @@ class Finder(ttk.Frame):
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(
             self, junk: typing.Optional[tkinter.Event] = None) -> None:
-        # Literal is new in 3.8 and i don't typecheck with older than that in
-        # porcupine.
-        if sys.version_info >= (3, 8):
-            # TODO: document this trick
-            State = typing.Union[typing.Literal['normal'],
-                                 typing.Literal['disabled']]
-            matches_something_state: State
-            replace_this_state: State
+        # TODO: document this trick
+        State = typing.Union[Literal['normal'], Literal['disabled']]
+        matches_something_state: State
+        replace_this_state: State
 
         matches_something_state = (
             'normal' if self.get_match_ranges() else 'disabled')

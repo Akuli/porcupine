@@ -1,3 +1,4 @@
+import sys
 import tkinter
 import _tkinter
 from typing import (
@@ -5,12 +6,16 @@ from typing import (
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
     Tuple,
     Union,
     overload,
 )
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 
 class Widget(tkinter.Widget): pass

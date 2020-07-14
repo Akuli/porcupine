@@ -1,12 +1,17 @@
+import sys
 import tkinter
 from typing import (
     Any,    # use sparingly lol
     Dict,
-    Literal,
     Tuple,
     Union,
     overload,
 )
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 
 class Font:
