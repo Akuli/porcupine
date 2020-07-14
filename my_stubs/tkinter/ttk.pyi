@@ -212,7 +212,7 @@ class Treeview(Widget, tkinter.YView):
     def identify_row(self, y: int) -> str: ...      # may return empty string
 
     def insert(
-        self, parent: str, index: Union[int, Literal['end']],
+        self, parent: str, index: Union[int, Literal['end']], *,
         # tkinter supports both 'id' and 'iid' for the name of this arg. I like
         # 'id' because it's less confusing, even though it's also a built-in
         # function.
