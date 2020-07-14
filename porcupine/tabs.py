@@ -4,7 +4,6 @@ import functools
 import hashlib
 import itertools
 import logging
-import os
 import pathlib
 import tkinter
 from tkinter import ttk, messagebox, filedialog
@@ -652,7 +651,7 @@ bers.py>` use this attribute.
 
     def _update_title(
             self, junk: typing.Optional[tkinter.Event] = None) -> None:
-        text = 'New File' if self.path is None else os.path.basename(self.path)
+        text = 'New File' if self.path is None else self.path.name
         if not self.is_saved():
             # TODO: figure out how to make the label red in ttk instead
             #       of stupid stars
@@ -687,8 +686,7 @@ bers.py>` use this attribute.
         if self.path is None:
             msg = "Do you want to save your changes?"
         else:
-            msg = ("Do you want to save your changes to %s?"
-                   % os.path.basename(self.path))
+            msg = f"Do you want to save your changes to {self.path.name}?"
         answer = messagebox.askyesnocancel("Close file", msg)
         if answer is None:
             # cancel

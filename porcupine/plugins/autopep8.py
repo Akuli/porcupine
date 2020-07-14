@@ -27,7 +27,7 @@ def run_autopep8(code: str) -> typing.Optional[str]:
 
     # autopep8's main() does some weird signal stuff, so we'll run it in
     # a subprocess just to make sure that the porcupine process is ok
-    command = [utils.python_executable, '-m', 'autopep8', '-']
+    command = [str(utils.python_executable), '-m', 'autopep8', '-']
     process = subprocess.Popen(
         command, stdin=subprocess.PIPE,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)

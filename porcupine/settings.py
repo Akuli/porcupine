@@ -3,7 +3,6 @@ import codecs
 import functools
 import json
 import logging
-import os
 import sys
 import tkinter
 import tkinter.font as tkfont
@@ -492,7 +491,7 @@ def _init() -> None:
 
     assert not _loaded_json
     try:
-        with open(os.path.join(dirs.configdir, 'settings.json'), 'r') as file:
+        with (dirs.configdir / 'settings.json').open('r') as file:
             _loaded_json.update(json.load(file))
     except FileNotFoundError:
         pass      # use defaults everywhere
@@ -589,7 +588,7 @@ def save() -> None:
         # if two porcupines are running and the user changes settings
         # differently in them, the settings of the one that's closed
         # first are discarded
-        with open(os.path.join(dirs.configdir, 'settings.json'), 'w') as file:
+        with (dirs.configdir / 'settings.json').open('w') as file:
             json.dump(_loaded_json, file)
 
 

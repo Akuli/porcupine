@@ -33,7 +33,7 @@ def _run_in_windows_cmd(
     log.debug("using Windows command prompt")
 
     command = [
-        utils.python_executable, str(run_script),
+        str(utils.python_executable), str(run_script),
         blue_message, str(workingdir),
     ] + command
 

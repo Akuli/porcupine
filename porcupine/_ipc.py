@@ -2,14 +2,13 @@
 
 import contextlib
 from multiprocessing import connection
-import os
 import queue
 import threading
 import typing
 
 from porcupine import dirs
 
-_ADDRESS_FILE = os.path.join(dirs.cachedir, 'ipc_address.txt')
+_ADDRESS_FILE = dirs.cachedir / 'ipc_address.txt'
 
 
 # the addresses contain random junk so they are very unlikely to
@@ -24,7 +23,7 @@ def send(objects: typing.List[typing.Any]) -> None:
     # reading the address file, connecting to a windows named pipe and
     # connecting to an AF_UNIX socket all raise FileNotFoundError :D
     try:
-        with open(_ADDRESS_FILE, 'r') as file:
+        with _ADDRESS_FILE.open('r') as file:
             address = file.read().strip()
         client = connection.Client(address)
     except FileNotFoundError:
@@ -66,7 +65,7 @@ def session() -> typing.Iterator['queue.Queue[typing.Any]']:
     """
     message_queue: 'queue.Queue[typing.Any]' = queue.Queue()
     with connection.Listener() as listener:
-        with open(_ADDRESS_FILE, 'w') as file:
+        with _ADDRESS_FILE.open('w') as file:
             print(listener.address, file=file)
         thread = threading.Thread(target=_listener2queue,
                                   args=[listener, message_queue], daemon=True)

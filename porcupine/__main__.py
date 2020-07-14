@@ -61,10 +61,10 @@ Examples:
 
 
 def main() -> None:
-    if os.path.basename(sys.argv[0]) == '__main__.py':
-        prog = '%s -m porcupine' % utils.short_python_command
-    else:
-        prog = os.path.basename(sys.argv[0])    # argparse default
+    prog = os.path.basename(sys.argv[0])
+    if prog == '__main__.py':
+        prog = f'{utils.short_python_command} -m porcupine'
+
     parser = argparse.ArgumentParser(
         prog=prog, epilog=_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter)

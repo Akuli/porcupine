@@ -342,13 +342,11 @@ class FileType:
         assert os.sep not in basename, "%r is not a basename" % basename
         template = _config[self.name][something_command]
 
-        no_exts_match = re.search(r'^\.*[^\.]*', basename)
-        assert no_exts_match is not None
-
+        exts = ''.join(pathlib.Path(basename).suffixes)
         format_args = {
             'file': basename,
-            'no_ext': os.path.splitext(basename)[0],
-            'no_exts': no_exts_match.group(0),
+            'no_ext': pathlib.Path(basename).stem,
+            'no_exts': basename[:-len(exts)] if exts else basename,
         }
         result = [part.format(**format_args) for part in shlex.split(template)]
         assert result
@@ -387,7 +385,7 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
     for filetype in _filetypes.values():
         if mimetype in filetype.mimetypes:
             return filetype
-        if any(fnmatch.fnmatch(os.path.basename(filepath), pattern)
+        if any(fnmatch.fnmatch(filepath.name, pattern)
                for pattern in filetype.filename_patterns):
             return filetype
         if (filetype.shebang_regex is not None and

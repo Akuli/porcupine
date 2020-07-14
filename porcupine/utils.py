@@ -33,10 +33,10 @@ else:
 
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
-# TODO: document this
 _installed_with_pynsist = (
-    platform.system() == 'Windows' and      # noqa
-    os.path.dirname(sys.executable).lower().endswith(r'\porcupine\python'))
+    platform.system() == 'Windows' and
+    pathlib.Path(sys.executable).parent.name.lower() == 'python' and
+    pathlib.Path(sys.executable).parent.parent.name.lower() == 'porcupine')
 
 
 if platform.system() == 'Windows':
@@ -45,11 +45,10 @@ if platform.system() == 'Windows':
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
         running_pythonw = True
-    elif (_installed_with_pynsist and       # noqa
-          sys.stdout is sys.stderr and      # noqa
-          # not sure if it can be None
-          isinstance(sys.stdout.name, str) and   # noqa
-          os.path.dirname(sys.stdout.name) == os.environ['APPDATA']):
+    elif (_installed_with_pynsist and
+          sys.stdout is sys.stderr and
+          sys.stdout.name is not None and       # not sure if necessary
+          pathlib.Path(sys.stdout.name).parent == pathlib.Path(os.environ['APPDATA'])):
         # pynsist generates a script that does this:
         #
         #   sys.stdout = sys.stderr = open(blablabla, 'w', **kw)
@@ -63,9 +62,11 @@ if platform.system() == 'Windows':
         sys.stdout.close()
         os.remove(sys.stdout.name)
 
-        # mypy doesn't know about setting std streams to None
+        # mypy doesn't know about how std streams can be None
         sys.stdout = None   # type: ignore
         sys.stderr = None   # type: ignore
+
+        running_pythonw = True
     else:
         # seems like python was started from e.g. a cmd or powershell
         running_pythonw = False
@@ -73,11 +74,11 @@ else:
     running_pythonw = False
 
 
-python_executable = sys.executable
-if running_pythonw and sys.executable.lower().endswith(r'\pythonw.exe'):
+python_executable = pathlib.Path(sys.executable)
+if running_pythonw and pathlib.Path(sys.executable).name.lower() == 'pythonw.exe':
     # get rid of the 'w' and hope for the best...
-    _possible_python = sys.executable[:-5] + sys.executable[-4:]
-    if os.path.isfile(_possible_python):
+    _possible_python = pathlib.Path(sys.executable).with_name('python.exe')
+    if _possible_python.is_file():
         python_executable = _possible_python
 
 
@@ -110,7 +111,7 @@ def _find_short_python() -> str:
                 return python
 
     # use the full path as a fallback
-    return python_executable
+    return str(python_executable)
 
 
 short_python_command: str = _find_short_python()

@@ -9,6 +9,7 @@ plugin API documentation:
 """
 
 import os
+import pathlib
 import shutil
 import subprocess
 
@@ -19,15 +20,13 @@ __copyright__ = 'Copyright (c) 2017-2020 Akuli'
 __license__ = 'MIT'
 
 # attach git stuff to the version if this isn't installed
-here = os.path.dirname(os.path.abspath(__file__))
-if (os.path.isdir(os.path.join(here, '..', '.git')) and
-    shutil.which('git') is not None):
-    # probably a git repo, not installed
+_here = pathlib.Path(__file__).absolute().parent
+if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
+    # running porcupine from git repo
     try:
         __version__ += '-git-' + subprocess.check_output(
             ['git', 'log', '--pretty=format:%h', '-n', '1']).decode('ascii')
-    except (OSError, subprocess.CalledProcessError,
-            UnicodeError):   # pragma: no cover
+    except (OSError, subprocess.CalledProcessError, UnicodeError):   # pragma: no cover
         pass
 
 # mypy wants this instead of 'from porcupine._run import stuff'

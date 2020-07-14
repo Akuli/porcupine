@@ -1,5 +1,4 @@
 # TODO: remember which tab was selected
-import os
 import pickle
 import pkgutil
 import tkinter
@@ -14,7 +13,7 @@ setup_after = [
 ]
 
 # https://fileinfo.com/extension/pkl
-STATE_FILE = os.path.join(dirs.cachedir, 'restart_state.pkl')
+STATE_FILE = dirs.cachedir / 'restart_state.pkl'
 
 
 def save_states(junk: tkinter.Event) -> None:
@@ -24,7 +23,7 @@ def save_states(junk: tkinter.Event) -> None:
         if state is not None:
             states.append((type(tab), state))
 
-    with open(STATE_FILE, 'wb') as file:
+    with STATE_FILE.open('wb') as file:
         pickle.dump(states, file)
 
 
@@ -33,7 +32,7 @@ def setup() -> None:
     get_main_window().bind('<<PorcupineQuit>>', save_states, add=True)
 
     try:
-        with open(STATE_FILE, 'rb') as file:
+        with STATE_FILE.open('rb') as file:
             states = pickle.load(file)
     except FileNotFoundError:
         states = []

@@ -28,10 +28,9 @@ def _remove_old_logs() -> None:
 
         how_old = datetime.now() - log_date
         if how_old > timedelta(days=LOG_MAX_AGE_DAYS):
-            path = os.path.join(LOG_DIR, filename)
-            log.info("%s is more than %d days old, removing",
-                     path, LOG_MAX_AGE_DAYS)
-            os.remove(path)
+            path = LOG_DIR / filename
+            log.info(f"{path} is more than {LOG_MAX_AGE_DAYS} days old, removing")
+            path.unlink()
 
 
 def _run_command(command: str) -> None:
@@ -48,9 +47,8 @@ def _run_command(command: str) -> None:
 
 
 def setup(verbose: bool) -> None:
-    os.makedirs(os.path.join(dirs.cachedir, 'logs'), exist_ok=True)
-    logfile = os.path.join(dirs.cachedir, 'logs',
-                           datetime.now().strftime(_FILENAME_FORMAT))
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    logfile = LOG_DIR / datetime.now().strftime(_FILENAME_FORMAT)
 
     if sys.stdout is None and sys.stderr is None:
         # running in pythonw.exe, make sure to log everything
@@ -58,13 +56,13 @@ def setup(verbose: bool) -> None:
         # logging.StreamHandler has a stream attribute which is set to the file
         # it opens, but that's undocumented, so need to open the file myself
         # and use StreamHandler
-        sys.stdout = sys.stderr = open(logfile, 'x', errors='replace')
+        sys.stdout = sys.stderr = logfile.open('x', errors='replace')
         file_handler = logging.StreamHandler(sys.stderr)
         file_handler.setLevel(logging.DEBUG)
         print_handler = None
 
     else:
-        file_handler = logging.FileHandler(logfile, 'x')
+        file_handler = logging.FileHandler(str(logfile), 'x')
         file_handler.setLevel(logging.DEBUG)
         print_handler = logging.StreamHandler(sys.stderr)
         print_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
