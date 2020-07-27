@@ -228,14 +228,12 @@ class BaseWidget:
     def deletecommand(self, name: str) -> None: ...
     def destroy(self) -> None: ...
 
-    # The data is str()ed, and it can be anything that has valid str(). Note
-    # that str(some_widget) returns the widget's Tcl command name, which can be
-    # e.g. passed to nametowidget.
+    # The data is str()ed, and it can be anything that has valid str().
     def event_generate(
         self, sequence: str, *,
         x: int = ...,
         y: int = ...,
-        data: Union[str, int, float, BaseWidget] = ...,
+        data: Any = ...,
     ) -> None: ...
 
     def focus_set(self) -> None: ...

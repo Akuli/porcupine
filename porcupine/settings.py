@@ -1,5 +1,6 @@
 import atexit
 import codecs
+import dataclasses
 import functools
 import json
 import logging
@@ -7,7 +8,6 @@ import sys
 import tkinter
 import tkinter.font as tkfont
 from tkinter import messagebox, ttk
-import types
 import typing
 
 # the pygments stuff is just for _validate_pygments_style_name()
@@ -64,6 +64,10 @@ class InvalidValue(Exception):
     """
 
 
+# values of settings, must be jsonable
+_V = typing.TypeVar('_V', str, int)
+_Value = typing.Union[str, int]
+
 # globals ftw
 _sections: typing.Dict[str, '_ConfigSection'] = {}
 _loaded_json: typing.Dict[str, typing.Dict[str, typing.Union[str, int]]] = {}
@@ -89,21 +93,23 @@ def get_section(section_name: str) -> '_ConfigSection':
         return _sections[section_name]
 
 
-_CallbackType = typing.Callable[[typing.Any], None]
+# this is generic because it uses _V
+_CallbackType = typing.Callable[[_V], None]
 
 # T represents a subclass of tkinter.Variable. Don't know if there's a better
 # way to tell that to mypy than passing tkinter.Variable twice...
 T = typing.TypeVar('T', tkinter.Variable, tkinter.Variable)
 
 
-class _OptionInfo(types.SimpleNamespace):
-    default: typing.Any     # not validated
+@dataclasses.dataclass
+class _OptionInfo(typing.Generic[_V]):
+    default: _V
     reset: bool
-    callbacks: typing.List[typing.Callable[[typing.Any], None]]
+    callbacks: typing.List[typing.Callable[[_V], None]]
     errorvar: tkinter.BooleanVar
 
 
-class _ConfigSection(typing.MutableMapping[str, typing.Any]):
+class _ConfigSection(typing.MutableMapping[str, typing.Union[str, int]]):
 
     def __init__(self, name: str) -> None:
         if _notebook is None:
@@ -113,10 +119,13 @@ class _ConfigSection(typing.MutableMapping[str, typing.Any]):
         _notebook.add(self.content_frame, text=name)
 
         self._name = name
-        self._infos: typing.Dict[str, _OptionInfo] = {}
+        self._infos: typing.Dict[
+            str,
+            typing.Union[_OptionInfo[int], _OptionInfo[str]],
+        ] = {}
         self._var_cache: typing.Dict[str, tkinter.Variable] = {}
 
-    def add_option(self, key: str, default: typing.Any, *,
+    def add_option(self, key: str, default: _V, *,
                    reset: bool = True) -> None:
         """Add a new option without adding widgets to the setting dialog.
 
@@ -139,9 +148,22 @@ class _ConfigSection(typing.MutableMapping[str, typing.Any]):
             errorvar=tkinter.BooleanVar(),  # true when the triangle is showing
         )
 
-    def __setitem__(self, key: str, value: typing.Any) -> None:
-        info = self._infos[key]
+    def _run_callbacks(self, info: _OptionInfo[_V], key: str, value: _V, old_value: _V) -> None:
+        for func in info.callbacks:
+            try:
+                func(value)
+            except InvalidValue as e:
+                _loaded_json[self._name][key] = old_value
+                raise e
+            except Exception:
+                try:
+                    func_name = func.__module__ + '.' + func.__qualname__
+                except AttributeError:
+                    func_name = repr(func)
+                log.exception("%s: %s(%r) didn't work", self._name,
+                              func_name, value)
 
+    def __setitem__(self, key: str, value: typing.Union[str, int]) -> None:
         old_value = self[key]
         try:
             _loaded_json[self._name][key] = value
@@ -150,21 +172,18 @@ class _ConfigSection(typing.MutableMapping[str, typing.Any]):
 
         if value != old_value:
             log.debug("%s: %r was set to %r, running %d callbacks",
-                      self._name, key, value, len(info.callbacks))
-            for func in info.callbacks:
-                try:
-                    func(value)
-                except InvalidValue as e:
-                    _loaded_json[self._name][key] = old_value
-                    raise e
-                except Exception:
-                    try:
-                        func_name = func.__module__ + '.' + func.__qualname__
-                    except AttributeError:
-                        func_name = repr(func)
-                    log.exception("%s: %s(%r) didn't work", self._name,
-                                  func_name, value)
+                      self._name, key, value, len(self._infos[key].callbacks))
+            # couldn't figure out a way to do this without if,else
+            if isinstance(value, str):
+                self._run_callbacks(
+                    typing.cast(_OptionInfo[str], self._infos[key]),
+                    key, value, old_value)
+            else:
+                self._run_callbacks(
+                    typing.cast(_OptionInfo[int], self._infos[key]),
+                    key, value, old_value)
 
+    # returning the _SettingValue union would add assert boilerplate elsewhere
     def __getitem__(self, key: str) -> typing.Any:
         try:
             return _loaded_json[self._name][key]
@@ -192,7 +211,7 @@ class _ConfigSection(typing.MutableMapping[str, typing.Any]):
         """
         self[key] = self._infos[key].default
 
-    def connect(self, key: str, callback: _CallbackType,
+    def connect(self, key: str, callback: _CallbackType[_V],
                 run_now: bool = True) -> None:
         """
         Schedule ``callback(section[key])`` to be called when the value
@@ -222,11 +241,14 @@ class _ConfigSection(typing.MutableMapping[str, typing.Any]):
                     "%s: %r value %r is invalid according to %s, resetting"
                     % (self._name, key, self[key], func_name))
                 self.reset(key)
-        self._infos[key].callbacks.append(callback)
 
-    def disconnect(self, key: str, callback: _CallbackType) -> None:
+        info = typing.cast(_OptionInfo[_V], self._infos[key])
+        info.callbacks.append(callback)
+
+    def disconnect(self, key: str, callback: _CallbackType[_V]) -> None:
         """Undo a :meth:`~connect` call."""
-        self._infos[key].callbacks.remove(callback)
+        info = typing.cast(_OptionInfo[_V], self._infos[key])
+        info.callbacks.remove(callback)
 
     # returns an image the same size as the triangle image, but empty
     @staticmethod

@@ -5,7 +5,6 @@
 
 import errno
 import itertools
-import json
 import logging
 import os
 import pathlib
@@ -29,7 +28,8 @@ except ImportError:
     # windows
     fcntl = None    # type: ignore
 
-from porcupine import get_tab_manager, filetypes, tabs, utils
+from porcupine import get_tab_manager, filetypes, tabs, textwidget, utils
+from porcupine.plugins import autocomplete
 import sansio_lsp_client as lsp     # type: ignore
 
 
@@ -259,9 +259,10 @@ class LangServer:
         self._lsp_client = lsp.Client(
             trace='verbose', root_uri=the_id.project_root.as_uri())
 
-        # TODO: don't use typing.Any
-        self._completion_infos: typing.Dict[
-            int, typing.Dict[str, typing.Any]] = {}
+        self._lsp_id_to_tab_and_request: typing.Dict[
+            int,
+            typing.Tuple[tabs.FileTab, autocomplete.Request],
+        ] = {}
 
         self._version_counter = itertools.count()
         self._log = log
@@ -382,38 +383,40 @@ class LangServer:
             self._get_removed_from_langservers()
 
         elif isinstance(lsp_event, lsp.Completion):
-            info_dict = self._completion_infos.pop(lsp_event.message_id)
-            tab = typing.cast(tabs.FileTab, info_dict.pop('tab'))
+            tab, req = self._lsp_id_to_tab_and_request.pop(lsp_event.message_id)
 
             # this is "open to interpretation", as the lsp spec says
             # TODO: use textEdit when available (need to find langserver that
             #       gives completions with textEdit for that to work)
             before_cursor = tab.textwidget.get(
-                '%s linestart' % info_dict['cursor_pos'],
-                info_dict['cursor_pos'])
+                f'{req.cursor_pos} linestart', req.cursor_pos)
             match = re.fullmatch(r'.*?(\w*)', before_cursor)
             assert match is not None
             prefix_len = len(match.group(1))
 
-            info_dict['completions'] = [
-                {
-                    'display_text': item.label,
-                    'replace_start': tab.textwidget.index(
-                        f"{info_dict['cursor_pos']} - {prefix_len} chars"),
-                    'replace_end': info_dict['cursor_pos'],
-                    'replace_text': item.insertText or item.label,
-                    'filter_text': (item.filterText
-                                    or item.insertText
-                                    or item.label)[prefix_len:],
-                    'documentation': get_completion_item_doc(item),
-                }
-                for item in sorted(
-                    lsp_event.completion_list.items,
-                    key=(lambda item: item.sortText or item.label),
-                )
-            ]
             tab.event_generate(
-                '<<AutoCompletionResponse>>', data=json.dumps(info_dict))
+                '<<AutoCompletionResponse>>',
+                data=autocomplete.Response(
+                    id=req.id,
+                    completions=[
+                        autocomplete.Completion(
+                            display_text=item.label,
+                            replace_start=tab.textwidget.index(
+                                f'{req.cursor_pos} - {prefix_len} chars'),
+                            replace_end=req.cursor_pos,
+                            replace_text=item.insertText or item.label,
+                            # TODO: is slicing necessary here?
+                            filter_text=(item.filterText
+                                         or item.insertText
+                                         or item.label)[prefix_len:],
+                            documentation=get_completion_item_doc(item),
+                        ) for item in sorted(
+                            lsp_event.completion_list.items,
+                            key=(lambda item: item.sortText or item.label),
+                        )
+                    ]
+                )
+            )
 
         elif isinstance(lsp_event, lsp.PublishDiagnostics):
             pass        # TODO
@@ -461,7 +464,7 @@ class LangServer:
                 # it was never fully started
                 self._process.kill()
 
-    def request_completions(self, event: lsp.Event) -> None:
+    def request_completions(self, event: utils.EventWithData) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             self._log.warning(
                 "autocompletions requested but langserver state == %r",
@@ -469,12 +472,13 @@ class LangServer:
             return
 
         tab = event.widget
-        info_dict = event.data_json()
+        assert isinstance(tab, tabs.FileTab) and tab.path is not None
+        request = event.data_class(autocomplete.Request)
 
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
-                position=_position_tk2lsp(info_dict['cursor_pos']),
+                position=_position_tk2lsp(request.cursor_pos),
             ),
             context=lsp.CompletionContext(
                 # FIXME: this isn't always the case, porcupine can also trigger
@@ -483,11 +487,10 @@ class LangServer:
             ),
         )
 
-        assert lsp_id not in self._completion_infos
-        self._completion_infos[lsp_id] = info_dict
-        self._completion_infos[lsp_id]['tab'] = tab
+        assert lsp_id not in self._lsp_id_to_tab_and_request
+        self._lsp_id_to_tab_and_request[lsp_id] = (tab, request)
 
-    def send_change_events(self, event: lsp.Event) -> None:
+    def send_change_events(self, event: utils.EventWithData) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             # The langserver will receive the actual content of the file once
             # it starts.
@@ -507,12 +510,12 @@ class LangServer:
             content_changes=[
                 lsp.TextDocumentContentChangeEvent(
                     range=lsp.Range(
-                        start=_position_tk2lsp(info['start']),
-                        end=_position_tk2lsp(info['end']),
+                        start=_position_tk2lsp(change.start),
+                        end=_position_tk2lsp(change.end),
                     ),
-                    text=info['new_text'],
+                    text=change.new_text,
                 )
-                for info in event.data_json()
+                for change in event.data_class(textwidget.Changes).change_list
             ],
         )
 

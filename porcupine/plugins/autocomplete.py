@@ -1,9 +1,8 @@
 # TODO: when no langserver, fallback autocompleting with "all words in file"
 #       type thing
 
-
+import dataclasses
 import itertools
-import json
 import re
 import tkinter
 from tkinter import ttk
@@ -12,10 +11,20 @@ import typing
 from porcupine import get_tab_manager, settings, tabs, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
-SETTINGS = settings.get_section("Autocomplete")
+_SETTINGS = settings.get_section("Autocomplete")
 
 
-def pack_with_scrollbar(
+@dataclasses.dataclass
+class Completion:
+    display_text: str
+    replace_start: str
+    replace_end: str
+    replace_text: str
+    filter_text: str
+    documentation: str
+
+
+def _pack_with_scrollbar(
         widget: typing.Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
     scrollbar = ttk.Scrollbar(widget.master)
     widget['yscrollcommand'] = scrollbar.set
@@ -27,11 +36,8 @@ def pack_with_scrollbar(
     return scrollbar
 
 
-# TODO: avoid Any
-Completion = typing.Dict[str, typing.Any]
-
-
-def add_resize_handle(toplevel: tkinter.Toplevel) -> ttk.Label:
+# TODO: ttk.Sizegrip
+def _add_resize_handle(toplevel: tkinter.Toplevel) -> ttk.Label:
     between_mouse_and_window_corner = [0, 0]
 
     # Doing this only in the beginning of resize ensures that if it's off by 1
@@ -60,7 +66,7 @@ def add_resize_handle(toplevel: tkinter.Toplevel) -> ttk.Label:
     return handle
 
 
-def calculate_popup_geometry(textwidget: tkinter.Text) -> str:
+def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
     bbox = textwidget.bbox('insert')
     assert bbox is not None     # cursor must be visible
     (cursor_x, cursor_y,
@@ -74,8 +80,8 @@ def calculate_popup_geometry(textwidget: tkinter.Text) -> str:
     cursor_y -= 5
     cursor_height += 10
 
-    popup_width = SETTINGS['popup_window_width']
-    popup_height = SETTINGS['popup_window_height']
+    popup_width = _SETTINGS['popup_window_width']
+    popup_height = _SETTINGS['popup_window_height']
     screen_width = textwidget.winfo_screenwidth()
     screen_height = textwidget.winfo_screenheight()
 
@@ -95,7 +101,7 @@ def calculate_popup_geometry(textwidget: tkinter.Text) -> str:
     return f'{popup_width}x{popup_height}+{x}+{y}'
 
 
-class AutoCompletionPopup:
+class _Popup:
 
     def __init__(self) -> None:
         self._completion_list: typing.Optional[typing.List[Completion]] = None
@@ -123,14 +129,13 @@ class AutoCompletionPopup:
             left_pane, show='tree', selectmode='browse')
         self.treeview.bind('<Motion>', self._on_mouse_move)
         self.treeview.bind('<<TreeviewSelect>>', self._on_select)
-        self._left_scrollbar = pack_with_scrollbar(self.treeview)
+        self._left_scrollbar = _pack_with_scrollbar(self.treeview)
 
         self._doc_text = utils.create_passive_text_widget(
             right_pane, width=50, height=15, wrap='word')
-        self._right_scrollbar = pack_with_scrollbar(self._doc_text)
+        self._right_scrollbar = _pack_with_scrollbar(self._doc_text)
 
-        self._resize_handle = ttk.Sizegrip(self.toplevel)
-        self._resize_handle.place(relx=1, rely=1, anchor='se')
+        self._resize_handle = _add_resize_handle(self.toplevel)
         self.toplevel.bind('<Configure>', self._on_anything_resized)
 
     def _on_anything_resized(self, junk: tkinter.Event) -> None:
@@ -185,7 +190,7 @@ class AutoCompletionPopup:
             for index, completion in enumerate(completion_list):
                 # id=str(index) is used in the rest of this class
                 self.treeview.insert('', 'end', id=str(index),
-                                     text=completion['display_text'])
+                                     text=completion.display_text)
             self._select_item('0')
         else:
             self._doc_text['state'] = 'normal'
@@ -199,7 +204,7 @@ class AutoCompletionPopup:
 
         # don't know why after_idle is needed, but it is
         def set_correct_sashpos() -> None:
-            self._panedwindow.sashpos(0, SETTINGS['popup_divider_pos'])
+            self._panedwindow.sashpos(0, _SETTINGS['popup_divider_pos'])
 
         self._panedwindow.after_idle(set_correct_sashpos)
 
@@ -209,9 +214,9 @@ class AutoCompletionPopup:
             self, *, withdraw: bool = True) -> typing.Optional[Completion]:
         # putting this here avoids some bugs
         if self.is_showing():
-            SETTINGS['popup_window_width'] = self.toplevel.winfo_width()
-            SETTINGS['popup_window_height'] = self.toplevel.winfo_height()
-            SETTINGS['popup_divider_pos'] = self._panedwindow.sashpos(0)
+            _SETTINGS['popup_window_width'] = self.toplevel.winfo_width()
+            _SETTINGS['popup_window_height'] = self.toplevel.winfo_height()
+            _SETTINGS['popup_divider_pos'] = self._panedwindow.sashpos(0)
 
         selected = self._get_selected_completion()
 
@@ -265,8 +270,20 @@ class AutoCompletionPopup:
         if completion is not None:
             self._doc_text['state'] = 'normal'
             self._doc_text.delete('1.0', 'end')
-            self._doc_text.insert('1.0', completion['documentation'])
+            self._doc_text.insert('1.0', completion.documentation)
             self._doc_text['state'] = 'disabled'
+
+
+@dataclasses.dataclass
+class Request(utils.EventDataclass):
+    id: int
+    cursor_pos: str
+
+
+@dataclasses.dataclass
+class Response(utils.EventDataclass):
+    id: int
+    completions: typing.List[Completion]
 
 
 # How this differs from using sometextwidget.compare(start, '<', end):
@@ -286,7 +303,7 @@ class AutoCompleter:
         self._orig_cursorpos: typing.Optional[str] = None
         self._id_counter = itertools.count()
         self._waiting_for_response_id: typing.Optional[int] = None
-        self.popup = AutoCompletionPopup()
+        self.popup = _Popup()
 
     def _request_completions(self) -> None:
         the_id = next(self._id_counter)
@@ -296,10 +313,10 @@ class AutoCompleter:
         # completion request or filtering, user might type more
         self._orig_cursorpos = self._tab.textwidget.index('insert')
 
-        self._tab.event_generate('<<AutoCompletionRequest>>', data=json.dumps({
-            'id': the_id,
-            'cursor_pos': self._orig_cursorpos,
-        }))
+        self._tab.event_generate('<<AutoCompletionRequest>>', data=Request(
+            id=the_id,
+            cursor_pos=self._orig_cursorpos,
+        ))
 
     def _user_wants_to_see_popup(self, cursor_pos_when_completing_started: str) -> bool:
         initial_line, initial_column = map(int, cursor_pos_when_completing_started.split('.'))
@@ -319,8 +336,8 @@ class AutoCompleter:
 
     # this might not run for all requests if e.g. langserver not configured
     def receive_completions(self, event: utils.EventWithData) -> None:
-        info_dict = event.data_json()
-        if info_dict['id'] != self._waiting_for_response_id:
+        response = event.data_class(Response)
+        if response.id != self._waiting_for_response_id:
             return
         self._waiting_for_response_id = None
 
@@ -338,7 +355,7 @@ class AutoCompleter:
 
         return [
             completion for completion in self.unfiltered_completions
-            if filter_text.lower() in completion['filter_text'].lower()
+            if filter_text.lower() in completion.filter_text.lower()
         ]
 
     # returns None if this isn't a place where it's good to autocomplete
@@ -384,8 +401,8 @@ class AutoCompleter:
             assert self._orig_cursorpos is not None
             self._tab.textwidget.delete(self._orig_cursorpos, 'insert')
             self._tab.textwidget.replace(
-                completion['replace_start'], completion['replace_end'],
-                completion['replace_text'])
+                completion.replace_start, completion.replace_end,
+                completion.replace_text)
 
         self._waiting_for_response_id = None
         self._orig_cursorpos = None
@@ -498,11 +515,11 @@ def on_new_tab(event: utils.EventWithData) -> None:
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
 
-    SETTINGS.add_label(
+    _SETTINGS.add_label(
         # TODO: link to langserver setup docs here
         "If autocompletion isn't working, make sure that you have langserver "
         "set up correctly.")
 
-    SETTINGS.add_option('popup_window_width', 500, reset=False)
-    SETTINGS.add_option('popup_window_height', 200, reset=False)
-    SETTINGS.add_option('popup_divider_pos', 200, reset=False)
+    _SETTINGS.add_option('popup_window_width', 500, reset=False)
+    _SETTINGS.add_option('popup_window_height', 200, reset=False)
+    _SETTINGS.add_option('popup_divider_pos', 200, reset=False)

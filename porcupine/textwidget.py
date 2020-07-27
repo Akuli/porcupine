@@ -1,27 +1,28 @@
+import dataclasses
 import functools
-import json
-import sys
 import tkinter
 import tkinter.font as tkfont
 import typing
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 import pygments.styles          # type: ignore
 
 from porcupine import filetypes, settings, utils
 
 
-class ChangeDict(TypedDict):
-    # tkinter text widget indexes: 'line.column'
+@dataclasses.dataclass
+class Change:
+    # start and end are 'line.column' text index strings
     start: str
     end: str
-
     old_text_len: int
     new_text: str
+
+
+# unfortunately a stupid class like this is necessary for passing a list of
+# data classes into an event
+@dataclasses.dataclass
+class Changes(utils.EventDataclass):
+    change_list: typing.List[Change]
 
 
 class HandyText(tkinter.Text):
@@ -37,38 +38,42 @@ class HandyText(tkinter.Text):
         like ``textwidget.edit_modified(False)`` or anything like that.
 
         If you want to know what changed and how, use
-        :func:`porcupine.utils.bind_with_data` and ``event.data_json()``.
-        Then ``event.data_json()`` will return a list containing dicts filled
-        with information. For example, this...
+        :func:`porcupine.utils.bind_with_data` and
+        ``event.data_class(Changes)``. For example, this...
         ::
 
-            # characters 0 to 5 on 1st line are the hello
+            # let's say that text widget contains 'hello world'
             textwidget.replace('1.0', '1.5', 'toot')
 
         ...changes the ``'hello'`` to ``'toot'``, generating a
-        ``<<ContentChanged>>`` event with ``data_json()`` like this::
+        ``<<ContentChanged>>`` event whose ``data_class(Changes)`` returns
+        this::
 
-            [{'start': '1.0',
-              'end': '1.5',
-              'old_text_len': 5,
-              'new_text', 'toot'}]
+            Changes(change_list=[
+                Change(start='1.0', end='1.5', old_text_len=5, new_text='toot'),
+            ])
 
         Here ``old_text_len`` is ``len('hello')``, not ``len('toot')``.
 
-        Unlike you might think, the ``old_text_len`` is not redundant. If the
-        whole ``'toot world'`` is deleted...
-        ::
+        The ``<<ContentChanged>>`` event occurs after the text in the text
+        widget has already changed. Also, sometimes many changes are applied
+        at once and ``change_list`` contains more than one item. The
+        ``change_list`` is always ordered so that most recent change is
+        ``change_list[-1]`` and the oldest change is ``change_list[0]``.
 
-            [{'start': '1.0',
-              'end': '1.10',
-              'old_text_len': 10,
-              'new_text', ''}]
+        Unlike you might think, the ``old_text_len`` is not redundant. Let's
+        say that the text widget contains ``'toot world'`` and all that is
+        deleted::
 
-        ...then ``'1.10'`` is no longer a valid index in the text widget
-        because it contains 0 characters (and 0 is less than 10). In this case,
-        checking only the ``0`` of ``1.0`` and the ``10`` of ``1.10`` could be
-        used to calculate the 10, but that doesn't work right when changing
-        multiple lines.
+            Changes(change_list=[
+                Change(start='1.0', end='1.10', old_text_len=10, new_text=''),
+            ])
+
+        Now ``'1.10'`` is no longer a valid index in the text widget because it
+        contains 0 characters (and 0 is less than 10). In this case, checking
+        only the ``0`` of ``1.0`` and the ``10`` of ``1.10`` could be used to
+        calculate the 10, but that doesn't work right when changing multiple
+        lines.
 
     .. virtualevent:: CursorMoved
 
@@ -219,19 +224,17 @@ class HandyText(tkinter.Text):
         # see _cursor_cb
         self._old_cursor_pos = self.index('insert')
 
-    def _create_change_dict(
-            self,
-            start: str, end: str, new_text: str) -> ChangeDict:
-        return {
-            'start': start,
-            'end': end,
-            'old_text_len': len(self.get(start, end)),
-            'new_text': new_text,
-        }
+    def _create_change(
+            self, start: str, end: str, new_text: str) -> Change:
+        return Change(
+            start=start,
+            end=end,
+            old_text_len=len(self.get(start, end)),
+            new_text=new_text,
+        )
 
     def _change_cb(self, subcommand: str, *args_tuple: str) -> None:
-        # contains (start, end, old_length, new_text) tuples
-        changes = []
+        changes: typing.List[Change] = []
 
         # search for 'pathName delete' in text(3tk)... it's a wall of text,
         # and this thing has to implement every detail of that wall
@@ -260,7 +263,6 @@ class HandyText(tkinter.Text):
 
             # "If index2 does not specify a position later in the text than
             # index1 then no characters are deleted."
-            # note that this also converts pairs to a list
             pairs = [(start, end) for (start, end) in pairs
                      if self.compare(start, '<', end)]
 
@@ -302,7 +304,7 @@ class HandyText(tkinter.Text):
             # range so deleted text does not cause an undesired index shifting
             # side-effects."
             for start, end in reversed(pairs):
-                changes.append(self._create_change_dict(start, end, ''))
+                changes.append(self._create_change(start, end, ''))
 
         # the man page's inserting section is also kind of a wall of
         # text, but not as bad as the delete
@@ -326,7 +328,7 @@ class HandyText(tkinter.Text):
             # 'asdtoot', not 'tootasd'
             new_text = ''.join(other_args[::2])
 
-            changes.append(self._create_change_dict(
+            changes.append(self._create_change(
                 text_index, text_index, new_text))
 
         # an even smaller wall of text that mostly refers to insert and replace
@@ -345,7 +347,7 @@ class HandyText(tkinter.Text):
             # didn't find in docs, but tcl throws an error for this
             assert self.compare(start, '<=', end)
 
-            changes.append(self._create_change_dict(start, end, new_text))
+            changes.append(self._create_change(start, end, new_text))
 
         else:   # pragma: no cover
             raise ValueError(
@@ -355,9 +357,9 @@ class HandyText(tkinter.Text):
         # remove changes that don't actually do anything
         changes = [
             change for change in changes
-            if (change['start'] != change['end']
-                or change['old_text_len'] != 0
-                or change['new_text'])
+            if (change.start != change.end
+                or change.old_text_len != 0
+                or change.new_text)
         ]
 
         # some plugins expect <<ContentChanged>> events to occur after changing
@@ -365,7 +367,7 @@ class HandyText(tkinter.Text):
         # run before, so here is the solution
         if changes:
             self.after_idle(lambda: self.event_generate(
-                '<<ContentChanged>>', data=json.dumps(changes)))
+                '<<ContentChanged>>', data=Changes(changes)))
 
     def _cursor_cb(self) -> None:
         # more implicit newline stuff

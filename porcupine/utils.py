@@ -30,6 +30,12 @@ import porcupine
 
 log = logging.getLogger(__name__)
 
+# seems like dacite doesn't have type hints working correctly?
+# don't know what's going on
+_T = typing.TypeVar('_T')
+_dict_to_dataclass = typing.cast(
+    typing.Callable[[_T, typing.Dict[str, typing.Any]], _T],
+    typing.cast(typing.Any, dacite).from_dict)
 
 BreakOrNone = typing.Optional[Literal['break']]
 
@@ -319,9 +325,6 @@ class EventDataclass:
         return type(self).__name__ + json.dumps(dataclasses.asdict(self))
 
 
-_T = typing.TypeVar('_T')
-
-
 # TODO: mention this in docs, useful for mypy
 class EventWithData(tkinter.Event):
 
@@ -349,7 +352,9 @@ class EventWithData(tkinter.Event):
         ``T`` must be a dataclass that inherits from :class:`EventDataclass`.
         """
         assert self.data_string.startswith(T.__name__ + '{')
-        return dacite.from_dict(T, json.loads(self.data_string[len(T.__name__):]))
+        result = _dict_to_dataclass(T, json.loads(self.data_string[len(T.__name__):]))
+        assert isinstance(result, T)
+        return result
 
     def __repr__(self) -> str:
         match = re.fullmatch(r'<(.*)>', super().__repr__())
