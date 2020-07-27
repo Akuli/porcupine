@@ -2,6 +2,7 @@
 
 import collections
 import contextlib
+import dataclasses
 import functools
 import json
 import logging
@@ -19,6 +20,7 @@ from tkinter import ttk
 import typing
 import traceback
 
+import dacite
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
@@ -281,18 +283,73 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
     manager.text = text
 
 
-# this is documented in bind_with_data()
-#
+class EventDataclass:
+    """
+    Inherit from this class when creating a dataclass for
+    :func:`bind_with_data`.
+
+    All values should be JSON safe or data classes containing JSON safe values.
+    Nested dataclasses don't need to inherit from EventDataclass. Example::
+
+        import dataclasses
+        import typing
+        from porcupine import utils
+
+        @dataclasses.dataclass
+        class Foo:
+            message: str
+            num: int
+
+        @dataclasses.dataclass
+        class Bar(utils.EventDataclass):
+            foos: typing.List[Foo]
+
+        def handle_event(event: utils.EventWithData):
+            print(event.data_class(Bar).foos[0].message)
+
+        utils.bind_with_data(some_widget, '<<Thingy>>', handle_event, add=True)
+        ...
+        foos = [Foo('ab', 123), Foo('cd', 456)]
+        some_widget.event_generate('<<Thingy>>', data=Bar(foos))
+    """
+
+    def __str__(self) -> str:
+        # str(Foo(a=1, b=2)) --> 'Foo{"a": 1, "b": 2}'
+        # Content after Foo is JSON parsed in Event.data_class()
+        return type(self).__name__ + json.dumps(dataclasses.asdict(self))
+
+
+_T = typing.TypeVar('_T')
+
+
 # TODO: mention this in docs, useful for mypy
 class EventWithData(tkinter.Event):
 
     data_string: str
 
     def data_widget(self) -> tkinter.BaseWidget:
+        """
+        If a widget was passed as ``data`` to ``event_generate()``, then this
+        returns that widget. Otherwise this raises an error.
+
+        Note that ``event.widget`` is the widget whose ``event_generate()``
+        method was used while ``event.data_widget()`` is the ``data`` argument
+        of ``widget.event_generate(..., data=the_data_widget)``. Usually these
+        are different widgets; if they are known to be the same widget, then
+        you probably don't need :func:`bind_with_data` at all.
+        """
         return self.widget.nametowidget(self.data_string)
 
-    def data_json(self) -> typing.Any:
-        return json.loads(self.data_string)
+    def data_class(self, T: typing.Type[_T]) -> _T:
+        """
+        If a dataclass instance of type ``T`` was passed as ``data`` to
+        ``event_generate()``, then this returns a copy of it. Otherwise this
+        raises an error.
+
+        ``T`` must be a dataclass that inherits from :class:`EventDataclass`.
+        """
+        assert self.data_string.startswith(T.__name__ + '{')
+        return dacite.from_dict(T, json.loads(self.data_string[len(T.__name__):]))
 
     def __repr__(self) -> str:
         match = re.fullmatch(r'<(.*)>', super().__repr__())
@@ -307,35 +364,22 @@ def bind_with_data(
         add: bool = False) -> str:
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``
-    argument of ``event_generate()``.
+    argument of ``event_generate()``. Note that the callback takes an argument
+    of type :class:`EventWithData` rather than a usual ``tkinter.Event``.
 
     Here's an example::
 
         from porcupine import utils
 
-        def on_wutwut(event: utils.EventWithData):
+        def handle_event(event: utils.EventWithData):
             print(event.data_string)
 
-        utils.bind_with_data(some_widget, '<<Thingy>>', on_wutwut, add=True)
+        utils.bind_with_data(some_widget, '<<Thingy>>', handle_event, add=True)
 
         # this prints 'wut wut'
         some_widget.event_generate('<<Thingy>>', data='wut wut')
 
     Note that everything is a string in Tcl, so tkinter ``str()``'s the data.
-
-    The event objects have all the attributes that tkinter events
-    usually have, and these additional attributes and methods:
-
-        ``data_string``
-            See the above example.
-
-        ``data_widget()``
-            If a widget was passed as ``data`` to ``event_generate()``,
-            then this returns that widget.
-
-        ``data_json()``
-            If ``json.dumps(something)`` was passed as ``data`` to
-            ``event_generate()``, then this returns the parsed JSON.
     """
     # tkinter creates event objects normally and appends them to the
     # deque, then run_callback() adds data_blablabla attributes to the

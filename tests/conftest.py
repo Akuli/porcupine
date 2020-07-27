@@ -14,8 +14,12 @@ import pytest
 
 import porcupine
 from porcupine import (dirs, get_main_window, get_tab_manager, tabs,
-                       pluginloader)
+                       pluginloader, plugins)
 from porcupine import filetypes as filetypes_module
+
+# avoid errors from user's custom plugins
+user_plugindir = plugins.__path__.pop(0)
+assert user_plugindir == str(dirs.configdir / 'plugins')
 
 # TODO: something else will be needed when testing the filetypes
 tempdir = tempfile.mkdtemp()

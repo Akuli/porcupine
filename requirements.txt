@@ -30,3 +30,6 @@ autopep8
 
 # typing.Literal is new in python 3.8
 typing_extensions
+
+# for event stuff in porcupine.utils
+dacite>=1.5.1,<2.0.0
