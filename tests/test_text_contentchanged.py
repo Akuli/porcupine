@@ -1,14 +1,15 @@
 import pytest
 
-from porcupine import get_main_window, textwidget, utils
+from porcupine import get_main_window, utils
+from porcupine.textwidget import HandyText, Change, Changes
 
 
 @pytest.fixture(scope='function')
 def text_and_events(porcusession):
-    text = textwidget.HandyText(get_main_window(), undo=True)
+    text = HandyText(get_main_window(), undo=True)
 
     # peers can mess things up
-    peer = textwidget.HandyText(get_main_window(), create_peer_from=text)
+    peer = HandyText(get_main_window(), create_peer_from=text)
 
     events = []
     utils.bind_with_data(
@@ -19,15 +20,12 @@ def text_and_events(porcusession):
 
 def test_insert_basic(text_and_events):
     text, events = text_and_events
-
     text.insert('end', 'foo')
     text.update()
-    assert events.pop().data_json() == [{
-        'start': '1.0',
-        'end': '1.0',
-        'old_text_len': 0,
-        'new_text': 'foo',
-    }]
+
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.0', end='1.0', old_text_len=0, new_text='foo'),
+    ]
 
 
 def test_delete_basic(text_and_events):
@@ -40,22 +38,16 @@ def test_delete_basic(text_and_events):
     text.delete('1.6', '1.8')
     text.update()
     assert text.get('1.0', 'end - 1 char') == 'foobarz'
-    assert events.pop().data_json() == [{
-        'start': '1.6',
-        'end': '1.8',
-        'old_text_len': 2,
-        'new_text': '',
-    }]
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.6', end='1.8', old_text_len=2, new_text=''),
+    ]
 
     text.delete('1.4')
     text.update()
     assert text.get('1.0', 'end - 1 char') == 'foobrz'
-    assert events.pop().data_json() == [{
-        'start': '1.4',
-        'end': '1.5',
-        'old_text_len': 1,
-        'new_text': '',
-    }]
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.4', end='1.5', old_text_len=1, new_text=''),
+    ]
 
 
 def test_delete_many_args(text_and_events):
@@ -69,19 +61,9 @@ def test_delete_many_args(text_and_events):
     text.tk.call(text, 'delete', '1.3', '1.5', '1.4', '1.6', '1.0')
     text.update()
     assert text.get('1.0', 'end - 1 char') == 'oo'
-    assert events.pop().data_json() == [
-        {
-            'start': '1.3',
-            'end': '1.6',
-            'old_text_len': 3,
-            'new_text': '',
-        },
-        {
-            'start': '1.0',
-            'end': '1.1',
-            'old_text_len': 1,
-            'new_text': '',
-        },
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.3', end='1.6', old_text_len=3, new_text=''),
+        Change(start='1.0', end='1.1', old_text_len=1, new_text=''),
     ]
 
     for args in [('1.4', '1.6', '1.4', '1.5'),
@@ -94,12 +76,9 @@ def test_delete_many_args(text_and_events):
         text.tk.call(text, 'delete', *args)
         text.update()
         assert text.get('1.0', 'end - 1 char') == 'hellworld'
-        assert events.pop().data_json() == [{
-            'start': '1.4',
-            'end': '1.6',
-            'old_text_len': 2,
-            'new_text': '',
-        }]
+        assert events.pop().data_class(Changes).change_list == [
+            Change(start='1.4', end='1.6', old_text_len=2, new_text=''),
+        ]
 
 
 def test_replace_at_very_end(text_and_events):
@@ -111,12 +90,9 @@ def test_replace_at_very_end(text_and_events):
 
     text.replace('end', 'end', 'bar')
     text.update()
-    assert events.pop().data_json() == [{
-        'start': '1.3',
-        'end': '1.3',
-        'old_text_len': 0,
-        'new_text': 'bar',
-    }]
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.3', end='1.3', old_text_len=0, new_text='bar'),
+    ]
 
 
 def test_undo(text_and_events):
@@ -125,19 +101,13 @@ def test_undo(text_and_events):
     text.insert('end', 'a')
     text.update()
     assert text.get('1.0', 'end - 1 char') == 'a'
-    assert events.pop().data_json() == [{
-        'start': '1.0',
-        'end': '1.0',
-        'old_text_len': 0,
-        'new_text': 'a',
-    }]
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.0', end='1.0', old_text_len=0, new_text='a'),
+    ]
 
     text.edit_undo()
     text.update()
     assert text.get('1.0', 'end - 1 char') == ''
-    assert events.pop().data_json() == [{
-        'start': '1.0',
-        'end': '1.1',
-        'old_text_len': 1,
-        'new_text': '',
-    }]
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.0', end='1.1', old_text_len=1, new_text=''),
+    ]

@@ -17,16 +17,6 @@ from porcupine import (dirs, get_main_window, get_tab_manager, tabs,
                        pluginloader, plugins)
 from porcupine import filetypes as filetypes_module
 
-# avoid errors from user's custom plugins
-user_plugindir = plugins.__path__.pop(0)
-assert user_plugindir == str(dirs.configdir / 'plugins')
-
-# TODO: something else will be needed when testing the filetypes
-tempdir = tempfile.mkdtemp()
-dirs.configdir = pathlib.Path(tempdir)
-atexit.register(shutil.rmtree, str(tempdir))
-del tempdir
-
 
 # this url is split on 2 lines because pep8, concatenate the lines when
 # copy/pasting it to your browser:
@@ -53,8 +43,22 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_pastebins)
 
 
+# works with this:  from porcupine import dirs
+# does NOT work:    from porcupine.dirs import configdir
 @pytest.fixture(scope='session')
-def porcusession():
+def monkeypatch_dirs():
+    # avoid errors from user's custom plugins
+    user_plugindir = plugins.__path__.pop(0)
+    assert user_plugindir == str(dirs.configdir / 'plugins')
+
+    with tempfile.TemporaryDirectory() as d:
+        dirs.cachedir = pathlib.Path(d) / 'cache'
+        dirs.configdir = pathlib.Path(d) / 'config'
+        yield
+
+
+@pytest.fixture(scope='session')
+def porcusession(monkeypatch_dirs):
     # these errors should not occur after the init
     with pytest.raises(RuntimeError):
         get_main_window()
@@ -67,8 +71,6 @@ def porcusession():
     porcupine.init(root)
 
     plugin_names = pluginloader.find_plugins()
-    plugin_names.remove('restart')   # this plugins opens tabs
-    #plugin_names = []
     pluginloader.load(plugin_names, shuffle=True)
 
     yield
