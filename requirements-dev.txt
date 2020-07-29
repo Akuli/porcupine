@@ -2,4 +2,5 @@ pytest
 coverage
 sphinx
 mypy
+flake8
 pytest-mock>=3.2.0,<4.0.0
