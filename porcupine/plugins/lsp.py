@@ -342,8 +342,6 @@ class LangServer:
 
         try:
             lsp_events = self._lsp_client.recv(received_bytes)
-        except lsp.IncompleteResponseError:
-            return True
         except Exception:
             self._log.exception("error while receiving lsp events")
             lsp_events = []
