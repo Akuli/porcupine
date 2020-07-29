@@ -25,35 +25,6 @@ def pack_with_scrollbar(widget):
     return scrollbar
 
 
-def add_resize_handle(toplevel):
-    between_mouse_and_window_corner = [0, 0]
-
-    # Doing this only in the beginning of resize ensures that if it's off by 1
-    # for whatever reason, then it will only ever be off by 1 pixel, rather
-    # than off by 1 pixel MORE for each resize event. If I put this to
-    # do_resize() instead, then for some reason, the window doesn't resize
-    # at all.
-    def begin_resize(event):
-        between_mouse_and_window_corner[:] = [
-            event.widget.winfo_width() - event.x,
-            event.widget.winfo_height() - event.y
-        ]
-
-    def do_resize(event):
-        x_offset, y_offset = between_mouse_and_window_corner
-        width = event.x_root - toplevel.winfo_rootx() + x_offset
-        height = event.y_root - toplevel.winfo_rooty() + y_offset
-
-        if width >= 0 and height >= 0:
-            toplevel.geometry('%dx%d' % (width, height))
-
-    handle = ttk.Label(toplevel, text="⇲")      # unicode awesomeness
-    handle.bind('<Button-1>', begin_resize)
-    handle.bind('<Button1-Motion>', do_resize)
-    handle.place(relx=1, rely=1, anchor='se')
-    return handle
-
-
 def calculate_popup_geometry(textwidget):
     (cursor_x, cursor_y,
      cursor_width, cursor_height) = textwidget.bbox('insert')
@@ -122,7 +93,8 @@ class AutoCompletionPopup:
             right_pane, width=50, height=15, wrap='word')
         self._right_scrollbar = pack_with_scrollbar(self._doc_text)
 
-        self._resize_handle = add_resize_handle(self.toplevel)
+        self._resize_handle = ttk.Sizegrip(self.toplevel)
+        self._resize_handle.place(relx=1, rely=1, anchor='se')
         self.toplevel.bind('<Configure>', self._on_anything_resized)
 
     def _on_anything_resized(self, event):
