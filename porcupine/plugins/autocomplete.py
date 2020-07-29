@@ -36,36 +36,6 @@ def _pack_with_scrollbar(
     return scrollbar
 
 
-# TODO: ttk.Sizegrip
-def _add_resize_handle(toplevel: tkinter.Toplevel) -> ttk.Label:
-    between_mouse_and_window_corner = [0, 0]
-
-    # Doing this only in the beginning of resize ensures that if it's off by 1
-    # for whatever reason, then it will only ever be off by 1 pixel, rather
-    # than off by 1 pixel MORE for each resize event. If I put this to
-    # do_resize() instead, then for some reason, the window doesn't resize
-    # at all.
-    def begin_resize(event: tkinter.Event) -> None:
-        between_mouse_and_window_corner[:] = [
-            event.widget.winfo_width() - event.x,
-            event.widget.winfo_height() - event.y
-        ]
-
-    def do_resize(event: tkinter.Event) -> None:
-        x_offset, y_offset = between_mouse_and_window_corner
-        width = event.x_root - toplevel.winfo_rootx() + x_offset
-        height = event.y_root - toplevel.winfo_rooty() + y_offset
-
-        if width >= 0 and height >= 0:
-            toplevel.geometry('%dx%d' % (width, height))
-
-    handle = ttk.Label(toplevel, text="⇲")      # unicode awesomeness
-    handle.bind('<Button-1>', begin_resize)
-    handle.bind('<Button1-Motion>', do_resize)
-    handle.place(relx=1, rely=1, anchor='se')
-    return handle
-
-
 def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
     bbox = textwidget.bbox('insert')
     assert bbox is not None     # cursor must be visible
@@ -135,7 +105,8 @@ class _Popup:
             right_pane, width=50, height=15, wrap='word')
         self._right_scrollbar = _pack_with_scrollbar(self._doc_text)
 
-        self._resize_handle = _add_resize_handle(self.toplevel)
+        self._resize_handle = ttk.Sizegrip(self.toplevel)
+        self._resize_handle.place(relx=1, rely=1, anchor='se')
         self.toplevel.bind('<Configure>', self._on_anything_resized)
 
     def _on_anything_resized(self, junk: tkinter.Event) -> None:
