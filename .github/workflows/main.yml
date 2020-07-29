@@ -1,0 +1,27 @@
+# https://medium.com/@doedotdev/mypy-for-github-action-7da1ebee99e7
+name: Run linters and tests
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Run linters and tests
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt -r requirements-dev.txt
+    - name: mypy
+      run: |
+        python3 -m mypy --strict porcupine
+      env:
+        MYPYPATH: ./my_stubs
+    - name: flake8
+      run: |
+        python3 -m flake8 porcupine
+    - name: pytest
+      run: |
+        python3 -m pytest
