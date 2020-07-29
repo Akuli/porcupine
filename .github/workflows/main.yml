@@ -23,5 +23,8 @@ jobs:
       run: |
         python3 -m flake8 porcupine
     - name: pytest
-      run: |
-        python3 -m pytest
+      # xvfb is needed for running tkinter
+      uses: GabrielBB/xvfb-action@v1.2
+      with:
+        run: |
+          python3 -m pytest
