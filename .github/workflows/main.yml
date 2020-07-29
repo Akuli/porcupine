@@ -24,7 +24,8 @@ jobs:
         python3 -m flake8 porcupine
     - name: pytest
       # xvfb is needed for running tkinter
-      uses: GabrielBB/xvfb-action@v1.2
+      # not using latest version because https://github.com/GabrielBB/xvfb-action/issues/10
+      uses: GabrielBB/xvfb-action@v1.0
       with:
         run: |
           python3 -m pytest
