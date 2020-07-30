@@ -63,16 +63,6 @@ session = requests.Session()
 session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
 
-@pastebin("dpaste.com")
-def paste_to_dpaste_com(code: str, path: typing.Optional[pathlib.Path]) -> str:
-    response = session.post('http://dpaste.com/api/v2/', data={
-        'content': code,
-        'syntax': 'python3',
-    })
-    response.raise_for_status()
-    return response.text.strip()
-
-
 @pastebin("dpaste.org")
 def paste_to_dpaste_de(code: str, path: typing.Optional[pathlib.Path]) -> str:
     # docs: http://dpaste.readthedocs.io/en/latest/api.html
@@ -85,20 +75,6 @@ def paste_to_dpaste_de(code: str, path: typing.Optional[pathlib.Path]) -> str:
     })
     response.raise_for_status()
     return response.text.strip()
-
-
-# TODO: delete this, doesn't work anymore, gives front page link
-@pastebin("Paste ofCode")
-def paste_to_paste_ofcode(code: str, path: typing.Optional[pathlib.Path]) -> str:
-    # PurpleMyst figured out this stuff a long time ago... it's not documented
-    # anywhere, but it has worked for i think over a year now
-    response = session.post('http://paste.ofcode.org/', data={
-        'code': code,
-        'language': 'python3',
-        'notabot': 'most_likely',   # lol
-    })
-    response.raise_for_status()
-    return response.url
 
 
 class SuccessDialog(tkinter.Toplevel):

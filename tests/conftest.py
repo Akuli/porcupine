@@ -74,6 +74,11 @@ def porcusession(monkeypatch_dirs):
     pluginloader.load(plugin_names, shuffle=True)
 
     yield
+
+    # avoid "Do you want to save" dialogs
+    for tab in list(porcupine.get_tab_manager().tabs()):
+        porcupine.get_tab_manager().close_tab(tab)
+
     porcupine.quit()
     root.destroy()
 
