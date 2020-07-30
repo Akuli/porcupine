@@ -32,8 +32,7 @@ def bump_version(new_info):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        usage="%(prog)s {major,minor,patch} [arguments for git commit]")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         'what_to_bump', choices=['major', 'minor', 'patch'],
         help="which part of major.minor.patch version number to increment")
