@@ -66,6 +66,11 @@ def _run_in_osx_terminal_app(blue_message, workingdir, command):
 def _run_in_x11_like_terminal(blue_message, workingdir, command):
     terminal = os.environ.get('TERMINAL', 'x-terminal-emulator')
 
+    # to config what x-terminal-emulator is:
+    #
+    #   $ sudo update-alternatives --config x-terminal-emulator
+    #
+    # TODO: document this
     if terminal == 'x-terminal-emulator':
         log.debug("using x-terminal-emulator")
 
