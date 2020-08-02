@@ -122,30 +122,14 @@ def _add_any_action(path, kind, callback_or_choices, binding, var, *,
                 # things by default
                 return 'break'
 
-        # TODO: display a warning if it's already bound?
+        # TODO: warning if it's already bound?
+        #
+        # bind_all is considered only after the Text-specific binding (try
+        # pressing ctrl+o or ctrl+w with some text selected without the
+        # following line)
         widget = porcupine.get_main_window()    # any widget would do
         widget.bind_all(binding, bind_callback, add=True)
-
-        # text widgets are tricky, by default they insert a newline on ctrl+o,
-        # and i discovered how it works in a Tcl session:
-        #
-        #    wish8.6 [~]bind Text <Control-o>
-        #
-        #        if {!$tk_strictMotif} {
-        #    	      %W insert insert \n
-        #    	      %W mark set insert insert-1c
-        #        }
-        #
-        # preventing that is simple as binding it to nothing, and then they'll
-        # do the bind_all thing as usual:
-        #
-        #    wish8.6 [~]bind Text <Control-o>
-        #    wish8.6 [~]bind Text <Control-o>     ;# empty string is returned
-        #    wish8.6 [~]
-        #
-        # this is done to all action bindings instead of just <Control-o> to
-        # avoid any issues with other bindings
-        widget.tk.call('bind', 'Text', binding, '')
+        widget.bind_class('Text', binding, bind_callback, add=False)
 
     return action
 
