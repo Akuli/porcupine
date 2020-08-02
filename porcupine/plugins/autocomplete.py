@@ -262,17 +262,34 @@ class AutoCompleter:
             'cursor_pos': self._orig_cursorpos,
         }))
 
+    def _user_wants_to_see_popup(self, cursor_pos_when_completing_started: str) -> bool:
+        initial_line, initial_column = map(int, cursor_pos_when_completing_started.split('.'))
+        current_line, current_column = map(int, self._tab.textwidget.index('insert').split('.'))
+
+        # Make sure that while waiting for completions, the user didn't
+        #   - switch porcupine tab
+        #   - switch to a different window
+        #   - move the cursor to another line
+        #   - move the cursor back before where it was initially
+        #
+        # Moving the cursor forward to filter through the list is allowed as
+        # long as the cursor stays on the same line.
+        return (self._tab.focus_get() == self._tab.textwidget and
+                current_line == initial_line and
+                current_column >= initial_column)
+
     # this might not run for all requests if e.g. langserver not configured
     def receive_completions(self, event):
         info_dict = event.data_json()
         if info_dict['id'] != self._waiting_for_response_id:
             return
         self._waiting_for_response_id = None
-        self.unfiltered_completions = info_dict['completions']
 
-        self.popup.start_completing(
-            self._get_filtered_completions(),
-            calculate_popup_geometry(self._tab.textwidget))
+        if self._user_wants_to_see_popup(info_dict['cursor_pos']):
+            self.unfiltered_completions = info_dict['completions']
+            self.popup.start_completing(
+                self._get_filtered_completions(),
+                calculate_popup_geometry(self._tab.textwidget))
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
