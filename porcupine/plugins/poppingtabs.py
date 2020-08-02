@@ -111,8 +111,19 @@ class PopManager:
                 pickle.dump(message, file)
 
             settings.save()     # let the new process use up-to-date settings
-            process = subprocess.Popen([sys.executable, '-m', __name__,
-                                        file.name])
+
+            # Empty string (aka "load from current working directory") becomes
+            # the first item of sys.path when using -m, which isn't great if
+            # your current working directory contains e.g. queue.py (issue 31).
+            python_code = f'''
+import sys
+if sys.path[0] == '':
+    del sys.path[0]
+from {__name__} import _run_popped_up_process
+_run_popped_up_process()
+'''
+            process = subprocess.Popen(
+                [sys.executable, '-c', python_code, file.name])
             log.debug("started subprocess with PID %d", process.pid)
             porcupine.get_tab_manager().close_tab(tab)
 
