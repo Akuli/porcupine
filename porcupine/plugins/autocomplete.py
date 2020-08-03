@@ -289,8 +289,9 @@ class AutoCompleter:
             cursor_pos=self._orig_cursorpos,
         ))
 
-    def _user_wants_to_see_popup(self, cursor_pos_when_completing_started: str) -> bool:
-        initial_line, initial_column = map(int, cursor_pos_when_completing_started.split('.'))
+    def _user_wants_to_see_popup(self) -> bool:
+        assert self._orig_cursorpos is not None
+        initial_line, initial_column = map(int, self._orig_cursorpos.split('.'))
         current_line, current_column = map(int, self._tab.textwidget.index('insert').split('.'))
 
         # Make sure that while waiting for completions, the user didn't
@@ -312,11 +313,11 @@ class AutoCompleter:
             return
         self._waiting_for_response_id = None
 
-        if self._user_wants_to_see_popup(info_dict['cursor_pos']):
-            self.unfiltered_completions = info_dict['completions']
+        if self._user_wants_to_see_popup():
+            self.unfiltered_completions = response.completions
             self.popup.start_completing(
                 self._get_filtered_completions(),
-                calculate_popup_geometry(self._tab.textwidget))
+                _calculate_popup_geometry(self._tab.textwidget))
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
