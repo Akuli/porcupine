@@ -4,6 +4,7 @@
 import argparse
 import os
 import subprocess
+import sys
 
 from porcupine import version_info as old_info
 
@@ -28,6 +29,7 @@ def bump_version(new_info):
     subprocess.check_call(['git', 'tag', 'v%d.%d.%d' % new_info])
     subprocess.check_call(['git', 'push', 'origin', 'master'])
     subprocess.check_call(['git', 'push', '--tags', 'origin', 'master'])
+    subprocess.check_call([sys.executable, 'docs/publish.py'])
     print("Bumped version from %d.%d.%d to %d.%d.%d" % (old_info + new_info))
 
 

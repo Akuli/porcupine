@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""build the docs and commit them to the gh-pages branch
+"""build the docs and commit them to the gh-pages branch"""
 
-this script is crazy, use with caution
-"""
-
-import contextlib
 import functools
 import os
-import re
+import pathlib
 import shlex
 import shutil
 import subprocess
@@ -17,89 +13,47 @@ import tempfile
 info = functools.partial(print, '**** %s:' % sys.argv[0])
 
 
-def run(*command, capture=False):
-    info("running", ' '.join(map(shlex.quote, command)))
-    if capture:
-        output = subprocess.check_output(list(command))
-        return output.decode('utf-8', errors='replace')
-
-    subprocess.check_call(list(command))
-    return None     # pep-8
-
-
-def remove(item):
-    info("removing '%s'" % item)
-    if os.path.isdir(item):
-        shutil.rmtree(item)
+def run(*command, cwd=None):
+    command_string = ' '.join(map(shlex.quote, command))
+    if cwd:
+        print(f"running {command_string} in {cwd}")
     else:
-        os.remove(item)
+        print(f"running {command_string}")
 
-
-def copy(src, dst):
-    info("copying '%s' to '%s'" % (src, dst))
-    if os.path.isdir(src):
-        shutil.copytree(src, dst)
-    else:
-        shutil.copy(src, dst)
-
-
-def current_branch():
-    output = run('git', 'branch', capture=True)
-    [branch] = re.findall('^\* (.*)$', output, flags=re.MULTILINE)
-    return branch
-
-
-@contextlib.contextmanager
-def switch_branch(new_branch):
-    old_branch = current_branch()
-    run('git', 'checkout', new_branch)
-
-    try:
-        yield
-    except Exception as e:
-        # undo everything to make sure the checkout works
-        run('git', 'reset', 'HEAD', '.')
-        run('git', 'checkout', '--', '.')
-    finally:
-        run('git', 'checkout', old_branch)
-
-
-def get_ignored_files():
-    yield '.git'
-    yield '.gitignore'
-    yield 'objects.inv'
-
-    # make this better if you need to
-    with open('.gitignore', 'r') as file:
-        for line in file:
-            yield line.rstrip('\n/')
+    subprocess.check_call(list(command), cwd=cwd)
 
 
 def main():
     if os.path.basename(os.getcwd()) == 'docs':
-        info("running in docs dir, going up a level")
+        print("running in docs dir, going up a level")
         os.chdir('..')
     if not os.path.isdir('docs'):
-        print("%s: docs directory not found" % sys.argv[0], file=sys.stderr)
-        sys.exit(1)
+        sys.exit(f"{sys.argv[0]}: docs directory not found")
+    if not os.environ.get('VIRTUAL_ENV'):
+        sys.exit(f"{sys.argv[0]}: not running in virtualenv (see README.md)")
 
     info("creating a temporary directory for building docs")
     with tempfile.TemporaryDirectory() as tmpdir:
-        run(sys.executable, '-m', 'sphinx', 'docs', tmpdir)
+        temp_docs = pathlib.Path(tmpdir) / 'docs'
+        temp_repo = pathlib.Path(tmpdir) / 'repo'
 
-        with switch_branch('gh-pages'):
-            ignored = set(get_ignored_files())
-            for item in (set(os.listdir()) - ignored):
-                remove(item)
-            for item in (set(os.listdir(tmpdir)) - ignored):
-                copy(os.path.join(tmpdir, item), item)
+        run(sys.executable, '-m', 'sphinx', 'docs', str(temp_docs))
+        run('git', 'clone', '--depth=1', '--branch=gh-pages', 'https://github.com/Akuli/porcupine', str(temp_repo))
+        run('git', 'checkout', 'gh-pages', cwd=temp_repo)
 
-            run('git', 'add', '--all', '.')
-            run('git', 'commit', '-m', 'updating docs with ' + __file__)
+        for subpath in temp_repo.iterdir():
+            if subpath.name not in {'.git', '.gitignore'}:
+                try:
+                    shutil.rmtree(subpath)
+                except NotADirectoryError:
+                    subpath.unlink()
 
-        info("deleting the temporary directory")
+        for subpath in temp_docs.iterdir():
+            subpath.rename(temp_repo / subpath.name)
 
-    run('git', 'push', 'origin', 'gh-pages')
+        run('git', 'add', '--all', '.', cwd=temp_repo)
+        run('git', 'commit', '-m', f'updating docs with {__file__}', cwd=temp_repo)
+        run('git', 'push', 'origin', 'gh-pages', cwd=temp_repo)
 
 
 if __name__ == '__main__':
