@@ -18,81 +18,99 @@ example plugin that uses this module.
 Action Objects
 --------------
 
-The action adding functions documented below return these. All action objects
-have these attributes:
+Use one of the action adding functions documented below instead of trying to
+create a new action yourself with ``Action(some arguments here)``.
 
-.. attribute:: any_action.path
+.. TODO: move this documentation to actions.py?
 
-    A string consisting of user-readable parts joined with ``/``, e.g.
-    ``'File/New File'``.
+.. class:: Action
 
-.. attribute:: any_action.kind
+    .. attribute:: path
+        :type: str
 
-    One of the strings ``'command'``, ``'yesno'`` or ``'choice'`` depending on
-    which `adding function <#action-adding-functions>`_ the action came from.
+        A string consisting of user-readable parts joined with ``/``, e.g.
+        ``'File/New File'``.
 
-.. attribute:: any_action.binding
+    .. attribute:: kind
+        :type: Literal['command', 'yesno', 'choice']
 
-    A string suitable for tkinter's ``bind()`` method, e.g. ``'<Control-n>'``.
-    :source:`The menubar plugin <porcupine/plugins/menubar.py>` uses
-    :func:`porcupine.utils.get_keyboard_shortcut` when it displays things like
-    ``Ctrl+N`` next to *New File*. Can be None for no binding.
+        This string indicates which `adding function <#action-adding-functions>`_ the action came from.
 
-.. TODO: document the virtual events better
+    .. attribute:: binding
+        :type: str
 
-.. attribute:: any_action.enabled
+        A string suitable for tkinter's ``bind()`` method, e.g. ``'<Control-n>'``.
+        :source:`The menubar plugin <porcupine/plugins/menubar.py>` uses
+        :func:`porcupine.utils.get_keyboard_shortcut` when it displays things like
+        ``Ctrl+N`` next to *New File*. Can be None for no binding.
 
-    True if the action is currently usable, and False otherwise. The menubar
-    makes disabled actions gray.
+    .. attribute:: enabled
+        :type: bool
 
-    Setting this to True or False generates an ``<<ActionEnabled>>`` or
-    ``<<ActionDisabled>>`` virtual event respectively. These events are
-    generated on the main window, and their datas are the :attr:`path` strings.
-    The virtual events do not run if the new ``enabled`` value does not differ
-    from the old value.
+        True if the action is currently usable, and False otherwise. The menubar
+        makes disabled actions gray.
 
-    Example::
+    .. virtualevent:: ActionEnabled
+    .. virtualevent:: ActionDisabled
 
-        from porcupine import actions, get_main_window, utils
+        These virtual events are generated on the **main window** when the
+        :attr:`.enabled` attribute of any :class:`Action` is changed.
 
-        def on_action_enabled(event):
-            action = actions.get_action(event.data)
-            ...
+        Setting :attr:`.enabled` to its current value does not generate
+        these events. They are only created when :attr:`.enabled` is actually
+        changed.
 
-        utils.bind_with_data(get_main_window(), '<<ActionEnabled>>',
-                             on_action_enabled, add=True)
+        The ``data_string`` of the event is set to the action name.
+        For example::
 
-    .. seealso::
-        :func:`porcupine.get_main_window`,
-        :func:`porcupine.utils.bind_with_data`
+            from porcupine import actions, get_main_window, utils
 
-.. attribute:: command_action.callback
+            def on_action_enabled(event):
+                action = actions.get_action(event.data_string)
+                ...
 
-    This is the callback function passed to :func:`add_command`. Only
-    ``'command'`` actions have this attribute.
+            utils.bind_with_data(get_main_window(), '<<ActionEnabled>>',
+                                 on_action_enabled, add=True)
 
-    Example::
+        .. seealso::
+            :func:`porcupine.get_main_window`,
+            :func:`porcupine.utils.bind_with_data`
 
-        if action.enabled:
-            action.callback()
+    .. attribute:: callback
+        :type: Callable[[], None]
 
-.. attribute:: yesno_or_choice_action.var
+        .. note:: Only actions added with :func:`add_command` have this attribute.
 
-    Only ``'yesno'`` and ``'choice'`` actions have a ``var`` attribute, and
-    it's set to a tkinter variable object representing the current state. For
-    ``'yesno'`` actions, this is a ``tkinter.BooleanVar`` that is set to
-    ``True`` when the menuitem is checked and ``False`` when it's not. The
-    ``var`` of ``'choice'`` actions is a ``tkinter.StringVar`` set to the
-    currently selected choice.
+        This is the callback function passed to :func:`add_command`. Only
+        ``'command'`` actions have this attribute.
 
-.. attribute:: choice_action.choices
+        Example::
 
-    Only ``'choice'`` actions have this attribute, and it's set to the
-    *choices* passed to :func:`add_choice`.
+            if action.enabled:
+                action.callback()
+
+    .. attribute:: var
+        :type: tkinter.Variable
+
+        .. note:: Only actions added with :func:`add_yesno` and :func:`add_choice` have this attribute.
+
+        Only ``'yesno'`` and ``'choice'`` actions have a ``var`` attribute, and
+        it's set to a tkinter variable object representing the current state. For
+        ``'yesno'`` actions, this is a ``tkinter.BooleanVar`` that is set to
+        ``True`` when the menuitem is checked and ``False`` when it's not. The
+        ``var`` of ``'choice'`` actions is a ``tkinter.StringVar`` set to the
+        currently selected choice.
+
+    .. attribute:: choice_action.choices
+
+        Only ``'choice'`` actions have this attribute, and it's set to the
+        *choices* passed to :func:`add_choice`.
 
 
 Action Adding Functions
 -----------------------
+
+.. TODO: .. virtualevent:: NewAction
 
 These functions return the action object they add. Adding a new action also
 generates a ``<<NewAction>>`` virtual event on the main window with the data
@@ -106,7 +124,9 @@ plugin, but adding more actions later works as well.
 
 The above functions take these optional keyword-only arguments as ``**kwargs``:
 
-*filetype_names*
+.. TODO: the way these are documented sucks
+
+*filetype_names: List[str]*
     Enable and disable the action automatically so that it's enabled only when
     a file of a specific type is being edited. For example,
     ``filetype_names=['Python']`` is useful for a Python-specific action.
@@ -116,7 +136,7 @@ The above functions take these optional keyword-only arguments as ``**kwargs``:
     :ref:`filetype objects <filetype-objects>`. The action is disabled if the
     current tab is not a :class:`~porcupine.tabs.FileTab`.
 
-*tabtypes*
+*tabtypes: List[Type[porcupine.tabs.Tab]]*
     Enable and disable the action automatically so that it's enabled only when
     the current tab is of a specific type.
 
