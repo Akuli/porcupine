@@ -524,6 +524,7 @@ class MainText(ThemedText):
                 old_cursor_pos = self.index('insert')
                 self.event_generate('<<NextWord>>')
                 self.delete(old_cursor_pos, 'insert')
+                return 'break'
 
         return None
 
