@@ -26,9 +26,16 @@ class Changes(utils.EventDataclass):
 
 
 class HandyText(tkinter.Text):
-    """Like ``tkinter.Text``, but with some handy features.
+    """
+    This class inherits from ``tkinter.Text`` and adds handy features.
 
-    All arguments are passed to ``tkinter.Text``.
+    All ``kwargs`` are passed to ``tkinter.Text``.
+    If you want to understand ``create_peer_from``, start by reading the
+    ``PEER WIDGETS`` section in
+    `text(3tk) <https://www.tcl.tk/man/tcl8.7/TkCmd/text.htm>`_.
+    Passing ``create_peer_from=foo`` creates a text widget that is a peer of
+    another text widget named ``foo``,
+    which is useful for e.g. :source:`porcupine/plugins/overview.py`.
 
     .. virtualevent:: ContentChanged
 
@@ -46,34 +53,16 @@ class HandyText(tkinter.Text):
             textwidget.replace('1.0', '1.5', 'toot')
 
         ...changes the ``'hello'`` to ``'toot'``, generating a
-        ``<<ContentChanged>>`` event whose ``data_class(Changes)`` returns
-        this::
+        ``<<ContentChanged>>`` event whose ``.data_class(Changes)`` returns
+        a :class:`Changes` object like this::
 
             Changes(change_list=[
                 Change(start='1.0', end='1.5', old_text_len=5, new_text='toot'),
             ])
 
-        Here ``old_text_len`` is ``len('hello')``, not ``len('toot')``.
-
         The ``<<ContentChanged>>`` event occurs after the text in the text
         widget has already changed. Also, sometimes many changes are applied
-        at once and ``change_list`` contains more than one item. The
-        ``change_list`` is always ordered so that most recent change is
-        ``change_list[-1]`` and the oldest change is ``change_list[0]``.
-
-        Unlike you might think, the ``old_text_len`` is not redundant. Let's
-        say that the text widget contains ``'toot world'`` and all that is
-        deleted::
-
-            Changes(change_list=[
-                Change(start='1.0', end='1.10', old_text_len=10, new_text=''),
-            ])
-
-        Now ``'1.10'`` is no longer a valid index in the text widget because it
-        contains 0 characters (and 0 is less than 10). In this case, checking
-        only the ``0`` of ``1.0`` and the ``10`` of ``1.10`` could be used to
-        calculate the 10, but that doesn't work right when changing multiple
-        lines.
+        at once and ``change_list`` contains more than one item.
 
     .. virtualevent:: CursorMoved
 
@@ -454,6 +443,13 @@ class ThemedText(HandyText):
 
     # TODO: document this
     def set_colors(self, foreground: str, background: str) -> None:
+        """
+        This method runs automatically when the Pygments color style is
+        changed. By default, it configures some text widget options.
+
+        See :source:`porcupine/plugins/overview.py` for an example of
+        overriding ``set_colors()``.
+        """
         self['fg'] = foreground
         self['bg'] = background
         self['insertbackground'] = foreground  # cursor color

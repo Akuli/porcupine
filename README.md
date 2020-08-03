@@ -157,7 +157,7 @@ Here is a list of the commands I use when developing Porcupine:
   creates a report of test coverage. Open `htmlcov/index.html` in your favorite
   browser to view it. If you don't have anything else to do, you can write more
   tests and try to improve the coverage :D
-- `cd docs` followed by `sphinx-build . _build` creates HTML documentation.
+- `cd docs` followed by `sphinx-build . build` creates HTML documentation.
   Open `docs/_build/index.html` in your favorite browser to view it.
 
 I also use these commands, but **I don't recommend running these yourself.**
