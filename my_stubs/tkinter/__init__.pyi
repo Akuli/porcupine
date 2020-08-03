@@ -170,6 +170,8 @@ T5 = TypeVar('T5')
 # Widget possibly without pack, grid, place. Use this if you want to specify
 # any widget, including Toplevel and Tk, and use Widget if you want to specify
 # a child widget.
+#
+# FIXME: some widgets are Misc but not BaseWidget
 class BaseWidget:
     # many of these methods are actually in Misc, but there's never need to
     # access them without some subclass of BaseWidget
@@ -209,6 +211,9 @@ class BaseWidget:
     def after_idle(self, func: Callable[[T1, T2, T3, T4, T5], None], __arg1: T1, __arg2: T2, __arg3: T3, __arg4: T4, __arg5: T5) -> str: ...
 
     def after_cancel(self, id: str) -> None: ...
+
+    def bind_class(self, className: Any, sequence: Any=..., func: Callable[..., Any] = ..., add: Any = ...) -> Optional[str]: ...
+    def focus_get(self) -> Optional[BaseWidget]: ...
 
     # add new binding
     @overload

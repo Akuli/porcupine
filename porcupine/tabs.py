@@ -417,7 +417,7 @@ class Tab(ttk.Frame):
         """
         return False
 
-    def get_state(self) -> typing.Any:
+    def get_state(self) -> typing.Optional[typing.Any]:
         """Override this method to support opening a similar tab after \
 restarting Porcupine.
 
@@ -435,8 +435,8 @@ restarting Porcupine.
     @classmethod
     def from_state(
             cls: typing.Type[_TabT], manager: TabManager, state: typing.Any) -> _TabT:
-        """Create a new tab from the return value of :meth:`get_state`.
-
+        """
+        Create a new tab from the return value of :meth:`get_state`.
         Be sure to override this if you override :meth:`get_state`.
         """
         raise NotImplementedError(
@@ -452,9 +452,9 @@ _FileTabState = typing.Tuple[
 
 
 class FileTab(Tab):
-    """A tab that represents an opened file.
+    """A subclass of :class:`.Tab` that represents an opened file.
 
-    The tab will have content in it by default when it's opened. If
+    The filetab will have *content* in it by default when it's opened. If
     *path* is given, the file will be saved there when Ctrl+S is
     pressed. Otherwise this becomes a "New File" tab.
 
@@ -476,6 +476,7 @@ class FileTab(Tab):
         This runs before the file is saved with the :meth:`save` method.
 
     .. attribute:: textwidget
+        :type: porcupine.textwidget.MainText
 
         The central text widget of the tab.
 
@@ -484,13 +485,15 @@ class FileTab(Tab):
         :class:`HandyText <porcupine.textwidget.HandyText>`.
 
     .. attribute:: scrollbar
+        :type: tkinter.ttk.Scrollbar
 
-        This is the ``ttk.Scrollbar`` widget next to :attr:`.textwidget`.
+        This is the scrollbar next to :attr:`.textwidget`.
 
         Things like :source:`the line number plugin <porcupine/plugins/linenum\
 bers.py>` use this attribute.
 
     .. attribute:: path
+        :type: Optional[pathlib.Path]
 
         The path where this file is currently saved.
 
@@ -500,6 +503,7 @@ bers.py>` use this attribute.
         .. seealso:: The :virtevt:`PathChanged` virtual event.
 
     .. attribute:: filetype
+        :type: porcupine.filetypes.FileType
 
         A filetype object from :mod:`porcupine.filetypes`.
 
@@ -562,15 +566,7 @@ bers.py>` use this attribute.
             content = file.read()
         return cls(manager, content, path)
 
-    def equivalent(self, other: Tab) -> bool:
-        """Return True if *self* and *other* are saved to the same place.
-
-        This method overrides :meth:`Tab.can_be_closed` and returns
-        False if other is not a FileTab or the path of at least one of
-        the tabs is None. If neither path is None, this returns True if
-        the paths point to the same file. This way, it's possible to
-        have multiple "New File" tabs.
-        """
+    def equivalent(self, other: Tab) -> bool:    # override
         # this used to have hasattr(other, "path") instead of isinstance
         # but it screws up if a plugin defines something different with
         # a path attribute, for example, a debugger plugin might have
@@ -593,7 +589,7 @@ bers.py>` use this attribute.
     def mark_saved(self) -> None:
         """Make :meth:`is_saved` return True."""
         self._save_hash = self._get_hash()
-        self._update_title()     # TODO: add a virtual event for this if needed
+        self._update_title()
 
     def is_saved(self) -> bool:
         """Return False if the text has changed since previous save.
@@ -649,6 +645,7 @@ bers.py>` use this attribute.
             # the user probably hasn't set the filetype
             self._guess_filetype()
 
+    # TODO: plugin
     def _update_title(
             self, junk: typing.Optional[tkinter.Event] = None) -> None:
         text = 'New File' if self.path is None else self.path.name
@@ -670,16 +667,7 @@ bers.py>` use this attribute.
             prefix, self.filetype.name,
             line, column)
 
-    def can_be_closed(self) -> bool:
-        """
-        This overrides :meth:`Tab.can_be_closed` in order to display a
-        save dialog.
-
-        If the file has been saved, this returns True and the tab is
-        closed normally. Otherwise this method asks the user whether the
-        file should be saved, and returns False only if the user cancels
-        something (and thus wants to keep working on this file).
-        """
+    def can_be_closed(self) -> bool:    # override
         if self.is_saved():
             return True
 
@@ -706,9 +694,7 @@ bers.py>` use this attribute.
         # no was clicked, can be closed
         return True
 
-    def on_focus(self) -> None:
-        """This override of :meth:`Tab.on_focus` focuses the :attr:`textwidget\
-`."""
+    def on_focus(self) -> None:    # override
         self.textwidget.focus_set()
 
     # TODO: returning None on errors kinda sucks, maybe a handle_errors kwarg?
