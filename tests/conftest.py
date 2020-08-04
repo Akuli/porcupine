@@ -66,9 +66,8 @@ def porcusession(monkeypatch_dirs):
     with pytest.raises(RuntimeError):
         get_tab_manager()
 
-    root = tkinter.Tk()
-    root.withdraw()
-    porcupine.init(root)
+    porcupine.init()
+    porcupine.get_main_window().withdraw()
 
     plugin_names = pluginloader.find_plugins()
     pluginloader.load(plugin_names, shuffle=True)
@@ -80,7 +79,6 @@ def porcusession(monkeypatch_dirs):
         porcupine.get_tab_manager().close_tab(tab)
 
     porcupine.quit()
-    root.destroy()
 
 
 # TODO: can this be deleted safely?
