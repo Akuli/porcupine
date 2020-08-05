@@ -110,6 +110,11 @@ Because I can.
 ### How does feature X work?
 See [porcupine/](porcupine/)X.py or [porcupine/plugins/](porcupine/plugins/)X.py.
 
+### Does Porcupine support programming language X?
+You will likely get syntax highlighting without any configuring
+and autocompletions with a few lines of configuration file editing.
+See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+
 ### Can I play tetris with Porcupine?
 Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
