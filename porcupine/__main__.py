@@ -56,7 +56,7 @@ Examples:
   %(prog)s file1.py file2.js  # open the given files on startup
   %(prog)s -nnn               # create 3 new files
   %(prog)s --no-plugins       # understand the power of plugins
-  %(prog)s --verbose          # produce lots of nerdy output
+  %(prog)s -v                 # produce lots of output for debugging
 """
 
 
@@ -70,7 +70,7 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument(
-        '-v', '--version', action='version',
+        '--version', action='version',
         version=("Porcupine %s" % porcupine.__version__),
         help="display the Porcupine version number and exit")
     parser.add_argument(
@@ -104,7 +104,7 @@ def main() -> None:
               "plugins are not shuffled in order to make the UI consistent"))
 
     parser.add_argument(
-        '--verbose', action='store_true',
+        '-v', '--verbose', action='store_true',
         help=("print all logging messages to stderr, only warnings and errors "
               "are printed by default (but all messages always go to a log "
               "file in %s as well)" % _logs.LOG_DIR))
