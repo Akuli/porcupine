@@ -22,7 +22,7 @@ project = 'Porcupine API'
 copyright = '2017, Akuli'
 author = 'Akuli'
 
-nitpicky = True
+nitpicky = False
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
