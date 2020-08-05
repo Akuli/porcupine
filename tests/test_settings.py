@@ -1,33 +1,29 @@
-import itertools
 import json
 import pathlib
-import tempfile
 import tkinter.font
 
 import pytest
 
-from porcupine import dirs, settings
+from porcupine import settings
 
 
 @pytest.fixture
 def cleared_settings(monkeypatch, porcusession, tmpdir):
     monkeypatch.setattr(settings, '_options', {})
     monkeypatch.setattr(settings, '_json_file_contents', {})
-    monkeypatch.setattr(settings, '_FILE_PATH',
-                        pathlib.Path(tmpdir) / 'settings.json')
-    yield
-
+    monkeypatch.setattr(settings, '_get_path',
+                        (lambda: pathlib.Path(tmpdir) / 'settings.json'))
 
 
 def load_from_json_string(json_string: str) -> None:
-    with settings._FILE_PATH.open('x', encoding='utf-8') as file:
+    with settings._get_path().open('x', encoding='utf-8') as file:
         file.write(json_string)
     settings._load_from_file()
 
 
 def save_and_read_file() -> str:
     settings.save()
-    with settings._FILE_PATH.open('r', encoding='utf-8') as file:
+    with settings._get_path().open('r', encoding='utf-8') as file:
         return json.load(file)
 
 
@@ -115,13 +111,13 @@ def test_reset(cleared_settings):
 
 
 def test_no_json_file(cleared_settings):
-    assert not settings._FILE_PATH.exists()
+    assert not settings._get_path().exists()
     settings._load_from_file()
 
     settings.add_option('foo', 'default')
     settings.set('foo', 'custom')
 
-    assert not settings._FILE_PATH.exists()
+    assert not settings._get_path().exists()
     settings.reset_all()
     assert settings.get('foo', str) == 'default'
 
@@ -135,7 +131,7 @@ def test_save(cleared_settings):
     settings.set('foo', 'custom foo')
 
     settings.save()
-    with settings._FILE_PATH.open('r') as file:
+    with settings._get_path().open('r') as file:
         assert json.load(file) == {'foo': 'custom foo', 'bar': 'custom bar'}
 
 

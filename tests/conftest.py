@@ -4,18 +4,13 @@
 # adding any_widget.update() calls
 # see also update(3tcl)
 
-import atexit
 import pathlib
-import shutil
 import tempfile
-import tkinter
 
 import pytest
 
 import porcupine
-from porcupine import (dirs, get_main_window, get_tab_manager, tabs,
-                       pluginloader, plugins)
-from porcupine import filetypes as filetypes_module
+from porcupine import dirs, get_main_window, get_tab_manager, pluginloader, plugins, tabs
 
 
 # this url is split on 2 lines because pep8, concatenate the lines when
@@ -80,12 +75,6 @@ def porcusession(monkeypatch_dirs):
         porcupine.get_tab_manager().close_tab(tab)
 
     porcupine.quit()
-
-
-# TODO: can this be deleted safely?
-@pytest.fixture(scope='session')
-def filetypes(porcusession):
-    return filetypes_module
 
 
 @pytest.fixture

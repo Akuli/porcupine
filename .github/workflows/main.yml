@@ -21,7 +21,7 @@ jobs:
         MYPYPATH: ./my_stubs
     - name: flake8
       run: |
-        python3 -m flake8 porcupine
+        python3 -m flake8 porcupine tests
     - name: pytest
       # xvfb is needed for running tkinter
       # not using latest version because https://github.com/GabrielBB/xvfb-action/issues/10

@@ -4,7 +4,7 @@ import tkinter
 
 import pytest
 
-from porcupine import actions, get_main_window, tabs, utils
+from porcupine import actions, filetypes, get_main_window, settings, tabs, utils
 
 
 _action_path_counter = itertools.count()
@@ -85,9 +85,6 @@ def test_add_command_and_stuff(porcusession, action_path):
         assert 'enabled=True' in repr(action)
         action.enabled = True
         assert not enable_events
-
-        with pytest.raises(TypeError):
-            action.enabled = 1
 
     action.enabled = False
 
@@ -211,7 +208,9 @@ def test_tabtypes(porcusession, tabmanager, action_path):
     assert action2.enabled
 
 
-def test_filetype_names(porcusession, tabmanager, action_path, filetypes):
+def test_filetype_names(porcusession, tabmanager, action_path):
+    assert settings.get('default_filetype', str) == 'Plain Text'
+
     # make sure these filetypes exist
     filetypes.get_filetype_by_name('C')
     filetypes.get_filetype_by_name('Java')
@@ -221,8 +220,7 @@ def test_filetype_names(porcusession, tabmanager, action_path, filetypes):
     filetab = tabs.FileTab(tabmanager)
     othertab = tabs.Tab(tabmanager)
 
-    action = actions.add_yesno(action_path, True,
-                               filetype_names=['C', 'Python'])
+    action = actions.add_yesno(action_path, True, filetype_names=['C', 'Python'])
     assert not action.enabled
 
     tabmanager.add_tab(othertab)

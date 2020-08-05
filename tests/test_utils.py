@@ -1,5 +1,4 @@
 import dataclasses
-import json
 import typing
 
 from porcupine import get_main_window, utils

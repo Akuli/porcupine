@@ -2,6 +2,7 @@ import atexit
 import codecs
 import json
 import logging
+import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
@@ -42,8 +43,11 @@ class _Option(Generic[_Val]):
             not_notified_yet.extend(widget.winfo_children())
 
 
+def _get_path() -> pathlib.Path:
+    return dirs.configdir / 'settings.json'
+
+
 log = logging.getLogger(__name__)
-_FILE_PATH = dirs.configdir / 'settings.json'
 
 # _json_file_contents may contain stuff that isn't in _options yet
 _json_file_contents: Dict[str, Any] = {}
@@ -108,7 +112,7 @@ def add_option(option_name: str, default: Union[str, int]) -> None:
 def _load_from_file() -> None:
     assert not _options    # add_option() uses _json_file_contents
     try:
-        with _FILE_PATH.open('r', encoding='utf-8') as file:
+        with _get_path().open('r', encoding='utf-8') as file:
             _json_file_contents.update(json.load(file))
     except FileNotFoundError:
         pass
@@ -131,7 +135,7 @@ def save() -> None:
         if _json_file_contents[name] == _options[name].default:
             del _json_file_contents[name]
 
-    with _FILE_PATH.open('w', encoding='utf-8') as file:
+    with _get_path().open('w', encoding='utf-8') as file:
         json.dump(_json_file_contents, file)
 
 
@@ -449,7 +453,7 @@ def _init() -> None:
     try:
         _load_from_file()
     except Exception:
-        log.exception(f"reading {_FILE_PATH} failed")
+        log.exception(f"reading {_get_path()} failed")
 
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
     if fixedfont['size'] < 0:

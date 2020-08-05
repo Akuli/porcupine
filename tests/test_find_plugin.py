@@ -7,7 +7,7 @@ from tkinter import ttk
 
 import pytest
 
-from porcupine import actions, get_main_window, get_tab_manager, tabs
+from porcupine import actions, get_main_window
 from porcupine.plugins import find
 
 

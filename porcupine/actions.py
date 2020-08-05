@@ -55,11 +55,6 @@ class Action:
 
     @enabled.setter
     def enabled(self, is_enabled: bool) -> None:
-        # omitting this check might cause confusing behavior
-        if not isinstance(is_enabled, bool):
-            raise TypeError("enabled should be True or False, not %r"
-                            % (is_enabled,))
-
         if self._enabled != is_enabled:
             self._enabled = is_enabled
             event = '<<ActionEnabled>>' if is_enabled else '<<ActionDisabled>>'

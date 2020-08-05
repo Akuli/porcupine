@@ -1,9 +1,7 @@
 import random
-import re
 import threading
 import time
 import tkinter
-import traceback
 import types
 
 import pytest
