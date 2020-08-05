@@ -31,11 +31,18 @@ class TkVirtualEvent(PyObject):
         signode += desc_name(f'<<{name}>>', f'<<{name}>>')
 
         class_name = self.env.ref_context.get('py:class')
+        if class_name is None:
+            return (name, '')
         return (class_name + '.' + name, '')
 
     def get_index_text(self, modname: str, name_cls: Tuple[str, str]) -> str:
-        class_name, event_name = name_cls[0].rsplit('.', 1)
-        return f'<<{event_name}>> ({modname}.{class_name} virtual event)'
+        event_name = name_cls[0]
+        if '.' in event_name:
+            class_name, event_name = event_name.rsplit('.', 1)
+            text = f'{modname}.{class_name} virtual event'
+        else:
+            text = 'virtual event'
+        return f'<<{event_name}>> ({text})'
 
 
 class TkVirtualEventXRefRole(PyXRefRole):

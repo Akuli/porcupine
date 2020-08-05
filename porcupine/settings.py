@@ -36,7 +36,6 @@ class _Option(Generic[_Val]):
             return
         self.value = value
 
-        # TODO: document these events
         event_name = f'<<SettingsChanged:{self.name}>>'
         log.debug(f"{self.name} was set to {value!r}, generating {event_name} events")
 
@@ -56,11 +55,16 @@ _options: Dict[str, Union[_Option[str], _Option[int]]] = {}
 
 
 # add 'from builtins import set as builtin_set' if needed
-def set(option_name: str, value: _Val) -> None:
+def set(option_name: str, value: Union[str, int]) -> None:
+    """Set the value of an opiton."""
     _options[option_name].set(value)
 
 
 def get(option_name: str, tybe: Type[_Val]) -> _Val:
+    """
+    Return the current value of an option.
+    *tybe* should be ``str`` or ``int`` depending on what type the option is.
+    """
     result = _options[option_name].value
     if not isinstance(result, tybe):
         raise TypeError(f"use {type(result).__name__} instead of {tybe.__name__}")
@@ -68,17 +72,31 @@ def get(option_name: str, tybe: Type[_Val]) -> _Val:
 
 
 def reset(option_name: str) -> None:
+    """Set an option to its default value given to :func:`add_option`."""
     option = _options[option_name]
     option.set(option.default)
 
 
 def reset_all() -> None:
+    """
+    Reset all settings, including the ones not shown in the setting dialog.
+    Clicking the reset button of the setting dialog runs this function.
+    """
     _json_file_contents.clear()
     for name in _options:
         reset(name)
 
 
 def add_option(option_name: str, default: Union[str, int]) -> None:
+    """
+    Add a custom option.
+
+    The type of *default* determines how :func:`set` and :func:`get` behave.
+    For example, if *default* is a string, then
+    calling :func:`set` with a value that isn't a string or
+    calling :func:`get` with the type set to something else than ``str``
+    is an error.
+    """
     if option_name in _options:
         raise RuntimeError(f"there's already an option named {option_name!r}")
 
@@ -150,12 +168,6 @@ def _create_notebook() -> ttk.Notebook:
 _notebook: Optional[ttk.Notebook] = None
 
 
-def get_notebook() -> ttk.Notebook:
-    if _notebook is None:
-        raise RuntimeError("porcupine isn't running")
-    return _notebook
-
-
 def show_dialog() -> None:
     """Show the "Porcupine Settings" dialog.
 
@@ -164,6 +176,17 @@ def show_dialog() -> None:
     dialog = get_notebook().winfo_toplevel()
     dialog.transient(porcupine.get_main_window())
     dialog.deiconify()
+
+
+def get_notebook() -> ttk.Notebook:
+    """Return the notebook widget in the setting dialog.
+
+    Use ``settings.get_notebook().winfo_toplevel()`` to access the dialog
+    itself. It's a :class:`tkinter.Toplevel`.
+    """
+    if _notebook is None:
+        raise RuntimeError("porcupine isn't running")
+    return _notebook
 
 
 def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
@@ -176,7 +199,7 @@ def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) ->
     return _cache[0]
 
 
-def set_up_validation_triangle(
+def _create_validation_triangle(
     widget: ttk.Entry,
     option_name: str,
     tybe: Type[_Val],
@@ -215,6 +238,57 @@ def set_up_validation_triangle(
     return triangle
 
 
+def add_section(title_text: str) -> ttk.Frame:
+    r"""Add a :class:`tkinter.ttk.Frame` to the notebook and return the frame.
+
+    The columns of the frame's grid is configured suitably for
+    :func:`add_entry`,
+    :func:`add_combobox`,
+    :func:`add_spinbox` and
+    :func:`add_label`.
+    Like this::
+
+
+        ,-----------------------------------------------------------.
+        | Porcupine Settings                                        |
+        |-----------------------------------------------------------|
+        |  / General \   / File Types \                             |
+        |_/           \_____________________________________________|
+        |                           :                           :   |
+        |                           :                           :col|
+        |         column 0          :         column 1          :umn|
+        |                           :                           : 2 |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        | ========================================================= |
+        |                                   ,---------. ,---------. |
+        |                                   |   OK    | |  Reset  | |
+        |                                   `---------' `---------' |
+        `-----------------------------------------------------------'
+
+    Column 0 typically contains labels such as "Font Family:", and column 1
+    contains widgets for changing the settings. Column 2 is used for displaying
+    |triangle| when the user has chosen the setting badly.
+    """
+    result = ttk.Frame(get_notebook())
+    result.grid_columnconfigure(0, weight=1)
+    result.grid_columnconfigure(1, weight=1)
+    get_notebook().add(result, text=title_text)
+    return result
+
+
 # Widget is needed for chooser.master and triangle.grid
 def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]) -> None:
     label = ttk.Label(chooser.master, text=label_text)
@@ -224,52 +298,86 @@ def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[t
         triangle.grid(row=label.grid_info()['row'], column=2)
 
 
-# TODO: document this
 def add_entry(
     section: ttk.Frame,
     option_name: str,
     text: str,
     validate_callback: Callable[[str], bool],
     **entry_kwargs: Any,
-) -> ttk.Combobox:
+) -> ttk.Entry:
+    """Add a :class:`tkinter.ttk.Entry` to the setting dialog.
+
+    A label that displays *text* will be added next to the entry.
+    All ``**entry_kwargs`` go to :class:`tkinter.ttk.Entry`.
+
+    When the user types something into the entry,
+    *validate_callback* is called with the text of the entry as its only argument.
+    If it returns ``True``, then the option given by *option_name*
+    is set to the string that the user typed.
+    Otherwise |triangle| is shown.
+    """
     entry = ttk.Entry(section, **entry_kwargs)
-    triangle = set_up_validation_triangle(entry, option_name, str, validate_callback)
+    triangle = _create_validation_triangle(entry, option_name, str, validate_callback)
     _grid_widgets(text, entry, triangle)
     return entry
 
 
-# TODO: document this
 def add_combobox(
     section: ttk.Frame,
     option_name: str,
     text: str,
     **combobox_kwargs: Any,
 ) -> ttk.Combobox:
+    """Add a :class:`tkinter.ttk.Combobox` to the setting dialog.
+
+    All ``**combobox_kwargs`` go to :class:`tkinter.ttk.Combobox`.
+    Usually you should pass at least ``values=list_of_strings``.
+
+    The content of the combobox is checked whenever it changes.
+    If it's in ``combobox['values']``
+    (given with the ``values=list_of_strings`` keyword argument or changed
+    later by configuring the returned combobox),
+    then the option given by *option_name* is set to the combobox content.
+    Otherwise |triangle| is shown.
+    """
     combo = ttk.Combobox(section, **combobox_kwargs)
-    triangle = set_up_validation_triangle(
+    triangle = _create_validation_triangle(
         combo, option_name, str,
         lambda value: value in combo['values'])
     _grid_widgets(text, combo, triangle)
     return combo
 
 
-# TODO: document this
 def add_spinbox(
     section: ttk.Frame,
     option_name: str,
     text: str,
     **spinbox_kwargs: Any,
 ) -> ttk.Spinbox:
+    """Add a :class:`utils.Spinbox` to the setting dialog.
+
+    All ``**spinbox_kwargs`` go to :class:`utils.Spinbox`.
+    Usually you should pass at least ``from_=some_integer, to=another_integer``.
+
+    The content of the spinbox is checked whenever it changes.
+    If it's a valid integer between ``spinbox['from']`` and ``spinbox['to']`` (inclusive),
+    then the option given by *option_name* is set to the :class:`int`.
+    Otherwise |triangle| is shown.
+    """
     spinbox = utils.Spinbox(section, **spinbox_kwargs)
-    triangle = set_up_validation_triangle(
+    triangle = _create_validation_triangle(
         spinbox, option_name, int,
         lambda value: int(spinbox['from']) <= value <= int(spinbox['to']))
     _grid_widgets(text, spinbox, triangle)
     return spinbox
 
 
-# TODO: document this
 def add_label(section: ttk.Frame, text: str) -> ttk.Label:
+    """Add text to the setting dialog.
+
+    This is useful for explaining what some options do with more than a few words.
+    The text is always as wide as the dialog is, even when the dialog is resized.
+    """
     label = ttk.Label(section, text=text)
     label.grid(column=0, columnspan=3, sticky='we', pady=10)
 
@@ -279,15 +387,6 @@ def add_label(section: ttk.Frame, text: str) -> ttk.Label:
 
     section.bind('<Configure>', wrap_on_resize, add=True)
     return label
-
-
-# TODO: document this
-def add_section(title_text: str) -> ttk.Frame:
-    result = ttk.Frame(get_notebook())
-    result.grid_columnconfigure(0, weight=1)
-    result.grid_columnconfigure(1, weight=1)
-    get_notebook().add(result, text=title_text)
-    return result
 
 
 def _encoding_exists(name: str) -> bool:
