@@ -183,7 +183,8 @@ class Scrollbar(Widget):
     # take any args while it can't in reality.
     def __setitem__(self, opt: Literal['command'], val: Callable[..., Optional[Tuple[float, float]]]) -> None: ...
 
-    def set(self, first: float, last: float) -> None: ...
+    # first and last are strings when used as yscrollcommand command
+    def set(self, first: Union[float, str], last: Union[float, str]) -> None: ...
 
 _TreeviewShowMode = Union[Literal['tree'], Literal['headings']]
 

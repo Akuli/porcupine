@@ -80,14 +80,15 @@ def _setup_scrolling(main_text: tkinter.Text, other_text: tkinter.Text) -> None:
     other_text['yscrollcommand'] = lambda start, end: (
         other_text.yview_moveto(main_text.yview()[0]))
 
-    old_command = main_text['yscrollcommand']   # string of tcl code
+    old_command = main_text['yscrollcommand']
+    assert isinstance(old_command, str)   # string of tcl code
 
     # also scroll other_text when main_text's scrolling position changes
     def new_yscrollcommand(start: str, end: str) -> None:
         # from options(3tk): "... the widget will generate a Tcl command by
         # concatenating the scroll command and two numbers."
         main_text.tk.eval(f'{old_command} {start} {end}')
-        other_text.yview_moveto(start)
+        other_text.yview_moveto(float(start))
 
     main_text['yscrollcommand'] = new_yscrollcommand
 
