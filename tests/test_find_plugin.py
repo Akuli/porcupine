@@ -81,20 +81,18 @@ def test_finding(filetab_and_finder):
     filetab.textwidget.insert('end', "this is a test\nthis is fun")
 
     def search_for(substring):
-        # i thought highlight_all_matches() would run automatically, it works
-        # irl but not in tests, even with update()
+        finder.find_entry.delete(0, 'end')
         finder.find_entry.insert(0, substring)
-        finder.highlight_all_matches()
+        assert finder.find_entry.get() == substring
         result = list(
             map(str, filetab.textwidget.tag_ranges('find_highlight')))
-        finder.find_entry.delete(0, 'end')
 
         buttons = [finder.previous_button, finder.next_button,
                    finder.replace_all_button]
         states = {str(button['state']) for button in buttons}
         assert len(states) == 1, "not all buttons have the same state"
 
-        if finder.statuslabel['text'] == "Found no matches :(":
+        if finder.statuslabel['text'] in {"Found no matches :(", "Type something to find."}:
             assert states == {'disabled'}
         else:
             assert states == {'normal'}
