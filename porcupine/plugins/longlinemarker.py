@@ -2,7 +2,6 @@
 
 import tkinter
 import tkinter.font as tkfont
-import typing
 
 import pygments.styles  # type: ignore
 import pygments.token   # type: ignore

@@ -14,9 +14,9 @@ from typing import (
 )
 
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from typing import Literal, TypedDict
 else:
-    from typing_extensions import Literal
+    from typing_extensions import Literal, TypedDict
 
 
 # yes, this is a float
@@ -291,6 +291,9 @@ _Sticky = Union[
     Literal['ensw'], Literal['enws'], Literal['esnw'], Literal['eswn'], Literal['ewns'], Literal['ewsn'],
 ]
 
+class _GridInfo(TypedDict, total=False):
+    row: int
+
 # this class represents a widget that can be put inside another widget
 class Widget(BaseWidget):
 
@@ -318,6 +321,7 @@ class Widget(BaseWidget):
         padx: Union[_ScreenDistance, Tuple[_ScreenDistance, _ScreenDistance]] = ...,
         pady: Union[_ScreenDistance, Tuple[_ScreenDistance, _ScreenDistance]] = ...,
     ) -> None: ...
+    def grid_info(self) -> _GridInfo: ...
 
     def pack(
         self, *,

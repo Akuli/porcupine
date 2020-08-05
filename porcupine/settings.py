@@ -1,14 +1,10 @@
 import atexit
 import codecs
-import dataclasses
-import functools
-import itertools
 import json
 import logging
-import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, Generic, IO, List, Optional, Tuple, TYPE_CHECKING, Type, TypeVar, Union, overload
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 import weakref
 
 import porcupine
@@ -438,9 +434,11 @@ def _fill_notebook_with_defaults() -> None:
 
     # filetypes aren't loaded yet when this is called, get_all_filetypes()
     # returns empty list
-    filetypes.after_idle(lambda: add_combobox(
-        filetypes, 'default_filetype', "Default filetype for new files:",
-        values=sorted(ft.name for ft in get_all_filetypes())))
+    def add_filetype_choosing_combobox() -> None:
+        filetype_names = sorted(ft.name for ft in get_all_filetypes())
+        add_combobox(filetypes, 'default_filetype', "Default filetype for new files:", values=filetype_names)
+
+    filetypes.after_idle(add_filetype_choosing_combobox)
 
 
 def _init() -> None:
