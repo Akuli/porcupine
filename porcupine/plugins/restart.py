@@ -1,7 +1,6 @@
 # TODO: remember which tab was selected
 import pickle
 import pkgutil
-import tkinter
 
 from porcupine import dirs, get_main_window, get_tab_manager
 from porcupine.plugins import __path__ as plugin_paths

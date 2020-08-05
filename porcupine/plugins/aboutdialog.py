@@ -3,7 +3,7 @@ import itertools
 import re
 import tkinter
 from tkinter import ttk
-from typing import Any, List, Match, Optional, Union
+from typing import Any, List, Match, Union
 import webbrowser
 
 from porcupine import actions, dirs, get_main_window, images, utils
