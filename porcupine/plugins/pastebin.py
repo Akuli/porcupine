@@ -9,7 +9,7 @@ import pathlib
 import socket
 import tkinter
 from tkinter import ttk
-import typing
+from typing import Any, Callable, Dict, Optional
 import webbrowser
 
 import requests
@@ -32,11 +32,11 @@ def tk_busy_forget() -> None:
 
 log = logging.getLogger(__name__)
 
-PastebinFunction = typing.Callable[[str, typing.Optional[pathlib.Path]], str]
-pastebins: typing.Dict[str, PastebinFunction] = {}
+PastebinFunction = Callable[[str, Optional[pathlib.Path]], str]
+pastebins: Dict[str, PastebinFunction] = {}
 
 
-def pastebin(name: str) -> typing.Callable[[PastebinFunction], PastebinFunction]:
+def pastebin(name: str) -> Callable[[PastebinFunction], PastebinFunction]:
     def inner(function: PastebinFunction) -> PastebinFunction:
         pastebins[name] = function
         return function
@@ -45,7 +45,7 @@ def pastebin(name: str) -> typing.Callable[[PastebinFunction], PastebinFunction]
 
 
 @pastebin("termbin.com")
-def paste_to_termbin(code: str, path: typing.Optional[pathlib.Path]) -> str:
+def paste_to_termbin(code: str, path: Optional[pathlib.Path]) -> str:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(('termbin.com', 9999))
         sock.send(code.encode('utf-8'))
@@ -64,7 +64,7 @@ session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
 
 @pastebin("dpaste.org")
-def paste_to_dpaste_de(code: str, path: typing.Optional[pathlib.Path]) -> str:
+def paste_to_dpaste_de(code: str, path: Optional[pathlib.Path]) -> str:
     # docs: http://dpaste.readthedocs.io/en/latest/api.html
     # the docs tell to post to http://dpaste.de/api/ but they use
     # https://... in the examples 0_o only the https version works
@@ -79,7 +79,7 @@ def paste_to_dpaste_de(code: str, path: typing.Optional[pathlib.Path]) -> str:
 
 class SuccessDialog(tkinter.Toplevel):
 
-    def __init__(self, url: str, *args: typing.Any, **kwargs: typing.Any):
+    def __init__(self, url: str, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)   # type: ignore
         self.url = url
 
@@ -109,8 +109,7 @@ class SuccessDialog(tkinter.Toplevel):
             button = ttk.Button(buttonframe, text=text, command=callback)
             button.pack(side='left', expand=True)
 
-    def _select_all(self, junk: typing.Optional[tkinter.Event] = None,
-                    breaking: bool = False) -> utils.BreakOrNone:
+    def _select_all(self, junk: object = None, breaking: bool = False) -> utils.BreakOrNone:
         self._entry.selection_range(0, 'end')
         return ('break' if breaking else None)
 
@@ -126,11 +125,11 @@ class SuccessDialog(tkinter.Toplevel):
 class Paste:
 
     def __init__(self, pastebin_name: str,
-                 code: str, path: typing.Optional[pathlib.Path]) -> None:
+                 code: str, path: Optional[pathlib.Path]) -> None:
         self.pastebin_name = pastebin_name
         self.content = code
         self.path = path
-        self.please_wait_window: typing.Optional[tkinter.Toplevel] = None
+        self.please_wait_window: Optional[tkinter.Toplevel] = None
 
     def make_please_wait_window(self) -> None:
         window = self.please_wait_window = tkinter.Toplevel()

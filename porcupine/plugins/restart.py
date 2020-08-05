@@ -16,7 +16,7 @@ setup_after = [
 STATE_FILE = dirs.cachedir / 'restart_state.pkl'
 
 
-def save_states(junk: tkinter.Event) -> None:
+def save_states(junk: object) -> None:
     states = []
     for tab in get_tab_manager().tabs():
         state = tab.get_state()

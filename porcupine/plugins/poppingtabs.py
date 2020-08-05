@@ -8,7 +8,7 @@ import sys
 import tempfile
 import threading
 import tkinter
-import typing
+from typing import Any, Tuple, Union
 
 import porcupine
 from porcupine import pluginloader, settings, tabs
@@ -54,10 +54,7 @@ class PopManager:
         self._label = tkinter.Label(self._window, fg='#000', bg='#ffc')
         self._label.pack()
 
-        self._dragged_state: typing.Union[
-            SpecialState,
-            typing.Tuple[tabs.Tab, typing.Any],
-        ] = NOT_DRAGGING
+        self._dragged_state: Union[SpecialState, Tuple[tabs.Tab, Any]] = NOT_DRAGGING
 
     def _show_tooltip(self, event: tkinter.Event) -> None:
         if self._window.state() == 'withdrawn':

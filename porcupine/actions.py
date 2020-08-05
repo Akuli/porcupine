@@ -1,6 +1,6 @@
 import collections
 import tkinter
-import typing
+from typing import Any, Callable, List, Optional, Sequence, Type, Union, cast
 import warnings
 
 import porcupine
@@ -16,13 +16,13 @@ class Action:
             self,
             path: str,
             kind: str,
-            callback_or_choices: typing.Union[
-                typing.Callable[[], None],
-                typing.List[typing.Any],
+            callback_or_choices: Union[
+                Callable[[], None],
+                List[Any],
                 None,
             ],
-            binding: typing.Optional[str],
-            var: typing.Optional[tkinter.Variable]):
+            binding: Optional[str],
+            var: Optional[tkinter.Variable]):
         self.path = path
         self.kind = kind
         self.binding = binding
@@ -32,12 +32,12 @@ class Action:
         if kind == 'command':
             assert not isinstance(callback_or_choices, list)
             assert callback_or_choices is not None
-            self.callback: typing.Callable[[], None] = callback_or_choices
+            self.callback: Callable[[], None] = callback_or_choices
         elif kind == 'choice':
             assert isinstance(callback_or_choices, list)
             assert var is not None
             self.var = var
-            self.choices: typing.List[typing.Any] = callback_or_choices
+            self.choices: List[Any] = callback_or_choices
             self.var.trace_add('write', self._var_set_check)
         elif kind == 'yesno':
             assert var is not None
@@ -60,7 +60,7 @@ class Action:
             event = '<<ActionEnabled>>' if is_enabled else '<<ActionDisabled>>'
             porcupine.get_main_window().event_generate(event, data=self.path)
 
-    def _var_set_check(self, *junk: typing.Any) -> None:
+    def _var_set_check(self, *junk: object) -> None:
         value = self.var.get()
         if value not in self.choices:
             warnings.warn("the var of %r was set to %r which is not one "
@@ -70,17 +70,17 @@ class Action:
 def _add_any_action(
         path: str,
         kind: str,
-        callback_or_choices: typing.Union[
-            typing.Callable[[], None],
-            typing.List[typing.Any],
+        callback_or_choices: Union[
+            Callable[[], None],
+            List[Any],
             None,
         ],
-        binding: typing.Optional[str],
-        var: typing.Optional[tkinter.Variable],
+        binding: Optional[str],
+        var: Optional[tkinter.Variable],
         *,
-        filetype_names: typing.Optional[typing.List[str]] = None,
-        tabtypes: typing.Optional[typing.Sequence[
-            typing.Type[tabs.Tab]]] = None) -> Action:
+        filetype_names: Optional[List[str]] = None,
+        tabtypes: Optional[Sequence[
+            Type[tabs.Tab]]] = None) -> Action:
 
     if path.startswith('/') or path.endswith('/'):
         raise ValueError("action paths must not start or end with /")
@@ -105,12 +105,12 @@ def _add_any_action(
                 for cls in tabtypes
             )
 
-            def enable_or_disable(junk: typing.Any = None) -> None:
+            def enable_or_disable(junk: object = None) -> None:
                 tab = porcupine.get_tab_manager().select()
                 action.enabled = isinstance(tab, actual_tabtypes)
 
         if filetype_names is not None:
-            def enable_or_disable(junk: typing.Any = None) -> None:     # noqa
+            def enable_or_disable(junk: object = None) -> None:     # noqa
                 tab = porcupine.get_tab_manager().select()
                 if isinstance(tab, tabs.FileTab):
                     assert filetype_names is not None
@@ -140,7 +140,7 @@ def _add_any_action(
                 if kind == 'command':
                     action.callback()
                 if kind == 'yesno':
-                    var = typing.cast(tkinter.BooleanVar, action.var)
+                    var = cast(tkinter.BooleanVar, action.var)
                     var.set(not var.get())
                 # try to allow binding keys that are used for other
                 # things by default
@@ -161,9 +161,9 @@ def _add_any_action(
 
 def add_command(
         path: str,
-        callback: typing.Callable[[], None],
-        keyboard_binding: typing.Optional[str] = None,
-        **kwargs: typing.Any) -> Action:
+        callback: Callable[[], None],
+        keyboard_binding: Optional[str] = None,
+        **kwargs: Any) -> Action:
     """Add a simple action that runs ``callback()``.
 
     The returned action object has a ``callback`` attribute set to the
@@ -175,10 +175,10 @@ def add_command(
 
 def add_yesno(
         path: str,
-        default: typing.Optional[bool] = None,
-        keyboard_binding: typing.Optional[str] = None, *,
-        var: typing.Optional[tkinter.BooleanVar] = None,
-        **kwargs: typing.Any) -> Action:
+        default: Optional[bool] = None,
+        keyboard_binding: Optional[str] = None, *,
+        var: Optional[tkinter.BooleanVar] = None,
+        **kwargs: Any) -> Action:
     """Add an action that appears as a checkbox item in the menubar.
 
     If *var* is given, it should be a ``tkinter.BooleanVar`` and it's
@@ -200,11 +200,11 @@ def add_yesno(
 
 def add_choice(
         path: str,
-        choices: typing.List[typing.Any],
-        default: typing.Optional[typing.Any] = None,
+        choices: List[Any],
+        default: Optional[Any] = None,
         *,
-        var: typing.Optional[tkinter.Variable] = None,
-        **kwargs: typing.Any) -> Action:
+        var: Optional[tkinter.Variable] = None,
+        **kwargs: Any) -> Action:
     """Add an action for choosing one from a list of choices.
 
     :source:`The menubar plugin <porcupine/plugins/menubar.py>` displays
@@ -243,7 +243,7 @@ def get_action(action_path: str) -> Action:
     return _actions[action_path.rstrip('/')]
 
 
-def get_all_actions() -> typing.List[Action]:
+def get_all_actions() -> List[Action]:
     """Return a list of all existing action objects in arbitrary order.
 
     Note that plugins like :source:`the menubar <porcupine/plugins/menubar.py>`

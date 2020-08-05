@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import tkinter
 import tkinter.font as tkfont
-import typing
+from typing import Any, Iterable, List, Optional, Tuple
 
 import pygments.styles          # type: ignore
 
@@ -22,7 +22,7 @@ class Change:
 # data classes into an event
 @dataclasses.dataclass
 class Changes(utils.EventDataclass):
-    change_list: typing.List[Change]
+    change_list: List[Change]
 
 
 class HandyText(tkinter.Text):
@@ -73,8 +73,8 @@ class HandyText(tkinter.Text):
     """
 
     def __init__(self, master: tkinter.Widget, *,
-                 create_peer_from: typing.Optional[tkinter.Text] = None,
-                 **kwargs: typing.Any) -> None:
+                 create_peer_from: Optional[tkinter.Text] = None,
+                 **kwargs: Any) -> None:
         super().__init__(master, **kwargs)
 
         if create_peer_from is not None:
@@ -227,7 +227,7 @@ class HandyText(tkinter.Text):
         )
 
     def _change_cb(self, subcommand: str, *args_tuple: str) -> None:
-        changes: typing.List[Change] = []
+        changes: List[Change] = []
 
         # search for 'pathName delete' in text(3tk)... it's a wall of text,
         # and this thing has to implement every detail of that wall
@@ -262,8 +262,8 @@ class HandyText(tkinter.Text):
             # "They [index pairs, aka ranges] are sorted [...]."
             # TODO: use the fact that (line, column) tuples sort nicely?
             def sort_by_range_beginnings(
-                    range1: typing.Tuple[str, str],
-                    range2: typing.Tuple[str, str]) -> int:
+                    range1: Tuple[str, str],
+                    range2: Tuple[str, str]) -> int:
                 start1, junk = range1
                 start2, junk = range2
                 if self.compare(start1, '>', start2):
@@ -280,7 +280,7 @@ class HandyText(tkinter.Text):
             # outside the given ranges due to text shifted during deletion."
             def merge_index_ranges(
                     start1: str, end1: str,
-                    start2: str, end2: str) -> typing.Tuple[str, str]:
+                    start2: str, end2: str) -> Tuple[str, str]:
                 start = start1 if self.compare(start1, '<', start2) else start2
                 end = end1 if self.compare(end1, '>', end2) else end2
                 return (start, end)
@@ -372,7 +372,7 @@ class HandyText(tkinter.Text):
             self._old_cursor_pos = new_pos
             self.event_generate('<<CursorMoved>>')
 
-    def iter_chunks(self, n: int = 100) -> typing.Iterable[str]:
+    def iter_chunks(self, n: int = 100) -> Iterable[str]:
         r"""Iterate over the content as chunks of *n* lines.
 
         Each yielded line ends with a ``\n`` character. Lines are not
@@ -395,7 +395,7 @@ class HandyText(tkinter.Text):
             yield self.get('%d.0' % start, '%d.0' % end)
             start = end
 
-    def iter_lines(self) -> typing.Iterable[str]:
+    def iter_lines(self) -> Iterable[str]:
         r"""Iterate over the content as lines.
 
         The trailing ``\n`` characters of each line are included.
@@ -418,7 +418,7 @@ class ThemedText(HandyText):
         :source:`porcupine/plugins/highlight.py`.
     """
 
-    def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.bind('<<SettingChanged:pygments_style>>', self._on_style_changed, add=True)
         self._on_style_changed()
@@ -464,7 +464,7 @@ class MainText(ThemedText):
             self,
             parent: tkinter.Widget,
             filetype: filetypes.FileType,
-            **kwargs: typing.Any) -> None:
+            **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
         self.set_filetype(filetype)
 

@@ -17,8 +17,8 @@ import sys
 import threading
 import tkinter
 from tkinter import ttk
-import typing
 import traceback
+from typing import Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
 import dacite
 if sys.version_info >= (3, 8):
@@ -32,12 +32,10 @@ log = logging.getLogger(__name__)
 
 # seems like dacite doesn't have type hints working correctly?
 # don't know what's going on
-_T = typing.TypeVar('_T')
-_dict_to_dataclass = typing.cast(
-    typing.Callable[[_T, typing.Dict[str, typing.Any]], _T],
-    typing.cast(typing.Any, dacite).from_dict)
+_T = TypeVar('_T')
+_dict_to_dataclass: Callable[[_T, Dict[str, Any]], _T] = cast(Any, dacite).from_dict
 
-BreakOrNone = typing.Optional[Literal['break']]
+BreakOrNone = Optional[Literal['break']]
 
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
@@ -125,7 +123,7 @@ def _find_short_python() -> str:
 short_python_command: str = _find_short_python()
 
 
-quote: typing.Callable[[str], str]
+quote: Callable[[str], str]
 if platform.system() == 'Windows':
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string: str) -> str:
@@ -216,11 +214,11 @@ class _TooltipManager:
         widget.bind('<Motion>', self.motion, add=True)
         self.widget = widget
         self.got_mouse = False
-        self.text: typing.Optional[str] = None
+        self.text: Optional[str] = None
 
     @classmethod
     def destroy_tipwindow(
-            cls, junk_event: typing.Optional[tkinter.Event] = None) -> None:
+            cls, junk_event: Optional[tkinter.Event] = None) -> None:
         if cls.tipwindow is not None:
             cls.tipwindow.destroy()
             cls.tipwindow = None
@@ -278,13 +276,12 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
     """
 
     try:
-        manager: _TooltipManager = (
-            typing.cast(typing.Any, widget)._tooltip_manager)
+        manager: _TooltipManager = cast(Any, widget)._tooltip_manager
     except AttributeError:
         if text is None:
             return
         manager = _TooltipManager(widget)
-        typing.cast(typing.Any, widget)._tooltip_manager = manager
+        cast(Any, widget)._tooltip_manager = manager
 
     manager.text = text
 
@@ -298,7 +295,7 @@ class EventDataclass:
     Nested dataclasses don't need to inherit from EventDataclass. Example::
 
         import dataclasses
-        import typing
+        from typing import List
         from porcupine import utils
 
         @dataclasses.dataclass
@@ -308,9 +305,9 @@ class EventDataclass:
 
         @dataclasses.dataclass
         class Bar(utils.EventDataclass):
-            foos: typing.List[Foo]
+            foos: List[Foo]
 
-        def handle_event(event: utils.EventWithData):
+        def handle_event(event: utils.EventWithData) -> None:
             print(event.data_class(Bar).foos[0].message)
 
         utils.bind_with_data(some_widget, '<<Thingy>>', handle_event, add=True)
@@ -343,7 +340,7 @@ class EventWithData(tkinter.Event):
         """
         return self.widget.nametowidget(self.data_string)
 
-    def data_class(self, T: typing.Type[_T]) -> _T:
+    def data_class(self, T: Type[_T]) -> _T:
         """
         If a dataclass instance of type ``T`` was passed as ``data`` to
         ``event_generate()``, then this returns a copy of it. Otherwise this
@@ -365,7 +362,7 @@ class EventWithData(tkinter.Event):
 def bind_with_data(
         widget: tkinter.BaseWidget,
         sequence: str,
-        callback: typing.Callable[[EventWithData], typing.Optional[str]],
+        callback: Callable[[EventWithData], Optional[str]],
         add: bool = False) -> str:
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``
@@ -391,13 +388,12 @@ def bind_with_data(
     # event objects and runs callback(event)
     #
     # TODO: is it possible to do this without a deque?
-    event_objects: typing.Deque[
-        typing.Union[tkinter.Event, EventWithData]] = collections.deque()
+    event_objects: Deque[Union[tkinter.Event, EventWithData]] = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
     # TODO: does the above bind get ever unbound so that it doesn't leak? see
     #       tkinter's unbind method
 
-    def run_the_callback(data_string: str) -> typing.Optional[str]:
+    def run_the_callback(data_string: str) -> Optional[str]:
         event = event_objects.popleft()
         event.__class__ = EventWithData    # evil haxor muhaha
         assert isinstance(event, EventWithData)
@@ -438,8 +434,8 @@ def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
 def temporary_bind(
     widget: tkinter.BaseWidget,
     sequence: str,
-    func: typing.Callable[[tkinter.Event], typing.Optional[str]]
-) -> typing.Iterator[None]:
+    func: Callable[[tkinter.Event], Optional[str]]
+) -> Iterator[None]:
     """Bind and unbind a callback.
 
     It's possible (and in Porcupine plugins, highly recommended) to use
@@ -487,8 +483,8 @@ def temporary_bind(
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
         widget: tkinter.Widget,
-        on_tab: typing.Callable[[tkinter.Event, bool], BreakOrNone],
-        **bind_kwargs: typing.Any) -> None:
+        on_tab: Callable[[tkinter.Event, bool], BreakOrNone],
+        **bind_kwargs: Any) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 
     Use this function like this::
@@ -524,11 +520,11 @@ def bind_tab_key(
 
 
 def bind_mouse_wheel(
-        widget_or_class_name: typing.Union[tkinter.Misc, str],
-        callback: typing.Callable[[Literal['up', 'down']], None],
+        widget_or_class_name: Union[tkinter.Misc, str],
+        callback: Callable[[Literal['up', 'down']], None],
         *,
         prefixes: str = '',
-        add: typing.Optional[bool] = None) -> None:
+        add: Optional[bool] = None) -> None:
     """Bind mouse wheel events to callback.
 
     The callback will be called like ``callback(direction)`` where
@@ -548,7 +544,7 @@ def bind_mouse_wheel(
     """
     some_widget = porcupine.get_main_window()    # any widget would do
 
-    bind: typing.Any   # because i'm lazy
+    bind: Any   # because i'm lazy
     if isinstance(widget_or_class_name, str):
         bind = functools.partial(some_widget.bind_class, widget_or_class_name)
     else:
@@ -572,8 +568,7 @@ def bind_mouse_wheel(
 
 
 # TODO: document this
-def create_passive_text_widget(
-        parent: tkinter.Widget, **kwargs: typing.Any) -> tkinter.Text:
+def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter.Text:
     kwargs.setdefault('font', 'TkDefaultFont')
     kwargs.setdefault('borderwidth', 0)
     kwargs.setdefault('relief', 'flat')
@@ -581,7 +576,7 @@ def create_passive_text_widget(
     kwargs.setdefault('state', 'disabled')  # TODO: remember to mention in docs
     text = tkinter.Text(parent, **kwargs)
 
-    def update_colors(junk: typing.Optional[tkinter.Event] = None) -> None:
+    def update_colors(junk: object = None) -> None:
         # tkinter's ttk::style api sucks so let's not use it
         ttk_fg = text.tk.eval('ttk::style lookup TLabel.label -foreground')
         ttk_bg = text.tk.eval('ttk::style lookup TLabel.label -background')
@@ -628,7 +623,7 @@ except AttributeError:
 
 
 def errordialog(title: str, message: str,
-                monospace_text: typing.Optional[str] = None) -> None:
+                monospace_text: Optional[str] = None) -> None:
     """This is a lot like ``tkinter.messagebox.showerror``.
 
     This function can be called with or without creating a root window
@@ -678,12 +673,12 @@ def errordialog(title: str, message: str,
     window.wait_window()
 
 
-T = typing.TypeVar('T')
+T = TypeVar('T')
 
 
 def run_in_thread(
-    blocking_function: typing.Callable[[], T],
-    done_callback: typing.Callable[[bool, typing.Union[str, T]], None],
+    blocking_function: Callable[[], T],
+    done_callback: Callable[[bool, Union[str, T]], None],
 ) -> None:
     """Run ``blocking_function()`` in another thread.
 
@@ -698,7 +693,7 @@ def run_in_thread(
     root = porcupine.get_main_window()  # any widget would do
 
     value: T
-    error_traceback: typing.Optional[str] = None
+    error_traceback: Optional[str] = None
 
     def thread_target() -> None:
         nonlocal value
@@ -728,10 +723,7 @@ def run_in_thread(
 
 # how to type hint context manager: https://stackoverflow.com/a/49736916
 @contextlib.contextmanager
-def backup_open(
-    path: pathlib.Path,
-    *args: typing.Any, **kwargs: typing.Any,
-) -> typing.Iterator[typing.TextIO]:
+def backup_open(path: pathlib.Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
     """Like :func:`open`, but uses a backup file if needed.
 
     This is useless with modes like ``'r'`` because they don't modify

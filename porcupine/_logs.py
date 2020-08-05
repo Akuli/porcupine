@@ -6,7 +6,7 @@ import shlex
 import subprocess
 import sys
 import threading
-import typing
+from typing import Any, List, cast
 
 import porcupine
 from porcupine import dirs
@@ -67,7 +67,7 @@ def setup(verbose: bool) -> None:
         print_handler = logging.StreamHandler(sys.stderr)
         print_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
 
-    handlers: typing.List[logging.Handler] = [file_handler]
+    handlers: List[logging.Handler] = [file_handler]
     file_handler.setFormatter(logging.Formatter(
         '[%(asctime)s] %(name)s %(levelname)s: %(message)s'))
     if print_handler is not None:
@@ -80,7 +80,7 @@ def setup(verbose: bool) -> None:
                         format="[%(levelname)s] %(name)s: %(message)s")
 
     log.debug("starting Porcupine %s from '%s'", porcupine.__version__,
-              typing.cast(typing.Any, porcupine).__path__[0])
+              cast(Any, porcupine).__path__[0])
     log.debug("log file: %s", logfile)
     log.debug("PID: %d", os.getpid())
     log.debug("running on Python %d.%d.%d from '%s'",

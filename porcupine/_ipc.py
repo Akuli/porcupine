@@ -4,7 +4,7 @@ import contextlib
 from multiprocessing import connection
 import queue
 import threading
-import typing
+from typing import Any, Iterator, List
 
 from porcupine import dirs
 
@@ -15,7 +15,7 @@ _ADDRESS_FILE = dirs.cachedir / 'ipc_address.txt'
 # conflict with each other
 # example addresses: r'\\.\pipe\pyc-1412-1-7hyryfd_',
 # '/tmp/pymp-_lk54sed/listener-4o8n1xrc',
-def send(objects: typing.List[typing.Any]) -> None:
+def send(objects: List[Any]) -> None:
     """Send objects from an iterable to a process running session().
 
     Raise ConnectionRefusedError if session() is not running.
@@ -35,7 +35,7 @@ def send(objects: typing.List[typing.Any]) -> None:
 
 
 def _listener2queue(listener: connection.Listener,
-                    object_queue: 'queue.Queue[typing.Any]') -> None:
+                    object_queue: 'queue.Queue[Any]') -> None:
     """Accept connections. Receive and queue objects."""
     while True:
         try:
@@ -53,7 +53,7 @@ def _listener2queue(listener: connection.Listener,
 
 
 @contextlib.contextmanager
-def session() -> typing.Iterator['queue.Queue[typing.Any]']:
+def session() -> Iterator['queue.Queue[Any]']:
     """Context manager that listens for send().
 
     Use this as a context manager:
@@ -63,7 +63,7 @@ def session() -> typing.Iterator['queue.Queue[typing.Any]']:
             # start something that processes items in the queue and run
             # the application
     """
-    message_queue: 'queue.Queue[typing.Any]' = queue.Queue()
+    message_queue: queue.Queue[Any] = queue.Queue()
     with connection.Listener() as listener:
         with _ADDRESS_FILE.open('w') as file:
             print(listener.address, file=file)

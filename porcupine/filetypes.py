@@ -12,7 +12,7 @@ import pathlib
 import platform
 import re
 import shlex
-import typing
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import pygments.lexer   # type: ignore
 import pygments.lexers  # type: ignore
@@ -227,7 +227,7 @@ _config = configparser.ConfigParser(
 # ordered to make sure that filetypes loaded from filetypes.ini are used
 # when possible
 #
-# there is typing.OrderedDict, but https://stackoverflow.com/a/43583996
+# there is OrderedDict, but https://stackoverflow.com/a/43583996
 _filetypes: 'OrderedDict[str, FileType]' = OrderedDict()
 
 
@@ -303,9 +303,9 @@ class FileType:
 
         self.autocomplete_chars = section['autocomplete_chars'].split()
 
-        self.langserver_port: typing.Optional[int]
-        self.langserver_command: typing.Optional[str]
-        self.langserver_language_id: typing.Optional[str]
+        self.langserver_port: Optional[int]
+        self.langserver_command: Optional[str]
+        self.langserver_language_id: Optional[str]
 
         self.langserver_command = section['langserver_command'].strip()
         self.langserver_language_id = section['langserver_language_id']
@@ -331,14 +331,14 @@ class FileType:
     # TODO: support passing more options in the config file? useful for lexers
     #       like pygments.lexers.PythonConsoleLexer, which takes an optional
     #       python3 argument
-    def get_lexer(self, **kwargs: typing.Any) -> typing.Any:
+    def get_lexer(self, **kwargs: Any) -> Any:
         return self._pygments_lexer_class(**kwargs)
 
     def has_command(self, something_command: str) -> bool:
         return bool(_config[self.name][something_command].strip())
 
     def get_command(
-            self, something_command: str, basename: str) -> typing.List[str]:
+            self, something_command: str, basename: str) -> List[str]:
         assert os.sep not in basename, "%r is not a basename" % basename
         template = _config[self.name][something_command]
 
@@ -362,7 +362,7 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
         # the file doesn't exist yet
         pass
 
-    shebang_line: typing.Optional[str]
+    shebang_line: Optional[str]
     try:
         # the shebang is read as utf-8 because the filetype config file
         # is utf-8
@@ -429,12 +429,12 @@ def get_filetype_by_name(name: str) -> FileType:
     return _filetypes[name]
 
 
-def get_all_filetypes() -> typing.List[FileType]:
+def get_all_filetypes() -> List[FileType]:
     """Return a list of all loaded filetypes."""
     return list(_filetypes.values())
 
 
-def get_filedialog_kwargs() -> typing.Dict[str, typing.Any]:
+def get_filedialog_kwargs() -> Dict[str, Any]:
     """This is a way to run tkinter dialogs that display the filetypes and ext\
 ensions that Porcupine supports.
 
@@ -451,12 +451,10 @@ ensions that Porcupine supports.
     You can use this function with other ``tkinter.filedialog`` functions as
     well.
     """
-    result: typing.List[
-        typing.Tuple[
-            str,
-            typing.Union[str, typing.Tuple[str, ...]]  # tkinter works this way
-        ]
-    ] = [("All files", "*")]
+    result: List[Tuple[
+        str,
+        Union[str, Tuple[str, ...]],  # tkinter works this way
+    ]] = [("All files", "*")]
     for filetype in get_all_filetypes():
         patterns = list(filetype.filename_patterns)
         if filetype.name not in {'Plain Text', 'Porcupine filetypes.ini'}:
@@ -614,9 +612,9 @@ def _init() -> None:
 def _key_val_pair(
     key: str,
     value: str,
-    key_token: typing.Any = pygments.token.Name.Builtin,
-    value_token: typing.Any = pygments.token.String,
-) -> typing.Iterable[typing.Tuple[str, typing.Any]]:
+    key_token: Any = pygments.token.Name.Builtin,
+    value_token: Any = pygments.token.String,
+) -> Iterable[Tuple[str, Any]]:
     for regex, token in [(value, value_token),
                          (r'.*?', pygments.token.Name)]:
         yield (
@@ -633,7 +631,7 @@ class _FiletypesDotIniLexer(pygments.lexer.RegexLexer):     # type: ignore
     # these are probably not needed
     name = 'Porcupine filetypes.ini'
     aliases = ['porcupine-filetypes']
-    filenames: typing.List[str] = []
+    filenames: List[str] = []
 
     tokens = {'root': [
         (r'\s*#.*?$', pygments.token.Comment),

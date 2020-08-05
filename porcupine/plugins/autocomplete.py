@@ -6,7 +6,7 @@ import itertools
 import re
 import tkinter
 from tkinter import ttk
-import typing
+from typing import List, Optional, Union
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -23,8 +23,7 @@ class Completion:
     documentation: str
 
 
-def _pack_with_scrollbar(
-        widget: typing.Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
+def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
     scrollbar = ttk.Scrollbar(widget.master)
     widget['yscrollcommand'] = scrollbar.set
     scrollbar['command'] = widget.yview
@@ -73,7 +72,7 @@ def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
 class _Popup:
 
     def __init__(self) -> None:
-        self._completion_list: typing.Optional[typing.List[Completion]] = None
+        self._completion_list: Optional[List[Completion]] = None
 
         self.toplevel = tkinter.Toplevel()
         self.toplevel.withdraw()
@@ -108,7 +107,7 @@ class _Popup:
         self._resize_handle.place(relx=1, rely=1, anchor='se')
         self.toplevel.bind('<Configure>', self._on_anything_resized)
 
-    def _on_anything_resized(self, junk: tkinter.Event) -> None:
+    def _on_anything_resized(self, junk: object) -> None:
         # When the separator is dragged all the way to left or the popup is
         # resized to be narrow enough, the right scrollbar is no longer mapped
         # (i.e. visible) but the left scrollbar must get out of the way of the
@@ -137,7 +136,7 @@ class _Popup:
         self.treeview.selection_set(item_id)
         self.treeview.see(item_id)
 
-    def _get_selected_completion(self) -> typing.Optional[Completion]:
+    def _get_selected_completion(self) -> Optional[Completion]:
         if not self.is_completing():
             return None
         assert self._completion_list is not None
@@ -149,8 +148,7 @@ class _Popup:
         [the_id] = selected_ids
         return self._completion_list[int(the_id)]
 
-    def start_completing(self, completion_list: typing.List[Completion],
-                         geometry: typing.Optional[str] = None) -> None:
+    def start_completing(self, completion_list: List[Completion], geometry: Optional[str] = None) -> None:
         if self.is_completing():
             self.stop_completing(withdraw=False)
 
@@ -180,8 +178,7 @@ class _Popup:
 
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
-    def stop_completing(
-            self, *, withdraw: bool = True) -> typing.Optional[Completion]:
+    def stop_completing(self, *, withdraw: bool = True) -> Optional[Completion]:
         # putting this here avoids some bugs
         if self.is_showing():
             settings.set('popup_window_width', self.toplevel.winfo_width())
@@ -253,7 +250,7 @@ class Request(utils.EventDataclass):
 @dataclasses.dataclass
 class Response(utils.EventDataclass):
     id: int
-    completions: typing.List[Completion]
+    completions: List[Completion]
 
 
 # How this differs from using sometextwidget.compare(start, '<', end):
@@ -270,9 +267,9 @@ class AutoCompleter:
 
     def __init__(self, tab: tabs.FileTab) -> None:
         self._tab = tab
-        self._orig_cursorpos: typing.Optional[str] = None
+        self._orig_cursorpos: Optional[str] = None
         self._id_counter = itertools.count()
-        self._waiting_for_response_id: typing.Optional[int] = None
+        self._waiting_for_response_id: Optional[int] = None
         self.popup = _Popup()
 
     def _request_completions(self) -> None:
@@ -320,7 +317,7 @@ class AutoCompleter:
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
-    def _get_filtered_completions(self) -> typing.List[Completion]:
+    def _get_filtered_completions(self) -> List[Completion]:
         assert self._orig_cursorpos is not None
         filter_text = self._tab.textwidget.get(self._orig_cursorpos, 'insert')
 

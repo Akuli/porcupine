@@ -7,7 +7,7 @@ import sys
 import tkinter
 from tkinter import filedialog
 import traceback
-import typing
+from typing import Any, Dict, Optional, Sequence
 import webbrowser
 
 if sys.version_info >= (3, 8):
@@ -20,9 +20,9 @@ from porcupine import _logs, actions, filetypes, dirs, settings, tabs, utils
 log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier
-_root: typing.Optional[tkinter.Tk] = None
-_tab_manager: typing.Optional[tabs.TabManager] = None
-_init_kwargs: typing.Dict[str, typing.Any] = {}
+_root: Optional[tkinter.Tk] = None
+_tab_manager: Optional[tabs.TabManager] = None
+_init_kwargs: Dict[str, Any] = {}
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
@@ -55,7 +55,7 @@ def init(*, verbose_logging: bool = False) -> None:
 
 
 # TODO: avoid Any typing
-def get_init_kwargs() -> typing.Dict[str, typing.Any]:
+def get_init_kwargs() -> Dict[str, Any]:
     """Return a dictionary of the keyword arguments that were passed to :func:\
 `init`.
 
@@ -115,7 +115,7 @@ def _setup_actions() -> None:
 
     def open_files() -> None:
         kwargs = filetypes.get_filedialog_kwargs()
-        paths: typing.Sequence[str] = filedialog.askopenfilenames(**kwargs)  # type: ignore
+        paths: Sequence[str] = filedialog.askopenfilenames(**kwargs)  # type: ignore
 
         # tkinter returns '' if the user cancels, and i'm arfaid that python
         # devs might "fix" a future version to return None

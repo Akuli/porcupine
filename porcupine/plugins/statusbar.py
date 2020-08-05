@@ -1,6 +1,5 @@
 import tkinter
 from tkinter import ttk
-import typing
 
 from porcupine import get_tab_manager, tabs, utils
 
@@ -36,7 +35,7 @@ class StatusBar(ttk.Frame):
         self.do_update()
 
     # this is do_update() because tkinter has a method called update()
-    def do_update(self, junk: typing.Any = None) -> None:
+    def do_update(self, junk: object = None) -> None:
         parts = self.tab.status.split('\t')
 
         # there's always at least one part, the label added in

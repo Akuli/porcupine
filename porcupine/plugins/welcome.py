@@ -3,7 +3,6 @@
 import re
 import tkinter
 from tkinter import ttk
-import typing
 
 from porcupine import get_tab_manager, images, utils
 
@@ -63,7 +62,7 @@ class WelcomeMessageDisplayer:
         self._frame.pack_forget()
         event.data_widget().bind('<Destroy>', self._on_tab_closed, add=True)
 
-    def _on_tab_closed(self, event: typing.Any = None) -> None:
+    def _on_tab_closed(self, junk: object = None) -> None:
         if not get_tab_manager().tabs():
             self._frame.pack(fill='both', expand=True)
 

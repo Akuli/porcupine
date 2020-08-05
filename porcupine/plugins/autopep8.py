@@ -1,11 +1,11 @@
 import platform
 import subprocess
-import typing
+from typing import Optional
 
 from porcupine import actions, get_tab_manager, tabs, utils
 
 
-def run_autopep8(code: str) -> typing.Optional[str]:
+def run_autopep8(code: str) -> Optional[str]:
     try:
         import autopep8     # type: ignore      # noqa
     except ImportError:

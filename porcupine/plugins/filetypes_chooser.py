@@ -5,13 +5,12 @@ The menubar plugin shows these as a "Filetypes" menu.
 
 import functools
 import tkinter
-import typing
 
 from porcupine import actions, filetypes, get_tab_manager, tabs, utils
 
 
 # called when a filetypes menu item is clicked
-def var_value_to_tab(var: tkinter.StringVar, *junk: typing.Any) -> None:
+def var_value_to_tab(var: tkinter.StringVar, *junk: object) -> None:
     filetype = filetypes.get_filetype_by_name(var.get())
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
@@ -21,7 +20,7 @@ def var_value_to_tab(var: tkinter.StringVar, *junk: typing.Any) -> None:
 # called when the tab is changed, or something else (e.g. another plugin)
 # changes ANY tab's filetype; changing the filetype of some other tab than the
 # currently selected tab runs this, but it doesn't matter
-def tab_filetype_to_var(var: tkinter.StringVar, junk: tkinter.Event) -> None:
+def tab_filetype_to_var(var: tkinter.StringVar, junk: object) -> None:
     selected_tab = get_tab_manager().select()   # may be None
     if isinstance(selected_tab, tabs.FileTab):
         var.set(selected_tab.filetype.name)

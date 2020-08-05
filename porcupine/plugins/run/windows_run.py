@@ -4,7 +4,7 @@
 import colorama     # type: ignore
 import subprocess
 import sys
-import typing
+from typing import Optional
 
 
 colorama.init()
@@ -12,7 +12,7 @@ colorama.init()
 prog, blue_message, directory, *command = sys.argv
 print(colorama.Fore.BLUE + blue_message + colorama.Fore.RESET)
 try:
-    returncode: typing.Optional[int] = subprocess.call(command, cwd=directory)
+    returncode: Optional[int] = subprocess.call(command, cwd=directory)
 except KeyboardInterrupt:
     # the subprocess should have already printed any traceback or
     # whatever it might want to print

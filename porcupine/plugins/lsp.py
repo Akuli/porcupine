@@ -20,7 +20,7 @@ import subprocess
 import threading
 import time
 import tkinter
-import typing
+from typing import cast, Dict, List, NamedTuple, Optional, Tuple, Union
 
 try:
     import fcntl
@@ -44,7 +44,7 @@ class SubprocessStdIO:
         self._process = process
 
         if fcntl is None:
-            self._read_queue: 'queue.Queue[bytes]' = queue.Queue()
+            self._read_queue: queue.Queue[bytes] = queue.Queue()
             self._running = True
             self._worker_thread = threading.Thread(
                 target=self._stdout_to_read_queue, daemon=True)
@@ -73,7 +73,7 @@ class SubprocessStdIO:
     #   - nonempty bytes object: data was read
     #   - empty bytes object: process exited
     #   - None: no data to read
-    def read(self) -> typing.Optional[bytes]:
+    def read(self) -> Optional[bytes]:
         if fcntl is None:
             # shitty windows code
             buf = bytearray()
@@ -114,7 +114,7 @@ class LocalhostSocketIO:
         #   - I don't feel like learning to do non-blocking send right now.
         #   - It must be possible to .write() before the socket is connected.
         #     The written bytes get sent when the socket connects.
-        self._send_queue: 'queue.Queue[typing.Optional[bytes]]' = queue.Queue()
+        self._send_queue: 'queue.Queue[Optional[bytes]]' = queue.Queue()
 
         self._worker_thread = threading.Thread(
             target=self._send_queue_to_socket, args=[port, log], daemon=True)
@@ -144,7 +144,7 @@ class LocalhostSocketIO:
     #   - nonempty bytes object: data was received
     #   - empty bytes object: socket closed
     #   - None: no data to receive
-    def read(self) -> typing.Optional[bytes]:
+    def read(self) -> Optional[bytes]:
         # figure out if we can read from the socket without blocking
         # 0 is timeout, i.e. return immediately
         #
@@ -210,7 +210,7 @@ def get_completion_item_doc(item: lsp.CompletionItem) -> str:
     else:
         result = item.label
 
-    return typing.cast(str, result)
+    return cast(str, result)
 
 
 def exit_code_string(exit_code: int) -> str:
@@ -241,9 +241,9 @@ def _position_tk2lsp(tk_position: str) -> lsp.Position:
 
 
 # FIXME: two langservers with same command, same port, different project_root
-class LangServerId(typing.NamedTuple):
+class LangServerId(NamedTuple):
     command: str
-    port: typing.Optional[int]
+    port: Optional[int]
     project_root: pathlib.Path
 
 
@@ -259,17 +259,14 @@ class LangServer:
         self._lsp_client = lsp.Client(
             trace='verbose', root_uri=the_id.project_root.as_uri())
 
-        self._lsp_id_to_tab_and_request: typing.Dict[
-            int,
-            typing.Tuple[tabs.FileTab, autocomplete.Request],
-        ] = {}
+        self._lsp_id_to_tab_and_request: Dict[int, Tuple[tabs.FileTab, autocomplete.Request]] = {}
 
         self._version_counter = itertools.count()
         self._log = log
-        self.tabs_opened: typing.List[tabs.FileTab] = []
+        self.tabs_opened: List[tabs.FileTab] = []
         self._is_shutting_down_cleanly = False
 
-        self._io: typing.Union[SubprocessStdIO, LocalhostSocketIO]
+        self._io: Union[SubprocessStdIO, LocalhostSocketIO]
         if the_id.port is None:
             self._io = SubprocessStdIO(process)
         else:
@@ -520,7 +517,7 @@ class LangServer:
         )
 
 
-langservers: typing.Dict[LangServerId, LangServer] = {}
+langservers: Dict[LangServerId, LangServer] = {}
 
 
 # I was going to add code that checks if two langservers use the same port
@@ -530,7 +527,7 @@ langservers: typing.Dict[LangServerId, LangServer] = {}
 
 def get_lang_server(
         filetype: filetypes.FileType,
-        project_root: pathlib.Path) -> typing.Optional[LangServer]:
+        project_root: pathlib.Path) -> Optional[LangServer]:
     if not (filetype.langserver_command and filetype.langserver_language_id):
         logging.getLogger(__name__).info(
             "langserver not configured for filetype " + filetype.name)
@@ -555,7 +552,7 @@ def get_lang_server(
     # with shell=True it's the pid of the shell, not the pid of the program
     #
     # on windows, there is no shell and it's all about whether to quote or not
-    command: typing.Union[str, typing.List[str]]
+    command: Union[str, List[str]]
     if platform.system() == 'Windows':
         shell = True
         command = filetype.langserver_command
@@ -585,7 +582,7 @@ def get_lang_server(
 
 
 def on_new_tab(event: utils.EventWithData) -> None:
-    tab = typing.cast(tabs.Tab, event.data_widget())
+    tab = cast(tabs.Tab, event.data_widget())
     if isinstance(tab, tabs.FileTab):
         if tab.path is None or tab.filetype is None:
             # TODO

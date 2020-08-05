@@ -2,7 +2,7 @@
 
 import functools
 import logging
-import typing
+from typing import Callable, Set
 
 from porcupine import actions, filetypes, get_tab_manager, tabs
 
@@ -42,7 +42,7 @@ def do_something_to_this_file(something: str) -> None:
         no_terminal.run_command(workingdir, command)
 
 
-def get_filetype_names(has_what: str) -> typing.Set[str]:
+def get_filetype_names(has_what: str) -> Set[str]:
     return {filetype.name for filetype in filetypes.get_all_filetypes()
             if filetype.has_command(has_what)}
 
@@ -52,7 +52,7 @@ def setup() -> None:
     runnable = get_filetype_names('run_command')
     lintable = get_filetype_names('lint_command')
 
-    def create_callback(something: str) -> typing.Callable[[], None]:
+    def create_callback(something: str) -> Callable[[], None]:
         return functools.partial(do_something_to_this_file, something)
 
     actions.add_command("Run/Compile", create_callback('compile'),

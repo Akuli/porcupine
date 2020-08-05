@@ -5,7 +5,7 @@ import logging
 import os
 import pathlib
 import sys
-import typing
+from typing import List, Optional, Tuple
 
 from porcupine import _logs, pluginloader, get_tab_manager, tabs, utils
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
@@ -111,9 +111,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    filelist: typing.List[typing.Tuple[
-        typing.Optional[pathlib.Path], str
-    ]] = []
+    filelist: List[Tuple[Optional[pathlib.Path], str]] = []
     for file in args.files:
         if file is sys.stdin:
             # don't close stdin so it's possible to do this:

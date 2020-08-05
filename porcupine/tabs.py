@@ -8,7 +8,7 @@ import pathlib
 import tkinter
 from tkinter import ttk, messagebox, filedialog
 import traceback
-import typing
+from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union, cast
 from porcupine import filetypes, images, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
@@ -58,22 +58,18 @@ class TabManager(ttk.Notebook):
             :meth:`add_tab`, :meth:`close_tab`, :attr:`Tab.title`
     """
 
-    def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # These can be bound in a parent widget. This doesn't use
         # enable_traversal() because we want more bindings than it
         # creates.
         # TODO: document self.bindings?
-        partial = functools.partial     # pep-8 line length
-        self.bindings: typing.List[typing.Tuple[
-            str,
-            typing.Callable[[tkinter.Event], utils.BreakOrNone]
-        ]] = [
-            ('<Control-Prior>', partial(self._on_page_updown, False, -1)),
-            ('<Control-Next>', partial(self._on_page_updown, False, +1)),
-            ('<Control-Shift-Prior>', partial(self._on_page_updown, True, -1)),
-            ('<Control-Shift-Next>', partial(self._on_page_updown, True, +1)),
+        self.bindings: List[Tuple[str, Callable[[tkinter.Event], utils.BreakOrNone]]] = [
+            ('<Control-Prior>', functools.partial(self._on_page_updown, False, -1)),
+            ('<Control-Next>', functools.partial(self._on_page_updown, False, +1)),
+            ('<Control-Shift-Prior>', functools.partial(self._on_page_updown, True, -1)),
+            ('<Control-Shift-Next>', functools.partial(self._on_page_updown, True, +1)),
         ]
         for number in range(1, 10):
             callback = functools.partial(self._on_alt_n, number)
@@ -131,9 +127,7 @@ class TabManager(ttk.Notebook):
     #
     # The ignore comment is to allow creating someting incompatible with
     # ttk.Notebook. Hopefully it doesn't break any ttk.Notebook internals.
-    def select(             # type: ignore
-        self, tab_id: typing.Union[None, int, 'Tab'] = None,
-    ) -> typing.Optional['Tab']:
+    def select(self, tab_id: Union[None, int, 'Tab'] = None) -> Optional['Tab']:  # type: ignore
         """Select the given tab as if the user clicked it.
 
         Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
@@ -144,13 +138,13 @@ class TabManager(ttk.Notebook):
             selected = super().select()
             if not selected:        # no tabs, selected == ''
                 return None
-            return typing.cast(Tab, self.nametowidget(str(selected)))
+            return cast(Tab, self.nametowidget(str(selected)))
 
         # the tab can be e.g. an index, that's why two super() calls
         super().select(tab_id)
         return None
 
-    def tabs(self) -> typing.Tuple['Tab', ...]:
+    def tabs(self) -> Tuple['Tab', ...]:
         """Return a tuple of tabs in the tab manager.
 
         This returns a tuple instead of a list for compatibility with
@@ -160,7 +154,7 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects, and this str()'s the tabs just in
         # case it is fixed later: str(widget object) and str(widget name) both
         # give the widget name consistently
-        return tuple(typing.cast(Tab, self.nametowidget(str(tab)))
+        return tuple(cast(Tab, self.nametowidget(str(tab)))
                      for tab in super().tabs())
 
     def add_tab(self, tab: 'Tab', select: bool = True) -> 'Tab':
@@ -269,8 +263,8 @@ class TabManager(ttk.Notebook):
 
 # _FileTabT represents a subclass of FileTab. Don't know if there's a better
 # way to tell that to mypy than passing FileTab twice...
-_TabT = typing.TypeVar('_TabT', 'Tab', 'Tab')
-_FileTabT = typing.TypeVar('_FileTabT', 'FileTab', 'FileTab')
+_TabT = TypeVar('_TabT', 'Tab', 'Tab')
+_FileTabT = TypeVar('_FileTabT', 'FileTab', 'FileTab')
 
 
 class Tab(ttk.Frame):
@@ -417,7 +411,7 @@ class Tab(ttk.Frame):
         """
         return False
 
-    def get_state(self) -> typing.Optional[typing.Any]:
+    def get_state(self) -> Optional[Any]:
         """Override this method to support opening a similar tab after \
 restarting Porcupine.
 
@@ -434,7 +428,7 @@ restarting Porcupine.
 
     @classmethod
     def from_state(
-            cls: typing.Type[_TabT], manager: TabManager, state: typing.Any) -> _TabT:
+            cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
         """
         Create a new tab from the return value of :meth:`get_state`.
         Be sure to override this if you override :meth:`get_state`.
@@ -443,11 +437,11 @@ restarting Porcupine.
             "from_state() wasn't overrided but get_state() was overrided")
 
 
-_FileTabState = typing.Tuple[
-    typing.Optional[pathlib.Path],
-    typing.Optional[str],   # content
-    typing.Optional[str],   # hash
-    str,                    # cursor location
+_FileTabState = Tuple[
+    Optional[pathlib.Path],
+    Optional[str],   # content
+    Optional[str],   # hash
+    str,             # cursor location
 ]
 
 
@@ -513,10 +507,10 @@ bers.py>` use this attribute.
     _filetype: filetypes.FileType
 
     def __init__(self, manager: TabManager, content: str = '',
-                 path: typing.Optional[pathlib.Path] = None) -> None:
+                 path: Optional[pathlib.Path] = None) -> None:
         super().__init__(manager)
 
-        self._save_hash: typing.Optional[str] = None
+        self._save_hash: Optional[str] = None
 
         self._path = path
         self._guess_filetype()          # sets self._filetype
@@ -552,7 +546,7 @@ bers.py>` use this attribute.
         self._update_status()
 
     @classmethod
-    def open_file(cls: typing.Type[_FileTabT], manager: TabManager, path: pathlib.Path) -> _FileTabT:
+    def open_file(cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path) -> _FileTabT:
         """Read a file and return a new FileTab object.
 
         Use this constructor if you want to open an existing file from a
@@ -600,11 +594,11 @@ bers.py>` use this attribute.
         return self._get_hash() == self._save_hash
 
     @property
-    def path(self) -> typing.Optional[pathlib.Path]:
+    def path(self) -> Optional[pathlib.Path]:
         return self._path
 
     @path.setter
-    def path(self, new_path: typing.Optional[pathlib.Path]) -> None:
+    def path(self, new_path: Optional[pathlib.Path]) -> None:
         it_changes = (self._path != new_path)
         self._path = new_path
         if it_changes:
@@ -640,14 +634,13 @@ bers.py>` use this attribute.
             #        before saving, and that's when this runs
             self.filetype = filetypes.guess_filetype(self.path)
 
-    def _guess_filetype_if_needed(self, junk: tkinter.Event) -> None:
+    def _guess_filetype_if_needed(self, junk: object) -> None:
         if self.filetype.name == 'Plain Text':
             # the user probably hasn't set the filetype
             self._guess_filetype()
 
     # TODO: plugin
-    def _update_title(
-            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def _update_title(self, junk: object = None) -> None:
         text = 'New File' if self.path is None else self.path.name
         if not self.is_saved():
             # TODO: figure out how to make the label red in ttk instead
@@ -655,8 +648,7 @@ bers.py>` use this attribute.
             text = '*' + text + '*'
         self.title = text
 
-    def _update_status(
-            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def _update_status(self, junk: object = None) -> None:
         if self.path is None:
             prefix = "New file"
         else:
@@ -698,7 +690,7 @@ bers.py>` use this attribute.
         self.textwidget.focus_set()
 
     # TODO: returning None on errors kinda sucks, maybe a handle_errors kwarg?
-    def save(self) -> typing.Optional[bool]:
+    def save(self) -> Optional[bool]:
         """Save the file to the current :attr:`path`.
 
         This calls :meth:`save_as` if :attr:`path` is None, and returns
@@ -756,9 +748,7 @@ bers.py>` use this attribute.
                 self.textwidget.index('insert'))
 
     @classmethod
-    def from_state(
-            cls: typing.Type[_FileTabT],
-            manager: TabManager, state: _FileTabState) -> _FileTabT:
+    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
         path, content, save_hash, cursor_pos = state
         if content is None:
             # nothing has changed since saving, read from the saved file

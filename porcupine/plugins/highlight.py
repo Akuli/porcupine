@@ -10,7 +10,7 @@ import multiprocessing
 import queue
 import tkinter
 import tkinter.font as tkfont
-import typing
+from typing import Any, Callable, Dict, Iterator, List, Tuple
 
 import pygments.styles      # type: ignore
 import pygments.token       # type: ignore
@@ -18,16 +18,16 @@ import pygments.token       # type: ignore
 from porcupine import filetypes, get_tab_manager, settings, tabs, utils
 
 
-def _list_all_token_types(tokentype: typing.Any) -> typing.Iterator[typing.Any]:
+def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
     yield tokentype
     for sub in map(_list_all_token_types, tokentype.subtypes):
         yield from sub
 
 _ALL_TAGS = set(map(str, _list_all_token_types(pygments.token.Token)))  # noqa
 
-PygmentizeResult = typing.Dict[
+PygmentizeResult = Dict[
     str,                # str(tokentype)
-    typing.List[str],   # [start1, end1, start2, end2, ...]
+    List[str],   # [start1, end1, start2, end2, ...]
 ]
 
 
@@ -36,11 +36,8 @@ PygmentizeResult = typing.Dict[
 class PygmentizerProcess:
 
     def __init__(self) -> None:
-        self.in_queue: 'multiprocessing.Queue[\
-            typing.Tuple[filetypes.FileType, str]\
-        ]' = multiprocessing.Queue()
-        self.out_queue: 'multiprocessing.Queue[PygmentizeResult]' = \
-            multiprocessing.Queue()
+        self.in_queue: multiprocessing.Queue[Tuple[filetypes.FileType, str]] = multiprocessing.Queue()
+        self.out_queue: multiprocessing.Queue[PygmentizeResult] = multiprocessing.Queue()
         self.process = multiprocessing.Process(target=self._run)
         self.process.start()
 
@@ -87,13 +84,13 @@ class Highlighter:
     def __init__(
             self,
             textwidget: tkinter.Text,
-            filetype_getter: typing.Callable[[], filetypes.FileType]) -> None:
+            filetype_getter: Callable[[], filetypes.FileType]) -> None:
         self.textwidget = textwidget
         self._get_filetype = filetype_getter
         self.pygmentizer = PygmentizerProcess()
 
         # the tags use fonts from here
-        self._fonts: typing.Dict[typing.Tuple[bool, bool], tkfont.Font] = {}
+        self._fonts: Dict[Tuple[bool, bool], tkfont.Font] = {}
         for bold in (True, False):
             for italic in (True, False):
                 # the fonts will be updated later, see _config_changed()
@@ -108,7 +105,7 @@ class Highlighter:
         self._style_changed()
         self.textwidget.after(50, self._do_highlights)
 
-    def on_destroy(self, junk: typing.Any = None) -> None:
+    def on_destroy(self, junk: object = None) -> None:
         #print("terminating", repr(self.pygmentizer.process))
         self.pygmentizer.process.terminate()
         #print("terminated", repr(self.pygmentizer.process))
@@ -174,7 +171,7 @@ class Highlighter:
         # make things laggy
         self.textwidget.after(50, self._do_highlights)
 
-    def highlight_all(self, junk: typing.Any = None) -> None:
+    def highlight_all(self, junk: object = None) -> None:
         code = self.textwidget.get('1.0', 'end - 1 char')
         self.pygmentizer.in_queue.put((self._get_filetype(), code))
 

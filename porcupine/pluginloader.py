@@ -8,7 +8,7 @@ import logging
 import pkgutil
 import random
 import time
-import typing
+from typing import Any, Callable, Dict, Iterable, List, Set
 
 import toposort     # type: ignore
 
@@ -17,7 +17,7 @@ from porcupine.plugins import __path__ as plugin_paths
 log = logging.getLogger(__name__)
 
 
-def find_plugins() -> typing.Set[str]:
+def find_plugins() -> Set[str]:
     """Return names of plugins that can be loaded.
 
     Note that loading some of the returned plugins may fail.
@@ -28,10 +28,10 @@ def find_plugins() -> typing.Set[str]:
     }
 
 
-_loaded_names: typing.List[str] = []
+_loaded_names: List[str] = []
 
 
-def load(plugin_names: typing.Iterable[str], shuffle: bool = False) -> None:
+def load(plugin_names: Iterable[str], shuffle: bool = False) -> None:
     """Load plugins.
 
     The plugins are always ordered using their ``setup_before`` and
@@ -52,13 +52,13 @@ def load(plugin_names: typing.Iterable[str], shuffle: bool = False) -> None:
         log.debug("trying to import plugin: %s", name)
         start = time.time()
         try:
-            module: typing.Any = importlib.import_module(
+            module: Any = importlib.import_module(
                 'porcupine.plugins.' + name)
-            setup_before: typing.Set[str] = set(
+            setup_before: Set[str] = set(
                 getattr(module, 'setup_before', []))
-            setup_after: typing.Set[str] = set(
+            setup_after: Set[str] = set(
                 getattr(module, 'setup_after', []))
-            setup: typing.Callable[[], None] = module.setup
+            setup: Callable[[], None] = module.setup
         except Exception:
             log.exception("problem with importing %s", name)
             continue
@@ -74,7 +74,7 @@ def load(plugin_names: typing.Iterable[str], shuffle: bool = False) -> None:
     # not installed because they are for controlling the loading order,
     # not for requiring dependencies
 
-    dependencies: typing.Dict[str, typing.Set[str]] = {
+    dependencies: Dict[str, Set[str]] = {
         name: set() for name in plugin_infos
     }
     for name, (setup_before, setup_after, setup) in plugin_infos.items():
@@ -85,11 +85,10 @@ def load(plugin_names: typing.Iterable[str], shuffle: bool = False) -> None:
     # the toposort will partially work even if there's a circular
     # dependency, the CircularDependencyError is raised after doing
     # everything possible (see source code)
-    loading_order: typing.List[str] = []
+    loading_order: List[str] = []
     try:
-        # map(list, ...) doesn't work in mypy
-        make_list: typing.Callable[
-            [typing.Iterable[str]], typing.List[str]] = list
+        # https://github.com/python/mypy/issues/9253
+        make_list: Callable[[Iterable[str]], List[str]] = list
         for names in map(make_list, toposort.toposort(dependencies)):
             if shuffle:
                 random.shuffle(names)
@@ -114,7 +113,7 @@ def load(plugin_names: typing.Iterable[str], shuffle: bool = False) -> None:
         log.debug("ran %s.setup() in %.3f milliseconds", name, duration*1000)
 
 
-def get_loaded_plugins() -> typing.List[str]:
+def get_loaded_plugins() -> List[str]:
     """Return a list of plugin names that have been loaded successfully.
 
     This is useful for writing plugins that need to start a new Porcupine

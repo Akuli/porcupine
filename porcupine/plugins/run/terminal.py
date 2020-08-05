@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import tempfile
 from tkinter import messagebox
-import typing
+from typing import List, Union
 
 from porcupine import get_main_window, utils
 
@@ -21,7 +21,7 @@ if platform.system() == 'Windows':
 else:
     run_script = _this_dir / 'bash_run.sh'
 
-CommandArgument = typing.Union[str, pathlib.Path]
+CommandArgument = Union[str, pathlib.Path]
 
 
 # getting this to work in powershell turned out to be hard :(
@@ -29,7 +29,7 @@ CommandArgument = typing.Union[str, pathlib.Path]
 def _run_in_windows_cmd(
         blue_message: str,
         workingdir: pathlib.Path,
-        command: typing.List[str]) -> None:
+        command: List[str]) -> None:
     log.debug("using Windows command prompt")
 
     command = [
@@ -49,7 +49,7 @@ def _run_in_windows_cmd(
 def _run_in_osx_terminal_app(
         blue_message: str,
         workingdir: pathlib.Path,
-        command: typing.List[str]) -> None:
+        command: List[str]) -> None:
     log.debug("using OSX terminal.app")
 
     bash = shutil.which('bash')
@@ -81,7 +81,7 @@ def _run_in_osx_terminal_app(
 
 def _run_in_x11_like_terminal(
         blue_message: str, workingdir: pathlib.Path,
-        command: typing.List[str]) -> None:
+        command: List[str]) -> None:
     terminal: str = os.environ.get('TERMINAL', 'x-terminal-emulator')
 
     # to config what x-terminal-emulator is:
@@ -145,7 +145,7 @@ def _run_in_x11_like_terminal(
 # this figures out which terminal to use every time the user wants to run
 # something but it doesn't really matter, this way the user can install a
 # terminal while porcupine is running without restarting porcupine
-def run_command(workingdir: pathlib.Path, command: typing.List[str]) -> None:
+def run_command(workingdir: pathlib.Path, command: List[str]) -> None:
     blue_message = ' '.join(map(utils.quote, command))
 
     widget = get_main_window()    # any tkinter widget works

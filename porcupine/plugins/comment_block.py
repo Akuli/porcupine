@@ -2,7 +2,7 @@
 
 import functools
 import tkinter
-import typing
+from typing import Optional
 
 from porcupine import actions, get_tab_manager, tabs, utils
 
@@ -10,9 +10,7 @@ from porcupine import actions, get_tab_manager, tabs, utils
 filetype_names = ['Python', 'Makefile', 'Shell', 'Tcl']
 
 
-def comment_or_uncomment(
-        tab: tabs.FileTab,
-        junk: typing.Optional[tkinter.Event] = None) -> utils.BreakOrNone:
+def comment_or_uncomment(tab: tabs.FileTab, junk: object = None) -> utils.BreakOrNone:
     if tab.filetype.name not in filetype_names:
         # add '#' normally
         return None

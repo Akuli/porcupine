@@ -6,13 +6,13 @@ import queue
 import subprocess
 import threading
 import tkinter
-import typing
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from porcupine import get_tab_manager, images, utils
 
 log = logging.getLogger(__name__)
 
-QueueMessage = typing.Tuple[str, typing.Union[str, typing.Callable[[], None]]]
+QueueMessage = Tuple[str, Union[str, Callable[[], None]]]
 
 
 class NoTerminalRunner:
@@ -25,12 +25,12 @@ class NoTerminalRunner:
         self.textwidget.tag_config('error', foreground='red')
 
         self._output_queue: 'queue.Queue[QueueMessage]' = queue.Queue()
-        self._running_process: typing.Optional['subprocess.Popen[bytes]'] = None
+        self._running_process: Optional['subprocess.Popen[bytes]'] = None
         self._queue_clearer()
 
     def _runner_thread(
-            self, workingdir: pathlib.Path, command: typing.List[str],
-            succeeded_callback: typing.Callable[[], None]) -> None:
+            self, workingdir: pathlib.Path, command: List[str],
+            succeeded_callback: Callable[[], None]) -> None:
         process = None
 
         def emit_message(msg: QueueMessage) -> None:
@@ -65,8 +65,8 @@ class NoTerminalRunner:
         else:
             emit_message(('error', f"The process failed with status {process.returncode}."))
 
-    def run_command(self, workingdir: pathlib.Path, command: typing.List[str],
-                    succeeded_callback: typing.Callable[[], None]) -> None:
+    def run_command(self, workingdir: pathlib.Path, command: List[str],
+                    succeeded_callback: Callable[[], None]) -> None:
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
         threading.Thread(target=self._runner_thread,
@@ -74,7 +74,7 @@ class NoTerminalRunner:
                          daemon=True).start()
 
     def _queue_clearer(self) -> None:
-        messages: typing.List[QueueMessage] = []
+        messages: List[QueueMessage] = []
         while True:
             try:
                 messages.append(self._output_queue.get(block=False))
@@ -98,7 +98,7 @@ class NoTerminalRunner:
 
         self.textwidget.after(100, self._queue_clearer)
 
-    def destroy(self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def destroy(self, junk: object = None) -> None:
         self.textwidget.destroy()
 
         # Saving self._running_process to local var avoids race condition and
@@ -109,14 +109,14 @@ class NoTerminalRunner:
 
 
 # keys are tkinter widget paths from str(tab), they identify tabs uniquely
-_no_terminal_runners: typing.Dict[str, NoTerminalRunner] = {}
+_no_terminal_runners: Dict[str, NoTerminalRunner] = {}
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(
     workingdir: pathlib.Path,
-    command: typing.List[str],
-    succeeded_callback: typing.Callable[[], None] = (lambda: None),
+    command: List[str],
+    succeeded_callback: Callable[[], None] = (lambda: None),
 ) -> None:
 
     tab = get_tab_manager().select()

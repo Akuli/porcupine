@@ -6,7 +6,7 @@ import re
 import sys
 import tkinter
 from tkinter import ttk
-import typing
+from typing import Any, Iterator, List, Optional, Tuple, Union, cast
 import weakref
 
 if sys.version_info >= (3, 8):
@@ -28,9 +28,7 @@ class Finder(ttk.Frame):
     Use the pack geometry manager with this widget.
     """
 
-    def __init__(
-            self, parent: tkinter.BaseWidget, textwidget: tkinter.Text,
-            **kwargs: typing.Any) -> None:
+    def __init__(self, parent: tkinter.BaseWidget, textwidget: tkinter.Text, **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)      # type: ignore
         self._textwidget = textwidget
 
@@ -62,7 +60,7 @@ class Finder(ttk.Frame):
         find_var.trace_add('write', self.highlight_all_matches)
 
         # because cpython gc
-        typing.cast(typing.Any, self.find_entry).lol = find_var
+        cast(Any, self.find_entry).lol = find_var
 
         self.replace_entry = self._add_entry(1, "Replace with:")
 
@@ -137,8 +135,7 @@ class Finder(ttk.Frame):
         self.find_entry.focus_set()
         self.highlight_all_matches()
 
-    def hide(
-            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def hide(self, junk: object = None) -> None:
         # remove previous highlights from highlight_all_matches
         self._textwidget.tag_remove('find_highlight', '1.0', 'end')
 
@@ -147,7 +144,7 @@ class Finder(ttk.Frame):
 
     # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
     # gives a list of (start, end) pairs
-    def get_match_ranges(self) -> typing.List[typing.Tuple[str, str]]:
+    def get_match_ranges(self) -> List[Tuple[str, str]]:
         starts_and_ends = list(
             map(str, self._textwidget.tag_ranges('find_highlight')))
         assert len(starts_and_ends) % 2 == 0
@@ -156,10 +153,9 @@ class Finder(ttk.Frame):
 
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
-    def _update_buttons(
-            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def _update_buttons(self, junk: object = None) -> None:
         # TODO: document this trick
-        State = typing.Union[Literal['normal'], Literal['disabled']]
+        State = Union[Literal['normal'], Literal['disabled']]
         matches_something_state: State
         replace_this_state: State
 
@@ -181,7 +177,7 @@ class Finder(ttk.Frame):
         self.replace_this_button['state'] = replace_this_state
         self.replace_all_button['state'] = matches_something_state
 
-    def _get_matches_to_highlight(self, looking4: str) -> typing.Iterator[str]:
+    def _get_matches_to_highlight(self, looking4: str) -> Iterator[str]:
         nocase_opt = self.ignore_case_var.get()
         if self.full_words_var.get():
             # tk doesn't have python-style \b, but it has \m and \M that match
@@ -218,7 +214,7 @@ class Finder(ttk.Frame):
                 break
             yield start_index
 
-    def highlight_all_matches(self, *junk: typing.Any) -> None:
+    def highlight_all_matches(self, *junk: object) -> None:
         # clear previous highlights
         self._textwidget.tag_remove('find_highlight', '1.0', 'end')
 
@@ -261,8 +257,7 @@ class Finder(ttk.Frame):
         self._textwidget.see(start)
 
     # TODO: adjust scrolling accordingly
-    def _go_to_next_match(
-            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def _go_to_next_match(self, junk: object = None) -> None:
         pairs = self.get_match_ranges()
         if not pairs:
             # the "Next match" button is disabled in this case, but the key
@@ -283,8 +278,7 @@ class Finder(ttk.Frame):
         self._update_buttons()
 
     # see _go_to_next_match for comments
-    def _go_to_previous_match(
-            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def _go_to_previous_match(self, junk: object = None) -> None:
         pairs = self.get_match_ranges()
         if not pairs:
             self.statuslabel['text'] = "No matches found!"
@@ -301,8 +295,7 @@ class Finder(ttk.Frame):
         self._update_buttons()
         return
 
-    def _replace_this(
-            self, junk: typing.Optional[tkinter.Event] = None) -> None:
+    def _replace_this(self, junk: object = None) -> None:
         if str(self.replace_this_button['state']) == 'disabled':
             self.statuslabel['text'] = (
                 'Click "Previous match" or "Next match" first.')

@@ -2,7 +2,7 @@
 
 import sys
 import tkinter
-import typing
+from typing import Tuple
 
 from porcupine import get_tab_manager, settings, tabs, utils
 from porcupine.textwidget import ThemedText
@@ -97,7 +97,7 @@ class Overview(ThemedText):
         for frame in self._vast:
             frame['background'] = foreground
 
-    def set_font(self, junk: typing.Any = None) -> None:
+    def set_font(self, junk: object = None) -> None:
         font = (
             settings.get('font_family', str),
             round(settings.get('font_size', int) / 3),
@@ -117,7 +117,7 @@ class Overview(ThemedText):
         self.see(last_visible_index)
         self._update_vast()
 
-    def _do_math(self) -> typing.Tuple[float, float, float, float, int, float, int]:
+    def _do_math(self) -> Tuple[float, float, float, float, int, float, int]:
         # FIXME: this is a little bit off in very long files
 
         # tkinter doesn't provide a better way to look up font metrics without
@@ -146,7 +146,7 @@ class Overview(ThemedText):
                 how_many_lines_fit_on_editor,
                 total_height)
 
-    def _update_vast(self, *junk: typing.Any) -> None:
+    def _update_vast(self, *junk: object) -> None:
         if not self.tag_cget('sel', 'font'):
             # view was created just a moment ago, set_font() hasn't ran yet
             return

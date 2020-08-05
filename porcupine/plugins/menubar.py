@@ -1,5 +1,5 @@
 import tkinter
-import typing
+from typing import Dict, Tuple
 
 from porcupine import get_main_window, actions, utils
 
@@ -8,14 +8,14 @@ class MenuManager:
 
     def __init__(self) -> None:
         self.main_menu = tkinter.Menu(tearoff=False)
-        self._submenus: typing.Dict[
-            typing.Tuple[tkinter.Menu, str],    # (menu, label)
+        self._submenus: Dict[
+            Tuple[tkinter.Menu, str],           # (menu, label)
             tkinter.Menu,                       # submenu
         ] = {}
         self.get_menu("Help")       # see comments in get_menu()
-        self._items: typing.Dict[
+        self._items: Dict[
             str,                                # path, e.g. "File/Open"
-            typing.Tuple[tkinter.Menu, int],    # (menu, index)
+            Tuple[tkinter.Menu, int],           # (menu, index)
         ] = {}
 
     def get_menu(self, path: str) -> tkinter.Menu:

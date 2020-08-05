@@ -2,7 +2,7 @@
 # FIXME: sometimes line numbers are off in y direction. Hard to reproduce.
 
 import tkinter
-import typing
+from typing import Any, Optional
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.textwidget import ThemedText
@@ -10,22 +10,20 @@ from porcupine.textwidget import ThemedText
 
 class LineNumbers(ThemedText):
 
-    def __init__(
-            self, parent: tkinter.BaseWidget, textwidget: tkinter.Text,
-            **kwargs: typing.Any) -> None:
+    def __init__(self, parent: tkinter.BaseWidget, textwidget: tkinter.Text, **kwargs: Any) -> None:
         super().__init__(parent, width=6, height=1, **kwargs)
         self.textwidget = textwidget
         self.insert('1.0', " 1")    # this is always there
         self['state'] = 'disabled'  # must be after the insert
         self._linecount = 1
 
-        self._clicked_place: typing.Optional[str] = None
+        self._clicked_place: Optional[str] = None
         self.bind('<Button-1>', self._on_click, add=True)
         self.bind('<ButtonRelease-1>', self._on_unclick, add=True)
         self.bind('<Double-Button-1>', self._on_double_click, add=True)
         self.bind('<Button1-Motion>', self._on_drag, add=True)
 
-    def do_update(self, junk: typing.Any = None) -> None:
+    def do_update(self, junk: object = None) -> None:
         """This should be ran when the line count changes."""
         linecount = int(self.textwidget.index('end - 1 char').split('.')[0])
         if linecount > self._linecount:

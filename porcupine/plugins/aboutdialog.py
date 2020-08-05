@@ -3,7 +3,7 @@ import itertools
 import re
 import tkinter
 from tkinter import ttk
-import typing
+from typing import Any, List, Match, Optional, Union
 import webbrowser
 
 from porcupine import actions, dirs, get_main_window, images, utils
@@ -35,7 +35,7 @@ here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 """.format(version=porcupine_version)
 
 
-def show_huge_logo(junk: typing.Optional[tkinter.Event] = None) -> None:
+def show_huge_logo(junk: object = None) -> None:
     path = dirs.installdir / 'images' / 'logo.gif'
     assert path.is_file()
 
@@ -48,7 +48,7 @@ def show_huge_logo(junk: typing.Optional[tkinter.Event] = None) -> None:
 
 class _AboutDialogContent(ttk.Frame):
 
-    def __init__(self, *args: typing.Any, **kwargs: typing.Any):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         big_label = ttk.Label(self, font=('', 16, ()), text="About Porcupine")
@@ -77,7 +77,7 @@ class _AboutDialogContent(ttk.Frame):
         label.bind('<Button-1>', show_huge_logo)
 
     def _add_minimal_markdown(self, text: str) -> None:
-        parts: typing.List[typing.Union[str, typing.Match[str]]] = []
+        parts: List[Union[str, Match[str]]] = []
 
         previous_end = 0
         for link in re.finditer(r'\[(.+?)\]\((.+?)\)', text):
