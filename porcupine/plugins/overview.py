@@ -63,31 +63,14 @@ class Overview(ThemedText):
         self.bind('<Button-1>', self._on_click_and_drag)
         self.bind('<Button1-Motion>', self._on_click_and_drag)
 
-        # TODO: delete this, it makes no sense for 1px wide frames
-        forward_list = [
-            '<Button-1>', '<Button1-Motion>',       # clicking and dragging
-            '<Button-4>', '<Button-5>',             # mouse wheel (linux)
-        ]
-        for event_name in forward_list:
-            for frame in self._vast:
-                utils.forward_event(event_name, frame, self)
-
         # We want to prevent the user from selecting anything in self, because
         # of abusing the 'sel' tag. Binding <Button-1> and <Button1-Motion>
         # isn't quite enough.
         self.bind('<Button1-Enter>', self._on_click_and_drag)
         self.bind('<Button1-Leave>', self._on_click_and_drag)
 
-        self._temporary_binds = [
-            utils.temporary_bind(
-                self.winfo_toplevel(), '<Configure>', self._update_vast),
-            utils.temporary_bind(
-                # TODO: why?
-                tab.master, '<<NotebookTabChanged>>', self._update_vast),
-        ]
-        for binding in self._temporary_binds:
-            binding.__enter__()
-        tab.bind('<Destroy>', self._clean_up, add=True)
+        # TODO: can this line be deleted safely?
+        self.bind('<Configure>', self._update_vast, add=True)
 
         self.bind('<<SettingsChanged:font_family>>', self.set_font, add=True)
         self.bind('<<SettingsChanged:font_size>>', self.set_font, add=True)
@@ -98,10 +81,6 @@ class Overview(ThemedText):
         # issues with tests.
         if 'pytest' not in sys.modules:
             self.after(50, self._scroll_callback)
-
-    def _clean_up(self, junk: typing.Any) -> None:
-        for binding in self._temporary_binds:
-            binding.__exit__(None, None, None)
 
     # this overrides ThemedText.set_colors
     def set_colors(self, foreground: str, background: str) -> None:
