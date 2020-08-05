@@ -9,8 +9,6 @@ import pygments.token   # type: ignore
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
-config = settings.get_section('General')
-
 
 class LongLineMarker:
 
@@ -23,20 +21,15 @@ class LongLineMarker:
         self._height = 0        # on_configure() will run later
 
     def setup(self) -> None:
-        config.connect('font_family', self.do_update, run_now=False)
-        config.connect('font_size', self.do_update, run_now=False)
-        config.connect('pygments_style', self.on_style_changed)
+        self.tab.bind('<<SettingsChanged:font_family>>', self.do_update, add=True)
+        self.tab.bind('<<SettingsChanged:font_size>>', self.do_update, add=True)
+        self.tab.bind('<<SettingsChanged:pygments_style>>', self.on_style_changed, add=True)
         self.tab.textwidget.bind('<Configure>', self.on_configure, add=True)
-        self.tab.bind('<<FiletypeChanged>>', self.do_update, add=True)
-        self.tab.bind('<Destroy>', self.on_destroy, add=True)
+
         self.do_update()
+        self.on_style_changed()
 
-    def on_destroy(self, event: tkinter.Event) -> None:
-        config.disconnect('font_family', self.do_update)
-        config.disconnect('font_size', self.do_update)
-        config.disconnect('pygments_style', self.on_style_changed)
-
-    def do_update(self, junk: typing.Any = None) -> None:
+    def do_update(self, junk: object = None) -> None:
         column = self.tab.filetype.max_line_length
         if column == 0:
             # maximum line length is disabled, see filetypes.ini docs
@@ -46,9 +39,9 @@ class LongLineMarker:
         where = font.measure(' ' * self.tab.filetype.max_line_length)
         self.frame.place(x=where, height=self._height)
 
-    def on_style_changed(self, name: str) -> None:
-        # do the same thing as porcupine's color theme menu does
-        infos = dict(iter(pygments.styles.get_style_by_name(name)))
+    def on_style_changed(self, junk: object = None) -> None:
+        style = pygments.styles.get_style_by_name(settings.get('pygments_style', str))
+        infos = dict(iter(style))   # iterating is documented
         for tokentype in [pygments.token.Error, pygments.token.Name.Exception]:
             if tokentype in infos:
                 for key in ['bgcolor', 'color', 'border']:

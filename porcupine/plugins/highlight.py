@@ -17,8 +17,6 @@ import pygments.token       # type: ignore
 
 from porcupine import filetypes, get_tab_manager, settings, tabs, utils
 
-config = settings.get_section('General')
-
 
 def _list_all_token_types(tokentype: typing.Any) -> typing.Iterator[typing.Any]:
     yield tokentype
@@ -95,35 +93,28 @@ class Highlighter:
         self.pygmentizer = PygmentizerProcess()
 
         # the tags use fonts from here
-        self._fonts = {}
+        self._fonts: typing.Dict[typing.Tuple[bool, bool], tkfont.Font] = {}
         for bold in (True, False):
             for italic in (True, False):
-                # the fonts will be updated later, see _on_config_changed()
+                # the fonts will be updated later, see _config_changed()
                 self._fonts[(bold, italic)] = tkfont.Font(
                     weight=('bold' if bold else 'normal'),
                     slant=('italic' if italic else 'roman'))
 
-        config.connect('pygments_style', self._on_config_changed,
-                       run_now=False)
-        config.connect('font_family', self._on_config_changed, run_now=False)
-        config.connect('font_size', self._on_config_changed, run_now=False)
-        self._on_config_changed()
+        self.textwidget.bind('<<SettingsChanged:font_family>>', self._font_changed, add=True)
+        self.textwidget.bind('<<SettingsChanged:font_size>>', self._font_changed, add=True)
+        self.textwidget.bind('<<SettingsChanged:pygments_style>>', self._style_changed, add=True)
+        self._font_changed()
+        self._style_changed()
         self.textwidget.after(50, self._do_highlights)
 
     def on_destroy(self, junk: typing.Any = None) -> None:
-        config.disconnect('pygments_style', self._on_config_changed)
-        config.disconnect('font_family', self._on_config_changed)
-        config.disconnect('font_size', self._on_config_changed)
-
         #print("terminating", repr(self.pygmentizer.process))
         self.pygmentizer.process.terminate()
         #print("terminated", repr(self.pygmentizer.process))
 
-    def _on_config_changed(self, junk: typing.Any = None) -> None:
-        # when the font family or size changes, self.textwidget['font']
-        # also changes because it's a porcupine.textwiddet.ThemedText widget
-        fontobject = tkfont.Font(name=self.textwidget['font'], exists=True)
-        font_updates = fontobject.actual()
+    def _font_changed(self, junk: object = None) -> None:
+        font_updates = tkfont.Font(name='TkFixedFont', exists=True).actual()
         del font_updates['weight']     # ignore boldness
         del font_updates['slant']      # ignore italicness
 
@@ -132,10 +123,11 @@ class Highlighter:
             for key, value in font_updates.items():
                 font[key] = value   # type: ignore
 
+    def _style_changed(self, junk: object = None) -> None:
         # http://pygments.org/docs/formatterdevelopment/#styles
         # all styles seem to yield all token types when iterated over,
         # so we should always end up with the same tags configured
-        style = pygments.styles.get_style_by_name(config['pygments_style'])
+        style = pygments.styles.get_style_by_name(settings.get('pygments_style', str))
         for tokentype, infodict in style:
             # this doesn't use underline and border
             # i don't like random underlines in my code and i don't know

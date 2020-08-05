@@ -1,6 +1,7 @@
 """Add an action for choosing the Pygments style."""
 
 import threading
+import tkinter
 import typing
 
 import pygments.styles      # type: ignore
@@ -42,7 +43,6 @@ def load_styles_to_list(target_list: typing.List[str]) -> None:
 
 
 def setup() -> None:
-    config = settings.get_section('General')
     styles: typing.List[str] = []
     thread = threading.Thread(target=load_styles_to_list, args=[styles])
     thread.daemon = True     # i don't care wtf happens to this
@@ -52,7 +52,20 @@ def setup() -> None:
         if thread.is_alive():
             get_main_window().after(200, check_if_it_finished)
         else:
-            actions.add_choice(
-                "Color Styles", styles, var=config.get_var('pygments_style'))
+            var = tkinter.StringVar(value=settings.get('pygments_style', str))
+
+            def settings2var(event: tkinter.Event) -> None:
+                # toplevel widgets get notified from their children's events, don't want that here
+                if event.widget == get_main_window():
+                    var.set(settings.get('pygments_style', str))
+
+            def var2settings(*junk: str) -> None:
+                settings.set('pygments_style', var.get())
+
+            # this doesn't recurse infinitely because <<SettingsChanged:bla>>
+            # gets generated only when the setting actually changes
+            get_main_window().bind('<<SettingsChanged:pygments_style>>', settings2var, add=True)
+            var.trace_add('write', var2settings)
+            actions.add_choice("Color Styles", styles, var=var)
 
     get_main_window().after(200, check_if_it_finished)

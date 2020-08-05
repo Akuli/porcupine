@@ -91,7 +91,11 @@ class HandyText(tkinter.Text):
             #
             #    https://github.com/python/mypy/issues/6552
             #
-            self.destroy()      # goodbye stupid tkinter-created widget
+            # Can't do self.destroy() because that screws up winfo_children().
+            # Each tkinter widget has keeps a list of child widgets, and
+            # self.destroy() would delete the widget from there. Tkinter's
+            # winfo_children() also ignores anything not found in those lists.
+            self.tk.call('destroy', str(self))  # destroy tkinter-created widget
             create_peer_from.peer_create(str(self), **kwargs)   # type: ignore
             utils.forward_event('<<ContentChanged>>', self, create_peer_from)
 
@@ -416,17 +420,11 @@ class ThemedText(HandyText):
 
     def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         super().__init__(*args, **kwargs)
-        settings.get_section('General').connect(
-            'pygments_style', self._set_style, run_now=True)
+        self.bind('<<SettingsChanged:pygments_style>>', self._on_style_changed, add=True)
+        self._on_style_changed()
 
-        def on_destroy(event: tkinter.Event) -> None:
-            settings.get_section('General').disconnect(
-                'pygments_style', self._set_style)
-
-        self.bind('<Destroy>', on_destroy, add=True)
-
-    def _set_style(self, name: str) -> None:
-        style = pygments.styles.get_style_by_name(name)
+    def _on_style_changed(self, junk: object = None) -> None:
+        style = pygments.styles.get_style_by_name(settings.get('pygments_style', str))
         bg = style.background_color
 
         # yes, style.default_style can be '#rrggbb', '' or nonexistent
@@ -488,20 +486,6 @@ class MainText(ThemedText):
         self.bind('<Control-v>', self._paste)
         self.bind('<Control-y>', self._redo)
         self.bind('<Control-a>', self._select_all)
-
-        utils.bind_mouse_wheel(self, self._on_ctrl_wheel, prefixes='Control-')
-
-    # TODO: the run plugin contains similar code, maybe reuse it somehow?
-    def _on_ctrl_wheel(self, direction: str) -> None:
-        config = settings.get_section('General')
-        if direction == 'reset':
-            config.reset('font_size')
-            return
-
-        try:
-            config['font_size'] += (1 if direction == 'up' else -1)
-        except settings.InvalidValue:
-            pass
 
     def set_filetype(self, filetype: filetypes.FileType) -> None:
         self._filetype = filetype

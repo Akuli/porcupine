@@ -524,11 +524,11 @@ def bind_tab_key(
 
 
 def bind_mouse_wheel(
-        widget: tkinter.Widget,
-        callback: typing.Callable[[str], None],
+        widget_or_class_name: typing.Union[tkinter.Misc, str],
+        callback: typing.Callable[[Literal['up', 'down']], None],
         *,
         prefixes: str = '',
-        **bind_kwargs: typing.Any) -> None:
+        add: typing.Optional[bool] = None) -> None:
     """Bind mouse wheel events to callback.
 
     The callback will be called like ``callback(direction)`` where
@@ -537,28 +537,38 @@ def bind_mouse_wheel(
     ``prefixes='Control-'`` means that callback will be ran when the
     user holds down Control and rolls the wheel.
 
+    *add* has the same meaning as in tkinter's ``bind()``.
+
+    If *widget* is a string, then it should be a widget class name for
+    ``bind_class()``, such as ``Text`` to bind all text widgets.
+
     .. note::
         This function has not been tested on OSX. If you have a Mac,
         please try it out and let me know how much it sucked.
     """
+    some_widget = porcupine.get_main_window()    # any widget would do
+
+    bind: typing.Any   # because i'm lazy
+    if isinstance(widget_or_class_name, str):
+        bind = functools.partial(some_widget.bind_class, widget_or_class_name)
+    else:
+        bind = widget_or_class_name.bind
+
     # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
-    if widget.tk.call('tk', 'windowingsystem') == 'x11':
+    if some_widget.tk.call('tk', 'windowingsystem') == 'x11':
         def real_callback(event: tkinter.Event) -> None:
             callback('up' if event.num == 4 else 'down')
 
-        widget.bind('<{}Button-4>'.format(prefixes),
-                    real_callback, **bind_kwargs)
-        widget.bind('<{}Button-5>'.format(prefixes),
-                    real_callback, **bind_kwargs)
+        bind(f'<{prefixes}Button-4>', real_callback, add)
+        bind(f'<{prefixes}Button-5>', real_callback, add)
 
     else:
         # TODO: test this on OSX
         def real_callback(event: tkinter.Event) -> None:
             callback('up' if event.delta > 0 else 'down')
 
-        widget.bind('<{}MouseWheel>'.format(prefixes),
-                    real_callback, **bind_kwargs)
+        bind(f'<{prefixes}MouseWheel>', real_callback, add)
 
 
 # TODO: document this

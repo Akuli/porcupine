@@ -561,8 +561,7 @@ bers.py>` use this attribute.
         :exc:`UnicodeError` or :exc:`OSError` is raised if reading the
         file fails.
         """
-        config = settings.get_section('General')
-        with open(path, 'r', encoding=config['encoding']) as file:
+        with path.open('r', encoding=settings.get('encoding', str)) as file:
             content = file.read()
         return cls(manager, content, path)
 
@@ -577,6 +576,7 @@ bers.py>` use this attribute.
                 other.path is not None and
                 self.path.samefile(other.path))
 
+    # TODO: avoid doing this on every keypress?
     def _get_hash(self) -> str:
         result = hashlib.md5()
         for chunk in self.textwidget.iter_chunks():
@@ -632,8 +632,8 @@ bers.py>` use this attribute.
 
     def _guess_filetype(self) -> None:
         if self.path is None:
-            name = settings.get_section('File Types')['default_filetype']
-            self.filetype = filetypes.get_filetype_by_name(name)
+            self.filetype = filetypes.get_filetype_by_name(
+                settings.get('default_filetype', str))
         else:
             # FIXME: this may read the shebang from the file, but the file
             #        might not be saved yet because save_as() sets self.path
@@ -713,7 +713,7 @@ bers.py>` use this attribute.
 
         self.event_generate('<<Save>>')
 
-        encoding = settings.get_section('General')['encoding']
+        encoding = settings.get('encoding', str)
         try:
             with utils.backup_open(self.path, 'w', encoding=encoding) as f:
                 for chunk in self.textwidget.iter_chunks():

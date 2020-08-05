@@ -22,13 +22,13 @@ class Widget(tkinter.Widget): pass
 class Frame(Widget): pass
 class Separator(Widget):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         orient: Union[Literal['horizontal'], Literal['vertical']] = ...,
     ) -> None: ...
 
 class Label(Widget):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         text: str = ...,
         image: tkinter.PhotoImage = ...,
         cursor: str = ...,
@@ -44,27 +44,21 @@ class Label(Widget):
 
 class Checkbutton(Widget):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         text: str = ...,
         variable: tkinter.BooleanVar = ...,
     ) -> None: ...
 
-# For __getitem__ of Literal['State'].
-#
-# Actual return type is currently Tcl_Obj which is kinda useless unless
-# it's str()ed. I'm writing it as union to make sure that if it's changed
-# some day then this code won't break. I recommend always str()ing the
-# return value.
 _StateFromGetItem = Union[_tkinter.Tcl_Obj, str]
 
 class Button(Widget):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         text: str = ...,
         command: Callable[[], None] = ...,
     ) -> None: ...
 
-    def __getitem__(self, opt: Literal['state']) -> _StateFromGetItem: ...
+    def __getitem__(self, opt: Literal['state']) -> Any: ...
     def __setitem__(self, opt: Literal['state'], val: Union[Literal['normal'], Literal['disabled']]) -> None: ...
 
 _NotebookTabId = Union[
@@ -171,7 +165,7 @@ class Notebook(Widget):
 # no PanedWindow here.
 class Panedwindow(Widget):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         orient: Union[Literal['horizontal'], Literal['vertical']] = ...,
     ) -> None: ...
 
@@ -195,7 +189,7 @@ _TreeviewShowMode = Union[Literal['tree'], Literal['headings']]
 
 class Treeview(Widget, tkinter.YView):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         selectmode: Union[Literal['extended'], Literal['browse'], Literal['none']] = ...,
         show: Union[_TreeviewShowMode, List[_TreeviewShowMode]] = ...,
     ) -> None: ...
@@ -230,7 +224,7 @@ class Treeview(Widget, tkinter.YView):
 
 class Progressbar(Widget):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         mode: Union[Literal['determinate'], Literal['indeterminate']],
     ) -> None: ...
     def start(self, interval: int = ...) -> None: ...
@@ -240,7 +234,7 @@ _EntryIndex = Union[str, int]
 
 class Entry(Widget):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         textvariable: tkinter.StringVar = ...,
         font: tkinter._FontSpec = ...,
         width: int = ...,
@@ -250,27 +244,33 @@ class Entry(Widget):
     def insert(self, index: _EntryIndex, string: str) -> None: ...
     def selection_range(self, start: _EntryIndex, end: _EntryIndex) -> None: ...
 
-    def __getitem__(self, opt: Literal['state']) -> _StateFromGetItem: ...
+    def __getitem__(self, opt: Literal['state']) -> Any: ...
 
+    @overload
+    def __setitem__(self, opt: Literal['validatecommand'], val: Callable[[], bool]) -> None: ...
     @overload
     def __setitem__(self, opt: Literal['state'], val: Union[Literal['normal'], Literal['disabled'], Literal['readonly']]) -> None: ...
     @overload
     def __setitem__(self, opt: Literal['textvariable'], val: tkinter.StringVar) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['validate'], val: Literal['none','key','focus','focusin','focusout','all']) -> None: ...
 
 class Combobox(Entry):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         values: List[str],
         # rest is copy/pasta from Entry
         textvariable: tkinter.StringVar,
     ) -> None: ...
+    def __getitem__(self, opt: Literal['state', 'values']) -> Any: ...
 
 class Spinbox(Entry):
     def __init__(
-        self, master: tkinter.BaseWidget, *,
+        self, master: tkinter.Misc, *,
         from_: int,
         to: int,
         textvariable: tkinter.IntVar,   # differs from Entry
     ) -> None: ...
+    def __getitem__(self, opt: Literal['from', 'to', 'state']) -> Any: ...
 
 class Sizegrip(Widget): ...

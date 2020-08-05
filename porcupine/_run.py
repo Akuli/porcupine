@@ -3,11 +3,17 @@
 import functools
 import logging
 import pathlib
+import sys
 import tkinter
 from tkinter import filedialog
 import traceback
 import typing
 import webbrowser
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 from porcupine import _logs, actions, filetypes, dirs, settings, tabs, utils
 
@@ -20,7 +26,7 @@ _init_kwargs: typing.Dict[str, typing.Any] = {}
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
-def init(verbose_logging: bool = False) -> None:
+def init(*, verbose_logging: bool = False) -> None:
     """Get everything ready for running Porcupine.
 
     The *verbose_logging* option corresponds to the ``--verbose``
@@ -37,6 +43,7 @@ def init(verbose_logging: bool = False) -> None:
     _logs.setup(verbose_logging)
     _root = tkinter.Tk()
     _root.protocol('WM_DELETE_WINDOW', quit)
+    settings._init()
     filetypes._init()
 
     _tab_manager = tabs.TabManager(_root)
@@ -164,16 +171,25 @@ def _setup_actions() -> None:
     #       things like ttk themes and color styles?
     actions.add_command("Edit/Porcupine Settings...", settings.show_dialog)
 
-    def change_font_size(how: str) -> None:
-        # TODO: i think there is similar code in a couple other places too
-        config = settings.get_section('General')
+    def change_font_size(how: Literal['bigger', 'smaller', 'reset']) -> None:
         if how == 'reset':
-            config.reset('font_size')
+            settings.reset('font_size')
+            return
+
+        size = settings.get('font_size', int)
+        if how == 'bigger':
+            size += 1
         else:
-            try:
-                config['font_size'] += (1 if how == 'bigger' else -1)
-            except settings.InvalidValue:
-                pass
+            size -= 1
+            if size < 3:
+                return
+
+        settings.set('font_size', size)
+
+    # trigger change_font_size() with mouse wheel from any text widget
+    utils.bind_mouse_wheel('Text', (
+        lambda updn: change_font_size('bigger' if updn == 'up' else 'smaller')
+    ), prefixes='Control-', add=True)
 
     # these work only with filetabs because that way the size change is
     # noticable

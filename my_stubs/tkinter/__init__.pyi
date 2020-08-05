@@ -52,6 +52,7 @@ _TraceMode = Union[
 ]
 
 class Variable:
+    def __init__(self, master: Optional[Any] = None, value: Optional[Any] = None, name: Optional[str] = None) -> None: ...
     def set(self, value: Any) -> None: ...
     def get(self) -> Any: ...
 
@@ -167,16 +168,39 @@ T3 = TypeVar('T3')
 T4 = TypeVar('T4')
 T5 = TypeVar('T5')
 
-# Widget possibly without pack, grid, place. Use this if you want to specify
-# any widget, including Toplevel and Tk, and use Widget if you want to specify
-# a child widget.
-#
 # FIXME: some widgets are Misc but not BaseWidget
-class BaseWidget:
-    # many of these methods are actually in Misc, but there's never need to
-    # access them without some subclass of BaseWidget
+# FIXME: lots of BaseWidget stuff should be in Misc instead
+class Misc:
+    # add new binding
+    @overload
+    def bind(self, sequence: str, func: _BindCallback, add: bool = ...) -> str: ...
 
-    master: Optional['BaseWidget']
+    # get all tcl code bound to sequence
+    @overload
+    def bind(self, sequence: str) -> str: ...
+
+    # set the tcl code bound to sequence
+    @overload
+    def bind(self, sequence: str, func: str) -> None: ...
+
+    def bind_all(self, sequence: str, func: _BindCallback, add: bool = ...) -> str: ...
+    def bind_class(self, className: Any, sequence: Any=..., func: Callable[..., Any] = ..., add: Any = ...) -> Optional[str]: ...
+
+    # The data is str()ed, and it can be anything that has valid str().
+    def event_generate(
+        self, sequence: str, *,
+        x: int = ...,
+        y: int = ...,
+        data: Any = ...,
+    ) -> None: ...
+
+    def grid_size(self) -> Tuple[int, int]: ...
+
+    def winfo_children(self) -> List[Misc]: ...
+
+
+class BaseWidget(Misc):
+    master: Optional[Misc]
 
     # I don't think this is documented, but MANY sources online use this
     # occationally. Tkinter itself uses this everywhere.
@@ -212,34 +236,12 @@ class BaseWidget:
 
     def after_cancel(self, id: str) -> None: ...
 
-    def bind_class(self, className: Any, sequence: Any=..., func: Callable[..., Any] = ..., add: Any = ...) -> Optional[str]: ...
-    def focus_get(self) -> Optional[BaseWidget]: ...
+    def focus_get(self) -> Optional[Misc]: ...
 
-    # add new binding
-    @overload
-    def bind(self, sequence: str, func: _BindCallback, add: bool = ...) -> str: ...
-
-    # get all tcl code bound to sequence
-    @overload
-    def bind(self, sequence: str) -> str: ...
-
-    # set the tcl code bound to sequence
-    @overload
-    def bind(self, sequence: str, func: str) -> None: ...
-
-    def bind_all(self, sequence: str, func: _BindCallback, add: bool = ...) -> str: ...
     def clipboard_clear(self) -> None: ...
     def clipboard_append(self, string: str) -> None: ...
     def deletecommand(self, name: str) -> None: ...
     def destroy(self) -> None: ...
-
-    # The data is str()ed, and it can be anything that has valid str().
-    def event_generate(
-        self, sequence: str, *,
-        x: int = ...,
-        y: int = ...,
-        data: Any = ...,
-    ) -> None: ...
 
     def focus_set(self) -> None: ...
     def getvar(self, name: str = ...) -> Any: ...    # doesn't always return str
@@ -257,7 +259,6 @@ class BaseWidget:
 
     def update(self) -> None: ...
     def wait_window(self) -> None: ...
-    def winfo_children(self) -> List['BaseWidget']: ...
     def winfo_ismapped(self) -> Union[Literal[0], Literal[1]]: ...  # weird that its not bool
     def winfo_rgb(self, color: str) -> Tuple[int, int, int]: ...
     def winfo_rootx(self) -> int: ...
@@ -296,12 +297,12 @@ class Widget(BaseWidget):
     # Toplevel and Tk are BaseWidgets but not Widgets. They also have master
     # but it's often None and not so useful. This is never None as far as I
     # know.
-    master: BaseWidget
+    master: Misc
 
     # these methods are actually in 3 separate classes: Pack, Grid, Place,
     # but there should never be any need to use those directly so why bother
     # with them here
-    def __init__(self, master: BaseWidget) -> None: ...
+    def __init__(self, master: Misc) -> None: ...
 
     def grid(
         self, *,
@@ -309,7 +310,7 @@ class Widget(BaseWidget):
         columnspan: int = ...,
         row: int = ...,
         rowspan: int = ...,
-        sticky: _Sticky,
+        sticky: _Sticky = ...,
         # TODO: figure out how 'in' is supposed to work
         ipadx: _ScreenDistance = ...,
         ipady: _ScreenDistance = ...,
@@ -345,7 +346,7 @@ class Widget(BaseWidget):
 
 class Label(Widget):
     def __init__(
-        self, master: BaseWidget, *,
+        self, master: Misc, *,
         text: str = ...,
         border: int = ...,
         fg: str = ...,
@@ -427,7 +428,7 @@ _TextIndex = Union[str, _tkinter.Tcl_Obj]
 
 class Text(Widget, YView):
     def __init__(
-        self, master: BaseWidget, *,
+        self, master: Misc, *,
         width: int = ...,
         height: int = ...,
         font: _FontSpec = ...,
@@ -525,7 +526,7 @@ class Text(Widget, YView):
 
 class Frame(Widget):
     def __init__(
-        self, master: BaseWidget, *,
+        self, master: Misc, *,
         width: _ScreenDistance = ...,
         height: _ScreenDistance = ...,
     ) -> None: ...
@@ -587,7 +588,7 @@ class Wm:
     def protocol(self, name: _WmProtocolName, func: Callable[[], None]) -> Literal['']: ...
     def title(self, string: str) -> Literal['']: ...
     def transient(self, master: Wm) -> Literal['']: ...
-    def withdraw(self) -> Literal['']: ...
+    def withdraw(self) -> None: ...   # actually returns empty string
     def deiconify(self) -> Literal['']: ...
 
     def __setitem__(self, opt: Literal['menu'], val: Menu) -> None: ...

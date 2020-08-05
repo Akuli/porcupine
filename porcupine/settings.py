@@ -2,580 +2,158 @@ import atexit
 import codecs
 import dataclasses
 import functools
+import itertools
 import json
 import logging
-import sys
-import tkinter
-import tkinter.font as tkfont
+import pathlib
+import tkinter.font
 from tkinter import messagebox, ttk
-import typing
+from typing import Any, Callable, Dict, Generic, IO, List, Optional, Tuple, TYPE_CHECKING, Type, TypeVar, Union, overload
+import weakref
 
-# the pygments stuff is just for _validate_pygments_style_name()
-import pygments.styles      # type: ignore
-import pygments.util        # type: ignore
-
-# get_main_window and get_tab_manager must not be imported from
-# porcupine because it imports this before exposing the getter
-# functions, and the getter functions cannot be imported from
-# porcupine._run because that imports this file (lol)
-# that's why "import porcupine"
 import porcupine
 from porcupine import dirs, images, utils
 from porcupine.filetypes import get_all_filetypes
 
 
+_Val = TypeVar('_Val', str, int)
+
+
+class _Option(Generic[_Val]):
+
+    def __init__(self, name: str, default: _Val) -> None:
+        self.name = name
+        self.value: _Val = default
+        self.default: _Val = default
+        self.variables: 'weakref.WeakSet[tkinter.StringVar]' = weakref.WeakSet()
+
+    def set(self, value: Union[str, int]) -> None:
+        if not isinstance(value, type(self.default)):
+            raise TypeError(f"expected {type(self.default).__name__}, got {type(value).__name__}")
+
+        # don't create change events when nothing changes (helps avoid infinite recursion)
+        if self.value == value:
+            return
+        self.value = value
+
+        # TODO: document these events
+        event_name = f'<<SettingsChanged:{self.name}>>'
+        log.debug(f"{self.name} was set to {value!r}, generating {event_name} events")
+
+        not_notified_yet: List[tkinter.Misc] = [porcupine.get_main_window()]
+        while not_notified_yet:
+            widget = not_notified_yet.pop()
+            widget.event_generate(event_name)
+            not_notified_yet.extend(widget.winfo_children())
+
+
 log = logging.getLogger(__name__)
+_FILE_PATH = dirs.configdir / 'settings.json'
+
+# _json_file_contents may contain stuff that isn't in _options yet
+_json_file_contents: Dict[str, Any] = {}
+_options: Dict[str, Union[_Option[str], _Option[int]]] = {}
 
 
-# this is a custom exception because plain ValueError is often raised
-# when something goes wrong unexpectedly
-class InvalidValue(Exception):
-    """Raise this in a callback if the value is invalid.
+# add 'from builtins import set as builtin_set' if needed
+def set(option_name: str, value: _Val) -> None:
+    _options[option_name].set(value)
 
-    Example::
 
-        wat_config = settings.get_section('Wat Wat')
+def get(option_name: str, tybe: Type[_Val]) -> _Val:
+    result = _options[option_name].value
+    if not isinstance(result, tybe):
+        raise TypeError(f"use {type(result).__name__} instead of {tybe.__name__}")
+    return result
 
-        def validate_indent(indent):
-            if indent not in ('tabs', 'spaces'):
-                raise settings.InvalidValue(
-                    "invalid indent %r, should be 'tabs' or 'spaces'"
-                    % repr(indent))
 
-        wat_config.add_option('indent', default='spaces')
-        wat_config.connect('indent', validate_indent)
+def reset(option_name: str) -> None:
+    option = _options[option_name]
+    option.set(option.default)
 
-    .. note::
-        Be sure to connect validator callbacks before anything else is
-        connected. The callbacks are ran in the same order as they are
-        connected, and running other callbacks with an invalid value is
-        probably not what you want.
 
-    There's no need to do checks like ``isinstance(indent, str)``.
-    Python is a dynamically typed language.
+def reset_all() -> None:
+    _json_file_contents.clear()
+    for name in _options:
+        reset(name)
 
-    You can also catch ``InvalidValue`` to check if setting a value
-    succeeded::
 
-        try:
-            wat_config['indent'] = 'wat wat'
-        except InvalidValue:
-            print("'wat wat' is not a valid indent :(")
+def add_option(option_name: str, default: Union[str, int]) -> None:
+    if option_name in _options:
+        raise RuntimeError(f"there's already an option named {option_name!r}")
+
+    # TODO: create mypy issues about need for Any-typing
+    option: Any = _Option(option_name, default)
+    _options[option_name] = option
+    if option_name in _json_file_contents:
+        # this errors if _json_file_contents has wrong type value
+        # TODO: add test
+        option.set(_json_file_contents[option_name])
+
+
+def _load_from_file() -> None:
+    assert not _options    # add_option() uses _json_file_contents
+    try:
+        with _FILE_PATH.open('r', encoding='utf-8') as file:
+            _json_file_contents.update(json.load(file))
+    except FileNotFoundError:
+        pass
+
+
+def save() -> None:
+    """Save the settings to the config file.
+
+    Note that :func:`porcupine.run` always calls this before it returns,
+    so usually you don't need to worry about calling this yourself.
     """
-
-
-# values of settings, must be jsonable
-_V = typing.TypeVar('_V', str, int)
-_Value = typing.Union[str, int]
-
-# globals ftw
-_sections: typing.Dict[str, '_ConfigSection'] = {}
-_loaded_json: typing.Dict[str, typing.Dict[str, typing.Union[str, int]]] = {}
-
-# the "Porcupine Settings" window
-_dialog: typing.Optional[tkinter.Toplevel] = None
-
-# main widget in the dialog
-_notebook: typing.Optional[ttk.Notebook] = None
-
-
-def get_section(section_name: str) -> '_ConfigSection':
-    """Return a section object, creating it if it doesn't exist yet.
-
-    The *section_name* is a title of a tab in the *Porcupine Settings*
-    dialog, such as ``'General'`` or ``'File Types'``.
-    """
-    _init()
-    try:
-        return _sections[section_name]
-    except KeyError:
-        _sections[section_name] = _ConfigSection(section_name)
-        return _sections[section_name]
-
-
-# this is generic because it uses _V
-_CallbackType = typing.Callable[[_V], None]
-
-# T represents a subclass of tkinter.Variable. Don't know if there's a better
-# way to tell that to mypy than passing tkinter.Variable twice...
-T = typing.TypeVar('T', tkinter.Variable, tkinter.Variable)
-
-
-@dataclasses.dataclass
-class _OptionInfo(typing.Generic[_V]):
-    default: _V
-    reset: bool
-    callbacks: typing.List[typing.Callable[[_V], None]]
-    errorvar: tkinter.BooleanVar
-
-
-class _ConfigSection(typing.MutableMapping[str, typing.Union[str, int]]):
-
-    def __init__(self, name: str) -> None:
-        if _notebook is None:
-            raise RuntimeError("%s.init() wasn't called" % __name__)
-
-        self.content_frame = ttk.Frame(_notebook)
-        _notebook.add(self.content_frame, text=name)
-
-        self._name = name
-        self._infos: typing.Dict[
-            str,
-            typing.Union[_OptionInfo[int], _OptionInfo[str]],
-        ] = {}
-        self._var_cache: typing.Dict[str, tkinter.Variable] = {}
-
-    def add_option(self, key: str, default: _V, *,
-                   reset: bool = True) -> None:
-        """Add a new option without adding widgets to the setting dialog.
-
-        ``section[key]`` will be *default* unless something else is
-        specified.
-
-        If *reset* is True, the setting dialog's reset button sets this
-        option to *default*.
-
-        .. note::
-            The *reset* argument should be False for settings that
-            cannot be changed with the dialog. That way, clicking the
-            reset button resets only the settings that are shown in the
-            dialog.
-        """
-        self._infos[key] = _OptionInfo(
-            default=default,        # not validated
-            reset=reset,
-            callbacks=[],
-            errorvar=tkinter.BooleanVar(),  # true when the triangle is showing
-        )
-
-    def _run_callbacks(self, info: _OptionInfo[_V], key: str, value: _V, old_value: _V) -> None:
-        for func in info.callbacks:
-            try:
-                func(value)
-            except InvalidValue as e:
-                _loaded_json[self._name][key] = old_value
-                raise e
-            except Exception:
-                try:
-                    func_name = func.__module__ + '.' + func.__qualname__
-                except AttributeError:
-                    func_name = repr(func)
-                log.exception("%s: %s(%r) didn't work", self._name,
-                              func_name, value)
-
-    def __setitem__(self, key: str, value: typing.Union[str, int]) -> None:
-        old_value = self[key]
-        try:
-            _loaded_json[self._name][key] = value
-        except KeyError:
-            _loaded_json[self._name] = {key: value}
-
-        if value != old_value:
-            log.debug("%s: %r was set to %r, running %d callbacks",
-                      self._name, key, value, len(self._infos[key].callbacks))
-            # couldn't figure out a way to do this without if,else
-            if isinstance(value, str):
-                self._run_callbacks(
-                    typing.cast(_OptionInfo[str], self._infos[key]),
-                    key, value, old_value)
-            else:
-                self._run_callbacks(
-                    typing.cast(_OptionInfo[int], self._infos[key]),
-                    key, value, old_value)
-
-    # returning the _SettingValue union would add assert boilerplate elsewhere
-    def __getitem__(self, key: str) -> typing.Any:
-        try:
-            return _loaded_json[self._name][key]
-        except KeyError:
-            return self._infos[key].default
-
-    # the abc requires this
-    def __delitem__(self, key: str) -> typing.NoReturn:
-        raise TypeError("cannot delete options")
-
-    def __iter__(self) -> typing.Iterator[str]:
-        return iter(self._infos.keys())
-
-    def __len__(self) -> int:
-        return len(self._infos)
-
-    def reset(self, key: str) -> None:
-        """Set ``section[key]`` back to the default value.
-
-        The value is always reset to the *default* argument passed to
-        :meth:`add_option`, regardless of its *reset* argument.
-
-        Resetting is useful for e.g. key bindings. For example, pressing
-        Ctrl+0 resets ``font_size``.
-        """
-        self[key] = self._infos[key].default
-
-    def connect(self, key: str, callback: _CallbackType[_V],
-                run_now: bool = True) -> None:
-        """
-        Schedule ``callback(section[key])`` to be called when the value
-        of an option changes.
-
-        If *run_now* is True, ``callback(section[key])`` is also called
-        immediately when ``connect()`` is called, and the option is
-        reset if the callback raises :exc:`InvalidValue`.
-
-        .. note::
-            *run_now* is True by default, so if you don't want to run
-            the callback right away you need an explicit
-            ``run_now=False``.
-
-        More than one callback can be connected to the same key.
-        """
-        if run_now:
-            try:
-                callback(self[key])
-            except InvalidValue:
-                try:
-                    func_name = (callback.__module__ + '.' +
-                                 callback.__qualname__)
-                except AttributeError:
-                    func_name = repr(callback)
-                log.warning(
-                    "%s: %r value %r is invalid according to %s, resetting"
-                    % (self._name, key, self[key], func_name))
-                self.reset(key)
-
-        info = typing.cast(_OptionInfo[_V], self._infos[key])
-        info.callbacks.append(callback)
-
-    def disconnect(self, key: str, callback: _CallbackType[_V]) -> None:
-        """Undo a :meth:`~connect` call."""
-        info = typing.cast(_OptionInfo[_V], self._infos[key])
-        info.callbacks.remove(callback)
-
-    # returns an image the same size as the triangle image, but empty
-    @staticmethod
-    def _get_fake_triangle(
-            cache: typing.List[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
-        if not cache:
-            cache.append(tkinter.PhotoImage(
-                width=images.get('triangle').width(),
-                height=images.get('triangle').height()))
-            atexit.register(cache.clear)     # see images/__init__.py
-        return cache[0]
-
-    def get_var(
-        self, key: str,
-        var_type: typing.Type[T] = tkinter.StringVar,
-    ) -> T:
-        """Return a tkinter variable that is bound to an option.
-
-        Changing the value of the variable updates the config section,
-        and changing the value in the section also sets the variable's
-        value.
-
-        This returns a ``StringVar`` by default, but you can use the
-        ``var_type`` argument to change that. For example,
-        ``var_type=tkinter.BooleanVar`` is suitable for an option that
-        is meant to be True or False.
-
-        If an invalid value is set to the variable, it is not set to the
-        section but the triangles in the frames returned by
-        :meth:`add_frame` are shown.
-
-        Calling this function multiple times with different ``var_type``
-        arguments raises :exc:`TypeError`.
-        """
-        if key in self._var_cache:
-            if not isinstance(self._var_cache[key], var_type):
-                raise TypeError("get_var(%r, var_type) was called multiple "
-                                "times with different var types" % key)
-            return self._var_cache[key]
-
-        info = self._infos[key]
-        var = var_type()
-
-        def var2config(*junk: typing.Any) -> None:
-            try:
-                value = var.get()
-            except (tkinter.TclError, ValueError):
-                # example: var_type is IntVar and the actual value is 'lol'
-                # not-very-latest pythons use int() and raise ValueError
-                info.errorvar.set(True)
-                return
-
-            try:
-                self[key] = value
-            except InvalidValue:
-                info.errorvar.set(True)
-                return
-
-            info.errorvar.set(False)
-
-        self.connect(key, var.set)      # runs var.set
-        var.trace_add('write', var2config)
-
-        self._var_cache[key] = var
-        return var
-
-    def add_frame(
-            self, triangle_key: typing.Optional[str] = None) -> ttk.Frame:
-        """Add a ``ttk.Frame`` to the dialog and return it.
-
-        The frame will contain a label that displays a |triangle| when
-        the value of the variable from :meth:`get_var` is invalid. The
-        triangle label is packed with ``side='right'``.
-
-        For example, :meth:`add_checkbutton` works roughly like this::
-
-            frame = section.add_frame(key)
-            var = section.get_var(key, tkinter.BooleanVar)
-            ttk.Checkbutton(frame, text=text, variable=var).pack(side='left')
-
-        """
-        frame = ttk.Frame(self.content_frame)
-        frame.pack(fill='x')
-
-        if triangle_key is not None:
-            errorvar = self._infos[triangle_key].errorvar
-            triangle_label = ttk.Label(frame)
-            triangle_label.pack(side='right')
-
-            def on_errorvar_changed(*junk: typing.Any) -> None:
-                if errorvar.get():
-                    triangle_label['image'] = images.get('triangle')
-                else:
-                    triangle_label['image'] = self._get_fake_triangle()
-
-            errorvar.trace_add('write', on_errorvar_changed)
-            on_errorvar_changed()
-
-        return frame
-
-    # TODO: document this
-    def add_label(self, text: str) -> ttk.Label:
-        frame = self.add_frame()
-        label = ttk.Label(frame, text=text)
-        label.pack(fill='x', pady=10)
-
-        def wrap_on_resize(event: tkinter.Event) -> None:
-            assert event.width != '??'
-            label['wraplength'] = event.width
-
-        frame.bind('<Configure>', wrap_on_resize, add=True)
-        return label
-
-    def add_checkbutton(self, key: str, text: str) -> None:
-        """Add a ``ttk.Checkbutton`` that sets an option to a bool."""
-        var = self.get_var(key, tkinter.BooleanVar)
-        assert isinstance(var, tkinter.BooleanVar)   # TODO: why this needed?
-        ttk.Checkbutton(self.add_frame(key), text=text,
-                        variable=var).pack(side='left')
-
-    def add_entry(self, key: str, text: str) -> None:
-        """Add a ``ttk.Entry`` that sets an option to a string."""
-        frame = self.add_frame(key)
-        ttk.Label(frame, text=text).pack(side='left')
-
-        var = self.get_var(key)
-        assert isinstance(var, tkinter.StringVar)   # TODO: why this needed?
-        ttk.Entry(frame, textvariable=var).pack(side='right')
-
-    def add_combobox(self, key: str, choices: typing.List[str], text: str, *,
-                     case_sensitive: bool = True) -> None:
-        """Add a ``ttk.Combobox`` that sets an option to a string.
-
-        The combobox will contain each string in *choices*.
-
-        A `validator callback <Validating>`_ that ensures the value is
-        in *choices* is also added. If *case_sensitive* is False,
-        :meth:`str.casefold` is used when comparing the strings.
-        """
-        def validator(value: str) -> None:
-            if case_sensitive:
-                ok = (value in choices)
-            else:
-                ok = (value.casefold() in map(str.casefold, choices))
-            if not ok:
-                raise InvalidValue("%r is not a valid %r value"
-                                   % (value, key))
-
-        self.connect(key, validator)
-
-        frame = self.add_frame(key)
-        ttk.Label(frame, text=text).pack(side='left')
-
-        var = self.get_var(key)
-        assert isinstance(var, tkinter.StringVar)   # TODO: why this needed?
-        ttk.Combobox(frame, values=choices,
-                     textvariable=var).pack(side='right')
-
-    def add_spinbox(
-            self, key: str, minimum: int, maximum: int, text: str) -> None:
-        """
-        Add a :class:`utils.Spinbox <porcupine.utils.Spinbox>` that sets
-        an option to an integer.
-
-        The *minimum* and *maximum* arguments are used as the bounds for
-        the spinbox. A `validator callback <Validating>`_ that makes
-        sure the value is between them is also added.
-
-        Note that *minimum* and *maximum* are inclusive, so
-        ``minimum=3, maximum=5`` means that 3, 4 and 5 are valid values.
-        """
-        def validator(value: int) -> None:
-            if value < minimum:
-                raise InvalidValue(f"{value} is too small")
-            if value > maximum:
-                raise InvalidValue(f"{value} is too big")
-
-        self.connect(key, validator)
-
-        frame = self.add_frame(key)
-        ttk.Label(frame, text=text).pack(side='left')
-
-        var = self.get_var(key, tkinter.IntVar)
-        assert isinstance(var, tkinter.IntVar)      # TODO: why is this needed?
-        utils.Spinbox(frame, textvariable=var,
-                      from_=minimum, to=maximum).pack(side='right')
-
-
-def _needs_reset() -> bool:
-    for section in _sections.values():
-        for key, info in section._infos.items():
-            if info.default != section[key]:
-                return True
-    return False
-
-
-def _do_reset() -> None:
-    if not _needs_reset:
-        messagebox.showinfo("Reset Settings",
-                            "You are already using the default settings.")
-        return
-
-    if not messagebox.askyesno(
-            "Reset Settings", "Are you sure you want to reset all settings?",
-            parent=_dialog):
-        return
-
-    for section in _sections.values():
-        for key, info in section._infos.items():
-            if info.reset:
-                section[key] = info.default
-    messagebox.showinfo(
-        "Reset Settings", "All settings were reset to defaults.",
-        parent=_dialog)
-
-
-def _validate_encoding(name: str) -> None:
-    try:
-        codecs.lookup(name)
-    except LookupError as e:
-        raise InvalidValue from e
-
-
-def _validate_pygments_style_name(name: str) -> None:
-    try:
-        pygments.styles.get_style_by_name(name)
-    except pygments.util.ClassNotFound as e:
-        raise InvalidValue(str(e)) from None
-
-
-def _init() -> None:
-    global _dialog
-    global _notebook
-
-    if _dialog is not None:
-        # already initialized
-        return
-
-    # tkinter weirdness: withdraw returns '' but protocol callback needs to
-    # return None. Actually it works if it returns '', and the return value
-    # gets ignored, but this is the price one has to pay for accurate type
-    # hints.
-    def withdraw_the_dialog() -> None:
-        assert _dialog is not None
-        _dialog.withdraw()
-
-    _dialog = tkinter.Toplevel()
-    _dialog.withdraw()        # hide it for now
-    _dialog.title("Porcupine Settings")
-    _dialog.protocol('WM_DELETE_WINDOW', withdraw_the_dialog)
-    _dialog.geometry('500x350')
-
-    big_frame = ttk.Frame(_dialog)
+    _json_file_contents.update({
+        name: option.value
+        for name, option in _options.items()
+    })
+
+    # don't store anything that doesn't differ from defaults
+    # also don't wipe unknown stuff from config file
+    for name in list(_json_file_contents.keys() & _options.keys()):
+        if _json_file_contents[name] == _options[name].default:
+            del _json_file_contents[name]
+
+    with _FILE_PATH.open('w', encoding='utf-8') as file:
+        json.dump(_json_file_contents, file)
+
+
+def _create_notebook() -> ttk.Notebook:
+    dialog = tkinter.Toplevel()
+    dialog.withdraw()
+    dialog.title("Porcupine Settings")
+    dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
+    dialog.bind('<Escape>', lambda event: dialog.withdraw())
+    dialog.geometry('500x350')
+
+    def confirm_and_reset_all() -> None:
+        if messagebox.askyesno("Reset Settings", "Are you sure you want to reset all settings?", parent=dialog):
+            reset_all()
+
+    big_frame = ttk.Frame(dialog)
     big_frame.pack(fill='both', expand=True)
-    _notebook = ttk.Notebook(big_frame)
-    _notebook.pack(fill='both', expand=True)
+    notebook = ttk.Notebook(big_frame)
+    notebook.pack(fill='both', expand=True)
     ttk.Separator(big_frame).pack(fill='x')
     buttonframe = ttk.Frame(big_frame)
     buttonframe.pack(fill='x')
-    for text, command in [("Reset", _do_reset), ("OK", withdraw_the_dialog)]:
-        ttk.Button(buttonframe, text=text, command=command).pack(side='right')
 
-    assert not _loaded_json
-    try:
-        with (dirs.configdir / 'settings.json').open('r') as file:
-            _loaded_json.update(json.load(file))
-    except FileNotFoundError:
-        pass      # use defaults everywhere
+    ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all).pack(side='right')
+    ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side='right')
 
-    general = get_section('General')   # type: _ConfigSection
+    return notebook
 
-    fixedfont = tkfont.Font(name='TkFixedFont', exists=True)
-    font_families = sorted(family for family in tkfont.families()
-                           # i get weird fonts starting with @ on windows
-                           if not family.startswith('@'))
 
-    general.add_option('font_family', fixedfont.actual('family'))
-    general.add_combobox('font_family', font_families, "Font Family:",
-                         case_sensitive=False)
+_notebook: Optional[ttk.Notebook] = None
 
-    # negative font sizes have a special meaning in tk and the size is negative
-    # by default, that's why the stupid hard-coded default size 10
-    general.add_option('font_size', 10)
-    general.add_spinbox('font_size', 3, 1000, "Font Size:")
 
-    # when font_family changes:  fixedfont['family'] = new_family
-    # when font_size changes:    fixedfont['size'] = new_size
-    general.connect(
-        'font_family', functools.partial(fixedfont.__setitem__, 'family'))
-    general.connect(
-        'font_size', functools.partial(fixedfont.__setitem__, 'size'))
-
-    # TODO: file-specific encodings
-    general.add_option('encoding', 'UTF-8')
-    general.add_entry('encoding', "Encoding of opened and saved files:")
-    general.connect('encoding', _validate_encoding)
-
-    general.add_option('pygments_style', 'default', reset=False)
-    general.connect('pygments_style', _validate_pygments_style_name)
-
-    def edit_it() -> None:
-        # porcupine/tabs.py imports this file
-        # these local imports feel so evil xD  MUHAHAHAA!!!
-        from porcupine import tabs
-
-        path = dirs.configdir / 'filetypes.ini'
-        manager = porcupine.get_tab_manager()
-        manager.add_tab(tabs.FileTab.open_file(manager, path))
-        assert _dialog is not None
-        _dialog.withdraw()
-
-    filetypes = get_section('File Types')
-    filetypes.add_label(
-        "Currently there's no GUI for changing filetype specific settings, "
-        "but they're stored in filetypes.ini and you can edit it yourself.")
-    ttk.Button(filetypes.add_frame(), text="Edit filetypes.ini",
-               command=edit_it).pack(anchor='center')
-
-    names = [filetype.name for filetype in get_all_filetypes()]
-    filetypes.add_label(
-        "You can use the following option to choose which filetype "
-        "Porcupine should use when you create a new file in Porcupine. You "
-        "can change the filetype after creating the file by clicking "
-        "Filetypes in the menu bar.")
-    filetypes.add_option('default_filetype', 'Plain Text')
-    filetypes.add_combobox('default_filetype', names,
-                           "Default filetype for new files:")
+def get_notebook() -> ttk.Notebook:
+    if _notebook is None:
+        raise RuntimeError("porcupine isn't running")
+    return _notebook
 
 
 def show_dialog() -> None:
@@ -583,38 +161,222 @@ def show_dialog() -> None:
 
     This function is called when the user opens the dialog from the menu.
     """
-    _init()
-    assert _notebook is not None
-    assert _dialog is not None
+    dialog = get_notebook().winfo_toplevel()
+    dialog.transient(porcupine.get_main_window())
+    dialog.deiconify()
 
-    # hide sections with no widgets in the content_frame
-    # add and hide preserve order and title texts
-    for name, section in _sections.items():
-        if section.content_frame.winfo_children():
-            _notebook.add(section.content_frame)
+
+def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
+    # see images/__init__.py
+    if not _cache:
+        _cache.append(tkinter.PhotoImage(
+            width=images.get('triangle').width(),
+            height=images.get('triangle').height()))
+        atexit.register(_cache.clear)
+    return _cache[0]
+
+
+def set_up_validation_triangle(
+    widget: ttk.Entry,
+    option_name: str,
+    tybe: Type[_Val],
+    callback: Callable[[_Val], bool],
+) -> ttk.Label:
+
+    triangle = ttk.Label(widget.master)
+    var = tkinter.StringVar()
+
+    def var_changed(*junk: object) -> None:
+        value_string = var.get()
+
+        value: Optional[_Val]
+        try:
+            value = tybe(value_string)
+        except ValueError:   # e.g. int('foo')
+            value = None
         else:
-            _notebook.hide(section.content_frame)
+            if not callback(value):
+                value = None
 
-    _dialog.transient(porcupine.get_main_window())
-    _dialog.deiconify()
+        if value is None:
+            triangle['image'] = images.get('triangle')
+        else:
+            triangle['image'] = _get_blank_triangle_sized_image()
+            set(option_name, value)
+
+    def setting_changed(junk: object = None) -> None:
+        var.set(str(_options[option_name].value))
+
+    widget.bind(f'<<SettingsChanged:{option_name}>>', setting_changed, add=True)
+    var.trace_add('write', var_changed)
+    setting_changed()
+
+    widget['textvariable'] = var
+    return triangle
 
 
-def save() -> None:
-    """Save the settings to the config file.
-
-    Note that :func:`porcupine.run` always calls this before it returns,
-    so usually you don't need to worry about this yourself.
-    """
-    if _loaded_json:
-        # there's something to save
-        # if two porcupines are running and the user changes settings
-        # differently in them, the settings of the one that's closed
-        # first are discarded
-        with (dirs.configdir / 'settings.json').open('w') as file:
-            json.dump(_loaded_json, file)
+# Widget is needed for chooser.master and triangle.grid
+def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]) -> None:
+    label = ttk.Label(chooser.master, text=label_text)
+    label.grid(column=0, sticky='w')
+    chooser.grid(row=label.grid_info()['row'], column=1, sticky='we')
+    if triangle is not None:
+        triangle.grid(row=label.grid_info()['row'], column=2)
 
 
-# docs/settings.rst relies on this
-# FIXME: the [source] links of section methods don't work :(
-if 'sphinx' in sys.modules:
-    section = _ConfigSection
+# TODO: document this
+def add_entry(
+    section: ttk.Frame,
+    option_name: str,
+    text: str,
+    validate_callback: Callable[[str], bool],
+    **entry_kwargs: Any,
+) -> ttk.Combobox:
+    entry = ttk.Entry(section, **entry_kwargs)
+    triangle = set_up_validation_triangle(entry, option_name, str, validate_callback)
+    _grid_widgets(text, entry, triangle)
+    return entry
+
+
+# TODO: document this
+def add_combobox(
+    section: ttk.Frame,
+    option_name: str,
+    text: str,
+    **combobox_kwargs: Any,
+) -> ttk.Combobox:
+    combo = ttk.Combobox(section, **combobox_kwargs)
+    triangle = set_up_validation_triangle(
+        combo, option_name, str,
+        lambda value: value in combo['values'])
+    _grid_widgets(text, combo, triangle)
+    return combo
+
+
+# TODO: document this
+def add_spinbox(
+    section: ttk.Frame,
+    option_name: str,
+    text: str,
+    **spinbox_kwargs: Any,
+) -> ttk.Spinbox:
+    spinbox = utils.Spinbox(section, **spinbox_kwargs)
+    triangle = set_up_validation_triangle(
+        spinbox, option_name, int,
+        lambda value: int(spinbox['from']) <= value <= int(spinbox['to']))
+    _grid_widgets(text, spinbox, triangle)
+    return spinbox
+
+
+# TODO: document this
+def add_label(section: ttk.Frame, text: str) -> ttk.Label:
+    label = ttk.Label(section, text=text)
+    label.grid(column=0, columnspan=3, sticky='we', pady=10)
+
+    def wrap_on_resize(event: tkinter.Event) -> None:
+        assert event.width != '??'
+        label['wraplength'] = event.width
+
+    section.bind('<Configure>', wrap_on_resize, add=True)
+    return label
+
+
+# TODO: document this
+def add_section(title_text: str) -> ttk.Frame:
+    result = ttk.Frame(get_notebook())
+    result.grid_columnconfigure(0, weight=1)
+    result.grid_columnconfigure(1, weight=1)
+    get_notebook().add(result, text=title_text)
+    return result
+
+
+def _encoding_exists(name: str) -> bool:
+    try:
+        codecs.lookup(name)
+        return True
+    except LookupError:
+        return False
+
+
+def _edit_filetypes_config() -> None:
+    # porcupine/tabs.py imports this file
+    # these local imports feel so evil xD  MUHAHAHAA!!!
+    from porcupine import tabs
+
+    path = dirs.configdir / 'filetypes.ini'
+    manager = porcupine.get_tab_manager()
+    manager.add_tab(tabs.FileTab.open_file(manager, path))
+    get_notebook().winfo_toplevel().withdraw()
+
+
+def _fill_notebook_with_defaults() -> None:
+    general = add_section("General")
+
+    # sort, remove duplicates, remove weird fonts starting with @ on windows
+    font_families = sorted({
+        family for family in tkinter.font.families()
+        if not family.startswith('@')
+    })
+
+    add_combobox(general, 'font_family', "Font family:", values=font_families)
+    add_spinbox(general, 'font_size', "Font size:", from_=3, to=1000)
+    add_entry(general, 'encoding', "File encoding:", _encoding_exists)
+
+    filetypes = add_section('File Types')
+    add_label(filetypes, (
+        "Currently there's no GUI for changing filetype specific settings, "
+        "but they're stored in filetypes.ini and you can edit it yourself."
+    ))
+    ttk.Button(
+        filetypes, text="Edit filetypes.ini", command=_edit_filetypes_config,
+    ).grid(row=1, column=0, columnspan=3, sticky='')
+
+    add_label(filetypes, (
+        "You can use the following option to choose which filetype "
+        "Porcupine should use when you create a new file in Porcupine. You "
+        "can change the filetype after creating the file by clicking "
+        "Filetypes in the menu bar."))
+
+    # filetypes aren't loaded yet when this is called, get_all_filetypes()
+    # returns empty list
+    filetypes.after_idle(lambda: add_combobox(
+        filetypes, 'default_filetype', "Default filetype for new files:",
+        values=sorted(ft.name for ft in get_all_filetypes())))
+
+
+def _init() -> None:
+    global _notebook
+    if _notebook is not None:
+        raise RuntimeError("can't call _init() twice")
+
+    try:
+        _load_from_file()
+    except Exception:
+        log.exception(f"reading {_FILE_PATH} failed")
+
+    fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
+    if fixedfont['size'] < 0:
+        # negative sizes have a special meaning in Tk, and i don't care much
+        # about it for porcupine, using stupid hard-coded default instead
+        fixedfont['size'] = 10
+
+    # fixedfont['family'] is typically e.g. 'Monospace', that's not included in
+    # tkinter.font.families() because it refers to another font family that is
+    # in tkinter.font.families()
+    add_option('font_family', fixedfont.actual('family'))
+    add_option('font_size', fixedfont['size'])
+    add_option('encoding', 'utf-8')    # TODO: file-specific encodings
+    add_option('pygments_style', 'default')
+    add_option('default_filetype', 'Plain Text')
+
+    # keep TkFixedFont up to date with settings
+    def update_fixedfont(event: Optional[tkinter.Event] = None) -> None:
+        # toplevel widgets get notified from their children's events, don't want that here
+        if event is None or event.widget == porcupine.get_main_window():
+            fixedfont.config(family=get('font_family', str), size=get('font_size', int))
+
+    porcupine.get_main_window().bind('<<SettingsChanged:font_family>>', update_fixedfont, add=True)
+    porcupine.get_main_window().bind('<<SettingsChanged:font_size>>', update_fixedfont, add=True)
+    update_fixedfont()
+    _notebook = _create_notebook()
+    _fill_notebook_with_defaults()
