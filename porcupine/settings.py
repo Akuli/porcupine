@@ -470,12 +470,10 @@ def _init() -> None:
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: Optional[tkinter.Event] = None) -> None:
-        # toplevel widgets get notified from their children's events, don't want that here
-        if event is None or event.widget == porcupine.get_main_window():
-            fixedfont.config(family=get('font_family', str), size=get('font_size', int))
+        fixedfont.config(family=get('font_family', str), size=get('font_size', int))
 
-    porcupine.get_main_window().bind('<<SettingsChanged:font_family>>', update_fixedfont, add=True)
-    porcupine.get_main_window().bind('<<SettingsChanged:font_size>>', update_fixedfont, add=True)
+    porcupine.get_tab_manager().bind('<<SettingsChanged:font_family>>', update_fixedfont, add=True)
+    porcupine.get_tab_manager().bind('<<SettingsChanged:font_size>>', update_fixedfont, add=True)
     update_fixedfont()
     _notebook = _create_notebook()
     _fill_notebook_with_defaults()
