@@ -75,16 +75,18 @@ class LineNumbers(ThemedText):
         return 'break'
 
 
-def setup_scrolling(main_text: tkinter.Text, other_text: tkinter.Text) -> None:
+def _setup_scrolling(main_text: tkinter.Text, other_text: tkinter.Text) -> None:
     # do nothing when mouse is wheeled on other_text
     other_text['yscrollcommand'] = lambda start, end: (
         other_text.yview_moveto(main_text.yview()[0]))
 
-    # also scroll other_text when main_text's scrolling position changes
-    old_command = main_text['yscrollcommand']   # tcl command string
+    old_command = main_text['yscrollcommand']   # string of tcl code
 
-    def new_yscrollcommand(start: float, end: float) -> None:
-        main_text.tk.call(old_command, start, end)
+    # also scroll other_text when main_text's scrolling position changes
+    def new_yscrollcommand(start: str, end: str) -> None:
+        # from options(3tk): "... the widget will generate a Tcl command by
+        # concatenating the scroll command and two numbers."
+        main_text.tk.eval(f'{old_command} {start} {end}')
         other_text.yview_moveto(start)
 
     main_text['yscrollcommand'] = new_yscrollcommand
@@ -95,7 +97,7 @@ def on_new_tab(event: utils.EventWithData) -> None:
     if isinstance(tab, tabs.FileTab):
         linenumbers = LineNumbers(tab.left_frame, tab.textwidget)
         linenumbers.pack(side='left', fill='y')
-        setup_scrolling(tab.textwidget, linenumbers)
+        _setup_scrolling(tab.textwidget, linenumbers)
         tab.textwidget.bind('<<ContentChanged>>', linenumbers.do_update, add=True)
         linenumbers.do_update()
 
