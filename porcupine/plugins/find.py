@@ -54,6 +54,7 @@ class Finder(ttk.Frame):
         # TODO: use the pygments theme somehow?
         textwidget.tag_config(
             'find_highlight', foreground='black', background='yellow')
+        self._textwidget.tag_lower('find_highlight', 'sel')
 
         self.find_entry = self._add_entry(0, "Find:")
         find_var = self.find_entry['textvariable'] = tkinter.StringVar()
@@ -249,8 +250,6 @@ class Finder(ttk.Frame):
             self.statuslabel['text'] = "Found %d matches." % count
 
     def _select_range(self, start: str, end: str) -> None:
-        # the tag_lower makes sure sel shows up, hiding find_highlight under it
-        self._textwidget.tag_lower('find_highlight', 'sel')
         self._textwidget.tag_remove('sel', '1.0', 'end')
         self._textwidget.tag_add('sel', start, end)
         self._textwidget.mark_set('insert', start)
