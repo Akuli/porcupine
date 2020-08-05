@@ -60,9 +60,9 @@ def setup() -> None:
             def var2settings(*junk: str) -> None:
                 settings.set('pygments_style', var.get())
 
-            # this doesn't recurse infinitely because <<SettingsChanged:bla>>
+            # this doesn't recurse infinitely because <<SettingChanged:bla>>
             # gets generated only when the setting actually changes
-            get_tab_manager().bind('<<SettingsChanged:pygments_style>>', settings2var, add=True)
+            get_tab_manager().bind('<<SettingChanged:pygments_style>>', settings2var, add=True)
             var.trace_add('write', var2settings)
             actions.add_choice("Color Styles", styles, var=var)
 

@@ -36,7 +36,7 @@ class _Option(Generic[_Val]):
             return
         self.value = value
 
-        event_name = f'<<SettingsChanged:{self.name}>>'
+        event_name = f'<<SettingChanged:{self.name}>>'
         log.debug(f"{self.name} was set to {value!r}, generating {event_name} events")
 
         not_notified_yet: List[tkinter.Misc] = [porcupine.get_main_window()]
@@ -230,7 +230,7 @@ def _create_validation_triangle(
     def setting_changed(junk: object = None) -> None:
         var.set(str(_options[option_name].value))
 
-    widget.bind(f'<<SettingsChanged:{option_name}>>', setting_changed, add=True)
+    widget.bind(f'<<SettingChanged:{option_name}>>', setting_changed, add=True)
     var.trace_add('write', var_changed)
     setting_changed()
 
@@ -472,8 +472,8 @@ def _init() -> None:
     def update_fixedfont(event: Optional[tkinter.Event] = None) -> None:
         fixedfont.config(family=get('font_family', str), size=get('font_size', int))
 
-    porcupine.get_tab_manager().bind('<<SettingsChanged:font_family>>', update_fixedfont, add=True)
-    porcupine.get_tab_manager().bind('<<SettingsChanged:font_size>>', update_fixedfont, add=True)
+    porcupine.get_tab_manager().bind('<<SettingChanged:font_family>>', update_fixedfont, add=True)
+    porcupine.get_tab_manager().bind('<<SettingChanged:font_size>>', update_fixedfont, add=True)
     update_fixedfont()
     _notebook = _create_notebook()
     _fill_notebook_with_defaults()

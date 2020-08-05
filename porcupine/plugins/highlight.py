@@ -101,9 +101,9 @@ class Highlighter:
                     weight=('bold' if bold else 'normal'),
                     slant=('italic' if italic else 'roman'))
 
-        self.textwidget.bind('<<SettingsChanged:font_family>>', self._font_changed, add=True)
-        self.textwidget.bind('<<SettingsChanged:font_size>>', self._font_changed, add=True)
-        self.textwidget.bind('<<SettingsChanged:pygments_style>>', self._style_changed, add=True)
+        self.textwidget.bind('<<SettingChanged:font_family>>', self._font_changed, add=True)
+        self.textwidget.bind('<<SettingChanged:font_size>>', self._font_changed, add=True)
+        self.textwidget.bind('<<SettingChanged:pygments_style>>', self._style_changed, add=True)
         self._font_changed()
         self._style_changed()
         self.textwidget.after(50, self._do_highlights)

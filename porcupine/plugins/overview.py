@@ -72,8 +72,8 @@ class Overview(ThemedText):
         # TODO: can this line be deleted safely?
         self.bind('<Configure>', self._update_vast, add=True)
 
-        self.bind('<<SettingsChanged:font_family>>', self.set_font, add=True)
-        self.bind('<<SettingsChanged:font_size>>', self.set_font, add=True)
+        self.bind('<<SettingChanged:font_family>>', self.set_font, add=True)
+        self.bind('<<SettingChanged:font_size>>', self.set_font, add=True)
         self.set_font()
         tab.bind('<<FiletypeChanged>>', self.set_font, add=True)
 

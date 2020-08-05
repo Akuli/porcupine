@@ -21,9 +21,9 @@ class LongLineMarker:
         self._height = 0        # on_configure() will run later
 
     def setup(self) -> None:
-        self.tab.bind('<<SettingsChanged:font_family>>', self.do_update, add=True)
-        self.tab.bind('<<SettingsChanged:font_size>>', self.do_update, add=True)
-        self.tab.bind('<<SettingsChanged:pygments_style>>', self.on_style_changed, add=True)
+        self.tab.bind('<<SettingChanged:font_family>>', self.do_update, add=True)
+        self.tab.bind('<<SettingChanged:font_size>>', self.do_update, add=True)
+        self.tab.bind('<<SettingChanged:pygments_style>>', self.on_style_changed, add=True)
         self.tab.textwidget.bind('<Configure>', self.on_configure, add=True)
 
         self.do_update()

@@ -420,7 +420,7 @@ class ThemedText(HandyText):
 
     def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         super().__init__(*args, **kwargs)
-        self.bind('<<SettingsChanged:pygments_style>>', self._on_style_changed, add=True)
+        self.bind('<<SettingChanged:pygments_style>>', self._on_style_changed, add=True)
         self._on_style_changed()
 
     def _on_style_changed(self, junk: object = None) -> None:

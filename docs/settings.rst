@@ -121,13 +121,13 @@ A label that displays *text* is added to column 0 (see the ascii art above).
 Change Events
 -------------
 
-.. virtualevent:: SettingsChanged:foo
+.. virtualevent:: SettingChanged:foo
 
     When any setting is changed,
     all widgets in the main window (see :func:`porcupine.get_main_window`)
-    receive a virtual event named ``<<SettingsChanged:option_name>>``,
+    receive a virtual event named ``<<SettingChanged:option_name>>``,
     where ``option_name`` is the name of the changed setting.
-    For example, ``<<SettingsChanged:pygments_style>>`` runs
+    For example, ``<<SettingChanged:pygments_style>>`` runs
     when the user changes the Pygments style.
 
 All widget bindings go away automatically when the corresponding widget is destroyed.
@@ -139,11 +139,11 @@ If you want your binding to work as long as Porcupine is running,
 use the bind method of :func:`porcupine.get_tab_manager`.
 
 .. note::
-    Don't use :func:`porcupine.get_main_window` for binding to ``<<SettingsChanged:foo>>``.
+    Don't use :func:`porcupine.get_main_window` for binding to ``<<SettingChanged:foo>>``.
     The main window is a :class:`tkinter.Tk` or :class:`tkinter.Toplevel` widget,
     so it gets notified of its child widgets' events too.
     For example, let's say that  there are 100 widgets currently being shown in the main window,
-    and you unwisely use the main window's ``bind()`` to bind ``<<SettingsChanged:foo>>``.
+    and you unwisely use the main window's ``bind()`` to bind ``<<SettingChanged:foo>>``.
     When the ``foo`` setting changes, your bind callback runs
     100 times with ``event.widget`` set to something else than the main window, and
     once with ``event.widget`` set to the main window.
