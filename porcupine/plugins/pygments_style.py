@@ -6,7 +6,7 @@ import typing
 
 import pygments.styles      # type: ignore
 
-from porcupine import actions, get_main_window, settings
+from porcupine import actions, get_main_window, get_tab_manager, settings
 
 # TODO: here's old code that created colored menu items, add it back
 #        style = pygments.styles.get_style_by_name(name)
@@ -55,16 +55,14 @@ def setup() -> None:
             var = tkinter.StringVar(value=settings.get('pygments_style', str))
 
             def settings2var(event: tkinter.Event) -> None:
-                # toplevel widgets get notified from their children's events, don't want that here
-                if event.widget == get_main_window():
-                    var.set(settings.get('pygments_style', str))
+                var.set(settings.get('pygments_style', str))
 
             def var2settings(*junk: str) -> None:
                 settings.set('pygments_style', var.get())
 
             # this doesn't recurse infinitely because <<SettingsChanged:bla>>
             # gets generated only when the setting actually changes
-            get_main_window().bind('<<SettingsChanged:pygments_style>>', settings2var, add=True)
+            get_tab_manager().bind('<<SettingsChanged:pygments_style>>', settings2var, add=True)
             var.trace_add('write', var2settings)
             actions.add_choice("Color Styles", styles, var=var)
 
