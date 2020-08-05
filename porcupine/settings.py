@@ -467,11 +467,15 @@ def _init() -> None:
     add_option('default_filetype', 'Plain Text')
 
     # keep TkFixedFont up to date with settings
-    def update_fixedfont(event: Optional[tkinter.Event] = None) -> None:
-        fixedfont.config(family=get('font_family', str), size=get('font_size', int))
+    def update_fixedfont(event: Optional[tkinter.Event]) -> None:
+        # can't bind to get_tab_manager() as recommended in docs because tab
+        # manager isn't ready yet when settings get inited
+        if event is None or event.widget == porcupine.get_main_window():
+            fixedfont.config(family=get('font_family', str), size=get('font_size', int))
 
-    porcupine.get_tab_manager().bind('<<SettingChanged:font_family>>', update_fixedfont, add=True)
-    porcupine.get_tab_manager().bind('<<SettingChanged:font_size>>', update_fixedfont, add=True)
-    update_fixedfont()
+    porcupine.get_main_window().bind('<<SettingChanged:font_family>>', update_fixedfont, add=True)
+    porcupine.get_main_window().bind('<<SettingChanged:font_size>>', update_fixedfont, add=True)
+    update_fixedfont(None)
+
     _notebook = _create_notebook()
     _fill_notebook_with_defaults()
