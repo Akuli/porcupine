@@ -67,7 +67,8 @@ def porcusession(monkeypatch_dirs):
         get_tab_manager()
 
     porcupine.init()
-    porcupine.get_main_window().withdraw()
+    # can't hide the main window with .withdraw()
+    # doing that makes events not happen for some reason
 
     plugin_names = pluginloader.find_plugins()
     pluginloader.load(plugin_names, shuffle=True)
@@ -91,12 +92,12 @@ def filetypes(porcusession):
 def tabmanager(porcusession):
     assert not get_tab_manager().tabs(), "something hasn't cleaned up its tabs"
     yield get_tab_manager()
-    assert not get_tab_manager().tabs(), "the test didn't clean up its tabs"
+    for tab in get_tab_manager().tabs():
+        get_tab_manager().close_tab(tab)
 
 
 @pytest.fixture
 def filetab(porcusession, tabmanager):
     tab = tabs.FileTab(tabmanager)
     tabmanager.add_tab(tab)
-    yield tab
-    tabmanager.close_tab(tab)
+    return tab
