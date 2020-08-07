@@ -661,25 +661,20 @@ class MainText(tkinter.Text):
         lineno, column = map(int, self.index(location).split('.'))
         line = self.get('%s linestart' % location, '%s lineend' % location)
 
-        if column == 0:
-            start = 0
-            end = self._filetype.indent_size
-        else:
-            start = column - (column % self._filetype.indent_size)
-            if start == column:    # prefer deleting from left side
-                start -= self._filetype.indent_size
-            end = start + self._filetype.indent_size
+        start = column - (column % self._filetype.indent_size)   # round down to indent_size multiple
+        if start == column and start != 0:    # prefer deleting from left side
+            start -= self._filetype.indent_size
+        assert start >= 0
 
-        end = min(end, len(line))    # don't go past end of line
-        if start == 0:
-            # delete undersized indents
-            whitespaces = len(line) - len(line.lstrip())
-            end = min(whitespaces, end)
+        # try to delete as much of full indent as possible without going past
+        # end of line or deleting non-whitespace
+        end = min(start + self._filetype.indent_size, len(line))
+        while start < end and not line[start:end].isspace():
+            end -= 1
 
-        if not line[start:end].isspace():   # ''.isspace() is False
-            return False
-        self.delete('%d.%d' % (lineno, start), '%d.%d' % (lineno, end))
-        return True
+        assert start <= end
+        self.delete(f'{lineno}.{start}', f'{lineno}.{end}')
+        return (start != end)
 
     def _redo(self, event: tkinter.Event) -> utils.BreakOrNone:
         self.event_generate('<<Redo>>')
