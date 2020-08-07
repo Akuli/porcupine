@@ -433,6 +433,9 @@ _TextIndex = Union[str, _tkinter.Tcl_Obj]
 class Text(Widget, YView):
     def __init__(
         self, master: Misc, *,
+        exportselection: bool = ...,
+        takefocus: bool = ...,
+        yscrollcommand: Union[str, Callable[[str, str], None]] = ...,
         width: int = ...,
         height: int = ...,
         font: _FontSpec = ...,
@@ -485,7 +488,7 @@ class Text(Widget, YView):
     def get(self, index1: _TextIndex, index2: Optional[_TextIndex] = ...) -> str: ...
     def index(self, index: _TextIndex) -> str: ...
     def mark_set(self, markName: str, index: _TextIndex) -> str: ...
-    def peer_create(self, newPathName: str) -> None: ...
+    def peer_create(self, newPathName: Union[str, Text]) -> None: ...
     def search(
         self, pattern: str, index: _TextIndex, stopindex: _TextIndex = ..., *,
         forwards: bool = ...,

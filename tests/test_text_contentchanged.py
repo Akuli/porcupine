@@ -1,19 +1,22 @@
+import tkinter
+
 import pytest
 
 from porcupine import get_main_window, utils
-from porcupine.textwidget import HandyText, Change, Changes
+from porcupine.textwidget import Change, Changes, track_changes, create_peer_widget
 
 
 @pytest.fixture(scope='function')
 def text_and_events(porcusession):
-    text = HandyText(get_main_window(), undo=True)
+    text = tkinter.Text(get_main_window())
+    text['undo'] = True    # must be before track_changes()
+    track_changes(text)
 
     # peers can mess things up
-    HandyText(get_main_window(), create_peer_from=text)
+    create_peer_widget(text, tkinter.Text(get_main_window()))
 
     events = []
-    utils.bind_with_data(
-        text, '<<ContentChanged>>', events.append, add=True)
+    utils.bind_with_data(text, '<<ContentChanged>>', events.append, add=True)
     yield (text, events)
     assert not events
 
@@ -111,3 +114,18 @@ def test_undo(text_and_events):
     assert events.pop().data_class(Changes).change_list == [
         Change(start='1.0', end='1.1', old_text_len=1, new_text=''),
     ]
+
+
+def test_track_changes_twice(porcusession):
+    text = tkinter.Text(get_main_window())
+    track_changes(text)
+    with pytest.raises(RuntimeError, match=r'^track_changes\(\) called twice for same text widget$'):
+        track_changes(text)
+
+
+def test_track_changes_after_create_peer_widget(porcusession):
+    text = tkinter.Text(get_main_window())
+    peer = tkinter.Text(get_main_window())
+    create_peer_widget(text, peer)
+    with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
+        track_changes(text)

@@ -474,9 +474,11 @@ class FileTab(Tab):
 
         The central text widget of the tab.
 
-        Currently this is a :class:`porcupine.textwidget.MainText`, but
-        this is guaranteed to always be a
-        :class:`HandyText <porcupine.textwidget.HandyText>`.
+        When a new :class:`FileTab` is created, these functions will be called
+        for the text widget:
+
+            * :func:`porcupine.textwidget.use_pygments_theme`
+            * :func:`porcupine.textwidget.track_changes`
 
     .. attribute:: scrollbar
         :type: tkinter.ttk.Scrollbar
@@ -572,9 +574,7 @@ bers.py>` use this attribute.
 
     # TODO: avoid doing this on every keypress?
     def _get_hash(self) -> str:
-        result = hashlib.md5()
-        for chunk in self.textwidget.iter_chunks():
-            result.update(chunk.encode('utf-8'))
+        result = hashlib.md5(self.textwidget.get('1.0', 'end - 1 char').encode('utf-8'))
 
         # hash objects don't define an __eq__ so we need to use a string
         # representation of the hash
@@ -708,8 +708,7 @@ bers.py>` use this attribute.
         encoding = settings.get('encoding', str)
         try:
             with utils.backup_open(self.path, 'w', encoding=encoding) as f:
-                for chunk in self.textwidget.iter_chunks():
-                    f.write(chunk)
+                f.write(self.textwidget.get('1.0', 'end - 1 char'))
         except (OSError, UnicodeError) as e:
             log.exception("saving '%s' failed", self.path)
             utils.errordialog(type(e).__name__, "Saving failed!",

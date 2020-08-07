@@ -4,15 +4,14 @@
 import tkinter
 from typing import Any, Optional
 
-from porcupine import get_tab_manager, tabs, utils
-from porcupine.textwidget import ThemedText
+from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
-class LineNumbers(ThemedText):
+class LineNumbers(tkinter.Text):
 
-    def __init__(self, parent: tkinter.BaseWidget, textwidget: tkinter.Text, **kwargs: Any) -> None:
+    def __init__(self, parent: tkinter.BaseWidget, textwidget_of_tab: tkinter.Text, **kwargs: Any) -> None:
         super().__init__(parent, width=6, height=1, **kwargs)
-        self.textwidget = textwidget
+        self.textwidget = textwidget_of_tab
         self.insert('1.0', " 1")    # this is always there
         self['state'] = 'disabled'  # must be after the insert
         self._linecount = 1
@@ -96,6 +95,7 @@ def on_new_tab(event: utils.EventWithData) -> None:
     if isinstance(tab, tabs.FileTab):
         linenumbers = LineNumbers(tab.left_frame, tab.textwidget)
         linenumbers.pack(side='left', fill='y')
+        textwidget.use_pygments_theme(linenumbers)
         _setup_scrolling(tab.textwidget, linenumbers)
         tab.textwidget.bind('<<ContentChanged>>', linenumbers.do_update, add=True)
         linenumbers.do_update()
@@ -103,22 +103,3 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-
-
-if __name__ == '__main__':
-    root = tkinter.Tk()
-
-    text = ThemedText(root)
-    text.pack(side='right', fill='both', expand=True)
-    linenumbers = LineNumbers(root, text)
-    linenumbers.pack(side='left', fill='y')
-
-    def on_lineno_change(event: tkinter.Event) -> None:
-        text.after_idle(linenumbers.do_update)
-
-    # this isn't perfect but this is good enough for this test
-    text.bind('<Return>', on_lineno_change)
-    text.bind('<BackSpace>', on_lineno_change)
-    text.bind('<Delete>', on_lineno_change)
-
-    root.mainloop()
