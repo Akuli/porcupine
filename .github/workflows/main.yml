@@ -2,9 +2,9 @@
 name: Run linters and tests
 on: [push]
 jobs:
-  build:
+  mypy:
     runs-on: ubuntu-latest
-    name: Run linters and tests
+    name: mypy
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.8
@@ -19,9 +19,33 @@ jobs:
         python3 -m mypy --strict porcupine
       env:
         MYPYPATH: ./my_stubs
+  flake8:
+    runs-on: ubuntu-latest
+    name: flake8
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt -r requirements-dev.txt
     - name: flake8
       run: |
         python3 -m flake8 porcupine tests
+  pytest:
+    runs-on: ubuntu-latest
+    name: pytest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt -r requirements-dev.txt
     - name: pytest
       # xvfb is needed for running tkinter
       # not using latest version because https://github.com/GabrielBB/xvfb-action/issues/10
@@ -29,6 +53,15 @@ jobs:
       with:
         run: |
           python3 -m pytest
+  bindcheck:
+    runs-on: ubuntu-latest
+    name: bindcheck
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
     - name: bindcheck
       run: |
         python3 bindcheck.py porcupine
