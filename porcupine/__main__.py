@@ -130,7 +130,7 @@ def main() -> None:
                     (pathlib.Path(file.name).absolute(), file.read(), None))
 
     filetypes._init()
-    for filetype_name in args.new_file:
+    for filetype_name in (args.new_file or []):   # args.new_file may be None
         try:
             filetype = filetypes.get_filetype_by_name(filetype_name)
         except KeyError:
