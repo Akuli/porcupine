@@ -167,10 +167,12 @@ Here is a list of the commands I use when developing Porcupine:
 
 I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.
-- `python3 docs/publish.py` uploads the documentation to
-  https://akuli.github.io/porcupine/ .
-- `python3 bump.py major_or_minor_or_patch` increments the version number and
-  invokes `git commit`. Be sure to `git push` and `git push --tags` after this.
+- `python3 release.py major_or_minor_or_patch` increments the version number and
+  runs all the commands needed for doing a new Porcupine release. The argument
+  works like this:
+    - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
+    - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
+    - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
 
 ## Building the Windows installer
