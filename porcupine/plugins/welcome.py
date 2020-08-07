@@ -8,13 +8,12 @@ from porcupine import get_tab_manager, images, utils
 
 
 RAW_MESSAGE = """
-Porcupine is a simple, beginner-friendly editor. If you ever used
-anything like Notepad, Microsoft Word or LibreOffice Writer before, you
-will feel right at home.
-
 To get started, create a new file by pressing Ctrl+N or open an existing
-file by pressing Ctrl+O. You can save the file with Ctrl+S or run a
-program by pressing F5.
+file by pressing Ctrl+O. You can save the file with Ctrl+S and then run it by
+pressing F5.
+
+Note that your code won't syntax-highlighted unless you save the file or choose
+a filetype from the Filetypes menu.
 
 See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.

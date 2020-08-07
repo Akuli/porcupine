@@ -1,40 +1,36 @@
 # Porcupine
 
-Porcupine is a simple and beginner-friendly editor. If you ever used anything
-like Notepad, Microsoft Word or LibreOffice Writer before, you will feel right
-at home. All features of Porcupine should work great on Windows, Linux and Mac
-OSX.
+Porcupine is an editor written with the notorious Tkinter library. It supports
+most things you would expect from an editor, such as autocompletions and syntax
+highlighting.
 
 ![Screenshot.](screenshot.png)
 
-Here's a list of the most important features:
-
+Most important features:
 - Syntax highlighting with [Pygments][] (supports many programming languages
   and color themes, extensible)
-- Some filetype specific settings
+- Autocompletions
+- [Langserver] support
 - Compiling files inside the editor window
 - Running files in a separate terminal or command prompt window
-- Autocompleting with tab
 - Automatic indenting and trailing whitespace stripping when Enter is pressed
 - Indent/dedent block with Tab and Shift+Tab
 - Commenting/uncommenting multiple lines by selecting them and typing a #
 - Line numbers
 - Line length marker
 - Find/replace
-- Simple setting dialog
 - Multiple files can be opened at the same time like tabs in a web browser
-- The tabs can be dragged out of the window to open a new Porcupine window
-  conveniently
-- Status bar that shows current line and column numbers
+- The tabs can be dragged out of the window to open a new Porcupine window conveniently
 
-[Pygments]: http://pygments.org/
+[Pygments]: https://pygments.org/
+[Langserver]: https://langserver.org/
 
 Porcupine also has [a very powerful plugin
 API](https://akuli.github.io/porcupine/), and most of the above features are
 implemented as plugins. This means that if you know how to use Python 3 and
 tkinter, you can easily customize your editor to do anything you want to. In
 fact, the plugin API is so powerful that if you run Porcupine without plugins,
-it shows up as an empty window!
+it shows up as an empty window.
 
 ## Installing Porcupine
 
@@ -52,8 +48,8 @@ Open a terminal and run these commands:
 
 ### Other Linux distributions
 
-Install Python 3.6 or newer with pip and tkinter somehow. Then run this
-command:
+Install Python 3.6 or newer with pip and tkinter somehow. Then run these
+commands:
 
     python3 -m pip install --user --upgrade pip wheel
     python3 -m pip install https://github.com/Akuli/porcupine/archive/master.zip

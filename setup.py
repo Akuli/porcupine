@@ -37,8 +37,7 @@ def find_metadata():
 # TODO: update the description here and in a few other places
 setup(
     name='Porcupine',
-    description="An editor that sucks less than IDLE",
-    keywords='editor tkinter idle beginner',
+    description="A decent editor written in tkinter",
     url='https://github.com/Akuli/porcupine',
     install_requires=list(get_requirements()),
     packages=find_packages(),
