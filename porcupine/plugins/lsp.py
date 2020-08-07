@@ -190,6 +190,16 @@ def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
     return project_file_path.parent
 
 
+def completion_item_doc_contains_label(doc: str, label: str) -> bool:
+    # this used to be doc.startswith(label), but see issue #67
+    label = label.strip()
+    if '(' in label:
+        prefix = label.strip().split('(')[0] + '('
+    else:
+        prefix = label.strip()
+    return doc.startswith(prefix)
+
+
 def get_completion_item_doc(item: lsp.CompletionItem) -> str:
     if item.documentation:
         # try this with clangd
@@ -201,9 +211,7 @@ def get_completion_item_doc(item: lsp.CompletionItem) -> str:
         #    {
         #        fo<Tab>
         #    }
-        #
-        # without this check, this wouldn't show arguments of foo on right side
-        if item.documentation.startswith(item.label.strip()):
+        if completion_item_doc_contains_label(item.documentation, item.label):
             result = item.documentation
         else:
             result = item.label.strip() + '\n\n' + item.documentation
