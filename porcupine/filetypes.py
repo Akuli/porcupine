@@ -425,7 +425,10 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
 
 
 def get_filetype_by_name(name: str) -> FileType:
-    """Find and return a filetype object by its ``name`` attribute."""
+    """
+    Find and return a filetype object by its ``name`` attribute.
+    Raises :class:`KeyError` if the filetype is not found.
+    """
     return _filetypes[name]
 
 
@@ -509,7 +512,10 @@ def _add_missing_mimetypes() -> None:
 
 
 def _init() -> None:
-    assert (not _filetypes), "cannot _init() twice"
+    if _filetypes:
+        # already inited, __main__.py needs to init filetypes before gui stuff
+        return
+
     _add_missing_mimetypes()
     stupid = configparser.ConfigParser(default_section='Plain Text')
     stupid.read_string(_STUPID_DEFAULTS)

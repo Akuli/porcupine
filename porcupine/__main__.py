@@ -7,7 +7,7 @@ import pathlib
 import sys
 from typing import List, Optional, Tuple
 
-from porcupine import _logs, pluginloader, get_tab_manager, tabs, utils
+from porcupine import _logs, filetypes, get_tab_manager, pluginloader, tabs, utils
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
 
 log = logging.getLogger(__name__)
@@ -30,7 +30,6 @@ class _PrintPlugindirAction(argparse.Action):
         parser.exit()
 
 
-# "porcupine -n a b c -n" works, but unfortunately "porcupine a -n b" doesn't
 class _ExtendAction(argparse.Action):
 
     def __init__(   # type: ignore
@@ -54,7 +53,7 @@ _EPILOG = r"""
 Examples:
   %(prog)s                    # run Porcupine normally
   %(prog)s file1.py file2.js  # open the given files on startup
-  %(prog)s -nnn               # create 3 new files
+  %(prog)s -n Python          # create a new Python file
   %(prog)s --no-plugins       # understand the power of plugins
   %(prog)s -v                 # produce lots of output for debugging
 """
@@ -82,8 +81,8 @@ def main() -> None:
         nargs=argparse.ZERO_OR_MORE, type=argparse.FileType("r"),
         help="open these files when Porcupine starts, - means stdin")
     parser.add_argument(
-        '-n', '--new-file', dest='files', action='append_const', const=None,
-        help='create a "New File" tab, may be given multiple times')
+        '-n', '--new-file', metavar='FILETYPE', action='append',
+        help='create a "New File" tab with a filetype from filetypes.ini')
 
     plugingroup = parser.add_argument_group("plugin loading options")
     plugingroup.add_argument(
@@ -111,7 +110,10 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    filelist: List[Tuple[Optional[pathlib.Path], str]] = []
+    # Make sure to get error before doing any gui stuff if reading file fails
+    # or specified filetype doesn't exist.
+    filelist: List[Tuple[Optional[pathlib.Path], str, Optional[filetypes.FileType]]] = []
+
     for file in args.files:
         if file is sys.stdin:
             # don't close stdin so it's possible to do this:
@@ -121,14 +123,19 @@ def main() -> None:
             #   ^D
             #   bla bla
             #   ^D
-            filelist.append((None, file.read()))
-        elif file is None:
-            # -n or --new-file was used
-            filelist.append((None, ''))
+            filelist.append((None, file.read(), None))
         else:
             with file:
                 filelist.append(
-                    (pathlib.Path(file.name).absolute(), file.read()))
+                    (pathlib.Path(file.name).absolute(), file.read(), None))
+
+    filetypes._init()
+    for filetype_name in args.new_file:
+        try:
+            filetype = filetypes.get_filetype_by_name(filetype_name)
+        except KeyError:
+            parser.error(f"no filetype named {filetype_name!r}")
+        filelist.append((None, '', filetype))
 
     porcupine.init(verbose_logging=args.verbose)
     if args.yes_plugins:
@@ -146,8 +153,11 @@ def main() -> None:
         pluginloader.load(plugin_names, shuffle=args.shuffle_plugins)
 
     tabmanager = get_tab_manager()
-    for path, content in filelist:
-        tabmanager.add_tab(tabs.FileTab(tabmanager, content, path))
+    for path, content, filetype in filelist:
+        tab = tabs.FileTab(tabmanager, content, path)
+        if filetype is not None:
+            tab.filetype = filetype
+        tabmanager.add_tab(tab)
 
     porcupine.run()
     log.info("exiting Porcupine successfully")
