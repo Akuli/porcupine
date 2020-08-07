@@ -70,13 +70,14 @@ class Overview(tkinter.Text):
         self.bind('<Button1-Enter>', self._on_click_and_drag, add=True)
         self.bind('<Button1-Leave>', self._on_click_and_drag, add=True)
 
-        # TODO: can this line be deleted safely?
-        self.bind('<Configure>', self._update_vast, add=True)
-
         self.bind('<<SettingChanged:font_family>>', self.set_font, add=True)
         self.bind('<<SettingChanged:font_size>>', self.set_font, add=True)
-        self.set_font()
         tab.bind('<<FiletypeChanged>>', self.set_font, add=True)
+
+        self.set_font()
+
+        # Make sure that 'sel' tag stays added even when text widget becomes empty
+        tab.textwidget.bind('<<ContentChanged>>', self._update_sel_tag, add=True)
 
         # don't know why after_idle doesn't work. Adding a timeout causes
         # issues with tests.
@@ -141,6 +142,9 @@ class Overview(tkinter.Text):
                 how_many_lines_fit_on_editor,
                 total_height)
 
+    def _update_sel_tag(self, junk: object = None) -> None:
+        self.tag_add('sel', '1.0', 'end')
+
     def _update_vast(self, *junk: object) -> None:
         if not self.tag_cget('sel', 'font'):
             # view was created just a moment ago, set_font() hasn't ran yet
@@ -182,7 +186,8 @@ class Overview(tkinter.Text):
             x=(width - LINE_THICKNESS), y=vast_top,
             width=LINE_THICKNESS, height=vast_height)
 
-        self.tag_add('sel', '1.0', 'end')
+        # TODO: figure out when exactly this is needed, remove unnecessary calls?
+        self._update_sel_tag()
 
     def _on_click_and_drag(self, event: tkinter.Event) -> utils.BreakOrNone:
         (overview_scroll_relative_start,
