@@ -38,7 +38,7 @@ class Overview(tkinter.Text):
         self['exportselection'] = False
         self['takefocus'] = False
         self['yscrollcommand'] = self._update_vast
-        self['wrap'] = None
+        self['wrap'] = 'none'
 
         self._tab = tab
         self._tab.textwidget['highlightthickness'] = LINE_THICKNESS
