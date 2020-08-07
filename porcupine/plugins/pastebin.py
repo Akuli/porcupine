@@ -94,8 +94,8 @@ class SuccessDialog(tkinter.Toplevel):
         entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
         entry.insert(0, url)
         entry['state'] = 'readonly'     # must be after the insert
-        entry.bind('<Control-a>', breaky_select_all)
-        entry.bind('<FocusIn>', self._select_all)
+        entry.bind('<Control-a>', breaky_select_all, add=True)
+        entry.bind('<FocusIn>', self._select_all, add=True)
         self._select_all()
 
         button_info = [

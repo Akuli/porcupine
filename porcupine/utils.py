@@ -248,7 +248,7 @@ class _TooltipManager:
         if self.text is not None:
             tipwindow = type(self).tipwindow = tkinter.Toplevel()
             tipwindow.geometry('+%d+%d' % (self.mousex+10, self.mousey-10))
-            tipwindow.bind('<Motion>', self.destroy_tipwindow)
+            tipwindow.bind('<Motion>', self.destroy_tipwindow, add=True)
             tipwindow.overrideredirect(True)
 
             # If you modify this, make sure to always define either no
@@ -462,9 +462,9 @@ def temporary_bind(
     The event objects support the same additional attributes as those
     from :func:`bind_with_data`.
     """
-    not_bound_commands = widget.bind(sequence)
+    not_bound_commands = widget.bind(sequence)  # bindcheck: ignore
     tcl_command = bind_with_data(widget, sequence, func, add=True)
-    bound_commands = widget.bind(sequence)
+    bound_commands = widget.bind(sequence)  # bindcheck: ignore
     assert bound_commands.startswith(not_bound_commands)
     new_things = bound_commands[len(not_bound_commands):]
 
@@ -472,9 +472,9 @@ def temporary_bind(
         yield
     finally:
         # other stuff might be bound too while this thing was yielding
-        bound_and_stuff = widget.bind(sequence)
+        bound_and_stuff = widget.bind(sequence)  # bindcheck: ignore
         assert bound_and_stuff.count(new_things) == 1
-        widget.bind(sequence, bound_and_stuff.replace(new_things, ''))
+        widget.bind(sequence, bound_and_stuff.replace(new_things, ''))  # bindcheck: ignore
 
         # unbind() does this too to avoid memory leaks
         widget.deletecommand(tcl_command)
@@ -515,8 +515,8 @@ def bind_tab_key(
     else:
         shift_tab = '<Shift-Tab>'
 
-    widget.bind('<Tab>', functools.partial(callback, False), **bind_kwargs)
-    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)
+    widget.bind('<Tab>', functools.partial(callback, False), **bind_kwargs)   # bindcheck: ignore
+    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
 
 
 def bind_mouse_wheel(
@@ -597,7 +597,7 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
 
     # even non-ttk widgets can handle <<ThemeChanged>>
     # TODO: make sure that this works
-    text.bind('<<ThemeChanged>>', update_colors)
+    text.bind('<<ThemeChanged>>', update_colors, add=True)
     update_colors()
 
     return text

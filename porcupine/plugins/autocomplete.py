@@ -95,8 +95,8 @@ class _Popup:
 
         self.treeview = ttk.Treeview(
             left_pane, show='tree', selectmode='browse')
-        self.treeview.bind('<Motion>', self._on_mouse_move)
-        self.treeview.bind('<<TreeviewSelect>>', self._on_select)
+        self.treeview.bind('<Motion>', self._on_mouse_move, add=True)
+        self.treeview.bind('<<TreeviewSelect>>', self._on_select, add=True)
         self._left_scrollbar = _pack_with_scrollbar(self.treeview)
 
         self._doc_text = utils.create_passive_text_widget(
@@ -105,7 +105,7 @@ class _Popup:
 
         self._resize_handle = ttk.Sizegrip(self.toplevel)
         self._resize_handle.place(relx=1, rely=1, anchor='se')
-        self.toplevel.bind('<Configure>', self._on_anything_resized)
+        self.toplevel.bind('<Configure>', self._on_anything_resized, add=True)
 
     def _on_anything_resized(self, junk: object) -> None:
         # When the separator is dragged all the way to left or the popup is

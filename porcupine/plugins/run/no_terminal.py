@@ -135,7 +135,7 @@ def run_command(
 
         closebutton = tkinter.Label(
             runner.textwidget, image=images.get('closebutton'), cursor='hand2')
-        closebutton.bind('<Button-1>', on_close)
+        closebutton.bind('<Button-1>', on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor='ne')
 
     runner.textwidget.pack(side='top', fill='x')

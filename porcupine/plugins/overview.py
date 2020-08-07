@@ -60,14 +60,14 @@ class Overview(ThemedText):
             tab.register(self._scroll_callback) +
             '\n' + self._tab.textwidget['yscrollcommand'])
 
-        self.bind('<Button-1>', self._on_click_and_drag)
-        self.bind('<Button1-Motion>', self._on_click_and_drag)
+        self.bind('<Button-1>', self._on_click_and_drag, add=True)
+        self.bind('<Button1-Motion>', self._on_click_and_drag, add=True)
 
         # We want to prevent the user from selecting anything in self, because
         # of abusing the 'sel' tag. Binding <Button-1> and <Button1-Motion>
         # isn't quite enough.
-        self.bind('<Button1-Enter>', self._on_click_and_drag)
-        self.bind('<Button1-Leave>', self._on_click_and_drag)
+        self.bind('<Button1-Enter>', self._on_click_and_drag, add=True)
+        self.bind('<Button1-Leave>', self._on_click_and_drag, add=True)
 
         # TODO: can this line be deleted safely?
         self.bind('<Configure>', self._update_vast, add=True)

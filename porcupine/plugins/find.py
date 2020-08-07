@@ -65,8 +65,8 @@ class Finder(ttk.Frame):
 
         self.replace_entry = self._add_entry(1, "Replace with:")
 
-        self.find_entry.bind('<Shift-Return>', self._go_to_previous_match)
-        self.find_entry.bind('<Return>', self._go_to_next_match)
+        self.find_entry.bind('<Shift-Return>', self._go_to_previous_match, add=True)
+        self.find_entry.bind('<Return>', self._go_to_next_match, add=True)
 
         # commented out because pressing tab in self.find_entry unselects the
         # text in textwidget for some reason
@@ -115,7 +115,7 @@ class Finder(ttk.Frame):
 
         closebutton = ttk.Label(self, cursor='hand2')
         closebutton.place(relx=1, rely=0, anchor='ne')
-        closebutton.bind('<Button-1>', self.hide)
+        closebutton.bind('<Button-1>', self.hide, add=True)
 
         # TODO: figure out why images don't work in tests
         if 'pytest' not in sys.modules:     # pragma: no cover
@@ -127,7 +127,7 @@ class Finder(ttk.Frame):
     def _add_entry(self, row: int, text: str) -> ttk.Entry:
         ttk.Label(self, text=text).grid(row=row, column=0, sticky='w')
         entry = ttk.Entry(self, width=35, font='TkFixedFont')
-        entry.bind('<Escape>', self.hide)
+        entry.bind('<Escape>', self.hide, add=True)
         entry.grid(row=row, column=1, sticky='we')
         return entry
 

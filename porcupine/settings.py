@@ -144,7 +144,7 @@ def _create_notebook() -> ttk.Notebook:
     dialog.withdraw()
     dialog.title("Porcupine Settings")
     dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
-    dialog.bind('<Escape>', lambda event: dialog.withdraw())
+    dialog.bind('<Escape>', (lambda event: dialog.withdraw()), add=True)
     dialog.geometry('500x350')
 
     def confirm_and_reset_all() -> None:

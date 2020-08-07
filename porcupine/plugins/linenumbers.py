@@ -103,22 +103,3 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-
-
-if __name__ == '__main__':
-    root = tkinter.Tk()
-
-    text = ThemedText(root)
-    text.pack(side='right', fill='both', expand=True)
-    linenumbers = LineNumbers(root, text)
-    linenumbers.pack(side='left', fill='y')
-
-    def on_lineno_change(event: tkinter.Event) -> None:
-        text.after_idle(linenumbers.do_update)
-
-    # this isn't perfect but this is good enough for this test
-    text.bind('<Return>', on_lineno_change)
-    text.bind('<BackSpace>', on_lineno_change)
-    text.bind('<Delete>', on_lineno_change)
-
-    root.mainloop()

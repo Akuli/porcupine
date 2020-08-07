@@ -29,3 +29,6 @@ jobs:
       with:
         run: |
           python3 -m pytest
+    - name: bindcheck
+      run: |
+        python3 bindcheck.py porcupine

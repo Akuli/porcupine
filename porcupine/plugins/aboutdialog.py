@@ -74,7 +74,7 @@ class _AboutDialogContent(ttk.Frame):
                           cursor='hand2')
         label.pack(anchor='e')
         utils.set_tooltip(label, "Click to view in full size")
-        label.bind('<Button-1>', show_huge_logo)
+        label.bind('<Button-1>', show_huge_logo, add=True)
 
     def _add_minimal_markdown(self, text: str) -> None:
         parts: List[Union[str, Match[str]]] = []

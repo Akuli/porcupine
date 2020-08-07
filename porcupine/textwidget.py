@@ -471,21 +471,21 @@ class MainText(ThemedText):
         # FIXME: lots of things have been turned into plugins, but
         # there's still wayyyy too much stuff in here...
         partial = functools.partial     # pep8 line length
-        self.bind('<BackSpace>', partial(self._on_delete, False))
-        self.bind('<Control-BackSpace>', partial(self._on_delete, True))
-        self.bind('<Control-Delete>', partial(self._on_delete, True))
+        self.bind('<BackSpace>', partial(self._on_delete, False), add=True)
+        self.bind('<Control-BackSpace>', partial(self._on_delete, True), add=True)
+        self.bind('<Control-Delete>', partial(self._on_delete, True), add=True)
         self.bind('<Shift-Control-Delete>',
-                  partial(self._on_delete, True, shifted=True))
+                  partial(self._on_delete, True, shifted=True), add=True)
         self.bind('<Shift-Control-BackSpace>',
-                  partial(self._on_delete, True, shifted=True))
+                  partial(self._on_delete, True, shifted=True), add=True)
         self.bind('<parenright>', self._on_closing_brace, add=True)
         self.bind('<bracketright>', self._on_closing_brace, add=True)
         self.bind('<braceright>', self._on_closing_brace, add=True)
 
         # most other things work by default, but these don't
-        self.bind('<Control-v>', self._paste)
-        self.bind('<Control-y>', self._redo)
-        self.bind('<Control-a>', self._select_all)
+        self.bind('<Control-v>', self._paste, add=True)
+        self.bind('<Control-y>', self._redo, add=True)
+        self.bind('<Control-a>', self._select_all, add=True)
 
     def set_filetype(self, filetype: filetypes.FileType) -> None:
         self._filetype = filetype
