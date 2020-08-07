@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import tkinter
 import tkinter.font as tkfont
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 import weakref
 
 import pygments.styles          # type: ignore
