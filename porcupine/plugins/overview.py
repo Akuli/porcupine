@@ -4,8 +4,8 @@ import sys
 import tkinter
 from typing import Tuple
 
-from porcupine import get_tab_manager, settings, tabs, utils
-from porcupine.textwidget import ThemedText
+from porcupine import get_tab_manager, settings, tabs, textwidget, utils
+
 
 LINE_THICKNESS = 1
 
@@ -15,8 +15,7 @@ def count_lines(textwidget: tkinter.Text) -> int:
 
 
 # We want self to have the same text content and colors as the main
-# text. We do this efficiently with a peer widget. See "PEER WIDGETS" in
-# text(3tk) for more.
+# text. We do this efficiently with a peer widget.
 #
 # The only way to bold text is to specify a tag with a bold font, and that's
 # what the main text widget does. The peer text widget then gets the same tag
@@ -30,14 +29,17 @@ def count_lines(textwidget: tkinter.Text) -> int:
 # There is only one tag that is not common to both widgets, sel. It represents
 # the text being selected, and we abuse it for setting the smaller font size.
 # This means that all of the text has to be selected all the time.
-class Overview(ThemedText):
+class Overview(tkinter.Text):
 
     def __init__(self, master: tkinter.BaseWidget, tab: tabs.FileTab) -> None:
-        # ThemedText.__init__ calls set_colors() which needs _vast
+        super().__init__(master)
+        textwidget.create_peer_widget(tab.textwidget, self)
+        self['width'] = 25
+        self['exportselection'] = False
+        self['takefocus'] = False
+        self['yscrollcommand'] = self._update_vast
+        self['wrap'] = 'none'
 
-        super().__init__(master, width=25, exportselection=False,
-                         takefocus=False, create_peer_from=tab.textwidget,
-                         yscrollcommand=self._update_vast, wrap='none')
         self._tab = tab
         self._tab.textwidget['highlightthickness'] = LINE_THICKNESS
 
@@ -54,7 +56,6 @@ class Overview(ThemedText):
             tkinter.Frame(self),
             tkinter.Frame(self),
         ]
-        self.set_colors(*self._colors)
 
         tab.textwidget['yscrollcommand'] = (
             tab.register(self._scroll_callback) +
@@ -82,13 +83,7 @@ class Overview(ThemedText):
         if 'pytest' not in sys.modules:
             self.after(50, self._scroll_callback)
 
-    # this overrides ThemedText.set_colors
     def set_colors(self, foreground: str, background: str) -> None:
-        if not hasattr(self, '_vast'):
-            # called from super().__init__, too early
-            self._colors = (foreground, background)
-            return
-
         self['foreground'] = foreground
         self['background'] = background
         self['inactiveselectbackground'] = background   # must be non-empty?
@@ -218,6 +213,7 @@ def on_new_tab(event: utils.EventWithData) -> None:
         return
 
     overview = Overview(tab.right_frame, tab)
+    textwidget.use_pygments_theme(overview, overview.set_colors)
     overview.pack(fill='y', expand=True)
 
 

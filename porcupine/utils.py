@@ -327,7 +327,7 @@ class EventWithData(tkinter.Event):
 
     data_string: str
 
-    def data_widget(self) -> tkinter.BaseWidget:
+    def data_widget(self) -> tkinter.Misc:
         """
         If a widget was passed as ``data`` to ``event_generate()``, then this
         returns that widget. Otherwise this raises an error.
