@@ -132,7 +132,8 @@ def main() -> None:
     filetypes._init()
     for filetype_name in (args.new_file or []):   # args.new_file may be None
         try:
-            filetype = filetypes.get_filetype_by_name(filetype_name)
+            # putting type annotation here fixes a problem that occurs below
+            filetype: Optional[filetypes.FileType] = filetypes.get_filetype_by_name(filetype_name)
         except KeyError:
             parser.error(f"no filetype named {filetype_name!r}")
         filelist.append((None, '', filetype))
