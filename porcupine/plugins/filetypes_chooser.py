@@ -4,9 +4,8 @@ The menubar plugin shows these as a "Filetypes" menu.
 """
 
 import functools
-import tkinter
 
-from porcupine import actions, filetypes, get_tab_manager, tabs, utils
+from porcupine import actions, filetypes, get_tab_manager, tabs
 
 
 # called when a filetypes menu item is clicked

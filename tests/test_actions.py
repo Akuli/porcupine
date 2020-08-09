@@ -4,7 +4,7 @@ import tkinter
 
 import pytest
 
-from porcupine import actions, filetypes, get_main_window, settings, tabs, utils
+from porcupine import actions, get_main_window, tabs, utils
 
 
 _action_path_counter = itertools.count()

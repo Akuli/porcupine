@@ -16,7 +16,7 @@ import pygments.lexer       # type: ignore
 import pygments.styles      # type: ignore
 import pygments.token       # type: ignore
 
-from porcupine import filetypes, get_tab_manager, settings, tabs, utils
+from porcupine import get_tab_manager, settings, tabs, utils
 
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:

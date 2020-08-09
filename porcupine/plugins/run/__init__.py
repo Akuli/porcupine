@@ -5,9 +5,9 @@ import logging
 import os
 import pathlib
 import shlex
-from typing import Callable, List, Optional, Set
+from typing import Callable, List, Optional
 
-from porcupine import actions, filetypes, get_tab_manager, tabs, utils
+from porcupine import actions, get_tab_manager, tabs, utils
 
 from . import terminal, no_terminal
 

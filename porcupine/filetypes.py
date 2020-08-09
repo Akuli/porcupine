@@ -7,11 +7,9 @@ import fnmatch
 import importlib
 import logging
 import mimetypes
-import os
 import pathlib
 import platform
 import re
-import shlex
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import pygments.lexer   # type: ignore

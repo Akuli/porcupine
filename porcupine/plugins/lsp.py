@@ -20,7 +20,6 @@ import socket
 import subprocess
 import threading
 import time
-import tkinter
 from typing import cast, Dict, List, NamedTuple, Optional, Tuple, Union
 
 try:
@@ -29,7 +28,7 @@ except ImportError:
     # windows
     fcntl = None    # type: ignore
 
-from porcupine import get_tab_manager, filetypes, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textwidget, utils
 from porcupine.plugins import autocomplete
 import sansio_lsp_client as lsp     # type: ignore
 
