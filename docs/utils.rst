@@ -51,6 +51,7 @@ Tkinter Utilities
 .. autofunction:: bind_with_data
 .. autofunction:: get_keyboard_shortcut
 .. autofunction:: run_in_thread
+.. autoclass:: TemporaryBind
 
 .. class:: Spinbox
 
@@ -72,14 +73,4 @@ Miscellaneous
    and on Windows it adds double quotes in a similar way. This is useful for
    running commands in the Windows command prompt or a POSIX-compatible shell.
 
-
-Don't-use-this functions
-------------------------
-
-I might remove these functions later, and they are there because some part of
-Porcupine still uses them, the function does something that was difficult to
-implement or I'm planning on rewriting the whole function in an incompabile way
-later.
-
 .. autofunction:: errordialog
-.. autofunction:: temporary_bind

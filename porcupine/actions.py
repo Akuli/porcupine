@@ -78,15 +78,11 @@ def _add_any_action(
         binding: Optional[str],
         var: Optional[tkinter.Variable],
         *,
-        filetype_names: Optional[List[str]] = None,
         tabtypes: Optional[Sequence[
             Type[tabs.Tab]]] = None) -> Action:
 
     if path.startswith('/') or path.endswith('/'):
         raise ValueError("action paths must not start or end with /")
-    if filetype_names is not None and tabtypes is not None:
-        # python raises TypeError when it comes to invalid arguments
-        raise TypeError("only one of filetype_names and tabtypes can be used")
     if path in _actions:
         raise RuntimeError("there's already an action with path %r" % path)
 
@@ -97,35 +93,16 @@ def _add_any_action(
     _actions[path] = action
     porcupine.get_main_window().event_generate('<<NewAction>>', data=path)
 
-    if tabtypes is not None or filetype_names is not None:
-        if tabtypes is not None:
-            actual_tabtypes = tuple(
-                # None is the only type(None) object
-                type(None) if cls is None else cls
-                for cls in tabtypes
-            )
+    if tabtypes is not None:
+        actual_tabtypes = tuple(
+            # None is the only type(None) object
+            type(None) if cls is None else cls
+            for cls in tabtypes
+        )
 
-            def enable_or_disable(junk: object = None) -> None:
-                tab = porcupine.get_tab_manager().select()
-                action.enabled = isinstance(tab, actual_tabtypes)
-
-        if filetype_names is not None:
-            def enable_or_disable(junk: object = None) -> None:     # noqa
-                tab = porcupine.get_tab_manager().select()
-                if isinstance(tab, tabs.FileTab):
-                    assert filetype_names is not None
-                    action.enabled = tab.filetype.name in filetype_names
-                else:
-                    action.enabled = False
-
-            def on_new_tab(event: utils.EventWithData) -> None:
-                tab = event.data_widget()
-                if isinstance(tab, tabs.FileTab):
-                    tab.bind('<<FiletypeChanged>>', enable_or_disable,
-                             add=True)
-
-            utils.bind_with_data(porcupine.get_tab_manager(),
-                                 '<<NewTab>>', on_new_tab, add=True)
+        def enable_or_disable(junk: object = None) -> None:
+            tab = porcupine.get_tab_manager().select()
+            action.enabled = isinstance(tab, actual_tabtypes)
 
         enable_or_disable()
         porcupine.get_tab_manager().bind(

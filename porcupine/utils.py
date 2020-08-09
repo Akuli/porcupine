@@ -431,12 +431,7 @@ def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
         return from_.bind(event_name, callback, add=add)
 
 
-@contextlib.contextmanager
-def temporary_bind(
-    widget: tkinter.BaseWidget,
-    sequence: str,
-    func: Callable[[tkinter.Event], Optional[str]]
-) -> Iterator[None]:
+class TemporaryBind:
     """Bind and unbind a callback.
 
     It's possible (and in Porcupine plugins, highly recommended) to use
@@ -450,35 +445,57 @@ def temporary_bind(
 
     Use this as a context manager, like this::
 
-        with utils.temporary_bind(some_widget, '<Button-1>', on_click):
+        with utils.TemporaryBind(some_widget, '<Button-1>', on_click):
             # now clicking the widget runs on_click() and whatever was
             # bound before (unless on_click() returns 'break')
             ...
         # now on_click() doesn't run when the widget is clicked, but
         # everything else still runs
 
+    Or call the ``.unbind()`` method when you want to::
+
+        binding = utils.TemporaryBind(...)
+        ...
+        binding.unbind()
+
     Calls to this function may be nested, and other things can be bound
     inside the ``with`` block as long as ``add=True`` is used.
 
-    The event objects support the same additional attributes as those
-    from :func:`bind_with_data`.
+    The event objects are just like with :func:`bind_with_data`.
     """
-    not_bound_commands = widget.bind(sequence)  # bindcheck: ignore
-    tcl_command = bind_with_data(widget, sequence, func, add=True)
-    bound_commands = widget.bind(sequence)  # bindcheck: ignore
-    assert bound_commands.startswith(not_bound_commands)
-    new_things = bound_commands[len(not_bound_commands):]
 
-    try:
-        yield
-    finally:
+    def __init__(self, widget: tkinter.BaseWidget, sequence: str, func: Callable[[EventWithData], BreakOrNone]) -> None:
+        self._widget = widget
+        self._sequence = sequence
+
+        not_bound_commands = widget.bind(sequence)  # bindcheck: ignore
+        self._tcl_command = bind_with_data(widget, sequence, func, add=True)
+        bound_commands = widget.bind(sequence)  # bindcheck: ignore
+        assert bound_commands.startswith(not_bound_commands)
+        self._new_things = bound_commands[len(not_bound_commands):]
+
+    def unbind(self) -> None:
         # other stuff might be bound too while this thing was yielding
-        bound_and_stuff = widget.bind(sequence)  # bindcheck: ignore
-        assert bound_and_stuff.count(new_things) == 1
-        widget.bind(sequence, bound_and_stuff.replace(new_things, ''))  # bindcheck: ignore
+        try:
+            bound_and_stuff = self._widget.bind(self._sequence)  # bindcheck: ignore
+        except tkinter.TclError as e:
+            if self._widget.winfo_exists():
+                raise e
+            else:
+                # widget is already destroyed, no need to do anything
+                return
 
-        # unbind() does this too to avoid memory leaks
-        widget.deletecommand(tcl_command)
+        assert bound_and_stuff.count(self._new_things) == 1
+        self._widget.bind(self._sequence, bound_and_stuff.replace(self._new_things, ''))  # bindcheck: ignore
+
+        # tkinter's unbind() does this too to avoid memory leaks
+        self._widget.deletecommand(self._tcl_command)
+
+    def __enter__(self) -> None:
+        pass
+
+    def __exit__(self, *error: object) -> None:
+        self.unbind()
 
 
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs

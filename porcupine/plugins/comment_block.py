@@ -1,18 +1,12 @@
 """Comment out multiple lines easily in languages like Python or Bash."""
+# TODO: don't assume that '#' comments are a thing in every programming language
 
 import functools
 
 from porcupine import actions, get_tab_manager, tabs, utils
 
-# update the code if you add a filetype that doesn't use # as comment prefix
-filetype_names = ['Python', 'Makefile', 'Shell', 'Tcl']
-
 
 def comment_or_uncomment(tab: tabs.FileTab, junk: object = None) -> utils.BreakOrNone:
-    if tab.filetype.name not in filetype_names:
-        # add '#' normally
-        return None
-
     try:
         start_index, end_index = map(str, tab.textwidget.tag_ranges('sel'))
     except ValueError:
@@ -59,7 +53,5 @@ def on_new_tab(event: utils.EventWithData) -> None:
 def setup() -> None:
     # the action's binding feature cannot be used because then typing
     # a '#' outside the main text widget inserts a # to the main widget
-    actions.add_command(
-        "Edit/Comment Block", comment_or_uncomment_in_current_tab,
-        filetype_names=filetype_names)
+    actions.add_command("Edit/Comment Block", comment_or_uncomment_in_current_tab, tabtypes=[tabs.FileTab])
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

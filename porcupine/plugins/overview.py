@@ -72,7 +72,7 @@ class Overview(tkinter.Text):
 
         self.bind('<<SettingChanged:font_family>>', self.set_font, add=True)
         self.bind('<<SettingChanged:font_size>>', self.set_font, add=True)
-        tab.bind('<<FiletypeChanged>>', self.set_font, add=True)
+        tab.bind('<<TabSettingChanged:indent_size>>', self.set_font, add=True)
 
         self.set_font()
 
@@ -98,7 +98,7 @@ class Overview(tkinter.Text):
             settings.get('font_family', str),
             round(settings.get('font_size', int) / 3),
             ())
-        how_to_show_tab = ' ' * self._tab.filetype.indent_size
+        how_to_show_tab = ' ' * self._tab.settings.get('indent_size', int)
 
         # tkinter doesn't provide a better way to do font stuff than stupid
         # font object

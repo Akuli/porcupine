@@ -1,4 +1,5 @@
 import atexit
+import builtins
 import dataclasses
 import codecs
 import json
@@ -35,7 +36,7 @@ class _Option:
         self.type = tybe
 
 
-def _get_path() -> pathlib.Path:
+def _get_json_path() -> pathlib.Path:
     return dirs.configdir / 'settings.json'
 
 
@@ -44,26 +45,25 @@ class Settings:
     def __init__(
             self,
             change_event_widget: Optional[tkinter.Misc],
-            change_event_format: str,
-            from_config_file: Dict[str, Any]):
+            change_event_format: str):
         # '<<Foo:{}>>'
         assert '{}' in change_event_format
         assert change_event_format.startswith('<<')
         assert change_event_format.endswith('>>')
 
         self._options: Dict[str, _Option] = {}
+        self._unknown_options: Dict[str, Any] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
-        self._from_config_file = from_config_file
 
-    def add_option(self, option_name: str, default: Any, tybe: Optional[Any] = None) -> None:
+    def add_option(self, option_name: str, default: Any, *, type: Optional[Any] = None) -> None:
         """Add a custom option.
 
         The type of *default* determines how :func:`set` and :func:`get` behave.
         For example, if *default* is a string, then
         calling :func:`set` with a value that isn't a string or
         calling :func:`get` with the type set to something else than ``str``
-        is an error. You can also provide a custom type with the *tybe*
+        is an error. You can also provide a custom type with the *type*
         argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
 
         If you are adding a global option (see :class:`Settings`), use only
@@ -73,19 +73,39 @@ class Settings:
         if option_name in self._options:
             raise RuntimeError(f"there's already an option named {option_name!r}")
 
-        if tybe is None:
-            tybe = type(default)
-        assert tybe is not None
+        if type is None:
+            # using type as variable name, wanna access built-in named 'type'
+            type = builtins.type(default)
+        assert type is not None
 
-        option = _Option(option_name, default, tybe)
+        option = _Option(option_name, default, type)
         self._options[option_name] = option
-        if option_name in self._from_config_file:
-            # this errors if self._from_config_file has wrong type value
-            # TODO: add test
-            self.set(option_name, self._from_config_file[option_name])
 
-    def set(self, option_name: str, value: object) -> None:
-        """Set the value of an opiton."""
+        try:
+            value = self._unknown_options.pop(option_name)
+        except KeyError:
+            pass   # nothing relevant in config file, use default
+        else:
+            # Error handling here because it's not possible to fail early when
+            # an option goes to _unknown_options, and bad data in a config file
+            # shouldn't cause add_option() and the rest of a plugin's setup()
+            # to fail.
+            try:
+                self.set(option_name, value)
+            except Exception:
+                _log.exception(f"setting {option_name!r} to {value!r} failed")
+
+    def set(self, option_name: str, value: object, *, allow_unknown: bool = False) -> None:
+        """Set the value of an opiton.
+
+        If the option hasn't been added with :func:`add_option` and
+        ``allow_unknown=True`` is used, then the value will be set later when
+        :func:`add_option` is called.
+        """
+        if option_name not in self._options and allow_unknown:
+            self._unknown_options[option_name] = value
+            return
+
         option = self._options[option_name]
         _type_check(option.type, value)
 
@@ -109,18 +129,18 @@ class Settings:
     # I don't like how this requires overloads for every type
     # https://stackoverflow.com/q/61471700
     @overload
-    def get(self, option_name: str, tybe: Type[pathlib.Path]) -> pathlib.Path: ...  # noqa
+    def get(self, option_name: str, type: Type[pathlib.Path]) -> pathlib.Path: ...  # noqa
     @overload
-    def get(self, option_name: str, tybe: Type[str]) -> str: ...  # noqa
+    def get(self, option_name: str, type: Type[str]) -> str: ...  # noqa
     @overload
-    def get(self, option_name: str, tybe: Type[int]) -> int: ...  # noqa
+    def get(self, option_name: str, type: Type[int]) -> int: ...  # noqa
     @overload
-    def get(self, option_name: str, tybe: object) -> Any: ...  # noqa
+    def get(self, option_name: str, type: object) -> Any: ...  # noqa
 
-    def get(self, option_name: str, tybe: Any) -> Any:
+    def get(self, option_name: str, type: Any) -> Any:
         """
         Return the current value of an option.
-        *tybe* should be ``str`` or ``int`` depending on what type the option is.
+        *type* should be ``str`` or ``int`` depending on what type the option is.
         You can also specify ``object`` to allow any type.
 
         This method works correctly for :class:`str` and :class:`int`,
@@ -139,13 +159,13 @@ class Settings:
             reveal_type(good_bar)  # Optional[pathlib.Path]
         """
         result = self._options[option_name].value
-        _type_check(tybe, result)
+        _type_check(type, result)
         return result
 
 
-_global_settings = Settings(None, '<<SettingChanged:{}>>', {})
+_global_settings = Settings(None, '<<SettingChanged:{}>>')
 add_option = _global_settings.add_option
-set = _global_settings.set  # add if needed: from builtins import set as builtin_set
+set = _global_settings.set     # shadows the built-in set data structure
 get = _global_settings.get
 
 
@@ -159,7 +179,7 @@ def reset_all() -> None:
     Reset all settings, including the ones not shown in the setting dialog.
     Clicking the reset button of the setting dialog runs this function.
     """
-    _global_settings._from_config_file.clear()
+    _global_settings._unknown_options.clear()
     for name in _global_settings._options:
         reset(name)
 
@@ -170,33 +190,44 @@ def save() -> None:
     Note that :func:`porcupine.run` always calls this before it returns,
     so usually you don't need to worry about calling this yourself.
     """
-    from_file = _global_settings._from_config_file
-    options = _global_settings._options
-    from_file.update({name: opt.value for name, opt in options.items()})
+    currently_known_defaults = {
+        name: opt.default
+        for name, opt in _global_settings._options.items()
+    }
+
+    writing: Dict[str, Any] = _global_settings._unknown_options.copy()
+
+    # don't wipe unknown stuff from config file
+    writing.update({
+        name: get(name, object)
+        for name in currently_known_defaults.keys()
+    })
 
     # don't store anything that doesn't differ from defaults
-    # also don't wipe unknown stuff from config file
-    for name in list(from_file.keys() & options.keys()):
-        if from_file[name] == options[name].default:
-            del from_file[name]
+    for name, default in currently_known_defaults.items():
+        if name in writing and writing[name] == default:
+            del writing[name]
 
-    with _get_path().open('w', encoding='utf-8') as file:
-        json.dump(from_file, file)
+    with _get_json_path().open('w', encoding='utf-8') as file:
+        json.dump(writing, file)
 
 
 def _load_from_file() -> None:
     try:
-        with _get_path().open('r', encoding='utf-8') as file:
-            _global_settings._from_config_file.update(json.load(file))
+        with _get_json_path().open('r', encoding='utf-8') as file:
+            options = json.load(file)
     except FileNotFoundError:
-        pass
+        return
+
+    for name, value in options.items():
+        set(name, value, allow_unknown=True)
 
 
 def _init_global_settings() -> None:
     try:
         _load_from_file()
     except Exception:
-        _log.exception(f"reading {_get_path()} failed")
+        _log.exception(f"reading {_get_json_path()} failed")
 
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
     if fixedfont['size'] < 0:

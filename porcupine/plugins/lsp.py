@@ -4,6 +4,7 @@
 # TODO: error reporting in gui somehow
 
 import errno
+import functools
 import itertools
 import logging
 import os
@@ -271,7 +272,7 @@ class LangServer:
 
         self._version_counter = itertools.count()
         self._log = log
-        self.tabs_opened: List[tabs.FileTab] = []
+        self.tabs_opened: Dict[tabs.FileTab, List[utils.TemporaryBind]] = {}
         self._is_shutting_down_cleanly = False
 
         self._io: Union[SubprocessStdIO, LocalhostSocketIO]
@@ -280,9 +281,15 @@ class LangServer:
         else:
             self._io = LocalhostSocketIO(the_id.port, log)
 
+    def __repr__(self):
+        return (f"<{type(self).__name__}: "
+                f"PID {self._process.pid}, "
+                f"{self._id}, "
+                f"{len(self.tabs_opened)} tabs opened>")
+
     def _is_in_langservers(self) -> bool:
         # This returns False if a langserver died and another one with the same
-        # command was launched.
+        # id was launched.
         return (langservers.get(self._id, None) is self)
 
     def _get_removed_from_langservers(self) -> None:
@@ -368,7 +375,7 @@ class LangServer:
         self._lsp_client.did_open(
             lsp.TextDocumentItem(
                 uri=tab.path.as_uri(),
-                languageId=tab.filetype.langserver_language_id,
+                languageId=tab.settings.get('langserver_language_id', str),
                 text=tab.textwidget.get('1.0', 'end - 1 char'),
                 version=0,
             )
@@ -379,7 +386,7 @@ class LangServer:
             self._log.info("langserver initialized, capabilities:\n%s",
                            pprint.pformat(lsp_event.capabilities))
 
-            for tab in self.tabs_opened:
+            for tab in self.tabs_opened.keys():
                 self._send_tab_opened_message(tab)
 
         elif isinstance(lsp_event, lsp.Shutdown):
@@ -444,12 +451,18 @@ class LangServer:
             get_tab_manager().after(50, self.run_stuff)
 
     def open_tab(self, tab: tabs.FileTab) -> None:
+        assert tab not in self.tabs_opened
+        self.tabs_opened[tab] = [
+            utils.TemporaryBind(tab, '<<AutoCompletionRequest>>', self.request_completions),
+            utils.TemporaryBind(tab.textwidget, '<<ContentChanged>>', self.send_change_events),
+            utils.TemporaryBind(tab, '<Destroy>', (lambda event: self.forget_tab(tab))),
+        ]
+
         self._log.debug("tab opened")
-        self.tabs_opened.append(tab)
         if self._lsp_client.state == lsp.ClientState.NORMAL:
             self._send_tab_opened_message(tab)
 
-    def close_tab(self, tab: tabs.FileTab) -> None:
+    def forget_tab(self, tab: tabs.FileTab) -> None:
         if not self._is_in_langservers():
             self._log.debug(
                 "a tab was closed, but langserver process is no longer "
@@ -457,7 +470,9 @@ class LangServer:
             return
 
         self._log.debug("tab closed")
-        self.tabs_opened.remove(tab)
+        for binding in self.tabs_opened.pop(tab):
+            binding.unbind()
+
         if not self.tabs_opened:
             self._log.info("no more open tabs, shutting down")
             self._is_shutting_down_cleanly = True
@@ -533,17 +548,16 @@ langservers: Dict[LangServerId, LangServer] = {}
 # is already being used, then it should exit with an error message.
 
 
-def get_lang_server(
-        filetype: filetypes.FileType,
-        project_root: pathlib.Path) -> Optional[LangServer]:
-    if not (filetype.langserver_command and filetype.langserver_language_id):
-        logging.getLogger(__name__).info(
-            "langserver not configured for filetype " + filetype.name)
+def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
+    command = tab.settings.get('langserver_command', Optional[str])
+    language_id = tab.settings.get('langserver_language_id', Optional[str])
+    port = tab.settings.get('langserver_port', Optional[int])
+
+    if tab.path is None or command is None or language_id is None:
         return None
 
-    the_id = LangServerId(
-        filetype.langserver_command, filetype.langserver_port, project_root)
-
+    project_root = find_project_root(tab.path)
+    the_id = LangServerId(command, port, project_root)
     try:
         return langservers[the_id]
     except KeyError:
@@ -552,36 +566,32 @@ def get_lang_server(
     log = logging.getLogger(
         # this is lol
         __name__ + '.' + re.sub(
-            r'[^A-Za-z0-9]', '_',
-            filetype.langserver_command + ' ' + str(project_root)))
+            r'[^A-Za-z0-9]', '_', command + ' ' + str(project_root)))
 
     # avoid shell=True on non-windows to get process.pid to do the right thing
     #
     # with shell=True it's the pid of the shell, not the pid of the program
     #
     # on windows, there is no shell and it's all about whether to quote or not
-    command: Union[str, List[str]]
+    actual_command: Union[str, List[str]]
     if platform.system() == 'Windows':
         shell = True
-        command = filetype.langserver_command
+        actual_command = command
     else:
         shell = False
-        command = shlex.split(filetype.langserver_command)
+        actual_command = shlex.split(command)
 
     try:
         # TODO: read and log stderr
         process = subprocess.Popen(
-            command, shell=shell,
+            actual_command, shell=shell,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     except (OSError, subprocess.CalledProcessError):
-        log.exception(
-            "cannot start langserver process with command '%s'",
-            filetype.langserver_command)
+        log.exception(f"failed to start langserver with command {command!r}")
         return None
 
     log.info("Langserver process started with command '%s', PID %d, "
-             "for project root '%s'",
-             filetype.langserver_command, process.pid, project_root)
+             "for project root '%s'", command, process.pid, project_root)
 
     langserver = LangServer(process, the_id, log)
     langserver.run_stuff()
@@ -589,30 +599,38 @@ def get_lang_server(
     return langserver
 
 
+# Switch the tab to another langserver, starting one if needed
+def switch_langservers(tab: tabs.FileTab, junk: object = None) -> None:
+    old = next((
+        langserver
+        for langserver in langservers.values()
+        if tab in langserver.tabs_opened
+    ), None)
+    new = get_lang_server(tab)
+
+    if old is not new:
+        logging.getLogger(__name__).info(f"Switching langservers: {old} --> {new}")
+        if old is not None:
+            old.forget_tab(tab)
+        if new is not None:
+            new.open_tab(tab)
+
+
 def on_new_tab(event: utils.EventWithData) -> None:
-    tab = cast(tabs.Tab, event.data_widget())
+    tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        if tab.path is None or tab.filetype is None:
-            # TODO
-            return
+        tab.settings.add_option('langserver_command', None, type=Optional[str])
+        tab.settings.add_option('langserver_language_id', None, type=Optional[str])
+        tab.settings.add_option('langserver_port', None, type=Optional[int])
 
-        langserver = get_lang_server(tab.filetype, find_project_root(tab.path))
-        if langserver is None:
-            return
-
-        # mypy doesn't understand if i try to do this with lambda
-        def destroy_callback(event: tkinter.Event) -> None:
-            assert isinstance(tab, tabs.FileTab)
-            assert langserver is not None
-            langserver.close_tab(tab)
-
-        utils.bind_with_data(tab, '<<AutoCompletionRequest>>',
-                             langserver.request_completions, add=True)
-        utils.bind_with_data(tab.textwidget, '<<ContentChanged>>',
-                             langserver.send_change_events, add=True)
-        tab.bind('<Destroy>', destroy_callback, add=True)
-
-        langserver.open_tab(tab)
+        for virtual_event in [
+                # FIXME: langserver_bla settings don't change all at once
+                '<<TabSettingChanged:langserver_command>>',
+                '<<TabSettingChanged:langserver_language_id>>',
+                '<<TabSettingChanged:langserver_port>>',
+                '<<PathChanged>>']:
+            tab.bind(virtual_event, functools.partial(switch_langservers, tab), add=True)
+        switch_langservers(tab)
 
 
 def setup() -> None:

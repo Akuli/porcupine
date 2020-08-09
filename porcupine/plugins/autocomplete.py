@@ -6,7 +6,7 @@ import itertools
 import re
 import tkinter
 from tkinter import ttk
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -395,18 +395,16 @@ class AutoCompleter:
             # let the text get inserted before continuing
             self._tab.textwidget.after_idle(self._filter_through_completions)
 
-        else:
-            if event.char in self._tab.filetype.autocomplete_chars:
-                def do_request() -> None:
-                    if ((not self.popup.is_completing())
-                            and self._can_complete_here()):
-                        self._request_completions()
+        elif event.char in self._tab.settings.get('autocomplete_chars', Tuple[str, ...]):
+            def do_request() -> None:
+                if ((not self.popup.is_completing())
+                        and self._can_complete_here()):
+                    self._request_completions()
 
-                # Tiny delay added to make sure that langserver's change events
-                # get sent before completions are requested.
-                self._tab.after(10, do_request)
-                self._waiting_for_response_id = None
-                return
+            # Tiny delay added to make sure that langserver's change events
+            # get sent before completions are requested.
+            self._tab.after(10, do_request)
+            self._waiting_for_response_id = None
 
     # Completing should stop when newline is inserted with or without pressing
     # the enter key. Pasting is one way to insert newline without enter press.
@@ -445,6 +443,8 @@ def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if not isinstance(tab, tabs.FileTab):
         return
+
+    tab.settings.add_option('autocomplete_chars', (), type=Tuple[str, ...])
 
     completer = AutoCompleter(tab)
     utils.bind_with_data(tab, '<<AutoCompletionResponse>>',

@@ -157,7 +157,7 @@ def main() -> None:
     for path, content, filetype in filelist:
         tab = tabs.FileTab(tabmanager, content, path)
         if filetype is not None:
-            tab.filetype = filetype
+            tab.filetype_to_settings(filetype)
         tabmanager.add_tab(tab)
 
     porcupine.run()

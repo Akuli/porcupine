@@ -2,12 +2,14 @@ import dataclasses
 import functools
 import tkinter
 import tkinter.font as tkfont
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING
 import weakref
 
 import pygments.styles          # type: ignore
 
-from porcupine import filetypes, settings, utils
+from porcupine import settings, utils
+if TYPE_CHECKING:
+    from porcupine import tabs
 
 
 @dataclasses.dataclass
@@ -533,17 +535,14 @@ def use_pygments_theme(
 class MainText(tkinter.Text):
     """Don't use this. It may be changed later."""
 
-    # the filetype is needed for setting the tab width and indenting
-    def __init__(
-            self,
-            parent: tkinter.Widget,
-            filetype: filetypes.FileType,
-            **kwargs: Any) -> None:
-        super().__init__(parent, **kwargs)
+    def __init__(self, tab: 'tabs.FileTab', **kwargs: Any) -> None:
+        super().__init__(tab, **kwargs)
+        self._tab = tab
         track_changes(self)
         use_pygments_theme(self)
 
-        self.set_filetype(filetype)
+        tab.bind('<<TabSettingChanged:indent_size>>', self._on_indent_size_changed, add=True)
+        self._on_indent_size_changed()
 
         # FIXME: lots of things have been turned into plugins, but
         # there's still wayyyy too much stuff in here...
@@ -564,9 +563,7 @@ class MainText(tkinter.Text):
         self.bind('<Control-y>', self._redo, add=True)
         self.bind('<Control-a>', self._select_all, add=True)
 
-    def set_filetype(self, filetype: filetypes.FileType) -> None:
-        self._filetype = filetype
-
+    def _on_indent_size_changed(self, junk: object = None) -> None:
         # from the text(3tk) man page: "To achieve a different standard
         # spacing, for example every 4 characters, simply configure the
         # widget with “-tabs "[expr {4 * [font measure $font 0]}] left"
@@ -574,8 +571,10 @@ class MainText(tkinter.Text):
         #
         # my version is kind of minimal compared to that example, but it
         # seems to work :)
+        #
+        # TODO: there's similar code in overview plugin, clean up
         font = tkfont.Font(name='TkFixedFont', exists=True)
-        self['tabs'] = [str(font.measure(' ' * filetype.indent_size))]
+        self['tabs'] = font.measure(' ' * self._tab.settings.get('indent_size', int))
 
     def _on_delete(self, control_down: bool, event: tkinter.Event,
                    shifted: bool = False) -> utils.BreakOrNone:
@@ -629,16 +628,16 @@ class MainText(tkinter.Text):
 
     def indent(self, location: str) -> None:
         """Insert indentation character(s) at the given location."""
-        if not self._filetype.tabs2spaces:
+        if not self._tab.settings.get('tabs2spaces', bool):
             self.insert(location, '\t')
             return
 
-        # we can't just add ' '*self._filetype.indent_size, for example,
+        # we can't just add ' '*indent_size, for example,
         # if indent_size is 4 and there are 7 charaters we add 1 space
-        spaces = self._filetype.indent_size    # pep-8 line length
+        indent_size = self._tab.settings.get('indent_size', int)
         how_many_chars = int(self.index(location).split('.')[1])
-        spaces2add = spaces - (how_many_chars % spaces)
-        self.insert(location, ' ' * spaces2add)
+        space_count = indent_size - (how_many_chars % indent_size)
+        self.insert(location, ' ' * space_count)
 
     def dedent(self, location: str) -> bool:
         """Remove indentation character(s) if possible.
@@ -651,7 +650,7 @@ class MainText(tkinter.Text):
 
         This returns True if something was done, and False otherwise.
         """
-        if not self._filetype.tabs2spaces:
+        if not self._tab.settings.get('tabs2spaces', bool):
             one_back = '%s - 1 char' % location
             if self.get(one_back, location) == '\t':
                 self.delete(one_back, location)
@@ -661,14 +660,15 @@ class MainText(tkinter.Text):
         lineno, column = map(int, self.index(location).split('.'))
         line = self.get('%s linestart' % location, '%s lineend' % location)
 
-        start = column - (column % self._filetype.indent_size)   # round down to indent_size multiple
+        indent_size = self._tab.settings.get('indent_size', int)
+        start = column - (column % indent_size)   # round down to indent_size multiple
         if start == column and start != 0:    # prefer deleting from left side
-            start -= self._filetype.indent_size
+            start -= indent_size
         assert start >= 0
 
         # try to delete as much of full indent as possible without going past
         # end of line or deleting non-whitespace
-        end = min(start + self._filetype.indent_size, len(line))
+        end = min(start + indent_size, len(line))
         while start < end and not line[start:end].isspace():
             end -= 1
 

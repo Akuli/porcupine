@@ -266,7 +266,7 @@ class FileType:
         try:
             modulename, classname = section['pygments_lexer'].rsplit('.', 1)
             module = importlib.import_module(modulename)
-            self._pygments_lexer_class = getattr(module, classname)
+            self.pygments_lexer_class = getattr(module, classname)
         # this can import arbitrary modules, anything can go wrong
         except Exception as e:
             raise _OptionError('pygments_lexer') from e
@@ -292,20 +292,15 @@ class FileType:
         except ValueError as e:
             raise _OptionError('max_line_length') from e
 
-        for something_command in ['compile_command', 'run_command',
-                                  'lint_command']:
-            if self.has_command(something_command):
-                try:
-                    self.get_command(something_command, 'whatever')
-                # str.format seems to raise ValueError and KeyError
-                except (KeyError, ValueError) as e:
-                    raise _OptionError(something_command) from e
-
         self.autocomplete_chars = section['autocomplete_chars'].split()
 
         self.langserver_port: Optional[int]
         self.langserver_command: Optional[str]
         self.langserver_language_id: Optional[str]
+
+        self.compile_command = section['compile_command']
+        self.run_command = section['run_command']
+        self.lint_command = section['lint_command']
 
         self.langserver_command = section['langserver_command'].strip()
         self.langserver_language_id = section['langserver_language_id']
@@ -331,26 +326,6 @@ class FileType:
     # TODO: support passing more options in the config file? useful for lexers
     #       like pygments.lexers.PythonConsoleLexer, which takes an optional
     #       python3 argument
-    def get_lexer(self, **kwargs: Any) -> Any:
-        return self._pygments_lexer_class(**kwargs)
-
-    def has_command(self, something_command: str) -> bool:
-        return bool(_config[self.name][something_command].strip())
-
-    def get_command(
-            self, something_command: str, basename: str) -> List[str]:
-        assert os.sep not in basename, "%r is not a basename" % basename
-        template = _config[self.name][something_command]
-
-        exts = ''.join(pathlib.Path(basename).suffixes)
-        format_args = {
-            'file': basename,
-            'no_ext': pathlib.Path(basename).stem,
-            'no_exts': basename[:-len(exts)] if exts else basename,
-        }
-        result = [part.format(**format_args) for part in shlex.split(template)]
-        assert result
-        return result
 
 
 def guess_filetype(filepath: pathlib.Path) -> FileType:

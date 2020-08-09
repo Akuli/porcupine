@@ -12,6 +12,7 @@ import tkinter
 import tkinter.font as tkfont
 from typing import Any, Callable, Dict, Iterator, List, Tuple
 
+import pygments.lexer       # type: ignore
 import pygments.styles      # type: ignore
 import pygments.token       # type: ignore
 
@@ -36,19 +37,17 @@ PygmentizeResult = Dict[
 class PygmentizerProcess:
 
     def __init__(self) -> None:
-        self.in_queue: multiprocessing.Queue[Tuple[filetypes.FileType, str]] = multiprocessing.Queue()
+        self.in_queue: multiprocessing.Queue[Tuple[pygments.lexer.LexerMeta, str]] = multiprocessing.Queue()
         self.out_queue: multiprocessing.Queue[PygmentizeResult] = multiprocessing.Queue()
         self.process = multiprocessing.Process(target=self._run)
         self.process.start()
 
-    # returns {str(tokentype): [start1, end1, start2, end2, ...]}
-    def _pygmentize(
-            self, filetype: filetypes.FileType, code: str) -> PygmentizeResult:
+    def _pygmentize(self, lexer_class: pygments.lexer.LexerMeta, code: str) -> PygmentizeResult:
         # pygments doesn't include any info about where the tokens are
         # so we need to do it manually :(
         lineno = 1
         column = 0
-        lexer = filetype.get_lexer(stripnl=False)
+        lexer = lexer_class(stripnl=False)
 
         result: PygmentizeResult = {}
         for tokentype, string in lexer.get_tokens(code):
@@ -67,15 +66,17 @@ class PygmentizerProcess:
         while True:
             # if multiple codes were queued while this thing was doing
             # the previous code, just do the last one and ignore the rest
-            filetype, code = self.in_queue.get(block=True)
+            #
+            # FIXME: this doesn't seem to work and instead it lags a lot?
+            lexer_class, code = self.in_queue.get(block=True)
             try:
                 while True:
-                    filetype, code = self.in_queue.get(block=False)
+                    lexer_class, code = self.in_queue.get(block=False)
                     # print("_run: ignoring a code")
             except queue.Empty:
                 pass
 
-            result = self._pygmentize(filetype, code)
+            result = self._pygmentize(lexer_class, code)
             self.out_queue.put(result)
 
 
@@ -84,9 +85,9 @@ class Highlighter:
     def __init__(
             self,
             textwidget: tkinter.Text,
-            filetype_getter: Callable[[], filetypes.FileType]) -> None:
+            lexer_class_getter: Callable[[], pygments.lexer.LexerMeta]) -> None:
         self.textwidget = textwidget
-        self._get_filetype = filetype_getter
+        self._get_lexer_class = lexer_class_getter
         self.pygmentizer = PygmentizerProcess()
 
         # the tags use fonts from here
@@ -173,21 +174,20 @@ class Highlighter:
 
     def highlight_all(self, junk: object = None) -> None:
         code = self.textwidget.get('1.0', 'end - 1 char')
-        self.pygmentizer.in_queue.put((self._get_filetype(), code))
+        self.pygmentizer.in_queue.put((self._get_lexer_class(), code))
 
 
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        # needed because tab.filetype might change
-        def get_filetype() -> filetypes.FileType:
-            assert isinstance(tab, tabs.FileTab)
-            return tab.filetype
+        # needed because pygments_lexer_class might change
+        def get_lexer_class() -> pygments.lexer.LexerMeta:
+            assert isinstance(tab, tabs.FileTab)  # f u mypy
+            return tab.settings.get('pygments_lexer_class', pygments.lexer.LexerMeta)
 
-        highlighter = Highlighter(tab.textwidget, get_filetype)
-        tab.bind('<<FiletypeChanged>>', highlighter.highlight_all, add=True)
-        tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all,
-                            add=True)
+        highlighter = Highlighter(tab.textwidget, get_lexer_class)
+        tab.bind('<<TabSettingChanged:pygments_lexer_class>>', highlighter.highlight_all, add=True)
+        tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all, add=True)
         tab.bind('<Destroy>', highlighter.on_destroy, add=True)
         highlighter.highlight_all()
 

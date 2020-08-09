@@ -9,7 +9,12 @@ import tkinter
 from tkinter import ttk, messagebox, filedialog
 import traceback
 from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union, cast
+
+import pygments.lexer     # type: ignore
+import pygments.lexers    # type: ignore
+
 from porcupine import filetypes, images, settings, textwidget, utils
+
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
@@ -512,28 +517,29 @@ bers.py>` use this attribute.
         .. seealso:: The :virtevt:`PathChanged` virtual event.
     """
 
-    _filetype: filetypes.FileType
-
     def __init__(self, manager: TabManager, content: str = '',
                  path: Optional[pathlib.Path] = None) -> None:
         super().__init__(manager)
 
-        self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>', {})
         self._save_hash: Optional[str] = None
-
         self._path = path
-        self._guess_filetype()          # sets self._filetype
-        self.bind('<<PathChanged>>', self._update_title, add=True)
-        self.bind('<<PathChanged>>', self._guess_filetype_if_needed, add=True)
+
+        # TODO: TabSettingChanged --> FileTabSettingChanged (too long?)
+        self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
+        self.settings.add_option(
+            'pygments_lexer_class', pygments.lexers.TextLexer,
+            type=pygments.lexer.LexerMeta)
+        self.settings.add_option('tabs2spaces', False)
+        self.settings.add_option('indent_size', 4)
+
+        self._guess_filetype()
+        self.bind('<<PathChanged>>', self._guess_filetype, add=True)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
-            self, self._filetype, width=1, height=1, wrap='none', undo=True)
+            self, width=1, height=1, wrap='none', undo=True)
         self.textwidget.pack(side='left', fill='both', expand=True)
-        self.bind('<<FiletypeChanged>>',
-                  lambda event: self.textwidget.set_filetype(self.filetype),
-                  add=True)
         self.textwidget.bind('<<ContentChanged>>', self._update_title,
                              add=True)
 
@@ -542,7 +548,6 @@ bers.py>` use this attribute.
             self.textwidget.edit_reset()   # reset undo/redo
 
         self.bind('<<PathChanged>>', self._update_status, add=True)
-        self.bind('<<FiletypeChanged>>', self._update_status, add=True)
         self.textwidget.bind('<<CursorMoved>>', self._update_status, add=True)
 
         self.scrollbar = ttk.Scrollbar(self.right_frame)
@@ -611,40 +616,30 @@ bers.py>` use this attribute.
         if it_changes:
             self.event_generate('<<PathChanged>>')
 
-    @property
-    def filetype(self) -> filetypes.FileType:
-        return self._filetype
-
-    # weird things might happen if filetype is of the wrong type
-    @filetype.setter
-    def filetype(self, filetype: filetypes.FileType) -> None:
-        try:
-            # it's easier to write code that don't recurse infinitely if
-            # 'tab.filetype = tab.filetype' does nothing
-            if filetype is self._filetype:
-                return
-        except AttributeError:
-            # this happens when called from _guess_filetype, and self._filetype
-            # hasn't been set yet
-            pass
-
-        self._filetype = filetype
-        self.event_generate('<<FiletypeChanged>>')
-
-    def _guess_filetype(self) -> None:
+    def _guess_filetype(self, junk: object = None) -> None:
         if self.path is None:
-            self.filetype = filetypes.get_filetype_by_name(
+            filetype = filetypes.get_filetype_by_name(
                 settings.get('default_filetype', str))
         else:
             # FIXME: this may read the shebang from the file, but the file
             #        might not be saved yet because save_as() sets self.path
             #        before saving, and that's when this runs
-            self.filetype = filetypes.guess_filetype(self.path)
+            filetype = filetypes.guess_filetype(self.path)
 
-    def _guess_filetype_if_needed(self, junk: object) -> None:
-        if self.filetype.name == 'Plain Text':
-            # the user probably hasn't set the filetype
-            self._guess_filetype()
+        self.filetype_to_settings(filetype)
+
+    def filetype_to_settings(self, ft: filetypes.FileType) -> None:
+        # TODO: rewrite filetypes because this sucks ass
+        self.settings.set('pygments_lexer_class', ft.pygments_lexer_class, allow_unknown=True)
+        self.settings.set('tabs2spaces', ft.tabs2spaces, allow_unknown=True)
+        self.settings.set('indent_size', ft.indent_size, allow_unknown=True)
+        self.settings.set('max_line_length', ft.max_line_length, allow_unknown=True)
+        self.settings.set('autocomplete_chars', tuple(ft.autocomplete_chars), allow_unknown=True)
+        self.settings.set('langserver_command', ft.langserver_command, allow_unknown=True)
+        self.settings.set('langserver_language_id', ft.langserver_language_id, allow_unknown=True)
+        self.settings.set('compile_command', ft.compile_command, allow_unknown=True)
+        self.settings.set('run_command', ft.run_command, allow_unknown=True)
+        self.settings.set('lint_command', ft.lint_command, allow_unknown=True)
 
     # TODO: plugin
     def _update_title(self, junk: object = None) -> None:
@@ -657,14 +652,11 @@ bers.py>` use this attribute.
 
     def _update_status(self, junk: object = None) -> None:
         if self.path is None:
-            prefix = "New file"
+            path_string = "New file"
         else:
-            prefix = "File '%s'" % self.path
+            path_string = "File '%s'" % self.path
         line, column = self.textwidget.index('insert').split('.')
-
-        self.status = "%s, %s\tLine %s, column %s" % (
-            prefix, self.filetype.name,
-            line, column)
+        self.status = f"{path_string}\tLine {line}, column {column}"
 
     def can_be_closed(self) -> bool:    # override
         if self.is_saved():

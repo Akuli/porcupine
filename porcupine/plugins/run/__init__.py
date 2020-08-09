@@ -2,13 +2,34 @@
 
 import functools
 import logging
-from typing import Callable, Set
+import os
+import pathlib
+import shlex
+from typing import Callable, List, Optional, Set
 
-from porcupine import actions, filetypes, get_tab_manager, tabs
+from porcupine import actions, filetypes, get_tab_manager, tabs, utils
 
 from . import terminal, no_terminal
 
 log = logging.getLogger(__name__)
+
+
+def get_command(tab: tabs.FileTab, something_command: str, basename: str) -> Optional[List[str]]:
+    assert os.sep not in basename, "%r is not a basename" % basename
+    template = tab.settings.get(something_command, str)
+    if not template.strip():
+        return None
+
+    exts = ''.join(pathlib.Path(basename).suffixes)
+    format_args = {
+        'file': basename,
+        'no_ext': pathlib.Path(basename).stem,
+        'no_exts': basename[:-len(exts)] if exts else basename,
+    }
+    # TODO: is this really supposed to be shlex.split even on windows?
+    result = [part.format(**format_args) for part in shlex.split(template)]
+    assert result
+    return result
 
 
 def do_something_to_this_file(something: str) -> None:
@@ -24,42 +45,48 @@ def do_something_to_this_file(something: str) -> None:
     basename = tab.path.name
 
     if something == 'run':
-        command = tab.filetype.get_command('run_command', basename)
-        terminal.run_command(workingdir, command)
+        command = get_command(tab, 'run_command', basename)
+        if command is not None:
+            terminal.run_command(workingdir, command)
 
     elif something == 'compilerun':
         def run_after_compile() -> None:
             assert isinstance(tab, tabs.FileTab)
-            command = tab.filetype.get_command('run_command', basename)
-            terminal.run_command(workingdir, command)
+            command = get_command(tab, 'run_command', basename)
+            if command is not None:
+                terminal.run_command(workingdir, command)
 
-        compile_command = tab.filetype.get_command('compile_command', basename)
-        no_terminal.run_command(workingdir, compile_command, run_after_compile)
+        compile_command = get_command(tab, 'compile_command', basename)
+        if compile_command is not None:
+            no_terminal.run_command(workingdir, compile_command, run_after_compile)
 
     else:
         assert something in {'compile', 'lint'}
-        command = tab.filetype.get_command(something + '_command', basename)
-        no_terminal.run_command(workingdir, command)
+        command = get_command(tab, something + '_command', basename)
+        if command is not None:
+            no_terminal.run_command(workingdir, command)
 
 
-def get_filetype_names(has_what: str) -> Set[str]:
-    return {filetype.name for filetype in filetypes.get_all_filetypes()
-            if filetype.has_command(has_what)}
+def on_new_tab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option('compile_command', '')
+    tab.settings.add_option('run_command', '')
+    tab.settings.add_option('lint_command', '')
 
 
 def setup() -> None:
-    compilable = get_filetype_names('compile_command')
-    runnable = get_filetype_names('run_command')
-    lintable = get_filetype_names('lint_command')
-
     def create_callback(something: str) -> Callable[[], None]:
         return functools.partial(do_something_to_this_file, something)
 
+    # TODO: disable the menu items when they don't correspond to actual commands
     actions.add_command("Run/Compile", create_callback('compile'),
-                        '<F4>', filetype_names=compilable)
+                        '<F4>', tabtypes=[tabs.FileTab])
     actions.add_command("Run/Run", create_callback('run'),
-                        '<F5>', filetype_names=runnable)
+                        '<F5>', tabtypes=[tabs.FileTab])
     actions.add_command("Run/Compile and Run", create_callback('compilerun'),
-                        '<F6>', filetype_names=(compilable & runnable))
+                        '<F6>', tabtypes=[tabs.FileTab])
     actions.add_command("Run/Lint", create_callback('lint'),
-                        '<F7>', filetype_names=lintable)
+                        '<F7>', tabtypes=[tabs.FileTab])
+
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', (
+        lambda event: on_new_tab(event.data_widget())
+    ), add=True)

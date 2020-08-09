@@ -20,6 +20,7 @@ class LongLineMarker:
         self._height = 0        # on_configure() will run later
 
     def setup(self) -> None:
+        self.tab.bind('<<TabSettingChanged:max_line_length>>', self.do_update, add=True)
         self.tab.bind('<<SettingChanged:font_family>>', self.do_update, add=True)
         self.tab.bind('<<SettingChanged:font_size>>', self.do_update, add=True)
         self.tab.bind('<<SettingChanged:pygments_style>>', self.on_style_changed, add=True)
@@ -29,13 +30,14 @@ class LongLineMarker:
         self.on_style_changed()
 
     def do_update(self, junk: object = None) -> None:
-        column = self.tab.filetype.max_line_length
-        if column == 0:
-            # maximum line length is disabled, see filetypes.ini docs
+        max_line_length = self.tab.settings.get('max_line_length', int)
+        if max_line_length <= 0:
+            # marker is disabled
+            self.frame.place_forget()
             return
 
         font = tkfont.Font(name=self.tab.textwidget['font'], exists=True)
-        where = font.measure(' ' * self.tab.filetype.max_line_length)
+        where = font.measure(' ' * max_line_length)
         self.frame.place(x=where, height=self._height)
 
     def on_style_changed(self, junk: object = None) -> None:
@@ -60,6 +62,8 @@ class LongLineMarker:
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
+        # raymond hettinger says 90-ish
+        tab.settings.add_option('max_line_length', 90)
         LongLineMarker(tab).setup()
 
 

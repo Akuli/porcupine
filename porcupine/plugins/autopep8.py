@@ -62,4 +62,4 @@ def callback() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Tools/autopep8", callback, filetype_names=["Python"])
+    actions.add_command("Tools/Python/autopep8", callback, tabtypes=[tabs.FileTab])
