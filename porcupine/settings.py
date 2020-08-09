@@ -6,14 +6,13 @@ import logging
 import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, overload
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, overload
 
 import porcupine
 from porcupine import dirs, images, utils
 from porcupine.filetypes import get_all_filetypes
 
 
-_T = TypeVar('_T')
 _log = logging.getLogger(__name__)
 
 
@@ -26,9 +25,9 @@ def _type_check(tybe: type, obj: object) -> None:
     utils.dict_to_dataclass(ValueContainer, {'value': obj})
 
 
-class _Option(Generic[_T]):
+class _Option:
 
-    def __init__(self, name: str, default: _T, tybe: Type[_T]) -> None:
+    def __init__(self, name: str, default: object, tybe: Any) -> None:
         _type_check(tybe, default)
         self.name = name
         self.value = default
@@ -52,7 +51,7 @@ class Settings:
         assert change_event_format.startswith('<<')
         assert change_event_format.endswith('>>')
 
-        self._options: Dict[str, _Option[Any]] = {}
+        self._options: Dict[str, _Option] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
         self._from_config_file = from_config_file
