@@ -281,7 +281,7 @@ class LangServer:
         else:
             self._io = LocalhostSocketIO(the_id.port, log)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"<{type(self).__name__}: "
                 f"PID {self._process.pid}, "
                 f"{self._id}, "

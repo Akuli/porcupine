@@ -67,7 +67,8 @@ def do_something_to_this_file(something: str) -> None:
             no_terminal.run_command(workingdir, command)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
+def on_new_tab(event: utils.EventWithData) -> None:
+    tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         tab.settings.add_option('compile_command', '')
         tab.settings.add_option('run_command', '')
@@ -88,6 +89,4 @@ def setup() -> None:
     actions.add_command("Run/Lint", create_callback('lint'),
                         '<F7>', tabtypes=[tabs.FileTab])
 
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', (
-        lambda event: on_new_tab(event.data_widget())
-    ), add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
