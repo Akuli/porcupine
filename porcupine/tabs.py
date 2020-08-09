@@ -334,6 +334,7 @@ class Tab(ttk.Frame):
         These frames should contain no widgets when Porcupine is running
         without plugins. Use pack when adding things here.
     """
+    # TODO: write types into above docstring
 
     master: TabManager
 
@@ -460,10 +461,22 @@ class FileTab(Tab):
         This runs when :attr:`~path` is set to a new value. Use
         ``event.widget.path`` to get the new path.
 
-    .. virtualevent:: FiletypeChanged
+    .. attribute:: settings
+        :type: porcupine.settings.Settings
 
-        Like :virtevt:`PathChanged`, but for :attr:`filetype`. Use
-        ``event.widget.filetype`` to access the new file type.
+        This setting object is for settings loaded from Porcupine's filetype
+        configuration file, but they can be changed file-specifically too.
+        It contains the following settings by default (but plugins add more
+        settings with :meth:`~porcupine.settings.Settings.add_option`):
+
+            TODO
+
+    .. virtualevent:: TabSettingChanged:foo
+
+        When the ``title`` of :attr:`~settings` is set,
+        the tab receives (but the child widgets of the tab don't receive)
+        a virtual event named ``<<TabSettingChanged:title>>``.
+        This works similarly for other tab settings.
 
     .. virtualevent:: Save
 
@@ -497,13 +510,6 @@ bers.py>` use this attribute.
         an absolute path.
 
         .. seealso:: The :virtevt:`PathChanged` virtual event.
-
-    .. attribute:: filetype
-        :type: porcupine.filetypes.FileType
-
-        A filetype object from :mod:`porcupine.filetypes`.
-
-        .. seealso:: The :virtevt:`FiletypeChanged` virtual event.
     """
 
     _filetype: filetypes.FileType
@@ -512,6 +518,7 @@ bers.py>` use this attribute.
                  path: Optional[pathlib.Path] = None) -> None:
         super().__init__(manager)
 
+        self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>', {})
         self._save_hash: Optional[str] = None
 
         self._path = path

@@ -167,6 +167,7 @@ Non-global Settings
     This class provides settings that behave a lot like the global settings described above,
     but each instance of :class:`Settings` has its own options
     and isn't related to other instances or global settings.
+    See :class:`porcupine.tabs.Tab.settings` for an example.
 
     The change events of :class:`Settings` instances differ from :virtevt:`SettingChanged:foo`:
 
