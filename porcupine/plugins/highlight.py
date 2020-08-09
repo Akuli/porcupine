@@ -194,36 +194,3 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-
-
-# some old testing code
-
-#if __name__ == '__main__':
-#    import tkinter
-#    from porcupine.settings import load as load_settings
-#
-#    def on_modified(event):
-#        text.unbind('<<Modified>>')
-#        text.edit_modified(False)
-#        text.bind('<<Modified>>', on_modified)
-#        text.after_idle(highlighter.highlight_all)
-#
-#    root = tkinter.Tk()
-#    load_settings()     # must be after creating root window
-#    text = tkinter.Text(root, insertbackground='red')
-#    text.pack(fill='both', expand=True)
-#    text.bind('<<Modified>>', on_modified)
-#
-#    # The theme doesn't display perfectly here because the highlighter
-#    # only does tags, not foreground, background etc. See textwidget.py.
-#    highlighter = Highlighter(
-#        text, (lambda: filetypes.get_filetype_by_name('Python')))
-#
-#    with open(__file__, 'r') as f:
-#        text.insert('1.0', f.read())
-#    text.see('end')
-#
-#    try:
-#        root.mainloop()
-#    finally:
-#        highlighter.on_destroy()

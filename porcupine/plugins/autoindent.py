@@ -55,8 +55,3 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-
-
-if __name__ == '__main__':
-    import doctest
-    print(doctest.testmod())
