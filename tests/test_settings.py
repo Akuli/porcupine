@@ -9,10 +9,9 @@ from porcupine import settings
 
 @pytest.fixture
 def cleared_settings(monkeypatch, porcusession, tmpdir):
-    monkeypatch.setattr(settings, '_options', {})
-    monkeypatch.setattr(settings, '_json_file_contents', {})
-    monkeypatch.setattr(settings, '_get_path',
-                        (lambda: pathlib.Path(tmpdir) / 'settings.json'))
+    monkeypatch.setattr(settings._global_settings, '_options', {})
+    monkeypatch.setattr(settings._global_settings, '_from_config_file', {})
+    monkeypatch.setattr(settings, '_get_path', (lambda: pathlib.Path(tmpdir) / 'settings.json'))
 
 
 def load_from_json_string(json_string: str) -> None:

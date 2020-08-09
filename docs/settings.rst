@@ -158,3 +158,30 @@ Misc functions
 .. autofunction:: show_dialog
 .. autofunction:: save
 
+
+Non-global Settings
+-------------------
+
+.. class:: Settings
+
+    This class provides settings that behave a lot like the global settings described above,
+    but each instance of :class:`Settings` has its own options
+    and isn't related to other instances or global settings.
+
+    The change events of :class:`Settings` instances differ from :virtevt:`SettingChanged:foo`:
+
+        * The virtual events are named differently.
+        * Instead of having all child widgets of the main window receive the virtual events,
+          only one widget receives them.
+
+    The name of the event and the receiving widget should be mentioned
+    in the documentation of the :class:`Settings` instance,
+    such as the documentation of an attribute with type :class:`Settings`.
+
+    .. method:: set(option_name, value)
+    .. method:: get(option_name, tybe)
+    .. method:: add_option(option_name, default)
+
+        These methods are just like the
+        :func:`set`, :func:`get` and :func:`add_option` functions,
+        but they do things with the :class:`Settings` instance, not with the global settings.

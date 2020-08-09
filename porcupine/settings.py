@@ -5,7 +5,7 @@ import logging
 import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
 import weakref
 
 import porcupine
@@ -14,6 +14,8 @@ from porcupine.filetypes import get_all_filetypes
 
 
 _Val = TypeVar('_Val', str, int)
+_AnyType = TypeVar('_AnyType')
+_log = logging.getLogger(__name__)
 
 
 class _Option(Generic[_Val]):
@@ -22,59 +24,93 @@ class _Option(Generic[_Val]):
         self.name = name
         self.value: _Val = default
         self.default: _Val = default
-        self.variables: 'weakref.WeakSet[tkinter.StringVar]' = weakref.WeakSet()
-
-    def set(self, value: Union[str, int]) -> None:
-        if not isinstance(value, type(self.default)):
-            raise TypeError(f"expected {type(self.default).__name__}, got {type(value).__name__}")
-
-        # don't create change events when nothing changes (helps avoid infinite recursion)
-        if self.value == value:
-            return
-        self.value = value
-
-        event_name = f'<<SettingChanged:{self.name}>>'
-        log.debug(f"{self.name} was set to {value!r}, generating {event_name} events")
-
-        not_notified_yet: List[tkinter.Misc] = [porcupine.get_main_window()]
-        while not_notified_yet:
-            widget = not_notified_yet.pop()
-            widget.event_generate(event_name)
-            not_notified_yet.extend(widget.winfo_children())
 
 
 def _get_path() -> pathlib.Path:
     return dirs.configdir / 'settings.json'
 
 
-log = logging.getLogger(__name__)
+class Settings:
 
-# _json_file_contents may contain stuff that isn't in _options yet
-_json_file_contents: Dict[str, Any] = {}
-_options: Dict[str, Union[_Option[str], _Option[int]]] = {}
+    def __init__(
+            self,
+            change_event_widget: Optional[tkinter.Misc],
+            change_event_format: str,
+            from_config_file: Dict[str, Any]):
+        # '<<Foo:{}>>'
+        assert '{}' in change_event_format
+        assert change_event_format.startswith('<<')
+        assert change_event_format.endswith('>>')
+
+        self._options: Dict[str, _Option[Any]] = {}
+        self._change_event_widget = change_event_widget  # None to notify all widgets
+        self._change_event_format = change_event_format
+        self._from_config_file = from_config_file
+
+    def add_option(self, option_name: str, default: Union[str, int]) -> None:
+        """Add a custom option.
+
+        The type of *default* determines how :func:`set` and :func:`get` behave.
+        For example, if *default* is a string, then
+        calling :func:`set` with a value that isn't a string or
+        calling :func:`get` with the type set to something else than ``str``
+        is an error.
+        """
+        if option_name in self._options:
+            raise RuntimeError(f"there's already an option named {option_name!r}")
+
+        # TODO: create mypy issue about need for Any
+        option = _Option(option_name, cast(Any, default))
+        self._options[option_name] = option
+        if option_name in self._from_config_file:
+            # this errors if self._from_config_file has wrong type value
+            # TODO: add test
+            self.set(option_name, self._from_config_file[option_name])
+
+    def set(self, option_name: str, value: Union[str, int]) -> None:
+        """Set the value of an opiton."""
+        option = self._options[option_name]
+        if not isinstance(value, type(option.default)):
+            raise TypeError(f"expected {type(option.default).__name__}, got {type(value).__name__}")
+
+        # don't create change events when nothing changes (helps avoid infinite recursion)
+        if option.value == value:
+            return
+        option.value = value
+
+        event_name = self._change_event_format.format(option_name)
+        _log.debug(f"{option_name} was set to {value!r}, generating {event_name} events")
+
+        if self._change_event_widget is None:
+            not_notified_yet: List[tkinter.Misc] = [porcupine.get_main_window()]
+            while not_notified_yet:
+                widget = not_notified_yet.pop()
+                widget.event_generate(event_name)
+                not_notified_yet.extend(widget.winfo_children())
+        else:
+            self._change_event_widget.event_generate(event_name)
+
+    def get(self, option_name: str, tybe: Type[_AnyType]) -> _AnyType:
+        """
+        Return the current value of an option.
+        *tybe* should be ``str`` or ``int`` depending on what type the option is.
+        You can also specify ``object`` to allow any type.
+        """
+        result = self._options[option_name].value
+        if not isinstance(result, tybe):
+            raise TypeError(f"use {type(result).__name__} instead of {tybe.__name__}")
+        return result
 
 
-# add 'from builtins import set as builtin_set' if needed
-def set(option_name: str, value: Union[str, int]) -> None:
-    """Set the value of an opiton."""
-    _options[option_name].set(value)
-
-
-def get(option_name: str, tybe: Type[_Val]) -> _Val:
-    """
-    Return the current value of an option.
-    *tybe* should be ``str`` or ``int`` depending on what type the option is.
-    """
-    result = _options[option_name].value
-    if not isinstance(result, tybe):
-        raise TypeError(f"use {type(result).__name__} instead of {tybe.__name__}")
-    return result
+_global_settings = Settings(None, '<<SettingChanged:{}>>', {})
+add_option = _global_settings.add_option
+set = _global_settings.set  # add if needed: from builtins import set as builtin_set
+get = _global_settings.get
 
 
 def reset(option_name: str) -> None:
     """Set an option to its default value given to :func:`add_option`."""
-    option = _options[option_name]
-    option.set(option.default)
+    set(option_name, _global_settings._options[option_name].default)
 
 
 def reset_all() -> None:
@@ -82,40 +118,9 @@ def reset_all() -> None:
     Reset all settings, including the ones not shown in the setting dialog.
     Clicking the reset button of the setting dialog runs this function.
     """
-    _json_file_contents.clear()
-    for name in _options:
+    _global_settings._from_config_file.clear()
+    for name in _global_settings._options:
         reset(name)
-
-
-def add_option(option_name: str, default: Union[str, int]) -> None:
-    """
-    Add a custom option.
-
-    The type of *default* determines how :func:`set` and :func:`get` behave.
-    For example, if *default* is a string, then
-    calling :func:`set` with a value that isn't a string or
-    calling :func:`get` with the type set to something else than ``str``
-    is an error.
-    """
-    if option_name in _options:
-        raise RuntimeError(f"there's already an option named {option_name!r}")
-
-    # TODO: create mypy issues about need for Any-typing
-    option: Any = _Option(option_name, default)
-    _options[option_name] = option
-    if option_name in _json_file_contents:
-        # this errors if _json_file_contents has wrong type value
-        # TODO: add test
-        option.set(_json_file_contents[option_name])
-
-
-def _load_from_file() -> None:
-    assert not _options    # add_option() uses _json_file_contents
-    try:
-        with _get_path().open('r', encoding='utf-8') as file:
-            _json_file_contents.update(json.load(file))
-    except FileNotFoundError:
-        pass
 
 
 def save() -> None:
@@ -124,19 +129,59 @@ def save() -> None:
     Note that :func:`porcupine.run` always calls this before it returns,
     so usually you don't need to worry about calling this yourself.
     """
-    _json_file_contents.update({
-        name: option.value
-        for name, option in _options.items()
-    })
+    from_file = _global_settings._from_config_file
+    options = _global_settings._options
+    from_file.update({name: opt.value for name, opt in options.items()})
 
     # don't store anything that doesn't differ from defaults
     # also don't wipe unknown stuff from config file
-    for name in list(_json_file_contents.keys() & _options.keys()):
-        if _json_file_contents[name] == _options[name].default:
-            del _json_file_contents[name]
+    for name in list(from_file.keys() & options.keys()):
+        if from_file[name] == options[name].default:
+            del from_file[name]
 
     with _get_path().open('w', encoding='utf-8') as file:
-        json.dump(_json_file_contents, file)
+        json.dump(from_file, file)
+
+
+def _load_from_file() -> None:
+    try:
+        with _get_path().open('r', encoding='utf-8') as file:
+            _global_settings._from_config_file.update(json.load(file))
+    except FileNotFoundError:
+        pass
+
+
+def _init_global_settings() -> None:
+    try:
+        _load_from_file()
+    except Exception:
+        _log.exception(f"reading {_get_path()} failed")
+
+    fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
+    if fixedfont['size'] < 0:
+        # negative sizes have a special meaning in Tk, and i don't care much
+        # about it for porcupine, using stupid hard-coded default instead
+        fixedfont['size'] = 10
+
+    # fixedfont['family'] is typically e.g. 'Monospace', that's not included in
+    # tkinter.font.families() because it refers to another font family that is
+    # in tkinter.font.families()
+    add_option('font_family', fixedfont.actual('family'))
+    add_option('font_size', fixedfont['size'])
+    add_option('encoding', 'utf-8')    # TODO: file-specific encodings
+    add_option('pygments_style', 'default')
+    add_option('default_filetype', 'Plain Text')
+
+    # keep TkFixedFont up to date with settings
+    def update_fixedfont(event: Optional[tkinter.Event]) -> None:
+        # can't bind to get_tab_manager() as recommended in docs because tab
+        # manager isn't ready yet when settings get inited
+        if event is None or event.widget == porcupine.get_main_window():
+            fixedfont.config(family=get('font_family', str), size=get('font_size', int))
+
+    porcupine.get_main_window().bind('<<SettingChanged:font_family>>', update_fixedfont, add=True)
+    porcupine.get_main_window().bind('<<SettingChanged:font_size>>', update_fixedfont, add=True)
+    update_fixedfont(None)
 
 
 def _create_notebook() -> ttk.Notebook:
@@ -228,7 +273,7 @@ def _create_validation_triangle(
             set(option_name, value)
 
     def setting_changed(junk: object = None) -> None:
-        var.set(str(_options[option_name].value))
+        var.set(str(get(option_name, object)))
 
     widget.bind(f'<<SettingChanged:{option_name}>>', setting_changed, add=True)
     var.trace_add('write', var_changed)
@@ -450,36 +495,6 @@ def _init() -> None:
     if _notebook is not None:
         raise RuntimeError("can't call _init() twice")
 
-    try:
-        _load_from_file()
-    except Exception:
-        log.exception(f"reading {_get_path()} failed")
-
-    fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
-    if fixedfont['size'] < 0:
-        # negative sizes have a special meaning in Tk, and i don't care much
-        # about it for porcupine, using stupid hard-coded default instead
-        fixedfont['size'] = 10
-
-    # fixedfont['family'] is typically e.g. 'Monospace', that's not included in
-    # tkinter.font.families() because it refers to another font family that is
-    # in tkinter.font.families()
-    add_option('font_family', fixedfont.actual('family'))
-    add_option('font_size', fixedfont['size'])
-    add_option('encoding', 'utf-8')    # TODO: file-specific encodings
-    add_option('pygments_style', 'default')
-    add_option('default_filetype', 'Plain Text')
-
-    # keep TkFixedFont up to date with settings
-    def update_fixedfont(event: Optional[tkinter.Event]) -> None:
-        # can't bind to get_tab_manager() as recommended in docs because tab
-        # manager isn't ready yet when settings get inited
-        if event is None or event.widget == porcupine.get_main_window():
-            fixedfont.config(family=get('font_family', str), size=get('font_size', int))
-
-    porcupine.get_main_window().bind('<<SettingChanged:font_family>>', update_fixedfont, add=True)
-    porcupine.get_main_window().bind('<<SettingChanged:font_size>>', update_fixedfont, add=True)
-    update_fixedfont(None)
-
+    _init_global_settings()
     _notebook = _create_notebook()
     _fill_notebook_with_defaults()
