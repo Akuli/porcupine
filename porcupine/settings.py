@@ -109,7 +109,7 @@ class Settings:
     # I don't like how this requires overloads for every type
     # https://stackoverflow.com/q/61471700
     @overload
-    def get(self, option_name: str, tybe: Type[Optional[pathlib.Path]]) -> pathlib.Path: ...  # noqa
+    def get(self, option_name: str, tybe: Type[pathlib.Path]) -> pathlib.Path: ...  # noqa
     @overload
     def get(self, option_name: str, tybe: Type[str]) -> str: ...  # noqa
     @overload
