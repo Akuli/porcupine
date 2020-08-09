@@ -59,12 +59,16 @@ class Settings:
     def add_option(self, option_name: str, default: Any, tybe: Optional[Any] = None) -> None:
         """Add a custom option.
 
-        The *tybe* determines how :func:`set` and :func:`get` behave.
-        It defaults to ``type(default)``.
-        For example, if *default* is a string and no explicit *tybe* is given,
-        then calling :func:`set` with a value that isn't a string or
+        The type of *default* determines how :func:`set` and :func:`get` behave.
+        For example, if *default* is a string, then
+        calling :func:`set` with a value that isn't a string or
         calling :func:`get` with the type set to something else than ``str``
-        is an error.
+        is an error. You can also provide a custom type with the *tybe*
+        argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
+
+        If you are adding a global option (see :class:`Settings`), use only
+        JSON-safe and immutable types. Don't use ``List[something]``, for
+        example. Let me know if this limitation is too annoying.
         """
         if option_name in self._options:
             raise RuntimeError(f"there's already an option named {option_name!r}")
