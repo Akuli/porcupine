@@ -8,26 +8,28 @@ import pytest
 from porcupine import settings
 
 
+# Could replace some of this with non-global setting objects, but I don't feel
+# like rewriting the tests just because it would be slightly nicer that way
 @pytest.fixture
-def cleared_settings(monkeypatch, porcusession, tmpdir):
+def cleared_global_settings(monkeypatch, porcusession, tmpdir):
     monkeypatch.setattr(settings._global_settings, '_options', {})
-    monkeypatch.setattr(settings._global_settings, '_from_config_file', {})
-    monkeypatch.setattr(settings, '_get_path', (lambda: pathlib.Path(tmpdir) / 'settings.json'))
+    monkeypatch.setattr(settings._global_settings, '_unknown_options', {})
+    monkeypatch.setattr(settings, '_get_json_path', (lambda: pathlib.Path(tmpdir) / 'settings.json'))
 
 
 def load_from_json_string(json_string: str) -> None:
-    with settings._get_path().open('x', encoding='utf-8') as file:
+    with settings._get_json_path().open('x', encoding='utf-8') as file:
         file.write(json_string)
     settings._load_from_file()
 
 
 def save_and_read_file() -> str:
     settings.save()
-    with settings._get_path().open('r', encoding='utf-8') as file:
+    with settings._get_json_path().open('r', encoding='utf-8') as file:
         return json.load(file)
 
 
-def test_add_option_and_get_and_set(cleared_settings):
+def test_add_option_and_get_and_set(cleared_global_settings):
     settings.add_option('how_many_foos', 123)
     settings.add_option('bar_message', 'hello')
 
@@ -46,7 +48,7 @@ def test_add_option_and_get_and_set(cleared_settings):
 #
 # Even if the plugin is installed, reading the file happens before add_option()
 # is called.
-def test_unknown_option_in_settings_file(cleared_settings):
+def test_unknown_option_in_settings_file(cleared_global_settings):
     load_from_json_string('{"foo": "custom", "unknown": "hello"}')
     with pytest.raises(KeyError):
         settings.get('foo', str)
@@ -59,23 +61,9 @@ def test_unknown_option_in_settings_file(cleared_settings):
     assert save_and_read_file() == {'unknown': 'hello'}
 
 
-#def test_variables_cached_properly(cleared_settings):
-#    settings.add_option('thingy_count', 123)
-#
-#    # If variables were not cached, then this would create a temporary Variable
-#    # object and garbage collect it immediately (because refcount goes to zero)
-#    # and that would destroy the underlying Tcl variable...
-#    settings.get_var('thingy_count', tkinter.IntVar)
-#
-#    # ...which would cause this to fail:
-#    assert settings.get_var('thingy_count', tkinter.IntVar).get() == 123
-
-
-def test_wrong_type(cleared_settings):
+def test_wrong_type(cleared_global_settings):
     settings.add_option('magic_message', 'bla')
 
-#    with pytest.raises(TypeError, match=r'^use StringVar instead of IntVar$'):
-#        settings.get_var('magic_message', tkinter.IntVar)
     with pytest.raises(
             dacite.exceptions.WrongTypeError,
             match=r'wrong value type .* should be "int" instead of .* "str"'):
@@ -86,13 +74,13 @@ def test_wrong_type(cleared_settings):
         settings.set('magic_message', 123)
 
 
-def test_name_collision(cleared_settings):
+def test_name_collision(cleared_global_settings):
     settings.add_option('omg', 'bla')
     with pytest.raises(RuntimeError, match="^there's already an option named 'omg'$"):
         settings.add_option('omg', 'bla')
 
 
-def test_reset(cleared_settings):
+def test_reset(cleared_global_settings):
     load_from_json_string('{"foo": "custom", "bar": "custom", "unknown": "hello"}')
     settings.add_option('foo', 'default')
     settings.add_option('bar', 'default')
@@ -114,19 +102,19 @@ def test_reset(cleared_settings):
     assert save_and_read_file() == {}  # even unknown options go away
 
 
-def test_no_json_file(cleared_settings):
-    assert not settings._get_path().exists()
+def test_no_json_file(cleared_global_settings):
+    assert not settings._get_json_path().exists()
     settings._load_from_file()
 
     settings.add_option('foo', 'default')
     settings.set('foo', 'custom')
 
-    assert not settings._get_path().exists()
+    assert not settings._get_json_path().exists()
     settings.reset_all()
     assert settings.get('foo', str) == 'default'
 
 
-def test_save(cleared_settings):
+def test_save(cleared_global_settings):
     load_from_json_string('{"bar": "custom bar"}')
 
     settings.add_option('foo', 'default')
@@ -135,7 +123,7 @@ def test_save(cleared_settings):
     settings.set('foo', 'custom foo')
 
     settings.save()
-    with settings._get_path().open('r') as file:
+    with settings._get_json_path().open('r') as file:
         assert json.load(file) == {'foo': 'custom foo', 'bar': 'custom bar'}
 
 

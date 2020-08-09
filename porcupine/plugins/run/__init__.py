@@ -67,10 +67,11 @@ def do_something_to_this_file(something: str) -> None:
             no_terminal.run_command(workingdir, command)
 
 
-def on_new_tab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option('compile_command', '')
-    tab.settings.add_option('run_command', '')
-    tab.settings.add_option('lint_command', '')
+def on_new_tab(tab: tabs.Tab) -> None:
+    if isinstance(tab, tabs.FileTab):
+        tab.settings.add_option('compile_command', '')
+        tab.settings.add_option('run_command', '')
+        tab.settings.add_option('lint_command', '')
 
 
 def setup() -> None:

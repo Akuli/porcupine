@@ -37,14 +37,12 @@ def action_events():
     disable_events = []
 
     window = get_main_window()
-    tb = utils.temporary_bind    # pep8 line length
-    with tb(window, '<<NewAction>>', new_events.append):
-        with tb(window, '<<ActionEnabled>>', enable_events.append):
-            with tb(window, '<<ActionDisabled>>', disable_events.append):
+    with utils.TemporaryBind(window, '<<NewAction>>', new_events.append):
+        with utils.TemporaryBind(window, '<<ActionEnabled>>', enable_events.append):
+            with utils.TemporaryBind(window, '<<ActionDisabled>>', disable_events.append):
                 yield (new_events, enable_events, disable_events)
 
     # new_events check commented out because plugins can do weird things
-
     #assert not new_events
     assert not enable_events
     assert not disable_events
@@ -206,39 +204,3 @@ def test_tabtypes(porcusession, tabmanager, action_path):
     assert tabmanager.select() is None
     tabmanager.update()       # process virtual events
     assert action2.enabled
-
-
-def test_filetype_names(porcusession, tabmanager, action_path):
-    assert settings.get('default_filetype', str) == 'Plain Text'
-
-    # make sure these filetypes exist
-    filetypes.get_filetype_by_name('C')
-    filetypes.get_filetype_by_name('Java')
-    filetypes.get_filetype_by_name('Python')
-    filetypes.get_filetype_by_name('Plain Text')
-
-    filetab = tabs.FileTab(tabmanager)
-    othertab = tabs.Tab(tabmanager)
-
-    action = actions.add_yesno(action_path, True, filetype_names=['C', 'Python'])
-    assert not action.enabled
-
-    tabmanager.add_tab(othertab)
-    assert tabmanager.select() is othertab
-    assert not action.enabled
-
-    tabmanager.add_tab(filetab)
-    assert tabmanager.select() is filetab
-    assert not action.enabled
-
-    filetab.filetype = filetypes.get_filetype_by_name('Java')
-    assert not action.enabled
-    filetab.filetype = filetypes.get_filetype_by_name('C')
-    assert action.enabled
-
-    tabmanager.close_tab(filetab)
-    tabmanager.update()
-    assert not action.enabled
-    tabmanager.close_tab(othertab)
-    tabmanager.update()
-    assert not action.enabled
