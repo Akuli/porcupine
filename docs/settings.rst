@@ -170,7 +170,7 @@ Non-global Settings
 
     The change events of :class:`Settings` instances differ from :virtevt:`SettingChanged:foo`:
 
-        * The virtual events are named differently.
+        * The change events are named differently.
         * Instead of having all child widgets of the main window receive the virtual events,
           only one widget receives them.
 

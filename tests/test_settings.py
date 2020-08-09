@@ -2,6 +2,7 @@ import json
 import pathlib
 import tkinter.font
 
+import dacite
 import pytest
 
 from porcupine import settings
@@ -75,9 +76,13 @@ def test_wrong_type(cleared_settings):
 
 #    with pytest.raises(TypeError, match=r'^use StringVar instead of IntVar$'):
 #        settings.get_var('magic_message', tkinter.IntVar)
-    with pytest.raises(TypeError, match=r'^use str instead of int$'):
+    with pytest.raises(
+            dacite.exceptions.WrongTypeError,
+            match=r'wrong value type .* should be "int" instead of .* "str"'):
         settings.get('magic_message', int)
-    with pytest.raises(TypeError, match=r'^expected str, got int$'):
+    with pytest.raises(
+            dacite.exceptions.WrongTypeError,
+            match=r'wrong value type .* should be "str" instead of .* "int"'):
         settings.set('magic_message', 123)
 
 

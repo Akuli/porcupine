@@ -1,29 +1,39 @@
 import atexit
+import dataclasses
 import codecs
 import json
 import logging
 import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
-import weakref
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, overload
 
 import porcupine
 from porcupine import dirs, images, utils
 from porcupine.filetypes import get_all_filetypes
 
 
-_Val = TypeVar('_Val', str, int)
-_AnyType = TypeVar('_AnyType')
+_T = TypeVar('_T')
 _log = logging.getLogger(__name__)
 
 
-class _Option(Generic[_Val]):
+def _type_check(tybe: type, obj: object) -> None:
+    # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
+    @dataclasses.dataclass
+    class ValueContainer:
+        value: tybe  # type: ignore
 
-    def __init__(self, name: str, default: _Val) -> None:
+    utils.dict_to_dataclass(ValueContainer, {'value': obj})
+
+
+class _Option(Generic[_T]):
+
+    def __init__(self, name: str, default: _T, tybe: Type[_T]) -> None:
+        _type_check(tybe, default)
         self.name = name
-        self.value: _Val = default
-        self.default: _Val = default
+        self.value = default
+        self.default = default
+        self.type = tybe
 
 
 def _get_path() -> pathlib.Path:
@@ -47,31 +57,34 @@ class Settings:
         self._change_event_format = change_event_format
         self._from_config_file = from_config_file
 
-    def add_option(self, option_name: str, default: Union[str, int]) -> None:
+    def add_option(self, option_name: str, default: Any, tybe: Optional[Any] = None) -> None:
         """Add a custom option.
 
-        The type of *default* determines how :func:`set` and :func:`get` behave.
-        For example, if *default* is a string, then
-        calling :func:`set` with a value that isn't a string or
+        The *tybe* determines how :func:`set` and :func:`get` behave.
+        It defaults to ``type(default)``.
+        For example, if *default* is a string and no explicit *tybe* is given,
+        then calling :func:`set` with a value that isn't a string or
         calling :func:`get` with the type set to something else than ``str``
         is an error.
         """
         if option_name in self._options:
             raise RuntimeError(f"there's already an option named {option_name!r}")
 
-        # TODO: create mypy issue about need for Any
-        option = _Option(option_name, cast(Any, default))
+        if tybe is None:
+            tybe = type(default)
+        assert tybe is not None
+
+        option = _Option(option_name, default, tybe)
         self._options[option_name] = option
         if option_name in self._from_config_file:
             # this errors if self._from_config_file has wrong type value
             # TODO: add test
             self.set(option_name, self._from_config_file[option_name])
 
-    def set(self, option_name: str, value: Union[str, int]) -> None:
+    def set(self, option_name: str, value: object) -> None:
         """Set the value of an opiton."""
         option = self._options[option_name]
-        if not isinstance(value, type(option.default)):
-            raise TypeError(f"expected {type(option.default).__name__}, got {type(value).__name__}")
+        _type_check(option.type, value)
 
         # don't create change events when nothing changes (helps avoid infinite recursion)
         if option.value == value:
@@ -90,15 +103,40 @@ class Settings:
         else:
             self._change_event_widget.event_generate(event_name)
 
-    def get(self, option_name: str, tybe: Type[_AnyType]) -> _AnyType:
+    # I don't like how this requires overloads for every type
+    # https://stackoverflow.com/q/61471700
+    @overload
+    def get(self, option_name: str, tybe: Type[Optional[pathlib.Path]]) -> pathlib.Path: ...  # noqa
+    @overload
+    def get(self, option_name: str, tybe: Type[str]) -> str: ...  # noqa
+    @overload
+    def get(self, option_name: str, tybe: Type[int]) -> int: ...  # noqa
+    @overload
+    def get(self, option_name: str, tybe: object) -> Any: ...  # noqa
+
+    def get(self, option_name: str, tybe: Any) -> Any:
         """
         Return the current value of an option.
         *tybe* should be ``str`` or ``int`` depending on what type the option is.
         You can also specify ``object`` to allow any type.
+
+        This method works correctly for :class:`str` and :class:`int`,
+        but sometimes it returns Any because mypy sucks::
+
+            foo = settings.get('something', str)
+            reveal_type(foo)  # str
+
+            shitty_bar = settings.get('something', Optional[pathlib.Path])
+            reveal_type(shitty_bar)  # Any
+
+        Use a type annotation to work around this (and make sure to write the
+        same type two times)::
+
+            good_bar: Optional[pathlib.Path] = settings.get('something', Optional[pathlib.Path])
+            reveal_type(good_bar)  # Optional[pathlib.Path]
         """
         result = self._options[option_name].value
-        if not isinstance(result, tybe):
-            raise TypeError(f"use {type(result).__name__} instead of {tybe.__name__}")
+        _type_check(tybe, result)
         return result
 
 
@@ -244,11 +282,14 @@ def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) ->
     return _cache[0]
 
 
+_StrOrInt = TypeVar('_StrOrInt', str, int)
+
+
 def _create_validation_triangle(
     widget: ttk.Entry,
     option_name: str,
-    tybe: Type[_Val],
-    callback: Callable[[_Val], bool],
+    tybe: Type[_StrOrInt],
+    callback: Callable[[_StrOrInt], bool],
 ) -> ttk.Label:
 
     triangle = ttk.Label(widget.master)
@@ -257,7 +298,7 @@ def _create_validation_triangle(
     def var_changed(*junk: object) -> None:
         value_string = var.get()
 
-        value: Optional[_Val]
+        value: Optional[_StrOrInt]
         try:
             value = tybe(value_string)
         except ValueError:   # e.g. int('foo')
