@@ -77,7 +77,6 @@ def guess_filetype(filepath: pathlib.Path) -> Dict[str, Any]:
     """
     filetype = _guess_by_filename(filepath)
     if filetype is not None:
-        print("Guessed by name", filetype)
         return filetype
 
     try:

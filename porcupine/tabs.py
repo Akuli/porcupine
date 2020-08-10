@@ -648,6 +648,7 @@ bers.py>` use this attribute.
         self.filetype_to_settings(filetype)
 
     def filetype_to_settings(self, filetype: Dict[str, Any]) -> None:
+        log.info(f"applying filetype settings: {filetype!r}")
         for name, value in filetype.items():
             self.settings.set(name, value, from_config=True)
 
