@@ -468,8 +468,8 @@ class FileTab(Tab):
     *path* is given, the file will be saved there when Ctrl+S is
     pressed. Otherwise this becomes a "New File" tab.
 
-    If you want to read a file and open a new tab from it, use
-    :meth:`open_file`. It uses things like the user's encoding settings.
+    If you want to open a new tab for editing an existing file,
+    use :meth:`open_file`.
 
     .. virtualevent:: PathChanged
 
@@ -489,6 +489,8 @@ class FileTab(Tab):
             ``tabs2spaces``: :class:`bool`
 
             ``indent_size``: :class:`int`
+
+            ``encoding``: :class:`str`
 
         See :source:`porcupine/default_filetypes.toml` for a description of
         each option.
@@ -541,13 +543,13 @@ bers.py>` use this attribute.
         self._save_hash: Optional[str] = None
         self._path = path
 
-        # TODO: TabSettingChanged --> FileTabSettingChanged (too long?)
         self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
         self.settings.add_option(
             'pygments_lexer',
             pygments.lexers.TextLexer,
             type=pygments.lexer.LexerMeta,
             converter=_import_lexer_class)
+        self.settings.add_option('encoding', 'utf-8')
         self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)
 
@@ -588,9 +590,13 @@ bers.py>` use this attribute.
         :exc:`UnicodeError` or :exc:`OSError` is raised if reading the
         file fails.
         """
-        with path.open('r', encoding=settings.get('encoding', str)) as file:
+        tab = cls(manager, path=path)
+        with path.open('r', encoding=tab.settings.get('encoding', str)) as file:
             content = file.read()
-        return cls(manager, content, path)
+        tab.textwidget.insert('1.0', content)
+
+        tab.mark_saved()
+        return tab
 
     def equivalent(self, other: Tab) -> bool:    # override
         # this used to have hasattr(other, "path") instead of isinstance
@@ -715,7 +721,7 @@ bers.py>` use this attribute.
 
         self.event_generate('<<Save>>')
 
-        encoding = settings.get('encoding', str)
+        encoding = self.settings.get('encoding', str)
         try:
             with utils.backup_open(self.path, 'w', encoding=encoding) as f:
                 f.write(self.textwidget.get('1.0', 'end - 1 char'))

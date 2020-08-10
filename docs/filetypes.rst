@@ -1,4 +1,4 @@
-:mod:`porcupine.filetypes` --- low-level access to ``filetypes.toml`` stuff
+:mod:`porcupine.filetypes` --- Low-level access to ``filetypes.toml`` stuff
 ===========================================================================
 
 .. module:: porcupine.filetypes

@@ -38,10 +38,6 @@ Porcupine has these options by default (but you can add your own options too, se
             import tkinter.font
             fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
 
-    ``encoding``: :class:`str`
-        This encoding should be used when reading and writing the user's files.
-        The default value is ``'utf-8'``.
-
     ``pygments_style``: :class:`str`
         Name of the current Pygments style used for syntax highlighting.
         Use this option like this::

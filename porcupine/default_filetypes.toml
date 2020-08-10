@@ -28,6 +28,9 @@
 #        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
 #        matches the shebang '#!/bin/foo --bar --baz'.
 #
+#    encoding
+#        Name of encoding to be used with these files. Default is "utf-8".
+#
 #    pygments_lexer (default: "pygments.lexers.TextLexer")
 #        Name of a Pygments lexer class that will be used for syntax
 #        highlighting. See the Pygments documentation for lexers that Pygments

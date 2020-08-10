@@ -1,7 +1,6 @@
 import atexit
 import builtins
 import dataclasses
-import codecs
 import copy
 import json
 import logging
@@ -270,7 +269,6 @@ def _init_global_settings() -> None:
     # in tkinter.font.families()
     add_option('font_family', fixedfont.actual('family'))
     add_option('font_size', fixedfont['size'])
-    add_option('encoding', 'utf-8')    # TODO: file-specific encodings
     add_option('pygments_style', 'default')
     add_option('default_filetype', 'Python')
 
@@ -539,14 +537,6 @@ def add_label(section: ttk.Frame, text: str) -> ttk.Label:
     return label
 
 
-def _encoding_exists(name: str) -> bool:
-    try:
-        codecs.lookup(name)
-        return True
-    except LookupError:
-        return False
-
-
 def _edit_filetypes_config() -> None:
     # porcupine/tabs.py imports this file
     # these local imports feel so evil xD  MUHAHAHAA!!!
@@ -569,7 +559,6 @@ def _fill_notebook_with_defaults() -> None:
 
     add_combobox(general, 'font_family', "Font family:", values=font_families)
     add_spinbox(general, 'font_size', "Font size:", from_=3, to=1000)
-    add_entry(general, 'encoding', "File encoding:", _encoding_exists)
 
     filetypes = add_section('File Types')
     add_label(filetypes, (
