@@ -145,7 +145,9 @@ ensions that Porcupine supports.
         Union[str, Tuple[str, ...]],  # tkinter works this way
     ]] = [("All files", "*")]
     for name in get_filetype_names():
-        result.append((name, tuple(get_filetype_by_name(name)['filename_patterns'])))
+        # "*.py" doesn't work on windows, but ".py" works and does the same thing
+        patterns = get_filetype_by_name(name)['filename_patterns']
+        result.append((name, tuple(pat.replace('*', '') for pat in patterns)))
 
     widget = porcupine.get_main_window()   # any widget would do
     if len(result) == 1 and widget.tk.call('tk', 'windowingsystem') == 'aqua':
