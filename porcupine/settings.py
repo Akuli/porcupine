@@ -272,7 +272,7 @@ def _init_global_settings() -> None:
     add_option('font_size', fixedfont['size'])
     add_option('encoding', 'utf-8')    # TODO: file-specific encodings
     add_option('pygments_style', 'default')
-    add_option('default_filetype', 'Plain Text')
+    add_option('default_filetype', 'Python')
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: Optional[tkinter.Event]) -> None:
