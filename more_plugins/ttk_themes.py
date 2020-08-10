@@ -3,7 +3,7 @@
 import functools
 import tkinter
 
-from porcupine import actions, get_main_window, settings
+from porcupine import actions, settings
 import ttkthemes   # type: ignore
 
 

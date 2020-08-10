@@ -18,7 +18,7 @@ import sys
 import threading
 import tkinter as tk
 
-from porcupine import tabs, textwidget, utils
+from porcupine import tabs, textwidget
 
 
 _WINDOWS = (platform.system() == 'Windows')
@@ -35,13 +35,13 @@ class PythonPrompt:
     def __init__(self, textwidget, close_callback):
         self.widget = textwidget
         self.close_callback = close_callback
-        self.widget.bind('<Return>', self._on_return)
-        self.widget.bind('<Control-c>', self._keyboard_interrupt)
-        self.widget.bind('<Control-C>', self._copy)
-        self.widget.bind('<Control-l>', self._clear)
-        self.widget.bind('<Control-L>', self._clear)
-        self.widget.bind('<Control-d>', self._send_eof)
-        self.widget.bind('<Control-D>', self._send_eof)
+        self.widget.bind('<Return>', self._on_return, add=True)
+        self.widget.bind('<Control-c>', self._keyboard_interrupt, add=True)
+        self.widget.bind('<Control-C>', self._copy, add=True)
+        self.widget.bind('<Control-l>', self._clear, add=True)
+        self.widget.bind('<Control-L>', self._clear, add=True)
+        self.widget.bind('<Control-d>', self._send_eof, add=True)
+        self.widget.bind('<Control-D>', self._send_eof, add=True)
 
         # without -u python buffers stdout and everything is one enter
         # press late :( see python --help

@@ -15,7 +15,7 @@ SCALE = 20     # each square is 20x20 pixels
 # that the shape rotates around and top center of the game when the
 # shape is added to it
 # y is like in math, so more y means higher
-SHAPES = {          # noqa
+SHAPES = {
     'I': [(0, 2),
           (0, 1),
           (0, 0),
@@ -28,12 +28,12 @@ SHAPES = {          # noqa
           (0, 0),
           (0, -1), (1, -1)],
     'J': [
-            (0, 1),
+            (0, 1),            # noqa
             (0, 0),
-  (-1, -1), (0, -1)],
+  (-1, -1), (0, -1)],          # noqa
     'S': [
-            (0, 1), (1, 1),
-   (-1, 0), (0, 0)],
+            (0, 1), (1, 1),    # noqa
+   (-1, 0), (0, 0)],           # noqa
     'Z': [(-1, 1), (0, 1),
                    (0, 0), (1, 0)],
 }
