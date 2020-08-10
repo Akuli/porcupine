@@ -672,6 +672,10 @@ class MainText(tkinter.Text):
         while start < end and not line[start:end].isspace():
             end -= 1
 
+        # location argument must be in the range that gets deleted
+        if end < column:
+            return False
+
         assert start <= end
         self.delete(f'{lineno}.{start}', f'{lineno}.{end}')
         return (start != end)
