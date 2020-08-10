@@ -175,9 +175,9 @@ def _init() -> None:
 
     _filetypes.update(toml.load(defaults_path))
 
-    user_filetypes = {}
+    user_filetypes: Dict[str, Any] = {}
     try:
-        user_filetypes = toml.load(user_path)
+        user_filetypes = dict(toml.load(user_path))
     except FileNotFoundError:
         log.info(f"'{user_path}' not found, creating")
         with user_path.open('x') as file:   # error if exists
