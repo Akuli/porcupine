@@ -11,7 +11,6 @@ import pathlib
 import platform
 import re
 import shutil
-import string as string_module      # string is used as a variable name
 import subprocess
 import sys
 import threading
@@ -89,41 +88,6 @@ if running_pythonw and pathlib.Path(sys.executable).name.lower() == 'pythonw.exe
         python_executable = _possible_python
 
 
-def _find_short_python() -> str:
-    if platform.system() == 'Windows':
-        # windows python uses a py.exe launcher program in system32
-        expected = 'Python %d.%d.%d' % sys.version_info[:3]
-
-        try:
-            for python in ['py', 'py -%d' % sys.version_info[0],
-                           'py -%d.%d' % sys.version_info[:2]]:
-                # command strings aren't different from lists of
-                # arguments on windows, the subprocess module just
-                # quotes lists anyway (see subprocess.list2cmdline)
-                got = subprocess.check_output('%s --version' % python)
-                if expected.encode('ascii') == got.strip():
-                    return python
-        except (OSError, subprocess.CalledProcessError):
-            # something's wrong with py.exe 0_o it probably doesn't
-            # exist at all and we got a FileNotFoundError
-            pass
-
-    else:
-        for python in ['python', 'python%d' % sys.version_info[0],
-                       'python%d.%d' % sys.version_info[:2]]:
-            # samefile() does the right thing with symlinks
-            path_string = shutil.which(python)
-            if (path_string is not None and
-                    os.path.samefile(path_string, sys.executable)):
-                return python
-
-    # use the full path as a fallback
-    return str(python_executable)
-
-
-short_python_command: str = _find_short_python()
-
-
 quote: Callable[[str], str]
 if platform.system() == 'Windows':
     # this is mostly copy/pasted from subprocess.list2cmdline
@@ -192,15 +156,6 @@ def invert_color(color: str, *, black_or_white: bool = False) -> str:
         return '#ffffff' if average < 0x80 else '#000000'
     else:
         return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
-
-
-def mix_colors(color1: str, color2: str) -> str:
-    widget = porcupine.get_main_window()    # any widget would do
-    r, g, b = (
-        sum(pair) // 2     # average
-        for pair in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
-    )
-    return '#%02x%02x%02x' % (r >> 8, g >> 8, b >> 8)
 
 
 class _TooltipManager:
@@ -782,42 +737,3 @@ def backup_open(path: pathlib.Path, *args: Any, **kwargs: Any) -> Iterator[TextI
 
     else:
         yield path.open(*args, **kwargs)
-
-
-def get_keyboard_shortcut(binding: str) -> str:
-    """Convert a Tk binding string to a format that most people are used to.
-
-    >>> get_keyboard_shortcut('<Control-c>')
-    'Ctrl+C'
-    >>> get_keyboard_shortcut('<Control-C>')
-    'Ctrl+Shift+C'
-    >>> get_keyboard_shortcut('<Control-0>')
-    'Ctrl+Zero'
-    >>> get_keyboard_shortcut('<Control-1>')
-    'Ctrl+1'
-    >>> get_keyboard_shortcut('<F11>')
-    'F11'
-    """
-    # TODO: handle more corner cases? see bind(3tk)
-    parts = binding.lstrip('<').rstrip('>').split('-')
-    result = []
-
-    for part in parts:
-        if part == 'Control':
-            # TODO: i think this is supposed to use the command symbol
-            # on OSX? i don't have a mac
-            result.append('Ctrl')
-        # tk doesnt like e.g. <Control-ö> :( that's why ascii only here
-        elif len(part) == 1 and part in string_module.ascii_lowercase:
-            result.append(part.upper())
-        elif len(part) == 1 and part in string_module.ascii_uppercase:
-            result.append('Shift')
-            result.append(part)
-        elif part == '0':
-            # 0 and O look too much like each other
-            result.append('Zero')
-        else:
-            # good enough guess :D
-            result.append(part.capitalize())
-
-    return '+'.join(result)

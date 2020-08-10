@@ -25,22 +25,6 @@ Information about Python
    Like :data:`sys.executable`, but this should also be correct on
    ``pythonw.exe``.
 
-.. data:: short_python_command
-
-   A short command for running the Python that Porcupine is running on.
-
-   This may contain arguments. For example, this might be ``'py -3'`` on a
-   Windows system that has both Python 2 and Python 3 installed, and Python 2
-   is the default.
-
-   Note that this is quoted already if it needs quoting, and should *not* be
-   quoted more. For example, this code is **bad**::
-
-      subprocess.call([utils.short_python_command, 'blah', 'blah'])
-
-   Use :data:`python_executable` if you want to do a :func:`subprocess.call` or
-   something like that.
-
 
 Tkinter Utilities
 -----------------
@@ -49,7 +33,6 @@ Tkinter Utilities
 .. autofunction:: bind_mouse_wheel
 .. autofunction:: bind_tab_key
 .. autofunction:: bind_with_data
-.. autofunction:: get_keyboard_shortcut
 .. autofunction:: run_in_thread
 .. autoclass:: TemporaryBind
 

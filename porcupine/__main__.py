@@ -60,13 +60,8 @@ Examples:
 
 
 def main() -> None:
-    prog = os.path.basename(sys.argv[0])
-    if prog == '__main__.py':
-        prog = f'{utils.short_python_command} -m porcupine'
-
     parser = argparse.ArgumentParser(
-        prog=prog, epilog=_EPILOG,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        epilog=_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument(
         '--version', action='version',

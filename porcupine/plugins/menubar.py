@@ -1,7 +1,47 @@
+import string
 import tkinter
 from typing import Dict, Tuple
 
 from porcupine import get_main_window, actions, utils
+
+
+def get_keyboard_shortcut(binding: str) -> str:
+    """Convert a Tk binding string to a format that most people are used to.
+
+    >>> get_keyboard_shortcut('<Control-c>')
+    'Ctrl+C'
+    >>> get_keyboard_shortcut('<Control-C>')
+    'Ctrl+Shift+C'
+    >>> get_keyboard_shortcut('<Control-0>')
+    'Ctrl+Zero'
+    >>> get_keyboard_shortcut('<Control-1>')
+    'Ctrl+1'
+    >>> get_keyboard_shortcut('<F11>')
+    'F11'
+    """
+    # TODO: handle more corner cases? see bind(3tk)
+    parts = binding.lstrip('<').rstrip('>').split('-')
+    result = []
+
+    for part in parts:
+        if part == 'Control':
+            # TODO: i think this is supposed to use the command symbol
+            # on OSX? i don't have a mac
+            result.append('Ctrl')
+        # tk doesnt like e.g. <Control-ö> :( that's why ascii only here
+        elif len(part) == 1 and part in string.ascii_lowercase:
+            result.append(part.upper())
+        elif len(part) == 1 and part in string.ascii_uppercase:
+            result.append('Shift')
+            result.append(part)
+        elif part == '0':
+            # 0 and O look too much like each other
+            result.append('Zero')
+        else:
+            # good enough guess :D
+            result.append(part.capitalize())
+
+    return '+'.join(result)
 
 
 class MenuManager:
@@ -54,7 +94,7 @@ class MenuManager:
             if action.binding is None:
                 accel = ''
             else:
-                accel = utils.get_keyboard_shortcut(action.binding)
+                accel = get_keyboard_shortcut(action.binding)
 
             if action.kind == 'command':
                 menu.add_command(
