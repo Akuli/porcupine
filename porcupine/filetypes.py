@@ -173,15 +173,14 @@ def _init() -> None:
     user_path = dirs.configdir / 'filetypes.toml'
     defaults_path = pathlib.Path(__file__).absolute().parent / 'default_filetypes.toml'
 
-    it_succeeded = False
+    _filetypes.update(toml.load(defaults_path))
+
+    user_filetypes = {}
     try:
-        # toml.load seems to merge the configs quite nicely
-        # TODO: create typeshed issue about how these don't actually need to be strings
-        _filetypes.update(toml.load([str(defaults_path), str(user_path)]))
-        it_succeeded = True
+        user_filetypes = toml.load(user_path)
     except FileNotFoundError:
-        log.info(f"'{user_path}' doesn't exist yet, creating it")
-        with user_path.open('x') as file:
+        log.info(f"'{user_path}' not found, creating")
+        with user_path.open('x') as file:   # error if exists
             file.write('''\
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
@@ -189,11 +188,11 @@ def _init() -> None:
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
 ''')
     except (OSError, UnicodeError, toml.TomlDecodeError):
-        log.exception(f"reading '{user_path}' failed")
+        log.exception(f"reading '{user_path}' failed, using defaults")
 
-    if not it_succeeded:
-        # read defaults and ignore whatever user configured
-        _filetypes.update(toml.load(defaults_path))
+    # toml.load can take multiple file names, but it doesn't merge the configs
+    for name, updates in user_filetypes.items():
+        _filetypes.setdefault(name, {}).update(updates)
 
     # everything except filename_patterns and shebang_regex is handled by Settings objects
     for name, filetype in _filetypes.items():
