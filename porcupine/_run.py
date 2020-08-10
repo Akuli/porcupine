@@ -7,7 +7,8 @@ import sys
 import tkinter
 from tkinter import filedialog
 import traceback
-from typing import Any, Dict, Optional, Sequence
+import types
+from typing import Any, Dict, Optional, Sequence, Type
 import webbrowser
 
 if sys.version_info >= (3, 8):
@@ -23,6 +24,10 @@ log = logging.getLogger(__name__)
 _root: Optional[tkinter.Tk] = None
 _tab_manager: Optional[tabs.TabManager] = None
 _init_kwargs: Dict[str, Any] = {}
+
+
+def _log_tkinter_error(exc: Type[BaseException], val: BaseException, tb: types.TracebackType) -> Any:
+    log.error("Error in tkinter callback", exc_info=(exc, val, tb))
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
@@ -43,6 +48,8 @@ def init(*, verbose_logging: bool = False) -> None:
     _logs.setup(verbose_logging)
     _root = tkinter.Tk()
     _root.protocol('WM_DELETE_WINDOW', quit)
+    # TODO: why ignore comment needed?
+    _root.report_callback_exception = _log_tkinter_error  # type: ignore[assignment,misc]
     settings._init()
     filetypes._init()
 

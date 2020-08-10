@@ -8,10 +8,12 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     TypeVar,
     Union,
     overload,
 )
+from types import TracebackType
 
 if sys.version_info >= (3, 8):
     from typing import Literal, TypedDict
@@ -611,6 +613,8 @@ class Wm:
 class Toplevel(BaseWidget, Wm): pass
 
 class Tk(BaseWidget, Wm):
+    report_callback_exception: Callable[[Type[BaseException], BaseException, TracebackType], Any]
+
     # actually many widgets have this, but invoking it elsewhere doesn't make
     # much sense
     def mainloop(self) -> None: ...
