@@ -180,13 +180,13 @@ class Highlighter:
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        # needed because pygments_lexer_class might change
+        # needed because pygments_lexer might change
         def get_lexer_class() -> pygments.lexer.LexerMeta:
             assert isinstance(tab, tabs.FileTab)  # f u mypy
-            return tab.settings.get('pygments_lexer_class', pygments.lexer.LexerMeta)
+            return tab.settings.get('pygments_lexer', pygments.lexer.LexerMeta)
 
         highlighter = Highlighter(tab.textwidget, get_lexer_class)
-        tab.bind('<<TabSettingChanged:pygments_lexer_class>>', highlighter.highlight_all, add=True)
+        tab.bind('<<TabSettingChanged:pygments_lexer>>', highlighter.highlight_all, add=True)
         tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all, add=True)
         tab.bind('<Destroy>', highlighter.on_destroy, add=True)
         highlighter.highlight_all()

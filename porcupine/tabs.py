@@ -2,13 +2,14 @@ r"""Tabs as in browser tabs, not \t characters."""
 
 import functools
 import hashlib
+import importlib
 import itertools
 import logging
 import pathlib
 import tkinter
 from tkinter import ttk, messagebox, filedialog
 import traceback
-from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 
 import pygments.lexer     # type: ignore
 import pygments.lexers    # type: ignore
@@ -451,6 +452,15 @@ _FileTabState = Tuple[
 ]
 
 
+def _import_lexer_class(name: str) -> pygments.lexer.LexerMeta:
+    modulename, classname = name.rsplit('.', 1)
+    module = importlib.import_module(modulename)
+    klass = getattr(module, classname)
+    if not isinstance(klass, pygments.lexer.LexerMeta):
+        raise TypeError(f"expected a Lexer subclass, got {klass}")
+    return klass
+
+
 class FileTab(Tab):
     """A subclass of :class:`.Tab` that represents an opened file.
 
@@ -469,12 +479,19 @@ class FileTab(Tab):
     .. attribute:: settings
         :type: porcupine.settings.Settings
 
-        This setting object is for settings loaded from Porcupine's filetype
-        configuration file, but they can be changed file-specifically too.
+        This setting object is for settings loaded from :mod:`porcupine.filetypes`,
+        but they can be changed file-specifically too.
         It contains the following settings by default (but plugins add more
         settings with :meth:`~porcupine.settings.Settings.add_option`):
 
-            TODO
+            ``pygments_lexer``: a subclass of :class:`pygments.lexer.Lexer`
+
+            ``tabs2spaces``: :class:`bool`
+
+            ``indent_size``: :class:`int`
+
+        See :source:`porcupine/default_filetypes.toml` for a description of
+        each option.
 
     .. virtualevent:: TabSettingChanged:foo
 
@@ -527,8 +544,10 @@ bers.py>` use this attribute.
         # TODO: TabSettingChanged --> FileTabSettingChanged (too long?)
         self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
         self.settings.add_option(
-            'pygments_lexer_class', pygments.lexers.TextLexer,
-            type=pygments.lexer.LexerMeta)
+            'pygments_lexer',
+            pygments.lexers.TextLexer,
+            type=pygments.lexer.LexerMeta,
+            converter=_import_lexer_class)
         self.settings.add_option('tabs2spaces', False)
         self.settings.add_option('indent_size', 4)
 
@@ -628,18 +647,9 @@ bers.py>` use this attribute.
 
         self.filetype_to_settings(filetype)
 
-    def filetype_to_settings(self, ft: filetypes.FileType) -> None:
-        # TODO: rewrite filetypes because this sucks ass
-        self.settings.set('pygments_lexer_class', ft.pygments_lexer_class, allow_unknown=True)
-        self.settings.set('tabs2spaces', ft.tabs2spaces, allow_unknown=True)
-        self.settings.set('indent_size', ft.indent_size, allow_unknown=True)
-        self.settings.set('max_line_length', ft.max_line_length, allow_unknown=True)
-        self.settings.set('autocomplete_chars', tuple(ft.autocomplete_chars), allow_unknown=True)
-        self.settings.set('langserver_command', ft.langserver_command, allow_unknown=True)
-        self.settings.set('langserver_language_id', ft.langserver_language_id, allow_unknown=True)
-        self.settings.set('compile_command', ft.compile_command, allow_unknown=True)
-        self.settings.set('run_command', ft.run_command, allow_unknown=True)
-        self.settings.set('lint_command', ft.lint_command, allow_unknown=True)
+    def filetype_to_settings(self, filetype: Dict[str, Any]) -> None:
+        for name, value in filetype.items():
+            self.settings.set(name, value, from_config=True)
 
     # TODO: plugin
     def _update_title(self, junk: object = None) -> None:

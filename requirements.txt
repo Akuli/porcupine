@@ -33,3 +33,5 @@ typing_extensions
 
 # for event stuff in porcupine.utils
 dacite>=1.5.1,<2.0.0
+
+toml

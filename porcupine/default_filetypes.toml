@@ -1,0 +1,199 @@
+# These settings can be overrided in your user-specific filetypes.toml. To edit
+# it, go to Edit --> Porcupine settings --> File Types --> Edit filetypes.toml.
+#
+# There's a friendly introduction to editing this file on Porcupine Wiki:
+#
+#    https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language
+#
+# Available options (plugins may add more):
+#
+#    filename_patterns
+#        List of strings with * used as wildcard, such as "*.py" to match files
+#        named "something.py".
+#
+#    shebang_regex
+#        Regular expression checked against the first line of a file when no
+#        filename_pattern matches. See the Python documentation for supported
+#        regular expression syntax:
+#
+#            https://docs.python.org/3/library/re.html#regular-expression-syntax
+#
+#        Use single quotes to avoid having to escape backslashes.
+#
+#        By default, the regex may match any part of the first line. Put the
+#        regex between ^ and $ to match the entire first line, e.g.
+#
+#            '^#!/usr/bin/python(2|3)$'
+#
+#        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
+#        matches the shebang '#!/bin/foo --bar --baz'.
+#
+#    pygments_lexer (default: "pygments.lexers.TextLexer")
+#        Name of a Pygments lexer class that will be used for syntax
+#        highlighting. See the Pygments documentation for lexers that Pygments
+#        comes with:
+#
+#            https://pygments.org/docs/lexers/
+#
+#    tabs2spaces (default: true)
+#        If this is true, then spaces will be used for indentation.
+#
+#    indent_size (default: 4)
+#        If tabs2spaces is false, this specifies the number of spaces
+#        corresponding to one tab character. If tabs2spaces is true, then this
+#        is the number of spaces used for indentation.
+#
+#    max_line_length
+#        How many characters to put before the long line marker. Set this to 0
+#        or negative value to disable the long line marker.
+#
+#    autocomplete_chars
+#        List of one-character strings. The autocompletion popup triggers
+#        automatically when one of these characters is entered.
+#
+#    compile_command
+#    run_command
+#    lint_command
+#        Commands to run when something in the Run menu is clicked, as strings.
+#        All of these commands are ran in the directory containing the file
+#        being edited. These substitutions are performed to the commands before
+#        they are ran:
+#
+#            {file}
+#                File being edited, e.g. "hello world.tar.gz"
+#
+#            {no_ext}
+#                Like {file}, but without the last file extenion, e.g.
+#                "hello world.tar".
+#
+#            {no_exts}
+#                Like {file}, but with no file extensions, e.g. "hello world".
+#
+#            {python}
+#                "py" on Windows, "python3" on other platforms. This way I don't
+#                need to write separate default configuration files for Windows
+#                and Linux.
+#
+#            {exe}
+#                Same as {no_ext}.exe on Windows and ./{no_ext} on other
+#                platforms.
+#
+#        Redirections with e.g. > or | don't work. The command is split into an
+#        argument list before substituting in the filenames, so spaces in
+#        filenames don't cause issues. For example, if {file} is
+#        "hello world.txt", then specifying this...
+#
+#            tar cf {no_ext}.tar {file}
+#
+#        ...results in running a properly quoted command like this one:
+#
+#            tar cf "hello world.tar" "hello world.txt"
+#
+#    langserver_command
+#        A command string that will be ran to start the langserver process.
+#
+#    langserver_language_id
+#        This should be an "Identifier" from the table shown here:
+#
+#            https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocumentItem
+#
+#    langserver_port
+#        Leave this unset if you want to use stdin and stdout with the
+#        langserver. If the langserver uses a TCP socket listening on localhost
+#        instead, then set this to the port number that it uses.
+
+["Plain Text"]
+pygments_lexer = "pygments.lexers.TextLexer"
+
+[Python]
+filename_patterns = ["*.py", "*.pyi"]
+shebang_regex = 'python(\d(\.\d)?)?$'
+pygments_lexer = "pygments.lexers.Python3Lexer"
+tabs2spaces = true
+indent_size = 4
+max_line_length = 79   # pep8 says so, lol
+
+# flake8 is the default because pylint doesn't like my code :/ </3
+run_command = "{python} {file}"
+lint_command = "{python} -m flake8 {file}"
+
+autocomplete_chars = ["."]
+langserver_command = "pyls"
+langserver_language_id = "python"
+
+[C]
+filename_patterns = ["*.c", "*.h"]
+pygments_lexer = "pygments.lexers.CLexer"
+compile_command = "cc {file} -Wall -Wextra -std=c99 -o {exe}"
+run_command = "{exe}"
+
+langserver_command = "clangd"
+langserver_language_id = "c"
+
+["C++"]
+# Override this in your own filetypes.toml if you use .h for C++ headers
+filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
+pygments_lexer = "pygments.lexers.CppLexer"
+compile_command = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}"
+run_command = "{exe}"
+
+langserver_command = "clangd"
+langserver_language_id = "cpp"
+
+[Java]
+filename_patterns = ["*.java"]
+pygments_lexer = "pygments.lexers.JavaLexer"
+compile_command = "javac {file}"
+run_command = "java {no_ext}"
+
+[JavaScript]
+filename_patterns = ["*.js"]
+pygments_lexer = "pygments.lexers.JavascriptLexer"
+tabs2spaces = true
+indent_size = 2
+run_command = "node {file}"
+
+[Makefile]
+filename_patterns = ["Makefile", "makefile", "Makefile.*", "makefile.*"]
+pygments_lexer = "pygments.lexers.MakefileLexer"
+# make doesn't work with spaces
+tabs2spaces = false
+run_command = "make"
+
+# TODO: Windows batch files and powershell files
+#
+# i'm not trying to discriminate anyone with pygments_lexer and
+# run_command, override them in your user-specific config you want to
+#
+# shebang_regex is partly copy/pasted from nano's default config
+[Shell]
+filename_patterns = ["*.sh"]
+shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
+pygments_lexer = "pygments.lexers.BashLexer"
+run_command = "bash {file}"
+
+# tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
+[Tcl]
+filename_patterns = ["*.tcl"]
+shebang_regex = '(wi|tcl)sh$'
+pygments_lexer = "pygments.lexers.TclLexer"
+tabs2spaces = true
+run_command = "tclsh {file}"
+
+[JSON]
+filename_patterns = ["*.json"]
+pygments_lexer = "pygments.lexers.JsonLexer"
+indent_size = 2
+tabs2spaces = true
+
+[TOML]
+filename_patterns = ["*.toml"]
+pygments_lexer = "pygments.lexers.TOMLLexer"
+
+[reStructuredText]
+filename_patterns = ["*.rst"]
+pygments_lexer = "pygments.lexers.RstLexer"
+
+[Markdown]
+filename_patterns = ["*.md", "*.markdown"]
+pygments_lexer = "pygments.lexers.MarkdownLexer"

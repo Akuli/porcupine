@@ -5,7 +5,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from porcupine import _logs, filetypes, get_tab_manager, pluginloader, tabs, utils
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
@@ -82,7 +82,7 @@ def main() -> None:
         help="open these files when Porcupine starts, - means stdin")
     parser.add_argument(
         '-n', '--new-file', metavar='FILETYPE', action='append',
-        help='create a "New File" tab with a filetype from filetypes.ini')
+        help='create a "New File" tab with a filetype from filetypes.toml')
 
     plugingroup = parser.add_argument_group("plugin loading options")
     plugingroup.add_argument(
@@ -112,7 +112,7 @@ def main() -> None:
 
     # Make sure to get error before doing any gui stuff if reading file fails
     # or specified filetype doesn't exist.
-    filelist: List[Tuple[Optional[pathlib.Path], str, Optional[filetypes.FileType]]] = []
+    filelist: List[Tuple[Optional[pathlib.Path], str, Optional[Dict[str, Any]]]] = []
 
     for file in args.files:
         if file is sys.stdin:
@@ -131,9 +131,9 @@ def main() -> None:
 
     filetypes._init()
     for filetype_name in (args.new_file or []):   # args.new_file may be None
+        filetype = None   # fixes mypy error
         try:
-            # putting type annotation here fixes a problem that occurs below
-            filetype: Optional[filetypes.FileType] = filetypes.get_filetype_by_name(filetype_name)
+            filetype = filetypes.get_filetype_by_name(filetype_name)
         except KeyError:
             parser.error(f"no filetype named {filetype_name!r}")
         filelist.append((None, '', filetype))

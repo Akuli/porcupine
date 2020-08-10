@@ -4,6 +4,7 @@ import functools
 import logging
 import os
 import pathlib
+import platform
 import shlex
 from typing import Callable, List, Optional
 
@@ -21,10 +22,13 @@ def get_command(tab: tabs.FileTab, something_command: str, basename: str) -> Opt
         return None
 
     exts = ''.join(pathlib.Path(basename).suffixes)
+    no_ext = pathlib.Path(basename).stem
     format_args = {
         'file': basename,
         'no_ext': pathlib.Path(basename).stem,
         'no_exts': basename[:-len(exts)] if exts else basename,
+        'python': 'py' if platform.system() == 'Windows' else 'python3',
+        'exe': f'{no_ext}.exe' if platform.system() == 'Windows' else f'./{no_ext}',
     }
     # TODO: is this really supposed to be shlex.split even on windows?
     result = [part.format(**format_args) for part in shlex.split(template)]

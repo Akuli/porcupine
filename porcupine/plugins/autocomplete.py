@@ -6,7 +6,7 @@ import itertools
 import re
 import tkinter
 from tkinter import ttk
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -395,7 +395,7 @@ class AutoCompleter:
             # let the text get inserted before continuing
             self._tab.textwidget.after_idle(self._filter_through_completions)
 
-        elif event.char in self._tab.settings.get('autocomplete_chars', Tuple[str, ...]):
+        elif event.char in self._tab.settings.get('autocomplete_chars', List[str]):
             def do_request() -> None:
                 if ((not self.popup.is_completing())
                         and self._can_complete_here()):
@@ -444,7 +444,7 @@ def on_new_tab(event: utils.EventWithData) -> None:
     if not isinstance(tab, tabs.FileTab):
         return
 
-    tab.settings.add_option('autocomplete_chars', (), type=Tuple[str, ...])
+    tab.settings.add_option('autocomplete_chars', [], type=List[str])
 
     completer = AutoCompleter(tab)
     utils.bind_with_data(tab, '<<AutoCompletionResponse>>',

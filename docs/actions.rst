@@ -118,32 +118,15 @@ set to the action name, similarly to how the :attr:`~any_action.enabled`
 attribute works. Actions are usually added in the ``setup()`` function of a
 plugin, but adding more actions later works as well.
 
+The *tabtypes* argument of the below functions is used to
+enable and disable the action automatically so that it's enabled only when
+the current tab is of a specific type.
+It should contain :class:`~porcupine.tabs.Tab` subclasses
+or ``None`` to enable the action when there are no tabs.
+
 .. autofunction:: add_command
 .. autofunction:: add_yesno
 .. autofunction:: add_choice
-
-The above functions take these optional keyword-only arguments as ``**kwargs``:
-
-.. TODO: the way these are documented sucks
-
-*filetype_names: List[str]*
-    Enable and disable the action automatically so that it's enabled only when
-    a file of a specific type is being edited. For example,
-    ``filetype_names=['Python']`` is useful for a Python-specific action.
-
-    This should be a list or set of
-    :attr:`~porcupine.filetypes.somefiletype.name` attributes of
-    :ref:`filetype objects <filetype-objects>`. The action is disabled if the
-    current tab is not a :class:`~porcupine.tabs.FileTab`.
-
-*tabtypes: List[Type[porcupine.tabs.Tab]]*
-    Enable and disable the action automatically so that it's enabled only when
-    the current tab is of a specific type.
-
-    If given, this should be a listor set of :class:`~porcupine.tabs.Tab`
-    subclasses, or ``None`` to also enable the action when there are no tabs.
-
-Using *filetype_names* and *tabtypes* in the same function call doesn't work.
 
 
 Other Functions

@@ -4,21 +4,22 @@ The menubar plugin shows these as a "Filetypes" menu.
 """
 
 import functools
+from typing import Any, Dict
 
 from porcupine import actions, filetypes, get_tab_manager, tabs
 
 
 # called when a filetypes menu item is clicked
-def set_filetype(filetype: filetypes.FileType) -> None:
+def set_filetype(filetype: Dict[str, Any]) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     tab.filetype_to_settings(filetype)
 
 
 def setup() -> None:
-    for filetype in filetypes.get_all_filetypes():
-        safe_name = filetype.name.replace('/', '\\')   # TODO: unicode slash character
+    for name in filetypes.get_filetype_names():
+        safe_name = name.replace('/', '\\')   # TODO: unicode slash character
         actions.add_command(
             f'Filetypes/{safe_name}',
-            functools.partial(set_filetype, filetype),
+            functools.partial(set_filetype, filetypes.get_filetype_by_name(name)),
             tabtypes=[tabs.FileTab])

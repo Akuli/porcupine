@@ -2,6 +2,7 @@ import atexit
 import builtins
 import dataclasses
 import codecs
+import copy
 import json
 import logging
 import pathlib
@@ -11,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, overload
 
 import porcupine
 from porcupine import dirs, images, utils
-from porcupine.filetypes import get_all_filetypes
+from porcupine.filetypes import get_filetype_names
 
 
 _log = logging.getLogger(__name__)
@@ -28,12 +29,13 @@ def _type_check(tybe: type, obj: object) -> None:
 
 class _Option:
 
-    def __init__(self, name: str, default: object, tybe: Any) -> None:
+    def __init__(self, name: str, default: object, tybe: Any, converter: Callable[[Any], Any]) -> None:
         _type_check(tybe, default)
         self.name = name
         self.value = default
         self.default = default
         self.type = tybe
+        self.converter = converter
 
 
 def _get_json_path() -> pathlib.Path:
@@ -56,7 +58,14 @@ class Settings:
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
 
-    def add_option(self, option_name: str, default: Any, *, type: Optional[Any] = None) -> None:
+    def add_option(
+        self,
+        option_name: str,
+        default: Any,
+        *,
+        type: Optional[Any] = None,
+        converter: Callable[[Any], Any] = (lambda x: x),
+    ) -> None:
         """Add a custom option.
 
         The type of *default* determines how :func:`set` and :func:`get` behave.
@@ -66,9 +75,23 @@ class Settings:
         is an error. You can also provide a custom type with the *type*
         argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
 
-        If you are adding a global option (see :class:`Settings`), use only
-        JSON-safe and immutable types. Don't use ``List[something]``, for
-        example. Let me know if this limitation is too annoying.
+        If you are adding a global option (see :class:`Settings` for non-global
+        options), use only JSON-safe types. Let me know if this limitation is
+        too annoying.
+
+        If you are **not** adding a global option, you
+        can also specify a *converter* that takes the value in the
+        configuration file as an argument and returns an instance of *type*.
+        For example, ``pygments_lexer`` is set to a string like
+        "pygments.lexers.Foo" in the config file, even though it appears as a
+        class in the settings object. That's implemented similarly to this::
+
+            def import_lexer_class(name: str) -> something:
+                ...
+
+            filetab.settings.add_option('pygments_lexer', ..., converter=import_lexer_class)
+
+        By default, the converter returns its argument unchanged.
         """
         if option_name in self._options:
             raise RuntimeError(f"there's already an option named {option_name!r}")
@@ -78,7 +101,7 @@ class Settings:
             type = builtins.type(default)
         assert type is not None
 
-        option = _Option(option_name, default, type)
+        option = _Option(option_name, default, type, converter)
         self._options[option_name] = option
 
         try:
@@ -91,22 +114,29 @@ class Settings:
             # shouldn't cause add_option() and the rest of a plugin's setup()
             # to fail.
             try:
-                self.set(option_name, value)
+                self.set(option_name, converter(value))
             except Exception:
+                # can be an error from converter
                 _log.exception(f"setting {option_name!r} to {value!r} failed")
 
-    def set(self, option_name: str, value: object, *, allow_unknown: bool = False) -> None:
+    def set(self, option_name: str, value: object, *, from_config: bool = False) -> None:
         """Set the value of an opiton.
 
-        If the option hasn't been added with :func:`add_option` and
-        ``allow_unknown=True`` is used, then the value will be set later when
-        :func:`add_option` is called.
+        Set ``from_config=True`` if the value comes from a configuration
+        file (see :func:`add_option`). That does two things:
+
+            * The converter given to :func:`add_option` will be used.
+            * If the option hasn't been added with :func:`add_option` yet, then
+              the value won't be set immediatelly, but instead it gets set
+              later when the option is added.
         """
-        if option_name not in self._options and allow_unknown:
+        if option_name not in self._options and from_config:
             self._unknown_options[option_name] = value
             return
 
         option = self._options[option_name]
+        if from_config:
+            value = option.converter(value)
         _type_check(option.type, value)
 
         # don't create change events when nothing changes (helps avoid infinite recursion)
@@ -160,7 +190,7 @@ class Settings:
         """
         result = self._options[option_name].value
         _type_check(type, result)
-        return result
+        return copy.deepcopy(result)  # mutating wouldn't trigger change events
 
 
 _global_settings = Settings(None, '<<SettingChanged:{}>>')
@@ -220,7 +250,7 @@ def _load_from_file() -> None:
         return
 
     for name, value in options.items():
-        set(name, value, allow_unknown=True)
+        set(name, value, from_config=True)
 
 
 def _init_global_settings() -> None:
@@ -522,7 +552,7 @@ def _edit_filetypes_config() -> None:
     # these local imports feel so evil xD  MUHAHAHAA!!!
     from porcupine import tabs
 
-    path = dirs.configdir / 'filetypes.ini'
+    path = dirs.configdir / 'filetypes.toml'
     manager = porcupine.get_tab_manager()
     manager.add_tab(tabs.FileTab.open_file(manager, path))
     get_notebook().winfo_toplevel().withdraw()
@@ -544,10 +574,10 @@ def _fill_notebook_with_defaults() -> None:
     filetypes = add_section('File Types')
     add_label(filetypes, (
         "Currently there's no GUI for changing filetype specific settings, "
-        "but they're stored in filetypes.ini and you can edit it yourself."
+        "but you can edit it the configuration file."
     ))
     ttk.Button(
-        filetypes, text="Edit filetypes.ini", command=_edit_filetypes_config,
+        filetypes, text="Edit filetypes.toml", command=_edit_filetypes_config,
     ).grid(row=1, column=0, columnspan=3, sticky='')
 
     add_label(filetypes, (
@@ -556,10 +586,9 @@ def _fill_notebook_with_defaults() -> None:
         "can change the filetype after creating the file by clicking "
         "Filetypes in the menu bar."))
 
-    # filetypes aren't loaded yet when this is called, get_all_filetypes()
-    # returns empty list
+    # filetypes aren't loaded yet when this is called
     def add_filetype_choosing_combobox() -> None:
-        filetype_names = sorted(ft.name for ft in get_all_filetypes())
+        filetype_names = sorted(get_filetype_names())
         add_combobox(filetypes, 'default_filetype', "Default filetype for new files:", values=filetype_names)
 
     filetypes.after_idle(add_filetype_choosing_combobox)

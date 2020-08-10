@@ -68,18 +68,17 @@ class Action:
 
 
 def _add_any_action(
-        path: str,
-        kind: str,
-        callback_or_choices: Union[
-            Callable[[], None],
-            List[Any],
-            None,
-        ],
-        binding: Optional[str],
-        var: Optional[tkinter.Variable],
-        *,
-        tabtypes: Optional[Sequence[
-            Type[tabs.Tab]]] = None) -> Action:
+    path: str,
+    kind: str,
+    callback_or_choices: Union[
+        Callable[[], None],
+        List[Any],
+        None,
+    ],
+    binding: Optional[str],
+    var: Optional[tkinter.Variable],
+    tabtypes: Optional[Sequence[Optional[Type[tabs.Tab]]]] = None,
+) -> Action:
 
     if path.startswith('/') or path.endswith('/'):
         raise ValueError("action paths must not start or end with /")
@@ -137,25 +136,29 @@ def _add_any_action(
 
 
 def add_command(
-        path: str,
-        callback: Callable[[], None],
-        keyboard_binding: Optional[str] = None,
-        **kwargs: Any) -> Action:
+    path: str,
+    callback: Callable[[], None],
+    keyboard_binding: Optional[str] = None,
+    *,
+    tabtypes: Optional[Sequence[Optional[Type[tabs.Tab]]]] = None,
+) -> Action:
     """Add a simple action that runs ``callback()``.
 
     The returned action object has a ``callback`` attribute set to the
     ``callback`` passed to this function.
     """
     return _add_any_action(path, 'command', callback,
-                           keyboard_binding, None, **kwargs)
+                           keyboard_binding, None, tabtypes)
 
 
 def add_yesno(
-        path: str,
-        default: Optional[bool] = None,
-        keyboard_binding: Optional[str] = None, *,
-        var: Optional[tkinter.BooleanVar] = None,
-        **kwargs: Any) -> Action:
+    path: str,
+    default: Optional[bool] = None,
+    keyboard_binding: Optional[str] = None,
+    *,
+    var: Optional[tkinter.BooleanVar] = None,
+    tabtypes: Optional[Sequence[Optional[Type[tabs.Tab]]]] = None,
+) -> Action:
     """Add an action that appears as a checkbox item in the menubar.
 
     If *var* is given, it should be a ``tkinter.BooleanVar`` and it's
@@ -172,16 +175,17 @@ def add_yesno(
         var.set(default)
 
     return _add_any_action(path, 'yesno', None,
-                           keyboard_binding, var, **kwargs)
+                           keyboard_binding, var, tabtypes)
 
 
 def add_choice(
-        path: str,
-        choices: List[Any],
-        default: Optional[Any] = None,
-        *,
-        var: Optional[tkinter.Variable] = None,
-        **kwargs: Any) -> Action:
+    path: str,
+    choices: List[Any],
+    default: Optional[Any] = None,
+    *,
+    var: Optional[tkinter.Variable] = None,
+    tabtypes: Optional[Sequence[Optional[Type[tabs.Tab]]]] = None,
+) -> Action:
     """Add an action for choosing one from a list of choices.
 
     :source:`The menubar plugin <porcupine/plugins/menubar.py>` displays
@@ -212,7 +216,7 @@ def add_choice(
                                  % (default,))
             var.set(default)
 
-    return _add_any_action(path, 'choice', choices, None, var, **kwargs)
+    return _add_any_action(path, 'choice', choices, None, var, tabtypes)
 
 
 def get_action(action_path: str) -> Action:
