@@ -9,7 +9,8 @@ def gotoline() -> None:
 
     # simpledialog isn't ttk yet, but it's not a huge problem imo
     lineno = simpledialog.askinteger(
-        "Go to Line", "Type a line number and press Enter:")
+        "Go to Line", "Type a line number and press Enter:",
+        parent=tab.winfo_toplevel())
     if lineno is not None:    # not cancelled
         # there's no need to do a bounds check because tk ignores out-of-bounds
         # text indexes

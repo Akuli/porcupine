@@ -125,11 +125,14 @@ def _add_any_action(
 
         # TODO: warning if it's already bound?
         #
-        # bind_all is considered only after the Text-specific binding (try
-        # pressing ctrl+o or ctrl+w with some text selected without the
-        # following line)
+        # Text-specific binding are considered first (try pressing ctrl+o or
+        # ctrl+w with some text selected without bind_class)
+        #
+        # main window is Tk or Toplevel so it gets notified for what its child
+        # widgets do as well, no need to bind_all() which would also bind stuff
+        # outside the main window
         widget = porcupine.get_main_window()    # any widget would do
-        widget.bind_all(binding, bind_callback, add=True)
+        widget.bind(binding, bind_callback, add=True)
         widget.bind_class('Text', binding, bind_callback, add=False)
 
     return action
