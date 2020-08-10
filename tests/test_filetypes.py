@@ -21,7 +21,7 @@ def test_get_filedialog_kwargs(porcusession):
                 assert isinstance(pair[1], tuple)
             assert all(isinstance(pattern, str) for pattern in pair[1])
 
-        assert kwargs['filetypes'][0] == ('All files', '*')
+        assert kwargs['filetypes'][0] == ('All Files', '*')
         assert '.py' in dict(kwargs['filetypes'])['Python']
 
     else:

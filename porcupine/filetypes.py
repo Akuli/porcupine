@@ -143,23 +143,20 @@ ensions that Porcupine supports.
     result: List[Tuple[
         str,
         Union[str, Tuple[str, ...]],  # tkinter works this way
-    ]] = [("All files", "*")]
+    ]] = [("All Files", "*")]
     for name in get_filetype_names():
-        # "*.py" doesn't work on windows, but ".py" works and does the same thing
-        patterns = get_filetype_by_name(name)['filename_patterns']
-        result.append((name, tuple(pat.replace('*', '') for pat in patterns)))
+        if name == "Plain Text":
+            # can just use "All Files" for this
+            continue
 
-    widget = porcupine.get_main_window()   # any widget would do
-    if len(result) == 1 and widget.tk.call('tk', 'windowingsystem') == 'aqua':
-        # there's a bug that makes python crash with this list on osx, and osx
-        # creates a huge error message that complains about an empty parameter
-        # list... so it seems like osx ignores ("All files", "*") and disallows
-        # empty filetypes lists
-        #
-        # TODO: is this actually a problem with modern Tcl/Tk versions? I don't
-        # have a mac, and the above text was written after helping someone else
-        # to debug a different tkinter program on IRC.
-        return {}
+        patterns = tuple(
+            # "*.py" doesn't work on windows, but ".py" works and does the same thing
+            # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
+            pattern.lstrip('*')
+            for pattern in get_filetype_by_name(name)['filename_patterns']
+        )
+        result.append((name, patterns))
+
     return {'filetypes': result}
 
 
