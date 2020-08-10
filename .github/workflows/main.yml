@@ -11,7 +11,7 @@ jobs:
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
     - run: |
-        python3 -m mypy --strict porcupine
+        python3 -m mypy --strict porcupine more_plugins/ttk_themes.py
       env:
         MYPYPATH: ./my_stubs
   flake8:
@@ -24,7 +24,7 @@ jobs:
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
     - run: |
-        python3 -m flake8 porcupine tests
+        python3 -m flake8 porcupine tests more_plugins
   pytest:
     runs-on: ubuntu-latest
     steps:
@@ -49,3 +49,5 @@ jobs:
         python-version: 3.8
     - run: |
         python3 bindcheck.py porcupine
+    - run: |
+        python3 bindcheck.py more_plugins
