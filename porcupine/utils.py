@@ -11,7 +11,6 @@ import pathlib
 import platform
 import re
 import shutil
-import subprocess
 import sys
 import threading
 import tkinter

@@ -2,12 +2,11 @@
 
 import argparse
 import logging
-import os
 import pathlib
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
-from porcupine import _logs, filetypes, get_tab_manager, pluginloader, tabs, utils
+from porcupine import _logs, filetypes, get_tab_manager, pluginloader, tabs
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
 
 log = logging.getLogger(__name__)

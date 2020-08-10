@@ -13,9 +13,6 @@ import pygments.token   # type: ignore
 from pygments.util import ClassNotFound     # type: ignore
 import toml
 
-# 'import porcupine' is for porcupine.get_main_window(), can't use a from
-# import because import cycles
-import porcupine
 from porcupine import dirs
 
 
