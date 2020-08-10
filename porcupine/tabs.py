@@ -548,7 +548,7 @@ bers.py>` use this attribute.
             pygments.lexers.TextLexer,
             type=pygments.lexer.LexerMeta,
             converter=_import_lexer_class)
-        self.settings.add_option('tabs2spaces', False)
+        self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)
 
         self._guess_filetype()
