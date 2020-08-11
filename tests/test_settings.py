@@ -7,7 +7,7 @@ from typing import Optional
 import dacite
 import pytest
 
-from porcupine import get_main_window, settings
+from porcupine import settings
 
 
 # Could replace some of this with non-global setting objects, but I don't feel
