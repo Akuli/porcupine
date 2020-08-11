@@ -48,8 +48,8 @@ def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
     cursor_y -= 5
     cursor_height += 10
 
-    popup_width = settings.get('popup_window_width', int)
-    popup_height = settings.get('popup_window_height', int)
+    popup_width = settings.get('autocomplete_popup_width', int)
+    popup_height = settings.get('autocomplete_popup_height', int)
     screen_width = textwidget.winfo_screenwidth()
     screen_height = textwidget.winfo_screenheight()
 
@@ -172,7 +172,7 @@ class _Popup:
 
         # don't know why after_idle is needed, but it is
         def set_correct_sashpos() -> None:
-            self._panedwindow.sashpos(0, settings.get('popup_divider_pos', int))
+            self._panedwindow.sashpos(0, settings.get('autocomplete_divider_pos', int))
 
         self._panedwindow.after_idle(set_correct_sashpos)
 
@@ -181,9 +181,9 @@ class _Popup:
     def stop_completing(self, *, withdraw: bool = True) -> Optional[Completion]:
         # putting this here avoids some bugs
         if self.is_showing():
-            settings.set('popup_window_width', self.toplevel.winfo_width())
-            settings.set('popup_window_height', self.toplevel.winfo_height())
-            settings.set('popup_divider_pos', self._panedwindow.sashpos(0))
+            settings.set('autocomplete_popup_width', self.toplevel.winfo_width())
+            settings.set('autocomplete_popup_height', self.toplevel.winfo_height())
+            settings.set('autocomplete_divider_pos', self._panedwindow.sashpos(0))
 
         selected = self._get_selected_completion()
 
@@ -483,6 +483,6 @@ def on_new_tab(event: utils.EventWithData) -> None:
 # TODO: link to langserver setup docs somewhere in the gui
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-    settings.add_option('popup_window_width', 500)
-    settings.add_option('popup_window_height', 200)
-    settings.add_option('popup_divider_pos', 200)
+    settings.add_option('autocomplete_popup_width', 500)
+    settings.add_option('autocomplete_popup_height', 200)
+    settings.add_option('autocomplete_divider_pos', 200)
