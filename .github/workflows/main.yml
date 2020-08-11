@@ -11,7 +11,7 @@ jobs:
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
     - run: |
-        python3 -m mypy --strict porcupine more_plugins
+        python3 -m mypy --strict --show-error-codes porcupine more_plugins
       env:
         MYPYPATH: ./my_stubs
   flake8:
