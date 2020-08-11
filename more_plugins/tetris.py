@@ -1,8 +1,11 @@
-# TODO: add a pause feature (maybe pressing p or something?)
+# TODO: make pause feature discoverable to users
+# FIXME: "game over" text doesn't show up very well on top of white squares
+
 import functools
 import itertools
 import random
-import tkinter as tk
+from typing import Dict, Iterator, List, Optional, Tuple
+import tkinter
 
 from porcupine import actions, get_tab_manager, tabs, utils
 
@@ -10,12 +13,14 @@ WIDTH = 10
 HEIGHT = 20
 SCALE = 20     # each square is 20x20 pixels
 
+Point = Tuple[int, int]
+ShapeLetter = str
 
 # the shapes are lists of (x, y) coordinates where (0, 0) is the point
 # that the shape rotates around and top center of the game when the
 # shape is added to it
 # y is like in math, so more y means higher
-SHAPES = {
+SHAPES: Dict[ShapeLetter, List[Point]] = {
     'I': [(0, 2),
           (0, 1),
           (0, 0),
@@ -45,7 +50,7 @@ class Block:
     Other blocks end up in Game.frozen_squares.
     """
 
-    def __init__(self, game, shape_letter):
+    def __init__(self, game: 'Game', shape_letter: ShapeLetter) -> None:
         self._game = game
         self.shape_letter = shape_letter
         self.shape = SHAPES[shape_letter].copy()
@@ -53,21 +58,17 @@ class Block:
         self.y = HEIGHT
 
     # for debugging
-    def __repr__(self):
-        coords = (self.x, self.y)
-        return '<%s-shaped %s at %r>' % (
-            self.shape_letter, type(self).__name__, coords)
+    def __repr__(self) -> str:
+        return f'<{self.shape_letter}-shaped {type(self).__name__} at ({self.x}, {self.y})>'
 
-    def get_coords(self):
+    def get_coords(self) -> Iterator[Point]:
         for shapex, shapey in self.shape:
             yield (self.x + shapex, self.y + shapey)
 
-    def bumps(self, x, y):
-        return (x not in range(WIDTH)
-                or y < 0       # noqa
-                or (x, y) in self._game.frozen_squares)   # noqa
+    def bumps(self, x: int, y: int) -> bool:
+        return (x not in range(WIDTH) or y < 0 or (x, y) in self._game.frozen_squares)
 
-    def _move(self, deltax, deltay):
+    def _move(self, deltax: int, deltay: int) -> bool:
         for x, y in self.get_coords():
             if self.bumps(x + deltax, y + deltay):
                 return False
@@ -80,12 +81,12 @@ class Block:
     move_right = functools.partialmethod(_move, +1, 0)
     move_down = functools.partialmethod(_move, 0, -1)
 
-    def move_down_all_the_way(self):
+    def move_down_all_the_way(self) -> None:
         while self.move_down():
             pass
 
-    def rotate(self):
-        new_shape = []
+    def rotate(self) -> bool:
+        new_shape: List[Point] = []
         for old_x, old_y in self.shape:
             x, y = -old_y, old_x
             if self.bumps(self.x + x, self.y + y):
@@ -98,17 +99,15 @@ class Block:
 
 class NonRotatingBlock(Block):
 
-    def rotate(self):
+    def rotate(self) -> bool:
         return False
 
 
 class TwoRotationsBlock(Block):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._rotations = None
+    _rotations: Optional[Iterator[List[Point]]] = None
 
-    def rotate(self):
+    def rotate(self) -> bool:
         if self._rotations is None:
             # running this for the first time
             before = self.shape.copy()
@@ -134,24 +133,25 @@ class TwoRotationsBlock(Block):
 
 class Game:
 
-    def __init__(self):
-        self.moving_block = None
-        self.frozen_squares = {}   # {(x, y): shape_letter}
-        self.score = 0      # each new block increments score
-        self.add_block()
-        self.paused = False     # only used outside this class definition
+    moving_block: Block
+
+    def __init__(self) -> None:
+        self.frozen_squares: Dict[Point, str] = {}
+        self.score = 0        # each new block increments score
+        self.add_block()      # creates self.moving_block
+        self.paused = False   # only used outside this class definition
 
     @property
-    def level(self):
+    def level(self) -> int:
         # levels start at 1
         return self.score//30 + 1    # noqa
 
     @property
-    def delay(self):
+    def delay(self) -> int:
         """The waiting time between do_something() calls as milliseconds."""
         return 300 - (30 * self.level)
 
-    def add_block(self):
+    def add_block(self) -> None:
         letter = random.choice(list(SHAPES.keys()))
         if letter == 'O':
             self.moving_block = NonRotatingBlock(self, letter)
@@ -160,19 +160,20 @@ class Game:
         else:
             self.moving_block = Block(self, letter)
 
-    def shape_at(self, x, y):
+    def shape_at(self, x: int, y: int) -> Optional[ShapeLetter]:
         try:
             return self.frozen_squares[(x, y)]
         except KeyError:
+            assert self.moving_block is not None
             if (x, y) in self.moving_block.get_coords():
                 return self.moving_block.shape_letter
             return None
 
-    def freeze_moving_block(self):
+    def freeze_moving_block(self) -> None:
         for x, y in self.moving_block.get_coords():
             self.frozen_squares[(x, y)] = self.moving_block.shape_letter
 
-    def delete_full_lines(self):
+    def delete_full_lines(self) -> None:
         # this is much easier with a nested list
         lines = []
         for y in range(HEIGHT):
@@ -187,7 +188,7 @@ class Game:
                 if value is not None:
                     self.frozen_squares[(x, y)] = value
 
-    def do_something(self):
+    def do_something(self) -> None:
         if self.moving_block.move_down():
             return
 
@@ -196,15 +197,12 @@ class Game:
         self.delete_full_lines()
         self.score += 1
 
-    def game_over(self):
+    def game_over(self) -> bool:
         """Return True if the game is over."""
-        for x in range(WIDTH):
-            if (x, HEIGHT) in self.frozen_squares:
-                return True
-        return False
+        return any((x, HEIGHT) in self.frozen_squares for x in range(WIDTH))
 
 
-COLORS = {
+COLORS: Dict[ShapeLetter, str] = {
     'I': 'red',
     'O': 'blue',
     'T': 'yellow',
@@ -217,13 +215,13 @@ COLORS = {
 
 class TetrisTab(tabs.Tab):
 
-    def __init__(self, manager):
+    def __init__(self, manager: tabs.TabManager) -> None:
         super().__init__(manager)
         self.title = "Tetris"
 
         # the takefocus thing is important, it's hard to bind the keys
         # correctly without it
-        self._canvas = tk.Canvas(
+        self._canvas = tkinter.Canvas(
             self, width=WIDTH*SCALE, height=HEIGHT*SCALE,
             relief='ridge', bg='black', takefocus=True)
         self._canvas.pack()
@@ -244,10 +242,10 @@ class TetrisTab(tabs.Tab):
                     left, bottom - SCALE, left + SCALE, bottom,
                     outline='black', fill='black')
 
-        self._timeout_id = None
-        self._game_over_id = None
+        self._timeout_id: Optional[str] = None
+        self._game_over_id: Optional[int] = None
 
-    def _on_key(self, event):
+    def _on_key(self, event: tkinter.Event) -> utils.BreakOrNone:
         if event.keysym in {'A', 'a', 'Left'}:
             self._game.moving_block.move_left()
         elif event.keysym in {'D', 'd', 'Right'}:
@@ -267,7 +265,7 @@ class TetrisTab(tabs.Tab):
         self._refresh()
         return 'break'
 
-    def _refresh(self):
+    def _refresh(self) -> None:
         for (x, y), item_id in self._canvas_content.items():
             shape = self._game.shape_at(x, y)
             if shape is None:
@@ -279,7 +277,7 @@ class TetrisTab(tabs.Tab):
         self.status = "Score %d, level %d" % (
             self._game.score, self._game.level)
 
-    def new_game(self):
+    def new_game(self) -> None:
         if self._timeout_id is not None:
             self.after_cancel(self._timeout_id)
         if self._game_over_id is not None:
@@ -290,7 +288,7 @@ class TetrisTab(tabs.Tab):
         self._refresh()
         self._on_timeout()
 
-    def _on_timeout(self):
+    def _on_timeout(self) -> None:
         if self._game.paused:
             self._timeout_id = self._canvas.after(
                 self._game.delay, self._on_timeout)
@@ -310,15 +308,15 @@ class TetrisTab(tabs.Tab):
             self._timeout_id = self._canvas.after(
                 self._game.delay, self._on_timeout)
 
-    def on_focus(self):
+    def on_focus(self) -> None:
         # yes, this needs force for some reason
         self._canvas.focus_force()
 
-    def get_state(self):
+    def get_state(self) -> Game:
         return self._game       # it should be picklable
 
     @classmethod
-    def from_state(cls, manager, game):
+    def from_state(cls, manager: tabs.TabManager, game: Game) -> 'TetrisTab':
         self = cls(manager)
         self._game = game
         self._refresh()
@@ -326,11 +324,11 @@ class TetrisTab(tabs.Tab):
         return self
 
 
-def play_tetris():
+def play_tetris() -> None:
     tab = TetrisTab(get_tab_manager())
     tab.new_game()
     get_tab_manager().add_tab(tab)
 
 
-def setup():
+def setup() -> None:
     actions.add_command("Games/Tetris", play_tetris)

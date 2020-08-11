@@ -1,4 +1,7 @@
 # based on this: http://wiki.tcl.tk/3314
+#
+# FIXME: terminal isn't aware of window size
+# FIXME: mouse has to be on the terminal or it doesn't receive key strokes
 import subprocess
 import tkinter
 from tkinter import messagebox
@@ -6,11 +9,11 @@ from tkinter import messagebox
 from porcupine import actions, get_tab_manager, tabs
 
 
-def start_xterm():
+def start_xterm() -> None:
     tab = tabs.Tab(get_tab_manager())
     tab.title = "Terminal"
     content = tkinter.Frame(tab, container=True)
-    content.pack(fill='both', expand=True)
+    content.pack(fill='both', expand=True)   # FIXME: doesn't stretch correctly?
 
     try:
         process = subprocess.Popen(['xterm', '-into', str(content.winfo_id())])
@@ -20,20 +23,16 @@ def start_xterm():
             "Please install it and try again."))
         return
 
-    def close_if_not_closed(junk):
-        if tab in get_tab_manager().tabs:
+    def terminal_wants_to_exit(junk: object) -> None:
+        if tab in get_tab_manager().tabs():
             get_tab_manager().close_tab(tab)
 
-    # the content is destroyed when the terminal wants to exit
-    content.bind('<Destroy>', close_if_not_closed, add=True)
-
-    # the tab is destroyed when the user wants to close it
-    tab.bind('<Destroy>', lambda event: process.terminate(), add=True)
-
+    content.bind('<Destroy>', terminal_wants_to_exit, add=True)
+    tab.bind('<Destroy>', (lambda event: process.terminate()), add=True)
     get_tab_manager().add_tab(tab)
 
 
-def setup():
+def setup() -> None:
     # it's possible to run full X11 on a Mac, so this is better than
     # e.g. platform.system()
     # FIXME: i think it's possible to run xterm in aqua? would that
@@ -45,4 +44,6 @@ def setup():
             "Sorry, the terminal plugin only works on X11 :(")
         return
 
+    # upper-case T means Ctrl+Shift+T
+    # I use non-shifted ctrl+t for swapping two characters before cursor while editing
     actions.add_command("Tools/Terminal", start_xterm, '<Control-T>')

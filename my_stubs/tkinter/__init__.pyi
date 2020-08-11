@@ -199,6 +199,7 @@ class Misc:
     def grid_size(self) -> Tuple[int, int]: ...
 
     def winfo_children(self) -> List[Misc]: ...
+    def winfo_id(self) -> int: ...
 
 
 class BaseWidget(Misc):
@@ -246,6 +247,7 @@ class BaseWidget(Misc):
     def destroy(self) -> None: ...
 
     def focus_set(self) -> None: ...
+    def focus_force(self) -> None: ...
     def getvar(self, name: str = ...) -> Any: ...    # doesn't always return str
     def grid_columnconfigure(
         self, index: int, *,
@@ -371,6 +373,39 @@ class Label(Widget):
     @overload
     def __setitem__(self, opt: Literal['font'], val: _FontSpec) -> None: ...
 
+class Canvas(Widget):
+    def __init__(
+        self, master: Misc, *,
+        width: _ScreenDistance,
+        height: _ScreenDistance,
+        relief: _Relief,
+        bg: str,
+        takefocus: bool,
+    ) -> None: ...
+
+    def __getitem__(self, opt: Literal['width', 'height', 'bg']) -> Any: ...
+
+    def create_rectangle(
+        self,
+        x1: _ScreenDistance, y1: _ScreenDistance,
+        x2: _ScreenDistance, y2: _ScreenDistance,
+        *,
+        outline: str = ...,
+        fill: str = ...,
+    ) -> int: ...
+    def create_text(
+        self,
+        x: _ScreenDistance, y: _ScreenDistance,
+        *,
+        text: str = ...,
+        font: _FontSpec = ...,
+        anchor: _Anchor = ...,
+        fill: str = ...,
+    ) -> int: ...
+
+    def itemconfig(self, tagOrId: Union [str,int], **kw: Any) -> None: ...   # TODO: get rid of Any typing
+    def delete(self, tagOrId: Union [str,int])->None:...
+
 # see menu man page for what kind of strings are allowed
 _MenuIndex = Union[int, str]
 
@@ -491,7 +526,7 @@ class Text(Widget, YView):
     @overload
     def __setitem__(self, opt: Literal['yscrollcommand'], val: Union[str, Callable[[str, str], None]]) -> None: ...
 
-    def __getitem__(self, opt: Literal['font', 'yscrollcommand']) -> Any: ...
+    def __getitem__(self, opt: Literal['font', 'yscrollcommand', 'state']) -> Any: ...
 
     def bbox(self, index: _TextIndex) -> Optional[Tuple[int, int, int, int]]: ...
     def compare(self, index1: _TextIndex, op: _CompareOp, index2: _TextIndex) -> bool: ...
@@ -546,6 +581,7 @@ class Frame(Widget):
         self, master: Misc, *,
         width: _ScreenDistance = ...,
         height: _ScreenDistance = ...,
+        container: bool = ...,
     ) -> None: ...
 
     @overload

@@ -1,12 +1,11 @@
 """A tab that displays a >>> prompt.
 
-This plugin is disabled by default because sending a Ctrl+C ,to a
-subprocess is basically impossible on Windows and interrupts. If you
-don't use Windows, get rid of the _ in this file's name and have fun
-with it :)
+This plugin is disabled by default because I don't know much it sucks on
+Windows. It's not perfect on my linux system either.
 """
 
-# FIXME: >>> while True: print("lel")
+# FIXME: >>> while True: print("lel")   (avoid making it as slow as idle is)
+# FIXME: prevent writing anywhere except to the end of the prompt
 # TODO: test this on windows, this may turn out to be pretty broken :(
 
 import io
@@ -16,15 +15,17 @@ import signal
 import subprocess
 import sys
 import threading
-import tkinter as tk
+import tkinter
+from tkinter import ttk
+from typing import Any, Callable, Tuple, Union
 
-from porcupine import tabs, textwidget
+from porcupine import actions, get_tab_manager, tabs, textwidget, utils
 
 
 _WINDOWS = (platform.system() == 'Windows')
 
 
-def _tupleindex(index):
+def _tupleindex(index: str) -> Tuple[int, int]:
     """Convert 'line.column' to (line, column)."""
     line, column = index.split('.')
     return (int(line), int(column))
@@ -32,7 +33,7 @@ def _tupleindex(index):
 
 class PythonPrompt:
 
-    def __init__(self, textwidget, close_callback):
+    def __init__(self, textwidget: tkinter.Text, close_callback: Callable[[], None]):
         self.widget = textwidget
         self.close_callback = close_callback
         self.widget.bind('<Return>', self._on_return, add=True)
@@ -51,11 +52,11 @@ class PythonPrompt:
 
         # the queuer thread is a daemon thread because it makes exiting
         # porcupine easier and interrupting it isn't a problem
-        self._queue = queue.Queue()
+        self._queue: queue.Queue[Tuple[str, Union[int, bytes]]] = queue.Queue()
         threading.Thread(target=self._queuer, daemon=True).start()
         self.widget.after_idle(self._queue_clearer)
 
-    def _keyboard_interrupt(self, event):
+    def _keyboard_interrupt(self, junk: object) -> None:
         try:
             self.process.send_signal(signal.SIGINT)
         except ProcessLookupError:
@@ -63,7 +64,7 @@ class PythonPrompt:
             # taken care of it already
             assert self.widget['state'] == 'disabled'
 
-    def _copy(self, event):
+    def _copy(self, junk: object) -> None:
         # i didn't find a way to do this like tkinter does it by default
         try:
             start, end = self.widget.tag_ranges('sel')
@@ -75,13 +76,14 @@ class PythonPrompt:
             self.widget.clipboard_clear()
             self.widget.clipboard_append(text)
 
-    def _clear(self, event):
+    def _clear(self, junk: object) -> None:
         self.widget.delete('1.0', 'end-1l')
 
-    def _send_eof(self, event):
+    def _send_eof(self, junk: object) -> None:
+        assert self.process.stdin is not None
         self.process.stdin.close()
 
-    def _on_return(self, event):
+    def _on_return(self, junk: object) -> utils.BreakOrNone:
         end_of_output = _tupleindex(str(self.widget.tag_ranges('output')[-1]))
         cursor = _tupleindex(self.widget.index('insert'))
         end = _tupleindex(self.widget.index('end - 1 char'))
@@ -99,12 +101,14 @@ class PythonPrompt:
         text = self.widget.get('%d.%d' % end_of_output, 'end')   # ends with \n
         self.widget.insert('end', '\n')
         self.widget.mark_set('insert', 'end')
+        assert self.process.stdin is not None
         self.process.stdin.write(text.encode('utf-8'))
         self.process.stdin.flush()
         return 'break'
 
-    def _queuer(self):
+    def _queuer(self) -> None:
         while True:
+            assert self.process.stdout is not None
             output = self.process.stdout.read(io.DEFAULT_BUFFER_SIZE)
             if not output:
                 # the process terminated, wait() will return the exit
@@ -113,7 +117,7 @@ class PythonPrompt:
                 break
             self._queue.put(('output', output))
 
-    def _queue_clearer(self):
+    def _queue_clearer(self) -> None:
         try:
             state, value = self._queue.get(block=False)
         except queue.Empty:
@@ -132,7 +136,7 @@ class PythonPrompt:
                 self.widget['state'] = 'disabled'
             return
 
-        assert state == 'output'
+        assert state == 'output' and isinstance(value, bytes)
         if _WINDOWS:
             value = value.replace(b'\r\n', b'\n')
         self.widget.insert(
@@ -145,26 +149,26 @@ class PythonPrompt:
 
 class PromptTab(tabs.Tab):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.title = "Interactive Prompt"
 
-        self.textwidget = textwidget.ThemedText(
-            self.content, width=1, height=1)
+        self.textwidget = tkinter.Text(self, width=1, height=1)
         self.textwidget.pack(side='left', fill='both', expand=True)
-        self.prompt = PythonPrompt(self.textwidget, self.close)
+        textwidget.use_pygments_theme(self.textwidget)
+        self.prompt = PythonPrompt(self.textwidget, (lambda: self.master.close_tab(self)))
 
-        self.scrollbar = tk.Scrollbar(self.content)
+        self.scrollbar = ttk.Scrollbar(self)
         self.scrollbar.pack(side='left', fill='y')
         self.textwidget['yscrollcommand'] = self.scrollbar.set
         self.scrollbar['command'] = self.textwidget.yview
 
-        self.bind('<Destroy>', self.on_destroy, add=True)
+        self.bind('<Destroy>', self._on_destroy, add=True)
 
-    def on_focus(self):
-        self.textwidget.focus()
+    def on_focus(self) -> None:
+        self.textwidget.focus_set()
 
-    def _on_destroy(self, event):
+    def _on_destroy(self, junk: object) -> None:
         # TODO: what if terminating blocks? maybe a timeout and fall
         # back to killing?
         try:
@@ -174,11 +178,9 @@ class PromptTab(tabs.Tab):
             pass
 
 
-def setup(editor):
-    def start_prompt():
-        tab = PromptTab(editor.tabmanager)
-        editor.tabmanager.add_tab(tab)
-        editor.tabmanager.current_tab = tab
+def start_prompt() -> None:
+    get_tab_manager().add_tab(PromptTab(get_tab_manager()))
 
-    editor.add_action(start_prompt, "Run/Interactive Prompt",
-                      "Ctrl+I", "<Control-i>")
+
+def setup() -> None:
+    actions.add_command("Run/Interactive Python prompt", start_prompt, "<Control-i>")

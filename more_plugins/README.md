@@ -20,16 +20,14 @@ Installing these plugins is easy:
 
 | File              | Description                                               | Notes |
 | ----------------- | --------------------------------------------------------- | ----- |
-| pythonprompt.py   | Simple `>>>` prompt tab.                                  | 1.    |
-| terminal.py       | Run a terminal inside Porcupine as a tab.                 | 2.    |
+| pythonprompt.py   | Simple `>>>` prompt tab.                                  |       |
+| terminal.py       | Run a terminal inside Porcupine as a tab.                 | 1.    |
 | tetris.py         | Fun tetris game.                                          |       |
-| ttkthemes.py      | Nicer colors for everything else than the main text area. | 3.    |
+| ttkthemes.py      | Nicer colors for everything else than the main text area. | 2.    |
 
 Notes:
 
-1.  This plugin does not work. It should be fixed soon.
-
-2.  This plugin is kind of annoying, but perhaps better than nothing.
+1.  This plugin is shit. Don't waste your time with it.
 
     You need to install xterm if you want to use this plugin. That's easy if
     you are using Linux. For example, if you're using a Debian-based
@@ -45,7 +43,7 @@ Notes:
     However, if you manage to get xterm or some other terminal to work inside a
     tkinter program on Windows or OSX I'd be happy to update this plugin!
 
-3.  [Click here](https://github.com/RedFantom/ttkthemes/wiki/Themes) to get
+2.  [Click here](https://github.com/RedFantom/ttkthemes/wiki/Themes) to get
     an idea of what different themes look like.
 
     If you are using Windows, run this command before installing the plugin:
