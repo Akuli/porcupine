@@ -1,5 +1,4 @@
 """Stuff related to filetypes.toml."""
-# TODO: replace all this with editorconfig
 
 import fnmatch
 import logging
