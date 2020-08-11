@@ -105,8 +105,7 @@ def main() -> None:
                 if name in plugin_names:
                     plugin_names.remove(name)
                 else:
-                    log.warning(
-                        "no plugin named %r, cannot load without it", name)
+                    parser.error(f"no plugin named {name!r}, cannot load without it")
 
         pluginloader.load(plugin_names, shuffle=args.shuffle_plugins)
 
