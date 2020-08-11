@@ -17,19 +17,19 @@ from porcupine.filetypes import get_filetype_names
 _log = logging.getLogger(__name__)
 
 
-def _type_check(tybe: type, obj: object) -> None:
+def _type_check(tybe: type, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
         value: tybe  # type: ignore
 
-    utils.dict_to_dataclass(ValueContainer, {'value': obj})
+    return utils.dict_to_dataclass(ValueContainer, {'value': obj}).value
 
 
 class _Option:
 
     def __init__(self, name: str, default: object, tybe: Any, converter: Callable[[Any], Any]) -> None:
-        _type_check(tybe, default)
+        default = _type_check(tybe, default)
         self.name = name
         self.value = default
         self.default = default
@@ -88,7 +88,11 @@ class Settings:
             def import_lexer_class(name: str) -> something:
                 ...
 
-            filetab.settings.add_option('pygments_lexer', ..., converter=import_lexer_class)
+            filetab.settings.add_option(
+                'pygments_lexer',
+                pygments.lexers.TextLexer,
+                ...
+                converter=import_lexer_class)
 
         By default, the converter returns its argument unchanged.
         """
@@ -136,7 +140,7 @@ class Settings:
         option = self._options[option_name]
         if from_config:
             value = option.converter(value)
-        _type_check(option.type, value)
+        value = _type_check(option.type, value)
 
         # don't create change events when nothing changes (helps avoid infinite recursion)
         if option.value == value:
@@ -188,7 +192,7 @@ class Settings:
             reveal_type(good_bar)  # Optional[pathlib.Path]
         """
         result = self._options[option_name].value
-        _type_check(type, result)
+        result = _type_check(type, result)
         return copy.deepcopy(result)  # mutating wouldn't trigger change events
 
 

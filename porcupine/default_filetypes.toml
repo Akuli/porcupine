@@ -54,13 +54,21 @@
 #        List of one-character strings. The autocompletion popup triggers
 #        automatically when one of these characters is entered.
 #
-#    compile_command
-#    run_command
-#    lint_command
-#        Commands to run when something in the Run menu is clicked, as strings.
-#        All of these commands are ran in the directory containing the file
-#        being edited. These substitutions are performed to the commands before
-#        they are ran:
+#    commands
+#        Mapping with the following strings as keys and commands as values:
+#
+#            "compile"
+#                This command will be ran without a separate terminal window.
+#                Leave this unset if the files don't need to be compiled.
+#
+#            "run"
+#                This command will be ran in a separate terminal window.
+#
+#            "lint"
+#                This command is not related to compiling and running. It will
+#                be ran without a separate terminal window.
+#
+#        These substitutions are performed to the commands before they are ran:
 #
 #            {file}
 #                File being edited, e.g. "hello world.tar.gz"
@@ -92,18 +100,20 @@
 #
 #            tar cf "hello world.tar" "hello world.txt"
 #
-#    langserver_command
-#        A command string that will be ran to start the langserver process.
+#    langserver
+#        A mapping with these keys and values in it:
 #
-#    langserver_language_id
-#        This should be an "Identifier" from the table shown here:
+#        "command"
+#            Command string that will be ran to start the langserver process.
 #
+#        "language_id"
+#            An "Identifier" from the table shown here, as a string:
 #            https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocumentItem
 #
-#    langserver_port
-#        Leave this unset if you want to use stdin and stdout with the
-#        langserver. If the langserver uses a TCP socket listening on localhost
-#        instead, then set this to the port number that it uses.
+#        "port"
+#            Leave this unset if you want to use stdin and stdout with the
+#            langserver. If the langserver uses a TCP socket listening on localhost
+#            instead, then set this to the port number that it uses.
 
 ["Plain Text"]
 pygments_lexer = "pygments.lexers.TextLexer"
@@ -115,65 +125,54 @@ pygments_lexer = "pygments.lexers.Python3Lexer"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
-
 # flake8 is the default because pylint doesn't like my code :/ </3
-run_command = "{python} {file}"
-lint_command = "{python} -m flake8 {file}"
-
+commands = {"run" = "{python} {file}", "lint" = "{python} -m flake8 {file}"}
 autocomplete_chars = ["."]
-langserver_command = "pyls"
-langserver_language_id = "python"
+langserver = {"command" = "pyls", "language_id" = "python"}
 
 [C]
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
-compile_command = "cc {file} -Wall -Wextra -std=c99 -o {exe}"
-run_command = "{exe}"
-
-langserver_command = "clangd"
-langserver_language_id = "c"
+commands = {"compile" = "cc {file} -Wall -Wextra -std=c99 -o {exe}", "run" = "{exe}"}
+langserver = {"command" = "clangd", "language_id" = "c"}
 
 ["C++"]
 # Override this in your own filetypes.toml if you use .h for C++ headers
 filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
 pygments_lexer = "pygments.lexers.CppLexer"
-compile_command = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}"
-run_command = "{exe}"
-
-langserver_command = "clangd"
-langserver_language_id = "cpp"
+commands = {"compile" = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}", "run" = "{exe}"}
+langserver = {"command" = "clangd", "language_id" = "cpp"}
 
 [Java]
 filename_patterns = ["*.java"]
 pygments_lexer = "pygments.lexers.JavaLexer"
-compile_command = "javac {file}"
-run_command = "java {no_ext}"
+commands = {"compile" = "javac {file}", "run" = "java {no_ext}"}
 
 [JavaScript]
 filename_patterns = ["*.js"]
 pygments_lexer = "pygments.lexers.JavascriptLexer"
 tabs2spaces = true
 indent_size = 2
-run_command = "node {file}"
+commands = {"run" = "node {file}"}
 
 [Makefile]
 filename_patterns = ["Makefile", "makefile", "Makefile.*", "makefile.*"]
 pygments_lexer = "pygments.lexers.MakefileLexer"
 # make doesn't work with spaces
 tabs2spaces = false
-run_command = "make"
+commands = {"run" = "make"}
 
 # TODO: Windows batch files and powershell files
 #
 # i'm not trying to discriminate anyone with pygments_lexer and
-# run_command, override them in your user-specific config you want to
+# commands, override them in your user-specific config you want to
 #
 # shebang_regex is partly copy/pasted from nano's default config
 [Shell]
 filename_patterns = ["*.sh"]
 shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
-run_command = "bash {file}"
+commands = {"run" = "bash {file}"}
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
@@ -181,7 +180,7 @@ filename_patterns = ["*.tcl"]
 shebang_regex = '(wi|tcl)sh$'
 pygments_lexer = "pygments.lexers.TclLexer"
 tabs2spaces = true
-run_command = "tclsh {file}"
+commands = {"run" = "tclsh {file}"}
 
 [JSON]
 filename_patterns = ["*.json"]

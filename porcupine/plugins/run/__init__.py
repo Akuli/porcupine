@@ -1,12 +1,19 @@
 """Compile, run and lint files."""
 
+import dataclasses
 import functools
 import logging
 import os
 import pathlib
 import platform
 import shlex
-from typing import Callable, List, Optional
+import sys
+from typing import Callable, List, Optional, cast
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 from porcupine import actions, get_tab_manager, tabs, utils
 
@@ -15,9 +22,19 @@ from . import terminal, no_terminal
 log = logging.getLogger(__name__)
 
 
-def get_command(tab: tabs.FileTab, something_command: str, basename: str) -> Optional[List[str]]:
+@dataclasses.dataclass
+class CommandsConfig:
+    compile: str = ''
+    run: str = ''
+    lint: str = ''
+
+
+def get_command(tab: tabs.FileTab, which_command: Literal['compile', 'run', 'lint'], basename: str) -> Optional[List[str]]:
     assert os.sep not in basename, "%r is not a basename" % basename
-    template = tab.settings.get(something_command, str)
+
+    commands = tab.settings.get('commands', CommandsConfig)
+    assert isinstance(commands, CommandsConfig)
+    template = getattr(commands, which_command)
     if not template.strip():
         return None
 
@@ -25,14 +42,13 @@ def get_command(tab: tabs.FileTab, something_command: str, basename: str) -> Opt
     no_ext = pathlib.Path(basename).stem
     format_args = {
         'file': basename,
-        'no_ext': pathlib.Path(basename).stem,
+        'no_ext': no_ext,
         'no_exts': basename[:-len(exts)] if exts else basename,
         'python': 'py' if platform.system() == 'Windows' else 'python3',
         'exe': f'{no_ext}.exe' if platform.system() == 'Windows' else f'./{no_ext}',
     }
     # TODO: is this really supposed to be shlex.split even on windows?
     result = [part.format(**format_args) for part in shlex.split(template)]
-    assert result
     return result
 
 
@@ -49,24 +65,24 @@ def do_something_to_this_file(something: str) -> None:
     basename = tab.path.name
 
     if something == 'run':
-        command = get_command(tab, 'run_command', basename)
+        command = get_command(tab, 'run', basename)
         if command is not None:
             terminal.run_command(workingdir, command)
 
     elif something == 'compilerun':
         def run_after_compile() -> None:
             assert isinstance(tab, tabs.FileTab)
-            command = get_command(tab, 'run_command', basename)
+            command = get_command(tab, 'run', basename)
             if command is not None:
                 terminal.run_command(workingdir, command)
 
-        compile_command = get_command(tab, 'compile_command', basename)
+        compile_command = get_command(tab, 'compile', basename)
         if compile_command is not None:
             no_terminal.run_command(workingdir, compile_command, run_after_compile)
 
     else:
         assert something in {'compile', 'lint'}
-        command = get_command(tab, something + '_command', basename)
+        command = get_command(tab, cast(Literal['compile', 'lint'], something), basename)
         if command is not None:
             no_terminal.run_command(workingdir, command)
 
@@ -74,9 +90,7 @@ def do_something_to_this_file(something: str) -> None:
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option('compile_command', '')
-        tab.settings.add_option('run_command', '')
-        tab.settings.add_option('lint_command', '')
+        tab.settings.add_option('commands', CommandsConfig())
 
 
 def setup() -> None:

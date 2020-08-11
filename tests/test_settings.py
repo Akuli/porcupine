@@ -1,11 +1,13 @@
+import dataclasses
 import json
 import pathlib
 import tkinter.font
+from typing import Optional
 
 import dacite
 import pytest
 
-from porcupine import settings
+from porcupine import get_main_window, settings
 
 
 # Could replace some of this with non-global setting objects, but I don't feel
@@ -139,3 +141,21 @@ def test_font_gets_updated(porcusession):
 def test_init_when_already_inited(porcusession):
     with pytest.raises(RuntimeError, match=r"^can't call _init\(\) twice$"):
         settings._init()
+
+
+@dataclasses.dataclass
+class Foo:
+    how_many: int
+    message: str
+
+
+def test_dataclass(porcusession):
+    settings_obj = settings.Settings(None, '<<Foo:{}>>')
+
+    settings_obj.add_option('foo', None, type=Optional[Foo])
+    settings_obj.set('foo', {'how_many': 123, 'message': 'hello'}, from_config=True)
+    settings_obj.set('bar', {'how_many': 456, 'message': 'hi'}, from_config=True)
+    settings_obj.add_option('bar', None, type=Optional[Foo])
+
+    assert settings_obj.get('foo', Foo) == Foo(123, 'hello')
+    assert settings_obj.get('bar', Foo) == Foo(456, 'hi')

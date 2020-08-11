@@ -3,6 +3,7 @@
 # TODO: CompletionProvider
 # TODO: error reporting in gui somehow
 
+import dataclasses
 import errno
 import functools
 import itertools
@@ -248,6 +249,13 @@ def _position_tk2lsp(tk_position: str) -> lsp.Position:
     return lsp.Position(line=line-1, character=column)
 
 
+@dataclasses.dataclass
+class LangServerConfig:
+    command: str
+    language_id: str
+    port: Optional[int] = None
+
+
 # FIXME: two langservers with same command, same port, different project_root
 class LangServerId(NamedTuple):
     command: str
@@ -370,11 +378,14 @@ class LangServer:
         return True
 
     def _send_tab_opened_message(self, tab: tabs.FileTab) -> None:
+        config = tab.settings.get('langserver', Optional[LangServerConfig])
+        assert isinstance(config, LangServerConfig)
         assert tab.path is not None
+
         self._lsp_client.did_open(
             lsp.TextDocumentItem(
                 uri=tab.path.as_uri(),
-                languageId=tab.settings.get('langserver_language_id', str),
+                languageId=config.language_id,
                 text=tab.textwidget.get('1.0', 'end - 1 char'),
                 version=0,
             )
@@ -548,15 +559,16 @@ langservers: Dict[LangServerId, LangServer] = {}
 
 
 def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
-    command = tab.settings.get('langserver_command', Optional[str])
-    language_id = tab.settings.get('langserver_language_id', Optional[str])
-    port = tab.settings.get('langserver_port', Optional[int])
-
-    if tab.path is None or command is None or language_id is None:
+    if tab.path is None:
         return None
 
+    config = tab.settings.get('langserver', Optional[LangServerConfig])
+    if config is None:
+        return None
+    assert isinstance(config, LangServerConfig)
+
     project_root = find_project_root(tab.path)
-    the_id = LangServerId(command, port, project_root)
+    the_id = LangServerId(config.command, config.port, project_root)
     try:
         return langservers[the_id]
     except KeyError:
@@ -565,7 +577,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     log = logging.getLogger(
         # this is lol
         __name__ + '.' + re.sub(
-            r'[^A-Za-z0-9]', '_', command + ' ' + str(project_root)))
+            r'[^A-Za-z0-9]', '_', config.command + ' ' + str(project_root)))
 
     # avoid shell=True on non-windows to get process.pid to do the right thing
     #
@@ -575,10 +587,10 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     actual_command: Union[str, List[str]]
     if platform.system() == 'Windows':
         shell = True
-        actual_command = command
+        actual_command = config.command
     else:
         shell = False
-        actual_command = shlex.split(command)
+        actual_command = shlex.split(config.command)
 
     try:
         # TODO: read and log stderr
@@ -586,11 +598,11 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
             actual_command, shell=shell,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     except (OSError, subprocess.CalledProcessError):
-        log.exception(f"failed to start langserver with command {command!r}")
+        log.exception(f"failed to start langserver with command {config.command!r}")
         return None
 
     log.info("Langserver process started with command '%s', PID %d, "
-             "for project root '%s'", command, process.pid, project_root)
+             "for project root '%s'", config.command, process.pid, project_root)
 
     langserver = LangServer(process, the_id, log)
     langserver.run_stuff()
@@ -618,17 +630,11 @@ def switch_langservers(tab: tabs.FileTab, junk: object = None) -> None:
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option('langserver_command', None, type=Optional[str])
-        tab.settings.add_option('langserver_language_id', None, type=Optional[str])
-        tab.settings.add_option('langserver_port', None, type=Optional[int])
+        tab.settings.add_option('langserver', None, type=Optional[LangServerConfig])
 
-        for virtual_event in [
-                # FIXME: langserver_bla settings don't change all at once
-                '<<TabSettingChanged:langserver_command>>',
-                '<<TabSettingChanged:langserver_language_id>>',
-                '<<TabSettingChanged:langserver_port>>',
-                '<<PathChanged>>']:
-            tab.bind(virtual_event, functools.partial(switch_langservers, tab), add=True)
+        callback = functools.partial(switch_langservers, tab)
+        tab.bind('<<TabSettingChanged:langserver>>', callback, add=True)
+        tab.bind('<<PathChanged>>', callback, add=True)
         switch_langservers(tab)
 
 
