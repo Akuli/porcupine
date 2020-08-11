@@ -57,14 +57,14 @@
 #    commands
 #        Mapping with the following strings as keys and commands as values:
 #
-#            "compile"
+#            compile
 #                This command will be ran without a separate terminal window.
 #                Leave this unset if the files don't need to be compiled.
 #
-#            "run"
+#            run
 #                This command will be ran in a separate terminal window.
 #
-#            "lint"
+#            lint
 #                This command is not related to compiling and running. It will
 #                be ran without a separate terminal window.
 #
@@ -103,14 +103,14 @@
 #    langserver
 #        A mapping with these keys and values in it:
 #
-#        "command"
+#        command
 #            Command string that will be ran to start the langserver process.
 #
-#        "language_id"
+#        language_id
 #            An "Identifier" from the table shown here, as a string:
 #            https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocumentItem
 #
-#        "port"
+#        port
 #            Leave this unset if you want to use stdin and stdout with the
 #            langserver. If the langserver uses a TCP socket listening on localhost
 #            instead, then set this to the port number that it uses.
@@ -126,41 +126,41 @@ tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
 # flake8 is the default because pylint doesn't like my code :/ </3
-commands = {"run" = "{python} {file}", "lint" = "{python} -m flake8 {file}"}
+commands = {run = "{python} {file}", lint = "{python} -m flake8 {file}"}
 autocomplete_chars = ["."]
-langserver = {"command" = "pyls", "language_id" = "python"}
+langserver = {command = "pyls", language_id = "python"}
 
 [C]
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
-commands = {"compile" = "cc {file} -Wall -Wextra -std=c99 -o {exe}", "run" = "{exe}"}
-langserver = {"command" = "clangd", "language_id" = "c"}
+commands = {compile = "cc {file} -Wall -Wextra -std=c99 -o {exe}", run = "{exe}"}
+langserver = {command = "clangd", language_id = "c"}
 
 ["C++"]
 # Override this in your own filetypes.toml if you use .h for C++ headers
 filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
 pygments_lexer = "pygments.lexers.CppLexer"
-commands = {"compile" = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}", "run" = "{exe}"}
-langserver = {"command" = "clangd", "language_id" = "cpp"}
+commands = {compile = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}", run = "{exe}"}
+langserver = {command = "clangd", language_id = "cpp"}
 
 [Java]
 filename_patterns = ["*.java"]
 pygments_lexer = "pygments.lexers.JavaLexer"
-commands = {"compile" = "javac {file}", "run" = "java {no_ext}"}
+commands = {compile = "javac {file}", run = "java {no_ext}"}
 
 [JavaScript]
 filename_patterns = ["*.js"]
 pygments_lexer = "pygments.lexers.JavascriptLexer"
 tabs2spaces = true
 indent_size = 2
-commands = {"run" = "node {file}"}
+commands = {run = "node {file}"}
 
 [Makefile]
 filename_patterns = ["Makefile", "makefile", "Makefile.*", "makefile.*"]
 pygments_lexer = "pygments.lexers.MakefileLexer"
 # make doesn't work with spaces
 tabs2spaces = false
-commands = {"run" = "make"}
+commands = {run = "make"}
 
 # TODO: Windows batch files and powershell files
 #
@@ -172,7 +172,7 @@ commands = {"run" = "make"}
 filename_patterns = ["*.sh"]
 shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
-commands = {"run" = "bash {file}"}
+commands = {run = "bash {file}"}
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
@@ -180,7 +180,7 @@ filename_patterns = ["*.tcl"]
 shebang_regex = '(wi|tcl)sh$'
 pygments_lexer = "pygments.lexers.TclLexer"
 tabs2spaces = true
-commands = {"run" = "tclsh {file}"}
+commands = {run = "tclsh {file}"}
 
 [JSON]
 filename_patterns = ["*.json"]
