@@ -36,6 +36,21 @@ class TabManager(ttk.Notebook):
         Bind to the ``<Destroy>`` event of the tab if you want to clean
         up something when the tab is closed.
 
+    .. virtualevent:: WillOpenFile
+
+        :meth:`FileTab.open_file` generates this event when an **existing**
+        file is about to be opened. Unlike :virtevt:`~NewTab`, this never runs
+        for tabs created without :meth:`~FileTab.open_file`, such as the tabs
+        created by clicking "New File" in the menu.
+
+        Use :func:`~porcupine.utils.bind_with_data` and ``event.data_widget()``
+        to access the related :class:`FileTab`.
+
+        This event runs before the file is read, so if you want your plugin to
+        e.g. decide which encoding will be used, then this is the virtual event
+        that you should use. See :source:`porcupine/plugins/editorconfig.py`
+        for an example.
+
     .. virtualevent:: NotebookTabChanged
 
         This runs when the user selects another tab or Porcupine does it
@@ -598,7 +613,6 @@ bers.py>` use this attribute.
         file fails.
         """
         tab = cls(manager, path=path)
-        # TODO: document <<WillOpenFile>>
         manager.event_generate('<<WillOpenFile>>', data=tab)
         with path.open('r', encoding=tab.settings.get('encoding', str)) as file:
             content = file.read()

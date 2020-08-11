@@ -1,3 +1,5 @@
+import os
+import pathlib
 from typing import Tuple
 
 import docutils.nodes
@@ -7,7 +9,8 @@ from sphinx.addnodes import desc_annotation, desc_name
 from sphinx.domains.python import PyObject, PyXRefRole
 from sphinx.util.nodes import split_explicit_title
 
-SOURCE_URI = 'https://github.com/Akuli/porcupine/tree/master/'
+GITHUB_URL = 'https://github.com/Akuli/porcupine/tree/master/'
+PROJECT_ROOT = pathlib.Path(__file__).absolute().parent.parent
 
 
 # this is mostly copy/pasted from cpython's Doc/tools/extensions/pyspecific.py
@@ -15,8 +18,9 @@ def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     has_t, title, target = split_explicit_title(text)
     title = docutils.utils.unescape(title)
     target = docutils.utils.unescape(target)
+    assert (PROJECT_ROOT / target.replace('/', os.sep)).exists(), target
     refnode = docutils.nodes.reference(
-        title, title, refuri=SOURCE_URI + target)
+        title, title, refuri=(GITHUB_URL + target))
     return [refnode], []
 
 
