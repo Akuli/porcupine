@@ -4,7 +4,7 @@ import argparse
 import logging
 import pathlib
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 from porcupine import _logs, filetypes, get_tab_manager, pluginloader, tabs
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
@@ -29,25 +29,6 @@ class _PrintPlugindirAction(argparse.Action):
         parser.exit()
 
 
-class _ExtendAction(argparse.Action):
-
-    def __init__(   # type: ignore
-            self, option_strings, dest, nargs=None, const=None,
-            default=None, type=None, choices=None, required=False,
-            help=None, metavar=None):
-        assert nargs != 0 and (const is None or nargs == argparse.OPTIONAL)
-        super().__init__(option_strings=option_strings, dest=dest, nargs=nargs,
-                         const=const, default=default, type=type,
-                         choices=choices, required=required, help=help,
-                         metavar=metavar)
-
-    def __call__(   # type: ignore
-            self, parser, namespace, values, option_string=None):
-        if getattr(namespace, self.dest) is None:
-            setattr(namespace, self.dest, [])
-        getattr(namespace, self.dest).extend(values)
-
-
 _EPILOG = r"""
 Examples:
   %(prog)s                    # run Porcupine normally
@@ -70,9 +51,7 @@ def main() -> None:
         '--print-plugindir', action=_PrintPlugindirAction,
         help="find out where to install custom plugins")
     parser.add_argument(
-        'files', metavar='FILES', action=_ExtendAction,
-        # FIXME: this uses the system-default encoding :/
-        nargs=argparse.ZERO_OR_MORE, type=argparse.FileType("r"),
+        'files', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         help="open these files when Porcupine starts, - means stdin")
     parser.add_argument(
         '-n', '--new-file', metavar='FILETYPE', action='append',
@@ -104,33 +83,17 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Make sure to get error before doing any gui stuff if reading file fails
-    # or specified filetype doesn't exist.
-    filelist: List[Tuple[Optional[pathlib.Path], str, Optional[Dict[str, Any]]]] = []
-
-    for file in args.files:
-        if file is sys.stdin:
-            # don't close stdin so it's possible to do this:
-            #
-            #   $ porcupine - -
-            #   bla bla bla
-            #   ^D
-            #   bla bla
-            #   ^D
-            filelist.append((None, file.read(), None))
-        else:
-            with file:
-                filelist.append(
-                    (pathlib.Path(file.name).absolute(), file.read(), None))
-
+    # Make sure to get error early if filetype doesn't exist.
+    #
+    # Ideally would also get errors early when files don't exist, but reading
+    # files must come later to because .open_file() is needed.
+    filetypes_of_new_files: List[Dict[str, Any]] = []
     filetypes._init()
     for filetype_name in (args.new_file or []):   # args.new_file may be None
-        filetype = None   # fixes mypy error
         try:
-            filetype = filetypes.get_filetype_by_name(filetype_name)
+            filetypes_of_new_files.append(filetypes.get_filetype_by_name(filetype_name))
         except KeyError:
             parser.error(f"no filetype named {filetype_name!r}")
-        filelist.append((None, '', filetype))
 
     porcupine.init(verbose_logging=args.verbose)
     if args.yes_plugins:
@@ -148,11 +111,22 @@ def main() -> None:
         pluginloader.load(plugin_names, shuffle=args.shuffle_plugins)
 
     tabmanager = get_tab_manager()
-    for path, content, filetype in filelist:
-        tab = tabs.FileTab(tabmanager, content, path)
-        if filetype is not None:
-            tab.filetype_to_settings(filetype)
+    for path_string in args.files:
+        if path_string == '-':
+            # don't close stdin so it's possible to do this:
+            #
+            #   $ porcu - -
+            #   bla bla bla
+            #   ^D
+            #   bla bla
+            #   ^D
+            tab = tabs.FileTab(tabmanager, content=sys.stdin.read())
+        else:
+            tab = tabs.FileTab.open_file(tabmanager, pathlib.Path(path_string))
         tabmanager.add_tab(tab)
+
+    for filetype in filetypes_of_new_files:
+        tabmanager.add_tab(tabs.FileTab(tabmanager, filetype=filetype))
 
     porcupine.run()
     log.info("exiting Porcupine successfully")

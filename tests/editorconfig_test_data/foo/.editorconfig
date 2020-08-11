@@ -1,0 +1,16 @@
+# foo/.editorconfig
+
+# comment
+; comment
+    # comment
+    ; comment
+
+[[abc].py]
+Indent_Style = UnSet
+Indent_Size = 4
+this_option_does_not_exist = unset
+trim_trailing_whitespace = true
+
+# should be case insensitive
+[A.py]
+foo_bar = baz

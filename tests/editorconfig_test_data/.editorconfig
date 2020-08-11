@@ -1,0 +1,13 @@
+# .editorconfig  (not in foo)
+
+rOOt = trUE
+
+# all of these should apply to a.py
+[a.py]
+Indent_STYLE = tab
+
+[foo/a.py]
+Indent_Size = 8
+
+[foo/[a].{py}]
+END_of_Line = CrLf

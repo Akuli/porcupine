@@ -537,11 +537,15 @@ bers.py>` use this attribute.
     """
 
     def __init__(self, manager: TabManager, content: str = '',
-                 path: Optional[pathlib.Path] = None) -> None:
+                 path: Optional[pathlib.Path] = None,
+                 filetype: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(manager)
 
         self._save_hash: Optional[str] = None
-        self._path = path
+        if path is None:
+            self._path = None
+        else:
+            self._path = path.absolute()
 
         self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
         self.settings.add_option(
@@ -553,7 +557,10 @@ bers.py>` use this attribute.
         self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)
 
-        self._guess_filetype()
+        if filetype is None:
+            self._guess_filetype()
+        else:
+            self.filetype_to_settings(filetype)
         self.bind('<<PathChanged>>', self._guess_filetype, add=True)
 
         # we need to set width and height to 1 to make sure it's never too
@@ -591,6 +598,8 @@ bers.py>` use this attribute.
         file fails.
         """
         tab = cls(manager, path=path)
+        # TODO: document <<WillOpenFile>>
+        manager.event_generate('<<WillOpenFile>>', data=tab)
         with path.open('r', encoding=tab.settings.get('encoding', str)) as file:
             content = file.read()
         tab.textwidget.insert('1.0', content)

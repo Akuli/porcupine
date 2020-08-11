@@ -11,6 +11,7 @@ Most important features:
   and color themes, extensible)
 - Autocompletions
 - [Langserver] support
+- [Editorconfig][] support
 - Compiling files inside the editor window
 - Running files in a separate terminal or command prompt window
 - Automatic indenting and trailing whitespace stripping when Enter is pressed
@@ -24,6 +25,7 @@ Most important features:
 
 [Pygments]: https://pygments.org/
 [Langserver]: https://langserver.org/
+[Editorconfig]: https://editorconfig.org/
 
 Porcupine also has [a very powerful plugin
 API](https://akuli.github.io/porcupine/), and most of the above features are
