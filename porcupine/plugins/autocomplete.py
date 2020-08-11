@@ -1,6 +1,7 @@
 # TODO: when no langserver, fallback autocompleting with "all words in file"
 #       type thing
 
+import collections
 import dataclasses
 import itertools
 import re
@@ -263,6 +264,35 @@ def text_index_less_than(index1: str, index2: str) -> bool:
     return (tuple1 < tuple2)
 
 
+# stupid fallback
+def _all_words_in_file_completions(textwidget: tkinter.Text) -> List[Completion]:
+    match = re.search(r'\w*$', textwidget.get('insert linestart', 'insert'))
+    assert match is not None
+    before_cursor = match.group(0)
+    replace_start = textwidget.index(f'insert - {len(before_cursor)} chars')
+    replace_end = textwidget.index('insert')
+
+    counts = dict(collections.Counter([
+        word
+        for word in re.findall(r'\w+', textwidget.get('1.0', 'end'))
+        if before_cursor.casefold() in word.casefold()
+    ]))
+    if counts.get(before_cursor, 0) == 1:
+        del counts[before_cursor]
+
+    return [
+        Completion(
+            display_text=word,
+            replace_start=replace_start,
+            replace_end=replace_end,
+            replace_text=word,
+            filter_text=word,
+            documentation=word,
+        )
+        for word in sorted(counts.keys(), key=counts.get)
+    ]
+
+
 class AutoCompleter:
 
     def __init__(self, tab: tabs.FileTab) -> None:
@@ -271,6 +301,10 @@ class AutoCompleter:
         self._id_counter = itertools.count()
         self._waiting_for_response_id: Optional[int] = None
         self.popup = _Popup()
+        utils.bind_with_data(
+            tab, '<<AutoCompletionResponse>>',
+            lambda event: self.receive_completions(event.data_class(Response)),
+            add=True)
 
     def _request_completions(self) -> None:
         the_id = next(self._id_counter)
@@ -280,10 +314,18 @@ class AutoCompleter:
         # completion request or filtering, user might type more
         self._orig_cursorpos = self._tab.textwidget.index('insert')
 
-        self._tab.event_generate('<<AutoCompletionRequest>>', data=Request(
-            id=the_id,
-            cursor_pos=self._orig_cursorpos,
-        ))
+        if self._tab.bind('<<AutoCompletionRequest>>'):
+            # an event handler is bound, use that
+            self._tab.event_generate('<<AutoCompletionRequest>>', data=Request(
+                id=the_id,
+                cursor_pos=self._orig_cursorpos,
+            ))
+        else:
+            # fall back to "all words in file" autocompleting
+            self.receive_completions(Response(
+                id=the_id,
+                completions=_all_words_in_file_completions(self._tab.textwidget),
+            ))
 
     def _user_wants_to_see_popup(self) -> bool:
         assert self._orig_cursorpos is not None
@@ -303,8 +345,7 @@ class AutoCompleter:
                 current_column >= initial_column)
 
     # this might not run for all requests if e.g. langserver not configured
-    def receive_completions(self, event: utils.EventWithData) -> None:
-        response = event.data_class(Response)
+    def receive_completions(self, response: Response) -> None:
         if response.id != self._waiting_for_response_id:
             return
         self._waiting_for_response_id = None
@@ -447,8 +488,6 @@ def on_new_tab(event: utils.EventWithData) -> None:
     tab.settings.add_option('autocomplete_chars', [], type=List[str])
 
     completer = AutoCompleter(tab)
-    utils.bind_with_data(tab, '<<AutoCompletionResponse>>',
-                         completer.receive_completions, add=True)
 
     # no idea why backspace has to be bound separately
     utils.bind_with_data(
