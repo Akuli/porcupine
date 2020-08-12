@@ -188,8 +188,8 @@ class TabManager(ttk.Notebook):
 
         If ``tab.equivalent(existing_tab)`` returns True for any
         ``existing_tab`` that is already in the tab manager, then that
-        existing tab is returned. Otherwise *tab* is added to the tab
-        manager and returned.
+        existing tab is returned and the tab passed in as an argument is
+        destroyed. Otherwise *tab* is added to the tab manager and returned.
 
         If *select* is True, then the returned tab is selected
         with :meth:`~select`.
@@ -202,6 +202,7 @@ class TabManager(ttk.Notebook):
             if tab.equivalent(existing_tab):
                 if select:
                     self.select(existing_tab)
+                tab.destroy()
                 return existing_tab
 
         self.add(tab, text=tab.title, image=images.get('closebutton'),
