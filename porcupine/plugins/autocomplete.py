@@ -1,6 +1,3 @@
-# TODO: when no langserver, fallback autocompleting with "all words in file"
-#       type thing
-
 import collections
 import dataclasses
 import itertools
