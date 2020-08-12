@@ -64,9 +64,7 @@ def porcusession(monkeypatch_dirs):
     porcupine.init()
     # can't hide the main window with .withdraw()
     # doing that makes events not happen for some reason
-
-    plugin_names = pluginloader.find_plugins()
-    pluginloader.load(plugin_names, shuffle=True)
+    pluginloader.load(shuffle=True)
 
     yield
 
