@@ -1,4 +1,5 @@
 """Stuff related to filetypes.toml."""
+# TODO: turn this into a plugin?
 
 import fnmatch
 import logging
@@ -19,13 +20,6 @@ log = logging.getLogger(__name__)
 _filetypes: Dict[str, Dict[str, Any]] = {}
 
 
-def _no_detecting_stuff(filetype: Dict[str, Any]) -> Dict[str, Any]:
-    result = filetype.copy()
-    del result['filename_patterns']
-    del result['shebang_regex']
-    return result
-
-
 def _get_filetype_from_matches(
     matches: Dict[str, Dict[str, Any]],
     they_match_what: str,
@@ -37,7 +31,7 @@ def _get_filetype_from_matches(
     if rest:
         names = ', '.join(matches.keys())
         log.warning(f"multiple file types match {they_match_what}: {names}")
-    return _no_detecting_stuff(result)
+    return result
 
 
 def _guess_by_filename(filepath: pathlib.Path) -> Optional[Dict[str, Any]]:

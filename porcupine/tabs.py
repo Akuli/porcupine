@@ -688,7 +688,9 @@ bers.py>` use this attribute.
     def filetype_to_settings(self, filetype: Dict[str, Any]) -> None:
         log.info(f"applying filetype settings: {filetype!r}")
         for name, value in filetype.items():
-            self.settings.set(name, value, from_config=True)
+            # Ignore stuff used only for guessing the correct filetype
+            if name not in {'filename_patterns', 'shebang_regex'}:
+                self.settings.set(name, value, from_config=True)
 
     # TODO: plugin
     def _update_title(self, junk: object = None) -> None:
