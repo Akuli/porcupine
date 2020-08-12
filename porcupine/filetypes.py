@@ -76,8 +76,9 @@ def guess_filetype(filepath: pathlib.Path) -> Dict[str, Any]:
             # don't read the entire file if it's huge
             shebang_line = file.readline(1000)
     except (UnicodeError, OSError):
-        pass
-    else:
+        shebang_line = None
+
+    if shebang_line is not None:
         filetype = _guess_by_shebang(shebang_line)
         if filetype is not None:
             return filetype
