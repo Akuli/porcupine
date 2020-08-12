@@ -95,15 +95,20 @@ class PopManager:
         self._window.withdraw()
         if not (_is_on_window(event) or isinstance(self._dragged_state, SpecialState)):
             log.info("popping off a tab")
-            plugin_names = pluginloader.get_loaded_plugins()
-            for bad_plugin in ['restart', 'geometry']:
+
+            plugin_names_to_disable = {
+                info.name for info in pluginloader.plugin_infos
+                if info.status == pluginloader.Status.DISABLED_ON_COMMAND_LINE
+            } | {
                 # these plugins are not suitable for popups
-                if bad_plugin in plugin_names:
-                    plugin_names.remove(bad_plugin)
+                # TODO: this isn't very good
+                'restart',
+                'geometry',
+            }
 
             tab, state = self._dragged_state
             required_size = (tab.winfo_reqwidth(), tab.winfo_reqheight())
-            message = (type(tab), state, plugin_names, required_size,
+            message = (type(tab), state, plugin_names_to_disable, required_size,
                        porcupine.get_init_kwargs(), event.x_root, event.y_root)
             with tempfile.NamedTemporaryFile(delete=False) as file:
                 log.debug("writing dumped state to '%s'", file)
@@ -153,7 +158,7 @@ def setup() -> None:
 def _run_popped_up_process() -> None:
     prog, state_path = sys.argv
     with open(state_path, 'rb') as file:
-        (tabtype, state, plugin_names, required_size, init_kwargs,
+        (tabtype, state, plugin_names_to_disable, required_size, init_kwargs,
          mousex, mousey) = pickle.load(file)
 
     porcupine.init(**init_kwargs)
@@ -171,7 +176,7 @@ def _run_popped_up_process() -> None:
     porcupine.get_main_window().geometry('%dx%d+%d+%d' % (
         max(width, reqwidth), max(height, reqheight), left, top))
 
-    pluginloader.load(plugin_names)
+    pluginloader.load(disabled_on_command_line=plugin_names_to_disable)
     tabmanager = porcupine.get_tab_manager()
     tabmanager.add_tab(tabtype.from_state(tabmanager, state))
 

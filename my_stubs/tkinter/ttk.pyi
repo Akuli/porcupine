@@ -33,6 +33,8 @@ class Label(Widget):
         image: tkinter.PhotoImage = ...,
         cursor: str = ...,
         font: tkinter._FontSpec = ...,
+        width: int = ...,
+        anchor: Literal['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center'] = ...,
     ) -> None: ...
 
     @overload
@@ -49,17 +51,19 @@ class Checkbutton(Widget):
         variable: tkinter.BooleanVar = ...,
     ) -> None: ...
 
-_StateFromGetItem = Union[_tkinter.Tcl_Obj, str]
-
 class Button(Widget):
     def __init__(
         self, master: tkinter.Misc, *,
         text: str = ...,
         command: Callable[[], None] = ...,
+        state: Literal['normal', 'disabled'] = ...,
     ) -> None: ...
 
-    def __getitem__(self, opt: Literal['state']) -> Any: ...
-    def __setitem__(self, opt: Literal['state'], val: Union[Literal['normal'], Literal['disabled']]) -> None: ...
+    def __getitem__(self, opt: Literal['state', 'text']) -> Any: ...
+    @overload
+    def __setitem__(self, opt: Literal['state'], val: Literal['normal', 'disabled']) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['text'], val: str) -> None: ...
 
 _NotebookTabId = Union[
     # see TAB IDENTIFIERS in ttk_notebook man page
@@ -193,6 +197,7 @@ class Treeview(Widget, tkinter.YView):
         self, master: tkinter.Misc, *,
         selectmode: Union[Literal['extended'], Literal['browse'], Literal['none']] = ...,
         show: Union[_TreeviewShowMode, List[_TreeviewShowMode]] = ...,
+        columns: Tuple[str, ...] = ...,
     ) -> None: ...
 
     # TODO: belongs to YView but is currently copy/pasted to every subclasses
@@ -213,7 +218,16 @@ class Treeview(Widget, tkinter.YView):
         # function.
         id: str = ...,
         text: str = ...,
+        values: Tuple[str, ...] = ...,
     ) -> str: ...
+
+    # TODO: int vs ScreenUnits
+    def column(self, column: int, *, width: int = ..., minwidth: int = ...) -> Optional[Dict[str, Any]]: ...
+    def heading(self, column: int, *, text: str = ...) -> Optional[Dict[str, Any]]: ...
+    @overload
+    def item(self, item: str, option: Literal['values']) -> Any: ...
+    @overload
+    def item(self, item: str, *, values: Tuple[str, ...] = ...) -> Optional[Any]: ...
 
     # prev(first item) and next(last item) return empty string
     def prev(self, item: str) -> str: ...

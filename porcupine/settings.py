@@ -190,6 +190,13 @@ class Settings:
 
             good_bar: Optional[pathlib.Path] = settings.get('something', Optional[pathlib.Path])
             reveal_type(good_bar)  # Optional[pathlib.Path]
+
+        Options of mutable types are returned as copies, so things like
+        ``settings.get('something', List[str])`` always return a new list.
+        If you want to change a setting like that, you need to first get a copy
+        of the current value, then modify the copy, and finally :func:`set` it
+        back. This is an easy way to make sure that change events run every
+        time the value changes.
         """
         result = self._options[option_name].value
         result = _type_check(type, result)
@@ -275,6 +282,7 @@ def _init_global_settings() -> None:
     add_option('font_size', fixedfont['size'])
     add_option('pygments_style', 'default')
     add_option('default_filetype', 'Python')
+    add_option('disabled_plugins', [], type=List[str])
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: Optional[tkinter.Event]) -> None:

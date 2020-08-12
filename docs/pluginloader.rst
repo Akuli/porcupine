@@ -7,7 +7,7 @@ On startup, Porcupine loads plugins roughly like this (after calling
 :func:`porcupine.init`)::
 
     from porcupine import pluginloader
-    pluginloader.load(pluginloader.find_plugins())
+    pluginloader.load()
 
 :source:`The real code <porcupine/__main__.py>` is a little more complicated
 than that because the behaviour can be changed with command-line arguments, but
@@ -17,6 +17,13 @@ In this documentation, a plugin name means no file extension or
 ``porcupine.plugins.`` prefix, e.g. ``highlight`` instead of ``highlight.py``
 or ``porcupine.plugins.highlight``.
 
-.. autofunction:: find_plugins
+.. autoclass:: Status
+.. autoclass:: PluginInfo
+
+.. data:: plugin_infos
+    :type: Sequence[PluginInfo]
+
+    This contains infos for all the plugins that the plugin loader knows about,
+    including plugins that failed to load and disabled plugins.
+
 .. autofunction:: load
-.. autofunction:: get_loaded_plugins

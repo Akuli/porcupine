@@ -52,7 +52,12 @@ class MenuManager:
             Tuple[tkinter.Menu, str],           # (menu, label)
             tkinter.Menu,                       # submenu
         ] = {}
-        self.get_menu("Help")       # see comments in get_menu()
+
+        # help last, file first, edit second
+        self.get_menu("Help")
+        self.get_menu("File")
+        self.get_menu("Edit")
+
         self._items: Dict[
             str,                                # path, e.g. "File/Open"
             Tuple[tkinter.Menu, int],           # (menu, index)

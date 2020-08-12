@@ -59,7 +59,7 @@ def main() -> None:
 
     plugingroup = parser.add_argument_group("plugin loading options")
     plugingroup.add_argument(
-        '--no-plugins', action='store_false', dest='yes_plugins',
+        '--no-plugins', action='store_false', dest='use_plugins',
         help=("don't load any plugins, this is useful for "
               "understanding how much can be done with plugins"))
     plugingroup.add_argument(
@@ -96,18 +96,15 @@ def main() -> None:
             parser.error(f"no filetype named {filetype_name!r}")
 
     porcupine.init(verbose_logging=args.verbose)
-    if args.yes_plugins:
-        plugin_names = pluginloader.find_plugins()
-        log.info("found %d plugins", len(plugin_names))
-
+    if args.use_plugins:
         if args.without_plugins:
-            for name in args.without_plugins.split(','):
-                if name in plugin_names:
-                    plugin_names.remove(name)
-                else:
-                    parser.error(f"no plugin named {name!r}, cannot load without it")
-
-        pluginloader.load(plugin_names, shuffle=args.shuffle_plugins)
+            disable_list = args.without_plugins.split(',')
+        else:
+            disable_list = []
+        pluginloader.load(
+            disabled_on_command_line=disable_list,
+            shuffle=args.shuffle_plugins,
+        )
 
     tabmanager = get_tab_manager()
     for path_string in args.files:

@@ -173,11 +173,6 @@ def _setup_actions() -> None:
                         tabtypes=[tabs.Tab])
     actions.add_command("File/Quit", quit, '<Control-q>')
 
-    # TODO: is Edit the best possible place for this? maybe a Settings menu
-    #       that could also contain plugin-specific settings, and maybe even
-    #       things like ttk themes and color styles?
-    actions.add_command("Edit/Porcupine Settings...", settings.show_dialog)
-
     def change_font_size(how: Literal['bigger', 'smaller', 'reset']) -> None:
         if how == 'reset':
             settings.reset('font_size')
@@ -215,6 +210,9 @@ def _setup_actions() -> None:
             webbrowser.open(url)    # ...because this returns non-None and mypy
 
         actions.add_command(path, callback)
+
+    # TODO: should ttk themes and color styles move to settings menu?
+    actions.add_command("Settings/Porcupine Settings...", settings.show_dialog)
 
     # TODO: porcupine starring button?
     add_link("Help/Porcupine Wiki",

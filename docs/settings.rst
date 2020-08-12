@@ -51,6 +51,10 @@ Porcupine has these options by default (but you can add your own options too, se
 
         .. seealso:: :meth:`porcupine.filetypes.get_filetype_by_name`
 
+    ``disabled_plugins``: List[:class:`str`]
+
+        Names of plugins that the user has disabled. See :mod:`porcupine.pluginloader`.
+
 
 Custom Options
 --------------
