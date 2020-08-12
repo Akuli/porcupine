@@ -436,6 +436,10 @@ class Tab(ttk.Frame):
                         # MyCoolTabs are never equivalent to other kinds
                         # of tabs
                         return False
+
+        .. note::
+            Make sure that your tab can't be changed so that it becomes
+            equivalent with another tab that is already in the tab manager.
         """
         return False
 
@@ -777,12 +781,24 @@ bers.py>` use this attribute.
         cancelled the dialog.
         """
         # type ignored because mypy **kwargs support isn't great
-        path: str = filedialog.asksaveasfilename(    # type: ignore
+        path_string: str = filedialog.asksaveasfilename(    # type: ignore
             **filetypes.get_filedialog_kwargs())
-        if not path:     # it may be '' because tkinter
+        if not path_string:     # it may be '' because tkinter
+            return False
+        path = pathlib.Path(path_string)
+
+        # see equivalent()
+        if any(isinstance(other, FileTab) and other.path == path
+               for other in self.master.tabs()
+               if other is not self):
+            messagebox.showerror(
+                "Save As",
+                f"{path.name!r} is already opened. "
+                "Please close it before overwriting it with another file.",
+                parent=self.winfo_toplevel())
             return False
 
-        self.path = pathlib.Path(path)
+        self.path = path
         self.save()
         return True
 
