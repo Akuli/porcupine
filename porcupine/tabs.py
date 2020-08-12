@@ -672,6 +672,7 @@ bers.py>` use this attribute.
         self._path = new_path
         if it_changes:
             self.event_generate('<<PathChanged>>')
+            self._guess_filetype()
 
     def _guess_filetype(self, junk: object = None) -> None:
         if self.path is None:

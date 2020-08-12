@@ -278,7 +278,7 @@ class LangServer:
         self._lsp_id_to_tab_and_request: Dict[int, Tuple[tabs.FileTab, autocomplete.Request]] = {}
 
         self._version_counter = itertools.count()
-        self._log = log
+        self.log = log
         self.tabs_opened: Dict[tabs.FileTab, List[utils.TemporaryBind]] = {}
         self._is_shutting_down_cleanly = False
 
@@ -303,7 +303,7 @@ class LangServer:
         # this is called more than necessary to make sure we don't end up with
         # funny issues caused by unusable langservers
         if self._is_in_langservers():
-            self._log.debug("getting removed from langservers")
+            self.log.debug("getting removed from langservers")
             del langservers[self._id]
 
     # returns whether this should be called again later
@@ -314,7 +314,7 @@ class LangServer:
                 # process still running, but will exit soon. Let's make sure
                 # to log that when it happens so that if it doesn't exit for
                 # whatever reason, then that will be visible in logs.
-                self._log.debug("langserver process should stop soon")
+                self.log.debug("langserver process should stop soon")
                 get_tab_manager().after(
                     500, self._ensure_langserver_process_quits_soon)
                 return
@@ -324,7 +324,7 @@ class LangServer:
                 'stdout' if self._id.port is None
                 else 'socket connection'
             )
-            self._log.warn(
+            self.log.warn(
                 f"killing langserver process {self._process.pid} "
                 f"because {what_closed} has closed for some reason")
 
@@ -332,11 +332,11 @@ class LangServer:
             exit_code = self._process.wait()
 
         if self._is_shutting_down_cleanly:
-            self._log.info(
+            self.log.info(
                 "langserver process terminated, %s",
                 exit_code_string(exit_code))
         else:
-            self._log.error(
+            self.log.error(
                 "langserver process terminated unexpectedly, %s",
                 exit_code_string(exit_code))
 
@@ -361,19 +361,19 @@ class LangServer:
             return False
 
         assert received_bytes
-        self._log.debug("got %d bytes of data", len(received_bytes))
+        self.log.debug("got %d bytes of data", len(received_bytes))
 
         try:
             lsp_events = self._lsp_client.recv(received_bytes)
         except Exception:
-            self._log.exception("error while receiving lsp events")
+            self.log.exception("error while receiving lsp events")
             lsp_events = []
 
         for lsp_event in lsp_events:
             try:
                 self._handle_lsp_event(lsp_event)
             except Exception:
-                self._log.exception("error while handling langserver event")
+                self.log.exception("error while handling langserver event")
 
         return True
 
@@ -393,14 +393,14 @@ class LangServer:
 
     def _handle_lsp_event(self, lsp_event: lsp.Event) -> None:
         if isinstance(lsp_event, lsp.Initialized):
-            self._log.info("langserver initialized, capabilities:\n%s",
+            self.log.info("langserver initialized, capabilities:\n%s",
                            pprint.pformat(lsp_event.capabilities))
 
             for tab in self.tabs_opened.keys():
                 self._send_tab_opened_message(tab)
 
         elif isinstance(lsp_event, lsp.Shutdown):
-            self._log.debug("langserver sent Shutdown event")
+            self.log.debug("langserver sent Shutdown event")
             self._lsp_client.exit()
             self._get_removed_from_langservers()
 
@@ -450,7 +450,7 @@ class LangServer:
                 lsp.MessageType.WARNING: logging.WARNING,
                 lsp.MessageType.ERROR: logging.ERROR,
             }
-            self._log.log(loglevel_dict[lsp_event.type],
+            self.log.log(loglevel_dict[lsp_event.type],
                           "message from langserver: %s", lsp_event.message)
 
         else:
@@ -468,23 +468,23 @@ class LangServer:
             utils.TemporaryBind(tab, '<Destroy>', (lambda event: self.forget_tab(tab))),
         ]
 
-        self._log.debug("tab opened")
+        self.log.debug("tab opened")
         if self._lsp_client.state == lsp.ClientState.NORMAL:
             self._send_tab_opened_message(tab)
 
-    def forget_tab(self, tab: tabs.FileTab) -> None:
+    def forget_tab(self, tab: tabs.FileTab, *, may_shutdown: bool = True) -> None:
         if not self._is_in_langservers():
-            self._log.debug(
+            self.log.debug(
                 "a tab was closed, but langserver process is no longer "
                 "running (maybe it crashed?)")
             return
 
-        self._log.debug("tab closed")
+        self.log.debug("tab closed")
         for binding in self.tabs_opened.pop(tab):
             binding.unbind()
 
-        if not self.tabs_opened:
-            self._log.info("no more open tabs, shutting down")
+        if may_shutdown and not self.tabs_opened:
+            self.log.info("no more open tabs, shutting down")
             self._is_shutting_down_cleanly = True
             self._get_removed_from_langservers()
 
@@ -496,7 +496,7 @@ class LangServer:
 
     def request_completions(self, event: utils.EventWithData) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
-            self._log.warning(
+            self.log.warning(
                 "autocompletions requested but langserver state == %r",
                 self._lsp_client.state)
             return
@@ -524,7 +524,7 @@ class LangServer:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             # The langserver will receive the actual content of the file once
             # it starts.
-            self._log.debug(
+            self.log.debug(
                 "not sending change events because langserver state == %r",
                 self._lsp_client.state)
             return
@@ -611,13 +611,18 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
 
 
 # Switch the tab to another langserver, starting one if needed
-def switch_langservers(tab: tabs.FileTab, junk: object = None) -> None:
+def switch_langservers(tab: tabs.FileTab, called_because_path_changed: bool, junk: object = None) -> None:
     old = next((
         langserver
         for langserver in langservers.values()
         if tab in langserver.tabs_opened
     ), None)
     new = get_lang_server(tab)
+
+    if old is not None and new is not None and old is new and called_because_path_changed:
+        old.log.info("Path changed, closing and reopening the tab")
+        old.forget_tab(tab, may_shutdown=False)
+        new.open_tab(tab)
 
     if old is not new:
         logging.getLogger(__name__).info(f"Switching langservers: {old} --> {new}")
@@ -632,10 +637,9 @@ def on_new_tab(event: utils.EventWithData) -> None:
     if isinstance(tab, tabs.FileTab):
         tab.settings.add_option('langserver', None, type=Optional[LangServerConfig])
 
-        callback = functools.partial(switch_langservers, tab)
-        tab.bind('<<TabSettingChanged:langserver>>', callback, add=True)
-        tab.bind('<<PathChanged>>', callback, add=True)
-        switch_langservers(tab)
+        tab.bind('<<TabSettingChanged:langserver>>', functools.partial(switch_langservers, tab, False), add=True)
+        tab.bind('<<PathChanged>>', functools.partial(switch_langservers, tab, True), add=True)
+        switch_langservers(tab, False)
 
 
 def setup() -> None:
