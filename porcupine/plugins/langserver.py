@@ -394,7 +394,7 @@ class LangServer:
     def _handle_lsp_event(self, lsp_event: lsp.Event) -> None:
         if isinstance(lsp_event, lsp.Initialized):
             self.log.info("langserver initialized, capabilities:\n%s",
-                           pprint.pformat(lsp_event.capabilities))
+                          pprint.pformat(lsp_event.capabilities))
 
             for tab in self.tabs_opened.keys():
                 self._send_tab_opened_message(tab)
@@ -451,7 +451,7 @@ class LangServer:
                 lsp.MessageType.ERROR: logging.ERROR,
             }
             self.log.log(loglevel_dict[lsp_event.type],
-                          "message from langserver: %s", lsp_event.message)
+                         f"message from langserver: {lsp_event.message}")
 
         else:
             raise NotImplementedError(lsp_event)

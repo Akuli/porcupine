@@ -74,7 +74,7 @@ def guess_filetype(filepath: pathlib.Path) -> Dict[str, Any]:
         # is utf-8
         with filepath.open('r', encoding='utf-8') as file:
             # don't read the entire file if it's huge
-            shebang_line = file.readline(1000)
+            shebang_line: Optional[str] = file.readline(1000)
     except (UnicodeError, OSError):
         shebang_line = None
 
