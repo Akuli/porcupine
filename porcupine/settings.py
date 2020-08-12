@@ -505,7 +505,7 @@ def add_spinbox(
     option_name: str,
     text: str,
     **spinbox_kwargs: Any,
-) -> ttk.Spinbox:
+) -> utils.Spinbox:
     """Add a :class:`utils.Spinbox` to the setting dialog.
 
     All ``**spinbox_kwargs`` go to :class:`utils.Spinbox`.
