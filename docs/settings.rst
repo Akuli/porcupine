@@ -16,6 +16,7 @@ Use these functions for setting and getting values of options:
 
 .. autofunction:: set
 .. autofunction:: get
+.. autofunction:: debug_dump
 
 .. |br| raw:: html
 
@@ -182,7 +183,8 @@ Non-global Settings
     .. method:: set(option_name, value)
     .. method:: get(option_name, tybe)
     .. method:: add_option(option_name, default)
+    .. method:: debug_dump()
 
         These methods are just like the
-        :func:`set`, :func:`get` and :func:`add_option` functions,
+        :func:`set`, :func:`get`, :func:`add_option` and :func:`debug_dump` functions,
         but they do things with the :class:`Settings` instance, not with the global settings.

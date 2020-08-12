@@ -202,11 +202,26 @@ class Settings:
         result = _type_check(type, result)
         return copy.deepcopy(result)  # mutating wouldn't trigger change events
 
+    def debug_dump(self):
+        """Print all settings and their values. This is useful for debugging."""
+        if self._options:
+            print("Known options (add_option called):")
+            for name, option in self._options.items():
+                print(f'  {name} = {option.value!r}    (type: {option.type!r})')
+            print()
+
+        if self._unknown_options:
+            print("Unknown options (add_option not called):")
+            for name, value in self._unknown_options.items():
+                print(f'  {name} = {value!r}')
+            print()
+
 
 _global_settings = Settings(None, '<<SettingChanged:{}>>')
 add_option = _global_settings.add_option
 set = _global_settings.set     # shadows the built-in set data structure
 get = _global_settings.get
+debug_dump = _global_settings.debug_dump
 
 
 def reset(option_name: str) -> None:

@@ -159,3 +159,18 @@ def test_dataclass(porcusession):
 
     assert settings_obj.get('foo', Foo) == Foo(123, 'hello')
     assert settings_obj.get('bar', Foo) == Foo(456, 'hi')
+
+
+def test_debug_dump(porcusession, capsys):
+    settings_obj = settings.Settings(None, '<<Foo:{}>>')
+    settings_obj.add_option('foo', None, type=Optional[str])
+    settings_obj.set('bar', ['a', 'b', 'c'], from_config=True)
+    settings_obj.debug_dump()
+    assert capsys.readouterr() == ('''\
+Known options (add_option called):
+  foo = None    (type: typing.Union[str, NoneType])
+
+Unknown options (add_option not called):
+  bar = ['a', 'b', 'c']
+
+''', '')
