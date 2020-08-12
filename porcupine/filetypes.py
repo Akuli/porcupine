@@ -95,6 +95,7 @@ def guess_filetype(filepath: pathlib.Path) -> Dict[str, Any]:
 
     return {
         'pygments_lexer': type(lexer).__module__ + '.' + type(lexer).__name__,
+        'langserver': None,
     }
 
 
@@ -184,8 +185,8 @@ def _init() -> None:
     for name, updates in user_filetypes.items():
         _filetypes.setdefault(name, {}).update(updates)
 
-    # everything except filename_patterns and shebang_regex is handled by Settings objects
     for name, filetype in _filetypes.items():
+        # everything except filename_patterns and shebang_regex is handled by Settings objects
         if ('filename_patterns' in filetype and
                 not _is_list_of_strings(filetype['filename_patterns'])):
             log.error(f"filename_patterns is not a list of strings in [{name}] section")
@@ -200,3 +201,7 @@ def _init() -> None:
 
         filetype.setdefault('filename_patterns', [])
         filetype.setdefault('shebang_regex', r'this regex matches nothing^')
+
+        # if no langserver configured, then don't leave langserver from
+        # previous filetype around when switching filetype
+        filetype.setdefault('langserver', None)
