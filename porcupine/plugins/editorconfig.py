@@ -325,13 +325,33 @@ def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
                 tab.settings.set(name, value)
 
 
+def get_config_and_apply_to_tab(tab: tabs.FileTab):
+    assert tab.path is not None
+    log.debug(f"applying settings to {tab.path}")
+    apply_config(get_config(tab.path), tab)
+
+
 def before_file_opens(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     assert isinstance(tab, tabs.FileTab)
-    assert tab.path is not None
-    log.debug(f"detected new file opened from {tab.path}")
-    apply_config(get_config(tab.path), tab)
+    log.info(f"file opened: {tab.path}")
+    get_config_and_apply_to_tab(tab)
+
+
+def on_path_changed(event: utils.EventWithData) -> None:
+    assert isinstance(event.widget, tabs.FileTab)
+    if event.widget.path is not None:
+        log.info(f"file path changed: {event.widget.path}")
+        get_config_and_apply_to_tab(event.widget)
+
+
+def on_new_tab(event: utils.EventWithData) -> None:
+    tab = event.data_widget()
+    if isinstance(tab, tabs.FileTab):
+        # no need to run on_path_changed() now, <<WillOpenFile>> handles that
+        tab.bind('<<PathChanged>>', on_path_changed, add=True)
 
 
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<WillOpenFile>>', before_file_opens, add=True)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

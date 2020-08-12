@@ -51,6 +51,11 @@ class TabManager(ttk.Notebook):
         that you should use. See :source:`porcupine/plugins/editorconfig.py`
         for an example.
 
+        .. note::
+            :virtevt:`WillOpenFile` doesn't run for files created by clicking
+            "New File" and then "Save as". Use  :virtevt:`NewTab` and
+            :virtevt:`~FileTab.PathChanged` to handle those.
+
     .. virtualevent:: NotebookTabChanged
 
         This runs when the user selects another tab or Porcupine does it
@@ -490,6 +495,10 @@ class FileTab(Tab):
 
         This runs when :attr:`~path` is set to a new value. Use
         ``event.widget.path`` to get the new path.
+
+        When the file is saved with :meth:`save_as`, the :virtevt:`PathChanged`
+        event callbacks run before the file is written, so you can e.g. change
+        the encoding setting in a :virtevt:`PathChanged` callback.
 
     .. attribute:: settings
         :type: porcupine.settings.Settings
