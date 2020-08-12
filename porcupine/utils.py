@@ -422,16 +422,16 @@ class TemporaryBind:
         self._widget = widget
         self._sequence = sequence
 
-        not_bound_commands = widget.bind(sequence)  # bindcheck: ignore
+        not_bound_commands = widget.bind(sequence)
         self._tcl_command = bind_with_data(widget, sequence, func, add=True)
-        bound_commands = widget.bind(sequence)  # bindcheck: ignore
+        bound_commands = widget.bind(sequence)
         assert bound_commands.startswith(not_bound_commands)
         self._new_things = bound_commands[len(not_bound_commands):]
 
     def unbind(self) -> None:
         # other stuff might be bound too while this thing was yielding
         try:
-            bound_and_stuff = self._widget.bind(self._sequence)  # bindcheck: ignore
+            bound_and_stuff = self._widget.bind(self._sequence)
         except tkinter.TclError as e:
             if self._widget.winfo_exists():
                 raise e
@@ -440,7 +440,7 @@ class TemporaryBind:
                 return
 
         assert bound_and_stuff.count(self._new_things) == 1
-        self._widget.bind(self._sequence, bound_and_stuff.replace(self._new_things, ''))  # bindcheck: ignore
+        self._widget.bind(self._sequence, bound_and_stuff.replace(self._new_things, ''), add=False)
 
         # tkinter's unbind() does this too to avoid memory leaks
         self._widget.deletecommand(self._tcl_command)

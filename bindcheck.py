@@ -20,6 +20,7 @@ bad_binds = [
     if isinstance(node, ast.Call)
     and isinstance(node.func, ast.Attribute)
     and node.func.attr in {'bind', 'bind_all', 'bind_class', 'bind_with_data'}
+    and len(node.args) >= 2   # widget.bind(one_argument) doesn't need add=True
     and not any(kw.arg == 'add' for kw in node.keywords)
     and '# bindcheck: ignore' not in code.splitlines()[node.lineno - 1]
 ]

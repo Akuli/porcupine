@@ -311,7 +311,7 @@ class AutoCompleter:
         # completion request or filtering, user might type more
         self._orig_cursorpos = self._tab.textwidget.index('insert')
 
-        if self._tab.bind('<<AutoCompletionRequest>>'):   # bindcheck: ignore
+        if self._tab.bind('<<AutoCompletionRequest>>'):
             # an event handler is bound, use that
             self._tab.event_generate('<<AutoCompletionRequest>>', data=Request(
                 id=the_id,
