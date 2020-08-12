@@ -202,7 +202,7 @@ class Settings:
         result = _type_check(type, result)
         return copy.deepcopy(result)  # mutating wouldn't trigger change events
 
-    def debug_dump(self):
+    def debug_dump(self) -> None:
         """Print all settings and their values. This is useful for debugging."""
         if self._options:
             print("Known options (add_option called):")

@@ -8,6 +8,7 @@ import dataclasses
 import logging
 import pathlib
 import re
+import tkinter
 from typing import Dict, List, Optional, Tuple, Union
 
 from porcupine import get_tab_manager, tabs, utils
@@ -325,7 +326,7 @@ def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
                 tab.settings.set(name, value)
 
 
-def get_config_and_apply_to_tab(tab: tabs.FileTab):
+def get_config_and_apply_to_tab(tab: tabs.FileTab) -> None:
     assert tab.path is not None
     log.debug(f"applying settings to {tab.path}")
     apply_config(get_config(tab.path), tab)
@@ -338,7 +339,7 @@ def before_file_opens(event: utils.EventWithData) -> None:
     get_config_and_apply_to_tab(tab)
 
 
-def on_path_changed(event: utils.EventWithData) -> None:
+def on_path_changed(event: tkinter.Event) -> None:
     assert isinstance(event.widget, tabs.FileTab)
     if event.widget.path is not None:
         log.info(f"file path changed: {event.widget.path}")

@@ -1,9 +1,6 @@
-import contextlib
 import logging
 import pathlib
-import tempfile
 
-from porcupine import tabs
 from porcupine.plugins.editorconfig import apply_config, get_config, glob_match
 
 
