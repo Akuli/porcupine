@@ -206,17 +206,15 @@ class Settings:
 
     def debug_dump(self) -> None:
         """Print all settings and their values. This is useful for debugging."""
-        if self._options:
-            print("Known options (add_option called):")
-            for name, option in self._options.items():
-                print(f'  {name} = {option.value!r}    (type: {option.type!r})')
-            print()
+        print(f"{len(self._options)} known options (add_option called)")
+        for name, option in self._options.items():
+            print(f'  {name} = {option.value!r}    (type: {option.type!r})')
+        print()
 
-        if self._unknown_options:
-            print("Unknown options (add_option not called):")
-            for name, value in self._unknown_options.items():
-                print(f'  {name} = {value!r}')
-            print()
+        print(f"{len(self._unknown_options)} unknown options (add_option not called)")
+        for name, value in self._unknown_options.items():
+            print(f'  {name} = {value!r}')
+        print()
 
 
 _global_settings = Settings(None, '<<SettingChanged:{}>>')
