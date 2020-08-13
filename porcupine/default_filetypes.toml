@@ -112,8 +112,8 @@
 #
 #        port
 #            Leave this unset if you want to use stdin and stdout with the
-#            langserver. If the langserver uses a TCP socket listening on localhost
-#            instead, then set this to the port number that it uses.
+#            langserver. If the langserver uses a TCP socket listening on
+#            localhost instead, then set this to the port number that it uses.
 
 ["Plain Text"]
 pygments_lexer = "pygments.lexers.TextLexer"
