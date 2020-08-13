@@ -12,7 +12,7 @@ import re
 import tkinter
 from typing import Dict, List, Optional, Tuple, Union
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -304,15 +304,29 @@ def get_max_line_length(config: Dict[str, str]) -> Optional[int]:
         return None
 
 
-# TODO: end_of_line, trim_trailing_whitespace, insert_final_newline
+def get_line_ending(config: Dict[str, str]) -> Optional[settings.LineEnding]:
+    try:
+        string = config['end_of_line']
+    except KeyError:
+        return None
+
+    try:
+        return settings.LineEnding[string.upper()]
+    except KeyError:
+        log.error(f"bad end_of_line {string!r}")
+        return None
+
+
+# TODO: trim_trailing_whitespace, insert_final_newline
 
 
 def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
-    updates: Dict[str, Union[str, int, None]] = {
+    updates: Dict[str, Optional[object]] = {
         'tabs2spaces': get_tabs2spaces(config),
         'indent_size': get_indent_size(config),
         'encoding': get_encoding(config),
         'max_line_length': get_max_line_length(config),
+        'line_ending': get_line_ending(config),
     }
     for name, value in updates.items():
         if value is None:

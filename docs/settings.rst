@@ -56,6 +56,12 @@ Porcupine has these options by default (but you can add your own options too, se
 
         Names of plugins that the user has disabled. See :mod:`porcupine.pluginloader`.
 
+    ``default_line_end``: :class:`LineEnding`
+
+        The default line ending for new files.
+
+.. autoclass:: LineEnding
+
 
 Custom Options
 --------------
@@ -113,6 +119,7 @@ You can add widgets to the section yourself or use the following functions.
 All of these assume that the *section* argument comes from :func:`add_section`
 and return the added widget.
 A label that displays *text* is added to column 0 (see the ascii art above).
+When setting the values, the converter passed to :func:`add_option` is used.
 
 .. autofunction:: add_entry
 .. autofunction:: add_combobox

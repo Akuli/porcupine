@@ -521,6 +521,8 @@ class FileTab(Tab):
 
             ``encoding``: :class:`str`
 
+            ``line_ending``: :class:`settings.LineEnding`
+
         See :source:`porcupine/default_filetypes.toml` for a description of
         each option.
 
@@ -582,9 +584,12 @@ bers.py>` use this attribute.
             pygments.lexers.TextLexer,
             type=pygments.lexer.LexerMeta,
             converter=_import_lexer_class)
-        self.settings.add_option('encoding', 'utf-8')
         self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)
+        self.settings.add_option('encoding', 'utf-8')
+        self.settings.add_option(
+            'line_ending', settings.get('default_line_ending', settings.LineEnding),
+            converter=settings.LineEnding.__getitem__)
 
         if filetype is None:
             self._guess_filetype()
@@ -632,6 +637,15 @@ bers.py>` use this attribute.
             content = file.read()
         tab.textwidget.insert('1.0', content)
         tab.textwidget.edit_reset()
+
+        if isinstance(file.newlines, tuple):
+            # TODO: show a message box to user?
+            log.warning(f"file '{path}' contains mixed line endings: {file.newlines}")
+        elif file.newlines is not None:
+            assert isinstance(file.newlines, str)
+            # The editorconfig plugin sets newlines when <<WillOpenFile>> is generated, and that
+            # will be used if e.g. the file is empty (more generally, contains no newlines)
+            tab.settings.set('line_ending', settings.LineEnding(file.newlines))
 
         tab.mark_saved()
         return tab
@@ -763,8 +777,10 @@ bers.py>` use this attribute.
         self.event_generate('<<Save>>')
 
         encoding = self.settings.get('encoding', str)
+        line_ending = self.settings.get('line_ending', settings.LineEnding)
+
         try:
-            with utils.backup_open(self.path, 'w', encoding=encoding) as f:
+            with utils.backup_open(self.path, 'w', encoding=encoding, newline=line_ending.value) as f:
                 f.write(self.textwidget.get('1.0', 'end - 1 char'))
         except (OSError, UnicodeError) as e:
             log.exception("saving '%s' failed", self.path)

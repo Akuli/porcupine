@@ -1,9 +1,11 @@
 import atexit
 import builtins
-import dataclasses
 import copy
+import dataclasses
+import enum
 import json
 import logging
+import os
 import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
@@ -17,6 +19,53 @@ from porcupine.filetypes import get_filetype_names
 
 
 _log = logging.getLogger(__name__)
+
+
+class LineEnding(enum.Enum):
+    r"""
+    This :mod:`enum` has these members representing different ways to write
+    newline characters to files:
+
+    .. data:: CR
+
+        ``\r``, aka "Mac line endings".
+
+    .. data:: LF
+
+        ``\n``, aka "Linux/Unix line endings".
+
+    .. data:: CRLF
+
+        ``\r\n``, aka "Windows line endings".
+
+    Python's :func:`open` function translates all of these to the string
+    ``'\n'`` when reading files and uses a platform-specific default when
+    writing files.
+
+    There are 3 ways to represent line endings in Porcupine, and
+    different things want the line ending represented in different ways:
+
+        * The strings ``'\r'``, ``'\n'`` and ``'\r\n'``. For example,
+          :func:`open` line endings are specified like this.
+        * The strings ``'CR'``, ``'LF'`` and ``'CRLF'``. Line endings are
+          typically defined this way in configuration files, such as
+          `editorconfig <https://editorconfig.org/>`_ files.
+        * This enum. I recommend using this to avoid typos.
+          For example, ``LineEnding[some_string_from_user]`` (see below)
+          raises an error if the string is invalid.
+
+    Convert between this enum and the different kinds of strings like this:
+
+        * Enum to backslashy string: ``LineEnding.CRLF.value == '\r\n'``
+        * Enum to human readable string: ``LineEnding.CRLF.name == 'CRLF'``
+        * Backslashy string to enum: ``LineEnding('\r\n') == LineEnding.CRLF``
+        * Human readable string to enum: ``LineEnding['CRLF'] == LineEnding.CRLF``
+
+    Use ``LineEnding(os.linesep)`` to get the platform-specific default.
+    """
+    CR = '\r'
+    LF = '\n'
+    CRLF = '\r\n'
 
 
 def _type_check(tybe: type, obj: object) -> object:
@@ -166,6 +215,8 @@ class Settings:
     @overload
     def get(self, option_name: str, type: Type[pathlib.Path]) -> pathlib.Path: ...  # noqa
     @overload
+    def get(self, option_name: str, type: Type[LineEnding]) -> LineEnding: ...  # noqa
+    @overload
     def get(self, option_name: str, type: Type[str]) -> str: ...  # noqa
     @overload
     def get(self, option_name: str, type: Type[int]) -> int: ...  # noqa
@@ -239,6 +290,13 @@ def reset_all() -> None:
         reset(name)
 
 
+def _value_to_save(obj: object) -> object:
+    # Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
+    if isinstance(obj, enum.Enum):
+        return obj.name
+    return obj
+
+
 def save() -> None:
     """Save the settings to the config file.
 
@@ -264,7 +322,10 @@ def save() -> None:
             del writing[name]
 
     with _get_json_path().open('w', encoding='utf-8') as file:
-        json.dump(writing, file)
+        json.dump({
+            name: _value_to_save(value)
+            for name, value in writing.items()
+        }, file)
 
 
 def _load_from_file() -> None:
@@ -304,6 +365,7 @@ def _init_global_settings() -> None:
     add_option('pygments_style', 'default', converter=_check_pygments_style)
     add_option('default_filetype', 'Python')
     add_option('disabled_plugins', [], type=List[str])
+    add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: Optional[tkinter.Event]) -> None:
@@ -406,10 +468,10 @@ def _create_validation_triangle(
             triangle['image'] = images.get('triangle')
         else:
             triangle['image'] = _get_blank_triangle_sized_image()
-            set(option_name, value)
+            set(option_name, value, from_config=True)
 
     def setting_changed(junk: object = None) -> None:
-        var.set(str(get(option_name, object)))
+        var.set(str(_value_to_save(get(option_name, object))))
 
     widget.bind(f'<<SettingChanged:{option_name}>>', setting_changed, add=True)
     var.trace_add('write', var_changed)
@@ -517,9 +579,10 @@ def add_combobox(
     The content of the combobox is checked whenever it changes.
     If it's in ``combobox['values']``
     (given with the ``values=list_of_strings`` keyword argument or changed
-    later by configuring the returned combobox),
-    then the option given by *option_name* is set to the combobox content.
-    Otherwise |triangle| is shown.
+    later by configuring the returned combobox), then the option given by
+    *option_name* is set to the content of the combobox. The converter passed
+    to :func:`add_option` will be used. If the content of the combobox is not
+    in ``combobox['values']``, then |triangle| is shown.
     """
     combo = ttk.Combobox(section, **combobox_kwargs)
     triangle = _create_validation_triangle(
@@ -592,6 +655,9 @@ def _fill_notebook_with_defaults() -> None:
 
     add_combobox(general, 'font_family', "Font family:", values=font_families)
     add_spinbox(general, 'font_size', "Font size:", from_=3, to=1000)
+    add_combobox(
+        general, 'default_line_ending', "Default line ending:",
+        values=[ending.name for ending in LineEnding])
 
     filetypes = add_section('File Types')
     add_label(filetypes, (

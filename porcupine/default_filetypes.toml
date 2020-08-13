@@ -46,6 +46,10 @@
 #        corresponding to one tab character. If tabs2spaces is true, then this
 #        is the number of spaces used for indentation.
 #
+#    line_ending
+#        One of "CR", "LF" or "CRLF" (aka \r, \n and \r\n). To change the
+#        default line ending, go to Porcupine Settings in the Edit menu.
+#
 #    max_line_length
 #        How many characters to put before the long line marker. Set this to 0
 #        or negative value to disable the long line marker.
