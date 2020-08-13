@@ -167,10 +167,10 @@ def test_debug_dump(porcusession, capsys):
     settings_obj.set('bar', ['a', 'b', 'c'], from_config=True)
     settings_obj.debug_dump()
     assert capsys.readouterr() == ('''\
-Known options (add_option called):
+1 known options (add_option called)
   foo = None    (type: typing.Union[str, NoneType])
 
-Unknown options (add_option not called):
+1 unknown options (add_option not called)
   bar = ['a', 'b', 'c']
 
 ''', '')
