@@ -317,9 +317,6 @@ def get_trim_trailing_whitespace(config: Dict[str, str]) -> Optional[bool]:
     return None
 
 
-# TODO: insert_final_newline
-
-
 def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
     updates: Dict[str, Optional[object]] = {
         'tabs2spaces': get_bool(config, 'indent_style', true_string='space', false_string='tab'),
@@ -328,7 +325,10 @@ def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
         'max_line_length': get_max_line_length(config),
         'line_ending': get_line_ending(config),
         'trim_trailing_whitespace': get_bool(config, 'trim_trailing_whitespace'),
+        'insert_final_newline': get_bool(config, 'insert_final_newline'),
     }
+    # TODO: warn about unknown things in config?
+
     for name, value in updates.items():
         if value is None:
             log.debug(f"{name} not specified in editorconfigs")

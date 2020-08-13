@@ -120,6 +120,7 @@ def test_good_values(filetab):
         'max_line_length': '123',
         'end_of_line': 'crlf',
         'trim_trailing_whitespace': 'false',
+        'insert_final_newline': 'false',
     }, filetab)
     assert not filetab.settings.get('tabs2spaces', bool)
     assert filetab.settings.get('indent_size', int) == 8
@@ -127,6 +128,7 @@ def test_good_values(filetab):
     assert filetab.settings.get('max_line_length', int) == 123
     assert filetab.settings.get('line_ending', settings.LineEnding) == settings.LineEnding.CRLF
     assert not filetab.settings.get('trim_trailing_whitespace', bool)
+    assert not filetab.settings.get('insert_final_newline', bool)
 
 
 def test_bad_values(filetab, caplog):
@@ -139,6 +141,7 @@ def test_bad_values(filetab, caplog):
     apply_config({'max_line_length': 'my ass'}, filetab)
     apply_config({'end_of_line': 'da newline character lulz'}, filetab)
     apply_config({'trim_trailing_whitespace': 'asd'}, filetab)
+    apply_config({'insert_final_newline': 'its late'}, filetab)
 
     assert [record.getMessage() for record in caplog.records] == [
         "bad indent_style: 'asd'",
@@ -148,4 +151,5 @@ def test_bad_values(filetab, caplog):
         "bad max_line_length: 'my ass'",
         "bad end_of_line: 'da newline character lulz'",
         "bad trim_trailing_whitespace: 'asd'",
+        "bad insert_final_newline: 'its late'",
     ]

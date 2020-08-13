@@ -54,6 +54,10 @@
 #        Set this to false to prevent removing whitespace from ends of the lines
 #        automatically when Enter is pressed. The default is true.
 #
+#    insert_final_newline
+#        By default, Porcupine makes sure that files end with a newline when
+#        saving. Set this to false to disable that.
+#
 #    max_line_length
 #        How many characters to put before the long line marker. Set this to 0
 #        or negative value to disable the long line marker.
