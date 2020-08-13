@@ -1,10 +1,8 @@
-import contextlib
 import itertools
-import tkinter
 
 import pytest
 
-from porcupine import get_main_window, menubar, tabs, utils
+from porcupine import get_main_window, menubar, tabs
 
 
 _action_path_counter = itertools.count()
@@ -54,15 +52,16 @@ def test_text_widget_binding_weirdness(filetab):
     filetab.textwidget.insert('1.0', 'hello world')
     filetab.textwidget.tag_add('sel', '1.4', '1.7')
 
-    # pressing ctrl+w should leave the text as is (default bindings don't run)
-    # and try to close the tab (except that we prevent it from closing)
     called = 0
+
     def fake_can_be_closed():
         nonlocal called
         called += 1
         return False
     filetab.can_be_closed = fake_can_be_closed
 
+    # pressing ctrl+w should leave the text as is (default bindings don't run)
+    # and try to close the tab (except that we prevented it from closing)
     filetab.update()
     filetab.textwidget.event_generate('<Control-w>')
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'hello world'
