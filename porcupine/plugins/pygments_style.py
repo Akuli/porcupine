@@ -2,49 +2,48 @@
 
 import threading
 import tkinter
-from typing import List
+from typing import List, Optional, Tuple
 
 import pygments.styles      # type: ignore
 
-from porcupine import get_main_window, get_tab_manager, menubar, settings
+from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 
-# TODO: here's old code that created colored menu items, add it back
-#        style = pygments.styles.get_style_by_name(name)
-#        bg = style.background_color
-#
-#        # styles have a style_for_token() method, but only iterating
-#        # is documented :( http://pygments.org/docs/formatterdevelopment/
-#        # i'm using iter() to make sure that dict() really treats
-#        # the style as an iterable of pairs instead of some other
-#        # metaprogramming fanciness
-#        fg = None
-#        style_infos = dict(iter(style))
-#        for token in [pygments.token.String, pygments.token.Text]:
-#            if style_infos[token]['color'] is not None:
-#                fg = '#' + style_infos[token]['color']
-#                break
-#        if fg is None:
-#            # do like textwidget.ThemedText._set_style does
-#            fg = (getattr(style, 'default_style', '') or
-#                  utils.invert_color(bg))
-#
-#        options['foreground'] = options['activebackground'] = fg
-#        options['background'] = options['activeforeground'] = bg
-#
-#        menubar.get_menu("Color Themes").add_radiobutton(**options)
+
+def get_colors(style_name: str) -> Tuple[str, str]:
+    style = pygments.styles.get_style_by_name(style_name)
+    bg: str = style.background_color
+
+    # style_names have a style_for_token() method, but only iterating
+    # is documented :( http://pygments.org/docs/formatterdevelopment/
+    # i'm using iter() to make sure that dict() really treats
+    # the style as an iterable of pairs instead of some other
+    # metaprogramming fanciness
+    fg: Optional[str] = None
+    style_infos = dict(iter(style))
+
+    for token in [pygments.token.String, pygments.token.Text]:
+        if style_infos[token]['color'] is not None:
+            fg = '#' + style_infos[token]['color']
+            break
+
+    if fg is None:
+        # do like textwidget.use_pygments_theme does
+        fg = getattr(style, 'default_style', '') or utils.invert_color(bg)
+
+    return (fg, bg)
 
 
 # threading this gives a significant speed improvement on startup
 # on this system, setup() took 0.287940 seconds before adding threads
 # and 0.000371 seconds after adding threads
-def load_styles_to_list(target_list: List[str]) -> None:
+def load_style_names_to_list(target_list: List[str]) -> None:
     target_list.extend(pygments.styles.get_all_styles())    # slow
     target_list.sort()
 
 
 def setup() -> None:
-    styles: List[str] = []
-    thread = threading.Thread(target=load_styles_to_list, args=[styles])
+    style_names: List[str] = []
+    thread = threading.Thread(target=load_style_names_to_list, args=[style_names])
     thread.daemon = True     # i don't care wtf happens to this
     thread.start()
 
@@ -66,7 +65,12 @@ def setup() -> None:
         get_tab_manager().bind('<<SettingChanged:pygments_style>>', settings2var, add=True)
         var.trace_add('write', var2settings)
 
-        for style_name in styles:
-            menubar.get_menu("Color Styles").add_radiobutton(label=style_name, value=style_name, variable=var)
+        for style_name in style_names:
+            fg, bg = get_colors(style_name)
+            menubar.get_menu("Color Styles").add_radiobutton(
+                label=style_name, value=style_name, variable=var,
+                foreground=fg, background=bg,
+                activeforeground=bg, activebackground=fg,   # swapped colors
+            )
 
     get_main_window().after(200, check_if_it_finished)
