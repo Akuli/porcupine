@@ -199,3 +199,9 @@ pygments_lexer = "pygments.lexers.RstLexer"
 [Markdown]
 filename_patterns = ["*.md", "*.markdown"]
 pygments_lexer = "pygments.lexers.MarkdownLexer"
+
+[YAML]
+filename_patterns = ["*.yml", "*.yaml"]
+pygments_lexer = "pygments.lexers.YamlLexer"
+tabs2spaces = true
+indent_size = 2
