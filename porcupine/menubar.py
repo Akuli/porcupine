@@ -337,7 +337,7 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))
 
     # TODO: should ttk themes and color styles move to settings menu?
-    get_menu("Settings").add_command(label="Settings/Porcupine Settings", command=settings.show_dialog)
+    get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
 
     def add_link(menu_path: str, label: str, url: str) -> None:
         def callback() -> None:     # lambda doesn't work for this...
