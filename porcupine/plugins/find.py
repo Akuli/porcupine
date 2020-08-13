@@ -1,4 +1,4 @@
-"""Find/replace widget."""
+"""Find and replace text."""
 
 # FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
 

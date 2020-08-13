@@ -1,3 +1,4 @@
+"""Save and restore Porcupine's state when Porcupine is restarted."""
 # TODO: remember which tab was selected
 import pickle
 import pkgutil

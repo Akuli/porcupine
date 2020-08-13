@@ -1,3 +1,4 @@
+"""Display the "About Porcupine" button in the "Help" menu."""
 import functools
 import itertools
 import re

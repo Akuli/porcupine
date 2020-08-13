@@ -1,3 +1,4 @@
+"""Display a status bar in each tab."""
 import tkinter
 from tkinter import ttk
 

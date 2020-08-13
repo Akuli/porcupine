@@ -1,4 +1,4 @@
-"""Indenting and dedenting automatically."""
+"""Indent new lines automatically when Enter is pressed."""
 
 # without this, pressing enter twice would strip all trailing whitespace
 # from the blank line above the cursor, and then after_enter() wouldn't

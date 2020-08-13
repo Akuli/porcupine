@@ -1,3 +1,4 @@
+"""Run a very shitty terminal window inside Porcupine. This plugin sucks."""
 # based on this: http://wiki.tcl.tk/3314
 #
 # FIXME: terminal isn't aware of window size

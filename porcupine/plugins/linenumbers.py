@@ -1,4 +1,4 @@
-"""Line numbers for tkinter's Text widget."""
+"""Line numbers on left side of the file being edited."""
 # FIXME: sometimes line numbers are off in y direction. Hard to reproduce.
 
 import tkinter

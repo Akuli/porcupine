@@ -1,4 +1,4 @@
-"""Add an action for choosing the Pygments style."""
+"""Display a "Color Styles" menu."""
 
 import threading
 import tkinter

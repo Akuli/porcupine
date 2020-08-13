@@ -1,4 +1,4 @@
-"""Simple welcome message."""
+"""Display a welcome message when there are no tabs."""
 
 import re
 import tkinter

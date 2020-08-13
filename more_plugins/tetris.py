@@ -1,3 +1,4 @@
+"""Tetris game."""
 # TODO: make pause feature discoverable to users
 # FIXME: "game over" text doesn't show up very well on top of white squares
 

@@ -1,3 +1,4 @@
+"""Set the title and icon of the Porcupine window."""
 from porcupine import get_main_window, images
 
 

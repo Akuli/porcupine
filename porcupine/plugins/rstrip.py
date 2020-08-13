@@ -1,4 +1,4 @@
-"""Remove trailing whitespace when enter is pressed."""
+"""Remove trailing whitespace from the end of a line when Enter is pressed."""
 
 import tkinter
 

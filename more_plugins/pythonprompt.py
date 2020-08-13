@@ -1,8 +1,4 @@
-"""A tab that displays a >>> prompt.
-
-This plugin is disabled by default because I don't know much it sucks on
-Windows. It's not perfect on my linux system either.
-"""
+"""Use Python's >>> prompt inside Porcupine."""
 
 # FIXME: >>> while True: print("lel")   (avoid making it as slow as idle is)
 # FIXME: prevent writing anywhere except to the end of the prompt

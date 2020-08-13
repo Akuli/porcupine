@@ -1,4 +1,4 @@
-"""Syntax highlighting for Tkinter's text widget with Pygments."""
+"""Syntax highlighting."""
 # TODO: optimize by not always highlighting everything and may be get
 #       rid of the multiprocessing stuff?! alternatively, at least don't
 #       make a separate process for each file

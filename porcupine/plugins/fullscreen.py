@@ -1,3 +1,4 @@
+"""Full Screen button in the View menu."""
 import tkinter
 
 from porcupine import get_main_window, menubar

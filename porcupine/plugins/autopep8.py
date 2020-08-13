@@ -1,3 +1,4 @@
+"""Run autopep8 on the file being edited. This is in the Python submenu of the Tools menu."""
 import platform
 import subprocess
 from typing import Optional

@@ -1,4 +1,4 @@
-#        docstring = re.sub(r'(.)\n(.)', r'\1 \2', docstring.strip())
+"""Enable and disable Porcupine plugins."""
 import ast
 import importlib.util
 import logging

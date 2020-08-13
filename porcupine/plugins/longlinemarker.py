@@ -1,4 +1,4 @@
-"""Maximum line length marker for Tkinter's text widget."""
+"""Maximum line length marker."""
 
 import tkinter
 import tkinter.font as tkfont

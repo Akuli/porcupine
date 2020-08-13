@@ -1,4 +1,4 @@
-# langserver plugin
+"""Langserver support for autocompletions."""
 # TODO: sockets without specifying netcat as the command
 # TODO: CompletionProvider
 # TODO: error reporting in gui somehow

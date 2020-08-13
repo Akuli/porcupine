@@ -1,7 +1,4 @@
-"""Actions for choosing the filetype of the current tab.
-
-The menubar plugin shows these as a "Filetypes" menu.
-"""
+"""Display the "Filetypes" menu."""
 
 import functools
 from typing import Any, Dict

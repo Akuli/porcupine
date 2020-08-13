@@ -1,4 +1,4 @@
-"""Add a trailing newline character to files when saving."""
+"""Add a trailing newline character to the end of file when saving."""
 
 import tkinter
 

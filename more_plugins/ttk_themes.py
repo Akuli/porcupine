@@ -1,4 +1,4 @@
-# see also: https://github.com/RedFantom/ttkthemes
+"""More Ttk themes: https://github.com/RedFantom/ttkthemes"""
 # TODO: capitalize theme names in menu items?
 import functools
 import tkinter

@@ -1,5 +1,4 @@
-"""Allow selecting multiple lines and indenting them all at once."""
-
+"""If multiple lines are selected and tab is pressed, then indent all of the lines."""
 import tkinter
 
 from porcupine import get_tab_manager, textwidget, tabs, utils

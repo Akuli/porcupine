@@ -1,3 +1,4 @@
+"""Remember the size and location of the Porcupine window."""
 import tkinter
 
 from porcupine import get_main_window, settings

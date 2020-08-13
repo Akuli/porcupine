@@ -1,4 +1,4 @@
-"""Comment out multiple lines easily in languages like Python or Bash."""
+"""If you select multiple lines and type '#', then all selected lines are commented out."""
 # TODO: don't assume that '#' comments are a thing in every programming language
 
 import functools

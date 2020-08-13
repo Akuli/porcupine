@@ -1,3 +1,9 @@
+"""Autocompletions.
+
+To get the most out of this plugin, you also need some other plugin such as the
+langserver plugin. If no such plugin is loaded, then this plugin falls back to
+"all words in file" style autocompletions.
+"""
 import collections
 import dataclasses
 import itertools

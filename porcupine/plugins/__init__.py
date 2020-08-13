@@ -1,7 +1,5 @@
-"""Porcupine's plugins.
-
-If you want to write more plugins, that's great! Have a look at the
-official documentation:
+"""
+If you want to write more plugins, that's great! Have a look at the documentation:
 
     https://akuli.github.io/porcupine/
 """

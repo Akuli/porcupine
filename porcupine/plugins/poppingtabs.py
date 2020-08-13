@@ -1,4 +1,4 @@
-"""Dragging tabs out of a Porcupine window."""
+"""Allow dragging tabs out of the Porcupine window."""
 
 import logging
 import os
