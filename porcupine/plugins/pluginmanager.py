@@ -83,7 +83,7 @@ class PluginDialogContent:
         self._description_label.pack(fill='both', expand=True)
         self._description_label.bind(
             '<Configure>',
-            lambda event: event.widget.config(wraplength=event.width),  # type: ignore
+            lambda event: event.widget.config(wraplength=event.width-5),  # type: ignore
             add=True)
 
     def _insert_data(self) -> None:
