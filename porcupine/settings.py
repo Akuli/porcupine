@@ -9,6 +9,8 @@ import tkinter.font
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, overload
 
+import pygments.styles   # type: ignore
+
 import porcupine
 from porcupine import dirs, images, utils
 from porcupine.filetypes import get_filetype_names
@@ -278,6 +280,12 @@ def _load_from_file() -> None:
         set(name, value, from_config=True)
 
 
+# pygments styles can be uninstalled, must not end up with invalid pygments style that way
+def _check_pygments_style(name: str) -> str:
+    pygments.styles.get_style_by_name(name)   # may raise error that will get logged
+    return name
+
+
 def _init_global_settings() -> None:
     try:
         _load_from_file()
@@ -295,7 +303,7 @@ def _init_global_settings() -> None:
     # in tkinter.font.families()
     add_option('font_family', fixedfont.actual('family'))
     add_option('font_size', fixedfont['size'])
-    add_option('pygments_style', 'default')
+    add_option('pygments_style', 'default', converter=_check_pygments_style)
     add_option('default_filetype', 'Python')
     add_option('disabled_plugins', [], type=List[str])
 
