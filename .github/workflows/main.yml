@@ -3,35 +3,30 @@ on: [push, pull_request]
 jobs:
   mypy:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8"]
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: ${{ matrix.python-version }}
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
     - run: |
         python3 -m mypy --strict --show-error-codes porcupine more_plugins
       env:
         MYPYPATH: ./my_stubs
-  flake8:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
-    - run: |
-        pip install -r requirements.txt -r requirements-dev.txt
-    - run: |
-        python3 -m flake8 porcupine tests more_plugins
   pytest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8"]
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: ${{ matrix.python-version }}
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
     - # xvfb is needed for running tkinter
@@ -40,13 +35,24 @@ jobs:
       with:
         run: |
           python3 -m pytest
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v1
+      with:
+        python-version: "3.8"
+    - run: |
+        pip install -r requirements.txt -r requirements-dev.txt
+    - run: |
+        python3 -m flake8 porcupine tests more_plugins
   bindcheck:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: "3.8"
     - run: |
         python3 bindcheck.py porcupine
     - run: |
