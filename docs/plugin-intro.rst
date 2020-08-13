@@ -84,8 +84,6 @@ Some details:
       :source:`fullscreen.py <porcupine/plugins/fullscreen.py>`'s ``setup()`` is
       always called before our ``setup()``.
 
-.. TODO: display a message box if there's something wrong with a plugin
-
 
 A Step Back
 -----------
@@ -101,8 +99,8 @@ with plugins. Open a command prompt or terminal and run this command on it::
    porcu --no-plugins
 
 If the ``porcu`` command doesn't work you can use ``pyw -m porcupine`` or
-``python3 -m porcupine`` instead of ``porcu`` as shown
-`here <https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#installing-porcupine>`_.
+``python3 -m porcupine`` instead of ``porcu`` as shown in
+`Porcupine's README <https://github.com/Akuli/porcupine#installing-porcupine>`_.
 
 This will run Porcupine without any plugins, and in fact, it's just an empty
 window with *nothing* inside it! However, actions are a part of Porcupine (even
@@ -275,7 +273,7 @@ Let's fix this crap with ``add=True``, ``return 'break'`` and
    from porcupine import tabs, utils
 
    # this plugin handles all tab presses and returns 'break' from them, you
-   # need this if you bind <Tab>
+   # need this if you bind <Tab> on the text widget
    setup_before = ['tabs2spaces']
 
    def on_tab(event, shift_pressed):
@@ -290,6 +288,6 @@ Let's fix this crap with ``add=True``, ``return 'break'`` and
 
    def on_new_tab(tab):
        if isinstance(tab, tabs.FileTab):
-           utils.bind_tab_key(tab, on_tab)
+           utils.bind_tab_key(tab, on_tab, add=True)
 
 See :source:`porcupine/plugins/indent_block.py` for a complete example plugin.
