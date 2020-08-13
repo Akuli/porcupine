@@ -631,6 +631,7 @@ bers.py>` use this attribute.
         with path.open('r', encoding=tab.settings.get('encoding', str)) as file:
             content = file.read()
         tab.textwidget.insert('1.0', content)
+        tab.textwidget.edit_reset()
 
         tab.mark_saved()
         return tab
