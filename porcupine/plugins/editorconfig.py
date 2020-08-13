@@ -10,7 +10,7 @@ import logging
 import pathlib
 import re
 import tkinter
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -310,14 +310,26 @@ def get_line_ending(config: Dict[str, str]) -> Optional[settings.LineEnding]:
     except KeyError:
         return None
 
-    try:
+    if string in {'cr', 'lf', 'crlf'}:
         return settings.LineEnding[string.upper()]
+    log.error(f"bad end_of_line {string!r}")
+    return None
+
+
+def get_trim_trailing_whitespace(config: Dict[str, str]) -> Optional[bool]:
+    try:
+        string = config['trim_trailing_whitespace']
     except KeyError:
-        log.error(f"bad end_of_line {string!r}")
         return None
+    if string == 'true':
+        return True
+    if string == 'false':
+        return False
+    log.error(f"bad trim_trailing_whitespace {string!r}")
+    return None
 
 
-# TODO: trim_trailing_whitespace, insert_final_newline
+# TODO: insert_final_newline
 
 
 def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
@@ -327,15 +339,16 @@ def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
         'encoding': get_encoding(config),
         'max_line_length': get_max_line_length(config),
         'line_ending': get_line_ending(config),
+        'trim_trailing_whitespace': get_trim_trailing_whitespace(config),
     }
     for name, value in updates.items():
         if value is None:
             log.debug(f"{name} not specified in editorconfigs")
         else:
             log.info(f"setting {name} to {value}")
-            if name == 'max_line_length':
-                # this must work even if running without longlinemarker plugin
-                # (or if longlinemarker's setup() runs after this plugin)
+            if name in {'max_line_length', 'trim_trailing_whitespace'}:
+                # these must work even if running without the plugin that creates this option
+                # (or if the plugin's setup() runs after this plugin)
                 tab.settings.set(name, value, from_config=True)
             else:
                 tab.settings.set(name, value)

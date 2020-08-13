@@ -1,6 +1,7 @@
 import logging
 import pathlib
 
+from porcupine import settings
 from porcupine.plugins.editorconfig import apply_config, get_config, glob_match
 
 
@@ -117,11 +118,15 @@ def test_good_values(filetab):
         'tab_width': '8',
         'charset': 'latin1',
         'max_line_length': '123',
+        'end_of_line': 'crlf',
+        'trim_trailing_whitespace': 'false',
     }, filetab)
     assert not filetab.settings.get('tabs2spaces', bool)
     assert filetab.settings.get('indent_size', int) == 8
     assert filetab.settings.get('encoding', str) == 'latin1'
     assert filetab.settings.get('max_line_length', int) == 123
+    assert filetab.settings.get('line_ending', settings.LineEnding) == settings.LineEnding.CRLF
+    assert not filetab.settings.get('strip_trailing_whitespace', bool)
 
 
 def test_bad_values(filetab, caplog):
@@ -132,6 +137,8 @@ def test_bad_values(filetab, caplog):
     apply_config({'indent_size': 'tab', 'tab_width': 'bar'}, filetab)
     apply_config({'charset': 'ascii'}, filetab)
     apply_config({'max_line_length': 'my ass'}, filetab)
+    apply_config({'end_of_line': 'da newline character lulz'}, filetab)
+    apply_config({'trim_trailing_whitespace': 'asd'}, filetab)
 
     assert [record.getMessage() for record in caplog.records] == [
         "bad indent_style 'asd'",
@@ -139,4 +146,6 @@ def test_bad_values(filetab, caplog):
         "bad indent_size or tab_width 'bar'",
         "bad charset 'ascii'",
         "bad max_line_length 'my ass'",
+        "bad end_of_line 'da newline character lulz'",
+        "bad trim_trailing_whitespace 'asd'",
     ]

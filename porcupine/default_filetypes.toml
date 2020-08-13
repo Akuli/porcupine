@@ -50,6 +50,10 @@
 #        One of "CR", "LF" or "CRLF" (aka \r, \n and \r\n). To change the
 #        default line ending, go to Porcupine Settings in the Edit menu.
 #
+#    trim_trailing_whitespace
+#        Set this to false to prevent removing whitespace from ends of the lines
+#        automatically when Enter is pressed. The default is true.
+#
 #    max_line_length
 #        How many characters to put before the long line marker. Set this to 0
 #        or negative value to disable the long line marker.
