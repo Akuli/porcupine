@@ -239,93 +239,81 @@ def get_config(path: pathlib.Path) -> Dict[str, str]:
     return result
 
 
-# https://github.com/editorconfig/editorconfig/wiki/EditorConfig-Properties
-
-def get_tabs2spaces(config: Dict[str, str]) -> Optional[bool]:
-    try:
-        string = config['indent_style']
-    except KeyError:
-        return None
-
-    if string == 'tab':
-        return False
-    if string == 'space':
-        return True
-    log.error(f"bad indent_style {string!r}")
+def get_bool(
+    config: Dict[str, str],
+    option: str,
+    *,
+    true_string: str = 'true',
+    false_string: str = 'false',
+) -> Optional[bool]:
+    if option in config:
+        if config[option] == true_string:
+            return True
+        if config[option] == false_string:
+            return False
+        log.error(f"bad {option}: {config[option]!r}")
     return None
 
 
+# https://github.com/editorconfig/editorconfig/wiki/EditorConfig-Properties
+
 def get_indent_size(config: Dict[str, str]) -> Optional[int]:
-    try:
+    # "When set to tab, the value of tab_width (if specified) will be used."
+    if 'indent_size' in config and config['indent_size'] != 'tab':
         string_value = config['indent_size']
-        # "When set to tab, the value of tab_width (if specified) will be used."
-        if string_value == 'tab':
-            raise KeyError
-    except KeyError:
-        try:
-            string_value = config['tab_width']
-        except KeyError:
-            return None
+    elif 'tab_width' in config:
+        string_value = config['tab_width']
+    else:
+        return None
 
     try:
         return int(string_value)
     except ValueError:
-        log.error(f"bad indent_size or tab_width {string_value!r}")
+        log.error(f"bad indent_size or tab_width: {string_value!r}")
         return None
 
 
 def get_encoding(config: Dict[str, str]) -> Optional[str]:
-    try:
+    if 'charset' in config:
         encoding = config['charset']
-    except KeyError:
-        return None
 
-    # "set to latin1, utf-8, utf-8-bom, utf-16be or utf-16le to control the
-    # character set"
-    #
-    # i.e. only these are supported, and we must ignore anything else that
-    # Python supports too.
-    if encoding not in {'latin1', 'utf-8', 'utf-8-bom', 'utf-16be', 'utf-16le'}:
-        log.error(f"bad charset {encoding!r}")
-        return None
-    return encoding
+        # "set to latin1, utf-8, utf-8-bom, utf-16be or utf-16le to control the character set"
+        if encoding == 'utf-8-bom':
+            return 'utf-8-sig'    # this appears to be the Python name of this encoding
+        if encoding in {'latin1', 'utf-8', 'utf-16be', 'utf-16le'}:
+            return encoding
+        log.error(f"bad charset: {encoding!r}")
+
+    return None
 
 
 def get_max_line_length(config: Dict[str, str]) -> Optional[int]:
-    try:
+    if 'max_line_length' in config:
         string = config['max_line_length']
-    except KeyError:
-        return None
-
-    try:
-        return int(string)
-    except ValueError:
-        log.error(f"bad max_line_length {string!r}")
-        return None
+        try:
+            return int(string)
+        except ValueError:
+            log.error(f"bad max_line_length: {string!r}")
+    return None
 
 
 def get_line_ending(config: Dict[str, str]) -> Optional[settings.LineEnding]:
-    try:
+    if 'end_of_line' in config:
         string = config['end_of_line']
-    except KeyError:
-        return None
-
-    if string in {'cr', 'lf', 'crlf'}:
-        return settings.LineEnding[string.upper()]
-    log.error(f"bad end_of_line {string!r}")
+        if string in {'cr', 'lf', 'crlf'}:
+            return settings.LineEnding[string.upper()]
+        log.error(f"bad end_of_line: {string!r}")
     return None
 
 
 def get_trim_trailing_whitespace(config: Dict[str, str]) -> Optional[bool]:
-    try:
+    if 'trim_trailing_whitespace' in config:
         string = config['trim_trailing_whitespace']
-    except KeyError:
-        return None
-    if string == 'true':
-        return True
-    if string == 'false':
-        return False
-    log.error(f"bad trim_trailing_whitespace {string!r}")
+        if string == 'true':
+            return True
+        if string == 'false':
+            return False
+        log.error(f"bad trim_trailing_whitespace: {string!r}")
     return None
 
 
@@ -334,12 +322,12 @@ def get_trim_trailing_whitespace(config: Dict[str, str]) -> Optional[bool]:
 
 def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
     updates: Dict[str, Optional[object]] = {
-        'tabs2spaces': get_tabs2spaces(config),
+        'tabs2spaces': get_bool(config, 'indent_style', true_string='space', false_string='tab'),
         'indent_size': get_indent_size(config),
         'encoding': get_encoding(config),
         'max_line_length': get_max_line_length(config),
         'line_ending': get_line_ending(config),
-        'trim_trailing_whitespace': get_trim_trailing_whitespace(config),
+        'trim_trailing_whitespace': get_bool(config, 'trim_trailing_whitespace'),
     }
     for name, value in updates.items():
         if value is None:

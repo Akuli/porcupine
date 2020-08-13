@@ -126,7 +126,7 @@ def test_good_values(filetab):
     assert filetab.settings.get('encoding', str) == 'latin1'
     assert filetab.settings.get('max_line_length', int) == 123
     assert filetab.settings.get('line_ending', settings.LineEnding) == settings.LineEnding.CRLF
-    assert not filetab.settings.get('strip_trailing_whitespace', bool)
+    assert not filetab.settings.get('trim_trailing_whitespace', bool)
 
 
 def test_bad_values(filetab, caplog):
@@ -141,11 +141,11 @@ def test_bad_values(filetab, caplog):
     apply_config({'trim_trailing_whitespace': 'asd'}, filetab)
 
     assert [record.getMessage() for record in caplog.records] == [
-        "bad indent_style 'asd'",
-        "bad indent_size or tab_width 'foo'",
-        "bad indent_size or tab_width 'bar'",
-        "bad charset 'ascii'",
-        "bad max_line_length 'my ass'",
-        "bad end_of_line 'da newline character lulz'",
-        "bad trim_trailing_whitespace 'asd'",
+        "bad indent_style: 'asd'",
+        "bad indent_size or tab_width: 'foo'",
+        "bad indent_size or tab_width: 'bar'",
+        "bad charset: 'ascii'",
+        "bad max_line_length: 'my ass'",
+        "bad end_of_line: 'da newline character lulz'",
+        "bad trim_trailing_whitespace: 'asd'",
     ]
