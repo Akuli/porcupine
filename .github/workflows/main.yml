@@ -1,11 +1,11 @@
 # https://medium.com/@doedotdev/mypy-for-github-action-7da1ebee99e7
 on: [push, pull_request]
-strategy:
-  matrix:
-    python-version: ["3.6", "3.7", "3.8"]
 jobs:
   mypy:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8"]
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -19,6 +19,9 @@ jobs:
         MYPYPATH: ./my_stubs
   flake8:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8"]
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -30,6 +33,9 @@ jobs:
         python3 -m flake8 porcupine tests more_plugins
   pytest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8"]
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -45,6 +51,9 @@ jobs:
           python3 -m pytest
   bindcheck:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8"]
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
