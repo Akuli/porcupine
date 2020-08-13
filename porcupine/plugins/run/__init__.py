@@ -1,21 +1,21 @@
 """Compile, run and lint files."""
 
 import dataclasses
-import functools
+from functools import partial
 import logging
 import os
 import pathlib
 import platform
 import shlex
 import sys
-from typing import Callable, List, Optional, cast
+from typing import List, Optional, cast
 
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
 
-from porcupine import actions, get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, menubar, tabs, utils
 
 from . import terminal, no_terminal
 
@@ -52,7 +52,7 @@ def get_command(tab: tabs.FileTab, which_command: Literal['compile', 'run', 'lin
     return result
 
 
-def do_something_to_this_file(something: str) -> None:
+def do_something(something: str) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     if tab.path is None or not tab.is_saved():
@@ -94,17 +94,13 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 
 def setup() -> None:
-    def create_callback(something: str) -> Callable[[], None]:
-        return functools.partial(do_something_to_this_file, something)
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+
+    menubar.get_menu("Run").add_command(label="Compile", command=partial(do_something, 'compile'))
+    menubar.get_menu("Run").add_command(label="Run", command=partial(do_something, 'run'))
+    menubar.get_menu("Run").add_command(label="Compile and Run", command=partial(do_something, 'compilerun'))
+    menubar.get_menu("Run").add_command(label="Lint", command=partial(do_something, 'compilerun'))
 
     # TODO: disable the menu items when they don't correspond to actual commands
-    actions.add_command("Run/Compile", create_callback('compile'),
-                        '<F4>', tabtypes=[tabs.FileTab])
-    actions.add_command("Run/Run", create_callback('run'),
-                        '<F5>', tabtypes=[tabs.FileTab])
-    actions.add_command("Run/Compile and Run", create_callback('compilerun'),
-                        '<F6>', tabtypes=[tabs.FileTab])
-    actions.add_command("Run/Lint", create_callback('lint'),
-                        '<F7>', tabtypes=[tabs.FileTab])
-
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    for label in {"Compile", "Run", "Compile and Run", "Lint"}:
+        menubar.set_enabled_based_on_tab(f"Run/{label}", (lambda tab: isinstance(tab, tabs.FileTab)))

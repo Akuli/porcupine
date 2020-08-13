@@ -14,7 +14,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import actions, get_tab_manager, images, tabs
+from porcupine import get_tab_manager, images, menubar, tabs
 
 
 # keys are tabs, values are Finder widgets
@@ -346,5 +346,5 @@ def find() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Edit/Find and Replace", find, '<Control-f>',
-                        tabtypes=[tabs.FileTab])
+    menubar.get_menu("Edit").add_command(label="Find and Replace", command=find)
+    menubar.set_enabled_based_on_tab("Edit/Find and Replace", (lambda tab: isinstance(tab, tabs.FileTab)))

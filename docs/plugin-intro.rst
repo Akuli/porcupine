@@ -47,13 +47,13 @@ Hello World!
 Create a ``hello.py`` to your plugin directory, and add this code to it::
 
     from tkinter import messagebox
-    from porcupine import actions
+    from porcupine import menubar
 
     def hello():
         messagebox.showinfo("Hello", "Hello World!")
 
     def setup():
-        actions.add_command("Hello/Hello World", hello)
+        menubar.get_menu("Hello").add_command(label="Hello World", command=hello)
 
 Restart Porcupine. You should see a new *Hello* menu in the menubar with a
 *Hello World* button in it. Clicking that button runs the ``hello()``
@@ -61,9 +61,12 @@ function.
 
 Some details:
 
-    * You can also add actions to menus that Porcupine created, like
-      ``actions.add_command("Run/Hello", hello)``. See :mod:`porcupine.actions`
-      for more documentation about actions.
+    * ``menubar.get_menu("Hello")`` creates a :class:`tkinter.Menu` widget labelled
+      *Hello* into the menubar and returns it. If there was already a menu labelled
+      *Hello* in the menubar, then that would be returned instead. To create
+      submenus instead, you can give a slash-separated string, such as
+      ``"Tools/Python"`` for submenu menu named *Python* inside the *Tools* menu.
+      See :mod:`porcupine.menubar` for more details.
     * Usually plugins are files, but directories with an ``__init__.py`` in them
       work as well.
     * Plugins can be imported like ``import porcupine.plugins.hello``.
@@ -102,11 +105,8 @@ If the ``porcu`` command doesn't work you can use ``pyw -m porcupine`` or
 ``python3 -m porcupine`` instead of ``porcu`` as shown in
 `Porcupine's README <https://github.com/Akuli/porcupine#installing-porcupine>`_.
 
-This will run Porcupine without any plugins, and in fact, it's just an empty
-window with *nothing* inside it! However, actions are a part of Porcupine (even
-though :source:`the menubar <porcupine/plugins/menubar.py>` that usually
-displays them is a plugin), so you can e.g. press Ctrl+N to create a new file
-or Ctrl+S to save it.
+This will run Porcupine without any plugins, and it's a window with only the
+menubar in it. You can still create and open files though.
 
 
 Porcupine's Widgets
@@ -123,20 +123,24 @@ Here are the widgets that Porcupine itself creates without any plugins:
 .. |1| unicode:: \x2776
 .. |2| unicode:: \x2777
 .. |3| unicode:: \x2778
+.. |4| unicode:: \x2778
 
 |1| Main Window
    Everything is inside this widget. Usually it's a ``tkinter.Tk`` root window,
    but it might be a ``Toplevel`` widget in a future version of Porcupine. You
    can access this widget with :func:`porcupine.get_main_window`.
 
-|2| Tab Manager
+|2| Menu Bar
+    You can access this widget with :func:`porcupine.menubar.get_menu`.
+
+|3| Tab Manager
    This widget contains tabs (as in browser tabs, not ``\t`` characters), and
    :source:`the welcome plugin <porcupine/plugins/welcome.py>` displays a
    welcome message in it when there are no tabs. This widget is a
    :class:`porcupine.tabs.TabManager` and can be accessed with
    :func:`porcupine.get_tab_manager`.
 
-|3| A Tab
+|4| A Tab
    Tabs are :class:`porcupine.tabs.Tab` widgets, and you can access them with
    the tab manager's :attr:`tabs <porcupine.tabs.TabManager.tabs>` attribute.
    This tab is a :class:`porcupine.tabs.FileTab` because it represents a new

@@ -3,7 +3,7 @@
 import functools
 import tkinter
 
-from porcupine import actions, settings
+from porcupine import menubar, settings
 import ttkthemes   # type: ignore
 
 
@@ -24,4 +24,5 @@ def setup() -> None:
     var = tkinter.StringVar()
     var.trace_add('write', functools.partial(on_theme_changed, style, var))
     var.set(settings.get('ttk_theme', str))
-    actions.add_choice("Ttk Themes", sorted(style.get_themes()), var=var)
+    for name in sorted(style.get_themes()):
+        menubar.get_menu("Ttk Themes").add_radiobutton(label=name, value=name, variable=var)

@@ -301,7 +301,7 @@ class Tab(ttk.Frame):
     class. Here's a very minimal but complete example plugin::
 
         from tkinter import ttk
-        from porcupine import actions, get_tab_manager, tabs
+        from porcupine import get_tab_manager, menubar, tabs
 
         class HelloTab(tabs.Tab):
             def __init__(self, manager):
@@ -313,7 +313,7 @@ class Tab(ttk.Frame):
             get_tab_manager().add_tab(HelloTab(get_tab_manager()))
 
         def setup():
-            actions.add_command('Hello/New Hello Tab', new_hello_tab)
+            menubar.get_menu("Hello").add_command(label="New Hello Tab", command=new_hello_tab)
 
     Note that you need to use the pack geometry manager when creating
     custom tabs. If you want to use grid or place you can create a frame

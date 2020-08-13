@@ -19,7 +19,7 @@ import tkinter
 from tkinter import ttk
 from typing import Any, Callable, Tuple, Union
 
-from porcupine import actions, get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
 _WINDOWS = (platform.system() == 'Windows')
@@ -183,4 +183,4 @@ def start_prompt() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Run/Interactive Python prompt", start_prompt, "<Control-i>")
+    menubar.get_menu("Run").add_command(label="Interactive Python prompt", command=start_prompt)

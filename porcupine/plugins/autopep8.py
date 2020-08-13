@@ -2,7 +2,7 @@ import platform
 import subprocess
 from typing import Optional
 
-from porcupine import actions, get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, menubar, tabs, utils
 
 
 def run_autopep8(code: str) -> Optional[str]:
@@ -62,4 +62,6 @@ def callback() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Tools/Python/autopep8", callback, tabtypes=[tabs.FileTab])
+    # TODO: Python tabs only?
+    menubar.get_menu("Tools/Python").add_command(label="autopep8", command=callback)
+    menubar.set_enabled_based_on_tab("Tools/Python/autopep8", (lambda tab: isinstance(tab, tabs.FileTab)))

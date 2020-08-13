@@ -11,8 +11,8 @@ try:
 except ImportError:
     BeautifulSoup = None
 
+from porcupine import get_main_window
 import porcupine.plugins.pastebin as pastebin_module
-from porcupine import actions
 
 
 BLAH_BLAH = "Hello World!\nThis is a test.\n"
@@ -51,6 +51,8 @@ def test_success_dialog(monkeypatch):
     dialog.open_in_browser()
     assert not dialog.winfo_exists()
     assert opened == ['http://example.com/poop']
+
+    dialog.destroy()
 
 
 def test_paste_class(monkeypatch, filetab):
@@ -118,7 +120,7 @@ def test_paste_error_handling(monkeypatch, caplog):
     assert traceback_string in caplog.records[0].message
 
 
-def test_start_pasting_with_actions(monkeypatch, filetab):
+def test_start_pasting_with_menubar(monkeypatch, filetab):
     called = []
 
     class FakePaste:
@@ -137,7 +139,5 @@ def test_start_pasting_with_actions(monkeypatch, filetab):
     random.shuffle(pastebin_names)
 
     for name in pastebin_names:
-        action = actions.get_action('Share/%s' % name)
-        assert action.enabled
-        action.callback()
+        get_main_window().event_generate(f'<<Menubar:Share/{name}>>')
     assert called == pastebin_names

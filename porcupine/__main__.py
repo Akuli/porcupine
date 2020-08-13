@@ -6,14 +6,13 @@ import pathlib
 import sys
 from typing import Any, Dict, List
 
-from porcupine import _logs, filetypes, get_tab_manager, pluginloader, tabs
+from porcupine import _logs, filetypes, get_tab_manager, menubar, pluginloader, tabs
 import porcupine.plugins    # .plugins for porcupine.plugins.__path__
 
 log = logging.getLogger(__name__)
 
 
-# these actions are based on argparse's source code
-
+# see the --help action in argparse's source code
 class _PrintPlugindirAction(argparse.Action):
 
     def __init__(   # type: ignore
@@ -105,6 +104,9 @@ def main() -> None:
             disabled_on_command_line=disable_list,
             shuffle=args.shuffle_plugins,
         )
+    else:
+        # pluginloader.load() calls this when it's done
+        menubar.update_keyboard_shortcuts()
 
     tabmanager = get_tab_manager()
     for path_string in args.files:

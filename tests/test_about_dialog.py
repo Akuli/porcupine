@@ -6,7 +6,7 @@ import tkinter
 import types
 from urllib.request import url2pathname
 
-from porcupine import actions
+from porcupine import get_main_window
 from porcupine.plugins import aboutdialog
 
 
@@ -26,8 +26,7 @@ def test_it_doesnt_crash(monkeypatch, porcusession):
 
     monkeypatch.setattr(aboutdialog, 'tkinter', fake_tkinter)
 
-    assert actions.get_action('Help/About Porcupine...').enabled
-    actions.get_action('Help/About Porcupine...').callback()
+    get_main_window().event_generate("<<Menubar:Help/About Porcupine>>")
     assert called == [1]
 
 

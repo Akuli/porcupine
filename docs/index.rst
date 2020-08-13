@@ -33,7 +33,7 @@ Everything that you can use in plugins is documented here.
       :maxdepth: 1
 
       porcupine
-      actions
+      menubar
       tabs
       textwidget
       images

@@ -14,7 +14,7 @@ import webbrowser
 
 import requests
 
-from porcupine import actions, get_main_window, get_tab_manager, tabs, utils
+from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 from porcupine import __version__ as _porcupine_version
 
 
@@ -199,6 +199,6 @@ def start_pasting(pastebin_name: str) -> None:
 
 def setup() -> None:
     for name in sorted(pastebins, key=str.casefold):
+        menubar.get_menu("Share").add_command(label=name, command=functools.partial(start_pasting, name))
         assert '/' not in name
-        callback = functools.partial(start_pasting, name)
-        actions.add_command("Share/" + name, callback, tabtypes=[tabs.FileTab])
+        menubar.set_enabled_based_on_tab(f"Share/{name}", (lambda tab: isinstance(tab, tabs.FileTab)))

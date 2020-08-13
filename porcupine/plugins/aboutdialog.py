@@ -6,7 +6,7 @@ from tkinter import ttk
 from typing import Any, List, Match, Union
 import webbrowser
 
-from porcupine import actions, dirs, get_main_window, images, utils
+from porcupine import dirs, get_main_window, images, menubar, utils
 from porcupine import __version__ as porcupine_version
 
 
@@ -125,4 +125,4 @@ def show_about_dialog() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Help/About Porcupine...", show_about_dialog)
+    menubar.get_menu("Help").add_command(label="About Porcupine", command=show_about_dialog)

@@ -6,7 +6,7 @@ import subprocess
 import tkinter
 from tkinter import messagebox
 
-from porcupine import actions, get_tab_manager, tabs
+from porcupine import get_tab_manager, menubar, tabs
 
 
 def start_xterm() -> None:
@@ -44,6 +44,4 @@ def setup() -> None:
             "Sorry, the terminal plugin only works on X11 :(")
         return
 
-    # upper-case T means Ctrl+Shift+T
-    # I use non-shifted ctrl+t for swapping two characters before cursor while editing
-    actions.add_command("Tools/Terminal", start_xterm, '<Control-T>')
+    menubar.get_menu("Tools").add_command(label="Terminal", command=start_xterm)

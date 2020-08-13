@@ -7,7 +7,7 @@ import tkinter
 from tkinter import ttk
 from typing import List
 
-from porcupine import actions, get_main_window, pluginloader, settings
+from porcupine import get_main_window, menubar, pluginloader, settings
 
 log = logging.getLogger(__name__)
 
@@ -173,4 +173,4 @@ def show_dialog() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Settings/Plugin Manager...", show_dialog)
+    menubar.get_menu("Settings").add_command(label="Plugin Manager", command=show_dialog)

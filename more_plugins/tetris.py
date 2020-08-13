@@ -7,7 +7,7 @@ import random
 from typing import Dict, Iterator, List, Optional, Tuple
 import tkinter
 
-from porcupine import actions, get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, menubar, tabs, utils
 
 WIDTH = 10
 HEIGHT = 20
@@ -331,4 +331,4 @@ def play_tetris() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Games/Tetris", play_tetris)
+    menubar.get_menu("Games").add_command(label="Tetris", command=play_tetris)

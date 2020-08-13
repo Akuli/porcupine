@@ -3,7 +3,7 @@
 
 import functools
 
-from porcupine import actions, get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, menubar, tabs, utils
 
 
 def comment_or_uncomment(tab: tabs.FileTab, junk: object = None) -> utils.BreakOrNone:
@@ -53,5 +53,5 @@ def on_new_tab(event: utils.EventWithData) -> None:
 def setup() -> None:
     # the action's binding feature cannot be used because then typing
     # a '#' outside the main text widget inserts a # to the main widget
-    actions.add_command("Edit/Comment Block", comment_or_uncomment_in_current_tab, tabtypes=[tabs.FileTab])
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    menubar.get_menu("Edit").add_command(label="Comment Block", command=comment_or_uncomment_in_current_tab)
+    menubar.set_enabled_based_on_tab("Edit/Comment Block", (lambda tab: isinstance(tab, tabs.FileTab)))

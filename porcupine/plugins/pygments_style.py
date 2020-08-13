@@ -6,7 +6,7 @@ from typing import List
 
 import pygments.styles      # type: ignore
 
-from porcupine import actions, get_main_window, get_tab_manager, settings
+from porcupine import get_main_window, get_tab_manager, menubar, settings
 
 # TODO: here's old code that created colored menu items, add it back
 #        style = pygments.styles.get_style_by_name(name)
@@ -51,19 +51,22 @@ def setup() -> None:
     def check_if_it_finished() -> None:
         if thread.is_alive():
             get_main_window().after(200, check_if_it_finished)
-        else:
-            var = tkinter.StringVar(value=settings.get('pygments_style', str))
+            return
 
-            def settings2var(event: tkinter.Event) -> None:
-                var.set(settings.get('pygments_style', str))
+        var = tkinter.StringVar(value=settings.get('pygments_style', str))
 
-            def var2settings(*junk: str) -> None:
-                settings.set('pygments_style', var.get())
+        def settings2var(event: tkinter.Event) -> None:
+            var.set(settings.get('pygments_style', str))
 
-            # this doesn't recurse infinitely because <<SettingChanged:bla>>
-            # gets generated only when the setting actually changes
-            get_tab_manager().bind('<<SettingChanged:pygments_style>>', settings2var, add=True)
-            var.trace_add('write', var2settings)
-            actions.add_choice("Color Styles", styles, var=var)
+        def var2settings(*junk: str) -> None:
+            settings.set('pygments_style', var.get())
+
+        # this doesn't recurse infinitely because <<SettingChanged:bla>>
+        # gets generated only when the setting actually changes
+        get_tab_manager().bind('<<SettingChanged:pygments_style>>', settings2var, add=True)
+        var.trace_add('write', var2settings)
+
+        for style_name in styles:
+            menubar.get_menu("Color Styles").add_radiobutton(label=style_name, value=style_name, variable=var)
 
     get_main_window().after(200, check_if_it_finished)

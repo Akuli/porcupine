@@ -1,6 +1,6 @@
 from tkinter import simpledialog    # type: ignore
 
-from porcupine import actions, get_tab_manager, tabs
+from porcupine import get_tab_manager, menubar, tabs
 
 
 def gotoline() -> None:
@@ -22,5 +22,5 @@ def gotoline() -> None:
 
 
 def setup() -> None:
-    actions.add_command("Edit/Go to Line", gotoline, '<Control-l>',
-                        tabtypes=[tabs.FileTab])
+    menubar.get_menu("Edit").add_command(label="Go to Line", command=gotoline)
+    menubar.set_enabled_based_on_tab("Edit/Go to Line", (lambda tab: isinstance(tab, tabs.FileTab)))

@@ -1,0 +1,69 @@
+import contextlib
+import itertools
+import tkinter
+
+import pytest
+
+from porcupine import get_main_window, menubar, tabs, utils
+
+
+_action_path_counter = itertools.count()
+
+
+def test_virtual_events_calling_menu_callbacks(porcusession):
+    called = []
+    menubar.get_menu("Foo").add_command(label="Bar", command=(lambda: called.append('bar')))
+    menubar.get_menu("Foo").add_command(label="Baz", command=(lambda: called.append('baz')), state='disabled')
+    menubar.update_keyboard_shortcuts()
+    get_main_window().update()
+    get_main_window().event_generate('<<Menubar:Foo/Bar>>')
+    get_main_window().event_generate('<<Menubar:Foo/Baz>>')
+    assert called == ['bar']
+
+
+def test_set_enabled_based_on_tab(porcusession, tabmanager):
+    tab1 = tabs.Tab(tabmanager)
+    tab2 = tabs.Tab(tabmanager)
+
+    menubar.get_menu("Foo").add_command(label="Spam")
+    menubar.set_enabled_based_on_tab("Foo/Spam", (lambda tab: tab is tab2))
+    assert menubar.get_menu("Foo").entrycget('end', 'state') == 'disabled'
+
+    tabmanager.add_tab(tab1)
+    assert menubar.get_menu("Foo").entrycget('end', 'state') == 'disabled'
+
+    tabmanager.add_tab(tab2)
+    assert menubar.get_menu("Foo").entrycget('end', 'state') == 'normal'
+
+    tabmanager.select(tab1)
+    tabmanager.update()
+    assert menubar.get_menu("Foo").entrycget('end', 'state') == 'disabled'
+
+    tabmanager.close_tab(tab1)
+    tabmanager.close_tab(tab2)
+    assert menubar.get_menu("Foo").entrycget('end', 'state') == 'disabled'
+
+
+def test_item_doesnt_exist(porcusession):
+    with pytest.raises(LookupError, match=r"^menu item 'Asdf/BlaBlaBla' not found$"):
+        menubar.set_enabled_based_on_tab("Asdf/BlaBlaBla", (lambda tab: True))
+
+
+def test_text_widget_binding_weirdness(filetab):
+    # write text to text widget and select some of it
+    filetab.textwidget.insert('1.0', 'hello world')
+    filetab.textwidget.tag_add('sel', '1.4', '1.7')
+
+    # pressing ctrl+w should leave the text as is (default bindings don't run)
+    # and try to close the tab (except that we prevent it from closing)
+    called = 0
+    def fake_can_be_closed():
+        nonlocal called
+        called += 1
+        return False
+    filetab.can_be_closed = fake_can_be_closed
+
+    filetab.update()
+    filetab.textwidget.event_generate('<Control-w>')
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'hello world'
+    assert called == 1

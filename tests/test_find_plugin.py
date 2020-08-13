@@ -7,20 +7,20 @@ from tkinter import ttk
 
 import pytest
 
-from porcupine import actions, get_main_window
+from porcupine import get_main_window
 from porcupine.plugins import find
-
-
-@pytest.fixture
-def filetab_and_finder(filetab):
-    actions.get_action('Edit/Find and Replace').callback()
-    return (filetab, find.finders[filetab])
 
 
 def test_finder_creation(filetab):
     assert filetab not in find.finders
-    actions.get_action('Edit/Find and Replace').callback()
+    get_main_window().event_generate('<<Menubar:Edit/Find and Replace>>')
     assert filetab in find.finders
+
+
+@pytest.fixture
+def filetab_and_finder(filetab):
+    get_main_window().event_generate('<<Menubar:Edit/Find and Replace>>')
+    return (filetab, find.finders[filetab])
 
 
 # i don't know why, but this does not work on windows
@@ -30,7 +30,7 @@ def test_finder_creation(filetab):
 def test_key_bindings_that_are_annoying_if_they_dont_work(filetab):
     assert filetab.focus_get() is filetab.textwidget
 
-    actions.get_action('Edit/Find and Replace').callback()
+    get_main_window().event_generate('<<Menubar:Edit/Find and Replace>>')
     finder = find.finders[filetab]
     filetab.update()
     assert filetab.focus_get() is finder.find_entry

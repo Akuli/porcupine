@@ -1,22 +1,11 @@
 """The main window and tab manager globals are here."""
 
-import functools
 import logging
-import pathlib
-import sys
 import tkinter
-from tkinter import filedialog
-import traceback
 import types
-from typing import Any, Dict, Optional, Sequence, Type
-import webbrowser
+from typing import Any, Dict, Optional, Type
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
-from porcupine import _logs, actions, filetypes, dirs, settings, tabs, utils
+from porcupine import _logs, filetypes, dirs, menubar, settings, tabs
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +20,7 @@ def _log_tkinter_error(exc: Type[BaseException], val: BaseException, tb: types.T
 
 
 # get_main_window() and get_tab_manager() work only if this has been called
+# TODO: should this function call pluginloader.load()?
 def init(*, verbose_logging: bool = False) -> None:
     """Get everything ready for running Porcupine.
 
@@ -58,7 +48,7 @@ def init(*, verbose_logging: bool = False) -> None:
     for binding, callback in _tab_manager.bindings:
         _root.bind(binding, callback, add=True)
 
-    _setup_actions()
+    menubar._init()
 
 
 # TODO: avoid Any typing
@@ -89,6 +79,18 @@ def get_tab_manager() -> tabs.TabManager:
     return _tab_manager
 
 
+def run() -> None:
+    if _root is None:
+        raise RuntimeError("init() wasn't called")
+
+    # the user can change the settings only if we get here, so there's
+    # no need to wrap the whole thing in try/with/finally/whatever
+    try:
+        _root.mainloop()
+    finally:
+        settings.save()
+
+
 def quit() -> None:
     """
     Calling this function is equivalent to clicking the X button in the
@@ -113,130 +115,3 @@ def quit() -> None:
     for tab in _tab_manager.tabs():
         _tab_manager.close_tab(tab)
     _root.destroy()
-
-
-def _setup_actions() -> None:
-    def new_file() -> None:
-        assert _tab_manager is not None
-        _tab_manager.add_tab(tabs.FileTab(_tab_manager))
-
-    def open_files() -> None:
-        kwargs = filetypes.get_filedialog_kwargs()
-        paths: Sequence[str] = filedialog.askopenfilenames(**kwargs)  # type: ignore
-
-        # tkinter returns '' if the user cancels, and i'm arfaid that python
-        # devs might "fix" a future version to return None
-        if not paths:
-            return
-
-        assert _tab_manager is not None
-        for path in map(pathlib.Path, paths):
-            try:
-                tab = tabs.FileTab.open_file(_tab_manager, path)
-            except (UnicodeError, OSError) as e:
-                log.exception("opening '%s' failed", path)
-                utils.errordialog(type(e).__name__, "Opening failed!",
-                                  traceback.format_exc())
-                continue
-
-            _tab_manager.add_tab(tab)
-
-    def save_file(save_as: bool) -> None:
-        assert _tab_manager is not None
-        tab = _tab_manager.select()
-        assert isinstance(tab, tabs.FileTab)
-
-        if save_as:
-            tab.save_as()
-        else:
-            tab.save()
-
-    def close_selected_tab() -> None:
-        assert _tab_manager is not None
-        tab = _tab_manager.select()
-        assert tab is not None      # handled by tabtypes=[tabs.Tab] below
-        if tab.can_be_closed():
-            _tab_manager.close_tab(tab)
-
-    # TODO: an API for adding separators to menus nicely? or just recommend
-    #       putting related items in a submenu?
-    actions.add_command("File/New File", new_file, '<Control-n>')
-    actions.add_command("File/Open", open_files, '<Control-o>')
-    actions.add_command("File/Save", functools.partial(save_file, False),
-                        '<Control-s>', tabtypes=[tabs.FileTab])
-    actions.add_command("File/Save As...", functools.partial(save_file, True),
-                        '<Control-S>', tabtypes=[tabs.FileTab])
-
-    # TODO: disable File/Quit when there are tabs, it's too easy to hit
-    # Ctrl+Q accidentally
-    actions.add_command("File/Close", close_selected_tab, '<Control-w>',
-                        tabtypes=[tabs.Tab])
-    actions.add_command("File/Quit", quit, '<Control-q>')
-
-    def change_font_size(how: Literal['bigger', 'smaller', 'reset']) -> None:
-        if how == 'reset':
-            settings.reset('font_size')
-            return
-
-        size = settings.get('font_size', int)
-        if how == 'bigger':
-            size += 1
-        else:
-            size -= 1
-            if size < 3:
-                return
-
-        settings.set('font_size', size)
-
-    # trigger change_font_size() with mouse wheel from any text widget
-    utils.bind_mouse_wheel('Text', (
-        lambda updn: change_font_size('bigger' if updn == 'up' else 'smaller')
-    ), prefixes='Control-', add=True)
-
-    # these work only with filetabs because that way the size change is
-    # noticable
-    actions.add_command(
-        "View/Bigger Font", functools.partial(change_font_size, 'bigger'),
-        '<Control-plus>', tabtypes=[tabs.FileTab])
-    actions.add_command(
-        "View/Smaller Font", functools.partial(change_font_size, 'smaller'),
-        '<Control-minus>', tabtypes=[tabs.FileTab])
-    actions.add_command(
-        "View/Reset Font Size", functools.partial(change_font_size, 'reset'),
-        '<Control-0>', tabtypes=[tabs.FileTab])
-
-    def add_link(path: str, url: str) -> None:
-        def callback() -> None:     # lambda doesn't work for this...
-            webbrowser.open(url)    # ...because this returns non-None and mypy
-
-        actions.add_command(path, callback)
-
-    # TODO: should ttk themes and color styles move to settings menu?
-    actions.add_command("Settings/Porcupine Settings...", settings.show_dialog)
-
-    # TODO: porcupine starring button?
-    add_link("Help/Porcupine Wiki",
-             "https://github.com/Akuli/porcupine/wiki")
-    add_link("Help/Report a problem or request a feature",
-             "https://github.com/Akuli/porcupine/issues/new")
-    add_link("Help/Read Porcupine's code on GitHub",
-             "https://github.com/Akuli/porcupine/tree/master/porcupine")
-
-    add_link("Help/Python Help/Free help chat",
-             "http://webchat.freenode.net/?channels=%23%23learnpython")
-    add_link("Help/Python Help/My Python tutorial",
-             "https://github.com/Akuli/python-tutorial/blob/master/README.md")
-    add_link("Help/Python Help/Official Python documentation",
-             "https://docs.python.org/")
-
-
-def run() -> None:
-    if _root is None:
-        raise RuntimeError("init() wasn't called")
-
-    # the user can change the settings only if we get here, so there's
-    # no need to wrap the whole thing in try/with/finally/whatever
-    try:
-        _root.mainloop()
-    finally:
-        settings.save()
