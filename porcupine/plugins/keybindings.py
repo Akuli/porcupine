@@ -16,6 +16,7 @@ def setup() -> None:
         notebook.nametowidget(tab) for tab in notebook.tabs()
         if notebook.tab(tab, 'text') == 'Config Files'
     ]
+    assert isinstance(config_file_section, tkinter.ttk.Frame)
     settings.add_config_file_button(config_file_section, user_path)
 
     try:
@@ -34,4 +35,4 @@ def setup() -> None:
         get_main_window().tk.call('source', user_path)
     except tkinter.TclError:
         # more verbose error message than default, including file names and line numbers
-        raise tkinter.TclError(root.getvar('errorInfo')) from None
+        raise tkinter.TclError(get_main_window().getvar('errorInfo')) from None

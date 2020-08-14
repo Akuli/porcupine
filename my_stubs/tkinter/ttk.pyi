@@ -153,10 +153,13 @@ class Notebook(Widget):
     # changes the config. There seems to be no way to type hint this correctly.
     #
     # TODO: if nothing else can be done, then at least avoid Any
+    @overload
     def tab(
-        self, tab_id: _NotebookTabId, *,
+        self, tab_id: _NotebookTabId, option: None = ..., *,
         text: str = ...,
     ) -> Optional[Dict[str, Any]]: ...
+    @overload
+    def tab(self, tab_id: _NotebookTabId, option: Literal['text']) -> Any: ...
 
     def tabs(self) -> Tuple[_StringlyTypedWidget, ...]: ...
 
