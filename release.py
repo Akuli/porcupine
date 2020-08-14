@@ -9,9 +9,10 @@ import sys
 from porcupine import version_info as old_info
 
 
-def check_git_branch():
+def check_stuff():
     status = subprocess.check_output(['git', 'status'])
     assert status.startswith(b'On branch master\n')
+    assert 'VIRTUAL_ENV' in os.environ
 
 
 def bump_version(new_info):
@@ -49,7 +50,7 @@ def main():
     else:
         assert False, "unexpected what_to_bump %r" % args.what_to_bump
 
-    check_git_branch()
+    check_stuff()
     bump_version(new_info)
 
 
