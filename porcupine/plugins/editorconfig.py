@@ -306,17 +306,6 @@ def get_line_ending(config: Dict[str, str]) -> Optional[settings.LineEnding]:
     return None
 
 
-def get_trim_trailing_whitespace(config: Dict[str, str]) -> Optional[bool]:
-    if 'trim_trailing_whitespace' in config:
-        string = config['trim_trailing_whitespace']
-        if string == 'true':
-            return True
-        if string == 'false':
-            return False
-        log.error(f"bad trim_trailing_whitespace: {string!r}")
-    return None
-
-
 def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
     updates: Dict[str, Optional[object]] = {
         'tabs2spaces': get_bool(config, 'indent_style', true_string='space', false_string='tab'),
