@@ -9,29 +9,15 @@ import sys
 from porcupine import version_info as old_info
 
 
-def check_stuff():
-    status = subprocess.check_output(['git', 'status'])
-    assert status.startswith(b'On branch master\n')
-    assert 'VIRTUAL_ENV' in os.environ
-
-
-def bump_version(new_info):
-    path = os.path.join('porcupine', '__init__.py')
-    with open(path, 'r') as f:
+def edit_init_dot_py(new_info):
+    with open('porcupine/__init__.py', 'r') as f:
         content = f.read()
+
     assert repr(old_info) in content
-
     content = content.replace(repr(old_info), repr(new_info), 1)
-    with open(path, 'w') as f:
-        f.write(content)
 
-    subprocess.check_call(['git', 'add', path])
-    subprocess.check_call(['git', 'commit', '-m', 'v%d.%d.%d' % new_info])
-    subprocess.check_call(['git', 'tag', 'v%d.%d.%d' % new_info])
-    subprocess.check_call(['git', 'push', 'origin', 'master'])
-    subprocess.check_call(['git', 'push', '--tags', 'origin', 'master'])
-    subprocess.check_call([sys.executable, 'docs/publish.py'])
-    print("Bumped version from %d.%d.%d to %d.%d.%d" % (old_info + new_info))
+    with open('porcupine/__init__.py', 'w') as f:
+        f.write(content)
 
 
 def main():
@@ -50,8 +36,20 @@ def main():
     else:
         assert False, "unexpected what_to_bump %r" % args.what_to_bump
 
-    check_stuff()
-    bump_version(new_info)
+    status = subprocess.check_output(['git', 'status'])
+    assert status.startswith(b'On branch master\n')
+    assert b'Changes not staged for commit:' not in status
+    assert 'VIRTUAL_ENV' in os.environ
+
+    print("Bumping version from %d.%d.%d to %d.%d.%d" % (old_info + new_info))
+
+    edit_init_dot_py(new_info)
+    subprocess.check_call(['git', 'add', 'porcupine/__init__.py'])
+    subprocess.check_call(['git', 'commit', '-m', 'v%d.%d.%d' % new_info])
+    subprocess.check_call(['git', 'tag', 'v%d.%d.%d' % new_info])
+    subprocess.check_call(['git', 'push', 'origin', 'master'])
+    subprocess.check_call(['git', 'push', '--tags', 'origin', 'master'])
+    subprocess.check_call([sys.executable, 'docs/publish.py'])
 
 
 if __name__ == '__main__':
