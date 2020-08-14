@@ -117,9 +117,7 @@ class Finder(ttk.Frame):
         closebutton.place(relx=1, rely=0, anchor='ne')
         closebutton.bind('<Button-1>', self.hide, add=True)
 
-        # TODO: figure out why images don't work in tests
-        if 'pytest' not in sys.modules:     # pragma: no cover
-            closebutton['image'] = images.get('closebutton')
+        closebutton['image'] = images.get('closebutton')
 
         # explained in test_find_plugin.py
         textwidget.bind('<<Selection>>', self._update_buttons, add=True)
@@ -155,7 +153,6 @@ class Finder(ttk.Frame):
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self, junk: object = None) -> None:
-        # TODO: document this trick
         State = Union[Literal['normal'], Literal['disabled']]
         matches_something_state: State
         replace_this_state: State
@@ -255,7 +252,6 @@ class Finder(ttk.Frame):
         self._textwidget.mark_set('insert', start)
         self._textwidget.see(start)
 
-    # TODO: adjust scrolling accordingly
     def _go_to_next_match(self, junk: object = None) -> None:
         pairs = self.get_match_ranges()
         if not pairs:

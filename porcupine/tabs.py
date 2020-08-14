@@ -89,8 +89,7 @@ class TabManager(ttk.Notebook):
 
         # These can be bound in a parent widget. This doesn't use
         # enable_traversal() because we want more bindings than it
-        # creates.
-        # TODO: document self.bindings?
+        # creates. Undocumented because plugins shouldn't need this.
         self.bindings: List[Tuple[str, Callable[[tkinter.Event], utils.BreakOrNone]]] = [
             ('<Control-Prior>', functools.partial(self._on_page_updown, False, -1)),
             ('<Control-Next>', functools.partial(self._on_page_updown, False, +1)),
@@ -248,7 +247,7 @@ class TabManager(ttk.Notebook):
         except tkinter.TclError:   # should be "Slave index n out of bounds"
             return False
 
-    # TODO: test this
+    # TODO: write tests for this? otoh it's a feature that I use all the time
     def move_selected_tab(self, diff: int) -> bool:
         """Try to move the currently selected tab left or right.
 
@@ -760,7 +759,6 @@ bers.py>` use this attribute.
     def on_focus(self) -> None:    # override
         self.textwidget.focus_set()
 
-    # TODO: returning None on errors kinda sucks, maybe a handle_errors kwarg?
     def save(self) -> Optional[bool]:
         """Save the file to the current :attr:`path`.
 

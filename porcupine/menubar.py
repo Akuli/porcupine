@@ -153,7 +153,7 @@ def _get_keyboard_shortcut(binding: str) -> str:
     >>> _get_keyboard_shortcut('<F11>')
     'F11'
     """
-    # TODO: handle more corner cases? see bind(3tk)
+    # this doesn't handle all possible cases, see bind(3tk)
     parts = binding.lstrip('<').rstrip('>').split('-')
     result = []
 
@@ -249,7 +249,6 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]],
 
 # TODO: pluginify?
 def _fill_menus_with_default_stuff() -> None:
-
     # Make sure to get the order of menus right:
     #   File, Edit, <everything else>, Help
     get_menu("Help")   # handled specially in get_menu
@@ -293,7 +292,6 @@ def _fill_menus_with_default_stuff() -> None:
         if tab.can_be_closed():
             _run.get_tab_manager().close_tab(tab)
 
-    # FIXME: disable some menu items when current tab isn't FileTab (font size stuff too?)
     get_menu("File").add_command(label="New File", command=new_file)
     get_menu("File").add_command(label="Open", command=open_files)
     get_menu("File").add_command(label="Save", command=functools.partial(save_file, False))
@@ -334,7 +332,6 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("View/Smaller Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))
 
-    # TODO: should ttk themes and color styles move to settings menu?
     get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
 
     def add_link(menu_path: str, label: str, url: str) -> None:
@@ -343,7 +340,7 @@ def _fill_menus_with_default_stuff() -> None:
 
         get_menu(menu_path).add_command(label=label, command=callback)
 
-    # TODO: porcupine starring button?
+    # TODO: porcupine starring button
     add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
     add_link("Help", "Report a problem or request a feature", "https://github.com/Akuli/porcupine/issues/new")
     add_link("Help/Python", "Free help chat", "http://webchat.freenode.net/?channels=%23%23learnpython")

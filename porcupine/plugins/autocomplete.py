@@ -522,7 +522,6 @@ def on_new_tab(event: utils.EventWithData) -> None:
              add=True)
 
 
-# TODO: link to langserver setup docs somewhere in the gui
 def setup() -> None:
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
     settings.add_option('autocomplete_popup_width', 500)

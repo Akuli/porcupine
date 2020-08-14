@@ -347,8 +347,6 @@ def bind_with_data(
     # TODO: is it possible to do this without a deque?
     event_objects: Deque[Union[tkinter.Event, EventWithData]] = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
-    # TODO: does the above bind get ever unbound so that it doesn't leak? see
-    #       tkinter's unbind method
 
     def run_the_callback(data_string: str) -> Optional[str]:
         event = event_objects.popleft()

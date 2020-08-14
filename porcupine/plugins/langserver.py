@@ -1,5 +1,4 @@
 """Langserver support for autocompletions."""
-# TODO: sockets without specifying netcat as the command
 # TODO: CompletionProvider
 # TODO: error reporting in gui somehow
 
@@ -170,9 +169,7 @@ class LocalhostSocketIO:
         return result
 
 
-# TODO: add a configuration option for this, and make this a part of porcupine
-#       rather than something that every plugin has to implement
-# TODO: editorconfig support
+# TODO: make this a part of porcupine rather than something that every plugin has to implement
 _PROJECT_ROOT_THINGS = ['editorconfig', '.git'] + [
     readme + extension
     for readme in ['README', 'readme', 'Readme', 'ReadMe']

@@ -1,6 +1,3 @@
-# TODO: move this to __init__.py? this was in a separate file because
-# setup.py used to import porcupine but it doesn't do it anymore
-
 import pathlib
 import platform
 

@@ -102,7 +102,6 @@ class PluginInfo:
     error: Optional[str]
 
 
-# TODO: document this
 _mutable_plugin_infos: List[PluginInfo] = []
 plugin_infos: Sequence[PluginInfo] = _mutable_plugin_infos  # changing content is mypy error
 

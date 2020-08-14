@@ -35,14 +35,6 @@ def _is_on_window(event: tkinter.Event) -> bool:
             (window_top < event.y_root < window_bottom))
 
 
-# TODO: tests
-def _2lines(string: str) -> str:
-    # convert a space in the middle into a newline
-    words = string.split()
-    center = len(words) // 2
-    return ' '.join(words[:center]) + '\n' + ' '.join(words[center:])
-
-
 class PopManager:
 
     def __init__(self) -> None:
@@ -82,12 +74,10 @@ class PopManager:
             state = tab.get_state()
             if state is None:
                 self._dragged_state = NOT_POPPABLE
-                self._label['text'] = _2lines(
-                    "This tab cannot be popped up.")
+                self._label['text'] = "This tab cannot\nbe popped up."
             else:
                 self._dragged_state = (tab, state)
-                self._label['text'] = _2lines(
-                    "Drop the tab here to pop it up...")
+                self._label['text'] = "Drop the tab here\nto pop it up..."
 
         self._show_tooltip(event)
 

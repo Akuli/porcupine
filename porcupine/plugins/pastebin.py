@@ -1,8 +1,5 @@
 """Display a "Share" menu that allows you to pastebin files easily."""
 # remember to update this file if the pythonprompt plugin will work some day
-# FIXME: this is way too python-specific :(
-# FIXME: only two of the 5 pastebins still work, code needs updating
-# TODO: cancel button
 
 import functools
 import logging
@@ -72,6 +69,7 @@ def paste_to_dpaste_de(code: str, path: Optional[pathlib.Path]) -> str:
     response = session.post('https://dpaste.org/api/', data={
         'content': code,
         # lexer defaults to 'python'
+        # TODO: don't highlight everything as python
         'format': 'url',
     })
     response.raise_for_status()
@@ -139,8 +137,7 @@ class Paste:
         window.geometry('350x150')
         window.resizable(False, False)
 
-        # disable the close button, there's no good way to cancel this
-        # forcefully :(
+        # disable the close button, there's no way to cancel this forcefully :(
         window.protocol('WM_DELETE_WINDOW', (lambda: None))
 
         content = ttk.Frame(window)
