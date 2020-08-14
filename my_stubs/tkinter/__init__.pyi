@@ -376,14 +376,19 @@ class Label(Widget):
 class Canvas(Widget):
     def __init__(
         self, master: Misc, *,
-        width: _ScreenDistance,
-        height: _ScreenDistance,
-        relief: _Relief,
-        bg: str,
-        takefocus: bool,
+        width: _ScreenDistance = ...,
+        height: _ScreenDistance = ...,
+        relief: _Relief = ...,
+        bg: str = ...,
+        takefocus: bool = ...,
     ) -> None: ...
 
     def __getitem__(self, opt: Literal['width', 'height', 'bg']) -> Any: ...
+
+    @overload
+    def __setitem__(self, opt: Literal['background'], val: str) -> None: ...
+    @overload
+    def __setitem__(self, opt: Literal['width'], val: _ScreenDistance) -> None: ...
 
     def create_rectangle(
         self,

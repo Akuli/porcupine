@@ -2,7 +2,7 @@ import dataclasses
 import functools
 import tkinter
 import tkinter.font as tkfont
-from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING, overload
 import weakref
 
 import pygments.styles          # type: ignore
@@ -486,8 +486,14 @@ def create_peer_widget(
         utils.forward_event('<<ContentChanged>>', the_widget_that_becomes_a_peer, original_text_widget)
 
 
+@overload
+def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None: ...  # noqa
+@overload
+def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...  # noqa
+
+
 def use_pygments_theme(
-    widget: tkinter.Text,
+    widget: tkinter.Misc,
     callback: Optional[Callable[[str, str], None]] = None,
 ) -> None:
     """
@@ -496,9 +502,9 @@ def use_pygments_theme(
     Porcupine does that automatically for the ``textwidget`` of each
     :class:`~porcupine.tabs.FileTab`.
 
-    If the callback is specified, it will be called like
-    ``callback(foreground_color, background_color)``
-    instead of configuring the widget.
+    If you don't specify a *callback*, then ``widget`` must be a :class:`tkinter.Text` widget.
+    If you specify a callback, then it will be called like
+    ``callback(foreground_color, background_color)``, and the type of the widget doesn't matter.
 
     .. seealso::
         This function is used in :source:`porcupine/plugins/linenumbers.py`.
@@ -520,6 +526,7 @@ def use_pygments_theme(
         #    '#222222', '', '', '', '???', '']
         fg = getattr(style, 'default_style', '') or utils.invert_color(bg)
         if callback is None:
+            assert isinstance(widget, tkinter.Text)
             widget['fg'] = fg
             widget['bg'] = bg
             widget['insertbackground'] = fg  # cursor color
