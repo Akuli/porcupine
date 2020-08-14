@@ -66,7 +66,7 @@ class LineNumbers:
             self.canvas.create_text(0, y, text=f' {lineno}', anchor='nw', font='TkFixedFont', fill=self._text_color)
 
     def _update_canvas_width(self, junk: object = None) -> None:
-        self.canvas['width'] = tkinter.font.Font(name='TkFixedFont', exists=True).measure('a' * 5)
+        self.canvas['width'] = tkinter.font.Font(name='TkFixedFont', exists=True).measure(' 1234 ')
 
     def _on_click(self, event: tkinter.Event) -> None:
         # go to clicked line
