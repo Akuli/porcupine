@@ -26,13 +26,21 @@ Information about Python
    ``pythonw.exe``.
 
 
-Tkinter Utilities
------------------
+Events with Data
+----------------
+
+.. autofunction:: bind_with_data
+.. autoclass:: EventWithData
+    :members:
+.. autoclass:: EventDataclass
+
+
+Other Tkinter Utilities
+-----------------------
 
 .. autofunction:: set_tooltip
 .. autofunction:: bind_mouse_wheel
 .. autofunction:: bind_tab_key
-.. autofunction:: bind_with_data
 .. autofunction:: run_in_thread
 .. autoclass:: TemporaryBind
 

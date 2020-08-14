@@ -277,9 +277,11 @@ class EventDataclass:
         return type(self).__name__ + json.dumps(dataclasses.asdict(self))
 
 
-# TODO: mention this in docs, useful for mypy
 class EventWithData(tkinter.Event):
+    """A subclass of :class:`tkinter.Event` for use with :func:`bind_with_data`."""
 
+    #: If a string was passed to the ``data`` argument of ``event_generate()``,
+    #: then this is that string.
     data_string: str
 
     def data_widget(self) -> tkinter.Misc:
