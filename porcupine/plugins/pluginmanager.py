@@ -7,7 +7,7 @@ import tkinter
 from tkinter import ttk
 from typing import List
 
-from porcupine import get_main_window, menubar, pluginloader, settings
+from porcupine import get_main_window, menubar, pluginloader, settings, utils
 
 log = logging.getLogger(__name__)
 
@@ -78,13 +78,11 @@ class PluginDialogContent:
             right_side, text="Enable", command=self._toggle_enabled, state='disabled')
         self._enable_disable_button.pack(side='bottom')
 
-        self._description_label = ttk.Label(
-            right_side, width=25, anchor='nw', text="Please select a plugin.")
-        self._description_label.pack(fill='both', expand=True)
-        self._description_label.bind(
-            '<Configure>',
-            lambda event: event.widget.config(wraplength=event.width-5),  # type: ignore
-            add=True)
+        self._description = utils.create_passive_text_widget(right_side)
+        self._description['state'] = 'normal'
+        self._description.insert('1.0', "Please select a plugin.")
+        self._description['state'] = 'disabled'
+        self._description.pack(fill='both', expand=True)
 
     def _insert_data(self) -> None:
         for info in sorted(pluginloader.plugin_infos, key=(lambda info: info.name)):
@@ -142,7 +140,10 @@ class PluginDialogContent:
             text = re.sub(r'(.)\n(.)', r'\1 \2', text)
 
         self._title_label['text'] = plugin_name
-        self._description_label['text'] = text
+        self._description['state'] = 'normal'
+        self._description.delete('1.0', 'end')
+        self._description.insert('1.0', text)
+        self._description['state'] = 'disabled'
 
         disable_list = settings.get('disabled_plugins', List[str])
         if plugin_name in disable_list:
