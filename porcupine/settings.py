@@ -3,6 +3,7 @@ import builtins
 import copy
 import dataclasses
 import enum
+from functools import partial
 import json
 import logging
 import os
@@ -495,7 +496,7 @@ def add_section(title_text: str) -> ttk.Frame:
         ,-----------------------------------------------------------.
         | Porcupine Settings                                        |
         |-----------------------------------------------------------|
-        |  / General \   / File Types \                             |
+        |  / General \   / Config Files \                           |
         |_/           \_____________________________________________|
         |                           :                           :   |
         |                           :                           :col|
@@ -633,15 +634,24 @@ def add_label(section: ttk.Frame, text: str) -> ttk.Label:
     return label
 
 
-def _edit_filetypes_config() -> None:
+def _edit_file(path: pathlib.Path) -> None:
     # porcupine/tabs.py imports this file
     # these local imports feel so evil xD  MUHAHAHAA!!!
     from porcupine import tabs
 
-    path = dirs.configdir / 'filetypes.toml'
     manager = porcupine.get_tab_manager()
     manager.add_tab(tabs.FileTab.open_file(manager, path))
     get_notebook().winfo_toplevel().withdraw()
+
+
+def add_config_file_button(section: ttk.Frame, path: pathlib.Path) -> ttk.Button:
+    """
+    Add a button that opens a file in Porcupine when it's clicked.
+    The button doesn't have any text next to it.
+    """
+    button = ttk.Button(section, text=f"Edit {path.name}", command=partial(_edit_file, path))
+    button.grid(column=0, columnspan=3, sticky='', pady=5)
+    return button
 
 
 def _fill_notebook_with_defaults() -> None:
@@ -659,27 +669,18 @@ def _fill_notebook_with_defaults() -> None:
         general, 'default_line_ending', "Default line ending:",
         values=[ending.name for ending in LineEnding])
 
-    filetypes = add_section('File Types')
-    add_label(filetypes, (
-        "Currently there's no GUI for changing filetype specific settings, "
-        "but you can edit it the configuration file."
-    ))
-    ttk.Button(
-        filetypes, text="Edit filetypes.toml", command=_edit_filetypes_config,
-    ).grid(row=1, column=0, columnspan=3, sticky='')
-
-    add_label(filetypes, (
-        "You can use the following option to choose which filetype "
-        "Porcupine should use when you create a new file in Porcupine. You "
-        "can change the filetype after creating the file by clicking "
-        "Filetypes in the menu bar."))
-
     # filetypes aren't loaded yet when this is called
-    def add_filetype_choosing_combobox() -> None:
-        filetype_names = sorted(get_filetype_names())
-        add_combobox(filetypes, 'default_filetype', "Default filetype for new files:", values=filetype_names)
+    general.after_idle(lambda: add_combobox(
+        general, 'default_filetype', "Default filetype for new files:",
+        values=sorted(get_filetype_names(), key=str.casefold),
+    ))
 
-    filetypes.after_idle(add_filetype_choosing_combobox)
+    configs = add_section('Config Files')
+    add_label(configs, (
+        "Currently there's no GUI for changing these settings, but you can edit it the "
+        "configuration files yourself."
+    ))
+    add_config_file_button(configs, dirs.configdir / 'filetypes.toml')
 
 
 def _init() -> None:

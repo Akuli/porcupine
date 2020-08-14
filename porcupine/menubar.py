@@ -63,9 +63,7 @@ def _init() -> None:
     main_window['menu'] = tkinter.Menu(main_window, tearoff=False)
 
     main_window.bind_class('Text', '<FocusIn>', _fix_text_widget_bindings, add=True)
-
     _fill_menus_with_default_stuff()
-    _setup_stupid_default_bindings()
 
 
 _MENU_ITEM_TYPES_WITH_LABEL = {'command', 'checkbutton', 'radiobutton', 'cascade'}
@@ -351,40 +349,3 @@ def _fill_menus_with_default_stuff() -> None:
     add_link("Help/Python", "Free help chat", "http://webchat.freenode.net/?channels=%23%23learnpython")
     add_link("Help/Python", "My Python tutorial", "https://github.com/Akuli/python-tutorial/blob/master/README.md")
     add_link("Help/Python", "Official documentation", "https://docs.python.org/")
-
-
-# TODO: make this configurable (should be easy because of virtual event usage)
-def _setup_stupid_default_bindings() -> None:
-    main_window = _run.get_main_window()
-    main_window.event_add('<<Menubar:File/New File>>', '<Control-n>')
-    main_window.event_add('<<Menubar:File/Open>>', '<Control-o>')
-    main_window.event_add('<<Menubar:File/Save>>', '<Control-s>')
-    main_window.event_add('<<Menubar:File/Save As>>', '<Control-S>')
-    main_window.event_add('<<Menubar:File/Close>>', '<Control-w>')
-    main_window.event_add('<<Menubar:File/Quit>>', '<Control-q>')
-    main_window.event_add('<<Menubar:View/Bigger Font>>', '<Control-plus>')
-    main_window.event_add('<<Menubar:View/Smaller Font>>', '<Control-minus>')
-    main_window.event_add('<<Menubar:View/Reset Font Size>>', '<Control-0>')
-
-    # run plugin
-    main_window.event_add('<<Menubar:Run/Compile>>', '<F4>')
-    main_window.event_add('<<Menubar:Run/Run>>', '<F5>')
-    main_window.event_add('<<Menubar:Run/Compile and Run>>', '<F6>')
-    main_window.event_add('<<Menubar:Run/Lint>>', '<F7>')
-
-    # gotoline plugin
-    main_window.event_add('<<Menubar:Edit/Go to Line>>', '<Control-l>')
-
-    # fullscreen plugin
-    main_window.event_add('<<Menubar:View/Full Screen>>', '<F11>')
-
-    # find plugin
-    main_window.event_add('<<Menubar:Edit/Find and Replace>>', '<Control-f>')
-
-    # more_plugins/terminal.py
-    # upper-case T means Ctrl+Shift+T
-    # I use non-shifted ctrl+t for swapping two characters before cursor while editing
-    main_window.event_add('<<Menubar:Tools/Terminal>>', '<Control-T>')
-
-    # more_plugins/pythonprompt.py
-    main_window.event_add('<<Menubar:Run/Interactive Python prompt>>', '<Control-i>')

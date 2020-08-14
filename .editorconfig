@@ -6,7 +6,7 @@ insert_final_newline = true
 [porcupine/default_filetypes.toml]
 max_line_length = 80
 
-[*.py]
+[*.{py,tcl}]
 indent_style = space
 indent_size = 4
 max_line_length = 100

@@ -124,6 +124,7 @@ When setting the values, the converter passed to :func:`add_option` is used.
 .. autofunction:: add_entry
 .. autofunction:: add_combobox
 .. autofunction:: add_spinbox
+.. autofunction:: add_config_file_button
 
 
 Change Events
