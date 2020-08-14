@@ -364,7 +364,7 @@ def _setup_stupid_default_bindings() -> None:
     main_window.event_add('<<Menubar:File/Quit>>', '<Control-q>')
     main_window.event_add('<<Menubar:View/Bigger Font>>', '<Control-plus>')
     main_window.event_add('<<Menubar:View/Smaller Font>>', '<Control-minus>')
-    main_window.event_add('<<Menubar:View/Reset Font Size>>', '<Control-minus>')
+    main_window.event_add('<<Menubar:View/Reset Font Size>>', '<Control-0>')
 
     # run plugin
     main_window.event_add('<<Menubar:Run/Compile>>', '<F4>')
