@@ -570,6 +570,10 @@ class MainText(tkinter.Text):
         self.bind('<Control-y>', self._redo, add=True)
         self.bind('<Control-a>', self._select_all, add=True)
 
+        # ctrl+up and ctrl+down don't go to beginning of line by default
+        self.bind('<Control-Up>', self._on_control_up, add=True)
+        self.bind('<Control-Down>', self._on_control_down, add=True)
+
     def _on_indent_size_changed(self, junk: object = None) -> None:
         # from the text(3tk) man page: "To achieve a different standard
         # spacing, for example every 4 characters, simply configure the
@@ -632,6 +636,28 @@ class MainText(tkinter.Text):
     def _on_closing_brace(self, event: tkinter.Event) -> None:
         """Dedent automatically."""
         self.dedent('insert')
+
+    # Tk's default ctrl+up and ctrl+down behaviour isn't great:
+    #   - whitespace-only and blank lines are treated differently
+    #   - if a line starts with whitespace, it doesn't jump to beginning of line
+    def _on_control_up(self, junk: object) -> utils.BreakOrNone:
+        lineno = int(self.index('insert').split('.')[0]) - 1
+        while lineno > 1 and self.get(f'{lineno - 1}.0', f'{lineno - 1}.0 lineend').strip():
+            lineno -= 1
+
+        self.mark_set('insert', f'{lineno}.0')
+        self.see('insert')
+        return 'break'
+
+    def _on_control_down(self, junk: object) -> utils.BreakOrNone:
+        lineno_max = int(self.index('end - 1 char').split('.')[0])
+        lineno = int(self.index('insert').split('.')[0]) + 1
+        while lineno < lineno_max and self.get(f'{lineno - 1}.0', f'{lineno - 1}.0 lineend').strip():
+            lineno += 1
+
+        self.mark_set('insert', f'{lineno}.0')
+        self.see('insert')
+        return 'break'
 
     def indent(self, location: str) -> None:
         """Insert indentation character(s) at the given location."""
