@@ -14,7 +14,7 @@ from porcupine import dirs
 log = logging.getLogger(__name__)
 LOG_DIR = dirs.cachedir / 'logs'
 _FILENAME_FORMAT = '%Y-%m-%dT%H-%M-%S.txt'
-LOG_MAX_AGE_DAYS = 30
+LOG_MAX_AGE_DAYS = 3
 
 
 def _remove_old_logs() -> None:
