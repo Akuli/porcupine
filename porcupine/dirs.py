@@ -3,16 +3,15 @@ import platform
 
 import appdirs      # type: ignore
 
-from porcupine import __author__ as _author
-
 
 if platform.system() in {'Windows', 'Darwin'}:
     # these platforms like path names like "Program Files" or
     # "Application Support"
     _appname = 'Porcupine'
+    _author = 'Akuli'
 else:
     _appname = 'porcupine'
-    _author = _author.lower()
+    _author = 'akuli'
 
 cachedir: pathlib.Path = pathlib.Path(
     appdirs.user_cache_dir(_appname, _author))

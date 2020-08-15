@@ -444,7 +444,10 @@ class LangServer:
             )
 
         elif isinstance(lsp_event, lsp.PublishDiagnostics):
-            [tab] = [tab for tab in self.tabs_opened.keys() if tab.path.as_uri() == lsp_event.uri]
+            [tab] = [
+                tab for tab in self.tabs_opened.keys()
+                if tab.path is not None and tab.path.as_uri() == lsp_event.uri
+            ]
 
             underline_list: List[underlines.Underline] = []
             for diagnostic in lsp_event.diagnostics:
