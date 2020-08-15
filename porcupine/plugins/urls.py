@@ -20,6 +20,7 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
             '(': ')',
             '[': ']',
             '{': '}',
+            '<': '>',
         }.get(text.get(f'{match_start} - 1 char'))
 
         if closing_paren is None:

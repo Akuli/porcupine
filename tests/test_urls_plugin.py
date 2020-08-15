@@ -13,10 +13,11 @@ line 3:  'https://github.com/Akuli/porcupine/'
 line 4:  (http://example.com/)
 line 5:  {http://example.com/}      <-- this might occur in Tcl code, for example
 line 6:  [http://example.com/]
-line 7:  (http://example.com/))()
-line 8: ("http://example.com/")bla
-line 9: "(http://example.com/)" :)
-line 10: (http://example.com/ )   <-- often used with tools that don't understand parenthesized urls
+line 7:  <http://example.com/>
+line 8:  (http://example.com/))()
+line 9: ("http://example.com/")bla
+line 10:"(http://example.com/)" :)
+line 11: (http://example.com/ )   <-- often used with tools that don't understand parenthesized urls
 ''')
 
     porcupine_len = len('https://github.com/Akuli/porcupine/')
@@ -33,4 +34,5 @@ line 10: (http://example.com/ )   <-- often used with tools that don't understan
         ('8.10', f'8.{10 + example_len}'),
         ('9.10', f'9.{10 + example_len}'),
         ('10.10', f'10.{10 + example_len}'),
+        ('11.10', f'11.{10 + example_len}'),
     ]
