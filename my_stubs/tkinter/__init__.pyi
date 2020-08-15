@@ -469,6 +469,24 @@ class YView:
 
     def yview_moveto(self, __fraction: float) -> None: ...
 
+class XView:
+    @overload
+    def xview(self) -> Tuple[float, float]: ...
+    @overload
+    def xview(self, __arg: Literal['moveto'], __fraction: float) -> None: ...
+    @overload
+    def xview(self, __arg: Literal['scroll'], __number: int, __what: Union[Literal['units'], Literal['pages']]) -> None: ...
+    @overload
+    def xview(self, __arg: Literal['scroll'], __number: _ScreenDistance, __what: Literal['pixels']) -> None: ...
+
+    # i wish there was an easy way to do partialmethods
+    @overload
+    def xview_scroll(self, __number: int, __what: Union[Literal['units'], Literal['pages']]) -> None: ...
+    @overload
+    def xview_scroll(self, __number: _ScreenDistance, __what: Literal['pixels']) -> None: ...
+
+    def xview_moveto(self, __fraction: float) -> None: ...
+
 _WrapMode = Union[Literal['none'], Literal['char'], Literal['word']]
 _TextWidgetState = Union[Literal['normal'], Literal['disabled']]
 _TagList = Union[str, List[str], Tuple[str]]
@@ -482,11 +500,12 @@ _CompareOp = Union[
 # wanting text indexes.
 _TextIndex = Union[str, _tkinter.Tcl_Obj]
 
-class Text(Widget, YView):
+class Text(Widget, XView, YView):
     def __init__(
         self, master: Misc, *,
         exportselection: bool = ...,
         takefocus: bool = ...,
+        xscrollcommand: Union[str, Callable[[str, str], None]] = ...,
         yscrollcommand: Union[str, Callable[[str, str], None]] = ...,
         width: int = ...,
         height: int = ...,
@@ -534,11 +553,14 @@ class Text(Widget, YView):
     def __setitem__(self, opt: Literal['tabs'], val: Union[str, _ScreenDistance, Tuple[Union[str, _ScreenDistance], ...]]) -> None: ...
     @overload
     def __setitem__(self, opt: Literal['cursor'], val: str) -> None: ...
+    # TODO: belongs to XView but is currently copy/pasted to every subclasses
+    @overload
+    def __setitem__(self, opt: Literal['xscrollcommand'], val: Union[str, Callable[[str, str], None]]) -> None: ...
     # TODO: belongs to YView but is currently copy/pasted to every subclasses
     @overload
     def __setitem__(self, opt: Literal['yscrollcommand'], val: Union[str, Callable[[str, str], None]]) -> None: ...
 
-    def __getitem__(self, opt: Literal['font', 'yscrollcommand', 'state']) -> Any: ...
+    def __getitem__(self, opt: Literal['font', 'xscrollcommand', 'yscrollcommand', 'state']) -> Any: ...
 
     def bbox(self, index: _TextIndex) -> Optional[Tuple[int, int, int, int]]: ...
     def compare(self, index1: _TextIndex, op: _CompareOp, index2: _TextIndex) -> bool: ...
