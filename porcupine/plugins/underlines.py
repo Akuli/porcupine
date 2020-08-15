@@ -6,7 +6,7 @@ To use this plugin, you also need some other plugin such as the langserver plugi
 import dataclasses
 from functools import partial
 import tkinter
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from porcupine import get_tab_manager, tabs, utils
 
@@ -35,19 +35,21 @@ class _Underliner:
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
         self.textwidget.bind('<Unmap>', self._hide_popup, add=True)
+        self.textwidget.bind('<<CursorMoved>>', self._on_cursor_moved, add=True)
         self._popup: Optional[tkinter.Toplevel] = None
-        self._tags: List[str] = []
+        self._currently_showing_tag: Optional[str] = None
+        self._currently_tagged: Dict[str, Underline] = {}
 
     def set_underlines(self, event: utils.EventWithData) -> None:
         self._hide_popup()
 
-        for tag in self._tags:
+        for tag in self._currently_tagged.keys():
             self.textwidget.tag_delete(tag)
-        self._tags.clear()
+        self._currently_tagged.clear()
 
         for index, underline in enumerate(event.data_class(UnderlineList).underlines):
             tag = f'underline{index}'
-            self._tags.append(tag)
+            self._currently_tagged[tag] = underline
 
             self.textwidget.tag_config(
                 tag,
@@ -55,10 +57,21 @@ class _Underliner:
                 underlinefg=('red' if underline.is_error else 'orange'),
             )
             self.textwidget.tag_add(tag, underline.start, underline.end)
-            self.textwidget.tag_bind(tag, '<Enter>', partial(self._show_popup, tag, underline.message))
+            self.textwidget.tag_bind(tag, '<Enter>', partial(self._show_popup, tag))
             self.textwidget.tag_bind(tag, '<Leave>', self._hide_popup)
 
-    def _show_popup(self, tag: str, message: str, junk: object) -> None:
+    def _on_cursor_moved(self, junk: object) -> None:
+        for tag in self.textwidget.tag_names('insert'):
+            if tag in self._currently_tagged:
+                self._show_popup(tag)
+                return
+
+        self._hide_popup()
+
+    def _show_popup(self, tag: str, junk: object = None) -> None:
+        if tag == self._currently_showing_tag:
+            return
+
         self._hide_popup()
 
         if _tag_spans_multiple_lines(self.textwidget, tag):
@@ -74,11 +87,11 @@ class _Underliner:
         x += self.textwidget.winfo_rootx()
         y += self.textwidget.winfo_rooty()
 
-        # TODO: similar code in utils.set_tooltip()
+        self._currently_showing_tag = tag
         self._popup = tkinter.Toplevel()
         tkinter.Label(
             self._popup,
-            text=message,
+            text=self._currently_tagged[tag].message,
             # opposite colors as in the text widget
             bg=self.textwidget['fg'],
             fg=self.textwidget['bg'],
@@ -90,6 +103,7 @@ class _Underliner:
         if self._popup is not None:
             self._popup.destroy()
             self._popup = None
+            self._currently_showing_tag = None
 
 
 def on_new_tab(event: utils.EventWithData) -> None:
