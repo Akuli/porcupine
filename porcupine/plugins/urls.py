@@ -24,13 +24,13 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
 
         if closing_paren is None:
             # usually urls end on space or quote
-            match_end = text.search(r'''["' ]''', match_start, f'{match_start} lineend', regexp=True)
+            regex = r'''["' ]'''
         else:
-            # except when the url is parenthesized (http://example.com/)
-            match_end = text.search(closing_paren, match_start, f'{match_start} lineend')
+            # if the url is parenthesized (http://example.com/), we look for paren instead of quote
+            regex = r'[\%s ]' % closing_paren
 
-        if not match_end:
-            match_end = f'{match_start} lineend'
+        line_end = f'{match_start} lineend'
+        match_end = text.search(regex, match_start, line_end, regexp=True) or line_end
         yield (match_start, match_end)
         searching_begins_here = match_end
 
