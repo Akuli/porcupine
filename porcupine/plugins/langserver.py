@@ -29,7 +29,7 @@ except ImportError:
     fcntl = None    # type: ignore
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
-from porcupine.plugins import autocomplete
+from porcupine.plugins import autocomplete, underlines
 import sansio_lsp_client as lsp     # type: ignore
 
 global_log = logging.getLogger(__name__)
@@ -248,6 +248,10 @@ def _position_tk2lsp(tk_position: str) -> lsp.Position:
     return lsp.Position(line=line-1, character=column)
 
 
+def _position_lsp2tk(lsp_position: lsp.Position) -> str:
+    return f'{lsp_position.line + 1}.{lsp_position.character}'
+
+
 @dataclasses.dataclass
 class LangServerConfig:
     command: str
@@ -440,7 +444,19 @@ class LangServer:
             )
 
         elif isinstance(lsp_event, lsp.PublishDiagnostics):
-            pass        # TODO
+            [tab] = [tab for tab in self.tabs_opened.keys() if tab.path.as_uri() == lsp_event.uri]
+
+            underline_list: List[underlines.Underline] = []
+            for diagnostic in lsp_event.diagnostics:
+                # TODO: don't assume that diagnostic.severity is WARNING or ERROR
+                underline_list.append(underlines.Underline(
+                    start=_position_lsp2tk(diagnostic.range.start),
+                    end=_position_lsp2tk(diagnostic.range.end),
+                    message=f'{diagnostic.source}: {diagnostic.message}',
+                    is_error=(diagnostic.severity == lsp.DiagnosticSeverity.ERROR),
+                ))
+
+            tab.event_generate('<<SetUnderlines>>', data=underlines.UnderlineList(underline_list))
 
         elif isinstance(lsp_event, lsp.LogMessage):
             loglevel_dict = {
