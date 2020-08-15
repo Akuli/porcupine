@@ -1,13 +1,13 @@
 """Find URLs in code and make them clickable."""
 
 import tkinter
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 import webbrowser
 
 from porcupine import get_tab_manager, tabs, utils
 
 
-def find_urls(text: tkinter.Text) -> List[Tuple[str, str]]:
+def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
     searching_begins_here = '1.0'
     while True:
         match_start = text.search(
@@ -36,7 +36,8 @@ def find_urls(text: tkinter.Text) -> List[Tuple[str, str]]:
 
 
 def _index2tuple(text_index: str) -> Tuple[int, int]:
-    return tuple(map(int, text_index.split('.')))
+    lineno, column = map(int, text_index.split('.'))
+    return (lineno, column)
 
 
 class UrlTagger:
