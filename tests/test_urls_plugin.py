@@ -7,17 +7,18 @@ from porcupine.plugins.urls import find_urls
 def test_find_urls(porcusession):
     text = tkinter.Text(get_main_window())
     text.insert('end', '''\
-line 1:   https://github.com/Akuli/porcupine/
-line 2:  "https://github.com/Akuli/porcupine/"blabla
-line 3:  'https://github.com/Akuli/porcupine/'
-line 4:  (http://example.com/)
-line 5:  {http://example.com/}      <-- this might occur in Tcl code, for example
-line 6:  [http://example.com/]
-line 7:  <http://example.com/>
-line 8:  (http://example.com/))()
-line 9: ("http://example.com/")bla
-line 10:"(http://example.com/)" :)
-line 11: (http://example.com/ )   <-- often used with tools that don't understand parenthesized urls
+          https://github.com/Akuli/porcupine/
+          https://github.com/Akuli/porcupine/ bla bla
+"See also https://github.com/Akuli/porcupine/"
+         'https://github.com/Akuli/porcupine/ bla'
+         (http://example.com/)
+         {http://example.com/}      <-- this might occur in Tcl code, for example
+         [http://example.com/]
+         <http://example.com/>
+         (http://example.com/))()
+        ("http://example.com/")bla
+        "(http://example.com/)" :)
+         (http://example.com/ )   <-- often used with tools that don't understand parenthesized urls
 ''')
 
     porcupine_len = len('https://github.com/Akuli/porcupine/')
@@ -27,7 +28,7 @@ line 11: (http://example.com/ )   <-- often used with tools that don't understan
         ('1.10', f'1.{10 + porcupine_len}'),
         ('2.10', f'2.{10 + porcupine_len}'),
         ('3.10', f'3.{10 + porcupine_len}'),
-        ('4.10', f'4.{10 + example_len}'),
+        ('4.10', f'4.{10 + porcupine_len}'),
         ('5.10', f'5.{10 + example_len}'),
         ('6.10', f'6.{10 + example_len}'),
         ('7.10', f'7.{10 + example_len}'),
@@ -35,4 +36,5 @@ line 11: (http://example.com/ )   <-- often used with tools that don't understan
         ('9.10', f'9.{10 + example_len}'),
         ('10.10', f'10.{10 + example_len}'),
         ('11.10', f'11.{10 + example_len}'),
+        ('12.10', f'12.{10 + example_len}'),
     ]
