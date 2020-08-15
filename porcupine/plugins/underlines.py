@@ -36,17 +36,19 @@ class _Underliner:
         self.textwidget = textwidget
         self.textwidget.bind('<Unmap>', self._hide_popup, add=True)
         self._popup: Optional[tkinter.Toplevel] = None
+        self._tags: List[str] = []
 
     def set_underlines(self, event: utils.EventWithData) -> None:
         self._hide_popup()
 
-        for tag in self.textwidget.tag_names():
-            if tag.startswith('underline'):
-                self.textwidget.tag_delete(tag)
+        for tag in self._tags:
+            self.textwidget.tag_delete(tag)
+        self._tags.clear()
 
         for index, underline in enumerate(event.data_class(UnderlineList).underlines):
             tag = f'underline{index}'
-            # TODO: use the current pygments theme for colors?
+            self._tags.append(tag)
+
             self.textwidget.tag_config(
                 tag,
                 underline=True,
