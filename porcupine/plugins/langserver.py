@@ -444,22 +444,27 @@ class LangServer:
             )
 
         elif isinstance(lsp_event, lsp.PublishDiagnostics):
-            [tab] = [
+            matching_tabs = [
                 tab for tab in self.tabs_opened.keys()
                 if tab.path is not None and tab.path.as_uri() == lsp_event.uri
             ]
 
-            underline_list: List[underlines.Underline] = []
-            for diagnostic in lsp_event.diagnostics:
-                # TODO: don't assume that diagnostic.severity is WARNING or ERROR
-                underline_list.append(underlines.Underline(
-                    start=_position_lsp2tk(diagnostic.range.start),
-                    end=_position_lsp2tk(diagnostic.range.end),
-                    message=f'{diagnostic.source}: {diagnostic.message}',
-                    is_error=(diagnostic.severity == lsp.DiagnosticSeverity.ERROR),
-                ))
+            # matching_tabs is empty when the tab has been just closed but
+            # langserver doesn't realize it for whatever reason
+            if matching_tabs:
+                [tab] = matching_tabs
 
-            tab.event_generate('<<SetUnderlines>>', data=underlines.UnderlineList(underline_list))
+                underline_list: List[underlines.Underline] = []
+                for diagnostic in lsp_event.diagnostics:
+                    # TODO: don't assume that diagnostic.severity is WARNING or ERROR
+                    underline_list.append(underlines.Underline(
+                        start=_position_lsp2tk(diagnostic.range.start),
+                        end=_position_lsp2tk(diagnostic.range.end),
+                        message=f'{diagnostic.source}: {diagnostic.message}',
+                        is_error=(diagnostic.severity == lsp.DiagnosticSeverity.ERROR),
+                    ))
+
+                tab.event_generate('<<SetUnderlines>>', data=underlines.UnderlineList(underline_list))
 
         elif isinstance(lsp_event, lsp.LogMessage):
             loglevel_dict = {
