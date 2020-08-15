@@ -82,6 +82,8 @@ def setup(verbose: bool) -> None:
     log.debug("starting Porcupine %s from '%s'", porcupine.__version__,
               cast(Any, porcupine).__path__[0])
     log.debug("log file: %s", logfile)
+    if not verbose:
+        print(f"log file: {logfile}")
     log.debug("PID: %d", os.getpid())
     log.debug("running on Python %d.%d.%d from '%s'",
               *sys.version_info[:3], sys.executable)
