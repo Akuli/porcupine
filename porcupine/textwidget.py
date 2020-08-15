@@ -487,9 +487,9 @@ def create_peer_widget(
 
 
 @overload
-def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None: ...  # noqa
+def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None: ...
 @overload
-def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...  # noqa
+def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...
 
 
 def use_pygments_theme(

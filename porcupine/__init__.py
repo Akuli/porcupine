@@ -8,10 +8,11 @@ plugin API documentation:
     https://akuli.github.io/porcupine/
 """
 
-import os
 import pathlib
 import shutil
 import subprocess
+
+from porcupine import _run
 
 version_info = (0, 76, 4)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
@@ -29,8 +30,6 @@ if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
     except (OSError, subprocess.CalledProcessError, UnicodeError):   # pragma: no cover
         pass
 
-# mypy wants this instead of 'from porcupine._run import stuff'
-from porcupine import _run
 init = _run.init
 get_init_kwargs = _run.get_init_kwargs
 run = _run.run

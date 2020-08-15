@@ -52,7 +52,7 @@ class WelcomeMessageDisplayer:
         # images.get('logo-200x200').width() is always 200, but hard-coding is bad
         self.title_label['wraplength'] = (
             event.width - images.get('logo-200x200').width() - BORDER_SIZE)
-        self.message_label['wraplength'] = event.width - 2*BORDER_SIZE  # noqa
+        self.message_label['wraplength'] = event.width - 2*BORDER_SIZE
 
     def on_new_tab(self, event: utils.EventWithData) -> None:
         self._frame.pack_forget()

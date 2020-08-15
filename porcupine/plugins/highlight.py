@@ -24,7 +24,8 @@ def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
     for sub in map(_list_all_token_types, tokentype.subtypes):
         yield from sub
 
-_ALL_TAGS = set(map(str, _list_all_token_types(pygments.token.Token)))  # noqa
+
+_ALL_TAGS = set(map(str, _list_all_token_types(pygments.token.Token)))
 
 PygmentizeResult = Dict[
     str,                # str(tokentype)

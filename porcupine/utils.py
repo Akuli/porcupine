@@ -105,7 +105,7 @@ if platform.system() == 'Windows':
                 bs_buf.append(c)
             elif c == '"':
                 # Double backslashes.
-                result.append('\\' * len(bs_buf)*2)     # noqa
+                result.append('\\' * len(bs_buf)*2)
                 bs_buf = []
                 result.append('\\"')
             else:
@@ -126,7 +126,8 @@ if platform.system() == 'Windows':
         return ''.join(result)
 
 else:
-    from shlex import quote     # noqa
+    from shlex import quote
+    quote = quote       # silence pyflakes warning
 
 
 # i know, i shouldn't do math with rgb colors, but this is good enough
