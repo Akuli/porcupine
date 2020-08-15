@@ -131,16 +131,23 @@
 pygments_lexer = "pygments.lexers.TextLexer"
 
 [Python]
-filename_patterns = ["*.py", "*.pyi"]
+filename_patterns = ["*.py"]
 shebang_regex = 'python(\d(\.\d)?)?$'
 pygments_lexer = "pygments.lexers.Python3Lexer"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
-# flake8 is the default because pylint doesn't like my code :/ </3
-commands = {run = "{python} {file}", lint = "{python} -m flake8 {file}"}
+commands = {run = "{python} {file}"}
 autocomplete_chars = ["."]
 langserver = {command = "pyls", language_id = "python"}
+
+["Python stub file"]
+filename_patterns = ["*.pyi"]
+pygments_lexer = "pygments.lexers.Python3Lexer"
+tabs2spaces = true
+indent_size = 4
+max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
+autocomplete_chars = ["."]
 
 [C]
 filename_patterns = ["*.c", "*.h"]
