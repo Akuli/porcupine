@@ -32,6 +32,8 @@ from porcupine import get_tab_manager, tabs, textwidget, utils
 from porcupine.plugins import autocomplete
 import sansio_lsp_client as lsp     # type: ignore
 
+global_log = logging.getLogger(__name__)
+
 
 # 1024 bytes was way too small, and with this chunk size, it
 # still sometimes takes two reads to get everything (that's fine)
@@ -571,11 +573,6 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     except KeyError:
         pass
 
-    log = logging.getLogger(
-        # this is lol
-        __name__ + '.' + re.sub(
-            r'[^A-Za-z0-9]', '_', config.command + ' ' + str(project_root)))
-
     # avoid shell=True on non-windows to get process.pid to do the right thing
     #
     # with shell=True it's the pid of the shell, not the pid of the program
@@ -595,9 +592,10 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
             actual_command, shell=shell,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     except (OSError, subprocess.CalledProcessError):
-        log.exception(f"failed to start langserver with command {config.command!r}")
+        global_log.exception(f"failed to start langserver with command {config.command!r}")
         return None
 
+    log = global_log.getChild(str(process.pid))
     log.info("Langserver process started with command '%s', PID %d, "
              "for project root '%s'", config.command, process.pid, project_root)
 
@@ -622,7 +620,7 @@ def switch_langservers(tab: tabs.FileTab, called_because_path_changed: bool, jun
         new.open_tab(tab)
 
     if old is not new:
-        logging.getLogger(__name__).info(f"Switching langservers: {old} --> {new}")
+        global_log.info(f"Switching langservers: {old} --> {new}")
         if old is not None:
             old.forget_tab(tab)
         if new is not None:
