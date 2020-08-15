@@ -295,3 +295,55 @@ Let's fix this crap with ``add=True``, ``return 'break'`` and
            utils.bind_tab_key(tab, on_tab, add=True)
 
 See :source:`porcupine/plugins/indent_block.py` for a complete example plugin.
+
+
+Cleaning Up Bindings
+--------------------
+
+A binding like ``widget.bind('<Foo>', callback, ...)`` creates a Tcl command that runs
+the Python ``callback`` function. By default, those Tcl commands are cleaned up when
+``widget`` is destroyed. This is great for most bindings, because typically you want a
+binding to be alive until the related widget is destroyed.
+
+Avoid creating lots of bindings without cleaning them up properly. In particular, avoid
+writing code that creates new bindings every time a user does something, but doesn't clean
+up the old bindings when it does that.
+
+For example, this code is **bad**::
+
+    def callback_that_runs_when_user_does_something():
+        for tag in list_of_tag_names:
+            text_widget.tag_delete(tag)
+        list_of_tag_names.clear()
+
+        for index, thing in enumerate(something):
+            tag = f'foo_{index}'
+            text_widget.tag_bind(tag, ...)
+            ...
+            list_of_tag_names.append(tag)
+
+If ``something`` is typically a sequence of 30 things and this callback runs 500 times for
+the same ``text_widget``, then this creates 1500 new Tcl commands for the bindings, and
+none of them get cleaned up before ``text_widget`` is destroyed. As a quick fix, you can
+add some cleanup code::
+
+    bindings = []
+
+    def callback_that_runs_when_user_does_something():
+        ...
+        for binding in bindings:
+            text_widget.deletecommand(binding)
+        bindings.clear()
+
+        for index, thing in enumerate(something):
+            ...
+            tcl_command = text_widget.tag_bind(tag, ...)
+            bindings.append(tcl_command)
+            ...
+
+Now the bindings don't "pile up", and old bindings get cleaned up whenever new bindings
+get added.
+
+A "better" fix is to avoid running the same bind code multiple times.
+For example, you could create one tag that includes all the bindings, and then apply two
+tags in the loop, the ``f'foo_{index}'`` tag and the tag that does the bindings.

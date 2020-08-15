@@ -39,6 +39,7 @@ class _Underliner:
         self._popup: Optional[tkinter.Toplevel] = None
         self._currently_showing_tag: Optional[str] = None
         self._currently_tagged: Dict[str, Underline] = {}
+        self._bindings: List[str] = []
 
     def set_underlines(self, event: utils.EventWithData) -> None:
         self._hide_popup()
@@ -46,6 +47,10 @@ class _Underliner:
         for tag in self._currently_tagged.keys():
             self.textwidget.tag_delete(tag)
         self._currently_tagged.clear()
+
+        for binding in self._bindings:
+            self.textwidget.deletecommand(binding)
+        self._bindings.clear()
 
         for index, underline in enumerate(event.data_class(UnderlineList).underlines):
             tag = f'underline{index}'
@@ -57,8 +62,8 @@ class _Underliner:
                 underlinefg=('red' if underline.is_error else 'orange'),
             )
             self.textwidget.tag_add(tag, underline.start, underline.end)
-            self.textwidget.tag_bind(tag, '<Enter>', partial(self._show_popup, tag))
-            self.textwidget.tag_bind(tag, '<Leave>', self._hide_popup)
+            self._bindings.append(self.textwidget.tag_bind(tag, '<Enter>', partial(self._show_popup, tag)))
+            self._bindings.append(self.textwidget.tag_bind(tag, '<Leave>', self._hide_popup))
 
     def _on_cursor_moved(self, junk: object) -> None:
         for tag in self.textwidget.tag_names('insert'):
