@@ -34,10 +34,12 @@ class _Underliner:
 
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
-        self.textwidget.bind('<Destroy>', self._hide_popup)
+        self.textwidget.bind('<Unmap>', self._hide_popup, add=True)
         self._popup: Optional[tkinter.Toplevel] = None
 
     def set_underlines(self, event: utils.EventWithData) -> None:
+        self._hide_popup()
+
         for tag in self.textwidget.tag_names():
             if tag.startswith('underline'):
                 self.textwidget.tag_delete(tag)
