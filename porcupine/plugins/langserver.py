@@ -20,7 +20,7 @@ import socket
 import subprocess
 import threading
 import time
-from typing import cast, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import cast, Dict, IO, List, NamedTuple, Optional, Tuple, Union
 
 try:
     import fcntl
@@ -557,6 +557,12 @@ langservers: Dict[LangServerId, LangServer] = {}
 # is already being used, then it should exit with an error message.
 
 
+def stream_to_log(stream: IO[bytes], log: logging.Logger) -> None:
+    for line_bytes in stream:
+        line = line_bytes.rstrip(b'\r\n').decode('utf-8', errors='replace')
+        log.info(f"langserver logged: {line}")
+
+
 def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     if tab.path is None:
         return None
@@ -587,10 +593,16 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
         actual_command = shlex.split(config.command)
 
     try:
-        # TODO: read and log stderr
-        process = subprocess.Popen(
-            actual_command, shell=shell,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        if the_id.port is None:
+            # langserver writes log messages to stderr
+            process = subprocess.Popen(
+                actual_command, shell=shell,
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            # most langservers log to stderr, but also watch stdout
+            process = subprocess.Popen(
+                actual_command, shell=shell,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     except (OSError, subprocess.CalledProcessError):
         global_log.exception(f"failed to start langserver with command {config.command!r}")
         return None
@@ -598,6 +610,10 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     log = global_log.getChild(str(process.pid))
     log.info("Langserver process started with command '%s', PID %d, "
              "for project root '%s'", config.command, process.pid, project_root)
+
+    logging_stream = process.stderr if the_id.port is None else process.stdout
+    assert logging_stream is not None
+    threading.Thread(target=stream_to_log, args=[logging_stream, log], daemon=True).start()
 
     langserver = LangServer(process, the_id, log)
     langserver.run_stuff()
