@@ -57,12 +57,13 @@ class LineNumbers:
         first_line = int(self.textwidget.index('@0,0').split('.')[0])
         last_line = int(self.textwidget.index(f'@0,{self.textwidget.winfo_height()}').split('.')[0])
         for lineno in range(first_line, last_line + 1):
-            bbox = self.textwidget.bbox(f'{lineno}.0')
-            if bbox is None:
-                # line not showing up for whatever reason
+            # index('@0,y') doesn't work when scrolled a lot to side, but dlineinfo seems to work
+            dlineinfo = self.textwidget.dlineinfo(f'{lineno}.0')
+            if dlineinfo is None:
+                # line not on screen for whatever reason
                 continue
 
-            x, y, width, height = bbox
+            x, y, *junk = dlineinfo
             self.canvas.create_text(0, y, text=f' {lineno}', anchor='nw', font='TkFixedFont', fill=self._text_color)
 
     def _update_canvas_width(self, junk: object = None) -> None:
