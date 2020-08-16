@@ -16,22 +16,16 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
         if not match_start:     # empty string means not found
             break
 
-        closing_paren = {
-            '(': ')',
-            '[': ']',
-            '{': '}',
-            '<': '>',
-        }.get(text.get(f'{match_start} - 1 char'))
+        # urls end on space, quote or end of line
+        end_of_line = f'{match_start} lineend'
+        match_end = text.search(r'''["' ]''', match_start, end_of_line, regexp=True) or end_of_line
 
-        if closing_paren is None:
-            # usually urls end on space or quote
-            regex = r'''["' ]'''
-        else:
-            # if the url is parenthesized (http://example.com/), we look for paren instead of quote
-            regex = r'[\%s ]' % closing_paren
+        # support parenthesized urls and commas/dots after urls
+        if text.get(f'{match_end} - 1 char') in {',', '.'}:
+            match_end += ' - 1 char'
+        if text.get(f'{match_end} - 1 char') in {')', '}', '>'}:    # '}' is useful for tcl code
+            match_end += ' - 1 char'
 
-        line_end = f'{match_start} lineend'
-        match_end = text.search(regex, match_start, line_end, regexp=True) or line_end
         yield (match_start, match_end)
         searching_begins_here = match_end
 
