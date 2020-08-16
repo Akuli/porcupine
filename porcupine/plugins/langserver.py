@@ -471,15 +471,18 @@ class LangServer:
 
             underline_list: List[underlines.Underline] = []
             for diagnostic in lsp_event.diagnostics:
-                # TODO: don't assume that diagnostic.severity is WARNING or ERROR
                 underline_list.append(underlines.Underline(
                     start=_position_lsp2tk(diagnostic.range.start),
                     end=_position_lsp2tk(diagnostic.range.end),
                     message=f'{diagnostic.source}: {diagnostic.message}',
-                    is_error=(diagnostic.severity == lsp.DiagnosticSeverity.ERROR),
+                    # TODO: there are plenty of other severities than ERROR, color differently
+                    color=('red' if diagnostic.severity == lsp.DiagnosticSeverity.ERROR else 'orange'),
                 ))
 
-            tab.event_generate('<<SetUnderlines>>', data=underlines.UnderlineList(underline_list))
+            tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
+                id='langserver_diagnostics',
+                underline_list=underline_list,
+            ))
             return
 
         raise NotImplementedError(lsp_event)

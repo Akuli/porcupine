@@ -1,10 +1,12 @@
 """Find URLs in code and make them clickable."""
 
+from functools import partial
 import tkinter
-from typing import Iterable, List, Tuple
+from typing import Iterable, Tuple
 import webbrowser
 
 from porcupine import get_tab_manager, tabs, utils
+from porcupine.plugins import underlines
 
 
 def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
@@ -30,52 +32,34 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
         searching_begins_here = match_end
 
 
-def _index2tuple(text_index: str) -> Tuple[int, int]:
-    lineno, column = map(int, text_index.split('.'))
-    return (lineno, column)
+def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
+    tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
+        id='urls',
+        underline_list=[
+            underlines.Underline(start, end, "ctrl+click or ctrl+enter to open")
+            for start, end in find_urls(tab.textwidget)
+        ],
+    ))
 
 
-class UrlTagger:
-
-    def __init__(self, textwidget: tkinter.Text) -> None:
-        self._tag_count = 0
-        self._textwidget = textwidget
-        self._bindings: List[str] = []
-
-        self._textwidget.tag_config('clickable_url', underline=True)
-        self._textwidget.tag_bind('clickable_url', '<Button-1>', self._on_click, add=True)
-        self._textwidget.tag_bind('clickable_url', '<Enter>', self._mouse_enters_url, add=True)
-        self._textwidget.tag_bind('clickable_url', '<Leave>', self._mouse_leaves_url, add=True)
-
-    def tag_urls(self, junk: object = None) -> None:
-        self._textwidget.tag_remove('clickable_url', '1.0', 'end')
-        for start, end in find_urls(self._textwidget):
-            self._textwidget.tag_add('clickable_url', start, end)
-
-    def _mouse_enters_url(self, junk: object) -> None:
-        self._textwidget['cursor'] = 'hand2'
-
-    def _mouse_leaves_url(self, junk: object) -> None:
-        self._textwidget['cursor'] = ''
-
-    def _on_click(self, event: tkinter.Event) -> None:
-        cursor = _index2tuple(self._textwidget.index(f'@{event.x},{event.y}'))
-
-        # tag_ranges() is a painful method to use
-        ranges = list(map(str, self._textwidget.tag_ranges('clickable_url')))
-        for start, end in zip(ranges[0::2], ranges[1::2]):
-            if _index2tuple(start) <= cursor <= _index2tuple(end):
-                url = self._textwidget.get(start, end)
-                webbrowser.open(url)
-                break
+def open_the_url(tab: tabs.FileTab, index: str, junk: object) -> utils.BreakOrNone:
+    # tag_ranges is a painful method to use
+    ranges = tab.textwidget.tag_ranges('underline:urls')
+    for start, end in zip(ranges[0::2], ranges[1::2]):
+        if tab.textwidget.compare(start, '<=', index) and tab.textwidget.compare(index, '<=', end):
+            webbrowser.open(tab.textwidget.get(start, end))
+            return 'break'
+    return None
 
 
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        tagger = UrlTagger(tab.textwidget)
-        tab.textwidget.bind('<<ContentChanged>>', tagger.tag_urls, add=True)
-        tagger.tag_urls()
+        tab.textwidget.bind('<<ContentChanged>>', partial(update_url_underlines, tab), add=True)
+        update_url_underlines(tab)
+
+        tab.textwidget.tag_bind('underline:urls', '<Button-1>', partial(open_the_url, tab, 'current'), add=True)
+        tab.textwidget.bind('<Control-Return>', partial(open_the_url, tab, 'insert'), add=True)
 
 
 def setup() -> None:
