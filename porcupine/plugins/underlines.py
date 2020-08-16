@@ -6,7 +6,7 @@ and the urls plugin uses this to create control-clickable links.
 
 import dataclasses
 import tkinter
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from porcupine import get_tab_manager, tabs, utils
 
@@ -36,14 +36,14 @@ class _Underliner:
 
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
-        self.textwidget.bind('<Unmap>', self._hide_popup, add=True)
         self.textwidget.bind('<<CursorMoved>>', self._on_cursor_moved, add=True)
-        self._popup: Optional[Tuple[tkinter.Toplevel, str]] = None  # window and tag name
-
-        self._tag2underline: Dict[str, Underline] = {}
-
+        self.textwidget.bind('<Unmap>', self._hide_popup, add=True)
         self.textwidget.tag_bind('underline_common', '<Enter>', self._on_mouse_enter)
         self.textwidget.tag_bind('underline_common', '<Leave>', self._hide_popup)
+
+        self._popup: Optional[tkinter.Toplevel] = None
+        self._popup_tag: Optional[str] = None
+        self._tag2underline: Dict[str, Underline] = {}
 
     def _show_tag_at_index(self, index: str) -> None:
         for tag in self.textwidget.tag_names(index):
@@ -94,7 +94,7 @@ class _Underliner:
                     self.textwidget.tag_add('underline_common', start, end)
 
     def _show_popup(self, tag: str) -> None:
-        if self._popup is not None and self._popup[1] == tag:
+        if self._popup_tag == tag:
             return
 
         self._hide_popup()
@@ -112,24 +112,23 @@ class _Underliner:
         x += self.textwidget.winfo_rootx()
         y += self.textwidget.winfo_rooty()
 
-        self._currently_showing_tag = tag
-        window = tkinter.Toplevel()
-        self._popup = (window, tag)
+        self._popup_tag = tag
+        self._popup = tkinter.Toplevel()
         tkinter.Label(
-            window,
+            self._popup,
             text=self._tag2underline[tag].message,
             # opposite colors as in the text widget
             bg=self.textwidget['fg'],
             fg=self.textwidget['bg'],
         ).pack()
-        window.geometry(f'+{x}+{y + height + 5}')
-        window.overrideredirect(True)
+        self._popup.geometry(f'+{x}+{y + height + 5}')
+        self._popup.overrideredirect(True)
 
     def _hide_popup(self, junk: object = None) -> None:
         if self._popup is not None:
-            window, tag = self._popup
-            window.destroy()
+            self._popup.destroy()
             self._popup = None
+            self._popup_tag = None
 
 
 def on_new_tab(event: utils.EventWithData) -> None:
