@@ -36,7 +36,6 @@ class _Underliner:
 
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
-        self.textwidget.bind('<Key>', self._hide_popup, add=True)
         self.textwidget.bind('<Unmap>', self._hide_popup, add=True)
         self.textwidget.bind('<<CursorMoved>>', self._on_cursor_moved, add=True)
         self._popup: Optional[Tuple[tkinter.Toplevel, str]] = None  # window and tag name
