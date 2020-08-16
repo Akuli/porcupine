@@ -25,7 +25,7 @@ _here = pathlib.Path(__file__).absolute().parent
 if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
     # running porcupine from git repo
     try:
-        __version__ += '-git-' + subprocess.check_output(
+        __version__ += '+git.' + subprocess.check_output(
             ['git', 'log', '--pretty=format:%h', '-n', '1']).decode('ascii')
     except (OSError, subprocess.CalledProcessError, UnicodeError):   # pragma: no cover
         pass
