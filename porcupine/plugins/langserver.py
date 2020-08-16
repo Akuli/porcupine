@@ -395,19 +395,38 @@ class LangServer:
         )
 
     def _handle_lsp_event(self, lsp_event: lsp.Event) -> None:
+        if isinstance(lsp_event, lsp.Shutdown):
+            self.log.debug("langserver sent Shutdown event")
+            self._lsp_client.exit()
+            self._get_removed_from_langservers()
+            return
+
+        if isinstance(lsp_event, lsp.LogMessage):
+            # most langservers seem to use stdio instead of this
+            loglevel_dict = {
+                lsp.MessageType.LOG: logging.DEBUG,
+                lsp.MessageType.INFO: logging.INFO,
+                lsp.MessageType.WARNING: logging.WARNING,
+                lsp.MessageType.ERROR: logging.ERROR,
+            }
+            self.log.log(loglevel_dict[lsp_event.type],
+                         f"message from langserver: {lsp_event.message}")
+            return
+
+        # rest of these need the langserver to be active
+        if not self._is_in_langservers():
+            self.log.warning(f"ignoring event because langserver is shutting down: {lsp_event}")
+            return
+
         if isinstance(lsp_event, lsp.Initialized):
             self.log.info("langserver initialized, capabilities:\n%s",
                           pprint.pformat(lsp_event.capabilities))
 
             for tab in self.tabs_opened.keys():
                 self._send_tab_opened_message(tab)
+            return
 
-        elif isinstance(lsp_event, lsp.Shutdown):
-            self.log.debug("langserver sent Shutdown event")
-            self._lsp_client.exit()
-            self._get_removed_from_langservers()
-
-        elif isinstance(lsp_event, lsp.Completion):
+        if isinstance(lsp_event, lsp.Completion):
             tab, req = self._lsp_id_to_tab_and_request.pop(lsp_event.message_id)
 
             # this is "open to interpretation", as the lsp spec says
@@ -442,42 +461,28 @@ class LangServer:
                     ]
                 )
             )
+            return
 
-        elif isinstance(lsp_event, lsp.PublishDiagnostics):
-            matching_tabs = [
+        if isinstance(lsp_event, lsp.PublishDiagnostics):
+            [tab] = [
                 tab for tab in self.tabs_opened.keys()
                 if tab.path is not None and tab.path.as_uri() == lsp_event.uri
             ]
 
-            # matching_tabs is empty when the tab has been just closed but
-            # langserver doesn't realize it for whatever reason
-            if matching_tabs:
-                [tab] = matching_tabs
+            underline_list: List[underlines.Underline] = []
+            for diagnostic in lsp_event.diagnostics:
+                # TODO: don't assume that diagnostic.severity is WARNING or ERROR
+                underline_list.append(underlines.Underline(
+                    start=_position_lsp2tk(diagnostic.range.start),
+                    end=_position_lsp2tk(diagnostic.range.end),
+                    message=f'{diagnostic.source}: {diagnostic.message}',
+                    is_error=(diagnostic.severity == lsp.DiagnosticSeverity.ERROR),
+                ))
 
-                underline_list: List[underlines.Underline] = []
-                for diagnostic in lsp_event.diagnostics:
-                    # TODO: don't assume that diagnostic.severity is WARNING or ERROR
-                    underline_list.append(underlines.Underline(
-                        start=_position_lsp2tk(diagnostic.range.start),
-                        end=_position_lsp2tk(diagnostic.range.end),
-                        message=f'{diagnostic.source}: {diagnostic.message}',
-                        is_error=(diagnostic.severity == lsp.DiagnosticSeverity.ERROR),
-                    ))
+            tab.event_generate('<<SetUnderlines>>', data=underlines.UnderlineList(underline_list))
+            return
 
-                tab.event_generate('<<SetUnderlines>>', data=underlines.UnderlineList(underline_list))
-
-        elif isinstance(lsp_event, lsp.LogMessage):
-            loglevel_dict = {
-                lsp.MessageType.LOG: logging.DEBUG,
-                lsp.MessageType.INFO: logging.INFO,
-                lsp.MessageType.WARNING: logging.WARNING,
-                lsp.MessageType.ERROR: logging.ERROR,
-            }
-            self.log.log(loglevel_dict[lsp_event.type],
-                         f"message from langserver: {lsp_event.message}")
-
-        else:
-            raise NotImplementedError(lsp_event)
+        raise NotImplementedError(lsp_event)
 
     def run_stuff(self) -> None:
         if self._run_stuff_once():
