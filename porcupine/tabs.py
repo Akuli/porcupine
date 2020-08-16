@@ -590,6 +590,8 @@ bers.py>` use this attribute.
             'line_ending', settings.get('default_line_ending', settings.LineEnding),
             converter=settings.LineEnding.__getitem__)
 
+        # filetype guessing must happen before <<PathChanged>> so that
+        # plugins can override guessed stuff
         if filetype is None:
             self._guess_filetype()
         else:
@@ -690,8 +692,10 @@ bers.py>` use this attribute.
         it_changes = (self._path != new_path)
         self._path = new_path
         if it_changes:
-            self.event_generate('<<PathChanged>>')
+            # filetype guessing must happen before <<PathChanged>> so that
+            # plugins can override guessed stuff
             self._guess_filetype()
+            self.event_generate('<<PathChanged>>')
 
     def _guess_filetype(self, junk: object = None) -> None:
         if self.path is None:

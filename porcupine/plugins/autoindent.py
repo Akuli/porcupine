@@ -1,13 +1,13 @@
 """Indent new lines automatically when Enter is pressed."""
 
+import tkinter
+
+from porcupine import get_tab_manager, tabs, textwidget, utils
+
 # without this, pressing enter twice would strip all trailing whitespace
 # from the blank line above the cursor, and then after_enter() wouldn't
 # do anything
 setup_before = ['rstrip']
-
-import tkinter
-
-from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
 def leading_whitespace(string: str) -> str:

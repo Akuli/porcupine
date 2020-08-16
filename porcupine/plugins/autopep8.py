@@ -8,7 +8,8 @@ from porcupine import get_tab_manager, menubar, tabs, utils
 
 def run_autopep8(code: str) -> Optional[str]:
     try:
-        import autopep8     # type: ignore      # noqa
+        import autopep8         # type: ignore
+        autopep8 = autopep8     # silence pyflakes warning
     except ImportError:
         # this command is wrong in some cases, but most of the time
         # it's ok

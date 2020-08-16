@@ -98,7 +98,7 @@ class _AboutDialogContent(ttk.Frame):
                 # a link
                 text, href = part.groups()
                 tag = next(self._link_tag_names)
-                self._textwidget.tag_bind(
+                self._textwidget.tag_bind(      # bindcheck: ignore
                     tag, '<Button-1>',
                     functools.partial(self._open_link, href))
                 self._textwidget.insert('end', text, ['link', tag])

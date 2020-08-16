@@ -19,7 +19,8 @@ log = logging.getLogger(__name__)
 class SpecialState:
     pass
 
-NO_TABS = SpecialState()        # noqa
+
+NO_TABS = SpecialState()
 NOT_POPPABLE = SpecialState()
 NOT_DRAGGING = SpecialState()
 

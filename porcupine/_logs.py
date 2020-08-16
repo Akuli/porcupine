@@ -14,7 +14,9 @@ from porcupine import dirs
 log = logging.getLogger(__name__)
 LOG_DIR = dirs.cachedir / 'logs'
 _FILENAME_FORMAT = '%Y-%m-%dT%H-%M-%S.txt'
-LOG_MAX_AGE_DAYS = 30
+
+# might be useful to grep something from old logs, but 30 days was way too much
+LOG_MAX_AGE_DAYS = 7
 
 
 def _remove_old_logs() -> None:
@@ -82,6 +84,8 @@ def setup(verbose: bool) -> None:
     log.debug("starting Porcupine %s from '%s'", porcupine.__version__,
               cast(Any, porcupine).__path__[0])
     log.debug("log file: %s", logfile)
+    if not verbose:
+        print(f"log file: {logfile}")
     log.debug("PID: %d", os.getpid())
     log.debug("running on Python %d.%d.%d from '%s'",
               *sys.version_info[:3], sys.executable)

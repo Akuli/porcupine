@@ -214,15 +214,15 @@ class Settings:
     # I don't like how this requires overloads for every type
     # https://stackoverflow.com/q/61471700
     @overload
-    def get(self, option_name: str, type: Type[pathlib.Path]) -> pathlib.Path: ...  # noqa
+    def get(self, option_name: str, type: Type[pathlib.Path]) -> pathlib.Path: ...
     @overload
-    def get(self, option_name: str, type: Type[LineEnding]) -> LineEnding: ...  # noqa
+    def get(self, option_name: str, type: Type[LineEnding]) -> LineEnding: ...
     @overload
-    def get(self, option_name: str, type: Type[str]) -> str: ...  # noqa
+    def get(self, option_name: str, type: Type[str]) -> str: ...
     @overload
-    def get(self, option_name: str, type: Type[int]) -> int: ...  # noqa
+    def get(self, option_name: str, type: Type[int]) -> int: ...
     @overload
-    def get(self, option_name: str, type: object) -> Any: ...  # noqa
+    def get(self, option_name: str, type: object) -> Any: ...
 
     def get(self, option_name: str, type: Any) -> Any:
         """

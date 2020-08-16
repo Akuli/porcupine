@@ -33,3 +33,8 @@ event add "<<Menubar:Tools/Terminal>>" <Control-T>
 
 # more_plugins/pythonprompt.py
 event add "<<Menubar:Run/Interactive Python prompt>>" <Control-i>
+
+
+# Text widgets have confusing control-click behaviour by default. Disabling it
+# here makes control-click same as just click.
+bind Text <Control-Button-1> {}

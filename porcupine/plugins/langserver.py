@@ -29,7 +29,7 @@ except ImportError:
     fcntl = None    # type: ignore
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
-from porcupine.plugins import autocomplete
+from porcupine.plugins import autocomplete, underlines
 import sansio_lsp_client as lsp     # type: ignore
 
 global_log = logging.getLogger(__name__)
@@ -248,6 +248,10 @@ def _position_tk2lsp(tk_position: str) -> lsp.Position:
     return lsp.Position(line=line-1, character=column)
 
 
+def _position_lsp2tk(lsp_position: lsp.Position) -> str:
+    return f'{lsp_position.line + 1}.{lsp_position.character}'
+
+
 @dataclasses.dataclass
 class LangServerConfig:
     command: str
@@ -391,19 +395,38 @@ class LangServer:
         )
 
     def _handle_lsp_event(self, lsp_event: lsp.Event) -> None:
+        if isinstance(lsp_event, lsp.Shutdown):
+            self.log.debug("langserver sent Shutdown event")
+            self._lsp_client.exit()
+            self._get_removed_from_langservers()
+            return
+
+        if isinstance(lsp_event, lsp.LogMessage):
+            # most langservers seem to use stdio instead of this
+            loglevel_dict = {
+                lsp.MessageType.LOG: logging.DEBUG,
+                lsp.MessageType.INFO: logging.INFO,
+                lsp.MessageType.WARNING: logging.WARNING,
+                lsp.MessageType.ERROR: logging.ERROR,
+            }
+            self.log.log(loglevel_dict[lsp_event.type],
+                         f"message from langserver: {lsp_event.message}")
+            return
+
+        # rest of these need the langserver to be active
+        if not self._is_in_langservers():
+            self.log.warning(f"ignoring event because langserver is shutting down: {lsp_event}")
+            return
+
         if isinstance(lsp_event, lsp.Initialized):
             self.log.info("langserver initialized, capabilities:\n%s",
                           pprint.pformat(lsp_event.capabilities))
 
             for tab in self.tabs_opened.keys():
                 self._send_tab_opened_message(tab)
+            return
 
-        elif isinstance(lsp_event, lsp.Shutdown):
-            self.log.debug("langserver sent Shutdown event")
-            self._lsp_client.exit()
-            self._get_removed_from_langservers()
-
-        elif isinstance(lsp_event, lsp.Completion):
+        if isinstance(lsp_event, lsp.Completion):
             tab, req = self._lsp_id_to_tab_and_request.pop(lsp_event.message_id)
 
             # this is "open to interpretation", as the lsp spec says
@@ -438,22 +461,31 @@ class LangServer:
                     ]
                 )
             )
+            return
 
-        elif isinstance(lsp_event, lsp.PublishDiagnostics):
-            pass        # TODO
+        if isinstance(lsp_event, lsp.PublishDiagnostics):
+            [tab] = [
+                tab for tab in self.tabs_opened.keys()
+                if tab.path is not None and tab.path.as_uri() == lsp_event.uri
+            ]
 
-        elif isinstance(lsp_event, lsp.LogMessage):
-            loglevel_dict = {
-                lsp.MessageType.LOG: logging.DEBUG,
-                lsp.MessageType.INFO: logging.INFO,
-                lsp.MessageType.WARNING: logging.WARNING,
-                lsp.MessageType.ERROR: logging.ERROR,
-            }
-            self.log.log(loglevel_dict[lsp_event.type],
-                         f"message from langserver: {lsp_event.message}")
+            underline_list: List[underlines.Underline] = []
+            for diagnostic in lsp_event.diagnostics:
+                underline_list.append(underlines.Underline(
+                    start=_position_lsp2tk(diagnostic.range.start),
+                    end=_position_lsp2tk(diagnostic.range.end),
+                    message=f'{diagnostic.source}: {diagnostic.message}',
+                    # TODO: there are plenty of other severities than ERROR, color differently
+                    color=('red' if diagnostic.severity == lsp.DiagnosticSeverity.ERROR else 'orange'),
+                ))
 
-        else:
-            raise NotImplementedError(lsp_event)
+            tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
+                id='langserver_diagnostics',
+                underline_list=underline_list,
+            ))
+            return
+
+        raise NotImplementedError(lsp_event)
 
     def run_stuff(self) -> None:
         if self._run_stuff_once():

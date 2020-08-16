@@ -132,7 +132,7 @@ def test_good_values(filetab):
 
 
 def test_bad_values(filetab, caplog):
-    caplog.set_level(logging.ERROR)
+    caplog.set_level(logging.WARNING)
 
     apply_config({'indent_style': 'asd'}, filetab)
     apply_config({'indent_size': 'foo'}, filetab)
@@ -142,14 +142,16 @@ def test_bad_values(filetab, caplog):
     apply_config({'end_of_line': 'da newline character lulz'}, filetab)
     apply_config({'trim_trailing_whitespace': 'asd'}, filetab)
     apply_config({'insert_final_newline': 'its late'}, filetab)
+    apply_config({'foo': '123', 'bar': 'lol'}, filetab)
 
-    assert [record.getMessage() for record in caplog.records] == [
-        "bad indent_style: 'asd'",
-        "bad indent_size or tab_width: 'foo'",
-        "bad indent_size or tab_width: 'bar'",
-        "bad charset: 'ascii'",
-        "bad max_line_length: 'my ass'",
-        "bad end_of_line: 'da newline character lulz'",
-        "bad trim_trailing_whitespace: 'asd'",
-        "bad insert_final_newline: 'its late'",
+    assert [(record.levelname, record.getMessage()) for record in caplog.records] == [
+        ('ERROR', "bad indent_style: 'asd'"),
+        ('ERROR', "bad indent_size or tab_width: 'foo'"),
+        ('ERROR', "bad indent_size or tab_width: 'bar'"),
+        ('ERROR', "bad charset: 'ascii'"),
+        ('ERROR', "bad max_line_length: 'my ass'"),
+        ('ERROR', "bad end_of_line: 'da newline character lulz'"),
+        ('ERROR', "bad trim_trailing_whitespace: 'asd'"),
+        ('ERROR', "bad insert_final_newline: 'its late'"),
+        ('WARNING', "editorconfig files contain unknown options: bar, foo"),
     ]

@@ -316,7 +316,6 @@ def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
         'trim_trailing_whitespace': get_bool(config, 'trim_trailing_whitespace'),
         'insert_final_newline': get_bool(config, 'insert_final_newline'),
     }
-    # TODO: warn about unknown things in config?
 
     for name, value in updates.items():
         if value is None:
@@ -329,6 +328,20 @@ def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
                 tab.settings.set(name, value, from_config=True)
             else:
                 tab.settings.set(name, value)
+
+    unknown_options = config.keys() - {
+        'indent_style',
+        'indent_size',
+        'tab_width',
+        'charset',
+        'max_line_length',
+        'end_of_line',
+        'trim_trailing_whitespace',
+        'insert_final_newline',
+    }
+    if unknown_options:
+        message = ', '.join(sorted(unknown_options))
+        log.warning(f"editorconfig files contain unknown options: {message}")
 
 
 def get_config_and_apply_to_tab(tab: tabs.FileTab) -> None:
