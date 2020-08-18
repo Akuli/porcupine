@@ -25,8 +25,12 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
         # support parenthesized urls and commas/dots after urls
         if text.get(f'{match_end} - 1 char') in {',', '.'}:
             match_end += ' - 1 char'
-        if text.get(f'{match_end} - 1 char') in {')', '}', '>'}:    # '}' is useful for tcl code
-            match_end += ' - 1 char'
+
+        url = text.get(match_start, match_end)
+        closing2opening = {')': '(', '}': '{', '>': '<'}    # {url} is useful for tcl code
+        if url[-1] in closing2opening and closing2opening[url[-1]] not in url:
+            # url isn't like "Bla(bla)" but ends with ")" or similar, assume that's not part of url
+            match_end = f'{match_end} - 1 char'
 
         yield (match_start, match_end)
         searching_begins_here = match_end
