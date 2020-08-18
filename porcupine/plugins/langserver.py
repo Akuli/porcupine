@@ -469,19 +469,23 @@ class LangServer:
                 if tab.path is not None and tab.path.as_uri() == lsp_event.uri
             ]
 
-            underline_list: List[underlines.Underline] = []
-            for diagnostic in lsp_event.diagnostics:
-                underline_list.append(underlines.Underline(
-                    start=_position_lsp2tk(diagnostic.range.start),
-                    end=_position_lsp2tk(diagnostic.range.end),
-                    message=f'{diagnostic.source}: {diagnostic.message}',
-                    # TODO: there are plenty of other severities than ERROR, color differently
-                    color=('red' if diagnostic.severity == lsp.DiagnosticSeverity.ERROR else 'orange'),
-                ))
-
             tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
                 id='langserver_diagnostics',
-                underline_list=underline_list,
+                underline_list=[
+                    underlines.Underline(
+                        start=_position_lsp2tk(diagnostic.range.start),
+                        end=_position_lsp2tk(diagnostic.range.end),
+                        message=f'{diagnostic.source}: {diagnostic.message}',
+                        # TODO: there are plenty of other severities than ERROR and WARNING
+                        color=('red' if diagnostic.severity == lsp.DiagnosticSeverity.ERROR else 'orange'),
+                    )
+                    for diagnostic in sorted(
+                        lsp_event.diagnostics,
+                        # error red underlines should be shown over orange warning underlines
+                        key=(lambda diagn: diagn.severity),
+                        reverse=True,
+                    )
+                ],
             ))
             return
 
