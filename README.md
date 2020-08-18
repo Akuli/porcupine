@@ -156,7 +156,7 @@ Here is a list of the commands I use when developing Porcupine:
 - Type checking with mypy:
     - `git submodule init`
     - `git submodule update`
-    - `mypy --strict --show-error-codes --custom-typeshed-dir=typeshed porcupine more_plugins`
+    - `mypy --show-error-codes --custom-typeshed-dir=typeshed porcupine more_plugins`
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
 - `coverage run --include="porcupine/*" -m pytest` followed by `coverage html`
