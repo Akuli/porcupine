@@ -8,7 +8,7 @@ import pathlib
 import platform
 import shlex
 import sys
-from typing import List, Optional, cast
+from typing import List, Optional
 
 if sys.version_info >= (3, 8):
     from typing import Literal

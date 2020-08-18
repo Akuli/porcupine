@@ -16,7 +16,7 @@ import threading
 import tkinter
 from tkinter import ttk
 import traceback
-from typing import Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
+from typing import Any, Callable, Deque, Dict, Iterator, Optional, TextIO, TYPE_CHECKING, Type, TypeVar, Union, cast
 
 import dacite    # type: ignore[import]
 if sys.version_info >= (3, 8):

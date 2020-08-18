@@ -6,7 +6,7 @@ import re
 import sys
 import tkinter
 from tkinter import ttk
-from typing import Any, Iterator, List, Tuple, Union, cast
+from typing import Any, Iterator, List, Tuple, cast
 import weakref
 
 if sys.version_info >= (3, 8):
