@@ -278,7 +278,13 @@ class EventDataclass:
         return type(self).__name__ + json.dumps(dataclasses.asdict(self))
 
 
-class EventWithData('tkinter.Event[tkinter.Misc]'):
+if TYPE_CHECKING:
+    _Event = tkinter.Event[tkinter.Misc]
+else:
+    _Event = tkinter.Event
+
+
+class EventWithData(_Event):
     """A subclass of :class:`'tkinter.Event[tkinter.Misc]'` for use with :func:`bind_with_data`."""
 
     #: If a string was passed to the ``data`` argument of ``event_generate()``,
