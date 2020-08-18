@@ -598,6 +598,9 @@ else:
 
         config = configure  # type: ignore
 
+        if TYPE_CHECKING:
+            def cget(self, key: str) -> Any: ...
+
 
 def errordialog(title: str, message: str,
                 monospace_text: Optional[str] = None) -> None:
