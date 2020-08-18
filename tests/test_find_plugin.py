@@ -185,7 +185,7 @@ def test_basic_statuses_and_previous_and_next_match_buttons(
     for button in [finder.previous_button, finder.next_button]:
         # the button is disabled, but key bindings can call its command, and
         # click(button) works of course
-        finder.statuslabel.cget('text') = "this should be overwritten"
+        finder.statuslabel.config(text="this should be overwritten")
         click(button)
         assert finder.statuslabel.cget('text') == "No matches found!"
 
