@@ -445,7 +445,7 @@ def create_peer_widget(
 
             the_widget_that_becomes_a_peer = tkinter.Text(master)
             create_peer_widget(original_text_widget, the_widget_that_becomes_a_peer)
-            the_widget_that_becomes_a_peer['background'] = 'red'
+            the_widget_that_becomes_a_peer.config(background='red')
 
         All widget options of *the_widget_that_becomes_a_peer* are lost when
         this function is called. I tried to make this function preserve the
@@ -527,11 +527,13 @@ def use_pygments_theme(
         fg = getattr(style, 'default_style', '') or utils.invert_color(bg)
         if callback is None:
             assert isinstance(widget, tkinter.Text)
-            widget['fg'] = fg
-            widget['bg'] = bg
-            widget['insertbackground'] = fg  # cursor color
-            widget['selectforeground'] = bg
-            widget['selectbackground'] = fg
+            widget.config(
+                foreground=fg,
+                background=bg,
+                insertbackground=fg,  # cursor color
+                selectforeground=bg,
+                selectbackground=fg,
+            )
         else:
             callback(fg, bg)
 
@@ -581,9 +583,9 @@ class MainText(tkinter.Text):
         #
         # TODO: there's similar code in overview plugin, clean up
         font = tkfont.Font(name='TkFixedFont', exists=True)
-        self['tabs'] = font.measure(' ' * self._tab.settings.get('indent_size', int))
+        self.config(tabs=font.measure(' ' * self._tab.settings.get('indent_size', int)))
 
-    def _on_delete(self, control_down: bool, event: tkinter.Event,
+    def _on_delete(self, control_down: bool, event: 'tkinter.Event[tkinter.Misc]',
                    shifted: bool = False) -> utils.BreakOrNone:
         """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
@@ -629,7 +631,7 @@ class MainText(tkinter.Text):
 
         return None
 
-    def _on_closing_brace(self, event: tkinter.Event) -> None:
+    def _on_closing_brace(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         """Dedent automatically."""
         self.dedent('insert')
 
@@ -687,11 +689,11 @@ class MainText(tkinter.Text):
         self.delete(f'{lineno}.{start}', f'{lineno}.{end}')
         return (start != end)
 
-    def _redo(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _redo(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         self.event_generate('<<Redo>>')
         return 'break'
 
-    def _paste(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _paste(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         self.event_generate('<<Paste>>')
 
         # by default, selected text doesn't go away when pasting
@@ -705,6 +707,6 @@ class MainText(tkinter.Text):
 
         return 'break'
 
-    def _select_all(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _select_all(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         self.tag_add('sel', '1.0', 'end - 1 char')
         return 'break'

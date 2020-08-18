@@ -10,7 +10,7 @@ import multiprocessing
 import queue
 import tkinter
 import tkinter.font as tkfont
-from typing import Any, Callable, Dict, Iterator, List, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 
 import pygments.lexer       # type: ignore
 import pygments.styles      # type: ignore
@@ -113,14 +113,15 @@ class Highlighter:
         #print("terminated", repr(self.pygmentizer.process))
 
     def _font_changed(self, junk: object = None) -> None:
-        font_updates = tkfont.Font(name='TkFixedFont', exists=True).actual()
+        font_updates = cast(Dict[str, Any], tkfont.Font(name='TkFixedFont', exists=True).actual())
         del font_updates['weight']     # ignore boldness
         del font_updates['slant']      # ignore italicness
 
         for (bold, italic), font in self._fonts.items():
             # fonts don't have an update() method
             for key, value in font_updates.items():
-                font[key] = value   # type: ignore
+                # TODO(typeshed): font objects and widgets behave inconsistently
+                font[key] = value  # type: ignore[call-overload]
 
     def _style_changed(self, junk: object = None) -> None:
         # http://pygments.org/docs/formatterdevelopment/#styles
@@ -135,10 +136,8 @@ class Highlighter:
                 str(tokentype),
                 font=self._fonts[(infodict['bold'], infodict['italic'])],
                 # empty string resets foreground
-                foreground=('' if infodict['color'] is None
-                            else '#' + infodict['color']),
-                background=('' if infodict['bgcolor'] is None
-                            else '#' + infodict['bgcolor']),
+                foreground=('' if infodict['color'] is None else '#' + infodict['color']),
+                background=('' if infodict['bgcolor'] is None else '#' + infodict['bgcolor']),
             )
 
             # make sure that the selection tag takes precedence over our

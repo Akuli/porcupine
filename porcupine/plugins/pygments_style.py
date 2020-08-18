@@ -54,7 +54,7 @@ def setup() -> None:
 
         var = tkinter.StringVar(value=settings.get('pygments_style', str))
 
-        def settings2var(event: tkinter.Event) -> None:
+        def settings2var(event: 'tkinter.Event[tkinter.Misc]') -> None:
             var.set(settings.get('pygments_style', str))
 
         def var2settings(*junk: str) -> None:

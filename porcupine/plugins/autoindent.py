@@ -46,8 +46,8 @@ def after_enter(text: textwidget.MainText) -> None:
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        def bind_callback(event: tkinter.Event) -> None:
-            assert isinstance(tab, tabs.FileTab)
+        def bind_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
+            assert isinstance(tab, tabs.FileTab)   # because mypy is awesome
             tab.textwidget.after_idle(after_enter, tab.textwidget)
 
         tab.textwidget.bind('<Return>', bind_callback, add=True)

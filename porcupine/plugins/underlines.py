@@ -118,8 +118,8 @@ class _Underliner:
             self._popup,
             text=self._tag2underline[tag].message,
             # opposite colors as in the text widget
-            bg=self.textwidget['fg'],
-            fg=self.textwidget['bg'],
+            bg=self.textwidget.cget('fg'),
+            fg=self.textwidget.cget('bg'),
         ).pack()
         self._popup.geometry(f'+{x}+{y + height + 5}')
         self._popup.overrideredirect(True)

@@ -20,8 +20,8 @@ class LongLineMarker:
         self._width = self._height = 1        # on_configure() will run soon
 
     def setup(self) -> None:
-        assert not self.tab.textwidget['xscrollcommand']
-        self.tab.textwidget['xscrollcommand'] = self.do_update
+        assert not self.tab.textwidget.cget('xscrollcommand')
+        self.tab.textwidget.config(xscrollcommand=self.do_update)
         self.tab.bind('<<TabSettingChanged:max_line_length>>', self.do_update, add=True)
         self.tab.bind('<<SettingChanged:font_family>>', self.do_update, add=True)
         self.tab.bind('<<SettingChanged:font_size>>', self.do_update, add=True)
@@ -38,7 +38,7 @@ class LongLineMarker:
             self.frame.place_forget()
             return
 
-        font = tkfont.Font(name=self.tab.textwidget['font'], exists=True)
+        font = tkfont.Font(name=self.tab.textwidget.cget('font'), exists=True)
         marker_x = font.measure(' ' * max_line_length)
 
         # these are relative to the length of the longest line in the text widget
@@ -58,13 +58,13 @@ class LongLineMarker:
             if tokentype in infos:
                 for key in ['bgcolor', 'color', 'border']:
                     if infos[tokentype][key] is not None:
-                        self.frame['bg'] = '#' + infos[tokentype][key]
+                        self.frame.config(bg=('#' + infos[tokentype][key]))
                         return
 
         # stupid fallback
-        self.frame['bg'] = 'red'
+        self.frame.config(bg='red')
 
-    def on_configure(self, event: tkinter.Event) -> None:
+    def on_configure(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         # this way to calculate it is weird but seems to work
         bbox = self.tab.textwidget.bbox('@0,0')
         assert bbox is not None
@@ -72,8 +72,6 @@ class LongLineMarker:
         weird_x_padding = 2*x
         weird_y_padding = weird_x_padding   # don't know better way, bbox y may be off screen
 
-        assert event.width != '??'
-        assert event.height != '??'
         self._width = event.width - weird_x_padding
         self._height = event.height - weird_y_padding
         self.do_update()

@@ -18,7 +18,7 @@ from tkinter import ttk
 import traceback
 from typing import Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
-import dacite
+import dacite    # type: ignore[import]
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
@@ -174,12 +174,12 @@ class _TooltipManager:
 
     @classmethod
     def destroy_tipwindow(
-            cls, junk_event: Optional[tkinter.Event] = None) -> None:
+            cls, junk_event: Optional['tkinter.Event[tkinter.Misc]'] = None) -> None:
         if cls.tipwindow is not None:
             cls.tipwindow.destroy()
             cls.tipwindow = None
 
-    def enter(self, event: tkinter.Event) -> None:
+    def enter(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         # For some reason, toplevels get also notified of their
         # childrens' events.
         if event.widget is self.widget:
@@ -187,12 +187,12 @@ class _TooltipManager:
             self.got_mouse = True
             self.widget.after(1000, self.show)
 
-    def leave(self, event: tkinter.Event) -> None:
+    def leave(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         if event.widget is self.widget:
             self.destroy_tipwindow()
             self.got_mouse = False
 
-    def motion(self, event: tkinter.Event) -> None:
+    def motion(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         self.mousex = event.x_root
         self.mousey = event.y_root
 
@@ -278,8 +278,8 @@ class EventDataclass:
         return type(self).__name__ + json.dumps(dataclasses.asdict(self))
 
 
-class EventWithData(tkinter.Event):
-    """A subclass of :class:`tkinter.Event` for use with :func:`bind_with_data`."""
+class EventWithData('tkinter.Event[tkinter.Misc]'):
+    """A subclass of :class:`'tkinter.Event[tkinter.Misc]'` for use with :func:`bind_with_data`."""
 
     #: If a string was passed to the ``data`` argument of ``event_generate()``,
     #: then this is that string.
@@ -325,7 +325,7 @@ def bind_with_data(
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``
     argument of ``event_generate()``. Note that the callback takes an argument
-    of type :class:`EventWithData` rather than a usual ``tkinter.Event``.
+    of type :class:`EventWithData` rather than a usual ``'tkinter.Event[tkinter.Misc]'``.
 
     Here's an example::
 
@@ -346,7 +346,7 @@ def bind_with_data(
     # event objects and runs callback(event)
     #
     # TODO: is it possible to do this without a deque?
-    event_objects: Deque[Union[tkinter.Event, EventWithData]] = collections.deque()
+    event_objects: Deque[Union['tkinter.Event[tkinter.Misc]', EventWithData]] = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
 
     def run_the_callback(data_string: str) -> Optional[str]:
@@ -368,7 +368,7 @@ def bind_with_data(
 # TODO: document this
 def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
                   *, add: bool = True) -> str:
-    def callback(event: tkinter.Event) -> None:
+    def callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
         # make the coordinates relative to the 'to' widget
         x = event.x_root - to.winfo_rootx()
         y = event.y_root - to.winfo_rooty()
@@ -456,7 +456,7 @@ class TemporaryBind:
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
         widget: tkinter.Widget,
-        on_tab: Callable[[tkinter.Event, bool], BreakOrNone],
+        on_tab: Callable[['tkinter.Event[Any]', bool], BreakOrNone],
         **bind_kwargs: Any) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 
@@ -478,7 +478,7 @@ def bind_tab_key(
     """
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
-    def callback(shifted: bool, event: tkinter.Event) -> BreakOrNone:
+    def callback(shifted: bool, event: 'tkinter.Event[tkinter.Misc]') -> BreakOrNone:
         return on_tab(event, shifted)
 
     if widget.tk.call('tk', 'windowingsystem') == 'x11':
@@ -526,7 +526,7 @@ def bind_mouse_wheel(
     # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
     if some_widget.tk.call('tk', 'windowingsystem') == 'x11':
-        def real_callback(event: tkinter.Event) -> None:
+        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
             callback('up' if event.num == 4 else 'down')
 
         bind(f'<{prefixes}Button-4>', real_callback, add)
@@ -534,7 +534,7 @@ def bind_mouse_wheel(
 
     else:
         # TODO: test this on OSX
-        def real_callback(event: tkinter.Event) -> None:
+        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
             callback('up' if event.delta > 0 else 'down')
 
         bind(f'<{prefixes}MouseWheel>', real_callback, add)
@@ -564,9 +564,7 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
         elif not ttk_fg:
             ttk_fg = invert_color(ttk_bg, black_or_white=True)
 
-        text['foreground'] = ttk_fg
-        text['background'] = ttk_bg
-        text['highlightbackground'] = ttk_bg
+        text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
 
     # even non-ttk widgets can handle <<ThemeChanged>>
     # TODO: make sure that this works
@@ -592,7 +590,7 @@ except AttributeError:
                 kwargs['from'] = kwargs.pop('from_')
             return super().configure(*args, **kwargs)   # type: ignore
 
-        config = configure
+        config = configure  # type: ignore
 
 
 def errordialog(title: str, message: str,
@@ -635,7 +633,7 @@ def errordialog(title: str, message: str,
         text = tkinter.Text(big_frame, width=1, height=1)
         text.pack(fill='both', expand=True)
         text.insert('1.0', monospace_text)
-        text['state'] = 'disabled'
+        text.config(state='disabled')
         geometry = '400x300'
 
     button = ttk.Button(big_frame, text="OK", command=window.destroy)

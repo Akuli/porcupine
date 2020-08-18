@@ -28,10 +28,10 @@ class LineNumbers:
         #
         #   _do_update
         #   bla bla bla 0.123 0.456
-        old_tcl_code = textwidget_of_tab['yscrollcommand']
+        old_tcl_code = textwidget_of_tab.cget('yscrollcommand')
         assert old_tcl_code
         new_tcl_code = self.canvas.register(self._do_update) + '\n' + old_tcl_code
-        textwidget_of_tab['yscrollcommand'] = new_tcl_code
+        textwidget_of_tab.config(yscrollcommand=new_tcl_code)
 
         textwidget_of_tab.bind('<<ContentChanged>>', self._do_update, add=True)
         self._do_update()
@@ -47,7 +47,7 @@ class LineNumbers:
         self.canvas.bind('<Button1-Motion>', self._on_drag, add=True)
 
     def _set_colors(self, fg: str, bg: str) -> None:
-        self.canvas['background'] = bg
+        self.canvas.config(background=bg)
         self._text_color = fg
         self.canvas.itemconfig('all', fill=fg)
 
@@ -64,26 +64,32 @@ class LineNumbers:
                 continue
 
             x, y, *junk = dlineinfo
-            self.canvas.create_text(0, y, text=f' {lineno}', anchor='nw', font='TkFixedFont', fill=self._text_color)
+            self.canvas.create_text(
+                0, y,
+                text=f' {lineno}',
+                anchor='nw',
+                font='TkFixedFont',
+                fill=self._text_color,
+            )
 
     def _update_canvas_width(self, junk: object = None) -> None:
-        self.canvas['width'] = tkinter.font.Font(name='TkFixedFont', exists=True).measure(' 1234 ')
+        self.canvas.config(width=tkinter.font.Font(name='TkFixedFont', exists=True).measure(' 1234 '))
 
-    def _on_click(self, event: tkinter.Event) -> None:
+    def _on_click(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         # go to clicked line
         self.textwidget.tag_remove('sel', '1.0', 'end')
         self.textwidget.mark_set('insert', f'@0,{event.y}')
         self._clicked_place = self.textwidget.index('insert')
 
-    def _on_unclick(self, event: tkinter.Event) -> None:
+    def _on_unclick(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         self._clicked_place = None
 
-    def _on_double_click(self, event: tkinter.Event) -> None:
+    def _on_double_click(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         # select the line the cursor is on, including trailing newline
         self.textwidget.tag_remove('sel', '1.0', 'end')
         self.textwidget.tag_add('sel', 'insert', 'insert + 1 line')
 
-    def _on_drag(self, event: tkinter.Event) -> None:
+    def _on_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         if self._clicked_place is None:
             # the user pressed down the mouse button and then moved the
             # mouse over the line numbers

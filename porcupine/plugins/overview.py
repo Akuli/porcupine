@@ -34,14 +34,16 @@ class Overview(tkinter.Text):
     def __init__(self, master: tkinter.BaseWidget, tab: tabs.FileTab) -> None:
         super().__init__(master)
         textwidget.create_peer_widget(tab.textwidget, self)
-        self['width'] = 25
-        self['exportselection'] = False
-        self['takefocus'] = False
-        self['yscrollcommand'] = self._update_vast
-        self['wrap'] = 'none'
+        self.config(
+            width=25,
+            exportselection=False,
+            takefocus=False,
+            yscrollcommand=self._update_vast,
+            wrap='none',
+        )
 
         self._tab = tab
-        self._tab.textwidget['highlightthickness'] = LINE_THICKNESS
+        self._tab.textwidget.config(highlightthickness=LINE_THICKNESS)
 
         self.tag_config('sel', foreground='', background='')
 
@@ -57,9 +59,9 @@ class Overview(tkinter.Text):
             tkinter.Frame(self),
         ]
 
-        tab.textwidget['yscrollcommand'] = (
-            tab.register(self._scroll_callback) +
-            '\n' + self._tab.textwidget['yscrollcommand'])
+        tcl_code = tab.textwidget.cget('yscrollcommand')
+        assert tcl_code
+        tab.textwidget.config(yscrollcommand=(tab.register(self._scroll_callback) + '\n' + tcl_code))
 
         self.bind('<Button-1>', self._on_click_and_drag, add=True)
         self.bind('<Button1-Motion>', self._on_click_and_drag, add=True)
@@ -85,13 +87,15 @@ class Overview(tkinter.Text):
             self.after(50, self._scroll_callback)
 
     def set_colors(self, foreground: str, background: str) -> None:
-        self['foreground'] = foreground
-        self['background'] = background
-        self['inactiveselectbackground'] = background   # must be non-empty?
+        self.config(
+            fg=foreground,
+            bg=background,
+            inactiveselectbackground=background,   # must be non-empty?
+        )
 
-        self._tab.textwidget['highlightcolor'] = foreground
+        self._tab.textwidget.config(highlightcolor=foreground)
         for frame in self._vast:
-            frame['background'] = foreground
+            frame.config(bg=foreground)
 
     def set_font(self, junk: object = None) -> None:
         font = (
@@ -102,7 +106,7 @@ class Overview(tkinter.Text):
 
         # tkinter doesn't provide a better way to do font stuff than stupid
         # font object
-        self['tabs'] = self.tk.call('font', 'measure', font, how_to_show_tab)
+        self.config(tabs=self.tk.call('font', 'measure', font, how_to_show_tab))
         self.tag_config('sel', font=font)
         self._update_vast()
 
@@ -119,7 +123,7 @@ class Overview(tkinter.Text):
         # tkinter doesn't provide a better way to look up font metrics without
         # creating a stupid font object
         how_tall_are_lines_on_editor: int = self._tab.tk.call(
-            'font', 'metrics', self._tab.textwidget['font'], '-linespace')
+            'font', 'metrics', self._tab.textwidget.cget('font'), '-linespace')
         how_tall_are_lines_overview: int = self._tab.tk.call(
             'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace')
 
@@ -189,7 +193,7 @@ class Overview(tkinter.Text):
         # TODO: figure out when exactly this is needed, remove unnecessary calls?
         self._update_sel_tag()
 
-    def _on_click_and_drag(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _on_click_and_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         (overview_scroll_relative_start,
          overview_scroll_relative_end,
          text_scroll_relative_start,

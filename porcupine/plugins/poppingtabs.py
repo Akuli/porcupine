@@ -25,7 +25,7 @@ NOT_POPPABLE = SpecialState()
 NOT_DRAGGING = SpecialState()
 
 
-def _is_on_window(event: tkinter.Event) -> bool:
+def _is_on_window(event: 'tkinter.Event[tkinter.Misc]') -> bool:
     window = event.widget.winfo_toplevel()
     window_left = window.winfo_x()
     window_right = window_left + window.winfo_width()
@@ -49,7 +49,7 @@ class PopManager:
 
         self._dragged_state: Union[SpecialState, Tuple[tabs.Tab, Any]] = NOT_DRAGGING
 
-    def _show_tooltip(self, event: tkinter.Event) -> None:
+    def _show_tooltip(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         if self._window.state() == 'withdrawn':
             self._window.deiconify()
 
@@ -59,7 +59,7 @@ class PopManager:
 
     # no need to return 'break' imo, other plugins are free to follow
     # drags and drops
-    def on_drag(self, event: tkinter.Event) -> None:
+    def on_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         if _is_on_window(event):
             self._window.withdraw()
             return
@@ -75,14 +75,14 @@ class PopManager:
             state = tab.get_state()
             if state is None:
                 self._dragged_state = NOT_POPPABLE
-                self._label['text'] = "This tab cannot\nbe popped up."
+                self._label.config(text="This tab cannot\nbe popped up.")
             else:
                 self._dragged_state = (tab, state)
-                self._label['text'] = "Drop the tab here\nto pop it up..."
+                self._label.config(text="Drop the tab here\nto pop it up...")
 
         self._show_tooltip(event)
 
-    def on_drop(self, event: tkinter.Event) -> None:
+    def on_drop(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         self._window.withdraw()
         if not (_is_on_window(event) or isinstance(self._dragged_state, SpecialState)):
             log.info("popping off a tab")

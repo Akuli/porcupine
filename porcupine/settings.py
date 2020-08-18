@@ -10,7 +10,7 @@ import os
 import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, overload
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
 
 import pygments.styles   # type: ignore
 
@@ -353,23 +353,23 @@ def _init_global_settings() -> None:
         _log.exception(f"reading {_get_json_path()} failed")
 
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
-    if fixedfont['size'] < 0:
+    if fixedfont.cget('size') < 0:
         # negative sizes have a special meaning in Tk, and i don't care much
         # about it for porcupine, using stupid hard-coded default instead
-        fixedfont['size'] = 10
+        fixedfont.config(size=10)
 
-    # fixedfont['family'] is typically e.g. 'Monospace', that's not included in
+    # fixedfont.cget('family') is typically e.g. 'Monospace', that's not included in
     # tkinter.font.families() because it refers to another font family that is
     # in tkinter.font.families()
     add_option('font_family', fixedfont.actual('family'))
-    add_option('font_size', fixedfont['size'])
+    add_option('font_size', fixedfont.cget('size'))
     add_option('pygments_style', 'default', converter=_check_pygments_style)
     add_option('default_filetype', 'Python')
     add_option('disabled_plugins', [], type=List[str])
     add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     # keep TkFixedFont up to date with settings
-    def update_fixedfont(event: Optional[tkinter.Event]) -> None:
+    def update_fixedfont(event: Optional['tkinter.Event[tkinter.Misc]']) -> None:
         # can't bind to get_tab_manager() as recommended in docs because tab
         # manager isn't ready yet when settings get inited
         if event is None or event.widget == porcupine.get_main_window():
@@ -450,7 +450,8 @@ def _create_validation_triangle(
     callback: Callable[[_StrOrInt], bool],
 ) -> ttk.Label:
 
-    triangle = ttk.Label(widget.master)
+    # TODO(typeshed): master attribute
+    triangle: ttk.Label = ttk.Label(widget.master)  # type: ignore[attr-defined]
     var = tkinter.StringVar()
 
     def var_changed(*junk: object) -> None:
@@ -466,9 +467,9 @@ def _create_validation_triangle(
                 value = None
 
         if value is None:
-            triangle['image'] = images.get('triangle')
+            triangle.config(image=images.get('triangle'))
         else:
-            triangle['image'] = _get_blank_triangle_sized_image()
+            triangle.config(image=_get_blank_triangle_sized_image())
             set(option_name, value, from_config=True)
 
     def setting_changed(junk: object = None) -> None:
@@ -478,7 +479,7 @@ def _create_validation_triangle(
     var.trace_add('write', var_changed)
     setting_changed()
 
-    widget['textvariable'] = var
+    widget.config(textvariable=var)
     return triangle
 
 
@@ -535,7 +536,8 @@ def add_section(title_text: str) -> ttk.Frame:
 
 # Widget is needed for chooser.master and triangle.grid
 def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]) -> None:
-    label = ttk.Label(chooser.master, text=label_text)
+    # TODO(typeshed): master attribute
+    label = ttk.Label(chooser.master, text=label_text)  # type: ignore[attr-defined]
     label.grid(column=0, sticky='w')
     chooser.grid(row=label.grid_info()['row'], column=1, sticky='we')
     if triangle is not None:
@@ -578,17 +580,17 @@ def add_combobox(
     Usually you should pass at least ``values=list_of_strings``.
 
     The content of the combobox is checked whenever it changes.
-    If it's in ``combobox['values']``
+    If it's in ``combobox.cget('values')``
     (given with the ``values=list_of_strings`` keyword argument or changed
     later by configuring the returned combobox), then the option given by
     *option_name* is set to the content of the combobox. The converter passed
     to :func:`add_option` will be used. If the content of the combobox is not
-    in ``combobox['values']``, then |triangle| is shown.
+    in ``combobox.cget('values')``, then |triangle| is shown.
     """
     combo = ttk.Combobox(section, **combobox_kwargs)
     triangle = _create_validation_triangle(
         combo, option_name, str,
-        lambda value: value in combo['values'])
+        lambda value: value in combo.cget('values'))
     _grid_widgets(text, combo, triangle)
     return combo
 
@@ -605,14 +607,14 @@ def add_spinbox(
     Usually you should pass at least ``from_=some_integer, to=another_integer``.
 
     The content of the spinbox is checked whenever it changes.
-    If it's a valid integer between ``spinbox['from']`` and ``spinbox['to']`` (inclusive),
+    If it's a valid integer between ``spinbox.cget('from')`` and ``spinbox.cget('to')`` (inclusive),
     then the option given by *option_name* is set to the :class:`int`.
     Otherwise |triangle| is shown.
     """
     spinbox = utils.Spinbox(section, **spinbox_kwargs)
     triangle = _create_validation_triangle(
         spinbox, option_name, int,
-        lambda value: int(spinbox['from']) <= value <= int(spinbox['to']))
+        lambda value: int(spinbox.cget('from')) <= value <= int(spinbox.cget('to')))
     _grid_widgets(text, spinbox, triangle)
     return spinbox
 
@@ -626,11 +628,7 @@ def add_label(section: ttk.Frame, text: str) -> ttk.Label:
     label = ttk.Label(section, text=text)
     label.grid(column=0, columnspan=3, sticky='we', pady=10)
 
-    def wrap_on_resize(event: tkinter.Event) -> None:
-        assert event.width != '??'
-        label['wraplength'] = event.width
-
-    section.bind('<Configure>', wrap_on_resize, add=True)
+    section.bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
     return label
 
 

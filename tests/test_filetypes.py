@@ -5,11 +5,12 @@ from porcupine import get_main_window, filetypes
 def test_get_filedialog_kwargs(porcusession):
     kwargs = filetypes.get_filedialog_kwargs()
 
+    # TODO: remove legacy 'aqua' specific stuff
     if kwargs:
         assert kwargs.keys() == {'filetypes'}
         if get_main_window().tk.call('tk', 'windowingsystem') == 'aqua':
             # see comments in filetypes.get_filedialog_kwargs()
-            assert len(kwargs['filetypes']) > 1
+            assert len(kwargs.cget('filetypes')) > 1
 
         for pair in kwargs['filetypes']:
             assert isinstance(pair, tuple)

@@ -56,11 +56,11 @@ def callback() -> None:
         return
 
     if before != after:
-        widget['autoseparators'] = False
+        widget.config(autoseparators=False)
         widget.delete('1.0', 'end - 1 char')
         widget.insert('1.0', after)
         widget.edit_separator()
-        widget['autoseparators'] = True
+        widget.config(autoseparators=True)
 
 
 def setup() -> None:

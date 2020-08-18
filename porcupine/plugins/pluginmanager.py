@@ -79,9 +79,9 @@ class PluginDialogContent:
         self._enable_disable_button.pack(side='bottom')
 
         self._description = utils.create_passive_text_widget(right_side)
-        self._description['state'] = 'normal'
+        self._description.config(state='normal')
         self._description.insert('1.0', "Please select a plugin.")
-        self._description['state'] = 'disabled'
+        self._description.config(state='disabled')
         self._description.pack(fill='both', expand=True)
 
     def _insert_data(self) -> None:
@@ -119,9 +119,9 @@ class PluginDialogContent:
             for name in self._treeview.get_children()
         )
         if any(status.endswith('upon restart') for status in statuses):
-            self._plz_restart_label['text'] = "Please restart Porcupine to apply the changes."
+            self._plz_restart_label.config(text="Please restart Porcupine to apply the changes.")
         else:
-            self._plz_restart_label['text'] = ""
+            self._plz_restart_label.config(text="")
 
     def _on_select(self, junk: object = None) -> None:
         [plugin_name] = self._treeview.selection()
@@ -139,18 +139,15 @@ class PluginDialogContent:
             # get rid of single newlines
             text = re.sub(r'(.)\n(.)', r'\1 \2', text)
 
-        self._title_label['text'] = plugin_name
-        self._description['state'] = 'normal'
+        self._title_label.config(text=plugin_name)
+        self._description.config(state='normal')
         self._description.delete('1.0', 'end')
         self._description.insert('1.0', text)
-        self._description['state'] = 'disabled'
+        self._description.config(state='disabled')
 
         disable_list = settings.get('disabled_plugins', List[str])
-        if plugin_name in disable_list:
-            self._enable_disable_button['text'] = "Enable"
-        else:
-            self._enable_disable_button['text'] = "Disable"
-        self._enable_disable_button['state'] = 'normal'
+        self._enable_disable_button.config(
+            state='normal', text=("Enable" if plugin_name in disable_list else "Disable"))
 
     def _toggle_enabled(self) -> None:
         [plugin_name] = self._treeview.selection()

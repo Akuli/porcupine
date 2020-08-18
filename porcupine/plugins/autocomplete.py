@@ -10,7 +10,7 @@ import itertools
 import re
 import tkinter
 from tkinter import ttk
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -28,9 +28,10 @@ class Completion:
 
 
 def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
-    scrollbar = ttk.Scrollbar(widget.master)
-    widget['yscrollcommand'] = scrollbar.set
-    scrollbar['command'] = widget.yview
+    # TODO(typeshed): master attribute
+    scrollbar = ttk.Scrollbar(widget.master)  # type: ignore[union-attr]
+    widget.config(yscrollcommand=scrollbar.set)
+    scrollbar.config(command=widget.yview)
 
     # scroll bar must be packed first to make sure that it's always displayed
     scrollbar.pack(side='right', fill='y')
@@ -165,10 +166,10 @@ class _Popup:
                                      text=completion.display_text)
             self._select_item('0')
         else:
-            self._doc_text['state'] = 'normal'
+            self._doc_text.config(state='normal')
             self._doc_text.delete('1.0', 'end')
             self._doc_text.insert('1.0', "No completions")
-            self._doc_text['state'] = 'disabled'
+            self._doc_text.config(state='disabled')
 
         if geometry is not None:
             self.toplevel.geometry(geometry)
@@ -214,7 +215,7 @@ class _Popup:
             self._select_item(
                 self.treeview.next(the_id) or self.treeview.get_children()[0])
 
-    def on_page_up_down(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_page_up_down(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
@@ -222,7 +223,7 @@ class _Popup:
         self._doc_text.yview_scroll(page_count, 'pages')
         return 'break'
 
-    def on_arrow_key_up_down(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_arrow_key_up_down(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
@@ -231,18 +232,18 @@ class _Popup:
         method()
         return 'break'
 
-    def _on_mouse_move(self, event: tkinter.Event) -> None:
+    def _on_mouse_move(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         hovered_id = self.treeview.identify_row(event.y)
         if hovered_id:
             self.treeview.selection_set(hovered_id)
 
-    def _on_select(self, event: tkinter.Event) -> None:
+    def _on_select(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         completion = self._get_selected_completion()
         if completion is not None:
-            self._doc_text['state'] = 'normal'
+            self._doc_text.config(state='normal')
             self._doc_text.delete('1.0', 'end')
             self._doc_text.insert('1.0', completion.documentation)
-            self._doc_text['state'] = 'disabled'
+            self._doc_text.config(state='disabled')
 
 
 @dataclasses.dataclass
@@ -292,7 +293,7 @@ def _all_words_in_file_completions(textwidget: tkinter.Text) -> List[Completion]
             filter_text=word,
             documentation=word,
         )
-        for word in sorted(counts.keys(), key=counts.get)
+        for word in sorted(counts.keys(), key=counts.__getitem__)
     ]
 
 
@@ -315,7 +316,8 @@ class AutoCompleter:
 
         # use this cursor pos when needed because while processing the
         # completion request or filtering, user might type more
-        self._orig_cursorpos = self._tab.textwidget.index('insert')
+        # TODO(typeshed): .index() return type
+        self._orig_cursorpos = cast(str, self._tab.textwidget.index('insert'))
 
         if self._tab.bind('<<AutoCompletionRequest>>'):
             # an event handler is bound, use that
@@ -385,7 +387,7 @@ class AutoCompleter:
 
         return True
 
-    def on_tab(self, event: tkinter.Event, shifted: bool) -> utils.BreakOrNone:
+    def on_tab(self, event: 'tkinter.Event[tkinter.Misc]', shifted: bool) -> utils.BreakOrNone:
         if self._tab.textwidget.tag_ranges('sel'):
             # something's selected, autocompleting is not the right thing to do
             return None
@@ -425,7 +427,7 @@ class AutoCompleter:
             self._waiting_for_response_id = None
             self._orig_cursorpos = None
 
-    def on_any_key(self, event: tkinter.Event) -> None:
+    def on_any_key(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         if event.keysym.startswith('Shift'):
             return
 
@@ -470,13 +472,13 @@ class AutoCompleter:
         self.popup.stop_completing(withdraw=False)
         self.popup.start_completing(self._get_filtered_completions())
 
-    def on_enter(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_enter(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._accept()
             return 'break'
         return None
 
-    def on_escape(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_escape(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._reject()
             return 'break'

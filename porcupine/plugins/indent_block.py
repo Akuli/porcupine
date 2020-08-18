@@ -6,9 +6,7 @@ from porcupine import get_tab_manager, textwidget, tabs, utils
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
 
 
-def on_tab_key(event: tkinter.Event, shifted: bool) -> None:
-    assert isinstance(event.widget, textwidget.MainText)
-
+def on_tab_key(event: 'tkinter.Event[textwidget.MainText]', shifted: bool) -> None:
     try:
         start_index, end_index = map(str, event.widget.tag_ranges('sel'))
     except ValueError:

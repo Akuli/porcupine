@@ -56,7 +56,7 @@ def get_command(
     return result
 
 
-def do_something(something: str) -> None:
+def do_something(something: Literal['compile', 'run', 'compilerun', 'lint']) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     if tab.path is None or not tab.is_saved():
@@ -85,8 +85,7 @@ def do_something(something: str) -> None:
             no_terminal.run_command(workingdir, compile_command, run_after_compile)
 
     else:
-        assert something in {'compile', 'lint'}
-        command = get_command(tab, cast(Literal['compile', 'lint'], something), basename)
+        command = get_command(tab, something, basename)
         if command is not None:
             no_terminal.run_command(workingdir, command)
 
