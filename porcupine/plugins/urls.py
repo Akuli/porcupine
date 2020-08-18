@@ -58,7 +58,7 @@ def on_new_tab(event: utils.EventWithData) -> None:
         tab.textwidget.bind('<<ContentChanged>>', partial(update_url_underlines, tab), add=True)
         update_url_underlines(tab)
 
-        tab.textwidget.tag_bind('underline:urls', '<Button-1>', partial(open_the_url, tab, 'current'), add=True)
+        tab.textwidget.tag_bind('underline:urls', '<Control-Button-1>', partial(open_the_url, tab, 'current'), add=True)
         tab.textwidget.bind('<Control-Return>', partial(open_the_url, tab, 'insert'), add=True)
 
 
