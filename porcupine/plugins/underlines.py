@@ -8,7 +8,7 @@ import dataclasses
 import tkinter
 from typing import Dict, List, Optional
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
 @dataclasses.dataclass
@@ -37,7 +37,7 @@ class _Underliner:
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
         self.textwidget.bind('<<CursorMoved>>', self._on_cursor_moved, add=True)
-        self.textwidget.bind('<Unmap>', self._hide_popup, add=True)
+        self.textwidget.bind('<<UnderlinerHidePopup>>', self._hide_popup, add=True)
         self.textwidget.tag_bind('underline_common', '<Enter>', self._on_mouse_enter)
         self.textwidget.tag_bind('underline_common', '<Leave>', self._hide_popup)
 
@@ -138,5 +138,18 @@ def on_new_tab(event: utils.EventWithData) -> None:
         utils.bind_with_data(tab, '<<SetUnderlines>>', underliner.set_underlines, add=True)
 
 
+def hide_all_popups(event: 'tkinter.Event[tkinter.Misc]') -> None:
+    if event.widget is get_main_window():   # Tk and Toplevel events need this check
+        for tab in get_tab_manager().tabs():
+            if isinstance(tab, tabs.FileTab):
+                tab.textwidget.event_generate('<<UnderlinerHidePopup>>')
+
+
 def setup() -> None:
+    # trigger <<UnderlinerHidePopup>> when text widget goes invisible (e.g. switching tabs)
+    get_main_window().event_add('<<UnderlinerHidePopup>>', '<Unmap>')
+
+    # and when the entire porcupine window loses input focus (binding here to avoid unbinding)
+    get_main_window().bind('<FocusOut>', hide_all_popups, add=True)
+
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
