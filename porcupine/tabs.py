@@ -575,7 +575,7 @@ bers.py>` use this attribute.
         if path is None:
             self._path = None
         else:
-            self._path = path.absolute()
+            self._path = path.resolve()
 
         self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
         self.settings.add_option(
@@ -689,6 +689,9 @@ bers.py>` use this attribute.
 
     @path.setter
     def path(self, new_path: Optional[pathlib.Path]) -> None:
+        if new_path is not None:
+            new_path = new_path.resolve()
+
         it_changes = (self._path != new_path)
         self._path = new_path
         if it_changes:
