@@ -93,6 +93,12 @@ class _Underliner:
                 for start, end in zip(ranges[0::2], ranges[1::2]):
                     self.textwidget.tag_add('underline_common', start, end)
 
+        # update what's showing
+        if any(tag.startswith('underline:') for tag in self.textwidget.tag_names('insert')):
+            self._show_tag_at_index('insert')
+        else:
+            self._hide_popup()
+
     def _show_popup(self, tag: str) -> None:
         if self._popup_tag == tag:
             return
