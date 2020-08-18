@@ -592,7 +592,7 @@ except AttributeError:
                 kwargs['from'] = kwargs.pop('from_')
             return super().configure(*args, **kwargs)   # type: ignore
 
-        config = configure
+        config = configure  # type: ignore
 
 
 def errordialog(title: str, message: str,

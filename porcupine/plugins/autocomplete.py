@@ -10,7 +10,7 @@ import itertools
 import re
 import tkinter
 from tkinter import ttk
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -28,7 +28,8 @@ class Completion:
 
 
 def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
-    scrollbar = ttk.Scrollbar(widget.master)
+    # TODO(typeshed): master attribute
+    scrollbar = ttk.Scrollbar(widget.master)  # type: ignore[union-attr]
     widget['yscrollcommand'] = scrollbar.set
     scrollbar['command'] = widget.yview
 
@@ -292,7 +293,7 @@ def _all_words_in_file_completions(textwidget: tkinter.Text) -> List[Completion]
             filter_text=word,
             documentation=word,
         )
-        for word in sorted(counts.keys(), key=counts.get)
+        for word in sorted(counts.keys(), key=counts.__getitem__)
     ]
 
 
@@ -315,7 +316,8 @@ class AutoCompleter:
 
         # use this cursor pos when needed because while processing the
         # completion request or filtering, user might type more
-        self._orig_cursorpos = self._tab.textwidget.index('insert')
+        # TODO(typeshed): .index() return type
+        self._orig_cursorpos = cast(str, self._tab.textwidget.index('insert'))
 
         if self._tab.bind('<<AutoCompletionRequest>>'):
             # an event handler is bound, use that

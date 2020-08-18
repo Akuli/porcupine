@@ -10,7 +10,7 @@ import multiprocessing
 import queue
 import tkinter
 import tkinter.font as tkfont
-from typing import Any, Callable, Dict, Iterator, List, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 
 import pygments.lexer       # type: ignore
 import pygments.styles      # type: ignore
@@ -113,7 +113,7 @@ class Highlighter:
         #print("terminated", repr(self.pygmentizer.process))
 
     def _font_changed(self, junk: object = None) -> None:
-        font_updates = tkfont.Font(name='TkFixedFont', exists=True).actual()
+        font_updates = cast(Dict[str, Any], tkfont.Font(name='TkFixedFont', exists=True).actual())
         del font_updates['weight']     # ignore boldness
         del font_updates['slant']      # ignore italicness
 
