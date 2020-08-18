@@ -580,10 +580,10 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     return text
 
 
-try:
+if sys.version_info >= (3, 7):
     Spinbox = ttk.Spinbox
-except AttributeError:
-    # python 3.6 compat thing, written similarly to ttk.Combobox
+else:
+    # written similarly to ttk.Combobox
     class Spinbox(ttk.Entry):   # type: ignore
 
         def __init__(self, master, *, from_=None, **kwargs):     # type: ignore
