@@ -270,7 +270,7 @@ class TetrisTab(tabs.Tab):
         for (x, y), item_id in self._canvas_content.items():
             shape = self._game.shape_at(x, y)
             if shape is None:
-                color = self._canvas['bg']
+                color = self._canvas.cget('bg')
             else:
                 color = COLORS[shape]
             self._canvas.itemconfig(item_id, fill=color)
@@ -299,12 +299,12 @@ class TetrisTab(tabs.Tab):
         self._refresh()
 
         if self._game.game_over():
-            centerx = int(self._canvas['width']) // 2
-            centery = int(self._canvas['height']) // 3
+            centerx = int(self._canvas.cget('width')) // 2
+            centery = int(self._canvas.cget('height')) // 3
             self._game_over_id = self._canvas.create_text(
                 centerx, centery, anchor='center',
                 text="Game Over :(", font=('', 18, 'bold'),
-                fill=utils.invert_color(self._canvas['bg']))
+                fill=utils.invert_color(self._canvas.cget('bg')))
         else:
             self._timeout_id = self._canvas.after(
                 self._game.delay, self._on_timeout)

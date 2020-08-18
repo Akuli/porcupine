@@ -75,10 +75,10 @@ class PopManager:
             state = tab.get_state()
             if state is None:
                 self._dragged_state = NOT_POPPABLE
-                self._label['text'] = "This tab cannot\nbe popped up."
+                self._label.config(text="This tab cannot\nbe popped up.")
             else:
                 self._dragged_state = (tab, state)
-                self._label['text'] = "Drop the tab here\nto pop it up..."
+                self._label.config(text="Drop the tab here\nto pop it up...")
 
         self._show_tooltip(event)
 

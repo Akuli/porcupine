@@ -564,9 +564,7 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
         elif not ttk_fg:
             ttk_fg = invert_color(ttk_bg, black_or_white=True)
 
-        text['foreground'] = ttk_fg
-        text['background'] = ttk_bg
-        text['highlightbackground'] = ttk_bg
+        text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
 
     # even non-ttk widgets can handle <<ThemeChanged>>
     # TODO: make sure that this works
@@ -635,7 +633,7 @@ def errordialog(title: str, message: str,
         text = tkinter.Text(big_frame, width=1, height=1)
         text.pack(fill='both', expand=True)
         text.insert('1.0', monospace_text)
-        text['state'] = 'disabled'
+        text.config(state='disabled')
         geometry = '400x300'
 
     button = ttk.Button(big_frame, text="OK", command=window.destroy)

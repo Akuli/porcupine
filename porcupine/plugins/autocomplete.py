@@ -30,8 +30,8 @@ class Completion:
 def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
     # TODO(typeshed): master attribute
     scrollbar = ttk.Scrollbar(widget.master)  # type: ignore[union-attr]
-    widget['yscrollcommand'] = scrollbar.set
-    scrollbar['command'] = widget.yview
+    widget.config(yscrollcommand=scrollbar.set)
+    scrollbar.config(command=widget.yview)
 
     # scroll bar must be packed first to make sure that it's always displayed
     scrollbar.pack(side='right', fill='y')
@@ -166,10 +166,10 @@ class _Popup:
                                      text=completion.display_text)
             self._select_item('0')
         else:
-            self._doc_text['state'] = 'normal'
+            self._doc_text.config(state='normal')
             self._doc_text.delete('1.0', 'end')
             self._doc_text.insert('1.0', "No completions")
-            self._doc_text['state'] = 'disabled'
+            self._doc_text.config(state='disabled')
 
         if geometry is not None:
             self.toplevel.geometry(geometry)
@@ -240,10 +240,10 @@ class _Popup:
     def _on_select(self, event: tkinter.Event) -> None:
         completion = self._get_selected_completion()
         if completion is not None:
-            self._doc_text['state'] = 'normal'
+            self._doc_text.config(state='normal')
             self._doc_text.delete('1.0', 'end')
             self._doc_text.insert('1.0', completion.documentation)
-            self._doc_text['state'] = 'disabled'
+            self._doc_text.config(state='disabled')
 
 
 @dataclasses.dataclass

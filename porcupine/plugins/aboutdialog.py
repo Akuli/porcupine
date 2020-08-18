@@ -66,10 +66,10 @@ class _AboutDialogContent(ttk.Frame):
         self._textwidget.tag_bind('link', '<Leave>', self._leave_link)
         self._link_tag_names = map('link-{}'.format, itertools.count())
 
-        self._textwidget['state'] = 'normal'
+        self._textwidget.config(state='normal')
         for text_chunk in _BORING_TEXT.strip().split('\n\n'):
             self._add_minimal_markdown(text_chunk)
-        self._textwidget['state'] = 'disabled'
+        self._textwidget.config(state='disabled')
 
         label = ttk.Label(self, image=images.get('logo-200x200'),
                           cursor='hand2')
@@ -104,10 +104,10 @@ class _AboutDialogContent(ttk.Frame):
                 self._textwidget.insert('end', text, ['link', tag])
 
     def _enter_link(self, junk_event: tkinter.Event) -> None:
-        self._textwidget['cursor'] = 'hand2'
+        self._textwidget.config(cursor='hand2')
 
     def _leave_link(self, junk_event: tkinter.Event) -> None:
-        self._textwidget['cursor'] = ''
+        self._textwidget.config(cursor='')
 
     def _open_link(self, href: str, junk_event: tkinter.Event) -> None:
         webbrowser.open(href)

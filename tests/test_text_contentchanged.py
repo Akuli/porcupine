@@ -9,7 +9,7 @@ from porcupine.textwidget import Change, Changes, track_changes, create_peer_wid
 @pytest.fixture(scope='function')
 def text_and_events(porcusession):
     text = tkinter.Text(get_main_window())
-    text['undo'] = True    # must be before track_changes()
+    text.config(undo=True)    # must be before track_changes()
     track_changes(text)
 
     # peers can mess things up

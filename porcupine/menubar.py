@@ -60,7 +60,7 @@ def _fix_text_widget_bindings(event: tkinter.Event) -> None:
 
 def _init() -> None:
     main_window = _run.get_main_window()
-    main_window['menu'] = tkinter.Menu(main_window, tearoff=False)
+    main_window.config(menu=tkinter.Menu(main_window, tearoff=False))
 
     main_window.bind_class('Text', '<FocusIn>', _fix_text_widget_bindings, add=True)
     _fill_menus_with_default_stuff()
@@ -89,7 +89,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
     If *path* is ``None``, then the menubar itself is returned.
     """
     main_window = _run.get_main_window()
-    main_menu = cast(tkinter.Menu, main_window.nametowidget(main_window['menu']))
+    main_menu = cast(tkinter.Menu, main_window.nametowidget(main_window.cget('menu')))
     if path is None:
         return main_menu
 

@@ -41,7 +41,7 @@ def test_key_bindings_that_are_annoying_if_they_dont_work(filetab):
 
 
 def click(button):
-    button.tk.call(button['command'])
+    button.tk.eval(button.cget('command'))
 
 
 # porcusession to avoid creating another root window that messes things up
@@ -59,16 +59,16 @@ def test_initial_button_states(filetab_and_finder):
                    finder.replace_this_button, finder.replace_all_button]
 
     # all buttons should be disabled because the find entry is empty
-    assert finder.statuslabel['text'] == "Type something to find."
+    assert finder.statuslabel.cget('text') == "Type something to find."
     for button in all_buttons:
-        assert str(button['state']) == 'disabled'
+        assert str(button.cget('state')) == 'disabled'
 
     # i had a bug that occurred when typing something to the find area and
     # backspacing it out because it called highlight_all_matches()
     finder.highlight_all_matches()
-    assert finder.statuslabel['text'] == "Type something to find."
+    assert finder.statuslabel.cget('text') == "Type something to find."
     for button in all_buttons:
-        assert str(button['state']) == 'disabled'
+        assert str(button.cget('state')) == 'disabled'
 
 
 def test_initial_checkbox_states(filetab_and_finder):
@@ -89,10 +89,10 @@ def test_finding(filetab_and_finder):
 
         buttons = [finder.previous_button, finder.next_button,
                    finder.replace_all_button]
-        states = {str(button['state']) for button in buttons}
+        states = {str(button.cget('state')) for button in buttons}
         assert len(states) == 1, "not all buttons have the same state"
 
-        if finder.statuslabel['text'] in {"Found no matches :(", "Type something to find."}:
+        if finder.statuslabel.cget('text') in {"Found no matches :(", "Type something to find."}:
             assert states == {'disabled'}
         else:
             assert states == {'normal'}
@@ -105,19 +105,19 @@ def test_finding(filetab_and_finder):
         '2.2', '2.4',       # thIS is fun
         '2.5', '2.7',       # this IS fun
     ]
-    assert finder.statuslabel['text'] == "Found 4 matches."
+    assert finder.statuslabel.cget('text') == "Found 4 matches."
 
     assert search_for('n') == [
         '2.10', '2.11',     # fuN
     ]
-    assert finder.statuslabel['text'] == "Found 1 match."
+    assert finder.statuslabel.cget('text') == "Found 1 match."
 
     # corner case: match in the beginning of file
     assert search_for('this is a') == ['1.0', '1.9']
-    assert finder.statuslabel['text'] == "Found 1 match."
+    assert finder.statuslabel.cget('text') == "Found 1 match."
 
     assert search_for('This Is A') == []
-    assert finder.statuslabel['text'] == "Found no matches :("
+    assert finder.statuslabel.cget('text') == "Found no matches :("
 
 
 def test_ignore_case_and_full_words_only(filetab_and_finder):
@@ -176,24 +176,24 @@ def test_basic_statuses_and_previous_and_next_match_buttons(
 
     finder.find_entry.insert(0, "no matches for this")
     finder.highlight_all_matches()
-    assert finder.statuslabel['text'] == "Found no matches :("
+    assert finder.statuslabel.cget('text') == "Found no matches :("
 
     for button in [finder.previous_button, finder.next_button,
                    finder.replace_all_button]:
-        assert str(button['state']) == 'disabled'
+        assert str(button.cget('state')) == 'disabled'
 
     for button in [finder.previous_button, finder.next_button]:
         # the button is disabled, but key bindings can call its command, and
         # click(button) works of course
-        finder.statuslabel['text'] = "this should be overwritten"
+        finder.statuslabel.cget('text') = "this should be overwritten"
         click(button)
-        assert finder.statuslabel['text'] == "No matches found!"
+        assert finder.statuslabel.cget('text') == "No matches found!"
 
     finder.find_entry.delete(0, 'end')
     finder.find_entry.insert(0, "asd")
 
     finder.highlight_all_matches()
-    assert finder.statuslabel['text'] == "Found 5 matches."
+    assert finder.statuslabel.cget('text') == "Found 5 matches."
 
     def get_selected():
         start, end = filetab.textwidget.tag_ranges('sel')
@@ -221,7 +221,7 @@ def test_basic_statuses_and_previous_and_next_match_buttons(
             click(finder.next_button)
             index = (index + 1) % len(selecteds)
 
-        assert finder.statuslabel['text'] == ""
+        assert finder.statuslabel.cget('text') == ""
         assert selecteds[index] == get_selected()
 
 
@@ -236,42 +236,42 @@ def test_replace(filetab_and_finder):
     finder.replace_entry.insert(0, "asda")
 
     finder.highlight_all_matches()
-    assert str(finder.replace_this_button['state']) == 'disabled'
+    assert str(finder.replace_this_button.cget('state')) == 'disabled'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
 
     # the button is disabled, but key bindings can still call its callback, and
     # the callback should set a nice message to statuslabel
     click(finder.replace_this_button)
-    assert finder.statuslabel['text'] == (
+    assert finder.statuslabel.cget('text') == (
         'Click "Previous match" or "Next match" first.')
 
     click(finder.next_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
 
     click(finder.replace_this_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
-    assert finder.statuslabel['text'] == (
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
+    assert finder.statuslabel.cget('text') == (
         "Replaced a match. There are 2 more matches.")
     assert finder.get_match_ranges() == [('1.5', '1.8'), ('1.9', '1.12')]
 
     click(finder.replace_this_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
-    assert finder.statuslabel['text'] == (
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
+    assert finder.statuslabel.cget('text') == (
         "Replaced a match. There is 1 more match.")
     assert finder.get_match_ranges() == [('1.10', '1.13')]
 
-    assert str(finder.previous_button['state']) == 'normal'
-    assert str(finder.next_button['state']) == 'normal'
+    assert str(finder.previous_button.cget('state')) == 'normal'
+    assert str(finder.next_button.cget('state')) == 'normal'
 
     click(finder.replace_this_button)
-    assert str(finder.replace_this_button['state']) == 'disabled'
-    assert str(finder.previous_button['state']) == 'disabled'
-    assert str(finder.next_button['state']) == 'disabled'
-    assert str(finder.replace_all_button['state']) == 'disabled'
-    assert finder.statuslabel['text'] == "Replaced the last match."
+    assert str(finder.replace_this_button.cget('state')) == 'disabled'
+    assert str(finder.previous_button.cget('state')) == 'disabled'
+    assert str(finder.next_button.cget('state')) == 'disabled'
+    assert str(finder.replace_all_button.cget('state')) == 'disabled'
+    assert finder.statuslabel.cget('text') == "Replaced the last match."
     assert finder.get_match_ranges() == []
 
 
@@ -284,22 +284,22 @@ def test_replace_asd_with_asd(filetab_and_finder):
     finder.replace_entry.insert(0, "asd")
 
     finder.highlight_all_matches()
-    assert str(finder.replace_this_button['state']) == 'disabled'
+    assert str(finder.replace_this_button.cget('state')) == 'disabled'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7')]
 
     click(finder.next_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7')]
 
     click(finder.replace_this_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
-    assert finder.statuslabel['text'] == (
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
+    assert finder.statuslabel.cget('text') == (
         "Replaced a match. There is 1 more match.")
     assert finder.get_match_ranges() == [('1.4', '1.7')]
 
     click(finder.replace_this_button)
-    assert str(finder.replace_this_button['state']) == 'disabled'
-    assert finder.statuslabel['text'] == "Replaced the last match."
+    assert str(finder.replace_this_button.cget('state')) == 'disabled'
+    assert finder.statuslabel.cget('text') == "Replaced the last match."
     assert finder.get_match_ranges() == []
 
 
@@ -310,37 +310,37 @@ def test_replace_all(filetab_and_finder):
     finder.replace_entry.insert(0, "asda")
 
     finder.highlight_all_matches()
-    assert str(finder.replace_this_button['state']) == 'disabled'
+    assert str(finder.replace_this_button.cget('state')) == 'disabled'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
 
     click(finder.next_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'),
                                          ('1.8', '1.11')]
 
     click(finder.replace_this_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
-    assert finder.statuslabel['text'] == (
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
+    assert finder.statuslabel.cget('text') == (
         "Replaced a match. There are 2 more matches.")
     assert finder.get_match_ranges() == [('1.5', '1.8'), ('1.9', '1.12')]
 
     click(finder.replace_all_button)
-    assert str(finder.replace_this_button['state']) == 'disabled'
-    assert str(finder.previous_button['state']) == 'disabled'
-    assert str(finder.next_button['state']) == 'disabled'
-    assert str(finder.replace_all_button['state']) == 'disabled'
-    assert finder.statuslabel['text'] == "Replaced 2 matches."
+    assert str(finder.replace_this_button.cget('state')) == 'disabled'
+    assert str(finder.previous_button.cget('state')) == 'disabled'
+    assert str(finder.next_button.cget('state')) == 'disabled'
+    assert str(finder.replace_all_button.cget('state')) == 'disabled'
+    assert finder.statuslabel.cget('text') == "Replaced 2 matches."
     assert finder.get_match_ranges() == []
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'asda asda asda'
 
     filetab.textwidget.delete('1.3', 'end')
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'asd'
     finder.highlight_all_matches()
-    assert str(finder.replace_all_button['state']) == 'normal'
+    assert str(finder.replace_all_button.cget('state')) == 'normal'
     click(finder.replace_all_button)
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'asda'
-    assert finder.statuslabel['text'] == "Replaced 1 match."
+    assert finder.statuslabel.cget('text') == "Replaced 1 match."
 
 
 def test_selecting_messing_up_button_disableds(filetab_and_finder):
@@ -351,11 +351,11 @@ def test_selecting_messing_up_button_disableds(filetab_and_finder):
     finder.highlight_all_matches()
 
     click(finder.next_button)
-    assert str(finder.replace_this_button['state']) == 'normal'
+    assert str(finder.replace_this_button.cget('state')) == 'normal'
 
     # "Replace this match" doesn't make sense after changing the selection
     # because no match is selected to be the "this" match
     filetab.textwidget.tag_remove('sel', '1.2', 'end')
     filetab.update()
     assert filetab.textwidget.get('sel.first', 'sel.last') == 'as'
-    assert str(finder.replace_this_button['state']) == 'disabled'
+    assert str(finder.replace_this_button.cget('state')) == 'disabled'

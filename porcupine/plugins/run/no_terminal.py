@@ -82,7 +82,7 @@ class NoTerminalRunner:
                 break
 
         if messages:
-            self.textwidget['state'] = 'normal'
+            self.textwidget.config(state='normal')
             for msg in messages:
                 if msg[0] == 'clear':
                     assert not msg[1]
@@ -94,7 +94,7 @@ class NoTerminalRunner:
                     tag, text = msg
                     assert isinstance(text, str)
                     self.textwidget.insert('end', text, tag)
-            self.textwidget['state'] = 'disabled'
+            self.textwidget.config(state='disabled')
 
         self.textwidget.after(100, self._queue_clearer)
 

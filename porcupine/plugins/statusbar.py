@@ -47,7 +47,7 @@ class StatusBar(ttk.Frame):
             self.labels.append(LabelWithEmptySpaceAtLeft(self))
 
         for label, text in zip(self.labels, parts):
-            label['text'] = text
+            label.config(text=text)
 
 
 def on_new_tab(event: utils.EventWithData) -> None:

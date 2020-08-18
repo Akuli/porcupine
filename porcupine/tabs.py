@@ -615,8 +615,8 @@ bers.py>` use this attribute.
 
         self.scrollbar = ttk.Scrollbar(self.right_frame)
         self.scrollbar.pack(side='right', fill='y')
-        self.textwidget['yscrollcommand'] = self.scrollbar.set
-        self.scrollbar['command'] = self.textwidget.yview
+        self.textwidget.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.textwidget.yview)
 
         self.mark_saved()
         self._update_title()

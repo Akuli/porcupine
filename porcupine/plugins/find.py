@@ -57,7 +57,8 @@ class Finder(ttk.Frame):
         self._textwidget.tag_lower('find_highlight', 'sel')
 
         self.find_entry = self._add_entry(0, "Find:")
-        find_var = self.find_entry['textvariable'] = tkinter.StringVar()
+        find_var = tkinter.StringVar()
+        self.find_entry.config(textvariable=find_var)
         find_var.trace_add('write', self.highlight_all_matches)
 
         # because cpython gc
@@ -117,7 +118,7 @@ class Finder(ttk.Frame):
         closebutton.place(relx=1, rely=0, anchor='ne')
         closebutton.bind('<Button-1>', self.hide, add=True)
 
-        closebutton['image'] = images.get('closebutton')
+        closebutton.config(image=images.get('closebutton'))
 
         # explained in test_find_plugin.py
         textwidget.bind('<<Selection>>', self._update_buttons, add=True)
@@ -153,12 +154,9 @@ class Finder(ttk.Frame):
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self, junk: object = None) -> None:
-        State = Union[Literal['normal'], Literal['disabled']]
-        matches_something_state: State
+        State = Literal['normal', 'disabled']
+        matches_something_state: State = 'normal' if self.get_match_ranges() else 'disabled'
         replace_this_state: State
-
-        matches_something_state = (
-            'normal' if self.get_match_ranges() else 'disabled')
 
         try:
             start, end = map(str, self._textwidget.tag_ranges('sel'))
@@ -170,10 +168,10 @@ class Finder(ttk.Frame):
             else:
                 replace_this_state = 'disabled'
 
-        self.previous_button['state'] = matches_something_state
-        self.next_button['state'] = matches_something_state
-        self.replace_this_button['state'] = replace_this_state
-        self.replace_all_button['state'] = matches_something_state
+        self.previous_button.config(state=matches_something_state)
+        self.next_button.config(state=matches_something_state)
+        self.replace_this_button.config(state=replace_this_state)
+        self.replace_all_button.config(state=matches_something_state)
 
     def _get_matches_to_highlight(self, looking4: str) -> Iterator[str]:
         nocase_opt = self.ignore_case_var.get()
@@ -219,16 +217,16 @@ class Finder(ttk.Frame):
         looking4 = self.find_entry.get()
         if not looking4:    # don't search for empty string
             self._update_buttons()
-            self.statuslabel['text'] = "Type something to find."
+            self.statuslabel.config(text="Type something to find.")
             return
         if self.full_words_var.get():
             # check for non-wordy characters
             match = re.search(r'\W', looking4)
             if match is not None:
                 self._update_buttons()
-                self.statuslabel['text'] = ('The search string can\'t contain '
-                                            '"%s" when "Full words only" is '
-                                            'checked.' % match.group(0))
+                self.statuslabel.config(
+                    text=f'The search string can\'t contain "{match.group(0)}" when "Full words only" is checked.'
+                )
                 return
 
         count = 0
@@ -240,11 +238,11 @@ class Finder(ttk.Frame):
 
         self._update_buttons()
         if count == 0:
-            self.statuslabel['text'] = "Found no matches :("
+            self.statuslabel.config(text="Found no matches :(")
         elif count == 1:
-            self.statuslabel['text'] = "Found 1 match."
+            self.statuslabel.config(text="Found 1 match.")
         else:
-            self.statuslabel['text'] = "Found %d matches." % count
+            self.statuslabel.config(text=f"Found {count} matches.")
 
     def _select_range(self, start: str, end: str) -> None:
         self._textwidget.tag_remove('sel', '1.0', 'end')
@@ -257,7 +255,7 @@ class Finder(ttk.Frame):
         if not pairs:
             # the "Next match" button is disabled in this case, but the key
             # binding of the find entry is not
-            self.statuslabel['text'] = "No matches found!"
+            self.statuslabel.config(text="No matches found!")
             return
 
         # find first pair that starts after the cursor
@@ -269,14 +267,14 @@ class Finder(ttk.Frame):
             # reached end of file, use the first match
             self._select_range(*pairs[0])
 
-        self.statuslabel['text'] = ""
+        self.statuslabel.config(text="")
         self._update_buttons()
 
     # see _go_to_next_match for comments
     def _go_to_previous_match(self, junk: object = None) -> None:
         pairs = self.get_match_ranges()
         if not pairs:
-            self.statuslabel['text'] = "No matches found!"
+            self.statuslabel.config(text="No matches found!")
             return
 
         for start, end in reversed(pairs):
@@ -286,14 +284,13 @@ class Finder(ttk.Frame):
         else:
             self._select_range(*pairs[-1])
 
-        self.statuslabel['text'] = ""
+        self.statuslabel.config(text="")
         self._update_buttons()
         return
 
     def _replace_this(self, junk: object = None) -> None:
-        if str(self.replace_this_button['state']) == 'disabled':
-            self.statuslabel['text'] = (
-                'Click "Previous match" or "Next match" first.')
+        if str(self.replace_this_button.cget('state')) == 'disabled':
+            self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
             return
 
         # highlighted areas must not be moved after .replace, think about what
@@ -308,13 +305,11 @@ class Finder(ttk.Frame):
 
         left = len(self.get_match_ranges())
         if left == 0:
-            self.statuslabel['text'] = "Replaced the last match."
+            self.statuslabel.config(text="Replaced the last match.")
         elif left == 1:
-            self.statuslabel['text'] = (
-                "Replaced a match. There is 1 more match.")
+            self.statuslabel.config(text="Replaced a match. There is 1 more match.")
         else:
-            self.statuslabel['text'] = (
-                "Replaced a match. There are %d more matches." % left)
+            self.statuslabel.config(text=f"Replaced a match. There are {left} more matches.")
 
     def _replace_all(self) -> None:
         match_ranges = self.get_match_ranges()
@@ -327,10 +322,9 @@ class Finder(ttk.Frame):
         self._update_buttons()
 
         if len(match_ranges) == 1:
-            self.statuslabel['text'] = "Replaced 1 match."
+            self.statuslabel.config(text="Replaced 1 match.")
         else:
-            self.statuslabel['text'] = ("Replaced %d matches." %
-                                        len(match_ranges))
+            self.statuslabel.config(text=f"Replaced {len(match_ranges)} matches.")
 
 
 def find() -> None:

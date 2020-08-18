@@ -58,7 +58,7 @@ class PythonPrompt:
         except ProcessLookupError:
             # the subprocess has terminated, _queue_clearer should have
             # taken care of it already
-            assert self.widget['state'] == 'disabled'
+            assert self.widget.cget('state') == 'disabled'
 
     def _copy(self, junk: object) -> None:
         # i didn't find a way to do this like tkinter does it by default
@@ -129,7 +129,7 @@ class PythonPrompt:
                 self.widget.insert(
                     'end', "\n\n***********************\n" +
                     "the subprocess exited with code %d" % value)
-                self.widget['state'] = 'disabled'
+                self.widget.config(state='disabled')
             return
 
         assert state == 'output' and isinstance(value, bytes)
@@ -156,8 +156,8 @@ class PromptTab(tabs.Tab):
 
         self.scrollbar = ttk.Scrollbar(self)
         self.scrollbar.pack(side='left', fill='y')
-        self.textwidget['yscrollcommand'] = self.scrollbar.set
-        self.scrollbar['command'] = self.textwidget.yview
+        self.textwidget.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.textwidget.yview)
 
         self.bind('<Destroy>', self._on_destroy, add=True)
 

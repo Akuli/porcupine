@@ -445,7 +445,7 @@ def create_peer_widget(
 
             the_widget_that_becomes_a_peer = tkinter.Text(master)
             create_peer_widget(original_text_widget, the_widget_that_becomes_a_peer)
-            the_widget_that_becomes_a_peer['background'] = 'red'
+            the_widget_that_becomes_a_peer.config(background='red')
 
         All widget options of *the_widget_that_becomes_a_peer* are lost when
         this function is called. I tried to make this function preserve the
@@ -527,11 +527,13 @@ def use_pygments_theme(
         fg = getattr(style, 'default_style', '') or utils.invert_color(bg)
         if callback is None:
             assert isinstance(widget, tkinter.Text)
-            widget['fg'] = fg
-            widget['bg'] = bg
-            widget['insertbackground'] = fg  # cursor color
-            widget['selectforeground'] = bg
-            widget['selectbackground'] = fg
+            widget.config(
+                foreground=fg,
+                background=bg,
+                insertbackground=fg,  # cursor color
+                selectforeground=bg,
+                selectbackground=fg,
+            )
         else:
             callback(fg, bg)
 
@@ -581,7 +583,7 @@ class MainText(tkinter.Text):
         #
         # TODO: there's similar code in overview plugin, clean up
         font = tkfont.Font(name='TkFixedFont', exists=True)
-        self['tabs'] = font.measure(' ' * self._tab.settings.get('indent_size', int))
+        self.config(tabs=font.measure(' ' * self._tab.settings.get('indent_size', int)))
 
     def _on_delete(self, control_down: bool, event: tkinter.Event,
                    shifted: bool = False) -> utils.BreakOrNone:
