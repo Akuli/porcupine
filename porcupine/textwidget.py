@@ -585,7 +585,7 @@ class MainText(tkinter.Text):
         font = tkfont.Font(name='TkFixedFont', exists=True)
         self.config(tabs=font.measure(' ' * self._tab.settings.get('indent_size', int)))
 
-    def _on_delete(self, control_down: bool, event: tkinter.Event,
+    def _on_delete(self, control_down: bool, event: 'tkinter.Event[tkinter.Misc]',
                    shifted: bool = False) -> utils.BreakOrNone:
         """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
@@ -631,7 +631,7 @@ class MainText(tkinter.Text):
 
         return None
 
-    def _on_closing_brace(self, event: tkinter.Event) -> None:
+    def _on_closing_brace(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         """Dedent automatically."""
         self.dedent('insert')
 
@@ -689,11 +689,11 @@ class MainText(tkinter.Text):
         self.delete(f'{lineno}.{start}', f'{lineno}.{end}')
         return (start != end)
 
-    def _redo(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _redo(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         self.event_generate('<<Redo>>')
         return 'break'
 
-    def _paste(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _paste(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         self.event_generate('<<Paste>>')
 
         # by default, selected text doesn't go away when pasting
@@ -707,6 +707,6 @@ class MainText(tkinter.Text):
 
         return 'break'
 
-    def _select_all(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _select_all(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         self.tag_add('sel', '1.0', 'end - 1 char')
         return 'break'

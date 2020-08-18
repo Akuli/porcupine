@@ -215,7 +215,7 @@ class _Popup:
             self._select_item(
                 self.treeview.next(the_id) or self.treeview.get_children()[0])
 
-    def on_page_up_down(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_page_up_down(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
@@ -223,7 +223,7 @@ class _Popup:
         self._doc_text.yview_scroll(page_count, 'pages')
         return 'break'
 
-    def on_arrow_key_up_down(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_arrow_key_up_down(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
@@ -232,12 +232,12 @@ class _Popup:
         method()
         return 'break'
 
-    def _on_mouse_move(self, event: tkinter.Event) -> None:
+    def _on_mouse_move(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         hovered_id = self.treeview.identify_row(event.y)
         if hovered_id:
             self.treeview.selection_set(hovered_id)
 
-    def _on_select(self, event: tkinter.Event) -> None:
+    def _on_select(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         completion = self._get_selected_completion()
         if completion is not None:
             self._doc_text.config(state='normal')
@@ -387,7 +387,7 @@ class AutoCompleter:
 
         return True
 
-    def on_tab(self, event: tkinter.Event, shifted: bool) -> utils.BreakOrNone:
+    def on_tab(self, event: 'tkinter.Event[tkinter.Misc]', shifted: bool) -> utils.BreakOrNone:
         if self._tab.textwidget.tag_ranges('sel'):
             # something's selected, autocompleting is not the right thing to do
             return None
@@ -427,7 +427,7 @@ class AutoCompleter:
             self._waiting_for_response_id = None
             self._orig_cursorpos = None
 
-    def on_any_key(self, event: tkinter.Event) -> None:
+    def on_any_key(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         if event.keysym.startswith('Shift'):
             return
 
@@ -472,13 +472,13 @@ class AutoCompleter:
         self.popup.stop_completing(withdraw=False)
         self.popup.start_completing(self._get_filtered_completions())
 
-    def on_enter(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_enter(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._accept()
             return 'break'
         return None
 
-    def on_escape(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def on_escape(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._reject()
             return 'break'

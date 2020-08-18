@@ -14,8 +14,7 @@ import tkinter
 from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
-def on_tab_key(event: tkinter.Event, shift_pressed: bool) -> utils.BreakOrNone:
-    assert isinstance(event.widget, textwidget.MainText)
+def on_tab_key(event: 'tkinter.Event[textwidget.MainText]', shift_pressed: bool) -> utils.BreakOrNone:
     if not event.widget.tag_ranges('sel'):
         # nothing selected
         if shift_pressed:

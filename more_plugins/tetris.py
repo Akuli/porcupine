@@ -246,7 +246,7 @@ class TetrisTab(tabs.Tab):
         self._timeout_id: Optional[str] = None
         self._game_over_id: Optional[int] = None
 
-    def _on_key(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _on_key(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if event.keysym in {'A', 'a', 'Left'}:
             self._game.moving_block.move_left()
         elif event.keysym in {'D', 'd', 'Right'}:

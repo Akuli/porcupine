@@ -369,7 +369,7 @@ def _init_global_settings() -> None:
     add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     # keep TkFixedFont up to date with settings
-    def update_fixedfont(event: Optional[tkinter.Event]) -> None:
+    def update_fixedfont(event: Optional['tkinter.Event[tkinter.Misc]']) -> None:
         # can't bind to get_tab_manager() as recommended in docs because tab
         # manager isn't ready yet when settings get inited
         if event is None or event.widget == porcupine.get_main_window():

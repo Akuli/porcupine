@@ -48,7 +48,7 @@ def _generate_event(name: str, junk: object) -> Literal['break']:
     return 'break'
 
 
-def _fix_text_widget_bindings(event: tkinter.Event) -> None:
+def _fix_text_widget_bindings(event: 'tkinter.Event[tkinter.Misc]') -> None:
     for virtual_event in event.widget.event_info():
         if virtual_event.startswith('<<Menubar:') and not event.widget.bind(virtual_event):
             # When the keys are pressed, generate the event on the main
@@ -181,7 +181,7 @@ def _get_keyboard_shortcut(binding: str) -> str:
     return '+'.join(result)
 
 
-def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event) -> utils.BreakOrNone:
+def _menu_event_handler(menu: tkinter.Menu, index: int, junk: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
     menu.invoke(index)
     return 'break'
 

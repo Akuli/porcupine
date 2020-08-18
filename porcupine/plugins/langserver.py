@@ -4,7 +4,7 @@
 
 import dataclasses
 import errno
-import functools
+from functools import partial
 import itertools
 import logging
 import os
@@ -495,7 +495,7 @@ class LangServer:
         assert tab not in self.tabs_opened
         self.tabs_opened[tab] = [
             utils.TemporaryBind(tab, '<<AutoCompletionRequest>>', self.request_completions),
-            utils.TemporaryBind(tab.textwidget, '<<ContentChanged>>', self.send_change_events),
+            utils.TemporaryBind(tab.textwidget, '<<ContentChanged>>', partial(self.send_change_events, tab)),
             utils.TemporaryBind(tab, '<Destroy>', (lambda event: self.forget_tab(tab))),
         ]
 
@@ -551,7 +551,7 @@ class LangServer:
         assert lsp_id not in self._lsp_id_to_tab_and_request
         self._lsp_id_to_tab_and_request[lsp_id] = (tab, request)
 
-    def send_change_events(self, event: utils.EventWithData) -> None:
+    def send_change_events(self, tab: tabs.FileTab, event: utils.EventWithData) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             # The langserver will receive the actual content of the file once
             # it starts.
@@ -560,8 +560,6 @@ class LangServer:
                 self._lsp_client.state)
             return
 
-        tab = event.widget.master
-        assert isinstance(tab, tabs.FileTab)
         assert tab.path is not None
         self._lsp_client.did_change(
             text_document=lsp.VersionedTextDocumentIdentifier(
@@ -680,8 +678,8 @@ def on_new_tab(event: utils.EventWithData) -> None:
     if isinstance(tab, tabs.FileTab):
         tab.settings.add_option('langserver', None, type=Optional[LangServerConfig])
 
-        tab.bind('<<TabSettingChanged:langserver>>', functools.partial(switch_langservers, tab, False), add=True)
-        tab.bind('<<PathChanged>>', functools.partial(switch_langservers, tab, True), add=True)
+        tab.bind('<<TabSettingChanged:langserver>>', partial(switch_langservers, tab, False), add=True)
+        tab.bind('<<PathChanged>>', partial(switch_langservers, tab, True), add=True)
         switch_langservers(tab, False)
 
 

@@ -90,7 +90,7 @@ class TabManager(ttk.Notebook):
         # These can be bound in a parent widget. This doesn't use
         # enable_traversal() because we want more bindings than it
         # creates. Undocumented because plugins shouldn't need this.
-        self.bindings: List[Tuple[str, Callable[[tkinter.Event], utils.BreakOrNone]]] = [
+        self.bindings: List[Tuple[str, Callable[['tkinter.Event[tkinter.Misc]'], utils.BreakOrNone]]] = [
             ('<Control-Prior>', functools.partial(self._on_page_updown, False, -1)),
             ('<Control-Next>', functools.partial(self._on_page_updown, False, +1)),
             ('<Control-Shift-Prior>', functools.partial(self._on_page_updown, True, -1)),
@@ -104,12 +104,12 @@ class TabManager(ttk.Notebook):
         self.bind('<Button-1>', self._on_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
 
-    def _focus_selected_tab(self, event: tkinter.Event) -> None:
+    def _focus_selected_tab(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         tab = self.select()
         if tab is not None:
             tab.on_focus()
 
-    def _on_click(self, event: tkinter.Event) -> None:
+    def _on_click(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         if self.identify(event.x, event.y) != 'label':
             # something else than the top label was clicked
             return
@@ -132,14 +132,14 @@ class TabManager(ttk.Notebook):
 
     def _on_page_updown(
             self, shifted: bool, diff: int,
-            event: tkinter.Event) -> utils.BreakOrNone:
+            event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         if shifted:
             self.move_selected_tab(diff)
         else:
             self.select_another_tab(diff)
         return 'break'
 
-    def _on_alt_n(self, n: int, event: tkinter.Event) -> utils.BreakOrNone:
+    def _on_alt_n(self, n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         try:
             self.select(n - 1)
             return 'break'
@@ -839,7 +839,7 @@ bers.py>` use this attribute.
         if content is None:
             # nothing has changed since saving, read from the saved file
             assert path is not None
-            assert isinstance(path, pathlib.Path)
+            assert isinstance(path, pathlib.Path)  # older porcupines used strings
             self = cls.open_file(manager, path)
         else:
             self = cls(manager, content, path)

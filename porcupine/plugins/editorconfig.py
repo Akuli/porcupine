@@ -357,8 +357,7 @@ def before_file_opens(event: utils.EventWithData) -> None:
     get_config_and_apply_to_tab(tab)
 
 
-def on_path_changed(event: tkinter.Event) -> None:
-    assert isinstance(event.widget, tabs.FileTab)
+def on_path_changed(event: 'tkinter.Event[tabs.FileTab]') -> None:
     if event.widget.path is not None:
         log.info(f"file path changed: {event.widget.path}")
         get_config_and_apply_to_tab(event.widget)

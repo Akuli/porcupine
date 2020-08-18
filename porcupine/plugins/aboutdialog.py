@@ -103,13 +103,13 @@ class _AboutDialogContent(ttk.Frame):
                     functools.partial(self._open_link, href))
                 self._textwidget.insert('end', text, ['link', tag])
 
-    def _enter_link(self, junk_event: tkinter.Event) -> None:
+    def _enter_link(self, junk_event: 'tkinter.Event[tkinter.Misc]') -> None:
         self._textwidget.config(cursor='hand2')
 
-    def _leave_link(self, junk_event: tkinter.Event) -> None:
+    def _leave_link(self, junk_event: 'tkinter.Event[tkinter.Misc]') -> None:
         self._textwidget.config(cursor='')
 
-    def _open_link(self, href: str, junk_event: tkinter.Event) -> None:
+    def _open_link(self, href: str, junk_event: 'tkinter.Event[tkinter.Misc]') -> None:
         webbrowser.open(href)
 
 

@@ -193,7 +193,7 @@ class Overview(tkinter.Text):
         # TODO: figure out when exactly this is needed, remove unnecessary calls?
         self._update_sel_tag()
 
-    def _on_click_and_drag(self, event: tkinter.Event) -> utils.BreakOrNone:
+    def _on_click_and_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         (overview_scroll_relative_start,
          overview_scroll_relative_end,
          text_scroll_relative_start,

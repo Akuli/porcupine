@@ -5,8 +5,7 @@ import tkinter
 from porcupine import get_tab_manager, tabs, utils
 
 
-def on_save(event: tkinter.Event) -> None:
-    assert isinstance(event.widget, tabs.FileTab)
+def on_save(event: 'tkinter.Event[tabs.FileTab]') -> None:
     if event.widget.settings.get('insert_final_newline', bool):
         textwidget = event.widget.textwidget
         if textwidget.get('end - 2 chars', 'end - 1 char') != '\n':
