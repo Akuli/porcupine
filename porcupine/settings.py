@@ -10,7 +10,7 @@ import os
 import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, overload
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
 
 import pygments.styles   # type: ignore
 
@@ -628,11 +628,7 @@ def add_label(section: ttk.Frame, text: str) -> ttk.Label:
     label = ttk.Label(section, text=text)
     label.grid(column=0, columnspan=3, sticky='we', pady=10)
 
-    def wrap_on_resize(event: tkinter.Event) -> None:
-        assert event.width != '??'
-        label.config(wraplength=event.width)
-
-    section.bind('<Configure>', wrap_on_resize, add=True)
+    section.bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
     return label
 
 

@@ -72,8 +72,6 @@ class LongLineMarker:
         weird_x_padding = 2*x
         weird_y_padding = weird_x_padding   # don't know better way, bbox y may be off screen
 
-        assert event.width != '??'
-        assert event.height != '??'
         self._width = event.width - weird_x_padding
         self._height = event.height - weird_y_padding
         self.do_update()

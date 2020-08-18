@@ -47,8 +47,6 @@ class WelcomeMessageDisplayer:
         self._on_tab_closed()
 
     def update_wraplen(self, event: tkinter.Event) -> None:
-        assert event.width != '??'
-
         # images.get('logo-200x200').width() is always 200, but hard-coding is bad
         self.title_label.config(wraplength=(
             event.width - images.get('logo-200x200').width() - BORDER_SIZE))
