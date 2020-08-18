@@ -252,6 +252,12 @@ def _position_lsp2tk(lsp_position: lsp.Position) -> str:
     return f'{lsp_position.line + 1}.{lsp_position.character}'
 
 
+def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
+    if diagnostic.source is None:
+        return diagnostic.message
+    return f'{diagnostic.source}: {diagnostic.message}'
+
+
 @dataclasses.dataclass
 class LangServerConfig:
     command: str
@@ -475,7 +481,7 @@ class LangServer:
                     underlines.Underline(
                         start=_position_lsp2tk(diagnostic.range.start),
                         end=_position_lsp2tk(diagnostic.range.end),
-                        message=f'{diagnostic.source}: {diagnostic.message}',
+                        message=_get_diagnostic_string(diagnostic),
                         # TODO: there are plenty of other severities than ERROR and WARNING
                         color=('red' if diagnostic.severity == lsp.DiagnosticSeverity.ERROR else 'orange'),
                     )
