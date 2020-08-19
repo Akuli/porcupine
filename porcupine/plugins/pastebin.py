@@ -61,7 +61,7 @@ session = requests.Session()
 session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
 
-@pastebin("dpaste.org")
+@pastebin("dpaste.de")
 def paste_to_dpaste_de(code: str, path: Optional[pathlib.Path]) -> str:
     # docs: http://dpaste.readthedocs.io/en/latest/api.html
     # the docs tell to post to http://dpaste.de/api/ but they use
