@@ -4,11 +4,13 @@ import tkinter
 from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
-paren_list = [
-    ('(', ')', r'[()]'),
-    ('[', ']', r'[\[\]]'),
-    ('{', '}', r'[{}]'),
-]
+OPEN_TO_CLOSE = {
+    '{': '}',
+    '[': ']',
+    '(': ')',
+}
+OPEN = OPEN_TO_CLOSE.keys()
+CLOSE = OPEN_TO_CLOSE.values()
 
 
 def on_cursor_moved(event: 'tkinter.Event[tkinter.Text]') -> None:
@@ -19,35 +21,37 @@ def on_cursor_moved(event: 'tkinter.Event[tkinter.Text]') -> None:
         return
 
     last_char = event.widget.get('insert - 1 char')
-    for opening, closing, regex in paren_list:
-        if last_char == opening:
-            search_backwards = False
-        elif last_char == closing:
-            search_backwards = True
+    if last_char in OPEN:
+        search_backwards = False
+        search_start = 'insert'
+    elif last_char in CLOSE:
+        search_backwards = True
+        search_start = 'insert - 1 char'
+    else:
+        return
+
+    stack = [last_char]
+    while stack:
+        match = event.widget.search(
+            r'[()\[\]{}]', search_start, ('1.0' if search_backwards else 'end'),
+            regexp=True, backwards=search_backwards)
+        if not match:
+            return   # unclosed parentheses
+
+        paren = event.widget.get(match)
+        if (paren in OPEN and not search_backwards) or (paren in CLOSE and search_backwards):
+            stack.append(paren)
+        elif (paren in CLOSE and not search_backwards) or (paren in OPEN and search_backwards):
+            pair = (stack.pop(), paren)
+            if pair not in OPEN_TO_CLOSE.items() and pair[::-1] not in OPEN_TO_CLOSE.items():
+                # foo([) does not highlight its () because you forgot to close square bracket
+                return
         else:
-            continue
+            raise NotImplementedError(paren)
+        search_start = match if search_backwards else f'{match} + 1 char'
 
-        level = -1 if search_backwards else 1
-        search_start = 'insert - 1 char' if search_backwards else 'insert'
-
-        while level != 0:
-            match = event.widget.search(
-                regex, search_start, ('1.0' if search_backwards else 'end'),
-                regexp=True, backwards=search_backwards)
-            if not match:
-                return   # unclosed parentheses
-
-            paren = event.widget.get(match)
-            if paren == opening:
-                level += 1
-            elif paren == closing:
-                level -= 1
-            else:
-                raise NotImplementedError(paren)
-            search_start = match if search_backwards else f'{match} + 1 char'
-
-        event.widget.tag_add('matching_paren', 'insert - 1 char')
-        event.widget.tag_add('matching_paren', match)
+    event.widget.tag_add('matching_paren', 'insert - 1 char')
+    event.widget.tag_add('matching_paren', match)
 
 
 # rgb math sucks ikr

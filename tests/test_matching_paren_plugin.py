@@ -69,3 +69,10 @@ def test_404(filetab):
         text.insert('1.0', content)
         text.mark_set('insert', '1.6')
         assert not text.tag_ranges('matching_paren')
+
+
+def test_wrong_paren_between(filetab):
+    text = filetab.textwidget
+    text.insert('1.0', 'foo([)')
+    text.mark_set('insert', '1.0 lineend')
+    assert not text.tag_ranges('matching_paren')
