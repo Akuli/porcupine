@@ -7,6 +7,7 @@ langserver plugin. If no such plugin is loaded, then this plugin falls back to
 import collections
 import dataclasses
 import itertools
+import logging
 import re
 import tkinter
 from tkinter import ttk
@@ -15,6 +16,8 @@ from typing import List, Optional, Union, cast
 from porcupine import get_tab_manager, settings, tabs, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
+
+log = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -311,6 +314,7 @@ class AutoCompleter:
             add=True)
 
     def _request_completions(self) -> None:
+        log.debug("requesting completions")
         the_id = next(self._id_counter)
         self._waiting_for_response_id = the_id
 
@@ -351,6 +355,8 @@ class AutoCompleter:
 
     # this might not run for all requests if e.g. langserver not configured
     def receive_completions(self, response: Response) -> None:
+        log.debug(f"receiving completions: {response}")
+
         if response.id != self._waiting_for_response_id:
             return
         self._waiting_for_response_id = None
@@ -364,6 +370,7 @@ class AutoCompleter:
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
     def _get_filtered_completions(self) -> List[Completion]:
+        log.debug("getting filtered completions")
         assert self._orig_cursorpos is not None
         filter_text = self._tab.textwidget.get(self._orig_cursorpos, 'insert')
 
@@ -410,6 +417,7 @@ class AutoCompleter:
         if not self.popup.is_completing():
             return
 
+        log.debug("accepting")
         completion = self.popup.stop_completing()
         if completion is not None:
             assert self._orig_cursorpos is not None
@@ -423,6 +431,7 @@ class AutoCompleter:
 
     def _reject(self) -> None:
         if self.popup.is_completing():
+            log.debug("rejecting")
             self.popup.stop_completing()
             self._waiting_for_response_id = None
             self._orig_cursorpos = None
@@ -460,6 +469,7 @@ class AutoCompleter:
     # TODO: is it possible to write a test for this?
 
     def _filter_through_completions(self) -> None:
+        log.debug("filtering through completions")
         assert self._orig_cursorpos is not None
 
         # if cursor has moved back more since requesting completions: User

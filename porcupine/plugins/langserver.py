@@ -402,6 +402,8 @@ class LangServer:
         )
 
     def _handle_lsp_event(self, lsp_event: lsp.Event) -> None:
+        self.log.debug(f"handling event: {lsp_event}")
+
         if isinstance(lsp_event, lsp.Shutdown):
             self.log.debug("langserver sent Shutdown event")
             self._lsp_client.exit()
