@@ -46,7 +46,8 @@ class _Underliner:
         self._tag2underline: Dict[str, Underline] = {}
 
     def _show_tag_at_index(self, index: str) -> None:
-        for tag in self.textwidget.tag_names(index):
+        # Reversing to prefer topmost tags (i.e. tags added last)
+        for tag in reversed(self.textwidget.tag_names(index)):
             if tag in self._tag2underline:
                 self._show_popup(tag)
                 return
