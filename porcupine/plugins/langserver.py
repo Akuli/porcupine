@@ -435,6 +435,10 @@ class LangServer:
 
         if isinstance(lsp_event, lsp.Completion):
             tab, req = self._lsp_id_to_tab_and_request.pop(lsp_event.message_id)
+            if tab not in self.tabs_opened:
+                # I wouldn't be surprised if some langserver sent completions to closed tabs
+                self.log.debug(f"Completion sent to closed tab: {lsp_event}")
+                return
 
             # this is "open to interpretation", as the lsp spec says
             # TODO: use textEdit when available (need to find langserver that
@@ -477,10 +481,15 @@ class LangServer:
             return
 
         if isinstance(lsp_event, lsp.PublishDiagnostics):
-            [tab] = [
+            matching_tabs = [
                 tab for tab in self.tabs_opened.keys()
                 if tab.path is not None and tab.path.as_uri() == lsp_event.uri
             ]
+            if not matching_tabs:
+                # Some langservers send diagnostics to closed tabs
+                self.log.debug(f"PublishDiagnostics sent to closed tab: {lsp_event}")
+                return
+            [tab] = matching_tabs
 
             tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
                 id='langserver_diagnostics',
