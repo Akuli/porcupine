@@ -254,6 +254,7 @@ def _position_lsp2tk(lsp_position: lsp.Position) -> str:
 
 def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
     if diagnostic.source is None:
+        assert diagnostic.message is not None  # TODO
         return diagnostic.message
     return f'{diagnostic.source}: {diagnostic.message}'
 
@@ -444,6 +445,12 @@ class LangServer:
             assert match is not None
             prefix_len = len(match.group(1))
 
+            assert lsp_event.completion_list is not None
+            if isinstance(lsp_event.completion_list, list):
+                completions = lsp_event.completion_list
+            else:
+                completions = lsp_event.completion_list.items
+
             tab.event_generate(
                 '<<AutoCompletionResponse>>',
                 data=autocomplete.Response(
@@ -461,7 +468,7 @@ class LangServer:
                                          or item.label)[prefix_len:],
                             documentation=get_completion_item_doc(item),
                         ) for item in sorted(
-                            lsp_event.completion_list.items,
+                            completions,
                             key=(lambda item: item.sortText or item.label),
                         )
                     ]

@@ -19,8 +19,8 @@ toposort>=1.5
 # ubuntu 14.04 comes with colorama 0.2.5 in repos
 colorama>=0.2.5
 
-# api changed in 0.7.0
-sansio-lsp-client==0.7.*
+# 0.7.2 is first release that correctly supports type hints: https://github.com/PurpleMyst/sansio-lsp-client/pull/13
+sansio-lsp-client>=0.7.2,<0.8.0
 
 # to have something hopefully work by default
 python-language-server
