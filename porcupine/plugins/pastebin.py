@@ -3,17 +3,19 @@
 
 import functools
 import logging
-import pathlib
 import socket
 import tkinter
 from tkinter import ttk
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Optional
 import webbrowser
 
+import pygments.lexer  # type: ignore
 import requests
 
 from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 from porcupine import __version__ as _porcupine_version
+
+log = logging.getLogger(__name__)
 
 
 # yes, TkVersion is a float lol
@@ -28,22 +30,7 @@ def tk_busy_forget() -> None:
         get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
 
 
-log = logging.getLogger(__name__)
-
-PastebinFunction = Callable[[str, Optional[pathlib.Path]], str]
-pastebins: Dict[str, PastebinFunction] = {}
-
-
-def pastebin(name: str) -> Callable[[PastebinFunction], PastebinFunction]:
-    def inner(function: PastebinFunction) -> PastebinFunction:
-        pastebins[name] = function
-        return function
-
-    return inner
-
-
-@pastebin("termbin.com")
-def paste_to_termbin(code: str, path: Optional[pathlib.Path]) -> str:
+def paste_to_termbin(code: str, lexer_class: pygments.lexer.LexerMeta) -> str:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(('termbin.com', 9999))
         sock.send(code.encode('utf-8'))
@@ -61,19 +48,20 @@ session = requests.Session()
 session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
 
-@pastebin("dpaste.de")
-def paste_to_dpaste_de(code: str, path: Optional[pathlib.Path]) -> str:
-    # docs: http://dpaste.readthedocs.io/en/latest/api.html
+# dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
+def paste_to_dpaste_dot_com(code: str, lexer_class: pygments.lexer.LexerMeta) -> str:
+    # docs: https://dpaste.com/api/v2/
     # the docs tell to post to http://dpaste.de/api/ but they use
     # https://... in the examples 0_o only the https version works
-    response = session.post('https://dpaste.org/api/', data={
+    response = session.post('https://dpaste.com/api/v2/', data={
+        'syntax': lexer_class.aliases[0],
         'content': code,
-        # lexer defaults to 'python'
-        # TODO: don't highlight everything as python
-        'format': 'url',
     })
     response.raise_for_status()
     return response.text.strip()
+
+
+pastebins = {"termbin.com": paste_to_termbin, "dpaste.com": paste_to_dpaste_dot_com}
 
 
 class SuccessDialog(tkinter.Toplevel):
@@ -124,10 +112,10 @@ class SuccessDialog(tkinter.Toplevel):
 class Paste:
 
     def __init__(self, pastebin_name: str,
-                 code: str, path: Optional[pathlib.Path]) -> None:
+                 code: str, lexer_class: pygments.lexer.LexerMeta) -> None:
         self.pastebin_name = pastebin_name
         self.content = code
-        self.path = path
+        self.lexer_class = lexer_class
         self.please_wait_window: Optional[tkinter.Toplevel] = None
 
     def make_please_wait_window(self) -> None:
@@ -157,7 +145,7 @@ class Paste:
         tk_busy_hold()
         self.make_please_wait_window()
         paste_it = functools.partial(
-            pastebins[self.pastebin_name], self.content, self.path)
+            pastebins[self.pastebin_name], self.content, self.lexer_class)
         utils.run_in_thread(paste_it, self.done_callback)
 
     def done_callback(self, success: bool, result: str) -> None:
@@ -192,7 +180,7 @@ def start_pasting(pastebin_name: str) -> None:
         # nothing is selected, pastebin everything
         code = tab.textwidget.get('1.0', 'end - 1 char')
 
-    Paste(pastebin_name, code, tab.path).start()
+    Paste(pastebin_name, code, tab.settings.get('pygments_lexer', pygments.lexer.LexerMeta)).start()
 
 
 def setup() -> None:

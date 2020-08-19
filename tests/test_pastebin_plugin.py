@@ -1,39 +1,57 @@
 import random
+import re
 import threading
 import time
 import tkinter
 import types
 
+import pygments.lexer
+import pygments.lexers
 import pytest
 import requests
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    BeautifulSoup = None
 
 from porcupine import get_main_window
 import porcupine.plugins.pastebin as pastebin_module
 
 
-BLAH_BLAH = "Hello World!\nThis is a test.\n"
+@pytest.mark.pastebin_test
+def test_dpaste_syntax_choices():
+    # download the json data representing valid syntax choices linked from dpaste docs
+    response = requests.get('https://dpaste.com/api/v2/syntax-choices/')
+    response.raise_for_status()
+    syntax_choices = response.json()
+
+    for syntax_choice in syntax_choices.keys():
+        assert syntax_choice == pygments.lexers.get_lexer_by_name(syntax_choice).aliases[0]
 
 
 def check_pastebin(pastebin_name):
-    @pytest.mark.pastebin_test
-    def test_function():
+    some_code = "import foo as bar\nprint('baz')"
+
+    for lexer in [pygments.lexers.TextLexer, pygments.lexers.PythonLexer]:
         function = pastebin_module.pastebins[pastebin_name]
-        url = function(BLAH_BLAH, "/tmp/asd.py")
+        url = function(some_code, lexer)
         assert isinstance(url, str)
 
         response = requests.get(url)
         response.raise_for_status()
-        assert BLAH_BLAH in response.text.replace('\r\n', '\n')
 
-    return test_function
+        if response.text.strip().startswith('<!DOCTYPE'):
+            # html and regexes ftw
+            assert some_code in re.sub(r'<.*?>', '', response.text).replace("&#39;", "'")
+        else:
+            # raw url
+            assert response.text.strip() == some_code.strip()
 
 
-test_termbin = check_pastebin('termbin.com')
-test_dpaste_dot_org = check_pastebin('dpaste.org')
+@pytest.mark.pastebin_test
+def test_termbin():
+    check_pastebin('termbin.com')
+
+
+@pytest.mark.pastebin_test
+def test_dpaste_dot_com():
+    check_pastebin('dpaste.com')
 
 
 def test_success_dialog(monkeypatch):
@@ -124,10 +142,10 @@ def test_start_pasting_with_menubar(monkeypatch, filetab):
     called = []
 
     class FakePaste:
-        def __init__(self, pastebin_name, code, path):
+        def __init__(self, pastebin_name, code, lexer):
             self.started = 0
             assert code == ''
-            assert path is None     # because the filetab hasn't been saved
+            assert issubclass(lexer, pygments.lexer.Lexer)
             self._pastebin_name = pastebin_name
 
         def start(self):

@@ -4,3 +4,4 @@ sphinx
 mypy>=0.782
 flake8
 pytest-mock>=3.2.0,<4.0.0
+bs4
