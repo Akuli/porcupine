@@ -17,6 +17,7 @@ Most important features:
 - Automatic indenting and trailing whitespace stripping when Enter is pressed
 - Indent/dedent block with Tab and Shift+Tab
 - Commenting/uncommenting multiple lines by selecting them and typing a #
+- Highlighting matching parentheses
 - Line numbers
 - Line length marker
 - Find/replace
