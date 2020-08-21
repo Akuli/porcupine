@@ -11,4 +11,9 @@ Porcupine starts. ``images.get('logo')`` seems to take about 225 milliseconds on
 this system while ``images.get('logo-200x200')`` returns in about 5
 milliseconds.
 
+.. data:: images_dir
+
+    This is the directory containing the images.
+    You can do ``images_dir / 'logo.gif'``, for example.
+
 .. autofunction:: get

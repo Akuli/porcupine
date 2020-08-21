@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Any, List, Match, Union
 import webbrowser
 
-from porcupine import dirs, get_main_window, images, menubar, utils
+from porcupine import get_main_window, images, menubar, utils
 from porcupine import __version__ as porcupine_version
 
 
@@ -37,14 +37,11 @@ here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 
 
 def show_huge_logo(junk: object = None) -> None:
-    path = dirs.installdir / 'images' / 'logo.gif'
-    assert path.is_file()
-
     # Web browsers are good at displaying large images, and webbrowser.open
     # actually tries xdg-open first. So, if you're on linux and you have an
     # image viewer installed, this should launch that. I guess it just opens up
     # web browser on other platforms.
-    webbrowser.open(path.as_uri())
+    webbrowser.open((images.images_dir / 'logo.gif').as_uri())
 
 
 class _AboutDialogContent(ttk.Frame):
