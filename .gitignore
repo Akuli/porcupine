@@ -94,3 +94,4 @@ ENV/
 porcupine-logo.ico
 pynsist_pkgs/
 pynsist.cfg
+playground.*
