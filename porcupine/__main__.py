@@ -50,10 +50,17 @@ def main() -> None:
         add_help=False,  # help in step 1 wouldn't show options added by plugins
     )
     parser.add_argument(
+        '--version', action='version',
+        version=("Porcupine %s" % porcupine_version),
+        help="display the Porcupine version number and exit")
+    parser.add_argument(
         '--verbose', action='store_true',
         help=("print all logging messages to stderr, only warnings and errors "
               "are printed by default (but all messages always go to a log "
               "file in %s as well)" % _logs.LOG_DIR))
+    parser.add_argument(
+        '--print-plugindir', action=_PrintPlugindirAction,
+        help="find out where to install custom plugins")
     plugingroup = parser.add_argument_group("plugin loading options")
     plugingroup.add_argument(
         '--no-plugins', action='store_false', dest='use_plugins',
@@ -78,15 +85,13 @@ def main() -> None:
             disable_list = []
         pluginloader.import_plugins(disable_list)
 
+        bad_disables = set(disable_list) - {info.name for info in pluginloader.plugin_infos}
+        if bad_disables:
+            one_of_them, *the_rest = bad_disables
+            parser.error(f"--without-plugins: no plugin named {one_of_them!r}")
+
     parser.add_argument('--help', action='help', help="show this message")
     pluginloader.run_setup_argument_parser_functions(parser)
-    parser.add_argument(
-        '--version', action='version',
-        version=("Porcupine %s" % porcupine_version),
-        help="display the Porcupine version number and exit")
-    parser.add_argument(
-        '--print-plugindir', action=_PrintPlugindirAction,
-        help="find out where to install custom plugins")
     parser.add_argument(
         'files', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         help="open these files when Porcupine starts, - means stdin")
