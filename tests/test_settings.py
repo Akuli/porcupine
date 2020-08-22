@@ -138,11 +138,6 @@ def test_font_gets_updated(porcusession):
     assert fixedfont.cget('size') == 123
 
 
-def test_init_when_already_inited(porcusession):
-    with pytest.raises(RuntimeError, match=r"^can't call _init\(\) twice$"):
-        settings._init()
-
-
 @dataclasses.dataclass
 class Foo:
     how_many: int
