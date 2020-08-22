@@ -78,6 +78,11 @@ def main() -> None:
             disable_list = []
         pluginloader.import_plugins(disable_list)
 
+        bad_disables = set(disable_list) - {info.name for info in pluginloader.plugin_infos}
+        if bad_disables:
+            one_of_them, *the_rest = bad_disables
+            parser.error(f"--without-plugins: no plugin named {one_of_them!r}")
+
     parser.add_argument('--help', action='help', help="show this message")
     pluginloader.run_setup_argument_parser_functions(parser)
     parser.add_argument(
