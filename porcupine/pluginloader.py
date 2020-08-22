@@ -176,8 +176,6 @@ def run_setup_argument_parser_functions(parser: argparse.ArgumentParser) -> None
                 log.exception(f"{info.name}.setup_argument_parser() doesn't work")
                 info.status = Status.SETUP_FAILED
                 info.error = traceback.format_exc()
-            else:
-                info.status = Status.ACTIVE
 
 
 # undocumented on purpose, don't use in plugins

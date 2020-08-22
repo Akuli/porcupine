@@ -3,7 +3,7 @@
 import logging
 import tkinter
 import types
-from typing import Any, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 from porcupine import tabs
 
@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 _root: Optional[tkinter.Tk] = None
 _tab_manager: Optional[tabs.TabManager] = None
 _parsed_args: Optional[Any] = None
+filedialog_kwargs: Dict[str, Any] = {}
 
 
 def _log_tkinter_error(exc: Type[BaseException], val: BaseException, tb: types.TracebackType) -> Any:

@@ -5,15 +5,16 @@
 #
 # Many comments in this file are quotes from https://editorconfig.org/
 import configparser
+from functools import partial
 import dataclasses
 import logging
 import pathlib
 import re
-import tkinter
 from typing import Dict, List, Optional, Tuple
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
+setup_after = ['filetypes']
 log = logging.getLogger(__name__)
 
 
@@ -344,32 +345,18 @@ def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
         log.warning(f"editorconfig files contain unknown options: {message}")
 
 
-def get_config_and_apply_to_tab(tab: tabs.FileTab) -> None:
-    assert tab.path is not None
-    log.debug(f"applying settings to {tab.path}")
-    apply_config(get_config(tab.path), tab)
-
-
-def before_file_opens(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
-    assert isinstance(tab, tabs.FileTab)
-    log.info(f"file opened: {tab.path}")
-    get_config_and_apply_to_tab(tab)
-
-
-def on_path_changed(event: 'tkinter.Event[tabs.FileTab]') -> None:
-    if event.widget.path is not None:
-        log.info(f"file path changed: {event.widget.path}")
-        get_config_and_apply_to_tab(event.widget)
+def get_config_and_apply_to_tab(tab: tabs.FileTab, junk: object = None) -> None:
+    if tab.path is not None:
+        log.debug(f"applying settings to {tab.path}")
+        apply_config(get_config(tab.path), tab)
 
 
 def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
-        # no need to run on_path_changed() now, <<WillOpenFile>> handles that
-        tab.bind('<<PathChanged>>', on_path_changed, add=True)
+        get_config_and_apply_to_tab(tab)
+        tab.bind('<<PathChanged>>', partial(get_config_and_apply_to_tab, tab), add=True)
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<WillOpenFile>>', before_file_opens, add=True)
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)

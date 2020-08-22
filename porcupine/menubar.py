@@ -14,8 +14,8 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import filetypes, settings, tabs, utils
-from porcupine._state import get_main_window, get_tab_manager, quit
+from porcupine import settings, tabs, utils
+from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
 
 log = logging.getLogger(__name__)
 
@@ -260,8 +260,7 @@ def _fill_menus_with_default_stuff() -> None:
         get_tab_manager().add_tab(tabs.FileTab(get_tab_manager()))
 
     def open_files() -> None:
-        kwargs = filetypes.get_filedialog_kwargs()
-        paths: Sequence[str] = filedialog.askopenfilenames(**kwargs)  # type: ignore
+        paths: Sequence[str] = filedialog.askopenfilenames(**filedialog_kwargs)  # type: ignore
 
         # tkinter returns '' if the user cancels, and i'm arfaid that python
         # devs might "fix" a future version to return None

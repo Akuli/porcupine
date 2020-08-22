@@ -36,3 +36,17 @@ Version Information
           # use some feature that was added in Porcupine 0.28
       else:
           # display an error message or do things without the new feature
+
+
+File Dialogs
+------------
+
+.. data:: filedialog_kwargs
+    :type: Dict[str, Any]
+
+    Porcupine uses :mod:`tkinter.filedialog` functions similarly to this::
+
+        path = filedialog.asksaveasfilename(**porcupine.filedialog_kwargs)
+
+    The :source:`filetypes plugin <porcupine/plugins/filetypes.py>` uses this
+    for displaying known filetypes in the dialogs.

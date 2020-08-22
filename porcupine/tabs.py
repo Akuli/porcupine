@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Un
 import pygments.lexer     # type: ignore
 import pygments.lexers    # type: ignore
 
-from porcupine import filetypes, images, settings, textwidget, utils
+from porcupine import _state, images, settings, textwidget, utils
 
 
 log = logging.getLogger(__name__)
@@ -507,8 +507,8 @@ class FileTab(Tab):
     .. attribute:: settings
         :type: porcupine.settings.Settings
 
-        This setting object is for settings loaded from :mod:`porcupine.filetypes`,
-        but they can be changed file-specifically too.
+        This setting object is for file-specific settings,
+        such as those loaded by :source:`porcupine/plugins/filetypes.py`.
         It contains the following settings by default (but plugins add more
         settings with :meth:`~porcupine.settings.Settings.add_option`):
 
@@ -589,14 +589,6 @@ bers.py>` use this attribute.
         self.settings.add_option(
             'line_ending', settings.get('default_line_ending', settings.LineEnding),
             converter=settings.LineEnding.__getitem__)
-
-        # filetype guessing must happen before <<PathChanged>> so that
-        # plugins can override guessed stuff
-        if filetype is None:
-            self._guess_filetype()
-        else:
-            self.filetype_to_settings(filetype)
-        self.bind('<<PathChanged>>', self._guess_filetype, add=True)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
@@ -697,27 +689,7 @@ bers.py>` use this attribute.
         if it_changes:
             # filetype guessing must happen before <<PathChanged>> so that
             # plugins can override guessed stuff
-            self._guess_filetype()
             self.event_generate('<<PathChanged>>')
-
-    def _guess_filetype(self, junk: object = None) -> None:
-        if self.path is None:
-            filetype = filetypes.get_filetype_by_name(
-                settings.get('default_filetype', str))
-        else:
-            # FIXME: this may read the shebang from the file, but the file
-            #        might not be saved yet because save_as() sets self.path
-            #        before saving, and that's when this runs
-            filetype = filetypes.guess_filetype(self.path)
-
-        self.filetype_to_settings(filetype)
-
-    def filetype_to_settings(self, filetype: Dict[str, Any]) -> None:
-        log.info(f"applying filetype settings: {filetype!r}")
-        for name, value in filetype.items():
-            # Ignore stuff used only for guessing the correct filetype
-            if name not in {'filename_patterns', 'shebang_regex'}:
-                self.settings.set(name, value, from_config=True)
 
     # TODO: plugin
     def _update_title(self, junk: object = None) -> None:
@@ -803,8 +775,7 @@ bers.py>` use this attribute.
         cancelled the dialog.
         """
         # type ignored because mypy **kwargs support isn't great
-        path_string: str = filedialog.asksaveasfilename(    # type: ignore
-            **filetypes.get_filedialog_kwargs())
+        path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
         if not path_string:     # it may be '' because tkinter
             return False
         path = pathlib.Path(path_string)

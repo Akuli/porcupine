@@ -2,11 +2,10 @@ import argparse
 import logging
 import pathlib
 import sys
-from typing import Any, Dict, List
 
 # imports spread across multiple lines to keep sane line lengths and make it greppable
 from porcupine import get_main_window, get_tab_manager
-from porcupine import _logs, _state, dirs, filetypes, menubar, pluginloader, plugins, settings, tabs
+from porcupine import _logs, _state, dirs, menubar, pluginloader, plugins, settings, tabs
 from porcupine import __version__ as porcupine_version
 
 log = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ def main() -> None:
         version=("Porcupine %s" % porcupine_version),
         help="display the Porcupine version number and exit")
     parser.add_argument(
-        '--verbose', action='store_true',
+        '-v', '--verbose', action='store_true',
         help=("print all logging messages to stderr, only warnings and errors "
               "are printed by default (but all messages always go to a log "
               "file in %s as well)" % _logs.LOG_DIR))
@@ -94,9 +93,6 @@ def main() -> None:
     parser.add_argument(
         'files', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
         help="open these files when Porcupine starts, - means stdin")
-    parser.add_argument(
-        '-n', '--new-file', metavar='FILETYPE', action='append',
-        help='create a "New File" tab with a filetype from filetypes.toml')
     plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
         help=("respect setup_before and setup_after, but otherwise setup the "
@@ -105,18 +101,6 @@ def main() -> None:
               "setup_before and setup_after define everything needed; usually "
               "plugins are not shuffled in order to make the UI consistent"))
     args = parser.parse_args()
-
-    # Make sure to get error early if filetype doesn't exist.
-    #
-    # Ideally would also get errors early when files don't exist, but reading
-    # files must come later to because .open_file() is needed.
-    filetypes_of_new_files: List[Dict[str, Any]] = []
-    filetypes._init()
-    for filetype_name in (args.new_file or []):   # args.new_file may be None
-        try:
-            filetypes_of_new_files.append(filetypes.get_filetype_by_name(filetype_name))
-        except KeyError:
-            parser.error(f"no filetype named {filetype_name!r}")
 
     _state.init(args)
     settings.init_the_rest_after_initing_enough_for_using_disabled_plugins_list()
@@ -139,9 +123,6 @@ def main() -> None:
         else:
             tab = tabs.FileTab.open_file(tabmanager, pathlib.Path(path_string))
         tabmanager.add_tab(tab)
-
-    for filetype in filetypes_of_new_files:
-        tabmanager.add_tab(tabs.FileTab(tabmanager, filetype=filetype))
 
     try:
         get_main_window().mainloop()

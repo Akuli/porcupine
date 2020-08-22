@@ -16,7 +16,6 @@ import pygments.styles   # type: ignore
 
 import porcupine
 from porcupine import dirs, images, utils
-from porcupine.filetypes import get_filetype_names
 
 
 _log = logging.getLogger(__name__)
@@ -366,7 +365,6 @@ def init_enough_for_using_disabled_plugins_list() -> None:
 
 def _init_global_gui_settings() -> None:
     add_option('pygments_style', 'default', converter=_check_pygments_style)
-    add_option('default_filetype', 'Python')
     add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
@@ -679,15 +677,6 @@ def _fill_notebook_with_defaults() -> None:
     add_combobox(
         general, 'default_line_ending', "Default line ending:",
         values=[ending.name for ending in LineEnding])
-
-    # filetypes aren't loaded yet when this is called
-    def add_default_filetype_chooser() -> None:
-        add_combobox(
-            general, 'default_filetype', "Default filetype for new files:",
-            values=sorted(get_filetype_names(), key=str.casefold),
-        )
-
-    general.after_idle(add_default_filetype_chooser)
 
     configs = add_section('Config Files')
     add_label(configs, (
