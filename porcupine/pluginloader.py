@@ -110,22 +110,8 @@ def _did_plugin_come_with_porcupine(finder: object) -> bool:
     return isinstance(finder, importlib.machinery.FileFinder) and finder.path == plugin_paths[-1]
 
 
+# undocumented on purpose, don't use in plugins
 def load(*, shuffle: bool = False, disabled_on_command_line: List[str] = []) -> None:
-    """Load plugins.
-
-    The plugins are always ordered using their ``setup_before`` and
-    ``setup_after`` lists. The *shuffle* argument determines what is
-    done when multiple plugins can be loaded in any order with respect
-    to each other. By default, they are sorted alphabetically, so
-    things like menu items are always in the same order. Setting
-    ``shuffle=True`` means that a random order is used instead; this is
-    useful for making sure that the plugins don't rely on the sorting.
-
-    Plugins specified as *disabled_on_command_line* won't be loaded.
-
-    Exceptions are caught and logged, so there's no need to wrap calls to this
-    function in ``try,except``.
-    """
     assert not _mutable_plugin_infos, "cannot load() twice"
     _mutable_plugin_infos.extend(
         PluginInfo(
@@ -188,8 +174,12 @@ def load(*, shuffle: bool = False, disabled_on_command_line: List[str] = []) -> 
         make_list: Callable[[Iterable[str]], List[str]] = list
         for names in map(make_list, toposort.toposort(dependencies)):
             if shuffle:
+                # for plugin developers wanting to make sure that the
+                # dependencies specified in setup_before and setup_after
+                # are correct
                 random.shuffle(names)
             else:
+                # for consistency in UI (e.g. always same order of menu items)
                 names.sort()
             loading_order.extend(names)
         loadable_infos = imported_infos
