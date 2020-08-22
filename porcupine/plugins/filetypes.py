@@ -224,8 +224,8 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
 def open_files_specified_on_command_line(junk: object) -> None:
     for filetype_name in (get_parsed_args().new_file or []):   # new_file may be None
         tab = tabs.FileTab(get_tab_manager())
-        apply_filetype_to_tab(tab, filetypes[filetype_name])
-        get_tab_manager().add_tab(tab)
+        get_tab_manager().add_tab(tab)  # sets default filetype
+        apply_filetype_to_tab(tab, filetypes[filetype_name])  # sets correct filetype
 
 
 def menu_callback(filetype: FileType) -> None:
