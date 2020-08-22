@@ -2,7 +2,6 @@ import argparse
 import logging
 import pathlib
 import sys
-import tkinter
 from typing import Any, Dict, List
 
 from porcupine import (
