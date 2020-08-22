@@ -4,10 +4,10 @@ import pathlib
 import sys
 from typing import Any, Dict, List
 
-from porcupine import (
-    __version__ as porcupine_version,
-    get_main_window, get_tab_manager,
-    _logs, _state, dirs, filetypes, menubar, pluginloader, plugins, settings, tabs)
+# imports spread across multiple lines to keep sane line lengths and make it greppable
+from porcupine import get_main_window, get_tab_manager
+from porcupine import _logs, _state, dirs, filetypes, menubar, pluginloader, plugins, settings, tabs
+from porcupine import __version__ as porcupine_version
 
 log = logging.getLogger(__name__)
 
