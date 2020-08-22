@@ -70,7 +70,9 @@ def porcusession(monkeypatch_dirs):
     old_args = sys.argv[1:]
     old_mainloop = tkinter.Tk.mainloop
     try:
-        sys.argv[1:] = ['--verbose', '--shuffle-plugins']
+        # --verbose here doesn't work for whatever reason
+        # I tried to make it work, but then pytest caplog fixture didn't work
+        sys.argv[1:] = ['--shuffle-plugins']
         tkinter.Tk.mainloop = lambda self: None
         main()
     finally:
