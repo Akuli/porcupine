@@ -25,7 +25,7 @@ FileType = Dict[str, Any]
 filetypes: Dict[str, FileType] = {}
 
 
-def _is_list_of_strings(obj: object) -> bool:
+def is_list_of_strings(obj: object) -> bool:
     return isinstance(obj, list) and all(isinstance(item, str) for item in obj)
 
 
@@ -57,7 +57,7 @@ def load_filetypes() -> None:
     for name, filetype in filetypes.items():
         # everything except filename_patterns and shebang_regex is handled by Settings objects
         if ('filename_patterns' in filetype and
-                not _is_list_of_strings(filetype['filename_patterns'])):
+                not is_list_of_strings(filetype['filename_patterns'])):
             log.error(f"filename_patterns is not a list of strings in [{name}] section")
             del filetype['filename_patterns']
 
@@ -199,13 +199,6 @@ def configure_filetypes_kwargs() -> None:
         filetypes_for_filedialog.append((name, patterns))
 
     filedialog_kwargs['filetypes'] = filetypes_for_filedialog
-
-
-def before_file_opens(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
-    assert isinstance(tab, tabs.FileTab)
-    log.info(f"file opened: {tab.path}")
-    apply_filetype_to_tab(tab, get_filetype_for_tab(tab))
 
 
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:

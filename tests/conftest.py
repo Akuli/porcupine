@@ -16,11 +16,7 @@ from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
 
 
-# this url is split on 2 lines because pep8, concatenate the lines when
-# copy/pasting it to your browser:
-#
-#    https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-c
-#    ommand-line-options
+# https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
 #
 # use 'pytest --test-pastebins' to run tests that send stuff to pastebins, it's
 # disabled by default because pastebins might block you for using them
