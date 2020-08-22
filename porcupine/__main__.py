@@ -1,13 +1,14 @@
-"""Parse arguments and run Porcupine using ``_run.py``."""
-
 import argparse
 import logging
 import pathlib
 import sys
+import tkinter
 from typing import Any, Dict, List
 
-from porcupine import _logs, filetypes, get_tab_manager, menubar, pluginloader, tabs
-import porcupine.plugins    # .plugins for porcupine.plugins.__path__
+from porcupine import (
+    __version__ as porcupine_version,
+    get_main_window, get_tab_manager,
+    _logs, _state, dirs, filetypes, menubar, pluginloader, plugins, settings, tabs)
 
 log = logging.getLogger(__name__)
 
@@ -23,8 +24,7 @@ class _PrintPlugindirAction(argparse.Action):
 
     def __call__(   # type: ignore
             self, parser, namespace, values, option_string=None):
-        print("You can install plugins here:\n\n    %s\n"
-              % porcupine.plugins.__path__[0])
+        print("You can install plugins here:\n\n    %s\n" % plugins.__path__[0])
         parser.exit()
 
 
@@ -44,7 +44,7 @@ def main() -> None:
 
     parser.add_argument(
         '--version', action='version',
-        version=("Porcupine %s" % porcupine.__version__),
+        version=("Porcupine %s" % porcupine_version),
         help="display the Porcupine version number and exit")
     parser.add_argument(
         '--print-plugindir', action=_PrintPlugindirAction,
@@ -94,7 +94,13 @@ def main() -> None:
         except KeyError:
             parser.error(f"no filetype named {filetype_name!r}")
 
-    porcupine.init(verbose_logging=args.verbose)
+    dirs.makedirs()
+    _logs.setup(args.verbose)
+    _state.set_main_window_and_create_tab_manager(tkinter.Tk())
+    settings._init()
+    filetypes._init()
+    menubar._init()
+
     if args.use_plugins:
         if args.without_plugins:
             disable_list = args.without_plugins.split(',')
@@ -104,9 +110,9 @@ def main() -> None:
             disabled_on_command_line=disable_list,
             shuffle=args.shuffle_plugins,
         )
-    else:
-        # pluginloader.load() calls this when it's done
-        menubar.update_keyboard_shortcuts()
+
+    # this is generated even if args.use_plugins is False and 0 plugins were loaded
+    get_main_window().event_generate('<<PluginsLoaded>>')
 
     tabmanager = get_tab_manager()
     for path_string in args.files:
@@ -126,9 +132,13 @@ def main() -> None:
     for filetype in filetypes_of_new_files:
         tabmanager.add_tab(tabs.FileTab(tabmanager, filetype=filetype))
 
-    porcupine.run()
+    try:
+        get_main_window().mainloop()
+    finally:
+        settings.save()
     log.info("exiting Porcupine successfully")
 
 
+# python3 -m pocupine
 if __name__ == '__main__':
     main()

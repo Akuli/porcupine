@@ -5,12 +5,15 @@
 # see also update(3tcl)
 
 import pathlib
+import sys
 import tempfile
+import tkinter
 
 import pytest
 
 import porcupine
-from porcupine import dirs, get_main_window, get_tab_manager, pluginloader, plugins, tabs
+from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
+from porcupine.__main__ import main
 
 
 # this url is split on 2 lines because pep8, concatenate the lines when
@@ -49,6 +52,7 @@ def monkeypatch_dirs():
     with tempfile.TemporaryDirectory() as d:
         dirs.cachedir = pathlib.Path(d) / 'cache'
         dirs.configdir = pathlib.Path(d) / 'config'
+        dirs.makedirs()
         yield
 
 
@@ -61,10 +65,17 @@ def porcusession(monkeypatch_dirs):
     with pytest.raises(RuntimeError):
         get_tab_manager()
 
-    porcupine.init()
-    # can't hide the main window with .withdraw()
-    # doing that makes events not happen for some reason
-    pluginloader.load(shuffle=True)
+    # monkeypatch fixture doesn't work for this for whatever reason
+    # porcupine calls mainloop(), but we want it to return immediately for tests
+    old_args = sys.argv[1:]
+    old_mainloop = tkinter.Tk.mainloop
+    try:
+        sys.argv[1:] = ['--verbose', '--shuffle-plugins']
+        tkinter.Tk.mainloop = lambda self: None
+        main()
+    finally:
+        sys.argv[1:] = old_args
+        tkinter.Tk.mainloop = old_mainloop
 
     yield
 

@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set
 
 import toposort     # type: ignore
 
-from porcupine import menubar, settings
+from porcupine import settings
 from porcupine.plugins import __path__ as plugin_paths
 
 log = logging.getLogger(__name__)
@@ -220,5 +220,3 @@ def load(*, shuffle: bool = False, disabled_on_command_line: List[str] = []) -> 
 
         duration = time.time() - start
         log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration*1000)
-
-    menubar.update_keyboard_shortcuts()

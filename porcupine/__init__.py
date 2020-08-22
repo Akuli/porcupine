@@ -1,4 +1,3 @@
-# flake8: noqa
 """Porcupine is a simple editor.
 
 You are probably reading this because you want to learn how Porcupine
@@ -12,7 +11,7 @@ import pathlib
 import shutil
 import subprocess
 
-from porcupine import _run
+from porcupine import _state
 
 version_info = (0, 78, 0)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
@@ -30,9 +29,6 @@ if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
     except (OSError, subprocess.CalledProcessError, UnicodeError):   # pragma: no cover
         pass
 
-init = _run.init
-get_init_kwargs = _run.get_init_kwargs
-run = _run.run
-quit = _run.quit
-get_main_window = _run.get_main_window
-get_tab_manager = _run.get_tab_manager
+quit = _state.quit
+get_main_window = _state.get_main_window
+get_tab_manager = _state.get_tab_manager

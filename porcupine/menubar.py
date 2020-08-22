@@ -14,7 +14,8 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import _run, filetypes, settings, tabs, utils
+from porcupine import filetypes, settings, tabs, utils
+from porcupine._state import get_main_window, get_tab_manager, quit
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ log = logging.getLogger(__name__)
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
 def _generate_event(name: str, junk: object) -> Literal['break']:
-    _run.get_main_window().event_generate(name)
+    get_main_window().event_generate(name)
     return 'break'
 
 
@@ -59,9 +60,9 @@ def _fix_text_widget_bindings(event: 'tkinter.Event[tkinter.Misc]') -> None:
 
 
 def _init() -> None:
-    main_window = _run.get_main_window()
+    main_window = get_main_window()
     main_window.config(menu=tkinter.Menu(main_window, tearoff=False))
-
+    main_window.bind('<<PluginsLoaded>>', (lambda event: update_keyboard_shortcuts()), add=True)
     main_window.bind_class('Text', '<FocusIn>', _fix_text_widget_bindings, add=True)
     _fill_menus_with_default_stuff()
 
@@ -88,7 +89,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
 
     If *path* is ``None``, then the menubar itself is returned.
     """
-    main_window = _run.get_main_window()
+    main_window = get_main_window()
     main_menu = cast(tkinter.Menu, main_window.nametowidget(main_window.cget('menu')))
     if path is None:
         return main_menu
@@ -197,7 +198,7 @@ def update_keyboard_shortcuts() -> None:
     This has to be called when menus or keyboard shortcuts have been modified.
     It's called automatically when plugins have been set up.
     """
-    main_window = _run.get_main_window()
+    main_window = get_main_window()
     for path, menu, index in _walk_menu_contents():
         event_name = f'<<Menubar:{path}>>'
 
@@ -236,7 +237,7 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]],
             set_enabled_based_on_tab("Foo/Bar", (lambda tab: isinstance(tab, tabs.FileTab)))
     """
     def on_tab_changed(junk: object = None) -> None:
-        tab = _run.get_tab_manager().select()
+        tab = get_tab_manager().select()
         menu = get_menu(path.rsplit('/', 1)[0] if '/' in path else None)
         index = _find_item(menu, path.split('/')[-1])
         if index is None:
@@ -244,7 +245,7 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]],
         menu.entryconfig(index, state=('normal' if callback(tab) else 'disabled'))
 
     on_tab_changed()
-    _run.get_tab_manager().bind('<<NotebookTabChanged>>', on_tab_changed, add=True)
+    get_tab_manager().bind('<<NotebookTabChanged>>', on_tab_changed, add=True)
 
 
 # TODO: pluginify?
@@ -256,7 +257,7 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("Edit")
 
     def new_file() -> None:
-        _run.get_tab_manager().add_tab(tabs.FileTab(_run.get_tab_manager()))
+        get_tab_manager().add_tab(tabs.FileTab(get_tab_manager()))
 
     def open_files() -> None:
         kwargs = filetypes.get_filedialog_kwargs()
@@ -269,17 +270,17 @@ def _fill_menus_with_default_stuff() -> None:
 
         for path in map(pathlib.Path, paths):
             try:
-                tab = tabs.FileTab.open_file(_run.get_tab_manager(), path)
+                tab = tabs.FileTab.open_file(get_tab_manager(), path)
             except (UnicodeError, OSError) as e:
                 log.exception("opening '%s' failed", path)
                 utils.errordialog(type(e).__name__, "Opening failed!",
                                   traceback.format_exc())
                 continue
 
-            _run.get_tab_manager().add_tab(tab)
+            get_tab_manager().add_tab(tab)
 
     def save_file(save_as: bool) -> None:
-        tab = _run.get_tab_manager().select()
+        tab = get_tab_manager().select()
         assert isinstance(tab, tabs.FileTab)
         if save_as:
             tab.save_as()
@@ -287,10 +288,10 @@ def _fill_menus_with_default_stuff() -> None:
             tab.save()
 
     def close_selected_tab() -> None:
-        tab = _run.get_tab_manager().select()
+        tab = get_tab_manager().select()
         assert tab is not None
         if tab.can_be_closed():
-            _run.get_tab_manager().close_tab(tab)
+            get_tab_manager().close_tab(tab)
 
     get_menu("File").add_command(label="New File", command=new_file)
     get_menu("File").add_command(label="Open", command=open_files)
@@ -298,7 +299,7 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("File").add_command(label="Save As", command=functools.partial(save_file, True))
     get_menu("File").add_separator()
     get_menu("File").add_command(label="Close", command=close_selected_tab)
-    get_menu("File").add_command(label="Quit", command=_run.quit)
+    get_menu("File").add_command(label="Quit", command=quit)
 
     set_enabled_based_on_tab("File/Save", (lambda tab: isinstance(tab, tabs.FileTab)))
     set_enabled_based_on_tab("File/Save As", (lambda tab: isinstance(tab, tabs.FileTab)))

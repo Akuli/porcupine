@@ -27,3 +27,12 @@ or ``porcupine.plugins.highlight``.
     including plugins that failed to load and disabled plugins.
 
 .. autofunction:: load
+
+.. virtualevent:: PluginsLoaded
+
+    This virtual event is generated on the main window
+    when the ``setup()`` methods of all plugins have been called.
+    Bind to it if you want to run things that must not happen
+    until plugins are ready for it.
+
+    .. seealso:: :func:`porcupine.get_main_window`

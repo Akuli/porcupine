@@ -10,8 +10,7 @@ import threading
 import tkinter
 from typing import Any, Tuple, Union
 
-import porcupine
-from porcupine import pluginloader, settings, tabs
+from porcupine import get_main_window, get_tab_manager, pluginloader, settings, tabs
 
 log = logging.getLogger(__name__)
 
@@ -65,7 +64,7 @@ class PopManager:
             return
 
         if self._dragged_state is NOT_DRAGGING:
-            tab = porcupine.get_tab_manager().select()
+            tab = get_tab_manager().select()
             if tab is None:
                 # no tabs to pop up
                 self._dragged_state = NO_TABS
@@ -86,21 +85,10 @@ class PopManager:
         self._window.withdraw()
         if not (_is_on_window(event) or isinstance(self._dragged_state, SpecialState)):
             log.info("popping off a tab")
-
-            plugin_names_to_disable = {
-                info.name for info in pluginloader.plugin_infos
-                if info.status == pluginloader.Status.DISABLED_ON_COMMAND_LINE
-            } | {
-                # these plugins are not suitable for popups
-                # TODO: this isn't very good
-                'restart',
-                'geometry',
-            }
-
             tab, state = self._dragged_state
             required_size = (tab.winfo_reqwidth(), tab.winfo_reqheight())
-            message = (type(tab), state, plugin_names_to_disable, required_size,
-                       porcupine.get_init_kwargs(), event.x_root, event.y_root)
+            message = (type(tab), state, required_size, event.x_root, event.y_root)
+
             with tempfile.NamedTemporaryFile(delete=False) as file:
                 log.debug("writing dumped state to '%s'", file)
                 pickle.dump(message, file)
@@ -110,17 +98,41 @@ class PopManager:
             # Empty string (aka "load from current working directory") becomes
             # the first item of sys.path when using -m, which isn't great if
             # your current working directory contains e.g. queue.py (issue 31).
-            python_code = f'''
+            #
+            # However, if the currently running porcupine imports from current
+            # working directory (e.g. python3 -m porcupine), then the subprocess
+            # should do that too.
+            if os.getcwd() in sys.path:
+                args = [sys.executable, '-m', 'porcupine']
+            else:
+                python_code = '''
 import sys
 if sys.path[0] == '':
     del sys.path[0]
-from {__name__} import _run_popped_up_process
-_run_popped_up_process()
+from porcupine.__main__ import main
+main()
 '''
+                args = [sys.executable, '-c', python_code]
+
+            args.append('--without-plugins')
+            args.append(','.join({
+                info.name
+                for info in pluginloader.plugin_infos
+                if info.status == pluginloader.Status.DISABLED_ON_COMMAND_LINE
+            } | {
+                # these plugins are not suitable for popups
+                # TODO: geometry and restart stuff don't get saved
+                'restart',
+                'geometry',
+            }))
+            # TODO: if porcupine was started with --verbose, give that to
+            # child process as well
+
             process = subprocess.Popen(
-                [sys.executable, '-c', python_code, file.name])
+                args,
+                env={**os.environ, 'PORCUPINE_POPPINGTABS_STATE_FILE': file.name})
             log.debug("started subprocess with PID %d", process.pid)
-            porcupine.get_tab_manager().close_tab(tab)
+            get_tab_manager().close_tab(tab)
 
             # don't exit python until the subprocess exits, also log stuff
             threading.Thread(target=self._waiter_thread,
@@ -138,21 +150,14 @@ _run_popped_up_process()
                         process.pid, status)
 
 
-def setup() -> None:
-    manager = PopManager()
-    porcupine.get_tab_manager().bind(
-        '<Button1-Motion>', manager.on_drag, add=True)
-    porcupine.get_tab_manager().bind(
-        '<ButtonRelease-1>', manager.on_drop, add=True)
+def open_tab_from_state_file(junk: object) -> None:
+    try:
+        path = os.environ.pop('PORCUPINE_POPPINGTABS_STATE_FILE')
+    except KeyError:
+        return
 
-
-def _run_popped_up_process() -> None:
-    prog, state_path = sys.argv
-    with open(state_path, 'rb') as file:
-        (tabtype, state, plugin_names_to_disable, required_size, init_kwargs,
-         mousex, mousey) = pickle.load(file)
-
-    porcupine.init(**init_kwargs)
+    with open(path, 'rb') as file:
+        (tabtype, state, required_size, mousex, mousey) = pickle.load(file)
 
     # stupid default size
     width = 600
@@ -164,23 +169,21 @@ def _run_popped_up_process() -> None:
     # center the window around the mouse
     top = mousey - height//2
     left = mousex - height//2
-    porcupine.get_main_window().geometry('%dx%d+%d+%d' % (
+    get_main_window().geometry('%dx%d+%d+%d' % (
         max(width, reqwidth), max(height, reqheight), left, top))
 
-    pluginloader.load(disabled_on_command_line=plugin_names_to_disable)
-    tabmanager = porcupine.get_tab_manager()
-    tabmanager.add_tab(tabtype.from_state(tabmanager, state))
+    get_tab_manager().add_tab(tabtype.from_state(get_tab_manager(), state))
 
     # the state file is not removed earlier because if anything above
-    # fails, it still exists and can be recovered like this:
+    # fails, it still exists and can be recovered somehow
     #
-    #   $ python3 -m porcupine.plugins.poppingtabs /path/to/the/state/file
-    #
-    # most of the time this should "just work", so user-unfriendliness
+    # most of the time this should "just work", so user-unfriendy recovery
     # is not a huge problem
-    os.remove(state_path)
-    porcupine.run()
+    os.remove(path)
 
 
-if __name__ == '__main__':
-    _run_popped_up_process()
+def setup() -> None:
+    manager = PopManager()
+    get_tab_manager().bind('<Button1-Motion>', manager.on_drag, add=True)
+    get_tab_manager().bind('<ButtonRelease-1>', manager.on_drop, add=True)
+    get_main_window().bind('<<PluginsLoaded>>', open_tab_from_state_file, add=True)
