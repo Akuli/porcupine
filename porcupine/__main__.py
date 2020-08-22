@@ -98,7 +98,6 @@ def main() -> None:
     _logs.setup(args.verbose)
     _state.set_main_window_and_create_tab_manager(tkinter.Tk())
     settings._init()
-    filetypes._init()
     menubar._init()
 
     if args.use_plugins:
