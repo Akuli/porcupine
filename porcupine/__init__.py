@@ -31,4 +31,5 @@ if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
 
 quit = _state.quit
 get_main_window = _state.get_main_window
+get_parsed_args = _state.get_parsed_args
 get_tab_manager = _state.get_tab_manager

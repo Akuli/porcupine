@@ -10,7 +10,7 @@ import threading
 import tkinter
 from typing import Any, Tuple, Union
 
-from porcupine import get_main_window, get_tab_manager, pluginloader, settings, tabs
+from porcupine import get_main_window, get_parsed_args, get_tab_manager, pluginloader, settings, tabs
 
 log = logging.getLogger(__name__)
 
@@ -125,8 +125,9 @@ main()
                 'restart',
                 'geometry',
             }))
-            # TODO: if porcupine was started with --verbose, give that to
-            # child process as well
+
+            if get_parsed_args().verbose:
+                args.append('--verbose')
 
             process = subprocess.Popen(
                 args,

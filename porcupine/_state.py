@@ -55,6 +55,7 @@ def get_tab_manager() -> tabs.TabManager:
     return _tab_manager
 
 
+# TODO: document available attributes
 def get_parsed_args() -> Any:
     """Return Porcupine's arguments as returned by :func:`argparse.parse_args`."""
     assert _parsed_args is not None
