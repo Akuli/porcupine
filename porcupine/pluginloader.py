@@ -3,6 +3,7 @@
 # plugins using Porcupine, so Porcupine must run if the plugins are
 # broken
 
+import argparse
 import dataclasses
 import enum
 import importlib.machinery
@@ -28,8 +29,8 @@ class Status(enum.Enum):
 
     .. data:: LOADING
 
-        The :func:`load` function is currently running, and it doesn't know yet
-        what the final status of the plugin will be.
+        The plugin hasn't been set up successfully yet, but no errors
+        preventing the setup have occurred.
 
     .. data:: ACTIVE
 
@@ -111,8 +112,8 @@ def _did_plugin_come_with_porcupine(finder: object) -> bool:
 
 
 # undocumented on purpose, don't use in plugins
-def load(*, shuffle: bool = False, disabled_on_command_line: List[str] = []) -> None:
-    assert not _mutable_plugin_infos, "cannot load() twice"
+def import_plugins(disabled_on_command_line: List[str]):
+    assert not _mutable_plugin_infos
     _mutable_plugin_infos.extend(
         PluginInfo(
             name=name,
@@ -127,7 +128,6 @@ def load(*, shuffle: bool = False, disabled_on_command_line: List[str] = []) -> 
         if not name.startswith('_')
     )
 
-    imported_infos = []
     for info in _mutable_plugin_infos:
         # If it's disabled in settings and on command line, then status is set
         # to DISABLED_BY_SETTINGS. This makes more sense for the user of the
@@ -154,7 +154,35 @@ def load(*, shuffle: bool = False, disabled_on_command_line: List[str] = []) -> 
 
         duration = time.time() - start
         log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration*1000)
-        imported_infos.append(info)
+
+
+def _get_successfully_imported_infos() -> List[PluginInfo]:
+    # If all plugins are disabled, then import_plugins() doesn't run at all and plugin_infos is empty
+    return [
+        info for info in plugin_infos
+        if info.status == Status.LOADING
+    ]
+
+
+# undocumented on purpose, don't use in plugins
+# TODO: document what setup_argument_parser() function in a plugin does
+def run_setup_argument_parser_functions(parser: argparse.ArgumentParser) -> None:
+    for info in _get_successfully_imported_infos():
+        assert info.module is not None
+        if hasattr(info.module, 'setup_argument_parser'):
+            try:
+                info.module.setup_argument_parser(parser)
+            except Exception:
+                log.exception(f"{info.name}.setup_argument_parser() doesn't work")
+                info.status = Status.SETUP_FAILED
+                info.error = traceback.format_exc()
+            else:
+                info.status = Status.ACTIVE
+
+
+# undocumented on purpose, don't use in plugins
+def run_setup_functions(shuffle: bool) -> None:
+    imported_infos = _get_successfully_imported_infos()
 
     # setup_before and setup_after may contain names of plugins that are not
     # installed because they are for controlling the loading order. That's fine

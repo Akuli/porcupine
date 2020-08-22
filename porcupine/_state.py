@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 # global state makes some things a lot easier
 _root: Optional[tkinter.Tk] = None
 _tab_manager: Optional[tabs.TabManager] = None
+_parsed_args: Optional[Any] = None
 
 
 def _log_tkinter_error(exc: Type[BaseException], val: BaseException, tb: types.TracebackType) -> Any:
@@ -19,12 +20,16 @@ def _log_tkinter_error(exc: Type[BaseException], val: BaseException, tb: types.T
 
 
 # undocumented on purpose, don't use in plugins
-def set_main_window_and_create_tab_manager(main_window: tkinter.Tk) -> None:
+def init(args: Any) -> None:
     global _root
     global _tab_manager
-    assert _root is None and _tab_manager is None
+    global _parsed_args
+    assert _root is None and _tab_manager is None and _parsed_args is None
+    assert args is not None
 
-    _root = main_window
+    _parsed_args = args
+
+    _root = tkinter.Tk()
     _root.protocol('WM_DELETE_WINDOW', quit)
     # TODO(typeshed): why ignore comment needed?
     _root.report_callback_exception = _log_tkinter_error  # type: ignore[assignment,misc]
@@ -48,6 +53,12 @@ def get_tab_manager() -> tabs.TabManager:
     if _tab_manager is None:
         raise RuntimeError("Porcupine is not running")
     return _tab_manager
+
+
+def get_parsed_args() -> Any:
+    """Return Porcupine's arguments as returned by :func:`argparse.parse_args`."""
+    assert _parsed_args is not None
+    return _parsed_args
 
 
 def quit() -> None:

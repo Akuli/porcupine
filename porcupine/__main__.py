@@ -39,9 +39,47 @@ Examples:
 
 
 def main() -> None:
+    # Arguments are parsed in two steps:
+    #   1. only the arguments needed for importing plugins
+    #   2. everything else
+    #
+    # Between those steps, plugins get a chance to add more command-line options.
     parser = argparse.ArgumentParser(
-        epilog=_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,  # help in step 1 wouldn't show options added by plugins
+    )
+    parser.add_argument(
+        '--verbose', action='store_true',
+        help=("print all logging messages to stderr, only warnings and errors "
+              "are printed by default (but all messages always go to a log "
+              "file in %s as well)" % _logs.LOG_DIR))
+    plugingroup = parser.add_argument_group("plugin loading options")
+    plugingroup.add_argument(
+        '--no-plugins', action='store_false', dest='use_plugins',
+        help=("don't load any plugins, this is useful for "
+              "understanding how much can be done with plugins"))
+    plugingroup.add_argument(
+        '--without-plugins', metavar='PLUGINS', default='',
+        help=("don't load PLUGINS (see --print-plugindir), "
+              "e.g. --without-plugins=highlight disables syntax highlighting, "
+              "multiple plugin names can be given comma-separated"))
 
+    args_parsed_in_first_step, junk = parser.parse_known_args()
+
+    dirs.makedirs()
+    _logs.setup(args_parsed_in_first_step.verbose)
+
+    settings.init_enough_for_using_disabled_plugins_list()
+    if args_parsed_in_first_step.use_plugins:
+        if args_parsed_in_first_step.without_plugins:
+            disable_list = args_parsed_in_first_step.without_plugins.split(',')
+        else:
+            disable_list = []
+        pluginloader.import_plugins(disable_list)
+
+    parser.add_argument('--help', action='help', help="show this message")
+    pluginloader.run_setup_argument_parser_functions(parser)
     parser.add_argument(
         '--version', action='version',
         version=("Porcupine %s" % porcupine_version),
@@ -55,17 +93,6 @@ def main() -> None:
     parser.add_argument(
         '-n', '--new-file', metavar='FILETYPE', action='append',
         help='create a "New File" tab with a filetype from filetypes.toml')
-
-    plugingroup = parser.add_argument_group("plugin loading options")
-    plugingroup.add_argument(
-        '--no-plugins', action='store_false', dest='use_plugins',
-        help=("don't load any plugins, this is useful for "
-              "understanding how much can be done with plugins"))
-    plugingroup.add_argument(
-        '--without-plugins', metavar='PLUGINS', default='',
-        help=("don't load PLUGINS (see --print-plugindir), "
-              "e.g. --without-plugins=highlight disables syntax highlighting, "
-              "multiple plugin names can be given comma-separated"))
     plugingroup.add_argument(
         '--shuffle-plugins', action='store_true',
         help=("respect setup_before and setup_after, but otherwise setup the "
@@ -73,13 +100,6 @@ def main() -> None:
               "alphabetically, useful for making sure that your plugin's "
               "setup_before and setup_after define everything needed; usually "
               "plugins are not shuffled in order to make the UI consistent"))
-
-    parser.add_argument(
-        '-v', '--verbose', action='store_true',
-        help=("print all logging messages to stderr, only warnings and errors "
-              "are printed by default (but all messages always go to a log "
-              "file in %s as well)" % _logs.LOG_DIR))
-
     args = parser.parse_args()
 
     # Make sure to get error early if filetype doesn't exist.
@@ -94,23 +114,11 @@ def main() -> None:
         except KeyError:
             parser.error(f"no filetype named {filetype_name!r}")
 
-    dirs.makedirs()
-    _logs.setup(args.verbose)
-    _state.set_main_window_and_create_tab_manager(tkinter.Tk())
-    settings._init()
+    _state.init(args)
+    settings.init_the_rest_after_initing_enough_for_using_disabled_plugins_list()
     menubar._init()
 
-    if args.use_plugins:
-        if args.without_plugins:
-            disable_list = args.without_plugins.split(',')
-        else:
-            disable_list = []
-        pluginloader.load(
-            disabled_on_command_line=disable_list,
-            shuffle=args.shuffle_plugins,
-        )
-
-    # this is generated even if args.use_plugins is False and 0 plugins were loaded
+    pluginloader.run_setup_functions(args.shuffle_plugins)
     get_main_window().event_generate('<<PluginsLoaded>>')
 
     tabmanager = get_tab_manager()

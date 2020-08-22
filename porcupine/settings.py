@@ -203,11 +203,18 @@ class Settings:
         _log.debug(f"{option_name} was set to {value!r}, generating {event_name} events")
 
         if self._change_event_widget is None:
-            not_notified_yet: List[tkinter.Misc] = [porcupine.get_main_window()]
-            while not_notified_yet:
-                widget = not_notified_yet.pop()
-                widget.event_generate(event_name)
-                not_notified_yet.extend(widget.winfo_children())
+            try:
+                main_window = porcupine.get_main_window()
+            except RuntimeError as e:
+                # on porcupine startup, plugin disable list needs to be set before main window exists
+                if option_name != 'disabled_plugins':
+                    raise e
+            else:
+                not_notified_yet: List[tkinter.Misc] = [main_window]
+                while not_notified_yet:
+                    widget = not_notified_yet.pop()
+                    widget.event_generate(event_name)
+                    not_notified_yet.extend(widget.winfo_children())
         else:
             self._change_event_widget.event_generate(event_name)
 
@@ -346,11 +353,21 @@ def _check_pygments_style(name: str) -> str:
     return name
 
 
-def _init_global_settings() -> None:
+# plugin disable list is needed on porcupine startup before anything is done with tkinter
+#
+# undocumented on purpose, don't use in plugins
+def init_enough_for_using_disabled_plugins_list() -> None:
     try:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {_get_json_path()} failed")
+    add_option('disabled_plugins', [], type=List[str])
+
+
+def _init_global_gui_settings() -> None:
+    add_option('pygments_style', 'default', converter=_check_pygments_style)
+    add_option('default_filetype', 'Python')
+    add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
     if fixedfont.cget('size') < 0:
@@ -363,10 +380,6 @@ def _init_global_settings() -> None:
     # in tkinter.font.families()
     add_option('font_family', fixedfont.actual('family'))
     add_option('font_size', fixedfont.cget('size'))
-    add_option('pygments_style', 'default', converter=_check_pygments_style)
-    add_option('default_filetype', 'Python')
-    add_option('disabled_plugins', [], type=List[str])
-    add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: Optional['tkinter.Event[tkinter.Misc]']) -> None:
@@ -684,11 +697,12 @@ def _fill_notebook_with_defaults() -> None:
     add_config_file_button(configs, dirs.configdir / 'filetypes.toml')
 
 
-def _init() -> None:
+# undocumented on purpose, don't use in plugins
+def init_the_rest_after_initing_enough_for_using_disabled_plugins_list() -> None:
     global _notebook
     if _notebook is not None:
         raise RuntimeError("can't call _init() twice")
 
-    _init_global_settings()
+    _init_global_gui_settings()
     _notebook = _create_notebook()
     _fill_notebook_with_defaults()
