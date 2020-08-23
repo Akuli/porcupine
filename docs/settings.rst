@@ -47,11 +47,6 @@ Porcupine has these options by default (but you can add your own options too, se
             from pygments import styles
             the_style = styles.get_style_by_name(settings.get('pygments_style', str))
 
-    ``default_filetype``: :class:`str`
-        Name of the filetype used when a new file is created with e.g. Ctrl+N.
-
-        .. seealso:: :meth:`porcupine.filetypes.get_filetype_by_name`
-
     ``disabled_plugins``: List[:class:`str`]
 
         Names of plugins that the user has disabled. See :mod:`porcupine.pluginloader`.

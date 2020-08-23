@@ -38,7 +38,6 @@ Everything that you can use in plugins is documented here.
       textwidget
       images
       dirs
-      filetypes
       settings
       pluginloader
       utils
