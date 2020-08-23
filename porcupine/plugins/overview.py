@@ -59,10 +59,7 @@ class Overview(tkinter.Text):
             tkinter.Frame(self),
         ]
 
-        tcl_code = tab.textwidget.cget('yscrollcommand')
-        assert tcl_code
-        tab.textwidget.config(yscrollcommand=(tab.register(self._scroll_callback) + '\n' + tcl_code))
-
+        utils.add_scroll_command(tab.textwidget, 'yscrollcommand', self._scroll_callback)
         self.bind('<Button-1>', self._on_click_and_drag, add=True)
         self.bind('<Button1-Motion>', self._on_click_and_drag, add=True)
 

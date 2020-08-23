@@ -392,6 +392,31 @@ def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
         return from_.bind(event_name, callback, add=add)
 
 
+# TODO: document this
+def add_scroll_command(
+        widget: tkinter.Text,
+        option: Literal['xscrollcommand', 'yscrollcommand'],
+        callback: Callable[[], None]) -> None:
+    if not widget[option]:
+        widget[option] = (lambda *args: None)
+    tcl_code = widget[option]
+    assert isinstance(tcl_code, str)
+    assert tcl_code
+
+    # from options(3tk): "... the widget will generate a Tcl command by
+    # concatenating the scroll command and two numbers."
+    #
+    # So if tcl_code is like this:  bla bla bla
+    #
+    # it would be called like this:  bla bla bla 0.123 0.456
+    #
+    # and by putting something in front on separate line we can make it get called like this
+    #
+    #   something
+    #   bla bla bla 0.123 0.456
+    widget[option] = widget.register(callback) + '\n' + tcl_code
+
+
 class TemporaryBind:
     """Bind and unbind a callback.
 

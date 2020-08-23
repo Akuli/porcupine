@@ -20,8 +20,7 @@ class LongLineMarker:
         self._width = self._height = 1        # on_configure() will run soon
 
     def setup(self) -> None:
-        assert not self.tab.textwidget.cget('xscrollcommand')
-        self.tab.textwidget.config(xscrollcommand=self.do_update)
+        utils.add_scroll_command(self.tab.textwidget, 'xscrollcommand', self.do_update)
         self.tab.bind('<<TabSettingChanged:max_line_length>>', self.do_update, add=True)
         self.tab.bind('<<SettingChanged:font_family>>', self.do_update, add=True)
         self.tab.bind('<<SettingChanged:font_size>>', self.do_update, add=True)

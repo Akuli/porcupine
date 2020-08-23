@@ -12,27 +12,7 @@ class LineNumbers:
         self.textwidget = textwidget_of_tab
         self.canvas = tkinter.Canvas(parent, width=40)
         textwidget.use_pygments_theme(self.canvas, self._set_colors)
-
-        # from options(3tk): "... the widget will generate a Tcl command by
-        # concatenating the scroll command and two numbers."
-        #
-        # So if yscrollcommand is like this
-        #
-        #   bla bla bla
-        #
-        # it would be called like this
-        #
-        #   bla bla bla 0.123 0.456
-        #
-        # and by putting something in front on separate line we can make it get called like this
-        #
-        #   _do_update
-        #   bla bla bla 0.123 0.456
-        old_tcl_code = textwidget_of_tab.cget('yscrollcommand')
-        assert old_tcl_code
-        new_tcl_code = self.canvas.register(self._do_update) + '\n' + old_tcl_code
-        textwidget_of_tab.config(yscrollcommand=new_tcl_code)
-
+        utils.add_scroll_command(textwidget_of_tab, 'yscrollcommand', self._do_update)
         textwidget_of_tab.bind('<<ContentChanged>>', self._do_update, add=True)
         self._do_update()
 
