@@ -40,6 +40,7 @@ class _Underliner:
         self.textwidget.bind('<<UnderlinerHidePopup>>', self._hide_popup, add=True)
         self.textwidget.tag_bind('underline_common', '<Enter>', self._on_mouse_enter)
         self.textwidget.tag_bind('underline_common', '<Leave>', self._hide_popup)
+        utils.add_scroll_command(textwidget, 'yscrollcommand', self._hide_popup)
 
         self._popup: Optional[tkinter.Toplevel] = None
         self._popup_tag: Optional[str] = None
