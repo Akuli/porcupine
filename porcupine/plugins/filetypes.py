@@ -213,18 +213,24 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
+    def parse_filetype_name(name: str) -> FileType:
+        try:
+            return filetypes[name]
+        except KeyError:
+            raise argparse.ArgumentTypeError(f"no filetype named {name!r}")
+
     load_filetypes()
     parser.add_argument(
-        '-n', '--new-file', metavar='FILETYPE', action='append',
+        '-n', '--new-file', metavar='FILETYPE', action='append', type=parse_filetype_name,
         help='create a "New File" tab with a filetype from filetypes.toml')
     # TODO: make sure to get error for bad filetypes
 
 
 def open_files_specified_on_command_line(junk: object) -> None:
-    for filetype_name in (get_parsed_args().new_file or []):   # new_file may be None
+    for filetype in (get_parsed_args().new_file or []):   # new_file may be None
         tab = tabs.FileTab(get_tab_manager())
         get_tab_manager().add_tab(tab)  # sets default filetype
-        apply_filetype_to_tab(tab, filetypes[filetype_name])  # sets correct filetype
+        apply_filetype_to_tab(tab, filetype)  # sets correct filetype
 
 
 def menu_callback(filetype: FileType) -> None:

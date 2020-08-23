@@ -5,6 +5,7 @@
 # see also update(3tcl)
 
 import pathlib
+import subprocess
 import sys
 import tempfile
 import tkinter
@@ -97,3 +98,15 @@ def filetab(porcusession, tabmanager):
     tab = tabs.FileTab(tabmanager)
     tabmanager.add_tab(tab)
     return tab
+
+
+@pytest.fixture
+def run_porcupine():
+    def actually_run_porcupine(args, expected_exit_status):
+        run_result = subprocess.run(
+            [sys.executable, '-m', 'porcupine'] + args,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
+        assert run_result.returncode == expected_exit_status
+        return run_result.stdout
+
+    return actually_run_porcupine

@@ -14,3 +14,8 @@ def test_get_filedialog_kwargs(porcusession):
 
     assert filedialog_kwargs['filetypes'][0] == ('All Files', '*')
     assert '.py' in dict(filedialog_kwargs['filetypes'])['Python']
+
+
+def test_bad_filetype_on_command_line(run_porcupine):
+    output = run_porcupine(['-n', 'FooBar'], 2)
+    assert "no filetype named 'FooBar'" in output
