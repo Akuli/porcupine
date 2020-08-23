@@ -1,5 +1,4 @@
 """Everything related to filetypes.toml."""
-# TODO: turn this into a plugin?
 
 import argparse
 import fnmatch
