@@ -42,7 +42,7 @@ class _Underliner:
         self.textwidget.tag_bind('underline_common', '<Leave>', self._hide_message_label)
         utils.add_scroll_command(textwidget, 'yscrollcommand', self._hide_message_label)
 
-        self._message_label: Optional[tkinter.Toplevel] = None
+        self._message_label: Optional[tkinter.Label] = None
         self._message_tag: Optional[str] = None
         self._tag2underline: Dict[str, Underline] = {}
 
