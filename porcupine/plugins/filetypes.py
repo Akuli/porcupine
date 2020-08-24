@@ -6,7 +6,6 @@ from functools import partial
 import logging
 import pathlib
 import re
-import tkinter.ttk
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pygments.lexer   # type: ignore

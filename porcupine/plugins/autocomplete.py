@@ -11,7 +11,7 @@ import logging
 import re
 import tkinter
 from tkinter import ttk
-from typing import List, Optional, Union, cast
+from typing import List, Optional, Union
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
