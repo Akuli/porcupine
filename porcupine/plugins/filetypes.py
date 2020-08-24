@@ -6,7 +6,7 @@ from functools import partial
 import logging
 import pathlib
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional
 
 import pygments.lexer   # type: ignore
 import pygments.lexers  # type: ignore
@@ -163,36 +163,6 @@ def apply_filetype_to_tab(tab: tabs.FileTab, filetype: FileType) -> None:
             tab.settings.set(name, value, from_config=True)
 
 
-def setup_settings_stuff() -> None:
-    settings.add_option('default_filetype', 'Python')
-    settings.add_combobox(
-        settings.get_section('General'), 'default_filetype', "Default filetype for new files:",
-        values=sorted(filetypes.keys(), key=str.casefold),
-    )
-    settings.add_config_file_button(settings.get_section('Config Files'), USER_FILETYPES_PATH)
-
-
-def configure_filetypes_kwargs() -> None:
-    filetypes_for_filedialog: List[Tuple[
-        str,
-        Union[str, Tuple[str, ...]],  # tkinter works this way
-    ]] = [("All Files", "*")]
-    for name, filetype in filetypes.items():
-        if name == "Plain Text":
-            # can just use "All Files" for this
-            continue
-
-        patterns = tuple(
-            # "*.py" doesn't work on windows, but ".py" works and does the same thing
-            # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
-            pattern.lstrip('*')
-            for pattern in filetype['filename_patterns']
-        )
-        filetypes_for_filedialog.append((name, patterns))
-
-    filedialog_kwargs['filetypes'] = filetypes_for_filedialog
-
-
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     log.info(f"file path changed: {tab.path}")
     apply_filetype_to_tab(tab, get_filetype_for_tab(tab))
@@ -232,19 +202,32 @@ def menu_callback(filetype: FileType) -> None:
     apply_filetype_to_tab(tab, filetype)
 
 
-def create_filetypes_menu() -> None:
+def setup() -> None:
+    # load_filetypes() got already called in setup_argument_parser()
+    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_main_window().bind('<<PluginsLoaded>>', open_files_specified_on_command_line, add=True)
+
+    settings.add_option('default_filetype', 'Python')
+    settings.add_combobox(
+        settings.get_section('General'), 'default_filetype', "Default filetype for new files:",
+        values=sorted(filetypes.keys(), key=str.casefold),
+    )
+    settings.add_config_file_button(settings.get_section('Config Files'), USER_FILETYPES_PATH)
+
+    filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
+        (name, [
+            # "*.py" doesn't work on windows, but ".py" works and does the same thing
+            # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
+            pattern.lstrip("*")
+            for pattern in filetype['filename_patterns']
+        ])
+        for name, filetype in filetypes.items()
+        if name != 'Plain Text'    # can just use "All Files" for this
+    ]
+
     for name, filetype in filetypes.items():
         safe_name = name.replace('/', '\\')   # TODO: unicode slash character
         menubar.get_menu("Filetypes").add_command(
             label=safe_name,
             command=partial(menu_callback, filetype))
         menubar.set_enabled_based_on_tab(f"Filetypes/{safe_name}", (lambda tab: isinstance(tab, tabs.FileTab)))
-
-
-def setup() -> None:
-    # load_filetypes() got already called in setup_argument_parser()
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
-    get_main_window().bind('<<PluginsLoaded>>', open_files_specified_on_command_line, add=True)
-    setup_settings_stuff()
-    configure_filetypes_kwargs()
-    create_filetypes_menu()

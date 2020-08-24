@@ -1,19 +1,27 @@
-from porcupine import filedialog_kwargs
+import platform
+import pytest
+from tkinter import filedialog
+
+from porcupine import filedialog_kwargs, get_main_window
 
 
-def test_get_filedialog_kwargs(porcusession):
-    for pair in filedialog_kwargs['filetypes']:
-        assert isinstance(pair, tuple)
-        assert len(pair) == 2
-        assert isinstance(pair[0], str)
-        if pair[1] != '*':
-            # because tkinter likes tuples, and in tcl, "*" is a string
-            # that is also a list of length 1
-            assert isinstance(pair[1], tuple)
-        assert all(isinstance(pattern, str) for pattern in pair[1])
+def test_filedialog_patterns_got_stripped(porcusession):
+    python_patterns = dict(filedialog_kwargs['filetypes'])['Python']
+    assert '*.py' not in python_patterns
+    assert '.py' in python_patterns
 
-    assert filedialog_kwargs['filetypes'][0] == ('All Files', '*')
-    assert '.py' in dict(filedialog_kwargs['filetypes'])['Python']
+
+@pytest.mark.skipif(
+    platform.system() != 'Linux',
+    reason="don't know how filedialog works on non-Linux")
+def test_actually_running_filedialog():
+    # Wait and then press Esc. That's done as Tcl code because the Tk widget
+    # representing the dialog can't be used with tkinter.
+    root = get_main_window().nametowidget('.')
+    root.after(1000, root.eval, "event generate [focus] <Escape>")
+
+    # If filedialog_kwargs are wrong, then this errors.
+    filedialog.askopenfilename(**filedialog_kwargs)
 
 
 def test_bad_filetype_on_command_line(run_porcupine):
