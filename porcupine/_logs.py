@@ -13,6 +13,7 @@ from porcupine import dirs
 
 log = logging.getLogger(__name__)
 LOG_DIR = dirs.cachedir / 'logs'
+# FIXME: race condition with two log files created the same second
 _FILENAME_FORMAT = '%Y-%m-%dT%H-%M-%S.txt'
 
 # might be useful to grep something from old logs, but 30 days was way too much
