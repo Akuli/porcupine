@@ -461,8 +461,7 @@ def _create_validation_triangle(
     callback: Callable[[_StrOrInt], bool],
 ) -> ttk.Label:
 
-    # TODO(typeshed): master attribute
-    triangle: ttk.Label = ttk.Label(widget.master)  # type: ignore[attr-defined]
+    triangle = ttk.Label(widget.master)
     var = tkinter.StringVar()
 
     def var_changed(*junk: object) -> None:
@@ -547,8 +546,7 @@ def add_section(title_text: str) -> ttk.Frame:
 
 # Widget is needed for chooser.master and triangle.grid
 def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]) -> None:
-    # TODO(typeshed): master attribute
-    label = ttk.Label(chooser.master, text=label_text)  # type: ignore[attr-defined]
+    label = ttk.Label(chooser.master, text=label_text)
     label.grid(column=0, sticky='w')
     chooser.grid(row=label.grid_info()['row'], column=1, sticky='we')
     if triangle is not None:

@@ -31,8 +31,7 @@ class Completion:
 
 
 def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
-    # TODO(typeshed): master attribute
-    scrollbar = ttk.Scrollbar(widget.master)  # type: ignore[union-attr]
+    scrollbar = ttk.Scrollbar(widget.master)
     widget.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=widget.yview)
 
@@ -320,8 +319,7 @@ class AutoCompleter:
 
         # use this cursor pos when needed because while processing the
         # completion request or filtering, user might type more
-        # TODO(typeshed): .index() return type
-        self._orig_cursorpos = cast(str, self._tab.textwidget.index('insert'))
+        self._orig_cursorpos = self._tab.textwidget.index('insert')
 
         if self._tab.bind('<<AutoCompletionRequest>>'):
             # an event handler is bound, use that

@@ -120,8 +120,7 @@ class Highlighter:
         for (bold, italic), font in self._fonts.items():
             # fonts don't have an update() method
             for key, value in font_updates.items():
-                # TODO(typeshed): font objects and widgets behave inconsistently
-                font[key] = value  # type: ignore[call-overload]
+                font[key] = value
 
     def _style_changed(self, junk: object = None) -> None:
         # http://pygments.org/docs/formatterdevelopment/#styles
