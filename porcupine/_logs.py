@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import itertools
 import logging
 import os
 import platform
@@ -13,25 +14,24 @@ from porcupine import dirs
 
 log = logging.getLogger(__name__)
 LOG_DIR = dirs.cachedir / 'logs'
-# FIXME: race condition with two log files created the same second
-_FILENAME_FORMAT = '%Y-%m-%dT%H-%M-%S.txt'
+FILENAME_FIRST_PART_FORMAT = '%Y-%m-%dT%H-%M-%S'
 
 # might be useful to grep something from old logs, but 30 days was way too much
 LOG_MAX_AGE_DAYS = 7
 
 
 def _remove_old_logs() -> None:
-    for filename in os.listdir(LOG_DIR):
+    for path in LOG_DIR.glob('*.txt'):
+        # support '<LOG_DIR>/<first_part>_<number>.txt' and '<LOG_DIR>/<firstpart>.txt'
+        first_part = path.stem.split('_')[0]
         try:
-            log_date = datetime.strptime(filename, _FILENAME_FORMAT)
+            log_date = datetime.strptime(first_part, FILENAME_FIRST_PART_FORMAT)
         except ValueError:
-            log.info("%s contains a file with an unexpected name: %s",
-                     LOG_DIR, filename)
+            log.info(f"{path.parent} contains a file with an unexpected name: {path.name}")
             continue
 
         how_old = datetime.now() - log_date
         if how_old > timedelta(days=LOG_MAX_AGE_DAYS):
-            path = LOG_DIR / filename
             log.info(f"{path} is more than {LOG_MAX_AGE_DAYS} days old, removing")
             path.unlink()
 
@@ -49,44 +49,46 @@ def _run_command(command: str) -> None:
                     exc_info=True)
 
 
-def setup(verbose: bool) -> None:
+def _open_log_file():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    logfile = LOG_DIR / datetime.now().strftime(_FILENAME_FORMAT)
+    timestamp = datetime.now().strftime(FILENAME_FIRST_PART_FORMAT)
+    filenames = (
+        f'{timestamp}.txt' if i == 0 else f'{timestamp}_{i}.txt'
+        for i in itertools.count()
+    )
+    for filename in filenames:
+        try:
+            return (LOG_DIR / filename).open('x', encoding='utf-8')
+        except FileExistsError:
+            continue
 
-    if sys.stdout is None and sys.stderr is None:
-        # running in pythonw.exe, make sure to log everything
-        #
-        # logging.StreamHandler has a stream attribute which is set to the file
-        # it opens, but that's undocumented, so need to open the file myself
-        # and use StreamHandler
-        sys.stdout = sys.stderr = logfile.open('x', errors='replace')
-        file_handler = logging.StreamHandler(sys.stderr)
-        file_handler.setLevel(logging.DEBUG)
-        print_handler = None
 
-    else:
-        file_handler = logging.FileHandler(str(logfile), 'x')
-        file_handler.setLevel(logging.DEBUG)
-        print_handler = logging.StreamHandler(sys.stderr)
-        print_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
+def setup(verbose: bool) -> None:
+    handlers: List[logging.Handler] = []
 
-    handlers: List[logging.Handler] = [file_handler]
+    log_file = _open_log_file()
+    file_handler = logging.StreamHandler(log_file)
+    file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(
         '[%(asctime)s] %(name)s %(levelname)s: %(message)s'))
-    if print_handler is not None:
-        handlers.append(print_handler)
+    handlers.append(file_handler)
+
+    if sys.stderr is not None:
+        # not running in pythonw.exe, can also show something in terminal
+        print_handler = logging.StreamHandler(sys.stderr)
+        print_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
         print_handler.setFormatter(logging.Formatter(
             '%(name)s %(levelname)s: %(message)s'))
+        handlers.append(print_handler)
 
-    logging.basicConfig(level=logging.DEBUG,  # no idea why this is needed
-                        handlers=handlers,
-                        format="[%(levelname)s] %(name)s: %(message)s")
+    # don't know why level must be specified here
+    logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
     log.debug("starting Porcupine %s from '%s'", porcupine.__version__,
               cast(Any, porcupine).__path__[0])
-    log.debug("log file: %s", logfile)
+    log.debug("log file: %s", log_file.name)
     if not verbose:
-        print(f"log file: {logfile}")
+        print(f"log file: {log_file.name}")
     log.debug("PID: %d", os.getpid())
     log.debug("running on Python %d.%d.%d from '%s'",
               *sys.version_info[:3], sys.executable)
