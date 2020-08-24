@@ -105,6 +105,7 @@ Click *Porcupine Settings* in the *Edit* menu to open the dialog.
 The dialog contains a :class:`tkinter.ttk.Notebook` widget and some buttons.
 
 .. autofunction:: get_notebook
+.. autofunction:: get_section
 
 You can add widgets to the notebook yourself, but it's usually easiest to use this:
 

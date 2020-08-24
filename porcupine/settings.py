@@ -651,6 +651,16 @@ def _edit_file(path: pathlib.Path) -> None:
     get_notebook().winfo_toplevel().withdraw()
 
 
+def get_section(text: str) -> ttk.Frame:
+    """Find a tab from the notebook by the text of the tab showing near the top of the notebook."""
+    [result] = [
+        get_notebook().nametowidget(tab)
+        for tab in get_notebook().tabs()
+        if get_notebook().tab(tab, 'text') == text
+    ]
+    return result
+
+
 def add_config_file_button(section: ttk.Frame, path: pathlib.Path) -> ttk.Button:
     """
     Add a button that opens a file in Porcupine when it's clicked.

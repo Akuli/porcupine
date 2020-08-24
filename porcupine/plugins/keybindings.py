@@ -11,13 +11,7 @@ def setup() -> None:
     default_path = porcupine_dir / 'default_keybindings.tcl'
     user_path = dirs.configdir / 'keybindings.tcl'
 
-    notebook = settings.get_notebook()
-    [config_file_section] = [
-        notebook.nametowidget(tab) for tab in notebook.tabs()
-        if notebook.tab(tab, 'text') == 'Config Files'
-    ]
-    assert isinstance(config_file_section, tkinter.ttk.Frame)
-    settings.add_config_file_button(config_file_section, user_path)
+    settings.add_config_file_button(settings.get_section('Config Files'), user_path)
 
     try:
         with user_path.open('x') as file:

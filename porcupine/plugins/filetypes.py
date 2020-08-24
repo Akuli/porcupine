@@ -166,24 +166,11 @@ def apply_filetype_to_tab(tab: tabs.FileTab, filetype: FileType) -> None:
 
 def setup_settings_stuff() -> None:
     settings.add_option('default_filetype', 'Python')
-
-    notebook = settings.get_notebook()
-    [general_section] = [
-        notebook.nametowidget(tab) for tab in notebook.tabs()
-        if notebook.tab(tab, 'text') == 'General'
-    ]
-    assert isinstance(general_section, tkinter.ttk.Frame)
     settings.add_combobox(
-        general_section, 'default_filetype', "Default filetype for new files:",
+        settings.get_section('General'), 'default_filetype', "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-
-    [config_file_section] = [
-        notebook.nametowidget(tab) for tab in notebook.tabs()
-        if notebook.tab(tab, 'text') == 'Config Files'
-    ]
-    assert isinstance(config_file_section, tkinter.ttk.Frame)
-    settings.add_config_file_button(config_file_section, USER_FILETYPES_PATH)
+    settings.add_config_file_button(settings.get_section('Config Files'), USER_FILETYPES_PATH)
 
 
 def configure_filetypes_kwargs() -> None:
