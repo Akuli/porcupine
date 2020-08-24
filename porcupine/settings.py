@@ -681,7 +681,6 @@ def _fill_notebook_with_defaults() -> None:
         "Currently there's no GUI for changing these settings, but you can edit it the "
         "configuration files yourself."
     ))
-    add_config_file_button(configs, dirs.configdir / 'filetypes.toml')
 
 
 # undocumented on purpose, don't use in plugins

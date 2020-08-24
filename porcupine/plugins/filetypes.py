@@ -22,6 +22,7 @@ from porcupine import dirs, filedialog_kwargs, menubar, settings, tabs, utils
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]
 filetypes: Dict[str, FileType] = {}
+USER_FILETYPES_PATH = dirs.configdir / 'filetypes.toml'
 
 
 def is_list_of_strings(obj: object) -> bool:
@@ -29,17 +30,16 @@ def is_list_of_strings(obj: object) -> bool:
 
 
 def load_filetypes() -> None:
-    user_path = dirs.configdir / 'filetypes.toml'
     defaults_path = pathlib.Path(__file__).absolute().parent.parent / 'default_filetypes.toml'
 
     filetypes.update(toml.load(defaults_path))
 
     user_filetypes: Dict[str, FileType] = {}
     try:
-        user_filetypes = dict(toml.load(user_path))
+        user_filetypes = dict(toml.load(USER_FILETYPES_PATH))
     except FileNotFoundError:
-        log.info(f"'{user_path}' not found, creating")
-        with user_path.open('x') as file:   # error if exists
+        log.info(f"'{USER_FILETYPES_PATH}' not found, creating")
+        with USER_FILETYPES_PATH.open('x') as file:   # error if exists
             file.write('''\
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
@@ -47,7 +47,7 @@ def load_filetypes() -> None:
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
 ''')
     except (OSError, UnicodeError, toml.TomlDecodeError):
-        log.exception(f"reading '{user_path}' failed, using defaults")
+        log.exception(f"reading '{USER_FILETYPES_PATH}' failed, using defaults")
 
     # toml.load can take multiple file names, but it doesn't merge the configs
     for name, updates in user_filetypes.items():
@@ -164,7 +164,7 @@ def apply_filetype_to_tab(tab: tabs.FileTab, filetype: FileType) -> None:
             tab.settings.set(name, value, from_config=True)
 
 
-def add_default_filetype_setting() -> None:
+def setup_settings_stuff() -> None:
     settings.add_option('default_filetype', 'Python')
 
     notebook = settings.get_notebook()
@@ -177,6 +177,13 @@ def add_default_filetype_setting() -> None:
         general_section, 'default_filetype', "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
+
+    [config_file_section] = [
+        notebook.nametowidget(tab) for tab in notebook.tabs()
+        if notebook.tab(tab, 'text') == 'Config Files'
+    ]
+    assert isinstance(config_file_section, tkinter.ttk.Frame)
+    settings.add_config_file_button(config_file_section, USER_FILETYPES_PATH)
 
 
 def configure_filetypes_kwargs() -> None:
@@ -252,6 +259,6 @@ def setup() -> None:
     # load_filetypes() got already called in setup_argument_parser()
     utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
     get_main_window().bind('<<PluginsLoaded>>', open_files_specified_on_command_line, add=True)
-    add_default_filetype_setting()
+    setup_settings_stuff()
     configure_filetypes_kwargs()
     create_filetypes_menu()
