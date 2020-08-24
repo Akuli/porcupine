@@ -57,9 +57,7 @@ def test_log_path_printed():
     # -u for unbuffered, helps get printed output when python is killed
     process = subprocess.Popen([sys.executable, '-u', '-m', 'porcupine'], stdout=subprocess.PIPE)
     try:
-        print("sleep begin")
         time.sleep(1)
-        print("end")
     finally:
         process.kill()
 
