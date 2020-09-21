@@ -32,8 +32,7 @@ def init(args: Any) -> None:
 
     _root = tkinter.Tk()
     _root.protocol('WM_DELETE_WINDOW', quit)
-    # TODO(typeshed): why ignore comment needed?
-    _root.report_callback_exception = _log_tkinter_error  # type: ignore[assignment,misc]
+    _root.report_callback_exception = _log_tkinter_error
 
     _tab_manager = tabs.TabManager(_root)
     _tab_manager.pack(fill='both', expand=True)
