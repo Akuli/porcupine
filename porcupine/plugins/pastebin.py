@@ -9,7 +9,7 @@ from tkinter import ttk
 from typing import Any, Optional
 import webbrowser
 
-import pygments.lexer  # type: ignore
+from pygments.lexer import LexerMeta  # type: ignore
 import requests
 
 from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
@@ -30,7 +30,7 @@ def tk_busy_forget() -> None:
         get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
 
 
-def paste_to_termbin(code: str, lexer_class: pygments.lexer.LexerMeta) -> str:
+def paste_to_termbin(code: str, lexer_class: LexerMeta) -> str:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(('termbin.com', 9999))
         sock.send(code.encode('utf-8'))
@@ -49,7 +49,7 @@ session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 
 
 # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
-def paste_to_dpaste_dot_com(code: str, lexer_class: pygments.lexer.LexerMeta) -> str:
+def paste_to_dpaste_dot_com(code: str, lexer_class: LexerMeta) -> str:
     # docs: https://dpaste.com/api/v2/
     # the docs tell to post to http://dpaste.de/api/ but they use
     # https://... in the examples 0_o only the https version works
@@ -112,7 +112,7 @@ class SuccessDialog(tkinter.Toplevel):
 class Paste:
 
     def __init__(self, pastebin_name: str,
-                 code: str, lexer_class: pygments.lexer.LexerMeta) -> None:
+                 code: str, lexer_class: LexerMeta) -> None:
         self.pastebin_name = pastebin_name
         self.content = code
         self.lexer_class = lexer_class
@@ -180,7 +180,7 @@ def start_pasting(pastebin_name: str) -> None:
         # nothing is selected, pastebin everything
         code = tab.textwidget.get('1.0', 'end - 1 char')
 
-    Paste(pastebin_name, code, tab.settings.get('pygments_lexer', pygments.lexer.LexerMeta)).start()
+    Paste(pastebin_name, code, tab.settings.get('pygments_lexer', LexerMeta)).start()
 
 
 def setup() -> None:

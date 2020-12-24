@@ -11,8 +11,8 @@ from tkinter import ttk, messagebox, filedialog
 import traceback
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 
-import pygments.lexer     # type: ignore
-import pygments.lexers    # type: ignore
+from pygments.lexer import LexerMeta     # type: ignore
+from pygments.lexers import TextLexer    # type: ignore
 
 from porcupine import _state, images, settings, textwidget, utils
 
@@ -476,11 +476,11 @@ _FileTabState = Tuple[
 ]
 
 
-def _import_lexer_class(name: str) -> pygments.lexer.LexerMeta:
+def _import_lexer_class(name: str) -> LexerMeta:
     modulename, classname = name.rsplit('.', 1)
     module = importlib.import_module(modulename)
     klass = getattr(module, classname)
-    if not isinstance(klass, pygments.lexer.LexerMeta):
+    if not isinstance(klass, LexerMeta):
         raise TypeError(f"expected a Lexer subclass, got {klass}")
     return klass
 
@@ -579,9 +579,7 @@ bers.py>` use this attribute.
 
         self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
         self.settings.add_option(
-            'pygments_lexer',
-            pygments.lexers.TextLexer,
-            type=pygments.lexer.LexerMeta,
+            'pygments_lexer', TextLexer, type=LexerMeta,
             converter=_import_lexer_class)
         self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)

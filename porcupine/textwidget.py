@@ -5,7 +5,7 @@ import tkinter.font as tkfont
 from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING, overload
 import weakref
 
-import pygments.styles          # type: ignore
+from pygments import styles   # type: ignore
 
 from porcupine import settings, utils
 if TYPE_CHECKING:
@@ -512,7 +512,7 @@ def use_pygments_theme(
         :source:`porcupine/plugins/highlight.py`.
     """
     def on_style_changed(junk: object = None) -> None:
-        style = pygments.styles.get_style_by_name(settings.get('pygments_style', str))
+        style = styles.get_style_by_name(settings.get('pygments_style', str))
         bg = style.background_color
 
         # yes, style.default_style can be '#rrggbb', '' or nonexistent

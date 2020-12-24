@@ -12,9 +12,8 @@ import tkinter
 import tkinter.font as tkfont
 from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 
-import pygments.lexer       # type: ignore
-import pygments.styles      # type: ignore
-import pygments.token       # type: ignore
+from pygments import styles, token    # type: ignore
+from pygments.lexer import LexerMeta  # type: ignore
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -25,10 +24,10 @@ def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
         yield from sub
 
 
-_ALL_TAGS = set(map(str, _list_all_token_types(pygments.token.Token)))
+_ALL_TAGS = set(map(str, _list_all_token_types(token.Token)))
 
 PygmentizeResult = Dict[
-    str,                # str(tokentype)
+    str,         # str(tokentype)
     List[str],   # [start1, end1, start2, end2, ...]
 ]
 
@@ -38,12 +37,12 @@ PygmentizeResult = Dict[
 class PygmentizerProcess:
 
     def __init__(self) -> None:
-        self.in_queue: multiprocessing.Queue[Tuple[pygments.lexer.LexerMeta, str]] = multiprocessing.Queue()
+        self.in_queue: multiprocessing.Queue[Tuple[LexerMeta, str]] = multiprocessing.Queue()
         self.out_queue: multiprocessing.Queue[PygmentizeResult] = multiprocessing.Queue()
         self.process = multiprocessing.Process(target=self._run)
         self.process.start()
 
-    def _pygmentize(self, lexer_class: pygments.lexer.LexerMeta, code: str) -> PygmentizeResult:
+    def _pygmentize(self, lexer_class: LexerMeta, code: str) -> PygmentizeResult:
         # pygments doesn't include any info about where the tokens are
         # so we need to do it manually :(
         lineno = 1
@@ -86,7 +85,7 @@ class Highlighter:
     def __init__(
             self,
             textwidget: tkinter.Text,
-            lexer_class_getter: Callable[[], pygments.lexer.LexerMeta]) -> None:
+            lexer_class_getter: Callable[[], LexerMeta]) -> None:
         self.textwidget = textwidget
         self._get_lexer_class = lexer_class_getter
         self.pygmentizer = PygmentizerProcess()
@@ -126,7 +125,7 @@ class Highlighter:
         # http://pygments.org/docs/formatterdevelopment/#styles
         # all styles seem to yield all token types when iterated over,
         # so we should always end up with the same tags configured
-        style = pygments.styles.get_style_by_name(settings.get('pygments_style', str))
+        style = styles.get_style_by_name(settings.get('pygments_style', str))
         for tokentype, infodict in style:
             # this doesn't use underline and border
             # i don't like random underlines in my code and i don't know
@@ -180,9 +179,9 @@ def on_new_tab(event: utils.EventWithData) -> None:
     tab = event.data_widget()
     if isinstance(tab, tabs.FileTab):
         # needed because pygments_lexer might change
-        def get_lexer_class() -> pygments.lexer.LexerMeta:
+        def get_lexer_class() -> LexerMeta:
             assert isinstance(tab, tabs.FileTab)  # f u mypy
-            return tab.settings.get('pygments_lexer', pygments.lexer.LexerMeta)
+            return tab.settings.get('pygments_lexer', LexerMeta)
 
         highlighter = Highlighter(tab.textwidget, get_lexer_class)
         tab.bind('<<TabSettingChanged:pygments_lexer>>', highlighter.highlight_all, add=True)

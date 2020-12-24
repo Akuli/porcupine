@@ -8,9 +8,7 @@ import pathlib
 import re
 from typing import Any, Dict, Optional
 
-import pygments.lexer   # type: ignore
-import pygments.lexers  # type: ignore
-import pygments.token   # type: ignore
+from pygments import lexers  # type: ignore
 from pygments.util import ClassNotFound     # type: ignore
 import toml
 
@@ -132,12 +130,12 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
 
     # if nothing else works, create a new filetype automagically based on pygments
     try:
-        lexer = pygments.lexers.get_lexer_for_filename(filepath)
+        lexer = lexers.get_lexer_for_filename(filepath)
     except ClassNotFound:
         if shebang_line is None:
             return filetypes['Plain Text']  # give up
-        lexer = pygments.lexers.guess_lexer(shebang_line)
-        if isinstance(lexer, pygments.lexers.TextLexer):
+        lexer = lexers.guess_lexer(shebang_line)
+        if isinstance(lexer, lexers.TextLexer):
             return filetypes['Plain Text']  # give up
 
     return {

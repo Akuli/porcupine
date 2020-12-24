@@ -3,8 +3,7 @@
 import tkinter
 import tkinter.font as tkfont
 
-import pygments.styles  # type: ignore
-import pygments.token   # type: ignore
+from pygments import styles, token   # type: ignore
 
 from porcupine import get_tab_manager, settings, tabs, utils
 
@@ -51,9 +50,9 @@ class LongLineMarker:
             height=self._height)
 
     def on_style_changed(self, junk: object = None) -> None:
-        style = pygments.styles.get_style_by_name(settings.get('pygments_style', str))
+        style = styles.get_style_by_name(settings.get('pygments_style', str))
         infos = dict(iter(style))   # iterating is documented
-        for tokentype in [pygments.token.Error, pygments.token.Name.Exception]:
+        for tokentype in [token.Error, token.Name.Exception]:
             if tokentype in infos:
                 for key in ['bgcolor', 'color', 'border']:
                     if infos[tokentype][key] is not None:

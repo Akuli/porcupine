@@ -12,7 +12,7 @@ import tkinter.font
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
 
-import pygments.styles   # type: ignore
+from pygments import styles   # type: ignore
 
 import porcupine
 from porcupine import dirs, images, utils
@@ -348,7 +348,7 @@ def _load_from_file() -> None:
 
 # pygments styles can be uninstalled, must not end up with invalid pygments style that way
 def _check_pygments_style(name: str) -> str:
-    pygments.styles.get_style_by_name(name)   # may raise error that will get logged
+    styles.get_style_by_name(name)   # may raise error that will get logged
     return name
 
 

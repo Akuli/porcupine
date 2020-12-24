@@ -4,13 +4,13 @@ import threading
 import tkinter
 from typing import List, Optional, Tuple
 
-import pygments.styles      # type: ignore
+from pygments import styles, token      # type: ignore
 
 from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 
 
 def get_colors(style_name: str) -> Tuple[str, str]:
-    style = pygments.styles.get_style_by_name(style_name)
+    style = styles.get_style_by_name(style_name)
     bg: str = style.background_color
 
     # style_names have a style_for_token() method, but only iterating
@@ -21,9 +21,9 @@ def get_colors(style_name: str) -> Tuple[str, str]:
     fg: Optional[str] = None
     style_infos = dict(iter(style))
 
-    for token in [pygments.token.String, pygments.token.Text]:
-        if style_infos[token]['color'] is not None:
-            fg = '#' + style_infos[token]['color']
+    for tokentype in [token.String, token.Text]:
+        if style_infos[tokentype]['color'] is not None:
+            fg = '#' + style_infos[tokentype]['color']
             break
 
     if fg is None:
@@ -37,7 +37,7 @@ def get_colors(style_name: str) -> Tuple[str, str]:
 # on this system, setup() took 0.287940 seconds before adding threads
 # and 0.000371 seconds after adding threads
 def load_style_names_to_list(target_list: List[str]) -> None:
-    target_list.extend(pygments.styles.get_all_styles())    # slow
+    target_list.extend(styles.get_all_styles())    # slow
     target_list.sort()
 
 
