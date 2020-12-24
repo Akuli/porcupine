@@ -247,6 +247,7 @@ prints the filename at the end of its output, and it seems to be always
 ## Publishing a new version of Porcupine
 
 Please ask me (Akuli) to do these things instead of doing them yourself.
-- Bump version number: `python3 bump.py`, `git push --tags origin master`, same without `--tags`
+- Bump version number: merge changes to master branch, then `python3 release.py patch`
+  (see `--help` if you don't know what `patch` means here)
 - Build and publish updated docs: `docs/publish.py`
 - Update `porcupine.wiki` as needed
