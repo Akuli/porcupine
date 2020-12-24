@@ -7,7 +7,7 @@ appdirs
 # this is just for the pastebin plugin, any python 3 compatible
 # requests should work
 # https://github.com/kennethreitz/requests/blob/master/HISTORY.rst
-requests>=0.10.1
+requests>=2.24.0, <3.0.0
 
 # pygments docs say "new in 1.6" about many things that porcupine uses
 pygments>=1.6
