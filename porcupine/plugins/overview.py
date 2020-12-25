@@ -95,16 +95,12 @@ class Overview(tkinter.Text):
             frame.config(bg=foreground)
 
     def set_font(self, junk: object = None) -> None:
-        font = (
+        self.tag_config('sel', font=(
             settings.get('font_family', str),
             round(settings.get('font_size', int) / 3),
-            ())
-        how_to_show_tab = ' ' * self._tab.settings.get('indent_size', int)
-
-        # tkinter doesn't provide a better way to do font stuff than stupid
-        # font object
-        self.config(tabs=self.tk.call('font', 'measure', font, how_to_show_tab))
-        self.tag_config('sel', font=font)
+            (),
+        ))
+        utils.config_tab_displaying(self, self._tab.settings.get('indent_size', int), tag='sel')
         self._update_vast()
 
     def _scroll_callback(self) -> None:

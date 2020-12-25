@@ -1,7 +1,6 @@
 import dataclasses
 import functools
 import tkinter
-import tkinter.font as tkfont
 from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING, overload
 import weakref
 
@@ -573,17 +572,7 @@ class MainText(tkinter.Text):
         self.bind('<Control-a>', self._select_all, add=True)
 
     def _on_indent_size_changed(self, junk: object = None) -> None:
-        # from the text(3tk) man page: "To achieve a different standard
-        # spacing, for example every 4 characters, simply configure the
-        # widget with “-tabs "[expr {4 * [font measure $font 0]}] left"
-        # -tabstyle wordprocessor”."
-        #
-        # my version is kind of minimal compared to that example, but it
-        # seems to work :)
-        #
-        # TODO: there's similar code in overview plugin, clean up
-        font = tkfont.Font(name='TkFixedFont', exists=True)
-        self.config(tabs=font.measure(' ' * self._tab.settings.get('indent_size', int)))
+        utils.config_tab_displaying(self, self._tab.settings.get('indent_size', int))
 
     def _on_delete(self, control_down: bool, event: 'tkinter.Event[tkinter.Misc]',
                    shifted: bool = False) -> utils.BreakOrNone:
