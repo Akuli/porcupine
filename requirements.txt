@@ -23,7 +23,7 @@ colorama>=0.2.5
 sansio-lsp-client>=0.7.2,<0.8.0
 
 # to have something hopefully work by default
-python-language-server
+python-language-server>=0.36.2,<1.0.0
 
 # for autopep8 plugin
 autopep8
