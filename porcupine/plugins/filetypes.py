@@ -124,7 +124,7 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
         shebang_line = None
 
     # don't guess from first line of file when it's not a shebang
-    if not shebang_line.startswith('#!'):
+    if shebang_line is not None and not shebang_line.startswith('#!'):
         shebang_line = None
 
     if shebang_line is not None:
