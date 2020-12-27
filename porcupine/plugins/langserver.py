@@ -172,7 +172,7 @@ class LocalhostSocketIO:
 
 
 # TODO: make this a part of porcupine rather than something that every plugin has to implement
-_PROJECT_ROOT_THINGS = ['editorconfig', '.git'] + [
+_PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
     readme + extension
     for readme in ['README', 'readme', 'Readme', 'ReadMe']
     for extension in ['', '.txt', '.md']

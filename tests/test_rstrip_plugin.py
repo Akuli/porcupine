@@ -1,14 +1,14 @@
-from porcupine import tabs
+def test_rstrip(filetab):
+    filetab.textwidget.insert('end', 'print("hello")  ')
+    filetab.update()
+    filetab.event_generate('<Return>')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'print("hello")\n'
 
-
-def test_rstrip(tabmanager):
-    tab = tabs.FileTab(tabmanager)
-    tabmanager.add_tab(tab)
-
-    tab.textwidget.insert('end', 'print("hello")  ')
-    tab.update()
-    tab.event_generate('<Return>')
-    tab.update()
-    assert tab.textwidget.get('1.0', 'end - 1 char') == 'print("hello")\n'
-
-    tabmanager.close_tab(tab)
+    # ctrl+enter should not wipe trailing whitespace
+    filetab.textwidget.delete('1.0', 'end')
+    filetab.textwidget.insert('end', 'print("hello")  ')
+    filetab.update()
+    filetab.event_generate('<Control-Return>')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'print("hello")  \n'

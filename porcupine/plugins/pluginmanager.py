@@ -38,6 +38,10 @@ def get_docstring(module_name: str) -> str:
     return '(no description available)'
 
 
+DIALOG_WIDTH = 800
+DIALOG_HEIGHT = 300
+
+
 class PluginDialogContent:
 
     def __init__(self, master: tkinter.Misc) -> None:
@@ -83,6 +87,11 @@ class PluginDialogContent:
         self._description.insert('1.0', "Please select a plugin.")
         self._description.config(state='disabled')
         self._description.pack(fill='both', expand=True)
+
+        # I had some trouble getting this to work. With after_idle, this makes
+        # the left side invisibly small. With 50ms timeout, it still happened
+        # sometimes.
+        panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7*DIALOG_WIDTH)))
 
     def _insert_data(self) -> None:
         for info in sorted(pluginloader.plugin_infos, key=(lambda info: info.name)):
@@ -165,8 +174,8 @@ def show_dialog() -> None:
     dialog = tkinter.Toplevel()
     PluginDialogContent(dialog).content.pack(fill='both', expand=True)
     dialog.transient(get_main_window())
-    dialog.geometry('700x300')
-    dialog.minsize(700, 300)
+    dialog.geometry(f'{DIALOG_WIDTH}x{DIALOG_HEIGHT}')
+    dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
     dialog.wait_window()
 
 

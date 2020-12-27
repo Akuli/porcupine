@@ -5,11 +5,12 @@ import hashlib
 import importlib
 import itertools
 import logging
+import os
 import pathlib
 import tkinter
 from tkinter import ttk, messagebox, filedialog
 import traceback
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
 
 from pygments.lexer import LexerMeta     # type: ignore
 from pygments.lexers import TextLexer    # type: ignore
@@ -19,6 +20,22 @@ from porcupine import _state, images, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
+_T = TypeVar('_T')
+
+
+def _find_duplicates(items: List[_T], key: Callable[[_T], str]) -> Iterable[List[_T]]:
+    for key_return_value, similar_items_iter in itertools.groupby(items, key=key):
+        similar_items = list(similar_items_iter)
+        if len(similar_items) >= 2:
+            yield similar_items
+
+
+def _short_ways_to_display_path(path):
+    parts = str(path).split(os.sep)
+    return [parts[-1], parts[-2] + os.sep + parts[-1]] + [
+        first_part + os.sep + '...' + os.sep + parts[-1]
+        for first_part in parts[:-2]
+    ]
 
 
 class TabManager(ttk.Notebook):
@@ -146,6 +163,24 @@ class TabManager(ttk.Notebook):
         except tkinter.TclError:        # index out of bounds
             return None
 
+    def _update_tab_titles(self):
+        titlelists = [list(tab.title_choices) for tab in self.tabs()]
+        while True:
+            did_something = False
+            for conflicting_title_lists in _find_duplicates(titlelists, key=(lambda lizt: lizt[0].strip("*"))):
+                # shorten longest title lists
+                maxlen = max(len(titlelist) for titlelist in conflicting_title_lists)
+                if maxlen >= 2:
+                    for titlelist in conflicting_title_lists:
+                        if len(titlelist) == maxlen:
+                            del titlelist[0]
+                            did_something = True
+            if not did_something:
+                break
+
+        for tab, titlelist in zip(self.tabs(), titlelists):
+            self.tab(tab, text=titlelist[0])
+
     # fixing tkinter weirdness: some methods returns widget names as
     # strings instead of widget objects, these str() everything anyway
     # because tkinter might be fixed some day
@@ -204,8 +239,8 @@ class TabManager(ttk.Notebook):
                 tab.destroy()
                 return existing_tab
 
-        self.add(tab, text=tab.title, image=images.get('closebutton'),
-                 compound='right')
+        self.add(tab, image=images.get('closebutton'), compound='right')
+        self._update_tab_titles()
         if select:
             self.select(tab)
 
@@ -224,6 +259,7 @@ class TabManager(ttk.Notebook):
         """
         self.forget(tab)
         tab.destroy()
+        self._update_tab_titles()
 
     def select_another_tab(self, diff: int) -> bool:
         """Try to select another tab next to the currently selected tab.
@@ -305,7 +341,7 @@ class Tab(ttk.Frame):
         class HelloTab(tabs.Tab):
             def __init__(self, manager):
                 super().__init__(manager)
-                self.title = "Hello"
+                self.title_choices = ["Hello"]
                 ttk.Label(self, text="Hello World!").pack()
 
         def new_hello_tab():
@@ -324,10 +360,16 @@ class Tab(ttk.Frame):
         This event is generated when :attr:`status` is set to a new
         value. Use ``event.widget.status`` to access the current status.
 
-    .. attribute:: title
+    .. attribute:: title_choices
 
-        This is the title of the tab, next to the red close button. You
-        can set and get this attribute easily.
+        A :class:`typing.Sequence` of strings that can be used as the title of
+        the tab, next to the red close button.
+
+        Usually the first title of the list is used, but if multiple tabs have
+        the same first title, then the second title is used instead, and so on.
+        For example, if you open a file named ``foo/bar/baz.py``, its title
+        will be ``baz.py``, but if you also open ``foo/bar2/baz.py`` then the
+        titles change to ``bar/baz.py`` and ``bar2/baz.py``.
 
     .. attribute:: status
 
@@ -367,7 +409,7 @@ class Tab(ttk.Frame):
     def __init__(self, manager: TabManager) -> None:
         super().__init__(manager)
         self._status = ''
-        self._title = ''
+        self._titles: Sequence[str] = ['']
 
         # top and bottom frames must be packed first because this way
         # they extend past other frames in the corners
@@ -390,14 +432,15 @@ class Tab(ttk.Frame):
         self.event_generate('<<StatusChanged>>')
 
     @property
-    def title(self) -> str:
-        return self._title
+    def title_choices(self) -> Sequence[str]:
+        return self._titles
 
-    @title.setter
-    def title(self, text: str) -> None:
-        self._title = text
+    @title_choices.setter
+    def title_choices(self, titles: Sequence[str]) -> None:
+        assert titles
+        self._titles = titles
         if self in self.master.tabs():
-            self.master.tab(self, text=text)
+            self.master._update_tab_titles()
 
     def can_be_closed(self) -> bool:
         """
@@ -527,9 +570,9 @@ class FileTab(Tab):
 
     .. virtualevent:: TabSettingChanged:foo
 
-        When the ``title`` of :attr:`~settings` is set,
+        When the ``indent_size`` of :attr:`~settings` is set,
         the tab receives (but the child widgets of the tab don't receive)
-        a virtual event named ``<<TabSettingChanged:title>>``.
+        a virtual event named ``<<TabSettingChanged:indent_size>>``.
         This works similarly for other tab settings.
 
     .. virtualevent:: Save
@@ -593,7 +636,7 @@ bers.py>` use this attribute.
         self.textwidget = textwidget.MainText(
             self, width=1, height=1, wrap='none', undo=True)
         self.textwidget.pack(side='left', fill='both', expand=True)
-        self.textwidget.bind('<<ContentChanged>>', self._update_title,
+        self.textwidget.bind('<<ContentChanged>>', self._update_titles,
                              add=True)
 
         if content:
@@ -609,7 +652,7 @@ bers.py>` use this attribute.
         self.scrollbar.config(command=self.textwidget.yview)
 
         self.mark_saved()
-        self._update_title()
+        self._update_titles()
         self._update_status()
 
     @classmethod
@@ -663,7 +706,7 @@ bers.py>` use this attribute.
     def mark_saved(self) -> None:
         """Make :meth:`is_saved` return True."""
         self._save_hash = self._get_hash()
-        self._update_title()
+        self._update_titles()
 
     def is_saved(self) -> bool:
         """Return False if the text has changed since previous save.
@@ -690,13 +733,16 @@ bers.py>` use this attribute.
             self.event_generate('<<PathChanged>>')
 
     # TODO: plugin
-    def _update_title(self, junk: object = None) -> None:
-        text = 'New File' if self.path is None else self.path.name
+    def _update_titles(self, junk: object = None) -> None:
+        if self.path is None:
+            titles = ['New File']
+        else:
+            titles = _short_ways_to_display_path(self.path)
+
         if not self.is_saved():
-            # TODO: figure out how to make the label red in ttk instead
-            #       of stupid stars
-            text = '*' + text + '*'
-        self.title = text
+            titles = [f'*{title}*' for title in titles]
+
+        self.title_choices = titles
 
     def _update_status(self, junk: object = None) -> None:
         if self.path is None:
@@ -818,7 +864,7 @@ bers.py>` use this attribute.
 
         # the title depends on the saved hash
         self._save_hash = save_hash
-        self._update_title()
+        self._update_titles()
 
         self.textwidget.mark_set('insert', cursor_pos)
         self.textwidget.see('insert linestart')

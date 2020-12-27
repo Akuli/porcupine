@@ -12,7 +12,7 @@ from porcupine import get_tab_manager, menubar, tabs
 
 def start_xterm() -> None:
     tab = tabs.Tab(get_tab_manager())
-    tab.title = "Terminal"
+    tab.title_choices = ["Terminal"]
     content = tkinter.Frame(tab, container=True)
     content.pack(fill='both', expand=True)   # FIXME: doesn't stretch correctly?
 

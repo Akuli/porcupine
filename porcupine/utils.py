@@ -605,6 +605,21 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     return text
 
 
+# TODO: document this
+def config_tab_displaying(textwidget: tkinter.Text, indent_size: int, *, tag: Optional[str] = None) -> None:
+    # from the text(3tk) man page: "To achieve a different standard
+    # spacing, for example every 4 characters, simply configure the
+    # widget with “-tabs "[expr {4 * [font measure $font 0]}] left"
+    # -tabstyle wordprocessor”."
+    if tag is None:
+        font = textwidget.cget('font')
+    else:
+        font = textwidget.tag_cget(tag, 'font')
+
+    measure_result = int(textwidget.tk.call('font', 'measure', font, '0'))
+    textwidget.config(tabs=(indent_size*measure_result, 'left'), tabstyle='wordprocessor')
+
+
 if sys.version_info >= (3, 7):
     Spinbox = ttk.Spinbox
 else:

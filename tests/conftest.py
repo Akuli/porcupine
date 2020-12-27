@@ -55,7 +55,7 @@ def monkeypatch_dirs():
 
 @pytest.fixture(scope='session')
 def porcusession(monkeypatch_dirs):
-    # these errors should not occur after the init
+    # these errors should not occur while porcupine is running
     with pytest.raises(RuntimeError):
         get_main_window()
 

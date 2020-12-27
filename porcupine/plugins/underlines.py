@@ -1,6 +1,6 @@
 """Show underlines in code to indicate different things.
 
-Currently the langserver plugin displaying errors and warnings with this plugin
+Currently the langserver plugin displays errors and warnings with this plugin
 and the urls plugin uses this to create control-clickable links.
 """
 
