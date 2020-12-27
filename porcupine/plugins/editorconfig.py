@@ -62,8 +62,7 @@ def parse_file(path: pathlib.Path) -> Tuple[List[Section], bool]:
     )
 
     # "... [ and ] are allowed in the section names."
-    # TODO: create typeshed issue
-    parser.SECTCRE = re.compile(r"\[(?P<header>.*)\]")  # type: ignore[attr-defined]
+    parser.SECTCRE = re.compile(r"\[(?P<header>.*)\]")
 
     try:
         parser.read_string(content, source=str(path))

@@ -473,10 +473,6 @@ def create_peer_widget(
     # widget knows its child widgets, and .destroy() would make tkinter no
     # longer know it. Tkinter's winfo_children() also ignores anything not
     # known to tkinter.
-    #
-    # issues related to type ignore comments:
-    #    https://github.com/python/mypy/issues/6552
-    #    https://github.com/python/typeshed/issues/4409
     the_widget_that_becomes_a_peer.tk.call('destroy', the_widget_that_becomes_a_peer)
     original_text_widget.peer_create(the_widget_that_becomes_a_peer)
 
