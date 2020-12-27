@@ -1,4 +1,3 @@
-import pathlib
 import platform
 import pytest
 from tkinter import filedialog
