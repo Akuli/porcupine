@@ -13,7 +13,7 @@ import subprocess
 
 from porcupine import _state
 
-version_info = (0, 79, 1)        # this is updated with bump.py
+version_info = (0, 80, 0)        # this is updated with bump.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017-2020 Akuli'
