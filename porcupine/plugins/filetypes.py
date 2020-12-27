@@ -184,7 +184,6 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '-n', '--new-file', metavar='FILETYPE', action='append', type=parse_filetype_name,
         help='create a "New File" tab with a filetype from filetypes.toml')
-    # TODO: make sure to get error for bad filetypes
 
 
 def open_files_specified_on_command_line(junk: object) -> None:
