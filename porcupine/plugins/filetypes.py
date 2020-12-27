@@ -19,7 +19,6 @@ from porcupine import dirs, filedialog_kwargs, menubar, settings, tabs, utils
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]
 filetypes: Dict[str, FileType] = {}
-USER_FILETYPES_PATH = dirs.configdir / 'filetypes.toml'
 
 
 def is_list_of_strings(obj: object) -> bool:
@@ -27,16 +26,17 @@ def is_list_of_strings(obj: object) -> bool:
 
 
 def load_filetypes() -> None:
+    user_path = dirs.configdir / 'filetypes.toml'   # not global because tests monkeypatch dirs.configdir
     defaults_path = pathlib.Path(__file__).absolute().parent.parent / 'default_filetypes.toml'
 
     filetypes.update(toml.load(defaults_path))
 
     user_filetypes: Dict[str, FileType] = {}
     try:
-        user_filetypes = dict(toml.load(USER_FILETYPES_PATH))
+        user_filetypes = dict(toml.load(user_path))
     except FileNotFoundError:
-        log.info(f"'{USER_FILETYPES_PATH}' not found, creating")
-        with USER_FILETYPES_PATH.open('x') as file:   # error if exists
+        log.info(f"'{user_path}' not found, creating")
+        with user_path.open('x') as file:   # error if exists
             file.write('''\
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
@@ -44,7 +44,7 @@ def load_filetypes() -> None:
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
 ''')
     except (OSError, UnicodeError, toml.TomlDecodeError):
-        log.exception(f"reading '{USER_FILETYPES_PATH}' failed, using defaults")
+        log.exception(f"reading '{user_path}' failed, using defaults")
 
     # toml.load can take multiple file names, but it doesn't merge the configs
     for name, updates in user_filetypes.items():
@@ -213,7 +213,7 @@ def setup() -> None:
         settings.get_section('General'), 'default_filetype', "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    settings.add_config_file_button(settings.get_section('Config Files'), USER_FILETYPES_PATH)
+    settings.add_config_file_button(settings.get_section('Config Files'), dirs.configdir / 'filetypes.toml')
 
     filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
         (name, [
