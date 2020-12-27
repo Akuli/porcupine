@@ -7,7 +7,7 @@ from porcupine import get_tab_manager, menubar, tabs
 
 def on_menu_toggled(wrap_var: tkinter.BooleanVar, *junk: object) -> None:
     tab = get_tab_manager().select()
-    assert tab is not None
+    assert isinstance(tab, tabs.FileTab)
     tab.textwidget.config(wrap=('word' if wrap_var.get() else 'none'))
 
 
