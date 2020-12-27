@@ -1,8 +1,10 @@
+import pathlib
 import platform
 import pytest
 from tkinter import filedialog
 
 from porcupine import filedialog_kwargs, get_main_window
+from porcupine.plugins import filetypes
 
 
 def test_filedialog_patterns_got_stripped(porcusession):
@@ -27,3 +29,16 @@ def test_actually_running_filedialog():
 def test_bad_filetype_on_command_line(run_porcupine):
     output = run_porcupine(['-n', 'FooBar'], 2)
     assert "no filetype named 'FooBar'" in output
+
+
+def test_unknown_filetype(filetab, tmp_path):
+    # pygments does not know graphviz, see how it gets handled
+    filetab.textwidget.insert('end', '''\
+digraph G {
+    Hello->World;
+}
+''')
+    filetab.path = tmp_path / 'graphviz-hello-world.gvz'
+    filetab.save()
+    lexer_class_name = filetypes.get_filetype_for_tab(filetab)['pygments_lexer']
+    assert lexer_class_name.endswith('.TextLexer')

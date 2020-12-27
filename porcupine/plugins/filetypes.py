@@ -118,9 +118,13 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
         # the shebang is read as utf-8 because the filetype config file
         # is utf-8
         with filepath.open('r', encoding='utf-8') as file:
-            # don't read the entire file if it's huge
+            # don't read the entire file if it's huge and all on one line
             shebang_line: Optional[str] = file.readline(1000)
     except (UnicodeError, OSError):
+        shebang_line = None
+
+    # don't guess from first line of file when it's not a shebang
+    if not shebang_line.startswith('#!'):
         shebang_line = None
 
     if shebang_line is not None:
