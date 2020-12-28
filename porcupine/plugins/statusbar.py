@@ -2,7 +2,7 @@
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, tabs
 
 # i have experimented with a logging handler that displays logging
 # messages in the label, but it's not as good idea as it sounds like,
@@ -50,11 +50,9 @@ class StatusBar(ttk.Frame):
             label.config(text=text)
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
-    assert isinstance(tab, tabs.Tab)
+def on_new_tab(tab: tabs.Tab) -> None:
     StatusBar(tab.bottom_frame, tab).pack(side='bottom', fill='x')
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

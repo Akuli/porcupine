@@ -209,15 +209,12 @@ class Overview(tkinter.Text):
         return 'break'
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
-    if not isinstance(tab, tabs.FileTab):
-        return
-
-    overview = Overview(tab.right_frame, tab)
-    textwidget.use_pygments_theme(overview, overview.set_colors)
-    overview.pack(fill='y', expand=True)
+def on_new_tab(tab: tabs.Tab) -> None:
+    if isinstance(tab, tabs.FileTab):
+        overview = Overview(tab.right_frame, tab)
+        textwidget.use_pygments_theme(overview, overview.set_colors)
+        overview.pack(fill='y', expand=True)
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

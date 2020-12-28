@@ -44,35 +44,6 @@ class TabManager(ttk.Notebook):
     This widget inherits from ``ttk.Notebook``. All widgets added to
     this should be :class:`Tab` objects.
 
-    .. virtualevent:: NewTab
-
-        This runs when a new tab has been added to the tab manager with
-        :meth:`add_tab`. Use :func:`~porcupine.utils.bind_with_data` and
-        ``event.data_widget()`` to access the tab that was added.
-
-        Bind to the ``<Destroy>`` event of the tab if you want to clean
-        up something when the tab is closed.
-
-    .. virtualevent:: WillOpenFile
-
-        :meth:`FileTab.open_file` generates this event when an **existing**
-        file is about to be opened. Unlike :virtevt:`~NewTab`, this never runs
-        for tabs created without :meth:`~FileTab.open_file`, such as the tabs
-        created by clicking "New File" in the menu.
-
-        Use :func:`~porcupine.utils.bind_with_data` and ``event.data_widget()``
-        to access the related :class:`FileTab`.
-
-        This event runs before the file is read, so if you want your plugin to
-        e.g. decide which encoding will be used, then this is the virtual event
-        that you should use. See :source:`porcupine/plugins/editorconfig.py`
-        for an example.
-
-        .. note::
-            :virtevt:`WillOpenFile` doesn't run for files created by clicking
-            "New File" and then "Save as". Use  :virtevt:`NewTab` and
-            :virtevt:`~FileTab.PathChanged` to handle those.
-
     .. virtualevent:: NotebookTabChanged
 
         This runs when the user selects another tab or Porcupine does it
@@ -120,6 +91,9 @@ class TabManager(ttk.Notebook):
         self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
         self.bind('<Button-1>', self._on_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
+
+        # the string is call stack for adding callback
+        self._tab_callbacks: List[Tuple[Callable[[Tab], None], str]] = []
 
     def _focus_selected_tab(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         tab = self.select()
@@ -247,7 +221,12 @@ class TabManager(ttk.Notebook):
         # The update() is needed in some cases because virtual events don't run
         # if the widget isn't visible yet.
         self.update()
-        self.event_generate('<<NewTab>>', data=tab)
+        for callback, add_stack in self._tab_callbacks:
+            try:
+                callback(tab)
+            except Exception:
+                log.error("tab callback failed", exc_info=True)
+                log.error(f"the callback was added here\n{add_stack}")
         return tab
 
     def close_tab(self, tab: 'Tab') -> None:
@@ -321,6 +300,17 @@ class TabManager(ttk.Notebook):
             self.select(tab)
 
         return True
+
+    def add_tab_callback(self, func: Callable[['Tab'], None]) -> None:
+        """Run a callback for each tab in the tab manager.
+
+        When new tabs are added later, the callback will be ran for them too.
+        Bind to the ``<Destroy>`` event of each tab if you want to clean
+        up something when a tab is closed.
+        """
+        for tab in self.tabs():
+            func(tab)
+        self._tab_callbacks.append((func, ''.join(traceback.format_stack())))
 
 
 # _FileTabT represents a subclass of FileTab. Don't know if there's a better
@@ -666,7 +656,6 @@ bers.py>` use this attribute.
         file fails.
         """
         tab = cls(manager, path=path)
-        manager.event_generate('<<WillOpenFile>>', data=tab)
         with path.open('r', encoding=tab.settings.get('encoding', str)) as file:
             content = file.read()
         tab.textwidget.insert('1.0', content)
@@ -677,8 +666,6 @@ bers.py>` use this attribute.
             log.warning(f"file '{path}' contains mixed line endings: {file.newlines}")
         elif file.newlines is not None:
             assert isinstance(file.newlines, str)
-            # The editorconfig plugin sets newlines when <<WillOpenFile>> is generated, and that
-            # will be used if e.g. the file is empty (more generally, contains no newlines)
             tab.settings.set('line_ending', settings.LineEnding(file.newlines))
 
         tab.mark_saved()

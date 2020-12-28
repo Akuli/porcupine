@@ -75,8 +75,7 @@ class LongLineMarker:
         self.do_update()
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         # raymond hettinger says 90-ish
         tab.settings.add_option('max_line_length', 90)
@@ -84,4 +83,4 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)
