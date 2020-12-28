@@ -149,8 +149,7 @@ class _Underliner:
             self._message_tag = None
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         underliner = _Underliner(tab.textwidget)
         utils.bind_with_data(tab, '<<SetUnderlines>>', underliner.set_underlines, add=True)
@@ -170,4 +169,4 @@ def setup() -> None:
     # and when the entire porcupine window loses input focus (binding here to avoid unbinding)
     get_main_window().bind('<FocusOut>', hide_all_message_labels, add=True)
 
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

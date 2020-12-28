@@ -64,16 +64,16 @@ class Status(enum.Enum):
         should be set up before *A*, then *A*, *B* and *C* will all fail with
         ``CIRCULAR_DEPENDENCY_ERROR``.
     """
-    LOADING = enum.auto()    #: bla
-    ACTIVE = enum.auto()    #: bla
-    DISABLED_BY_SETTINGS = enum.auto()    #: bla
-    DISABLED_ON_COMMAND_LINE = enum.auto()    #: bla
-    IMPORT_FAILED = enum.auto()    #: bla
-    SETUP_FAILED = enum.auto()    #: bla
-    CIRCULAR_DEPENDENCY_ERROR = enum.auto()    #: bla
+    LOADING = enum.auto()
+    ACTIVE = enum.auto()
+    DISABLED_BY_SETTINGS = enum.auto()
+    DISABLED_ON_COMMAND_LINE = enum.auto()
+    IMPORT_FAILED = enum.auto()
+    SETUP_FAILED = enum.auto()
+    CIRCULAR_DEPENDENCY_ERROR = enum.auto()
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class PluginInfo:
     """
     This :mod:`dataclass <dataclasses>` represents a plugin.
@@ -98,13 +98,70 @@ class PluginInfo:
     came_with_porcupine: bool
     status: Status
     module: Optional[Any]
-    setup_before: Set[str]
-    setup_after: Set[str]
     error: Optional[str]
 
 
 _mutable_plugin_infos: List[PluginInfo] = []
 plugin_infos: Sequence[PluginInfo] = _mutable_plugin_infos  # changing content is mypy error
+_dependencies: Dict[PluginInfo, Set[PluginInfo]] = {}
+
+
+def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.ArgumentParser) -> None:
+    assert info.status == Status.LOADING
+    assert info.module is not None
+
+    if hasattr(info.module, 'setup_argument_parser'):
+        try:
+            info.module.setup_argument_parser(parser)
+        except Exception:
+            log.exception(f"{info.name}.setup_argument_parser() doesn't work")
+            info.status = Status.SETUP_FAILED
+            info.error = traceback.format_exc()
+
+
+def _import_plugin(info: PluginInfo) -> None:
+    assert info.status == Status.LOADING
+    assert info.module is None
+
+    log.debug(f"trying to import porcupine.plugins.{info.name}")
+    start = time.time()
+
+    try:
+        info.module = importlib.import_module(f'porcupine.plugins.{info.name}')
+        setup_before = set(getattr(info.module, 'setup_before', []))
+        setup_after = set(getattr(info.module, 'setup_after', []))
+    except Exception:
+        log.exception(f"can't import porcupine.plugins.{info.name}")
+        info.status = Status.IMPORT_FAILED
+        info.error = traceback.format_exc()
+        return
+
+    for dep_info in plugin_infos:
+        if dep_info.name in setup_after:
+            _dependencies[info].add(dep_info)
+        if dep_info.name in setup_before:
+            _dependencies[dep_info].add(info)
+
+    duration = time.time() - start
+    log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration*1000)
+
+
+def _run_setup(info: PluginInfo) -> None:
+    assert info.status == Status.LOADING
+    assert info.module is not None
+
+    start = time.time()
+    try:
+        info.module.setup()
+    except Exception:
+        log.exception(f"{info.name}.setup() doesn't work")
+        info.status = Status.SETUP_FAILED
+        info.error = traceback.format_exc()
+    else:
+        info.status = Status.ACTIVE
+
+    duration = time.time() - start
+    log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration*1000)
 
 
 def _did_plugin_come_with_porcupine(finder: object) -> bool:
@@ -113,20 +170,19 @@ def _did_plugin_come_with_porcupine(finder: object) -> bool:
 
 # undocumented on purpose, don't use in plugins
 def import_plugins(disabled_on_command_line: List[str]) -> None:
-    assert not _mutable_plugin_infos
+    assert not _mutable_plugin_infos and not _dependencies
     _mutable_plugin_infos.extend(
         PluginInfo(
             name=name,
             came_with_porcupine=_did_plugin_come_with_porcupine(finder),
             status=Status.LOADING,
             module=None,
-            setup_before=set(),
-            setup_after=set(),
             error=None,
         )
         for finder, name, is_pkg in pkgutil.iter_modules(plugin_paths)
         if not name.startswith('_')
     )
+    _dependencies.update({info: set() for info in plugin_infos})
 
     for info in _mutable_plugin_infos:
         # If it's disabled in settings and on command line, then status is set
@@ -138,101 +194,92 @@ def import_plugins(disabled_on_command_line: List[str]) -> None:
         if info.name in disabled_on_command_line:
             info.status = Status.DISABLED_ON_COMMAND_LINE
             continue
-
-        log.debug(f"trying to import porcupine.plugins.{info.name}")
-        start = time.time()
-
-        try:
-            info.module = importlib.import_module(f'porcupine.plugins.{info.name}')
-            info.setup_before = set(getattr(info.module, 'setup_before', []))
-            info.setup_after = set(getattr(info.module, 'setup_after', []))
-        except Exception:
-            log.exception(f"can't import porcupine.plugins.{info.name}")
-            info.status = Status.IMPORT_FAILED
-            info.error = traceback.format_exc()
-            continue
-
-        duration = time.time() - start
-        log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration*1000)
-
-
-def _get_successfully_imported_infos() -> List[PluginInfo]:
-    # If all plugins are disabled, then import_plugins() doesn't run at all and plugin_infos is empty
-    return [
-        info for info in plugin_infos
-        if info.status == Status.LOADING
-    ]
+        _import_plugin(info)
 
 
 # undocumented on purpose, don't use in plugins
 # TODO: document what setup_argument_parser() function in a plugin does
 def run_setup_argument_parser_functions(parser: argparse.ArgumentParser) -> None:
-    for info in _get_successfully_imported_infos():
-        assert info.module is not None
-        if hasattr(info.module, 'setup_argument_parser'):
-            try:
-                info.module.setup_argument_parser(parser)
-            except Exception:
-                log.exception(f"{info.name}.setup_argument_parser() doesn't work")
-                info.status = Status.SETUP_FAILED
-                info.error = traceback.format_exc()
+    for info in plugin_infos:
+        if info.status == Status.LOADING:
+            _run_setup_argument_parser_function(info, parser)
 
 
 # undocumented on purpose, don't use in plugins
 def run_setup_functions(shuffle: bool) -> None:
-    imported_infos = _get_successfully_imported_infos()
-
-    # setup_before and setup_after may contain names of plugins that are not
-    # installed because they are for controlling the loading order. That's fine
-    # because toposort ignores missing things.
-    dependencies: Dict[str, Set[str]] = {}
-    for info in imported_infos:
-        dependencies.setdefault(info.name, set()).update(info.setup_after)
-        for reverse_dependency in info.setup_before:
-            dependencies.setdefault(reverse_dependency, set()).add(info.name)
+    imported_infos = [info for info in plugin_infos if info.status == Status.LOADING]
 
     # the toposort will partially work even if there's a circular
     # dependency, the CircularDependencyError is raised after doing
     # everything possible (see source code)
-    loading_order: List[str] = []
+    loading_order: List[PluginInfo] = []
     try:
         # https://github.com/python/mypy/issues/9253
-        make_list: Callable[[Iterable[str]], List[str]] = list
-        for names in map(make_list, toposort.toposort(dependencies)):
+        make_list: Callable[[Iterable[PluginInfo]], List[PluginInfo]] = list
+        for infos in map(make_list, toposort.toposort(_dependencies)):
             if shuffle:
                 # for plugin developers wanting to make sure that the
                 # dependencies specified in setup_before and setup_after
                 # are correct
-                random.shuffle(names)
+                random.shuffle(infos)
             else:
                 # for consistency in UI (e.g. always same order of menu items)
-                names.sort()
-            loading_order.extend(names)
-        loadable_infos = imported_infos
+                infos.sort(key=(lambda i: i.name))
+            loading_order.extend([i for i in infos if i.status == Status.LOADING])
 
     except toposort.CircularDependencyError as e:
         log.exception("circular dependency")
 
-        for info in imported_infos:
-            if info.name in loading_order:
-                loadable_infos.append(info)
-            else:
-                info.status = Status.CIRCULAR_DEPENDENCY_ERROR
-                parts = ', '.join(f"{a} depends on {b}" for a, b in e.data.items())
-                info.error = f"Circular dependency error: {parts}"
+        for info in set(imported_infos) - set(loading_order):
+            info.status = Status.CIRCULAR_DEPENDENCY_ERROR
+            parts = ', '.join(f"{a} depends on {b}" for a, b in e.data.items())
+            info.error = f"Circular dependency error: {parts}"
 
-    loadable_infos.sort(key=(lambda info: loading_order.index(info.name)))
-    for info in loadable_infos:
-        start = time.time()
-        try:
-            assert info.module is not None
-            info.module.setup()
-        except Exception:
-            log.exception(f"{info.name}.setup() doesn't work")
-            info.status = Status.SETUP_FAILED
-            info.error = traceback.format_exc()
-        else:
-            info.status = Status.ACTIVE
+    for info in loading_order:
+        assert info.status == Status.LOADING
+        _run_setup(info)
 
-        duration = time.time() - start
-        log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration*1000)
+
+def can_setup_while_running(info: PluginInfo) -> bool:
+    """
+    Returns whether the plugin can be set up now, without having to
+    restart Porcupine.
+
+    This function handles errors coming from plugins, so there's on need to
+    wrap it in try/except.
+    """
+    if info.status not in {Status.DISABLED_BY_SETTINGS, Status.DISABLED_ON_COMMAND_LINE}:
+        return False
+
+    if info.module is None:
+        # Importing may give more information about dependencies, needed below
+        old_status = info.status
+        info.status = Status.LOADING
+        _import_plugin(info)
+        if info.status != Status.LOADING:  # error
+            return False
+        info.status = old_status
+
+    return not any(
+        info.status == Status.ACTIVE and info in deps
+        for info, deps in _dependencies.items()
+    )
+
+
+def setup_while_running(info: PluginInfo) -> None:
+    """Run the ``setup_argument_parser()`` and ``setup()`` functions now.
+
+    Before calling this function, make sure that
+    :func:`can_setup_while_running` returns ``True``.
+    This function handles errors coming from plugins, so there's on need to
+    wrap it in try/except.
+    """
+    info.status = Status.LOADING
+
+    dummy_parser = argparse.ArgumentParser()
+    _run_setup_argument_parser_function(info, dummy_parser)
+    if info.status != Status.LOADING:  # error
+        return
+
+    _run_setup(info)
+    assert info.status != Status.LOADING

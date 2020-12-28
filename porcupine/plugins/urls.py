@@ -29,8 +29,9 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
         # urls in middle of text: URL, and URL.
         url = url.rstrip('.,')
 
-        open2close = dict(['()', '{}', '<>'])
-        close2open = dict([')(', '}{', '><'])
+        open2close = {'(': ')', '{': '}', '<': '>'}
+        close2open = {')': '(', '}': '{', '>': '<'}
+
         if before_url in open2close and open2close[before_url] in url:
             # url is parenthesized
             url = url.split(open2close[before_url])[0]
@@ -62,8 +63,7 @@ def open_the_url(tab: tabs.FileTab, index: str, junk: object) -> utils.BreakOrNo
     return None
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         tab.textwidget.bind('<<ContentChanged>>', partial(update_url_underlines, tab), add=True)
         update_url_underlines(tab)
@@ -73,4 +73,4 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

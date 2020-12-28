@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 from pygments import styles, token    # type: ignore
 from pygments.lexer import LexerMeta  # type: ignore
 
-from porcupine import get_tab_manager, settings, tabs, utils
+from porcupine import get_tab_manager, settings, tabs
 
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
@@ -175,8 +175,7 @@ class Highlighter:
         self.pygmentizer.in_queue.put((self._get_lexer_class(), code))
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         # needed because pygments_lexer might change
         def get_lexer_class() -> LexerMeta:
@@ -191,4 +190,4 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

@@ -86,12 +86,11 @@ class LineNumbers:
         self.textwidget.tag_add('sel', start, end)
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         linenumbers = LineNumbers(tab.left_frame, tab.textwidget)
         linenumbers.canvas.pack(side='left', fill='y')
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

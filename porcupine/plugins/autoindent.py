@@ -2,7 +2,7 @@
 
 import tkinter
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textwidget
 
 # without this, pressing enter twice would strip all trailing whitespace
 # from the blank line above the cursor, and then after_enter() wouldn't
@@ -43,8 +43,7 @@ def after_enter(text: textwidget.MainText) -> None:
         text.dedent('insert')
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         def bind_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
             assert isinstance(tab, tabs.FileTab)   # because mypy is awesome
@@ -54,4 +53,4 @@ def on_new_tab(event: utils.EventWithData) -> None:
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

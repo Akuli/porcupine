@@ -1,7 +1,7 @@
 from functools import partial
 import tkinter
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textwidget
 
 
 OPEN_TO_CLOSE = {
@@ -71,12 +71,11 @@ def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
     text.tag_config('matching_paren', background=mix_colors(fg, bg, 0.2))
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         textwidget.use_pygments_theme(tab, partial(on_pygments_theme_changed, tab.textwidget))
         tab.textwidget.bind('<<CursorMoved>>', on_cursor_moved, add=True)
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)
