@@ -164,13 +164,13 @@ class _TooltipManager:
     # mouse pointer.
     tipwindow = None
 
-    def __init__(self, widget: tkinter.Widget) -> None:
+    def __init__(self, widget: tkinter.Widget, text: str) -> None:
         widget.bind('<Enter>', self.enter, add=True)
         widget.bind('<Leave>', self.leave, add=True)
         widget.bind('<Motion>', self.motion, add=True)
         self.widget = widget
         self.got_mouse = False
-        self.text: Optional[str] = None
+        self.text = text    # can be changed after creating tooltip manager
 
     @classmethod
     def destroy_tipwindow(
@@ -197,11 +197,8 @@ class _TooltipManager:
         self.mousey = event.y_root
 
     def show(self) -> None:
-        if not self.got_mouse:
-            return
-
-        self.destroy_tipwindow()
-        if self.text is not None:
+        if self.got_mouse:
+            self.destroy_tipwindow()
             tipwindow = type(self).tipwindow = tkinter.Toplevel()
             tipwindow.geometry('+%d+%d' % (self.mousex+10, self.mousey-10))
             tipwindow.bind('<Motion>', self.destroy_tipwindow, add=True)
@@ -229,13 +226,11 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
     wrote the tooltip code! Idlelib is awful and I don't want to use
     anything from it in my editor.
     """
-
     try:
         manager: _TooltipManager = cast(Any, widget)._tooltip_manager
     except AttributeError:
-        manager = _TooltipManager(widget)
-        cast(Any, widget)._tooltip_manager = manager
-
+        cast(Any, widget)._tooltip_manager = _TooltipManager(widget, text)
+        return
     manager.text = text
 
 
