@@ -1,6 +1,5 @@
 """Reload file from disk when Ctrl+R is pressed."""
 import functools
-import tkinter
 import typing
 
 from porcupine import get_tab_manager, tabs, utils
