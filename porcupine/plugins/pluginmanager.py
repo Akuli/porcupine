@@ -112,6 +112,7 @@ class PluginDialogContent:
             message = "Will be disabled upon restart"
         else:
             message = {
+                # it should be impossible to get here with LOADING status
                 pluginloader.Status.ACTIVE: "Active",
                 pluginloader.Status.DISABLED_BY_SETTINGS: "Disabled",
                 pluginloader.Status.DISABLED_ON_COMMAND_LINE: "Disabled on command line",
@@ -165,6 +166,10 @@ class PluginDialogContent:
         disabled = set(settings.get('disabled_plugins', List[str]))
         disabled ^= {plugin_name}
         settings.set('disabled_plugins', list(disabled))
+
+        if plugin_name not in disabled and pluginloader.can_setup_while_running(info):
+            pluginloader.setup_while_running(info)
+
         self._update_row(info)
         self._on_select()
         self._update_plz_restart_label()
