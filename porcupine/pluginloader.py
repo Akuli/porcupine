@@ -64,15 +64,13 @@ class Status(enum.Enum):
         should be set up before *A*, then *A*, *B* and *C* will all fail with
         ``CIRCULAR_DEPENDENCY_ERROR``.
     """
-    LOADING = enum.auto()    #: bla
-    ACTIVE = enum.auto()    #: bla
-    DISABLED_BY_SETTINGS = enum.auto()    #: bla
-    DISABLED_ON_COMMAND_LINE = enum.auto()    #: bla
-    IMPORT_FAILED = enum.auto()    #: bla
-    SETUP_FAILED = enum.auto()    #: bla
-    CIRCULAR_DEPENDENCY_ERROR = enum.auto()    #: bla
-
-    # TODO: are the above bla comments really necessary?
+    LOADING = enum.auto()
+    ACTIVE = enum.auto()
+    DISABLED_BY_SETTINGS = enum.auto()
+    DISABLED_ON_COMMAND_LINE = enum.auto()
+    IMPORT_FAILED = enum.auto()
+    SETUP_FAILED = enum.auto()
+    CIRCULAR_DEPENDENCY_ERROR = enum.auto()
 
 
 @dataclasses.dataclass(eq=False)
@@ -271,9 +269,8 @@ def can_setup_while_running(info: PluginInfo) -> bool:
 def setup_while_running(info: PluginInfo) -> None:
     """Run the ``setup_argument_parser()`` and ``setup()`` functions now.
 
-    Make sure that :func:`can_setup_while_running` returns ``True`` before
-    calling this function.
-
+    Before calling this function, make sure that
+    :func:`can_setup_while_running` returns ``True``.
     This function handles errors coming from plugins, so there's on need to
     wrap it in try/except.
     """

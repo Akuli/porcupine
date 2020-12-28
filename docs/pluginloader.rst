@@ -24,3 +24,6 @@ or ``porcupine.plugins.highlight``.
     until plugins are ready for it.
 
     .. seealso:: :func:`porcupine.get_main_window`
+
+.. autofunction:: can_setup_while_running
+.. autofunction:: setup_while_running
