@@ -28,5 +28,5 @@ def on_new_tab(tab: tabs.Tab) -> None:
         tab.textwidget.bind('<Control-r>', functools.partial(reload, tab), add=True)
 
 
-def setup() - > None:
+def setup() -> None:
     get_tab_manager().add_tab_callback(on_new_tab)
