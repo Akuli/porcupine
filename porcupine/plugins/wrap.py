@@ -1,4 +1,6 @@
-"""Word Wrap option in View menu."""
+"""
+"Wrap Long Lines" option in the View menu.
+"""
 from functools import partial
 import tkinter
 
