@@ -31,10 +31,12 @@ def test_find_urls_basic(porcusession):
    [Link](URL)
    [Link](URL), foo and bar
    [Link](URL).
+   [Link](URL).</small>    mixed markdown and HTML
+    `foo <URL>`_           RST link
 '''.replace('URL', url))
         assert [(text.index(start), text.index(end)) for start, end in find_urls(text)] == [
             (f'{lineno}.10', f'{lineno}.{10 + len(url)}')
-            for lineno in range(1, 18)
+            for lineno in range(1, 20)
         ]
 
 

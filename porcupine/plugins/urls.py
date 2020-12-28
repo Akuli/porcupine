@@ -10,30 +10,36 @@ from porcupine.plugins import underlines
 
 
 def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
-    searching_begins_here = '1.0'
+    match_ends_and_search_begins = '1.0'
     while True:
         match_start = text.search(
-            r'\mhttps?://[a-z]', searching_begins_here, 'end',
+            r'\mhttps?://[a-z]', match_ends_and_search_begins, 'end',
             nocase=True, regexp=True)
         if not match_start:     # empty string means not found
             break
 
-        # urls end on space, quote or end of line
-        end_of_line = f'{match_start} lineend'
-        match_end = text.search(r'''["' ]''', match_start, end_of_line, regexp=True) or end_of_line
+        url = text.get(match_start, f'{match_start} lineend')
+        before_url = None if text.index(match_start) == '1.0' else text.get(f'{match_start} - 1 char')
 
-        # support parenthesized urls and commas/dots after urls
-        if text.get(f'{match_end} - 1 char') in {',', '.'}:
-            match_end += ' - 1 char'
+        # urls end on space or quote
+        url = url.split(' ')[0]
+        url = url.split("'")[0]
+        url = url.split('"')[0]
 
-        url = text.get(match_start, match_end)
-        closing2opening = {')': '(', '}': '{', '>': '<'}    # {url} is useful for tcl code
-        if url[-1] in closing2opening and closing2opening[url[-1]] not in url:
+        # urls in middle of text: URL, and URL.
+        url = url.rstrip('.,')
+
+        open2close = dict(['()', '{}', '<>'])
+        close2open = dict([')(', '}{', '><'])
+        if before_url in open2close and open2close[before_url] in url:
+            # url is parenthesized
+            url = url.split(open2close[before_url])[0]
+        if url[-1] in close2open and close2open[url[-1]] not in url:
             # url isn't like "Bla(bla)" but ends with ")" or similar, assume that's not part of url
-            match_end = f'{match_end} - 1 char'
+            url = url[:-1]
 
-        yield (match_start, match_end)
-        searching_begins_here = match_end
+        match_ends_and_search_begins = f'{match_start} + {len(url)} chars'
+        yield (match_start, match_ends_and_search_begins)
 
 
 def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
