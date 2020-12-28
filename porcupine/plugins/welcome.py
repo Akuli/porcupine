@@ -4,10 +4,10 @@ import re
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, images, utils
+from porcupine import get_tab_manager, images, tabs
 
 
-RAW_MESSAGE = """
+MESSAGE = """
 To get started, create a new file by pressing Ctrl+N or open an existing
 file by pressing Ctrl+O. You can save the file with Ctrl+S and then run it by
 pressing F5.
@@ -17,7 +17,7 @@ their keyboard shortcuts.
 """
 
 # replace single newlines with spaces
-MESSAGE = re.sub(r'(.)\n(.)', r'\1 \2', RAW_MESSAGE.strip())
+MESSAGE = re.sub(r'(.)\n(.)', r'\1 \2', MESSAGE.strip())
 
 BORDER_SIZE = 30    # pixels
 
@@ -52,9 +52,9 @@ class WelcomeMessageDisplayer:
             event.width - images.get('logo-200x200').width() - BORDER_SIZE))
         self.message_label.config(wraplength=(event.width - 2*BORDER_SIZE))
 
-    def on_new_tab(self, event: utils.EventWithData) -> None:
+    def on_new_tab(self, tab: tabs.Tab) -> None:
         self._frame.pack_forget()
-        event.data_widget().bind('<Destroy>', self._on_tab_closed, add=True)
+        tab.bind('<Destroy>', self._on_tab_closed, add=True)
 
     def _on_tab_closed(self, junk: object = None) -> None:
         if not get_tab_manager().tabs():
@@ -64,5 +64,4 @@ class WelcomeMessageDisplayer:
 def setup() -> None:
     displayer = WelcomeMessageDisplayer()
     get_tab_manager().bind('<Configure>', displayer.update_wraplen, add=True)
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>',
-                         displayer.on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(displayer.on_new_tab)

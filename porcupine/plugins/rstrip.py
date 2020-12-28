@@ -2,7 +2,7 @@
 
 import functools
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, tabs
 
 
 def after_enter(tab: tabs.FileTab) -> None:
@@ -17,12 +17,11 @@ def on_enter(tab: tabs.FileTab, junk: object) -> None:
     tab.after_idle(after_enter, tab)
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         tab.settings.add_option('trim_trailing_whitespace', True)
         tab.textwidget.bind('<Return>', functools.partial(on_enter, tab), add=True)
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)

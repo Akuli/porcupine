@@ -2,7 +2,7 @@
 
 import tkinter
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, tabs
 
 
 def on_save(event: 'tkinter.Event[tabs.FileTab]') -> None:
@@ -16,12 +16,11 @@ def on_save(event: 'tkinter.Event[tabs.FileTab]') -> None:
             textwidget.mark_set('insert', cursor)
 
 
-def on_new_tab(event: utils.EventWithData) -> None:
-    tab = event.data_widget()
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         tab.settings.add_option('insert_final_newline', True)
         tab.bind('<<Save>>', on_save, add=True)
 
 
 def setup() -> None:
-    utils.bind_with_data(get_tab_manager(), '<<NewTab>>', on_new_tab, add=True)
+    get_tab_manager().add_tab_callback(on_new_tab)
