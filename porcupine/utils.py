@@ -681,12 +681,9 @@ def errordialog(title: str, message: str,
     window.wait_window()
 
 
-T = TypeVar('T')
-
-
 def run_in_thread(
-    blocking_function: Callable[[], T],
-    done_callback: Callable[[bool, Union[str, T]], None],
+    blocking_function: Callable[[], _T],
+    done_callback: Callable[[bool, Union[str, _T]], None],
 ) -> None:
     """Run ``blocking_function()`` in another thread.
 
@@ -700,7 +697,7 @@ def run_in_thread(
     """
     root = porcupine.get_main_window()  # any widget would do
 
-    value: T
+    value: _T
     error_traceback: Optional[str] = None
 
     def thread_target() -> None:
