@@ -29,8 +29,9 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
         # urls in middle of text: URL, and URL.
         url = url.rstrip('.,')
 
-        open2close = dict(['()', '{}', '<>'])
-        close2open = dict([')(', '}{', '><'])
+        open2close = {'(': ')', '{': '}', '<': '>'}
+        close2open = {')': '(', '}': '{', '>': '<'}
+
         if before_url in open2close and open2close[before_url] in url:
             # url is parenthesized
             url = url.split(open2close[before_url])[0]
