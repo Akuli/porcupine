@@ -16,7 +16,7 @@ jobs:
     - run: |
         git submodule init && git submodule update
     - run: |
-        python3 -m mypy --show-error-codes --custom-typeshed-dir=typeshed porcupine more_plugins
+        python3 -m mypy --disallow-untyped-defs --show-error-codes --custom-typeshed-dir=typeshed porcupine more_plugins
       env:
         MYPYPATH: ./my_stubs
   pytest:

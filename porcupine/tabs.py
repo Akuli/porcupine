@@ -30,7 +30,7 @@ def _find_duplicates(items: List[_T], key: Callable[[_T], str]) -> Iterable[List
             yield similar_items
 
 
-def _short_ways_to_display_path(path):
+def _short_ways_to_display_path(path: pathlib.Path) -> List[str]:
     parts = str(path).split(os.sep)
     return [parts[-1], parts[-2] + os.sep + parts[-1]] + [
         first_part + os.sep + '...' + os.sep + parts[-1]
@@ -163,7 +163,7 @@ class TabManager(ttk.Notebook):
         except tkinter.TclError:        # index out of bounds
             return None
 
-    def _update_tab_titles(self):
+    def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
         while True:
             did_something = False

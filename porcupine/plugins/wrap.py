@@ -19,7 +19,7 @@ def on_tab_changed(wrap_var: tkinter.BooleanVar, tab: tabs.Tab) -> bool:
     return False
 
 
-def setup():
+def setup() -> None:
     wrap_var = tkinter.BooleanVar()
     wrap_var.trace_add('write', partial(on_menu_toggled, wrap_var))
     menubar.get_menu("View").add_checkbutton(label="Wrap Long Lines", variable=wrap_var)

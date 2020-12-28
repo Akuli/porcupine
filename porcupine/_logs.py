@@ -7,7 +7,7 @@ import shlex
 import subprocess
 import sys
 import threading
-from typing import Any, List, cast
+from typing import Any, List, TextIO, cast
 
 import porcupine
 from porcupine import dirs
@@ -49,7 +49,7 @@ def _run_command(command: str) -> None:
                     exc_info=True)
 
 
-def _open_log_file():
+def _open_log_file() -> TextIO:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime(FILENAME_FIRST_PART_FORMAT)
     filenames = (
@@ -61,6 +61,7 @@ def _open_log_file():
             return (LOG_DIR / filename).open('x', encoding='utf-8')
         except FileExistsError:
             continue
+    assert False  # makes mypy happy
 
 
 def setup(verbose: bool) -> None:
