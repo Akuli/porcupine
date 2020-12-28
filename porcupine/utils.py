@@ -220,8 +220,7 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
 
     After calling ``set_tooltip(some_widget, "hello")``, "hello" will be
     displayed in a small window when the user moves the mouse over the
-    widget and waits for 1 second. Do ``set_tooltip(some_widget, None)``
-    to get rid of a tooltip.
+    widget and waits for 1 second.
 
     If you have read some of IDLE's source code (if you haven't, that's
     good; IDLE's source code is ugly), you might be wondering what this
@@ -234,8 +233,6 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
     try:
         manager: _TooltipManager = cast(Any, widget)._tooltip_manager
     except AttributeError:
-        if text is None:
-            return
         manager = _TooltipManager(widget)
         cast(Any, widget)._tooltip_manager = manager
 
@@ -658,12 +655,8 @@ def errordialog(title: str, message: str,
             utils.errordialog("Oh no", "Doing something failed!",
                               traceback.format_exc())
     """
-    root = porcupine.get_main_window()
-    if root is None:
-        window = tkinter.Tk()
-    else:
-        window = tkinter.Toplevel()
-        window.transient(root)
+    window = tkinter.Toplevel()
+    window.transient(porcupine.get_main_window())
 
     # there's nothing but this frame in the window because ttk widgets
     # may use a different background color than the window
