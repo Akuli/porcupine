@@ -18,12 +18,17 @@ or ``porcupine.plugins.highlight``.
 
 .. virtualevent:: PluginsLoaded
 
-    This virtual event is generated on the main window
-    when the ``setup()`` methods of all plugins have been called.
+    This virtual event is generated once on the main window
+    when the ``setup()`` methods of all plugins have been called on startup.
     Bind to it if you want to run things that must not happen
     until plugins are ready for it.
 
     .. seealso:: :func:`porcupine.get_main_window`
+
+    Note that it's possible to setup plugins individually while Porcupine is running.
+    This event also runs after that happens.
+
+    .. seealso:: :func:`porcupine.pluginloader.setup_while_running`
 
 .. autofunction:: can_setup_while_running
 .. autofunction:: setup_while_running

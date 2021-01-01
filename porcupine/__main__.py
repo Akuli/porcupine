@@ -107,7 +107,6 @@ def main() -> None:
     menubar._init()
 
     pluginloader.run_setup_functions(args.shuffle_plugins)
-    get_main_window().event_generate('<<PluginsLoaded>>')
 
     tabmanager = get_tab_manager()
     for path_string in args.files:

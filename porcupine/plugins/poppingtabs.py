@@ -151,7 +151,7 @@ main()
                         process.pid, status)
 
 
-def open_tab_from_state_file(junk: object) -> None:
+def open_tab_from_state_file() -> None:
     try:
         path = os.environ.pop('PORCUPINE_POPPINGTABS_STATE_FILE')
     except KeyError:
@@ -187,4 +187,5 @@ def setup() -> None:
     manager = PopManager()
     get_tab_manager().bind('<Button1-Motion>', manager.on_drag, add=True)
     get_tab_manager().bind('<ButtonRelease-1>', manager.on_drop, add=True)
-    get_main_window().bind('<<PluginsLoaded>>', open_tab_from_state_file, add=True)
+
+    open_tab_from_state_file()

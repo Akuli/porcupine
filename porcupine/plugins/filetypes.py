@@ -189,13 +189,6 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
         help='create a "New File" tab with a filetype from filetypes.toml')
 
 
-def open_files_specified_on_command_line(junk: object) -> None:
-    for filetype in (get_parsed_args().new_file or []):   # new_file may be None
-        tab = tabs.FileTab(get_tab_manager())
-        get_tab_manager().add_tab(tab)  # sets default filetype
-        apply_filetype_to_tab(tab, filetype)  # sets correct filetype
-
-
 def menu_callback(filetype: FileType) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
@@ -205,7 +198,6 @@ def menu_callback(filetype: FileType) -> None:
 def setup() -> None:
     # load_filetypes() got already called in setup_argument_parser()
     get_tab_manager().add_tab_callback(on_new_tab)
-    get_main_window().bind('<<PluginsLoaded>>', open_files_specified_on_command_line, add=True)
 
     settings.add_option('default_filetype', 'Python')
     settings.add_combobox(
@@ -231,3 +223,8 @@ def setup() -> None:
             label=safe_name,
             command=partial(menu_callback, filetype))
         menubar.set_enabled_based_on_tab(f"Filetypes/{safe_name}", (lambda tab: isinstance(tab, tabs.FileTab)))
+
+    for filetype in (get_parsed_args().new_file or []):   # new_file may be None
+        tab = tabs.FileTab(get_tab_manager())
+        get_tab_manager().add_tab(tab)  # sets default filetype
+        apply_filetype_to_tab(tab, filetype)  # sets correct filetype

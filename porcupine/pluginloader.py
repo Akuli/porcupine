@@ -16,7 +16,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set
 
 import toposort     # type: ignore
 
-from porcupine import settings
+from porcupine import get_main_window, settings
 from porcupine.plugins import __path__ as plugin_paths
 
 log = logging.getLogger(__name__)
@@ -146,6 +146,7 @@ def _import_plugin(info: PluginInfo) -> None:
     log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration*1000)
 
 
+# Remember to generate <<PluginsLoaded>> when this succeeds
 def _run_setup(info: PluginInfo) -> None:
     assert info.status == Status.LOADING
     assert info.module is not None
@@ -239,6 +240,8 @@ def run_setup_functions(shuffle: bool) -> None:
         assert info.status == Status.LOADING
         _run_setup(info)
 
+    get_main_window().event_generate('<<PluginsLoaded>>')
+
 
 def can_setup_while_running(info: PluginInfo) -> bool:
     """
@@ -283,3 +286,5 @@ def setup_while_running(info: PluginInfo) -> None:
 
     _run_setup(info)
     assert info.status != Status.LOADING
+    if info.status == Status.ACTIVE:
+        get_main_window().event_generate('<<PluginsLoaded>>')
