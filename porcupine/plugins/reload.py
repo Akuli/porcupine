@@ -1,4 +1,6 @@
 """Reload file from disk when Ctrl+R is pressed."""
+from tkinter import messagebox
+
 from porcupine import get_tab_manager, menubar, tabs
 
 
@@ -6,6 +8,13 @@ def reload() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     assert tab.path is not None
+
+    if not tab.is_saved():
+        user_says_yes = messagebox.askyesno(
+            "Reload",
+            f"You have not saved your changes to {tab.path.name}. Are you sure you want to reload?")
+        if not user_says_yes:
+            return
 
     cursor_pos = tab.textwidget.index('insert')
     scroll_fraction = tab.textwidget.yview()[0]
