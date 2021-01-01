@@ -10,11 +10,19 @@ def reload() -> None:
     cursor_pos = tab.textwidget.index('insert')
     scroll_fraction = tab.textwidget.yview()[0]
 
-    tab.textwidget.delete('1.0', 'end')
     with tab.path.open('r', encoding=tab.settings.get('encoding', str)) as file:
-        tab.textwidget.insert('1.0', file.read())
-    tab.mark_saved()
+        content = file.read()
 
+    # Reloading can be undoed with Ctrl+Z
+    tab.textwidget.config(autoseparators=False)
+    try:
+        tab.textwidget.edit_separator()
+        tab.textwidget.replace('1.0', 'end', content)
+        tab.textwidget.edit_separator()
+    finally:
+        tab.textwidget.config(autoseparators=True)
+
+    tab.mark_saved()
     tab.textwidget.mark_set('insert', cursor_pos)
     tab.textwidget.yview_moveto(scroll_fraction)
 
