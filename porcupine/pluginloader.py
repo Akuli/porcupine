@@ -214,18 +214,18 @@ def run_setup_functions(shuffle: bool) -> None:
     # everything possible (see source code)
     loading_order: List[PluginInfo] = []
     try:
-        # https://github.com/python/mypy/issues/9253
-        make_list: Callable[[Iterable[PluginInfo]], List[PluginInfo]] = list
-        for infos in map(make_list, toposort.toposort(_dependencies)):
+        toposort_result: Iterable[Iterable[PluginInfo]] = toposort.toposort(_dependencies)
+        for infos in toposort_result:
+            load_list: List[PluginInfo] = [info for info in infos if info.status == Status.LOADING]
             if shuffle:
                 # for plugin developers wanting to make sure that the
                 # dependencies specified in setup_before and setup_after
                 # are correct
-                random.shuffle(infos)
+                random.shuffle(load_list)
             else:
                 # for consistency in UI (e.g. always same order of menu items)
-                infos.sort(key=(lambda i: i.name))
-            loading_order.extend([i for i in infos if i.status == Status.LOADING])
+                load_list.sort(key=(lambda info: info.name))
+            loading_order.extend(load_list)
 
     except toposort.CircularDependencyError as e:
         log.exception("circular dependency")
