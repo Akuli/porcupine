@@ -17,7 +17,6 @@ from typing import Any, Callable, Tuple, Union
 
 from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
-
 _WINDOWS = (platform.system() == 'Windows')
 
 

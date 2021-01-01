@@ -14,7 +14,7 @@ import time
 import traceback
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
-import toposort     # type: ignore
+import toposort  # type: ignore
 
 from porcupine import get_main_window, settings
 from porcupine.plugins import __path__ as plugin_paths

@@ -1,11 +1,11 @@
 # this is a python script because handling Ctrl+C interrupts in batch
 # scripts seems to be impossible
 
-import colorama     # type: ignore
 import subprocess
 import sys
 from typing import Optional
 
+import colorama  # type: ignore
 
 colorama.init()
 

@@ -1,13 +1,13 @@
 import functools
 import logging
 import pathlib
-from string import ascii_lowercase, ascii_uppercase
 import sys
 import tkinter
-from tkinter import filedialog
 import traceback
-from typing import cast, Callable, Iterator, Optional, Sequence, Tuple
 import webbrowser
+from string import ascii_lowercase, ascii_uppercase
+from tkinter import filedialog
+from typing import Callable, Iterator, Optional, Sequence, Tuple, cast
 
 if sys.version_info >= (3, 8):
     from typing import Literal

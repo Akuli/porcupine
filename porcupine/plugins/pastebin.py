@@ -5,15 +5,15 @@ import functools
 import logging
 import socket
 import tkinter
+import webbrowser
 from tkinter import ttk
 from typing import Any, Optional
-import webbrowser
 
-from pygments.lexer import LexerMeta  # type: ignore
 import requests
+from pygments.lexer import LexerMeta  # type: ignore
 
-from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 from porcupine import __version__ as _porcupine_version
+from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 
 log = logging.getLogger(__name__)
 

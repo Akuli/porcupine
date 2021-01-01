@@ -8,15 +8,14 @@ import logging
 import os
 import pathlib
 import tkinter
-from tkinter import ttk, messagebox, filedialog
 import traceback
+from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
 
-from pygments.lexer import LexerMeta     # type: ignore
-from pygments.lexers import TextLexer    # type: ignore
+from pygments.lexer import LexerMeta  # type: ignore
+from pygments.lexers import TextLexer  # type: ignore
 
 from porcupine import _state, images, settings, textwidget, utils
-
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable

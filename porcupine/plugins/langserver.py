@@ -4,7 +4,6 @@
 
 import dataclasses
 import errno
-from functools import partial
 import itertools
 import logging
 import os
@@ -20,7 +19,8 @@ import socket
 import subprocess
 import threading
 import time
-from typing import cast, Dict, IO, List, NamedTuple, Optional, Tuple, Union
+from functools import partial
+from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
 try:
     import fcntl
@@ -28,9 +28,10 @@ except ImportError:
     # windows
     fcntl = None    # type: ignore
 
+import sansio_lsp_client as lsp  # type: ignore
+
 from porcupine import get_tab_manager, tabs, textwidget, utils
 from porcupine.plugins import autocomplete, underlines
-import sansio_lsp_client as lsp     # type: ignore
 
 global_log = logging.getLogger(__name__)
 

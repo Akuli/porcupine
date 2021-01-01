@@ -1,5 +1,5 @@
 """Jump to a given line number easily."""
-from tkinter import simpledialog    # type: ignore
+from tkinter import simpledialog  # type: ignore
 
 from porcupine import get_tab_manager, menubar, tabs
 

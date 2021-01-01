@@ -5,11 +5,11 @@
 #
 # Many comments in this file are quotes from https://editorconfig.org/
 import configparser
-from functools import partial
 import dataclasses
 import logging
 import pathlib
 import re
+from functools import partial
 from typing import Dict, List, Optional, Tuple
 
 from porcupine import get_tab_manager, settings, tabs

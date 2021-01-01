@@ -4,9 +4,9 @@ import pathlib
 import sys
 
 # imports spread across multiple lines to keep sane line lengths and make it greppable
-from porcupine import get_main_window, get_tab_manager
-from porcupine import _logs, _state, dirs, menubar, pluginloader, plugins, settings, tabs
 from porcupine import __version__ as porcupine_version
+from porcupine import (_logs, _state, dirs, get_main_window, get_tab_manager, menubar, pluginloader, plugins, settings,
+                       tabs)
 
 log = logging.getLogger(__name__)
 

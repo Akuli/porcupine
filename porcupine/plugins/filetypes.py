@@ -2,19 +2,17 @@
 
 import argparse
 import fnmatch
-from functools import partial
 import logging
 import pathlib
 import re
+from functools import partial
 from typing import Any, Dict, Optional
 
-from pygments import lexers  # type: ignore
-from pygments.util import ClassNotFound     # type: ignore
 import toml
+from pygments import lexers  # type: ignore
+from pygments.util import ClassNotFound  # type: ignore
 
-from porcupine import get_parsed_args, get_tab_manager
-from porcupine import dirs, filedialog_kwargs, menubar, settings, tabs
-
+from porcupine import dirs, filedialog_kwargs, get_parsed_args, get_tab_manager, menubar, settings, tabs
 
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]

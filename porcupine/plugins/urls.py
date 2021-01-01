@@ -1,9 +1,9 @@
 """Find URLs in code and make them clickable."""
 
-from functools import partial
 import tkinter
-from typing import Iterable, Tuple
 import webbrowser
+from functools import partial
+from typing import Iterable, Tuple
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import underlines

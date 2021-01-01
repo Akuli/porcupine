@@ -1,6 +1,3 @@
-from porcupine import _logs
-
-from datetime import datetime
 import logging
 import os
 import platform
@@ -9,6 +6,9 @@ import sys
 import threading
 import time
 import types
+from datetime import datetime
+
+from porcupine import _logs
 
 
 # should be possible to start many porcupines at almost exactly the same time

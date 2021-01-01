@@ -1,13 +1,13 @@
 """Compile, run and lint files."""
 
 import dataclasses
-from functools import partial
 import logging
 import os
 import pathlib
 import platform
 import shlex
 import sys
+from functools import partial
 from typing import List, Optional
 
 if sys.version_info >= (3, 8):
@@ -17,7 +17,7 @@ else:
 
 from porcupine import get_tab_manager, menubar, tabs
 
-from . import terminal, no_terminal
+from . import no_terminal, terminal
 
 log = logging.getLogger(__name__)
 

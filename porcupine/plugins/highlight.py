@@ -12,7 +12,7 @@ import tkinter
 import tkinter.font as tkfont
 from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 
-from pygments import styles, token    # type: ignore
+from pygments import styles, token  # type: ignore
 from pygments.lexer import LexerMeta  # type: ignore
 
 from porcupine import get_tab_manager, settings, tabs

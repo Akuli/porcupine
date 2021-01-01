@@ -14,11 +14,12 @@ import shutil
 import sys
 import threading
 import tkinter
-from tkinter import ttk
 import traceback
-from typing import Any, Callable, Deque, Dict, Iterator, Optional, TextIO, TYPE_CHECKING, Type, TypeVar, Union, cast
+from tkinter import ttk
+from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
-import dacite    # type: ignore[import]
+import dacite  # type: ignore[import]
+
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:

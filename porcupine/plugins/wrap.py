@@ -1,8 +1,8 @@
 """
 "Wrap Long Lines" option in the View menu.
 """
-from functools import partial
 import tkinter
+from functools import partial
 
 from porcupine import get_tab_manager, menubar, tabs
 

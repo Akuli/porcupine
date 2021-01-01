@@ -3,20 +3,19 @@ import builtins
 import copy
 import dataclasses
 import enum
-from functools import partial
 import json
 import logging
 import os
 import pathlib
 import tkinter.font
+from functools import partial
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
 
-from pygments import styles   # type: ignore
+from pygments import styles  # type: ignore
 
 import porcupine
 from porcupine import dirs, images, utils
-
 
 _log = logging.getLogger(__name__)
 

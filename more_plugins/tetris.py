@@ -5,8 +5,8 @@
 import functools
 import itertools
 import random
-from typing import Dict, Iterator, List, Optional, Tuple
 import tkinter
+from typing import Dict, Iterator, List, Optional, Tuple
 
 from porcupine import get_tab_manager, menubar, tabs, utils
 

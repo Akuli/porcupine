@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 import itertools
 import logging
 import os
@@ -7,6 +6,7 @@ import shlex
 import subprocess
 import sys
 import threading
+from datetime import datetime, timedelta
 from typing import Any, List, TextIO, cast
 
 import porcupine

@@ -6,7 +6,6 @@ from typing import Tuple
 
 from porcupine import get_tab_manager, settings, tabs, textwidget, utils
 
-
 LINE_THICKNESS = 1
 
 

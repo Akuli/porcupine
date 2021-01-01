@@ -1,7 +1,7 @@
 """If multiple lines are selected and tab is pressed, then indent all of the lines."""
 import tkinter
 
-from porcupine import get_tab_manager, textwidget, tabs, utils
+from porcupine import get_tab_manager, tabs, textwidget, utils
 
 setup_before = ['tabs2spaces']      # see tabs2spaces.py
 

@@ -6,7 +6,6 @@ from tkinter import ttk
 
 from porcupine import get_tab_manager, images, tabs
 
-
 MESSAGE = """
 To get started, create a new file by pressing Ctrl+N or open an existing
 file by pressing Ctrl+O. You can save the file with Ctrl+S and then run it by

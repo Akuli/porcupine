@@ -5,9 +5,9 @@
 import re
 import sys
 import tkinter
+import weakref
 from tkinter import ttk
 from typing import Any, Iterator, List, Tuple, cast
-import weakref
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -15,7 +15,6 @@ else:
     from typing_extensions import Literal
 
 from porcupine import get_tab_manager, images, menubar, tabs
-
 
 # keys are tabs, values are Finder widgets
 finders: 'weakref.WeakKeyDictionary[tabs.FileTab, Finder]' = (

@@ -1,12 +1,13 @@
 import dataclasses
 import functools
 import tkinter
-from typing import Any, Callable, List, Optional, Tuple, TYPE_CHECKING, overload
 import weakref
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, overload
 
-from pygments import styles   # type: ignore
+from pygments import styles  # type: ignore
 
 from porcupine import settings, utils
+
 if TYPE_CHECKING:
     from porcupine import tabs
 

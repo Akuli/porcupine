@@ -47,6 +47,17 @@ jobs:
         pip install -r requirements.txt -r requirements-dev.txt
     - run: |
         python3 -m pycodestyle porcupine tests more_plugins
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v1
+      with:
+        python-version: "3.8"
+    - run: |
+        pip install -r requirements.txt -r requirements-dev.txt
+    - run: |
+        python3 -m isort --check porcupine tests more_plugins
   pyflakes:
     runs-on: ubuntu-latest
     steps:

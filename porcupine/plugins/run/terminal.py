@@ -12,7 +12,6 @@ from typing import List, Union
 
 from porcupine import get_main_window, utils
 
-
 log = logging.getLogger(__name__)
 
 _this_dir = pathlib.Path(__file__).absolute().parent

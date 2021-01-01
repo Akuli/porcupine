@@ -3,13 +3,12 @@ import functools
 import itertools
 import re
 import tkinter
+import webbrowser
 from tkinter import ttk
 from typing import Any, List, Match, Union
-import webbrowser
 
-from porcupine import get_main_window, images, menubar, utils
 from porcupine import __version__ as porcupine_version
-
+from porcupine import get_main_window, images, menubar, utils
 
 _BORING_TEXT = """
 This is porcupine {version}.

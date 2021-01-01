@@ -3,8 +3,9 @@
 import functools
 import tkinter
 
+import ttkthemes  # type: ignore
+
 from porcupine import menubar, settings
-import ttkthemes   # type: ignore
 
 
 def on_theme_changed(style: ttkthemes.ThemedStyle, var: tkinter.StringVar, *junk: object) -> None:

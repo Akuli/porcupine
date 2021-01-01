@@ -2,8 +2,8 @@
 
 import atexit
 import pathlib
-from typing import Dict, List
 import tkinter
+from typing import Dict, List
 
 # __path__[0] is the directory where this __init__.py is
 __path__: List[str]

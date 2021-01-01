@@ -1,8 +1,7 @@
-from functools import partial
 import tkinter
+from functools import partial
 
 from porcupine import get_tab_manager, tabs, textwidget
-
 
 OPEN_TO_CLOSE = {
     '{': '}',

@@ -1,9 +1,9 @@
 # this file is currently not being used
 
 import contextlib
-from multiprocessing import connection
 import queue
 import threading
+from multiprocessing import connection
 from typing import Any, Iterator, List
 
 from porcupine import dirs

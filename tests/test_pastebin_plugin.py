@@ -10,8 +10,8 @@ import pygments.lexers
 import pytest
 import requests
 
-from porcupine import get_main_window
 import porcupine.plugins.pastebin as pastebin_module
+from porcupine import get_main_window
 
 
 @pytest.mark.pastebin_test

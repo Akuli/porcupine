@@ -1,8 +1,7 @@
 import pathlib
 import platform
 
-import appdirs      # type: ignore
-
+import appdirs  # type: ignore
 
 if platform.system() in {'Windows', 'Darwin'}:
     # these platforms like path names like "Program Files" or
