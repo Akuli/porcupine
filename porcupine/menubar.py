@@ -335,10 +335,7 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
 
     def add_link(menu_path: str, label: str, url: str) -> None:
-        def callback() -> None:     # lambda doesn't work for this...
-            webbrowser.open(url)    # ...because this returns non-None and mypy
-
-        get_menu(menu_path).add_command(label=label, command=callback)
+        get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))
 
     # TODO: porcupine starring button
     add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
