@@ -12,7 +12,7 @@ from pygments import lexers  # type: ignore
 from pygments.util import ClassNotFound     # type: ignore
 import toml
 
-from porcupine import get_main_window, get_parsed_args, get_tab_manager
+from porcupine import get_parsed_args, get_tab_manager
 from porcupine import dirs, filedialog_kwargs, menubar, settings, tabs
 
 

@@ -12,7 +12,7 @@ import pkgutil
 import random
 import time
 import traceback
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
 import toposort     # type: ignore
 
