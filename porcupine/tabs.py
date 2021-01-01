@@ -93,7 +93,7 @@ class TabManager(ttk.Notebook):
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
 
         # the string is call stack for adding callback
-        self._tab_callbacks: List[Tuple[Callable[[Tab], None], str]] = []
+        self._tab_callbacks: List[Tuple[Callable[[Tab], Any], str]] = []
 
     def _focus_selected_tab(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         tab = self.select()
@@ -301,12 +301,14 @@ class TabManager(ttk.Notebook):
 
         return True
 
-    def add_tab_callback(self, func: Callable[['Tab'], None]) -> None:
+    def add_tab_callback(self, func: Callable[['Tab'], Any]) -> None:
         """Run a callback for each tab in the tab manager.
 
         When new tabs are added later, the callback will be ran for them too.
         Bind to the ``<Destroy>`` event of each tab if you want to clean
         up something when a tab is closed.
+
+        The return value of the callback is ignored.
         """
         for tab in self.tabs():
             func(tab)
