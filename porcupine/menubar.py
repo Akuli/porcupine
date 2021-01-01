@@ -212,7 +212,7 @@ def update_keyboard_shortcuts() -> None:
             main_window.bind(event_name, command, add=True)
 
 
-def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]], bool]) -> None:
+def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]], bool]) -> Callable[..., None]:
     """Use this for disabling menu items depending on the currently selected tab.
 
     When the selected :class:`~porcupine.tabs.Tab` changes, ``callback`` will
@@ -234,9 +234,16 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]],
 
         def setup():
             menubar.get_menu("Foo").add_command(label="Bar", command=do_something)
-            set_enabled_based_on_tab("Foo/Bar", (lambda tab: isinstance(tab, tabs.FileTab)))
+            menubar.set_enabled_based_on_tab("Foo/Bar", (lambda tab: isinstance(tab, tabs.FileTab)))
+
+    Sometimes you need to update the enabled-ness of a menu item for other
+    reasons than changing the currently selected tab. To do that, call the
+    callback that this function returns. It's always called when the selected
+    tab changes, but you can call it at other times too. The returned callback
+    ignores all arguments given to it, which makes using it with ``.bind()``
+    easier.
     """
-    def on_tab_changed(junk: object = None) -> None:
+    def update_enabledness(*junk: object) -> None:
         tab = get_tab_manager().select()
         menu = get_menu(path.rsplit('/', 1)[0] if '/' in path else None)
         index = _find_item(menu, path.split('/')[-1])
@@ -244,8 +251,9 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]],
             raise LookupError(f"menu item {path!r} not found")
         menu.entryconfig(index, state=('normal' if callback(tab) else 'disabled'))
 
-    on_tab_changed()
-    get_tab_manager().bind('<<NotebookTabChanged>>', on_tab_changed, add=True)
+    update_enabledness()
+    get_tab_manager().bind('<<NotebookTabChanged>>', update_enabledness, add=True)
+    return update_enabledness
 
 
 # TODO: pluginify?

@@ -1,13 +1,11 @@
 """Reload file from disk when Ctrl+R is pressed."""
-import functools
-import typing
-
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, menubar, tabs
 
 
-def reload(tab: tabs.FileTab, junk: typing.Any) -> utils.BreakOrNone:
-    if tab.path is None:
-        return None
+def reload() -> None:
+    tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
+    assert tab.path is not None
 
     cursor_pos = tab.textwidget.index('insert')
     scroll_fraction = tab.textwidget.yview()[0]
@@ -19,13 +17,15 @@ def reload(tab: tabs.FileTab, junk: typing.Any) -> utils.BreakOrNone:
 
     tab.textwidget.mark_set('insert', cursor_pos)
     tab.textwidget.yview_moveto(scroll_fraction)
-    return 'break'
-
-
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        tab.textwidget.bind('<Control-r>', functools.partial(reload, tab), add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    # Put the reload button before first separator, after "Save As"
+    menu = menubar.get_menu('File')
+    separator_locations = [i for i in range(menu.index('end') + 1) if menu.type(i) == 'separator']
+    index = separator_locations[0] if separator_locations else 'end'
+    menu.insert_command(index, label='Reload', command=reload)
+
+    update_enabledness = menubar.set_enabled_based_on_tab(
+        'File/Reload', (lambda tab: isinstance(tab, tabs.FileTab) and tab.path is not None))
+    get_tab_manager().add_tab_callback(lambda tab: tab.bind('<<PathChanged>>', update_enabledness, add=True))

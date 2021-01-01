@@ -11,6 +11,9 @@ event add "<<Menubar:View/Bigger Font>>" <Control-plus>
 event add "<<Menubar:View/Smaller Font>>" <Control-minus>
 event add "<<Menubar:View/Reset Font Size>>" <Control-0>
 
+# reload plugin
+event add "<<Menubar:File/Reload>>" <Control-r>
+
 # run plugin
 event add "<<Menubar:Run/Compile>>" <F4>
 event add "<<Menubar:Run/Run>>" <F5>
