@@ -10,10 +10,9 @@ def reload() -> None:
     assert tab.path is not None
 
     if not tab.is_saved():
-        user_says_yes = messagebox.askyesno("Reload", (
-            f"You have changed {tab.path.name} after saving it. "
-            "If you reload it now, you will lose those changes. "
-            "Are you sure you want to reload?"))
+        user_says_yes = messagebox.askyesno(
+            "Reload",
+            f"You have not saved your changes to {tab.path.name}. Are you sure you want to reload?")
         if not user_says_yes:
             return
 
