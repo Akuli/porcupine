@@ -166,6 +166,7 @@ Here is a list of the commands I use when developing Porcupine:
   tests and try to improve the coverage :D
 - `cd docs` followed by `sphinx-build . build` creates HTML documentation.
   Open `docs/_build/index.html` in your favorite browser to view it.
+- Some linter commands that run automatically on pull request or push.
 
 I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.
