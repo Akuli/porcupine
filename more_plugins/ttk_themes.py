@@ -3,7 +3,7 @@
 import functools
 import tkinter
 
-import ttkthemes  # type: ignore
+import ttkthemes  # type: ignore[import]
 
 from porcupine import menubar, settings
 

@@ -22,13 +22,10 @@ import time
 from functools import partial
 from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
-try:
+if platform.system() != 'Windows':
     import fcntl
-except ImportError:
-    # windows
-    fcntl = None    # type: ignore
 
-import sansio_lsp_client as lsp  # type: ignore
+import sansio_lsp_client as lsp  # type: ignore[import]
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
 from porcupine.plugins import autocomplete, underlines
@@ -46,7 +43,7 @@ class SubprocessStdIO:
     def __init__(self, process: 'subprocess.Popen[bytes]') -> None:
         self._process = process
 
-        if fcntl is None:
+        if platform.system() == 'Windows':
             self._read_queue: queue.Queue[bytes] = queue.Queue()
             self._running = True
             self._worker_thread = threading.Thread(
@@ -77,7 +74,7 @@ class SubprocessStdIO:
     #   - empty bytes object: process exited
     #   - None: no data to read
     def read(self) -> Optional[bytes]:
-        if fcntl is None:
+        if platform.system() == 'Windows':
             # shitty windows code
             buf = bytearray()
             while True:
@@ -103,7 +100,8 @@ class SubprocessStdIO:
 def error_says_socket_not_connected(error: OSError) -> bool:
     if platform.system() == 'Windows':
         # i tried socket.socket().recv(1024) on windows and this is what i got
-        return (error.winerror == 10057)    # type: ignore
+        # https://github.com/python/mypy/issues/8166
+        return (error.winerror == 10057)   # type: ignore[attr-defined]
     else:
         return (error.errno == errno.ENOTCONN)
 

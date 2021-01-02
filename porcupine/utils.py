@@ -69,8 +69,8 @@ if platform.system() == 'Windows':
         os.remove(sys.stdout.name)
 
         # mypy doesn't know about how std streams can be None
-        sys.stdout = None   # type: ignore
-        sys.stderr = None   # type: ignore
+        sys.stdout = None   # type: ignore[assignment]
+        sys.stderr = None   # type: ignore[assignment]
 
         running_pythonw = True
     else:
@@ -617,19 +617,19 @@ if sys.version_info >= (3, 7):
     Spinbox = ttk.Spinbox
 else:
     # written similarly to ttk.Combobox
-    class Spinbox(ttk.Entry):   # type: ignore
+    class Spinbox(ttk.Entry):
 
-        def __init__(self, master, *, from_=None, **kwargs):     # type: ignore
+        def __init__(self, master, *, from_=None, **kwargs):   # type: ignore[no-untyped-def]
             if from_ is not None:
                 kwargs['from'] = from_  # this actually works
-            super().__init__(master, 'ttk::spinbox', **kwargs)  # type: ignore
+            super().__init__(master, 'ttk::spinbox', **kwargs)
 
-        def configure(self, *args, **kwargs):   # type: ignore
+        def configure(self, *args, **kwargs):   # type: ignore[no-untyped-def]
             if 'from_' in kwargs:
                 kwargs['from'] = kwargs.pop('from_')
-            return super().configure(*args, **kwargs)   # type: ignore
+            return super().configure(*args, **kwargs)
 
-        config = configure  # type: ignore
+        config = configure   # type: ignore[assignment]
 
         if TYPE_CHECKING:
             def cget(self, key: str) -> Any: ...

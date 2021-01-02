@@ -12,7 +12,7 @@ from functools import partial
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
 
-from pygments import styles  # type: ignore
+from pygments import styles  # type: ignore[import]
 
 import porcupine
 from porcupine import dirs, images, utils
@@ -71,7 +71,7 @@ def _type_check(tybe: type, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
-        value: tybe  # type: ignore
+        value: tybe  # type: ignore[valid-type]
 
     return utils.dict_to_dataclass(ValueContainer, {'value': obj}).value
 

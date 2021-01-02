@@ -5,7 +5,7 @@ import tkinter
 import weakref
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
 
-from pygments import styles  # type: ignore
+from pygments import styles  # type: ignore[import]
 
 from porcupine import settings, utils
 

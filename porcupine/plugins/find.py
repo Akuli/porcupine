@@ -28,7 +28,7 @@ class Finder(ttk.Frame):
     """
 
     def __init__(self, parent: tkinter.BaseWidget, textwidget: tkinter.Text, **kwargs: Any) -> None:
-        super().__init__(parent, **kwargs)      # type: ignore
+        super().__init__(parent, **kwargs)
         self._textwidget = textwidget
 
         # grid layout:

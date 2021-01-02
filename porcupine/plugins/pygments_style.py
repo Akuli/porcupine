@@ -4,7 +4,7 @@ import threading
 import tkinter
 from typing import List, Optional, Tuple
 
-from pygments import styles, token  # type: ignore
+from pygments import styles, token  # type: ignore[import]
 
 from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 

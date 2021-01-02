@@ -9,8 +9,8 @@ from functools import partial
 from typing import Any, Dict, Optional
 
 import toml
-from pygments import lexers  # type: ignore
-from pygments.util import ClassNotFound  # type: ignore
+from pygments import lexers  # type: ignore[import]
+from pygments.util import ClassNotFound  # type: ignore[import]
 
 from porcupine import dirs, filedialog_kwargs, get_parsed_args, get_tab_manager, menubar, settings, tabs
 

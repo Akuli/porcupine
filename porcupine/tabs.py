@@ -12,8 +12,8 @@ import traceback
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
 
-from pygments.lexer import LexerMeta  # type: ignore
-from pygments.lexers import TextLexer  # type: ignore
+from pygments.lexer import LexerMeta  # type: ignore[import]
+from pygments.lexers import TextLexer  # type: ignore[import]
 
 from porcupine import _state, images, settings, textwidget, utils
 
@@ -157,10 +157,7 @@ class TabManager(ttk.Notebook):
     # fixing tkinter weirdness: some methods returns widget names as
     # strings instead of widget objects, these str() everything anyway
     # because tkinter might be fixed some day
-    #
-    # The ignore comment is to allow creating someting incompatible with
-    # ttk.Notebook. Hopefully it doesn't break any ttk.Notebook internals.
-    def select(self, tab_id: Union[None, int, 'Tab'] = None) -> Optional['Tab']:  # type: ignore
+    def select(self, tab_id: Union[None, int, 'Tab'] = None) -> Optional['Tab']:
         """Select the given tab as if the user clicked it.
 
         Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
@@ -292,9 +289,8 @@ class TabManager(ttk.Notebook):
         options = self.tab(i2)
         selected = (tab is self.select())
 
-        # type ignore comment because mypy support for **kwargs is not great
         self.forget(i2)
-        self.insert(i1, tab, **options)     # type: ignore
+        self.insert(i1, tab, **options)
         if selected:
             self.select(tab)
 

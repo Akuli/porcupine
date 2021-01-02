@@ -3,7 +3,7 @@
 import tkinter
 import tkinter.font as tkfont
 
-from pygments import styles, token  # type: ignore
+from pygments import styles, token  # type: ignore[import]
 
 from porcupine import get_tab_manager, settings, tabs, utils
 

@@ -5,7 +5,7 @@ import subprocess
 import sys
 from typing import Optional
 
-import colorama  # type: ignore
+import colorama  # type: ignore[import]
 
 colorama.init()
 

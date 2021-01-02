@@ -14,13 +14,13 @@ log = logging.getLogger(__name__)
 # see the --help action in argparse's source code
 class _PrintPlugindirAction(argparse.Action):
 
-    def __init__(   # type: ignore
+    def __init__(   # type: ignore[no-untyped-def]
             self, option_strings, dest=argparse.SUPPRESS,
             default=argparse.SUPPRESS, help=None):
         super().__init__(option_strings=option_strings, dest=dest,
                          default=default, nargs=0, help=help)
 
-    def __call__(   # type: ignore
+    def __call__(   # type: ignore[no-untyped-def]
             self, parser, namespace, values, option_string=None):
         print("You can install plugins here:\n\n    %s\n" % plugins.__path__[0])
         parser.exit()

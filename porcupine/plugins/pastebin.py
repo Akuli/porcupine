@@ -10,7 +10,7 @@ from tkinter import ttk
 from typing import Any, Optional
 
 import requests
-from pygments.lexer import LexerMeta  # type: ignore
+from pygments.lexer import LexerMeta  # type: ignore[import]
 
 from porcupine import __version__ as _porcupine_version
 from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
@@ -67,7 +67,7 @@ pastebins = {"termbin.com": paste_to_termbin, "dpaste.com": paste_to_dpaste_dot_
 class SuccessDialog(tkinter.Toplevel):
 
     def __init__(self, url: str, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)   # type: ignore
+        super().__init__(*args, **kwargs)
         self.url = url
 
         content = ttk.Frame(self)
