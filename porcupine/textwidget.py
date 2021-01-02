@@ -1,8 +1,9 @@
+import contextlib
 import dataclasses
 import functools
 import tkinter
 import weakref
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
 
 from pygments import styles  # type: ignore
 
@@ -79,6 +80,7 @@ class _ChangeTracker:
 
     def __init__(self, widget: tkinter.Text) -> None:
         self.widget = widget
+        self.change_batch: Optional[List[Change]] = None
 
     def setup(self) -> None:
         self.old_cursor_pos = self.widget.index('insert')
@@ -326,6 +328,12 @@ class _ChangeTracker:
         else:   # pragma: no cover
             raise ValueError(f"the tcl code called _change_cb with unexpected subcommand: {subcommand}")
 
+        if self.change_batch is None:
+            self.generate_change_event(changes)
+        else:
+            self.change_batch.extend(changes)
+
+    def generate_change_event(self, changes: List[Change]) -> None:
         # remove changes that don't actually do anything
         changes = [
             change for change in changes
@@ -334,15 +342,15 @@ class _ChangeTracker:
                 or change.new_text)
         ]
 
-        # some plugins expect <<ContentChanged>> events to occur after changing
-        # the content in the editor, but the tcl code in __init__ needs them to
-        # run before, so here is the solution
-        #
-        # TODO: i think event_generate takes an argument describing when to
-        # trigger the event?
         if changes:
-            self.widget.after_idle(lambda: self.widget.event_generate(
-                '<<ContentChanged>>', data=Changes(changes)))
+            # some plugins expect <<ContentChanged>> events to occur after changing
+            # the content in the editor, but the tcl code in __init__ needs them to
+            # run before, so here is the solution
+            #
+            # TODO: i think event_generate takes an argument describing when to
+            # trigger the event?
+            self.widget.after_idle(lambda: (
+                self.widget.event_generate('<<ContentChanged>>', data=Changes(changes))))
 
     def _cursor_cb(self) -> None:
         # more implicit newline stuff
@@ -355,7 +363,7 @@ class _ChangeTracker:
             self.widget.event_generate('<<CursorMoved>>')
 
 
-_change_tracked_widgets: 'weakref.WeakSet[tkinter.Text]' = weakref.WeakSet()
+_change_trackers: 'weakref.WeakKeyDictionary[tkinter.Text, _ChangeTracker]' = weakref.WeakKeyDictionary()
 
 
 def track_changes(widget: tkinter.Text) -> None:
@@ -410,17 +418,54 @@ def track_changes(widget: tkinter.Text) -> None:
         ``textwidget.index('insert')`` to find the current cursor
         position.
     """
-    if widget in _change_tracked_widgets:
+    if widget in _change_trackers:
         raise RuntimeError("track_changes() called twice for same text widget")
 
     # all peers except the one we're trying to track should already be tracked
     peers = {widget.nametowidget(nameobj) for nameobj in widget.peer_names()}
     assert widget not in peers
-    if not peers.issubset(_change_tracked_widgets):
+    if not peers.issubset(_change_trackers.keys()):
         raise RuntimeError("track_changes() must be called before create_peer_widget()")
 
-    _change_tracked_widgets.add(widget)
-    _ChangeTracker(widget).setup()
+    tracker = _ChangeTracker(widget)
+    tracker.setup()
+    _change_trackers[widget] = tracker
+
+
+# how to type hint context manager: https://stackoverflow.com/a/49736916
+@contextlib.contextmanager
+def change_batch(widget: tkinter.Text) -> Iterator[None]:
+    """A context manager to optimize doing many changes to a text widget.
+
+    When :func:`track_changes` has been called, every change to a text widget
+    generates a new ``<<ContentChanged>>`` event, and lots of
+    ``<<ContentChanged>>`` events can cause Porcupine to run slowly. To avoid
+    that, you can use this context manager during the changes, like this::
+
+        with textwidget.change_batch(some_text_widget_with_change_tracking):
+            for thing in big_list_of_things_to_do:
+                textwidget.delete(...)
+                textwidget.insert(...)
+
+    See :source:`porcupine/plugins/indent_block.py` for a complete example.
+    """
+    try:
+        tracker = _change_trackers[widget]
+    except KeyError:
+        yield
+        return
+
+    if tracker.change_batch is not None:
+        raise RuntimeError("nested calls to change_batch")
+
+    tracker.change_batch = []
+    try:
+        yield
+    finally:
+        try:
+            tracker.generate_change_event(tracker.change_batch)
+        finally:
+            tracker.change_batch = None
 
 
 def create_peer_widget(
@@ -477,7 +522,7 @@ def create_peer_widget(
     the_widget_that_becomes_a_peer.tk.call('destroy', the_widget_that_becomes_a_peer)
     original_text_widget.peer_create(the_widget_that_becomes_a_peer)
 
-    if original_text_widget in _change_tracked_widgets:
+    if original_text_widget in _change_trackers:
         track_changes(the_widget_that_becomes_a_peer)
         utils.forward_event('<<ContentChanged>>', the_widget_that_becomes_a_peer, original_text_widget)
 

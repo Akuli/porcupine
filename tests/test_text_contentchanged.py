@@ -3,7 +3,7 @@ import tkinter
 import pytest
 
 from porcupine import get_main_window, utils
-from porcupine.textwidget import Change, Changes, create_peer_widget, track_changes
+from porcupine.textwidget import Change, Changes, change_batch, create_peer_widget, track_changes
 
 
 @pytest.fixture(scope='function')
@@ -129,3 +129,37 @@ def test_track_changes_after_create_peer_widget(porcusession):
     create_peer_widget(text, peer)
     with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
         track_changes(text)
+
+
+def test_change_batch_no_tracking(porcusession):
+    text = tkinter.Text(get_main_window())
+    with change_batch(text):    # should do nothing
+        text.insert('end', 'hello\n')
+
+
+def test_change_batch_with_tracking(text_and_events):
+    text, events = text_and_events
+    with change_batch(text):
+        end = 'end - 1 char'
+        text.insert(end, 'hello ')
+        text.insert(end, 'there')
+        text.delete(f'{end} - 5 chars', end)
+        text.insert(end, 'world')
+    assert text.get('1.0', end) == 'hello world'
+
+    text.update()
+    assert len(events) == 1    # would be multiple events without change_batch
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.0', end='1.0', old_text_len=0, new_text='hello '),
+        Change(start='1.6', end='1.6', old_text_len=0, new_text='there'),
+        Change(start='1.6', end='1.11', old_text_len=5, new_text=''),
+        Change(start='1.6', end='1.6', old_text_len=0, new_text='world'),
+    ]
+
+
+def test_change_batch_nested(text_and_events):
+    text, events = text_and_events
+    with pytest.raises(RuntimeError, match='nested calls'):
+        with change_batch(text):
+            with change_batch(text):
+                pass

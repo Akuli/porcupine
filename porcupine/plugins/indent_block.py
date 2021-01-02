@@ -19,16 +19,17 @@ def on_tab_key(event: 'tkinter.Event[textwidget.MainText]', shifted: bool) -> No
         # something's selected on the end line, let's indent/dedent it too
         end += 1
 
-    for lineno in range(start, end):
-        if shifted:
-            event.widget.dedent('%d.0' % lineno)
-        else:
-            # if the line is empty or it contains nothing but
-            # whitespace, don't touch it
-            content = event.widget.get(
-                '%d.0' % lineno, '%d.0 lineend' % lineno)
-            if not (content.isspace() or not content):
-                event.widget.indent('%d.0' % lineno)
+    with textwidget.change_batch(event.widget):
+        for lineno in range(start, end):
+            if shifted:
+                event.widget.dedent('%d.0' % lineno)
+            else:
+                # if the line is empty or it contains nothing but
+                # whitespace, don't touch it
+                content = event.widget.get(
+                    '%d.0' % lineno, '%d.0 lineend' % lineno)
+                if not (content.isspace() or not content):
+                    event.widget.indent('%d.0' % lineno)
 
     # select only the lines we indented but everything on them
     event.widget.tag_remove('sel', '1.0', 'end')
