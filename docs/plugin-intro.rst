@@ -208,34 +208,21 @@ if we had done this instead::
 Unfortunately tkinter's ``unbind()`` method is stupid and it unbinds
 everything, regardless of the second argument passed into it (see
 `the source code <https://github.com/python/cpython/blob/dff9b5f9d62a/Lib/tkinter/__init__.py#L1249>`_).
-If you need to bind and unbind something use
-:func:`porcupine.utils.temporary_bind`, and let me know that you needed it so I
-won't delete it.
 
 
-Binding Key Presses
-^^^^^^^^^^^^^^^^^^^
+Binding Key Presses Globally
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to bind a key press **globally** you should use
-:mod:`porcupine.actions` in most cases, but you can also bind on the main
-window, like this::
+If you want to bind a key press so that pressing it anywhere in Porcupine does something,
+you should probably add a menu item for it with :mod:`porcupine.menubar`,
+and then ask the users of the plugin to add the corresponding binding to their ``keybindings.tcl``.
+This way, you allow the user of the plugin to decide
+which key combination (if any) does your thing.
 
-   def print_hello(event):
-       print("Hello World!")
-       return 'break'
-
-   def setup():
-       porcupine.get_main_window().bind('<Control-g>', print_hello, add=True)
-
-Now pressing ``Ctrl+G`` in *any* Porcupine widget runs ``print_hello``.
-
-Note that the binding returns ``'break'``. This way, if tkinter does something
-by default when ``Ctrl+G`` is pressed, it will not do it now. You can also
-``return 'break'`` from other callbacks to indicate whether other plugins
-should handle that event (see `Shift-Tab`_ below).
-
-Of course, you can also create **non-global** bindings normally with the
-``bind()`` method of any other widget.
+The user-specific ``keybindings.tcl`` can be edited by going to
+*Settings* menu at top, then *Porcupine Settings*, then *Config Files*.
+By default, it contains a link to Porcupine's default ``keybindings.tcl``,
+and that contains many example key bindings.
 
 
 Shift-Tab
