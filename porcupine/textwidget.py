@@ -343,12 +343,9 @@ class _ChangeTracker:
         ]
 
         if changes:
-            # some plugins expect <<ContentChanged>> events to occur after changing
-            # the content in the editor, but the tcl code in __init__ needs them to
-            # run before, so here is the solution
-            #
-            # TODO: i think event_generate takes an argument describing when to
-            # trigger the event?
+            # Some plugins expect <<ContentChanged>> events to occur after changing
+            # the content in the editor, so we need to delay it here. For some
+            # reason, using the 'when' argument of event_generate() breaks tests.
             self.widget.after_idle(lambda: (
                 self.widget.event_generate('<<ContentChanged>>', data=Changes(changes))))
 
