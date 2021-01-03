@@ -8,7 +8,7 @@ from tkinter import ttk
 from typing import Any, List, Match, Union
 
 from porcupine import __version__ as porcupine_version
-from porcupine import get_main_window, images, menubar, utils
+from porcupine import get_main_window, images, menubar, textwidget, utils
 
 _BORING_TEXT = """
 This is porcupine {version}.
@@ -51,7 +51,7 @@ class _AboutDialogContent(ttk.Frame):
         big_label = ttk.Label(self, font=('', 16, ()), text="About Porcupine")
         big_label.pack(pady=5)
 
-        self._textwidget = utils.create_passive_text_widget(
+        self._textwidget = textwidget.create_passive_text_widget(
             self, width=60, height=18)
         self._textwidget.pack(fill='both', expand=True, padx=5, pady=5)
 

@@ -346,6 +346,8 @@ class _ChangeTracker:
             # Some plugins expect <<ContentChanged>> events to occur after changing
             # the content in the editor, so we need to delay it here. For some
             # reason, using the 'when' argument of event_generate() breaks tests.
+            #
+            # TODO: does this surely work in all corner cases?
             self.widget.after_idle(lambda: (
                 self.widget.event_generate('<<ContentChanged>>', data=Changes(changes))))
 
@@ -444,6 +446,8 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
                 textwidget.delete(...)
                 textwidget.insert(...)
 
+    This does nothing if :func:`track_changes` hasn't been called.
+
     See :source:`porcupine/plugins/indent_block.py` for a complete example.
     """
     try:
@@ -508,14 +512,11 @@ def create_peer_widget(
     # widget Tcl name, and then creates a peer widget with that name.
     # But if you want to create a tkinter widget, then you need to let
     # the tkinter widget to create a Tcl widget with a name chosen by
-    # tkinter. That has happened above with the super() call. However,
-    # rest of what happens in this __init__ method must do stuff to the
-    # peer widget, rather than the widget that tkinter created.
+    # tkinter. That has happened already when this function runs.
     #
     # Can't do .destroy() because that screws up winfo_children(). Each tkinter
     # widget knows its child widgets, and .destroy() would make tkinter no
-    # longer know it. Tkinter's winfo_children() also ignores anything not
-    # known to tkinter.
+    # longer know it. Tkinter's winfo_children() ignores unknown widgets.
     the_widget_that_becomes_a_peer.tk.call('destroy', the_widget_that_becomes_a_peer)
     original_text_widget.peer_create(the_widget_that_becomes_a_peer)
 
@@ -579,6 +580,29 @@ def use_pygments_theme(
     on_style_changed()
 
 
+def config_tab_displaying(textwidget: tkinter.Text, indent_size: int, *, tag: Optional[str] = None) -> None:
+    """Make ``textwidget`` display tabs as ``indent_size`` characters wide.
+
+    For example, if ``indent_size`` is 4, then each tab character will look
+    like be 4 spaces. This function uses the font of the textwidget, so don't
+    change the font immediately after
+
+    If ``tag`` is specified, then only the text tagged with the tag is
+    affected, not the entire ``textwidget``.
+    """
+    if tag is None:
+        font = textwidget.cget('font')
+    else:
+        font = textwidget.tag_cget(tag, 'font') or textwidget.cget('font')
+
+    # from the text(3tk) man page: "To achieve a different standard
+    # spacing, for example every 4 characters, simply configure the
+    # widget with “-tabs "[expr {4 * [font measure $font 0]}] left"
+    # -tabstyle wordprocessor”."
+    measure_result = int(textwidget.tk.call('font', 'measure', font, '0'))
+    textwidget.config(tabs=(indent_size*measure_result, 'left'), tabstyle='wordprocessor')
+
+
 class MainText(tkinter.Text):
     """Don't use this. It may be changed later."""
 
@@ -611,7 +635,7 @@ class MainText(tkinter.Text):
         self.bind('<Control-a>', self._select_all, add=True)
 
     def _on_indent_size_changed(self, junk: object = None) -> None:
-        utils.config_tab_displaying(self, self._tab.settings.get('indent_size', int))
+        config_tab_displaying(self, self._tab.settings.get('indent_size', int))
 
     def _on_delete(self, control_down: bool, event: 'tkinter.Event[tkinter.Misc]',
                    shifted: bool = False) -> utils.BreakOrNone:
@@ -741,3 +765,55 @@ class MainText(tkinter.Text):
     def _select_all(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         self.tag_add('sel', '1.0', 'end - 1 char')
         return 'break'
+
+
+def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter.Text:
+    """Create a text widget that is meant to be used for displaying text, not for editing.
+
+    The returned text widget is disabled by default (``state='disabled'``),
+    and it's intended to be used that way. You need to temporarily enable it
+    to add text to it::
+
+        widget = create_passive_text_widget(parent)
+        widget.config(state='normal')
+        widget.insert(1.0, wall_of_text)
+        widget.config(state='disabled')
+
+    When creating the widget, this function uses some default settings (such as
+    ``wrap='word'`` and ``state='disabled'``) that can be overrided with
+    ``**kwargs``. For example, the above example code can be written like this::
+
+        widget = create_passive_text_widget(parent, state='normal')
+        widget.insert(1.0, wall_of_text)
+        widget.config(state='disabled')
+    """
+    kwargs.setdefault('font', 'TkDefaultFont')
+    kwargs.setdefault('borderwidth', 0)
+    kwargs.setdefault('relief', 'flat')
+    kwargs.setdefault('wrap', 'word')       # TODO: remember to mention in docs
+    kwargs.setdefault('state', 'disabled')  # TODO: remember to mention in docs
+    text = tkinter.Text(parent, **kwargs)
+
+    def update_colors(junk: object = None) -> None:
+        # tkinter's ttk::style api sucks so let's not use it
+        ttk_fg = text.tk.eval('ttk::style lookup TLabel.label -foreground')
+        ttk_bg = text.tk.eval('ttk::style lookup TLabel.label -background')
+
+        if not ttk_fg and not ttk_bg:
+            # stupid ttk theme, it deserves this
+            ttk_fg = 'black'
+            ttk_bg = 'white'
+        elif not ttk_bg:
+            # this happens with e.g. elegance theme (more_plugins/ttkthemes.py)
+            ttk_bg = utils.invert_color(ttk_fg, black_or_white=True)
+        elif not ttk_fg:
+            ttk_fg = utils.invert_color(ttk_bg, black_or_white=True)
+
+        text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
+
+    # even non-ttk widgets can handle <<ThemeChanged>>
+    # TODO: make sure that this works
+    text.bind('<<ThemeChanged>>', update_colors, add=True)
+    update_colors()
+
+    return text

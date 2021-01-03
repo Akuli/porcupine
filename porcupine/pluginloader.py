@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 class Status(enum.Enum):
     """
-    This :mod:`Enum <enum>` represents the status of the plugin in the
+    This :mod:`enum` represents the status of the plugin in the
     currently running Porcupine process.
 
     .. data:: LOADING
@@ -247,9 +247,6 @@ def can_setup_while_running(info: PluginInfo) -> bool:
     """
     Returns whether the plugin can be set up now, without having to
     restart Porcupine.
-
-    This function handles errors coming from plugins, so there's on need to
-    wrap it in try/except.
     """
     if info.status not in {Status.DISABLED_BY_SETTINGS, Status.DISABLED_ON_COMMAND_LINE}:
         return False
@@ -274,8 +271,6 @@ def setup_while_running(info: PluginInfo) -> None:
 
     Before calling this function, make sure that
     :func:`can_setup_while_running` returns ``True``.
-    This function handles errors coming from plugins, so there's on need to
-    wrap it in try/except.
     """
     info.status = Status.LOADING
 

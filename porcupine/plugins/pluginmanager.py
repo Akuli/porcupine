@@ -7,7 +7,7 @@ import tkinter
 from tkinter import ttk
 from typing import List
 
-from porcupine import get_main_window, menubar, pluginloader, settings, utils
+from porcupine import get_main_window, menubar, pluginloader, settings, textwidget
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class PluginDialogContent:
             right_side, text="Enable", command=self._toggle_enabled, state='disabled')
         self._enable_disable_button.pack(side='bottom')
 
-        self._description = utils.create_passive_text_widget(right_side)
+        self._description = textwidget.create_passive_text_widget(right_side)
         self._description.config(state='normal')
         self._description.insert('1.0', "Please select a plugin.")
         self._description.config(state='disabled')

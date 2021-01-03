@@ -196,7 +196,7 @@ def update_keyboard_shortcuts() -> None:
         * Ensure that the menu item's callback runs when Ctrl+N is pressed.
 
     This has to be called when menus or keyboard shortcuts have been modified.
-    It's called automatically when plugins have been set up.
+    It's called automatically when a plugin has been set up.
     """
     main_window = get_main_window()
     for path, menu, index in _walk_menu_contents():

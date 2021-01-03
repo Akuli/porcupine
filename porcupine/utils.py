@@ -272,7 +272,7 @@ else:
 
 
 class EventWithData(_Event):
-    """A subclass of :class:`'tkinter.Event[tkinter.Misc]'` for use with :func:`bind_with_data`."""
+    """A subclass of :class:`tkinter.Event[tkinter.Misc]` for use with :func:`bind_with_data`."""
 
     #: If a string was passed to the ``data`` argument of ``event_generate()``,
     #: then this is that string.
@@ -358,7 +358,7 @@ def bind_with_data(
     return funcname
 
 
-# TODO: document this
+# TODO: delete this
 def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
                   *, add: bool = True) -> str:
     def callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
@@ -379,11 +379,19 @@ def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
         return from_.bind(event_name, callback, add=add)
 
 
-# TODO: document this
 def add_scroll_command(
         widget: tkinter.Text,
         option: Literal['xscrollcommand', 'yscrollcommand'],
         callback: Callable[[], None]) -> None:
+    """Schedule ``callback`` to run with no arguments when ``widget`` is scrolled.
+
+    The option should be ``'xscrollcommand'`` for horizontal scrolling or
+    ``'yscrollcommand'`` for vertical scrolling.
+
+    Unlike when setting the option directly, this function can be called
+    multiple times with the same widget and the same option to set multiple
+    callbacks.
+    """
     if not widget[option]:
         widget[option] = (lambda *args: None)
     tcl_code = widget[option]
@@ -556,55 +564,6 @@ def bind_mouse_wheel(
             callback('up' if event.delta > 0 else 'down')
 
         bind(f'<{prefixes}MouseWheel>', real_callback, add)
-
-
-# TODO: document this
-def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter.Text:
-    kwargs.setdefault('font', 'TkDefaultFont')
-    kwargs.setdefault('borderwidth', 0)
-    kwargs.setdefault('relief', 'flat')
-    kwargs.setdefault('wrap', 'word')       # TODO: remember to mention in docs
-    kwargs.setdefault('state', 'disabled')  # TODO: remember to mention in docs
-    text = tkinter.Text(parent, **kwargs)
-
-    def update_colors(junk: object = None) -> None:
-        # tkinter's ttk::style api sucks so let's not use it
-        ttk_fg = text.tk.eval('ttk::style lookup TLabel.label -foreground')
-        ttk_bg = text.tk.eval('ttk::style lookup TLabel.label -background')
-
-        if not ttk_fg and not ttk_bg:
-            # stupid ttk theme, it deserves this
-            ttk_fg = 'black'
-            ttk_bg = 'white'
-        elif not ttk_bg:
-            # this happens with e.g. elegance theme (more_plugins/ttkthemes.py)
-            ttk_bg = invert_color(ttk_fg, black_or_white=True)
-        elif not ttk_fg:
-            ttk_fg = invert_color(ttk_bg, black_or_white=True)
-
-        text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
-
-    # even non-ttk widgets can handle <<ThemeChanged>>
-    # TODO: make sure that this works
-    text.bind('<<ThemeChanged>>', update_colors, add=True)
-    update_colors()
-
-    return text
-
-
-# TODO: document this
-def config_tab_displaying(textwidget: tkinter.Text, indent_size: int, *, tag: Optional[str] = None) -> None:
-    # from the text(3tk) man page: "To achieve a different standard
-    # spacing, for example every 4 characters, simply configure the
-    # widget with “-tabs "[expr {4 * [font measure $font 0]}] left"
-    # -tabstyle wordprocessor”."
-    if tag is None:
-        font = textwidget.cget('font')
-    else:
-        font = textwidget.tag_cget(tag, 'font')
-
-    measure_result = int(textwidget.tk.call('font', 'measure', font, '0'))
-    textwidget.config(tabs=(indent_size*measure_result, 'left'), tabstyle='wordprocessor')
 
 
 if sys.version_info >= (3, 7):

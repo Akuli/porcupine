@@ -610,7 +610,7 @@ def add_spinbox(
     text: str,
     **spinbox_kwargs: Any,
 ) -> utils.Spinbox:
-    """Add a :class:`utils.Spinbox` to the setting dialog.
+    """Add a :class:`porcupine.utils.Spinbox` to the setting dialog.
 
     All ``**spinbox_kwargs`` go to :class:`utils.Spinbox`.
     Usually you should pass at least ``from_=some_integer, to=another_integer``.

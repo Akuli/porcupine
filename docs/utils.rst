@@ -6,8 +6,6 @@
 This module contains handy things that Porcupine uses internally and
 plugins can use freely.
 
-.. TODO: document the img_stuff API
-
 
 Information about Python
 ------------------------
@@ -38,16 +36,26 @@ Events with Data
 Other Tkinter Utilities
 -----------------------
 
+See :mod:`porcupine.textwidget` for ``tkinter.Text`` specific things.
+
 .. autofunction:: set_tooltip
 .. autofunction:: bind_mouse_wheel
 .. autofunction:: bind_tab_key
+.. autofunction:: add_scroll_command
 .. autofunction:: run_in_thread
+.. autofunction:: errordialog
 .. autoclass:: TemporaryBind
 
 .. class:: Spinbox
 
    Starting with Python 3.7, this is ``tkinter.ttk.Spinbox``. On Python 3.6,
    this class behaves just like ``tkinter.ttk.Spinbox`` on Python 3.7.
+
+.. data:: BreakOrNone
+
+    Same as ``Optional[Literal['break']]``, where ``Optional`` and ``Literal`` come from :mod:`typing`,
+    except that this uses ``typing_extensions.Literal`` on Python versions that don't have ``typing.Literal``.
+    This is the correct return type for tkinter bind callbacks.
 
 
 Miscellaneous
@@ -63,5 +71,3 @@ Miscellaneous
    This function is equivalent to :func:`shlex.quote` on non-Windows systems,
    and on Windows it adds double quotes in a similar way. This is useful for
    running commands in the Windows command prompt or a POSIX-compatible shell.
-
-.. autofunction:: errordialog

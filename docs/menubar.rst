@@ -12,20 +12,14 @@ any :source:`plugin that Porcupine comes with <porcupine/plugins>` for example u
 .. virtualevent:: Menubar:Foo/Bar/Baz
 
     Generating an event like this on the main window (see
-    :func:`porcupine.get_main_window`)runs the callback of a menu item named
+    :func:`porcupine.get_main_window`) runs the callback of a menu item named
     ``Baz`` in a menu named ``Foo/Bar`` (see :func:`get_menu`).
 
-    Use the ``event_add()`` method of any tkinter widget to associate a
-    keyboard shortcut with the menu item. For example, Porcupine runs code like
-    this when it starts::
-
-        main_window = get_main_window()
-        main_window.event_add('<<Menubar:File/New File>>', '<Control-n>')
-        main_window.event_add('<<Menubar:File/Open>>', '<Control-o>')
-        main_window.event_add('<<Menubar:File/Save>>', '<Control-s>')
-        main_window.event_add('<<Menubar:File/Save As>>', '<Control-S>')
-        ...
-
-    Call :func:`update_keyboard_shortcuts` after doing that.
+    Porcupine has a file named ``keybindings.tcl``, and it can be edited at
+    ``Settings/Porcupine Settings/Config Files`` in the menubar.
+    By default, it contains a link to Porcupine's default ``keybindings.tcl``,
+    and that contains many example key bindings.
+    All of them work by associating a keyboard event, such as ``<Control-n>``,
+    which one of these virtual events, such as ``<<Menubar:File/New File>>``.
 
 .. autofunction:: update_keyboard_shortcuts

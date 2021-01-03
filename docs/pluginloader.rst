@@ -15,6 +15,7 @@ or ``porcupine.plugins.highlight``.
 
     This contains infos for all the plugins that the plugin loader knows about,
     including plugins that failed to load and disabled plugins.
+    Don't modify this sequence outside ``porcupine/pluginloader.py``.
 
 .. virtualevent:: PluginsLoaded
 
@@ -28,7 +29,11 @@ or ``porcupine.plugins.highlight``.
     Note that it's possible to setup plugins individually while Porcupine is running.
     This event also runs after that happens.
 
-    .. seealso:: :func:`porcupine.pluginloader.setup_while_running`
+    .. seealso:: :func:`setup_while_running`
 
 .. autofunction:: can_setup_while_running
 .. autofunction:: setup_while_running
+
+.. note::
+    The functions documented above handle the errors coming from plugins,
+    so there's no need to use ``try/except`` when calling them.
