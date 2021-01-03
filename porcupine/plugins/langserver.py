@@ -25,7 +25,7 @@ from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 if platform.system() != 'Windows':
     import fcntl
 
-import sansio_lsp_client as lsp  # type: ignore[import]
+import sansio_lsp_client as lsp
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
 from porcupine.plugins import autocomplete, underlines
