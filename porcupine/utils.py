@@ -358,27 +358,6 @@ def bind_with_data(
     return funcname
 
 
-# TODO: delete this
-def forward_event(event_name: str, from_: tkinter.Widget, to: tkinter.Widget,
-                  *, add: bool = True) -> str:
-    def callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
-        # make the coordinates relative to the 'to' widget
-        x = event.x_root - to.winfo_rootx()
-        y = event.y_root - to.winfo_rooty()
-        # no need to specify rootx and rooty, because Tk can calculate them
-
-        if isinstance(event, EventWithData):
-            to.event_generate(event_name, x=x, y=y, data=event.data_string)
-        else:
-            to.event_generate(event_name, x=x, y=y)
-
-    if event_name.startswith('<<'):
-        # virtual events support data
-        return bind_with_data(from_, event_name, callback, add=add)
-    else:
-        return from_.bind(event_name, callback, add=add)
-
-
 def add_scroll_command(
         widget: tkinter.Text,
         option: Literal['xscrollcommand', 'yscrollcommand'],

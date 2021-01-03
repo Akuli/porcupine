@@ -521,8 +521,13 @@ def create_peer_widget(
     original_text_widget.peer_create(the_widget_that_becomes_a_peer)
 
     if original_text_widget in _change_trackers:
+        def forward_event_to_original_widget(event: 'tkinter.Event[tkinter.Text]') -> None:
+            original_text_widget.event_generate('<<ContentChanged>>', data=event.data_string)
+
         track_changes(the_widget_that_becomes_a_peer)
-        utils.forward_event('<<ContentChanged>>', the_widget_that_becomes_a_peer, original_text_widget)
+        utils.bind_with_data(
+            the_widget_that_becomes_a_peer, '<<ContentChanged>>',
+            forward_event_to_original_widget, add=True)
 
 
 @overload
