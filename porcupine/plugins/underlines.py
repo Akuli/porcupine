@@ -117,6 +117,7 @@ class _Underliner:
             return
 
         bbox_x, bbox_y, bbox_width, bbox_height = bbox
+        gap_size = 8
 
         self._message_tag = tag
         self._message_label = tkinter.Label(
@@ -125,11 +126,11 @@ class _Underliner:
             # opposite colors as in the text widget
             bg=self.textwidget.cget('fg'),
             fg=self.textwidget.cget('bg'),
+            wraplength=(self.textwidget.winfo_width() - 2*gap_size),
         )
 
         label_width = self._message_label.winfo_reqwidth()
         label_height = self._message_label.winfo_reqheight()
-        gap_size = 8
 
         # don't go beyond the right edge of textwidget
         label_x = min(bbox_x, self.textwidget.winfo_width() - gap_size - label_width)
