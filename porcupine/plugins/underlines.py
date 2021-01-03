@@ -123,10 +123,10 @@ class _Underliner:
         self._message_label = tkinter.Label(
             self.textwidget,
             text=self._tag2underline[tag].message,
+            wraplength=(self.textwidget.winfo_width() - 2*gap_size),
             # opposite colors as in the text widget
             bg=self.textwidget.cget('fg'),
             fg=self.textwidget.cget('bg'),
-            wraplength=(self.textwidget.winfo_width() - 2*gap_size),
         )
 
         label_width = self._message_label.winfo_reqwidth()
