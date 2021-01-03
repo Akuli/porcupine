@@ -18,7 +18,7 @@ import traceback
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
-import dacite  # type: ignore[import]
+import dacite
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -619,17 +619,17 @@ else:
     # written similarly to ttk.Combobox
     class Spinbox(ttk.Entry):
 
-        def __init__(self, master, *, from_=None, **kwargs):   # type: ignore[no-untyped-def]
+        def __init__(self, master: Any, *, from_: Any = None, **kwargs: Any):
             if from_ is not None:
                 kwargs['from'] = from_  # this actually works
             super().__init__(master, 'ttk::spinbox', **kwargs)
 
-        def configure(self, *args, **kwargs):   # type: ignore[no-untyped-def]
+        def configure(self, *args: Any, **kwargs: Any) -> Any:
             if 'from_' in kwargs:
                 kwargs['from'] = kwargs.pop('from_')
             return super().configure(*args, **kwargs)
 
-        config = configure   # type: ignore[assignment]
+        config = cast(Any, configure)
 
         if TYPE_CHECKING:
             def cget(self, key: str) -> Any: ...
