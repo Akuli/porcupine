@@ -16,7 +16,7 @@ import threading
 import tkinter
 import traceback
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Deque, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
 import dacite
 
