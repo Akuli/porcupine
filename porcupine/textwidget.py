@@ -78,12 +78,13 @@ class _ChangeTracker:
 
     old_cursor_pos: str
 
-    def __init__(self, widget: tkinter.Text) -> None:
-        self.widget = widget
+    # event_receiver_widget will receive the change events
+    def __init__(self, event_receiver_widget: tkinter.Text) -> None:
+        self.event_receiver_widget = event_receiver_widget
         self.change_batch: Optional[List[Change]] = None
 
-    def setup(self) -> None:
-        self.old_cursor_pos = self.widget.index('insert')
+    def setup(self, widget: tkinter.Text) -> None:
+        self.old_cursor_pos = widget.index('insert')
 
         #       /\
         #      /  \  WARNING: serious tkinter magic coming up
@@ -117,18 +118,18 @@ class _ChangeTracker:
         # cursor_cb is called whenever the cursor position may have changed,
         # and change_cb is called whenever the content of the text widget may
         # have changed
-        change_cb_command = self.widget.register(self._change_cb)
-        cursor_cb_command = self.widget.register(self._cursor_cb)
+        change_cb_command = widget.register(functools.partial(self._change_cb, widget))
+        cursor_cb_command = widget.register(functools.partial(self._cursor_cb, widget))
 
         # all widget stuff is implemented in python and in tcl as calls to a
-        # tcl command named str(self.widget), and replacing that with a custom
+        # tcl command named str(widget), and replacing that with a custom
         # command is a very powerful way to do magic; for example, moving the
         # cursor with arrow keys calls the 'mark set' widget command :D
-        actual_widget_command = str(self.widget) + '_actual_widget'
-        self.widget.tk.call('rename', str(self.widget), actual_widget_command)
+        actual_widget_command = str(widget) + '_actual_widget'
+        widget.tk.call('rename', str(widget), actual_widget_command)
 
         # this part is tcl because i couldn't get a python callback to work
-        self.widget.tk.eval('''
+        widget.tk.eval('''
         proc %(fake_widget)s {args} {
             #puts "%(fake_widget)s $args"
 
@@ -194,22 +195,22 @@ class _ChangeTracker:
             return $result
         }
         ''' % {
-            'fake_widget': str(self.widget),
+            'fake_widget': str(widget),
             'actual_widget': actual_widget_command,
             'change_cb': change_cb_command,
             'cursor_cb': cursor_cb_command,
         })
 
     def _create_change(
-            self, start: str, end: str, new_text: str) -> Change:
+            self, widget: tkinter.Text, start: str, end: str, new_text: str) -> Change:
         return Change(
             start=start,
             end=end,
-            old_text_len=len(self.widget.get(start, end)),
+            old_text_len=len(widget.get(start, end)),
             new_text=new_text,
         )
 
-    def _change_cb(self, subcommand: str, *args_tuple: str) -> None:
+    def _change_cb(self, widget: tkinter.Text, subcommand: str, *args_tuple: str) -> None:
         changes: List[Change] = []
 
         # search for 'pathName delete' in text(3tk)... it's a wall of text,
@@ -219,28 +220,28 @@ class _ChangeTracker:
             # are made." they are already validated, but this doesn't hurt
             # imo... but note that rest of this code assumes that this is done!
             # not everything works in corner cases without this
-            args = [self.widget.index(arg) for arg in args_tuple]
+            args = [widget.index(arg) for arg in args_tuple]
 
             # tk has a funny abstraction of an invisible newline character at
             # the end of file, it's always there but nothing else uses it, so
             # let's ignore it
             for index, old_arg in enumerate(args):
-                if old_arg == self.widget.index('end'):
-                    args[index] = self.widget.index('end - 1 char')
+                if old_arg == widget.index('end'):
+                    args[index] = widget.index('end - 1 char')
 
             # "If index2 is not specified then the single character at index1
             # is deleted." and later: "If more indices are given, multiple
             # ranges of text will be deleted." but no mention about combining
             # these features, this works like the text widget actually behaves
             if len(args) % 2 == 1:
-                args.append(self.widget.index('%s + 1 char' % args[-1]))
+                args.append(widget.index('%s + 1 char' % args[-1]))
             assert len(args) % 2 == 0
             pairs = list(zip(args[0::2], args[1::2]))
 
             # "If index2 does not specify a position later in the text than
             # index1 then no characters are deleted."
             pairs = [(start, end) for (start, end) in pairs
-                     if self.widget.compare(start, '<', end)]
+                     if widget.compare(start, '<', end)]
 
             # "They [index pairs, aka ranges] are sorted [...]."
             # TODO: use the fact that (line, column) tuples sort nicely?
@@ -249,9 +250,9 @@ class _ChangeTracker:
                     range2: Tuple[str, str]) -> int:
                 start1, junk = range1
                 start2, junk = range2
-                if self.widget.compare(start1, '>', start2):
+                if widget.compare(start1, '>', start2):
                     return 1
-                if self.widget.compare(start1, '<', start2):
+                if widget.compare(start1, '<', start2):
                     return -1
                 return 0
 
@@ -264,14 +265,14 @@ class _ChangeTracker:
             def merge_index_ranges(
                     start1: str, end1: str,
                     start2: str, end2: str) -> Tuple[str, str]:
-                start = start1 if self.widget.compare(start1, '<', start2) else start2
-                end = end1 if self.widget.compare(end1, '>', end2) else end2
+                start = start1 if widget.compare(start1, '<', start2) else start2
+                end = end1 if widget.compare(end1, '>', end2) else end2
                 return (start, end)
 
             # loop through pairs of pairs
             for i in range(len(pairs)-2, -1, -1):
                 (start1, end1), (start2, end2) = pairs[i:i+2]
-                if self.widget.compare(end1, '>=', start2):
+                if widget.compare(end1, '>=', start2):
                     # they overlap
                     new_pair = merge_index_ranges(start1, end1, start2, end2)
                     pairs[i:i+2] = [new_pair]
@@ -280,19 +281,19 @@ class _ChangeTracker:
             # range so deleted text does not cause an undesired index shifting
             # side-effects."
             for start, end in reversed(pairs):
-                changes.append(self._create_change(start, end, ''))
+                changes.append(self._create_change(widget, start, end, ''))
 
         # the man page's inserting section is also kind of a wall of
         # text, but not as bad as the delete
         elif subcommand == 'insert':
             text_index, *other_args = args_tuple
-            text_index = self.widget.index(text_index)
+            text_index = widget.index(text_index)
 
             # "If index refers to the end of the text (the character after the
             # last newline) then the new text is inserted just before the last
             # newline instead."
-            if text_index == self.widget.index('end'):
-                text_index = self.widget.index('end - 1 char')
+            if text_index == widget.index('end'):
+                text_index = widget.index('end - 1 char')
 
             # we don't care about the tagList arguments to insert, but we need
             # to handle the other arguments nicely anyway: "If multiple
@@ -304,26 +305,25 @@ class _ChangeTracker:
             # 'asdtoot', not 'tootasd'
             new_text = ''.join(other_args[::2])
 
-            changes.append(self._create_change(
-                text_index, text_index, new_text))
+            changes.append(self._create_change(widget, text_index, text_index, new_text))
 
         # an even smaller wall of text that mostly refers to insert and replace
         elif subcommand == 'replace':
             start, end, *other_args = args_tuple
-            start = self.widget.index(start)
-            end = self.widget.index(end)
+            start = widget.index(start)
+            end = widget.index(end)
             new_text = ''.join(other_args[::2])
 
             # more invisible newline garbage
-            if start == self.widget.index('end'):
-                start = self.widget.index('end - 1 char')
-            if end == self.widget.index('end'):
-                end = self.widget.index('end - 1 char')
+            if start == widget.index('end'):
+                start = widget.index('end - 1 char')
+            if end == widget.index('end'):
+                end = widget.index('end - 1 char')
 
             # didn't find in docs, but tcl throws an error for this
-            assert self.widget.compare(start, '<=', end)
+            assert widget.compare(start, '<=', end)
 
-            changes.append(self._create_change(start, end, new_text))
+            changes.append(self._create_change(widget, start, end, new_text))
 
         else:   # pragma: no cover
             raise ValueError(f"the tcl code called _change_cb with unexpected subcommand: {subcommand}")
@@ -348,18 +348,18 @@ class _ChangeTracker:
             # reason, using the 'when' argument of event_generate() breaks tests.
             #
             # TODO: does this surely work in all corner cases?
-            self.widget.after_idle(lambda: (
-                self.widget.event_generate('<<ContentChanged>>', data=Changes(changes))))
+            self.event_receiver_widget.after_idle(lambda: (
+                self.event_receiver_widget.event_generate('<<ContentChanged>>', data=Changes(changes))))
 
-    def _cursor_cb(self) -> None:
+    def _cursor_cb(self, widget: tkinter.Text) -> None:
         # more implicit newline stuff
-        new_pos = self.widget.index('insert')
-        if new_pos == self.widget.index('end'):
-            new_pos = self.widget.index('end - 1 char')
+        new_pos = widget.index('insert')
+        if new_pos == widget.index('end'):
+            new_pos = widget.index('end - 1 char')
 
         if new_pos != self.old_cursor_pos:
             self.old_cursor_pos = new_pos
-            self.widget.event_generate('<<CursorMoved>>')
+            widget.event_generate('<<CursorMoved>>')
 
 
 _change_trackers: 'weakref.WeakKeyDictionary[tkinter.Text, _ChangeTracker]' = weakref.WeakKeyDictionary()
@@ -419,15 +419,11 @@ def track_changes(widget: tkinter.Text) -> None:
     """
     if widget in _change_trackers:
         raise RuntimeError("track_changes() called twice for same text widget")
-
-    # all peers except the one we're trying to track should already be tracked
-    peers = {widget.nametowidget(nameobj) for nameobj in widget.peer_names()}
-    assert widget not in peers
-    if not peers.issubset(_change_trackers.keys()):
+    if widget.peer_names():
         raise RuntimeError("track_changes() must be called before create_peer_widget()")
 
     tracker = _ChangeTracker(widget)
-    tracker.setup()
+    tracker.setup(widget)
     _change_trackers[widget] = tracker
 
 
@@ -500,13 +496,13 @@ def create_peer_widget(
     Notes about using :func:`create_peer_widget` and :func:`track_changes`
     together:
 
-        * Bind to the ``<<ContentChanged>>`` event of *original_text_widget*,
-          not *the_widget_that_becomes_a_peer*. **Make sure to get this right**
-          to avoid issues with ``<<ContentChanged>>`` sometimes not triggering.
-          If you create peers of peers, then bind to the most original widget,
-          not any of its peers.
+        * Call :func:`track_changes` with *original_text_widget*, not with its
+          peers. If you get this wrong, you will get a :class:`RuntimeError`.
+        * Bind to the ``<<ContentChanged>>`` with the original widget, not with
+          the peers. If you get this wrong, your ``<<ContentChanged>>``
+          callback won't run.
         * First call :func:`track_changes` and then :func:`create_peer_widget`.
-          You will get a :class:`RuntimeError` if you screw this up.
+          If you get this wrong, you will get a :class:`RuntimeError`.
     """
     # Peer widgets are weird in tkinter. Text.peer_create takes in a
     # widget Tcl name, and then creates a peer widget with that name.
@@ -520,14 +516,9 @@ def create_peer_widget(
     the_widget_that_becomes_a_peer.tk.call('destroy', the_widget_that_becomes_a_peer)
     original_text_widget.peer_create(the_widget_that_becomes_a_peer)
 
-    if original_text_widget in _change_trackers:
-        def forward_event_to_original_widget(event: 'tkinter.Event[tkinter.Text]') -> None:
-            original_text_widget.event_generate('<<ContentChanged>>', data=event.data_string)
-
-        track_changes(the_widget_that_becomes_a_peer)
-        utils.bind_with_data(
-            the_widget_that_becomes_a_peer, '<<ContentChanged>>',
-            forward_event_to_original_widget, add=True)
+    change_tracker = _change_trackers.get(original_text_widget)
+    if change_tracker is not None:
+        change_tracker.setup(the_widget_that_becomes_a_peer)
 
 
 @overload

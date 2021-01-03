@@ -127,8 +127,11 @@ def test_track_changes_after_create_peer_widget(porcusession):
     text = tkinter.Text(get_main_window())
     peer = tkinter.Text(get_main_window())
     create_peer_widget(text, peer)
+
     with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
         track_changes(text)
+    with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
+        track_changes(peer)
 
 
 def test_change_batch_no_tracking(porcusession):
