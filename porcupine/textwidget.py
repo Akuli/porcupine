@@ -115,12 +115,6 @@ class _ChangeTracker:
         #    <Akuli> yes
         #    <__Myst__> very cool
 
-        # cursor_cb is called whenever the cursor position may have changed,
-        # and change_cb is called whenever the content of the text widget may
-        # have changed
-        change_cb_command = widget.register(functools.partial(self._change_cb, widget))
-        cursor_cb_command = widget.register(functools.partial(self._cursor_cb, widget))
-
         # all widget stuff is implemented in python and in tcl as calls to a
         # tcl command named str(widget), and replacing that with a custom
         # command is a very powerful way to do magic; for example, moving the
@@ -156,6 +150,7 @@ class _ChangeTracker:
             }
 
             set cursor_may_have_moved 0
+            set prepared_event ""
 
             # only these subcommands can change the text, but they can also
             # move the cursor by changing the text before the cursor
@@ -163,9 +158,7 @@ class _ChangeTracker:
                     $subcommand == "insert" ||
                     $subcommand == "replace"} {
                 set cursor_may_have_moved 1
-
-                # this is like _change_cb(*args) in python
-                %(change_cb)s {*}$args
+                set prepared_event [%(change_event_from_command)s {*}$args]
             }
 
             # it's important that this comes after the change cb stuff because
@@ -174,6 +167,11 @@ class _ChangeTracker:
             # stuff because the documented way to access the new index in a
             # <<CursorMoved>> binding is getting it directly from the widget
             set result [%(actual_widget)s {*}$args]
+
+            if {$prepared_event != ""} {
+                # must be after calling actual widget command
+                event generate %(event_receiver)s <<ContentChanged>> -data $prepared_event
+            }
 
             # only[*] 'textwidget mark set insert new_location' can change the
             # cursor position, because the cursor position is implemented as a
@@ -189,7 +187,7 @@ class _ChangeTracker:
             }
 
             if {$cursor_may_have_moved} {
-                %(cursor_cb)s
+                %(cursor_moved_callback)s
             }
 
             return $result
@@ -197,8 +195,9 @@ class _ChangeTracker:
         ''' % {
             'fake_widget': str(widget),
             'actual_widget': actual_widget_command,
-            'change_cb': change_cb_command,
-            'cursor_cb': cursor_cb_command,
+            'change_event_from_command': widget.register(functools.partial(self._change_event_from_command, widget)),
+            'event_receiver': self.event_receiver_widget,
+            'cursor_moved_callback': widget.register(functools.partial(self._cursor_cb, widget)),
         })
 
     def _create_change(
@@ -210,7 +209,8 @@ class _ChangeTracker:
             new_text=new_text,
         )
 
-    def _change_cb(self, widget: tkinter.Text, subcommand: str, *args_tuple: str) -> None:
+    # Must be called before widget content actually changes
+    def _change_event_from_command(self, widget: tkinter.Text, subcommand: str, *args_tuple: str) -> str:
         changes: List[Change] = []
 
         # search for 'pathName delete' in text(3tk)... it's a wall of text,
@@ -326,14 +326,8 @@ class _ChangeTracker:
             changes.append(self._create_change(widget, start, end, new_text))
 
         else:   # pragma: no cover
-            raise ValueError(f"the tcl code called _change_cb with unexpected subcommand: {subcommand}")
+            raise ValueError(f"unexpected subcommand: {subcommand}")
 
-        if self.change_batch is None:
-            self.generate_change_event(changes)
-        else:
-            self.change_batch.extend(changes)
-
-    def generate_change_event(self, changes: List[Change]) -> None:
         # remove changes that don't actually do anything
         changes = [
             change for change in changes
@@ -342,14 +336,24 @@ class _ChangeTracker:
                 or change.new_text)
         ]
 
-        if changes:
-            # Some plugins expect <<ContentChanged>> events to occur after changing
-            # the content in the editor, so we need to delay it here. For some
-            # reason, using the 'when' argument of event_generate() breaks tests.
-            #
-            # TODO: does this surely work in all corner cases?
-            self.event_receiver_widget.after_idle(lambda: (
-                self.event_receiver_widget.event_generate('<<ContentChanged>>', data=Changes(changes))))
+        if self.change_batch is None:
+            return str(Changes(changes)) if changes else ''
+        else:
+            self.change_batch.extend(changes)
+            return ''   # don't generate event
+
+    def begin_batch(self) -> None:
+        if self.change_batch is not None:
+            raise RuntimeError("nested calls to change_batch")
+        self.change_batch = []
+
+    def finish_batch(self) -> None:
+        assert self.change_batch is not None
+        try:
+            if self.change_batch:
+                self.event_receiver_widget.event_generate('<<ContentChanged>>', data=Changes(self.change_batch))
+        finally:
+            self.change_batch = None
 
     def _cursor_cb(self, widget: tkinter.Text) -> None:
         # more implicit newline stuff
@@ -427,7 +431,6 @@ def track_changes(widget: tkinter.Text) -> None:
     _change_trackers[widget] = tracker
 
 
-# how to type hint context manager: https://stackoverflow.com/a/49736916
 @contextlib.contextmanager
 def change_batch(widget: tkinter.Text) -> Iterator[None]:
     """A context manager to optimize doing many changes to a text widget.
@@ -450,19 +453,12 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
         tracker = _change_trackers[widget]
     except KeyError:
         yield
-        return
-
-    if tracker.change_batch is not None:
-        raise RuntimeError("nested calls to change_batch")
-
-    tracker.change_batch = []
-    try:
-        yield
-    finally:
+    else:
+        tracker.begin_batch()
         try:
-            tracker.generate_change_event(tracker.change_batch)
+            yield
         finally:
-            tracker.change_batch = None
+            tracker.finish_batch()
 
 
 def create_peer_widget(
