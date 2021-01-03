@@ -9,10 +9,6 @@ from porcupine import get_tab_manager, settings, tabs, textwidget, utils
 LINE_THICKNESS = 1
 
 
-def count_lines(textwidget: tkinter.Text) -> int:
-    return int(textwidget.index('end - 1 char').split('.')[0])
-
-
 # We want self to have the same text content and colors as the main
 # text. We do this efficiently with a peer widget.
 #
@@ -51,12 +47,12 @@ class Overview(tkinter.Text):
         # one tag that we are already abusing). Instead, we put a bunch of
         # frames on top of the text widget to make up a border. I call this
         # "vast" for "visible area showing thingies".
-        self._vast = [
-            tkinter.Frame(self),
-            tkinter.Frame(self),
-            tkinter.Frame(self),
-            tkinter.Frame(self),
-        ]
+        self._vast = {
+            'top': tkinter.Frame(self),
+            'left': tkinter.Frame(self),
+            'bottom': tkinter.Frame(self),
+            'right': tkinter.Frame(self),
+        }
 
         utils.add_scroll_command(tab.textwidget, 'yscrollcommand', self._scroll_callback)
         self.bind('<Button-1>', self._on_click_and_drag, add=True)
@@ -90,7 +86,7 @@ class Overview(tkinter.Text):
         )
 
         self._tab.textwidget.config(highlightcolor=foreground)
-        for frame in self._vast:
+        for frame in self._vast.values():
             frame.config(bg=foreground)
 
     def set_font(self, junk: object = None) -> None:
@@ -103,40 +99,11 @@ class Overview(tkinter.Text):
         self._update_vast()
 
     def _scroll_callback(self) -> None:
-        first_visible_index = self._tab.textwidget.index('@0,0')
-        last_visible_index = self._tab.textwidget.index('@0,10000000')
+        first_visible_index = self._tab.textwidget.index('@0,0 linestart')
+        last_visible_index = self._tab.textwidget.index('@0,10000000 linestart')
         self.see(first_visible_index)
         self.see(last_visible_index)
         self._update_vast()
-
-    def _do_math(self) -> Tuple[float, float, float, float, int, float, int]:
-        # FIXME: this is a little bit off in very long files
-
-        # tkinter doesn't provide a better way to look up font metrics without
-        # creating a stupid font object
-        how_tall_are_lines_on_editor: int = self._tab.tk.call(
-            'font', 'metrics', self._tab.textwidget.cget('font'), '-linespace')
-        how_tall_are_lines_overview: int = self._tab.tk.call(
-            'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace')
-
-        (overview_scroll_relative_start,
-         overview_scroll_relative_end) = self.yview()
-        (text_scroll_relative_start,
-         text_scroll_relative_end) = self._tab.textwidget.yview()
-
-        how_many_lines_total = count_lines(self._tab.textwidget)
-        how_many_lines_fit_on_editor = (
-            self._tab.textwidget.winfo_height() / how_tall_are_lines_on_editor)
-
-        total_height = how_many_lines_total * how_tall_are_lines_overview
-
-        return (overview_scroll_relative_start,
-                overview_scroll_relative_end,
-                text_scroll_relative_start,
-                text_scroll_relative_end,
-                how_many_lines_total,
-                how_many_lines_fit_on_editor,
-                total_height)
 
     def _update_sel_tag(self, junk: object = None) -> None:
         self.tag_add('sel', '1.0', 'end')
@@ -146,65 +113,72 @@ class Overview(tkinter.Text):
             # view was created just a moment ago, set_font() hasn't ran yet
             return
 
-        (overview_scroll_relative_start,
-         overview_scroll_relative_end,
-         text_scroll_relative_start,
-         text_scroll_relative_end,
-         how_many_lines_total,
-         how_many_lines_fit_on_editor,
-         total_height) = self._do_math()
+        start_bbox = self.bbox(self._tab.textwidget.index('@0,0 linestart'))
+        end_bbox = self.bbox(self._tab.textwidget.index('@0,10000000 linestart'))
 
-        if (text_scroll_relative_start == 0.0
-                and text_scroll_relative_end == 1.0):
-            # it fits fully on screen, make text_scroll_relative_end correspond
-            # to the end of what is actually visible (beyond end of file)
-            text_scroll_relative_end = (
-                how_many_lines_fit_on_editor / how_many_lines_total)
+        hide = set()
+        if start_bbox is None and end_bbox is None:
+            # no part of text file being edited is visible
+            hide = set(self._vast.keys())
 
-        vast_top = (text_scroll_relative_start
-                    - overview_scroll_relative_start) * total_height
-        vast_bottom = (text_scroll_relative_end
-                       - overview_scroll_relative_start) * total_height
-        vast_height = (text_scroll_relative_end
-                       - text_scroll_relative_start) * total_height
+        # To make this look perfect, we need some weird off-by-ones here. I
+        # don't know why, but using LINE_THICKNESS here is not right. To see
+        # this, think about (or TIAS) what this code does if you use
+        # LINE_THICKNESS instead of +1, and LINE_THICKNESS is set to a huge
+        # value such as 15.
+        x_offset = self['borderwidth'] + self['padx'] + 1
+        y_offset = self['borderwidth'] + self['pady'] + 1
 
-        # no idea why 5
-        width = self.winfo_width() - 5
+        if self._tab.textwidget.yview() == (0.0, 1.0):
+            # whole file content on screen at once, show screen size instead of file content size
+            # this does not take in account wrap plugin
+            how_tall_are_lines_on_editor: int = self._tab.tk.call(
+                'font', 'metrics', self._tab.textwidget.cget('font'), '-linespace')
+            how_tall_are_lines_on_overview: int = self._tab.tk.call(
+                'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace')
+            editor_height: int = self._tab.textwidget.winfo_height()
+            how_many_lines_fit_on_editor = editor_height / how_tall_are_lines_on_editor
 
-        self._vast[0].place(
-            x=0, y=vast_top, width=width, height=LINE_THICKNESS)
-        self._vast[1].place(
-            x=0, y=vast_top, width=LINE_THICKNESS, height=vast_height)
-        self._vast[2].place(
-            x=0, y=(vast_bottom - LINE_THICKNESS),
-            width=width, height=LINE_THICKNESS)
-        self._vast[3].place(
-            x=(width - LINE_THICKNESS), y=vast_top,
-            width=LINE_THICKNESS, height=vast_height)
+            vast_top = 0
+            vast_bottom = int(how_many_lines_fit_on_editor * how_tall_are_lines_on_overview)
+
+        else:
+            if start_bbox is None:
+                vast_top = 0
+                hide.add('top')
+            else:
+                x, y, w, h = start_bbox
+                vast_top = y - y_offset
+
+            if end_bbox is None:
+                vast_bottom = self.winfo_height()
+                hide.add('bottom')
+            else:
+                x, y, w, h = end_bbox
+                vast_bottom = y - y_offset + h
+
+        vast_height = vast_bottom - vast_top
+        width = self.winfo_width() - 2*x_offset
+
+        coords = {
+            'top': (0, vast_top, width, LINE_THICKNESS),
+            'left': (0, vast_top, LINE_THICKNESS, vast_height),
+            'bottom': (0, vast_bottom - LINE_THICKNESS, width, LINE_THICKNESS),
+            'right': (width - LINE_THICKNESS, vast_top, LINE_THICKNESS, vast_height),
+        }
+
+        for name, widget in self._vast.items():
+            if name in hide:
+                widget.place_forget()
+            else:
+                x, y, w, h = coords[name]
+                self._vast[name].place(x=x, y=y, width=w, height=h)
 
         # TODO: figure out when exactly this is needed, remove unnecessary calls?
         self._update_sel_tag()
 
     def _on_click_and_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
-        (overview_scroll_relative_start,
-         overview_scroll_relative_end,
-         text_scroll_relative_start,
-         text_scroll_relative_end,
-         how_many_lines_total,
-         how_many_lines_fit_on_editor,
-         total_height) = self._do_math()
-
-        if (text_scroll_relative_start != 0.0
-                or text_scroll_relative_end != 1.0):
-            # file doesn't fit fully on screen, need to scroll
-            text_showing_propotion = (
-                text_scroll_relative_end - text_scroll_relative_start)
-            middle_relative = (event.y/total_height
-                               + overview_scroll_relative_start)
-            start_relative = middle_relative - text_showing_propotion/2
-            self._tab.textwidget.yview_moveto(start_relative)
-            self._update_vast()
-
+        self._tab.textwidget.see(self.index(f'@0,{event.y}'))
         return 'break'
 
 
