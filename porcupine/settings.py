@@ -12,6 +12,7 @@ from functools import partial
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
 
+import dacite
 from pygments import styles  # type: ignore[import]
 
 import porcupine
@@ -73,7 +74,7 @@ def _type_check(tybe: type, obj: object) -> object:
     class ValueContainer:
         value: tybe  # type: ignore[valid-type]
 
-    return utils.dict_to_dataclass(ValueContainer, {'value': obj}).value
+    return dacite.from_dict(ValueContainer, {'value': obj}).value
 
 
 class _Option:

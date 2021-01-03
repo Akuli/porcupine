@@ -28,13 +28,7 @@ else:
 import porcupine
 
 log = logging.getLogger(__name__)
-
-# seems like dacite doesn't have type hints working correctly?
-# don't know what's going on
-# TODO: document or delete dict_to_dataclass?
 _T = TypeVar('_T')
-dict_to_dataclass: Callable[[_T, Dict[str, Any]], _T] = cast(Any, dacite).from_dict
-
 BreakOrNone = Optional[Literal['break']]
 
 
@@ -306,7 +300,7 @@ class EventWithData(_Event):
         ``T`` must be a dataclass that inherits from :class:`EventDataclass`.
         """
         assert self.data_string.startswith(T.__name__ + '{')
-        result = dict_to_dataclass(T, json.loads(self.data_string[len(T.__name__):]))
+        result = dacite.from_dict(T, json.loads(self.data_string[len(T.__name__):]))
         assert isinstance(result, T)
         return result
 
