@@ -688,16 +688,12 @@ class MainText(tkinter.Text):
         This returns True if something was done, and False otherwise.
         """
         if not self._tab.settings.get('tabs2spaces', bool):
-            if self.index(location).endswith('.0'):
-                # deleting from start of line
-                start_location = location
-                end_location = f'{location} + 1 char'
-            else:
-                start_location = f'{location} - 1 char'
-                end_location = location
+            if not self.index(location).endswith('.0'):
+                # not deleting from start of line, delete previous char instead
+                location = f'{location} - 1 char'
 
-            if self.get(start_location, end_location) == '\t':
-                self.delete(start_location, end_location)
+            if self.get(location) == '\t':
+                self.delete(location)
                 return True
             return False
 
