@@ -13,21 +13,17 @@ from porcupine.plugins import aboutdialog
 def test_it_doesnt_crash(monkeypatch, porcusession):
     # the dialog calls .wait_window(), but that doesn't terminate until the
     # user closes the window... so we'll make the window close itself
-    called = [0]       # not sure if nonlocal could be used instead
+    called = 0
 
-    class FakeToplevel(tkinter.Toplevel):
-        def wait_window(self):
-            called[0] += 1
-            self.destroy()
+    def fake_wait_window(self):
+        nonlocal called
+        called += 1
+        self.destroy()
 
-    fake_tkinter = types.SimpleNamespace()
-    fake_tkinter.__dict__.update(tkinter.__dict__)
-    fake_tkinter.Toplevel = FakeToplevel
-
-    monkeypatch.setattr(aboutdialog, 'tkinter', fake_tkinter)
+    monkeypatch.setattr(tkinter.Toplevel, 'wait_window', fake_wait_window)
 
     get_main_window().event_generate("<<Menubar:Help/About Porcupine>>")
-    assert called == [1]
+    assert called == 1
 
 
 def test_show_huge_logo(monkeypatch):

@@ -6,8 +6,7 @@ class AsdTab(tabs.Tab):
     pass
 
 
-def test_that_it_doesnt_crash_with_different_numbers_of_tab_separated_parts(
-        tabmanager):
+def test_that_it_doesnt_crash_with_different_numbers_of_tab_separated_parts(tabmanager):
     asd = AsdTab(tabmanager)
     tabmanager.add_tab(asd)
 

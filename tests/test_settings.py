@@ -1,6 +1,5 @@
 import dataclasses
 import json
-import pathlib
 import tkinter.font
 from typing import Optional
 
@@ -13,10 +12,10 @@ from porcupine import settings
 # Could replace some of this with non-global setting objects, but I don't feel
 # like rewriting the tests just because it would be slightly nicer that way
 @pytest.fixture
-def cleared_global_settings(monkeypatch, porcusession, tmpdir):
+def cleared_global_settings(monkeypatch, porcusession, tmp_path):
     monkeypatch.setattr(settings._global_settings, '_options', {})
     monkeypatch.setattr(settings._global_settings, '_unknown_options', {})
-    monkeypatch.setattr(settings, '_get_json_path', (lambda: pathlib.Path(tmpdir) / 'settings.json'))
+    monkeypatch.setattr(settings, '_get_json_path', (lambda: tmp_path / 'settings.json'))
 
 
 def load_from_json_string(json_string: str) -> None:
