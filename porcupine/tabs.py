@@ -802,7 +802,6 @@ bers.py>` use this attribute.
         Returns True if the file was saved, and False if the user
         cancelled the dialog.
         """
-        # type ignored because mypy **kwargs support isn't great
         path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
         if not path_string:     # it may be '' because tkinter
             return False
