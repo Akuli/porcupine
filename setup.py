@@ -4,7 +4,7 @@ import os
 import re
 
 assert sys.version_info >= (3, 6), "Porcupine requires Python 3.6 or newer"
-assert tkinter.TkVersion >= 8.5, "Porcupine requires Tk 8.5 or newer"
+assert tkinter.TkVersion >= 8.6, "Porcupine requires Tk 8.6 or newer"
 
 
 from setuptools import setup, find_packages  # noqa

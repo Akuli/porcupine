@@ -18,18 +18,6 @@ from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 log = logging.getLogger(__name__)
 
 
-# yes, TkVersion is a float lol
-# TODO: do something on Tk < 8.6?
-def tk_busy_hold() -> None:
-    if tkinter.TkVersion >= 8.6:
-        get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
-
-
-def tk_busy_forget() -> None:
-    if tkinter.TkVersion >= 8.6:
-        get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
-
-
 def paste_to_termbin(code: str, lexer_class: LexerMeta) -> str:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(('termbin.com', 9999))
@@ -142,14 +130,14 @@ class Paste:
 
     def start(self) -> None:
         log.debug("starting to paste to %s", self.pastebin_name)
-        tk_busy_hold()
+        get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
         self.make_please_wait_window()
         paste_it = functools.partial(
             pastebins[self.pastebin_name], self.content, self.lexer_class)
         utils.run_in_thread(paste_it, self.done_callback)
 
     def done_callback(self, success: bool, result: str) -> None:
-        tk_busy_forget()
+        get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
         assert self.please_wait_window is not None
         self.please_wait_window.destroy()
 
