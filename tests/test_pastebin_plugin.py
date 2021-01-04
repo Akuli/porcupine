@@ -2,11 +2,10 @@ import random
 import re
 import threading
 import time
-import tkinter
 import types
 
-import pygments.lexer
-import pygments.lexers
+from pygments.lexer import Lexer
+from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 import pytest
 import requests
 
@@ -22,13 +21,13 @@ def test_dpaste_syntax_choices():
     syntax_choices = response.json()
 
     for syntax_choice in syntax_choices.keys():
-        assert syntax_choice == pygments.lexers.get_lexer_by_name(syntax_choice).aliases[0]
+        assert syntax_choice == get_lexer_by_name(syntax_choice).aliases[0]
 
 
 def check_pastebin(pastebin_name):
     some_code = "import foo as bar\nprint('baz')"
 
-    for lexer in [pygments.lexers.TextLexer, pygments.lexers.PythonLexer]:
+    for lexer in [TextLexer, PythonLexer]:
         function = pastebin_module.pastebins[pastebin_name]
         url = function(some_code, lexer)
         assert isinstance(url, str)
@@ -110,32 +109,26 @@ def test_paste_class(monkeypatch, filetab):
 
 
 # this test assumes that utils.run_in_thread works
-def test_paste_error_handling(monkeypatch, caplog):
-    traceback_string = "Traceback (most recent call last):\nblah blah blah"
-    paste = pastebin_module.Paste('Lol', 'test code', 'test path')
-
-    # because i'm lazy
-    paste.please_wait_window = tkinter.Toplevel()
-    monkeypatch.setattr(pastebin_module, 'tk_busy_forget', (lambda: None))
-
+def test_paste_error_handling(monkeypatch, caplog, porcusession):
+    monkeypatch.setitem(pastebin_module.pastebins, 'Lol', (lambda *args: 1/0))
     errordialog_calls = []
-    monkeypatch.setattr(pastebin_module, 'utils', types.SimpleNamespace(
-        errordialog=lambda *args, **kwargs: {
-            errordialog_calls.append(args),
-            errordialog_calls.append(kwargs),
-        }))
+    monkeypatch.setattr(pastebin_module.utils, 'errordialog',
+                        lambda *args, **kwargs: errordialog_calls.append((args, kwargs)))
 
-    caplog.clear()
-    paste.done_callback(False, traceback_string)
+    paste = pastebin_module.Paste('Lol', 'test code', PythonLexer)
+    paste.start()
 
-    assert errordialog_calls == [
-        ("Pasting Failed",
-         "Check your internet connection and try again.\n\n" +
-         "Here's the full error message:"),
-        {'monospace_text': traceback_string},
-    ]
-    assert len(caplog.records) == 1
-    assert traceback_string in caplog.records[0].message
+    while paste.please_wait_window.winfo_exists():
+        paste.please_wait_window.update()
+
+    assert len(errordialog_calls) == 1
+    args, kwargs = errordialog_calls[0]
+    assert args == (
+        "Pasting Failed",
+         "Check your internet connection and try again.\n\nHere's the full error message:",
+    )
+    assert 'ZeroDivisionError' in kwargs['monospace_text']
+    assert 'ZeroDivisionError' in caplog.records[-1].message
 
 
 def test_start_pasting_with_menubar(monkeypatch, filetab):
@@ -145,7 +138,7 @@ def test_start_pasting_with_menubar(monkeypatch, filetab):
         def __init__(self, pastebin_name, code, lexer):
             self.started = 0
             assert code == ''
-            assert issubclass(lexer, pygments.lexer.Lexer)
+            assert issubclass(lexer, Lexer)
             self._pastebin_name = pastebin_name
 
         def start(self):
