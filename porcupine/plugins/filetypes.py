@@ -216,7 +216,8 @@ def setup() -> None:
     ]
 
     for name, filetype in filetypes.items():
-        safe_name = name.replace('/', '\\')   # TODO: unicode slash character
+        safe_name = name.replace('/', '\N{division slash}')  # lol
+        assert '/' not in safe_name
         menubar.get_menu("Filetypes").add_command(
             label=safe_name,
             command=partial(menu_callback, filetype))
