@@ -1,4 +1,6 @@
 """Reload file from disk when Ctrl+R is pressed."""
+from typing import Union
+
 from porcupine import get_tab_manager, menubar, tabs
 
 
@@ -31,7 +33,7 @@ def setup() -> None:
     # Put the reload button before first separator, after "Save As"
     menu = menubar.get_menu('File')
     separator_locations = [i for i in range(menu.index('end') + 1) if menu.type(i) == 'separator']
-    index = separator_locations[0] if separator_locations else 'end'
+    index: Union[int, str] = separator_locations[0] if separator_locations else 'end'
     menu.insert_command(index, label='Reload', command=reload)
 
     update_enabledness = menubar.set_enabled_based_on_tab(
