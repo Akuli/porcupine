@@ -3,7 +3,6 @@
 import itertools
 import platform
 import random
-from tkinter import ttk
 
 import pytest
 

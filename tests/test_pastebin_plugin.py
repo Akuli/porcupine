@@ -4,10 +4,10 @@ import threading
 import time
 import types
 
-from pygments.lexer import Lexer
-from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 import pytest
 import requests
+from pygments.lexer import Lexer
+from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 
 import porcupine.plugins.pastebin as pastebin_module
 from porcupine import get_main_window
@@ -125,7 +125,7 @@ def test_paste_error_handling(monkeypatch, caplog, porcusession):
     args, kwargs = errordialog_calls[0]
     assert args == (
         "Pasting Failed",
-         "Check your internet connection and try again.\n\nHere's the full error message:",
+        "Check your internet connection and try again.\n\nHere's the full error message:",
     )
     assert 'ZeroDivisionError' in kwargs['monospace_text']
     assert 'ZeroDivisionError' in caplog.records[-1].message

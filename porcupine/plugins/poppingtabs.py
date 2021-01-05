@@ -10,7 +10,8 @@ import threading
 import tkinter
 from typing import Any, Tuple, Union
 
-from porcupine import get_main_window, get_parsed_args, get_tab_manager, pluginloader, settings, tabs
+from porcupine import (get_main_window, get_parsed_args, get_tab_manager,
+                       pluginloader, settings, tabs)
 
 log = logging.getLogger(__name__)
 
