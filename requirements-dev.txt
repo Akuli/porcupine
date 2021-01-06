@@ -1,4 +1,5 @@
-pytest
+pytest>=5.4.3
+pytest-cov>=2.10.1
 isort>=5.7.0
 coverage
 sphinx

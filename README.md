@@ -141,7 +141,7 @@ If you want to develop porcupine, install Python 3.6 or newer and
     python3 -m porcupine
 
 This should run Porcupine. If you change some of Porcupine's
-code in the `porcupine` directory and you run `porcu` again, your changes
+code in the `porcupine` directory and you run `python3 -m porcupine` again, your changes
 should be visible right away.
 
 After doing some development and closing the terminal that you set up the
@@ -160,13 +160,14 @@ Here is a list of the commands I use when developing Porcupine:
     - `mypy porcupine more_plugins`
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
-- `coverage run --include="porcupine/*" -m pytest` followed by `coverage html`
-  creates a report of test coverage. Open `htmlcov/index.html` in your favorite
+- To see a report of test coverage, add `--cov=porcupine` to the above pytest
+  command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
   browser to view it. If you don't have anything else to do, you can write more
   tests and try to improve the coverage :D
-- `cd docs` followed by `sphinx-build . build` creates HTML documentation.
-  Open `docs/_build/index.html` in your favorite browser to view it.
-- Some linter commands that run automatically on pull request or push.
+- `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
+  Open `docs/build/index.html` in your favorite browser to view it.
+- Linter commands run automatically on pull request or push. Usually I don't run
+  them on my computer.
 
 I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.
