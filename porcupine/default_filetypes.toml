@@ -231,3 +231,9 @@ filename_patterns = ["*.yml", "*.yaml"]
 pygments_lexer = "pygments.lexers.YamlLexer"
 tabs2spaces = true
 indent_size = 2
+
+[HTML]
+filename_patterns = ["*.html", "*.htm"]
+pygments_lexer = "pygments.lexers.HtmlLexer"
+tabs2spaces = true
+indent_size = 2
