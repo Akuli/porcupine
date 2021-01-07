@@ -77,15 +77,24 @@ class Changes(utils.EventDataclass):
 
 class _ChangeTracker:
 
-    old_cursor_pos: str
-
     # event_receiver_widget will receive the change events
     def __init__(self, event_receiver_widget: tkinter.Text) -> None:
         self.event_receiver_widget = event_receiver_widget
         self.change_batch: Optional[List[Change]] = None
 
     def setup(self, widget: tkinter.Text) -> None:
-        self.old_cursor_pos = widget.index('insert')
+        old_cursor_pos = widget.index('insert')    # must be widget specific
+
+        def cursor_pos_changed():
+            nonlocal old_cursor_pos
+
+            new_pos = widget.index('insert')
+            if new_pos == widget.index('end'):
+                new_pos = widget.index('end - 1 char')
+
+            if new_pos != old_cursor_pos:
+                old_cursor_pos = new_pos
+                widget.event_generate('<<CursorMoved>>')
 
         #       /\
         #      /  \  WARNING: serious tkinter magic coming up
@@ -198,7 +207,7 @@ class _ChangeTracker:
             'actual_widget': actual_widget_command,
             'change_event_from_command': widget.register(functools.partial(self._change_event_from_command, widget)),
             'event_receiver': self.event_receiver_widget,
-            'cursor_moved_callback': widget.register(functools.partial(self._cursor_cb, widget)),
+            'cursor_moved_callback': widget.register(cursor_pos_changed),
         })
 
     def _create_change(
@@ -355,16 +364,6 @@ class _ChangeTracker:
                 self.event_receiver_widget.event_generate('<<ContentChanged>>', data=Changes(self.change_batch))
         finally:
             self.change_batch = None
-
-    def _cursor_cb(self, widget: tkinter.Text) -> None:
-        # more implicit newline stuff
-        new_pos = widget.index('insert')
-        if new_pos == widget.index('end'):
-            new_pos = widget.index('end - 1 char')
-
-        if new_pos != self.old_cursor_pos:
-            self.old_cursor_pos = new_pos
-            widget.event_generate('<<CursorMoved>>')
 
 
 _change_trackers: 'weakref.WeakKeyDictionary[tkinter.Text, _ChangeTracker]' = weakref.WeakKeyDictionary()

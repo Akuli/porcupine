@@ -167,3 +167,29 @@ def test_change_batch_nested(text_and_events):
         with change_batch(text):
             with change_batch(text):
                 pass
+
+
+def test_peer_cursor_moved(text_and_events):
+    text, change_events = text_and_events
+    peer = tkinter.Text(get_main_window())
+    create_peer_widget(text, peer)
+
+    text.insert('1.0', 'hello world')
+    text.mark_set('insert', '1.5')
+    peer.mark_set('insert', '1.5')
+    change_events.clear()
+
+    text_move_events = []
+    peer_move_events = []
+    text.bind('<<CursorMoved>>', text_move_events.append)
+    peer.bind('<<CursorMoved>>', peer_move_events.append)
+
+    text.mark_set('insert', 'end')
+    assert not peer_move_events
+    assert len(text_move_events) == 1
+    text_move_events.clear()
+
+    peer.mark_set('insert', 'end')
+    assert not text_move_events
+    assert len(peer_move_events) == 1
+    peer_move_events.clear()
