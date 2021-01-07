@@ -22,8 +22,8 @@ colorama>=0.2.5
 # 0.7.2 is first release that correctly supports type hints: https://github.com/PurpleMyst/sansio-lsp-client/pull/13
 sansio-lsp-client>=0.7.2,<0.8.0
 
-# https://github.com/PurpleMyst/sansio-lsp-client/issues/14
-python-language-server==0.34.1
+# to have something hopefully work by default
+python-language-server>=0.36.2,<1.0.0
 
 # for autopep8 plugin
 autopep8
