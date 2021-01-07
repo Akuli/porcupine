@@ -218,7 +218,7 @@ class TetrisTab(tabs.Tab):
 
     def __init__(self, manager: tabs.TabManager) -> None:
         super().__init__(manager)
-        self.title = "Tetris"
+        self.title_choices = ["Tetris"]
 
         # the takefocus thing is important, it's hard to bind the keys
         # correctly without it
@@ -228,7 +228,7 @@ class TetrisTab(tabs.Tab):
         self._canvas.pack()
 
         # this also requires binding on the tab when the tab is detached
-        for key in ['<A>', '<a>', '<S>', '<s>', '<D>', '<d>', '<F>', '<f>',
+        for key in ['<W>', '<w>', '<A>', '<a>', '<S>', '<s>', '<D>', '<d>',
                     '<Left>', '<Right>', '<Up>', '<Down>', '<Return>',
                     '<space>', '<F2>', '<P>', '<p>']:
             self._canvas.bind(key, self._on_key, add=True)
@@ -247,6 +247,11 @@ class TetrisTab(tabs.Tab):
         self._game_over_id: Optional[int] = None
 
     def _on_key(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+        control_flag = 0x4
+        assert isinstance(event.state, int)
+        if event.state & control_flag:
+            return None
+
         if event.keysym in {'A', 'a', 'Left'}:
             self._game.moving_block.move_left()
         elif event.keysym in {'D', 'd', 'Right'}:
