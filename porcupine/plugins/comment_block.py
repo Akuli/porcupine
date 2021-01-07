@@ -10,7 +10,7 @@ import functools
 import tkinter
 from typing import Optional
 
-from porcupine import get_tab_manager, menubar, tabs, utils
+from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
 def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkinter.Text]]') -> utils.BreakOrNone:
@@ -34,12 +34,12 @@ def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkint
         tab.textwidget.get('%d.0' % lineno, '%d.1' % lineno) == comment_char
         for lineno in range(start, end))
 
-    # TODO: use change_batch
-    for lineno in range(start, end):
-        if gonna_uncomment:
-            tab.textwidget.delete('%d.0' % lineno, '%d.1' % lineno)
-        else:
-            tab.textwidget.insert('%d.0' % lineno, comment_char)
+    with textwidget.change_batch(tab.textwidget):
+        for lineno in range(start, end):
+            if gonna_uncomment:
+                tab.textwidget.delete('%d.0' % lineno, '%d.1' % lineno)
+            else:
+                tab.textwidget.insert('%d.0' % lineno, comment_char)
 
     # select everything on the (un)commented lines
     tab.textwidget.tag_remove('sel', '1.0', 'end')
