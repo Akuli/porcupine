@@ -178,6 +178,7 @@ Instead, ask me to run them if you need to.
     - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
+  Note that `porcupine.wiki` may need updating when a new version is released.
 
 
 ## Building the Windows installer
@@ -244,12 +245,3 @@ you don't need to do anything to fix the complaints.
 Now you should have an exe that installs a Porcupine. The last command should
 prints the filename at the end of its output, and it seems to be always
 `build\nsis\Porcupine_X.Y.Z.exe` where `X.Y.Z` is the Porcupine version.
-
-
-## Publishing a new version of Porcupine
-
-Please ask me (Akuli) to do these things instead of doing them yourself.
-- Bump version number: merge changes to master branch, then `python3 release.py patch`
-  (see `--help` if you don't know what `patch` means here)
-- Build and publish updated docs: `docs/publish.py`
-- Update `porcupine.wiki` as needed
