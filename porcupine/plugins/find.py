@@ -16,9 +16,7 @@ else:
 
 from porcupine import get_tab_manager, images, menubar, tabs
 
-# keys are tabs, values are Finder widgets
-finders: 'weakref.WeakKeyDictionary[tabs.FileTab, Finder]' = (
-    weakref.WeakKeyDictionary())
+finders: 'weakref.WeakKeyDictionary[tabs.FileTab, Finder]' = weakref.WeakKeyDictionary()
 
 
 class Finder(ttk.Frame):
@@ -68,10 +66,6 @@ class Finder(ttk.Frame):
         self.find_entry.bind('<Shift-Return>', self._go_to_previous_match, add=True)
         self.find_entry.bind('<Return>', self._go_to_next_match, add=True)
 
-        # commented out because pressing tab in self.find_entry unselects the
-        # text in textwidget for some reason
-        #self.replace_entry.bind('<Return>', self._replace_this)
-
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=2, column=0, columnspan=4, sticky='we')
 
@@ -80,10 +74,10 @@ class Finder(ttk.Frame):
         self.next_button = ttk.Button(buttonframe, text="Next match",
                                       command=self._go_to_next_match)
         self.replace_this_button = ttk.Button(
-            buttonframe, text="Replace this match",
+            buttonframe, text="Replace this match", underline=len("Replace "),
             command=self._replace_this)
         self.replace_all_button = ttk.Button(
-            buttonframe, text="Replace all",
+            buttonframe, text="Replace all", underline=len("Replace "),
             command=self._replace_all)
 
         self.previous_button.pack(side='left')
@@ -126,6 +120,8 @@ class Finder(ttk.Frame):
         ttk.Label(self, text=text).grid(row=row, column=0, sticky='w')
         entry = ttk.Entry(self, width=35, font='TkFixedFont')
         entry.bind('<Escape>', self.hide, add=True)
+        entry.bind('<Alt-t>', self._replace_this, add=True)
+        entry.bind('<Alt-a>', self._replace_all, add=True)
         entry.grid(row=row, column=1, sticky='we')
         return entry
 
@@ -310,7 +306,7 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel.config(text=f"Replaced a match. There are {left} more matches.")
 
-    def _replace_all(self) -> None:
+    def _replace_all(self, junk: object = None) -> None:
         match_ranges = self.get_match_ranges()
 
         # must do this backwards because replacing may screw up indexes AFTER
