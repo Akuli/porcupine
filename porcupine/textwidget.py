@@ -85,7 +85,7 @@ class _ChangeTracker:
     def setup(self, widget: tkinter.Text) -> None:
         old_cursor_pos = widget.index('insert')    # must be widget specific
 
-        def cursor_pos_changed():
+        def cursor_pos_changed() -> None:
             nonlocal old_cursor_pos
 
             new_pos = widget.index('insert')
