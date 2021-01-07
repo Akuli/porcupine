@@ -28,8 +28,8 @@
 #        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
 #        matches the shebang '#!/bin/foo --bar --baz'.
 #
-#    encoding
-#        Name of encoding to be used with these files. Default is "utf-8".
+#    encoding (default: "utf-8")
+#        Name of encoding to be used with these files.
 #
 #    pygments_lexer (default: "pygments.lexers.TextLexer")
 #        Name of a Pygments lexer class that will be used for syntax
@@ -45,6 +45,12 @@
 #        If tabs2spaces is false, this specifies the number of spaces
 #        corresponding to one tab character. If tabs2spaces is true, then this
 #        is the number of spaces used for indentation.
+#
+#    comment_char
+#        If specified, typing this character with many lines selected will put
+#        it to the beginning of each line. For example, for making comments
+#        like the comment that you are currently reading, this is set to '#' in
+#        the [TOML] section.
 #
 #    line_ending
 #        One of "CR", "LF" or "CRLF" (aka \r, \n and \r\n). To change the
@@ -140,6 +146,7 @@ max_line_length = 79   # pep8 says so, lol
 commands = {run = "{python} {file}"}
 autocomplete_chars = ["."]
 langserver = {command = "pyls", language_id = "python"}
+comment_char = '#'
 
 ["Python stub file"]
 filename_patterns = ["*.pyi"]
@@ -148,6 +155,7 @@ tabs2spaces = true
 indent_size = 4
 max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
 autocomplete_chars = ["."]
+comment_char = '#'
 
 [C]
 filename_patterns = ["*.c", "*.h"]
@@ -187,6 +195,7 @@ pygments_lexer = "pygments.lexers.MakefileLexer"
 # make doesn't work with spaces
 tabs2spaces = false
 commands = {run = "make"}
+comment_char = '#'
 
 # TODO: Windows batch files and powershell files
 #
@@ -199,6 +208,7 @@ filename_patterns = ["*.sh"]
 shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
 commands = {run = "bash {file}"}
+comment_char = '#'
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
@@ -207,6 +217,7 @@ shebang_regex = '(wi|tcl)sh$'
 pygments_lexer = "pygments.lexers.TclLexer"
 tabs2spaces = true
 commands = {run = "tclsh {file}"}
+comment_char = '#'
 
 [JSON]
 filename_patterns = ["*.json"]
@@ -217,6 +228,7 @@ tabs2spaces = true
 [TOML]
 filename_patterns = ["*.toml"]
 pygments_lexer = "pygments.lexers.TOMLLexer"
+comment_char = '#'
 
 [reStructuredText]
 filename_patterns = ["*.rst"]
@@ -231,9 +243,16 @@ filename_patterns = ["*.yml", "*.yaml"]
 pygments_lexer = "pygments.lexers.YamlLexer"
 tabs2spaces = true
 indent_size = 2
+comment_char = '#'
 
 [HTML]
 filename_patterns = ["*.html", "*.htm"]
 pygments_lexer = "pygments.lexers.HtmlLexer"
 tabs2spaces = true
 indent_size = 2
+
+[TeX]
+filename_patterns = ["*.tex"]
+pygments_lexer = "pygments.lexers.TexLexer"
+tabs2spaces = true
+comment_char = '%'

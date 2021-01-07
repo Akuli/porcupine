@@ -1,12 +1,23 @@
-"""If you select multiple lines and type '#', then all selected lines are commented out."""
-# TODO: don't assume that '#' comments are a thing in every programming language
+"""
+If you select multiple lines in a Python file and type '#', then all selected
+lines are commented out.
+
+A different character is used in other programming languages. This can be
+configured with comment_char in filetypes.toml.
+"""
 
 import functools
+import tkinter
+from typing import Optional
 
 from porcupine import get_tab_manager, menubar, tabs, utils
 
 
-def comment_or_uncomment(tab: tabs.FileTab, junk: object = None) -> utils.BreakOrNone:
+def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkinter.Text]]') -> utils.BreakOrNone:
+    comment_char = tab.settings.get('comment_char', Optional[str])
+    if event is not None and event.char != comment_char:
+        return None
+
     try:
         start_index, end_index = map(str, tab.textwidget.tag_ranges('sel'))
     except ValueError:
@@ -20,14 +31,15 @@ def comment_or_uncomment(tab: tabs.FileTab, junk: object = None) -> utils.BreakO
         end += 1
 
     gonna_uncomment = all(
-        tab.textwidget.get('%d.0' % lineno, '%d.1' % lineno) == '#'
+        tab.textwidget.get('%d.0' % lineno, '%d.1' % lineno) == comment_char
         for lineno in range(start, end))
 
+    # TODO: use change_batch
     for lineno in range(start, end):
         if gonna_uncomment:
             tab.textwidget.delete('%d.0' % lineno, '%d.1' % lineno)
         else:
-            tab.textwidget.insert('%d.0' % lineno, '#')
+            tab.textwidget.insert('%d.0' % lineno, comment_char)
 
     # select everything on the (un)commented lines
     tab.textwidget.tag_remove('sel', '1.0', 'end')
@@ -38,15 +50,13 @@ def comment_or_uncomment(tab: tabs.FileTab, junk: object = None) -> utils.BreakO
 def comment_or_uncomment_in_current_tab() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
-    comment_or_uncomment(tab)
+    comment_or_uncomment(tab, None)
 
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        # the '#' character seems to be a 'numbersign' in tk
-        tab.textwidget.bind(
-            '<numbersign>', functools.partial(comment_or_uncomment, tab),
-            add=True)
+        tab.settings.add_option('comment_char', None, type=Optional[str])
+        tab.textwidget.bind('<Key>', functools.partial(comment_or_uncomment, tab), add=True)
 
 
 def setup() -> None:
