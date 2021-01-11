@@ -79,8 +79,8 @@ class _ChangeTracker:
 
     # event_receiver_widget will receive the change events
     def __init__(self, event_receiver_widget: tkinter.Text) -> None:
-        self.event_receiver_widget = event_receiver_widget
-        self.change_batch: Optional[List[Change]] = None
+        self._event_receiver_widget = event_receiver_widget
+        self._change_batch: Optional[List[Change]] = None
 
     def setup(self, widget: tkinter.Text) -> None:
         old_cursor_pos = widget.index('insert')    # must be widget specific
@@ -206,7 +206,7 @@ class _ChangeTracker:
             'fake_widget': str(widget),
             'actual_widget': actual_widget_command,
             'change_event_from_command': widget.register(functools.partial(self._change_event_from_command, widget)),
-            'event_receiver': self.event_receiver_widget,
+            'event_receiver': self._event_receiver_widget,
             'cursor_moved_callback': widget.register(cursor_pos_changed),
         })
 
@@ -346,24 +346,24 @@ class _ChangeTracker:
                 or change.new_text)
         ]
 
-        if self.change_batch is None:
+        if self._change_batch is None:
             return str(Changes(changes)) if changes else ''
         else:
-            self.change_batch.extend(changes)
+            self._change_batch.extend(changes)
             return ''   # don't generate event
 
     def begin_batch(self) -> None:
-        if self.change_batch is not None:
+        if self._change_batch is not None:
             raise RuntimeError("nested calls to change_batch")
-        self.change_batch = []
+        self._change_batch = []
 
     def finish_batch(self) -> None:
-        assert self.change_batch is not None
+        assert self._change_batch is not None
         try:
-            if self.change_batch:
-                self.event_receiver_widget.event_generate('<<ContentChanged>>', data=Changes(self.change_batch))
+            if self._change_batch:
+                self._event_receiver_widget.event_generate('<<ContentChanged>>', data=Changes(self._change_batch))
         finally:
-            self.change_batch = None
+            self._change_batch = None
 
 
 _change_trackers: 'weakref.WeakKeyDictionary[tkinter.Text, _ChangeTracker]' = weakref.WeakKeyDictionary()
