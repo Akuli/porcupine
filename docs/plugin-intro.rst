@@ -220,8 +220,8 @@ This way, you allow the user of the plugin to decide
 which key combination (if any) does your thing.
 
 The user-specific ``keybindings.tcl`` can be edited by going to
-*Settings* menu at top, then *Porcupine Settings*, then *Config Files*.
-By default, it contains a link to Porcupine's default ``keybindings.tcl``,
+*Settings* menu at top, then *Config Files*.
+By default, it contains a link to Porcupine's ``default_keybindings.tcl`` in a comment,
 and that contains many example key bindings.
 
 

@@ -16,10 +16,11 @@ any :source:`plugin that Porcupine comes with <porcupine/plugins>` for example u
     ``Baz`` in a menu named ``Foo/Bar`` (see :func:`get_menu`).
 
     Porcupine has a file named ``keybindings.tcl``, and it can be edited at
-    ``Settings/Porcupine Settings/Config Files`` in the menubar.
+    *Settings/Config Files* in the menubar.
     By default, it contains a link to Porcupine's default ``keybindings.tcl``,
     and that contains many example key bindings.
     All of them work by associating a keyboard event, such as ``<Control-n>``,
     which one of these virtual events, such as ``<<Menubar:File/New File>>``.
 
+.. autofunction:: add_config_file_button
 .. autofunction:: update_keyboard_shortcuts

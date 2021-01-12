@@ -8,7 +8,6 @@ import logging
 import os
 import pathlib
 import tkinter.font
-from functools import partial
 from tkinter import messagebox, ttk
 from typing import (Any, Callable, Dict, List, Optional, Type, TypeVar, cast,
                     overload)
@@ -508,7 +507,7 @@ def add_section(title_text: str) -> ttk.Frame:
         ,-----------------------------------------------------------.
         | Porcupine Settings                                        |
         |-----------------------------------------------------------|
-        |  / General \   / Config Files \                           |
+        |  / General \   / Another Section \                        |
         |_/           \_____________________________________________|
         |                           :                           :   |
         |                           :                           :col|
@@ -642,16 +641,6 @@ def add_label(section: ttk.Frame, text: str) -> ttk.Label:
     return label
 
 
-def _edit_file(path: pathlib.Path) -> None:
-    # porcupine/tabs.py imports this file
-    # these local imports feel so evil xD  MUHAHAHAA!!!
-    from porcupine import tabs
-
-    manager = porcupine.get_tab_manager()
-    manager.add_tab(tabs.FileTab.open_file(manager, path))
-    get_notebook().winfo_toplevel().withdraw()
-
-
 def get_section(text: str) -> ttk.Frame:
     """Find a tab from the notebook by the text of the tab showing near the top of the notebook."""
     [result] = [
@@ -660,16 +649,6 @@ def get_section(text: str) -> ttk.Frame:
         if get_notebook().tab(tab, 'text') == text
     ]
     return result
-
-
-def add_config_file_button(section: ttk.Frame, path: pathlib.Path) -> ttk.Button:
-    """
-    Add a button that opens a file in Porcupine when it's clicked.
-    The button doesn't have any text next to it.
-    """
-    button = ttk.Button(section, text=f"Edit {path.name}", command=partial(_edit_file, path))
-    button.grid(column=0, columnspan=3, sticky='', pady=5)
-    return button
 
 
 def _fill_notebook_with_defaults() -> None:
@@ -686,12 +665,6 @@ def _fill_notebook_with_defaults() -> None:
     add_combobox(
         general, 'default_line_ending', "Default line ending:",
         values=[ending.name for ending in LineEnding])
-
-    configs = add_section('Config Files')
-    add_label(configs, (
-        "Currently there's no GUI for changing these settings, but you can edit it the "
-        "configuration files yourself."
-    ))
 
 
 # undocumented on purpose, don't use in plugins

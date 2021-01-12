@@ -3,15 +3,14 @@
 import pathlib
 import tkinter
 
-from porcupine import dirs, get_main_window, settings
+from porcupine import dirs, get_main_window, menubar
 
 
 def setup() -> None:
     porcupine_dir = pathlib.Path(__file__).absolute().parent.parent
     default_path = porcupine_dir / 'default_keybindings.tcl'
     user_path = dirs.configdir / 'keybindings.tcl'
-
-    settings.add_config_file_button(settings.get_section('Config Files'), user_path)
+    menubar.add_config_file_button(user_path)
 
     try:
         with user_path.open('x') as file:

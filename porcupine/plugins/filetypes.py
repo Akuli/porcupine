@@ -203,7 +203,7 @@ def setup() -> None:
         settings.get_section('General'), 'default_filetype', "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    settings.add_config_file_button(settings.get_section('Config Files'), dirs.configdir / 'filetypes.toml')
+    menubar.add_config_file_button(dirs.configdir / 'filetypes.toml')
 
     filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
         (name, [

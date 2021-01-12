@@ -119,6 +119,17 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
     return menu
 
 
+def add_config_file_button(path: pathlib.Path) -> None:
+    """
+    Add a button to *Settings/Config Files* that opens a file in Porcupine when
+    it's clicked.
+    """
+    get_menu("Settings/Config Files").add_command(
+        label=path.name,
+        command=(lambda: get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))),
+    )
+
+
 def _walk_menu_contents(
     menu: Optional[tkinter.Menu] = None,
     path_prefix: str = '',
