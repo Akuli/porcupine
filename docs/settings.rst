@@ -69,7 +69,6 @@ time Porcupine is restarted.
 Example::
 
     import logging
-    from typing import Tuple
     from porcupine import settings
 
     log = logging.getLogger(__name__)
@@ -77,7 +76,7 @@ Example::
     def connect_to_http_server() -> None:
         host = settings.get('http_server_host', str)
         port = settings.get('http_server_port', int)
-        log.info(f"Connecting to localhost:{port}...")
+        log.info(f"Connecting to {host}:{port}...")
         ...
 
     def setup() -> None:
