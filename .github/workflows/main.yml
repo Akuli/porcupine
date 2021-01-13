@@ -44,7 +44,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: |
-        pip install -r requirements.txt -r requirements-dev.txt
+        pip install -r requirements-dev.txt
     - run: |
         python3 -m pycodestyle porcupine tests more_plugins
   isort:
@@ -55,7 +55,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: |
-        pip install -r requirements.txt -r requirements-dev.txt
+        pip install -r requirements-dev.txt
     - run: |
         python3 -m isort --check porcupine tests more_plugins
   pyflakes:
@@ -66,7 +66,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: |
-        pip install -r requirements.txt -r requirements-dev.txt
+        pip install -r requirements-dev.txt
     - run: |
         python3 -m pyflakes porcupine tests more_plugins
   bindcheck:
