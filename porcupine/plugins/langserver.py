@@ -284,7 +284,7 @@ class LangServer:
         self._lsp_client = lsp.Client(
             trace='verbose', root_uri=the_id.project_root.as_uri())
 
-        self._lsp_id_to_tab_and_request: Dict[int, Tuple[tabs.FileTab, autocomplete.Request]] = {}
+        self._lsp_id_to_tab_and_request: Dict[lsp.Id, Tuple[tabs.FileTab, autocomplete.Request]] = {}
 
         self._version_counter = itertools.count()
         self.log = log
