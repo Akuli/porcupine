@@ -391,7 +391,7 @@ def _init_global_gui_settings() -> None:
     update_fixedfont(None)
 
 
-def _create_notebook() -> ttk.Notebook:
+def _create_dialog_content() -> ttk.Frame:
     dialog = tkinter.Toplevel()
     dialog.withdraw()
     dialog.title("Porcupine Settings")
@@ -405,8 +405,8 @@ def _create_notebook() -> ttk.Notebook:
 
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill='both', expand=True)
-    notebook = ttk.Notebook(big_frame)
-    notebook.pack(fill='both', expand=True)
+    content = ttk.Frame(big_frame)
+    content.pack(fill='both', expand=True)
     ttk.Separator(big_frame).pack(fill='x')
     buttonframe = ttk.Frame(big_frame)
     buttonframe.pack(fill='x')
@@ -414,10 +414,12 @@ def _create_notebook() -> ttk.Notebook:
     ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all).pack(side='right')
     ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side='right')
 
-    return notebook
+    content.grid_columnconfigure(0, weight=1)
+    content.grid_columnconfigure(1, weight=1)
+    return content
 
 
-_notebook: Optional[ttk.Notebook] = None
+_dialog_content: Optional[ttk.Frame] = None
 
 
 def show_dialog() -> None:
@@ -425,20 +427,53 @@ def show_dialog() -> None:
 
     This function is called when the user opens the dialog from the menu.
     """
-    dialog = get_notebook().winfo_toplevel()
+    dialog = get_dialog_content().winfo_toplevel()
     dialog.transient(porcupine.get_main_window())
     dialog.deiconify()
 
 
-def get_notebook() -> ttk.Notebook:
-    """Return the notebook widget in the setting dialog.
+def get_dialog_content() -> ttk.Frame:
+    """Return the widget where setting changing widgets should be added.
 
-    Use ``settings.get_notebook().winfo_toplevel()`` to access the dialog
+    Use ``settings.get_dialog_content().winfo_toplevel()`` to access the dialog
     itself. It's a :class:`tkinter.Toplevel`.
+
+    Use grid with the returned widget. Its columns are configured like this::
+
+        ,-----------------------------------------------------------.
+        | Porcupine Settings                                        |
+        |-----------------------------------------------------------|
+        |                           :                           :   |
+        |                           :                           :col|
+        |         column 0          :         column 1          :umn|
+        |                           :                           : 2 |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        |                           :                           :   |
+        | ========================================================= |
+        |                                   ,---------. ,---------. |
+        |                                   |   OK    | |  Reset  | |
+        |                                   `---------' `---------' |
+        `-----------------------------------------------------------'
+
+    Column 0 typically contains labels such as "Font Family:", and column 1
+    contains widgets for changing the settings. Column 2 is used for displaying
+    |triangle| when the user has chosen the setting badly.
     """
-    if _notebook is None:
+    if _dialog_content is None:
         raise RuntimeError("porcupine isn't running")
-    return _notebook
+    return _dialog_content
 
 
 def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
@@ -493,58 +528,6 @@ def _create_validation_triangle(
     return triangle
 
 
-def add_section(title_text: str) -> ttk.Frame:
-    r"""Add a :class:`tkinter.ttk.Frame` to the notebook and return the frame.
-
-    The columns of the frame's grid is configured suitably for
-    :func:`add_entry`,
-    :func:`add_combobox`,
-    :func:`add_spinbox` and
-    :func:`add_label`.
-    Like this::
-
-
-        ,-----------------------------------------------------------.
-        | Porcupine Settings                                        |
-        |-----------------------------------------------------------|
-        |  / General \   / Another Section \                        |
-        |_/           \_____________________________________________|
-        |                           :                           :   |
-        |                           :                           :col|
-        |         column 0          :         column 1          :umn|
-        |                           :                           : 2 |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        |                           :                           :   |
-        | ========================================================= |
-        |                                   ,---------. ,---------. |
-        |                                   |   OK    | |  Reset  | |
-        |                                   `---------' `---------' |
-        `-----------------------------------------------------------'
-
-    Column 0 typically contains labels such as "Font Family:", and column 1
-    contains widgets for changing the settings. Column 2 is used for displaying
-    |triangle| when the user has chosen the setting badly.
-    """
-    result = ttk.Frame(get_notebook())
-    result.grid_columnconfigure(0, weight=1)
-    result.grid_columnconfigure(1, weight=1)
-    get_notebook().add(result, text=title_text)
-    return result
-
-
-# Widget is needed for chooser.master and triangle.grid
 def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]) -> None:
     label = ttk.Label(chooser.master, text=label_text)
     label.grid(column=0, sticky='w')
@@ -554,7 +537,6 @@ def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[t
 
 
 def add_entry(
-    section: ttk.Frame,
     option_name: str,
     text: str,
     validate_callback: Callable[[str], bool],
@@ -565,20 +547,19 @@ def add_entry(
     A label that displays *text* will be added next to the entry.
     All ``**entry_kwargs`` go to :class:`tkinter.ttk.Entry`.
 
-    When the user types something into the entry,
-    *validate_callback* is called with the text of the entry as its only argument.
+    When the user types something into the entry, *validate_callback*
+    is called with the text of the entry as its only argument.
     If it returns ``True``, then the option given by *option_name*
     is set to the string that the user typed.
     Otherwise |triangle| is shown.
     """
-    entry = ttk.Entry(section, **entry_kwargs)
+    entry = ttk.Entry(get_dialog_content(), **entry_kwargs)
     triangle = _create_validation_triangle(entry, option_name, str, validate_callback)
     _grid_widgets(text, entry, triangle)
     return entry
 
 
 def add_combobox(
-    section: ttk.Frame,
     option_name: str,
     text: str,
     **combobox_kwargs: Any,
@@ -596,7 +577,7 @@ def add_combobox(
     to :func:`add_option` will be used. If the content of the combobox is not
     in ``combobox.cget('values')``, then |triangle| is shown.
     """
-    combo = ttk.Combobox(section, **combobox_kwargs)
+    combo = ttk.Combobox(get_dialog_content(), **combobox_kwargs)
     triangle = _create_validation_triangle(
         combo, option_name, str,
         lambda value: value in combo.cget('values'))
@@ -605,7 +586,6 @@ def add_combobox(
 
 
 def add_spinbox(
-    section: ttk.Frame,
     option_name: str,
     text: str,
     **spinbox_kwargs: Any,
@@ -620,7 +600,7 @@ def add_spinbox(
     then the option given by *option_name* is set to the :class:`int`.
     Otherwise |triangle| is shown.
     """
-    spinbox = utils.Spinbox(section, **spinbox_kwargs)
+    spinbox = utils.Spinbox(get_dialog_content(), **spinbox_kwargs)
     triangle = _create_validation_triangle(
         spinbox, option_name, int,
         lambda value: int(spinbox.cget('from')) <= value <= int(spinbox.cget('to')))
@@ -628,51 +608,39 @@ def add_spinbox(
     return spinbox
 
 
-def add_label(section: ttk.Frame, text: str) -> ttk.Label:
+def add_label(text: str) -> ttk.Label:
     """Add text to the setting dialog.
 
     This is useful for explaining what some options do with more than a few words.
     The text is always as wide as the dialog is, even when the dialog is resized.
     """
-    label = ttk.Label(section, text=text)
+    label = ttk.Label(get_dialog_content(), text=text)
     label.grid(column=0, columnspan=3, sticky='we', pady=10)
 
-    section.bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
+    get_dialog_content().bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
     return label
 
 
-def get_section(text: str) -> ttk.Frame:
-    """Find a tab from the notebook by the text of the tab showing near the top of the notebook."""
-    [result] = [
-        get_notebook().nametowidget(tab)
-        for tab in get_notebook().tabs()
-        if get_notebook().tab(tab, 'text') == text
-    ]
-    return result
-
-
-def _fill_notebook_with_defaults() -> None:
-    general = add_section("General")
-
+def _fill_dialog_content_with_defaults() -> None:
     # sort, remove duplicates, remove weird fonts starting with @ on windows
     font_families = sorted({
         family for family in tkinter.font.families()
         if not family.startswith('@')
     })
 
-    add_combobox(general, 'font_family', "Font family:", values=font_families)
-    add_spinbox(general, 'font_size', "Font size:", from_=3, to=1000)
+    add_combobox('font_family', "Font family:", values=font_families)
+    add_spinbox('font_size', "Font size:", from_=3, to=1000)
     add_combobox(
-        general, 'default_line_ending', "Default line ending:",
+        'default_line_ending', "Default line ending:",
         values=[ending.name for ending in LineEnding])
 
 
 # undocumented on purpose, don't use in plugins
 def init_the_rest_after_initing_enough_for_using_disabled_plugins_list() -> None:
-    global _notebook
-    if _notebook is not None:
+    global _dialog_content
+    if _dialog_content is not None:
         raise RuntimeError("can't call _init() twice")
 
     _init_global_gui_settings()
-    _notebook = _create_notebook()
-    _fill_notebook_with_defaults()
+    _dialog_content = _create_dialog_content()
+    _fill_dialog_content_with_defaults()

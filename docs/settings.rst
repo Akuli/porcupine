@@ -101,18 +101,11 @@ The Settings Dialog
 -------------------
 
 Click *Porcupine Settings* in the *Edit* menu to open the dialog.
-The dialog contains a :class:`tkinter.ttk.Notebook` widget and some buttons.
 
-.. autofunction:: get_notebook
-.. autofunction:: get_section
+.. autofunction:: get_dialog_content
 
-You can add widgets to the notebook yourself, but it's usually easiest to use this:
-
-.. autofunction:: add_section
-
-You can add widgets to the section yourself or use the following functions.
-All of these assume that the *section* argument comes from :func:`add_section`
-and return the added widget.
+You can add widgets to the content frame, but it's usually easiest to use these functions.
+All of these return the added widget.
 A label that displays *text* is added to column 0 (see the ascii art above).
 When setting the values, the converter passed to :func:`add_option` is used.
 

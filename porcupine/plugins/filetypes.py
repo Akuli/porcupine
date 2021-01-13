@@ -200,7 +200,7 @@ def setup() -> None:
 
     settings.add_option('default_filetype', 'Python')
     settings.add_combobox(
-        settings.get_section('General'), 'default_filetype', "Default filetype for new files:",
+        'default_filetype', "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
     menubar.add_config_file_button(dirs.configdir / 'filetypes.toml')
