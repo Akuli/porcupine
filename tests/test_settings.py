@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import sys
 import tkinter.font
 from typing import Optional
 
@@ -160,11 +161,16 @@ def test_debug_dump(porcusession, capsys):
     settings_obj.add_option('foo', None, type=Optional[str])
     settings_obj.set('bar', ['a', 'b', 'c'], from_config=True)
     settings_obj.debug_dump()
-    assert capsys.readouterr() == ('''\
+
+    output, errors = capsys.readouterr()
+    assert not errors
+    if sys.version_info < (3, 9):
+        output = output.replace('typing.Union[str, NoneType]', 'typing.Optional[str]')
+    assert output == '''\
 1 known options (add_option called)
-  foo = None    (type: typing.Union[str, NoneType])
+  foo = None    (type: typing.Optional[str])
 
 1 unknown options (add_option not called)
   bar = ['a', 'b', 'c']
 
-''', '')
+'''

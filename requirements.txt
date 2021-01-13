@@ -20,7 +20,7 @@ toposort>=1.5
 colorama>=0.2.5
 
 # 0.7.2 is first release that correctly supports type hints: https://github.com/PurpleMyst/sansio-lsp-client/pull/13
-sansio-lsp-client>=0.7.2,<0.8.0
+sansio-lsp-client>=0.8.0,<0.9.0
 
 # to have something hopefully work by default
 python-language-server>=0.36.2,<1.0.0
