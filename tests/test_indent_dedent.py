@@ -1,5 +1,3 @@
-import platform
-
 _FUNNY = '''\
 def foo(
     x,
