@@ -64,8 +64,13 @@ class PluginDialogContent:
             columns=('name', 'type', 'status'),
             selectmode='browse',
         )
-        self._treeview.pack(side='top', fill='both', expand=True)
         self._treeview.bind('<<TreeviewSelect>>', self._on_select, add=True)
+
+        scrollbar = ttk.Scrollbar(left_side, command=self._treeview.yview)
+        self._treeview.config(yscrollcommand=scrollbar.set)
+
+        self._treeview.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
 
         for index, width in enumerate([100, 150, 180]):
             self._treeview.column(index, width=width, minwidth=width)
