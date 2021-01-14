@@ -209,11 +209,8 @@ class Settings:
                 if option_name != 'disabled_plugins':
                     raise e
             else:
-                not_notified_yet: List[tkinter.Misc] = [main_window]
-                while not_notified_yet:
-                    widget = not_notified_yet.pop()
+                for widget in utils.get_children_recursively(main_window, include_parent=True):
                     widget.event_generate(event_name)
-                    not_notified_yet.extend(widget.winfo_children())
         else:
             self._change_event_widget.event_generate(event_name)
 

@@ -1,7 +1,7 @@
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_main_window, pluginloader
+from porcupine import get_main_window, pluginloader, utils
 
 
 def test_all_plugins_loaded_successfully(porcusession):
@@ -11,12 +11,6 @@ def test_all_plugins_loaded_successfully(porcusession):
         assert info.status == pluginloader.Status.ACTIVE
 
 
-def get_children(widget):
-    for child in widget.winfo_children():
-        yield child
-        yield from get_children(child)
-
-
 def test_pluginmanager_plugin(porcusession, mocker):
     mocker.patch('tkinter.Toplevel.wait_window', autospec=True)
     get_main_window().event_generate('<<Menubar:Settings/Plugin Manager>>')
@@ -24,7 +18,8 @@ def test_pluginmanager_plugin(porcusession, mocker):
 
     [dialog] = tkinter.Toplevel.wait_window.call_args[0]
     try:
-        [treeview] = [widget for widget in get_children(dialog) if isinstance(widget, ttk.Treeview)]
+        [treeview] = [widget for widget in utils.get_children_recursively(dialog)
+                      if isinstance(widget, ttk.Treeview)]
 
         # Selecting the plugins runs code that finds description of plugin (as docstring)
         for info in pluginloader.plugin_infos:

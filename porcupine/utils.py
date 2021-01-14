@@ -154,6 +154,13 @@ def invert_color(color: str, *, black_or_white: bool = False) -> str:
         return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
 
 
+def get_children_recursively(parent: tkinter.Misc, *, include_parent: bool = False) -> Iterator[tkinter.Misc]:
+    if include_parent:
+        yield parent
+    for child in parent.winfo_children():
+        yield from get_children_recursively(child, include_parent=True)
+
+
 class _TooltipManager:
 
     # This needs to be shared by all instances because there's only one
