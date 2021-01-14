@@ -1,3 +1,7 @@
+"""
+When you put the cursor next to ')', this plugin highlights the matching '('.
+"""
+
 import tkinter
 from functools import partial
 
