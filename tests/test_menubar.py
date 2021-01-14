@@ -3,7 +3,7 @@ import pytest
 from porcupine import get_main_window, menubar, tabs
 
 
-def test_virtual_events_calling_menu_callbacks(porcusession):
+def test_virtual_events_calling_menu_callbacks():
     called = []
     menubar.get_menu("Foo").add_command(label="Bar", command=(lambda: called.append('bar')))
     menubar.get_menu("Foo").add_command(label="Baz", command=(lambda: called.append('baz')), state='disabled')
@@ -14,7 +14,7 @@ def test_virtual_events_calling_menu_callbacks(porcusession):
     assert called == ['bar']
 
 
-def test_set_enabled_based_on_tab(porcusession, tabmanager):
+def test_set_enabled_based_on_tab(tabmanager):
     tab1 = tabs.Tab(tabmanager)
     tab2 = tabs.Tab(tabmanager)
 
@@ -37,7 +37,7 @@ def test_set_enabled_based_on_tab(porcusession, tabmanager):
     assert menubar.get_menu("Foo").entrycget('end', 'state') == 'disabled'
 
 
-def test_item_doesnt_exist(porcusession):
+def test_item_doesnt_exist():
     with pytest.raises(LookupError, match=r"^menu item 'Asdf/BlaBlaBla' not found$"):
         menubar.set_enabled_based_on_tab("Asdf/BlaBlaBla", (lambda tab: True))
 

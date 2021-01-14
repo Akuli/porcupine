@@ -8,7 +8,7 @@ from porcupine.textwidget import (Change, Changes, change_batch,
 
 
 @pytest.fixture(scope='function')
-def text_and_events(porcusession):
+def text_and_events():
     text = tkinter.Text(get_main_window())
     text.config(undo=True)    # must be before track_changes()
     track_changes(text)
@@ -117,14 +117,14 @@ def test_undo(text_and_events):
     ]
 
 
-def test_track_changes_twice(porcusession):
+def test_track_changes_twice():
     text = tkinter.Text(get_main_window())
     track_changes(text)
     with pytest.raises(RuntimeError, match=r'^track_changes\(\) called twice for same text widget$'):
         track_changes(text)
 
 
-def test_track_changes_after_create_peer_widget(porcusession):
+def test_track_changes_after_create_peer_widget():
     text = tkinter.Text(get_main_window())
     peer = tkinter.Text(get_main_window())
     create_peer_widget(text, peer)
@@ -135,7 +135,7 @@ def test_track_changes_after_create_peer_widget(porcusession):
         track_changes(peer)
 
 
-def test_change_batch_no_tracking(porcusession):
+def test_change_batch_no_tracking():
     text = tkinter.Text(get_main_window())
     with change_batch(text):    # should do nothing
         text.insert('end', 'hello\n')

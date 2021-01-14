@@ -53,7 +53,7 @@ def monkeypatch_dirs():
         yield
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
 def porcusession(monkeypatch_dirs):
     # these errors should not occur while porcupine is running
     with pytest.raises(RuntimeError):

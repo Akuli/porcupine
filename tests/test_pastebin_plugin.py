@@ -109,7 +109,7 @@ def test_paste_class(monkeypatch, filetab):
 
 
 # this test assumes that utils.run_in_thread works
-def test_paste_error_handling(monkeypatch, caplog, porcusession):
+def test_paste_error_handling(monkeypatch, caplog):
     monkeypatch.setitem(pastebin_module.pastebins, 'Lol', (lambda *args: 1/0))
     errordialog_calls = []
     monkeypatch.setattr(pastebin_module.utils, 'errordialog',

@@ -10,7 +10,7 @@ from porcupine import get_main_window
 from porcupine.plugins import aboutdialog
 
 
-def test_it_doesnt_crash(monkeypatch, porcusession):
+def test_it_doesnt_crash(monkeypatch):
     # the dialog calls .wait_window(), but that doesn't terminate until the
     # user closes the window... so we'll make the window close itself
     called = 0

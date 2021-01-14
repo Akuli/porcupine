@@ -4,7 +4,7 @@ from porcupine import get_main_window
 from porcupine.plugins.urls import find_urls
 
 
-def test_find_urls_basic(porcusession):
+def test_find_urls_basic():
     text = tkinter.Text(get_main_window())
     urls = [
         'https://github.com/Akuli/porcupine/',
@@ -41,7 +41,7 @@ def test_find_urls_basic(porcusession):
 
 
 # urls with parentheses in them don't need to work in all cases, just very basic support wanted
-def test_url_containing_parens(porcusession):
+def test_url_containing_parens():
     for url in ['https://en.wikipedia.org/wiki/Whitespace_(programming_language)', 'https://example.com/foo(bar)baz']:
         text = tkinter.Text(get_main_window())
         text.insert('1.0', f'''\

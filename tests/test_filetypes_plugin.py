@@ -7,7 +7,7 @@ from porcupine import filedialog_kwargs, get_main_window
 from porcupine.plugins import filetypes
 
 
-def test_filedialog_patterns_got_stripped(porcusession):
+def test_filedialog_patterns_got_stripped():
     python_patterns = dict(filedialog_kwargs['filetypes'])['Python']
     assert '*.py' not in python_patterns
     assert '.py' in python_patterns

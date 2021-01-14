@@ -5,7 +5,7 @@ from tkinter import ttk
 from porcupine import get_main_window, utils
 
 
-def test_bind_with_data_string(porcusession):
+def test_bind_with_data_string():
     # i don't know why the main window works better with this than a
     # temporary tkinter.Frame()
     events = []
@@ -28,7 +28,7 @@ class Bar(utils.EventDataclass):
     foos: typing.List[Foo]
 
 
-def test_bind_with_data_class(porcusession):
+def test_bind_with_data_class():
     events = []
     utils.bind_with_data(
         get_main_window(), '<<DataclassAsd>>', events.append, add=True)
@@ -42,7 +42,7 @@ def test_bind_with_data_class(porcusession):
     assert foo.num == 123
 
 
-def test_get_children_recursively(porcusession):
+def test_get_children_recursively():
     parent = ttk.Label()
     child1 = ttk.Button(parent)
     child2 = ttk.Frame(parent)

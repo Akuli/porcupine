@@ -13,7 +13,7 @@ from porcupine import settings
 # Could replace some of this with non-global setting objects, but I don't feel
 # like rewriting the tests just because it would be slightly nicer that way
 @pytest.fixture
-def cleared_global_settings(monkeypatch, porcusession, tmp_path):
+def cleared_global_settings(monkeypatch, tmp_path):
     monkeypatch.setattr(settings._global_settings, '_options', {})
     monkeypatch.setattr(settings._global_settings, '_unknown_options', {})
     monkeypatch.setattr(settings, '_get_json_path', (lambda: tmp_path / 'settings.json'))
@@ -129,7 +129,7 @@ def test_save(cleared_global_settings):
         assert json.load(file) == {'foo': 'custom foo', 'bar': 'custom bar'}
 
 
-def test_font_gets_updated(porcusession):
+def test_font_gets_updated():
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
 
     settings.set('font_family', 'Helvetica')
@@ -144,7 +144,7 @@ class Foo:
     message: str
 
 
-def test_dataclass(porcusession):
+def test_dataclass():
     settings_obj = settings.Settings(None, '<<Foo:{}>>')
 
     settings_obj.add_option('foo', None, type=Optional[Foo])
@@ -156,7 +156,7 @@ def test_dataclass(porcusession):
     assert settings_obj.get('bar', Foo) == Foo(456, 'hi')
 
 
-def test_debug_dump(porcusession, capsys):
+def test_debug_dump(capsys):
     settings_obj = settings.Settings(None, '<<Foo:{}>>')
     settings_obj.add_option('foo', None, type=Optional[str])
     settings_obj.set('bar', ['a', 'b', 'c'], from_config=True)
