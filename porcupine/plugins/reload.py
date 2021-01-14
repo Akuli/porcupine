@@ -6,7 +6,7 @@ from porcupine import get_tab_manager, menubar, tabs
 
 def reload() -> None:
     tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
+    assert isinstance(tab, tabs.FileTab), repr(tab)
     assert tab.path is not None
 
     cursor_pos = tab.textwidget.index('insert')
