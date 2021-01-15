@@ -396,7 +396,7 @@ class LangServer:
                 uri=tab.path.as_uri(),
                 languageId=config.language_id,
                 text=tab.textwidget.get('1.0', 'end - 1 char'),
-                version=0,
+                version=next(self._version_counter),
             )
         )
 
