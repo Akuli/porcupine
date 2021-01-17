@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 import subprocess
@@ -20,6 +21,7 @@ merge_conflict_string = '''\
 
 
 @pytest.mark.skipif(shutil.which('git') is None, reason="need git to make merge conflicts")
+@pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason="somehow doesn't work in gh actions")
 def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     monkeypatch.chdir(tmp_path)
     file_content = 'before\nhello\nafter\n'
