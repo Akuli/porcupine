@@ -28,6 +28,9 @@ def reload() -> None:
     tab.textwidget.mark_set('insert', cursor_pos)
     tab.textwidget.yview_moveto(scroll_fraction)
 
+    # TODO: document this? it's used in mergeconflict plugin
+    tab.event_generate('<<Reloaded>>')
+
 
 def setup() -> None:
     # Put the reload button before first separator, after "Save As"
