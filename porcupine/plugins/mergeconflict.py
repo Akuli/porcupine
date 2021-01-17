@@ -46,7 +46,7 @@ def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
 tag_counter = itertools.count()
 
 
-class MergeConflictDisplayer:
+class ConflictDisplayer:
 
     # line numbers not stored to self because they may change as text is edited
     def __init__(self, textwidget: tkinter.Text, start_lineno: int, middle_lineno: int, end_lineno: int) -> None:
@@ -135,7 +135,7 @@ class MergeConflictDisplayer:
         self.stop_displaying()
 
 
-conflict_displayers: 'weakref.WeakKeyDictionary[tabs.FileTab, List[MergeConflictDisplayer]]' = weakref.WeakKeyDictionary()
+conflict_displayers: 'weakref.WeakKeyDictionary[tabs.FileTab, List[ConflictDisplayer]]' = weakref.WeakKeyDictionary()
 
 
 def setup_displayers(tab: tabs.FileTab) -> None:
@@ -146,7 +146,7 @@ def setup_displayers(tab: tabs.FileTab) -> None:
     displayer_list.clear()
 
     for line_numbers in find_merge_conflicts(tab.textwidget):
-        displayer_list.append(MergeConflictDisplayer(tab.textwidget, *line_numbers))
+        displayer_list.append(ConflictDisplayer(tab.textwidget, *line_numbers))
 
 
 def on_new_tab(tab: tabs.Tab) -> None:
