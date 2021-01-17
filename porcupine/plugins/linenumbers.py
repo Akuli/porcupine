@@ -1,7 +1,7 @@
 """Line numbers on left side of the file being edited."""
 
 import tkinter.font
-from typing import Optional
+from typing import Optional, cast
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
 
@@ -13,7 +13,15 @@ class LineNumbers:
         self.canvas = tkinter.Canvas(parent, width=40)
         textwidget.use_pygments_theme(self.canvas, self._set_colors)
         utils.add_scroll_command(textwidget_of_tab, 'yscrollcommand', self._do_update)
-        textwidget_of_tab.bind('<<ContentChanged>>', self._do_update, add=True)
+
+        textwidget_of_tab.bind('<<ContentChanged>>', (
+            cast(None, lambda event: textwidget_of_tab.after_idle(self._do_update))
+        ), add=True)
+        textwidget_of_tab.bind('<Enter>', (
+            # This runs after clicking button in merge conflict plugin, mouse <Enter>s text widget
+            # Don't know why this needs a small timeout instead of after_idle
+            cast(None, lambda event: textwidget_of_tab.after(50, self._do_update))
+        ), add=True)
         self._do_update()
 
         self.canvas.bind('<<SettingChanged:font_family>>', self._update_canvas_width, add=True)

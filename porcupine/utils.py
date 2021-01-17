@@ -154,6 +154,25 @@ def invert_color(color: str, *, black_or_white: bool = False) -> str:
         return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
 
 
+def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
+    """Create a new color based on two existing colors.
+
+    The ``color1_amount`` should be a number between 0 and 1, specifying how
+    much ``color1`` to use. If you set it to 0.8, for example, then the
+    resulting color will be 80% ``color1`` and 20% ``color2``.
+
+    Colors are specified and returned similarly to :func:`invert_color`.
+    """
+    color2_amount = 1 - color1_amount
+
+    widget = porcupine.get_main_window()
+    r, g, b = (
+        round(color1_amount*value1 + color2_amount*value2)
+        for value1, value2 in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
+    )
+    return '#%02x%02x%02x' % (r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
+
+
 def get_children_recursively(parent: tkinter.Misc, *, include_parent: bool = False) -> Iterator[tkinter.Misc]:
     if include_parent:
         yield parent

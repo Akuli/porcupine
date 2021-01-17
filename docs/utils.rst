@@ -62,6 +62,7 @@ Miscellaneous
 -------------
 
 .. autofunction:: invert_color
+.. autofunction:: mix_colors
 .. autofunction:: backup_open
 
 .. function:: quote(argument)

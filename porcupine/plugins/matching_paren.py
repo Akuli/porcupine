@@ -5,7 +5,7 @@ When you put the cursor next to ')', this plugin highlights the matching '('.
 import tkinter
 from functools import partial
 
-from porcupine import get_tab_manager, tabs, textwidget
+from porcupine import get_tab_manager, tabs, textwidget, utils
 
 OPEN_TO_CLOSE = {
     '{': '}',
@@ -57,21 +57,9 @@ def on_cursor_moved(event: 'tkinter.Event[tkinter.Text]') -> None:
     event.widget.tag_add('matching_paren', match)
 
 
-# rgb math sucks ikr
-def mix_colors(color1: str, color2: str, how_much_color1_out_of_one: float) -> str:
-    how_much_color2_out_of_one = 1 - how_much_color1_out_of_one
-
-    widget = get_tab_manager()    # any widget would do
-    r, g, b = (
-        round(value1*how_much_color1_out_of_one + value2*how_much_color2_out_of_one)
-        for value1, value2 in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))  # 16-bit color values
-    )
-    return '#%02x%02x%02x' % (r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
-
-
 def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
     # use a custom background with a little bit of the theme's foreground mixed in
-    text.tag_config('matching_paren', background=mix_colors(fg, bg, 0.2))
+    text.tag_config('matching_paren', background=utils.mix_colors(fg, bg, 0.2))
 
 
 def on_new_tab(tab: tabs.Tab) -> None:
