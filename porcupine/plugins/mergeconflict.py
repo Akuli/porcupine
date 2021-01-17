@@ -3,11 +3,12 @@ import itertools
 import re
 import tkinter
 import weakref
+from typing import Any, List, cast
 
 from porcupine import get_tab_manager, tabs, utils
 
 
-def find_merge_conflicts(textwidget):
+def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
     result = []
     current_state = 'outside'
 
@@ -48,7 +49,7 @@ tag_counter = itertools.count()
 class MergeConflictDisplayer:
 
     # line numbers not stored to self because they may change as text is edited
-    def __init__(self, textwidget, start_lineno, middle_lineno, end_lineno):
+    def __init__(self, textwidget: tkinter.Text, start_lineno: int, middle_lineno: int, end_lineno: int) -> None:
         self.textwidget = textwidget
 
         n = next(tag_counter)
@@ -62,17 +63,17 @@ class MergeConflictDisplayer:
 
         # TODO: also specify fg color
         self.part1_button = self.make_button(
-            f'{start_lineno}.0', part1_color,
+            start_lineno, part1_color,
             text="Use this",
             command=self.use_part1,
         )
         self.manual_button = self.make_button(
-            f'{middle_lineno}.0', manual_color,
+            middle_lineno, manual_color,
             text="Edit manually",
             command=self.stop_displaying,
         )
         self.part2_button = self.make_button(
-            f'{end_lineno}.0', part2_color,
+            end_lineno, part2_color,
             text="Use this",
             command=self.use_part2,
         )
@@ -89,7 +90,7 @@ class MergeConflictDisplayer:
 
         self._stopped = False
 
-    def make_button(self, index, bg_color, **options):
+    def make_button(self, lineno: int, bg_color: str, **options: Any) -> tkinter.Button:
         # tkinter.Button to use custom color, that's more difficult with ttk
         button = tkinter.Button(
             self.textwidget,
@@ -99,15 +100,18 @@ class MergeConflictDisplayer:
             **options
         )
 
-        # after_idle needed to prevent segfault
-        # https://core.tcl-lang.org/tk/tktview/54fe7a5e718423d16f4a11f9d672cd7bae7da39f
-        button.bind('<Destroy>', lambda event: self.textwidget.after_idle(self.stop_displaying))
+        def on_destroy(event: tkinter.Event) -> None:
+            # after_idle needed to prevent segfault
+            # https://core.tcl-lang.org/tk/tktview/54fe7a5e718423d16f4a11f9d672cd7bae7da39f
+            self.textwidget.after_idle(self.stop_displaying)
 
-        self.textwidget.window_create(f'{index} lineend', window=button)
+        button.bind('<Destroy>', on_destroy, add=True)
+
+        self.textwidget.window_create(f'{lineno}.0 lineend', window=button)
         return button
 
     # may get called multiple times
-    def stop_displaying(self):
+    def stop_displaying(self) -> None:
         if self._stopped:
             return
         self._stopped = True
@@ -120,21 +124,21 @@ class MergeConflictDisplayer:
         self.textwidget.tag_delete(self.middle_tag)
         self.textwidget.tag_delete(self.part2_tag)
 
-    def use_part1(self):
+    def use_part1(self) -> None:
         self.textwidget.delete(f'{self.middle_tag}.first', f'{self.part2_tag}.last')
         self.textwidget.delete(f'{self.part1_button} linestart', f'{self.part1_button} linestart + 1 line')
         self.stop_displaying()
 
-    def use_part2(self):
+    def use_part2(self) -> None:
         self.textwidget.delete(f'{self.part2_button} linestart', f'{self.part2_button} linestart + 1 line')
         self.textwidget.delete(f'{self.part1_tag}.first', f'{self.middle_tag}.last')
         self.stop_displaying()
 
 
-conflict_displayers = weakref.WeakKeyDictionary()
+conflict_displayers: 'weakref.WeakKeyDictionary[tabs.FileTab, List[MergeConflictDisplayer]]' = weakref.WeakKeyDictionary()
 
 
-def setup_displayers(tab):
+def setup_displayers(tab: tabs.FileTab) -> None:
     displayer_list = conflict_displayers.setdefault(tab, [])
 
     for displayer in displayer_list:
@@ -145,11 +149,11 @@ def setup_displayers(tab):
         displayer_list.append(MergeConflictDisplayer(tab.textwidget, *line_numbers))
 
 
-def on_new_tab(tab):
+def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         setup_displayers(tab)
-        tab.bind('<<Reloaded>>', (lambda event: setup_displayers(tab)), add=True)
+        tab.bind('<<Reloaded>>', (lambda event: setup_displayers(cast(tabs.FileTab, tab))), add=True)
 
 
-def setup():
+def setup() -> None:
     get_tab_manager().add_tab_callback(on_new_tab)
