@@ -5,7 +5,7 @@ import subprocess
 
 import pytest
 
-from porcupine.plugins.mergeconflict import (MergeConflictDisplayer,
+from porcupine.plugins.mergeconflict import (ConflictDisplayer,
                                              find_merge_conflicts)
 
 # Indented to not trigger the plugin when editing this file
@@ -61,7 +61,7 @@ def test_find_merge_conflicts(filetab):
 def check_use_button(textwidget, button_number):
     textwidget.delete('1.0', 'end')
     textwidget.insert('1.0', merge_conflict_string)
-    displayer = MergeConflictDisplayer(textwidget, *find_merge_conflicts(textwidget)[0])
+    displayer = ConflictDisplayer(textwidget, *find_merge_conflicts(textwidget)[0])
     textwidget.insert('2.0', 'lol\nwat\n')
     {1: displayer.part1_button, 2: displayer.part2_button}[button_number].invoke()
     textwidget.update()
