@@ -3,8 +3,7 @@ import dataclasses
 import functools
 import tkinter
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, Iterator, List, Optional,
-                    Tuple, overload)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
 
 from pygments import styles  # type: ignore[import]
 

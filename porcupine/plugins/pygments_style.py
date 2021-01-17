@@ -6,8 +6,7 @@ from typing import List, Optional, Tuple
 
 from pygments import styles, token  # type: ignore[import]
 
-from porcupine import (get_main_window, get_tab_manager, menubar, settings,
-                       utils)
+from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 
 
 def get_colors(style_name: str) -> Tuple[str, str]:

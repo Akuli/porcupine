@@ -12,8 +12,7 @@ import toml
 from pygments import lexers  # type: ignore[import]
 from pygments.util import ClassNotFound  # type: ignore[import]
 
-from porcupine import (dirs, filedialog_kwargs, get_parsed_args,
-                       get_tab_manager, menubar, settings, tabs)
+from porcupine import dirs, filedialog_kwargs, get_parsed_args, get_tab_manager, menubar, settings, tabs
 
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]

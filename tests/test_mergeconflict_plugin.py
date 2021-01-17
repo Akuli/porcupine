@@ -5,8 +5,7 @@ import subprocess
 
 import pytest
 
-from porcupine.plugins.mergeconflict import (ConflictDisplayer,
-                                             find_merge_conflicts)
+from porcupine.plugins.mergeconflict import ConflictDisplayer, find_merge_conflicts
 
 # Indented to not trigger the plugin when editing this file
 merge_conflict_string = '''\

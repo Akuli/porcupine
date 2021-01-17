@@ -9,8 +9,7 @@ import os
 import pathlib
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import (Any, Callable, Dict, List, Optional, Type, TypeVar, cast,
-                    overload)
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
 
 import dacite
 from pygments import styles  # type: ignore[import]

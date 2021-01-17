@@ -7,8 +7,7 @@ import tkinter
 from tkinter import ttk
 from typing import List
 
-from porcupine import (get_main_window, menubar, pluginloader, settings,
-                       textwidget)
+from porcupine import get_main_window, menubar, pluginloader, settings, textwidget
 
 log = logging.getLogger(__name__)
 

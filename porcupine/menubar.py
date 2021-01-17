@@ -15,8 +15,7 @@ else:
     from typing_extensions import Literal
 
 from porcupine import settings, tabs, utils
-from porcupine._state import (filedialog_kwargs, get_main_window,
-                              get_tab_manager, quit)
+from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
 
 log = logging.getLogger(__name__)
 
