@@ -33,13 +33,13 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
-    - run: python -m pytest
-      if: contains(matrix.os, 'windows')
-    - uses: GabrielBB/xvfb-action@v1.4
+    - if: contains(matrix.os, 'windows')
+      run: python -m pytest
+    - if: ${{ !contains(matrix.os, 'windows') }}
+      uses: GabrielBB/xvfb-action@v1.4
       with:
         run: |
           python3 -m pytest
-      if: !contains(matrix.os, 'windows')
 #  pycodestyle:
 #    runs-on: ubuntu-latest
 #    steps:
