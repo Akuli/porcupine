@@ -1,25 +1,8 @@
 # https://medium.com/@doedotdev/mypy-for-github-action-7da1ebee99e7
-on: [push, pull_request]
+on: [push]#, pull_request]
 jobs:
-#  mypy:
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        python-version: ["3.6", "3.7", "3.8", "3.9"]
-#    steps:
-#    - uses: actions/checkout@v1
-#    - uses: actions/setup-python@v1
-#      with:
-#        python-version: ${{ matrix.python-version }}
-#    - run: |
-#        pip install -r requirements.txt -r requirements-dev.txt
-#    - run: |
-#        git submodule init && git submodule update
-#    - run: |
-#        python3 -m mypy porcupine more_plugins
-#      env:
-#        MYPYPATH: ./my_stubs
-  pytest:
+  mypy:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
@@ -33,13 +16,30 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
-    - if: contains(matrix.os, 'windows')
-      run: python -m pytest
-    - if: ${{ !contains(matrix.os, 'windows') }}
-      uses: GabrielBB/xvfb-action@v1.4
-      with:
-        run: |
-          python3 -m pytest
+    - run: |
+        git submodule init && git submodule update
+    - run: |
+        mypy porcupine more_plugins
+#  pytest:
+#    strategy:
+#      matrix:
+#        os: ["ubuntu-latest", "windows-latest"]
+#        python-version: ["3.6", "3.7", "3.8", "3.9"]
+#    runs-on: ${{ matrix.os }}
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#    - run: |
+#        pip install -r requirements.txt -r requirements-dev.txt
+#    - run: python -m pytest
+#      if: contains(matrix.os, 'windows')
+#    - uses: GabrielBB/xvfb-action@v1.4
+#      with:
+#        run: |
+#          python3 -m pytest
+#      if: !contains(matrix.os, 'windows')
 #  pycodestyle:
 #    runs-on: ubuntu-latest
 #    steps:
