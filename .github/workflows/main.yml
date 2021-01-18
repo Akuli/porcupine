@@ -19,34 +19,27 @@ jobs:
 #        python3 -m mypy porcupine more_plugins
 #      env:
 #        MYPYPATH: ./my_stubs
-#  pytest-linux:
-#    strategy:
-#      matrix:
+  pytest:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
 #        python-version: ["3.6", "3.7", "3.8", "3.9"]
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@v1
-#    - uses: actions/setup-python@v1
-#      with:
-#        python-version: ${{ matrix.python-version }}
-#    - run: |
-#        pip install -r requirements.txt -r requirements-dev.txt
-#    - # xvfb is needed for running tkinter
-#      uses: GabrielBB/xvfb-action@v1.4
-#      with:
-#        run: |
-#          python3 -m pytest
-  pytest-windows:
-    runs-on: windows-latest
+        python-version: ["3.9"]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: ${{ matrix.python-version }}
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
-    - run: |
-        python -m pytest
+    - run: python -m pytest
+      if: contains(matrix.os, 'windows')
+    - uses: GabrielBB/xvfb-action@v1.4
+      with:
+        run: |
+          python3 -m pytest
+      if: !contains(matrix.os, 'windows')
 #  pycodestyle:
 #    runs-on: ubuntu-latest
 #    steps:
