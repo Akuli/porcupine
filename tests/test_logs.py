@@ -66,4 +66,4 @@ def test_log_path_printed():
         assert line.startswith(b'log file: ')
     else:
         assert line.startswith(b'log file: /')  # absolute path
-    assert line.endswith(b'.txt\n')
+    assert line.endswith((b'.txt\n', b'.txt\r\n'))
