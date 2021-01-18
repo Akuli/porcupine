@@ -46,7 +46,7 @@ jobs:
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
     - run: |
-        python -c "import os; print(os.listdir()); import porcupine; print(porcupine.__path__)"
+        python3 -m pytest
 #  pycodestyle:
 #    runs-on: ubuntu-latest
 #    steps:
