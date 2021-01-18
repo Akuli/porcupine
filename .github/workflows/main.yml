@@ -44,6 +44,8 @@ jobs:
       with:
         python-version: "3.9"
     - run: |
+        pip install -r requirements.txt -r requirements-dev.txt
+    - run: |
         python -c "import os; print(os.listdir()); import porcupine; print(porcupine.__path__)"
 #  pycodestyle:
 #    runs-on: ubuntu-latest
