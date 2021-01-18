@@ -1,5 +1,5 @@
 # https://medium.com/@doedotdev/mypy-for-github-action-7da1ebee99e7
-on: [pull_request]
+on: [push, pull_request]
 jobs:
 #  mypy:
 #    runs-on: ubuntu-latest
