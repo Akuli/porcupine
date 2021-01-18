@@ -2,10 +2,11 @@
 on: [push, pull_request]
 jobs:
   mypy:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: ["ubuntu-latest", "windows-latest"]
         python-version: ["3.6", "3.7", "3.8", "3.9"]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -16,14 +17,13 @@ jobs:
     - run: |
         git submodule init && git submodule update
     - run: |
-        python3 -m mypy porcupine more_plugins
-      env:
-        MYPYPATH: ./my_stubs
+        mypy porcupine more_plugins
   pytest:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: ["ubuntu-latest", "windows-latest"]
         python-version: ["3.6", "3.7", "3.8", "3.9"]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
@@ -31,7 +31,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: |
         pip install -r requirements.txt -r requirements-dev.txt
-    - # xvfb is needed for running tkinter
+    - if: contains(matrix.os, 'windows')
+      run: python -m pytest
+    - if: ${{ !contains(matrix.os, 'windows') }}
       uses: GabrielBB/xvfb-action@v1.4
       with:
         run: |
