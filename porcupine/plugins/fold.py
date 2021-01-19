@@ -68,8 +68,7 @@ def fold() -> None:
     tab.textwidget.tag_add(tag, f'{lineno + 1}.0', f'{end + 1}.0')
 
     dots.bind('<Destroy>', lambda event: cast(tabs.FileTab, tab).textwidget.tag_delete(tag), add=True)
-    # https://github.com/python/typeshed/issues/4953
-    dots.bind('<Button-1>', lambda event: cast(tabs.FileTab, tab).textwidget.delete(dots), add=True)  # type: ignore
+    dots.bind('<Button-1>', lambda event: cast(tabs.FileTab, tab).textwidget.delete(dots), add=True)
     tab.textwidget.window_create(f'{lineno}.0 lineend', window=dots)
     tab.textwidget.event_generate('<<UpdateLineNumbers>>')
 
