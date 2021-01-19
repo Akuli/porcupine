@@ -53,8 +53,7 @@ def _fix_text_widget_bindings(event: 'tkinter.Event[tkinter.Misc]') -> None:
     for virtual_event in event.widget.event_info():
         if virtual_event.startswith('<<Menubar:') and not event.widget.bind(virtual_event):
             # When the keys are pressed, generate the event on the main
-            # window so the menu callback will trigger. Don't know why
-            # utils.forward_event didn't work for this.
+            # window so the menu callback will trigger.
             event.widget.bind(virtual_event, functools.partial(_generate_event, virtual_event), add=True)
             assert event.widget.bind(virtual_event)
 
