@@ -156,7 +156,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
         tab.textwidget.bind('<Enter>', (
             # This runs after clicking "Use this" button, mouse <Enter>s text widget
             # Don't know why this needs a small timeout instead of after_idle
-            lambda event: cast(None, tab.after(50, tab.textwidget.event_generate, '<<UpdateLineNumbers>>'))
+            lambda event: tab.after(50, tab.textwidget.event_generate, '<<UpdateLineNumbers>>')  # type: ignore
         ), add=True)
 
 

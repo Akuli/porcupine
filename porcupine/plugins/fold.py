@@ -1,9 +1,10 @@
 import tkinter
+from typing import Optional, cast
 
-from porcupine import utils, tabs, get_tab_manager, menubar
+from porcupine import get_tab_manager, menubar, tabs, utils
 
 
-def get_indent(tab: tabs.FileTab, lineno: int) -> None:
+def get_indent(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     line = tab.textwidget.get(f'{lineno}.0', f'{lineno}.0 lineend')
     line = line.expandtabs(tab.settings.get('indent_size', int))
     without_indent = line.lstrip()
@@ -12,9 +13,7 @@ def get_indent(tab: tabs.FileTab, lineno: int) -> None:
     return len(line) - len(without_indent)
 
 
-def find_indented_block(tab, lineno):
-    indent_size = tab.settings.get('indent_size', int)
-
+def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     original_indent = get_indent(tab, lineno)
     if original_indent is None:
         return None
@@ -70,7 +69,7 @@ def fold() -> None:
     tab.textwidget.tag_config(tag, elide=True)
     tab.textwidget.tag_add(tag, f'{lineno + 1}.0', f'{end + 1}.0')
 
-    dots.bind('<Destroy>', lambda event: tab.textwidget.tag_delete(tag), add=True)
+    dots.bind('<Destroy>', lambda event: cast(tabs.FileTab, tab).textwidget.tag_delete(tag), add=True)
     dots.bind('<Button-1>', lambda event: dots.destroy(), add=True)
     tab.textwidget.window_create(f'{lineno}.0 lineend', window=dots)
     tab.textwidget.event_generate('<<UpdateLineNumbers>>')
