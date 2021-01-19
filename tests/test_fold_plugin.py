@@ -2,7 +2,6 @@ import pytest
 
 from porcupine import get_main_window
 
-
 code = '''\
 with open(path) as f:
     while True:
