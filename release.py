@@ -3,21 +3,20 @@
 
 import argparse
 import os
+import pathlib
 import subprocess
 import sys
 
 from porcupine import version_info as old_info
 
 
-def edit_init_dot_py(new_info):
-    with open('porcupine/__init__.py', 'r') as f:
-        content = f.read()
+TAG_FORMAT = 'v%d.%d.%d'
 
-    assert repr(old_info) in content
-    content = content.replace(repr(old_info), repr(new_info), 1)
 
-    with open('porcupine/__init__.py', 'w') as f:
-        f.write(content)
+def replace_in_file(path, old, new):
+    content = path.read_text()
+    assert content.count(old) >= 1
+    path.write_text(content.replace(old, new))
 
 
 def main():
@@ -41,12 +40,13 @@ def main():
     assert b'Changes not staged for commit:' not in status
     assert 'VIRTUAL_ENV' in os.environ
 
-    print("Bumping version from %d.%d.%d to %d.%d.%d" % (old_info + new_info))
+    print(f"Version changes: {TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
 
-    edit_init_dot_py(new_info)
-    subprocess.check_call(['git', 'add', 'porcupine/__init__.py'])
-    subprocess.check_call(['git', 'commit', '-m', 'v%d.%d.%d' % new_info])
-    subprocess.check_call(['git', 'tag', 'v%d.%d.%d' % new_info])
+    replace_in_file(pathlib.Path('porcupine/__init__.py'), repr(old_info), repr(new_info))
+    replace_in_file(pathlib.Path('README.md'), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
+    subprocess.check_call(['git', 'add', 'porcupine/__init__.py', 'README.md'])
+    subprocess.check_call(['git', 'commit', '-m', f'Version {TAG_FORMAT % new_info}'])
+    subprocess.check_call(['git', 'tag', TAG_FORMAT % new_info])
     subprocess.check_call(['git', 'push', 'origin', 'master'])
     subprocess.check_call(['git', 'push', '--tags', 'origin', 'master'])
     subprocess.check_call([sys.executable, 'docs/publish.py'])

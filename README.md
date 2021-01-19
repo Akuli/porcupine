@@ -46,7 +46,7 @@ Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/master.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.82.0.zip
     python3 -m porcupine &
 
 ### Other Linux distributions
@@ -55,7 +55,7 @@ Install Python 3.6 or newer with pip and tkinter somehow. Then run these
 commands:
 
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/master.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.82.0.zip
     python3 -m porcupine &
 
 ### Mac OSX
@@ -74,7 +74,7 @@ the "Install launchers for all users" box gets checked and tkinter gets
 installed. Then open PowerShell or command prompt, and run these commands:
 
     py -m pip install --user --upgrade pip wheel
-    py -m pip install https://github.com/Akuli/porcupine/archive/master.zip
+    py -m pip install https://github.com/Akuli/porcupine/archive/v0.82.0.zip
     pyw -m porcupine
 
 ### Development Install
