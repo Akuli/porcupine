@@ -1,0 +1,81 @@
+import tkinter
+
+from porcupine import utils, tabs, get_tab_manager, menubar
+
+
+def get_indent(tab: tabs.FileTab, lineno: int) -> None:
+    line = tab.textwidget.get(f'{lineno}.0', f'{lineno}.0 lineend')
+    line = line.expandtabs(tab.settings.get('indent_size', int))
+    without_indent = line.lstrip()
+    if not without_indent:
+        return None
+    return len(line) - len(without_indent)
+
+
+def find_indented_block(tab, lineno):
+    indent_size = tab.settings.get('indent_size', int)
+
+    original_indent = get_indent(tab, lineno)
+    if original_indent is None:
+        return None
+
+    last_lineno = lineno
+    max_lineno = int(tab.textwidget.index('end - 1 line').split('.')[0])
+    while last_lineno < max_lineno:
+        next_indent = get_indent(tab, last_lineno + 1)
+        if next_indent is not None and next_indent <= original_indent:
+            break
+        last_lineno += 1
+
+    # Don't hide trailing blank lines
+    while last_lineno > lineno and not tab.textwidget.get(f'{last_lineno}.0', f'{last_lineno}.0 lineend').strip():
+        last_lineno -= 1
+
+    if last_lineno == lineno:
+        return None
+    return last_lineno
+
+
+def unfold(textwidget: tkinter.Text, tag: str) -> None:
+    assert tag.startswith('fold_')
+    textwidget.nametowidget(tag[len('fold_'):]).destroy()
+
+
+def fold() -> None:
+    tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
+    lineno = int(tab.textwidget.index('insert').split('.')[0])
+
+    end = find_indented_block(tab, lineno)
+    if end is None:
+        return
+
+    old_folds = [tag for tag in tab.textwidget.tag_names(f'{lineno + 1}.0') if tag.startswith('fold_')]
+    if old_folds:
+        [tag] = old_folds
+        unfold(tab.textwidget, tag)
+        return
+
+    # Make it possible to get dots widget from tag name
+    dots = tkinter.Label(
+        tab.textwidget,
+        text='    ⬤ ⬤ ⬤    ',
+        font=('', 3, ''),
+        cursor='hand2',
+        fg=tab.textwidget['fg'],
+        bg=utils.mix_colors(tab.textwidget['fg'], tab.textwidget['bg'], 0.2),
+    )
+    tag = f'fold_{dots}'
+
+    tab.textwidget.tag_config(tag, elide=True)
+    tab.textwidget.tag_add(tag, f'{lineno + 1}.0', f'{end + 1}.0')
+
+    dots.bind('<Destroy>', lambda event: tab.textwidget.tag_delete(tag), add=True)
+    dots.bind('<Button-1>', lambda event: dots.destroy(), add=True)
+    tab.textwidget.window_create(f'{lineno}.0 lineend', window=dots)
+    tab.textwidget.event_generate('<<UpdateLineNumbers>>')
+
+
+def setup() -> None:
+    menubar.get_menu("Edit").add_command(label="Fold", command=fold)
+    menubar.set_enabled_based_on_tab("Edit/Fold", (lambda tab: isinstance(tab, tabs.FileTab)))

@@ -29,6 +29,9 @@ event add "<<Menubar:View/Full Screen>>" <F11>
 # find plugin
 event add "<<Menubar:Edit/Find and Replace>>" <Control-f>
 
+# fold plugin
+event add "<<Menubar:Edit/Fold>>" <Alt-f>
+
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T
 # I use non-shifted ctrl+t for swapping two characters before cursor while editing

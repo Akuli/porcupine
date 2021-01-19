@@ -6,6 +6,13 @@ from typing import Optional, cast
 from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
+def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:
+    tags = textwidget.tag_names(f'{lineno}.0')
+    elide_values = (textwidget.tag_cget(tag, 'elide') for tag in tags)
+    # elide values can be empty
+    return any(tkinter.getboolean(v or 'false') for v in elide_values)
+
+
 class LineNumbers:
 
     def __init__(self, parent: tkinter.Misc, textwidget_of_tab: tkinter.Text) -> None:
@@ -17,11 +24,7 @@ class LineNumbers:
         textwidget_of_tab.bind('<<ContentChanged>>', (
             cast(None, lambda event: textwidget_of_tab.after_idle(self._do_update))
         ), add=True)
-        textwidget_of_tab.bind('<Enter>', (
-            # This runs after clicking button in merge conflict plugin, mouse <Enter>s text widget
-            # Don't know why this needs a small timeout instead of after_idle
-            cast(None, lambda event: textwidget_of_tab.after(50, self._do_update))
-        ), add=True)
+        textwidget_of_tab.bind('<<UpdateLineNumbers>>', self._do_update, add=True)  # TODO: document this?
         self._do_update()
 
         self.canvas.bind('<<SettingChanged:font_family>>', self._update_canvas_width, add=True)
@@ -47,7 +50,7 @@ class LineNumbers:
         for lineno in range(first_line, last_line + 1):
             # index('@0,y') doesn't work when scrolled a lot to side, but dlineinfo seems to work
             dlineinfo = self.textwidget.dlineinfo(f'{lineno}.0')
-            if dlineinfo is None:
+            if dlineinfo is None or line_is_elided(self.textwidget, lineno):
                 # line not on screen for whatever reason
                 continue
 

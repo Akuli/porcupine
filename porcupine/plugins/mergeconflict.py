@@ -153,6 +153,11 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         setup_displayers(tab)
         tab.bind('<<Reloaded>>', (lambda event: setup_displayers(cast(tabs.FileTab, tab))), add=True)
+        tab.textwidget.bind('<Enter>', (
+            # This runs after clicking "Use this" button, mouse <Enter>s text widget
+            # Don't know why this needs a small timeout instead of after_idle
+            lambda event: cast(None, tab.after(50, tab.textwidget.event_generate, '<<UpdateLineNumbers>>'))
+        ), add=True)
 
 
 def setup() -> None:
