@@ -66,3 +66,14 @@ def test_leaving_blank_lines_behind(text):
     get_main_window().event_generate('<<Menubar:Edit/Fold>>')
     assert get_content(text, True) == code
     assert get_content(text, False) == except_folded
+
+
+# Make sure that when "..." is clicked, it does not leave an invisible character behind
+def test_invisible_character_bug(text):
+    text.mark_set('insert', '5.0')
+    get_main_window().event_generate('<<Menubar:Edit/Fold>>')
+    [three_dots] = [text.nametowidget(name) for name in text.window_names()]
+    assert text.index('5.0 lineend') == '5.24'
+    text.update()
+    three_dots.event_generate('<Button-1>')   # click it
+    assert text.index('5.0 lineend') == '5.23'

@@ -36,11 +36,6 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     return last_lineno
 
 
-def unfold(textwidget: tkinter.Text, tag: str) -> None:
-    assert tag.startswith('fold_')
-    textwidget.nametowidget(tag[len('fold_'):]).destroy()
-
-
 def fold() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
@@ -53,10 +48,12 @@ def fold() -> None:
     old_folds = [tag for tag in tab.textwidget.tag_names(f'{lineno + 1}.0') if tag.startswith('fold_')]
     if old_folds:
         [tag] = old_folds
-        unfold(tab.textwidget, tag)
+        assert tag.startswith('fold_')
+        window_name = tag[len('fold_'):]
+        tab.textwidget.delete(window_name)
         return
 
-    # Make it possible to get dots widget from tag name
+    # Make it possible to get dots widget from tag name (needed above)
     dots = tkinter.Label(
         tab.textwidget,
         text='    ⬤ ⬤ ⬤    ',
@@ -71,7 +68,8 @@ def fold() -> None:
     tab.textwidget.tag_add(tag, f'{lineno + 1}.0', f'{end + 1}.0')
 
     dots.bind('<Destroy>', lambda event: cast(tabs.FileTab, tab).textwidget.tag_delete(tag), add=True)
-    dots.bind('<Button-1>', lambda event: dots.destroy(), add=True)
+    # https://github.com/python/typeshed/issues/4953
+    dots.bind('<Button-1>', lambda event: cast(tabs.FileTab, tab).textwidget.delete(dots), add=True)  # type: ignore
     tab.textwidget.window_create(f'{lineno}.0 lineend', window=dots)
     tab.textwidget.event_generate('<<UpdateLineNumbers>>')
 
