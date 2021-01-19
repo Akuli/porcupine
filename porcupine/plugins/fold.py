@@ -1,3 +1,4 @@
+"""Fold parts of code with Edit/Fold."""
 import tkinter
 from typing import Optional, cast
 
