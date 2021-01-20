@@ -49,6 +49,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         def bind_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
             assert isinstance(tab, tabs.FileTab)   # because mypy is awesome
+            assert isinstance(event.state, int)
             shifted = bool(event.state & SHIFT_FLAG)
             tab.textwidget.after_idle(after_enter, tab.textwidget, shifted)
 
