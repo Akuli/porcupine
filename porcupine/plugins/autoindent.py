@@ -91,17 +91,25 @@ def on_enter_press(tab: tabs.FileTab, event: 'tkinter.Event[tkinter.Text]') -> N
     tab.textwidget.after_idle(after_enter, tab, shifted)
 
 
-def on_closing_brace(event: 'tkinter.Event[tkinter.Text]') -> None:
-    event.widget.dedent('insert')
+def on_closing_brace(tab: tabs.FileTab, event: 'tkinter.Event[tkinter.Text]') -> None:
+    # Don't dedent when there's some garbage before cursor, other than comment
+    # prefix. It's handy to have autodedent working inside big comments with
+    # example code in them.
+    before_cursor = tab.textwidget.get('insert linestart', 'insert')
+    before_cursor = before_cursor.replace(tab.settings.get('comment_prefix', Optional[str]) or '', '')
+    if before_cursor.strip():
+        return
+
+    tab.textwidget.dedent('insert')
 
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         tab.settings.add_option('autoindent_regexes', None, type=Optional[AutoIndentRegexes])
         tab.textwidget.bind('<Return>', partial(on_enter_press, tab), add=True)
-        tab.textwidget.bind('<parenright>', on_closing_brace, add=True)
-        tab.textwidget.bind('<bracketright>', on_closing_brace, add=True)
-        tab.textwidget.bind('<braceright>', on_closing_brace, add=True)
+        tab.textwidget.bind('<parenright>', partial(on_closing_brace, tab), add=True)
+        tab.textwidget.bind('<bracketright>', partial(on_closing_brace, tab), add=True)
+        tab.textwidget.bind('<braceright>', partial(on_closing_brace, tab), add=True)
 
 
 def setup() -> None:

@@ -97,7 +97,6 @@ def test_shift_enter_means_no_more_indent(filetab):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}'
 
 
-@pytest.mark.xfail
 def test_space_inside_braces_bug(filetab):
     filetab.textwidget.insert('1.0', '( aa ')
     filetab.textwidget.event_generate('<Key>', keysym='parenright')
