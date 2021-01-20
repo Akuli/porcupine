@@ -94,6 +94,13 @@ def test_shift_enter_means_no_more_indent(filetab):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}'
 
 
+def test_dedent_on_closing_paren(filetab):
+    filetab.textwidget.insert('1.0', 'print(\n    foo\n    ')
+    filetab.textwidget.event_generate('<Key>', keysym='parenright')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'print(\n    foo\n)'
+
+
 def test_space_inside_braces_bug(filetab):
     filetab.textwidget.insert('1.0', '( aa ')
     filetab.textwidget.event_generate('<Key>', keysym='parenright')
