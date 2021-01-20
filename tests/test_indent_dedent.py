@@ -1,3 +1,6 @@
+import pytest
+
+
 _FUNNY = '''\
 def foo(
     x,
@@ -92,3 +95,23 @@ def test_shift_enter_means_no_more_indent(filetab):
     filetab.textwidget.event_generate('<Shift-Return>')
     filetab.update()
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}'
+
+
+@pytest.mark.xfail
+def test_space_inside_braces_bug(filetab):
+    filetab.textwidget.insert('1.0', '( aa ')
+    filetab.textwidget.event_generate('<Key>', keysym='parenright')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == '( aa )'
+
+
+@pytest.mark.xfail
+def test_double_dedent_bug(filetab):
+    indent = ' ' * 4
+    filetab.textwidget.insert('end', f'{indent}{indent}return foo')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}{indent}return foo\n{indent}'
+    filetab.textwidget.event_generate('<Key>', keysym='parenright')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}{indent}return foo\n{indent})'
