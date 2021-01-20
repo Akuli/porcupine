@@ -1,6 +1,3 @@
-import pytest
-
-
 _FUNNY = '''\
 def foo(
     x,
@@ -104,7 +101,6 @@ def test_space_inside_braces_bug(filetab):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == '( aa )'
 
 
-@pytest.mark.xfail
 def test_double_dedent_bug(filetab):
     indent = ' ' * 4
     filetab.textwidget.insert('end', f'{indent}{indent}return foo')

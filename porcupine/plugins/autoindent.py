@@ -100,6 +100,10 @@ def on_closing_brace(tab: tabs.FileTab, event: 'tkinter.Event[tkinter.Text]') ->
     if before_cursor.strip():
         return
 
+    # Don't dedent when after_enter() has already dedented
+    if leading_whitespace(tab.textwidget.get('insert - 1 line', 'insert - 1 line lineend')):
+        return
+
     tab.textwidget.dedent('insert')
 
 
