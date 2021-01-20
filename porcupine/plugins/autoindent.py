@@ -9,6 +9,8 @@ from porcupine import get_tab_manager, tabs, textwidget
 # do anything
 setup_before = ['rstrip']
 
+SHIFT_FLAG = 1
+
 
 def leading_whitespace(string: str) -> str:
     r"""Return leading whitespace characters. Ignores trailing '\n'.
@@ -22,7 +24,7 @@ def leading_whitespace(string: str) -> str:
     return string[:count].rstrip('\n')
 
 
-def after_enter(text: textwidget.MainText) -> None:
+def after_enter(text: textwidget.MainText, shifted: bool) -> None:
     """Indent or dedent the current line automatically if needed."""
     lineno = int(text.index('insert').split('.')[0])
     prevline = text.get(f'{lineno}.0 - 1 line', f'{lineno}.0')
@@ -34,7 +36,7 @@ def after_enter(text: textwidget.MainText) -> None:
     #       stuff, but note that some languages like yaml have python-like
     #       indentation-based syntax
     prevline = prevline.strip()
-    if prevline.endswith((':', '(', '[', '{')):
+    if prevline.endswith((':', '(', '[', '{')) and not shifted:
         # start of a new block
         text.indent('insert')
     elif (prevline in {'return', 'break', 'pass', 'continue'} or
@@ -47,7 +49,8 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         def bind_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
             assert isinstance(tab, tabs.FileTab)   # because mypy is awesome
-            tab.textwidget.after_idle(after_enter, tab.textwidget)
+            shifted = bool(event.state & SHIFT_FLAG)
+            tab.textwidget.after_idle(after_enter, tab.textwidget, shifted)
 
         tab.textwidget.bind('<Return>', bind_callback, add=True)
 
