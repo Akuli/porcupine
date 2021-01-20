@@ -616,9 +616,6 @@ class MainText(tkinter.Text):
                   partial(self._on_delete, True, shifted=True), add=True)
         self.bind('<Shift-Control-BackSpace>',
                   partial(self._on_delete, True, shifted=True), add=True)
-        self.bind('<parenright>', self._on_closing_brace, add=True)
-        self.bind('<bracketright>', self._on_closing_brace, add=True)
-        self.bind('<braceright>', self._on_closing_brace, add=True)
 
         # most other things work by default, but these don't
         self.bind('<Control-v>', self._paste, add=True)
@@ -673,10 +670,6 @@ class MainText(tkinter.Text):
                 return 'break'
 
         return None
-
-    def _on_closing_brace(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
-        """Dedent automatically."""
-        self.dedent('insert')
 
     def indent(self, location: str) -> None:
         """Insert indentation character(s) at the given location."""

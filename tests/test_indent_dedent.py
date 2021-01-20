@@ -76,3 +76,44 @@ bar
 biz
 baz'''
     assert list(map(str, filetab.textwidget.tag_ranges('sel'))) == ['2.0', '4.0']
+
+
+def test_autoindent(filetab):
+    indent = ' ' * 4
+    filetab.textwidget.insert('end', f'{indent}if blah:  # comment')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}{indent}'
+
+
+def test_shift_enter_means_no_more_indent(filetab):
+    indent = ' ' * 4
+    filetab.textwidget.insert('end', f'{indent}if blah:  # comment')
+    filetab.textwidget.event_generate('<Shift-Return>')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}'
+
+
+def test_dedent_on_closing_paren(filetab):
+    filetab.textwidget.insert('1.0', 'print(\n    foo\n    ')
+    filetab.textwidget.event_generate('<Key>', keysym='parenright')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'print(\n    foo\n)'
+
+
+def test_space_inside_braces_bug(filetab):
+    filetab.textwidget.insert('1.0', '( aa ')
+    filetab.textwidget.event_generate('<Key>', keysym='parenright')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == '( aa )'
+
+
+def test_double_dedent_bug(filetab):
+    indent = ' ' * 4
+    filetab.textwidget.insert('end', f'{indent}{indent}return foo')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}{indent}return foo\n{indent}'
+    filetab.textwidget.event_generate('<Key>', keysym='parenright')
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}{indent}return foo\n{indent})'

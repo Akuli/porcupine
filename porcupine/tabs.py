@@ -550,6 +550,8 @@ class FileTab(Tab):
 
             ``encoding``: :class:`str`
 
+            ``comment_prefix``: :class:`str`
+
             ``line_ending``: :class:`settings.LineEnding`
 
         See :source:`porcupine/default_filetypes.toml` for a description of
@@ -614,6 +616,7 @@ bers.py>` use this attribute.
         self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)
         self.settings.add_option('encoding', 'utf-8')
+        self.settings.add_option('comment_prefix', None, type=Optional[str])
         self.settings.add_option(
             'line_ending', settings.get('default_line_ending', settings.LineEnding),
             converter=settings.LineEnding.__getitem__)
