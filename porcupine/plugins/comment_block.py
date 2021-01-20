@@ -3,7 +3,7 @@ If you select multiple lines in a Python file and type '#', then all selected
 lines are commented out.
 
 A different character is used in other programming languages. This can be
-configured with comment_char in filetypes.toml.
+configured with comment_prefix in filetypes.toml.
 """
 
 import functools
@@ -14,8 +14,8 @@ from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
 def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkinter.Text]]') -> utils.BreakOrNone:
-    comment_char = tab.settings.get('comment_char', Optional[str])
-    if event is not None and event.char != comment_char:
+    comment_prefix = tab.settings.get('comment_prefix', Optional[str])
+    if event is not None and event.char != comment_prefix:
         return None
 
     try:
@@ -31,7 +31,7 @@ def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkint
         end += 1
 
     gonna_uncomment = all(
-        tab.textwidget.get('%d.0' % lineno, '%d.1' % lineno) == comment_char
+        tab.textwidget.get('%d.0' % lineno, '%d.1' % lineno) == comment_prefix
         for lineno in range(start, end))
 
     with textwidget.change_batch(tab.textwidget):
@@ -39,7 +39,7 @@ def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkint
             if gonna_uncomment:
                 tab.textwidget.delete('%d.0' % lineno, '%d.1' % lineno)
             else:
-                tab.textwidget.insert('%d.0' % lineno, comment_char)
+                tab.textwidget.insert('%d.0' % lineno, comment_prefix)
 
     # select everything on the (un)commented lines
     tab.textwidget.tag_remove('sel', '1.0', 'end')
@@ -55,7 +55,6 @@ def comment_or_uncomment_in_current_tab() -> None:
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option('comment_char', None, type=Optional[str])
         tab.textwidget.bind('<Key>', functools.partial(comment_or_uncomment, tab), add=True)
 
 

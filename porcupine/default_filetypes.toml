@@ -46,11 +46,12 @@
 #        corresponding to one tab character. If tabs2spaces is true, then this
 #        is the number of spaces used for indentation.
 #
-#    comment_char
-#        If specified, typing this character with many lines selected will put
-#        it to the beginning of each line. For example, for making comments
-#        like the comment that you are currently reading, this is set to '#' in
-#        the [TOML] section.
+#    comment_prefix
+#        If specified as one character, typing this character with many lines
+#        selected will put it to the beginning of each line. For example, for
+#        making comments like the comment that you are currently reading, this
+#        is set to '#' in the [TOML] section. This is also used to strip
+#        comments from lines of code before using autoindent regexes.
 #
 #    line_ending
 #        One of "CR", "LF" or "CRLF" (aka \r, \n and \r\n). To change the
@@ -146,7 +147,8 @@ max_line_length = 79   # pep8 says so, lol
 commands = {run = "{python} {file}"}
 autocomplete_chars = ["."]
 langserver = {command = "pyls", language_id = "python"}
-comment_char = '#'
+comment_prefix = '#'
+autoindent = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
 
 ["Python stub file"]
 filename_patterns = ["*.pyi"]
@@ -155,13 +157,16 @@ tabs2spaces = true
 indent_size = 4
 max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
 autocomplete_chars = ["."]
-comment_char = '#'
+comment_prefix = '#'
+autoindent = {indent = '.*:'}
 
 [C]
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
 commands = {compile = "cc {file} -Wall -Wextra -std=c99 -o {exe}", run = "{exe}"}
 langserver = {command = "clangd", language_id = "c"}
+# Press shift+enter instead of enter to avoid indent after 'case foo:'
+autoindent = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
 
 ["C++"]
 # Override this in your own filetypes.toml if you use .h for C++ headers
@@ -169,11 +174,13 @@ filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx
 pygments_lexer = "pygments.lexers.CppLexer"
 commands = {compile = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}", run = "{exe}"}
 langserver = {command = "clangd", language_id = "cpp"}
+autoindent = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
 [Java]
 filename_patterns = ["*.java"]
 pygments_lexer = "pygments.lexers.JavaLexer"
 commands = {compile = "javac {file}", run = "java {no_ext}"}
+autoindent = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
 [JavaScript]
 filename_patterns = ["*.js"]
@@ -181,6 +188,7 @@ pygments_lexer = "pygments.lexers.JavascriptLexer"
 tabs2spaces = true
 indent_size = 2
 commands = {run = "node {file}"}
+autoindent = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
 [TypeScript]
 filename_patterns = ["*.ts"]
@@ -188,6 +196,7 @@ pygments_lexer = "pygments.lexers.TypeScriptLexer"
 tabs2spaces = true
 indent_size = 2
 commands = {compile = "tsc {file}", run = "node {no_ext}.js"}
+autoindent = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
 [Makefile]
 filename_patterns = ["Makefile", "makefile", "Makefile.*", "makefile.*"]
@@ -195,7 +204,7 @@ pygments_lexer = "pygments.lexers.MakefileLexer"
 # make doesn't work with spaces
 tabs2spaces = false
 commands = {run = "make"}
-comment_char = '#'
+comment_prefix = '#'
 
 # TODO: Windows batch files and powershell files
 #
@@ -208,7 +217,7 @@ filename_patterns = ["*.sh"]
 shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
 commands = {run = "bash {file}"}
-comment_char = '#'
+comment_prefix = '#'
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
@@ -217,7 +226,9 @@ shebang_regex = '(wi|tcl)sh$'
 pygments_lexer = "pygments.lexers.TclLexer"
 tabs2spaces = true
 commands = {run = "tclsh {file}"}
-comment_char = '#'
+comment_prefix = '#'
+
+# TODO: autoindents for many more languages
 
 [JSON]
 filename_patterns = ["*.json"]
@@ -228,7 +239,7 @@ tabs2spaces = true
 [TOML]
 filename_patterns = ["*.toml"]
 pygments_lexer = "pygments.lexers.TOMLLexer"
-comment_char = '#'
+comment_prefix = '#'
 
 [reStructuredText]
 filename_patterns = ["*.rst"]
@@ -243,7 +254,8 @@ filename_patterns = ["*.yml", "*.yaml"]
 pygments_lexer = "pygments.lexers.YamlLexer"
 tabs2spaces = true
 indent_size = 2
-comment_char = '#'
+comment_prefix = '#'
+autoindent = {indent = '.*:'}
 
 [HTML]
 filename_patterns = ["*.html", "*.htm"]
@@ -255,4 +267,4 @@ indent_size = 2
 filename_patterns = ["*.tex"]
 pygments_lexer = "pygments.lexers.TexLexer"
 tabs2spaces = true
-comment_char = '%'
+comment_prefix = '%'

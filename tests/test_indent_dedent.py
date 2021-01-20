@@ -80,15 +80,15 @@ baz'''
 
 def test_autoindent(filetab):
     indent = ' ' * 4
-    filetab.textwidget.insert('end', f'{indent}if blah:')
+    filetab.textwidget.insert('end', f'{indent}if blah:  # comment')
     filetab.textwidget.event_generate('<Return>')
     filetab.update()
-    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:\n{indent}{indent}'
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}{indent}'
 
 
 def test_shift_enter_means_no_more_indent(filetab):
     indent = ' ' * 4
-    filetab.textwidget.insert('end', f'{indent}if blah:')
+    filetab.textwidget.insert('end', f'{indent}if blah:  # comment')
     filetab.textwidget.event_generate('<Shift-Return>')
     filetab.update()
-    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:\n{indent}'
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}'
