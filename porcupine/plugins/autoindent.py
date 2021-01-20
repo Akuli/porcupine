@@ -37,7 +37,7 @@ class AutoIndentRegexes:
 
 
 def get_regexes(tab: tabs.FileTab) -> Tuple[str, str]:
-    config = tab.settings.get('autoindent', Optional[AutoIndentRegexes])
+    config = tab.settings.get('autoindent_regexes', Optional[AutoIndentRegexes])
     if config is None:
         config = AutoIndentRegexes(None, None)
     assert isinstance(config, AutoIndentRegexes)
@@ -93,7 +93,7 @@ def on_enter_press(tab: tabs.FileTab, event: 'tkinter.Event[tkinter.Text]') -> N
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option('autoindent', None, type=Optional[AutoIndentRegexes])
+        tab.settings.add_option('autoindent_regexes', None, type=Optional[AutoIndentRegexes])
         tab.textwidget.bind('<Return>', partial(on_enter_press, tab), add=True)
 
 
