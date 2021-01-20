@@ -21,6 +21,7 @@ Most important features:
 - Line numbers
 - Line length marker
 - Find/replace
+- Code folding
 - Multiple files can be opened at the same time like tabs in a web browser
 - The tabs can be dragged out of the window to open a new Porcupine window conveniently
 
