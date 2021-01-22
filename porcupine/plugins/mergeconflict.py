@@ -14,13 +14,14 @@ def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
 
     for lineno in range(1, int(textwidget.index('end - 1 char').split('.')[0]) + 1):
         line = textwidget.get(f'{lineno}.0', f'{lineno}.0 lineend')
-        if re.fullmatch(r'<<<<<<< \S+', line):
+        # Line might contain whitespace characters after '<<<<<<< '
+        if line.startswith('<<<<<<< '):
             expected_current_state = 'outside'
             new_state = 'first'
         elif line == '=======':
             expected_current_state = 'first'
             new_state = 'second'
-        elif re.fullmatch(r'>>>>>>> \S+', line):
+        elif line.startswith('>>>>>>> '):
             expected_current_state = 'second'
             new_state = 'outside'
         else:
