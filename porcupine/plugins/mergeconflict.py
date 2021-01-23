@@ -1,6 +1,5 @@
 """Add "Use this" buttons into files that contain Git merge conflicts."""
 import itertools
-import re
 import tkinter
 import weakref
 from typing import Any, List, cast
