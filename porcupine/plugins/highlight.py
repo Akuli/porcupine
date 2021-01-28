@@ -88,7 +88,7 @@ class Highlighter:
             if mark is None:
                 return None
             if mark.startswith(ROOT_STATE_MARK_PREFIX):
-                return mark
+                return self.textwidget.index(mark)
 
     def highlight(self, junk: object = None) -> None:
         start_time = time.perf_counter()
@@ -97,20 +97,21 @@ class Highlighter:
         last_possible_start = self.textwidget.index('@0,0')
         first_possible_end = self.textwidget.index('@0,10000')
 
-        start = self.textwidget.index(self._find_previous_root_mark(last_possible_start) or '1.0')
         lexer = self._get_lexer()
         use_root_marks = isinstance(lexer, RegexLexer)
-
-        code = self.textwidget.get(start, 'end - 1 char')
-        generator = lexer.get_tokens_unprocessed(code)
-
-        tags2add: Dict[str, List[str]] = {}
-        new_marks = [self.textwidget.index(start)]  # always 'lineno.column'
+        if use_root_marks:
+            start = self._find_previous_root_mark(last_possible_start) or '1.0'
+        else:
+            start = '1.0'
         lineno, column = map(int, self.textwidget.index(start).split('.'))
 
+        tag_locations: Dict[str, List[str]] = {}
+        mark_locations = [self.textwidget.index(start)]  # always 'lineno.column'
+
+        generator = lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end - 1 char'))
         for position, tokentype, text in generator:
-            tag_list = tags2add.setdefault(str(tokentype), [])
-            tag_list.append(f'{lineno}.{column}')
+            location_list = tag_locations.setdefault(str(tokentype), [])
+            location_list.append(f'{lineno}.{column}')
 
             newline_count = text.count('\n')
             if newline_count != 0:
@@ -118,7 +119,7 @@ class Highlighter:
                 column = len(text.rsplit('\n', 1)[-1])
             else:
                 column += len(text)
-            tag_list.append(f'{lineno}.{column}')
+            location_list.append(f'{lineno}.{column}')
 
             # We place marks where highlighting may begin.
             # You can't start highlighting anywhere, such as inside a multiline string or comment.
@@ -127,34 +128,33 @@ class Highlighter:
             # The only way to check for it with pygments is to use local variables inside the generator.
             # It's an ugly hack.
             if use_root_marks and generator.gi_frame.f_locals['statestack'] == ['root']:
-                if lineno >= int(new_marks[-1].split('.')[0]) + 10:
-                    new_marks.append(f'{lineno}.{column}')
+                if lineno >= int(mark_locations[-1].split('.')[0]) + 10:
+                    mark_locations.append(f'{lineno}.{column}')
                 if self.textwidget.compare(f'{lineno}.{column}', '>=', first_possible_end):
                     break
 
         end = f'{lineno}.{column}'
         for tag in all_token_tags:
             self.textwidget.tag_remove(tag, start, end)
-        for tag, places in tags2add.items():
+        for tag, places in tag_locations.items():
             self.textwidget.tag_add(tag, *places)
 
         # Don't know if unsetting marks in loop is guaranteed to work.
         # Possibly similar to changing a Python list while looping over it?
         marks_to_unset = []
-        mark: Optional[str] = start
+        mark = None
         while True:
-            assert mark is not None
-            mark = self.textwidget.mark_next(mark)
+            mark = self.textwidget.mark_next(mark or start)
             if mark is None or self.textwidget.compare(mark, '>', end):
                 break
             if mark.startswith(ROOT_STATE_MARK_PREFIX):
                 try:
-                    new_marks.remove(self.textwidget.index(mark))
+                    mark_locations.remove(self.textwidget.index(mark))
                 except ValueError:
                     marks_to_unset.append(mark)
         self.textwidget.mark_unset(*marks_to_unset)
 
-        for mark_index in new_marks:
+        for mark_index in mark_locations:
             self.textwidget.mark_set(next(root_mark_names), mark_index)
 
         mark_count = sum(
@@ -163,7 +163,7 @@ class Highlighter:
         )
         log.debug(
             f"Highlighted between {start} and {end} in {round((time.perf_counter() - start_time)*1000)}ms. "
-            f"Root state marks: {len(marks_to_unset)} deleted, {len(new_marks)} added, {mark_count} total")
+            f"Root state marks: {len(marks_to_unset)} deleted, {len(mark_locations)} added, {mark_count} total")
 
 
 # When scrolling, don't highlight too often. Makes scrolling smoother.
