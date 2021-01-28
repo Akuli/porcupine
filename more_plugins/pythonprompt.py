@@ -146,7 +146,7 @@ class PromptTab(tabs.Tab):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.title = "Interactive Prompt"
+        self.titles = ["Interactive Prompt"]
 
         self.textwidget = tkinter.Text(self, width=1, height=1)
         self.textwidget.pack(side='left', fill='both', expand=True)
