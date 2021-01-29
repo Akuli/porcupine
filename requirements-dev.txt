@@ -7,3 +7,4 @@ pyflakes>=2.2.0
 pycodestyle>=2.6.0
 pytest-mock>=3.2.0,<4.0.0
 pynsist>=2.6
+pillow>=5.4.1
