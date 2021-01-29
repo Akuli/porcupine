@@ -1,4 +1,3 @@
-import argparse
 import configparser
 import functools
 import os
@@ -82,16 +81,12 @@ def create_pynsist_cfg():
         parser.write(file)
 
 
-def run_pynsist(python):
+def run_pynsist():
     info(f"Running pynsist with {python}")
     subprocess.check_call([python, '-m', 'nsist', 'pynsist.cfg'])
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--python', default=sys.executable)
-    args = parser.parse_args()
-
     for path in [r'build\nsis', 'pynsist_pkgs', 'lib']:
         try:
             shutil.rmtree(path)
@@ -102,7 +97,7 @@ def main():
     copy_tkinter_files()
     create_ico_file()
     create_pynsist_cfg()
-    run_pynsist(args.python)
+    run_pynsist()
     info("All done")
 
 
