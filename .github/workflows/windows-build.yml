@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - windows-exe
+#  create:
 #    tags:
 #      - v*
 
