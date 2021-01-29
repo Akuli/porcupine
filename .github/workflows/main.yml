@@ -84,6 +84,6 @@ jobs:
       with:
         python-version: "3.9"
     - run: |
-        python3 bindcheck.py porcupine
+        python3 scripts/bindcheck.py porcupine
     - run: |
-        python3 bindcheck.py more_plugins
+        python3 scripts/bindcheck.py more_plugins

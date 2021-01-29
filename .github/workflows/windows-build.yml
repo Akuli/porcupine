@@ -20,7 +20,7 @@ jobs:
         scoop bucket add extras
         scoop install nsis
     - run: |
-        python build-exe-installer.py
+        python scripts/build-exe-installer.py
     - id: get_version
       uses: battila7/get-version-action@v2
     - id: create_release
