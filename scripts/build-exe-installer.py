@@ -10,8 +10,6 @@ import sys
 
 import PIL.Image
 
-from porcupine import version_info
-
 assert platform.system() == 'Windows', "this script must be ran on windows"
 
 # it's possible to run a 32-bit python on a 64-bit windows, but it would
@@ -22,9 +20,10 @@ assert not (struct.calcsize('P') == 4 and '64' in platform.machine()), (
     "this script can't be ran with 32-bit Python on a 64-bit Windows, "
     "install a 64-bit Python instead")
 
+[this_script_name, porcupine_version] = sys.argv
 
 # info("asd") prints "build-exe-installer.py: asd"
-info = functools.partial(print, sys.argv[0] + ':', file=sys.stderr, flush=True)
+info = functools.partial(print, this_script_name + ':', file=sys.stderr, flush=True)
 
 
 def get_frozen_requirements_in_a_crazy_way():
@@ -63,7 +62,7 @@ def create_pynsist_cfg():
     parser = configparser.ConfigParser()
     parser['Application'] = {
         'name': 'Porcupine',
-        'version': '%d.%d.%d' % version_info,
+        'version': porcupine_version,
         'entry_point': 'porcupine.__main__:main',    # setup.py copy pasta
         'icon': 'porcupine-logo.ico',
         'license_file': 'LICENSE',

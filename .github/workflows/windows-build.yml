@@ -19,10 +19,10 @@ jobs:
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
-    - run: |
-        python scripts/build-exe-installer.py
     - id: get_version
       uses: battila7/get-version-action@v2
+    - run: |
+        python scripts/build-exe-installer.py ${{ steps.get_version.outputs.version-without-v }}
     - id: create_release
       uses: actions/create-release@v1.0.0
       env:
