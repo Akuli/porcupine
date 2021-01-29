@@ -26,7 +26,7 @@ assert not (struct.calcsize('P') == 4 and '64' in platform.machine()), (
 
 
 # info("asd") prints "build-exe-installer.py: asd"
-info = functools.partial(print, sys.argv[0] + ':')
+info = functools.partial(print, sys.argv[0] + ':', file=sys.stderr, flush=True)
 
 
 def get_frozen_requirements_in_a_crazy_way():
