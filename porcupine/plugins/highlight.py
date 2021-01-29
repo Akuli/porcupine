@@ -1,5 +1,4 @@
 """Syntax highlighting."""
-# TODO: reloading is slow
 # TODO: try with Makefile (not RegexLexer)
 
 import itertools
@@ -173,11 +172,13 @@ class Highlighter:
     def on_change(self, event: utils.EventWithData) -> None:
         change_list = event.data_class(textwidget.Changes).change_list
         if len(change_list) == 1:
-            # Optimization: only highlight the area that might have changed
             [change] = change_list
-            self.highlight_range(change.start, f'{change.start} + {len(change.new_text)} chars')
-        else:
-            self.highlight_visible()
+            if len(change.new_text) < 5:
+                # Optimization for typical key strokes (but not for reloading entire file):
+                # only highlight the area that might have changed
+                self.highlight_range(change.start, f'{change.start} + {len(change.new_text)} chars')
+                return
+        self.highlight_visible()
 
 
 # When scrolling, don't highlight too often. Makes scrolling smoother.
