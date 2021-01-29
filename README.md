@@ -67,13 +67,7 @@ I think you can download Python with tkinter from
 
 ### Windows
 
-Install Python 3.6 or newer from [python.org](https://www.python.org/). Make sure that
-the "Install launchers for all users" box gets checked and tkinter gets
-installed. Then open PowerShell or command prompt, and run these commands:
-
-    py -m pip install --user --upgrade pip wheel
-    py -m pip install https://github.com/Akuli/porcupine/archive/v0.84.0.zip
-    pyw -m porcupine
+Download a Porcupine installer from [the releases page](https://github.com/Akuli/porcupine/releases).
 
 ### Development Install
 
