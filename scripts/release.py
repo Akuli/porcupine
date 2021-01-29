@@ -9,7 +9,6 @@ import sys
 
 from porcupine import version_info as old_info
 
-
 TAG_FORMAT = 'v%d.%d.%d'
 
 

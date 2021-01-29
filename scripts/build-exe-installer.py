@@ -12,7 +12,6 @@ import PIL.Image
 
 from porcupine import version_info
 
-
 assert platform.system() == 'Windows', "this script must be ran on windows"
 
 # it's possible to run a 32-bit python on a 64-bit windows, but it would
