@@ -103,6 +103,7 @@ def main():
     create_ico_file()
     create_pynsist_cfg()
     run_pynsist(args.python)
+    info("All done")
 
 
 if __name__ == '__main__':
