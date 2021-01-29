@@ -64,7 +64,7 @@ def create_pynsist_cfg():
     parser = configparser.ConfigParser()
     parser['Application'] = {
         'name': 'Porcupine',
-        'version': 'v%d.%d.%d' % version_info,
+        'version': '%d.%d.%d' % version_info,
         'entry_point': 'porcupine.__main__:main',    # setup.py copy pasta
         'icon': 'porcupine-logo.ico',
         'license_file': 'LICENSE',

@@ -21,6 +21,8 @@ jobs:
         scoop install nsis
     - run: |
         python build-exe-installer.py
+    - id: get_version
+      uses: battila7/get-version-action@v2
     - id: create_release
       uses: actions/create-release@v1.0.0
       env:
@@ -33,6 +35,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/nsis/Porcupine_v0.83.2.exe
-        asset_name: Porcupine_${{ github.event.release.tag_name }}.exe
+        asset_path: build/nsis/Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
+        asset_name: Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
         asset_content_type: application/vnd.microsoft.portable-executable
