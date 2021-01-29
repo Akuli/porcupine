@@ -1,4 +1,3 @@
-# FIXME: this contains copy/pasta from setup.py
 import configparser
 import functools
 import os
