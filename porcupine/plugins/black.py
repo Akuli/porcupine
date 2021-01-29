@@ -1,7 +1,6 @@
 import pathlib
 import subprocess
 import typing
-
 from tkinter import messagebox
 
 from porcupine import get_tab_manager, menubar, tabs
