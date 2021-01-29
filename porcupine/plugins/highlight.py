@@ -5,7 +5,7 @@ import logging
 import time
 import tkinter
 import tkinter.font as tkfont
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 
 from pygments import styles, token  # type: ignore[import]
 from pygments.lexer import Lexer, LexerMeta, RegexLexer  # type: ignore[import]
@@ -27,12 +27,9 @@ root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 
 class Highlighter:
 
-    def __init__(
-            self,
-            textwidget: tkinter.Text,
-            lexer_getter: Callable[[], Lexer]) -> None:
+    def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
-        self._get_lexer = lexer_getter
+        self._lexer = None
 
         # the tags use fonts from here
         self._fonts: Dict[Tuple[bool, bool], tkfont.Font] = {}
@@ -80,35 +77,27 @@ class Highlighter:
             # token tag
             self.textwidget.tag_lower(str(tokentype), 'sel')
 
-    def _find_previous_root_mark(self, index: str) -> Optional[str]:
-        assert not index.startswith(ROOT_STATE_MARK_PREFIX)
-        mark = index
+    # yields marks backwards, from end to start
+    def _get_root_marks(self, start: str = '1.0', end: str = 'end') -> Iterator[str]:
+        mark = None
         while True:
-            mark = self.textwidget.mark_previous(mark)
-            if mark is None:
-                return None
+            mark = self.textwidget.mark_previous(mark or end)
+            if mark is None or self.textwidget.compare(mark, '<', start):
+                break
             if mark.startswith(ROOT_STATE_MARK_PREFIX):
-                return self.textwidget.index(mark)
+                yield mark
 
-    def highlight(self, junk: object = None) -> None:
+    def highlight_range(self, last_possible_start: str, first_possible_end: str) -> None:
         start_time = time.perf_counter()
 
-        # Find visible part of code
-        last_possible_start = self.textwidget.index('@0,0')
-        first_possible_end = self.textwidget.index('@0,10000')
-
-        lexer = self._get_lexer()
-        use_root_marks = isinstance(lexer, RegexLexer)
-        if use_root_marks:
-            start = self._find_previous_root_mark(last_possible_start) or '1.0'
-        else:
-            start = '1.0'
-        lineno, column = map(int, self.textwidget.index(start).split('.'))
+        assert self._lexer is not None
+        start = self.textwidget.index(next(self._get_root_marks(end=last_possible_start), '1.0'))
+        lineno, column = map(int, start.split('.'))
 
         tag_locations: Dict[str, List[str]] = {}
-        mark_locations = [self.textwidget.index(start)]  # always 'lineno.column'
+        mark_locations = [start]  # always 'lineno.column'
 
-        generator = lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end - 1 char'))
+        generator = self._lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end - 1 char'))
         for position, tokentype, text in generator:
             location_list = tag_locations.setdefault(str(tokentype), [])
             location_list.append(f'{lineno}.{column}')
@@ -127,7 +116,7 @@ class Highlighter:
             # So it has to be in root state for placing a mark.
             # The only way to check for it with pygments is to use local variables inside the generator.
             # It's an ugly hack.
-            if use_root_marks and generator.gi_frame.f_locals['statestack'] == ['root']:
+            if isinstance(self._lexer, RegexLexer) and generator.gi_frame.f_locals['statestack'] == ['root']:
                 if lineno >= int(mark_locations[-1].split('.')[0]) + 10:
                     mark_locations.append(f'{lineno}.{column}')
                 if self.textwidget.compare(f'{lineno}.{column}', '>=', first_possible_end):
@@ -139,31 +128,31 @@ class Highlighter:
         for tag, places in tag_locations.items():
             self.textwidget.tag_add(tag, *places)
 
-        # Don't know if unsetting marks in loop is guaranteed to work.
-        # Possibly similar to changing a Python list while looping over it?
         marks_to_unset = []
-        mark = None
-        while True:
-            mark = self.textwidget.mark_next(mark or start)
-            if mark is None or self.textwidget.compare(mark, '>', end):
-                break
-            if mark.startswith(ROOT_STATE_MARK_PREFIX):
-                try:
-                    mark_locations.remove(self.textwidget.index(mark))
-                except ValueError:
-                    marks_to_unset.append(mark)
+        for mark in self._get_root_marks(start, end):
+            try:
+                mark_locations.remove(self.textwidget.index(mark))
+            except ValueError:
+                marks_to_unset.append(mark)
         self.textwidget.mark_unset(*marks_to_unset)
 
         for mark_index in mark_locations:
             self.textwidget.mark_set(next(root_mark_names), mark_index)
 
-        mark_count = sum(
-            1 if mark.startswith(ROOT_STATE_MARK_PREFIX) else 0
-            for mark in self.textwidget.mark_names()
-        )
-        log.debug(
+        mark_count = len(list(self._get_root_marks('1.0', 'end')))
+        log.error(
             f"Highlighted between {start} and {end} in {round((time.perf_counter() - start_time)*1000)}ms. "
             f"Root state marks: {len(marks_to_unset)} deleted, {len(mark_locations)} added, {mark_count} total")
+
+    def highlight_visible(self, junk: object = None) -> None:
+        start = self.textwidget.index('@0,0')
+        end = self.textwidget.index('@0,10000')
+        self.highlight_range(start, end)
+
+    def set_lexer(self, lexer: Lexer) -> None:
+        self.textwidget.mark_unset(*self._get_root_marks('1.0', 'end'))
+        self._lexer = lexer
+        self.highlight_visible()
 
 
 # When scrolling, don't highlight too often. Makes scrolling smoother.
@@ -197,16 +186,17 @@ def debounce(any_widget: tkinter.Misc, function: Callable[[], None], ms_between_
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         # needed because pygments_lexer might change
-        def get_lexer() -> Lexer:
+        def on_lexer_changed(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)  # f u mypy
-            return tab.settings.get('pygments_lexer', LexerMeta)()
+            highlighter.set_lexer(tab.settings.get('pygments_lexer', LexerMeta)())
 
-        highlighter = Highlighter(tab.textwidget, get_lexer)
-        tab.bind('<<TabSettingChanged:pygments_lexer>>', highlighter.highlight, add=True)
+        highlighter = Highlighter(tab.textwidget)
+        tab.bind('<<TabSettingChanged:pygments_lexer>>', on_lexer_changed, add=True)
+        on_lexer_changed()
         # TODO: handle changes outside view (currently they are quite rare)
-        utils.bind_with_data(tab.textwidget, '<<ContentChanged>>', highlighter.highlight, add=True)
-        utils.add_scroll_command(tab.textwidget, 'yscrollcommand', debounce(tab, highlighter.highlight, 50))
-        highlighter.highlight()
+        utils.bind_with_data(tab.textwidget, '<<ContentChanged>>', highlighter.highlight_visible, add=True)
+        utils.add_scroll_command(tab.textwidget, 'yscrollcommand', debounce(tab, highlighter.highlight_visible, 50))
+        highlighter.highlight_visible()
 
 
 def setup() -> None:
