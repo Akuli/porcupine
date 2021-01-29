@@ -11,7 +11,7 @@ import sys
 
 import PIL.Image
 
-from porcupine import __version__ as porcupine_version
+from porcupine import version_info
 
 
 assert platform.system() == 'Windows', "this script must be ran on windows"
@@ -65,7 +65,7 @@ def create_pynsist_cfg():
     parser = configparser.ConfigParser()
     parser['Application'] = {
         'name': 'Porcupine',
-        'version': porcupine_version,
+        'version': 'v%d.%d.%d' % version_info,
         'entry_point': 'porcupine.__main__:main',    # setup.py copy pasta
         'icon': 'porcupine-logo.ico',
         'license_file': 'LICENSE',

@@ -1,10 +1,7 @@
 on:
   push:
-    branches:
-      - windows-exe
-#  create:
-#    tags:
-#      - v*
+    tags:
+      - test*
 
 jobs:
   build:
@@ -24,6 +21,18 @@ jobs:
         scoop install nsis
     - run: |
         python build-exe-installer.py
-    - run: |
-        python -c "import pathlib; print(list(pathlib.Path('build').rglob('*.exe')))"
-
+    - id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+    - uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/nsis/Porcupine_v0.83.2.exe
+        asset_name: Porcupine_${{ github.ref }}.exe
+#        asset_content_type: application/zip
