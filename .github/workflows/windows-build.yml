@@ -1,0 +1,11 @@
+on:
+  push:
+    branches:
+      - windows-build
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - run: |
+        echo "hello world"
