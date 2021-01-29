@@ -23,7 +23,6 @@ Installing these plugins is easy:
 | pythonprompt.py   | Simple `>>>` prompt tab.                                  |       |
 | terminal.py       | Run a terminal inside Porcupine as a tab.                 | 1.    |
 | tetris.py         | Fun tetris game.                                          |       |
-| ttkthemes.py      | Nicer colors for everything else than the main text area. | 2.    |
 
 Notes:
 
@@ -42,14 +41,3 @@ Notes:
 
     However, if you manage to get xterm or some other terminal to work inside a
     tkinter program on Windows or OSX I'd be happy to update this plugin!
-
-2.  [Click here](https://github.com/RedFantom/ttkthemes/wiki/Themes) to get
-    an idea of what different themes look like.
-
-    If you are using Windows, run this command before installing the plugin:
-
-        py -m pip install --user ttkthemes
-
-    Use this command on other operating systems:
-
-        python3 -m pip install --user ttkthemes

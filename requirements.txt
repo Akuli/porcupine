@@ -5,10 +5,9 @@ toposort>=1.5
 colorama>=0.2.5
 sansio-lsp-client>=0.8.0,<0.9.0
 python-language-server>=0.36.2,<1.0.0
-
+# can't put black here, breaks windows installer build
 # typing.Literal is new in python 3.8
 typing_extensions
-
 dacite>=1.5.1,<2.0.0
 toml
-# can't put black here, breaks windows installer build
+ttkthemes>=3.0.0
