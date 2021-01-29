@@ -38,9 +38,6 @@ it shows up as an empty window.
 
 ## Installing Porcupine
 
-There are [more detailed instructions on Porcupine
-Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
-
 ### Debian-based Linux distributions (e.g. Ubuntu, Mint)
 
 Open a terminal and run these commands:
@@ -172,7 +169,7 @@ Here is a list of the commands I use when developing Porcupine:
 
 I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.
-- `python3 release.py major_or_minor_or_patch` increments the version number and
+- `python3 scripts/release.py major_or_minor_or_patch` increments the version number and
   runs all the commands needed for doing a new Porcupine release. Run it from
   inside a virtualenv with master branch checked out in git. The argument
   works like this:
@@ -180,69 +177,5 @@ Instead, ask me to run them if you need to.
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
   Note that `porcupine.wiki` may need updating when a new version is released.
-
-
-## Building the Windows installer
-
-It's possible to create a `porcupine-setup.exe` that installs Porcupine with a
-nice setup wizard that Windows users are familiar with. This is not the
-recommended way to install Porcupine yet because I don't know where I could
-upload the installers yet so people could just click a link to download.
-
-You need a Windows for creating the installer. You can use real computers, but
-I like to use virtual machines because I can run a 32-bit *and* a 64-bit
-virtual machine in a 64-bit operating system, and I don't need to have Windows
-installed on a real computer.
-
-Install VirtualBox and download [one of these things from
-Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/).
-The `x86` things are 32-bit Windowses, and `x64`s are 64-bit. Usually I build a
-32-bit installer and a 64-bit installer, so I need two virtual machines.
-
-If you don't have a really fast internet, it takes a while to download a
-virtual machine. Play tetris with the tetris plugin (see
-[more_plugins](more_plugins/)) while you are waiting.
-
-The virtual machine comes as a zip. You can use Python to extract it:
-
-    cd Downloads       # or wherever the downloaded zip ended up
-    python3 -m zipfile -e TheZipFile.zip .
-
-It will take a while, but not long enough for a tetris :( You should end up
-with a `.ova` file in your Downloads folder. Start VirtualBox and click
-"Import Appliance..." in the "File" menu. Select the `.ova` file and click
-"Next" a couple times. Play more tetris.
-
-Start the virtual machine by double-clicking it at left. If you downloaded
-Windows 10, be aware that it uses a **lot** of RAM, about 4GB on my system.
-It's also quite slow, so you may need to play tetris while it starts up.
-
-Install these programs in the virtual machine:
-- Git: https://git-scm.com/
-- Python: https://www.python.org/
-- NSIS: http://nsis.sourceforge.net/Download
-
-Clicking the biggest "Download" and "Next" buttons works most of the time, but
-watch out for these things:
-- You need Python 3.6 or newer.
-- If you are creating a 64-bit Porcupine installer, be sure to get a 64-bit
-  Python. At the time of writing this thing (August 2018), you need to first
-  click "All releases" on the Python website, and then the newest Python, and
-  finally scroll down and click either one of the "Windows x86-64 *something*
-  installer" links.
-
-Now you are ready to build the executable! Open a command prompt and run some
-commands:
-
-    git clone https://github.com/Akuli/porcupine
-    cd porcupine
-    py -m pip install pillow pynsist
-    py build-exe-installer.py
-
-Note that this does *not* work in a virtualenv. I don't feel like figuring out
-why right now. Pip will probably complain about stuff not in PATH, but it's OK,
-you don't need to do anything to fix the complaints.
-
-Now you should have an exe that installs a Porcupine. The last command should
-prints the filename at the end of its output, and it seems to be always
-`build\nsis\Porcupine_X.Y.Z.exe` where `X.Y.Z` is the Porcupine version.
+  Also, after running the release script, `.github/workflows/windows-build.yml` triggers
+  and adds a Windows installer to the release.

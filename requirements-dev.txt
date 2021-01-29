@@ -1,10 +1,10 @@
 pytest>=5.4.3
 pytest-cov>=2.10.1
 isort>=5.7.0
-coverage
 sphinx
 mypy>=0.790
 pyflakes>=2.2.0
 pycodestyle>=2.6.0
 pytest-mock>=3.2.0,<4.0.0
-bs4
+pynsist>=2.6
+pillow>=5.4.1

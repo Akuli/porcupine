@@ -1,37 +1,13 @@
-# feel free to make these version numbers higher if needed
-
-# any version should have what porcupine/dirs.py needs
-# https://github.com/ActiveState/appdirs/blob/master/CHANGES.rst
 appdirs
-
-# this is just for the pastebin plugin, any python 3 compatible
-# requests should work
-# https://github.com/kennethreitz/requests/blob/master/HISTORY.rst
 requests>=2.24.0, <3.0.0
-
-# pygments docs say "new in 1.6" about many things that porcupine uses
 pygments>=1.6
-
-# CircularDependencyError was added in 1.5, see changelog in pypi
 toposort>=1.5
-
-# colored output on windows, might be used for something else later
-# ubuntu 14.04 comes with colorama 0.2.5 in repos
 colorama>=0.2.5
-
-# 0.7.2 is first release that correctly supports type hints: https://github.com/PurpleMyst/sansio-lsp-client/pull/13
 sansio-lsp-client>=0.8.0,<0.9.0
-
-# to have something hopefully work by default
 python-language-server>=0.36.2,<1.0.0
-
-# for autopep8 plugin
-autopep8
-
+# can't put black here, breaks windows installer build
 # typing.Literal is new in python 3.8
 typing_extensions
-
-# for event stuff in porcupine.utils
 dacite>=1.5.1,<2.0.0
-
 toml
+ttkthemes>=3.0.0
