@@ -83,7 +83,8 @@ class Highlighter:
     def _get_root_marks(self, start: str = '1.0', end: str = 'end') -> Iterator[str]:
         mark = None
         while True:
-            mark = self.textwidget.mark_previous(mark or end)
+            # When stepping backwards, end seems to be excluded. We want to include it.
+            mark = self.textwidget.mark_previous(mark or f'{end} + 1 char')
             if mark is None or self.textwidget.compare(mark, '<', start):
                 break
             if mark.startswith(ROOT_STATE_MARK_PREFIX):
