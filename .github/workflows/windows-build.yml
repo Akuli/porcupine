@@ -1,9 +1,9 @@
 on:
   push:
-#    branches:
-#      - windows-exe
-    tags:
-      - foo*
+    branches:
+      - windows-exe
+#    tags:
+#      - v*
 
 jobs:
   build:
