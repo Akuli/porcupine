@@ -23,6 +23,6 @@ jobs:
         scoop bucket add extras
         scoop install nsis
     - run: |
-        python build-exe-installer.py --python=python
+        python build-exe-installer.py
     - run: |
         python -c "import pathlib; print(list(pathlib.Path().rglob('build/*.exe')))"
