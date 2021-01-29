@@ -24,3 +24,5 @@ jobs:
         scoop install nsis
     - run: |
         python build-exe-installer.py --python=python
+    - run: |
+        python -c "import pathlib; print(list(pathlib.Path().glob('*.exe')))"
