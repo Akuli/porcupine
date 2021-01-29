@@ -38,9 +38,6 @@ it shows up as an empty window.
 
 ## Installing Porcupine
 
-There are [more detailed instructions on Porcupine
-Wiki](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine).
-
 ### Debian-based Linux distributions (e.g. Ubuntu, Mint)
 
 Open a terminal and run these commands:
