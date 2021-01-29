@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - windows-build
+      - windows-exe
 
 jobs:
   build:
