@@ -1,16 +1,18 @@
 """Syntax highlighting."""
+# TODO: reloading is slow
+# TODO: try with Makefile (not RegexLexer)
 
 import itertools
 import logging
 import time
 import tkinter
-import tkinter.font as tkfont
+from tkinter.font import Font
 from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 
 from pygments import styles, token  # type: ignore[import]
 from pygments.lexer import Lexer, LexerMeta, RegexLexer  # type: ignore[import]
 
-from porcupine import get_tab_manager, settings, tabs, utils
+from porcupine import get_tab_manager, settings, tabs, textwidget, utils
 
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
@@ -27,16 +29,16 @@ root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 
 class Highlighter:
 
-    def __init__(self, textwidget: tkinter.Text) -> None:
-        self.textwidget = textwidget
+    def __init__(self, text: tkinter.Text) -> None:
+        self.textwidget = text
         self._lexer = None
 
         # the tags use fonts from here
-        self._fonts: Dict[Tuple[bool, bool], tkfont.Font] = {}
+        self._fonts: Dict[Tuple[bool, bool], Font] = {}
         for bold in (True, False):
             for italic in (True, False):
                 # the fonts will be updated later, see _config_changed()
-                self._fonts[(bold, italic)] = tkfont.Font(
+                self._fonts[(bold, italic)] = Font(
                     weight=('bold' if bold else 'normal'),
                     slant=('italic' if italic else 'roman'))
 
@@ -47,7 +49,7 @@ class Highlighter:
         self._style_changed()
 
     def _font_changed(self, junk: object = None) -> None:
-        font_updates = cast(Dict[str, Any], tkfont.Font(name='TkFixedFont', exists=True).actual())
+        font_updates = cast(Dict[str, Any], Font(name='TkFixedFont', exists=True).actual())
         del font_updates['weight']     # ignore boldness
         del font_updates['slant']      # ignore italicness
 
@@ -87,15 +89,26 @@ class Highlighter:
             if mark.startswith(ROOT_STATE_MARK_PREFIX):
                 yield mark
 
-    def highlight_range(self, last_possible_start: str, first_possible_end: str) -> None:
+    def _index_is_marked(self, index: str) -> bool:
+        try:
+            next(self._get_root_marks(index, index))
+        except StopIteration:
+            return False
+        return True
+
+    def highlight_range(self, last_possible_start: str, first_possible_end: str = 'end') -> None:
         start_time = time.perf_counter()
 
         assert self._lexer is not None
         start = self.textwidget.index(next(self._get_root_marks(end=last_possible_start), '1.0'))
         lineno, column = map(int, start.split('.'))
 
+        end_of_view = self.textwidget.index('@0,10000')
+        if self.textwidget.compare(first_possible_end, '>', end_of_view):
+            first_possible_end = end_of_view
+
         tag_locations: Dict[str, List[str]] = {}
-        mark_locations = [start]  # always 'lineno.column'
+        mark_locations = [start]
 
         generator = self._lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end - 1 char'))
         for position, tokentype, text in generator:
@@ -119,8 +132,12 @@ class Highlighter:
             if isinstance(self._lexer, RegexLexer) and generator.gi_frame.f_locals['statestack'] == ['root']:
                 if lineno >= int(mark_locations[-1].split('.')[0]) + 10:
                     mark_locations.append(f'{lineno}.{column}')
-                if self.textwidget.compare(f'{lineno}.{column}', '>=', first_possible_end):
+                if (self.textwidget.compare(f'{lineno}.{column}', '>=', first_possible_end)
+                        and self._index_is_marked(f'{lineno}.{column}')):
                     break
+
+            if self.textwidget.compare(f'{lineno}.{column}', '>', end_of_view):
+                break
 
         end = f'{lineno}.{column}'
         for tag in all_token_tags:
@@ -140,19 +157,26 @@ class Highlighter:
             self.textwidget.mark_set(next(root_mark_names), mark_index)
 
         mark_count = len(list(self._get_root_marks('1.0', 'end')))
-        log.error(
+        log.debug(
             f"Highlighted between {start} and {end} in {round((time.perf_counter() - start_time)*1000)}ms. "
             f"Root state marks: {len(marks_to_unset)} deleted, {len(mark_locations)} added, {mark_count} total")
 
     def highlight_visible(self, junk: object = None) -> None:
-        start = self.textwidget.index('@0,0')
-        end = self.textwidget.index('@0,10000')
-        self.highlight_range(start, end)
+        self.highlight_range(self.textwidget.index('@0,0'))
 
     def set_lexer(self, lexer: Lexer) -> None:
         self.textwidget.mark_unset(*self._get_root_marks('1.0', 'end'))
         self._lexer = lexer
         self.highlight_visible()
+
+    def on_change(self, event: utils.EventWithData) -> None:
+        change_list = event.data_class(textwidget.Changes).change_list
+        if len(change_list) == 1:
+            # Optimization: only highlight the area that might have changed
+            [change] = change_list
+            self.highlight_range(change.start, f'{change.start} + {len(change.new_text)} chars')
+        else:
+            self.highlight_visible()
 
 
 # When scrolling, don't highlight too often. Makes scrolling smoother.
@@ -193,8 +217,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
         highlighter = Highlighter(tab.textwidget)
         tab.bind('<<TabSettingChanged:pygments_lexer>>', on_lexer_changed, add=True)
         on_lexer_changed()
-        # TODO: handle changes outside view (currently they are quite rare)
-        utils.bind_with_data(tab.textwidget, '<<ContentChanged>>', highlighter.highlight_visible, add=True)
+        utils.bind_with_data(tab.textwidget, '<<ContentChanged>>', highlighter.on_change, add=True)
         utils.add_scroll_command(tab.textwidget, 'yscrollcommand', debounce(tab, highlighter.highlight_visible, 50))
         highlighter.highlight_visible()
 
