@@ -25,4 +25,5 @@ jobs:
     - run: |
         python build-exe-installer.py
     - run: |
-        python -c "import pathlib; print(list(pathlib.Path().rglob('build/*.exe')))"
+        python -c "import pathlib; print(list(pathlib.Path('build').rglob('*.exe')))"
+
