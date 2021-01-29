@@ -26,7 +26,7 @@ sansio-lsp-client>=0.8.0,<0.9.0
 python-language-server>=0.36.2,<1.0.0
 
 # for autopep8 plugin
-autopep8
+#autopep8
 
 # typing.Literal is new in python 3.8
 typing_extensions
