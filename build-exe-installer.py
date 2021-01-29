@@ -82,8 +82,7 @@ def create_pynsist_cfg():
 
 
 def run_pynsist():
-    info(f"Running pynsist with {python}")
-    subprocess.check_call([python, '-m', 'nsist', 'pynsist.cfg'])
+    subprocess.check_call([sys.executable, '-m', 'nsist', 'pynsist.cfg'])
 
 
 def main():
