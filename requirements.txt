@@ -12,4 +12,4 @@ typing_extensions
 dacite>=1.5.1,<2.0.0
 toml
 ttkthemes>=3.0.0
-dataclasses>=0.8; python_version < '3.7'
+dataclasses==0.8; python_version < '3.7'
