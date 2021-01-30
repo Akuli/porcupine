@@ -160,7 +160,7 @@ class Finder(ttk.Frame):
         replace_this_state: State
 
         try:
-            start, end = map(str, self._textwidget.tag_ranges('find_highlight_selected'))
+            start, end = map(str, self._textwidget.tag_ranges('sel'))
         except ValueError:
             replace_this_state = 'disabled'
         else:   # no, elif doesn't work here
@@ -247,8 +247,8 @@ class Finder(ttk.Frame):
 
     def _select_match(self, start: str, end: str) -> None:
         self._textwidget.tag_remove('sel', '1.0', 'end')
-        self._textwidget.tag_add('sel', start, end)
         self._textwidget.tag_remove('find_highlight_selected', '1.0', 'end')
+        self._textwidget.tag_add('sel', start, end)
         self._textwidget.tag_add('find_highlight_selected', start, end)
         self._textwidget.mark_set('insert', start)
         self._textwidget.see(start)
