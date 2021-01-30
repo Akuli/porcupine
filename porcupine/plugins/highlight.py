@@ -96,7 +96,9 @@ class Highlighter:
         return True
 
     def _detect_root_state(self, generator: Generator[Any, Any, Any], end_location: str) -> bool:
-        if isinstance(self._lexer, RegexLexer):
+        # Only for subclasses of RegexLexer that don't override get_tokens_unprocessed
+        # TODO: support ExtendedRegexLexer's context thing
+        if type(self._lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
             # Use a local variable inside the generator (ugly hack)
             return (generator.gi_frame.f_locals['statestack'] == ['root'])
 
