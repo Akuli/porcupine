@@ -20,8 +20,8 @@ def text_and_events():
     events = []
     utils.bind_with_data(text, '<<ContentChanged>>', events.append, add=True)
     yield (text, events)
-    text.destroy()
     assert not events
+    text.destroy()
 
 
 def test_insert_basic(text_and_events):
