@@ -9,14 +9,11 @@ from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import underlines
 
 
-def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
-    view_start = text.index('@0,0')
-    view_end = text.index('@0,10000')
-
-    match_ends_and_search_begins = view_start
+def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, str]]:
+    match_ends_and_search_begins = start
     while True:
         match_start = text.search(
-            r'\mhttps?://[a-z]', match_ends_and_search_begins, view_end,
+            r'\mhttps?://[a-z]', match_ends_and_search_begins, end,
             nocase=True, regexp=True)
         if not match_start:     # empty string means not found
             break
@@ -47,11 +44,14 @@ def find_urls(text: tkinter.Text) -> Iterable[Tuple[str, str]]:
 
 
 def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
+    view_start = tab.textwidget.index('@0,0')
+    view_end = tab.textwidget.index('@0,10000')
+
     tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
         id='urls',
         underline_list=[
             underlines.Underline(start, end, "ctrl+click or ctrl+enter to open")
-            for start, end in find_urls(tab.textwidget)
+            for start, end in find_urls(tab.textwidget, view_start, view_end)
         ],
     ))
 
