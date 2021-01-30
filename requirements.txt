@@ -1,6 +1,7 @@
 appdirs
 requests>=2.24.0, <3.0.0
-pygments>=1.6
+# pygments version fixed because haxx in highlight plugin
+Pygments==2.7.4
 toposort>=1.5
 colorama>=0.2.5
 sansio-lsp-client>=0.8.0,<0.9.0

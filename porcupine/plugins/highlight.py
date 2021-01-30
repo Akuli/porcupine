@@ -1,21 +1,16 @@
 """Syntax highlighting."""
-# TODO: optimize by not always highlighting everything and may be get
-#       rid of the multiprocessing stuff?! alternatively, at least don't
-#       make a separate process for each file
-# TODO: if a tag goes all the way to end of line, extend it past it to
-#       hide the lagging at least a little bit (if we're not
-#       highlighting it line by line
 
-import multiprocessing
-import queue
+import itertools
+import logging
+import time
 import tkinter
-import tkinter.font as tkfont
-from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
+from tkinter.font import Font
+from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple, cast
 
 from pygments import styles, token  # type: ignore[import]
-from pygments.lexer import LexerMeta  # type: ignore[import]
+from pygments.lexer import Lexer, LexerMeta, RegexLexer  # type: ignore[import]
 
-from porcupine import get_tab_manager, settings, tabs
+from porcupine import get_tab_manager, settings, tabs, textwidget, utils
 
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
@@ -24,78 +19,24 @@ def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
         yield from sub
 
 
-_ALL_TAGS = set(map(str, _list_all_token_types(token.Token)))
-
-PygmentizeResult = Dict[
-    str,         # str(tokentype)
-    List[str],   # [start1, end1, start2, end2, ...]
-]
-
-
-# tokenizing with pygments is the bottleneck of this thing (at least on
-# CPython) so it's done in another process
-class PygmentizerProcess:
-
-    def __init__(self) -> None:
-        self.in_queue: multiprocessing.Queue[Tuple[LexerMeta, str]] = multiprocessing.Queue()
-        self.out_queue: multiprocessing.Queue[PygmentizeResult] = multiprocessing.Queue()
-        self.process = multiprocessing.Process(target=self._run)
-        self.process.start()
-
-    def _pygmentize(self, lexer_class: LexerMeta, code: str) -> PygmentizeResult:
-        # pygments doesn't include any info about where the tokens are
-        # so we need to do it manually :(
-        lineno = 1
-        column = 0
-        lexer = lexer_class(stripnl=False)
-
-        result: PygmentizeResult = {}
-        for tokentype, string in lexer.get_tokens(code):
-            start = '%d.%d' % (lineno, column)
-            if '\n' in string:
-                lineno += string.count('\n')
-                column = len(string.rsplit('\n', 1)[1])
-            else:
-                column += len(string)
-            end = '%d.%d' % (lineno, column)
-            result.setdefault(str(tokentype), []).extend([start, end])
-
-        return result
-
-    def _run(self) -> None:
-        while True:
-            # if multiple codes were queued while this thing was doing
-            # the previous code, just do the last one and ignore the rest
-            #
-            # FIXME: this doesn't seem to work and instead it lags a lot?
-            lexer_class, code = self.in_queue.get(block=True)
-            try:
-                while True:
-                    lexer_class, code = self.in_queue.get(block=False)
-                    # print("_run: ignoring a code")
-            except queue.Empty:
-                pass
-
-            result = self._pygmentize(lexer_class, code)
-            self.out_queue.put(result)
+all_token_tags = set(map(str, _list_all_token_types(token.Token)))
+log = logging.getLogger(__name__)
+ROOT_STATE_MARK_PREFIX = 'highlight_root_'
+root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 
 
 class Highlighter:
 
-    def __init__(
-            self,
-            textwidget: tkinter.Text,
-            lexer_class_getter: Callable[[], LexerMeta]) -> None:
-        self.textwidget = textwidget
-        self._get_lexer_class = lexer_class_getter
-        self.pygmentizer = PygmentizerProcess()
+    def __init__(self, text: tkinter.Text) -> None:
+        self.textwidget = text
+        self._lexer = None
 
         # the tags use fonts from here
-        self._fonts: Dict[Tuple[bool, bool], tkfont.Font] = {}
+        self._fonts: Dict[Tuple[bool, bool], Font] = {}
         for bold in (True, False):
             for italic in (True, False):
                 # the fonts will be updated later, see _config_changed()
-                self._fonts[(bold, italic)] = tkfont.Font(
+                self._fonts[(bold, italic)] = Font(
                     weight=('bold' if bold else 'normal'),
                     slant=('italic' if italic else 'roman'))
 
@@ -104,15 +45,9 @@ class Highlighter:
         self.textwidget.bind('<<SettingChanged:pygments_style>>', self._style_changed, add=True)
         self._font_changed()
         self._style_changed()
-        self.textwidget.after(50, self._do_highlights)
-
-    def on_destroy(self, junk: object = None) -> None:
-        #print("terminating", repr(self.pygmentizer.process))
-        self.pygmentizer.process.terminate()
-        #print("terminated", repr(self.pygmentizer.process))
 
     def _font_changed(self, junk: object = None) -> None:
-        font_updates = cast(Dict[str, Any], tkfont.Font(name='TkFixedFont', exists=True).actual())
+        font_updates = cast(Dict[str, Any], Font(name='TkFixedFont', exists=True).actual())
         del font_updates['weight']     # ignore boldness
         del font_updates['slant']      # ignore italicness
 
@@ -142,51 +77,155 @@ class Highlighter:
             # token tag
             self.textwidget.tag_lower(str(tokentype), 'sel')
 
-    # handle things from the highlighting process
-    def _do_highlights(self) -> None:
-        # this check is actually unnecessary; turns out that destroying
-        # the text widget stops this timeout because the text widget's
-        # after method was used, but i don't feel like relying on it
-        if not self.pygmentizer.process.is_alive():
-            return
+    # yields marks backwards, from end to start
+    def _get_root_marks(self, start: str = '1.0', end: str = 'end') -> Iterator[str]:
+        mark = None
+        while True:
+            # When stepping backwards, end seems to be excluded. We want to include it.
+            mark = self.textwidget.mark_previous(mark or f'{end} + 1 char')
+            if mark is None or self.textwidget.compare(mark, '<', start):
+                break
+            if mark.startswith(ROOT_STATE_MARK_PREFIX):
+                yield mark
 
-        # if the pygmentizer process has put multiple result dicts to
-        # the queue, only use the last one
-        tags2add = None
+    def _index_is_marked(self, index: str) -> bool:
         try:
-            while True:
-                tags2add = self.pygmentizer.out_queue.get(block=False)
-        except queue.Empty:
-            pass
+            next(self._get_root_marks(index, index))
+        except StopIteration:
+            return False
+        return True
 
-        if tags2add is not None:
-            # print("_do_highlights: got something")
-            for tag in _ALL_TAGS:
-                self.textwidget.tag_remove(tag, '0.0', 'end')
-            for tag, places in tags2add.items():
-                self.textwidget.tag_add(tag, *places)
+    def _detect_root_state(self, generator: Generator[Any, Any, Any], end_location: str) -> bool:
+        if isinstance(self._lexer, RegexLexer):
+            # Use a local variable inside the generator (ugly hack)
+            return (generator.gi_frame.f_locals['statestack'] == ['root'])
 
-        # 50 milliseconds doesn't seem too bad, bigger timeouts tend to
-        # make things laggy
-        self.textwidget.after(50, self._do_highlights)
+        # Start of line (column zero) and not indentation or blank line
+        return end_location.endswith('.0') and bool(self.textwidget.get(end_location).strip())
 
-    def highlight_all(self, junk: object = None) -> None:
-        code = self.textwidget.get('1.0', 'end - 1 char')
-        self.pygmentizer.in_queue.put((self._get_lexer_class(), code))
+    def highlight_range(self, last_possible_start: str, first_possible_end: str = 'end') -> None:
+        start_time = time.perf_counter()
+
+        assert self._lexer is not None
+        start = self.textwidget.index(next(self._get_root_marks(end=last_possible_start), '1.0'))
+        lineno, column = map(int, start.split('.'))
+
+        end_of_view = self.textwidget.index('@0,10000')
+        if self.textwidget.compare(first_possible_end, '>', end_of_view):
+            first_possible_end = end_of_view
+
+        tag_locations: Dict[str, List[str]] = {}
+        mark_locations = [start]
+
+        generator = self._lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end - 1 char'))
+        for position, tokentype, text in generator:
+            token_start = f'{lineno}.{column}'
+            newline_count = text.count('\n')
+            if newline_count != 0:
+                lineno += newline_count
+                column = len(text.rsplit('\n', 1)[-1])
+            else:
+                column += len(text)
+            token_end = f'{lineno}.{column}'
+            tag_locations.setdefault(str(tokentype), []).extend([token_start, token_end])
+
+            # We place marks where highlighting may begin.
+            # You can't start highlighting anywhere, such as inside a multiline string or comment.
+            # The tokenizer is at root state when tokenizing starts.
+            # So it has to be in root state for placing a mark.
+            if self._detect_root_state(generator, token_end):
+                if lineno >= int(mark_locations[-1].split('.')[0]) + 10:
+                    mark_locations.append(token_end)
+                if (self.textwidget.compare(f'{lineno}.{column}', '>=', first_possible_end)
+                        and self._index_is_marked(token_end)):
+                    break
+
+            if self.textwidget.compare(token_end, '>', end_of_view):
+                break
+
+        end = f'{lineno}.{column}'
+        for tag in all_token_tags:
+            self.textwidget.tag_remove(tag, start, end)
+        for tag, places in tag_locations.items():
+            self.textwidget.tag_add(tag, *places)
+
+        marks_to_unset = []
+        for mark in self._get_root_marks(start, end):
+            try:
+                mark_locations.remove(self.textwidget.index(mark))
+            except ValueError:
+                marks_to_unset.append(mark)
+        self.textwidget.mark_unset(*marks_to_unset)
+
+        for mark_index in mark_locations:
+            self.textwidget.mark_set(next(root_mark_names), mark_index)
+
+        mark_count = len(list(self._get_root_marks('1.0', 'end')))
+        log.debug(
+            f"Highlighted between {start} and {end} in {round((time.perf_counter() - start_time)*1000)}ms. "
+            f"Root state marks: {len(marks_to_unset)} deleted, {len(mark_locations)} added, {mark_count} total")
+
+    def highlight_visible(self, junk: object = None) -> None:
+        self.highlight_range(self.textwidget.index('@0,0'))
+
+    def set_lexer(self, lexer: Lexer) -> None:
+        self.textwidget.mark_unset(*self._get_root_marks('1.0', 'end'))
+        self._lexer = lexer
+        self.highlight_visible()
+
+    def on_change(self, event: utils.EventWithData) -> None:
+        change_list = event.data_class(textwidget.Changes).change_list
+        if len(change_list) == 1:
+            [change] = change_list
+            if len(change.new_text) < 5:
+                # Optimization for typical key strokes (but not for reloading entire file):
+                # only highlight the area that might have changed
+                self.highlight_range(change.start, f'{change.start} + {len(change.new_text)} chars')
+                return
+        self.highlight_visible()
+
+
+# When scrolling, don't highlight too often. Makes scrolling smoother.
+def debounce(any_widget: tkinter.Misc, function: Callable[[], None], ms_between_calls_min: int) -> Callable[[], None]:
+    timeout_scheduled = False
+    running_requested = False
+
+    def timeout_callback() -> None:
+        nonlocal timeout_scheduled, running_requested
+        assert timeout_scheduled
+        if running_requested:
+            function()
+            any_widget.after(ms_between_calls_min, timeout_callback)
+            running_requested = False
+        else:
+            timeout_scheduled = False
+
+    def request_running() -> None:
+        nonlocal timeout_scheduled, running_requested
+        if timeout_scheduled:
+            running_requested = True
+        else:
+            assert not running_requested
+            function()
+            any_widget.after(ms_between_calls_min, timeout_callback)
+            timeout_scheduled = True
+
+    return request_running
 
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         # needed because pygments_lexer might change
-        def get_lexer_class() -> LexerMeta:
+        def on_lexer_changed(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)  # f u mypy
-            return tab.settings.get('pygments_lexer', LexerMeta)
+            highlighter.set_lexer(tab.settings.get('pygments_lexer', LexerMeta)())
 
-        highlighter = Highlighter(tab.textwidget, get_lexer_class)
-        tab.bind('<<TabSettingChanged:pygments_lexer>>', highlighter.highlight_all, add=True)
-        tab.textwidget.bind('<<ContentChanged>>', highlighter.highlight_all, add=True)
-        tab.bind('<Destroy>', highlighter.on_destroy, add=True)
-        highlighter.highlight_all()
+        highlighter = Highlighter(tab.textwidget)
+        tab.bind('<<TabSettingChanged:pygments_lexer>>', on_lexer_changed, add=True)
+        on_lexer_changed()
+        utils.bind_with_data(tab.textwidget, '<<ContentChanged>>', highlighter.on_change, add=True)
+        utils.add_scroll_command(tab.textwidget, 'yscrollcommand', debounce(tab, highlighter.highlight_visible, 50))
+        highlighter.highlight_visible()
 
 
 def setup() -> None:
