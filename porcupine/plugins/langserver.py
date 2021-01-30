@@ -333,7 +333,7 @@ class LangServer:
                 'stdout' if self._id.port is None
                 else 'socket connection'
             )
-            self.log.warn(
+            self.log.warning(
                 f"killing langserver process {self._process.pid} "
                 f"because {what_closed} has closed for some reason")
 
