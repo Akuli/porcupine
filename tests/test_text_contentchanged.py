@@ -1,3 +1,4 @@
+import logging
 import tkinter
 
 import pytest
@@ -196,7 +197,8 @@ def test_peer_cursor_moved(text_and_events):
     peer_move_events.clear()
 
 
-def test_copy_paste(text_and_events):
+def test_copy_paste(text_and_events, caplog):
+    caplog.set_level(logging.ERROR)
     text, events = text_and_events
     text.insert('1.0', 'hello')
     assert events.pop().data_class(Changes).change_list == [
@@ -211,5 +213,5 @@ def test_copy_paste(text_and_events):
 
     assert events.pop().data_class(Changes).change_list == [
         Change(start='1.5', end='1.5', old_text_len=0, new_text='hello'),
-    ]
+    ], caplog.text
     assert text.get('1.0', 'end - 1 char') == 'hellohello'
