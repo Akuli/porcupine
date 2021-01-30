@@ -1,12 +1,11 @@
 """Syntax highlighting."""
-# TODO: try with Makefile (not RegexLexer)
 
 import itertools
 import logging
 import time
 import tkinter
 from tkinter.font import Font
-from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
+from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple, cast
 
 from pygments import styles, token  # type: ignore[import]
 from pygments.lexer import Lexer, LexerMeta, RegexLexer  # type: ignore[import]
@@ -96,6 +95,14 @@ class Highlighter:
             return False
         return True
 
+    def _detect_root_state(self, generator: Generator[Any, Any, Any], end_location: str) -> bool:
+        if isinstance(self._lexer, RegexLexer):
+            # Use a local variable inside the generator (ugly hack)
+            return (generator.gi_frame.f_locals['statestack'] == ['root'])
+
+        # Start of line (column zero) and not indentation or blank line
+        return end_location.endswith('.0') and bool(self.textwidget.get(end_location).strip())
+
     def highlight_range(self, last_possible_start: str, first_possible_end: str = 'end') -> None:
         start_time = time.perf_counter()
 
@@ -112,31 +119,28 @@ class Highlighter:
 
         generator = self._lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end - 1 char'))
         for position, tokentype, text in generator:
-            location_list = tag_locations.setdefault(str(tokentype), [])
-            location_list.append(f'{lineno}.{column}')
-
+            token_start = f'{lineno}.{column}'
             newline_count = text.count('\n')
             if newline_count != 0:
                 lineno += newline_count
                 column = len(text.rsplit('\n', 1)[-1])
             else:
                 column += len(text)
-            location_list.append(f'{lineno}.{column}')
+            token_end = f'{lineno}.{column}'
+            tag_locations.setdefault(str(tokentype), []).extend([token_start, token_end])
 
             # We place marks where highlighting may begin.
             # You can't start highlighting anywhere, such as inside a multiline string or comment.
             # The tokenizer is at root state when tokenizing starts.
             # So it has to be in root state for placing a mark.
-            # The only way to check for it with pygments is to use local variables inside the generator.
-            # It's an ugly hack.
-            if isinstance(self._lexer, RegexLexer) and generator.gi_frame.f_locals['statestack'] == ['root']:
+            if self._detect_root_state(generator, token_end):
                 if lineno >= int(mark_locations[-1].split('.')[0]) + 10:
-                    mark_locations.append(f'{lineno}.{column}')
+                    mark_locations.append(token_end)
                 if (self.textwidget.compare(f'{lineno}.{column}', '>=', first_possible_end)
-                        and self._index_is_marked(f'{lineno}.{column}')):
+                        and self._index_is_marked(token_end)):
                     break
 
-            if self.textwidget.compare(f'{lineno}.{column}', '>', end_of_view):
+            if self.textwidget.compare(token_end, '>', end_of_view):
                 break
 
         end = f'{lineno}.{column}'
