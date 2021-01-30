@@ -617,12 +617,25 @@ def add_label(text: str) -> ttk.Label:
     return label
 
 
+def _is_monospace(font_family: str) -> bool:
+    # Ignore weird fonts starting with @ (happens on Windows)
+    if font_family.startswith('@'):
+        return False
+
+    # I don't want to create font objects just for this, lol
+    tcl_interpreter = get_dialog_content().tk
+
+    # In non-monospace fonts, i is very narrow and m is very wide
+    iii_size = tcl_interpreter.call('font', 'measure', (font_family, '12'), 'iii')
+    mmm_size = tcl_interpreter.call('font', 'measure', (font_family, '12'), 'mmm')
+
+    # Ignore off-by-one errors (don't know if they ever happen)
+    return abs(iii_size - mmm_size) <= 1
+
+
 def _fill_dialog_content_with_defaults() -> None:
     # sort, remove duplicates, remove weird fonts starting with @ on windows
-    font_families = sorted({
-        family for family in tkinter.font.families()
-        if not family.startswith('@')
-    })
+    font_families = sorted(builtins.set(filter(_is_monospace, tkinter.font.families())))
 
     add_combobox('font_family', "Font family:", values=font_families)
     add_spinbox('font_size', "Font size:", from_=3, to=1000)

@@ -17,7 +17,7 @@ class LineNumbers:
 
     def __init__(self, parent: tkinter.Misc, textwidget_of_tab: tkinter.Text) -> None:
         self.textwidget = textwidget_of_tab
-        self.canvas = tkinter.Canvas(parent, width=40)
+        self.canvas = tkinter.Canvas(parent, width=40, highlightthickness=0)
         textwidget.use_pygments_theme(self.canvas, self._set_colors)
         utils.add_scroll_command(textwidget_of_tab, 'yscrollcommand', self._do_update)
 
