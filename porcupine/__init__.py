@@ -13,7 +13,7 @@ import subprocess
 
 from porcupine import _state
 
-version_info = (0, 84, 1)        # this is updated with release.py
+version_info = (0, 84, 2)        # this is updated with release.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017-2020 Akuli'
