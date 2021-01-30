@@ -1,6 +1,7 @@
 import itertools
 import logging
 import os
+import pathlib
 import platform
 import shlex
 import subprocess
@@ -13,16 +14,20 @@ import porcupine
 from porcupine import dirs
 
 log = logging.getLogger(__name__)
-LOG_DIR = dirs.cachedir / 'logs'
 FILENAME_FIRST_PART_FORMAT = '%Y-%m-%dT%H-%M-%S'
 
 # might be useful to grep something from old logs, but 30 days was way too much
 LOG_MAX_AGE_DAYS = 7
 
 
+# tests monkeypatch dirs.cachedir
+def get_log_dir() -> pathlib.Path:
+    return dirs.cachedir / 'logs'
+
+
 def _remove_old_logs() -> None:
-    for path in LOG_DIR.glob('*.txt'):
-        # support '<LOG_DIR>/<first_part>_<number>.txt' and '<LOG_DIR>/<firstpart>.txt'
+    for path in get_log_dir().glob('*.txt'):
+        # support '<log dir>/<first_part>_<number>.txt' and '<log dir>/<firstpart>.txt'
         first_part = path.stem.split('_')[0]
         try:
             log_date = datetime.strptime(first_part, FILENAME_FIRST_PART_FORMAT)
@@ -50,7 +55,7 @@ def _run_command(command: str) -> None:
 
 
 def _open_log_file() -> TextIO:
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    get_log_dir().mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime(FILENAME_FIRST_PART_FORMAT)
     filenames = (
         f'{timestamp}.txt' if i == 0 else f'{timestamp}_{i}.txt'
@@ -58,7 +63,7 @@ def _open_log_file() -> TextIO:
     )
     for filename in filenames:
         try:
-            return (LOG_DIR / filename).open('x', encoding='utf-8')
+            return (get_log_dir() / filename).open('x', encoding='utf-8')
         except FileExistsError:
             continue
     assert False  # makes mypy happy
