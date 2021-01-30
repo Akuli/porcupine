@@ -87,8 +87,8 @@ def create_pynsist_cfg():
         'files': 'porcupine/images\nlib',
     }
 
-    parser.write(sys.stdout)
-    sys.stdout.flush()
+    parser.write(sys.stderr)
+    sys.stderr.flush()
 
     with open('pynsist.cfg', 'w') as file:
         parser.write(file)
