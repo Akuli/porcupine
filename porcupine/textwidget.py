@@ -1,6 +1,7 @@
 import contextlib
 import dataclasses
 import functools
+import re
 import tkinter
 import weakref
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
@@ -134,8 +135,6 @@ class _ChangeTracker:
         # this part is tcl because i couldn't get a python callback to work
         widget.tk.eval('''
         proc %(fake_widget)s {args} {
-            #puts "%(fake_widget)s $args"
-
             # subcommand is e.g. insert, delete, replace, index, search, ...
             # see text(3tk) for all possible subcommands
             set subcommand [lindex $args 0]
@@ -166,6 +165,21 @@ class _ChangeTracker:
             if {$subcommand == "delete" ||
                     $subcommand == "insert" ||
                     $subcommand == "replace"} {
+                # Validate and clean up indexes here so that any problems
+                # result in Tcl error
+                if {$subcommand == "delete"} {
+                    for {set i 1} {$i < [llength $args]} {incr i} {
+                        lset args $i [%(actual_widget)s index [lindex $args $i]]
+                    }
+                }
+                if {$subcommand == "insert"} {
+                    lset args 1 [%(actual_widget)s index [lindex $args 1]]
+                }
+                if {$subcommand == "replace"} {
+                    lset args 1 [%(actual_widget)s index [lindex $args 1]]
+                    lset args 2 [%(actual_widget)s index [lindex $args 2]]
+                }
+
                 set cursor_may_have_moved 1
                 set prepared_event [%(change_event_from_command)s {*}$args]
             }
@@ -211,6 +225,8 @@ class _ChangeTracker:
 
     def _create_change(
             self, widget: tkinter.Text, start: str, end: str, new_text: str) -> Change:
+        assert re.fullmatch(r'[0-9]+\.[0-9]+', start)
+        assert re.fullmatch(r'[0-9]+\.[0-9]+', end)
         return Change(
             start=start,
             end=end,
@@ -225,15 +241,10 @@ class _ChangeTracker:
         # search for 'pathName delete' in text(3tk)... it's a wall of text,
         # and this thing has to implement every detail of that wall
         if subcommand == 'delete':
-            # "All indices are first checked for validity before any deletions
-            # are made." they are already validated, but this doesn't hurt
-            # imo... but note that rest of this code assumes that this is done!
-            # not everything works in corner cases without this
-            args = [widget.index(arg) for arg in args_tuple]
-
             # tk has a funny abstraction of an invisible newline character at
             # the end of file, it's always there but nothing else uses it, so
             # let's ignore it
+            args = list(args_tuple)
             for index, old_arg in enumerate(args):
                 if old_arg == widget.index('end'):
                     args[index] = widget.index('end - 1 char')
@@ -296,7 +307,6 @@ class _ChangeTracker:
         # text, but not as bad as the delete
         elif subcommand == 'insert':
             text_index, *other_args = args_tuple
-            text_index = widget.index(text_index)
 
             # "If index refers to the end of the text (the character after the
             # last newline) then the new text is inserted just before the last
@@ -319,8 +329,6 @@ class _ChangeTracker:
         # an even smaller wall of text that mostly refers to insert and replace
         elif subcommand == 'replace':
             start, end, *other_args = args_tuple
-            start = widget.index(start)
-            end = widget.index(end)
             new_text = ''.join(other_args[::2])
 
             # more invisible newline garbage
