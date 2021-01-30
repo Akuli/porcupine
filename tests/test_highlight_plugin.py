@@ -22,3 +22,11 @@ def test_deleting_bug(filetab):
     assert tag_ranges('Token.Keyword') == ['1.0', '1.6']
     assert tag_ranges('Token.Keyword.Constant') == ['1.7', '1.11']
     assert tag_ranges('Token.Literal.String.Double') == []
+
+
+def test_yaml_highlighting(filetab, tmp_path):
+    filetab.path = tmp_path / "foo.yml"
+    filetab.save()
+    filetab.textwidget.insert('1.0', '"lol"')
+    filetab.update()
+    assert filetab.textwidget.tag_names('1.2') == ('Token.Literal.String',)
