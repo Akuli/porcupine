@@ -86,6 +86,10 @@ def create_pynsist_cfg():
         'packages': '\n'.join(deps_without_pypi_wheels),
         'files': 'porcupine/images\nlib',
     }
+
+    parser.write(sys.stdout)
+    sys.stdout.flush()
+
     with open('pynsist.cfg', 'w') as file:
         parser.write(file)
 
