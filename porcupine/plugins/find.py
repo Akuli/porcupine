@@ -48,11 +48,6 @@ class Finder(ttk.Frame):
         self.grid_columnconfigure(2, minsize=30)
         self.grid_columnconfigure(3, weight=1)
 
-        # TODO: use the pygments theme somehow?
-        textwidget.tag_config(
-            'find_highlight', foreground='black', background='yellow')
-        self._textwidget.tag_lower('find_highlight', 'sel')
-
         self.find_entry = self._add_entry(0, "Find:")
         find_var = tkinter.StringVar()
         self.find_entry.config(textvariable=find_var)
@@ -116,6 +111,18 @@ class Finder(ttk.Frame):
         # explained in test_find_plugin.py
         textwidget.bind('<<Selection>>', self._update_buttons, add=True)
 
+        textwidget.bind('<<SettingChanged:pygments_style>>', self._config_tags, add=True)
+        self._config_tags()
+
+    def _config_tags(self, junk: object = None) -> None:
+        # TODO: use more pygments theme instead of hard-coded colors?
+        self._textwidget.tag_config(
+            'find_highlight', foreground='black', background='yellow')
+        self._textwidget.tag_config(
+            'find_highlight_selected', foreground='black', background='orange')
+        self._textwidget.tag_raise('find_highlight', 'sel')
+        self._textwidget.tag_raise('find_highlight_selected', 'find_highlight')
+
     def _add_entry(self, row: int, text: str) -> ttk.Entry:
         ttk.Label(self, text=text).grid(row=row, column=0, sticky='w')
         entry = ttk.Entry(self, width=35, font='TkFixedFont')
@@ -131,9 +138,8 @@ class Finder(ttk.Frame):
         self.highlight_all_matches()
 
     def hide(self, junk: object = None) -> None:
-        # remove previous highlights from highlight_all_matches
         self._textwidget.tag_remove('find_highlight', '1.0', 'end')
-
+        self._textwidget.tag_remove('find_highlight_selected', '1.0', 'end')
         self.pack_forget()
         self._textwidget.focus_set()
 
@@ -154,7 +160,7 @@ class Finder(ttk.Frame):
         replace_this_state: State
 
         try:
-            start, end = map(str, self._textwidget.tag_ranges('sel'))
+            start, end = map(str, self._textwidget.tag_ranges('find_highlight_selected'))
         except ValueError:
             replace_this_state = 'disabled'
         else:   # no, elif doesn't work here
@@ -239,9 +245,11 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel.config(text=f"Found {count} matches.")
 
-    def _select_range(self, start: str, end: str) -> None:
+    def _select_match(self, start: str, end: str) -> None:
         self._textwidget.tag_remove('sel', '1.0', 'end')
         self._textwidget.tag_add('sel', start, end)
+        self._textwidget.tag_remove('find_highlight_selected', '1.0', 'end')
+        self._textwidget.tag_add('find_highlight_selected', start, end)
         self._textwidget.mark_set('insert', start)
         self._textwidget.see(start)
 
@@ -256,11 +264,11 @@ class Finder(ttk.Frame):
         # find first pair that starts after the cursor
         for start, end in pairs:
             if self._textwidget.compare(start, '>', 'insert'):
-                self._select_range(start, end)
+                self._select_match(start, end)
                 break
         else:
             # reached end of file, use the first match
-            self._select_range(*pairs[0])
+            self._select_match(*pairs[0])
 
         self.statuslabel.config(text="")
         self._update_buttons()
@@ -274,10 +282,10 @@ class Finder(ttk.Frame):
 
         for start, end in reversed(pairs):
             if self._textwidget.compare(start, '<', 'insert'):
-                self._select_range(start, end)
+                self._select_match(start, end)
                 break
         else:
-            self._select_range(*pairs[-1])
+            self._select_match(*pairs[-1])
 
         self.statuslabel.config(text="")
         self._update_buttons()
