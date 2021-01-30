@@ -66,7 +66,7 @@ def create_pynsist_cfg():
         if name.lower() == 'porcupine':
             pass
         elif name.lower() in {'ttkthemes', 'black'}:
-            deps_without_pypi_wheels.append(dependency)
+            deps_without_pypi_wheels.append(name)
         else:
             deps_from_pypi_wheels.append(dependency)
 
