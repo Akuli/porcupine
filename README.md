@@ -68,6 +68,7 @@ I think you can download Python with tkinter from
 ### Windows
 
 Download a Porcupine installer from [the releases page](https://github.com/Akuli/porcupine/releases).
+Run it and then open Porcupine from the start menu.
 
 ### Development Install
 
