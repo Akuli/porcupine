@@ -36,8 +36,7 @@ def get_frozen_requirements_in_a_crazy_way():
         frozen = subprocess.check_output([r'temp_env\Scripts\python.exe', '-m', 'pip', 'freeze'])
     finally:
         shutil.rmtree('temp_env')
-    return [requirement for requirement in frozen.decode('utf-8').strip().splitlines()
-            if not requirement.lower().startswith('porcupine==')]
+    return frozen.decode('utf-8').strip().splitlines()
 
 
 # https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
@@ -59,6 +58,18 @@ def create_ico_file():
 
 def create_pynsist_cfg():
     info("Creating pynsist.cfg...")
+
+    deps_from_pypi_wheels = []
+    deps_without_pypi_wheels = ['tkinter', '_tkinter']
+    for dependency in get_frozen_requirements_in_a_crazy_way():
+        name, version = dependency.split('==')
+        if name.lower() == 'porcupine':
+            pass
+        elif name.lower() in {'ttkthemes', 'black'}:
+            deps_without_pypi_wheels.append(dependency)
+        else:
+            deps_from_pypi_wheels.append(dependency)
+
     parser = configparser.ConfigParser()
     parser['Application'] = {
         'name': 'Porcupine',
@@ -71,8 +82,8 @@ def create_pynsist_cfg():
         'version': '%d.%d.%d' % sys.version_info[:3],
     }
     parser['Include'] = {
-        'pypi_wheels': '\n'.join(get_frozen_requirements_in_a_crazy_way()),
-        'packages': 'tkinter\n_tkinter',
+        'pypi_wheels': '\n'.join(deps_from_pypi_wheels),
+        'packages': '\n'.join(deps_without_pypi_wheels),
         'files': 'porcupine/images\nlib',
     }
     with open('pynsist.cfg', 'w') as file:
