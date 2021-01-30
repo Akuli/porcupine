@@ -1,3 +1,4 @@
+import logging
 import tkinter
 
 import pytest
@@ -9,6 +10,7 @@ from porcupine.textwidget import Change, Changes, change_batch, create_peer_widg
 @pytest.fixture(scope='function')
 def text_and_events():
     text = tkinter.Text(get_main_window())
+    text.pack()
     text.config(undo=True)    # must be before track_changes()
     track_changes(text)
 
@@ -18,6 +20,7 @@ def text_and_events():
     events = []
     utils.bind_with_data(text, '<<ContentChanged>>', events.append, add=True)
     yield (text, events)
+    text.destroy()
     assert not events
 
 
@@ -169,14 +172,14 @@ def test_change_batch_nested(text_and_events):
 
 
 def test_peer_cursor_moved(text_and_events):
-    text, change_events = text_and_events
+    text, events = text_and_events
     peer = tkinter.Text(get_main_window())
     create_peer_widget(text, peer)
 
     text.insert('1.0', 'hello world')
     text.mark_set('insert', '1.5')
     peer.mark_set('insert', '1.5')
-    change_events.clear()
+    events.clear()
 
     text_move_events = []
     peer_move_events = []
@@ -192,3 +195,23 @@ def test_peer_cursor_moved(text_and_events):
     assert not text_move_events
     assert len(peer_move_events) == 1
     peer_move_events.clear()
+
+
+def test_copy_paste(text_and_events, caplog):
+    caplog.set_level(logging.ERROR)
+    text, events = text_and_events
+    text.insert('1.0', 'hello')
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.0', end='1.0', old_text_len=0, new_text='hello'),
+    ]
+
+    text.update()
+    text.focus()
+    text.tag_add('sel', '1.0', 'end - 1 char')
+    text.event_generate('<Control-c>')
+    text.event_generate('<Control-v>')
+
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start='1.5', end='1.5', old_text_len=0, new_text='hello'),
+    ], caplog.text
+    assert text.get('1.0', 'end - 1 char') == 'hellohello'
