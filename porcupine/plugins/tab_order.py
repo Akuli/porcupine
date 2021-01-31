@@ -12,10 +12,12 @@ else:
 from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
-def on_drag(event: 'tkinter.Event[tabs.TabManager]') -> None:
+def on_drag(event: 'tkinter.Event[tabs.TabManager]') -> utils.BreakOrNone:
     if event.widget.identify(event.x, event.y) == 'label':
         destination_index = event.widget.index(f'@{event.x},{event.y}')
         event.widget.insert(destination_index, event.widget.select())
+        return 'break'
+    return None
 
 
 def select_tab_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
@@ -26,24 +28,26 @@ def select_tab_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrN
         return None
 
 
-def select_left_or_right(diff: Literal[-1, 1]) -> None:
+def select_left_or_right(diff: Literal[-1, 1]) -> utils.BreakOrNone:
     selected_tab = get_tab_manager().select()
     if selected_tab is not None:
         new_index = get_tab_manager().index(selected_tab) + diff
         try:
             get_tab_manager().select(new_index)
+            return 'break'
         except tkinter.TclError:        # index out of bounds
-            pass
+            return None
 
 
-def move_left_or_right(diff: Literal[-1, 1]) -> None:
+def move_left_or_right(diff: Literal[-1, 1]) -> utils.BreakOrNone:
     selected_tab = get_tab_manager().select()
     if selected_tab is not None:
         destination_index = get_tab_manager().index(selected_tab) + diff
         try:
             get_tab_manager().insert(destination_index, selected_tab)
+            return 'break'
         except tkinter.TclError:        # index out of bounds
-            pass
+            return None
 
 
 def setup() -> None:
