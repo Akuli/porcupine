@@ -182,64 +182,6 @@ class TabManager(ttk.Notebook):
         tab.destroy()
         self._update_tab_titles()
 
-    def select_another_tab(self, diff: int) -> bool:
-        """Try to select another tab next to the currently selected tab.
-
-        *diff* should be ``1`` for selecting a tab at right or ``-1``
-        for left. This returns True if another tab was selected and
-        False if the current tab is already the leftmost tab or there
-        are no tabs.
-        """
-        assert diff in {1, -1}, repr(diff)
-        if not self.tabs():
-            return False
-
-        selected_tab = self.select()
-        assert selected_tab is not None
-        index = self.index(selected_tab)
-
-        try:
-            self.select(index + diff)
-            return True
-        except tkinter.TclError:   # should be "Slave index n out of bounds"
-            return False
-
-    # TODO: write tests for this? otoh it's a feature that I use all the time
-    def move_selected_tab(self, diff: int) -> bool:
-        """Try to move the currently selected tab left or right.
-
-        *diff* should be ``1`` for moving to right or ``-1`` for left.
-        This returns True if the tab was moved and False if there was no
-        room for moving it or there are no tabs.
-        """
-        assert diff in {1, -1}, repr(diff)
-        if not self.tabs():
-            return False
-
-        selected_tab = self.select()
-        assert selected_tab is not None
-        i1 = self.index(selected_tab)
-
-        # this could be simplified, but it's nice and readable now
-        i2 = i1 + diff
-        if i1 > i2:
-            i1, i2 = i2, i1
-
-        if i1 < 0 or i2 >= self.index('end'):
-            return False
-
-        # it's important to move the second tab back instead of moving
-        # the other tab forward because insert(number_of_tabs, tab)
-        # doesn't work for some reason
-        tab = self.tabs()[i2]
-        selected = (tab is self.select())
-
-        self.insert(i1, tab)
-        if selected:
-            self.select(tab)
-
-        return True
-
     def add_tab_callback(self, func: Callable[['Tab'], Any]) -> None:
         """Run a callback for each tab in the tab manager.
 

@@ -1,7 +1,13 @@
 """Allow dragging tabs or pressing keys to change their order."""
 
+import sys
 import tkinter
 from functools import partial
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 from porcupine import get_main_window, get_tab_manager, tabs, utils
 
@@ -12,7 +18,7 @@ def on_drag(event: 'tkinter.Event[tabs.TabManager]') -> None:
         event.widget.insert(destination_index, event.widget.select())
 
 
-def on_alt_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+def select_tab_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
     try:
         get_tab_manager().select(n - 1)
         return 'break'
@@ -20,9 +26,24 @@ def on_alt_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         return None
 
 
-# TODO: does this work with mac os smooth scrolling? probably not
-def on_wheel(direction: str) -> None:
-    get_tab_manager().select_another_tab({'up': -1, 'down': +1}[direction])
+def select_left_or_right(diff: Literal[-1, 1]) -> None:
+    selected_tab = get_tab_manager().select()
+    if selected_tab is not None:
+        new_index = get_tab_manager().index(selected_tab) + diff
+        try:
+            get_tab_manager().select(new_index)
+        except tkinter.TclError:        # index out of bounds
+            pass
+
+
+def move_left_or_right(diff: Literal[-1, 1]) -> None:
+    selected_tab = get_tab_manager().select()
+    if selected_tab is not None:
+        destination_index = get_tab_manager().index(selected_tab) + diff
+        try:
+            get_tab_manager().insert(destination_index, selected_tab)
+        except tkinter.TclError:        # index out of bounds
+            pass
 
 
 def setup() -> None:
@@ -30,12 +51,16 @@ def setup() -> None:
     tabmanager.bind('<Button1-Motion>', on_drag, add=True)
 
     # This doesn't use enable_traversal() because we want more bindings than it creates.
-    get_main_window().bind('<<TabOrder:SelectLeft>>', (lambda event: tabmanager.select_another_tab(-1)), add=True)
-    get_main_window().bind('<<TabOrder:SelectRight>>', (lambda event: tabmanager.select_another_tab(1)), add=True)
-    get_main_window().bind('<<TabOrder:MoveLeft>>', (lambda event: tabmanager.move_selected_tab(-1)), add=True)
-    get_main_window().bind('<<TabOrder:MoveRight>>', (lambda event: tabmanager.move_selected_tab(1)), add=True)
+    # The bindings also need to be configurable.
+    get_main_window().bind('<<TabOrder:SelectLeft>>', (lambda event: select_left_or_right(-1)), add=True)
+    get_main_window().bind('<<TabOrder:SelectRight>>', (lambda event: select_left_or_right(1)), add=True)
+    get_main_window().bind('<<TabOrder:MoveLeft>>', (lambda event: move_left_or_right(-1)), add=True)
+    get_main_window().bind('<<TabOrder:MoveRight>>', (lambda event: move_left_or_right(1)), add=True)
 
     for n in range(1, 10):
-        get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(on_alt_n, n), add=True)
+        get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(select_tab_n, n), add=True)
 
-    utils.bind_mouse_wheel(get_tab_manager(), on_wheel, add=True)
+    # TODO: does this work with mac os smooth scrolling? probably not
+    utils.bind_mouse_wheel(get_tab_manager(), (
+        lambda direction: select_left_or_right({'up': -1, 'down': +1}[direction])  # type: ignore
+    ), add=True)
