@@ -59,11 +59,13 @@ def _fix_text_widget_bindings(event: 'tkinter.Event[tkinter.Misc]') -> None:
 
 
 def _init() -> None:
+    log.debug("_init() starts")
     main_window = get_main_window()
     main_window.config(menu=tkinter.Menu(main_window, tearoff=False))
     main_window.bind('<<PluginsLoaded>>', (lambda event: update_keyboard_shortcuts()), add=True)
     main_window.bind_class('Text', '<FocusIn>', _fix_text_widget_bindings, add=True)
     _fill_menus_with_default_stuff()
+    log.debug("_init() done")
 
 
 _MENU_ITEM_TYPES_WITH_LABEL = {'command', 'checkbutton', 'radiobutton', 'cascade'}

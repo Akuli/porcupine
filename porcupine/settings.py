@@ -8,6 +8,7 @@ import logging
 import os
 import pathlib
 import platform
+import time
 import tkinter.font
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
@@ -632,6 +633,11 @@ def _is_monospace(font_family: str) -> bool:
     # I don't want to create font objects just for this, lol
     tcl_interpreter = get_dialog_content().tk
 
+    # Let's first ask Tcl whether the font is fixed. This is fastest but
+    # returns the wrong result for some fonts that are not actually monospace.
+    if not tcl_interpreter.call('font', 'metrics', (font_family, '12'), '-fixed'):
+        return False
+
     # In non-monospace fonts, i is very narrow and m is very wide.
     # Also, make sure that bolding or italic doesn't change the width.
     sizes = [
@@ -641,15 +647,52 @@ def _is_monospace(font_family: str) -> bool:
         tcl_interpreter.call('font', 'measure', (font_family, '12', 'italic'), 'mmm'),
     ]
 
-    # Ignore off-by-one errors (don't know if they ever happen)
-    return max(sizes) - min(sizes) <= 1
+    # Allow off-by-one errors, just in case. Don't know if they ever actually happen.
+    return (max(sizes) - min(sizes) <= 1)
+
+
+def _get_monospace_font_families() -> List[str]:
+    cache_path = dirs.cachedir / 'font_cache.json'
+    all_families = sorted(builtins.set(tkinter.font.families()))
+
+    # This is surprisingly slow when there are lots of fonts. Let's cache.
+    try:
+        with cache_path.open('r') as file:
+            cache = json.load(file)
+
+        # all_families stored to cache in case user installs more fonts
+        if cache['version'] == 2 and cache['all_families'] == all_families:
+            _log.debug(f"Taking list of monospace families from {cache_path}")
+            return cache['monospace_families']
+
+    except FileNotFoundError:
+        pass
+    except Exception:
+        _log.error(f"unexpected {cache_path} reading error", exc_info=True)
+
+    _log.warning(f"Can't use {cache_path}. Starting Porcupine might take a while.")
+    monospace_families = list(filter(_is_monospace, all_families))
+
+    try:
+        with cache_path.open('w') as file:
+            json.dump({
+                'version': 2,
+                'all_families': all_families,
+                'monospace_families': monospace_families,
+            }, file)
+        _log.debug(f"Wrote {cache_path}")
+    except Exception:
+        _log.error(f"unexpected {cache_path} writing error", exc_info=True)
+
+    return monospace_families
 
 
 def _fill_dialog_content_with_defaults() -> None:
-    # sort, remove duplicates, remove weird fonts starting with @ on windows
-    font_families = sorted(builtins.set(filter(_is_monospace, tkinter.font.families())))
+    start_time = time.time()
+    monospace_families = _get_monospace_font_families()
+    _log.debug(f"Found monospace fonts in {round((time.time() - start_time)*1000)}ms")
 
-    add_combobox('font_family', "Font family:", values=font_families)
+    add_combobox('font_family', "Font family:", values=monospace_families)
     add_spinbox('font_size', "Font size:", from_=3, to=1000)
     add_combobox(
         'default_line_ending', "Default line ending:",
@@ -659,9 +702,10 @@ def _fill_dialog_content_with_defaults() -> None:
 # undocumented on purpose, don't use in plugins
 def init_the_rest_after_initing_enough_for_using_disabled_plugins_list() -> None:
     global _dialog_content
-    if _dialog_content is not None:
-        raise RuntimeError("can't call _init() twice")
+    assert _dialog_content is None
 
+    _log.debug("initializing continues")
     _init_global_gui_settings()
     _dialog_content = _create_dialog_content()
     _fill_dialog_content_with_defaults()
+    _log.debug("initialized")

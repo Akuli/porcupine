@@ -111,12 +111,16 @@ def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.Argum
     assert info.module is not None
 
     if hasattr(info.module, 'setup_argument_parser'):
+        start = time.time()
         try:
             info.module.setup_argument_parser(parser)
         except Exception:
             log.exception(f"{info.name}.setup_argument_parser() doesn't work")
             info.status = Status.SETUP_FAILED
             info.error = traceback.format_exc()
+
+        duration = time.time() - start
+        log.debug("ran %s.setup_argument_parser() in %.3f milliseconds", info.name, duration*1000)
 
 
 def _import_plugin(info: PluginInfo) -> None:
