@@ -8,7 +8,7 @@ import tkinter
 
 import ttkthemes  # type: ignore[import]
 
-from porcupine import menubar, settings, get_main_window
+from porcupine import get_main_window, menubar, settings
 
 
 def setup() -> None:
