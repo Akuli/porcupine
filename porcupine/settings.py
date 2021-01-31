@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import pathlib
+import platform
 import tkinter.font
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast, overload
@@ -369,10 +370,16 @@ def _init_global_gui_settings() -> None:
         # about it for porcupine, using stupid hard-coded default instead
         fixedfont.config(size=10)
 
-    # fixedfont.cget('family') is typically e.g. 'Monospace', that's not included in
-    # tkinter.font.families() because it refers to another font family that is
-    # in tkinter.font.families()
-    add_option('font_family', fixedfont.actual('family'))
+    if platform.system() == 'Windows':
+        # Windows default monospace font sucks, see #245
+        default_font_family = 'Consolas'
+    else:
+        # fixedfont.cget('family') is typically e.g. 'Monospace', that's not included in
+        # tkinter.font.families() because it refers to another font family that is
+        # in tkinter.font.families()
+        default_font_family = fixedfont.actual('family')
+
+    add_option('font_family', default_font_family)
     add_option('font_size', fixedfont.cget('size'))
 
     # keep TkFixedFont up to date with settings
