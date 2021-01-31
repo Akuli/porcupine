@@ -265,7 +265,7 @@ class _ChangeTracker:
 
             # "They [index pairs, aka ranges] are sorted [...]."
             # (line, column) tuples sort nicely
-            def get_range_beginning_as_tuple(start_and_end: Tuple[str, str]) -> int:
+            def get_range_beginning_as_tuple(start_and_end: Tuple[str, str]) -> Tuple[int, int]:
                 line, column = map(int, start_and_end[0].split('.'))
                 return (line, column)
 
