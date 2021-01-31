@@ -662,6 +662,9 @@ def init_the_rest_after_initing_enough_for_using_disabled_plugins_list() -> None
     if _dialog_content is not None:
         raise RuntimeError("can't call _init() twice")
 
+    _log.debug("initing global gui settings")
     _init_global_gui_settings()
+    _log.debug("creating dialog")
     _dialog_content = _create_dialog_content()
     _fill_dialog_content_with_defaults()
+    _log.debug("initialized")

@@ -28,6 +28,7 @@ def init(args: Any) -> None:
     assert _root is None and _tab_manager is None and _parsed_args is None
     assert args is not None
 
+    log.debug("init() starts")
     _parsed_args = args
 
     _root = tkinter.Tk()
@@ -36,6 +37,7 @@ def init(args: Any) -> None:
 
     _tab_manager = tabs.TabManager(_root)
     _tab_manager.pack(fill='both', expand=True)
+    log.debug("init() done")
 
 
 def get_main_window() -> tkinter.Tk:
