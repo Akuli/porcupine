@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
 
-from porcupine import _state, images, settings, textwidget, utils
+from porcupine import _state, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
@@ -88,7 +88,6 @@ class TabManager(ttk.Notebook):
             self.bindings.append(('<Alt-Key-%d>' % number, callback))
 
         self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
-        self.bind('<Button-1>', self._on_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
 
         # the string is call stack for adding callback
@@ -98,24 +97,6 @@ class TabManager(ttk.Notebook):
         tab = self.select()
         if tab is not None:
             tab.on_focus()
-
-    def _on_click(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
-        if self.identify(event.x, event.y) != 'label':
-            # something else than the top label was clicked
-            return
-
-        # find the right edge of the label
-        right = event.x
-        while self.identify(right, event.y) == 'label':
-            right += 1
-
-        # hopefully the image is on the right edge of the label and
-        # there's no padding :O
-        if event.x + images.get('closebutton').width() >= right:
-            # the close button was clicked
-            tab = self.tabs()[self.index('@%d,%d' % (event.x, event.y))]
-            if tab.can_be_closed():
-                self.close_tab(tab)
 
     def _on_wheel(self, direction: str) -> None:
         self.select_another_tab({'up': -1, 'down': +1}[direction])
@@ -209,7 +190,7 @@ class TabManager(ttk.Notebook):
                 tab.destroy()
                 return existing_tab
 
-        self.add(tab, image=images.get('closebutton'), compound='right')
+        self.add(tab)
         self._update_tab_titles()
         if select:
             self.select(tab)
