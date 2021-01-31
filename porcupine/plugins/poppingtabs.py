@@ -30,6 +30,7 @@ def _is_on_window(event: 'tkinter.Event[tkinter.Misc]') -> bool:
     window_right = window_left + window.winfo_width()
     window_top = window.winfo_y()
     window_bottom = window_top + window.winfo_height()
+    window_top -= 50  # menu bar and window border
 
     return ((window_left < event.x_root < window_right) and
             (window_top < event.y_root < window_bottom))

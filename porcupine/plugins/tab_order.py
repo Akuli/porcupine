@@ -1,5 +1,4 @@
 """Allow dragging tabs to change their order."""
-# TODO: it's too easy to drag a tab slightly up and pop it (see poppingtabs plugin)
 # TODO: move ctrl+shift+pageup and ctrl+shift+pagedown and alt+n bindings here and make them configurable
 
 import tkinter
