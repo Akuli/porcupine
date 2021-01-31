@@ -73,22 +73,7 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-
-        # These can be bound in a parent widget. This doesn't use
-        # enable_traversal() because we want more bindings than it
-        # creates. Undocumented because plugins shouldn't need this.
-        self.bindings: List[Tuple[str, Callable[['tkinter.Event[tkinter.Misc]'], utils.BreakOrNone]]] = [
-            ('<Control-Prior>', functools.partial(self._on_page_updown, False, -1)),
-            ('<Control-Next>', functools.partial(self._on_page_updown, False, +1)),
-            ('<Control-Shift-Prior>', functools.partial(self._on_page_updown, True, -1)),
-            ('<Control-Shift-Next>', functools.partial(self._on_page_updown, True, +1)),
-        ]
-        for number in range(1, 10):
-            callback = functools.partial(self._on_alt_n, number)
-            self.bindings.append(('<Alt-Key-%d>' % number, callback))
-
         self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
-        utils.bind_mouse_wheel(self, self._on_wheel, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: List[Tuple[Callable[[Tab], Any], str]] = []
@@ -97,25 +82,6 @@ class TabManager(ttk.Notebook):
         tab = self.select()
         if tab is not None:
             tab.on_focus()
-
-    def _on_wheel(self, direction: str) -> None:
-        self.select_another_tab({'up': -1, 'down': +1}[direction])
-
-    def _on_page_updown(
-            self, shifted: bool, diff: int,
-            event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
-        if shifted:
-            self.move_selected_tab(diff)
-        else:
-            self.select_another_tab(diff)
-        return 'break'
-
-    def _on_alt_n(self, n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
-        try:
-            self.select(n - 1)
-            return 'break'
-        except tkinter.TclError:        # index out of bounds
-            return None
 
     def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
