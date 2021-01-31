@@ -24,29 +24,32 @@ def select_tab_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrN
 
 def select_left_or_right(diff: int) -> utils.BreakOrNone:
     selected_tab = get_tab_manager().select()
-    if selected_tab is not None:
-        new_index = get_tab_manager().index(selected_tab) + diff
-        try:
-            get_tab_manager().select(new_index)
-            return 'break'
-        except tkinter.TclError:        # index out of bounds
-            return None
+    if selected_tab is None:
+        return None
+
+    new_index = get_tab_manager().index(selected_tab) + diff
+    try:
+        get_tab_manager().select(new_index)
+        return 'break'
+    except tkinter.TclError:        # index out of bounds
+        return None
 
 
 def move_left_or_right(diff: int) -> utils.BreakOrNone:
     selected_tab = get_tab_manager().select()
-    if selected_tab is not None:
-        destination_index = get_tab_manager().index(selected_tab) + diff
-        try:
-            get_tab_manager().insert(destination_index, selected_tab)
-            return 'break'
-        except tkinter.TclError:        # index out of bounds
-            return None
+    if selected_tab is None:
+        return None
+
+    destination_index = get_tab_manager().index(selected_tab) + diff
+    try:
+        get_tab_manager().insert(destination_index, selected_tab)
+        return 'break'
+    except tkinter.TclError:        # index out of bounds
+        return None
 
 
 def setup() -> None:
-    tabmanager = get_tab_manager()
-    tabmanager.bind('<Button1-Motion>', on_drag, add=True)
+    get_tab_manager().bind('<Button1-Motion>', on_drag, add=True)
 
     # This doesn't use enable_traversal() because we want more bindings than it creates.
     # The bindings also need to be configurable.
