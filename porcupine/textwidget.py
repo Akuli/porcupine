@@ -264,19 +264,12 @@ class _ChangeTracker:
                      if widget.compare(start, '<', end)]
 
             # "They [index pairs, aka ranges] are sorted [...]."
-            # TODO: use the fact that (line, column) tuples sort nicely?
-            def sort_by_range_beginnings(
-                    range1: Tuple[str, str],
-                    range2: Tuple[str, str]) -> int:
-                start1, junk = range1
-                start2, junk = range2
-                if widget.compare(start1, '>', start2):
-                    return 1
-                if widget.compare(start1, '<', start2):
-                    return -1
-                return 0
+            # (line, column) tuples sort nicely
+            def get_range_beginning_as_tuple(start_and_end: Tuple[str, str]) -> int:
+                line, column = map(int, start_and_end[0].split('.'))
+                return (line, column)
 
-            pairs.sort(key=functools.cmp_to_key(sort_by_range_beginnings))
+            pairs.sort(key=get_range_beginning_as_tuple)
 
             # "If multiple ranges with the same start index are given, then the
             # longest range is used. If overlapping ranges are given, then they
