@@ -34,7 +34,6 @@ def find_metadata():
     return result
 
 
-# TODO: update the description here and in a few other places
 setup(
     name='Porcupine',
     description="A decent editor written in tkinter",

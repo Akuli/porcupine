@@ -782,8 +782,8 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     kwargs.setdefault('font', 'TkDefaultFont')
     kwargs.setdefault('borderwidth', 0)
     kwargs.setdefault('relief', 'flat')
-    kwargs.setdefault('wrap', 'word')       # TODO: remember to mention in docs
-    kwargs.setdefault('state', 'disabled')  # TODO: remember to mention in docs
+    kwargs.setdefault('wrap', 'word')
+    kwargs.setdefault('state', 'disabled')
     text = tkinter.Text(parent, **kwargs)
 
     def update_colors(junk: object = None) -> None:
