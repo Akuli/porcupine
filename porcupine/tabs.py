@@ -1,6 +1,5 @@
 r"""Tabs as in browser tabs, not \t characters."""
 
-import functools
 import hashlib
 import importlib
 import itertools
