@@ -95,24 +95,14 @@ class PopManager:
 
             settings.save()     # let the new process use up-to-date settings
 
-            # Empty string (aka "load from current working directory") becomes
-            # the first item of sys.path when using -m, which isn't great if
-            # your current working directory contains e.g. queue.py (issue 31).
-            #
-            # However, if the currently running porcupine imports from current
-            # working directory (e.g. python3 -m porcupine), then the subprocess
-            # should do that too.
-            if os.getcwd() in sys.path:
-                args = [sys.executable, '-m', 'porcupine']
-            else:
-                python_code = '''
-import sys
-if sys.path[0] == '':
-    del sys.path[0]
-from porcupine.__main__ import main
-main()
-'''
-                args = [sys.executable, '-c', python_code]
+            # The subprocess must be called so that it has a sane sys.path.
+            # In particular, import or don't import from current working
+            # directory exactly like the porcupine that is currently running.
+            # Importing from current working directory is bad if it contains
+            # e.g. queue.py (#31), but good when that's where porcupine is
+            # meant to be imported from (#230).
+            code = f'import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()'
+            args = [sys.executable, '-c', code]
 
             args.append('--without-plugins')
             args.append(','.join({
