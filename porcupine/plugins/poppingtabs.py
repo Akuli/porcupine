@@ -109,7 +109,7 @@ class PopManager:
 
             message = (type(tab), state, f'{width}x{height}+{x}+{y}')
             with tempfile.NamedTemporaryFile(delete=False) as file:
-                log.debug(f"writing pickled state to {file}")
+                log.debug(f"writing pickled state to {file.name}")
                 pickle.dump(message, file)
 
             settings.save()     # let the new process use up-to-date settings
