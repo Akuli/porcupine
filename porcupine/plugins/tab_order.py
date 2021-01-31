@@ -1,13 +1,7 @@
 """Allow dragging tabs or pressing keys to change their order."""
 
-import sys
 import tkinter
 from functools import partial
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 from porcupine import get_main_window, get_tab_manager, tabs, utils
 
@@ -28,7 +22,7 @@ def select_tab_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrN
         return None
 
 
-def select_left_or_right(diff: Literal[-1, 1]) -> utils.BreakOrNone:
+def select_left_or_right(diff: int) -> utils.BreakOrNone:
     selected_tab = get_tab_manager().select()
     if selected_tab is not None:
         new_index = get_tab_manager().index(selected_tab) + diff
@@ -39,7 +33,7 @@ def select_left_or_right(diff: Literal[-1, 1]) -> utils.BreakOrNone:
             return None
 
 
-def move_left_or_right(diff: Literal[-1, 1]) -> utils.BreakOrNone:
+def move_left_or_right(diff: int) -> utils.BreakOrNone:
     selected_tab = get_tab_manager().select()
     if selected_tab is not None:
         destination_index = get_tab_manager().index(selected_tab) + diff
@@ -66,5 +60,5 @@ def setup() -> None:
 
     # TODO: does this work with mac os smooth scrolling? probably not
     utils.bind_mouse_wheel(get_tab_manager(), (
-        lambda direction: select_left_or_right({'up': -1, 'down': +1}[direction])  # type: ignore
+        lambda direction: select_left_or_right({'up': -1, 'down': +1}[direction])
     ), add=True)
