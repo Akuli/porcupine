@@ -24,7 +24,6 @@ CommandArgument = Union[str, pathlib.Path]
 
 
 # getting this to work in powershell turned out to be hard :(
-# TODO: tests
 def _run_in_windows_cmd(
         blue_message: str,
         workingdir: pathlib.Path,
