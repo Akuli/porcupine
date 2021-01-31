@@ -18,8 +18,7 @@ def on_click(event: 'tkinter.Event[tabs.TabManager]') -> None:
         while event.widget.identify(right, event.y) == 'label':
             right += 1
 
-        # hopefully the image is on the right edge of the label and
-        # there's no padding :O
+        # hopefully the image is on the right edge of the label and there's no padding :O
         if event.x >= right - images.get('closebutton').width():
             close_clicked_tab(event)
 

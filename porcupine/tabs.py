@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
 
-from porcupine import _state, images, settings, textwidget, utils
+from porcupine import _state, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
