@@ -625,12 +625,17 @@ def _is_monospace(font_family: str) -> bool:
     # I don't want to create font objects just for this, lol
     tcl_interpreter = get_dialog_content().tk
 
-    # In non-monospace fonts, i is very narrow and m is very wide
-    iii_size = tcl_interpreter.call('font', 'measure', (font_family, '12'), 'iii')
-    mmm_size = tcl_interpreter.call('font', 'measure', (font_family, '12'), 'mmm')
+    # In non-monospace fonts, i is very narrow and m is very wide.
+    # Also, make sure that bolding or italic doesn't change the width.
+    sizes = [
+        tcl_interpreter.call('font', 'measure', (font_family, '12'), 'iii'),
+        tcl_interpreter.call('font', 'measure', (font_family, '12'), 'mmm'),
+        tcl_interpreter.call('font', 'measure', (font_family, '12', 'bold'), 'mmm'),
+        tcl_interpreter.call('font', 'measure', (font_family, '12', 'italic'), 'mmm'),
+    ]
 
     # Ignore off-by-one errors (don't know if they ever happen)
-    return abs(iii_size - mmm_size) <= 1
+    return max(sizes) - min(sizes) <= 1
 
 
 def _fill_dialog_content_with_defaults() -> None:
