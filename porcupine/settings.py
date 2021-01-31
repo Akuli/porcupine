@@ -702,7 +702,7 @@ def _fill_dialog_content_with_defaults() -> None:
 # undocumented on purpose, don't use in plugins
 def init_the_rest_after_initing_enough_for_using_disabled_plugins_list() -> None:
     global _dialog_content
-    assert _dialog_content is not None
+    assert _dialog_content is None
 
     _log.debug("initializing continues")
     _init_global_gui_settings()
