@@ -32,6 +32,17 @@ event add "<<Menubar:Edit/Find and Replace>>" <Control-f>
 # fold plugin
 event add "<<Menubar:Edit/Fold>>" <Alt-f>
 
+# tab_order plugin
+# Prior = Page Up, Next = Page Down
+event add "<<TabOrder:SelectLeft>>" <Control-Prior>
+event add "<<TabOrder:SelectRight>>" <Control-Next>
+event add "<<TabOrder:MoveLeft>>" <Control-Shift-Prior>
+event add "<<TabOrder:MoveRight>>" <Control-Shift-Next>
+for {set i 1} {$i <= 9} {incr i} {
+    # e.g. Alt+2 to select second tab
+    event add "<<TabOrder:SelectTab$i>>" <Alt-Key-$i>
+}
+
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T
 # I use non-shifted ctrl+t for swapping two characters before cursor while editing

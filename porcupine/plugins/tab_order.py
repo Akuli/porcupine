@@ -20,14 +20,6 @@ def on_alt_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         return None
 
 
-def on_page_updown(shifted: bool, diff: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
-    if shifted:
-        get_tab_manager().move_selected_tab(diff)
-    else:
-        get_tab_manager().select_another_tab(diff)
-    return 'break'
-
-
 # TODO: does this work with mac os smooth scrolling? probably not
 def on_wheel(direction: str) -> None:
     get_tab_manager().select_another_tab({'up': -1, 'down': +1}[direction])
@@ -38,13 +30,12 @@ def setup() -> None:
     tabmanager.bind('<Button1-Motion>', on_drag, add=True)
 
     # This doesn't use enable_traversal() because we want more bindings than it creates.
-    # TODO: make these configurable
-    get_main_window().bind('<Control-Prior>', partial(on_page_updown, False, -1), add=True)
-    get_main_window().bind('<Control-Next>', partial(on_page_updown, False, +1), add=True)
-    get_main_window().bind('<Control-Shift-Prior>', partial(on_page_updown, True, -1), add=True)
-    get_main_window().bind('<Control-Shift-Next>', partial(on_page_updown, True, +1), add=True)
+    get_main_window().bind('<<TabOrder:SelectLeft>>', (lambda event: tabmanager.select_another_tab(-1)), add=True)
+    get_main_window().bind('<<TabOrder:SelectRight>>', (lambda event: tabmanager.select_another_tab(1)), add=True)
+    get_main_window().bind('<<TabOrder:MoveLeft>>', (lambda event: tabmanager.move_selected_tab(-1)), add=True)
+    get_main_window().bind('<<TabOrder:MoveRight>>', (lambda event: tabmanager.move_selected_tab(1)), add=True)
 
     for n in range(1, 10):
-        get_main_window().bind(f'<Alt-Key-{n}>', partial(on_alt_n, n), add=True)
+        get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(on_alt_n, n), add=True)
 
     utils.bind_mouse_wheel(get_tab_manager(), on_wheel, add=True)
