@@ -1,4 +1,8 @@
-"""More Ttk themes: https://github.com/RedFantom/ttkthemes"""
+"""Change the look of Porcupine's GUI.
+
+This plugin doesn't do anything to the colors used in the main editing area.
+Those are handled by pygments_style and highlight plugins.
+"""
 # TODO: capitalize theme names in menu items?
 import tkinter
 
