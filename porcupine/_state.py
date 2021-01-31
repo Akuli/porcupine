@@ -36,8 +36,6 @@ def init(args: Any) -> None:
 
     _tab_manager = tabs.TabManager(_root)
     _tab_manager.pack(fill='both', expand=True)
-    for binding, callback in _tab_manager.bindings:
-        _root.bind(binding, callback, add=True)
 
 
 def get_main_window() -> tkinter.Tk:

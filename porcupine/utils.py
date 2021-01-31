@@ -525,7 +525,7 @@ def bind_tab_key(
 
 def bind_mouse_wheel(
         widget_or_class_name: Union[tkinter.Misc, str],
-        callback: Callable[[Literal['up', 'down']], None],
+        callback: Callable[[Literal['up', 'down']], BreakOrNone],
         *,
         prefixes: str = '',
         add: Optional[bool] = None) -> None:
@@ -557,16 +557,16 @@ def bind_mouse_wheel(
     # i needed to cheat and use stackoverflow for the mac stuff :(
     # http://stackoverflow.com/a/17457843
     if some_widget.tk.call('tk', 'windowingsystem') == 'x11':
-        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
-            callback('up' if event.num == 4 else 'down')
+        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> BreakOrNone:
+            return callback('up' if event.num == 4 else 'down')
 
         bind(f'<{prefixes}Button-4>', real_callback, add)
         bind(f'<{prefixes}Button-5>', real_callback, add)
 
     else:
         # TODO: test this on OSX
-        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
-            callback('up' if event.delta > 0 else 'down')
+        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> BreakOrNone:
+            return callback('up' if event.delta > 0 else 'down')
 
         bind(f'<{prefixes}MouseWheel>', real_callback, add)
 

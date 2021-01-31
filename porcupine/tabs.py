@@ -1,6 +1,5 @@
 r"""Tabs as in browser tabs, not \t characters."""
 
-import functools
 import hashlib
 import importlib
 import itertools
@@ -73,22 +72,7 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-
-        # These can be bound in a parent widget. This doesn't use
-        # enable_traversal() because we want more bindings than it
-        # creates. Undocumented because plugins shouldn't need this.
-        self.bindings: List[Tuple[str, Callable[['tkinter.Event[tkinter.Misc]'], utils.BreakOrNone]]] = [
-            ('<Control-Prior>', functools.partial(self._on_page_updown, False, -1)),
-            ('<Control-Next>', functools.partial(self._on_page_updown, False, +1)),
-            ('<Control-Shift-Prior>', functools.partial(self._on_page_updown, True, -1)),
-            ('<Control-Shift-Next>', functools.partial(self._on_page_updown, True, +1)),
-        ]
-        for number in range(1, 10):
-            callback = functools.partial(self._on_alt_n, number)
-            self.bindings.append(('<Alt-Key-%d>' % number, callback))
-
         self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
-        utils.bind_mouse_wheel(self, self._on_wheel, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: List[Tuple[Callable[[Tab], Any], str]] = []
@@ -97,25 +81,6 @@ class TabManager(ttk.Notebook):
         tab = self.select()
         if tab is not None:
             tab.on_focus()
-
-    def _on_wheel(self, direction: str) -> None:
-        self.select_another_tab({'up': -1, 'down': +1}[direction])
-
-    def _on_page_updown(
-            self, shifted: bool, diff: int,
-            event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
-        if shifted:
-            self.move_selected_tab(diff)
-        else:
-            self.select_another_tab(diff)
-        return 'break'
-
-    def _on_alt_n(self, n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
-        try:
-            self.select(n - 1)
-            return 'break'
-        except tkinter.TclError:        # index out of bounds
-            return None
 
     def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
@@ -216,64 +181,6 @@ class TabManager(ttk.Notebook):
         self.forget(tab)
         tab.destroy()
         self._update_tab_titles()
-
-    def select_another_tab(self, diff: int) -> bool:
-        """Try to select another tab next to the currently selected tab.
-
-        *diff* should be ``1`` for selecting a tab at right or ``-1``
-        for left. This returns True if another tab was selected and
-        False if the current tab is already the leftmost tab or there
-        are no tabs.
-        """
-        assert diff in {1, -1}, repr(diff)
-        if not self.tabs():
-            return False
-
-        selected_tab = self.select()
-        assert selected_tab is not None
-        index = self.index(selected_tab)
-
-        try:
-            self.select(index + diff)
-            return True
-        except tkinter.TclError:   # should be "Slave index n out of bounds"
-            return False
-
-    # TODO: write tests for this? otoh it's a feature that I use all the time
-    def move_selected_tab(self, diff: int) -> bool:
-        """Try to move the currently selected tab left or right.
-
-        *diff* should be ``1`` for moving to right or ``-1`` for left.
-        This returns True if the tab was moved and False if there was no
-        room for moving it or there are no tabs.
-        """
-        assert diff in {1, -1}, repr(diff)
-        if not self.tabs():
-            return False
-
-        selected_tab = self.select()
-        assert selected_tab is not None
-        i1 = self.index(selected_tab)
-
-        # this could be simplified, but it's nice and readable now
-        i2 = i1 + diff
-        if i1 > i2:
-            i1, i2 = i2, i1
-
-        if i1 < 0 or i2 >= self.index('end'):
-            return False
-
-        # it's important to move the second tab back instead of moving
-        # the other tab forward because insert(number_of_tabs, tab)
-        # doesn't work for some reason
-        tab = self.tabs()[i2]
-        selected = (tab is self.select())
-
-        self.insert(i1, tab)
-        if selected:
-            self.select(tab)
-
-        return True
 
     def add_tab_callback(self, func: Callable[['Tab'], Any]) -> None:
         """Run a callback for each tab in the tab manager.
