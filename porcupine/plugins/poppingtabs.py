@@ -24,7 +24,7 @@ NOT_POPPABLE = SpecialState()
 NOT_DRAGGING = SpecialState()
 
 
-def _is_on_window(event: 'tkinter.Event[tkinter.Misc]') -> bool:
+def is_on_window(event: 'tkinter.Event[tkinter.Misc]') -> bool:
     window = event.widget.winfo_toplevel()
     window_left = window.winfo_x()
     window_right = window_left + window.winfo_width()
@@ -59,7 +59,7 @@ class PopManager:
     # no need to return 'break' imo, other plugins are free to follow
     # drags and drops
     def on_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
-        if _is_on_window(event):
+        if is_on_window(event):
             self._window.withdraw()
             return
 
@@ -83,14 +83,33 @@ class PopManager:
 
     def on_drop(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         self._window.withdraw()
-        if not (_is_on_window(event) or isinstance(self._dragged_state, SpecialState)):
+        if not (is_on_window(event) or isinstance(self._dragged_state, SpecialState)):
             log.info("popping off a tab")
             tab, state = self._dragged_state
-            required_size = (tab.winfo_reqwidth(), tab.winfo_reqheight())
-            message = (type(tab), state, required_size, event.x_root, event.y_root)
 
+            # At least 600x400, bigger if necessary. Can't use
+            # get_main_window.winfo_reqwidth because that's huge
+            # when there's a lot of tabs.
+            width = max(600, tab.winfo_reqwidth())
+            height = max(400, get_main_window().winfo_reqheight())
+
+            # Center the window
+            x = event.x_root - round(width/2)
+            y = event.y_root - round(height/2)
+
+            # Make sure it's not off screen
+            screen_width = get_main_window().winfo_screenwidth()
+            screen_height = get_main_window().winfo_screenheight()
+            width = min(width, screen_width)
+            height = min(height, screen_height)
+            x = min(x, screen_width - width)
+            y = min(y, screen_height - height)
+            x = max(0, x)
+            y = max(0, y)
+
+            message = (type(tab), state, f'{width}x{height}+{x}+{y}')
             with tempfile.NamedTemporaryFile(delete=False) as file:
-                log.debug("writing dumped state to '%s'", file)
+                log.debug(f"writing pickled state to {file}")
                 pickle.dump(message, file)
 
             settings.save()     # let the new process use up-to-date settings
@@ -148,21 +167,8 @@ def open_tab_from_state_file() -> None:
         return
 
     with open(path, 'rb') as file:
-        (tabtype, state, required_size, mousex, mousey) = pickle.load(file)
-
-    # stupid default size
-    width = 600
-    height = 400
-
-    reqwidth, reqheight = required_size
-    reqheight += 50     # for stuff outside tabs
-
-    # center the window around the mouse
-    top = mousey - height//2
-    left = mousex - height//2
-    get_main_window().geometry('%dx%d+%d+%d' % (
-        max(width, reqwidth), max(height, reqheight), left, top))
-
+        (tabtype, state, geometry) = pickle.load(file)
+    get_main_window().geometry(geometry)
     get_tab_manager().add_tab(tabtype.from_state(get_tab_manager(), state))
 
     # the state file is not removed earlier because if anything above
