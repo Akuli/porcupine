@@ -267,11 +267,9 @@ class TabManager(ttk.Notebook):
         # the other tab forward because insert(number_of_tabs, tab)
         # doesn't work for some reason
         tab = self.tabs()[i2]
-        options = self.tab(i2)
         selected = (tab is self.select())
 
-        self.forget(i2)
-        self.insert(i1, tab, **options)
+        self.insert(i1, tab)
         if selected:
             self.select(tab)
 
