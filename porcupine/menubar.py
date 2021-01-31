@@ -64,7 +64,6 @@ def _init() -> None:
     main_window.config(menu=tkinter.Menu(main_window, tearoff=False))
     main_window.bind('<<PluginsLoaded>>', (lambda event: update_keyboard_shortcuts()), add=True)
     main_window.bind_class('Text', '<FocusIn>', _fix_text_widget_bindings, add=True)
-    log.debug("calling _fill_menus_with_default_stuff()")
     _fill_menus_with_default_stuff()
     log.debug("_init() done")
 

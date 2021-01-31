@@ -633,7 +633,8 @@ def _is_monospace(font_family: str) -> bool:
     # I don't want to create font objects just for this, lol
     tcl_interpreter = get_dialog_content().tk
 
-    # Let's first ask Tcl whether the font is fixed. This is fastest.
+    # Let's first ask Tcl whether the font is fixed. This is fastest but
+    # returns the wrong result for some fonts that are not actually monospace.
     if not tcl_interpreter.call('font', 'metrics', (font_family, '12'), '-fixed'):
         return False
 
@@ -645,14 +646,16 @@ def _is_monospace(font_family: str) -> bool:
         tcl_interpreter.call('font', 'measure', (font_family, '12', 'bold'), 'mmm'),
         tcl_interpreter.call('font', 'measure', (font_family, '12', 'italic'), 'mmm'),
     ]
-    return len(builtins.set(sizes)) == 1
+
+    # Allow off-by-one errors, just in case. Don't know if they ever actually happen.
+    return (max(sizes) - min(sizes) <= 1)
 
 
-def _get_monospace_font_families():
+def _get_monospace_font_families() -> List[str]:
     cache_path = dirs.cachedir / 'font_cache.json'
     all_families = sorted(builtins.set(tkinter.font.families()))
 
-    # This is surprisingly slow when there are hundreds of fonts. Let's cache.
+    # This is surprisingly slow when there are lots of fonts. Let's cache.
     try:
         with cache_path.open('r') as file:
             cache = json.load(file)
@@ -699,12 +702,10 @@ def _fill_dialog_content_with_defaults() -> None:
 # undocumented on purpose, don't use in plugins
 def init_the_rest_after_initing_enough_for_using_disabled_plugins_list() -> None:
     global _dialog_content
-    if _dialog_content is not None:
-        raise RuntimeError("can't call _init() twice")
+    assert _dialog_content is not None
 
-    _log.debug("initing global gui settings")
+    _log.debug("initializing continues")
     _init_global_gui_settings()
-    _log.debug("creating dialog")
     _dialog_content = _create_dialog_content()
     _fill_dialog_content_with_defaults()
     _log.debug("initialized")
