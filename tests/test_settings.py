@@ -174,3 +174,9 @@ def test_debug_dump(capsys):
   bar = ['a', 'b', 'c']
 
 '''
+
+
+def test_font_family_chooser():
+    families = settings._get_monospace_font_families()
+    assert len(families) == len(set(families)), "duplicates"
+    assert families == sorted(families), "wrong order"
