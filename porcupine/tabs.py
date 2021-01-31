@@ -89,6 +89,7 @@ class TabManager(ttk.Notebook):
 
         self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
         self.bind('<Button-1>', self._on_click, add=True)
+        self.bind('<Button-2>', self._on_middle_click, add=True)
         utils.bind_mouse_wheel(self, self._on_wheel, add=True)
 
         # the string is call stack for adding callback
@@ -104,16 +105,23 @@ class TabManager(ttk.Notebook):
             # something else than the top label was clicked
             return
 
-        # find the right edge of the label
+        # find the right edge of the label (including close button)
         right = event.x
         while self.identify(right, event.y) == 'label':
             right += 1
 
         # hopefully the image is on the right edge of the label and
         # there's no padding :O
-        if event.x + images.get('closebutton').width() >= right:
+        if event.x >= right - images.get('closebutton').width():
             # the close button was clicked
-            tab = self.tabs()[self.index('@%d,%d' % (event.x, event.y))]
+            tab = self.tabs()[self.index(f'@{event.x},{event.y}')]
+            if tab.can_be_closed():
+                self.close_tab(tab)
+
+    # Close tab on middle-click (press down the wheel of the mouse)
+    def _on_middle_click(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+        if self.identify(event.x, event.y) == 'label':
+            tab = self.tabs()[self.index(f'@{event.x},{event.y}')]
             if tab.can_be_closed():
                 self.close_tab(tab)
 
