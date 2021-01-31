@@ -650,7 +650,7 @@ def _is_monospace(font_family: str) -> bool:
 
 def _get_monospace_font_families():
     cache_path = dirs.cachedir / 'font_cache.json'
-    all_families = sorted(tkinter.font.families())
+    all_families = sorted(builtins.set(tkinter.font.families()))
 
     # This is surprisingly slow when there are hundreds of fonts. Let's cache.
     try:
@@ -658,7 +658,7 @@ def _get_monospace_font_families():
             cache = json.load(file)
 
         # all_families stored to cache in case user installs more fonts
-        if cache['version'] == 1 and cache['all_families'] == all_families:
+        if cache['version'] == 2 and cache['all_families'] == all_families:
             _log.debug(f"Taking list of monospace families from {cache_path}")
             return cache['monospace_families']
 
@@ -673,7 +673,7 @@ def _get_monospace_font_families():
     try:
         with cache_path.open('w') as file:
             json.dump({
-                'version': 1,
+                'version': 2,
                 'all_families': all_families,
                 'monospace_families': monospace_families,
             }, file)
