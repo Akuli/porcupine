@@ -59,7 +59,6 @@ class TabManager(ttk.Notebook):
     .. method:: enable_traversal()
     .. method:: forget(tab_id)
     .. method:: hide(tab_id)
-    .. method:: insert(pos, child, **kw)
     .. method:: tab(tab_id, option=None, **kw)
 
         Don't use these methods. They are inherited from
