@@ -1,4 +1,4 @@
-"""Display an overview with small font at the right of of the file being edited."""
+"""Display an overview with small font at the right of the file being edited."""
 
 import sys
 import tkinter
