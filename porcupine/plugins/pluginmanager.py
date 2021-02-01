@@ -4,6 +4,7 @@ import importlib.util
 import logging
 import re
 import tkinter
+from functools import partial
 from tkinter import ttk
 from typing import List
 
@@ -45,11 +46,11 @@ DIALOG_HEIGHT = 300
 class PluginDialogContent:
 
     def __init__(self, master: tkinter.Misc) -> None:
-        self.content = ttk.Frame(master)
+        self.content_frame = ttk.Frame(master)
 
-        panedwindow = ttk.Panedwindow(self.content, orient='horizontal')
+        panedwindow = ttk.Panedwindow(self.content_frame, orient='horizontal')
         panedwindow.pack(side='top', fill='both', expand=True)
-        self._plz_restart_label = ttk.Label(self.content)
+        self._plz_restart_label = ttk.Label(self.content_frame)
         self._plz_restart_label.pack(side='bottom', fill='x')
 
         left_side = ttk.Frame(panedwindow)
@@ -57,50 +58,58 @@ class PluginDialogContent:
         panedwindow.add(left_side)
         panedwindow.add(right_side)
 
-        self._treeview = ttk.Treeview(
+        self.treeview = ttk.Treeview(
             left_side,
             show='headings',
             columns=('name', 'type', 'status'),
-            selectmode='browse',
+            selectmode='extended',
         )
-        self._treeview.bind('<<TreeviewSelect>>', self._on_select, add=True)
+        self.treeview.bind('<<TreeviewSelect>>', self._on_select, add=True)
 
-        scrollbar = ttk.Scrollbar(left_side, command=self._treeview.yview)
-        self._treeview.config(yscrollcommand=scrollbar.set)
+        scrollbar = ttk.Scrollbar(left_side, command=self.treeview.yview)
+        self.treeview.config(yscrollcommand=scrollbar.set)
 
-        self._treeview.pack(side='left', fill='both', expand=True)
+        self.treeview.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
 
         for index, width in enumerate([100, 150, 180]):
-            self._treeview.column(index, width=width, minwidth=width)
+            self.treeview.column(index, width=width, minwidth=width)
 
-        self._treeview.heading(0, text="Name")
-        self._treeview.heading(1, text="Type")
-        self._treeview.heading(2, text="Status")
+        self.treeview.heading(0, text="Name")
+        self.treeview.heading(1, text="Type")
+        self.treeview.heading(2, text="Status")
         self._insert_data()
 
         # Must pack everything else before description label so that if
         # description is very long, it doesn't cover up other things
         self._title_label = ttk.Label(right_side, font=('', 15, 'bold'))
         self._title_label.pack(side='top', pady=5)
-        self._enable_disable_button = ttk.Button(
-            right_side, text="Enable", command=self._toggle_enabled, state='disabled')
-        self._enable_disable_button.pack(side='bottom')
+        button_frame = ttk.Frame(right_side)
+        button_frame.pack(side='bottom', fill='x')
 
-        self._description = textwidget.create_passive_text_widget(right_side)
-        self._description.config(state='normal')
-        self._description.insert('1.0', "Please select a plugin.")
-        self._description.config(state='disabled')
-        self._description.pack(fill='both', expand=True)
+        self.enable_button = ttk.Button(button_frame, text="Enable", command=partial(self._set_enabled, True))
+        self.enable_button.pack(side='left', expand=True)
+        self.disable_button = ttk.Button(button_frame, text="Disable", command=partial(self._set_enabled, False))
+        self.disable_button.pack(side='left', expand=True)
+
+        self.description = textwidget.create_passive_text_widget(right_side)
+        self._set_description("Please select a plugin.")
+        self.description.pack(fill='both', expand=True)
 
         # I had some trouble getting this to work. With after_idle, this makes
         # the left side invisibly small. With 50ms timeout, it still happened
         # sometimes.
         panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7*DIALOG_WIDTH)))
 
+    def _set_description(self, text: str) -> None:
+        self.description.config(state='normal')
+        self.description.delete('1.0', 'end')
+        self.description.insert('1.0', text)
+        self.description.config(state='disabled')
+
     def _insert_data(self) -> None:
         for info in sorted(pluginloader.plugin_infos, key=(lambda info: info.name)):
-            self._treeview.insert('', 'end', id=info.name)
+            self.treeview.insert('', 'end', id=info.name)
             self._update_row(info)
         self._update_plz_restart_label()
 
@@ -126,67 +135,84 @@ class PluginDialogContent:
                 pluginloader.Status.CIRCULAR_DEPENDENCY_ERROR: "Circular dependency",
             }[info.status]
 
-        self._treeview.item(info.name, values=(info.name, how_it_got_installed, message))
+        self.treeview.item(info.name, values=(info.name, how_it_got_installed, message))
 
     def _update_plz_restart_label(self) -> None:
         statuses = (
-            self._treeview.item(name, 'values')[-1]
-            for name in self._treeview.get_children()
+            self.treeview.item(name, 'values')[-1]
+            for name in self.treeview.get_children()
         )
         if any(status.endswith('upon restart') for status in statuses):
             self._plz_restart_label.config(text="Please restart Porcupine to apply the changes.")
         else:
             self._plz_restart_label.config(text="")
 
+    def _get_selected_infos(self) -> List[pluginloader.PluginInfo]:
+        selection = self.treeview.selection()
+        infos = [info for info in pluginloader.plugin_infos if info.name in selection]
+        assert len(infos) == len(selection)
+        return infos
+
     def _on_select(self, junk: object = None) -> None:
-        [plugin_name] = self._treeview.selection()
-        [info] = [info for info in pluginloader.plugin_infos if info.name == plugin_name]
-
-        if info.status == pluginloader.Status.IMPORT_FAILED:
-            text = f"Importing the plugin failed.\n\n{info.error}"
-        elif info.status == pluginloader.Status.SETUP_FAILED:
-            text = f"The plugin's setup() function failed.\n\n{info.error}"
-        elif info.status == pluginloader.Status.CIRCULAR_DEPENDENCY_ERROR:
-            assert info.error is not None
-            text = info.error
-        else:
-            text = get_docstring(f'porcupine.plugins.{info.name}')
-            # get rid of single newlines
-            text = re.sub(r'(.)\n(.)', r'\1 \2', text)
-
-        self._title_label.config(text=plugin_name)
-        self._description.config(state='normal')
-        self._description.delete('1.0', 'end')
-        self._description.insert('1.0', text)
-        self._description.config(state='disabled')
-
+        infos = self._get_selected_infos()
         disable_list = settings.get('disabled_plugins', List[str])
-        self._enable_disable_button.config(
-            state='normal', text=("Enable" if plugin_name in disable_list else "Disable"))
 
-    def _toggle_enabled(self) -> None:
-        [plugin_name] = self._treeview.selection()
-        [info] = [info for info in pluginloader.plugin_infos if info.name == plugin_name]
+        if len(infos) == 1:
+            info = infos[0]
+            if info.status == pluginloader.Status.IMPORT_FAILED:
+                text = f"Importing the plugin failed.\n\n{info.error}"
+            elif info.status == pluginloader.Status.SETUP_FAILED:
+                text = f"The plugin's setup() function failed.\n\n{info.error}"
+            elif info.status == pluginloader.Status.CIRCULAR_DEPENDENCY_ERROR:
+                assert info.error is not None
+                text = info.error
+            else:
+                text = get_docstring(f'porcupine.plugins.{info.name}')
+                # get rid of single newlines
+                text = re.sub(r'(.)\n(.)', r'\1 \2', text)
+
+            self._title_label.config(text=info.name)
+            self._set_description(text)
+
+        else:
+            self._title_label.config(text="")
+            self._set_description(f"{len(infos)} plugins selected.")
+
+        self.enable_button.config(state=(
+            'normal' if any(info.name in disable_list for info in infos) else 'disabled'
+        ))
+        self.disable_button.config(state=(
+            'normal' if any(info.name not in disable_list for info in infos) else 'disabled'
+        ))
+
+    def _set_enabled(self, they_become_enabled: bool) -> None:
+        infos = self._get_selected_infos()
 
         disabled = set(settings.get('disabled_plugins', List[str]))
-        disabled ^= {plugin_name}
+        if they_become_enabled:
+            disabled -= {info.name for info in infos}
+        else:
+            disabled |= {info.name for info in infos}
         settings.set('disabled_plugins', list(disabled))
 
-        if plugin_name not in disabled and pluginloader.can_setup_while_running(info):
-            pluginloader.setup_while_running(info)
+        for info in infos:
+            if info.name not in disabled and pluginloader.can_setup_while_running(info):
+                pluginloader.setup_while_running(info)
+            self._update_row(info)
 
-        self._update_row(info)
         self._on_select()
         self._update_plz_restart_label()
 
 
-def show_dialog() -> None:
+def show_dialog() -> PluginDialogContent:
     dialog = tkinter.Toplevel()
-    PluginDialogContent(dialog).content.pack(fill='both', expand=True)
+    content = PluginDialogContent(dialog)
+    content.content_frame.pack(fill='both', expand=True)
     dialog.transient(get_main_window())
     dialog.geometry(f'{DIALOG_WIDTH}x{DIALOG_HEIGHT}')
     dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
     dialog.wait_window()
+    return content   # for tests
 
 
 def setup() -> None:

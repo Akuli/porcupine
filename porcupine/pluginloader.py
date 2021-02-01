@@ -264,6 +264,11 @@ def can_setup_while_running(info: PluginInfo) -> bool:
             return False
         info.status = old_status
 
+    # If a plugin defines setup_argument_parser, it likely wants it to run on
+    # startup, and now it's too late.
+    if hasattr(info.module, 'setup_argument_parser'):
+        return False
+
     return not any(
         info.status == Status.ACTIVE and info in deps
         for info, deps in _dependencies.items()
