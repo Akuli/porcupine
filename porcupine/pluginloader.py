@@ -111,7 +111,7 @@ def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.Argum
     assert info.module is not None
 
     if hasattr(info.module, 'setup_argument_parser'):
-        start = time.time()
+        start = time.perf_counter()
         try:
             info.module.setup_argument_parser(parser)
         except Exception:
@@ -119,7 +119,7 @@ def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.Argum
             info.status = Status.SETUP_FAILED
             info.error = traceback.format_exc()
 
-        duration = time.time() - start
+        duration = time.perf_counter() - start
         log.debug("ran %s.setup_argument_parser() in %.3f milliseconds", info.name, duration*1000)
 
 
@@ -128,7 +128,7 @@ def _import_plugin(info: PluginInfo) -> None:
     assert info.module is None
 
     log.debug(f"trying to import porcupine.plugins.{info.name}")
-    start = time.time()
+    start = time.perf_counter()
 
     try:
         info.module = importlib.import_module(f'porcupine.plugins.{info.name}')
@@ -146,7 +146,7 @@ def _import_plugin(info: PluginInfo) -> None:
         if dep_info.name in setup_before:
             _dependencies[dep_info].add(info)
 
-    duration = time.time() - start
+    duration = time.perf_counter() - start
     log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration*1000)
 
 
@@ -155,7 +155,7 @@ def _run_setup(info: PluginInfo) -> None:
     assert info.status == Status.LOADING
     assert info.module is not None
 
-    start = time.time()
+    start = time.perf_counter()
     try:
         info.module.setup()
     except Exception:
@@ -165,7 +165,7 @@ def _run_setup(info: PluginInfo) -> None:
     else:
         info.status = Status.ACTIVE
 
-    duration = time.time() - start
+    duration = time.perf_counter() - start
     log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration*1000)
 
 

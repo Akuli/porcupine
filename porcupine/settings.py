@@ -688,9 +688,9 @@ def _get_monospace_font_families() -> List[str]:
 
 
 def _fill_dialog_content_with_defaults() -> None:
-    start_time = time.time()
+    start_time = time.perf_counter()
     monospace_families = _get_monospace_font_families()
-    _log.debug(f"Found monospace fonts in {round((time.time() - start_time)*1000)}ms")
+    _log.debug(f"Found monospace fonts in {round((time.perf_counter() - start_time)*1000)}ms")
 
     add_combobox('font_family', "Font family:", values=monospace_families)
     add_spinbox('font_size', "Font size:", from_=3, to=1000)
