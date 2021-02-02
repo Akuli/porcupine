@@ -12,7 +12,7 @@ import platform
 import shutil
 import subprocess
 
-import appdirs    # type: ignore[import]
+import appdirs  # type: ignore[import]
 
 version_info = (0, 84, 2)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
