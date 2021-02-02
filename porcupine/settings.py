@@ -90,7 +90,7 @@ class _Option:
 
 
 def _get_json_path() -> pathlib.Path:
-    return dirs.configdir / 'settings.json'
+    return pathlib.Path(dirs.user_config_dir) / 'settings.json'
 
 
 class Settings:
@@ -652,7 +652,7 @@ def _is_monospace(font_family: str) -> bool:
 
 
 def _get_monospace_font_families() -> List[str]:
-    cache_path = dirs.cachedir / 'font_cache.json'
+    cache_path = pathlib.Path(dirs.user_cache_dir) / 'font_cache.json'
     all_families = sorted(builtins.set(tkinter.font.families()))
 
     # This is surprisingly slow when there are lots of fonts. Let's cache.

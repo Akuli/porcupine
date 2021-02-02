@@ -37,7 +37,6 @@ Everything that you can use in plugins is documented here.
       tabs
       textwidget
       images
-      dirs
       settings
       pluginloader
       utils

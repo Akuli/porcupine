@@ -72,7 +72,9 @@ def main() -> None:
 
     args_parsed_in_first_step, junk = parser.parse_known_args()
 
-    dirs.makedirs()
+    pathlib.Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(dirs.user_config_dir).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
     _logs.setup(args_parsed_in_first_step.verbose)
 
     settings.init_enough_for_using_disabled_plugins_list()

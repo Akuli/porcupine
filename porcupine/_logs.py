@@ -1,6 +1,7 @@
 import itertools
 import logging
 import os
+import pathlib
 import platform
 import shlex
 import subprocess
@@ -20,7 +21,7 @@ LOG_MAX_AGE_DAYS = 7
 
 
 def _remove_old_logs() -> None:
-    for path in dirs.logdir.glob('*.txt'):
+    for path in pathlib.Path(dirs.user_log_dir).glob('*.txt'):
         # support '<log dir>/<first_part>_<number>.txt' and '<log dir>/<firstpart>.txt'
         first_part = path.stem.split('_')[0]
         try:
@@ -49,7 +50,6 @@ def _run_command(command: str) -> None:
 
 
 def _open_log_file() -> TextIO:
-    dirs.logdir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime(FILENAME_FIRST_PART_FORMAT)
     filenames = (
         f'{timestamp}.txt' if i == 0 else f'{timestamp}_{i}.txt'
@@ -57,7 +57,7 @@ def _open_log_file() -> TextIO:
     )
     for filename in filenames:
         try:
-            return (dirs.logdir / filename).open('x', encoding='utf-8')
+            return (pathlib.Path(dirs.user_log_dir) / filename).open('x', encoding='utf-8')
         except FileExistsError:
             continue
     assert False  # makes mypy happy

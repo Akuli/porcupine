@@ -50,3 +50,19 @@ File Dialogs
 
     The :source:`filetypes plugin <porcupine/plugins/filetypes.py>` uses this
     for displaying known filetypes in the dialogs.
+
+
+Directories
+-----------
+
+.. data:: dirs
+    :type: appdirs.AppDirs
+
+    See `appdirs on PyPI <https://pypi.org/project/appdirs/>`_.
+    For example, ``porcupine.dirs.user_cache_dir`` is where temporary cache files should go.
+
+    When Porcupine starts, it makes sure that these directories exist:
+
+        * ``dirs.user_cache_dir``
+        * ``dirs.user_config_dir``
+        * ``dirs.user_log_dir``

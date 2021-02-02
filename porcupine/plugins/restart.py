@@ -13,7 +13,7 @@ setup_after = [
 ]
 
 # https://fileinfo.com/extension/pkl
-STATE_FILE = dirs.cachedir / 'restart_state.pkl'
+STATE_FILE = dirs.user_cache_dir / 'restart_state.pkl'
 
 
 def save_states(junk: object) -> None:

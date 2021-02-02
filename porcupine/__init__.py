@@ -8,10 +8,11 @@ plugin API documentation:
 """
 
 import pathlib
+import platform
 import shutil
 import subprocess
 
-from porcupine import _state
+import appdirs    # type: ignore[import]
 
 version_info = (0, 84, 2)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
@@ -29,6 +30,16 @@ if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
         ).decode('ascii')
     except (OSError, subprocess.CalledProcessError, UnicodeError):   # pragma: no cover
         pass
+
+if platform.system() in {'Windows', 'Darwin'}:
+    # these platforms like path names like "Program Files" or "Application Support"
+    dirs = appdirs.AppDirs('Porcupine', 'Akuli')
+else:
+    dirs = appdirs.AppDirs('porcupine', 'akuli')
+
+# Must be after creating dirs. Must be conditional to silence pyflakes.
+if True:
+    from porcupine import _state
 
 get_main_window = _state.get_main_window
 get_parsed_args = _state.get_parsed_args

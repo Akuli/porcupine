@@ -24,7 +24,7 @@ def is_list_of_strings(obj: object) -> bool:
 
 
 def load_filetypes() -> None:
-    user_path = dirs.configdir / 'filetypes.toml'   # not global because tests monkeypatch dirs.configdir
+    user_path = pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'   # not global, tests monkeypatch dirs
     defaults_path = pathlib.Path(__file__).absolute().parent.parent / 'default_filetypes.toml'
 
     filetypes.update(toml.load(defaults_path))
@@ -202,7 +202,7 @@ def setup() -> None:
         'default_filetype', "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    menubar.add_config_file_button(dirs.configdir / 'filetypes.toml')
+    menubar.add_config_file_button(pathlib.Path(dirs.user_config_dir) / 'filetypes.toml')
 
     filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
         (name, [

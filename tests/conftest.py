@@ -4,7 +4,7 @@
 # adding any_widget.update() calls
 # see also update(3tcl)
 
-import pathlib
+import os
 import subprocess
 import sys
 import tempfile
@@ -41,16 +41,15 @@ def pytest_collection_modifyitems(config, items):
 # works with this:  from porcupine import dirs
 # does NOT work:    from porcupine.dirs import configdir
 @pytest.fixture(scope='session')
-def monkeypatch_dirs():
+def monkeypatch_dirs(monkeypatch):
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
     assert user_plugindir == str(dirs.configdir / 'plugins')
 
     with tempfile.TemporaryDirectory() as d:
-        dirs.cachedir = pathlib.Path(d) / 'cache'
-        dirs.configdir = pathlib.Path(d) / 'config'
-        dirs.logdir = pathlib.Path(d) / 'logs'
-        dirs.makedirs()
+        monkeypatch.setattr(dirs, 'user_cache_dir', os.path.join(d, 'cache'))
+        monkeypatch.setattr(dirs, 'user_config_dir', os.path.join(d, 'config'))
+        monkeypatch.setattr(dirs, 'user_log_dir', os.path.join(d, 'logs'))
         yield
 
 
