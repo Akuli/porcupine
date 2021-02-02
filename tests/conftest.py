@@ -4,12 +4,14 @@
 # adding any_widget.update() calls
 # see also update(3tcl)
 
-import pathlib
+import operator
+import os
 import subprocess
 import sys
 import tempfile
 import tkinter
 
+import appdirs
 import pytest
 
 import porcupine
@@ -38,18 +40,28 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_pastebins)
 
 
-# works with this:  from porcupine import dirs
-# does NOT work:    from porcupine.dirs import configdir
+class MonkeypatchedAppDirs(appdirs.AppDirs):
+    user_cache_dir = property(operator.attrgetter('_cache'))
+    user_config_dir = property(operator.attrgetter('_config'))
+    user_log_dir = property(operator.attrgetter('_logs'))
+
+
 @pytest.fixture(scope='session')
 def monkeypatch_dirs():
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
-    assert user_plugindir == str(dirs.configdir / 'plugins')
+    assert user_plugindir == os.path.join(dirs.user_config_dir, 'plugins')
 
     with tempfile.TemporaryDirectory() as d:
-        dirs.cachedir = pathlib.Path(d) / 'cache'
-        dirs.configdir = pathlib.Path(d) / 'config'
-        dirs.makedirs()
+        # This is a hack because:
+        #   - pytest monkeypatch fixture doesn't work (not for scope='session')
+        #   - assigning to dirs.user_cache_dir doesn't work (appdirs uses @property)
+        #   - "porcupine.dirs = blahblah" doesn't work (from porcupine import dirs)
+        dirs.__class__ = MonkeypatchedAppDirs
+        dirs._cache = os.path.join(d, 'cache')
+        dirs._config = os.path.join(d, 'config')
+        dirs._logs = os.path.join(d, 'logs')
+        assert dirs.user_cache_dir.startswith(d)
         yield
 
 

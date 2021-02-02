@@ -1,6 +1,7 @@
 # this file is currently not being used
 
 import contextlib
+import pathlib
 import queue
 import threading
 from multiprocessing import connection
@@ -8,7 +9,7 @@ from typing import Any, Iterator, List
 
 from porcupine import dirs
 
-_ADDRESS_FILE = dirs.cachedir / 'ipc_address.txt'
+_ADDRESS_FILE = pathlib.Path(dirs.user_cache_dir) / 'ipc_address.txt'
 
 
 # the addresses contain random junk so they are very unlikely to

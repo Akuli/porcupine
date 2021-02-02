@@ -55,7 +55,7 @@ def main() -> None:
         '-v', '--verbose', action='store_true',
         help=("print all logging messages to stderr, only warnings and errors "
               "are printed by default (but all messages always go to a log "
-              "file in %s as well)" % _logs.get_log_dir()))
+              "file as well)"))
     parser.add_argument(
         '--print-plugindir', action=_PrintPlugindirAction,
         help="find out where to install custom plugins")
@@ -72,7 +72,9 @@ def main() -> None:
 
     args_parsed_in_first_step, junk = parser.parse_known_args()
 
-    dirs.makedirs()
+    pathlib.Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
+    (pathlib.Path(dirs.user_config_dir) / 'plugins').mkdir(parents=True, exist_ok=True)
+    pathlib.Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
     _logs.setup(args_parsed_in_first_step.verbose)
 
     settings.init_enough_for_using_disabled_plugins_list()
