@@ -14,9 +14,10 @@ else:
 
 cachedir: pathlib.Path = pathlib.Path(appdirs.user_cache_dir(_appname, _author))
 configdir: pathlib.Path = pathlib.Path(appdirs.user_config_dir(_appname, _author))
+logdir: pathlib.Path = pathlib.Path(appdirs.user_log_dir(_appname, _author))
 
 
 def makedirs() -> None:
-    all_paths = [cachedir, configdir, configdir / 'plugins']
+    all_paths = [cachedir, configdir, configdir / 'plugins', logdir]
     for path in all_paths:
         path.mkdir(parents=True, exist_ok=True)

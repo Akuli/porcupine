@@ -55,7 +55,7 @@ def main() -> None:
         '-v', '--verbose', action='store_true',
         help=("print all logging messages to stderr, only warnings and errors "
               "are printed by default (but all messages always go to a log "
-              "file in %s as well)" % _logs.get_log_dir()))
+              "file as well)"))
     parser.add_argument(
         '--print-plugindir', action=_PrintPlugindirAction,
         help="find out where to install custom plugins")

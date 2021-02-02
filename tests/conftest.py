@@ -49,6 +49,7 @@ def monkeypatch_dirs():
     with tempfile.TemporaryDirectory() as d:
         dirs.cachedir = pathlib.Path(d) / 'cache'
         dirs.configdir = pathlib.Path(d) / 'config'
+        dirs.logdir = pathlib.Path(d) / 'logs'
         dirs.makedirs()
         yield
 
