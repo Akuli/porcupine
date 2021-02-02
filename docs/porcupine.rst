@@ -64,5 +64,5 @@ Directories
     When Porcupine starts, it makes sure that these directories exist:
 
         * ``dirs.user_cache_dir``
-        * ``dirs.user_config_dir``
+        * ``dirs.user_config_dir`` and a subdirectory named ``plugins`` inside it
         * ``dirs.user_log_dir``
