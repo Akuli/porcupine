@@ -16,7 +16,7 @@ from porcupine import _state
 version_info = (0, 84, 2)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
-__copyright__ = 'Copyright (c) 2017-2020 Akuli'
+__copyright__ = 'Copyright (c) 2017-2021 Akuli'
 __license__ = 'MIT'
 
 # attach git stuff to the version if this isn't installed
