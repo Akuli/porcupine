@@ -510,12 +510,11 @@ bers.py>` use this attribute.
         self.textwidget = textwidget.MainText(
             self, width=1, height=1, wrap='none', undo=True)
         self.textwidget.pack(side='left', fill='both', expand=True)
-        self.textwidget.bind('<<ContentChanged>>', self._update_titles,
-                             add=True)
 
         if content:
             self.textwidget.insert('1.0', content)
             self.textwidget.edit_reset()   # reset undo/redo
+        self._set_saved_state(None)
 
         self.bind('<<TabSelected>>', (lambda event: self.textwidget.focus()), add=True)
         self.bind('<<PathChanged>>', self._update_status, add=True)
@@ -526,7 +525,8 @@ bers.py>` use this attribute.
         self.textwidget.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.textwidget.yview)
 
-        self._set_saved_state(None)
+        self.textwidget.bind('<<ContentChanged>>', self._update_titles, add=True)
+        self._update_titles()
         self._update_status()
 
     @classmethod
@@ -773,32 +773,35 @@ bers.py>` use this attribute.
         return self.save(check_if_other_program_has_changed=False)
 
     # FIXME: don't ignore undo history :/
-    # FIXME: get this to work again
-#    def get_state(self) -> _FileTabState:
-#        # e.g. "New File" tabs are saved even though the .path is None
-#        if self.path is not None and not self.is_modified():
-#            # this is really saved
-#            content = None
-#        else:
-#            content = self.textwidget.get('1.0', 'end - 1 char')
-#
-#        return (self.path, content, self._save_hash, self.textwidget.index('insert'))
-#
-#    @classmethod
-#    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
-#        path, content, save_hash, cursor_pos = state
-#        if content is None:
-#            # nothing has changed since saving, read from the saved file
-#            assert path is not None
-#            assert isinstance(path, pathlib.Path)  # older porcupines used strings
-#            self = cls.open_file(manager, path)
-#        else:
-#            self = cls(manager, content, path)
-#
-#        # the title depends on the saved hash
-#        self._save_hash = save_hash
-#        self._update_titles()
-#
-#        self.textwidget.mark_set('insert', cursor_pos)
-#        self.textwidget.see('insert linestart')
-#        return self
+    # FIXME: when called from reload plugin, require saving file first
+    def get_state(self) -> _FileTabState:
+        # e.g. "New File" tabs are saved even though the .path is None
+        if self.path is not None and not self.is_modified() and not self.reload_is_needed():
+            # this is really saved
+            content = None
+        else:
+            content = self.textwidget.get('1.0', 'end - 1 char')
+
+        return (self.path, content, self._saved_state, self.textwidget.index('insert'))
+
+    @classmethod
+    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
+        path, content, saved_state, cursor_pos = state
+        assert path is None or isinstance(path, pathlib.Path)  # string in older porcupines
+        assert isinstance(saved_state, tuple)   # string in older porcupines
+
+        if content is None:
+            # nothing has changed since saving, read from the saved file
+            assert path is not None
+            self = cls.open_file(manager, path)
+        else:
+            self = cls(manager, content, path)
+
+
+        # the title depends on the saved hash
+        self._saved_state = saved_state
+        self._update_titles()
+
+        self.textwidget.mark_set('insert', cursor_pos)
+        self.textwidget.see('insert linestart')
+        return self
