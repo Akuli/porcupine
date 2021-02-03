@@ -614,22 +614,22 @@ bers.py>` use this attribute.
             return False
 
         try:
+            # We could just reading the contents of the file, but it can often be avoided.
             actual_stat = self.path.stat()
             if actual_stat.st_mtime == save_stat.st_mtime:
+                log.debug(f"{self.path}: modified time has not changed")
                 return False
-
-            # It has been modified, but maybe the modification restored it back to the original contents?
             if actual_stat.st_size != save_stat.st_size:
-                # That surely did not happen
+                log.debug(f"{self.path}: size has changed")
                 return True
 
-            # Let's check the contents of the file...
+            log.info(f"reading {self.path} to figure out if reload is needed")
             with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
                 actual_hash = self._get_hash(f.read())
             if actual_hash != save_hash:
                 return True
 
-            # ...but avoid doing that again soon
+            # Avoid reading file contents again soon
             self._saved_state = (actual_stat, save_char_count, save_hash)
             return False
 
