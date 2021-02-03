@@ -1,4 +1,4 @@
-from porcupine import get_main_window, tabs
+from porcupine import tabs
 
 
 def test_reload(tabmanager, tmp_path):
