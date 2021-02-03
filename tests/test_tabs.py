@@ -87,3 +87,39 @@ def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
     assert tabmanager.tab(tab2, 'text').replace(os.sep, '/') == 'dir2/.../baz.py'
     tabmanager.close_tab(tab1)
     tabmanager.close_tab(tab2)
+
+
+def test_new_file_doesnt_show_up_as_modified(filetab):
+    assert not filetab.is_modified()
+
+
+def test_other_program_changed_file(filetab, tmp_path):
+    assert not filetab.other_program_changed_file()
+
+    filetab.textwidget.insert('1.0', 'lol\n')
+    assert not filetab.other_program_changed_file()
+
+    filetab.save_as(tmp_path / 'foo.py')
+    assert not filetab.other_program_changed_file()
+
+    filetab.textwidget.insert('1.0', 'x')
+    assert not filetab.other_program_changed_file()
+    filetab.textwidget.delete('1.0')
+    assert not filetab.other_program_changed_file()
+
+    (tmp_path / 'foo.py').write_text('wattttttttttt\n')
+    assert filetab.other_program_changed_file()
+
+    (tmp_path / 'foo.py').write_text('wat\n')
+    assert filetab.other_program_changed_file()
+
+    (tmp_path / 'foo.py').write_text('lol\n')
+    assert not filetab.other_program_changed_file()
+
+
+def test_save_as(filetab, tmp_path):
+    (tmp_path / 'foo.py').write_text('hello world\n')
+    filetab.path = tmp_path / 'foo.py'
+    filetab.reload()
+    filetab.save_as(tmp_path / 'bar.py')
+    assert (tmp_path / 'foo.py').read_text() == 'hello world\n'

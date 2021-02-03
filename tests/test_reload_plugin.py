@@ -1,4 +1,4 @@
-from porcupine import get_main_window, tabs
+from porcupine import tabs
 
 
 def test_reload(tabmanager, tmp_path):
@@ -8,7 +8,10 @@ def test_reload(tabmanager, tmp_path):
     assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello'
 
     (tmp_path / 'foo.py').write_text('lol')
-    assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello'
-
-    get_main_window().event_generate('<<Menubar:File/Reload>>')
+    tab.textwidget.event_generate('<Button-1>')
+    tab.update()
     assert tab.textwidget.get('1.0', 'end - 1 char') == 'lol'
+
+    # It should be possible to undo a reload
+    tab.textwidget.edit_undo()
+    assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello'

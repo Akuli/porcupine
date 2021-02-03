@@ -9,7 +9,8 @@ import pathlib
 import tkinter
 import traceback
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
+from typing import (Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Tuple, Type, TypeVar, Union,
+                    cast)
 
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
@@ -383,12 +384,11 @@ restarting Porcupine.
             "from_state() wasn't overrided but get_state() was overrided")
 
 
-_FileTabState = Tuple[
-    Optional[pathlib.Path],
-    Optional[str],   # content
-    Optional[str],   # hash
-    str,             # cursor location
-]
+class _FileTabState(NamedTuple):
+    path: Optional[pathlib.Path]
+    content: Optional[str]
+    saved_state: Tuple[Optional[os.stat_result], int, str]
+    cursor_pos: str
 
 
 def _import_lexer_class(name: str) -> LexerMeta:
@@ -488,7 +488,6 @@ bers.py>` use this attribute.
                  filetype: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(manager)
 
-        self._save_hash: Optional[str] = None
         if path is None:
             self._path = None
         else:
@@ -511,12 +510,11 @@ bers.py>` use this attribute.
         self.textwidget = textwidget.MainText(
             self, width=1, height=1, wrap='none', undo=True)
         self.textwidget.pack(side='left', fill='both', expand=True)
-        self.textwidget.bind('<<ContentChanged>>', self._update_titles,
-                             add=True)
 
         if content:
             self.textwidget.insert('1.0', content)
             self.textwidget.edit_reset()   # reset undo/redo
+        self._set_saved_state(None)
 
         self.bind('<<TabSelected>>', (lambda event: self.textwidget.focus()), add=True)
         self.bind('<<PathChanged>>', self._update_status, add=True)
@@ -527,7 +525,7 @@ bers.py>` use this attribute.
         self.textwidget.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.textwidget.yview)
 
-        self.mark_saved()
+        self.textwidget.bind('<<ContentChanged>>', self._update_titles, add=True)
         self._update_titles()
         self._update_status()
 
@@ -542,20 +540,99 @@ bers.py>` use this attribute.
         file fails.
         """
         tab = cls(manager, path=path)
-        with path.open('r', encoding=tab.settings.get('encoding', str)) as file:
-            content = file.read()
-        tab.textwidget.insert('1.0', content)
+        tab.reload()
         tab.textwidget.edit_reset()
-
-        if isinstance(file.newlines, tuple):
-            # TODO: show a message box to user?
-            log.warning(f"file '{path}' contains mixed line endings: {file.newlines}")
-        elif file.newlines is not None:
-            assert isinstance(file.newlines, str)
-            tab.settings.set('line_ending', settings.LineEnding(file.newlines))
-
-        tab.mark_saved()
         return tab
+
+    def _get_char_count(self) -> int:
+        # Why not 'end - 1 char': try .count('1.0', 'end - 1 char') with empty text widget
+        (n,) = self.textwidget.count('1.0', 'end')
+        return n
+
+    def _get_hash(self, string: Optional[str] = None) -> str:
+        if string is None:
+            string = self.textwidget.get('1.0', 'end - 1 char')
+        return hashlib.md5(string.encode('utf-8')).hexdigest()
+
+    def _set_saved_state(self, stat_result: Optional[os.stat_result]) -> None:
+        self._saved_state = (stat_result, self._get_char_count(), self._get_hash())
+        self._update_titles()
+
+    def is_modified(self) -> bool:
+        """Return False if the text has changed since previous save.
+
+        This is set to False automagically when the content is modified.
+        Use :meth:`mark_saved` to set this to True.
+        """
+        stat_result, char_count, save_hash = self._saved_state
+        # Don't call _get_hash() if not necessary
+        return (self._get_char_count() != char_count or self._get_hash() != save_hash)
+
+    def reload(self) -> None:
+        """Read the contents of the file from disk.
+
+        .. seealso:: :meth:`open_file`, :meth:`other_program_changed_file`
+        """
+        assert self.path is not None
+        with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
+            stat_result = os.fstat(f.fileno())
+            content = f.read()
+
+        if isinstance(f.newlines, tuple):
+            # TODO: show a message box to user?
+            log.warning(f"file '{self.path}' contains mixed line endings: {f.newlines}")
+        elif f.newlines is not None:
+            assert isinstance(f.newlines, str)
+            self.settings.set('line_ending', settings.LineEnding(f.newlines))
+
+        # Reloading can be undoed with Ctrl+Z
+        self.textwidget.config(autoseparators=False)
+        try:
+            self.textwidget.edit_separator()
+            self.textwidget.replace('1.0', 'end', content)
+            self.textwidget.edit_separator()
+        finally:
+            self.textwidget.config(autoseparators=True)
+
+        self._set_saved_state(stat_result)
+
+        # TODO: document this
+        self.event_generate('<<Reloaded>>')
+
+    def other_program_changed_file(self) -> bool:
+        """Check whether some other program has changed the file.
+
+        Programs like ``git`` often change the file while it's open in an
+        editor. After they do that, this method will return True until the file
+        is e.g. saved or reloaded.
+        """
+        save_stat, save_char_count, save_hash = self._saved_state
+        if self.path is None or save_stat is None:
+            return False
+
+        try:
+            # We could just reading the contents of the file, but it can often be avoided.
+            actual_stat = self.path.stat()
+            if actual_stat.st_mtime == save_stat.st_mtime:
+                log.debug(f"{self.path}: modified time has not changed")
+                return False
+            if actual_stat.st_size != save_stat.st_size:
+                log.debug(f"{self.path}: size has changed")
+                return True
+
+            log.info(f"reading {self.path} to figure out if reload is needed")
+            with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
+                actual_hash = self._get_hash(f.read())
+            if actual_hash != save_hash:
+                return True
+
+            # Avoid reading file contents again soon
+            self._saved_state = (actual_stat, save_char_count, save_hash)
+            return False
+
+        except (OSError, UnicodeError):
+            log.exception(f"error when figuring out if '{self.path}' needs reloading, assuming it does")
+            return True
 
     def equivalent(self, other: Tab) -> bool:    # override
         # this used to have hasattr(other, "path") instead of isinstance
@@ -567,27 +644,6 @@ bers.py>` use this attribute.
                 self.path is not None and
                 other.path is not None and
                 self.path.samefile(other.path))
-
-    # TODO: avoid doing this on every keypress?
-    def _get_hash(self) -> str:
-        result = hashlib.md5(self.textwidget.get('1.0', 'end - 1 char').encode('utf-8'))
-
-        # hash objects don't define an __eq__ so we need to use a string
-        # representation of the hash
-        return result.hexdigest()
-
-    def mark_saved(self) -> None:
-        """Make :meth:`is_saved` return True."""
-        self._save_hash = self._get_hash()
-        self._update_titles()
-
-    def is_saved(self) -> bool:
-        """Return False if the text has changed since previous save.
-
-        This is set to False automagically when the content is modified.
-        Use :meth:`mark_saved` to set this to True.
-        """
-        return self._get_hash() == self._save_hash
 
     @property
     def path(self) -> Optional[pathlib.Path]:
@@ -612,7 +668,7 @@ bers.py>` use this attribute.
         else:
             titles = _short_ways_to_display_path(self.path)
 
-        if not self.is_saved():
+        if self.is_modified():
             titles = [f'*{title}*' for title in titles]
 
         self.title_choices = titles
@@ -626,7 +682,7 @@ bers.py>` use this attribute.
         self.status = f"{path_string}\tLine {line}, column {column}"
 
     def can_be_closed(self) -> bool:    # override
-        if self.is_saved():
+        if not self.is_modified():
             return True
 
         if self.path is None:
@@ -639,31 +695,34 @@ bers.py>` use this attribute.
             return False
         if answer:
             # yes
-            save_result = self.save()
-            if save_result is None:
-                # saving failed
-                return False
-            elif save_result:
-                # saving succeeded
-                return True
-            else:
-                # user said no
-                return False
+            return self.save()
         # no was clicked, can be closed
         return True
 
-    def save(self) -> Optional[bool]:
+    def save(self, *, check_if_other_program_has_changed: bool = True) -> bool:
         """Save the file to the current :attr:`path`.
 
-        This calls :meth:`save_as` if :attr:`path` is None, and returns
-        False if the user cancels the save as dialog. None is returned
-        on errors, and True is returned in all other cases. In other
-        words, this returns True if saving succeeded.
+        This returns whether the file was actually saved. This means that
+        ``False`` is returned when the user cancels a :meth:`save_as` dialog
+        (can happen when :attr:`path` is None) or an error occurs (the error is
+        logged).
+
+        If ``check_if_other_program_has_changed`` is set to True and the saving
+        would overwrite changes done by other programs than Porcupine, then
+        before saving, this function will ask whether the user really wants to
+        save.
 
         .. seealso:: The :virtevt:`Save` event.
         """
         if self.path is None:
             return self.save_as()
+
+        if check_if_other_program_has_changed and self.other_program_changed_file():
+            user_is_sure = messagebox.askyesno(
+                "File changed",
+                f"Another program has changed {self.path.name}. Are you sure you want to save it?")
+            if not user_is_sure:
+                return False
 
         self.event_generate('<<Save>>')
 
@@ -673,25 +732,31 @@ bers.py>` use this attribute.
         try:
             with utils.backup_open(self.path, 'w', encoding=encoding, newline=line_ending.value) as f:
                 f.write(self.textwidget.get('1.0', 'end - 1 char'))
+                f.flush()   # needed to get right file size in stat
+                self._set_saved_state(os.fstat(f.fileno()))
         except (OSError, UnicodeError) as e:
             log.exception("saving '%s' failed", self.path)
             utils.errordialog(type(e).__name__, "Saving failed!",
                               traceback.format_exc())
-            return None
+            return False
 
-        self.mark_saved()
+        self._set_saved_state
+        self._save_hash = self._get_hash()
+        self._update_titles()
         return True
 
-    def save_as(self) -> bool:
+    def save_as(self, path: Optional[pathlib.Path] = None) -> bool:
         """Ask the user where to save the file and save it there.
 
         Returns True if the file was saved, and False if the user
-        cancelled the dialog.
+        cancelled the dialog. If a ``path`` is given, it's used instead of
+        asking the user.
         """
-        path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
-        if not path_string:     # it may be '' because tkinter
-            return False
-        path = pathlib.Path(path_string)
+        if path is None:
+            path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
+            if not path_string:     # it may be '' because tkinter
+                return False
+            path = pathlib.Path(path_string)
 
         # see equivalent()
         if any(isinstance(other, FileTab) and other.path == path
@@ -705,36 +770,35 @@ bers.py>` use this attribute.
             return False
 
         self.path = path
-        self.save()
-        return True
+        return self.save(check_if_other_program_has_changed=False)
 
     # FIXME: don't ignore undo history :/
+    # FIXME: when called from reload plugin, require saving file first
     def get_state(self) -> _FileTabState:
         # e.g. "New File" tabs are saved even though the .path is None
-        if self.is_saved() and self.path is not None:
+        if self.path is not None and not self.is_modified() and not self.other_program_changed_file():
             # this is really saved
             content = None
         else:
             content = self.textwidget.get('1.0', 'end - 1 char')
 
-        return (self.path, content, self._save_hash,
-                self.textwidget.index('insert'))
+        return _FileTabState(self.path, content, self._saved_state, self.textwidget.index('insert'))
 
     @classmethod
     def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
-        path, content, save_hash, cursor_pos = state
-        if content is None:
-            # nothing has changed since saving, read from the saved file
-            assert path is not None
-            assert isinstance(path, pathlib.Path)  # older porcupines used strings
-            self = cls.open_file(manager, path)
-        else:
-            self = cls(manager, content, path)
+        assert isinstance(state, _FileTabState)   # not namedtuple in older porcupines
 
-        # the title depends on the saved hash
-        self._save_hash = save_hash
+        if state.content is None:
+            # nothing has changed since saving, read from the saved file
+            assert state.path is not None
+            self = cls.open_file(manager, state.path)
+        else:
+            self = cls(manager, state.content, state.path)
+
+        # title depends on _saved_state
+        self._saved_state = state.saved_state
         self._update_titles()
 
-        self.textwidget.mark_set('insert', cursor_pos)
+        self.textwidget.mark_set('insert', state.cursor_pos)
         self.textwidget.see('insert linestart')
         return self
