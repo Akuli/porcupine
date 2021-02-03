@@ -91,3 +91,27 @@ def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
 
 def test_new_file_doesnt_show_up_as_modified(filetab):
     assert not filetab.is_modified()
+
+
+def test_reload_is_needed(filetab, tmp_path):
+    assert not filetab.reload_is_needed()
+
+    filetab.textwidget.insert('1.0', 'lol\n')
+    assert not filetab.reload_is_needed()
+
+    filetab.save_as(tmp_path / 'foo.py')
+    assert not filetab.reload_is_needed()
+
+    filetab.textwidget.insert('1.0', 'x')
+    assert not filetab.reload_is_needed()
+    filetab.textwidget.delete('1.0')
+    assert not filetab.reload_is_needed()
+
+    (tmp_path / 'foo.py').write_text('wattttttttttt\n')
+    assert filetab.reload_is_needed()
+
+    (tmp_path / 'foo.py').write_text('wat\n')
+    assert filetab.reload_is_needed()
+
+    (tmp_path / 'foo.py').write_text('lol\n')
+    assert not filetab.reload_is_needed()

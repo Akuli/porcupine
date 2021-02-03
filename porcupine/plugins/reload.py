@@ -10,7 +10,7 @@ def reload() -> None:
 
     cursor_pos = tab.textwidget.index('insert')
     scroll_fraction = tab.textwidget.yview()[0]
-    tab.reload()
+    tab.reload()   # TODO: error handling
     tab.textwidget.mark_set('insert', cursor_pos)
     tab.textwidget.yview_moveto(scroll_fraction)
 
