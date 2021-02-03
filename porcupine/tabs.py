@@ -558,19 +558,21 @@ bers.py>` use this attribute.
         self._saved_state = (stat_result, self._get_char_count(), self._get_hash())
         self._update_titles()
 
-    def equivalent(self, other: Tab) -> bool:    # override
-        # this used to have hasattr(other, "path") instead of isinstance
-        # but it screws up if a plugin defines something different with
-        # a path attribute, for example, a debugger plugin might have
-        # tabs that represent files and they might need to be opened at
-        # the same time as FileTabs are
-        return (isinstance(other, FileTab) and
-                self.path is not None and
-                other.path is not None and
-                self.path.samefile(other.path))
+    def is_modified(self) -> bool:
+        """Return False if the text has changed since previous save.
 
-    # TODO: document this
+        This is set to False automagically when the content is modified.
+        Use :meth:`mark_saved` to set this to True.
+        """
+        stat_result, char_count, save_hash = self._saved_state
+        # Don't call _get_hash() if not necessary
+        return (self._get_char_count() != char_count or self._get_hash() != save_hash)
+
     def reload(self) -> None:
+        """Read the contents of the file from disk.
+
+        .. seealso:: :meth:`open_file`, :meth:`reload_is_needed`
+        """
         assert self.path is not None
         with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
             stat_result = os.fstat(f.fileno())
@@ -597,18 +599,13 @@ bers.py>` use this attribute.
         # TODO: document this
         self.event_generate('<<Reloaded>>')
 
-    def is_modified(self) -> bool:
-        """Return False if the text has changed since previous save.
-
-        This is set to False automagically when the content is modified.
-        Use :meth:`mark_saved` to set this to True.
-        """
-        stat_result, char_count, save_hash = self._saved_state
-        # Don't call _get_hash() if not necessary
-        return (self._get_char_count() != char_count or self._get_hash() != save_hash)
-
-    # TODO: document this or move to plugin
     def reload_is_needed(self) -> bool:
+        """Check whether some other program has changed the file.
+
+        Programs like ``git`` often change the file while it's open in an
+        editor. After they do that, this method will return True until the file
+        is saved in Porcupine.
+        """
         save_stat, save_char_count, save_hash = self._saved_state
         if self.path is None or save_stat is None:
             return False
@@ -636,6 +633,17 @@ bers.py>` use this attribute.
         except (OSError, UnicodeError):
             log.exception(f"error when figuring out if '{self.path}' needs reloading, assuming it does")
             return True
+
+    def equivalent(self, other: Tab) -> bool:    # override
+        # this used to have hasattr(other, "path") instead of isinstance
+        # but it screws up if a plugin defines something different with
+        # a path attribute, for example, a debugger plugin might have
+        # tabs that represent files and they might need to be opened at
+        # the same time as FileTabs are
+        return (isinstance(other, FileTab) and
+                self.path is not None and
+                other.path is not None and
+                self.path.samefile(other.path))
 
     @property
     def path(self) -> Optional[pathlib.Path]:
