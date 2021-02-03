@@ -44,7 +44,7 @@ Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.84.2.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.85.0.zip
     python3 -m porcupine &
 
 ### Other Linux distributions
@@ -53,7 +53,7 @@ Install Python 3.6 or newer with pip and tkinter somehow. Then run these
 commands:
 
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.84.2.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.85.0.zip
     python3 -m porcupine &
 
 ### Mac OSX
