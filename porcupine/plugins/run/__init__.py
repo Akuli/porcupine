@@ -59,11 +59,11 @@ def get_command(
 def do_something(something: Literal['compile', 'run', 'compilerun', 'lint']) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
-    if tab.path is None or not tab.is_saved():
-        tab.save()
-        if tab.path is None:
-            # user cancelled a save as dialog
-            return
+
+    tab.save()
+    if tab.path is None:
+        # user cancelled a save as dialog
+        return
 
     workingdir = tab.path.parent
     basename = tab.path.name
