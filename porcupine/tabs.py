@@ -9,7 +9,8 @@ import pathlib
 import tkinter
 import traceback
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
+from typing import (Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Tuple, Type, TypeVar, Union,
+                    cast)
 
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
@@ -383,12 +384,11 @@ restarting Porcupine.
             "from_state() wasn't overrided but get_state() was overrided")
 
 
-_FileTabState = Tuple[
-    Optional[pathlib.Path],
-    Optional[str],                              # content
-    Tuple[Optional[os.stat_result], int, str],  # what was on disk when last reloaded or saved
-    str,                                        # cursor location
-]
+class _FileTabState(NamedTuple):
+    path: Optional[pathlib.Path]
+    content: Optional[str]
+    saved_state: Tuple[Optional[os.stat_result], int, str]
+    cursor_pos: str
 
 
 def _import_lexer_class(name: str) -> LexerMeta:
@@ -782,26 +782,23 @@ bers.py>` use this attribute.
         else:
             content = self.textwidget.get('1.0', 'end - 1 char')
 
-        return (self.path, content, self._saved_state, self.textwidget.index('insert'))
+        return _FileTabState(self.path, content, self._saved_state, self.textwidget.index('insert'))
 
     @classmethod
     def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
-        path, content, saved_state, cursor_pos = state
-        assert path is None or isinstance(path, pathlib.Path)  # string in older porcupines
-        assert isinstance(saved_state, tuple)   # string in older porcupines
+        assert isinstance(state, _FileTabState)   # not namedtuple in older porcupines
 
-        if content is None:
+        if state.content is None:
             # nothing has changed since saving, read from the saved file
-            assert path is not None
-            self = cls.open_file(manager, path)
+            assert state.path is not None
+            self = cls.open_file(manager, state.path)
         else:
-            self = cls(manager, content, path)
+            self = cls(manager, state.content, state.path)
 
-
-        # the title depends on the saved hash
-        self._saved_state = saved_state
+        # title depends on _saved_state
+        self._saved_state = state.saved_state
         self._update_titles()
 
-        self.textwidget.mark_set('insert', cursor_pos)
+        self.textwidget.mark_set('insert', state.cursor_pos)
         self.textwidget.see('insert linestart')
         return self
