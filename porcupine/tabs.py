@@ -691,7 +691,7 @@ bers.py>` use this attribute.
         # no was clicked, can be closed
         return True
 
-    def save(self) -> bool:
+    def save(self, *, check_if_other_program_has_changed: bool = True) -> bool:
         """Save the file to the current :attr:`path`.
 
         This returns whether the file was actually saved. This means that
@@ -699,10 +699,22 @@ bers.py>` use this attribute.
         (can happen when :attr:`path` is None) or an error occurs (the error is
         logged).
 
+        If ``check_if_other_program_has_changed`` is set to True and the saving
+        would overwrite changes done by other programs than Porcupine, then
+        before saving, this function will ask whether the user really wants to
+        save.
+
         .. seealso:: The :virtevt:`Save` event.
         """
         if self.path is None:
             return self.save_as()
+
+        if check_if_other_program_has_changed and self.reload_is_needed():
+            user_is_sure = messagebox.askyesno(
+                "File changed",
+                f"Another program has changed {self.path.name}. Are you sure you want to save it?")
+            if not user_is_sure:
+                return False
 
         self.event_generate('<<Save>>')
 
@@ -750,8 +762,7 @@ bers.py>` use this attribute.
             return False
 
         self.path = path
-        self.save()
-        return True
+        return self.save(check_if_other_program_has_changed=False)
 
     # FIXME: don't ignore undo history :/
     # FIXME: get this to work again

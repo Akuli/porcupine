@@ -115,3 +115,11 @@ def test_reload_is_needed(filetab, tmp_path):
 
     (tmp_path / 'foo.py').write_text('lol\n')
     assert not filetab.reload_is_needed()
+
+
+def test_save_as(filetab, tmp_path):
+    (tmp_path / 'foo.py').write_text('hello world\n')
+    filetab.path = tmp_path / 'foo.py'
+    filetab.reload()
+    filetab.save_as(tmp_path / 'bar.py')
+    assert (tmp_path / 'foo.py').read_text() == 'hello world\n'
