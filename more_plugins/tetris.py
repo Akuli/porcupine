@@ -246,6 +246,9 @@ class TetrisTab(tabs.Tab):
         self._timeout_id: Optional[str] = None
         self._game_over_id: Optional[int] = None
 
+        # yes, this needs force for some reason
+        self.bind('<<TabSelected>>', (lambda event: self._canvas.focus_force()), add=True)
+
     def _on_key(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
         control_flag = 0x4
         assert isinstance(event.state, int)
@@ -313,10 +316,6 @@ class TetrisTab(tabs.Tab):
         else:
             self._timeout_id = self._canvas.after(
                 self._game.delay, self._on_timeout)
-
-    def on_focus(self) -> None:
-        # yes, this needs force for some reason
-        self._canvas.focus_force()
 
     def get_state(self) -> Game:
         return self._game       # it should be picklable
