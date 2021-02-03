@@ -93,28 +93,28 @@ def test_new_file_doesnt_show_up_as_modified(filetab):
     assert not filetab.is_modified()
 
 
-def test_reload_is_needed(filetab, tmp_path):
-    assert not filetab.reload_is_needed()
+def test_other_program_changed_file(filetab, tmp_path):
+    assert not filetab.other_program_changed_file()
 
     filetab.textwidget.insert('1.0', 'lol\n')
-    assert not filetab.reload_is_needed()
+    assert not filetab.other_program_changed_file()
 
     filetab.save_as(tmp_path / 'foo.py')
-    assert not filetab.reload_is_needed()
+    assert not filetab.other_program_changed_file()
 
     filetab.textwidget.insert('1.0', 'x')
-    assert not filetab.reload_is_needed()
+    assert not filetab.other_program_changed_file()
     filetab.textwidget.delete('1.0')
-    assert not filetab.reload_is_needed()
+    assert not filetab.other_program_changed_file()
 
     (tmp_path / 'foo.py').write_text('wattttttttttt\n')
-    assert filetab.reload_is_needed()
+    assert filetab.other_program_changed_file()
 
     (tmp_path / 'foo.py').write_text('wat\n')
-    assert filetab.reload_is_needed()
+    assert filetab.other_program_changed_file()
 
     (tmp_path / 'foo.py').write_text('lol\n')
-    assert not filetab.reload_is_needed()
+    assert not filetab.other_program_changed_file()
 
 
 def test_save_as(filetab, tmp_path):

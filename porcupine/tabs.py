@@ -571,7 +571,7 @@ bers.py>` use this attribute.
     def reload(self) -> None:
         """Read the contents of the file from disk.
 
-        .. seealso:: :meth:`open_file`, :meth:`reload_is_needed`
+        .. seealso:: :meth:`open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
         with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
@@ -599,7 +599,7 @@ bers.py>` use this attribute.
         # TODO: document this
         self.event_generate('<<Reloaded>>')
 
-    def reload_is_needed(self) -> bool:
+    def other_program_changed_file(self) -> bool:
         """Check whether some other program has changed the file.
 
         Programs like ``git`` often change the file while it's open in an
@@ -717,7 +717,7 @@ bers.py>` use this attribute.
         if self.path is None:
             return self.save_as()
 
-        if check_if_other_program_has_changed and self.reload_is_needed():
+        if check_if_other_program_has_changed and self.other_program_changed_file():
             user_is_sure = messagebox.askyesno(
                 "File changed",
                 f"Another program has changed {self.path.name}. Are you sure you want to save it?")
@@ -776,7 +776,7 @@ bers.py>` use this attribute.
     # FIXME: when called from reload plugin, require saving file first
     def get_state(self) -> _FileTabState:
         # e.g. "New File" tabs are saved even though the .path is None
-        if self.path is not None and not self.is_modified() and not self.reload_is_needed():
+        if self.path is not None and not self.is_modified() and not self.other_program_changed_file():
             # this is really saved
             content = None
         else:

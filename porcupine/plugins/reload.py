@@ -3,7 +3,7 @@ from porcupine import get_tab_manager, tabs
 
 
 def reload_if_necessary(tab: tabs.FileTab) -> None:
-    if tab.reload_is_needed():
+    if tab.other_program_changed_file():
         cursor_pos = tab.textwidget.index('insert')
         scroll_fraction = tab.textwidget.yview()[0]
         tab.reload()   # TODO: error handling?
