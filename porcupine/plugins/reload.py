@@ -6,7 +6,7 @@ def reload_if_necessary(tab: tabs.FileTab) -> None:
     if tab.reload_is_needed():
         cursor_pos = tab.textwidget.index('insert')
         scroll_fraction = tab.textwidget.yview()[0]
-        tab.reload()   # TODO: error handling
+        tab.reload()   # TODO: error handling?
         tab.textwidget.mark_set('insert', cursor_pos)
         tab.textwidget.yview_moveto(scroll_fraction)
 
@@ -14,8 +14,7 @@ def reload_if_necessary(tab: tabs.FileTab) -> None:
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         filetab = tab   # mypy is wonderful
-        tab.textwidget.bind('<FocusIn>', (lambda event: reload_if_necessary(filetab)), add=True)
-        tab.textwidget.bind('<Button-1>', (lambda event: reload_if_necessary(filetab)), add=True)
+        tab.textwidget.bind('<<AutoReload>>', (lambda event: reload_if_necessary(filetab)), add=True)
 
 
 def setup() -> None:
