@@ -71,15 +71,15 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.bind('<<NotebookTabChanged>>', self._focus_selected_tab, add=True)
+        self.bind('<<NotebookTabChanged>>', self._notify_selected_tab, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: List[Tuple[Callable[[Tab], Any], str]] = []
 
-    def _focus_selected_tab(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def _notify_selected_tab(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
         tab = self.select()
         if tab is not None:
-            tab.on_focus()
+            tab.event_generate('<<TabSelected>>')
 
     def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
@@ -227,6 +227,13 @@ class Tab(ttk.Frame):
     inside the tab, pack it with ``fill='both', expand=True`` and do
     whatever you want inside it.
 
+    .. virtualevent:: TabSelected
+
+        :class:`TabManager` generates this event on the tab when the tab is
+        selected. Unlike :virtevt:`~TabManager.NotebookTabSelected`, this event
+        is bound on the tab and not the tab manager, and hence is automatically
+        unbound when the tab is destroyed.
+
     .. virtualevent:: StatusChanged
 
         This event is generated when :attr:`status` is set to a new
@@ -324,13 +331,6 @@ class Tab(ttk.Frame):
         :meth:`.FileTab.can_be_closed` for an example.
         """
         return True
-
-    def on_focus(self) -> None:
-        """This is called when the tab is selected.
-
-        This does nothing by default. You can override this in a
-        subclass and make this focus the tab's main widget if needed.
-        """
 
     def equivalent(self, other: 'Tab') -> bool:
         """This is explained in :meth:`.TabManager.add_tab`.
@@ -518,6 +518,7 @@ bers.py>` use this attribute.
             self.textwidget.insert('1.0', content)
             self.textwidget.edit_reset()   # reset undo/redo
 
+        self.bind('<<TabSelected>>', (lambda event: self.textwidget.focus()), add=True)
         self.bind('<<PathChanged>>', self._update_status, add=True)
         self.textwidget.bind('<<CursorMoved>>', self._update_status, add=True)
 
@@ -650,9 +651,6 @@ bers.py>` use this attribute.
                 return False
         # no was clicked, can be closed
         return True
-
-    def on_focus(self) -> None:    # override
-        self.textwidget.focus_set()
 
     def save(self) -> Optional[bool]:
         """Save the file to the current :attr:`path`.

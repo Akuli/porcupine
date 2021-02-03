@@ -20,7 +20,7 @@ def gotoline() -> None:
         tab.textwidget.mark_set('insert', '%d.%s' % (lineno, column))
         tab.textwidget.see('insert')
 
-    tab.on_focus()
+    tab.textwidget.focus()
 
 
 def setup() -> None:
