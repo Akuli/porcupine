@@ -604,7 +604,7 @@ bers.py>` use this attribute.
 
         Programs like ``git`` often change the file while it's open in an
         editor. After they do that, this method will return True until the file
-        is saved in Porcupine.
+        is e.g. saved or reloaded.
         """
         save_stat, save_char_count, save_hash = self._saved_state
         if self.path is None or save_stat is None:
