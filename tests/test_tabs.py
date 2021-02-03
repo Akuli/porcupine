@@ -87,3 +87,7 @@ def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
     assert tabmanager.tab(tab2, 'text').replace(os.sep, '/') == 'dir2/.../baz.py'
     tabmanager.close_tab(tab1)
     tabmanager.close_tab(tab2)
+
+
+def test_new_file_doesnt_show_up_as_modified(filetab):
+    assert not filetab.is_modified()

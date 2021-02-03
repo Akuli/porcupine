@@ -6,30 +6,13 @@ from porcupine import get_tab_manager, menubar, tabs
 
 def reload() -> None:
     tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab), repr(tab)
-    assert tab.path is not None
+    assert isinstance(tab, tabs.FileTab)
 
     cursor_pos = tab.textwidget.index('insert')
     scroll_fraction = tab.textwidget.yview()[0]
-
-    with tab.path.open('r', encoding=tab.settings.get('encoding', str)) as file:
-        content = file.read()
-
-    # Reloading can be undoed with Ctrl+Z
-    tab.textwidget.config(autoseparators=False)
-    try:
-        tab.textwidget.edit_separator()
-        tab.textwidget.replace('1.0', 'end', content)
-        tab.textwidget.edit_separator()
-    finally:
-        tab.textwidget.config(autoseparators=True)
-
-    tab.mark_saved()
+    tab.reload()
     tab.textwidget.mark_set('insert', cursor_pos)
     tab.textwidget.yview_moveto(scroll_fraction)
-
-    # TODO: document this? it's used in mergeconflict plugin
-    tab.event_generate('<<Reloaded>>')
 
 
 def setup() -> None:

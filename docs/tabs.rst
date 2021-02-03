@@ -17,4 +17,4 @@ and you'd like to use their code in your own projects.
 .. specifying members explicitly to avoid showing some overrided things
 
 .. autoclass:: FileTab
-   :members: open_file, mark_saved, is_saved, save, save_as
+   :members: open_file, is_modified, save, save_as, reload

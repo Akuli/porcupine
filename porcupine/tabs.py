@@ -527,7 +527,7 @@ bers.py>` use this attribute.
         self.textwidget.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.textwidget.yview)
 
-        self.mark_saved()
+        self._save_hash = self._get_hash()
         self._update_titles()
         self._update_status()
 
@@ -542,19 +542,8 @@ bers.py>` use this attribute.
         file fails.
         """
         tab = cls(manager, path=path)
-        with path.open('r', encoding=tab.settings.get('encoding', str)) as file:
-            content = file.read()
-        tab.textwidget.insert('1.0', content)
+        tab.reload()
         tab.textwidget.edit_reset()
-
-        if isinstance(file.newlines, tuple):
-            # TODO: show a message box to user?
-            log.warning(f"file '{path}' contains mixed line endings: {file.newlines}")
-        elif file.newlines is not None:
-            assert isinstance(file.newlines, str)
-            tab.settings.set('line_ending', settings.LineEnding(file.newlines))
-
-        tab.mark_saved()
         return tab
 
     def equivalent(self, other: Tab) -> bool:    # override
@@ -576,18 +565,41 @@ bers.py>` use this attribute.
         # representation of the hash
         return result.hexdigest()
 
-    def mark_saved(self) -> None:
-        """Make :meth:`is_saved` return True."""
+    # TODO: document this
+    def reload(self) -> None:
+        assert self.path is not None
+        with self.path.open('r', encoding=self.settings.get('encoding', str)) as file:
+            content = file.read()
+
+        if isinstance(file.newlines, tuple):
+            # TODO: show a message box to user?
+            log.warning(f"file '{self.path}' contains mixed line endings: {file.newlines}")
+        elif file.newlines is not None:
+            assert isinstance(file.newlines, str)
+            self.settings.set('line_ending', settings.LineEnding(file.newlines))
+
+        # Reloading can be undoed with Ctrl+Z
+        self.textwidget.config(autoseparators=False)
+        try:
+            self.textwidget.edit_separator()
+            self.textwidget.replace('1.0', 'end', content)
+            self.textwidget.edit_separator()
+        finally:
+            self.textwidget.config(autoseparators=True)
+
         self._save_hash = self._get_hash()
         self._update_titles()
 
-    def is_saved(self) -> bool:
+        # TODO: document this
+        self.event_generate('<<Reloaded>>')
+
+    def is_modified(self) -> bool:
         """Return False if the text has changed since previous save.
 
         This is set to False automagically when the content is modified.
         Use :meth:`mark_saved` to set this to True.
         """
-        return self._get_hash() == self._save_hash
+        return self._get_hash() != self._save_hash
 
     @property
     def path(self) -> Optional[pathlib.Path]:
@@ -612,7 +624,7 @@ bers.py>` use this attribute.
         else:
             titles = _short_ways_to_display_path(self.path)
 
-        if not self.is_saved():
+        if self.is_modified():
             titles = [f'*{title}*' for title in titles]
 
         self.title_choices = titles
@@ -626,7 +638,7 @@ bers.py>` use this attribute.
         self.status = f"{path_string}\tLine {line}, column {column}"
 
     def can_be_closed(self) -> bool:    # override
-        if self.is_saved():
+        if not self.is_modified():
             return True
 
         if self.path is None:
@@ -639,26 +651,17 @@ bers.py>` use this attribute.
             return False
         if answer:
             # yes
-            save_result = self.save()
-            if save_result is None:
-                # saving failed
-                return False
-            elif save_result:
-                # saving succeeded
-                return True
-            else:
-                # user said no
-                return False
+            return self.save()
         # no was clicked, can be closed
         return True
 
-    def save(self) -> Optional[bool]:
+    def save(self) -> bool:
         """Save the file to the current :attr:`path`.
 
-        This calls :meth:`save_as` if :attr:`path` is None, and returns
-        False if the user cancels the save as dialog. None is returned
-        on errors, and True is returned in all other cases. In other
-        words, this returns True if saving succeeded.
+        This returns whether the file was actually saved. This means that
+        ``False`` is returned when the user cancels a :meth:`save_as` dialog
+        (can happen when :attr:`path` is None) or an error occurs (the error is
+        logged).
 
         .. seealso:: The :virtevt:`Save` event.
         """
@@ -677,9 +680,10 @@ bers.py>` use this attribute.
             log.exception("saving '%s' failed", self.path)
             utils.errordialog(type(e).__name__, "Saving failed!",
                               traceback.format_exc())
-            return None
+            return False
 
-        self.mark_saved()
+        self._save_hash = self._get_hash()
+        self._update_titles()
         return True
 
     def save_as(self) -> bool:
@@ -709,16 +713,16 @@ bers.py>` use this attribute.
         return True
 
     # FIXME: don't ignore undo history :/
+    # FIXME: should include stat information?
     def get_state(self) -> _FileTabState:
         # e.g. "New File" tabs are saved even though the .path is None
-        if self.is_saved() and self.path is not None:
+        if self.path is not None and not self.is_modified():
             # this is really saved
             content = None
         else:
             content = self.textwidget.get('1.0', 'end - 1 char')
 
-        return (self.path, content, self._save_hash,
-                self.textwidget.index('insert'))
+        return (self.path, content, self._save_hash, self.textwidget.index('insert'))
 
     @classmethod
     def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
