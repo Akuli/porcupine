@@ -385,9 +385,9 @@ restarting Porcupine.
 
 _FileTabState = Tuple[
     Optional[pathlib.Path],
-    Optional[str],   # content
-    Optional[str],   # hash
-    str,             # cursor location
+    Optional[str],                              # content
+    Tuple[Optional[os.stat_result], int, str],  # what was on disk when last reloaded or saved
+    str,                                        # cursor location
 ]
 
 
