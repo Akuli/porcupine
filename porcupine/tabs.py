@@ -203,7 +203,7 @@ _FileTabT = TypeVar('_FileTabT', 'FileTab', 'FileTab')
 
 
 class Tab(ttk.Frame):
-    r"""Base class for widgets that can be added to TabManager.
+    """Base class for widgets that can be added to TabManager.
 
     You can easily create custom kinds of tabs by inheriting from this
     class. Here's a very minimal but complete example plugin::
