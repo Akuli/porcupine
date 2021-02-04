@@ -2,6 +2,7 @@
 from tkinter import ttk
 
 from porcupine import get_tab_manager, tabs
+from porcupine.menubar import get_keyboard_shortcut
 
 
 class StatusBar(ttk.Frame):
@@ -21,10 +22,13 @@ class StatusBar(ttk.Frame):
         line, column = self.tab.textwidget.index('insert').split('.')
         self.right_label.config(text=f"Line {line}, column {column}")
 
+    # TODO: don't show warning when no changes were lost
     def show_reload_warning(self, junk: object) -> None:
+        undo_keys = get_keyboard_shortcut(self.event_info('<<Undo>>')[0])
+        print("\n\n******", undo_keys, "\n")
         self.left_label.config(
             foreground='red',
-            text="File was reloaded. Press Ctrl+Z to get your changes back.",
+            text=f"File was reloaded. Press {undo_keys} to get your changes back.",
         )
 
     def clear_reload_warning(self, junk: object) -> None:

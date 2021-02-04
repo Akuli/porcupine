@@ -24,3 +24,4 @@ any :source:`plugin that Porcupine comes with <porcupine/plugins>` for example u
 
 .. autofunction:: add_config_file_button
 .. autofunction:: update_keyboard_shortcuts
+.. autofunction:: get_keyboard_shortcut
