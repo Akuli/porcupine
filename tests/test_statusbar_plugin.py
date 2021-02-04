@@ -20,6 +20,6 @@ def test_reload_warning(filetab, tmp_path):
     assert 'Press Ctrl+Z to get your changes back' in statusbar.left_label['text']
     assert statusbar.left_label['foreground'] != ''
 
-    filetab.textwidget.insert('1.0', 'a')   # assumeuser doesn't want changes back
+    filetab.textwidget.insert('1.0', 'a')   # assume user doesn't want changes back
     assert statusbar.left_label['text'].endswith('lol.py')
     assert statusbar.left_label['foreground'] == ''
