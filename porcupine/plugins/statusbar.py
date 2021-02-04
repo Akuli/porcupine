@@ -21,6 +21,7 @@ class StatusBar(ttk.Frame):
         line, column = self.tab.textwidget.index('insert').split('.')
         self.right_label.config(text=f"Line {line}, column {column}")
 
+    # TODO: it's likely not ctrl+z on mac
     def show_reload_warning(self, junk: object) -> None:
         self.left_label.config(
             foreground='red',
