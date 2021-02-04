@@ -6,51 +6,51 @@ on:
   pull_request:
 
 jobs:
-  mypy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: "3.9"
-    - run: pip install -r requirements.txt -r requirements-dev.txt
-    - run: git submodule init && git submodule update
-    - run: |
-        mypy --platform linux --python-version 3.6 porcupine more_plugins
-        mypy --platform linux --python-version 3.7 porcupine more_plugins
-        mypy --platform linux --python-version 3.8 porcupine more_plugins
-        mypy --platform linux --python-version 3.9 porcupine more_plugins
-        mypy --platform win32 --python-version 3.6 porcupine more_plugins
-        mypy --platform win32 --python-version 3.7 porcupine more_plugins
-        mypy --platform win32 --python-version 3.8 porcupine more_plugins
-        mypy --platform win32 --python-version 3.9 porcupine more_plugins
-  pytest-windows:
-    strategy:
-      matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - run: pip install -r requirements.txt -r requirements-dev.txt
-    - run: python -m pytest
-  pytest-linux:
-    strategy:
-      matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - run: pip install -r requirements.txt -r requirements-dev.txt
-    - uses: GabrielBB/xvfb-action@v1.4
-      with:
-        run: |
-          python3 -m pytest
+#  mypy:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: "3.9"
+#    - run: pip install -r requirements.txt -r requirements-dev.txt
+#    - run: git submodule init && git submodule update
+#    - run: |
+#        mypy --platform linux --python-version 3.6 porcupine more_plugins
+#        mypy --platform linux --python-version 3.7 porcupine more_plugins
+#        mypy --platform linux --python-version 3.8 porcupine more_plugins
+#        mypy --platform linux --python-version 3.9 porcupine more_plugins
+#        mypy --platform win32 --python-version 3.6 porcupine more_plugins
+#        mypy --platform win32 --python-version 3.7 porcupine more_plugins
+#        mypy --platform win32 --python-version 3.8 porcupine more_plugins
+#        mypy --platform win32 --python-version 3.9 porcupine more_plugins
+#  pytest-windows:
+#    strategy:
+#      matrix:
+#        python-version: ["3.6", "3.7", "3.8", "3.9"]
+#    runs-on: windows-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#    - run: pip install -r requirements.txt -r requirements-dev.txt
+#    - run: python -m pytest
+#  pytest-linux:
+#    strategy:
+#      matrix:
+#        python-version: ["3.6", "3.7", "3.8", "3.9"]
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#    - run: pip install -r requirements.txt -r requirements-dev.txt
+#    - uses: GabrielBB/xvfb-action@v1.4
+#      with:
+#        run: |
+#          python3 -m pytest
   pytest-macos:
     # https://github.com/actions/setup-python/issues/58
     runs-on: macos-latest
@@ -60,47 +60,47 @@ jobs:
     - run: python3 -c 'import sys; print(sys.version)'
     - run: python3 -c 'import tkinter'
     - run: python3 -c 'import tkinter; tkinter.Tk()'
-  pycodestyle:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: "3.9"
-    - run: |
-        pip install -r requirements-dev.txt
-    - run: |
-        python3 -m pycodestyle scripts/*.py porcupine tests more_plugins
-  isort:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: "3.9"
-    - run: |
-        pip install -r requirements-dev.txt
-    - run: |
-        python3 -m isort --check scripts/*.py porcupine tests more_plugins
-  pyflakes:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: "3.9"
-    - run: |
-        pip install -r requirements-dev.txt
-    - run: |
-        python3 -m pyflakes scripts/*.py porcupine tests more_plugins
-  bindcheck:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: "3.9"
-    - run: |
-        python3 scripts/bindcheck.py porcupine
-    - run: |
-        python3 scripts/bindcheck.py more_plugins
+#  pycodestyle:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: "3.9"
+#    - run: |
+#        pip install -r requirements-dev.txt
+#    - run: |
+#        python3 -m pycodestyle scripts/*.py porcupine tests more_plugins
+#  isort:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: "3.9"
+#    - run: |
+#        pip install -r requirements-dev.txt
+#    - run: |
+#        python3 -m isort --check scripts/*.py porcupine tests more_plugins
+#  pyflakes:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: "3.9"
+#    - run: |
+#        pip install -r requirements-dev.txt
+#    - run: |
+#        python3 -m pyflakes scripts/*.py porcupine tests more_plugins
+#  bindcheck:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: actions/setup-python@v1
+#      with:
+#        python-version: "3.9"
+#    - run: |
+#        python3 scripts/bindcheck.py porcupine
+#    - run: |
+#        python3 scripts/bindcheck.py more_plugins
