@@ -1,7 +1,7 @@
 """Display a status bar in each file tab."""
 from tkinter import ttk
 
-from porcupine import get_tab_manager, tabs
+from porcupine import get_tab_manager, tabs, utils
 
 
 class StatusBar(ttk.Frame):
@@ -22,11 +22,12 @@ class StatusBar(ttk.Frame):
         self.right_label.config(text=f"Line {line}, column {column}")
 
     # TODO: it's likely not ctrl+z on mac
-    def show_reload_warning(self, junk: object) -> None:
-        self.left_label.config(
-            foreground='red',
-            text="File was reloaded. Press Ctrl+Z to get your changes back.",
-        )
+    def show_reload_warning(self, event: utils.EventWithData) -> None:
+        if event.data_class(tabs.ReloadInfo).was_modified:
+            self.left_label.config(
+                foreground='red',
+                text="File was reloaded. Press Ctrl+Z to get your changes back.",
+            )
 
     def clear_reload_warning(self, junk: object) -> None:
         if self.left_label['foreground']:
@@ -39,7 +40,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
         statusbar = StatusBar(tab)
         statusbar.pack(side='bottom', fill='x')
         tab.bind('<<PathChanged>>', statusbar.show_path, add=True)
-        tab.bind('<<Reloaded>>', statusbar.show_reload_warning, add=True)
+        utils.bind_with_data(tab, '<<Reloaded>>', statusbar.show_reload_warning, add=True)
         tab.textwidget.bind('<<CursorMoved>>', statusbar.show_cursor_pos, add=True)
         tab.textwidget.bind('<<ContentChanged>>', statusbar.clear_reload_warning, add=True)
 

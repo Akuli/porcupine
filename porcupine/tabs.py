@@ -1,5 +1,6 @@
 r"""Tabs as in browser tabs, not \t characters."""
 
+import dataclasses
 import hashlib
 import importlib
 import itertools
@@ -372,6 +373,11 @@ def _import_lexer_class(name: str) -> LexerMeta:
     return klass
 
 
+@dataclasses.dataclass
+class ReloadInfo(utils.EventDataclass):
+    was_modified: bool
+
+
 class FileTab(Tab):
     """A subclass of :class:`.Tab` that represents an opened file.
 
@@ -554,6 +560,8 @@ bers.py>` use this attribute.
             assert isinstance(f.newlines, str)
             self.settings.set('line_ending', settings.LineEnding(f.newlines))
 
+        modified_before = self.is_modified()
+
         # Reloading can be undoed with Ctrl+Z
         self.textwidget.config(autoseparators=False)
         try:
@@ -566,7 +574,7 @@ bers.py>` use this attribute.
         self._set_saved_state(stat_result)
 
         # TODO: document this
-        self.event_generate('<<Reloaded>>')
+        self.event_generate('<<Reloaded>>', data=ReloadInfo(was_modified=modified_before))
 
     def other_program_changed_file(self) -> bool:
         """Check whether some other program has changed the file.
