@@ -67,8 +67,14 @@ I think you can download Python with tkinter from
 
 ### Windows
 
-Download a Porcupine installer from [the releases page](https://github.com/Akuli/porcupine/releases).
-Run it and then open Porcupine from the start menu.
+Download a Porcupine installer from [the releases page](https://github.com/Akuli/porcupine/releases) and run it.
+Because I haven't asked Microsoft to trust Porcupine installers,
+you will likely get a warning similar to this one:
+
+![Windows thinks it protected your PC](windows-defender.png)
+
+You should still be able to run the installer by clicking "More info".
+When installed, you will find Porcupine from the start menu.
 
 ### Development Install
 
