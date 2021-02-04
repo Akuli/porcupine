@@ -270,7 +270,6 @@ class Tab(ttk.Frame):
 
     def __init__(self, manager: TabManager) -> None:
         super().__init__(manager)
-        self._status = ''
         self._titles: Sequence[str] = ['']
 
         # top and bottom frames must be packed first because this way
@@ -283,15 +282,6 @@ class Tab(ttk.Frame):
         self.bottom_frame.pack(side='bottom', fill='x')
         self.left_frame.pack(side='left', fill='y')
         self.right_frame.pack(side='right', fill='y')
-
-    @property
-    def status(self) -> str:
-        return self._status
-
-    @status.setter
-    def status(self, new_status: str) -> None:
-        self._status = new_status
-        self.event_generate('<<StatusChanged>>')
 
     @property
     def title_choices(self) -> Sequence[str]:
