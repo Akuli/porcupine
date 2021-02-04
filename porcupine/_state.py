@@ -4,6 +4,8 @@ import logging
 import tkinter
 import types
 from typing import Any, Dict, Optional, Type
+from tkinter import ttk
+
 
 from porcupine import tabs
 
@@ -11,6 +13,7 @@ log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier
 _root: Optional[tkinter.Tk] = None
+_pw: Optional[tkinter.PanedWindow] = None
 _tab_manager: Optional[tabs.TabManager] = None
 _parsed_args: Optional[Any] = None
 filedialog_kwargs: Dict[str, Any] = {}
@@ -25,7 +28,8 @@ def init(args: Any) -> None:
     global _root
     global _tab_manager
     global _parsed_args
-    assert _root is None and _tab_manager is None and _parsed_args is None
+    global _pw
+    assert _root is None and _tab_manager is None and _parsed_args is None and _pw is None
     assert args is not None
 
     log.debug("init() starts")
@@ -35,8 +39,13 @@ def init(args: Any) -> None:
     _root.protocol('WM_DELETE_WINDOW', quit)
     _root.report_callback_exception = _log_tkinter_error
 
-    _tab_manager = tabs.TabManager(_root)
-    _tab_manager.pack(fill='both', expand=True)
+    _pw = ttk.PanedWindow(_root, orient='horizontal')
+
+    _tab_manager = tabs.TabManager(_pw)
+
+    _pw.add(_tab_manager)
+    _pw.pack(fill='both', expand=True)
+
     log.debug("init() done")
 
 
@@ -60,6 +69,12 @@ def get_parsed_args() -> Any:
     """Return Porcupine's arguments as returned by :func:`argparse.parse_args`."""
     assert _parsed_args is not None
     return _parsed_args
+
+
+def get_paned_window() -> tkinter.PanedWindow:
+    if _pw is None:
+        raise RuntimeError("Porcupine is not running")
+    return _pw
 
 
 def quit() -> None:

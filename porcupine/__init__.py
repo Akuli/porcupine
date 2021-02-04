@@ -43,6 +43,7 @@ if True:
 
 get_main_window = _state.get_main_window
 get_parsed_args = _state.get_parsed_args
+get_paned_window = _state.get_paned_window
 get_tab_manager = _state.get_tab_manager
 filedialog_kwargs = _state.filedialog_kwargs
 quit = _state.quit
