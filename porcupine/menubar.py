@@ -150,20 +150,20 @@ def _walk_menu_contents(
                 yield (path, menu, index)
 
 
-def get_keyboard_shortcut(binding: str) -> str:
+def _get_keyboard_shortcut(binding: str) -> str:
     """Convert a Tk binding string to a format that most people are used to.
 
-    >>> get_keyboard_shortcut('<Control-c>')
+    >>> _get_keyboard_shortcut('<Control-c>')
     'Ctrl+C'
-    >>> get_keyboard_shortcut('<Control-Key-c>')
+    >>> _get_keyboard_shortcut('<Control-Key-c>')
     'Ctrl+C'
-    >>> get_keyboard_shortcut('<Control-C>')
+    >>> _get_keyboard_shortcut('<Control-C>')
     'Ctrl+Shift+C'
-    >>> get_keyboard_shortcut('<Control-0>')
+    >>> _get_keyboard_shortcut('<Control-0>')
     'Ctrl+Zero'
-    >>> get_keyboard_shortcut('<Control-1>')
+    >>> _get_keyboard_shortcut('<Control-1>')
     'Ctrl+1'
-    >>> get_keyboard_shortcut('<F11>')
+    >>> _get_keyboard_shortcut('<F11>')
     'F11'
     """
     # this doesn't handle all possible cases, see bind(3tk)
@@ -215,7 +215,7 @@ def update_keyboard_shortcuts() -> None:
         event_name = f'<<Menubar:{path}>>'
 
         # show keyboard shortcuts in menus
-        shortcuts = map(get_keyboard_shortcut, main_window.event_info(event_name))
+        shortcuts = map(_get_keyboard_shortcut, main_window.event_info(event_name))
         menu.entryconfig(index, accelerator=', '.join(shortcuts))
 
         # trigger menu items when <<Menubar:Foo/Bar>> events are generated
