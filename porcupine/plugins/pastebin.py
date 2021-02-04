@@ -39,8 +39,6 @@ session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
 # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
 def paste_to_dpaste_dot_com(code: str, lexer_class: LexerMeta) -> str:
     # docs: https://dpaste.com/api/v2/
-    # the docs tell to post to http://dpaste.de/api/ but they use
-    # https://... in the examples 0_o only the https version works
     response = session.post('https://dpaste.com/api/v2/', data={
         'syntax': lexer_class.aliases[0],
         'content': code,
@@ -81,8 +79,7 @@ class SuccessDialog(tkinter.Toplevel):
         buttonframe = ttk.Frame(self)
         buttonframe.place(relx=0.5, rely=0.8, anchor='center', relwidth=1)
         for text, callback in button_info:
-            button = ttk.Button(buttonframe, text=text, command=callback)
-            button.pack(side='left', expand=True)
+            ttk.Button(buttonframe, text=text, command=callback).pack(side='left', expand=True)
 
     def _select_all(self, junk: object = None, breaking: bool = False) -> utils.BreakOrNone:
         self._entry.selection_range(0, 'end')
