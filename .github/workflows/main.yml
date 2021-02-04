@@ -55,7 +55,11 @@ jobs:
     # https://github.com/actions/setup-python/issues/58
     runs-on: macos-latest
     steps:
-    - run: brew search python
+    - run: brew install python@3.7    # Available versions: 3.7 3.8 3.9
+    - run: python3 -c 'print("hello world")'
+    - run: python3 -c 'import sys; print(sys.version)'
+    - run: python3 -c 'import tkinter'
+    - run: python3 -c 'import tkinter; tkinter.Tk()'
   pycodestyle:
     runs-on: ubuntu-latest
     steps:
