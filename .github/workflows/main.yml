@@ -13,10 +13,8 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: "3.9"
-    - run: |
-        pip install -r requirements.txt -r requirements-dev.txt
-    - run: |
-        git submodule init && git submodule update
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: git submodule init && git submodule update
     - run: |
         mypy --platform linux --python-version 3.6 porcupine more_plugins
         mypy --platform linux --python-version 3.7 porcupine more_plugins
@@ -26,26 +24,38 @@ jobs:
         mypy --platform win32 --python-version 3.7 porcupine more_plugins
         mypy --platform win32 --python-version 3.8 porcupine more_plugins
         mypy --platform win32 --python-version 3.9 porcupine more_plugins
-  pytest:
+  pytest-windows:
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
         python-version: ["3.6", "3.7", "3.8", "3.9"]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - run: |
-        pip install -r requirements.txt -r requirements-dev.txt
-    - if: contains(matrix.os, 'windows')
-      run: python -m pytest
-    - if: ${{ !contains(matrix.os, 'windows') }}
-      uses: GabrielBB/xvfb-action@v1.4
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: python -m pytest
+  pytest-linux:
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - uses: GabrielBB/xvfb-action@v1.4
       with:
         run: |
           python3 -m pytest
+  pytest-macos:
+    # https://github.com/actions/setup-python/issues/58
+    runs-on: macos-latest
+    steps:
+    - run: brew search python
   pycodestyle:
     runs-on: ubuntu-latest
     steps:
