@@ -49,8 +49,7 @@ jobs:
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - uses: GabrielBB/xvfb-action@v1.4
       with:
-        run: |
-          python3 -m pytest
+        run: python3 -m pytest
   pytest-macos:
     # https://github.com/actions/setup-python/issues/58
     runs-on: macos-latest
@@ -69,10 +68,8 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: "3.9"
-    - run: |
-        pip install -r requirements-dev.txt
-    - run: |
-        python3 -m pycodestyle scripts/*.py porcupine tests more_plugins
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m pycodestyle scripts/*.py porcupine tests more_plugins
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -80,10 +77,8 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: "3.9"
-    - run: |
-        pip install -r requirements-dev.txt
-    - run: |
-        python3 -m isort --check scripts/*.py porcupine tests more_plugins
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m isort --check scripts/*.py porcupine tests more_plugins
   pyflakes:
     runs-on: ubuntu-latest
     steps:
@@ -91,10 +86,8 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: "3.9"
-    - run: |
-        pip install -r requirements-dev.txt
-    - run: |
-        python3 -m pyflakes scripts/*.py porcupine tests more_plugins
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m pyflakes scripts/*.py porcupine tests more_plugins
   bindcheck:
     runs-on: ubuntu-latest
     steps:
@@ -102,7 +95,5 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: "3.9"
-    - run: |
-        python3 scripts/bindcheck.py porcupine
-    - run: |
-        python3 scripts/bindcheck.py more_plugins
+    - run: python3 scripts/bindcheck.py porcupine
+    - run: python3 scripts/bindcheck.py more_plugins
