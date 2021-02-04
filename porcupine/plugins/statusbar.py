@@ -26,7 +26,7 @@ class StatusBar(ttk.Frame):
         if event.data_class(tabs.ReloadInfo).was_modified:
             self.left_label.config(
                 foreground='red',
-                text="File was reloaded. Press Ctrl+Z to get your changes back.",
+                text="File was reloaded with unsaved changes. Press Ctrl+Z to get your changes back.",
             )
 
     def clear_reload_warning(self, junk: object) -> None:
