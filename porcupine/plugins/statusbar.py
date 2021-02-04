@@ -38,7 +38,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
         statusbar = StatusBar(tab)
         statusbar.pack(side='bottom', fill='x')
         tab.bind('<<PathChanged>>', statusbar.show_path, add=True)
-        tab.bind('<<Reloaded>>', statusbar.show_reload_warning)
+        tab.bind('<<Reloaded>>', statusbar.show_reload_warning, add=True)
         tab.textwidget.bind('<<CursorMoved>>', statusbar.show_cursor_pos, add=True)
         tab.textwidget.bind('<<ContentChanged>>', statusbar.clear_reload_warning, add=True)
 
