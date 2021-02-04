@@ -6,6 +6,7 @@ import functools
 import itertools
 import random
 import tkinter
+from tkinter import ttk
 from typing import Dict, Iterator, List, Optional, Tuple
 
 from porcupine import get_tab_manager, menubar, tabs, utils
@@ -227,6 +228,9 @@ class TetrisTab(tabs.Tab):
             relief='ridge', bg='black', takefocus=True)
         self._canvas.pack()
 
+        self._score_label = ttk.Label(self)
+        self._score_label.pack()
+
         # this also requires binding on the tab when the tab is detached
         for key in ['<W>', '<w>', '<A>', '<a>', '<S>', '<s>', '<D>', '<d>',
                     '<Left>', '<Right>', '<Up>', '<Down>', '<Return>',
@@ -283,8 +287,7 @@ class TetrisTab(tabs.Tab):
                 color = COLORS[shape]
             self._canvas.itemconfig(item_id, fill=color)
 
-        self.status = "Score %d, level %d" % (
-            self._game.score, self._game.level)
+        self._score_label['text'] = f"Score {self._game.score}, level {self._game.level}"
 
     def new_game(self) -> None:
         if self._timeout_id is not None:

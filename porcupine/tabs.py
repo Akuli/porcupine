@@ -235,11 +235,6 @@ class Tab(ttk.Frame):
         is bound on the tab and not the tab manager, and hence is automatically
         unbound when the tab is destroyed.
 
-    .. virtualevent:: StatusChanged
-
-        This event is generated when :attr:`status` is set to a new
-        value. Use ``event.widget.status`` to access the current status.
-
     .. attribute:: title_choices
 
         A :class:`typing.Sequence` of strings that can be used as the title of
@@ -250,19 +245,6 @@ class Tab(ttk.Frame):
         For example, if you open a file named ``foo/bar/baz.py``, its title
         will be ``baz.py``, but if you also open ``foo/bar2/baz.py`` then the
         titles change to ``bar/baz.py`` and ``bar2/baz.py``.
-
-    .. attribute:: status
-
-        A human-readable string for showing in e.g. a status bar.
-
-        The status message can also contain multiple tab-separated
-        things, e.g. ``"File 'thing.py'\tLine 12, column 34"``.
-
-        This is ``''`` by default, but that can be changed like
-        ``tab.status = something_new``.
-
-        If you're writing something like a status bar, make sure to
-        handle ``\t`` characters and bind :virtevt:`~StatusChanged`.
 
     .. attribute:: master
 
@@ -517,8 +499,6 @@ bers.py>` use this attribute.
         self._set_saved_state(None)
 
         self.bind('<<TabSelected>>', (lambda event: self.textwidget.focus()), add=True)
-        self.bind('<<PathChanged>>', self._update_status, add=True)
-        self.textwidget.bind('<<CursorMoved>>', self._update_status, add=True)
 
         self.scrollbar = ttk.Scrollbar(self.right_frame)
         self.scrollbar.pack(side='right', fill='y')
@@ -527,7 +507,6 @@ bers.py>` use this attribute.
 
         self.textwidget.bind('<<ContentChanged>>', self._update_titles, add=True)
         self._update_titles()
-        self._update_status()
 
     @classmethod
     def open_file(cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path) -> _FileTabT:
@@ -672,14 +651,6 @@ bers.py>` use this attribute.
             titles = [f'*{title}*' for title in titles]
 
         self.title_choices = titles
-
-    def _update_status(self, junk: object = None) -> None:
-        if self.path is None:
-            path_string = "New file"
-        else:
-            path_string = "File '%s'" % self.path
-        line, column = self.textwidget.index('insert').split('.')
-        self.status = f"{path_string}\tLine {line}, column {column}"
 
     def can_be_closed(self) -> bool:    # override
         if not self.is_modified():

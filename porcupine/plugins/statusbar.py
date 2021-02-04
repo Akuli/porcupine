@@ -1,12 +1,9 @@
-"""Display a status bar in each tab."""
+"""Display a status bar in each file tab."""
 import tkinter
 from tkinter import ttk
+from functools import partial
 
 from porcupine import get_tab_manager, tabs
-
-# i have experimented with a logging handler that displays logging
-# messages in the label, but it's not as good idea as it sounds like,
-# not all INFO messages are something that users should see all the time
 
 
 # this widget is kind of weird
@@ -25,19 +22,14 @@ class LabelWithEmptySpaceAtLeft(ttk.Label):
 
 class StatusBar(ttk.Frame):
 
-    def __init__(self, master: tkinter.BaseWidget, tab: tabs.Tab):
+    def __init__(self, master: tkinter.BaseWidget):
         super().__init__(master)
-        self.tab = tab
         # one label for each tab-separated thing
         self.labels = [ttk.Label(self)]
         self.labels[0].pack(side='left')
 
-        tab.bind('<<StatusChanged>>', self.do_update, add=True)
-        self.do_update()
-
-    # this is do_update() because tkinter has a method called update()
-    def do_update(self, junk: object = None) -> None:
-        parts = self.tab.status.split('\t')
+    def set_status(self, status: str) -> None:
+        parts = status.split('\t')
 
         # there's always at least one part, the label added in
         # __init__ is not destroyed here
@@ -50,8 +42,22 @@ class StatusBar(ttk.Frame):
             label.config(text=text)
 
 
+def update_status(tab: tabs.FileTab, statusbar: StatusBar, junk: object = None) -> None:
+    if tab.path is None:
+        path_string = "New file"
+    else:
+        path_string = str(tab.path)
+    line, column = tab.textwidget.index('insert').split('.')
+    statusbar.set_status(f"{path_string}\tLine {line}, column {column}")
+
+
 def on_new_tab(tab: tabs.Tab) -> None:
-    StatusBar(tab.bottom_frame, tab).pack(side='bottom', fill='x')
+    if isinstance(tab, tabs.FileTab):
+        statusbar = StatusBar(tab.bottom_frame)
+        statusbar.pack(side='bottom', fill='x')
+        tab.bind('<<PathChanged>>', partial(update_status, tab, statusbar), add=True)
+        tab.textwidget.bind('<<CursorMoved>>', partial(update_status, tab, statusbar), add=True)
+        update_status(tab, statusbar)
 
 
 def setup() -> None:
