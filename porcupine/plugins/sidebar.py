@@ -1,6 +1,6 @@
+import pathlib
 import tkinter as tk
 import tkinter.ttk as ttk
-import pathlib
 from typing import Dict, List
 
 from porcupine import get_paned_window, get_tab_manager, tabs

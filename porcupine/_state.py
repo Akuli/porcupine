@@ -3,9 +3,8 @@
 import logging
 import tkinter
 import types
-from typing import Any, Dict, Optional, Type
 from tkinter import ttk
-
+from typing import Any, Dict, Optional, Type
 
 from porcupine import tabs
 
