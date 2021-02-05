@@ -10,7 +10,7 @@ class Sidebar(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse')
-        self.nodes = {'': pathlib.Path('.').resolve()}
+        self.paths = {'': pathlib.Path('.').resolve()}
         self.process_directory('')
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
 
@@ -21,7 +21,7 @@ class Sidebar(ttk.Treeview):
         files: List[pathlib.Path] = []
         directories: List[pathlib.Path] = []
 
-        for path in sorted(self.nodes[node].iterdir()):
+        for path in sorted(self.paths[node].iterdir()):
             if path.is_dir():
                 directories.append(path)
             else:
@@ -29,16 +29,16 @@ class Sidebar(ttk.Treeview):
 
         for d in directories:
             n = self.insert(node, 'end', text=d.name, open=False)
-            self.nodes[n] = d
+            self.paths[n] = d
             self._insert_dummy(n)
 
         for f in files:
             n = self.insert(node, 'end', text=f.name, open=False)
-            self.nodes[n] = f
+            self.paths[n] = f
 
     def on_click(self, event: tkinter.Event) -> None:
         [selection] = self.selection()
-        path = self.nodes[selection]
+        path = self.paths[selection]
         if path.is_dir():
             self.process_directory(selection)
         else:
