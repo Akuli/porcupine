@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import pathlib
-from typing import List
+from typing import Dict, List
 
 from porcupine import get_paned_window, get_tab_manager, tabs
 from porcupine.plugins.langserver import find_project_root
@@ -12,7 +12,7 @@ class Sidebar(ttk.Treeview):
     def __init__(self, master: tk.BaseWidget) -> None:
         super().__init__(master)
         self.path = pathlib.Path('.').resolve()
-        self.nodes = {}
+        self.nodes: Dict[str, pathlib.Path] = {}
         self.populate()
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
 
