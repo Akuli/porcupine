@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier
 _root: Optional[tkinter.Tk] = None
-_pw: Optional[tkinter.PanedWindow] = None
+_pw: Optional[ttk.Panedwindow] = None
 _tab_manager: Optional[tabs.TabManager] = None
 _parsed_args: Optional[Any] = None
 filedialog_kwargs: Dict[str, Any] = {}
