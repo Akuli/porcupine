@@ -14,7 +14,7 @@ class Sidebar(ttk.Treeview):
         self.path = pathlib.Path('.').resolve()
         self.nodes = {}
         self.populate()
-        self.bind('<<TreeviewSelect>>', self.on_click)
+        self.bind('<<TreeviewSelect>>', self.on_click, add=True)
 
     def populate(self) -> None:
         files: List[pathlib.Path] = []
