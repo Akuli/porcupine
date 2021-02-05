@@ -37,7 +37,7 @@ class Sidebar(ttk.Treeview):
             self.nodes[n] = f
 
     def on_click(self, event: tkinter.Event) -> None:
-        selection = self.selection()[0]
+        [selection] = self.selection()
         path = self.nodes[selection]
         if path.is_dir():
             self.process_directory(selection)
