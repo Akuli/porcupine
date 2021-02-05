@@ -21,12 +21,12 @@ class Sidebar(ttk.Treeview):
 
         for p in sorted(self.path.iterdir()):
             directories.append(p) if p.is_dir() else files.append(p)
-        
+
         for d in directories:
             node = self.insert('', 'end', text=d.name, open=False)
             self.nodes[node] = d
             self._insert_dummy(node)
-    
+
         for f in files:
             node = self.insert('', 'end', text=f.name, open=False)
             self.nodes[node] = f
