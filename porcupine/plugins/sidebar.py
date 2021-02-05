@@ -4,7 +4,6 @@ import tkinter.ttk as ttk
 from typing import Dict, List
 
 from porcupine import get_paned_window, get_tab_manager, tabs
-from porcupine.plugins.langserver import find_project_root
 
 
 class Sidebar(ttk.Treeview):
