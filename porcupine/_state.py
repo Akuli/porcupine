@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier
 _root: Optional[tkinter.Tk] = None
-_pw: Optional[ttk.Panedwindow] = None
+_paned_window: Optional[ttk.Panedwindow] = None
 _tab_manager: Optional[tabs.TabManager] = None
 _parsed_args: Optional[Any] = None
 filedialog_kwargs: Dict[str, Any] = {}
@@ -27,8 +27,8 @@ def init(args: Any) -> None:
     global _root
     global _tab_manager
     global _parsed_args
-    global _pw
-    assert _root is None and _tab_manager is None and _parsed_args is None and _pw is None
+    global _paned_window
+    assert _root is None and _tab_manager is None and _parsed_args is None and _paned_window is None
     assert args is not None
 
     log.debug("init() starts")
@@ -38,12 +38,12 @@ def init(args: Any) -> None:
     _root.protocol('WM_DELETE_WINDOW', quit)
     _root.report_callback_exception = _log_tkinter_error
 
-    _pw = ttk.Panedwindow(_root, orient='horizontal')
+    _paned_window = ttk.Panedwindow(_root, orient='horizontal')
 
-    _tab_manager = tabs.TabManager(_pw)
+    _tab_manager = tabs.TabManager(_paned_window)
 
-    _pw.add(_tab_manager)
-    _pw.pack(fill='both', expand=True)
+    _paned_window.add(_tab_manager)
+    _paned_window.pack(fill='both', expand=True)
 
     log.debug("init() done")
 
@@ -71,9 +71,9 @@ def get_parsed_args() -> Any:
 
 
 def get_paned_window() -> ttk.Panedwindow:
-    if _pw is None:
+    if _paned_window is None:
         raise RuntimeError("Porcupine is not running")
-    return _pw
+    return _paned_window
 
 
 def quit() -> None:
