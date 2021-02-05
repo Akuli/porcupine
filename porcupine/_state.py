@@ -38,7 +38,7 @@ def init(args: Any) -> None:
     _root.protocol('WM_DELETE_WINDOW', quit)
     _root.report_callback_exception = _log_tkinter_error
 
-    _pw = ttk.PanedWindow(_root, orient='horizontal')
+    _pw = ttk.Panedwindow(_root, orient='horizontal')
 
     _tab_manager = tabs.TabManager(_pw)
 
@@ -70,7 +70,7 @@ def get_parsed_args() -> Any:
     return _parsed_args
 
 
-def get_paned_window() -> tkinter.PanedWindow:
+def get_paned_window() -> ttk.Panedwindow:
     if _pw is None:
         raise RuntimeError("Porcupine is not running")
     return _pw
