@@ -1,7 +1,7 @@
 import pathlib
 import tkinter
 import tkinter.ttk as ttk
-from typing import Dict, List
+from typing import List
 
 from porcupine import get_paned_window, get_tab_manager, tabs
 
