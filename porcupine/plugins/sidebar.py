@@ -10,8 +10,7 @@ class Sidebar(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse')
-        self.nodes: Dict[str, pathlib.Path] = {}
-        self.nodes[''] = pathlib.Path('.').resolve()
+        self.nodes = {'': pathlib.Path('.').resolve()}
         self.process_directory('')
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
 
