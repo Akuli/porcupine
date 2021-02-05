@@ -1,5 +1,5 @@
 import pathlib
-import tkinter as tk
+import tkinter
 import tkinter.ttk as ttk
 from typing import Dict, List
 
@@ -8,40 +8,36 @@ from porcupine import get_paned_window, get_tab_manager, tabs
 
 class Sidebar(ttk.Treeview):
 
-    def __init__(self, master: tk.BaseWidget) -> None:
-        super().__init__(master)
-        self.path = pathlib.Path('.').resolve()
+    def __init__(self, master: tkinter.Misc) -> None:
+        super().__init__(master, selectmode='browse')
         self.nodes: Dict[str, pathlib.Path] = {}
-        self.populate()
+        self.nodes[''] = pathlib.Path('.').resolve()
+        self.process_directory('')
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
-
-    def populate(self) -> None:
-        files: List[pathlib.Path] = []
-        directories: List[pathlib.Path] = []
-
-        for p in sorted(self.path.iterdir()):
-            directories.append(p) if p.is_dir() else files.append(p)
-
-        for d in directories:
-            node = self.insert('', 'end', text=d.name, open=False)
-            self.nodes[node] = d
-            self._insert_dummy(node)
-
-        for f in files:
-            node = self.insert('', 'end', text=f.name, open=False)
-            self.nodes[node] = f
 
     def process_directory(self, node: str) -> None:
         for child in self.get_children(node):
             self.delete(child)
 
-        for path in self.nodes[node].iterdir():
-            n = self.insert(node, 'end', text=path.name, open=False)
-            self.nodes[n] = path
-            if path.is_dir():
-                self.process_directory(n)
+        files: List[pathlib.Path] = []
+        directories: List[pathlib.Path] = []
 
-    def on_click(self, event: tk.Event) -> None:
+        for path in sorted(self.nodes[node].iterdir()):
+            if path.is_dir():
+                directories.append(path)
+            else:
+                files.append(path)
+
+        for d in directories:
+            n = self.insert(node, 'end', text=d.name, open=False)
+            self.nodes[n] = d
+            self._insert_dummy(n)
+
+        for f in files:
+            n = self.insert(node, 'end', text=f.name, open=False)
+            self.nodes[n] = f
+
+    def on_click(self, event: tkinter.Event) -> None:
         selection = self.selection()[0]
         path = self.nodes[selection]
         if path.is_dir():
@@ -55,4 +51,4 @@ class Sidebar(ttk.Treeview):
 
 def setup() -> None:
     sidebar = Sidebar(get_paned_window())
-    get_paned_window().insert(get_tab_manager(), sidebar)
+    get_paned_window().insert(get_tab_manager(), sidebar)   # put sidebar before tab manager
