@@ -12,8 +12,13 @@ from porcupine.plugins.langserver import find_project_root  # TODO: clean up
 
 log = logging.getLogger(__name__)
 
+# If more than this many projects are opened, then the least recently opened
+# project will be closed, unless a file has been opened from that project.
+PROJECT_AUTOCLOSE_COUNT = 3
+
 
 # TODO: handle files being deleted, copied, renamed, etc
+# TODO: remember projects when porcupine is closed
 class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
@@ -44,7 +49,7 @@ class DirectoryTree(ttk.Treeview):
 
     def add_project(self, root_path: pathlib.Path) -> None:
         for project_item_id in self.get_children():
-            path = self._get_path(project_item_id)
+            path = self.get_path(project_item_id)
             if path == root_path or path in root_path.parents:
                 # Project or parent project added already
                 return
@@ -60,6 +65,7 @@ class DirectoryTree(ttk.Treeview):
 
         project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='project', open=False)
         self.process_directory(root_path, project_item_id)
+        self.hide_old_projects()
 
     def process_directory(self, dir_path: pathlib.Path, parent_id: str) -> None:
         for child in self.get_children(parent_id):
@@ -80,17 +86,27 @@ class DirectoryTree(ttk.Treeview):
     def _insert_dummy(self, parent: str) -> None:
         self.insert(parent, 'end', text='(empty)', tags='dummy')
 
+    def hide_old_projects(self, junk: object = None) -> None:
+        for project_id in self.get_children(''):
+            if len(self.get_children('')) <= PROJECT_AUTOCLOSE_COUNT:
+                break
+
+            project_path = self.get_path(project_id)
+            if not any(isinstance(tab, tabs.FileTab) and tab.path is not None and project_path in tab.path.parents
+                       for tab in get_tab_manager().tabs()):
+                self.delete(project_id)
+
     def on_click(self, event: tkinter.Event) -> None:
         [selected_id] = self.selection()
         tags = self.item(selected_id, 'tags')
         if 'file' in tags or 'dir' in tags:
-            path = self._get_path(selected_id)
+            path = self.get_path(selected_id)
             if 'dir' in tags:
                 self.process_directory(path, selected_id)
             else:
                 get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
 
-    def _get_path(self, item_id: str) -> pathlib.Path:
+    def get_path(self, item_id: str) -> pathlib.Path:
         return pathlib.Path(self.item(item_id, 'values')[0])
 
     def _get_children_recursively(self, item_id: str) -> Iterator[str]:
@@ -101,13 +117,14 @@ class DirectoryTree(ttk.Treeview):
     # TODO: use git tags when sorting
     def update_git_tags(self, junk: object = None) -> None:
         for project_id in self.get_children(''):
-            project_path = self._get_path(project_id)
+            project_path = self.get_path(project_id)
 
             try:
                 git_status = subprocess.check_output(
-                    ['git', 'status', '--ignored', '--porcelain'], cwd=project_path
+                    ['git', 'status', '--ignored', '--porcelain'], cwd=project_path,
+                    stderr=subprocess.DEVNULL,   # TODO: log
                 ).decode('utf-8')
-            except (OSError, UnicodeError):
+            except (OSError, UnicodeError, subprocess.CalledProcessError):
                 log.info("can't run git", exc_info=True)
                 git_status = ''
 
@@ -132,7 +149,7 @@ class DirectoryTree(ttk.Treeview):
                 if 'dummy' in old_tags:
                     continue
 
-                item_path = self._get_path(item_id)
+                item_path = self.get_path(item_id)
                 new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
 
                 for path, tag in parsed_git_status.items():
@@ -155,6 +172,8 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         path_callback()
 
         tab.bind('<<PathChanged>>', path_callback, add=True)
+        tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
+        tab.bind('<Destroy>', tree.hide_old_projects, add=True)
         tab.bind('<<Save>>', tree.update_git_tags, add=True)
         tab.textwidget.bind('<<AutoReload>>', tree.update_git_tags, add=True)
 
