@@ -33,7 +33,7 @@ class DirectoryTree(ttk.Treeview):
         else:
             text = str(root_path)
 
-        project_item_id = self.insert('', 'end', text=text, values=[root_path], open=False)
+        project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='project', open=False)
         self.process_directory(root_path, project_item_id)
 
     def _config_tags(self, junk: object = None) -> None:
@@ -48,7 +48,8 @@ class DirectoryTree(ttk.Treeview):
         paths = sorted(dir_path.iterdir())
         if paths:
             for path in paths:
-                n = self.insert(parent_id, 'end', text=path.name, values=[path], open=False)
+                tag = 'dir' if path.is_dir() else 'file'
+                n = self.insert(parent_id, 'end', text=path.name, values=[path], tags=tag, open=False)
                 if path.is_dir():
                     self._insert_dummy(n)
         else:
@@ -56,9 +57,10 @@ class DirectoryTree(ttk.Treeview):
 
     def on_click(self, event: tkinter.Event) -> None:
         [selection] = self.selection()
-        if 'dummy' not in self.item(selection, 'tags'):
+        tags = self.item(selection, 'tags')
+        if 'file' in tags or 'dir' in tags:
             path = pathlib.Path(self.item(selection, 'values')[0])
-            if path.is_dir():
+            if 'dir' in tags:
                 self.process_directory(path, selection)
             else:
                 get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
