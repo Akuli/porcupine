@@ -1,3 +1,4 @@
+import time
 import logging
 import os
 import pathlib
@@ -136,9 +137,12 @@ class DirectoryTree(ttk.Treeview):
 
     # FIXME: this runs too often, clicking text widget --> slow response
     def update_git_tags(self, junk: object = None) -> None:
+        total_start = time.time()
+
         for project_id in self.get_children(''):
             project_path = self.get_path(project_id)
 
+            start = time.time()
             try:
                 run_result = subprocess.run(
                     ['git', 'status', '--ignored', '--porcelain'],
@@ -153,6 +157,7 @@ class DirectoryTree(ttk.Treeview):
             except (OSError, UnicodeError):
                 log.warning("can't run git", exc_info=True)
                 continue
+            print(f"git ran for {round((time.time() - start)*1000)}ms")
 
             # Show .git as ignored, even though it actually isn't
             parsed_git_status = {project_path / '.git': 'git_ignored'}
@@ -173,6 +178,8 @@ class DirectoryTree(ttk.Treeview):
             for item_id in self._get_children_recursively(project_id):
                 if 'dir' in self.item(item_id, 'tags') and not self._contains_dummy(item_id):
                     self._update_git_tags_and_sort_dir(item_id, parsed_git_status)
+
+        print(f"total time {round((time.time() - total_start)*1000)}ms")
 
     # TODO: use git tags when sorting
     def _update_git_tags_and_sort_dir(self, dir_id: str, parsed_git_status: Dict[pathlib.Path, str]) -> None:
