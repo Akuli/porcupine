@@ -1,15 +1,14 @@
 import logging
-import subprocess
 import os
 import pathlib
+import subprocess
 import tkinter
-from tkinter import ttk
 from functools import partial
+from tkinter import ttk
 from typing import Iterator
 
 from porcupine import get_paned_window, get_tab_manager, tabs, utils
-from porcupine.plugins.langserver import find_project_root   # TODO: clean up
-
+from porcupine.plugins.langserver import find_project_root  # TODO: clean up
 
 log = logging.getLogger(__name__)
 
@@ -23,25 +22,6 @@ class DirectoryTree(ttk.Treeview):
         self.bind('<<TreeviewOpen>>', self.on_click, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self._config_tags()
-
-    def add_project(self, root_path: pathlib.Path) -> None:
-        for project_item_id in self.get_children():
-            path = self._get_path(project_item_id)
-            if path == root_path or path in root_path.parents:
-                # Project or parent project added already
-                return
-            if root_path in path.parents:
-                # This project will replace the existing project
-                self.delete(project_item_id)
-
-        # TODO: show long paths more nicely
-        if pathlib.Path.home() in root_path.parents:
-            text = '~' + os.sep + str(root_path.relative_to(pathlib.Path.home()))
-        else:
-            text = str(root_path)
-
-        project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='project', open=False)
-        self.process_directory(root_path, project_item_id)
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval('ttk::style look Treeview -foreground')
@@ -62,6 +42,25 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('git_untracked', foreground=red)
         self.tag_configure('git_ignored', foreground=gray)
 
+    def add_project(self, root_path: pathlib.Path) -> None:
+        for project_item_id in self.get_children():
+            path = self._get_path(project_item_id)
+            if path == root_path or path in root_path.parents:
+                # Project or parent project added already
+                return
+            if root_path in path.parents:
+                # This project will replace the existing project
+                self.delete(project_item_id)
+
+        # TODO: show long paths more nicely
+        if pathlib.Path.home() in root_path.parents:
+            text = '~' + os.sep + str(root_path.relative_to(pathlib.Path.home()))
+        else:
+            text = str(root_path)
+
+        project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='project', open=False)
+        self.process_directory(root_path, project_item_id)
+
     def process_directory(self, dir_path: pathlib.Path, parent_id: str) -> None:
         for child in self.get_children(parent_id):
             self.delete(child)
@@ -78,6 +77,9 @@ class DirectoryTree(ttk.Treeview):
 
         self.update_git_tags()
 
+    def _insert_dummy(self, parent: str) -> None:
+        self.insert(parent, 'end', text='(empty)', tags='dummy')
+
     def on_click(self, event: tkinter.Event) -> None:
         [selected_id] = self.selection()
         tags = self.item(selected_id, 'tags')
@@ -87,9 +89,6 @@ class DirectoryTree(ttk.Treeview):
                 self.process_directory(path, selected_id)
             else:
                 get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
-
-    def _insert_dummy(self, parent: str) -> None:
-        self.insert(parent, 'end', text='(empty)', tags='dummy')
 
     def _get_path(self, item_id: str) -> pathlib.Path:
         return pathlib.Path(self.item(item_id, 'values')[0])
