@@ -125,6 +125,29 @@ else:
     quote = quote       # silence pyflakes warning
 
 
+_PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
+    readme + extension
+    for readme in ['README', 'readme', 'Readme', 'ReadMe']
+    for extension in ['', '.txt', '.md', '.rst']
+]
+
+
+# TODO: document this
+def looks_like_project_root(path: pathlib.Path) -> bool:
+    assert path.is_absolute()
+    return any((path / thing).exists() for thing in _PROJECT_ROOT_THINGS)
+
+
+# TODO: document this
+def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
+    for path in project_file_path.parents:
+        if looks_like_project_root(path):
+            return path
+
+    # shitty default (not returned by looks_like_project_root())
+    return project_file_path.parent
+
+
 # i know, i shouldn't do math with rgb colors, but this is good enough
 def invert_color(color: str, *, black_or_white: bool = False) -> str:
     """Return a color with opposite red, green and blue values.

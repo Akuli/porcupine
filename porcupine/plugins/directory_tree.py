@@ -8,7 +8,6 @@ from tkinter import ttk
 from typing import Iterator
 
 from porcupine import get_paned_window, get_tab_manager, tabs, utils
-from porcupine.plugins.langserver import find_project_root  # TODO: clean up
 
 log = logging.getLogger(__name__)
 
@@ -166,7 +165,7 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         def path_callback(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
-                tree.add_project(find_project_root(tab.path))
+                tree.add_project(utils.find_project_root(tab.path))
             tree.update_git_tags()
 
         path_callback()
