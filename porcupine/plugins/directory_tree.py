@@ -175,8 +175,8 @@ class DirectoryTree(ttk.Treeview):
             old_tags = set(self.item(child_id, 'tags'))
             new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
 
-            for dir_path, tag in parsed_git_status.items():
-                if dir_path == child_path or dir_path in child_path.parents:
+            for status_path, tag in parsed_git_status.items():
+                if status_path == child_path or status_path in child_path.parents:
                     new_tags.add(tag)
                     break
             else:
