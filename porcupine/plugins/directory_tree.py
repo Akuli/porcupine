@@ -6,7 +6,7 @@ from typing import List
 from porcupine import get_paned_window, get_tab_manager, tabs
 
 
-class Sidebar(ttk.Treeview):
+class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse')
@@ -49,5 +49,5 @@ class Sidebar(ttk.Treeview):
 
 
 def setup() -> None:
-    sidebar = Sidebar(get_paned_window())
+    sidebar = DirectoryTree(get_paned_window())
     get_paned_window().insert(get_tab_manager(), sidebar)   # put sidebar before tab manager
