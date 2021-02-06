@@ -26,7 +26,7 @@ class DirectoryTree(ttk.Treeview):
 
     def add_project(self, root_path: pathlib.Path) -> None:
         for project_item_id in self.get_children():
-            path = pathlib.Path(self.item(project_item_id, 'values')[0])
+            path = self._get_path(project_item_id)
             if path == root_path or path in root_path.parents:
                 # Project or parent project added already
                 return
@@ -79,12 +79,12 @@ class DirectoryTree(ttk.Treeview):
         self.update_git_tags()
 
     def on_click(self, event: tkinter.Event) -> None:
-        [selection] = self.selection()
-        tags = self.item(selection, 'tags')
+        [selected_id] = self.selection()
+        tags = self.item(selected_id, 'tags')
         if 'file' in tags or 'dir' in tags:
-            path = pathlib.Path(self.item(selection, 'values')[0])
+            path = self._get_path(selected_id)
             if 'dir' in tags:
-                self.process_directory(path, selection)
+                self.process_directory(path, selected_id)
             else:
                 get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
 
