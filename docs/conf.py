@@ -19,7 +19,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 project = 'Porcupine API'
-copyright = '2017, Akuli'
+copyright = porcupine.__copyright__.split('(c)')[1]
 author = 'Akuli'
 
 nitpicky = False
