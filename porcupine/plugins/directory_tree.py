@@ -6,7 +6,7 @@ import sys
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Tuple, Any
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -89,6 +89,10 @@ class DirectoryTree(ttk.Treeview):
     def _insert_dummy(self, parent: str) -> None:
         self.insert(parent, 'end', text='(empty)', tags='dummy')
 
+    def _contains_dummy(self, parent: str) -> None:
+        children = self.get_children(parent)
+        return (len(children) == 1 and 'dummy' in self.item(children[0], 'tags'))
+
     def hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(''):
             if len(self.get_children('')) <= PROJECT_AUTOCLOSE_COUNT:
@@ -123,6 +127,7 @@ class DirectoryTree(ttk.Treeview):
             yield child
             yield from self._get_children_recursively(child)
 
+    # FIXME: this runs too often, clicking text widget --> slow response
     def update_git_tags(self, junk: object = None) -> None:
         for project_id in self.get_children(''):
             project_path = self.get_path(project_id)
@@ -154,29 +159,49 @@ class DirectoryTree(ttk.Treeview):
                     parsed_git_status[path] = 'git_untracked'
                 elif line[:2] == '!!':
                     parsed_git_status[path] = 'git_ignored'
+                else:
+                    log.warning(f"unknown git status line: {repr(line)}")
 
+            self._update_git_tags_and_sort_dir(project_id, parsed_git_status)
             for item_id in self._get_children_recursively(project_id):
-                if 'dir' in self.item(item_id, 'tags'):
-                    self._update_git_tags_of_dir(item_id, parsed_git_status)
+                if 'dir' in self.item(item_id, 'tags') and not self._contains_dummy(item_id):
+                    self._update_git_tags_and_sort_dir(item_id, parsed_git_status)
 
     # TODO: use git tags when sorting
-    def _update_git_tags_of_dir(self, dir_id: str, parsed_git_status: Dict[pathlib.Path, str]) -> None:
+    def _update_git_tags_and_sort_dir(self, dir_id: str, parsed_git_status: Dict[pathlib.Path, str]) -> None:
         path = self.get_path(dir_id)
         for child_id in self.get_children(dir_id):
-            old_tags = set(self.item(child_id, 'tags'))
-            if 'dummy' in old_tags:
-                continue
-
             item_path = self.get_path(child_id)
+            old_tags = set(self.item(child_id, 'tags'))
             new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
 
             for path, tag in parsed_git_status.items():
                 if path == item_path or path in item_path.parents:
                     new_tags.add(tag)
                     break
+            else:
+                # TODO: Handle directories containing files with different statuses
+                pass
 
             if old_tags != new_tags:
                 self.item(child_id, tags=list(new_tags))
+
+        children = sorted(self.get_children(dir_id), key=self._sorting_key)
+        for index, child_id in enumerate(children):
+            self.move(child_id, dir_id, index)
+
+    def _sorting_key(self, item_id) -> Tuple[Any, ...]:
+        tags = self.item(item_id, 'tags')
+
+        git_tags = [tag for tag in self.item(item_id, 'tags') if tag.startswith('git_')]
+        assert len(git_tags) < 2
+        git_tag = git_tags[0] if git_tags else None
+
+        return (
+            1 if 'dir' in tags else 2,
+            ['git_added', 'git_modified', None, 'git_untracked', 'git_ignored'].index(git_tag),
+            str(self.get_path(item_id)),
+        )
 
 
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
