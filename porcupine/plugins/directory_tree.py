@@ -70,8 +70,13 @@ class DirectoryTree(ttk.Treeview):
 
 
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab) and tab.path is not None:
-        tree.add_project(find_project_root(tab.path))
+    if isinstance(tab, tabs.FileTab):
+        def callback(junk: object = None) -> None:
+            if tab.path is not None:
+                tree.add_project(find_project_root(tab.path))
+
+        callback()
+        tab.bind('<<PathChanged>>', callback)
 
 
 def setup() -> None:
