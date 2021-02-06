@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 import subprocess
+import sys
 import tkinter
 from functools import partial
 from tkinter import ttk
@@ -128,17 +129,23 @@ class DirectoryTree(ttk.Treeview):
             project_path = self.get_path(project_id)
 
             try:
-                git_status = subprocess.check_output(
-                    ['git', 'status', '--ignored', '--porcelain'], cwd=project_path,
-                    stderr=subprocess.DEVNULL,   # TODO: log
-                ).decode('utf-8')
-            except (OSError, UnicodeError, subprocess.CalledProcessError):
-                log.info("can't run git", exc_info=True)
-                git_status = ''
+                run_result = subprocess.run(
+                    ['git', 'status', '--ignored', '--porcelain'],
+                    cwd=project_path,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    encoding=sys.getfilesystemencoding(),
+                )
+                if run_result.returncode != 0:
+                    log.info(f"git failed: {run_result}")
+                    continue
+            except (OSError, UnicodeError):
+                log.warning("can't run git", exc_info=True)
+                continue
 
             # Show .git as ignored, even though it actually isn't
             parsed_git_status = {project_path / '.git': 'git_ignored'}
-            for line in git_status.splitlines():
+            for line in run_result.stdout.splitlines():
                 path = project_path / line[3:]
                 if line[1] == 'M':
                     tag = 'git_modified'
