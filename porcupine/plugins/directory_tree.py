@@ -139,6 +139,7 @@ class DirectoryTree(ttk.Treeview):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     encoding=sys.getfilesystemencoding(),
+                    timeout=0.1,
                 )
                 if run_result.returncode != 0:
                     log.info(f"git failed: {run_result}")
