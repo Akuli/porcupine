@@ -10,33 +10,29 @@ class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse')
-        self.paths = {'': pathlib.Path('.').resolve()}
-        self.process_directory('')
+        self.process_directory(pathlib.Path('.').resolve(), '')
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
         self.tag_configure('dummy', foreground='gray')   # TODO: use ttk theme?
 
-    def process_directory(self, parent: str) -> None:
-        for child in self.get_children(parent):
-            if 'dummy' not in self.item(child, 'tags'):
-                del self.paths[child]
+    def process_directory(self, dir_path: pathlib.Path, parent_id: str) -> None:
+        for child in self.get_children(parent_id):
             self.delete(child)
 
-        paths = sorted(self.paths[parent].iterdir())
+        paths = sorted(dir_path.iterdir())
         if paths:
             for path in paths:
-                n = self.insert(parent, 'end', text=path.name, open=False)
-                self.paths[n] = path
+                n = self.insert(parent_id, 'end', text=path.name, values=[path], open=False)
                 if path.is_dir():
                     self._insert_dummy(n)
         else:
-            self._insert_dummy(parent)
+            self._insert_dummy(parent_id)
 
     def on_click(self, event: tkinter.Event) -> None:
         [selection] = self.selection()
         if 'dummy' not in self.item(selection, 'tags'):
-            path = self.paths[selection]
+            path = pathlib.Path(self.item(selection, 'values')[0])
             if path.is_dir():
-                self.process_directory(selection)
+                self.process_directory(path, selection)
             else:
                 get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
 
