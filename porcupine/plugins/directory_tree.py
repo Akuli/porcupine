@@ -6,6 +6,7 @@ from typing import List
 from porcupine import get_paned_window, get_tab_manager, tabs
 
 
+# TODO: handle files being deleted, copied, renamed, etc
 class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
@@ -27,6 +28,8 @@ class DirectoryTree(ttk.Treeview):
 
         if files or directories:
             for child in self.get_children(node):
+                if 'dummy' not in self.item(child, 'tags'):
+                    del self.paths[child]
                 self.delete(child)
 
             for d in directories:
@@ -40,15 +43,12 @@ class DirectoryTree(ttk.Treeview):
 
     def on_click(self, event: tkinter.Event) -> None:
         [selection] = self.selection()
-        try:
+        if 'dummy' not in self.item(selection, 'tags'):
             path = self.paths[selection]
-        except KeyError:   # dummy item
-            return
-
-        if path.is_dir():
-            self.process_directory(selection)
-        else:
-            get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
+            if path.is_dir():
+                self.process_directory(selection)
+            else:
+                get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
 
     def _insert_dummy(self, node: str) -> None:
         self.insert(node, 'end', text='(empty)', tags='dummy')
