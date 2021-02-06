@@ -66,8 +66,8 @@ class DirectoryTree(ttk.Treeview):
         else:
             text = str(root_path)
 
-        project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='project', open=False)
-        self.process_directory(root_path, project_item_id)
+        project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='dir', open=False)
+        self._insert_dummy(project_item_id)
         self.hide_old_projects()
         self.save_opened_projects()
 
@@ -85,7 +85,7 @@ class DirectoryTree(ttk.Treeview):
         else:
             self._insert_dummy(parent_id)
 
-        self.update_git_tags()
+#        self.update_git_tags()
 
     def _insert_dummy(self, parent: str) -> None:
         self.insert(parent, 'end', text='(empty)', tags='dummy')
@@ -234,8 +234,8 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         tab.bind('<<PathChanged>>', path_callback, add=True)
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
-        tab.bind('<<Save>>', tree.update_git_tags, add=True)
-        tab.textwidget.bind('<FocusIn>', tree.update_git_tags, add=True)
+#        tab.bind('<<Save>>', tree.update_git_tags, add=True)
+#        tab.textwidget.bind('<FocusIn>', tree.update_git_tags, add=True)
 
 
 def setup() -> None:
