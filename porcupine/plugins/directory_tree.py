@@ -1,8 +1,11 @@
+import os
 import pathlib
 import tkinter
-import tkinter.ttk as ttk
+from tkinter import ttk
+from functools import partial
 
 from porcupine import get_paned_window, get_tab_manager, tabs, utils
+from porcupine.plugins.langserver import find_project_root   # TODO: clean up
 
 
 # TODO: handle files being deleted, copied, renamed, etc
@@ -10,10 +13,23 @@ class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse')
-        self.process_directory(pathlib.Path('.').resolve(), '')
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self._config_tags()
+
+    def add_project(self, root_path):
+        # TODO: nested projects
+        if str(root_path) in (self.item(child, 'values')[0] for child in self.get_children()):
+            return
+
+        # TODO: show long paths more nicely
+        if pathlib.Path.home() in root_path.parents:
+            text = '~' + os.sep + str(root_path.relative_to(pathlib.Path.home()))
+        else:
+            text = str(root_path)
+
+        project_item_id = self.insert('', 'end', text=text, values=[root_path], open=False)
+        self.process_directory(root_path, project_item_id)
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval('ttk::style look Treeview -foreground')
@@ -46,6 +62,11 @@ class DirectoryTree(ttk.Treeview):
         self.insert(parent, 'end', text='(empty)', tags='dummy')
 
 
+def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
+    if isinstance(tab, tabs.FileTab) and tab.path is not None:
+        tree.add_project(find_project_root(tab.path))
+
+
 def setup() -> None:
     container = ttk.Frame(get_paned_window())
     tree = DirectoryTree(container)
@@ -57,3 +78,4 @@ def setup() -> None:
     scrollbar.config(command=tree.yview)
 
     get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
+    get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
