@@ -44,7 +44,7 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('dummy', foreground=gray)
         self.tag_configure('git_modified', foreground=red)
         self.tag_configure('git_added', foreground=green)
-        self.tag_configure('git_untracked', foreground=red)
+        self.tag_configure('git_untracked', foreground='red4')
         self.tag_configure('git_ignored', foreground=gray)
 
     def add_project(self, root_path: pathlib.Path) -> None:
