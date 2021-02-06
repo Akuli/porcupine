@@ -6,7 +6,7 @@ import sys
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Iterator, List
+from typing import Dict, Iterator, List
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -123,7 +123,6 @@ class DirectoryTree(ttk.Treeview):
             yield child
             yield from self._get_children_recursively(child)
 
-    # TODO: use git tags when sorting
     def update_git_tags(self, junk: object = None) -> None:
         for project_id in self.get_children(''):
             project_path = self.get_path(project_id)
@@ -160,20 +159,27 @@ class DirectoryTree(ttk.Treeview):
                 parsed_git_status[path] = tag
 
             for item_id in self._get_children_recursively(project_id):
-                old_tags = set(self.item(item_id, 'tags'))
-                if 'dummy' in old_tags:
-                    continue
+                if 'dir' in self.item(item_id, 'tags'):
+                    self._update_git_tags_of_dir(item_id, parsed_git_status)
 
-                item_path = self.get_path(item_id)
-                new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
+    # TODO: use git tags when sorting
+    def _update_git_tags_of_dir(self, dir_id: str, parsed_git_status: Dict[pathlib.Path, str]) -> None:
+        path = self.get_path(dir_id)
+        for child_id in self.get_children(dir_id):
+            old_tags = set(self.item(child_id, 'tags'))
+            if 'dummy' in old_tags:
+                continue
 
-                for path, tag in parsed_git_status.items():
-                    if path == item_path or path in item_path.parents:
-                        new_tags.add(tag)
-                        break
+            item_path = self.get_path(child_id)
+            new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
 
-                if old_tags != new_tags:
-                    self.item(item_id, tags=list(new_tags))
+            for path, tag in parsed_git_status.items():
+                if path == item_path or path in item_path.parents:
+                    new_tags.add(tag)
+                    break
+
+            if old_tags != new_tags:
+                self.item(child_id, tags=list(new_tags))
 
 
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
