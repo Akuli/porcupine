@@ -1,7 +1,6 @@
 import pathlib
 import tkinter
 import tkinter.ttk as ttk
-from typing import List
 
 from porcupine import get_paned_window, get_tab_manager, tabs
 
@@ -16,30 +15,19 @@ class DirectoryTree(ttk.Treeview):
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
         self.tag_configure('dummy', foreground='gray')   # TODO: use ttk theme?
 
-    def process_directory(self, node: str) -> None:
-        files: List[pathlib.Path] = []
-        directories: List[pathlib.Path] = []
-
-        for path in sorted(self.paths[node].iterdir()):
-            if path.is_dir():
-                directories.append(path)
-            else:
-                files.append(path)
-
-        if files or directories:
-            for child in self.get_children(node):
+    def process_directory(self, parent: str) -> None:
+        paths = sorted(self.paths[parent].iterdir())
+        if paths:
+            for child in self.get_children(parent):
                 if 'dummy' not in self.item(child, 'tags'):
                     del self.paths[child]
                 self.delete(child)
 
-            for d in directories:
-                n = self.insert(node, 'end', text=d.name, open=False)
-                self.paths[n] = d
-                self._insert_dummy(n)
-
-            for f in files:
-                n = self.insert(node, 'end', text=f.name, open=False)
-                self.paths[n] = f
+            for path in paths:
+                n = self.insert(parent, 'end', text=path.name, open=False)
+                self.paths[n] = path
+                if path.is_dir():
+                    self._insert_dummy(n)
 
     def on_click(self, event: tkinter.Event) -> None:
         [selection] = self.selection()
@@ -50,8 +38,8 @@ class DirectoryTree(ttk.Treeview):
             else:
                 get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
 
-    def _insert_dummy(self, node: str) -> None:
-        self.insert(node, 'end', text='(empty)', tags='dummy')
+    def _insert_dummy(self, parent: str) -> None:
+        self.insert(parent, 'end', text='(empty)', tags='dummy')
 
 
 def setup() -> None:
