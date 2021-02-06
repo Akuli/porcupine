@@ -6,6 +6,7 @@ from porcupine import get_paned_window, get_tab_manager, tabs
 
 
 # TODO: handle files being deleted, copied, renamed, etc
+# TODO: scroll bar
 class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
@@ -16,18 +17,20 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('dummy', foreground='gray')   # TODO: use ttk theme?
 
     def process_directory(self, parent: str) -> None:
+        for child in self.get_children(parent):
+            if 'dummy' not in self.item(child, 'tags'):
+                del self.paths[child]
+            self.delete(child)
+
         paths = sorted(self.paths[parent].iterdir())
         if paths:
-            for child in self.get_children(parent):
-                if 'dummy' not in self.item(child, 'tags'):
-                    del self.paths[child]
-                self.delete(child)
-
             for path in paths:
                 n = self.insert(parent, 'end', text=path.name, open=False)
                 self.paths[n] = path
                 if path.is_dir():
                     self._insert_dummy(n)
+        else:
+            self._insert_dummy(parent)
 
     def on_click(self, event: tkinter.Event) -> None:
         [selection] = self.selection()
