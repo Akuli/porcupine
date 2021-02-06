@@ -6,7 +6,6 @@ from porcupine import get_paned_window, get_tab_manager, tabs
 
 
 # TODO: handle files being deleted, copied, renamed, etc
-# TODO: scroll bar
 class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
@@ -46,5 +45,13 @@ class DirectoryTree(ttk.Treeview):
 
 
 def setup() -> None:
-    sidebar = DirectoryTree(get_paned_window())
-    get_paned_window().insert(get_tab_manager(), sidebar)   # put sidebar before tab manager
+    container = ttk.Frame(get_paned_window())
+    tree = DirectoryTree(container)
+    tree.pack(side='left', fill='both', expand=True)
+    scrollbar = ttk.Scrollbar(container)
+    scrollbar.pack(side='right', fill='y')
+
+    tree.config(yscrollcommand=scrollbar.set)
+    scrollbar.config(command=tree.yview)
+
+    get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
