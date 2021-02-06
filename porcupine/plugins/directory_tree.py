@@ -147,16 +147,13 @@ class DirectoryTree(ttk.Treeview):
             for line in run_result.stdout.splitlines():
                 path = project_path / line[3:]
                 if line[1] == 'M':
-                    tag = 'git_modified'
+                    parsed_git_status[path] = 'git_modified'
                 elif line[1] == ' ':
-                    tag = 'git_added'
+                    parsed_git_status[path] = 'git_added'
                 elif line[:2] == '??':
-                    tag = 'git_untracked'
+                    parsed_git_status[path] = 'git_untracked'
                 elif line[:2] == '!!':
-                    tag = 'git_ignored'
-                else:
-                    continue
-                parsed_git_status[path] = tag
+                    parsed_git_status[path] = 'git_ignored'
 
             for item_id in self._get_children_recursively(project_id):
                 if 'dir' in self.item(item_id, 'tags'):
