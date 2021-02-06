@@ -1,3 +1,5 @@
+import shutil
+
 import pytest
 
 from porcupine import get_paned_window, utils, tabs
@@ -25,6 +27,26 @@ def test_adding_nested_projects(tree, tmp_path):
     assert get_paths() == [tmp_path / 'a']
     tree.add_project(tmp_path)
     assert get_paths() == [tmp_path]
+
+
+def test_deleting_project(tree, tmp_path, tabmanager, monkeypatch):
+    def get_project_names():
+        return [tree.get_path(project).name for project in tree.get_children()]
+
+    (tmp_path / 'a').mkdir(parents=True)
+    (tmp_path / 'b').mkdir(parents=True)
+    (tmp_path / 'a' / 'README').touch()
+    (tmp_path / 'b' / 'README').touch()
+    a_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'a' / 'README')
+    b_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'b' / 'README')
+
+    tabmanager.add_tab(a_tab)
+    assert get_project_names() == ['a']
+    tabmanager.close_tab(a_tab)
+    shutil.rmtree(tmp_path / 'a')
+    tabmanager.add_tab(b_tab)
+    assert get_project_names() == ['b']
+    tabmanager.close_tab(b_tab)
 
 
 def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
