@@ -69,21 +69,21 @@ class DirectoryTree(ttk.Treeview):
         project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='dir', open=False)
         self._insert_dummy(project_item_id)
         self.hide_old_projects()
-        self.save_opened_projects()
+        self.save_project_list()
 
-    def process_directory(self, dir_path: pathlib.Path, parent_id: str) -> None:
-        for child in self.get_children(parent_id):
+    def refresh_directory(self, dir_path: pathlib.Path, dir_id: str) -> None:
+        for child in self.get_children(dir_id):
             self.delete(child)
 
-        paths = sorted(dir_path.iterdir())
+        paths = dir_path.iterdir()
         if paths:
             for path in paths:
                 tag = 'dir' if path.is_dir() else 'file'
-                n = self.insert(parent_id, 'end', text=path.name, values=[path], tags=tag, open=False)
+                n = self.insert(dir_id, 'end', text=path.name, values=[path], tags=tag, open=False)
                 if path.is_dir():
                     self._insert_dummy(n)
         else:
-            self._insert_dummy(parent_id)
+            self._insert_dummy(dir_id)
 
 #        self.update_git_tags()
 
@@ -111,9 +111,9 @@ class DirectoryTree(ttk.Treeview):
             ):
                 self.delete(project_id)
 
-        self.save_opened_projects()
+        self.save_project_list()
 
-    def save_opened_projects(self):
+    def save_project_list(self):
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
 
@@ -123,7 +123,7 @@ class DirectoryTree(ttk.Treeview):
         if 'file' in tags or 'dir' in tags:
             path = self.get_path(selected_id)
             if 'dir' in tags:
-                self.process_directory(path, selected_id)
+                self.refresh_directory(path, selected_id)
             else:
                 get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
 
