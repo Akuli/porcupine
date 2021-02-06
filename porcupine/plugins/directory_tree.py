@@ -13,6 +13,7 @@ class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse')
+        self.bind('<Double-Button-1>', self.on_click, add=True)
         self.bind('<<TreeviewOpen>>', self.on_click, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self._config_tags()
