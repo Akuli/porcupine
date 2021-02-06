@@ -18,9 +18,14 @@ class DirectoryTree(ttk.Treeview):
         self._config_tags()
 
     def add_project(self, root_path):
-        # TODO: nested projects
-        if str(root_path) in (self.item(child, 'values')[0] for child in self.get_children()):
-            return
+        for project_item_id in self.get_children():
+            path = pathlib.Path(self.item(project_item_id, 'values')[0])
+            if path == root_path or path in root_path.parents:
+                # Project or parent project added already
+                return
+            if root_path in path.parents:
+                # This project will replace the existing project
+                self.delete(project_item_id)
 
         # TODO: show long paths more nicely
         if pathlib.Path.home() in root_path.parents:
