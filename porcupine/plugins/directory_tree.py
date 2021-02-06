@@ -17,7 +17,7 @@ class DirectoryTree(ttk.Treeview):
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self._config_tags()
 
-    def add_project(self, root_path):
+    def add_project(self, root_path: pathlib.Path) -> None:
         for project_item_id in self.get_children():
             path = pathlib.Path(self.item(project_item_id, 'values')[0])
             if path == root_path or path in root_path.parents:
@@ -72,6 +72,7 @@ class DirectoryTree(ttk.Treeview):
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         def callback(junk: object = None) -> None:
+            assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
                 tree.add_project(find_project_root(tab.path))
 
