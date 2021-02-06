@@ -170,19 +170,23 @@ class DirectoryTree(ttk.Treeview):
 
     # TODO: use git tags when sorting
     def _update_git_tags_and_sort_dir(self, dir_id: str, parsed_git_status: Dict[pathlib.Path, str]) -> None:
-        path = self.get_path(dir_id)
         for child_id in self.get_children(dir_id):
-            item_path = self.get_path(child_id)
+            child_path = self.get_path(child_id)
             old_tags = set(self.item(child_id, 'tags'))
             new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
 
-            for path, tag in parsed_git_status.items():
-                if path == item_path or path in item_path.parents:
+            for dir_path, tag in parsed_git_status.items():
+                if dir_path == child_path or dir_path in child_path.parents:
                     new_tags.add(tag)
                     break
             else:
-                # TODO: Handle directories containing files with different statuses
-                pass
+                # Handle directories containing files with different statuses
+                new_tags |= {
+                    status
+                    for subpath, status in parsed_git_status.items()
+                    if status in {'git_added', 'git_modified'}
+                    and child_path in subpath.parents
+                }
 
             if old_tags != new_tags:
                 self.item(child_id, tags=list(new_tags))
