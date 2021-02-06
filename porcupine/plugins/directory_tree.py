@@ -5,9 +5,9 @@ import subprocess
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Iterator
+from typing import Iterator, List
 
-from porcupine import get_paned_window, get_tab_manager, tabs, utils
+from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +50,9 @@ class DirectoryTree(ttk.Treeview):
         for project_item_id in self.get_children():
             path = self.get_path(project_item_id)
             if path == root_path or path in root_path.parents:
-                # Project or parent project added already
+                # Project or parent project added already. Move it first to
+                # avoid hiding it soon.
+                self.move(project_item_id, '', 0)
                 return
             if root_path in path.parents:
                 # This project will replace the existing project
@@ -65,6 +67,7 @@ class DirectoryTree(ttk.Treeview):
         project_item_id = self.insert('', 'end', text=text, values=[root_path], tags='project', open=False)
         self.process_directory(root_path, project_item_id)
         self.hide_old_projects()
+        self.save_opened_projects()
 
     def process_directory(self, dir_path: pathlib.Path, parent_id: str) -> None:
         for child in self.get_children(parent_id):
@@ -94,6 +97,12 @@ class DirectoryTree(ttk.Treeview):
             if not any(isinstance(tab, tabs.FileTab) and tab.path is not None and project_path in tab.path.parents
                        for tab in get_tab_manager().tabs()):
                 self.delete(project_id)
+
+        self.save_opened_projects()
+
+    def save_opened_projects(self):
+        # Settings is a weird place for this, but easier than e.g. using a cache file.
+        settings.set('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
 
     def on_click(self, event: tkinter.Event) -> None:
         [selected_id] = self.selection()
@@ -178,6 +187,7 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
 
 
 def setup() -> None:
+    # TODO: add something for finding a file by typing its name?
     container = ttk.Frame(get_paned_window())
     tree = DirectoryTree(container)
     tree.pack(side='left', fill='both', expand=True)
@@ -189,3 +199,8 @@ def setup() -> None:
 
     get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
+
+    settings.add_option('directory_tree_projects', [], type=List[str])
+    for path in [pathlib.Path(string) for string in settings.get('directory_tree_projects', List[str])]:
+        if path.is_absolute() and path.is_dir() and utils.looks_like_project_root(path):
+            tree.add_project(path)
