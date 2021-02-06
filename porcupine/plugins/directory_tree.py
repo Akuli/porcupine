@@ -221,7 +221,6 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
                 tree.add_project(utils.find_project_root(tab.path))
-            tree.update_git_tags()
 
         path_callback()
 
