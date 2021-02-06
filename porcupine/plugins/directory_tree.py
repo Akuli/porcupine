@@ -2,7 +2,7 @@ import pathlib
 import tkinter
 import tkinter.ttk as ttk
 
-from porcupine import get_paned_window, get_tab_manager, tabs
+from porcupine import get_paned_window, get_tab_manager, tabs, utils
 
 
 # TODO: handle files being deleted, copied, renamed, etc
@@ -12,7 +12,13 @@ class DirectoryTree(ttk.Treeview):
         super().__init__(master, selectmode='browse')
         self.process_directory(pathlib.Path('.').resolve(), '')
         self.bind('<<TreeviewSelect>>', self.on_click, add=True)
-        self.tag_configure('dummy', foreground='gray')   # TODO: use ttk theme?
+        self.bind('<<ThemeChanged>>', self._config_tags, add=True)
+        self._config_tags()
+
+    def _config_tags(self, junk: object = None) -> None:
+        fg = self.tk.eval('ttk::style look Treeview -foreground')
+        bg = self.tk.eval('ttk::style look Treeview -background')
+        self.tag_configure('dummy', foreground=utils.mix_colors(fg, bg, 0.5))
 
     def process_directory(self, dir_path: pathlib.Path, parent_id: str) -> None:
         for child in self.get_children(parent_id):
