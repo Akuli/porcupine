@@ -30,6 +30,7 @@ def test_adding_nested_projects(tree, tmp_path):
     assert get_paths() == [tmp_path]
 
 
+@pytest.mark.skipif(platform.system() == 'Windows', "rmtree can magically fail on windows")
 def test_deleting_project(tree, tmp_path, tabmanager, monkeypatch):
     def get_project_names():
         return [tree.get_path(project).name for project in tree.get_children()]
