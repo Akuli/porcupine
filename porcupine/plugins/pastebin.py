@@ -9,6 +9,7 @@ import ssl
 import logging
 import socket
 import tkinter
+from tkinter import messagebox
 import webbrowser
 from functools import partial
 from http.client import HTTPConnection, HTTPSConnection
@@ -213,15 +214,16 @@ def pasting_done_callback(paste: Paste, please_wait_window: tkinter.Toplevel, su
     please_wait_window.destroy()
 
     if success:
-        # TODO: as a sanity check, make sure it starts with http:// or https://
-        #   - dpaste can send blank pastes
-        #   - termbin can say "Use netcat."
-        log.info("pasting succeeded")
-        dialog = SuccessDialog(url=result)
-        dialog.title("Pasting Succeeded")
-        dialog.geometry('450x150')
-        dialog.transient(get_main_window())
-        dialog.wait_window()
+        if result.startswith(('http://', 'https://')):
+            log.info("pasting succeeded")
+            dialog = SuccessDialog(url=result)
+            dialog.title("Pasting Succeeded")
+            dialog.geometry('450x150')
+            dialog.transient(get_main_window())
+            dialog.wait_window()
+        else:
+            log.error(f"pastebin returned invalid url: {result!r}")
+            messagebox.showerror("Pasting failed", f"Instead of a valid URL, {type(paste).name} returned {result!r}.")
     elif paste.canceled:
         # Log error with less dramatic log level and don't show in GUI
         log.debug("Pasting failed and was cancelled. Here is the error.", exc_info=True)

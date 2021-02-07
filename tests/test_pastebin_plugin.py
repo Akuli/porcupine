@@ -150,3 +150,15 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab):
     assert args == ('Pasting Failed', "Check your internet connection and try again.\n\nHere's the full error message:")
     assert 'ThisIsNotValidUrlStart'.lower() in kwargs['monospace_text']
     assert 'ThisIsNotValidUrlStart'.lower() in caplog.records[-1].message
+
+
+def test_invalid_return(filetab, monkeypatch, tabmanager, mocker):
+    mocker.patch('tkinter.messagebox.showerror')
+    monkeypatch.setattr(pastebin_module.DPaste, 'run', (lambda *args: 'lol'))
+
+    tabmanager.select(filetab)
+    get_main_window().event_generate('<<Menubar:Share/dpaste.com>>')
+    get_main_window().update()
+
+    tkinter.messagebox.showerror.assert_called_once_with(
+        'Pasting failed', "Instead of a valid URL, dpaste.com returned 'lol'.")
