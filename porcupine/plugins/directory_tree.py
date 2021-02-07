@@ -165,6 +165,7 @@ class DirectoryTree(ttk.Treeview):
         dir_id: str,
         timer: Timer,
     ) -> None:
+      with timer.add("part 1"):
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])
 
@@ -179,6 +180,7 @@ class DirectoryTree(ttk.Treeview):
                 self._insert_dummy(dir_id)
                 return
 
+      with timer.add("part 2"):
         # TODO: handle changing directory to file
         for path in (path2id.keys() - new_paths):
             self.delete(path2id[path])
@@ -189,29 +191,35 @@ class DirectoryTree(ttk.Treeview):
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
 
+      with timer.add("part 3"):
+        project_roots = set(map(self.get_path, self.get_children()))
+
+      if True:
         for child_path, child_id in path2id.items():
-            with timer.add("A"):
+            with timer.add("A1"):
+                relevant_parents = [child_path]
+                parent_iterator = iter(child_path.parents)
+                while relevant_parents[-1] not in project_roots:
+                    relevant_parents.append(next(parent_iterator))
+                git_status = self.git_statuses[relevant_parents[-1]]
+
+            with timer.add("A2"):
                 old_tags = set(self.item(child_id, 'tags'))
                 new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
 
-                [git_status] = [
-                    self.git_statuses[parent]
-                    for parent in [child_path] + list(child_path.parents)
-                    if parent in self.git_statuses
-                ]
-
             with timer.add("B"):
-                for path in [child_path] + list(child_path.parents):
+                for path in relevant_parents:
                     if path in git_status:
                         new_tags.add(git_status[path])
                         break
                 else:
-                    with timer.add("B2 inner"):
+                    with timer.add("B inner"):
                         # Handle directories containing files with different statuses
                         new_tags |= {
                             status
                             for subpath, status in git_status.items()
                             if status in {'git_added', 'git_modified'}
+                            and str(subpath).startswith(str(child_path))  # optimization
                             and child_path in subpath.parents
                         }
 
@@ -222,15 +230,16 @@ class DirectoryTree(ttk.Treeview):
             if 'dir' in new_tags and not self._contains_dummy(child_id):
                 self.open_and_refresh_directory(child_path, child_id, timer)
 
+      with timer.add("part 4"):
         if dir_path is not None:
-            children = sorted(self.get_children(dir_id), key=self._sorting_key)
-            for index, child_id in enumerate(children):
-                self.move(child_id, dir_id, index)
+            with timer.add("part 4a"):
+                children = sorted(self.get_children(dir_id), key=self._sorting_key)
+            with timer.add("part 4b"):
+                for index, child_id in enumerate(children):
+                    self.move(child_id, dir_id, index)
 
     # TODO: does this run too often?
     def refresh_everything(self, junk: object = None):
-        print("refresh_everything START")
-        da_timer = Timer()
         with timer("refreshing everything"):
             with timer("hiding old projects"):
                 self.hide_old_projects()
@@ -241,9 +250,9 @@ class DirectoryTree(ttk.Treeview):
                     for path in map(self.get_path, self.get_children())
                 }
             with timer("open_and_refresh_directory"):
+                da_timer = Timer()
                 self.open_and_refresh_directory(None, '', da_timer)
-        print("refresh_everything DONE")
-        da_timer.show()
+                da_timer.show()
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
