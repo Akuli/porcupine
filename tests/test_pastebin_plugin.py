@@ -1,11 +1,12 @@
-import socket
+import os
 import re
+import socket
 import threading
 import time
+import tkinter
 import types
 from http.client import RemoteDisconnected
 
-import tkinter
 import pytest
 import requests
 from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
