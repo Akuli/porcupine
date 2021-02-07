@@ -70,20 +70,24 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     tabmanager.add_tab(a_tab)
     assert get_project_names() == ['a']
     tabmanager.add_tab(b_tab)
-    assert get_project_names() == ['a', 'b']
+    assert get_project_names() == ['b', 'a']
     tabmanager.add_tab(c_tab)
-    assert get_project_names() == ['a', 'b', 'c']
+    assert get_project_names() == ['c', 'b', 'a']
 
     tabmanager.close_tab(b_tab)
-    assert get_project_names() == ['a', 'c']
+    assert get_project_names() == ['c', 'a']
     tabmanager.close_tab(c_tab)
-    assert get_project_names() == ['a', 'c']
+    assert get_project_names() == ['c', 'a']
     tabmanager.close_tab(a_tab)
-    assert get_project_names() == ['a', 'c']
+    assert get_project_names() == ['c', 'a']
 
 
 @pytest.mark.skipif(shutil.which('git') is None, reason="git not found")
-def test_added_and_modified_content(tree, tmp_path, tabmanager, monkeypatch):
+def test_added_and_modified_content(tree, tmp_path, monkeypatch):
+    def dont_actually_run_in_thread(blocking_function, done_callback, check_interval_ms=1):
+        done_callback(True, blocking_function())
+    monkeypatch.setattr(utils, 'run_in_thread', dont_actually_run_in_thread)
+
     subprocess.check_call(['git', 'init'], cwd=tmp_path, stdout=subprocess.DEVNULL)
     tree.add_project(tmp_path)
 
