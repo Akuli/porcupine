@@ -178,7 +178,7 @@ class DirectoryTree(ttk.Treeview):
                 if child_tags == {'git_added', 'git_modified'}:
                     new_tags.add('git_modified')
                 else:
-                    assert len(new_tags) <= 1
+                    assert len(child_tags) <= 1
                     new_tags |= child_tags
 
             if old_tags != new_tags:
@@ -206,7 +206,6 @@ class DirectoryTree(ttk.Treeview):
             str(path),
         )
 
-    # TODO: does this run too often?
     def refresh_everything(self, junk: object = None) -> None:
         self.hide_old_projects()
         self.git_statuses = {
@@ -259,7 +258,6 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
 
-        # TODO: don't always refresh everything?
         tab.bind('<<Save>>', tree.refresh_everything, add=True)
         tab.textwidget.bind('<FocusIn>', tree.refresh_everything, add=True)
 
