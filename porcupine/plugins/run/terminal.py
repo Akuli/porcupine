@@ -109,10 +109,10 @@ def _run_in_x11_like_terminal(
                 return
 
         terminal_path = pathlib.Path(terminal_or_none)
-        log.info("found a terminal: %s", terminal_path)
+        log.info(f"found a terminal: {terminal_path}")
 
         terminal_path = terminal_path.resolve()
-        log.debug("absolute path to terminal: %s", terminal_path)
+        log.debug(f"absolute path to terminal: {terminal_path}")
 
         # sometimes x-terminal-emulator points to mate-terminal.wrapper,
         # it's a python script that changes some command line options
@@ -129,9 +129,7 @@ def _run_in_x11_like_terminal(
     if shutil.which(terminal) is None:
         messagebox.showerror(
             f"{terminal!r} not found",
-            "Cannot find %r in $PATH. "
-            "Try setting $TERMINAL to a path to a working terminal program."
-            % terminal)
+            f"Cannot find {terminal!r} in $PATH. Try setting $TERMINAL to a path to a working terminal program.")
         return
 
     real_command = [str(run_script), blue_message, str(workingdir)]

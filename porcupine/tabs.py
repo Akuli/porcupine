@@ -704,7 +704,7 @@ bers.py>` use this attribute.
                 f.flush()   # needed to get right file size in stat
                 self._set_saved_state(os.fstat(f.fileno()))
         except (OSError, UnicodeError) as e:
-            log.exception("saving '%s' failed", self.path)
+            log.exception(f"saving '{self.path}' failed")
             utils.errordialog(type(e).__name__, "Saving failed!",
                               traceback.format_exc())
             return False

@@ -129,7 +129,7 @@ class Paste:
         progressbar.start()
 
     def start(self) -> None:
-        log.debug("starting to paste to %s", self.pastebin_name)
+        log.debug(f"starting to paste to {self.pastebin_name}")
         get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
         self.make_please_wait_window()
         paste_it = functools.partial(

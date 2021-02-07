@@ -38,15 +38,14 @@ def _remove_old_logs() -> None:
 
 def _run_command(command: str) -> None:
     try:
-        output = subprocess.check_output(shlex.split(command),
-                                         stderr=subprocess.STDOUT)
-        log.info("output from '%s':\n%s", command,
-                 output.decode('utf-8', errors='replace'))
+        output = subprocess.check_output(
+            shlex.split(command), stderr=subprocess.STDOUT
+        ).decode('utf-8', errors='replace')
+        log.info(f"output from '{command}':\n{output}")
     except FileNotFoundError as e:
-        log.info("cannot run '%s': %s", command, e)
+        log.info(f"cannot run '{command}': {e}")
     except (subprocess.CalledProcessError, OSError):
-        log.warning("unexpected error when running '%s'", command,
-                    exc_info=True)
+        log.warning(f"unexpected error when running '{command}'", exc_info=True)
 
 
 def _open_log_file() -> TextIO:
@@ -84,16 +83,15 @@ def setup(verbose: bool) -> None:
     # don't know why level must be specified here
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
-    log.debug("starting Porcupine %s from '%s'", porcupine.__version__,
-              cast(Any, porcupine).__path__[0])
-    log.debug("log file: %s", log_file.name)
+    porcupine_path = cast(Any, porcupine).__path__[0]
+    log.debug(f"starting Porcupine {porcupine.__version__} from '{porcupine_path}'")
+    log.debug(f"log file: {log_file.name}")
     if not verbose:
         print(f"log file: {log_file.name}")
-    log.debug("PID: %d", os.getpid())
-    log.debug("running on Python %d.%d.%d from '%s'",
-              *sys.version_info[:3], sys.executable)
-    log.debug("platform.system() returned %r", platform.system())
-    log.debug("platform.platform() returned %r", platform.platform())
+    log.debug(f"PID: {os.getpid()}")
+    log.debug("running on Python %d.%d.%d from '%s'", *sys.version_info[:3], sys.executable)
+    log.debug(f"platform.system() returned {platform.system()!r}")
+    log.debug(f"platform.platform() returned {platform.platform()!r}")
     if platform.system() != 'Windows':
         # lsb_release is a python script on ubuntu so running it takes
         # about 0.12 seconds on this system, i really want porcupine to

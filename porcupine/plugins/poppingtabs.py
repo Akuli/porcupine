@@ -142,7 +142,7 @@ class PopManager:
             process = subprocess.Popen(
                 args,
                 env={**os.environ, 'PORCUPINE_POPPINGTABS_STATE_FILE': file.name})
-            log.debug("started subprocess with PID %d", process.pid)
+            log.debug(f"started subprocess with PID {process.pid}")
             get_tab_manager().close_tab(tab)
 
             # don't exit python until the subprocess exits, also log stuff
@@ -154,11 +154,9 @@ class PopManager:
     def _waiter_thread(self, process: 'subprocess.Popen[bytes]') -> None:
         status = process.wait()
         if status == 0:
-            log.debug("subprocess with PID %d exited successfully",
-                      process.pid)
+            log.debug(f"subprocess with PID {process.pid} exited successfully")
         else:
-            log.warning("subprocess with PID %d exited with status %d",
-                        process.pid, status)
+            log.warning(f"subprocess with PID {process.pid} exited with status {status}")
 
 
 def open_tab_from_state_file() -> None:
