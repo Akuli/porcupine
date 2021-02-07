@@ -19,34 +19,8 @@ log = logging.getLogger(__name__)
 PROJECT_AUTOCLOSE_COUNT = 3
 
 
-@contextlib.contextmanager
-def timer(what):
-    start = time.time()
-    yield
-    end = time.time()
-    print(f"{what} ran for {round((end-start)*1000)}ms")
-
-
-class Timer:
-
-    def __init__(self):
-        self.times = {}
-
-    @contextlib.contextmanager
-    def add(self, what):
-        start = time.perf_counter()
-        yield
-        self.times.setdefault(what, 0)
-        self.times[what] += time.perf_counter() - start
-
-    def show(self):
-        for what, da_time in sorted(self.times.items()):
-            print(f'{what.ljust(40)}: {round(da_time*1000)}ms')
-
-
 def run_git_status(project_root):
     try:
-        start = time.time()
         run_result = subprocess.run(
             ['git', 'status', '--ignored', '--porcelain'],
             cwd=project_root,
@@ -54,7 +28,6 @@ def run_git_status(project_root):
             stderr=subprocess.PIPE,   # for logging error message
             encoding=sys.getfilesystemencoding(),
         )
-        print(f"git ran for {round((time.time() - start)*1000)}ms")
 
         if run_result.returncode != 0:
             log.info(f"git failed: {run_result}")
@@ -163,9 +136,7 @@ class DirectoryTree(ttk.Treeview):
         self,
         dir_path: Optional[pathlib.Path],
         dir_id: str,
-        timer: Timer,
     ) -> None:
-      with timer.add("part 1"):
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])
 
@@ -180,7 +151,6 @@ class DirectoryTree(ttk.Treeview):
                 self._insert_dummy(dir_id)
                 return
 
-      with timer.add("part 2"):
         # TODO: handle changing directory to file
         for path in (path2id.keys() - new_paths):
             self.delete(path2id[path])
@@ -191,53 +161,42 @@ class DirectoryTree(ttk.Treeview):
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
 
-      with timer.add("part 3"):
         project_roots = set(map(self.get_path, self.get_children()))
 
-      if True:
         for child_path, child_id in path2id.items():
-            with timer.add("A1"):
-                relevant_parents = [child_path]
-                parent_iterator = iter(child_path.parents)
-                while relevant_parents[-1] not in project_roots:
-                    relevant_parents.append(next(parent_iterator))
-                git_status = self.git_statuses[relevant_parents[-1]]
+            relevant_parents = [child_path]
+            parent_iterator = iter(child_path.parents)
+            while relevant_parents[-1] not in project_roots:
+                relevant_parents.append(next(parent_iterator))
+            git_status = self.git_statuses[relevant_parents[-1]]
 
-            with timer.add("A2"):
-                old_tags = set(self.item(child_id, 'tags'))
-                new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
+            old_tags = set(self.item(child_id, 'tags'))
+            new_tags = {tag for tag in old_tags if not tag.startswith('git_')}
 
-            with timer.add("B"):
-                for path in relevant_parents:
-                    if path in git_status:
-                        new_tags.add(git_status[path])
-                        break
-                else:
-                    with timer.add("B inner"):
-                        # Handle directories containing files with different statuses
-                        new_tags |= {
-                            status
-                            for subpath, status in git_status.items()
-                            if status in {'git_added', 'git_modified'}
-                            and str(subpath).startswith(str(child_path))  # optimization
-                            and child_path in subpath.parents
-                        }
+            for path in relevant_parents:
+                if path in git_status:
+                    new_tags.add(git_status[path])
+                    break
+            else:
+                # Handle directories containing files with different statuses
+                new_tags |= {
+                    status
+                    for subpath, status in git_status.items()
+                    if status in {'git_added', 'git_modified'}
+                    and str(subpath).startswith(str(child_path))  # optimization
+                    and child_path in subpath.parents
+                }
 
-            with timer.add("C"):
-                if old_tags != new_tags:
-                    self.item(child_id, tags=list(new_tags))
+            if old_tags != new_tags:
+                self.item(child_id, tags=list(new_tags))
 
             if 'dir' in new_tags and not self._contains_dummy(child_id):
-                self.open_and_refresh_directory(child_path, child_id, timer)
+                self.open_and_refresh_directory(child_path, child_id)
 
-      with timer.add("part 4"):
         if dir_path is not None:
             assert set(self.get_children(dir_id)) == set(path2id.values())
-            with timer.add("part 4a"):
-                children = sorted(path2id.items(), key=self._sorting_key)
-            with timer.add("part 4b"):
-                for index, (path, child_id) in enumerate(children):
-                    self.move(child_id, dir_id, index)
+            for index, (path, child_id) in enumerate(sorted(path2id.items(), key=self._sorting_key)):
+                self.move(child_id, dir_id, index)
 
     def _sorting_key(self, path_id_pair) -> Tuple[Any, ...]:
         path, item_id = path_id_pair
@@ -255,19 +214,12 @@ class DirectoryTree(ttk.Treeview):
 
     # TODO: does this run too often?
     def refresh_everything(self, junk: object = None):
-        with timer("refreshing everything"):
-            with timer("hiding old projects"):
-                self.hide_old_projects()
-            with timer("calling git status for each project"):
-                start = time.time()
-                self.git_statuses = {
-                    path: run_git_status(path)
-                    for path in map(self.get_path, self.get_children())
-                }
-            with timer("open_and_refresh_directory"):
-                da_timer = Timer()
-                self.open_and_refresh_directory(None, '', da_timer)
-                da_timer.show()
+        self.hide_old_projects()
+        self.git_statuses = {
+            path: run_git_status(path)
+            for path in map(self.get_path, self.get_children())
+        }
+        self.open_and_refresh_directory(None, '')
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
@@ -286,7 +238,7 @@ class DirectoryTree(ttk.Treeview):
 
         tags = self.item(selected_id, 'tags')
         if 'dir' in tags:
-            self.open_and_refresh_directory(self.get_path(selected_id), selected_id, Timer())
+            self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
         elif 'file' in tags:
             get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id)))
 
