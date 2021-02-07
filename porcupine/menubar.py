@@ -191,6 +191,7 @@ def _menu_event_handler(menu: tkinter.Menu, index: int, junk: 'tkinter.Event[tki
     return 'break'
 
 
+# FIXME: what if menu item is inserted somewhere else than to end, and indexes change?
 def update_keyboard_shortcuts() -> None:
     """
     This function does two things to the *New File* menu item in the *File*
