@@ -232,11 +232,26 @@ class DirectoryTree(ttk.Treeview):
 
       with timer.add("part 4"):
         if dir_path is not None:
+            assert set(self.get_children(dir_id)) == set(path2id.values())
             with timer.add("part 4a"):
-                children = sorted(self.get_children(dir_id), key=self._sorting_key)
+                children = sorted(path2id.items(), key=self._sorting_key)
             with timer.add("part 4b"):
-                for index, child_id in enumerate(children):
+                for index, (path, child_id) in enumerate(children):
                     self.move(child_id, dir_id, index)
+
+    def _sorting_key(self, path_id_pair) -> Tuple[Any, ...]:
+        path, item_id = path_id_pair
+        tags = self.item(item_id, 'tags')
+
+        git_tags = [tag for tag in tags if tag.startswith('git_')]
+        assert len(git_tags) < 2
+        git_tag = git_tags[0] if git_tags else None
+
+        return (
+            1 if 'dir' in tags else 2,
+            ['git_added', 'git_modified', None, 'git_untracked', 'git_ignored'].index(git_tag),
+            str(path),
+        )
 
     # TODO: does this run too often?
     def refresh_everything(self, junk: object = None):
@@ -283,19 +298,6 @@ class DirectoryTree(ttk.Treeview):
         for child in self.get_children(item_id):
             yield child
             yield from self._get_children_recursively(child)
-
-    def _sorting_key(self, item_id) -> Tuple[Any, ...]:
-        tags = self.item(item_id, 'tags')
-
-        git_tags = [tag for tag in self.item(item_id, 'tags') if tag.startswith('git_')]
-        assert len(git_tags) < 2
-        git_tag = git_tags[0] if git_tags else None
-
-        return (
-            1 if 'dir' in tags else 2,
-            ['git_added', 'git_modified', None, 'git_untracked', 'git_ignored'].index(git_tag),
-            str(self.get_path(item_id)),
-        )
 
 
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
