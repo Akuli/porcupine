@@ -611,17 +611,17 @@ class MainText(tkinter.Text):
         # there's still wayyyy too much stuff in here...
         partial = functools.partial     # pep8 line length
         self.bind('<BackSpace>', partial(self._on_delete, False), add=True)
-        self.bind('<Control-BackSpace>', partial(self._on_delete, True), add=True)
-        self.bind('<Control-Delete>', partial(self._on_delete, True), add=True)
-        self.bind('<Shift-Control-Delete>',
+        self.bind(f'<{utils.contmand()}-BackSpace>', partial(self._on_delete, True), add=True)
+        self.bind(f'<{utils.contmand()}-Delete>', partial(self._on_delete, True), add=True)
+        self.bind(f'<Shift-{utils.contmand()}-Delete>',
                   partial(self._on_delete, True, shifted=True), add=True)
-        self.bind('<Shift-Control-BackSpace>',
+        self.bind(f'<Shift-{utils.contmand()}-BackSpace>',
                   partial(self._on_delete, True, shifted=True), add=True)
 
         # most other things work by default, but these don't
-        self.bind('<Control-v>', self._paste, add=True)
-        self.bind('<Control-y>', self._redo, add=True)
-        self.bind('<Control-a>', self._select_all, add=True)
+        self.bind(f'<{utils.contmand()}-v>', self._paste, add=True)
+        self.bind(f'<{utils.contmand()}-y>', self._redo, add=True)
+        self.bind(f'<{utils.contmand()}-a>', self._select_all, add=True)
 
     def _on_indent_size_changed(self, junk: object = None) -> None:
         config_tab_displaying(self, self._tab.settings.get('indent_size', int))

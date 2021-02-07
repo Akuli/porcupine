@@ -157,7 +157,7 @@ class SuccessDialog(tkinter.Toplevel):
         self._entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
         self._entry.insert(0, url)
         self._entry.config(state='readonly')     # must be after the insert
-        self._entry.bind('<Control-a>', partial(self._select_all, breaking=True), add=True)
+        self._entry.bind(f'<{utils.contmand()}-a>', partial(self._select_all, breaking=True), add=True)
         self._entry.bind('<FocusIn>', self._select_all, add=True)
         self._select_all()
 

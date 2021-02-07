@@ -32,12 +32,13 @@ class PythonPrompt:
         self.widget = textwidget
         self.close_callback = close_callback
         self.widget.bind('<Return>', self._on_return, add=True)
-        self.widget.bind('<Control-c>', self._keyboard_interrupt, add=True)
-        self.widget.bind('<Control-C>', self._copy, add=True)
-        self.widget.bind('<Control-l>', self._clear, add=True)
-        self.widget.bind('<Control-L>', self._clear, add=True)
-        self.widget.bind('<Control-d>', self._send_eof, add=True)
-        self.widget.bind('<Control-D>', self._send_eof, add=True)
+        # FIXME: define these bindings in default_keybindings.tcl
+        self.widget.bind(f'<{utils.contmand()}-c>', self._keyboard_interrupt, add=True)
+        self.widget.bind(f'<{utils.contmand()}-C>', self._copy, add=True)
+        self.widget.bind(f'<{utils.contmand()}-l>', self._clear, add=True)
+        self.widget.bind(f'<{utils.contmand()}-L>', self._clear, add=True)
+        self.widget.bind(f'<{utils.contmand()}-d>', self._send_eof, add=True)
+        self.widget.bind(f'<{utils.contmand()}-D>', self._send_eof, add=True)
 
         # without -u python buffers stdout and everything is one enter
         # press late :( see python --help

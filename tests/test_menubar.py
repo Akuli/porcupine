@@ -1,6 +1,29 @@
+import platform
 import pytest
 
-from porcupine import get_main_window, menubar, tabs
+from porcupine import get_main_window, menubar, tabs, utils
+from porcupine.menubar import _get_keyboard_shortcut
+
+
+def test_get_keyboard_shortcut():
+    if platform.system() == 'Darwin':
+        assert _get_keyboard_shortcut('<Command-c>') == '⌘C'
+        assert _get_keyboard_shortcut('<Mod1-Key-c>') == '⌘C'
+        assert _get_keyboard_shortcut('<Command-C>') == '⇧⌘C'
+        assert _get_keyboard_shortcut('<Command-Plus>') == '⌘+'
+        assert _get_keyboard_shortcut('<Command-Minus>') == '⌘-'
+        assert _get_keyboard_shortcut('<Command-0>') == '⌘0'
+        assert _get_keyboard_shortcut('<Command-1>') == '⌘1'
+    else:
+        assert _get_keyboard_shortcut('<Control-c>') == 'Ctrl+C'
+        assert _get_keyboard_shortcut('<Control-Key-c>') == 'Ctrl+C'
+        assert _get_keyboard_shortcut('<Control-C>') == 'Ctrl+Shift+C'
+        assert _get_keyboard_shortcut('<Control-Plus>') == 'Ctrl+Plus'
+        assert _get_keyboard_shortcut('<Control-Minus>') == 'Ctrl+Minus'
+        assert _get_keyboard_shortcut('<Control-0>') == 'Ctrl+Zero'
+        assert _get_keyboard_shortcut('<Control-1>') == 'Ctrl+1'
+
+    assert _get_keyboard_shortcut('<F11>') == 'F11'
 
 
 def test_virtual_events_calling_menu_callbacks():
@@ -58,6 +81,6 @@ def test_text_widget_binding_weirdness(filetab):
     # pressing ctrl+w should leave the text as is (default bindings don't run)
     # and try to close the tab (except that we prevented it from closing)
     filetab.update()
-    filetab.textwidget.event_generate('<Control-w>')
+    filetab.textwidget.event_generate(f'<{utils.contmand()}-w>')
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'hello world'
     assert called == 1

@@ -150,27 +150,12 @@ def _walk_menu_contents(
                 yield (path, menu, index)
 
 
+# this doesn't handle all possible cases, see bind(3tk)
 def _get_keyboard_shortcut(binding: str) -> str:
-    """Convert a Tk binding string to a format that most people are used to.
-
-    >>> _get_keyboard_shortcut('<Control-c>')
-    'Ctrl+C'
-    >>> _get_keyboard_shortcut('<Control-Key-c>')
-    'Ctrl+C'
-    >>> _get_keyboard_shortcut('<Control-C>')
-    'Ctrl+Shift+C'
-    >>> _get_keyboard_shortcut('<Control-0>')
-    'Ctrl+Zero'
-    >>> _get_keyboard_shortcut('<Control-1>')
-    'Ctrl+1'
-    >>> _get_keyboard_shortcut('<F11>')
-    'F11'
-    """
-    # this doesn't handle all possible cases, see bind(3tk)
-    parts = binding.lstrip('<').rstrip('>').split('-')
+    mac = (get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
     result = []
 
-    for part in parts:
+    for part in binding.lstrip('<').rstrip('>').split('-'):
         if part == 'Control':
             # TODO: i think this is supposed to use the command symbol
             # on OSX? i don't have a mac
@@ -184,14 +169,34 @@ def _get_keyboard_shortcut(binding: str) -> str:
         elif len(part) == 1 and part in ascii_uppercase:
             result.append('Shift')
             result.append(part)
-        elif part == '0':
-            # 0 and O look too much like each other
+        elif part == '0' and not mac:
+            # 0 and O look too much like each other, but not with mac default font
             result.append('Zero')
+        elif part == 'Plus' and mac:
+            result.append('+')
+        elif part == 'Minus' and mac:
+            result.append('-')
+        elif part == 'Mod1' and mac:
+            # weird way to spell Command, returned by event_info()
+            result.append('Command')
         else:
             # good enough guess :D
             result.append(part.capitalize())
 
-    return '+'.join(result)
+    if mac:
+        # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
+        fancy_unicodes = [
+            ('Shift', '⇧'),
+            ('Ctrl', '⌃'),   # this is NOT the ascii hat character, it's a different hat
+            ('Alt', '⌥'),
+            ('Command', '⌘'),
+        ]
+        for old, new in reversed(fancy_unicodes):
+            if old in result:
+                result.remove(old)
+                result.insert(0, new)   # reversed(mac_table) because inserting to beginning
+
+    return ('' if mac else '+').join(result)
 
 
 def _menu_event_handler(menu: tkinter.Menu, index: int, junk: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
@@ -342,7 +347,7 @@ def _fill_menus_with_default_stuff() -> None:
     # trigger change_font_size() with mouse wheel from any text widget
     utils.bind_mouse_wheel('Text', (
         lambda updn: change_font_size('bigger' if updn == 'up' else 'smaller')
-    ), prefixes='Control-', add=True)
+    ), prefixes=(utils.contmand() + '-'), add=True)
 
     get_menu("View").add_command(label="Bigger Font", command=functools.partial(change_font_size, 'bigger'))
     get_menu("View").add_command(label="Smaller Font", command=functools.partial(change_font_size, 'smaller'))
