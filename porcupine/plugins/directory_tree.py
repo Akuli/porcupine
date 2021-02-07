@@ -54,8 +54,6 @@ def run_git_status(project_root):
     return result
 
 
-# TODO: handle files being deleted, copied, renamed, etc
-# TODO: remember projects when porcupine is closed
 class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
