@@ -219,7 +219,7 @@ class DirectoryTree(ttk.Treeview):
         def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
             return {path: run_git_status(path) for path in paths}
 
-        def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]):
+        def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]) -> None:
             if success:
                 assert not isinstance(result, str)
                 self.git_statuses = result
