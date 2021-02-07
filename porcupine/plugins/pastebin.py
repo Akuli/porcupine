@@ -20,6 +20,10 @@ from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 log = logging.getLogger(__name__)
 
 
+DPASTE_URL = 'https://dpaste.com/api/v2/'
+TERMBIN_HOST_AND_PORT = ('termbin.com', 9999)
+
+
 class Paste:
     name: ClassVar[str]
 
@@ -59,7 +63,7 @@ class Termbin(Paste):
 
     def run(self, code: str, lexer_class: LexerMeta) -> str:
         with socket.socket() as self._socket:
-            self._socket.connect(('termbin.com', 9999))
+            self._socket.connect(TERMBIN_HOST_AND_PORT)
             self._socket.sendall(code.encode('utf-8'))
             url = self._socket.recv(1024)
             # today termbin adds zero bytes to my URL's 0_o it hasn't done sit before
@@ -87,7 +91,7 @@ class MyHTTPConnection(HTTPConnection):
 # HTTPSConnection does super().connect(), which calls MyHTTPConnection.connect,
 # and then it SSL-wraps the socket created by MyHTTPConnection.
 class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
-    def __init__(self, *args: Any, dpaste: 'Dpaste', **kwargs: Any) -> None:
+    def __init__(self, *args: Any, dpaste: 'DPaste', **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._dpaste = dpaste
 
@@ -105,7 +109,7 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
             self._dpaste.connection = self
 
 
-class Dpaste(Paste):
+class DPaste(Paste):
     name = 'dpaste.com'
 
     def __init__(self) -> None:
@@ -122,12 +126,9 @@ class Dpaste(Paste):
         handler = HTTPSHandler()
         handler.https_open = partial(handler.do_open, MyHTTPSConnection, dpaste=self)   # type: ignore
 
-        # TODO: write canceling test with httpbin
-
         # docs: https://dpaste.com/api/v2/
         # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
-#        request = Request('https://dpaste.com/api/v2/', data=urlencode({
-        request = Request('https://localhost:1234/', data=urlencode({
+        request = Request(DPASTE_URL, data=urlencode({
             'syntax': lexer_class.aliases[0],
             'content': code,
         }).encode('utf-8'))
@@ -248,7 +249,7 @@ def start_pasting(paste_class: Type[Paste]) -> None:
 
 
 def setup() -> None:
-    for klass in [Dpaste, Termbin]:
+    for klass in [DPaste, Termbin]:
         menubar.get_menu("Share").add_command(label=klass.name, command=partial(start_pasting, klass))
         assert '/' not in klass.name
         menubar.set_enabled_based_on_tab(f"Share/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab)))
