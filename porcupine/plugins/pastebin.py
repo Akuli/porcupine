@@ -1,4 +1,8 @@
-"""Display a "Share" menu that allows you to pastebin files easily."""
+"""Display a "Share" menu that allows you to pastebin files easily.
+
+If a part of the file is selected when you click something in the "Share" menu,
+then only the selected part of the file is shared.
+"""
 # TODO: make this work with pythonprompt plugin?
 
 import ssl
@@ -237,7 +241,6 @@ def start_pasting(paste_class: Type[Paste]) -> None:
 
     lexer_class = tab.settings.get('pygments_lexer', LexerMeta)
     try:
-        # TODO: document this feature?
         code = tab.textwidget.get('sel.first', 'sel.last')
     except tkinter.TclError:
         # nothing is selected, pastebin everything
