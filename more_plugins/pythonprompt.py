@@ -127,7 +127,7 @@ class PythonPrompt:
             else:
                 self.widget.insert(
                     'end', "\n\n***********************\n" +
-                    f"the subprocess exited with code {value}")
+                    f"the subprocess exited with code {value!r}")
                 self.widget.config(state='disabled')
             return
 
