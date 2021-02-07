@@ -201,7 +201,7 @@ class Finder(ttk.Frame):
                 start_index_for_search = start_index
                 first_time = False
             else:
-                start_index_for_search = '%s + 1 char' % start_index
+                start_index_for_search = f'{start_index} + 1 char'
 
             start_index = self._textwidget.search(
                 search_arg, start_index_for_search, 'end',

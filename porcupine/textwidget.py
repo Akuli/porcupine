@@ -254,7 +254,7 @@ class _ChangeTracker:
             # ranges of text will be deleted." but no mention about combining
             # these features, this works like the text widget actually behaves
             if len(args) % 2 == 1:
-                args.append(widget.index('%s + 1 char' % args[-1]))
+                args.append(widget.index(f'{args[-1]} + 1 char'))
             assert len(args) % 2 == 0
             pairs = list(zip(args[0::2], args[1::2]))
 
@@ -707,7 +707,7 @@ class MainText(tkinter.Text):
             return False
 
         lineno, column = map(int, self.index(location).split('.'))
-        line = self.get('%s linestart' % location, '%s lineend' % location)
+        line = self.get(f'{location} linestart', f'{location} lineend')
 
         indent_size = self._tab.settings.get('indent_size', int)
         start = column - (column % indent_size)   # round down to indent_size multiple

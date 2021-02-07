@@ -34,7 +34,7 @@ def get_command(
     which_command: Literal['compile', 'run', 'lint'],
     basename: str,
 ) -> Optional[List[str]]:
-    assert os.sep not in basename, "%r is not a basename" % basename
+    assert os.sep not in basename, f"{basename!r} is not a basename"
 
     commands = tab.settings.get('commands', CommandsConfig)
     assert isinstance(commands, CommandsConfig)

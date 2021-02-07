@@ -22,7 +22,7 @@ class _PrintPlugindirAction(argparse.Action):
 
     def __call__(   # type: ignore[no-untyped-def]
             self, parser, namespace, values, option_string=None):
-        print("You can install plugins here:\n\n    %s\n" % plugins.__path__[0])
+        print(f"You can install plugins here:\n\n    {plugins.__path__[0]}\n")
         parser.exit()
 
 
@@ -49,7 +49,7 @@ def main() -> None:
     )
     parser.add_argument(
         '--version', action='version',
-        version=("Porcupine %s" % porcupine_version),
+        version=f"Porcupine {porcupine_version}",
         help="display the Porcupine version number and exit")
     parser.add_argument(
         '-v', '--verbose', action='store_true',

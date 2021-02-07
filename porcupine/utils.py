@@ -333,7 +333,7 @@ class EventWithData(_Event):
     def __repr__(self) -> str:
         match = re.fullmatch(r'<(.*)>', super().__repr__())
         assert match is not None
-        return '<%s data_string=%r>' % (match.group(1), self.data_string)
+        return f'<{match.group(1)} data_string={self.data_string!r}>'
 
 
 def bind_with_data(

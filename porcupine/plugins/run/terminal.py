@@ -124,11 +124,11 @@ def _run_in_x11_like_terminal(
         else:
             terminal = str(terminal_path)
     else:
-        log.debug("using $TERMINAL, it's set to %r" % terminal)
+        log.debug(f"using $TERMINAL, it's set to {terminal!r}")
 
     if shutil.which(terminal) is None:
         messagebox.showerror(
-            "%r not found" % terminal,
+            f"{terminal!r} not found",
             "Cannot find %r in $PATH. "
             "Try setting $TERMINAL to a path to a working terminal program."
             % terminal)

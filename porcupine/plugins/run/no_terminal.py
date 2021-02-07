@@ -47,7 +47,7 @@ class NoTerminalRunner:
                 command, cwd=workingdir,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         except OSError as e:
-            emit_message(('error', '%s: %s\n' % (type(e).__name__, e)))
+            emit_message(('error', f'{type(e).__name__}: {e}\n'))
             log.debug("here's full traceback", exc_info=True)
             return
 
