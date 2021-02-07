@@ -3,6 +3,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import time
 import tkinter
 from functools import partial
 from tkinter import ttk
@@ -19,6 +20,7 @@ PROJECT_AUTOCLOSE_COUNT = 3
 
 def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
     try:
+        start = time.perf_counter()
         run_result = subprocess.run(
             ['git', 'status', '--ignored', '--porcelain'],
             cwd=project_root,
@@ -26,6 +28,7 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
             stderr=subprocess.PIPE,   # for logging error message
             encoding=sys.getfilesystemencoding(),
         )
+        log.debug(f"git ran in {round((time.perf_counter() - start)*1000)}ms")
 
         if run_result.returncode != 0:
             log.info(f"git failed: {run_result}")
@@ -207,12 +210,17 @@ class DirectoryTree(ttk.Treeview):
         )
 
     def refresh_everything(self, junk: object = None) -> None:
+        log.debug("refreshing begins")
+        start = time.perf_counter()
+
         self.hide_old_projects()
         self.git_statuses = {
             path: run_git_status(path)
             for path in map(self.get_path, self.get_children())
         }
         self.open_and_refresh_directory(None, '')
+
+        log.debug(f"refreshed in {round((time.perf_counter() - start)*1000)}ms")
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
