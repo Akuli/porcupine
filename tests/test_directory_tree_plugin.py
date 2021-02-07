@@ -44,6 +44,7 @@ def test_deleting_project(tree, tmp_path, tabmanager, monkeypatch):
     tabmanager.add_tab(a_tab)
     assert get_project_names() == ['a']
     tabmanager.close_tab(a_tab)
+    tabmanager.update()
     shutil.rmtree(tmp_path / 'a')
     tabmanager.add_tab(b_tab)
     assert get_project_names() == ['b']
