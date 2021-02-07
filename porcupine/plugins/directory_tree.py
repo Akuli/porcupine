@@ -7,7 +7,7 @@ import time
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -211,16 +211,26 @@ class DirectoryTree(ttk.Treeview):
 
     def refresh_everything(self, junk: object = None) -> None:
         log.debug("refreshing begins")
-        start = time.perf_counter()
 
         self.hide_old_projects()
-        self.git_statuses = {
-            path: run_git_status(path)
-            for path in map(self.get_path, self.get_children())
-        }
-        self.open_and_refresh_directory(None, '')
+        paths = list(map(self.get_path, self.get_children()))
 
-        log.debug(f"refreshed in {round((time.perf_counter() - start)*1000)}ms")
+        def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
+            return {
+                path: run_git_status(path)
+                for path in paths
+            }
+
+        def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]):
+            if success:
+                assert not isinstance(result, str)
+                self.git_statuses = result
+                self.open_and_refresh_directory(None, '')
+                log.debug("refreshing done")
+            else:
+                log.error(f"error in git status running thread\n{result}")
+
+        utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent

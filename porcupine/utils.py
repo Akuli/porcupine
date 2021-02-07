@@ -666,6 +666,8 @@ def errordialog(title: str, message: str,
 def run_in_thread(
     blocking_function: Callable[[], _T],
     done_callback: Callable[[bool, Union[str, _T]], None],
+    *,
+    check_interval_ms: int = 100,
 ) -> None:
     """Run ``blocking_function()`` in another thread.
 
@@ -676,6 +678,10 @@ def run_in_thread(
     return value from *blocking_function*. The *done_callback* is always
     called from Tk's main loop, so it can do things with Tkinter widgets
     unlike *blocking_function*.
+
+    Internally, this function checks whether the thread has completed every
+    100 milliseconds by default (so 10 times per second). Specify
+    *check_interval_ms* to customize this.
     """
     root = porcupine.get_main_window()  # any widget would do
 
@@ -696,7 +702,7 @@ def run_in_thread(
     def check() -> None:
         if thread.is_alive():
             # let's come back and check again later
-            root.after(100, check)
+            root.after(check_interval_ms, check)
         else:
             if error_traceback is None:
                 done_callback(True, value)
