@@ -170,25 +170,6 @@ class LocalhostSocketIO:
         return result
 
 
-# TODO: make this a part of porcupine rather than something that every plugin has to implement
-_PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
-    readme + extension
-    for readme in ['README', 'readme', 'Readme', 'ReadMe']
-    for extension in ['', '.txt', '.md']
-]
-
-
-def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
-    assert project_file_path.is_absolute()
-
-    for path in project_file_path.parents:
-        if any((path / thing).exists() for thing in _PROJECT_ROOT_THINGS):
-            return path
-
-    # shitty default
-    return project_file_path.parent
-
-
 def completion_item_doc_contains_label(doc: str, label: str) -> bool:
     # this used to be doc.startswith(label), but see issue #67
     label = label.strip()
@@ -620,7 +601,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
         return None
     assert isinstance(config, LangServerConfig)
 
-    project_root = find_project_root(tab.path)
+    project_root = utils.find_project_root(tab.path)
     the_id = LangServerId(config.command, config.port, project_root)
     try:
         return langservers[the_id]
