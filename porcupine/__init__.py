@@ -14,7 +14,7 @@ import subprocess
 
 import appdirs  # type: ignore[import]
 
-version_info = (0, 85, 0)        # this is updated with scripts/release.py
+version_info = (0, 86, 0)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017-2021 Akuli'
@@ -43,6 +43,7 @@ if True:
 
 get_main_window = _state.get_main_window
 get_parsed_args = _state.get_parsed_args
+get_paned_window = _state.get_paned_window    # TODO: document this
 get_tab_manager = _state.get_tab_manager
 filedialog_kwargs = _state.filedialog_kwargs
 quit = _state.quit

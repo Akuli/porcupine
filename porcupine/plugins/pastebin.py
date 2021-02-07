@@ -24,7 +24,7 @@ def paste_to_termbin(code: str, lexer_class: LexerMeta) -> str:
         sock.send(code.encode('utf-8'))
         url = sock.recv(1024)
         if url.startswith(b'Use netcat'):   # pragma: no cover
-            raise RuntimeError("sending to termbin failed (got %r)" % url)
+            raise RuntimeError(f"sending to termbin failed (got {url!r})")
 
         # today termbin adds zero bytes to my URL's 0_o it hasn't done
         # it before
@@ -33,7 +33,7 @@ def paste_to_termbin(code: str, lexer_class: LexerMeta) -> str:
 
 
 session = requests.Session()
-session.headers['User-Agent'] = "Porcupine/%s" % _porcupine_version
+session.headers['User-Agent'] = f"Porcupine/{_porcupine_version}"
 
 
 # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
@@ -118,7 +118,7 @@ class Paste:
 
         label = ttk.Label(
             content, font=('', 12, ()),
-            text=("Pasting to %s, please wait..." % self.pastebin_name))
+            text=f"Pasting to {self.pastebin_name}, please wait...")
         label.pack(expand=True)
 
         progressbar = ttk.Progressbar(content, mode='indeterminate')
@@ -126,7 +126,7 @@ class Paste:
         progressbar.start()
 
     def start(self) -> None:
-        log.debug("starting to paste to %s", self.pastebin_name)
+        log.debug(f"starting to paste to {self.pastebin_name}")
         get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
         self.make_please_wait_window()
         paste_it = functools.partial(
@@ -147,7 +147,7 @@ class Paste:
             dialog.wait_window()
         else:
             # result is the traceback as a string
-            log.error("pasting failed\n%s" % result)
+            log.error(f"pasting failed\n{result}")
             utils.errordialog(
                 "Pasting Failed",
                 ("Check your internet connection and try again.\n\n" +
