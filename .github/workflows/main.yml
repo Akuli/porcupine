@@ -35,7 +35,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: pip install -r requirements.txt -r requirements-dev.txt
-    - run: python -m pytest
+    - run: python -m pytest -vvvv
   pytest-linux:
     strategy:
       matrix:
