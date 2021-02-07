@@ -156,6 +156,9 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab):
     assert 'ThisIsNotValidUrlStart'.lower() in caplog.records[-1].message
 
 
+@pytest.mark.skipif(
+    os.getenv('GITHUB_ACTIONS') == 'true' and platform.system() == 'Windows',
+    reason="somehow doesn't work with gh actions windows")
 def test_invalid_return(filetab, monkeypatch, tabmanager, mocker):
     mocker.patch('tkinter.messagebox.showerror')
     monkeypatch.setattr(pastebin_module.DPaste, 'run', (lambda *args: 'lol'))
