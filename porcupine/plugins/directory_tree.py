@@ -1,5 +1,3 @@
-import contextlib
-import time
 import logging
 import os
 import pathlib
@@ -8,7 +6,7 @@ import sys
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Dict, Iterator, List, Tuple, Any, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -19,7 +17,7 @@ log = logging.getLogger(__name__)
 PROJECT_AUTOCLOSE_COUNT = 3
 
 
-def run_git_status(project_root):
+def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
     try:
         run_result = subprocess.run(
             ['git', 'status', '--ignored', '--porcelain'],
@@ -62,7 +60,7 @@ class DirectoryTree(ttk.Treeview):
         self.bind('<<TreeviewOpen>>', self.on_click, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self._config_tags()
-        self.git_statuses = {}
+        self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval('ttk::style look Treeview -foreground')
@@ -198,7 +196,7 @@ class DirectoryTree(ttk.Treeview):
             for index, (path, child_id) in enumerate(sorted(path2id.items(), key=self._sorting_key)):
                 self.move(child_id, dir_id, index)
 
-    def _sorting_key(self, path_id_pair) -> Tuple[Any, ...]:
+    def _sorting_key(self, path_id_pair: Tuple[pathlib.Path, str]) -> Tuple[Any, ...]:
         path, item_id = path_id_pair
         tags = self.item(item_id, 'tags')
 
@@ -213,7 +211,7 @@ class DirectoryTree(ttk.Treeview):
         )
 
     # TODO: does this run too often?
-    def refresh_everything(self, junk: object = None):
+    def refresh_everything(self, junk: object = None) -> None:
         self.hide_old_projects()
         self.git_statuses = {
             path: run_git_status(path)
@@ -225,7 +223,7 @@ class DirectoryTree(ttk.Treeview):
         assert parent
         self.insert(parent, 'end', text='(empty)', tags='dummy')
 
-    def _contains_dummy(self, parent: str) -> None:
+    def _contains_dummy(self, parent: str) -> bool:
         children = self.get_children(parent)
         return (len(children) == 1 and 'dummy' in self.item(children[0], 'tags'))
 
