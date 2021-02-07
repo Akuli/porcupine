@@ -7,7 +7,7 @@ import time
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -31,6 +31,7 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
         log.debug(f"git ran in {round((time.perf_counter() - start)*1000)}ms")
 
         if run_result.returncode != 0:
+            # likely not a git repo because missing ".git" dir
             log.info(f"git failed: {run_result}")
             return {}
 
@@ -108,6 +109,14 @@ class DirectoryTree(ttk.Treeview):
         self.hide_old_projects()
         self.refresh_everything()
 
+    def _insert_dummy(self, parent: str) -> None:
+        assert parent
+        self.insert(parent, 'end', text='(empty)', tags='dummy')
+
+    def _contains_dummy(self, parent: str) -> bool:
+        children = self.get_children(parent)
+        return (len(children) == 1 and 'dummy' in self.item(children[0], 'tags'))
+
     def hide_old_projects(self, junk: object = None) -> None:
         for project_id in reversed(self.get_children('')):
             project_path = self.get_path(project_id)
@@ -127,6 +136,27 @@ class DirectoryTree(ttk.Treeview):
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
+
+    def refresh_everything(self, junk: object = None) -> None:
+        log.debug("refreshing begins")
+        self.hide_old_projects()
+
+        # This must not be an iterator, otherwise thread calls self.get_path which does tkinter stuff
+        paths = list(map(self.get_path, self.get_children()))
+
+        def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
+            return {path: run_git_status(path) for path in paths}
+
+        def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]) -> None:
+            if success:
+                assert not isinstance(result, str)
+                self.git_statuses = result
+                self.open_and_refresh_directory(None, '')
+                log.debug("refreshing done")
+            else:
+                log.error(f"error in git status running thread\n{result}")
+
+        utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
     def open_and_refresh_directory(self, dir_path: Optional[pathlib.Path], dir_id: str) -> None:
         if self._contains_dummy(dir_id):
@@ -209,35 +239,6 @@ class DirectoryTree(ttk.Treeview):
             str(path),
         )
 
-    def refresh_everything(self, junk: object = None) -> None:
-        log.debug("refreshing begins")
-        self.hide_old_projects()
-
-        # This must not be an iterator, otherwise thread calls self.get_path which does tkinter stuff
-        paths = list(map(self.get_path, self.get_children()))
-
-        def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
-            return {path: run_git_status(path) for path in paths}
-
-        def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]) -> None:
-            if success:
-                assert not isinstance(result, str)
-                self.git_statuses = result
-                self.open_and_refresh_directory(None, '')
-                log.debug("refreshing done")
-            else:
-                log.error(f"error in git status running thread\n{result}")
-
-        utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
-
-    def _insert_dummy(self, parent: str) -> None:
-        assert parent
-        self.insert(parent, 'end', text='(empty)', tags='dummy')
-
-    def _contains_dummy(self, parent: str) -> bool:
-        children = self.get_children(parent)
-        return (len(children) == 1 and 'dummy' in self.item(children[0], 'tags'))
-
     def on_click(self, event: tkinter.Event) -> None:
         try:
             [selected_id] = self.selection()
@@ -254,11 +255,6 @@ class DirectoryTree(ttk.Treeview):
     def get_path(self, item_id: str) -> pathlib.Path:
         assert 'dummy' not in self.item(item_id, 'tags')
         return pathlib.Path(self.item(item_id, 'values')[0])
-
-    def _get_children_recursively(self, item_id: str) -> Iterator[str]:
-        for child in self.get_children(item_id):
-            yield child
-            yield from self._get_children_recursively(child)
 
 
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
