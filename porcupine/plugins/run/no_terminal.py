@@ -17,7 +17,7 @@ QueueMessage = Tuple[str, Union[str, Callable[[], None]]]
 
 class NoTerminalRunner:
 
-    def __init__(self, master: tkinter.BaseWidget) -> None:
+    def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
         self.textwidget = tkinter.Text(master, height=12, state='disabled')
         self.textwidget.tag_config('info', foreground='blue')
