@@ -262,6 +262,8 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         def path_callback(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
+                # Please avoid using find_project_root elsewhere. It doesn't
+                # work with nested projects, for example.
                 tree.add_project(utils.find_project_root(tab.path))
 
         path_callback()
@@ -292,5 +294,5 @@ def setup() -> None:
     settings.add_option('directory_tree_projects', [], type=List[str])
     string_paths = settings.get('directory_tree_projects', List[str])
     for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT]):
-        if path.is_absolute() and path.is_dir() and utils.looks_like_project_root(path):
+        if path.is_absolute() and path.is_dir():
             tree.add_project(path)

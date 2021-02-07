@@ -133,18 +133,14 @@ _PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
 
 
 # TODO: document this
-def looks_like_project_root(path: pathlib.Path) -> bool:
-    assert path.is_absolute()
-    return any((path / thing).exists() for thing in _PROJECT_ROOT_THINGS)
-
-
-# TODO: document this
 def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
+    assert project_file_path.is_absolute()
+
     for path in project_file_path.parents:
-        if looks_like_project_root(path):
+        if any((path / thing).exists() for thing in _PROJECT_ROOT_THINGS):
             return path
 
-    # shitty default (not returned by looks_like_project_root())
+    # shitty default
     return project_file_path.parent
 
 
