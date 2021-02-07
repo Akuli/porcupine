@@ -583,9 +583,6 @@ bers.py>` use this attribute.
         editor. After they do that, this method will return True until the file
         is e.g. saved or reloaded.
         """
-        print("self.path:", self.path)
-        print("self._saved_state:", self._saved_state)
-
         save_stat, save_char_count, save_hash = self._saved_state
         if self.path is None or save_stat is None:
             return False
@@ -593,32 +590,24 @@ bers.py>` use this attribute.
         try:
             # We could just reading the contents of the file, but it can often be avoided.
             actual_stat = self.path.stat()
-            print("actual_stat:", actual_stat)
             if actual_stat.st_mtime == save_stat.st_mtime:
-                print("mtime match")
                 log.debug(f"{self.path}: modified time has not changed")
                 return False
             if actual_stat.st_size != save_stat.st_size:
-                print("size diff")
                 log.debug(f"{self.path}: size has changed")
                 return True
 
             log.info(f"reading {self.path} to figure out if reload is needed")
             with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
                 actual_hash = self._get_hash(f.read())
-
-            print("actual_hash", actual_hash)
-            print("save_hash", save_hash)
             if actual_hash != save_hash:
                 return True
 
             # Avoid reading file contents again soon
             self._saved_state = (actual_stat, save_char_count, save_hash)
-            print("self._saved_state was set to", self._saved_state)
             return False
 
         except (OSError, UnicodeError):
-            print("error")
             log.exception(f"error when figuring out if '{self.path}' needs reloading, assuming it does")
             return True
 
