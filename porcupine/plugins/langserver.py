@@ -222,10 +222,10 @@ def get_completion_item_doc(item: lsp.CompletionItem) -> str:
 
 def exit_code_string(exit_code: int) -> str:
     if exit_code >= 0:
-        return "exited with code %d" % exit_code
+        return f"exited with code {exit_code}"
 
     signal_number = abs(exit_code)
-    result = "was killed by signal %d" % signal_number
+    result = f"was killed by signal {signal_number}"
 
     try:
         result += " (" + signal.Signals(signal_number).name + ")"
@@ -341,13 +341,9 @@ class LangServer:
             exit_code = self._process.wait()
 
         if self._is_shutting_down_cleanly:
-            self.log.info(
-                "langserver process terminated, %s",
-                exit_code_string(exit_code))
+            self.log.info(f"langserver process terminated, {exit_code_string(exit_code)}")
         else:
-            self.log.error(
-                "langserver process terminated unexpectedly, %s",
-                exit_code_string(exit_code))
+            self.log.error(f"langserver process terminated unexpectedly, {exit_code_string(exit_code)}")
 
         self._get_removed_from_langservers()
 
@@ -370,7 +366,7 @@ class LangServer:
             return False
 
         assert received_bytes
-        self.log.debug("got %d bytes of data", len(received_bytes))
+        self.log.debug(f"got {len(received_bytes)} bytes of data")
 
         try:
             lsp_events = self._lsp_client.recv(received_bytes)
@@ -427,8 +423,7 @@ class LangServer:
             return
 
         if isinstance(lsp_event, lsp.Initialized):
-            self.log.info("langserver initialized, capabilities:\n%s",
-                          pprint.pformat(lsp_event.capabilities))
+            self.log.info("langserver initialized, capabilities:\n" + pprint.pformat(lsp_event.capabilities))
 
             for tab in self.tabs_opened.keys():
                 self._send_tab_opened_message(tab)
@@ -554,9 +549,7 @@ class LangServer:
 
     def request_completions(self, event: utils.EventWithData) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
-            self.log.warning(
-                "autocompletions requested but langserver state == %r",
-                self._lsp_client.state)
+            self.log.warning(f"autocompletions requested but langserver state == {self._lsp_client.state!r}")
             return
 
         tab = event.widget
@@ -582,9 +575,7 @@ class LangServer:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             # The langserver will receive the actual content of the file once
             # it starts.
-            self.log.debug(
-                "not sending change events because langserver state == %r",
-                self._lsp_client.state)
+            self.log.debug(f"not sending change events because langserver state == {self._lsp_client.state!r}")
             return
 
         assert tab.path is not None
@@ -665,8 +656,9 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
         return None
 
     log = global_log.getChild(str(process.pid))
-    log.info("Langserver process started with command '%s', PID %d, "
-             "for project root '%s'", config.command, process.pid, project_root)
+    log.info(
+        f"Langserver process started with "
+        f"command '{config.command}', PID {process.pid}, project root '{project_root}'")
 
     logging_stream = process.stderr if the_id.port is None else process.stdout
     assert logging_stream is not None

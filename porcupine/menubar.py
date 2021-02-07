@@ -291,9 +291,8 @@ def _fill_menus_with_default_stuff() -> None:
             try:
                 tab = tabs.FileTab.open_file(get_tab_manager(), path)
             except (UnicodeError, OSError) as e:
-                log.exception("opening '%s' failed", path)
-                utils.errordialog(type(e).__name__, "Opening failed!",
-                                  traceback.format_exc())
+                log.exception(f"opening '{path}' failed")
+                utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
                 continue
 
             get_tab_manager().add_tab(tab)
@@ -358,6 +357,7 @@ def _fill_menus_with_default_stuff() -> None:
         get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))
 
     # TODO: porcupine starring button
+    # TODO: does ##learnpython IRC link still work?
     add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
     add_link("Help", "Report a problem or request a feature", "https://github.com/Akuli/porcupine/issues/new")
     add_link("Help/Python", "Free help chat", "http://webchat.freenode.net/?channels=%23%23learnpython")

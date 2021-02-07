@@ -22,18 +22,18 @@ def on_tab_key(event: 'tkinter.Event[textwidget.MainText]', shifted: bool) -> No
     with textwidget.change_batch(event.widget):
         for lineno in range(start, end):
             if shifted:
-                event.widget.dedent('%d.0' % lineno)
+                event.widget.dedent(f'{lineno}.0')
             else:
                 # if the line is empty or it contains nothing but
                 # whitespace, don't touch it
                 content = event.widget.get(
-                    '%d.0' % lineno, '%d.0 lineend' % lineno)
+                    f'{lineno}.0', f'{lineno}.0 lineend')
                 if not (content.isspace() or not content):
-                    event.widget.indent('%d.0' % lineno)
+                    event.widget.indent(f'{lineno}.0')
 
     # select only the lines we indented but everything on them
     event.widget.tag_remove('sel', '1.0', 'end')
-    event.widget.tag_add('sel', '%d.0' % start, '%d.0' % end)
+    event.widget.tag_add('sel', f'{start}.0', f'{end}.0')
 
 
 def on_new_tab(tab: tabs.Tab) -> None:

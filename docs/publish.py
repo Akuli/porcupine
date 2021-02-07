@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 
-info = functools.partial(print, '**** %s:' % sys.argv[0])
+info = functools.partial(print, f'**** {sys.argv[0]}:')
 
 
 def run(*command, cwd=None):

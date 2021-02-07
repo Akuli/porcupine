@@ -32,7 +32,7 @@ def main():
     elif args.what_to_bump == 'patch':
         new_info = (old_info[0], old_info[1], old_info[2]+1)
     else:
-        assert False, "unexpected what_to_bump %r" % args.what_to_bump
+        assert False, f"unexpected what_to_bump {args.what_to_bump!r}"
 
     status = subprocess.check_output(['git', 'status'])
     assert status.startswith(b'On branch master\n')

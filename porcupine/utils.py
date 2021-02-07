@@ -221,7 +221,7 @@ class _TooltipManager:
         if self.got_mouse:
             self.destroy_tipwindow()
             tipwindow = type(self).tipwindow = tkinter.Toplevel()
-            tipwindow.geometry('+%d+%d' % (self.mousex+10, self.mousey-10))
+            tipwindow.geometry(f'+{self.mousex + 10}+{self.mousey - 10}')
             tipwindow.bind('<Motion>', self.destroy_tipwindow, add=True)
             tipwindow.overrideredirect(True)
 
@@ -333,7 +333,7 @@ class EventWithData(_Event):
     def __repr__(self) -> str:
         match = re.fullmatch(r'<(.*)>', super().__repr__())
         assert match is not None
-        return '<%s data_string=%r>' % (match.group(1), self.data_string)
+        return f'<{match.group(1)} data_string={self.data_string!r}>'
 
 
 def bind_with_data(

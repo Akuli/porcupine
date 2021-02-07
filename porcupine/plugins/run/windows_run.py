@@ -38,7 +38,7 @@ if returncode == 0:
 elif returncode is None:
     print("The program was interrupted.")
 else:
-    print("The program failed with status %d." % returncode)
+    print(f"The program failed with status {returncode}.")
 
 print("Press Enter to close this window...")
 input()

@@ -273,7 +273,7 @@ class TetrisTab(tabs.Tab):
         elif event.keysym == 'F2':
             self.new_game()
         else:
-            raise ValueError("unknown keysym %r" % event.keysym)
+            raise ValueError(f"unknown keysym {event.keysym!r}")
 
         self._refresh()
         return 'break'
