@@ -290,6 +290,7 @@ def setup() -> None:
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
 
     settings.add_option('directory_tree_projects', [], type=List[str])
-    for path in [pathlib.Path(string) for string in settings.get('directory_tree_projects', List[str])]:
+    string_paths = settings.get('directory_tree_projects', List[str])
+    for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT]):
         if path.is_absolute() and path.is_dir() and utils.looks_like_project_root(path):
             tree.add_project(path)
