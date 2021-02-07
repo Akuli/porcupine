@@ -211,15 +211,13 @@ class DirectoryTree(ttk.Treeview):
 
     def refresh_everything(self, junk: object = None) -> None:
         log.debug("refreshing begins")
-
         self.hide_old_projects()
+
+        # This must not be an iterator, otherwise thread calls self.get_path which does tkinter stuff
         paths = list(map(self.get_path, self.get_children()))
 
         def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
-            return {
-                path: run_git_status(path)
-                for path in paths
-            }
+            return {path: run_git_status(path) for path in paths}
 
         def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]):
             if success:
