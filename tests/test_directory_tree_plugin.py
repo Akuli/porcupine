@@ -1,3 +1,4 @@
+import subprocess
 import shutil
 
 import pytest
@@ -79,3 +80,22 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     assert get_project_names() == ['a', 'c']
     tabmanager.close_tab(a_tab)
     assert get_project_names() == ['a', 'c']
+
+
+@pytest.mark.skipif(shutil.which('git') is None, reason="git not found")
+def test_added_and_modified_content(tree, tmp_path, tabmanager, monkeypatch):
+    subprocess.check_call(['git', 'init'], cwd=tmp_path, stdout=subprocess.DEVNULL)
+    tree.add_project(tmp_path)
+
+    (tmp_path / 'a').write_text('a')
+    (tmp_path / 'b').write_text('b')
+    subprocess.check_call(['git', 'add', 'a', 'b'], cwd=tmp_path)
+    (tmp_path / 'b').write_text('lol')
+    [project_id] = tree.get_children()
+
+    tree.refresh_everything()
+    assert set(tree.item(project_id, 'tags')) == {'project', 'dir', 'git_modified'}
+
+    subprocess.check_call(['git', 'add', 'a', 'b'], cwd=tmp_path)
+    tree.refresh_everything()
+    assert set(tree.item(project_id, 'tags')) == {'project', 'dir', 'git_added'}

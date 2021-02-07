@@ -84,13 +84,11 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('git_ignored', foreground=gray)
 
     def add_project(self, root_path: pathlib.Path) -> None:
-        print("adding project:", root_path)
         for project_item_id in self.get_children():
             path = self.get_path(project_item_id)
             if path == root_path or path in root_path.parents:
                 # Project or parent project added already. Move it first to
                 # avoid hiding it soon.
-                print("   found already")
                 self.move(project_item_id, '', 0)
                 return
             if root_path in path.parents:
@@ -124,7 +122,6 @@ class DirectoryTree(ttk.Treeview):
                     for tab in get_tab_manager().tabs()
                 )
             ):
-                print("Hiding old project:", project_path)
                 self.delete(project_id)
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
@@ -177,13 +174,18 @@ class DirectoryTree(ttk.Treeview):
                     break
             else:
                 # Handle directories containing files with different statuses
-                new_tags |= {
+                child_tags = {
                     status
                     for subpath, status in git_status.items()
                     if status in {'git_added', 'git_modified'}
                     and str(subpath).startswith(str(child_path))  # optimization
                     and child_path in subpath.parents
                 }
+                if child_tags == {'git_added', 'git_modified'}:
+                    new_tags.add('git_modified')
+                else:
+                    assert len(new_tags) <= 1
+                    new_tags |= child_tags
 
             if old_tags != new_tags:
                 self.item(child_id, tags=list(new_tags))
