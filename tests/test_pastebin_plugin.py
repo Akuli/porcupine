@@ -77,7 +77,7 @@ def test_dpaste_canceling(monkeypatch):
     time.sleep(1)
     paste.cancel()
     thread.join()
-    assert time.time() - start < 1.01
+    assert time.time() - start < 1.05
     assert got_error
 
 
