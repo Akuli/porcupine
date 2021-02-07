@@ -152,7 +152,7 @@ def _walk_menu_contents(
 
 # this doesn't handle all possible cases, see bind(3tk)
 def _get_keyboard_shortcut(binding: str) -> str:
-    return binding.lstrip('<').rstrip('>').replace('Mod1', 'Command')
+    return binding.lstrip('<').rstrip('>').replace('Mod1', 'Command').replace('Key-', '')
     mac = (get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
     result = []
 
