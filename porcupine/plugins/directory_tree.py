@@ -201,23 +201,19 @@ class DirectoryTree(ttk.Treeview):
                 ]
 
             with timer.add("B"):
-                if child_path in git_status:
-                    new_tags.add(git_status[child_path])
+                for path in [child_path] + list(child_path.parents):
+                    if path in git_status:
+                        new_tags.add(git_status[path])
+                        break
                 else:
-                    with timer.add("B2"):
-                        for status_path, tag in git_status.items():
-                            if status_path == child_path or status_path in child_path.parents:
-                                new_tags.add(tag)
-                                break
-                        else:
-                            with timer.add("B2 inner"):
-                                # Handle directories containing files with different statuses
-                                new_tags |= {
-                                    status
-                                    for subpath, status in git_status.items()
-                                    if status in {'git_added', 'git_modified'}
-                                    and child_path in subpath.parents
-                                }
+                    with timer.add("B2 inner"):
+                        # Handle directories containing files with different statuses
+                        new_tags |= {
+                            status
+                            for subpath, status in git_status.items()
+                            if status in {'git_added', 'git_modified'}
+                            and child_path in subpath.parents
+                        }
 
             with timer.add("C"):
                 if old_tags != new_tags:
