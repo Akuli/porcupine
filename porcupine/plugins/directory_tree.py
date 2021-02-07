@@ -125,11 +125,7 @@ class DirectoryTree(ttk.Treeview):
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
 
-    def open_and_refresh_directory(
-        self,
-        dir_path: Optional[pathlib.Path],
-        dir_id: str,
-    ) -> None:
+    def open_and_refresh_directory(self, dir_path: Optional[pathlib.Path], dir_id: str) -> None:
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])
 
