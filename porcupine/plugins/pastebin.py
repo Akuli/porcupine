@@ -1,53 +1,139 @@
 """Display a "Share" menu that allows you to pastebin files easily."""
-# remember to update this file if the pythonprompt plugin will work some day
+# TODO: make this work with pythonprompt plugin?
 
-import functools
+import ssl
 import logging
 import socket
 import tkinter
 import webbrowser
+from functools import partial
+from http.client import HTTPConnection, HTTPSConnection
 from tkinter import ttk
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional, Type, Union, cast
+from urllib.parse import urlencode
+from urllib.request import HTTPSHandler, Request, build_opener
 
-import requests
 from pygments.lexer import LexerMeta  # type: ignore[import]
 
-from porcupine import __version__ as _porcupine_version
 from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 
 log = logging.getLogger(__name__)
 
 
-def paste_to_termbin(code: str, lexer_class: LexerMeta) -> str:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.connect(('termbin.com', 9999))
-        sock.send(code.encode('utf-8'))
-        url = sock.recv(1024)
-        if url.startswith(b'Use netcat'):   # pragma: no cover
-            raise RuntimeError(f"sending to termbin failed (got {url!r})")
+class Paste:
+    name: ClassVar[str]
 
-        # today termbin adds zero bytes to my URL's 0_o it hasn't done
-        # it before
-        # i've never seen it add \r but i'm not surprised if it adds it
-        return url.rstrip(b'\n\r\0').decode('ascii')
+    def __init__(self) -> None:
+        self.canceled = False
 
+    def get_socket(self) -> Optional[Union[socket.socket, ssl.SSLSocket]]:
+        raise NotImplementedError
 
-session = requests.Session()
-session.headers['User-Agent'] = f"Porcupine/{_porcupine_version}"
+    # runs in a new thread
+    def run(self, code: str, lexer_class: LexerMeta) -> str:
+        raise NotImplementedError
 
+    def cancel(self) -> bool:
+        sock = self.get_socket()
+        if sock is None:
+            log.info("can't cancel yet")
+            return False
 
-# dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
-def paste_to_dpaste_dot_com(code: str, lexer_class: LexerMeta) -> str:
-    # docs: https://dpaste.com/api/v2/
-    response = session.post('https://dpaste.com/api/v2/', data={
-        'syntax': lexer_class.aliases[0],
-        'content': code,
-    })
-    response.raise_for_status()
-    return response.text.strip()
+        log.debug("canceling (shutting down socket)")
+        sock.shutdown(socket.SHUT_RDWR)
+
+        log.debug("canceling done")
+        self.canceled = True
+        return True
 
 
-pastebins = {"termbin.com": paste_to_termbin, "dpaste.com": paste_to_dpaste_dot_com}
+class Termbin(Paste):
+    name = 'termbin.com'
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._socket: Optional[socket.socket] = None
+
+    def get_socket(self) -> Optional[socket.socket]:
+        return self._socket
+
+    def run(self, code: str, lexer_class: LexerMeta) -> str:
+        with socket.socket() as self._socket:
+            self._socket.connect(('termbin.com', 9999))
+            self._socket.sendall(code.encode('utf-8'))
+            url = self._socket.recv(1024)
+            # today termbin adds zero bytes to my URL's 0_o it hasn't done sit before
+            # i've never seen it add \r but i'm not surprised if it adds it
+            return url.rstrip(b'\n\r\0').decode('ascii')
+
+
+# Hello there, random person reading my code. You are probably wondering why in
+# the world I am using urllib instead of requests.
+#
+# It doesn't seem to be possible to access the underlying socket that requests
+# uses without relying on _methods_named_like_this. We need that socket for
+# canceling the pastebinning. For example, https://stackoverflow.com/a/32311849
+# is useless because it gives the socket after it's connected, and most of the
+# pastebinning time is spent connecting the socket (on my system).
+class MyHTTPConnection(HTTPConnection):
+    def connect(self) -> None:
+        # Unlike HTTPConnection.connect, this creates the socket so that it is
+        # assinged to self.sock before it's connected.
+        self.sock = socket.socket()
+        self.sock.connect((self.host, self.port))
+        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+
+# HTTPSConnection does super().connect(), which calls MyHTTPConnection.connect,
+# and then it SSL-wraps the socket created by MyHTTPConnection.
+class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
+    def __init__(self, *args: Any, dpaste: 'Dpaste', **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._dpaste = dpaste
+
+    @property
+    def sock(self) -> Union[socket.socket, ssl.SSLSocket]:
+        return self.__sock
+
+    @sock.setter
+    def sock(self, new_sock: Union[socket.socket, ssl.SSLSocket]) -> None:
+        # Canceling with the non-SSL socket fails because making the SSL socket
+        # closes the non-SSL socket. So, don't tell the dpaste object about
+        # being able to cancel until self.sock is set to SSL socket.
+        self.__sock = new_sock
+        if isinstance(new_sock, ssl.SSLSocket):
+            self._dpaste.connection = self
+
+
+class Dpaste(Paste):
+    name = 'dpaste.com'
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.connection: Optional[MyHTTPSConnection] = None
+
+    def get_socket(self) -> Optional[ssl.SSLSocket]:
+        if self.connection is None:
+            return None
+        return cast(ssl.SSLSocket, self.connection.sock)
+
+    def run(self, code: str, lexer_class: LexerMeta) -> str:
+        # kwargs of do_open() go to MyHTTPSConnection
+        handler = HTTPSHandler()
+        handler.https_open = partial(handler.do_open, MyHTTPSConnection, dpaste=self)   # type: ignore
+
+        # TODO: write canceling test with httpbin
+
+        # docs: https://dpaste.com/api/v2/
+        # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
+#        request = Request('https://dpaste.com/api/v2/', data=urlencode({
+        request = Request('https://localhost:1234/', data=urlencode({
+            'syntax': lexer_class.aliases[0],
+            'content': code,
+        }).encode('utf-8'))
+
+        with build_opener(handler).open(request) as response:
+            return response.read().decode().strip()
 
 
 class SuccessDialog(tkinter.Toplevel):
@@ -62,13 +148,12 @@ class SuccessDialog(tkinter.Toplevel):
         label = ttk.Label(content, text="Here's your link:")
         label.place(relx=0.5, rely=0.15, anchor='center')
 
-        breaky_select_all = functools.partial(self._select_all, breaking=True)
-        entry = self._entry = ttk.Entry(self, justify='center')
-        entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
-        entry.insert(0, url)
-        entry.config(state='readonly')     # must be after the insert
-        entry.bind('<Control-a>', breaky_select_all, add=True)
-        entry.bind('<FocusIn>', self._select_all, add=True)
+        self._entry = ttk.Entry(self, justify='center')
+        self._entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
+        self._entry.insert(0, url)
+        self._entry.config(state='readonly')     # must be after the insert
+        self._entry.bind('<Control-a>', partial(self._select_all, breaking=True), add=True)
+        self._entry.bind('<FocusIn>', self._select_all, add=True)
         self._select_all()
 
         button_info = [
@@ -94,82 +179,76 @@ class SuccessDialog(tkinter.Toplevel):
         self.clipboard_append(self.url)
 
 
-class Paste:
+def make_please_wait_window(paste: Paste) -> tkinter.Toplevel:
+    window = tkinter.Toplevel()
+    window.transient(get_main_window())
+    window.title("Pasting...")
+    window.geometry('350x150')
+    window.resizable(False, False)
+    window.protocol('WM_DELETE_WINDOW', paste.cancel)
 
-    def __init__(self, pastebin_name: str,
-                 code: str, lexer_class: LexerMeta) -> None:
-        self.pastebin_name = pastebin_name
-        self.content = code
-        self.lexer_class = lexer_class
-        self.please_wait_window: Optional[tkinter.Toplevel] = None
+    content = ttk.Frame(window)
+    content.pack(fill='both', expand=True)
 
-    def make_please_wait_window(self) -> None:
-        window = self.please_wait_window = tkinter.Toplevel()
-        window.transient(get_main_window())
-        window.title("Pasting...")
-        window.geometry('350x150')
-        window.resizable(False, False)
+    label = ttk.Label(content, font=('', 12, ()), text=f"Pasting to {type(paste).name}, please wait...")
+    label.pack(expand=True)
 
-        # disable the close button, there's no way to cancel this forcefully :(
-        window.protocol('WM_DELETE_WINDOW', (lambda: None))
+    progressbar = ttk.Progressbar(content, mode='indeterminate')
+    progressbar.pack(fill='x', padx=15, pady=15)
+    progressbar.start()
 
-        content = ttk.Frame(window)
-        content.pack(fill='both', expand=True)
+    ttk.Button(content, text="Cancel", command=paste.cancel).pack(pady=15)
 
-        label = ttk.Label(
-            content, font=('', 12, ()),
-            text=f"Pasting to {self.pastebin_name}, please wait...")
-        label.pack(expand=True)
-
-        progressbar = ttk.Progressbar(content, mode='indeterminate')
-        progressbar.pack(fill='x', padx=15, pady=15)
-        progressbar.start()
-
-    def start(self) -> None:
-        log.debug(f"starting to paste to {self.pastebin_name}")
-        get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
-        self.make_please_wait_window()
-        paste_it = functools.partial(
-            pastebins[self.pastebin_name], self.content, self.lexer_class)
-        utils.run_in_thread(paste_it, self.done_callback)
-
-    def done_callback(self, success: bool, result: str) -> None:
-        get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
-        assert self.please_wait_window is not None
-        self.please_wait_window.destroy()
-
-        if success:
-            log.info("pasting succeeded")
-            dialog = SuccessDialog(result)
-            dialog.title("Pasting Succeeded")
-            dialog.geometry('450x150')
-            dialog.transient(get_main_window())
-            dialog.wait_window()
-        else:
-            # result is the traceback as a string
-            log.error(f"pasting failed\n{result}")
-            utils.errordialog(
-                "Pasting Failed",
-                ("Check your internet connection and try again.\n\n" +
-                 "Here's the full error message:"),
-                monospace_text=result)
+    get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
+    return window
 
 
-def start_pasting(pastebin_name: str) -> None:
+def pasting_done_callback(paste: Paste, please_wait_window: tkinter.Toplevel, success: bool, result: str) -> None:
+    get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
+    please_wait_window.destroy()
+
+    if success:
+        # TODO: as a sanity check, make sure it starts with http:// or https://
+        #   - dpaste can send blank pastes
+        #   - termbin can say "Use netcat."
+        log.info("pasting succeeded")
+        dialog = SuccessDialog(url=result)
+        dialog.title("Pasting Succeeded")
+        dialog.geometry('450x150')
+        dialog.transient(get_main_window())
+        dialog.wait_window()
+    elif paste.canceled:
+        # Log error with less dramatic log level and don't show in GUI
+        log.debug("Pasting failed and was cancelled. Here is the error.", exc_info=True)
+    else:
+        # result is the traceback as a string
+        log.error(f"pasting failed\n{result}")
+        utils.errordialog(
+            "Pasting Failed",
+            ("Check your internet connection and try again.\n\n" +
+             "Here's the full error message:"),
+            monospace_text=result)
+
+
+def start_pasting(paste_class: Type[Paste]) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
 
+    lexer_class = tab.settings.get('pygments_lexer', LexerMeta)
     try:
+        # TODO: document this feature?
         code = tab.textwidget.get('sel.first', 'sel.last')
     except tkinter.TclError:
         # nothing is selected, pastebin everything
         code = tab.textwidget.get('1.0', 'end - 1 char')
 
-    Paste(pastebin_name, code, tab.settings.get('pygments_lexer', LexerMeta)).start()
+    paste = paste_class()
+    plz_wait = make_please_wait_window(paste)
+    utils.run_in_thread(partial(paste.run, code, lexer_class), partial(pasting_done_callback, paste, plz_wait))
 
 
 def setup() -> None:
-    for name in sorted(pastebins, key=str.casefold):
-        menubar.get_menu("Share").add_command(label=name, command=functools.partial(start_pasting, name))
-        assert '/' not in name
-        menubar.set_enabled_based_on_tab(f"Share/{name}", (lambda tab: isinstance(tab, tabs.FileTab)))
+    for klass in [Dpaste, Termbin]:
+        menubar.get_menu("Share").add_command(label=klass.name, command=partial(start_pasting, klass))
+        assert '/' not in klass.name
+        menubar.set_enabled_based_on_tab(f"Share/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab)))

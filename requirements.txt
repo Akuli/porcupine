@@ -1,5 +1,4 @@
 appdirs>=1.4.4
-requests>=2.24.0, <3.0.0
 # pygments version fixed because haxx in highlight plugin
 Pygments==2.7.4
 toposort>=1.5
