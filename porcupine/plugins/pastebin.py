@@ -5,15 +5,14 @@ then only the selected part of the file is shared.
 """
 # TODO: make this work with pythonprompt plugin?
 
-import ssl
 import logging
 import socket
+import ssl
 import tkinter
-from tkinter import messagebox
 import webbrowser
 from functools import partial
 from http.client import HTTPConnection, HTTPSConnection
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import Any, ClassVar, Optional, Type, Union, cast
 from urllib.parse import urlencode
 from urllib.request import HTTPSHandler, Request, build_opener
