@@ -234,7 +234,7 @@ class Finder(ttk.Frame):
         for start_index in self._get_matches_to_highlight(looking4):
             self._textwidget.tag_add(
                 'find_highlight', start_index,
-                '%s + %d chars' % (start_index, len(looking4)))
+                f'{start_index} + {len(looking4)} chars')
             count += 1
 
         self._update_buttons()

@@ -31,19 +31,19 @@ def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkint
         end += 1
 
     gonna_uncomment = all(
-        tab.textwidget.get('%d.0' % lineno, '%d.1' % lineno) == comment_prefix
+        tab.textwidget.get(f'{lineno}.0', f'{lineno}.1') == comment_prefix
         for lineno in range(start, end))
 
     with textwidget.change_batch(tab.textwidget):
         for lineno in range(start, end):
             if gonna_uncomment:
-                tab.textwidget.delete('%d.0' % lineno, '%d.1' % lineno)
+                tab.textwidget.delete(f'{lineno}.0', f'{lineno}.1')
             else:
-                tab.textwidget.insert('%d.0' % lineno, comment_prefix)
+                tab.textwidget.insert(f'{lineno}.0', comment_prefix)
 
     # select everything on the (un)commented lines
     tab.textwidget.tag_remove('sel', '1.0', 'end')
-    tab.textwidget.tag_add('sel', '%d.0' % start, '%d.0' % end)
+    tab.textwidget.tag_add('sel', f'{start}.0', f'{end}.0')
     return 'break'
 
 

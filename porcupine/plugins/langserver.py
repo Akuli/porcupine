@@ -222,10 +222,10 @@ def get_completion_item_doc(item: lsp.CompletionItem) -> str:
 
 def exit_code_string(exit_code: int) -> str:
     if exit_code >= 0:
-        return "exited with code %d" % exit_code
+        return f"exited with code {exit_code}"
 
     signal_number = abs(exit_code)
-    result = "was killed by signal %d" % signal_number
+    result = f"was killed by signal {signal_number}"
 
     try:
         result += " (" + signal.Signals(signal_number).name + ")"

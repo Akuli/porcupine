@@ -55,7 +55,7 @@ class PopManager:
 
         left = event.x_root - (self._label.winfo_reqwidth() // 2)  # centered
         top = event.y_root - self._label.winfo_reqheight()      # above cursor
-        self._window.geometry('+%d+%d' % (left, top))
+        self._window.geometry(f'+{left}+{top}')
 
     # no need to return 'break' imo, other plugins are free to follow
     # drags and drops

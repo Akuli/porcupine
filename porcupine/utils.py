@@ -221,7 +221,7 @@ class _TooltipManager:
         if self.got_mouse:
             self.destroy_tipwindow()
             tipwindow = type(self).tipwindow = tkinter.Toplevel()
-            tipwindow.geometry('+%d+%d' % (self.mousex+10, self.mousey-10))
+            tipwindow.geometry(f'+{self.mousex + 10}+{self.mousey - 10}')
             tipwindow.bind('<Motion>', self.destroy_tipwindow, add=True)
             tipwindow.overrideredirect(True)
 

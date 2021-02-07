@@ -651,7 +651,7 @@ class MainText(tkinter.Text):
 
             if event.keysym == 'BackSpace':
                 lineno = int(self.index('insert').split('.')[0])
-                before_cursor = self.get('%d.0' % lineno, 'insert')
+                before_cursor = self.get(f'{lineno}.0', 'insert')
                 if before_cursor and before_cursor.isspace():
                     self.dedent('insert')
                     return 'break'
