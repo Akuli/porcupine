@@ -152,8 +152,14 @@ def _walk_menu_contents(
 
 # this doesn't handle all possible cases, see bind(3tk)
 def _get_keyboard_shortcut(binding: str) -> str:
-    return binding.lstrip('<').rstrip('>').replace('Mod1', 'Command').replace('Key-', '')
-    mac = (get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
+    if get_main_window().tk.call('tk', 'windowingsystem') == 'aqua':
+        # Macs are special https://stackoverflow.com/a/16901173
+        return '-'.join(
+            'Command' if part == 'Mod1' else part
+            for part in binding.lstrip('<').rstrip('>').split('-')
+            if part != 'Key'
+        )
+
     result = []
 
     for part in binding.lstrip('<').rstrip('>').split('-'):
@@ -170,34 +176,14 @@ def _get_keyboard_shortcut(binding: str) -> str:
         elif len(part) == 1 and part in ascii_uppercase:
             result.append('Shift')
             result.append(part)
-        elif part == '0' and not mac:
-            # 0 and O look too much like each other, but not with mac default font
+        elif part == '0':
+            # 0 and O look too much like each other
             result.append('Zero')
-        elif part == 'Plus' and mac:
-            result.append('+')
-        elif part == 'Minus' and mac:
-            result.append('-')
-        elif part == 'Mod1' and mac:
-            # weird way to spell Command, returned by event_info()
-            result.append('Command')
         else:
             # good enough guess :D
             result.append(part.capitalize())
 
-    if mac:
-        # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
-        fancy_unicodes = [
-            ('Shift', '⇧'),
-            ('Ctrl', '⌃'),   # this is NOT the ascii hat character, it's a different hat
-            ('Alt', '⌥'),
-            ('Command', '⌘'),
-        ]
-        for old, new in reversed(fancy_unicodes):
-            if old in result:
-                result.remove(old)
-                result.insert(0, new)   # reversed(mac_table) because inserting to beginning
-
-    return ('' if mac else '+').join(result)
+    return '+'.join(result)
 
 
 def _menu_event_handler(menu: tkinter.Menu, index: int, junk: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:

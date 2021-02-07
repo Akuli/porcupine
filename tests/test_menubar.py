@@ -7,13 +7,15 @@ from porcupine.menubar import _get_keyboard_shortcut
 
 def test_get_keyboard_shortcut():
     if platform.system() == 'Darwin':
-        assert _get_keyboard_shortcut('<Command-c>') == '⌘C'
-        assert _get_keyboard_shortcut('<Mod1-Key-c>') == '⌘C'
-        assert _get_keyboard_shortcut('<Command-C>') == '⇧⌘C'
-        assert _get_keyboard_shortcut('<Command-Plus>') == '⌘+'
-        assert _get_keyboard_shortcut('<Command-Minus>') == '⌘-'
-        assert _get_keyboard_shortcut('<Command-0>') == '⌘0'
-        assert _get_keyboard_shortcut('<Command-1>') == '⌘1'
+        # Tk will show these with the proper symbols and stuff
+        assert _get_keyboard_shortcut('<Command-c>') == 'Command-c'
+        assert _get_keyboard_shortcut('<Mod1-Key-c>') == 'Command-c'
+        # TODO: verify if the rest of these are correct:
+        assert _get_keyboard_shortcut('<Command-C>') == 'Command-C'
+        assert _get_keyboard_shortcut('<Command-Plus>') == 'Command-Plus'
+        assert _get_keyboard_shortcut('<Command-Minus>') == 'Command-Minus'
+        assert _get_keyboard_shortcut('<Command-0>') == 'Command-0'
+        assert _get_keyboard_shortcut('<Command-1>') == 'Command-1'
     else:
         assert _get_keyboard_shortcut('<Control-c>') == 'Ctrl+C'
         assert _get_keyboard_shortcut('<Control-Key-c>') == 'Ctrl+C'
