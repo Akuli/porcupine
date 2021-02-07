@@ -25,7 +25,7 @@ LINE_THICKNESS = 1
 # This means that all of the text has to be selected all the time.
 class Overview(tkinter.Text):
 
-    def __init__(self, master: tkinter.BaseWidget, tab: tabs.FileTab) -> None:
+    def __init__(self, master: tkinter.Misc, tab: tabs.FileTab) -> None:
         super().__init__(master)
         textwidget.create_peer_widget(tab.textwidget, self)
         self.config(

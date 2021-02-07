@@ -25,7 +25,7 @@ class Finder(ttk.Frame):
     Use the pack geometry manager with this widget.
     """
 
-    def __init__(self, parent: tkinter.BaseWidget, textwidget: tkinter.Text, **kwargs: Any) -> None:
+    def __init__(self, parent: tkinter.Misc, textwidget: tkinter.Text, **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
         self._textwidget = textwidget
 

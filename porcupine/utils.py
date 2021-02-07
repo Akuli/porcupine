@@ -356,7 +356,7 @@ class EventWithData(_Event):
 
 
 def bind_with_data(
-        widget: tkinter.BaseWidget,
+        widget: tkinter.Misc,
         sequence: str,
         callback: Callable[[EventWithData], Optional[str]],
         add: bool = False) -> str:
@@ -469,7 +469,7 @@ class TemporaryBind:
     The event objects are just like with :func:`bind_with_data`.
     """
 
-    def __init__(self, widget: tkinter.BaseWidget, sequence: str, func: Callable[[EventWithData], BreakOrNone]) -> None:
+    def __init__(self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], BreakOrNone]) -> None:
         self._widget = widget
         self._sequence = sequence
 
