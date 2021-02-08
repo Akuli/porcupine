@@ -10,8 +10,7 @@ import pathlib
 import tkinter
 import traceback
 from tkinter import filedialog, messagebox, ttk
-from typing import (Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Tuple, Type, TypeVar, Union,
-                    cast)
+from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
@@ -115,7 +114,7 @@ class TabManager(ttk.Notebook):
             selected = super().select()
             if not selected:        # no tabs, selected == ''
                 return None
-            return cast(Tab, self.nametowidget(str(selected)))
+            return self.nametowidget(str(selected))
 
         # the tab can be e.g. an index, that's why two super() calls
         super().select(tab_id)
@@ -128,11 +127,8 @@ class TabManager(ttk.Notebook):
         tkinter.
         """
         # tkinter has a bug that makes the original tabs() return widget name
-        # strings instead of widget objects, and this str()'s the tabs just in
-        # case it is fixed later: str(widget object) and str(widget name) both
-        # give the widget name consistently
-        return tuple(cast(Tab, self.nametowidget(str(tab)))
-                     for tab in super().tabs())
+        # strings instead of widget objects
+        return tuple(self.nametowidget(tab) for tab in super().tabs())
 
     def add_tab(self, tab: 'Tab', select: bool = True) -> 'Tab':
         """Append a :class:`.Tab` to this tab manager.

@@ -7,7 +7,7 @@ import traceback
 import webbrowser
 from string import ascii_lowercase, ascii_uppercase
 from tkinter import filedialog
-from typing import Callable, Iterator, Optional, Sequence, Tuple, cast
+from typing import Callable, Iterator, Optional, Sequence, Tuple
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -91,7 +91,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
     If *path* is ``None``, then the menubar itself is returned.
     """
     main_window = get_main_window()
-    main_menu = cast(tkinter.Menu, main_window.nametowidget(main_window.cget('menu')))
+    main_menu: tkinter.Menu = main_window.nametowidget(main_window.cget('menu'))
     if path is None:
         return main_menu
 
@@ -114,7 +114,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
             menu = submenu
 
         else:
-            menu = cast(tkinter.Menu, menu.nametowidget(menu.entrycget(submenu_index, 'menu')))
+            menu = menu.nametowidget(menu.entrycget(submenu_index, 'menu'))
 
     return menu
 
@@ -142,7 +142,7 @@ def _walk_menu_contents(
     if last_index is not None:   # menu not empty
         for index in range(last_index + 1):
             if menu.type(index) == 'cascade':
-                submenu = cast(tkinter.Menu, menu.nametowidget(menu.entrycget(index, 'menu')))
+                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, 'menu'))
                 new_prefix = path_prefix + menu.entrycget(index, 'label') + '/'
                 yield from _walk_menu_contents(submenu, new_prefix)
             elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:
