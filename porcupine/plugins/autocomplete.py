@@ -497,7 +497,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if not isinstance(tab, tabs.FileTab):
         return
 
-    tab.settings.add_option('autocomplete_chars', [], type=List[str])
+    tab.settings.add_option('autocomplete_chars', [], List[str])
 
     completer = AutoCompleter(tab)
 

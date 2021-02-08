@@ -147,10 +147,10 @@ class Foo:
 def test_dataclass():
     settings_obj = settings.Settings(None, '<<Foo:{}>>')
 
-    settings_obj.add_option('foo', None, type=Optional[Foo])
+    settings_obj.add_option('foo', None, Optional[Foo])
     settings_obj.set('foo', {'how_many': 123, 'message': 'hello'}, from_config=True)
     settings_obj.set('bar', {'how_many': 456, 'message': 'hi'}, from_config=True)
-    settings_obj.add_option('bar', None, type=Optional[Foo])
+    settings_obj.add_option('bar', None, Optional[Foo])
 
     assert settings_obj.get('foo', Foo) == Foo(123, 'hello')
     assert settings_obj.get('bar', Foo) == Foo(456, 'hi')
@@ -158,7 +158,7 @@ def test_dataclass():
 
 def test_debug_dump(capsys):
     settings_obj = settings.Settings(None, '<<Foo:{}>>')
-    settings_obj.add_option('foo', None, type=Optional[str])
+    settings_obj.add_option('foo', None, Optional[str])
     settings_obj.set('bar', ['a', 'b', 'c'], from_config=True)
     settings_obj.debug_dump()
 

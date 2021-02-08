@@ -1,5 +1,4 @@
 import atexit
-import builtins
 import copy
 import dataclasses
 import enum
@@ -69,23 +68,23 @@ class LineEnding(enum.Enum):
     CRLF = '\r\n'
 
 
-def _type_check(tybe: type, obj: object) -> object:
+def _type_check(type_: type, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
-        value: tybe  # type: ignore[valid-type]
+        value: type_  # type: ignore[valid-type]
 
     return dacite.from_dict(ValueContainer, {'value': obj}).value
 
 
 class _Option:
 
-    def __init__(self, name: str, default: object, tybe: Any, converter: Callable[[Any], Any]) -> None:
-        default = _type_check(tybe, default)
+    def __init__(self, name: str, default: object, type_: Any, converter: Callable[[Any], Any]) -> None:
+        default = _type_check(type_, default)
         self.name = name
         self.value = default
         self.default = default
-        self.type = tybe
+        self.type = type_
         self.converter = converter
 
 
@@ -113,8 +112,8 @@ class Settings:
         self,
         option_name: str,
         default: Any,
+        type_: Optional[Any] = None,
         *,
-        type: Optional[Any] = None,
         converter: Callable[[Any], Any] = (lambda x: x),
     ) -> None:
         """Add a custom option.
@@ -151,12 +150,11 @@ class Settings:
         if option_name in self._options:
             raise RuntimeError(f"there's already an option named {option_name!r}")
 
-        if type is None:
-            # using type as variable name, wanna access built-in named 'type'
-            type = builtins.type(default)
-        assert type is not None
+        if type_ is None:
+            type_ = type(default)
+        assert type_ is not None
 
-        option = _Option(option_name, default, type, converter)
+        option = _Option(option_name, default, type_, converter)
         self._options[option_name] = option
 
         try:
@@ -223,20 +221,20 @@ class Settings:
     # I don't like how this requires overloads for every type
     # https://stackoverflow.com/q/61471700
     @overload
-    def get(self, option_name: str, type: Type[pathlib.Path]) -> pathlib.Path: ...
+    def get(self, option_name: str, type_: Type[pathlib.Path]) -> pathlib.Path: ...
     @overload
-    def get(self, option_name: str, type: Type[LineEnding]) -> LineEnding: ...
+    def get(self, option_name: str, type_: Type[LineEnding]) -> LineEnding: ...
     @overload
-    def get(self, option_name: str, type: Type[str]) -> str: ...
+    def get(self, option_name: str, type_: Type[str]) -> str: ...
     @overload
-    def get(self, option_name: str, type: Type[int]) -> int: ...
+    def get(self, option_name: str, type_: Type[int]) -> int: ...
     @overload
-    def get(self, option_name: str, type: object) -> Any: ...
+    def get(self, option_name: str, type_: object) -> Any: ...
 
-    def get(self, option_name: str, type: Any) -> Any:
+    def get(self, option_name: str, type_: Any) -> Any:
         """
         Return the current value of an option.
-        *type* should be ``str`` or ``int`` depending on what type the option is.
+        *type_* should be e.g. ``str`` or ``int`` depending on what type the option is.
         You can also specify ``object`` to allow any type.
 
         This method works correctly for :class:`str` and :class:`int`,
@@ -262,7 +260,7 @@ class Settings:
         time the value changes.
         """
         result = self._options[option_name].value
-        result = _type_check(type, result)
+        result = _type_check(type_, result)
         return copy.deepcopy(result)  # mutating wouldn't trigger change events
 
     def debug_dump(self) -> None:
@@ -363,7 +361,7 @@ def init_enough_for_using_disabled_plugins_list() -> None:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {_get_json_path()} failed")
-    add_option('disabled_plugins', [], type=List[str])
+    add_option('disabled_plugins', [], List[str])
 
 
 def _init_global_gui_settings() -> None:
@@ -501,7 +499,7 @@ _StrOrInt = TypeVar('_StrOrInt', str, int)
 def _create_validation_triangle(
     widget: ttk.Entry,
     option_name: str,
-    tybe: Type[_StrOrInt],
+    type_: Type[_StrOrInt],
     callback: Callable[[_StrOrInt], bool],
 ) -> ttk.Label:
 
@@ -513,7 +511,7 @@ def _create_validation_triangle(
 
         value: Optional[_StrOrInt]
         try:
-            value = tybe(value_string)
+            value = type_(value_string)
         except ValueError:   # e.g. int('foo')
             value = None
         else:
