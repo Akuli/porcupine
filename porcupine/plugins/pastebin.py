@@ -99,7 +99,7 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
         super().__init__(*args, **kwargs)
         self._dpaste = dpaste
 
-    # https://github.com/python/mypy/issues
+    # https://github.com/python/mypy/issues/10049
     @property     # type: ignore
     def sock(self) -> Union[socket.socket, ssl.SSLSocket]:   # type: ignore
         return self.__sock
