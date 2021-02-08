@@ -20,7 +20,7 @@ import subprocess
 import threading
 import time
 from functools import partial
-from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union
 
 if platform.system() != 'Windows':
     import fcntl
@@ -198,7 +198,7 @@ def get_completion_item_doc(item: lsp.CompletionItem) -> str:
     else:
         result = item.label
 
-    return cast(str, result)
+    return result
 
 
 def exit_code_string(exit_code: int) -> str:

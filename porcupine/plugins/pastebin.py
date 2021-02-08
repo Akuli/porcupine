@@ -87,7 +87,7 @@ class MyHTTPConnection(HTTPConnection):
     def connect(self) -> None:
         # Unlike HTTPConnection.connect, this creates the socket so that it is
         # assinged to self.sock before it's connected.
-        self.sock = socket.socket()
+        self.sock: Union[socket.socket, ssl.SSLSocket] = socket.socket()
         self.sock.connect((self.host, self.port))
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
@@ -99,8 +99,9 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
         super().__init__(*args, **kwargs)
         self._dpaste = dpaste
 
-    @property
-    def sock(self) -> Union[socket.socket, ssl.SSLSocket]:
+    # https://github.com/python/mypy/issues
+    @property     # type: ignore
+    def sock(self) -> Union[socket.socket, ssl.SSLSocket]:   # type: ignore
         return self.__sock
 
     @sock.setter

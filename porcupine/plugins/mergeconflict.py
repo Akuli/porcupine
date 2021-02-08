@@ -152,6 +152,7 @@ def setup_displayers(tab: tabs.FileTab) -> None:
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         setup_displayers(tab)
+        # https://github.com/python/mypy/issues/9658
         tab.bind('<<Reloaded>>', (lambda event: setup_displayers(cast(tabs.FileTab, tab))), add=True)
         tab.textwidget.bind('<Enter>', (
             # This runs after clicking "Use this" button, mouse <Enter>s text widget
