@@ -21,7 +21,6 @@ class StatusBar(ttk.Frame):
         line, column = self.tab.textwidget.index('insert').split('.')
         self.right_label.config(text=f"Line {line}, column {column}")
 
-    # TODO: it's likely not ctrl+z on mac
     def show_reload_warning(self, event: utils.EventWithData) -> None:
         if event.data_class(tabs.ReloadInfo).was_modified:
             keys = '⌘Z' if get_tab_manager().tk.call('tk', 'windowingsystem') == 'aqua' else 'Ctrl+Z'
