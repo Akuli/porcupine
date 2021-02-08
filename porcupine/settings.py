@@ -665,7 +665,6 @@ def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, d
     # don't know why after_idle is needed, but it is
     panedwindow.bind('<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True)
     panedwindow.bind('<<DividersFromSettings>>', settings2panedwindow, add=True)
-    panedwindow.bind('<Unmap>', panedwindow2settings, add=True)
     panedwindow.bind('<ButtonRelease-1>', panedwindow2settings, add=True)
 
 

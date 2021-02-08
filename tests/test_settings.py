@@ -200,13 +200,13 @@ def test_remember_panedwindow_positions(toplevel):
     pw = ttk.PanedWindow(toplevel, orient='horizontal')
     settings.remember_divider_positions(pw, 'pw_dividers', [123])
     pw.pack(fill='both', expand=True)
-    pw.pack()
 
     pw.add(ttk.Label(pw, text="aaaaaaaaaaa"))
     pw.add(ttk.Label(pw, text="bbbbbbbbbbb"))
 
     pw.update()
     assert pw.sashpos(0) == 123
+
     pw.sashpos(0, 456)
-    pw.pack_forget()   # doesn't work with .destroy(), but should work when user drags with mouse
+    pw.event_generate('<ButtonRelease-1>')   # happens after user drags pane
     assert settings.get('pw_dividers', List[int]) == [456]
