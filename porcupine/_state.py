@@ -6,7 +6,7 @@ import types
 from tkinter import ttk
 from typing import Any, Dict, Optional, Type
 
-from porcupine import tabs
+from porcupine import settings, tabs
 
 log = logging.getLogger(__name__)
 
@@ -39,11 +39,12 @@ def init(args: Any) -> None:
     _root.report_callback_exception = _log_tkinter_error
 
     _paned_window = ttk.Panedwindow(_root, orient='horizontal')
+    settings.remember_divider_positions(_paned_window, 'main_panedwindow_dividers', [250])
+    _root.bind('<<PluginsLoaded>>', (lambda event: _paned_window.event_generate('<<DividersFromSettings>>')), add=True)
+    _paned_window.pack(fill='both', expand=True)
 
     _tab_manager = tabs.TabManager(_paned_window)
-
     _paned_window.add(_tab_manager)
-    _paned_window.pack(fill='both', expand=True)
 
     log.debug("init() done")
 

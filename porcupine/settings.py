@@ -648,9 +648,10 @@ def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, d
     add_option(option_name, defaults, List[int], exist_ok=True)
 
     # don't know why after_idle is needed, but it is
-    def settings2panedwindow() -> None:
+    def settings2panedwindow(junk: object = None) -> None:
         value = get(option_name, List[int])
         if len(value) == len(panedwindow.panes()) - 1:
+            _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
             for index, pos in enumerate(value):
                 panedwindow.sashpos(index, pos)
         else:
@@ -659,11 +660,12 @@ def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, d
                 f"{option_name} is set to {value}, of length {len(value)}, "
                 f"but there are {len(panedwindow.panes())} panes")
 
-    def panedwindow2settings(event: object) -> None:
+    def panedwindow2settings(junk: object) -> None:
         set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
 
     # don't know why after_idle is needed, but it is
     panedwindow.bind('<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True)
+    panedwindow.bind('<<DividersFromSettings>>', settings2panedwindow, add=True)
     panedwindow.bind('<Unmap>', panedwindow2settings, add=True)
     panedwindow.bind('<ButtonRelease-1>', panedwindow2settings, add=True)
 
