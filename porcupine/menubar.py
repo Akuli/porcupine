@@ -197,8 +197,8 @@ def update_keyboard_shortcuts() -> None:
     This function does two things to the *New File* menu item in the *File*
     menu, and similarly to all other menu items in all menus:
 
-        * Show *Ctrl+N* next to *New File*.
-        * Ensure that the menu item's callback runs when Ctrl+N is pressed.
+        * Show *Ctrl+N* (or *⌘N* on Mac) next to *New File*.
+        * Ensure that the menu item's callback runs when Ctrl+N (or Command+N) is pressed.
 
     This has to be called when menus or keyboard shortcuts have been modified.
     It's called automatically when a plugin has been set up.

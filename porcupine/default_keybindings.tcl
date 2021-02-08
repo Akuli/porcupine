@@ -51,7 +51,7 @@ for {set i 1} {$i <= 9} {incr i} {
 }
 
 # more_plugins/terminal.py
-# upper-case T means Ctrl+Shift+T
+# upper-case T means Ctrl+Shift+T or Command+Shift+T
 # I use non-shifted ctrl+t for swapping two characters before cursor while editing
 event add "<<Menubar:Tools/Terminal>>" <$contmand-T>
 

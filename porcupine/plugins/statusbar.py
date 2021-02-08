@@ -24,9 +24,10 @@ class StatusBar(ttk.Frame):
     # TODO: it's likely not ctrl+z on mac
     def show_reload_warning(self, event: utils.EventWithData) -> None:
         if event.data_class(tabs.ReloadInfo).was_modified:
+            keys = '⌘Z' if get_tab_manager().tk.call('tk', 'windowingsystem') == 'aqua' else 'Ctrl+Z'
             self.left_label.config(
                 foreground='red',
-                text="File was reloaded with unsaved changes. Press Ctrl+Z to get your changes back.",
+                text=f"File was reloaded with unsaved changes. Press {keys} to get your changes back.",
             )
 
     def clear_reload_warning(self, junk: object) -> None:

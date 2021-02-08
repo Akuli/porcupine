@@ -382,7 +382,7 @@ class FileTab(Tab):
     """A subclass of :class:`.Tab` that represents an opened file.
 
     The filetab will have *content* in it by default when it's opened. If
-    *path* is given, the file will be saved there when Ctrl+S is
+    *path* is given, the file will be saved there when Ctrl+S (or ⌘S on Mac) is
     pressed. Otherwise this becomes a "New File" tab.
 
     If you want to open a new tab for editing an existing file,

@@ -6,7 +6,9 @@ from tkinter import ttk
 
 from porcupine import get_tab_manager, images, tabs
 
-MESSAGE = """
+
+def get_message():
+    result = """
 To get started, create a new file by pressing Ctrl+N or open an existing
 file by pressing Ctrl+O. You can save the file with Ctrl+S and then run it by
 pressing F5.
@@ -14,9 +16,12 @@ pressing F5.
 See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
 """
+    if get_tab_manager().tk.call('tk', 'windowingsystem') == 'aqua':
+        result = result.replace('Ctrl+', '⌘')
 
-# replace single newlines with spaces
-MESSAGE = re.sub(r'(.)\n(.)', r'\1 \2', MESSAGE.strip())
+    # replace single newlines with spaces
+    return re.sub(r'(.)\n(.)', r'\1 \2', result.strip())
+
 
 BORDER_SIZE = 30    # pixels
 
@@ -40,7 +45,7 @@ class WelcomeMessageDisplayer:
         self.title_label.place(relx=0.5, rely=0.5, anchor='center')
 
         self.message_label = ttk.Label(
-            self._frame, text=MESSAGE, font=('', 15, ''))
+            self._frame, text=get_message(), font=('', 15, ''))
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()
