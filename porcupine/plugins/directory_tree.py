@@ -143,19 +143,21 @@ class DirectoryTree(ttk.Treeview):
         self.hide_old_projects()
 
         # This must not be an iterator, otherwise thread calls self.get_path which does tkinter stuff
-        paths = list(map(self.get_path, self.get_children()))
+        paths = {child_id: self.get_path(child_id) for child_id in self.get_children()}
 
         def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
-            return {path: run_git_status(path) for path in paths}
+            return {path: run_git_status(path) for path in paths.values()}
 
         def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]) -> None:
-            if success:
+            if success and set(self.get_children()) == paths.keys():
                 assert not isinstance(result, str)
                 self.git_statuses = result
                 self.open_and_refresh_directory(None, '')
                 log.debug("refreshing done")
+            elif success:
+                log.info("projects added/removed while refreshing, assuming another fresh is coming soon")
             else:
-                log.error(f"error in git status running thread\n{result}")
+                log.error("error in git status running thread\n" + result)
 
         utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
