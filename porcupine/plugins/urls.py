@@ -46,11 +46,12 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
 def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
     view_start = tab.textwidget.index('@0,0')
     view_end = tab.textwidget.index('@0,10000')
+    magic_key = 'cmd' if tab.tk.call('tk', 'windowingsystem') == "aqua" else 'ctrl'
 
     tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
         id='urls',
         underline_list=[
-            underlines.Underline(start, end, "ctrl+click or ctrl+enter to open")
+            underlines.Underline(start, end, f"{magic_key}+click or {magic_key}+enter to open")
             for start, end in find_urls(tab.textwidget, view_start, view_end)
         ],
     ))
