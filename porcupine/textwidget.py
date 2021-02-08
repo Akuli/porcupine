@@ -471,7 +471,7 @@ def create_peer_widget(
 
     For details, see the ``PEER WIDGETS`` section in
     `text(3tk) <https://www.tcl.tk/man/tcl8.7/TkCmd/text.htm>`_.
-    This is useful for e.g. :source:`porcupine/plugins/overview.py`.
+    This is useful for e.g. :source:`porcupine/plugins/minimap.py`.
 
     .. warning::
         This does **not** create a red text widget::

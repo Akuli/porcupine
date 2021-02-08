@@ -1,4 +1,4 @@
-"""Display an overview with small font at the right of the file being edited."""
+"""Display the contents of the file being edited with small font on the side."""
 
 import sys
 import tkinter
@@ -17,13 +17,13 @@ LINE_THICKNESS = 1
 # a font so that you only tell it to bold and nothing more, but then it just
 # chooses a default size that is not widget-specific. This means that we need
 # a way to override the font of a tag (it doesn't matter if we don't get bolded
-# text in the overview). The only way to override a font is to use another tag
+# text in the minimap). The only way to override a font is to use another tag
 # that has a higher priority.
 #
 # There is only one tag that is not common to both widgets, sel. It represents
 # the text being selected, and we abuse it for setting the smaller font size.
 # This means that all of the text has to be selected all the time.
-class Overview(tkinter.Text):
+class MiniMap(tkinter.Text):
 
     def __init__(self, master: tkinter.Misc, tab: tabs.FileTab) -> None:
         super().__init__(master)
@@ -133,13 +133,13 @@ class Overview(tkinter.Text):
             # this does not take in account wrap plugin
             how_tall_are_lines_on_editor: int = self._tab.tk.call(
                 'font', 'metrics', self._tab.textwidget.cget('font'), '-linespace')
-            how_tall_are_lines_on_overview: int = self._tab.tk.call(
+            how_tall_are_lines_on_minimap: int = self._tab.tk.call(
                 'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace')
             editor_height: int = self._tab.textwidget.winfo_height()
             how_many_lines_fit_on_editor = editor_height / how_tall_are_lines_on_editor
 
             vast_top = 0
-            vast_bottom = int(how_many_lines_fit_on_editor * how_tall_are_lines_on_overview)
+            vast_bottom = int(how_many_lines_fit_on_editor * how_tall_are_lines_on_minimap)
 
         else:
             if start_bbox is None:
@@ -183,9 +183,9 @@ class Overview(tkinter.Text):
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        overview = Overview(tab.right_frame, tab)
-        textwidget.use_pygments_theme(overview, overview.set_colors)
-        overview.pack(fill='y', expand=True)
+        minimap = MiniMap(tab.right_frame, tab)
+        textwidget.use_pygments_theme(minimap, minimap.set_colors)
+        minimap.pack(fill='y', expand=True)
 
 
 def setup() -> None:
