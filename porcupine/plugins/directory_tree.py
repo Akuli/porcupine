@@ -85,7 +85,7 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('git_untracked', foreground='red4')
         self.tag_configure('git_ignored', foreground=gray)
 
-    def add_project(self, root_path: pathlib.Path) -> None:
+    def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> None:
         for project_item_id in self.get_children():
             path = self.get_path(project_item_id)
             if path == root_path or path in root_path.parents:
@@ -107,7 +107,8 @@ class DirectoryTree(ttk.Treeview):
         project_item_id = self.insert('', 0, text=text, values=[root_path], tags=['dir', 'project'], open=False)
         self._insert_dummy(project_item_id)
         self.hide_old_projects()
-        self.refresh_everything()
+        if refresh:
+            self.refresh_everything()
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
@@ -295,4 +296,5 @@ def setup() -> None:
     string_paths = settings.get('directory_tree_projects', List[str])
     for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT]):
         if path.is_absolute() and path.is_dir():
-            tree.add_project(path)
+            tree.add_project(path, refresh=False)
+    tree.refresh_everything()
