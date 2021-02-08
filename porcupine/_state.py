@@ -40,7 +40,9 @@ def init(args: Any) -> None:
 
     _paned_window = ttk.Panedwindow(_root, orient='horizontal')
     settings.remember_divider_positions(_paned_window, 'main_panedwindow_dividers', [250])
-    _root.bind('<<PluginsLoaded>>', (lambda event: _paned_window.event_generate('<<DividersFromSettings>>')), add=True)
+    _root.bind('<<PluginsLoaded>>', (
+        lambda event: get_paned_window().event_generate('<<DividersFromSettings>>')
+    ), add=True)
     _paned_window.pack(fill='both', expand=True)
 
     _tab_manager = tabs.TabManager(_paned_window)

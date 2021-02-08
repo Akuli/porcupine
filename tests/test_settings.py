@@ -1,9 +1,9 @@
-import tkinter
 import dataclasses
 import json
 import sys
-from tkinter.font import Font
+import tkinter
 from tkinter import ttk
+from tkinter.font import Font
 from typing import List, Optional
 
 import dacite
