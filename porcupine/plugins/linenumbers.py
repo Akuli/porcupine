@@ -21,6 +21,7 @@ class LineNumbers:
         textwidget.use_pygments_theme(self.canvas, self._set_colors)
         utils.add_scroll_command(textwidget_of_tab, 'yscrollcommand', self._do_update)
 
+        # https://github.com/python/typeshed/issues/5010
         textwidget_of_tab.bind('<<ContentChanged>>', (
             cast(None, lambda event: textwidget_of_tab.after_idle(self._do_update))
         ), add=True)

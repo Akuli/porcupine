@@ -7,7 +7,7 @@ import time
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -85,7 +85,7 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('git_untracked', foreground='red4')
         self.tag_configure('git_ignored', foreground=gray)
 
-    def add_project(self, root_path: pathlib.Path) -> None:
+    def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> None:
         for project_item_id in self.get_children():
             path = self.get_path(project_item_id)
             if path == root_path or path in root_path.parents:
@@ -107,7 +107,8 @@ class DirectoryTree(ttk.Treeview):
         project_item_id = self.insert('', 0, text=text, values=[root_path], tags=['dir', 'project'], open=False)
         self._insert_dummy(project_item_id)
         self.hide_old_projects()
-        self.refresh_everything()
+        if refresh:
+            self.refresh_everything()
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
@@ -142,17 +143,19 @@ class DirectoryTree(ttk.Treeview):
         self.hide_old_projects()
 
         # This must not be an iterator, otherwise thread calls self.get_path which does tkinter stuff
-        paths = list(map(self.get_path, self.get_children()))
+        paths = {child_id: self.get_path(child_id) for child_id in self.get_children()}
 
         def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
-            return {path: run_git_status(path) for path in paths}
+            return {path: run_git_status(path) for path in paths.values()}
 
         def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]) -> None:
-            if success:
+            if success and set(self.get_children()) == paths.keys():
                 assert not isinstance(result, str)
                 self.git_statuses = result
                 self.open_and_refresh_directory(None, '')
                 log.debug("refreshing done")
+            elif success:
+                log.info("projects added/removed while refreshing, assuming another fresh is coming soon")
             else:
                 log.error(f"error in git status running thread\n{result}")
 
@@ -272,7 +275,8 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
 
-        tab.bind('<<Save>>', tree.refresh_everything, add=True)
+        # https://github.com/python/typeshed/issues/5010
+        tab.bind('<<Save>>', (lambda event: cast(None, tab.after_idle(tree.refresh_everything))), add=True)
         tab.textwidget.bind('<FocusIn>', tree.refresh_everything, add=True)
 
 
@@ -295,4 +299,5 @@ def setup() -> None:
     string_paths = settings.get('directory_tree_projects', List[str])
     for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT]):
         if path.is_absolute() and path.is_dir():
-            tree.add_project(path)
+            tree.add_project(path, refresh=False)
+    tree.refresh_everything()
