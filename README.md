@@ -45,7 +45,10 @@ Open a terminal and run these commands:
     sudo apt install python3-tk python3-pip
     python3 -m pip install --user --upgrade pip wheel
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.86.0.zip
-    python3 -m porcupine &
+    python3 -m porcupine
+
+If you want to leave Porcupine running and use the same terminal for something else,
+you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
 
 ### Other Linux distributions
 
@@ -54,7 +57,10 @@ commands:
 
     python3 -m pip install --user --upgrade pip wheel
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.86.0.zip
-    python3 -m porcupine &
+    python3 -m porcupine
+
+If you want to leave Porcupine running and use the same terminal for something else,
+you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
 
 ### Mac OSX
 
