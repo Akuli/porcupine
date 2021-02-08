@@ -1,4 +1,5 @@
 import platform
+
 import pytest
 
 from porcupine import get_main_window, menubar, tabs, utils

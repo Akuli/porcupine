@@ -72,7 +72,8 @@ def on_new_tab(tab: tabs.Tab) -> None:
         utils.add_scroll_command(tab.textwidget, 'yscrollcommand', partial(update_url_underlines, tab))
         update_url_underlines(tab)
 
-        tab.textwidget.tag_bind('underline:urls', f'<{utils.contmand()}-Button-1>', partial(open_the_url, tab, 'current'), add=True)
+        tab.textwidget.tag_bind(
+            'underline:urls', f'<{utils.contmand()}-Button-1>', partial(open_the_url, tab, 'current'), add=True)
         tab.textwidget.bind(f'<{utils.contmand()}-Return>', partial(open_the_url, tab, 'insert'), add=True)
 
 
