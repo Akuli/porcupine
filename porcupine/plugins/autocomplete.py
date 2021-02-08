@@ -93,8 +93,8 @@ class _Popup:
         # in a future version of python.
         self._panedwindow = ttk.Panedwindow(
             self.toplevel, orient='horizontal')
-        self._panedwindow.pack(fill='both', expand=True)
         settings.remember_divider_positions(self._panedwindow, 'autocomplete_dividers', [200])
+        self._panedwindow.pack(fill='both', expand=True)
 
         left_pane = ttk.Frame(self._panedwindow)
         right_pane = ttk.Frame(self._panedwindow)

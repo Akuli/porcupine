@@ -1,8 +1,10 @@
+import tkinter
 import dataclasses
 import json
 import sys
-import tkinter.font
-from typing import Optional
+from tkinter.font import Font
+from tkinter import ttk
+from typing import List, Optional
 
 import dacite
 import pytest
@@ -134,7 +136,7 @@ def test_save(cleared_global_settings):
 
 
 def test_font_gets_updated():
-    fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
+    fixedfont = Font(name='TkFixedFont', exists=True)
 
     settings.set_('font_family', 'Helvetica')
     assert fixedfont.cget('family') == 'Helvetica'
@@ -184,3 +186,27 @@ def test_font_family_chooser():
     families = settings._get_monospace_font_families()
     assert len(families) == len(set(families)), "duplicates"
     assert families == sorted(families), "wrong order"
+
+
+@pytest.fixture
+def toplevel():
+    toplevel = tkinter.Toplevel()
+    toplevel.geometry('600x100')
+    yield toplevel
+    toplevel.destroy()
+
+
+def test_remember_panedwindow_positions(toplevel):
+    pw = ttk.PanedWindow(toplevel, orient='horizontal')
+    settings.remember_divider_positions(pw, 'pw_dividers', [123])
+    pw.pack(fill='both', expand=True)
+    pw.pack()
+
+    pw.add(ttk.Label(pw, text="aaaaaaaaaaa"))
+    pw.add(ttk.Label(pw, text="bbbbbbbbbbb"))
+
+    pw.update()
+    assert pw.sashpos(0) == 123
+    pw.sashpos(0, 456)
+    pw.pack_forget()   # doesn't work with .destroy(), but should work when user drags with mouse
+    assert settings.get('pw_dividers', List[int]) == [456]

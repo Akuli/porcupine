@@ -645,26 +645,27 @@ def add_label(text: str) -> ttk.Label:
 # TODO: document this
 def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, defaults: List[int]) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
-    add_option(option_name, defaults, type=List[int], exist_ok=True)
+    add_option(option_name, defaults, List[int], exist_ok=True)
 
     # don't know why after_idle is needed, but it is
     def settings2panedwindow() -> None:
         value = get(option_name, List[int])
-        for index, x_coordinate in enumerate(value):
-            panedwindow.sashpos(index, x_coordinate)
+        if len(value) == len(panedwindow.panes()) - 1:
+            for index, pos in enumerate(value):
+                panedwindow.sashpos(index, pos)
+        else:
+            # number of panes can change if e.g. a plugin is enabled/disabled
+            _log.info(
+                f"{option_name} is set to {value}, of length {len(value)}, "
+                f"but there are {len(panedwindow.panes())} panes")
 
     def panedwindow2settings(event: object) -> None:
-        index_list = []
-        for i in itertools.count():
-            try:
-                index_list.append(panedwindow.sashpos(i))
-            except tkinter.TclError:   # sash index out of range
-                break
-        set(option_name, index_list)
+        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
 
     # don't know why after_idle is needed, but it is
     panedwindow.bind('<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True)
     panedwindow.bind('<Unmap>', panedwindow2settings, add=True)
+    panedwindow.bind('<ButtonRelease-1>', panedwindow2settings, add=True)
 
 
 def _is_monospace(font_family: str) -> bool:
