@@ -337,7 +337,7 @@ def _fill_menus_with_default_stuff() -> None:
             if size < 3:
                 return
 
-        settings.set('font_size', size)
+        settings.set_('font_size', size)
 
     # trigger change_font_size() with mouse wheel from any text widget
     utils.bind_mouse_wheel('Text', (

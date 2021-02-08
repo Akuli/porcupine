@@ -473,12 +473,11 @@ bers.py>` use this attribute.
 
         self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
         self.settings.add_option(
-            'pygments_lexer', TextLexer, type=LexerMeta,
-            converter=_import_lexer_class)
+            'pygments_lexer', TextLexer, LexerMeta, converter=_import_lexer_class)
         self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)
         self.settings.add_option('encoding', 'utf-8')
-        self.settings.add_option('comment_prefix', None, type=Optional[str])
+        self.settings.add_option('comment_prefix', None, Optional[str])
         self.settings.add_option(
             'line_ending', settings.get('default_line_ending', settings.LineEnding),
             converter=settings.LineEnding.__getitem__)

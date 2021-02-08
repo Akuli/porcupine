@@ -37,8 +37,8 @@ def test_add_option_and_get_and_set(cleared_global_settings):
 
     assert settings.get('how_many_foos', int) == 123
     assert settings.get('bar_message', str) == 'hello'
-    settings.set('how_many_foos', 456)
-    settings.set('bar_message', 'bla')
+    settings.set_('how_many_foos', 456)
+    settings.set_('bar_message', 'bla')
     assert settings.get('how_many_foos', int) == 456
     assert settings.get('bar_message', str) == 'bla'
 
@@ -57,7 +57,7 @@ def test_unknown_option_in_settings_file(cleared_global_settings):
 
     settings.add_option('foo', 'default')
     assert settings.get('foo', str) == 'custom'
-    settings.set('foo', 'default')
+    settings.set_('foo', 'default')
     assert settings.get('foo', str) == 'default'
 
     assert save_and_read_file() == {'unknown': 'hello'}
@@ -73,7 +73,7 @@ def test_wrong_type(cleared_global_settings):
     with pytest.raises(
             dacite.exceptions.WrongTypeError,
             match=r'wrong value type .* should be "str" instead of .* "int"'):
-        settings.set('magic_message', 123)
+        settings.set_('magic_message', 123)
 
 
 def test_name_collision(cleared_global_settings):
@@ -109,7 +109,7 @@ def test_no_json_file(cleared_global_settings):
     settings._load_from_file()
 
     settings.add_option('foo', 'default')
-    settings.set('foo', 'custom')
+    settings.set_('foo', 'custom')
 
     assert not settings._get_json_path().exists()
     settings.reset_all()
@@ -122,7 +122,7 @@ def test_save(cleared_global_settings):
     settings.add_option('foo', 'default')
     settings.add_option('bar', 'default')
     settings.add_option('baz', 'default')
-    settings.set('foo', 'custom foo')
+    settings.set_('foo', 'custom foo')
 
     settings.save()
     with settings._get_json_path().open('r') as file:
@@ -132,9 +132,9 @@ def test_save(cleared_global_settings):
 def test_font_gets_updated():
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
 
-    settings.set('font_family', 'Helvetica')
+    settings.set_('font_family', 'Helvetica')
     assert fixedfont.cget('family') == 'Helvetica'
-    settings.set('font_size', 123)
+    settings.set_('font_size', 123)
     assert fixedfont.cget('size') == 123
 
 
@@ -147,10 +147,10 @@ class Foo:
 def test_dataclass():
     settings_obj = settings.Settings(None, '<<Foo:{}>>')
 
-    settings_obj.add_option('foo', None, type=Optional[Foo])
+    settings_obj.add_option('foo', None, Optional[Foo])
     settings_obj.set('foo', {'how_many': 123, 'message': 'hello'}, from_config=True)
     settings_obj.set('bar', {'how_many': 456, 'message': 'hi'}, from_config=True)
-    settings_obj.add_option('bar', None, type=Optional[Foo])
+    settings_obj.add_option('bar', None, Optional[Foo])
 
     assert settings_obj.get('foo', Foo) == Foo(123, 'hello')
     assert settings_obj.get('bar', Foo) == Foo(456, 'hi')
@@ -158,7 +158,7 @@ def test_dataclass():
 
 def test_debug_dump(capsys):
     settings_obj = settings.Settings(None, '<<Foo:{}>>')
-    settings_obj.add_option('foo', None, type=Optional[str])
+    settings_obj.add_option('foo', None, Optional[str])
     settings_obj.set('bar', ['a', 'b', 'c'], from_config=True)
     settings_obj.debug_dump()
 

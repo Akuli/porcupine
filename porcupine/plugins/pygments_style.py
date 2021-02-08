@@ -58,7 +58,7 @@ def setup() -> None:
             var.set(settings.get('pygments_style', str))
 
         def var2settings(*junk: str) -> None:
-            settings.set('pygments_style', var.get())
+            settings.set_('pygments_style', var.get())
 
         # this doesn't recurse infinitely because <<SettingChanged:bla>>
         # gets generated only when the setting actually changes

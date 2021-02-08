@@ -1,5 +1,4 @@
 import atexit
-import builtins
 import copy
 import dataclasses
 import enum
@@ -69,23 +68,23 @@ class LineEnding(enum.Enum):
     CRLF = '\r\n'
 
 
-def _type_check(tybe: type, obj: object) -> object:
+def _type_check(type_: type, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
-        value: tybe  # type: ignore[valid-type]
+        value: type_  # type: ignore[valid-type]
 
     return dacite.from_dict(ValueContainer, {'value': obj}).value
 
 
 class _Option:
 
-    def __init__(self, name: str, default: object, tybe: Any, converter: Callable[[Any], Any]) -> None:
-        default = _type_check(tybe, default)
+    def __init__(self, name: str, default: object, type_: Any, converter: Callable[[Any], Any]) -> None:
+        default = _type_check(type_, default)
         self.name = name
         self.value = default
         self.default = default
-        self.type = tybe
+        self.type = type_
         self.converter = converter
 
 
@@ -113,15 +112,15 @@ class Settings:
         self,
         option_name: str,
         default: Any,
+        type_: Optional[Any] = None,
         *,
-        type: Optional[Any] = None,
         converter: Callable[[Any], Any] = (lambda x: x),
     ) -> None:
         """Add a custom option.
 
-        The type of *default* determines how :func:`set` and :func:`get` behave.
+        The type of *default* determines how :func:`set_` and :func:`get` behave.
         For example, if *default* is a string, then
-        calling :func:`set` with a value that isn't a string or
+        calling :func:`set_` with a value that isn't a string or
         calling :func:`get` with the type set to something else than ``str``
         is an error. You can also provide a custom type with the *type*
         argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
@@ -151,12 +150,11 @@ class Settings:
         if option_name in self._options:
             raise RuntimeError(f"there's already an option named {option_name!r}")
 
-        if type is None:
-            # using type as variable name, wanna access built-in named 'type'
-            type = builtins.type(default)
-        assert type is not None
+        if type_ is None:
+            type_ = type(default)
+        assert type_ is not None
 
-        option = _Option(option_name, default, type, converter)
+        option = _Option(option_name, default, type_, converter)
         self._options[option_name] = option
 
         try:
@@ -184,7 +182,12 @@ class Settings:
             * If the option hasn't been added with :func:`add_option` yet, then
               the value won't be set immediatelly, but instead it gets set
               later when the option is added.
+
+        This function is not named ``set`` to avoid conflicting with the
+        built-in :class:`set` class.
         """
+        # ...even though this method isn't named 'set_'. But the docstring is
+        # used in settings.rst to document a global "function".
         if option_name not in self._options and from_config:
             self._unknown_options[option_name] = value
             return
@@ -218,20 +221,20 @@ class Settings:
     # I don't like how this requires overloads for every type
     # https://stackoverflow.com/q/61471700
     @overload
-    def get(self, option_name: str, type: Type[pathlib.Path]) -> pathlib.Path: ...
+    def get(self, option_name: str, type_: Type[pathlib.Path]) -> pathlib.Path: ...
     @overload
-    def get(self, option_name: str, type: Type[LineEnding]) -> LineEnding: ...
+    def get(self, option_name: str, type_: Type[LineEnding]) -> LineEnding: ...
     @overload
-    def get(self, option_name: str, type: Type[str]) -> str: ...
+    def get(self, option_name: str, type_: Type[str]) -> str: ...
     @overload
-    def get(self, option_name: str, type: Type[int]) -> int: ...
+    def get(self, option_name: str, type_: Type[int]) -> int: ...
     @overload
-    def get(self, option_name: str, type: object) -> Any: ...
+    def get(self, option_name: str, type_: object) -> Any: ...
 
-    def get(self, option_name: str, type: Any) -> Any:
+    def get(self, option_name: str, type_: Any) -> Any:
         """
         Return the current value of an option.
-        *type* should be ``str`` or ``int`` depending on what type the option is.
+        *type_* should be e.g. ``str`` or ``int`` depending on what type the option is.
         You can also specify ``object`` to allow any type.
 
         This method works correctly for :class:`str` and :class:`int`,
@@ -252,12 +255,12 @@ class Settings:
         Options of mutable types are returned as copies, so things like
         ``settings.get('something', List[str])`` always return a new list.
         If you want to change a setting like that, you need to first get a copy
-        of the current value, then modify the copy, and finally :func:`set` it
+        of the current value, then modify the copy, and finally :func:`set_` it
         back. This is an easy way to make sure that change events run every
         time the value changes.
         """
         result = self._options[option_name].value
-        result = _type_check(type, result)
+        result = _type_check(type_, result)
         return copy.deepcopy(result)  # mutating wouldn't trigger change events
 
     def debug_dump(self) -> None:
@@ -275,14 +278,14 @@ class Settings:
 
 _global_settings = Settings(None, '<<SettingChanged:{}>>')
 add_option = _global_settings.add_option
-set = _global_settings.set     # shadows the built-in set data structure
+set_ = _global_settings.set
 get = _global_settings.get
 debug_dump = _global_settings.debug_dump
 
 
 def reset(option_name: str) -> None:
     """Set an option to its default value given to :func:`add_option`."""
-    set(option_name, _global_settings._options[option_name].default)
+    set_(option_name, _global_settings._options[option_name].default)
 
 
 def reset_all() -> None:
@@ -341,7 +344,7 @@ def _load_from_file() -> None:
         return
 
     for name, value in options.items():
-        set(name, value, from_config=True)
+        set_(name, value, from_config=True)
 
 
 # pygments styles can be uninstalled, must not end up with invalid pygments style that way
@@ -358,7 +361,7 @@ def init_enough_for_using_disabled_plugins_list() -> None:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {_get_json_path()} failed")
-    add_option('disabled_plugins', [], type=List[str])
+    add_option('disabled_plugins', [], List[str])
 
 
 def _init_global_gui_settings() -> None:
@@ -496,7 +499,7 @@ _StrOrInt = TypeVar('_StrOrInt', str, int)
 def _create_validation_triangle(
     widget: ttk.Entry,
     option_name: str,
-    tybe: Type[_StrOrInt],
+    type_: Type[_StrOrInt],
     callback: Callable[[_StrOrInt], bool],
 ) -> ttk.Label:
 
@@ -508,7 +511,7 @@ def _create_validation_triangle(
 
         value: Optional[_StrOrInt]
         try:
-            value = tybe(value_string)
+            value = type_(value_string)
         except ValueError:   # e.g. int('foo')
             value = None
         else:
@@ -519,7 +522,7 @@ def _create_validation_triangle(
             triangle.config(image=images.get('triangle'))
         else:
             triangle.config(image=_get_blank_triangle_sized_image())
-            set(option_name, value, from_config=True)
+            set_(option_name, value, from_config=True)
 
     def setting_changed(junk: object = None) -> None:
         var.set(str(_value_to_save(get(option_name, object))))
@@ -653,7 +656,7 @@ def _is_monospace(font_family: str) -> bool:
 
 def _get_monospace_font_families() -> List[str]:
     cache_path = pathlib.Path(dirs.user_cache_dir) / 'font_cache.json'
-    all_families = sorted(builtins.set(tkinter.font.families()))
+    all_families = sorted(set(tkinter.font.families()))
 
     # This is surprisingly slow when there are lots of fonts. Let's cache.
     try:

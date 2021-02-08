@@ -135,7 +135,7 @@ class DirectoryTree(ttk.Treeview):
                 self.delete(project_id)
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
-        settings.set('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
+        settings.set_('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
 
     def refresh_everything(self, junk: object = None) -> None:
         log.debug("refreshing begins")
@@ -291,7 +291,7 @@ def setup() -> None:
     get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
 
-    settings.add_option('directory_tree_projects', [], type=List[str])
+    settings.add_option('directory_tree_projects', [], List[str])
     string_paths = settings.get('directory_tree_projects', List[str])
     for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT]):
         if path.is_absolute() and path.is_dir():

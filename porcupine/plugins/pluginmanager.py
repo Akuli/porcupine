@@ -193,7 +193,7 @@ class PluginDialogContent:
             disabled -= {info.name for info in infos}
         else:
             disabled |= {info.name for info in infos}
-        settings.set('disabled_plugins', list(disabled))
+        settings.set_('disabled_plugins', list(disabled))
 
         for info in infos:
             if info.name not in disabled and pluginloader.can_setup_while_running(info):
