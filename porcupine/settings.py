@@ -2,6 +2,7 @@ import atexit
 import copy
 import dataclasses
 import enum
+import itertools
 import json
 import logging
 import os
@@ -639,6 +640,31 @@ def add_label(text: str) -> ttk.Label:
 
     get_dialog_content().bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
     return label
+
+
+# TODO: document this
+def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, defaults: List[int]) -> None:
+    # exist_ok=True to allow e.g. calling this once for each tab
+    add_option(option_name, defaults, type=List[int], exist_ok=True)
+
+    # don't know why after_idle is needed, but it is
+    def settings2panedwindow() -> None:
+        value = get(option_name, List[int])
+        for index, x_coordinate in enumerate(value):
+            panedwindow.sashpos(index, x_coordinate)
+
+    def panedwindow2settings(event: object) -> None:
+        index_list = []
+        for i in itertools.count():
+            try:
+                index_list.append(panedwindow.sashpos(i))
+            except tkinter.TclError:   # sash index out of range
+                break
+        set(option_name, index_list)
+
+    # don't know why after_idle is needed, but it is
+    panedwindow.bind('<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True)
+    panedwindow.bind('<Unmap>', panedwindow2settings, add=True)
 
 
 def _is_monospace(font_family: str) -> bool:
