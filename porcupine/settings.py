@@ -119,9 +119,9 @@ class Settings:
     ) -> None:
         """Add a custom option.
 
-        The type of *default* determines how :func:`set` and :func:`get` behave.
+        The type of *default* determines how :func:`set_` and :func:`get` behave.
         For example, if *default* is a string, then
-        calling :func:`set` with a value that isn't a string or
+        calling :func:`set_` with a value that isn't a string or
         calling :func:`get` with the type set to something else than ``str``
         is an error. You can also provide a custom type with the *type*
         argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
@@ -184,7 +184,12 @@ class Settings:
             * If the option hasn't been added with :func:`add_option` yet, then
               the value won't be set immediatelly, but instead it gets set
               later when the option is added.
+
+        This function is not named ``set`` to avoid conflicting with the
+        built-in :class:`set` class.
         """
+        # ...even though this method isn't named 'set_'. But the docstring is
+        # used in settings.rst to document a global "function".
         if option_name not in self._options and from_config:
             self._unknown_options[option_name] = value
             return
@@ -252,7 +257,7 @@ class Settings:
         Options of mutable types are returned as copies, so things like
         ``settings.get('something', List[str])`` always return a new list.
         If you want to change a setting like that, you need to first get a copy
-        of the current value, then modify the copy, and finally :func:`set` it
+        of the current value, then modify the copy, and finally :func:`set_` it
         back. This is an easy way to make sure that change events run every
         time the value changes.
         """
@@ -275,14 +280,14 @@ class Settings:
 
 _global_settings = Settings(None, '<<SettingChanged:{}>>')
 add_option = _global_settings.add_option
-set = _global_settings.set     # shadows the built-in set data structure
+set_ = _global_settings.set
 get = _global_settings.get
 debug_dump = _global_settings.debug_dump
 
 
 def reset(option_name: str) -> None:
     """Set an option to its default value given to :func:`add_option`."""
-    set(option_name, _global_settings._options[option_name].default)
+    set_(option_name, _global_settings._options[option_name].default)
 
 
 def reset_all() -> None:
@@ -341,7 +346,7 @@ def _load_from_file() -> None:
         return
 
     for name, value in options.items():
-        set(name, value, from_config=True)
+        set_(name, value, from_config=True)
 
 
 # pygments styles can be uninstalled, must not end up with invalid pygments style that way
@@ -519,7 +524,7 @@ def _create_validation_triangle(
             triangle.config(image=images.get('triangle'))
         else:
             triangle.config(image=_get_blank_triangle_sized_image())
-            set(option_name, value, from_config=True)
+            set_(option_name, value, from_config=True)
 
     def setting_changed(junk: object = None) -> None:
         var.set(str(_value_to_save(get(option_name, object))))
@@ -653,7 +658,7 @@ def _is_monospace(font_family: str) -> bool:
 
 def _get_monospace_font_families() -> List[str]:
     cache_path = pathlib.Path(dirs.user_cache_dir) / 'font_cache.json'
-    all_families = sorted(builtins.set(tkinter.font.families()))
+    all_families = sorted(set(tkinter.font.families()))
 
     # This is surprisingly slow when there are lots of fonts. Let's cache.
     try:

@@ -27,4 +27,4 @@ def setup() -> None:
         lambda event: var.set(settings.get('ttk_theme', str))
     ), add=True)
     var.set(settings.get('ttk_theme', str))
-    var.trace_add('write', lambda *junk: settings.set('ttk_theme', var.get()))
+    var.trace_add('write', lambda *junk: settings.set_('ttk_theme', var.get()))

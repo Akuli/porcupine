@@ -135,7 +135,7 @@ class DirectoryTree(ttk.Treeview):
                 self.delete(project_id)
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
-        settings.set('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
+        settings.set_('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
 
     def refresh_everything(self, junk: object = None) -> None:
         log.debug("refreshing begins")

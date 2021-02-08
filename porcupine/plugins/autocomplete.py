@@ -188,9 +188,9 @@ class _Popup:
     def stop_completing(self, *, withdraw: bool = True) -> Optional[Completion]:
         # putting this here avoids some bugs
         if self.is_showing():
-            settings.set('autocomplete_popup_width', self.toplevel.winfo_width())
-            settings.set('autocomplete_popup_height', self.toplevel.winfo_height())
-            settings.set('autocomplete_divider_pos', self._panedwindow.sashpos(0))
+            settings.set_('autocomplete_popup_width', self.toplevel.winfo_width())
+            settings.set_('autocomplete_popup_height', self.toplevel.winfo_height())
+            settings.set_('autocomplete_divider_pos', self._panedwindow.sashpos(0))
 
         selected = self._get_selected_completion()
 

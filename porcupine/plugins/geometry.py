@@ -6,7 +6,7 @@ from porcupine import get_main_window, settings
 
 def save_geometry(event: 'tkinter.Event[tkinter.Misc]') -> None:
     assert isinstance(event.widget, (tkinter.Tk, tkinter.Toplevel))
-    settings.set('default_geometry', event.widget.geometry())
+    settings.set_('default_geometry', event.widget.geometry())
 
 
 def setup() -> None:
