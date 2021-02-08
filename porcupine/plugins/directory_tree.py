@@ -7,7 +7,7 @@ import time
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -157,7 +157,7 @@ class DirectoryTree(ttk.Treeview):
             elif success:
                 log.info("projects added/removed while refreshing, assuming another fresh is coming soon")
             else:
-                log.error("error in git status running thread\n" + result)
+                log.error(f"error in git status running thread\n{result}")
 
         utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
@@ -275,7 +275,8 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
 
-        tab.bind('<<Save>>', (lambda event: tab.after_idle(tree.refresh_everything)), add=True)
+        # https://github.com/python/typeshed/issues/5010
+        tab.bind('<<Save>>', (lambda event: cast(None, tab.after_idle(tree.refresh_everything))), add=True)
         tab.textwidget.bind('<FocusIn>', tree.refresh_everything, add=True)
 
 

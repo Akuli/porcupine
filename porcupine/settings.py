@@ -624,6 +624,7 @@ def add_label(text: str) -> ttk.Label:
     label = ttk.Label(get_dialog_content(), text=text)
     label.grid(column=0, columnspan=3, sticky='we', pady=10)
 
+    # https://github.com/python/typeshed/issues/5010
     get_dialog_content().bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
     return label
 
