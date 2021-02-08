@@ -647,7 +647,6 @@ def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, d
     # exist_ok=True to allow e.g. calling this once for each tab
     add_option(option_name, defaults, List[int], exist_ok=True)
 
-    # don't know why after_idle is needed, but it is
     def settings2panedwindow(junk: object = None) -> None:
         value = get(option_name, List[int])
         if len(value) == len(panedwindow.panes()) - 1:
