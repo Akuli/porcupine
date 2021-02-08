@@ -93,6 +93,7 @@ class _Popup:
         # in a future version of python.
         self._panedwindow = ttk.Panedwindow(
             self.toplevel, orient='horizontal')
+        settings.remember_divider_positions(self._panedwindow, 'autocomplete_dividers', [200])
         self._panedwindow.pack(fill='both', expand=True)
 
         left_pane = ttk.Frame(self._panedwindow)
@@ -177,12 +178,6 @@ class _Popup:
             self.toplevel.geometry(geometry)
         self.toplevel.deiconify()
 
-        # don't know why after_idle is needed, but it is
-        def set_correct_sashpos() -> None:
-            self._panedwindow.sashpos(0, settings.get('autocomplete_divider_pos', int))
-
-        self._panedwindow.after_idle(set_correct_sashpos)
-
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
     def stop_completing(self, *, withdraw: bool = True) -> Optional[Completion]:
@@ -190,7 +185,6 @@ class _Popup:
         if self.is_showing():
             settings.set_('autocomplete_popup_width', self.toplevel.winfo_width())
             settings.set_('autocomplete_popup_height', self.toplevel.winfo_height())
-            settings.set_('autocomplete_divider_pos', self._panedwindow.sashpos(0))
 
         selected = self._get_selected_completion()
 
@@ -477,7 +471,7 @@ class AutoCompleter:
             self._reject()
             return
 
-        self.popup.stop_completing(withdraw=False)
+        self.popup.stop_completing(withdraw=False)   # TODO: is this needed?
         self.popup.start_completing(self._get_filtered_completions())
 
     def on_enter(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
@@ -535,4 +529,3 @@ def setup() -> None:
     get_tab_manager().add_tab_callback(on_new_tab)
     settings.add_option('autocomplete_popup_width', 500)
     settings.add_option('autocomplete_popup_height', 200)
-    settings.add_option('autocomplete_divider_pos', 200)

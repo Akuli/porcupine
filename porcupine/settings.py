@@ -115,6 +115,7 @@ class Settings:
         type_: Optional[Any] = None,
         *,
         converter: Callable[[Any], Any] = (lambda x: x),
+        exist_ok: bool = False,
     ) -> None:
         """Add a custom option.
 
@@ -146,13 +147,25 @@ class Settings:
                 converter=import_lexer_class)
 
         By default, the converter returns its argument unchanged.
-        """
-        if option_name in self._options:
-            raise RuntimeError(f"there's already an option named {option_name!r}")
 
+        If an option with the same name exists already, an error is raised by
+        default, but if ``exist_ok=True`` is given, then adding the same
+        option again is allowed. When this happens, an error is raised if
+        *default*, *type* or *converter* doesn't match what was passed in when
+        the option was added for the first time.
+        """
         if type_ is None:
             type_ = type(default)
         assert type_ is not None
+
+        if option_name in self._options:
+            if not exist_ok:
+                raise RuntimeError(f"there's already an option named {option_name!r}")
+            old_option = self._options[option_name]
+            assert default == old_option.default
+            assert type_ == old_option.type
+            assert converter == old_option.converter
+            return
 
         option = _Option(option_name, default, type_, converter)
         self._options[option_name] = option
@@ -626,6 +639,33 @@ def add_label(text: str) -> ttk.Label:
 
     get_dialog_content().bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
     return label
+
+
+# TODO: document this
+def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, defaults: List[int]) -> None:
+    # exist_ok=True to allow e.g. calling this once for each tab
+    add_option(option_name, defaults, List[int], exist_ok=True)
+
+    def settings2panedwindow(junk: object = None) -> None:
+        value = get(option_name, List[int])
+        if len(value) == len(panedwindow.panes()) - 1:
+            _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
+            for index, pos in enumerate(value):
+                panedwindow.sashpos(index, pos)
+        else:
+            # number of panes can change if e.g. a plugin is enabled/disabled
+            _log.info(
+                f"{option_name} is set to {value}, of length {len(value)}, "
+                f"but there are {len(panedwindow.panes())} panes")
+
+    def panedwindow2settings(junk: object) -> None:
+        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
+
+    # don't know why after_idle is needed, but it is
+    # https://github.com/python/typeshed/issues/5010
+    panedwindow.bind('<Map>', (lambda event: cast(None, panedwindow.after_idle(settings2panedwindow))), add=True)
+    panedwindow.bind('<<DividersFromSettings>>', settings2panedwindow, add=True)
+    panedwindow.bind('<ButtonRelease-1>', panedwindow2settings, add=True)
 
 
 def _is_monospace(font_family: str) -> bool:

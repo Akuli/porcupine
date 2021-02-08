@@ -1,8 +1,10 @@
 import dataclasses
 import json
 import sys
-import tkinter.font
-from typing import Optional
+import tkinter
+from tkinter import ttk
+from tkinter.font import Font
+from typing import List, Optional
 
 import dacite
 import pytest
@@ -81,6 +83,10 @@ def test_name_collision(cleared_global_settings):
     with pytest.raises(RuntimeError, match="^there's already an option named 'omg'$"):
         settings.add_option('omg', 'bla')
 
+    settings.add_option('omg', 'bla', exist_ok=True)
+    with pytest.raises(AssertionError):
+        settings.add_option('omg', 123, exist_ok=True)
+
 
 def test_reset(cleared_global_settings):
     load_from_json_string('{"foo": "custom", "bar": "custom", "unknown": "hello"}')
@@ -130,7 +136,7 @@ def test_save(cleared_global_settings):
 
 
 def test_font_gets_updated():
-    fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
+    fixedfont = Font(name='TkFixedFont', exists=True)
 
     settings.set_('font_family', 'Helvetica')
     assert fixedfont.cget('family') == 'Helvetica'
@@ -180,3 +186,27 @@ def test_font_family_chooser():
     families = settings._get_monospace_font_families()
     assert len(families) == len(set(families)), "duplicates"
     assert families == sorted(families), "wrong order"
+
+
+@pytest.fixture
+def toplevel():
+    toplevel = tkinter.Toplevel()
+    toplevel.geometry('600x100')
+    yield toplevel
+    toplevel.destroy()
+
+
+def test_remember_panedwindow_positions(toplevel):
+    pw = ttk.PanedWindow(toplevel, orient='horizontal')
+    settings.remember_divider_positions(pw, 'pw_dividers', [123])
+    pw.pack(fill='both', expand=True)
+
+    pw.add(ttk.Label(pw, text="aaaaaaaaaaa"))
+    pw.add(ttk.Label(pw, text="bbbbbbbbbbb"))
+
+    pw.update()
+    assert pw.sashpos(0) == 123
+
+    pw.sashpos(0, 456)
+    pw.event_generate('<ButtonRelease-1>')   # happens after user drags pane
+    assert settings.get('pw_dividers', List[int]) == [456]
