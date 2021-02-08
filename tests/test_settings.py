@@ -81,6 +81,10 @@ def test_name_collision(cleared_global_settings):
     with pytest.raises(RuntimeError, match="^there's already an option named 'omg'$"):
         settings.add_option('omg', 'bla')
 
+    settings.add_option('omg', 'bla', exist_ok=True)
+    with pytest.raises(AssertionError):
+        settings.add_option('omg', 123, exist_ok=True)
+
 
 def test_reset(cleared_global_settings):
     load_from_json_string('{"foo": "custom", "bar": "custom", "unknown": "hello"}')

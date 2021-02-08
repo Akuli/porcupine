@@ -115,6 +115,7 @@ class Settings:
         type_: Optional[Any] = None,
         *,
         converter: Callable[[Any], Any] = (lambda x: x),
+        exist_ok: bool = False,
     ) -> None:
         """Add a custom option.
 
@@ -146,13 +147,25 @@ class Settings:
                 converter=import_lexer_class)
 
         By default, the converter returns its argument unchanged.
-        """
-        if option_name in self._options:
-            raise RuntimeError(f"there's already an option named {option_name!r}")
 
+        If an option with the same name exists already, an error is raised by
+        default, but if ``exist_ok=True`` is given, then adding the same
+        option again is allowed. When this happens, an error is raised if
+        *default*, *type* or *converter* doesn't match what was passed in when
+        the option was added for the first time.
+        """
         if type_ is None:
             type_ = type(default)
         assert type_ is not None
+
+        if option_name in self._options:
+            if not exist_ok:
+                raise RuntimeError(f"there's already an option named {option_name!r}")
+            old_option = self._options[option_name]
+            assert default == old_option.default
+            assert type_ == old_option.type
+            assert converter == old_option.converter
+            return
 
         option = _Option(option_name, default, type_, converter)
         self._options[option_name] = option
