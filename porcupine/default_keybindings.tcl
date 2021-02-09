@@ -57,6 +57,12 @@ event add "<<Menubar:Tools/Terminal>>" <$contmand-T>
 
 # more_plugins/pythonprompt.py
 event add "<<Menubar:Run/Interactive Python prompt>>" <$contmand-i>
+event add "<<PythonPrompt:KeyboardInterrupt>>" <$contmand-c>
+event add "<<PythonPrompt:Copy>>" <$contmand-C>
+# FIXME: conflicts with gotoline plugin
+#event add "<<PythonPrompt:Clear>>" <$contmand-l>
+event add "<<PythonPrompt:Clear>>" <$contmand-L>
+event add "<<PythonPrompt:SendEOF>>" <$contmand-d> <$contmand-D>
 
 
 # Text widgets have confusing control-click behaviour by default. Disabling it
