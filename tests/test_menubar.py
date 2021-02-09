@@ -8,25 +8,29 @@ from porcupine.menubar import _get_keyboard_shortcut
 
 def test_get_keyboard_shortcut():
     if platform.system() == 'Darwin':
-        # Tk will show these with the proper symbols and stuff
-        assert _get_keyboard_shortcut('<Command-c>') == 'Command-c'
-        assert _get_keyboard_shortcut('<Mod1-Key-c>') == 'Command-c'
-        # TODO: verify if the rest of these are correct:
-        assert _get_keyboard_shortcut('<Command-C>') == 'Command-C'
-        assert _get_keyboard_shortcut('<Command-Plus>') == 'Command-Plus'
-        assert _get_keyboard_shortcut('<Command-Minus>') == 'Command-Minus'
+        # Tk will show these with the proper symbols and stuff when these go to menu
+        assert _get_keyboard_shortcut('<Command-n>') == 'Command-N'
+        assert _get_keyboard_shortcut('<Mod1-Key-n>') == 'Command-N'
+        assert _get_keyboard_shortcut('<Command-s>') == 'Command-S'
+        assert _get_keyboard_shortcut('<Command-S>') == 'Command-Shift-S'
+        assert _get_keyboard_shortcut('<Command-plus>') == 'Command-+'
+        assert _get_keyboard_shortcut('<Command-minus>') == 'Command--'
         assert _get_keyboard_shortcut('<Command-0>') == 'Command-0'
         assert _get_keyboard_shortcut('<Command-1>') == 'Command-1'
+        assert _get_keyboard_shortcut('<Alt-f>') == 'Alt-F'
+        assert _get_keyboard_shortcut('<F4>') == 'F4'
+        assert _get_keyboard_shortcut('<F11>') == 'F11'
     else:
         assert _get_keyboard_shortcut('<Control-c>') == 'Ctrl+C'
         assert _get_keyboard_shortcut('<Control-Key-c>') == 'Ctrl+C'
         assert _get_keyboard_shortcut('<Control-C>') == 'Ctrl+Shift+C'
-        assert _get_keyboard_shortcut('<Control-Plus>') == 'Ctrl+Plus'
-        assert _get_keyboard_shortcut('<Control-Minus>') == 'Ctrl+Minus'
+        assert _get_keyboard_shortcut('<Control-plus>') == 'Ctrl+Plus'
+        assert _get_keyboard_shortcut('<Control-minus>') == 'Ctrl+Minus'
         assert _get_keyboard_shortcut('<Control-0>') == 'Ctrl+Zero'
         assert _get_keyboard_shortcut('<Control-1>') == 'Ctrl+1'
-
-    assert _get_keyboard_shortcut('<F11>') == 'F11'
+        assert _get_keyboard_shortcut('<Alt-f>') == 'Alt+F'
+        assert _get_keyboard_shortcut('<F4>') == 'F4'
+        assert _get_keyboard_shortcut('<F11>') == 'F11'
 
 
 def test_virtual_events_calling_menu_callbacks():

@@ -152,23 +152,15 @@ def _walk_menu_contents(
 
 # this doesn't handle all possible cases, see bind(3tk)
 def _get_keyboard_shortcut(binding: str) -> str:
-    if get_main_window().tk.call('tk', 'windowingsystem') == 'aqua':
-        # Macs are special https://stackoverflow.com/a/16901173
-        return '-'.join(
-            'Command' if part == 'Mod1' else part
-            for part in binding.lstrip('<').rstrip('>').split('-')
-            if part != 'Key'
-        )
-
+    mac = (get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
     result = []
 
     for part in binding.lstrip('<').rstrip('>').split('-'):
-        if part == 'Control':
-            # TODO: i think this is supposed to use the command symbol
-            # on OSX? i don't have a mac
+        if part == 'Control' and not mac:
             result.append('Ctrl')
-        elif part == 'Key':
-            # <Control-c> and <Control-Key-c> do the same thing
+        elif part == 'Mod1' and mac:   # event_info() returns <Mod1-Key-x> for <Command-x>
+            result.append('Command')
+        elif part == 'Key':    # <Control-c> and <Control-Key-c> do the same thing
             continue
         # tk doesnt like e.g. <Control-ö> :( that's why ascii only here
         elif len(part) == 1 and part in ascii_lowercase:
@@ -176,14 +168,19 @@ def _get_keyboard_shortcut(binding: str) -> str:
         elif len(part) == 1 and part in ascii_uppercase:
             result.append('Shift')
             result.append(part)
-        elif part == '0':
-            # 0 and O look too much like each other
+        elif part == '0' and not mac:
+            # 0 and O look too much like each other, except on Mac where default
+            # font has a very clear diagonal line across zero.
             result.append('Zero')
+        elif part == 'plus' and mac:
+            result.append('+')
+        elif part == 'minus' and mac:
+            result.append('-')
         else:
             # good enough guess :D
             result.append(part.capitalize())
 
-    return '+'.join(result)
+    return ('-' if mac else '+').join(result)
 
 
 def _menu_event_handler(menu: tkinter.Menu, index: int, junk: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
