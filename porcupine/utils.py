@@ -288,7 +288,9 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
     result = []
 
     # this doesn't handle all possible cases, see bind(3tk)
-    for part in binding.lstrip('<').rstrip('>').split('-'):
+    parts = binding.lstrip('<').rstrip('>').split('-')
+    while parts:
+        part = parts.pop(0)
         if part == 'Control' and not mac:
             result.append('Ctrl')
         elif part == 'Mod1' and mac:   # event_info() returns <Mod1-Key-x> for <Command-x>
@@ -309,6 +311,12 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
             result.append('+')
         elif part == 'minus' and mac:
             result.append('-')
+        elif part == 'Button' and parts and parts[0] == '1':
+            # Button-1 --> click
+            if mac and menu:
+                return ''    # don't know how to show in mac menus
+            del parts[0]
+            result.append('click')
         else:
             # good enough guess :D
             result.append(part.capitalize())
@@ -328,7 +336,7 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
         for old, new in reversed(fancy_unicodes):
             if old in result:
                 result.remove(old)
-                result.insert(0, new)   # reversed(mac_table) because inserting to beginning
+                result.insert(0, new)   # reversed(fancy_unicodes) because inserting to beginning
         return ''.join(result)
 
     return '+'.join(result)

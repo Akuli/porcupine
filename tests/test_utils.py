@@ -72,6 +72,7 @@ def test_get_keyboard_shortcut():
         assert utils.get_keyboard_shortcut('<Alt-f>', menu=True) == 'Alt-F'
         assert utils.get_keyboard_shortcut('<F4>', menu=True) == 'F4'
         assert utils.get_keyboard_shortcut('<F11>', menu=True) == 'F11'
+        assert utils.get_keyboard_shortcut('<Command-Button-1>', menu=True) == ''   # not possible to show
 
         assert utils.get_keyboard_shortcut('<Command-n>', menu=False) == '⌘N'
         assert utils.get_keyboard_shortcut('<Mod1-Key-n>', menu=False) == '⌘N'
@@ -84,6 +85,7 @@ def test_get_keyboard_shortcut():
         assert utils.get_keyboard_shortcut('<Alt-f>', menu=False) == '⌥F'
         assert utils.get_keyboard_shortcut('<F4>', menu=False) == 'F4'
         assert utils.get_keyboard_shortcut('<F11>', menu=False) == 'F11'
+        assert utils.get_keyboard_shortcut('<Command-Button-1>', menu=False) == '⌘click'
 
     else:
         # menu option has no effect
@@ -98,3 +100,4 @@ def test_get_keyboard_shortcut():
             assert utils.get_keyboard_shortcut('<Alt-f>', menu=boolean) == 'Alt+F'
             assert utils.get_keyboard_shortcut('<F4>', menu=boolean) == 'F4'
             assert utils.get_keyboard_shortcut('<F11>', menu=boolean) == 'F11'
+            assert utils.get_keyboard_shortcut('<Control-Button-1>', menu=boolean) == 'Ctrl+click'
