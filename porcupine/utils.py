@@ -313,7 +313,25 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
             # good enough guess :D
             result.append(part.capitalize())
 
-    return ('-' if mac else '+').join(result)
+    if mac:
+        if menu:
+            # Tk will use the proper symbols automagically, and it expects dash-separated
+            return '-'.join(result)
+
+        # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
+        fancy_unicodes = [
+            ('Shift', '⇧'),
+            ('Control', '⌃'),   # this is NOT the ascii hat character, it's a different hat
+            ('Alt', '⌥'),
+            ('Command', '⌘'),
+        ]
+        for old, new in reversed(fancy_unicodes):
+            if old in result:
+                result.remove(old)
+                result.insert(0, new)   # reversed(mac_table) because inserting to beginning
+        return ''.join(result)
+
+    return '+'.join(result)
 
 
 class EventDataclass:
