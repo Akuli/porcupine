@@ -327,7 +327,7 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
     binding = re.sub(r'^(.*)Alt-', r'⌥\1', binding)
     binding = re.sub(r'^(.*)Control-', r'⌃\1', binding)   # this is NOT the ascii hat character, it's a different hat
     binding = re.sub(r'^(.*)Shift-', r'⇧\1', binding)
-    return re.sub(r'-([^-])', r'\1', binding)
+    return re.sub(r'-(?=[^-])', '', binding)
 
 
 
