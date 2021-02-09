@@ -46,8 +46,8 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
 def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
     view_start = tab.textwidget.index('@0,0')
     view_end = tab.textwidget.index('@0,10000')
-    shortcut1 = utils.get_keyboard_shortcut('<<Urls:OpenWithMouse>>')
-    shortcut2 = utils.get_keyboard_shortcut('<<Urls:OpenWithKeyboard>>')
+    shortcut1 = utils.get_binding('<<Urls:OpenWithMouse>>')
+    shortcut2 = utils.get_binding('<<Urls:OpenWithKeyboard>>')
 
     tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
         id='urls',

@@ -170,7 +170,7 @@ def update_keyboard_shortcuts() -> None:
         event_name = f'<<Menubar:{path}>>'
 
         # show keyboard shortcuts in menus
-        menu.entryconfig(index, accelerator=utils.get_keyboard_shortcut(event_name, menu=True))
+        menu.entryconfig(index, accelerator=utils.get_binding(event_name, menu=True))
 
         # trigger menu items when <<Menubar:Foo/Bar>> events are generated
         if not main_window.bind(event_name):
