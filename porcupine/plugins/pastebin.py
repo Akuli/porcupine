@@ -157,8 +157,7 @@ class SuccessDialog(tkinter.Toplevel):
         self._entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
         self._entry.insert(0, url)
         self._entry.config(state='readonly')     # must be after the insert
-        self._entry.bind(f'<{utils.contmand()}-a>', partial(self._select_all, breaking=True), add=True)
-        self._entry.bind('<FocusIn>', self._select_all, add=True)
+        self.bind('<FocusIn>', self._select_all, add=True)
         self._select_all()
 
         button_info = [
@@ -171,9 +170,10 @@ class SuccessDialog(tkinter.Toplevel):
         for text, callback in button_info:
             ttk.Button(buttonframe, text=text, command=callback).pack(side='left', expand=True)
 
-    def _select_all(self, junk: object = None, breaking: bool = False) -> utils.BreakOrNone:
-        self._entry.selection_range(0, 'end')
-        return ('break' if breaking else None)
+    def _select_all(self, event: Optional[tkinter.Event] = None) -> None:
+        if event is None or event.widget is self:   # toplevels annoyingly get notified of child events
+            self._entry.selection_range(0, 'end')
+            self._entry.focus()
 
     def open_in_browser(self) -> None:
         webbrowser.open(self.url)

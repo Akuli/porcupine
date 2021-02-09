@@ -68,3 +68,7 @@ event add "<<PythonPrompt:SendEOF>>" <$contmand-d> <$contmand-D>
 # Text widgets have confusing control-click behaviour by default. Disabling it
 # here makes control-click same as just click.
 bind Text <$contmand-Button-1> {}
+
+# Also, by default, Control+Slash selects all and Control+A goes to beginning.
+event delete "<<LineStart>>" <$contmand-a>
+event add "<<SelectAll>>" <$contmand-a>
