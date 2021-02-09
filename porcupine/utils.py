@@ -328,8 +328,9 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
     binding = re.sub(r'^(.*)\bControl-', r'⌃\1', binding)   # look carefully, two different kinds of hats
     binding = re.sub(r'^(.*)\bShift-', r'⇧\1', binding)
 
-    # "Command--" --> "Command-" (first dash gone, second stays)
-    return re.sub(r'-(?=[^-])', '', binding)
+    # "Command--" --> "Command-"
+    # "Command-+" --> "Command+"
+    return re.sub(r'-(-?)', r'\1', binding)
 
 
 class EventDataclass:
