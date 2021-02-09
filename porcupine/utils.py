@@ -323,10 +323,10 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
 
     # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
     # We need to sub backwards, because each sub puts its thing before everything else
-    binding = re.sub(r'^(.*)\bCommand-', r'⌘\1', binding)
-    binding = re.sub(r'^(.*)\bAlt-', r'⌥\1', binding)
-    binding = re.sub(r'^(.*)\bControl-', r'⌃\1', binding)   # look carefully, two different kinds of hats
-    binding = re.sub(r'^(.*)\bShift-', r'⇧\1', binding)
+    binding = re.sub(r'^(.*)\bCommand-', r'⌘-\1', binding)
+    binding = re.sub(r'^(.*)\bAlt-', r'⌥-\1', binding)
+    binding = re.sub(r'^(.*)\bControl-', r'⌃-\1', binding)   # look carefully, two different kinds of hats
+    binding = re.sub(r'^(.*)\bShift-', r'⇧-\1', binding)
 
     # "Command--" --> "Command-"
     # "Command-+" --> "Command+"
