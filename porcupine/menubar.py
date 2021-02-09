@@ -177,7 +177,7 @@ def update_keyboard_shortcuts() -> None:
         if menu.tk.call('tk', 'windowingsystem') == 'aqua':
             # Multiple shortcuts comma-separated likely wouldn't work, since
             # the shortcut strings get parsed in a weird way
-            menu.entryconfig(index, accelerator=shortcuts[0])
+            menu.entryconfig(index, accelerator=(shortcuts[0] if shortcuts else ''))
         else:
             menu.entryconfig(index, accelerator=', '.join(shortcuts))
 
