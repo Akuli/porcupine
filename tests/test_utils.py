@@ -59,9 +59,6 @@ def test_get_children_recursively():
 
 
 def test_get_binding():
-    # TODO: get rid of this when there is a virtual event that actually uses this
-    get_main_window().eval('event add <<Foo>> <$contmand-Button-1>')
-
     # User-wide keybindings.tcl is not loaded when tests run
     if platform.system() == 'Darwin':
         # Tk will show these with the proper symbols and stuff when these go to menu
@@ -73,7 +70,7 @@ def test_get_binding():
         assert utils.get_binding('<<Menubar:View/Reset Font Size>>', menu=True) == 'Command-0'
         assert utils.get_binding('<<Menubar:Edit/Fold>>', menu=True) == 'Alt-F'
         assert utils.get_binding('<<Menubar:Run/Run>>', menu=True) == 'F5'
-        assert utils.get_binding('<<Foo>>', menu=True) == ''   # not possible to show
+        assert utils.get_binding('<<Urls:OpenWithMouse>>', menu=True) == ''   # not possible to show
 
         assert utils.get_binding('<<Menubar:File/New File>>', menu=False) == '⌘N'
         assert utils.get_binding('<<Menubar:File/Save>>', menu=False) == '⌘S'
@@ -83,7 +80,7 @@ def test_get_binding():
         assert utils.get_binding('<<Menubar:View/Reset Font Size>>', menu=False) == '⌘0'
         assert utils.get_binding('<<Menubar:Edit/Fold>>', menu=False) == '⌥F'
         assert utils.get_binding('<<Menubar:Run/Run>>', menu=False) == 'F5'
-        assert utils.get_binding('<<Foo>>', menu=False) == '⌘click'
+        assert utils.get_binding('<<Urls:OpenWithMouse>>', menu=False) == '⌘-click'
 
     else:
         # menu option has no effect
@@ -96,4 +93,4 @@ def test_get_binding():
             assert utils.get_binding('<<Menubar:View/Reset Font Size>>', menu=boolean) == 'Ctrl+Zero'
             assert utils.get_binding('<<Menubar:Edit/Fold>>', menu=boolean) == 'Alt+F'
             assert utils.get_binding('<<Menubar:Run/Run>>', menu=boolean) == 'F5'
-            assert utils.get_binding('<<Foo>>', menu=boolean) == 'Ctrl+click'
+            assert utils.get_binding('<<Urls:OpenWithMouse>>', menu=boolean) == 'Ctrl+click'

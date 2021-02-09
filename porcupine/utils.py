@@ -300,7 +300,6 @@ def _format_binding(binding: str, menu: bool) -> str:
     if mac and menu and re.search(r'\bButton-1\b', binding):
         return ''
 
-    # TODO: on Mac, ⌘-click instead of ⌘click
     binding = re.sub(r'\bButton-1\b', 'click', binding)
     binding = re.sub(r'\b[A-Za-z]\b', _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
     binding = re.sub(r'\bKey-\b', '', binding)
@@ -330,7 +329,10 @@ def _format_binding(binding: str, menu: bool) -> str:
 
     # "Command--" --> "Command-"
     # "Command-+" --> "Command+"
-    return re.sub(r'-(-?)', r'\1', binding)
+    binding = re.sub(r'-(-?)', r'\1', binding)
+
+    # e.g. ⌘-click
+    return binding.replace('click', '-click')
 
 
 # TODO: document this
