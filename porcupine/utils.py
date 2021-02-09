@@ -336,7 +336,6 @@ def _format_binding(binding: str, menu: bool) -> str:
 
 # TODO: document this
 def get_binding(virtual_event: str, *, menu: bool = False) -> str:
-    assert virtual_event.startswith('<<') and virtual_event.endswith('>>'), virtual_event
     bindings = porcupine.get_main_window().event_info(virtual_event)
     if not bindings and not menu:
         log.warning(f"no bindings configured for {virtual_event}")
