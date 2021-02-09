@@ -300,6 +300,7 @@ def _binding_to_shortcut(binding: str, menu: bool) -> str:
     if mac and menu and re.search(r'\bButton-1\b', binding):
         return ''
 
+    # TODO: on Mac, ⌘-click instead of ⌘click
     binding = re.sub(r'\bButton-1\b', 'click', binding)
     binding = re.sub(r'\b[A-Za-z]\b', _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
     binding = re.sub(r'\bKey-\b', '', binding)
@@ -333,7 +334,8 @@ def _binding_to_shortcut(binding: str, menu: bool) -> str:
 
 
 # TODO: document this
-def get_keyboard_shortcut(virtual_event: str, menu: bool) -> str:
+# TODO: rename, it's no longer for keyboard shortcuts only
+def get_keyboard_shortcut(virtual_event: str, *, menu: bool = False) -> str:
     assert virtual_event.startswith('<<') and virtual_event.endswith('>>'), virtual_event
     bindings = porcupine.get_main_window().event_info(virtual_event)
     return _binding_to_shortcut(bindings[0], menu) if bindings else ''

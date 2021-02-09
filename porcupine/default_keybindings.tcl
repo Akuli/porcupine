@@ -39,6 +39,10 @@ event add "<<Menubar:Edit/Find and Replace>>" <$contmand-f>
 # fold plugin
 event add "<<Menubar:Edit/Fold>>" <Alt-f>
 
+# urls plugin
+event add "<<Urls:OpenWithMouse>>" <$contmand-Button-1>
+event add "<<Urls:OpenWithKeyboard>>" <$contmand-Return>
+
 # tab_order plugin
 # Prior = Page Up, Next = Page Down
 event add "<<TabOrder:SelectLeft>>" <$contmand-Prior>
