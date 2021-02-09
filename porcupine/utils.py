@@ -307,7 +307,7 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
     if mac:
         binding = re.sub(r'\bMod1\b', 'Command', binding)  # event_info() returns <Mod1-Key-x> for <Command-x>
         binding = re.sub(r'\bplus\b', '+', binding)
-        binding = re.sub(r'\bminus\b', '-', binding)
+        binding = re.sub(r'\bminus\b', '-', binding)   # e.g. "Command-minus" --> "Command--"
     else:
         binding = re.sub(r'\bControl\b', 'Ctrl', binding)
         binding = re.sub(r'\b0\b', 'Zero', binding)   # most fonts don't distinguishes O and 0 nicely, mac font does
@@ -327,8 +327,9 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
     binding = re.sub(r'^(.*)Alt-', r'⌥\1', binding)
     binding = re.sub(r'^(.*)Control-', r'⌃\1', binding)   # this is NOT the ascii hat character, it's a different hat
     binding = re.sub(r'^(.*)Shift-', r'⇧\1', binding)
-    return re.sub(r'-(?=[^-])', '', binding)
 
+    # "Command--" --> "Command-" (first dash gone, second stays)
+    return re.sub(r'-(?=[^-])', '', binding)
 
 
 class EventDataclass:
