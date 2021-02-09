@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 import socket
 import threading
@@ -100,6 +101,7 @@ def test_success_dialog(monkeypatch):
     dialog.destroy()
 
 
+@pytest.mark.skipif(platform.system() == 'Darwin', reason="freezes Mac CI")
 def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager):
     with socket.socket() as termbin:
         termbin.bind(('localhost', 0))
