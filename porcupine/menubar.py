@@ -170,16 +170,7 @@ def update_keyboard_shortcuts() -> None:
         event_name = f'<<Menubar:{path}>>'
 
         # show keyboard shortcuts in menus
-        shortcuts = [
-            utils.get_keyboard_shortcut(binding, menu=True)
-            for binding in main_window.event_info(event_name)
-        ]
-        if menu.tk.call('tk', 'windowingsystem') == 'aqua':
-            # Multiple shortcuts comma-separated likely wouldn't work, since
-            # the shortcut strings get parsed in a weird way
-            menu.entryconfig(index, accelerator=(shortcuts[0] if shortcuts else ''))
-        else:
-            menu.entryconfig(index, accelerator=', '.join(shortcuts))
+        menu.entryconfig(index, accelerator=utils.get_keyboard_shortcut(event_name, menu=True))
 
         # trigger menu items when <<Menubar:Foo/Bar>> events are generated
         if not main_window.bind(event_name):

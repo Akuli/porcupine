@@ -59,45 +59,41 @@ def test_get_children_recursively():
 
 
 def test_get_keyboard_shortcut():
+    # TODO: get rid of this when there is a virtual event that actually uses this
+    get_main_window().eval('event add <<Foo>> <$contmand-Button-1>')
+
+    # User-wide keybindings.tcl is not loaded when tests run
     if platform.system() == 'Darwin':
         # Tk will show these with the proper symbols and stuff when these go to menu
-        assert utils.get_keyboard_shortcut('<Command-n>', menu=True) == 'Command-N'
-        assert utils.get_keyboard_shortcut('<Mod1-Key-n>', menu=True) == 'Command-N'
-        assert utils.get_keyboard_shortcut('<Command-s>', menu=True) == 'Command-S'
-        assert utils.get_keyboard_shortcut('<Command-S>', menu=True) == 'Command-Shift-S'
-        assert utils.get_keyboard_shortcut('<Command-plus>', menu=True) == 'Command-+'
-        assert utils.get_keyboard_shortcut('<Command-minus>', menu=True) == 'Command--'
-        assert utils.get_keyboard_shortcut('<Command-0>', menu=True) == 'Command-0'
-        assert utils.get_keyboard_shortcut('<Command-1>', menu=True) == 'Command-1'
-        assert utils.get_keyboard_shortcut('<Alt-f>', menu=True) == 'Alt-F'
-        assert utils.get_keyboard_shortcut('<F4>', menu=True) == 'F4'
-        assert utils.get_keyboard_shortcut('<F11>', menu=True) == 'F11'
-        assert utils.get_keyboard_shortcut('<Command-Button-1>', menu=True) == ''   # not possible to show
+        assert utils.get_keyboard_shortcut('<<Menubar:File/New File>>', menu=True) == 'Command-N'
+        assert utils.get_keyboard_shortcut('<<Menubar:File/Save>>', menu=True) == 'Command-S'
+        assert utils.get_keyboard_shortcut('<<Menubar:File/Save As>>', menu=True) == 'Command-Shift-S'
+        assert utils.get_keyboard_shortcut('<<Menubar:View/Bigger Font>>', menu=True) == 'Command-+'
+        assert utils.get_keyboard_shortcut('<<Menubar:View/Smaller Font>>', menu=True) == 'Command--'
+        assert utils.get_keyboard_shortcut('<<Menubar:View/Reset Font Size>>', menu=True) == 'Command-0'
+        assert utils.get_keyboard_shortcut('<<Menubar:Edit/Fold>>', menu=True) == 'Alt-F'
+        assert utils.get_keyboard_shortcut('<<Menubar:Run/Run>>', menu=True) == 'F5'
+        assert utils.get_keyboard_shortcut('<<Foo>>', menu=True) == ''   # not possible to show
 
-        assert utils.get_keyboard_shortcut('<Command-n>', menu=False) == '⌘N'
-        assert utils.get_keyboard_shortcut('<Mod1-Key-n>', menu=False) == '⌘N'
-        assert utils.get_keyboard_shortcut('<Command-s>', menu=False) == '⌘S'
-        assert utils.get_keyboard_shortcut('<Command-S>', menu=False) == '⇧⌘S'
-        assert utils.get_keyboard_shortcut('<Command-plus>', menu=False) == '⌘+'
-        assert utils.get_keyboard_shortcut('<Command-minus>', menu=False) == '⌘-'
-        assert utils.get_keyboard_shortcut('<Command-0>', menu=False) == '⌘0'
-        assert utils.get_keyboard_shortcut('<Command-1>', menu=False) == '⌘1'
-        assert utils.get_keyboard_shortcut('<Alt-f>', menu=False) == '⌥F'
-        assert utils.get_keyboard_shortcut('<F4>', menu=False) == 'F4'
-        assert utils.get_keyboard_shortcut('<F11>', menu=False) == 'F11'
-        assert utils.get_keyboard_shortcut('<Command-Button-1>', menu=False) == '⌘click'
+        assert utils.get_keyboard_shortcut('<<Menubar:File/New File>>', menu=False) == '⌘N'
+        assert utils.get_keyboard_shortcut('<<Menubar:File/Save>>', menu=False) == '⌘S'
+        assert utils.get_keyboard_shortcut('<<Menubar:File/Save As>>', menu=False) == '⇧⌘S'
+        assert utils.get_keyboard_shortcut('<<Menubar:View/Bigger Font>>', menu=False) == '⌘+'
+        assert utils.get_keyboard_shortcut('<<Menubar:View/Smaller Font>>', menu=False) == '⌘-'
+        assert utils.get_keyboard_shortcut('<<Menubar:View/Reset Font Size>>', menu=False) == '⌘0'
+        assert utils.get_keyboard_shortcut('<<Menubar:Edit/Fold>>', menu=False) == '⌥F'
+        assert utils.get_keyboard_shortcut('<<Menubar:Run/Run>>', menu=False) == 'F5'
+        assert utils.get_keyboard_shortcut('<<Foo>>', menu=False) == '⌘click'
 
     else:
         # menu option has no effect
         for boolean in [True, False]:
-            assert utils.get_keyboard_shortcut('<Control-c>', menu=boolean) == 'Ctrl+C'
-            assert utils.get_keyboard_shortcut('<Control-Key-c>', menu=boolean) == 'Ctrl+C'
-            assert utils.get_keyboard_shortcut('<Control-C>', menu=boolean) == 'Ctrl+Shift+C'
-            assert utils.get_keyboard_shortcut('<Control-plus>', menu=boolean) == 'Ctrl+Plus'
-            assert utils.get_keyboard_shortcut('<Control-minus>', menu=boolean) == 'Ctrl+Minus'
-            assert utils.get_keyboard_shortcut('<Control-0>', menu=boolean) == 'Ctrl+Zero'
-            assert utils.get_keyboard_shortcut('<Control-1>', menu=boolean) == 'Ctrl+1'
-            assert utils.get_keyboard_shortcut('<Alt-f>', menu=boolean) == 'Alt+F'
-            assert utils.get_keyboard_shortcut('<F4>', menu=boolean) == 'F4'
-            assert utils.get_keyboard_shortcut('<F11>', menu=boolean) == 'F11'
-            assert utils.get_keyboard_shortcut('<Control-Button-1>', menu=boolean) == 'Ctrl+click'
+            assert utils.get_keyboard_shortcut('<<Menubar:File/New File>>', menu=boolean) == 'Ctrl+N'
+            assert utils.get_keyboard_shortcut('<<Menubar:File/Save>>', menu=boolean) == 'Ctrl+S'
+            assert utils.get_keyboard_shortcut('<<Menubar:File/Save As>>', menu=boolean) == 'Ctrl+Shift+S'
+            assert utils.get_keyboard_shortcut('<<Menubar:View/Bigger Font>>', menu=boolean) == 'Ctrl+Plus'
+            assert utils.get_keyboard_shortcut('<<Menubar:View/Smaller Font>>', menu=boolean) == 'Ctrl+Minus'
+            assert utils.get_keyboard_shortcut('<<Menubar:View/Reset Font Size>>', menu=boolean) == 'Ctrl+Zero'
+            assert utils.get_keyboard_shortcut('<<Menubar:Edit/Fold>>', menu=boolean) == 'Alt+F'
+            assert utils.get_keyboard_shortcut('<<Menubar:Run/Run>>', menu=boolean) == 'F5'
+            assert utils.get_keyboard_shortcut('<<Foo>>', menu=boolean) == 'Ctrl+click'

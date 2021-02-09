@@ -291,8 +291,7 @@ def _handle_letter(match: Match[str]) -> str:
     return match.group(0).upper()
 
 
-# TODO: switch to taking in virtual event as an argument
-def get_keyboard_shortcut(binding: str, menu: bool) -> str:
+def _binding_to_shortcut(binding: str, menu: bool) -> str:
     # this doesn't handle all possible cases, see bind(3tk)
     mac = (porcupine.get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
     binding = binding.lstrip('<').rstrip('>')
@@ -331,6 +330,13 @@ def get_keyboard_shortcut(binding: str, menu: bool) -> str:
     # "Command--" --> "Command-"
     # "Command-+" --> "Command+"
     return re.sub(r'-(-?)', r'\1', binding)
+
+
+# TODO: document this
+def get_keyboard_shortcut(virtual_event: str, menu: bool) -> str:
+    assert virtual_event.startswith('<<') and virtual_event.endswith('>>'), virtual_event
+    bindings = porcupine.get_main_window().event_info(virtual_event)
+    return _binding_to_shortcut(bindings[0], menu) if bindings else ''
 
 
 class EventDataclass:
