@@ -1,4 +1,5 @@
 import dataclasses
+import platform
 import typing
 from tkinter import ttk
 
@@ -55,3 +56,45 @@ def test_get_children_recursively():
             parent, child1, child2, child2a, child2b]
     finally:
         parent.destroy()
+
+
+def test_get_keyboard_shortcut():
+    if platform.system() == 'Darwin':
+        # Tk will show these with the proper symbols and stuff when these go to menu
+        assert utils.get_keyboard_shortcut('<Command-n>') == 'Command-N'
+        assert utils.get_keyboard_shortcut('<Mod1-Key-n>') == 'Command-N'
+        assert utils.get_keyboard_shortcut('<Command-s>') == 'Command-S'
+        assert utils.get_keyboard_shortcut('<Command-S>') == 'Command-Shift-S'
+        assert utils.get_keyboard_shortcut('<Command-plus>') == 'Command-+'
+        assert utils.get_keyboard_shortcut('<Command-minus>') == 'Command--'
+        assert utils.get_keyboard_shortcut('<Command-0>') == 'Command-0'
+        assert utils.get_keyboard_shortcut('<Command-1>') == 'Command-1'
+        assert utils.get_keyboard_shortcut('<Alt-f>') == 'Alt-F'
+        assert utils.get_keyboard_shortcut('<F4>') == 'F4'
+        assert utils.get_keyboard_shortcut('<F11>') == 'F11'
+
+        assert utils.get_keyboard_shortcut('<Command-n>', menu=False) == '⌘N'
+        assert utils.get_keyboard_shortcut('<Mod1-Key-n>', menu=False) == '⌘N'
+        assert utils.get_keyboard_shortcut('<Command-s>', menu=False) == '⌘S'
+        assert utils.get_keyboard_shortcut('<Command-S>', menu=False) == '⌘⇧S'
+        assert utils.get_keyboard_shortcut('<Command-plus>', menu=False) == '⌘+'
+        assert utils.get_keyboard_shortcut('<Command-minus>', menu=False) == '⌘-'
+        assert utils.get_keyboard_shortcut('<Command-0>', menu=False) == '⌘0'
+        assert utils.get_keyboard_shortcut('<Command-1>', menu=False) == '⌘1'
+        assert utils.get_keyboard_shortcut('<Alt-f>', menu=False) == '⌥F'
+        assert utils.get_keyboard_shortcut('<F4>', menu=False) == 'F4'
+        assert utils.get_keyboard_shortcut('<F11>', menu=False) == 'F11'
+
+    else:
+        # menu option has no effect
+        for boolean in [True, False]:
+            assert utils.get_keyboard_shortcut('<Control-c>', menu=boolean) == 'Ctrl+C'
+            assert utils.get_keyboard_shortcut('<Control-Key-c>', menu=boolean) == 'Ctrl+C'
+            assert utils.get_keyboard_shortcut('<Control-C>', menu=boolean) == 'Ctrl+Shift+C'
+            assert utils.get_keyboard_shortcut('<Control-plus>', menu=boolean) == 'Ctrl+Plus'
+            assert utils.get_keyboard_shortcut('<Control-minus>', menu=boolean) == 'Ctrl+Minus'
+            assert utils.get_keyboard_shortcut('<Control-0>', menu=boolean) == 'Ctrl+Zero'
+            assert utils.get_keyboard_shortcut('<Control-1>', menu=boolean) == 'Ctrl+1'
+            assert utils.get_keyboard_shortcut('<Alt-f>', menu=boolean) == 'Alt+F'
+            assert utils.get_keyboard_shortcut('<F4>', menu=boolean) == 'F4'
+            assert utils.get_keyboard_shortcut('<F11>', menu=boolean) == 'F11'

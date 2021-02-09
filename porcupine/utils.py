@@ -15,6 +15,7 @@ import sys
 import threading
 import tkinter
 import traceback
+from string import ascii_lowercase, ascii_uppercase
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Callable, Deque, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
@@ -279,6 +280,40 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
         cast(Any, widget)._tooltip_manager = _TooltipManager(widget, text)
         return
     manager.text = text
+
+
+# TODO: switch to taking in virtual event as an argument
+def get_keyboard_shortcut(binding: str, menu: bool) -> str:
+    mac = (porcupine.get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
+    result = []
+
+    # this doesn't handle all possible cases, see bind(3tk)
+    for part in binding.lstrip('<').rstrip('>').split('-'):
+        if part == 'Control' and not mac:
+            result.append('Ctrl')
+        elif part == 'Mod1' and mac:   # event_info() returns <Mod1-Key-x> for <Command-x>
+            result.append('Command')
+        elif part == 'Key':    # <Control-c> and <Control-Key-c> do the same thing
+            continue
+        # tk doesnt like e.g. <Control-ö> :( that's why ascii only here
+        elif len(part) == 1 and part in ascii_lowercase:
+            result.append(part.upper())
+        elif len(part) == 1 and part in ascii_uppercase:
+            result.append('Shift')
+            result.append(part)
+        elif part == '0' and not mac:
+            # 0 and O look too much like each other, except on Mac where default
+            # font has a very clear diagonal line across zero.
+            result.append('Zero')
+        elif part == 'plus' and mac:
+            result.append('+')
+        elif part == 'minus' and mac:
+            result.append('-')
+        else:
+            # good enough guess :D
+            result.append(part.capitalize())
+
+    return ('-' if mac else '+').join(result)
 
 
 class EventDataclass:
