@@ -4,20 +4,19 @@ import re
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, images, tabs
+from porcupine import get_tab_manager, images, tabs, utils
 
 
 def get_message() -> str:
-    result = """
-To get started, create a new file by pressing Ctrl+N or open an existing
-file by pressing Ctrl+O. You can save the file with Ctrl+S and then run it by
-pressing F5.
+    result = f"""
+To get started, create a new file by pressing {utils.get_binding('<<Menubar:File/New File>>')}
+or open an existing file by pressing {utils.get_binding('<<Menubar:File/Open>>')}.
+You can save the file with {utils.get_binding('<<Menubar:File/Save>>')}
+and then run it by pressing {utils.get_binding('<<Menubar:Run/Run>>')}.
 
 See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
 """
-    if get_tab_manager().tk.call('tk', 'windowingsystem') == 'aqua':
-        result = result.replace('Ctrl+', '⌘')
 
     # replace single newlines with spaces
     return re.sub(r'(.)\n(.)', r'\1 \2', result.strip())
