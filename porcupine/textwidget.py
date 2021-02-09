@@ -1,9 +1,9 @@
 import contextlib
 import dataclasses
-import functools
 import re
 import tkinter
 import weakref
+from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
 
 from pygments import styles  # type: ignore[import]
@@ -218,7 +218,7 @@ class _ChangeTracker:
         ''' % {
             'fake_widget': str(widget),
             'actual_widget': actual_widget_command,
-            'change_event_from_command': widget.register(functools.partial(self._change_event_from_command, widget)),
+            'change_event_from_command': widget.register(partial(self._change_event_from_command, widget)),
             'event_receiver': self._event_receiver_widget,
             'cursor_moved_callback': widget.register(cursor_pos_changed),
         })
@@ -609,7 +609,6 @@ class MainText(tkinter.Text):
 
         # FIXME: lots of things have been turned into plugins, but
         # there's still wayyyy too much stuff in here...
-        partial = functools.partial     # pep8 line length
         self.bind('<BackSpace>', partial(self._on_delete, False), add=True)
         self.bind(f'<{utils.contmand()}-BackSpace>', partial(self._on_delete, True), add=True)
         self.bind(f'<{utils.contmand()}-Delete>', partial(self._on_delete, True), add=True)

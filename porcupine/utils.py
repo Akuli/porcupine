@@ -148,8 +148,7 @@ def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
     return project_file_path.parent
 
 
-# TODO: document this
-# TODO: grep for all usages and see if they should instead use keybindings.tcl stuff
+# TODO: get rid of this and use virtual events and keybindings.tcl instead
 def contmand() -> str:
     widget = porcupine.get_main_window()    # any widget would do
     return 'Command' if widget.tk.call('tk', 'windowingsystem') == "aqua" else 'Control'
