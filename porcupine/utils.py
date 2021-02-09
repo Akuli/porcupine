@@ -15,16 +15,19 @@ import sys
 import threading
 import tkinter
 import traceback
-from string import ascii_lowercase, ascii_uppercase
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Callable, Deque, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
 import dacite
 
-if sys.version_info >= (3, 8):
+if sys.version_info >= (3, 9):
+    from re import Match
     from typing import Literal
+elif sys.version_info >= (3, 8):
+    from typing import Literal, Match
 else:
     from typing_extensions import Literal
+    from typing import Match
 
 import porcupine
 
@@ -282,64 +285,50 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
     manager.text = text
 
 
+def _handle_letter(match: Match[str]) -> str:
+    if match.group(0).isupper():
+        return 'Shift-' + match.group(0)
+    return match.group(0).upper()
+
+
 # TODO: switch to taking in virtual event as an argument
 def get_keyboard_shortcut(binding: str, menu: bool) -> str:
-    mac = (porcupine.get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
-    result = []
-
     # this doesn't handle all possible cases, see bind(3tk)
-    parts = binding.lstrip('<').rstrip('>').split('-')
-    while parts:
-        part = parts.pop(0)
-        if part == 'Control' and not mac:
-            result.append('Ctrl')
-        elif part == 'Mod1' and mac:   # event_info() returns <Mod1-Key-x> for <Command-x>
-            result.append('Command')
-        elif part == 'Key':    # <Control-c> and <Control-Key-c> do the same thing
-            continue
-        # tk doesnt like e.g. <Control-ö> :( that's why ascii only here
-        elif len(part) == 1 and part in ascii_lowercase:
-            result.append(part.upper())
-        elif len(part) == 1 and part in ascii_uppercase:
-            result.append('Shift')
-            result.append(part)
-        elif part == '0' and not mac:
-            # 0 and O look too much like each other, except on Mac where default
-            # font has a very clear diagonal line across zero.
-            result.append('Zero')
-        elif part == 'plus' and mac:
-            result.append('+')
-        elif part == 'minus' and mac:
-            result.append('-')
-        elif part == 'Button' and parts and parts[0] == '1':
-            # Button-1 --> click
-            if mac and menu:
-                return ''    # don't know how to show in mac menus
-            del parts[0]
-            result.append('click')
-        else:
-            # good enough guess :D
-            result.append(part.capitalize())
+    mac = (porcupine.get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
+    binding = binding.lstrip('<').rstrip('>')
 
+    # don't know how to show click in mac menus
+    if mac and menu and re.search(r'\bButton-1\b', binding):
+        return ''
+
+    binding = re.sub(r'\bButton-1\b', 'click', binding)
+    binding = re.sub(r'\b[A-Za-z]\b', _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
+    binding = re.sub(r'\bKey-\b', '', binding)
     if mac:
-        if menu:
-            # Tk will use the proper symbols automagically, and it expects dash-separated
-            return '-'.join(result)
+        binding = re.sub(r'\bMod1\b', 'Command', binding)  # event_info() returns <Mod1-Key-x> for <Command-x>
+        binding = re.sub(r'\bplus\b', '+', binding)
+        binding = re.sub(r'\bminus\b', '-', binding)
+    else:
+        binding = re.sub(r'\bControl\b', 'Ctrl', binding)
+        binding = re.sub(r'\b0\b', 'Zero', binding)   # most fonts don't distinguishes O and 0 nicely, mac font does
+        binding = re.sub(r'\bplus\b', 'Plus', binding)
+        binding = re.sub(r'\bminus\b', 'Minus', binding)
 
-        # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
-        fancy_unicodes = [
-            ('Shift', '⇧'),
-            ('Control', '⌃'),   # this is NOT the ascii hat character, it's a different hat
-            ('Alt', '⌥'),
-            ('Command', '⌘'),
-        ]
-        for old, new in reversed(fancy_unicodes):
-            if old in result:
-                result.remove(old)
-                result.insert(0, new)   # reversed(fancy_unicodes) because inserting to beginning
-        return ''.join(result)
+    if not mac:
+        return binding.replace('-', '+')
 
-    return '+'.join(result)
+    if menu:
+        # Tk will use the proper symbols automagically, and it expects dash-separated
+        return binding
+
+    # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
+    # We need to sub backwards, because each sub puts its thing before everything else
+    binding = re.sub(r'^(.*)Command-', r'⌘\1', binding)
+    binding = re.sub(r'^(.*)Alt-', r'⌥\1', binding)
+    binding = re.sub(r'^(.*)Control-', r'⌃\1', binding)   # this is NOT the ascii hat character, it's a different hat
+    binding = re.sub(r'^(.*)Shift-', r'⇧\1', binding)
+    return re.sub(r'-([^-])', r'\1', binding)
+
 
 
 class EventDataclass:
