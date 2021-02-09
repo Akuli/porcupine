@@ -5,7 +5,6 @@ import sys
 import tkinter
 import traceback
 import webbrowser
-from string import ascii_lowercase, ascii_uppercase
 from tkinter import filedialog
 from typing import Callable, Iterator, Optional, Sequence, Tuple, cast
 
