@@ -62,7 +62,7 @@ jobs:
         python-version: ["3.8", "3.9"]
     steps:
     - uses: actions/checkout@v2
-    - run: brew install python@${{ matrix.python-version }}
+    - run: brew reinstall python@${{ matrix.python-version }}
     - run: python3 --version
     - run: python${{ matrix.python-version }} --version
 #    - run: python3 -m pip install -r requirements.txt -r requirements-dev.txt
