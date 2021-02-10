@@ -61,7 +61,7 @@ def setup() -> None:
     for n in range(1, 10):
         get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(select_tab_n, n), add=True)
 
-    # TODO: does this work with mac os smooth scrolling? probably not
-    utils.bind_mouse_wheel(get_tab_manager(), (
-        lambda direction: select_left_or_right({'up': -1, 'down': +1}[direction])
-    ), add=True)
+    def scroll_callback(direction: str) -> None:
+        select_left_or_right({'up': -1, 'down': +1}[direction])
+
+    utils.bind_mouse_wheel(get_tab_manager(), scroll_callback, add=True)

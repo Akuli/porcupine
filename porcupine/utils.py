@@ -610,9 +610,13 @@ def bind_tab_key(
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
 
 
+# bigger value --> less sensitive
+MACOS_MOUSE_WHEEL_STEP = 2.5
+
+
 def bind_mouse_wheel(
         widget_or_class_name: Union[tkinter.Misc, str],
-        callback: Callable[[Literal['up', 'down']], BreakOrNone],
+        callback: Callable[[Literal['up', 'down']], None],
         *,
         prefixes: str = '',
         add: Optional[bool] = None) -> None:
@@ -628,10 +632,6 @@ def bind_mouse_wheel(
 
     If *widget* is a string, then it should be a widget class name for
     ``bind_class()``, such as ``Text`` to bind all text widgets.
-
-    .. note::
-        This function has not been tested on OSX. If you have a Mac,
-        please try it out and let me know how much it sucked.
     """
     some_widget = porcupine.get_main_window()    # any widget would do
 
@@ -641,19 +641,37 @@ def bind_mouse_wheel(
     else:
         bind = widget_or_class_name.bind
 
-    # i needed to cheat and use stackoverflow for the mac stuff :(
-    # http://stackoverflow.com/a/17457843
     if some_widget.tk.call('tk', 'windowingsystem') == 'x11':
-        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> BreakOrNone:
-            return callback('up' if event.num == 4 else 'down')
+        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
+            callback('up' if event.num == 4 else 'down')
 
         bind(f'<{prefixes}Button-4>', real_callback, add)
         bind(f'<{prefixes}Button-5>', real_callback, add)
 
-    else:
-        # TODO: test this on OSX
-        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> BreakOrNone:
-            return callback('up' if event.delta > 0 else 'down')
+    elif some_widget.tk.call('tk', 'windowingsystem') == 'aqua':
+        # Handle smooth scrolling
+        accumulator = 0
+
+        def reset(event: 'tkinter.Event[tkinter.Misc]') -> None:
+            nonlocal accumulator
+            accumulator = 0
+
+        def scroll(event: 'tkinter.Event[tkinter.Misc]') -> None:
+            nonlocal accumulator
+            accumulator += event.delta
+            if accumulator > MACOS_MOUSE_WHEEL_STEP:
+                accumulator -= MACOS_MOUSE_WHEEL_STEP
+                callback('up')
+            elif accumulator < -MACOS_MOUSE_WHEEL_STEP:
+                accumulator += MACOS_MOUSE_WHEEL_STEP
+                callback('down')
+
+        bind(f'<{prefixes}MouseWheel>', scroll, add)
+        bind('<Leave>', reset, add=True)
+
+    else:  # Windows
+        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
+            callback('up' if event.delta > 0 else 'down')
 
         bind(f'<{prefixes}MouseWheel>', real_callback, add)
 
