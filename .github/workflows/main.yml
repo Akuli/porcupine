@@ -46,6 +46,8 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    # Make sure that it doesn't crash with Noto Color Emoji
+    - run: sudo apt install fonts-noto-color-emoji
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - uses: GabrielBB/xvfb-action@v1.4
       with:
