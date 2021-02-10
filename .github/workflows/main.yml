@@ -54,10 +54,11 @@ jobs:
         run: python3 -m pytest -vvvv
   pytest-macos:
     # https://github.com/actions/setup-python/issues/58
+    # Brew-installed python 3.8 and 3.9 seem to already be there, so it's not slow
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.8", "3.9"]
     steps:
     - uses: actions/checkout@v2
     - run: brew install python@${{ matrix.python-version }}
