@@ -186,6 +186,7 @@ def import_plugins(disabled_on_command_line: List[str]) -> None:
         )
         for finder, name, is_pkg in pkgutil.iter_modules(plugin_paths)
         if not name.startswith('_')
+        and name != 'overview'  # workaround for #328
     )
     _dependencies.update({info: set() for info in plugin_infos})
 
