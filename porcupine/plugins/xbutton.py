@@ -11,7 +11,7 @@ def close_clicked_tab(event: 'tkinter.Event[tabs.TabManager]') -> None:
         event.widget.close_tab(tab)
 
 
-def on_click(event: 'tkinter.Event[tabs.TabManager]') -> None:
+def on_x_clicked(event: 'tkinter.Event[tabs.TabManager]') -> None:
     if event.widget.identify(event.x, event.y) == 'label':
         # find the right edge of the top label (including close button)
         right = event.x
@@ -24,7 +24,7 @@ def on_click(event: 'tkinter.Event[tabs.TabManager]') -> None:
 
 
 # Close tab on middle-click (press down the wheel of the mouse)
-def on_middle_click(event: 'tkinter.Event[tabs.TabManager]') -> None:
+def on_tab_clicked(event: 'tkinter.Event[tabs.TabManager]') -> None:
     if event.widget.identify(event.x, event.y) == 'label':
         close_clicked_tab(event)
 
@@ -34,6 +34,5 @@ def setup() -> None:
     tabmanager.add_tab_callback(lambda tab: get_tab_manager().tab(
         tab, image=images.get('closebutton'), compound='right'
     ))
-    tabmanager.bind('<Button-1>', on_click, add=True)
-    # TODO: <Button-2> is right-click on Mac, is that good for this?
-    tabmanager.bind('<Button-2>', on_middle_click, add=True)
+    tabmanager.bind('<<XButton:CloseWhenCloseButtonClicked>>', on_x_clicked, add=True)
+    tabmanager.bind('<<XButton:CloseWhenTabClicked>>', on_tab_clicked, add=True)

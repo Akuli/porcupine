@@ -54,6 +54,12 @@ for {set i 1} {$i <= 9} {incr i} {
     event add "<<TabOrder:SelectTab$i>>" <Alt-Key-$i>
 }
 
+# xbutton plugin
+event add "<<XButton:CloseWhenCloseButtonClicked>>" <Button-1>
+if {[tk windowingsystem] != "aqua"} {   # doesn't make sense on mac, see #303
+    event add "<<XButton:CloseWhenTabClicked>>" <Button-2>
+}
+
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
 # I use non-shifted ctrl+t for swapping two characters before cursor while editing
