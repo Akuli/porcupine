@@ -54,3 +54,7 @@ def test_selection(filetab):
     filetab.textwidget.tag_add('sel', '1.2', '3.1')
     filetab.update()
     assert statusbar.right_label['text'] == '9 characters on 3 lines selected'
+
+    filetab.textwidget.tag_remove('sel', '1.0', 'end')
+    filetab.update()
+    assert statusbar.right_label['text'] == 'Line 1, column 2'
