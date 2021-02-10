@@ -67,6 +67,9 @@ jobs:
     - run: echo python""${{ matrix.python_version }}
     - run: echo python"${{ matrix.python_version }}"
     - run: echo "${{ matrix.python_version }}"
+    - run: echo ${{ matrix.python_version }}
+    - run: echo foo@${{ matrix.python_version }}
+    - run: echo $(echo foo@${{ matrix.python_version }} | sed s/@//)
 #    - run: python3 -m pip install -r requirements.txt -r requirements-dev.txt
 #    - run: python3 -m pytest -vvvv
 #  pycodestyle:
