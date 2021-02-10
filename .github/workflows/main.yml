@@ -27,7 +27,8 @@ jobs:
   pytest-windows:
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        # 3.6 freezes randomly (#324)
+        python-version: ["3.7", "3.8", "3.9"]
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
