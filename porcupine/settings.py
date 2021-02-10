@@ -677,6 +677,11 @@ def _is_monospace(font_family: str) -> bool:
     # I don't want to create font objects just for this, lol
     tcl_interpreter = get_dialog_content().tk
 
+    # https://core.tcl-lang.org/tk/info/3767882e06
+    version = tuple(map(int, tcl_interpreter.eval('info patchlevel').split('.')))
+    if version < (8, 6, 11) and 'emoji' in font_family.lower():
+        return False
+
     # Let's first ask Tcl whether the font is fixed. This is fastest but
     # returns the wrong result for some fonts that are not actually monospace.
     if not tcl_interpreter.call('font', 'metrics', (font_family, '12'), '-fixed'):
