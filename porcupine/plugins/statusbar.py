@@ -20,6 +20,7 @@ class StatusBar(ttk.Frame):
 
     def show_cursor_or_selection(self, junk: object = None) -> None:
         try:
+            # For line count, if the cursor is in beginning of line, don't count that as another line.
             count_chars_result = self.tab.textwidget.count('sel.first', 'sel.last')
             count_lines_result = self.tab.textwidget.count('sel.first', 'sel.last - 1 char', 'lines')
         except tkinter.TclError:
