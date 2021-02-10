@@ -1,6 +1,6 @@
 import pytest
 
-from porcupine import get_main_window, menubar, tabs, utils
+from porcupine import get_main_window, menubar, tabs
 
 
 def test_virtual_events_calling_menu_callbacks():
