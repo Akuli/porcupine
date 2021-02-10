@@ -64,12 +64,7 @@ jobs:
     - uses: actions/checkout@v2
     - run: brew install python@${{ matrix.python-version }}
     - run: python3 --version
-    - run: echo python""${{ matrix.python-version }}
-    - run: echo python"${{ matrix.python-version }}"
-    - run: echo "${{ matrix.python-version }}"
-    - run: echo ${{ matrix.python-version }}
-    - run: echo foo@${{ matrix.python-version }}
-    - run: echo $(echo foo@${{ matrix.python-version }} | sed s/@//)
+    - run: python${{ matrix.python-version }} --version
 #    - run: python3 -m pip install -r requirements.txt -r requirements-dev.txt
 #    - run: python3 -m pytest -vvvv
 #  pycodestyle:
