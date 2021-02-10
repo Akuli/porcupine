@@ -77,8 +77,7 @@ def test_finding(filetab_and_finder):
         finder.find_entry.delete(0, 'end')
         finder.find_entry.insert(0, substring)
         assert finder.find_entry.get() == substring
-        result = list(
-            map(str, filetab.textwidget.tag_ranges('find_highlight')))
+        result = list(map(str, filetab.textwidget.tag_ranges('find_highlight')))
 
         buttons = [finder.previous_button, finder.next_button,
                    finder.replace_all_button]
@@ -348,3 +347,20 @@ def test_selecting_messing_up_button_disableds(filetab_and_finder):
     filetab.update()
     assert filetab.textwidget.get('sel.first', 'sel.last') == 'as'
     assert str(finder.replace_this_button.cget('state')) == 'disabled'
+
+
+def test_find_selected(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    finder.hide()
+    filetab.textwidget.insert('end', "foo bar baz bar")
+    filetab.textwidget.mark_set('insert', '1.4')
+    filetab.textwidget.tag_add('sel', '1.4', '1.7')
+
+    finder.show()
+    assert finder.find_entry.get() == 'bar'
+    assert list(map(str, filetab.textwidget.tag_ranges('find_highlight'))) == ['1.4', '1.7', '1.12', '1.15']
+
+    finder.hide()
+    assert filetab.textwidget.index('insert') == '1.4'
+    assert filetab.textwidget.index('sel.first') == '1.4'
+    assert filetab.textwidget.index('sel.last') == '1.7'
