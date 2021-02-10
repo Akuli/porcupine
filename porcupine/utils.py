@@ -611,7 +611,7 @@ def bind_tab_key(
 
 
 # bigger value --> less sensitive
-MACOS_MOUSE_WHEEL_STEP = 10
+MACOS_MOUSE_WHEEL_STEP = 2.5
 
 
 def bind_mouse_wheel(
