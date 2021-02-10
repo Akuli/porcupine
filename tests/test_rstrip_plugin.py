@@ -1,3 +1,6 @@
+from porcupine import utils
+
+
 def test_rstrip(filetab):
     filetab.textwidget.insert('end', 'print("hello")  ')
     filetab.update()
@@ -9,6 +12,6 @@ def test_rstrip(filetab):
     filetab.textwidget.delete('1.0', 'end')
     filetab.textwidget.insert('end', 'print("hello")  ')
     filetab.update()
-    filetab.event_generate('<Control-Return>')
+    filetab.event_generate(f'<{utils.contmand()}-Return>')
     filetab.update()
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'print("hello")  \n'

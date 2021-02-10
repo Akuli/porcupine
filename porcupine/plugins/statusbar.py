@@ -21,12 +21,12 @@ class StatusBar(ttk.Frame):
         line, column = self.tab.textwidget.index('insert').split('.')
         self.right_label.config(text=f"Line {line}, column {column}")
 
-    # TODO: it's likely not ctrl+z on mac
     def show_reload_warning(self, event: utils.EventWithData) -> None:
         if event.data_class(tabs.ReloadInfo).was_modified:
+            oops = utils.get_binding('<<Undo>>')
             self.left_label.config(
                 foreground='red',
-                text="File was reloaded with unsaved changes. Press Ctrl+Z to get your changes back.",
+                text=f"File was reloaded with unsaved changes. Press {oops} to get your changes back.",
             )
 
     def clear_reload_warning(self, junk: object) -> None:

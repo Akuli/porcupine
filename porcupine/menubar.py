@@ -5,7 +5,6 @@ import sys
 import tkinter
 import traceback
 import webbrowser
-from string import ascii_lowercase, ascii_uppercase
 from tkinter import filedialog
 from typing import Callable, Iterator, Optional, Sequence, Tuple
 
@@ -150,50 +149,6 @@ def _walk_menu_contents(
                 yield (path, menu, index)
 
 
-def _get_keyboard_shortcut(binding: str) -> str:
-    """Convert a Tk binding string to a format that most people are used to.
-
-    >>> _get_keyboard_shortcut('<Control-c>')
-    'Ctrl+C'
-    >>> _get_keyboard_shortcut('<Control-Key-c>')
-    'Ctrl+C'
-    >>> _get_keyboard_shortcut('<Control-C>')
-    'Ctrl+Shift+C'
-    >>> _get_keyboard_shortcut('<Control-0>')
-    'Ctrl+Zero'
-    >>> _get_keyboard_shortcut('<Control-1>')
-    'Ctrl+1'
-    >>> _get_keyboard_shortcut('<F11>')
-    'F11'
-    """
-    # this doesn't handle all possible cases, see bind(3tk)
-    parts = binding.lstrip('<').rstrip('>').split('-')
-    result = []
-
-    for part in parts:
-        if part == 'Control':
-            # TODO: i think this is supposed to use the command symbol
-            # on OSX? i don't have a mac
-            result.append('Ctrl')
-        elif part == 'Key':
-            # <Control-c> and <Control-Key-c> do the same thing
-            continue
-        # tk doesnt like e.g. <Control-ö> :( that's why ascii only here
-        elif len(part) == 1 and part in ascii_lowercase:
-            result.append(part.upper())
-        elif len(part) == 1 and part in ascii_uppercase:
-            result.append('Shift')
-            result.append(part)
-        elif part == '0':
-            # 0 and O look too much like each other
-            result.append('Zero')
-        else:
-            # good enough guess :D
-            result.append(part.capitalize())
-
-    return '+'.join(result)
-
-
 def _menu_event_handler(menu: tkinter.Menu, index: int, junk: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
     menu.invoke(index)
     return 'break'
@@ -204,8 +159,8 @@ def update_keyboard_shortcuts() -> None:
     This function does two things to the *New File* menu item in the *File*
     menu, and similarly to all other menu items in all menus:
 
-        * Show *Ctrl+N* next to *New File*.
-        * Ensure that the menu item's callback runs when Ctrl+N is pressed.
+        * Show *Ctrl+N* (or *⌘N* on Mac) next to *New File*.
+        * Ensure that the menu item's callback runs when Ctrl+N (or Command+N) is pressed.
 
     This has to be called when menus or keyboard shortcuts have been modified.
     It's called automatically when a plugin has been set up.
@@ -215,11 +170,11 @@ def update_keyboard_shortcuts() -> None:
         event_name = f'<<Menubar:{path}>>'
 
         # show keyboard shortcuts in menus
-        shortcuts = map(_get_keyboard_shortcut, main_window.event_info(event_name))
-        menu.entryconfig(index, accelerator=', '.join(shortcuts))
+        menu.entryconfig(index, accelerator=utils.get_binding(event_name, menu=True))
 
         # trigger menu items when <<Menubar:Foo/Bar>> events are generated
         if not main_window.bind(event_name):
+            # FIXME: what if menu item is inserted somewhere else than to end, and indexes change?
             command = functools.partial(_menu_event_handler, menu, index)
             main_window.bind(event_name, command, add=True)
 
@@ -340,9 +295,10 @@ def _fill_menus_with_default_stuff() -> None:
         settings.set_('font_size', size)
 
     # trigger change_font_size() with mouse wheel from any text widget
+    # TODO: only do this in text widgets that actually use the font specified in settings
     utils.bind_mouse_wheel('Text', (
         lambda updn: change_font_size('bigger' if updn == 'up' else 'smaller')
-    ), prefixes='Control-', add=True)
+    ), prefixes=(utils.contmand() + '-'), add=True)
 
     get_menu("View").add_command(label="Bigger Font", command=functools.partial(change_font_size, 'bigger'))
     get_menu("View").add_command(label="Smaller Font", command=functools.partial(change_font_size, 'smaller'))

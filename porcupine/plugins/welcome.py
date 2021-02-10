@@ -4,19 +4,23 @@ import re
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, images, tabs
+from porcupine import get_tab_manager, images, tabs, utils
 
-MESSAGE = """
-To get started, create a new file by pressing Ctrl+N or open an existing
-file by pressing Ctrl+O. You can save the file with Ctrl+S and then run it by
-pressing F5.
+
+def get_message() -> str:
+    result = f"""
+To get started, create a new file by pressing {utils.get_binding('<<Menubar:File/New File>>')}
+or open an existing file by pressing {utils.get_binding('<<Menubar:File/Open>>')}.
+You can save the file with {utils.get_binding('<<Menubar:File/Save>>')}
+and then run it by pressing {utils.get_binding('<<Menubar:Run/Run>>')}.
 
 See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
 """
 
-# replace single newlines with spaces
-MESSAGE = re.sub(r'(.)\n(.)', r'\1 \2', MESSAGE.strip())
+    # replace single newlines with spaces
+    return re.sub(r'(.)\n(.)', r'\1 \2', result.strip())
+
 
 BORDER_SIZE = 30    # pixels
 
@@ -40,7 +44,7 @@ class WelcomeMessageDisplayer:
         self.title_label.place(relx=0.5, rely=0.5, anchor='center')
 
         self.message_label = ttk.Label(
-            self._frame, text=MESSAGE, font=('', 15, ''))
+            self._frame, text=get_message(), font=('', 15, ''))
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()

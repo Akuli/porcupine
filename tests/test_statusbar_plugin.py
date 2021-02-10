@@ -17,7 +17,9 @@ def test_reload_warning(filetab, tmp_path):
     filetab.path.write_text("foo")
     filetab.reload()
     filetab.update()
-    assert 'Press Ctrl+Z to get your changes back' in statusbar.left_label['text']
+    # Ctrl+Z or Command+Z
+    assert 'Press ' in statusbar.left_label['text']
+    assert 'Z to get your changes back' in statusbar.left_label['text']
     assert statusbar.left_label['foreground'] != ''
 
     filetab.textwidget.insert('1.0', 'a')   # assume user doesn't want changes back

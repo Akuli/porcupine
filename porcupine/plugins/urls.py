@@ -46,11 +46,13 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
 def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
     view_start = tab.textwidget.index('@0,0')
     view_end = tab.textwidget.index('@0,10000')
+    shortcut1 = utils.get_binding('<<Urls:OpenWithMouse>>')
+    shortcut2 = utils.get_binding('<<Urls:OpenWithKeyboard>>')
 
     tab.event_generate('<<SetUnderlines>>', data=underlines.Underlines(
         id='urls',
         underline_list=[
-            underlines.Underline(start, end, "ctrl+click or ctrl+enter to open")
+            underlines.Underline(start, end, f"{shortcut1} or {shortcut2} to open")
             for start, end in find_urls(tab.textwidget, view_start, view_end)
         ],
     ))
@@ -72,8 +74,9 @@ def on_new_tab(tab: tabs.Tab) -> None:
         utils.add_scroll_command(tab.textwidget, 'yscrollcommand', partial(update_url_underlines, tab))
         update_url_underlines(tab)
 
-        tab.textwidget.tag_bind('underline:urls', '<Control-Button-1>', partial(open_the_url, tab, 'current'), add=True)
-        tab.textwidget.bind('<Control-Return>', partial(open_the_url, tab, 'insert'), add=True)
+        tab.textwidget.tag_bind(
+            'underline:urls', '<<Urls:OpenWithMouse>>', partial(open_the_url, tab, 'current'), add=True)
+        tab.textwidget.bind('<<Urls:OpenWithKeyboard>>', partial(open_the_url, tab, 'insert'), add=True)
 
 
 def setup() -> None:

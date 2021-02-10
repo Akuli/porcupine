@@ -58,6 +58,6 @@ def test_text_widget_binding_weirdness(filetab):
     # pressing ctrl+w should leave the text as is (default bindings don't run)
     # and try to close the tab (except that we prevented it from closing)
     filetab.update()
-    filetab.textwidget.event_generate('<Control-w>')
+    filetab.textwidget.event_generate('<<Menubar:File/Close>>')
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'hello world'
     assert called == 1

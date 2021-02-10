@@ -20,10 +20,14 @@ from typing import TYPE_CHECKING, Any, Callable, Deque, Iterator, Optional, Text
 
 import dacite
 
-if sys.version_info >= (3, 8):
+if sys.version_info >= (3, 9):
+    from re import Match
     from typing import Literal
+elif sys.version_info >= (3, 8):
+    from typing import Literal, Match
 else:
     from typing_extensions import Literal
+    from typing import Match
 
 import porcupine
 
@@ -142,6 +146,12 @@ def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
 
     # shitty default
     return project_file_path.parent
+
+
+# TODO: get rid of this and use virtual events and keybindings.tcl instead
+def contmand() -> str:
+    widget = porcupine.get_main_window()    # any widget would do
+    return 'Command' if widget.tk.call('tk', 'windowingsystem') == "aqua" else 'Control'
 
 
 # i know, i shouldn't do math with rgb colors, but this is good enough
@@ -272,6 +282,64 @@ def set_tooltip(widget: tkinter.Widget, text: str) -> None:
         cast(Any, widget)._tooltip_manager = _TooltipManager(widget, text)
         return
     manager.text = text
+
+
+def _handle_letter(match: Match[str]) -> str:
+    if match.group(0).isupper():
+        return 'Shift-' + match.group(0)
+    return match.group(0).upper()
+
+
+def _format_binding(binding: str, menu: bool) -> str:
+    # this doesn't handle all possible cases, see bind(3tk)
+    mac = (porcupine.get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
+    binding = binding.lstrip('<').rstrip('>')
+
+    # don't know how to show click in mac menus
+    if mac and menu and re.search(r'\bButton-1\b', binding):
+        return ''
+
+    binding = re.sub(r'\bButton-1\b', 'click', binding)
+    binding = re.sub(r'\b[A-Za-z]\b', _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
+    binding = re.sub(r'\bKey-\b', '', binding)
+    if mac:
+        binding = re.sub(r'\bMod1\b', 'Command', binding)  # event_info() returns <Mod1-Key-x> for <Command-x>
+        binding = re.sub(r'\bplus\b', '+', binding)
+        binding = re.sub(r'\bminus\b', '-', binding)   # e.g. "Command-minus" --> "Command--"
+    else:
+        binding = re.sub(r'\bControl\b', 'Ctrl', binding)
+        binding = re.sub(r'\b0\b', 'Zero', binding)   # most fonts don't distinguishes O and 0 nicely, mac font does
+        binding = re.sub(r'\bplus\b', 'Plus', binding)
+        binding = re.sub(r'\bminus\b', 'Minus', binding)
+
+    if not mac:
+        return binding.replace('-', '+')
+
+    if menu:
+        # Tk will use the proper symbols automagically, and it expects dash-separated
+        return binding
+
+    # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
+    # We need to sub backwards, because each sub puts its thing before everything else
+    binding = re.sub(r'^(.*)\bCommand-', r'⌘-\1', binding)
+    binding = re.sub(r'^(.*)\bAlt-', r'⌥-\1', binding)
+    binding = re.sub(r'^(.*)\bControl-', r'⌃-\1', binding)   # look carefully, two different kinds of hats
+    binding = re.sub(r'^(.*)\bShift-', r'⇧-\1', binding)
+
+    # "Command--" --> "Command-"
+    # "Command-+" --> "Command+"
+    binding = re.sub(r'-(-?)', r'\1', binding)
+
+    # e.g. ⌘-click
+    return binding.replace('click', '-click')
+
+
+# TODO: document this
+def get_binding(virtual_event: str, *, menu: bool = False) -> str:
+    bindings = porcupine.get_main_window().event_info(virtual_event)
+    if not bindings and not menu:
+        log.warning(f"no bindings configured for {virtual_event}")
+    return _format_binding(bindings[0], menu) if bindings else ''
 
 
 class EventDataclass:
