@@ -133,6 +133,14 @@ class Finder(ttk.Frame):
         return entry
 
     def show(self) -> None:
+        try:
+            selected_text = self._textwidget.get('sel.first', 'sel.last')
+        except tkinter.TclError:
+            pass   # nothing is selected, leave find entry content as is
+        else:
+            self.find_entry.delete(0, 'end')
+            self.find_entry.insert(0, selected_text)
+
         self.pack(fill='x')
         self.find_entry.focus_set()
         self.highlight_all_matches()

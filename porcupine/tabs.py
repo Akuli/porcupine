@@ -481,7 +481,7 @@ bers.py>` use this attribute.
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
-            self, width=1, height=1, wrap='none', undo=True)
+            self, width=1, height=1, wrap='none', undo=True, padx=3)
         self.textwidget.pack(side='left', fill='both', expand=True)
 
         if content:
