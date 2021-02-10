@@ -641,8 +641,6 @@ def bind_mouse_wheel(
     else:
         bind = widget_or_class_name.bind
 
-    # i needed to cheat and use stackoverflow for the mac stuff :(
-    # http://stackoverflow.com/a/17457843
     if some_widget.tk.call('tk', 'windowingsystem') == 'x11':
         def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
             callback('up' if event.num == 4 else 'down')
