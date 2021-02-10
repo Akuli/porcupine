@@ -82,6 +82,11 @@ you will likely get a warning similar to this one:
 You should still be able to run the installer by clicking "More info".
 When installed, you will find Porcupine from the start menu.
 
+**Epilepsy warning:**
+Currently the `directory_tree` plugin is unusable and does some weird flashing on Windows.
+You can disable it in the plugin manager (in Settings menu).
+Hopefully this will be fixed in the next release.
+
 ### Development Install
 
 See [below](#developing-porcupine).
