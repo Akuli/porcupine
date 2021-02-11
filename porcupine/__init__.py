@@ -16,7 +16,7 @@ import appdirs  # type: ignore[import]
 
 from porcupine.utils import subprocess_kwargs as _subprocess_kwargs
 
-version_info = (0, 87, 0)        # this is updated with scripts/release.py
+version_info = (0, 87, 1)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017-2021 Akuli'
