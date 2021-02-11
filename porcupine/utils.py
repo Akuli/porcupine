@@ -67,8 +67,8 @@ if sys.platform == 'win32':
         os.remove(sys.stdout.name)
 
         # mypy doesn't know about how std streams can be None
-        sys.stdout = None   # type: ignore[assignment]
-        sys.stderr = None   # type: ignore[assignment]
+        sys.stdout = None
+        sys.stderr = None
 
         running_pythonw = True
     else:

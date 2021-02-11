@@ -58,16 +58,16 @@ class SubprocessStdIO:
             new_flags = old_flags | os.O_NONBLOCK
             fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
 
-    # shitty windows code
-    def _stdout_to_read_queue(self) -> None:
-        while True:
-            # for whatever reason, nothing works unless i go ONE BYTE at a
-            # time.... this is a piece of shit
-            assert self._process.stdout is not None
-            one_fucking_byte = self._process.stdout.read(1)
-            if not one_fucking_byte:
-                break
-            self._read_queue.put(one_fucking_byte)
+    if sys.platform == 'win32':
+        def _stdout_to_read_queue(self) -> None:
+            while True:
+                # for whatever reason, nothing works unless i go ONE BYTE at a
+                # time.... this is a piece of shit
+                assert self._process.stdout is not None
+                one_fucking_byte = self._process.stdout.read(1)
+                if not one_fucking_byte:
+                    break
+                self._read_queue.put(one_fucking_byte)
 
     # Return values:
     #   - nonempty bytes object: data was read
@@ -101,7 +101,7 @@ def error_says_socket_not_connected(error: OSError) -> bool:
     if sys.platform == 'win32':
         # i tried socket.socket().recv(1024) on windows and this is what i got
         # https://github.com/python/mypy/issues/8166
-        return (error.winerror == 10057)   # type: ignore[attr-defined]
+        return (error.winerror == 10057)
     else:
         return (error.errno == errno.ENOTCONN)
 

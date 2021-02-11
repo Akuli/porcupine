@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import pathlib
+import sys
 import time
 import tkinter.font
 from tkinter import messagebox, ttk
