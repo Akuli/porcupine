@@ -135,10 +135,7 @@ else:
 subprocess_kwargs: Dict[str, Any] = {}
 if sys.platform == 'win32':
     # https://stackoverflow.com/a/1813893
-    # TODO: simplify when Python 3.6 support is dropped
-    #subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
-    subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO()
-    subprocess_kwargs['startupinfo'].dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
 
 
 _PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
