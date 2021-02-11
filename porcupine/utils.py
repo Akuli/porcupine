@@ -313,37 +313,38 @@ def _format_binding(binding: str, menu: bool) -> str:
 
     binding = re.sub(r'\bButton-1\b', 'click', binding)
     binding = re.sub(r'\b[A-Za-z]\b', _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
-    binding = re.sub(r'\bKey-\b', '', binding)
+    binding = re.sub(r'\bKey-', '', binding)
     if mac:
         binding = re.sub(r'\bMod1\b', 'Command', binding)  # event_info() returns <Mod1-Key-x> for <Command-x>
         binding = re.sub(r'\bplus\b', '+', binding)
         binding = re.sub(r'\bminus\b', '-', binding)   # e.g. "Command-minus" --> "Command--"
+
+        if menu:
+            # Tk will use the proper symbols automagically, and it expects dash-separated
+            return binding
+
+        # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
+        # We need to sub backwards, because each sub puts its thing before everything else
+        binding = re.sub(r'^(.*)-Return$', r'⏎-\1', binding)
+        binding = re.sub(r'^(.*)\bCommand-', r'⌘-\1', binding)
+        binding = re.sub(r'^(.*)\bAlt-', r'⌥-\1', binding)
+        binding = re.sub(r'^(.*)\bControl-', r'⌃-\1', binding)   # look carefully, two different kinds of hats
+        binding = re.sub(r'^(.*)\bShift-', r'⇧-\1', binding)
+
+        # "Command--" --> "Command-"
+        # "Command-+" --> "Command+"
+        binding = re.sub(r'-(-?)', r'\1', binding)
+
+        # e.g. ⌘-click
+        return binding.replace('click', '-click')
+
     else:
         binding = re.sub(r'\bControl\b', 'Ctrl', binding)
         binding = re.sub(r'\b0\b', 'Zero', binding)   # most fonts don't distinguishes O and 0 nicely, mac font does
         binding = re.sub(r'\bplus\b', 'Plus', binding)
         binding = re.sub(r'\bminus\b', 'Minus', binding)
-
-    if not mac:
+        binding = re.sub(r'\bReturn\b', 'Ctrl', 'Enter')
         return binding.replace('-', '+')
-
-    if menu:
-        # Tk will use the proper symbols automagically, and it expects dash-separated
-        return binding
-
-    # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
-    # We need to sub backwards, because each sub puts its thing before everything else
-    binding = re.sub(r'^(.*)\bCommand-', r'⌘-\1', binding)
-    binding = re.sub(r'^(.*)\bAlt-', r'⌥-\1', binding)
-    binding = re.sub(r'^(.*)\bControl-', r'⌃-\1', binding)   # look carefully, two different kinds of hats
-    binding = re.sub(r'^(.*)\bShift-', r'⇧-\1', binding)
-
-    # "Command--" --> "Command-"
-    # "Command-+" --> "Command+"
-    binding = re.sub(r'-(-?)', r'\1', binding)
-
-    # e.g. ⌘-click
-    return binding.replace('click', '-click')
 
 
 # TODO: document this
