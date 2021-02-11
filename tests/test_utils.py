@@ -71,6 +71,7 @@ def test_get_binding():
         assert utils.get_binding('<<Menubar:Edit/Fold>>', menu=True) == 'Alt-F'
         assert utils.get_binding('<<Menubar:Run/Run>>', menu=True) == 'F5'
         assert utils.get_binding('<<Urls:OpenWithMouse>>', menu=True) == ''   # not possible to show
+        assert utils.get_binding('<<Urls:OpenWithKeyboard>>', menu=True) == 'Command-Return'
 
         assert utils.get_binding('<<Menubar:File/New File>>', menu=False) == '⌘N'
         assert utils.get_binding('<<Menubar:File/Save>>', menu=False) == '⌘S'
@@ -81,6 +82,7 @@ def test_get_binding():
         assert utils.get_binding('<<Menubar:Edit/Fold>>', menu=False) == '⌥F'
         assert utils.get_binding('<<Menubar:Run/Run>>', menu=False) == 'F5'
         assert utils.get_binding('<<Urls:OpenWithMouse>>', menu=False) == '⌘-click'
+        assert utils.get_binding('<<Urls:OpenWithKeyboard>>', menu=False) == '⌘⏎'
 
     else:
         # menu option has no effect
@@ -94,3 +96,4 @@ def test_get_binding():
             assert utils.get_binding('<<Menubar:Edit/Fold>>', menu=boolean) == 'Alt+F'
             assert utils.get_binding('<<Menubar:Run/Run>>', menu=boolean) == 'F5'
             assert utils.get_binding('<<Urls:OpenWithMouse>>', menu=boolean) == 'Ctrl+click'
+            assert utils.get_binding('<<Urls:OpenWithKeyboard>>', menu=boolean) == 'Ctrl+Enter'
