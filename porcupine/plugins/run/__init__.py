@@ -4,7 +4,6 @@ import dataclasses
 import logging
 import os
 import pathlib
-import platform
 import shlex
 import sys
 from functools import partial
@@ -48,8 +47,8 @@ def get_command(
         'file': basename,
         'no_ext': no_ext,
         'no_exts': basename[:-len(exts)] if exts else basename,
-        'python': 'py' if platform.system() == 'Windows' else 'python3',
-        'exe': f'{no_ext}.exe' if platform.system() == 'Windows' else f'./{no_ext}',
+        'python': 'py' if sys.platform == 'win32' else 'python3',
+        'exe': f'{no_ext}.exe' if sys.platform == 'win32' else f'./{no_ext}',
     }
     # TODO: is this really supposed to be shlex.split even on windows?
     result = [part.format(**format_args) for part in shlex.split(template)]

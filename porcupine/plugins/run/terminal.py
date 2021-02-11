@@ -2,10 +2,10 @@
 import logging
 import os
 import pathlib
-import platform
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 from tkinter import messagebox
 from typing import List, Union
@@ -15,7 +15,7 @@ from porcupine import get_main_window, utils
 log = logging.getLogger(__name__)
 
 _this_dir = pathlib.Path(__file__).absolute().parent
-if platform.system() == 'Windows':
+if sys.platform == 'win32':
     run_script = _this_dir / 'windows_run.py'
 else:
     run_script = _this_dir / 'bash_run.sh'

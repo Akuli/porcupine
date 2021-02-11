@@ -1,5 +1,5 @@
 import dataclasses
-import platform
+import sys
 import typing
 from tkinter import ttk
 
@@ -60,7 +60,7 @@ def test_get_children_recursively():
 
 def test_get_binding():
     # User-wide keybindings.tcl is not loaded when tests run
-    if platform.system() == 'Darwin':
+    if sys.platform == 'darwin':
         # Tk will show these with the proper symbols and stuff when these go to menu
         assert utils.get_binding('<<Menubar:File/New File>>', menu=True) == 'Command-N'
         assert utils.get_binding('<<Menubar:File/Save>>', menu=True) == 'Command-S'

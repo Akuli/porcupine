@@ -1,4 +1,4 @@
-import platform
+import sys
 from tkinter import filedialog
 
 import pytest
@@ -14,7 +14,7 @@ def test_filedialog_patterns_got_stripped():
 
 
 @pytest.mark.skipif(
-    platform.system() != 'Linux',
+    sys.platform != 'linux',
     reason="don't know how filedialog works on non-Linux")
 def test_actually_running_filedialog():
     # Wait and then press Esc. That's done as Tcl code because the Tk widget

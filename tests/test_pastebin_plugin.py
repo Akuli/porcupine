@@ -1,7 +1,7 @@
 import os
-import platform
 import re
 import socket
+import sys
 import threading
 import time
 import tkinter
@@ -101,7 +101,7 @@ def test_success_dialog(monkeypatch):
     dialog.destroy()
 
 
-@pytest.mark.skipif(platform.system() == 'Darwin', reason="freezes Mac CI if menubar stuff is buggy")
+@pytest.mark.skipif(sys.platform == 'darwin', reason="freezes Mac CI if menubar stuff is buggy")
 def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager):
     with socket.socket() as termbin:
         termbin.bind(('localhost', 0))

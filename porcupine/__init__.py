@@ -7,7 +7,7 @@ plugin API documentation:
     https://akuli.github.io/porcupine/
 """
 
-import platform
+import sys
 
 import appdirs  # type: ignore[import]
 
@@ -17,7 +17,7 @@ __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017-2021 Akuli'
 __license__ = 'MIT'
 
-if platform.system() in {'Windows', 'Darwin'}:
+if sys.platform in {'win32', 'darwin'}:
     # these platforms like path names like "Program Files" or "Application Support"
     dirs = appdirs.AppDirs('Porcupine', 'Akuli')
 else:

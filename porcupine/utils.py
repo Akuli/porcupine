@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import pathlib
-import platform
 import re
 import shutil
 import subprocess
@@ -39,12 +38,12 @@ BreakOrNone = Optional[Literal['break']]
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
 _installed_with_pynsist = (
-    platform.system() == 'Windows' and
+    sys.platform == 'win32' and
     pathlib.Path(sys.executable).parent.name.lower() == 'python' and
     pathlib.Path(sys.executable).parent.parent.name.lower() == 'porcupine')
 
 
-if platform.system() == 'Windows':
+if sys.platform == 'win32':
     running_pythonw = True
     if sys.stdout is None and sys.stderr is None:
         # running in pythonw.exe so there's no console window, print still
@@ -88,7 +87,7 @@ if running_pythonw and pathlib.Path(sys.executable).name.lower() == 'pythonw.exe
 
 
 quote: Callable[[str], str]
-if platform.system() == 'Windows':
+if sys.platform == 'win32':
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string: str) -> str:
         result = []

@@ -10,7 +10,7 @@ import sys
 
 import PIL.Image
 
-assert platform.system() == 'Windows', "this script must be ran on windows"
+assert sys.platform == 'win32', "this script must be ran on windows"
 
 # it's possible to run a 32-bit python on a 64-bit windows, but it would
 # probably screw up tkinter dll stuff... looking at help('struct'),

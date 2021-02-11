@@ -34,10 +34,7 @@ def start_xterm() -> None:
 
 
 def setup() -> None:
-    # it's possible to run full X11 on a Mac, so this is better than
-    # e.g. platform.system()
-    # FIXME: i think it's possible to run xterm in aqua? would that
-    # work here?
+    # FIXME: i think it's possible to run xterm in aqua? would that work here?
     if get_tab_manager().tk.call('tk', 'windowingsystem') != 'x11':
         # TODO: more noob-friendly "u have the wrong os lel" message?
         messagebox.showerror(

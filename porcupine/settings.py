@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import pathlib
-import platform
 import time
 import tkinter.font
 from tkinter import messagebox, ttk
@@ -387,7 +386,7 @@ def _init_global_gui_settings() -> None:
         # about it for porcupine, using stupid hard-coded default instead
         fixedfont.config(size=10)
 
-    if platform.system() == 'Windows':
+    if sys.platform == 'win32':
         # Windows default monospace font sucks, see #245
         default_font_family = 'Consolas'
     else:
