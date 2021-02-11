@@ -69,6 +69,13 @@ class PluginDialogContent:
         scrollbar = ttk.Scrollbar(left_side, command=self.treeview.yview)
         self.treeview.config(yscrollcommand=scrollbar.set)
 
+        self._search_var = tkinter.StringVar()
+        search_entry = ttk.Entry(left_side, textvariable=self._search_var)
+        search_entry.bind('<FocusIn>', (lambda event: search_entry.selection_range(0, 'end')), add=True)
+        search_entry.insert(0, "Filter by name, type or status...")
+        self._search_var.trace_add('write', self._search)
+
+        search_entry.pack(side='bottom', fill='x')
         self.treeview.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
 
@@ -79,6 +86,7 @@ class PluginDialogContent:
         self.treeview.heading(1, text="Type")
         self.treeview.heading(2, text="Status")
         self._insert_data()
+        self._update_plz_restart_label()
 
         # Must pack everything else before description label so that if
         # description is very long, it doesn't cover up other things
@@ -111,7 +119,17 @@ class PluginDialogContent:
         for info in sorted(pluginloader.plugin_infos, key=(lambda info: info.name)):
             self.treeview.insert('', 'end', id=info.name)
             self._update_row(info)
-        self._update_plz_restart_label()
+
+    def _search(self, *junk: object) -> None:
+        search_regex = '.*'.join(map(re.escape, self._search_var.get()))
+        index = 0
+        for name in sorted(info.name for info in pluginloader.plugin_infos):
+            if any(re.search(search_regex, v, flags=re.IGNORECASE)
+                   for v in self.treeview.item(name, 'values')):
+                self.treeview.move(name, '', index)
+                index += 1
+            else:
+                self.treeview.detach(name)
 
     def _update_row(self, info: pluginloader.PluginInfo) -> None:
         if info.came_with_porcupine:
