@@ -1,8 +1,10 @@
 """Reload file from disk automatically."""
+from functools import partial
+
 from porcupine import get_tab_manager, tabs
 
 
-def reload_if_necessary(tab: tabs.FileTab) -> None:
+def reload_if_necessary(tab: tabs.FileTab, junk: object) -> None:
     if tab.other_program_changed_file():
         cursor_pos = tab.textwidget.index('insert')
         scroll_fraction = tab.textwidget.yview()[0]
@@ -13,8 +15,10 @@ def reload_if_necessary(tab: tabs.FileTab) -> None:
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        filetab = tab   # mypy is wonderful
-        tab.textwidget.bind('<<AutoReload>>', (lambda event: reload_if_necessary(filetab)), add=True)
+        callback = partial(reload_if_necessary, tab)
+        tab.bind('<<TabSelected>>', callback, add=True)
+        tab.textwidget.bind('<FocusIn>', callback, add=True)
+        tab.textwidget.bind('<Button-1>', callback, add=True)
 
 
 def setup() -> None:

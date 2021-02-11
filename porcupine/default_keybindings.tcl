@@ -17,10 +17,6 @@ event add "<<Menubar:View/Bigger Font>>" <$contmand-plus>
 event add "<<Menubar:View/Smaller Font>>" <$contmand-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
-# reload plugin
-event add "<<AutoReload>>" <Button-1>
-event add "<<AutoReload>>" <FocusIn>
-
 # run plugin
 event add "<<Menubar:Run/Compile>>" <F4>
 event add "<<Menubar:Run/Run>>" <F5>

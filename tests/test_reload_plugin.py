@@ -15,3 +15,17 @@ def test_reload(tabmanager, tmp_path):
     # It should be possible to undo a reload
     tab.textwidget.edit_undo()
     assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello'
+
+
+def test_tab_switch(tabmanager, tmp_path):
+    (tmp_path / 'a.py').write_text("hello")
+    (tmp_path / 'b.py').write_text("world")
+    tab_a = tabs.FileTab.open_file(tabmanager, tmp_path / 'a.py')
+    tab_b = tabs.FileTab.open_file(tabmanager, tmp_path / 'b.py')
+    tabmanager.add_tab(tab_a, select=True)
+    tabmanager.add_tab(tab_b, select=True)
+
+    (tmp_path / 'a.py').write_text("new text")
+    tabmanager.select(tab_a)
+    tabmanager.update()
+    assert tab_a.textwidget.get('1.0', 'end - 1 char') == 'new text'
