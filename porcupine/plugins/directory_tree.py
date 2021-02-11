@@ -237,8 +237,8 @@ class DirectoryTree(ttk.Treeview):
         git_tag = git_tags[0] if git_tags else None
 
         return (
-            1 if 'dir' in tags else 2,
             ['git_added', 'git_modified', None, 'git_untracked', 'git_ignored'].index(git_tag),
+            1 if 'dir' in tags else 2,
             str(path),
         )
 
