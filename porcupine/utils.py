@@ -323,9 +323,10 @@ def _format_binding(binding: str, menu: bool) -> str:
             # Tk will use the proper symbols automagically, and it expects dash-separated
             return binding
 
+        binding = re.sub(r'\bReturn\b', r'⏎', binding)
+
         # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
         # We need to sub backwards, because each sub puts its thing before everything else
-        binding = re.sub(r'^(.*)-Return$', r'⏎-\1', binding)
         binding = re.sub(r'^(.*)\bCommand-', r'⌘-\1', binding)
         binding = re.sub(r'^(.*)\bAlt-', r'⌥-\1', binding)
         binding = re.sub(r'^(.*)\bControl-', r'⌃-\1', binding)   # look carefully, two different kinds of hats
