@@ -178,8 +178,8 @@ class DirectoryTree(ttk.Treeview):
                 return
 
         # TODO: handle changing directory to file
-        for path in (path2id.keys() - new_paths):
-            self.delete(path2id[path])
+        for path in list(path2id.keys() - new_paths):
+            self.delete(path2id.pop(path))
         for path in list(new_paths - path2id.keys()):
             tag = 'dir' if path.is_dir() else 'file'
             path2id[path] = self.insert(dir_id, 'end', text=path.name, values=[path], tags=tag, open=False)
