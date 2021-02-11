@@ -108,7 +108,7 @@ def error_says_socket_not_connected(error: OSError) -> bool:
 
 class LocalhostSocketIO:
 
-    def __init__(self, port: int, log: logging.Logger) -> None:
+    def __init__(self, port: int, log: logging.LoggerAdapter) -> None:
         self._sock = socket.socket()
 
         # This queue solves two problems:
@@ -121,7 +121,7 @@ class LocalhostSocketIO:
             target=self._send_queue_to_socket, args=[port, log], daemon=True)
         self._worker_thread.start()
 
-    def _send_queue_to_socket(self, port: int, log: logging.Logger) -> None:
+    def _send_queue_to_socket(self, port: int, log: logging.LoggerAdapter) -> None:
         while True:
             try:
                 self._sock.connect(('localhost', port))
@@ -259,7 +259,7 @@ class LangServer:
             self,
             process: 'subprocess.Popen[bytes]',
             the_id: LangServerId,
-            log: logging.Logger) -> None:
+            log: logging.LoggerAdapter) -> None:
         self._process = process
         self._id = the_id
         self._lsp_client = lsp.Client(
@@ -586,7 +586,7 @@ langservers: Dict[LangServerId, LangServer] = {}
 # is already being used, then it should exit with an error message.
 
 
-def stream_to_log(stream: IO[bytes], log: logging.Logger) -> None:
+def stream_to_log(stream: IO[bytes], log: logging.LoggerAdapter) -> None:
     for line_bytes in stream:
         line = line_bytes.rstrip(b'\r\n').decode('utf-8', errors='replace')
         log.info(f"langserver logged: {line}")
@@ -636,10 +636,9 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
         global_log.exception(f"failed to start langserver with command {config.command!r}")
         return None
 
-    log = global_log.getChild(str(process.pid))
-    log.info(
-        f"Langserver process started with "
-        f"command '{config.command}', PID {process.pid}, project root '{project_root}'")
+    log = logging.LoggerAdapter(global_log, {})
+    log.process = lambda msg, kwargs: (f'(PID={process.pid}) {msg}', kwargs)  # type: ignore
+    log.info(f"Langserver process started with command '{config.command}', project root '{project_root}'")
 
     logging_stream = process.stderr if the_id.port is None else process.stdout
     assert logging_stream is not None
