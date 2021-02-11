@@ -609,10 +609,10 @@ def add_spinbox(
     option_name: str,
     text: str,
     **spinbox_kwargs: Any,
-) -> utils.Spinbox:
-    """Add a :class:`porcupine.utils.Spinbox` to the setting dialog.
+) -> tkinter.ttk.Spinbox:
+    """Add a :class:`tkinter.ttk.Spinbox` to the setting dialog.
 
-    All ``**spinbox_kwargs`` go to :class:`utils.Spinbox`.
+    All ``**spinbox_kwargs`` go to :class:`tkinter.ttk.Spinbox`.
     Usually you should pass at least ``from_=some_integer, to=another_integer``.
 
     The content of the spinbox is checked whenever it changes.
@@ -620,7 +620,7 @@ def add_spinbox(
     then the option given by *option_name* is set to the :class:`int`.
     Otherwise |triangle| is shown.
     """
-    spinbox = utils.Spinbox(get_dialog_content(), **spinbox_kwargs)
+    spinbox = ttk.Spinbox(get_dialog_content(), **spinbox_kwargs)
     triangle = _create_validation_triangle(
         spinbox, option_name, int,
         lambda value: int(spinbox.cget('from')) <= value <= int(spinbox.cget('to')))

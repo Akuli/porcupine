@@ -46,11 +46,6 @@ See :mod:`porcupine.textwidget` for ``tkinter.Text`` specific things.
 .. autofunction:: errordialog
 .. autoclass:: TemporaryBind
 
-.. class:: Spinbox
-
-   Starting with Python 3.7, this is ``tkinter.ttk.Spinbox``. On Python 3.6,
-   this class behaves just like ``tkinter.ttk.Spinbox`` on Python 3.7.
-
 .. data:: BreakOrNone
 
     Same as ``Optional[Literal['break']]``, where ``Optional`` and ``Literal`` come from :mod:`typing`,

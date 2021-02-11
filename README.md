@@ -52,7 +52,7 @@ you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
 
 ### Other Linux distributions
 
-Install Python 3.6 or newer with pip and tkinter somehow. Then run these
+Install Python 3.7 or newer with pip and tkinter somehow. Then run these
 commands:
 
     python3 -m pip install --user --upgrade pip wheel
@@ -134,7 +134,7 @@ started. Even if you are not going to write Porcupine plugins or do anything
 related to plugins, they will probably give you an idea of how things are done
 in Porcupine.
 
-If you want to develop porcupine, install Python 3.6 or newer and
+If you want to develop porcupine, install Python 3.7 or newer and
 [git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/Akuli/porcupine

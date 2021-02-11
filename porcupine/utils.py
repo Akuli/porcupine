@@ -135,10 +135,7 @@ else:
 subprocess_kwargs: Dict[str, Any] = {}
 if sys.platform == 'win32':
     # https://stackoverflow.com/a/1813893
-    # TODO: simplify when Python 3.6 support is dropped
-    #subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
-    subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO()
-    subprocess_kwargs['startupinfo'].dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
 
 
 _PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
@@ -688,28 +685,6 @@ def bind_mouse_wheel(
             callback('up' if event.delta > 0 else 'down')
 
         bind(f'<{prefixes}MouseWheel>', real_callback, add)
-
-
-if sys.version_info >= (3, 7):
-    Spinbox = ttk.Spinbox
-else:
-    # written similarly to ttk.Combobox
-    class Spinbox(ttk.Entry):
-
-        def __init__(self, master: Any, *, from_: Any = None, **kwargs: Any):
-            if from_ is not None:
-                kwargs['from'] = from_  # this actually works
-            super().__init__(master, 'ttk::spinbox', **kwargs)
-
-        def configure(self, *args: Any, **kwargs: Any) -> Any:
-            if 'from_' in kwargs:
-                kwargs['from'] = kwargs.pop('from_')
-            return super().configure(*args, **kwargs)
-
-        config = cast(Any, configure)
-
-        if TYPE_CHECKING:
-            def cget(self, key: str) -> Any: ...
 
 
 def errordialog(title: str, message: str,
