@@ -7,31 +7,15 @@ plugin API documentation:
     https://akuli.github.io/porcupine/
 """
 
-import pathlib
 import platform
-import shutil
-import subprocess
 
 import appdirs  # type: ignore[import]
-
-from porcupine.utils import subprocess_kwargs as _subprocess_kwargs
 
 version_info = (0, 87, 1)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
 __copyright__ = 'Copyright (c) 2017-2021 Akuli'
 __license__ = 'MIT'
-
-# attach git stuff to the version if this isn't installed
-_here = pathlib.Path(__file__).absolute().parent
-if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
-    # running porcupine from git repo
-    try:
-        __version__ += '+git.' + subprocess.check_output(
-            ['git', 'log', '--pretty=format:%h', '-n', '1'], cwd=_here, **_subprocess_kwargs
-        ).decode('ascii')
-    except (OSError, subprocess.CalledProcessError, UnicodeError):   # pragma: no cover
-        pass
 
 if platform.system() in {'Windows', 'Darwin'}:
     # these platforms like path names like "Program Files" or "Application Support"
