@@ -44,7 +44,6 @@ _installed_with_pynsist = (
 
 
 if sys.platform == 'win32':
-    running_pythonw = True
     if sys.stdout is None and sys.stderr is None:
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
