@@ -297,7 +297,9 @@ def setup() -> None:
 
     settings.add_option('directory_tree_projects', [], List[str])
     string_paths = settings.get('directory_tree_projects', List[str])
-    for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT]):
+
+    # Must reverse because last added project goes first
+    for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh_everything()
