@@ -14,6 +14,8 @@ import subprocess
 
 import appdirs  # type: ignore[import]
 
+from porcupine.utils import subprocess_kwargs as _subprocess_kwargs
+
 version_info = (0, 87, 0)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
 __author__ = 'Akuli'
@@ -26,7 +28,7 @@ if (_here.parent / '.git').is_dir() and shutil.which('git') is not None:
     # running porcupine from git repo
     try:
         __version__ += '+git.' + subprocess.check_output(
-            ['git', 'log', '--pretty=format:%h', '-n', '1'], cwd=_here
+            ['git', 'log', '--pretty=format:%h', '-n', '1'], cwd=_here, **_subprocess_kwargs
         ).decode('ascii')
     except (OSError, subprocess.CalledProcessError, UnicodeError):   # pragma: no cover
         pass
