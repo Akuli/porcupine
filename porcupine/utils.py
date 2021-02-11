@@ -11,12 +11,13 @@ import pathlib
 import platform
 import re
 import shutil
+import subprocess
 import sys
 import threading
 import tkinter
 import traceback
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Deque, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
 
 import dacite
 
@@ -127,6 +128,17 @@ if platform.system() == 'Windows':
 else:
     from shlex import quote
     quote = quote       # silence pyflakes warning
+
+
+# Using these with subprocess prevents opening unnecessary cmd windows
+# TODO: document this
+subprocess_kwargs: Dict[str, Any] = {}
+if sys.platform == 'win32':
+    # https://stackoverflow.com/a/1813893
+    # TODO: simplify when Python 3.6 support is dropped
+    #subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
+    subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO()
+    subprocess_kwargs['startupinfo'].dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
 
 _PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
