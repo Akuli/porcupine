@@ -285,8 +285,7 @@ def setup() -> None:
     container = ttk.Frame(get_paned_window())
     tree = DirectoryTree(container)
     tree.pack(side='left', fill='both', expand=True)
-    # Can't bind to <FocusIn>, causes bug on windows (#327)
-    tree.bind('<Button-1>', tree.refresh_everything, add=True)
+    tree.bind('<FocusIn>', tree.refresh_everything, add=True)
     scrollbar = ttk.Scrollbar(container)
     scrollbar.pack(side='right', fill='y')
 
