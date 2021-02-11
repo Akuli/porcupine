@@ -63,6 +63,7 @@ class DirectoryTree(ttk.Treeview):
         self.bind('<Double-Button-1>', self.on_click, add=True)
         self.bind('<<TreeviewOpen>>', self.on_click, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
+        self.column('#0', minwidth=500)   # allow scrolling sideways
         self._config_tags()
         self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
 
@@ -283,11 +284,13 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
 def setup() -> None:
     # TODO: add something for finding a file by typing its name?
     container = ttk.Frame(get_paned_window())
+
+    # Packing order matters. The widget packed first is always visible.
+    scrollbar = ttk.Scrollbar(container)
+    scrollbar.pack(side='right', fill='y')
     tree = DirectoryTree(container)
     tree.pack(side='left', fill='both', expand=True)
     tree.bind('<FocusIn>', tree.refresh_everything, add=True)
-    scrollbar = ttk.Scrollbar(container)
-    scrollbar.pack(side='right', fill='y')
 
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
