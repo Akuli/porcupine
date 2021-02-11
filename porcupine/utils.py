@@ -343,7 +343,7 @@ def _format_binding(binding: str, menu: bool) -> str:
         binding = re.sub(r'\b0\b', 'Zero', binding)   # most fonts don't distinguishes O and 0 nicely, mac font does
         binding = re.sub(r'\bplus\b', 'Plus', binding)
         binding = re.sub(r'\bminus\b', 'Minus', binding)
-        binding = re.sub(r'\bReturn\b', 'Ctrl', 'Enter')
+        binding = re.sub(r'\bReturn\b', 'Enter', binding)
         return binding.replace('-', '+')
 
 
