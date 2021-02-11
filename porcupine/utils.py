@@ -650,7 +650,7 @@ def bind_mouse_wheel(
 
     elif some_widget.tk.call('tk', 'windowingsystem') == 'aqua':
         # Handle smooth scrolling
-        accumulator = 0
+        accumulator = 0.0
 
         def reset(event: 'tkinter.Event[tkinter.Misc]') -> None:
             nonlocal accumulator
