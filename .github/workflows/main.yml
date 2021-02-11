@@ -60,11 +60,14 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9"]
+    env:
+      PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
     - uses: actions/checkout@v2
     - run: brew install python@${{ matrix.python-version }}
-    - run: python3 -m pip install -r requirements.txt -r requirements-dev.txt
-    - run: python3 -m pytest -vvvv
+    - run: $PYTHON --version
+    - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
+    - run: $PYTHON -m pytest -vvvv
   pycodestyle:
     runs-on: ubuntu-latest
     steps:
