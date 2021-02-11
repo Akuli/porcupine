@@ -1,6 +1,7 @@
 """Display the "About Porcupine" button in the "Help" menu."""
 import functools
 import itertools
+import pathlib
 import re
 import tkinter
 import webbrowser
@@ -11,7 +12,7 @@ from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, textwidget, utils
 
 _BORING_TEXT = """
-This is porcupine {version}.
+This is Porcupine {version}, running from {install_dir}.
 
 Porcupine is a simple but powerful and configurable text editor written in \
 Python using the notorious tkinter GUI library. It started as a \
@@ -32,7 +33,10 @@ Porcupine is available under the MIT license. It means that you can do \
 pretty much anything you want with it as long as you distribute the \
 LICENSE file with it. [Click \
 here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
-""".format(version=porcupine_version)
+""".format(
+    version=porcupine_version,
+    install_dir=pathlib.Path(__file__).absolute().parent.parent.parent,
+)
 
 
 def show_huge_logo(junk: object = None) -> None:
