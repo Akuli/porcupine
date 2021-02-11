@@ -12,9 +12,9 @@ import platform
 import shutil
 import subprocess
 
-from porcupine.utils import subprocess_kwargs as _subprocess_kwargs
-
 import appdirs  # type: ignore[import]
+
+from porcupine.utils import subprocess_kwargs as _subprocess_kwargs
 
 version_info = (0, 87, 0)        # this is updated with scripts/release.py
 __version__ = '%d.%d.%d' % version_info
