@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import pathlib
-import platform
 import re
 import shutil
 import subprocess
@@ -39,13 +38,12 @@ BreakOrNone = Optional[Literal['break']]
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
 _installed_with_pynsist = (
-    platform.system() == 'Windows' and
+    sys.platform == 'win32' and
     pathlib.Path(sys.executable).parent.name.lower() == 'python' and
     pathlib.Path(sys.executable).parent.parent.name.lower() == 'porcupine')
 
 
-if platform.system() == 'Windows':
-    running_pythonw = True
+if sys.platform == 'win32':
     if sys.stdout is None and sys.stderr is None:
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
@@ -68,8 +66,9 @@ if platform.system() == 'Windows':
         os.remove(sys.stdout.name)
 
         # mypy doesn't know about how std streams can be None
-        sys.stdout = None   # type: ignore[assignment]
-        sys.stderr = None   # type: ignore[assignment]
+        # https://github.com/python/mypy/issues/8823
+        sys.stdout = cast(Any, None)
+        sys.stderr = cast(Any, None)
 
         running_pythonw = True
     else:
@@ -88,7 +87,7 @@ if running_pythonw and pathlib.Path(sys.executable).name.lower() == 'pythonw.exe
 
 
 quote: Callable[[str], str]
-if platform.system() == 'Windows':
+if sys.platform == 'win32':
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string: str) -> str:
         result = []

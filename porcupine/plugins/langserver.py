@@ -8,7 +8,6 @@ import itertools
 import logging
 import os
 import pathlib
-import platform
 import pprint
 import queue
 import re
@@ -17,12 +16,13 @@ import shlex
 import signal
 import socket
 import subprocess
+import sys
 import threading
 import time
 from functools import partial
-from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
-if platform.system() != 'Windows':
+if sys.platform != 'win32':
     import fcntl
 
 import sansio_lsp_client as lsp
@@ -43,7 +43,7 @@ class SubprocessStdIO:
     def __init__(self, process: 'subprocess.Popen[bytes]') -> None:
         self._process = process
 
-        if platform.system() == 'Windows':
+        if sys.platform == 'win32':
             self._read_queue: queue.Queue[bytes] = queue.Queue()
             self._running = True
             self._worker_thread = threading.Thread(
@@ -58,23 +58,23 @@ class SubprocessStdIO:
             new_flags = old_flags | os.O_NONBLOCK
             fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
 
-    # shitty windows code
-    def _stdout_to_read_queue(self) -> None:
-        while True:
-            # for whatever reason, nothing works unless i go ONE BYTE at a
-            # time.... this is a piece of shit
-            assert self._process.stdout is not None
-            one_fucking_byte = self._process.stdout.read(1)
-            if not one_fucking_byte:
-                break
-            self._read_queue.put(one_fucking_byte)
+    if sys.platform == 'win32':
+        def _stdout_to_read_queue(self) -> None:
+            while True:
+                # for whatever reason, nothing works unless i go ONE BYTE at a
+                # time.... this is a piece of shit
+                assert self._process.stdout is not None
+                one_fucking_byte = self._process.stdout.read(1)
+                if not one_fucking_byte:
+                    break
+                self._read_queue.put(one_fucking_byte)
 
     # Return values:
     #   - nonempty bytes object: data was read
     #   - empty bytes object: process exited
     #   - None: no data to read
     def read(self) -> Optional[bytes]:
-        if platform.system() == 'Windows':
+        if sys.platform == 'win32':
             # shitty windows code
             buf = bytearray()
             while True:
@@ -98,10 +98,10 @@ class SubprocessStdIO:
 
 
 def error_says_socket_not_connected(error: OSError) -> bool:
-    if platform.system() == 'Windows':
+    if sys.platform == 'win32':
         # i tried socket.socket().recv(1024) on windows and this is what i got
-        # https://github.com/python/mypy/issues/8166
-        return (error.winerror == 10057)   # type: ignore[attr-defined]
+        # https://github.com/python/mypy/issues/8823
+        return (cast(Any, error).winerror == 10057)
     else:
         return (error.errno == errno.ENOTCONN)
 
@@ -614,7 +614,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     #
     # on windows, there is no shell and it's all about whether to quote or not
     actual_command: Union[str, List[str]]
-    if platform.system() == 'Windows':
+    if sys.platform == 'win32':
         shell = True
         actual_command = config.command
     else:

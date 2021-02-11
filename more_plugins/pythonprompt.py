@@ -5,7 +5,6 @@
 # TODO: test this on windows, this may turn out to be pretty broken :(
 
 import io
-import platform
 import queue
 import signal
 import subprocess
@@ -16,8 +15,6 @@ from tkinter import ttk
 from typing import Any, Callable, Tuple, Union
 
 from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
-
-_WINDOWS = (platform.system() == 'Windows')
 
 
 def _tupleindex(index: str) -> Tuple[int, int]:
@@ -130,7 +127,7 @@ class PythonPrompt:
             return
 
         assert state == 'output' and isinstance(value, bytes)
-        if _WINDOWS:
+        if sys.platform == 'win32':
             value = value.replace(b'\r\n', b'\n')
         self.widget.insert(
             'end-1c', value.decode('utf-8', errors='replace'), 'output')

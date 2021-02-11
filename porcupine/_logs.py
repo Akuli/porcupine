@@ -2,7 +2,6 @@ import itertools
 import logging
 import os
 import pathlib
-import platform
 import shlex
 import subprocess
 import sys
@@ -90,9 +89,8 @@ def setup(verbose: bool) -> None:
         print(f"log file: {log_file.name}")
     log.debug(f"PID: {os.getpid()}")
     log.debug("running on Python %d.%d.%d from '%s'", *sys.version_info[:3], sys.executable)
-    log.debug(f"platform.system() returned {platform.system()!r}")
-    log.debug(f"platform.platform() returned {platform.platform()!r}")
-    if platform.system() != 'Windows':
+    log.debug(f"sys.platform is {sys.platform!r}")
+    if sys.platform != 'win32':
         # lsb_release is a python script on ubuntu so running it takes
         # about 0.12 seconds on this system, i really want porcupine to
         # start as fast as possible

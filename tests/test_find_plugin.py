@@ -1,8 +1,8 @@
 # TODO: test overlapping matches
 
 import itertools
-import platform
 import random
+import sys
 
 import pytest
 
@@ -24,7 +24,7 @@ def filetab_and_finder(filetab):
 
 # i don't know why, but this does not work on windows
 @pytest.mark.skipif(
-    platform.system() == 'Windows',
+    sys.platform == 'win32',
     reason="focus_get() doesn't work on windows like this test assumes")
 def test_key_bindings_that_are_annoying_if_they_dont_work(filetab):
     assert filetab.focus_get() is filetab.textwidget

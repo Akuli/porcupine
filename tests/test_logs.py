@@ -1,6 +1,5 @@
 import logging
 import os
-import platform
 import subprocess
 import sys
 import threading
@@ -62,7 +61,7 @@ def test_log_path_printed():
         process.kill()
 
     line = process.stdout.readline()
-    if platform.system() == 'Windows':
+    if sys.platform == 'win32':
         assert line.startswith(b'log file: ')
     else:
         assert line.startswith(b'log file: /')  # absolute path
