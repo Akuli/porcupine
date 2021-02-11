@@ -22,9 +22,10 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
     extra_args: Dict[str, Any] = {}
     if sys.platform == 'win32':
         # https://stackoverflow.com/a/1813893
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        extra_args = {'startupinfo': startupinfo}
+        # TODO: simplify when Python 3.6 support is dropped
+        #extra_args['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
+        extra_args['startupinfo'] = subprocess.STARTUPINFO()
+        extra_args['startupinfo'].dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
     try:
         start = time.perf_counter()
