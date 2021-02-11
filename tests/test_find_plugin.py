@@ -1,8 +1,8 @@
 # TODO: test overlapping matches
 
 import itertools
-import platform
 import random
+import sys
 
 import pytest
 

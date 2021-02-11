@@ -20,7 +20,7 @@ import sys
 import threading
 import time
 from functools import partial
-from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
 if sys.platform != 'win32':
     import fcntl
@@ -100,8 +100,8 @@ class SubprocessStdIO:
 def error_says_socket_not_connected(error: OSError) -> bool:
     if sys.platform == 'win32':
         # i tried socket.socket().recv(1024) on windows and this is what i got
-        # https://github.com/python/mypy/issues/8166
-        return (error.winerror == 10057)
+        # https://github.com/python/mypy/issues/8823
+        return (cast(Any, error).winerror == 10057)
     else:
         return (error.errno == errno.ENOTCONN)
 
