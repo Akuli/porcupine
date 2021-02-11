@@ -19,6 +19,13 @@ PROJECT_AUTOCLOSE_COUNT = 5
 
 
 def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
+    extra_args: Dict[str, Any] = {}
+    if sys.platform == 'win32':
+        # https://stackoverflow.com/a/1813893
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        extra_args = {'startupinfo': startupinfo}
+
     try:
         start = time.perf_counter()
         run_result = subprocess.run(
@@ -27,7 +34,7 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,   # for logging error message
             encoding=sys.getfilesystemencoding(),
-        )
+            **extra_args)
         log.debug(f"git ran in {round((time.perf_counter() - start)*1000)}ms")
 
         if run_result.returncode != 0:
