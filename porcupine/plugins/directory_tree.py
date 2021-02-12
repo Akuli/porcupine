@@ -59,9 +59,10 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
 class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
-        super().__init__(master, selectmode='browse', show='tree')
+        super().__init__(master, selectmode='browse', show='tree', style='DirectoryTree.Treeview')
         self.bind('<Double-Button-1>', self.on_click, add=True)
         self.bind('<<TreeviewOpen>>', self.on_click, add=True)
+        self.bind('<<TreeviewSelect>>', self.update_selection_color, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self.column('#0', minwidth=500)   # allow scrolling sideways
         self._config_tags()
@@ -85,6 +86,22 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('git_added', foreground=green)
         self.tag_configure('git_untracked', foreground='red4')
         self.tag_configure('git_ignored', foreground=gray)
+
+    def update_selection_color(self, event: object = None) -> None:
+        try:
+            [selected_id] = self.selection()
+        except ValueError:   # nothing selected
+            git_tags = []
+        else:
+            git_tags = [tag for tag in self.item(selected_id, 'tags') if tag.startswith('git_')]
+
+        if git_tags:
+            [tag] = git_tags
+            color = self.tag_configure(tag, 'foreground')
+            self.tk.call('ttk::style', 'map', 'DirectoryTree.Treeview', '-foreground', ['selected', color])
+        else:
+            # use default colors
+            self.tk.eval('ttk::style map DirectoryTree.Treeview -foreground {}')
 
     def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> None:
         for project_item_id in self.get_children():
@@ -154,6 +171,7 @@ class DirectoryTree(ttk.Treeview):
                 assert not isinstance(result, str)
                 self.git_statuses = result
                 self.open_and_refresh_directory(None, '')
+                self.update_selection_color()
                 log.debug("refreshing done")
             elif success:
                 log.info("projects added/removed while refreshing, assuming another fresh is coming soon")
