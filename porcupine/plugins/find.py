@@ -1,11 +1,11 @@
 """Find and replace text."""
-
 # FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
 
 import re
 import sys
 import tkinter
 import weakref
+from functools import partial
 from tkinter import ttk
 from typing import Any, Iterator, List, Tuple, cast
 
@@ -48,8 +48,11 @@ class Finder(ttk.Frame):
         self.grid_columnconfigure(2, minsize=30)
         self.grid_columnconfigure(3, weight=1)
 
-        self.find_entry = self._add_entry(0, "Find:")
+        self.full_words_var = tkinter.BooleanVar()
+        self.ignore_case_var = tkinter.BooleanVar()
         find_var = tkinter.StringVar()
+
+        self.find_entry = self._add_entry(0, "Find:")
         self.find_entry.config(textvariable=find_var)
         find_var.trace_add('write', self.highlight_all_matches)
 
@@ -81,20 +84,15 @@ class Finder(ttk.Frame):
         self.replace_all_button.pack(side='left')
         self._update_buttons()
 
-        self.full_words_var = tkinter.BooleanVar()
         self.full_words_var.trace_add('write', self.highlight_all_matches)
-        self.ignore_case_var = tkinter.BooleanVar()
         self.ignore_case_var.trace_add('write', self.highlight_all_matches)
 
-        # TODO: add keyboard shortcut for "Full words only". I use it all the
-        #       time and reaching mouse is annoying. Tabbing through everything
-        #       is also annoying.
         ttk.Checkbutton(
-            self, text="Full words only", variable=self.full_words_var).grid(
-                row=0, column=3, sticky='w')
+            self, text="Full words only", underline=0, variable=self.full_words_var
+        ).grid(row=0, column=3, sticky='w')
         ttk.Checkbutton(
-            self, text="Ignore case", variable=self.ignore_case_var).grid(
-                row=1, column=3, sticky='w')
+            self, text="Ignore case", underline=0, variable=self.ignore_case_var
+        ).grid(row=1, column=3, sticky='w')
 
         self.statuslabel = ttk.Label(self)
         self.statuslabel.grid(row=3, column=0, columnspan=4, sticky='we')
@@ -129,8 +127,14 @@ class Finder(ttk.Frame):
         entry.bind('<Escape>', self.hide, add=True)
         entry.bind('<Alt-t>', self._replace_this, add=True)
         entry.bind('<Alt-a>', self._replace_all, add=True)
+        entry.bind('<Alt-f>', partial(self._toggle_var, self.full_words_var))
+        entry.bind('<Alt-i>', partial(self._toggle_var, self.ignore_case_var))
         entry.grid(row=row, column=1, sticky='we')
         return entry
+
+    def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> Literal['break']:
+        var.set(not var.get())
+        return 'break'
 
     def show(self) -> None:
         try:
