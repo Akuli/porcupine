@@ -127,8 +127,8 @@ class Finder(ttk.Frame):
         entry.bind('<Escape>', self.hide, add=True)
         entry.bind('<Alt-t>', self._replace_this, add=True)
         entry.bind('<Alt-a>', self._replace_all, add=True)
-        entry.bind('<Alt-f>', partial(self._toggle_var, self.full_words_var))
-        entry.bind('<Alt-i>', partial(self._toggle_var, self.ignore_case_var))
+        entry.bind('<Alt-f>', partial(self._toggle_var, self.full_words_var), add=True)
+        entry.bind('<Alt-i>', partial(self._toggle_var, self.ignore_case_var), add=True)
         entry.grid(row=row, column=1, sticky='we')
         return entry
 
