@@ -117,7 +117,7 @@ class DirectoryTree(ttk.Treeview):
 
     def _contains_dummy(self, parent: str) -> bool:
         children = self.get_children(parent)
-        return (len(children) == 1 and 'dummy' in self.item(children[0], 'tags'))
+        return (len(children) == 1 and self.tag_has('dummy', children[0]))
 
     def hide_old_projects(self, junk: object = None) -> None:
         for project_id in reversed(self.get_children('')):
@@ -250,14 +250,13 @@ class DirectoryTree(ttk.Treeview):
             # nothing selected, can happen when double-clicking something else than one of the items
             return
 
-        tags = self.item(selected_id, 'tags')
-        if 'dir' in tags:
+        if self.tag_has('dir', selected_id):
             self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
-        elif 'file' in tags:
+        elif self.tag_has('file', selected_id):
             get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id)))
 
     def get_path(self, item_id: str) -> pathlib.Path:
-        assert 'dummy' not in self.item(item_id, 'tags')
+        assert not self.tag_has('dummy', item_id)
         return pathlib.Path(self.item(item_id, 'values')[0])
 
 
