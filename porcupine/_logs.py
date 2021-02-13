@@ -7,7 +7,7 @@ import subprocess
 import sys
 import threading
 from datetime import datetime, timedelta
-from typing import Any, List, TextIO, cast
+from typing import Any, List, Optional, TextIO, cast
 
 import porcupine
 from porcupine import dirs
@@ -61,10 +61,16 @@ def _open_log_file() -> TextIO:
     assert False  # makes mypy happy
 
 
-def setup(verbose: bool) -> None:
+# verbose_logger can be:
+#   - empty string (print everything)
+#   - logger name (print only messages from that logger)
+#   - None (only print errors)
+def setup(verbose_logger: Optional[str]) -> None:
     handlers: List[logging.Handler] = []
 
     log_file = _open_log_file()
+    print(f"log file: {log_file.name}")
+
     file_handler = logging.StreamHandler(log_file)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(
@@ -74,7 +80,11 @@ def setup(verbose: bool) -> None:
     if sys.stderr is not None:
         # not running in pythonw.exe, can also show something in terminal
         print_handler = logging.StreamHandler(sys.stderr)
-        print_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
+        if verbose_logger is None:
+            print_handler.setLevel(logging.WARNING)
+        else:
+            print_handler.setLevel(logging.DEBUG)
+            print_handler.addFilter(logging.Filter(verbose_logger))
         print_handler.setFormatter(logging.Formatter(
             '%(name)s %(levelname)s: %(message)s'))
         handlers.append(print_handler)
@@ -84,9 +94,6 @@ def setup(verbose: bool) -> None:
 
     porcupine_path = cast(Any, porcupine).__path__[0]
     log.debug(f"starting Porcupine {porcupine.__version__} from '{porcupine_path}'")
-    log.debug(f"log file: {log_file.name}")
-    if not verbose:
-        print(f"log file: {log_file.name}")
     log.debug(f"PID: {os.getpid()}")
     log.debug("running on Python %d.%d.%d from '%s'", *sys.version_info[:3], sys.executable)
     log.debug(f"sys.platform is {sys.platform!r}")

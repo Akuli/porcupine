@@ -136,8 +136,9 @@ class PopManager:
                 'geometry',
             }))
 
-            if get_parsed_args().verbose:
-                args.append('--verbose')
+            if get_parsed_args().verbose_logger is not None:
+                args.append('--verbose-logger')
+                args.append(get_parsed_args().verbose_logger)
 
             process = subprocess.Popen(
                 args,
