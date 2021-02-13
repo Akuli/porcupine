@@ -122,9 +122,6 @@ See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki
 ### Can I play tetris with Porcupine?
 Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
-### Is Porcupine an Emacs?
-Not by default, but you can [install more plugins](more_plugins/).
-
 
 ## Developing Porcupine
 
@@ -183,6 +180,7 @@ Instead, ask me to run them if you need to.
     - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
+
   Note that `porcupine.wiki` may need updating when a new version is released.
   Also, after running the release script, `.github/workflows/windows-build.yml` triggers
   and adds a Windows installer to the release.
