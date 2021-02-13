@@ -5,10 +5,13 @@ and the urls plugin uses this to create control-clickable links.
 """
 
 import dataclasses
+import logging
 import tkinter
 from typing import Dict, List, Optional
 
 from porcupine import get_main_window, get_tab_manager, tabs, utils
+
+log = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -62,6 +65,7 @@ class _Underliner:
 
     def set_underlines(self, event: utils.EventWithData) -> None:
         underlines = event.data_class(Underlines)
+        log.debug(f"Setting underlines: {underlines}")
         self.textwidget.tag_remove(f'underline:{underlines.id}', '1.0', 'end')
 
         old_underlines_deleted = False
