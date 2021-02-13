@@ -103,17 +103,18 @@ class DirectoryTree(ttk.Treeview):
             # use default colors
             self.tk.eval('ttk::style map DirectoryTree.Treeview -foreground {}')
 
+    # This allows projects to be nested. Here's why that's a good thing:
+    # Consider two projects, blah/blah/outer and blah/blah/outer/blah/inner.
+    # If the inner project is not shown when outer project is already in the
+    # directory tree, and home folder somehow becomes a project (e.g. when
+    # editing ~/blah.py), then the directory tree will present everything
+    # inside the home folder as one project.
     def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> None:
         for project_item_id in self.get_children():
-            path = self.get_path(project_item_id)
-            if path == root_path or path in root_path.parents:
-                # Project or parent project added already. Move it first to
-                # avoid hiding it soon.
+            if self.get_path(project_item_id) == root_path:
+                # Move project first to avoid hiding it soon
                 self.move(project_item_id, '', 0)
                 return
-            if root_path in path.parents:
-                # This project will replace the existing project
-                self.delete(project_item_id)
 
         # TODO: show long paths more nicely
         if pathlib.Path.home() in root_path.parents:
