@@ -26,9 +26,9 @@ def test_adding_nested_projects(tree, tmp_path):
     tree.add_project(tmp_path / 'a')
     assert get_paths() == [tmp_path / 'a']
     tree.add_project(tmp_path / 'a' / 'b')
-    assert get_paths() == [tmp_path / 'a']
+    assert get_paths() == [tmp_path / 'a' / 'b', tmp_path / 'a']
     tree.add_project(tmp_path)
-    assert get_paths() == [tmp_path]
+    assert get_paths() == [tmp_path, tmp_path / 'a' / 'b', tmp_path / 'a']
 
 
 @pytest.mark.skipif(sys.platform == 'win32', reason="rmtree can magically fail on windows")
