@@ -6,6 +6,9 @@ from tkinter import ttk
 
 from porcupine import get_tab_manager, images, tabs, utils
 
+# Key bindings are included in the message
+setup_after = ['keybindings']
+
 
 def get_message() -> str:
     result = f"""
