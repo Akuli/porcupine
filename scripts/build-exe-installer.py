@@ -1,6 +1,5 @@
 import configparser
 import functools
-import io
 import os
 import pathlib
 import platform
@@ -9,10 +8,8 @@ import struct
 import subprocess
 import sys
 import tkinter
-import zipfile
 
 import PIL.Image
-import requests
 
 assert sys.platform == 'win32', "this script must be ran on windows"
 

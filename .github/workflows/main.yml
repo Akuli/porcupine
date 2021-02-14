@@ -34,8 +34,8 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - run: python scripts/download-tkdnd.py
     - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: python scripts/download-tkdnd.py
     - run: python -m pytest -vvvv
   pytest-linux:
     strategy:
@@ -68,8 +68,8 @@ jobs:
     - uses: actions/checkout@v2
     - run: brew install python@${{ matrix.python-version }}
     - run: $PYTHON --version
-    - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
+    - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pytest -vvvv
   pycodestyle:
     runs-on: ubuntu-latest

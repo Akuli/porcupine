@@ -1,9 +1,10 @@
 import io
-import requests
-import zipfile
+import os
 import sys
 import tarfile
-import os
+import zipfile
+
+import requests
 
 os.makedirs('lib', exist_ok=True)
 if sys.platform == 'win32':
