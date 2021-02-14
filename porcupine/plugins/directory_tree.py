@@ -60,17 +60,32 @@ class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse', show='tree', style='DirectoryTree.Treeview')
-        self.bind('<Double-Button-1>', self.on_click, add=True)
-        self.bind('<<TreeviewOpen>>', self.on_click, add=True)
+        self.bind('<Button-1>', self.on_click, add=True)
+        self.bind('<<TreeviewOpen>>', self.open_file_or_dir, add=True)
         self.bind('<<TreeviewSelect>>', self.update_selection_color, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self.column('#0', minwidth=500)   # allow scrolling sideways
         self._config_tags()
         self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
+        self._last_click_time = 0
+
+    def on_click(self, event: tkinter.Event) -> None:
+        # Don't know why the usual double-click handling doesn't work. It
+        # didn't work at all when update_selection_color was bound to
+        # <<TreeviewSelect>>, but even without that, it was a bit fragile and
+        # only worked sometimes.
+        #
+        # To find time between the two clicks of double-click, I made a program
+        # that printed times when I clicked.
+        if event.time - self._last_click_time < 500:
+            # double click
+            self.open_file_or_dir()
+
+        self._last_click_time = event.time
 
     def _config_tags(self, junk: object = None) -> None:
-        fg = self.tk.eval('ttk::style look Treeview -foreground')
-        bg = self.tk.eval('ttk::style look Treeview -background')
+        fg = self.tk.eval('ttk::style lookup Treeview -foreground')
+        bg = self.tk.eval('ttk::style lookup Treeview -background')
         gray = utils.mix_colors(fg, bg, 0.5)
 
         if sum(self.winfo_rgb(fg)) > 3*0x7fff:
@@ -84,7 +99,7 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('dummy', foreground=gray)
         self.tag_configure('git_modified', foreground=red)
         self.tag_configure('git_added', foreground=green)
-        self.tag_configure('git_untracked', foreground='red4')
+        self.tag_configure('git_untracked', foreground='red4')   # TODO: too close to other red?
         self.tag_configure('git_ignored', foreground=gray)
 
     def update_selection_color(self, event: object = None) -> None:
@@ -262,7 +277,7 @@ class DirectoryTree(ttk.Treeview):
             str(path),
         )
 
-    def on_click(self, event: tkinter.Event) -> None:
+    def open_file_or_dir(self, event: Optional[tkinter.Event] = None) -> None:
         try:
             [selected_id] = self.selection()
         except ValueError:
