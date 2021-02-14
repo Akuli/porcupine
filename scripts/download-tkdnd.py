@@ -1,3 +1,4 @@
+import gzip
 import io
 import os
 import sys
@@ -16,6 +17,6 @@ elif sys.platform == 'darwin':
     response = requests.get(
         'https://github.com/petasis/tkdnd/releases/download/tkdnd-release-test-v2.9.2/tkdnd-2.9.2-osx-x64.tgz')
     response.raise_for_status()
-    tarfile.TarFile(fileobj=io.BytesIO(response.content)).extractall('lib')
+    tarfile.TarFile(fileobj=io.BytesIO(gzip.decompress(response.content))).extractall('lib')
 else:
     raise RuntimeError("use e.g. apt-get")
