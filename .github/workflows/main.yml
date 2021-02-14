@@ -35,7 +35,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: pip install -r requirements.txt -r requirements-dev.txt
-    - run: python -c "import tkinter; print(tkinter.Tk().getvar('auto_path'))"
     - run: python scripts/download-tkdnd.py
     - run: python -m pytest -vvvv
   pytest-linux:
