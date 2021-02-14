@@ -138,7 +138,6 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     pathlib.Path('file').write_text('b')
     run('git add file')
     run('git commit -m b')
-    run('git log --oneline --all --graph')
     run('git merge master', check=False)    # Git returns status 1 when merge conflict occurs
 
     tree.add_project(tmp_path)
