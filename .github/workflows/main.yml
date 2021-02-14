@@ -26,6 +26,8 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9"]
+    env:
+      TCLLIBPATH: lib
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -33,6 +35,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: python scripts/download-tkdnd.py
     - run: python -m pytest -vvvv
   pytest-linux:
     strategy:
@@ -45,7 +48,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     # Make sure that it doesn't crash with Noto Color Emoji
-    - run: sudo apt install fonts-noto-color-emoji
+    - run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - uses: GabrielBB/xvfb-action@v1.4
       with:
@@ -58,12 +61,15 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9"]
     env:
+      # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
+      TCLLIBPATH: ./lib
       PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
     - uses: actions/checkout@v2
     - run: brew install python@${{ matrix.python-version }}
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
+    - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pytest -vvvv
   pycodestyle:
     runs-on: ubuntu-latest

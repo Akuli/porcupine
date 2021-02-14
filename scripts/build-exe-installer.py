@@ -1,6 +1,5 @@
 import configparser
 import functools
-import io
 import os
 import pathlib
 import platform
@@ -9,10 +8,8 @@ import struct
 import subprocess
 import sys
 import tkinter
-import zipfile
 
 import PIL.Image
-import requests
 
 assert sys.platform == 'win32', "this script must be ran on windows"
 
@@ -55,15 +52,9 @@ def copy_tkinter_files():
     shutil.copy(prefix / 'libs' / '_tkinter.lib', 'pynsist_pkgs')
 
 
-# https://github.com/petasis/tkdnd
 def download_tkdnd():
     info("Downloading tkdnd")
-    response = requests.get(
-        'https://github.com/petasis/tkdnd/releases/download/tkdnd-release-test-v2.9.2/tkdnd-2.9.2-windows-x64.zip')
-    response.raise_for_status()
-
-    info("Extracting tkdnd")
-    zipfile.ZipFile(io.BytesIO(response.content)).extractall('lib')
+    subprocess.check_call([sys.executable, 'scripts/download-tkdnd.py'], cwd=pathlib.Path(__file__).parent.parent)
 
     info("Ensuring that tkdnd is usable")
     root = tkinter.Tk()
@@ -121,13 +112,6 @@ def run_pynsist():
 
 
 def main():
-    for path in [r'build\nsis', 'pynsist_pkgs', 'lib']:
-        try:
-            shutil.rmtree(path)
-            info("Deleted", path)
-        except FileNotFoundError:
-            pass
-
     copy_tkinter_files()
     download_tkdnd()
     create_ico_file()
