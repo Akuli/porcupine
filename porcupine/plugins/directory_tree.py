@@ -51,6 +51,8 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
             result[path] = 'git_untracked'
         elif line[:2] == '!!':
             result[path] = 'git_ignored'
+        elif line[:2] in {'AA', 'UU'}:
+            result[path] = 'git_mergeconflict'
         else:
             log.warning(f"unknown git status line: {repr(line)}")
     return result
@@ -91,15 +93,16 @@ class DirectoryTree(ttk.Treeview):
         if sum(self.winfo_rgb(fg)) > 3*0x7fff:
             # bright foreground color
             green = '#00ff00'
-            red = '#ff0000'
+            orange = '#ff6e00'
         else:
             green = '#007f00'
-            red = '#7f0000'
+            orange = '#e66300'
 
         self.tag_configure('dummy', foreground=gray)
-        self.tag_configure('git_modified', foreground=red)
+        self.tag_configure('git_mergeconflict', foreground=orange)
+        self.tag_configure('git_modified', foreground='red')
         self.tag_configure('git_added', foreground=green)
-        self.tag_configure('git_untracked', foreground='red4')   # TODO: too close to other red?
+        self.tag_configure('git_untracked', foreground='red4')
         self.tag_configure('git_ignored', foreground=gray)
 
     def update_selection_color(self, event: object = None) -> None:
@@ -242,11 +245,13 @@ class DirectoryTree(ttk.Treeview):
                 child_tags = {
                     status
                     for subpath, status in git_status.items()
-                    if status in {'git_added', 'git_modified'}
+                    if status in {'git_added', 'git_modified', 'git_mergeconflict'}
                     and str(subpath).startswith(str(child_path))  # optimization
                     and child_path in subpath.parents
                 }
-                if child_tags == {'git_added', 'git_modified'}:
+                if 'git_mergeconflict' in child_tags:
+                    new_tags.add('git_mergeconflict')
+                elif 'git_modified' in child_tags:
                     new_tags.add('git_modified')
                 else:
                     assert len(child_tags) <= 1
@@ -272,7 +277,7 @@ class DirectoryTree(ttk.Treeview):
         git_tag = git_tags[0] if git_tags else None
 
         return (
-            ['git_added', 'git_modified', None, 'git_untracked', 'git_ignored'].index(git_tag),
+            ['git_added', 'git_modified', 'git_mergeconflict', None, 'git_untracked', 'git_ignored'].index(git_tag),
             1 if 'dir' in tags else 2,
             str(path),
         )
