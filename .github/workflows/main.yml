@@ -62,7 +62,7 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9"]
     env:
-      # TODO: how to install tkdnd on mac? add instructions to README
+      # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
       TCLLIBPATH: ./lib
       PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
