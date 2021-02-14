@@ -59,17 +59,33 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
 class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
-        super().__init__(master, selectmode='browse', show='tree')
-        self.bind('<Double-Button-1>', self.on_click, add=True)
-        self.bind('<<TreeviewOpen>>', self.on_click, add=True)
+        super().__init__(master, selectmode='browse', show='tree', style='DirectoryTree.Treeview')
+        self.bind('<Button-1>', self.on_click, add=True)
+        self.bind('<<TreeviewOpen>>', self.open_file_or_dir, add=True)
+        self.bind('<<TreeviewSelect>>', self.update_selection_color, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self.column('#0', minwidth=500)   # allow scrolling sideways
         self._config_tags()
         self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
+        self._last_click_time = 0
+
+    def on_click(self, event: tkinter.Event) -> None:
+        # Don't know why the usual double-click handling doesn't work. It
+        # didn't work at all when update_selection_color was bound to
+        # <<TreeviewSelect>>, but even without that, it was a bit fragile and
+        # only worked sometimes.
+        #
+        # To find time between the two clicks of double-click, I made a program
+        # that printed times when I clicked.
+        if event.time - self._last_click_time < 500:
+            # double click
+            self.open_file_or_dir()
+
+        self._last_click_time = event.time
 
     def _config_tags(self, junk: object = None) -> None:
-        fg = self.tk.eval('ttk::style look Treeview -foreground')
-        bg = self.tk.eval('ttk::style look Treeview -background')
+        fg = self.tk.eval('ttk::style lookup Treeview -foreground')
+        bg = self.tk.eval('ttk::style lookup Treeview -background')
         gray = utils.mix_colors(fg, bg, 0.5)
 
         if sum(self.winfo_rgb(fg)) > 3*0x7fff:
@@ -83,8 +99,24 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure('dummy', foreground=gray)
         self.tag_configure('git_modified', foreground=red)
         self.tag_configure('git_added', foreground=green)
-        self.tag_configure('git_untracked', foreground='red4')
+        self.tag_configure('git_untracked', foreground='red4')   # TODO: too close to other red?
         self.tag_configure('git_ignored', foreground=gray)
+
+    def update_selection_color(self, event: object = None) -> None:
+        try:
+            [selected_id] = self.selection()
+        except ValueError:   # nothing selected
+            git_tags = []
+        else:
+            git_tags = [tag for tag in self.item(selected_id, 'tags') if tag.startswith('git_')]
+
+        if git_tags:
+            [tag] = git_tags
+            color = self.tag_configure(tag, 'foreground')
+            self.tk.call('ttk::style', 'map', 'DirectoryTree.Treeview', '-foreground', ['selected', color])
+        else:
+            # use default colors
+            self.tk.eval('ttk::style map DirectoryTree.Treeview -foreground {}')
 
     # This allows projects to be nested. Here's why that's a good thing:
     # Consider two projects, blah/blah/outer and blah/blah/outer/blah/inner.
@@ -155,6 +187,7 @@ class DirectoryTree(ttk.Treeview):
                 assert not isinstance(result, str)
                 self.git_statuses = result
                 self.open_and_refresh_directory(None, '')
+                self.update_selection_color()
                 log.debug("refreshing done")
             elif success:
                 log.info("projects added/removed while refreshing, assuming another fresh is coming soon")
@@ -244,7 +277,7 @@ class DirectoryTree(ttk.Treeview):
             str(path),
         )
 
-    def on_click(self, event: tkinter.Event) -> None:
+    def open_file_or_dir(self, event: Optional[tkinter.Event] = None) -> None:
         try:
             [selected_id] = self.selection()
         except ValueError:
