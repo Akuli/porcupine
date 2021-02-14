@@ -51,7 +51,7 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
             result[path] = 'git_untracked'
         elif line[:2] == '!!':
             result[path] = 'git_ignored'
-        elif line[:2] == 'AA':
+        elif line[:2] in {'AA', 'UU'}:
             result[path] = 'git_mergeconflict'
         else:
             log.warning(f"unknown git status line: {repr(line)}")
