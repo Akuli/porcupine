@@ -124,8 +124,8 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     #    | * 9dbd837 (master) a
     #    |/
     #    * e16c2a7 initial
-    run = partial(subprocess.run, shell=True, check=True)
-    run('git init')
+    run = partial(subprocess.run, stdout=subprocess.DEVNULL, shell=True, check=True)
+    run('git init --quiet')
     run('git config user.name foo')   # not --global, will stay inside repo
     run('git config user.email foo@bar.baz')
     pathlib.Path('file').write_text('initial')
