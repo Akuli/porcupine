@@ -134,7 +134,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     pathlib.Path('file').write_text('a')
     run('git add file')
     run('git commit -m a')
-    run('git checkout --quiet -b b HEAD^')
+    run('git checkout --quiet -b b HEAD~')   # can't use HEAD^ because ^ is special in windows
     pathlib.Path('file').write_text('b')
     run('git add file')
     run('git commit -m b')
