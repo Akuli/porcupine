@@ -97,7 +97,7 @@ def dont_run_in_thread(monkeypatch):
 def test_added_and_modified_content(tree, tmp_path, monkeypatch, dont_run_in_thread):
     monkeypatch.chdir(tmp_path)
 
-    subprocess.check_call(['git', 'init'], stdout=subprocess.DEVNULL)
+    subprocess.check_call(['git', 'init', '--quiet'], stdout=subprocess.DEVNULL)
     tree.add_project(tmp_path)
 
     pathlib.Path('a').write_text('a')
@@ -125,7 +125,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     #    |/
     #    * e16c2a7 initial
     run = partial(subprocess.run, stdout=subprocess.DEVNULL, shell=True, check=True)
-    run('git init')
+    run('git init --quiet')
     run('git config user.name foo')   # not --global, will stay inside repo
     run('git config user.email foo@bar.baz')
     pathlib.Path('file').write_text('initial')
