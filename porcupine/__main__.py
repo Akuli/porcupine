@@ -110,12 +110,15 @@ def main() -> None:
               "alphabetically, useful for making sure that your plugin's "
               "setup_before and setup_after define everything needed; usually "
               "plugins are not shuffled in order to make the UI consistent"))
-    args = parser.parse_args()
 
+    args = parser.parse_args()
     _state.init(args)
+
+    # Prevent showing up a not-ready-yet root window to user
+    get_main_window().withdraw()
+
     settings.init_the_rest_after_initing_enough_for_using_disabled_plugins_list()
     menubar._init()
-
     pluginloader.run_setup_functions(args.shuffle_plugins)
 
     tabmanager = get_tab_manager()
@@ -133,6 +136,7 @@ def main() -> None:
             tab = tabs.FileTab.open_file(tabmanager, pathlib.Path(path_string))
         tabmanager.add_tab(tab)
 
+    get_main_window().deiconify()
     try:
         get_main_window().mainloop()
     finally:

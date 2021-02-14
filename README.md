@@ -43,6 +43,7 @@ it shows up as an empty window.
 Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip
+    sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
     python3 -m pip install --user --upgrade pip wheel
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.88.0.zip
     python3 -m porcupine
@@ -52,8 +53,9 @@ you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
 
 ### Other Linux distributions
 
-Install Python 3.7 or newer with pip and tkinter somehow. Then run these
-commands:
+Install Python 3.7 or newer with pip and tkinter somehow.
+If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
+Then run these commands:
 
     python3 -m pip install --user --upgrade pip wheel
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.88.0.zip
