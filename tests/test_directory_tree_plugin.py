@@ -124,7 +124,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     #    | * 9dbd837 (master) a
     #    |/
     #    * e16c2a7 initial
-    run = partial(subprocess.check_call, stdout=subprocess.DEVNULL, shell=True)
+    run = partial(subprocess.run, stdout=subprocess.DEVNULL, shell=True, check=True)
     run('git init')
     run('git commit --allow-empty -m initial')
     pathlib.Path('file').write_text('a')
@@ -134,9 +134,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     pathlib.Path('file').write_text('b')
     run('git add file')
     run('git commit -m b')
-
-    # Git returns status 1 when merge conflict occurs
-    assert subprocess.call('git merge master', stdout=subprocess.DEVNULL, shell=True) == 1
+    run('git merge master', check=False)    # Git returns status 1 when merge conflict occurs
 
     tree.add_project(tmp_path)
     [project_id] = tree.get_children()
