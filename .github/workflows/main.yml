@@ -26,12 +26,15 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9"]
+    env:
+      TCLLIBPATH: .\lib
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - run: python scripts/download-tkdnd.py
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: python -m pytest -vvvv
   pytest-linux:
@@ -58,11 +61,14 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9"]
     env:
+      # TODO: how to install tkdnd on mac? add instructions to README
+      TCLLIBPATH: ./lib
       PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
     - uses: actions/checkout@v2
     - run: brew install python@${{ matrix.python-version }}
     - run: $PYTHON --version
+    - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON -m pytest -vvvv
   pycodestyle:

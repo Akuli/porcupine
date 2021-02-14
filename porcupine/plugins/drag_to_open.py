@@ -1,7 +1,6 @@
 """Open a file in Porcupine when it's dragged and dropped from file manager."""
 import logging
 import pathlib
-import tkinter
 
 from porcupine import get_main_window, get_tab_manager, tabs
 
