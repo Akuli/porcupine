@@ -16,7 +16,7 @@ def handle_drop(paths_from_tcl: str) -> None:
             log.warning(f"can't open '{path}' because it is not a file")
 
 
-def setup():
+def setup() -> None:
     root = get_main_window()
     try:
         root.tk.eval('package require tkdnd')
