@@ -173,6 +173,10 @@ def _did_plugin_come_with_porcupine(finder: object) -> bool:
     return isinstance(finder, importlib.machinery.FileFinder) and finder.path == plugin_paths[-1]
 
 
+# workaround for #328
+_plugins_that_no_longer_exist = {'overview', 'drag_to_open'}
+
+
 # undocumented on purpose, don't use in plugins
 def import_plugins(disabled_on_command_line: List[str]) -> None:
     assert not _mutable_plugin_infos and not _dependencies
@@ -185,8 +189,7 @@ def import_plugins(disabled_on_command_line: List[str]) -> None:
             error=None,
         )
         for finder, name, is_pkg in pkgutil.iter_modules(plugin_paths)
-        if not name.startswith('_')
-        and name != 'overview'  # workaround for #328
+        if name not in _plugins_that_no_longer_exist and not name.startswith('_')
     )
     _dependencies.update({info: set() for info in plugin_infos})
 
