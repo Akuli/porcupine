@@ -62,14 +62,19 @@ class DirectoryTree(ttk.Treeview):
 
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse', show='tree', style='DirectoryTree.Treeview')
-        self.bind('<Button-1>', self.on_click, add=True)
+
+        # Needs after_idle because selection hasn't updated when binding runs
+        self.bind('<Button-1>', (lambda event: self.after_idle(self.on_click, event)), add=True)  # type: ignore
+
         self.bind('<<TreeviewOpen>>', self.open_file_or_dir, add=True)
         self.bind('<<TreeviewSelect>>', self.update_selection_color, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
         self.column('#0', minwidth=500)   # allow scrolling sideways
         self._config_tags()
         self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
+
         self._last_click_time = 0
+        self._last_click_selection: Optional[Tuple[str, ...]] = None
 
     def on_click(self, event: tkinter.Event) -> None:
         # Don't know why the usual double-click handling doesn't work. It
@@ -79,11 +84,13 @@ class DirectoryTree(ttk.Treeview):
         #
         # To find time between the two clicks of double-click, I made a program
         # that printed times when I clicked.
-        if event.time - self._last_click_time < 500:
+        selection: Tuple[str, ...] = self.selection()   # type: ignore
+        if event.time - self._last_click_time < 500 and self._last_click_selection == selection:
             # double click
             self.open_file_or_dir()
 
         self._last_click_time = event.time
+        self._last_click_selection = selection
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval('ttk::style lookup Treeview -foreground')
