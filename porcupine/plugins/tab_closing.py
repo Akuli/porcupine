@@ -61,6 +61,6 @@ def setup() -> None:
     tabmanager.add_tab_callback(lambda tab: get_tab_manager().tab(
         tab, image=images.get('closebutton'), compound='right'
     ))
-    tabmanager.bind('<<TabClosing:XButton>>', on_x_clicked, add=True)
-    tabmanager.bind('<<TabClosing:Menu>>', show_menu, add=True)
-    tabmanager.bind('<<TabClosing:Header>>', on_header_clicked, add=True)
+    tabmanager.bind('<<TabClosing:XButtonClickClose>>', on_x_clicked, add=True)
+    tabmanager.bind('<<TabClosing:ShowMenu>>', show_menu, add=True)
+    tabmanager.bind('<<TabClosing:HeaderClickClose>>', on_header_clicked, add=True)
