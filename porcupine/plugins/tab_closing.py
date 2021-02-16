@@ -47,7 +47,7 @@ def show_menu(event: tkinter.Event[tabs.TabManager]) -> None:
     menu.add_command(label="Close other tabs", command=partial(close_clicked_tab, event, what2close='others'))
 
     menu.tk_popup(event.x_root, event.y_root)
-    menu.bind('<Unmap>', (lambda event: menu.after_idle(menu.destroy)), add=True)   # type: ignore
+    menu.bind('<Unmap>', (lambda event: menu.after_idle(menu.destroy)), add=True)
 
 
 # Close tab on middle-click (press down the wheel of the mouse)
