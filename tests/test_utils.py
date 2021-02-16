@@ -1,7 +1,11 @@
 import dataclasses
+import shutil
+import subprocess
 import sys
 import typing
 from tkinter import ttk
+
+import pytest
 
 from porcupine import get_main_window, utils
 
@@ -97,3 +101,17 @@ def test_get_binding():
             assert utils.get_binding('<<Menubar:Run/Run>>', menu=boolean) == 'F5'
             assert utils.get_binding('<<Urls:OpenWithMouse>>', menu=boolean) == 'Ctrl+click'
             assert utils.get_binding('<<Urls:OpenWithKeyboard>>', menu=boolean) == 'Ctrl+Enter'
+
+
+@pytest.mark.skipif(shutil.which('git') is None, reason="git not found")
+def test_project_root(tmp_path, monkeypatch):
+    (tmp_path / 'foo').mkdir()
+    (tmp_path / 'bar.py').touch()
+    (tmp_path / 'foo' / 'baz.py').touch()
+    (tmp_path / 'foo' / 'README.md').touch()
+    (tmp_path / 'README.md').touch()
+
+    assert utils.find_project_root(tmp_path / 'bar.py') == tmp_path
+    assert utils.find_project_root(tmp_path / 'foo' / 'baz.py') == tmp_path / 'foo'
+    subprocess.run('git init -q', cwd=tmp_path, shell=True, check=True)
+    assert utils.find_project_root(tmp_path / 'foo' / 'baz.py') == tmp_path

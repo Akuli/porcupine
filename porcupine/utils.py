@@ -137,7 +137,7 @@ if sys.platform == 'win32':
     subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
 
 
-_PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
+_LIKELY_PROJECT_ROOT_THINGS = ['.editorconfig'] + [
     readme + extension
     for readme in ['README', 'readme', 'Readme', 'ReadMe']
     for extension in ['', '.txt', '.md', '.rst']
@@ -148,12 +148,14 @@ _PROJECT_ROOT_THINGS = ['.editorconfig', '.git'] + [
 def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
     assert project_file_path.is_absolute()
 
+    likely_root = None
     for path in project_file_path.parents:
-        if any((path / thing).exists() for thing in _PROJECT_ROOT_THINGS):
-            return path
+        if (path / '.git').exists():
+            return path   # trust this the most, if it exists
+        elif likely_root is None and any((path / thing).exists() for thing in _LIKELY_PROJECT_ROOT_THINGS):
+            likely_root = path
 
-    # shitty default
-    return project_file_path.parent
+    return likely_root or project_file_path.parent
 
 
 # TODO: get rid of this and use virtual events and keybindings.tcl instead
