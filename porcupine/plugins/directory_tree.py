@@ -32,7 +32,7 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
 
         if run_result.returncode != 0:
             # likely not a git repo because missing ".git" dir
-            log.info(f"git failed: {run_result}")
+            log.info(f"git failed in {project_root}: {run_result}")
             return {}
 
     except (OSError, UnicodeError):
