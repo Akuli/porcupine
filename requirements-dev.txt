@@ -2,7 +2,8 @@ pytest>=5.4.3
 pytest-cov>=2.10.1
 isort>=5.7.0
 sphinx>=3.0.0, <4.0.0
-mypy==0.790
+git+https://github.com/python/mypy.git@2738c73695e2d2f963fbe2a0056329c43a0f6e58
+types-toml>=0.1.1
 pyflakes>=2.2.0
 pycodestyle>=2.6.0
 pytest-mock>=3.2.0,<4.0.0
