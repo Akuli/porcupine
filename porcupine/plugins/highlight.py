@@ -101,7 +101,13 @@ class Highlighter:
         assert self._lexer is not None
         if type(self._lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
             # Use a local variable inside the generator (ugly hack)
-            return (generator.gi_frame.f_locals['statestack'] == ['root'])
+            local_vars = generator.gi_frame.f_locals
+
+            # If the generator changes state immediately after yielding, then
+            # it's not really stateless. And if new_state is not None, it might
+            # be just about to do that.
+            return (local_vars['statestack'] == ['root'] and
+                    local_vars.get('new_state', None) is None)
 
         # Start of line (column zero) and not indentation or blank line
         return end_location.endswith('.0') and bool(self.textwidget.get(end_location).strip())
