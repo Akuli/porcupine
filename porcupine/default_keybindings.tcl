@@ -52,7 +52,12 @@ for {set i 1} {$i <= 9} {incr i} {
 
 # tab_closing plugin
 event add "<<TabClosing:XButton>>" <Button-1>
-if {[tk windowingsystem] != "aqua"} {   # doesn't make sense on mac, see #303
+if {[tk windowingsystem] == "aqua"} {
+    # right-click is Button-2, no wheel-click (afaik)
+    event add "<<TabClosing:Menu>>" <Button-2>
+} else {
+    # right-click is Button-3, wheel-click is Button-2
+    event add "<<TabClosing:Menu>>" <Button-3>
     event add "<<TabClosing:Header>>" <Button-2>
 }
 
