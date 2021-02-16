@@ -103,9 +103,9 @@ class Highlighter:
             # Use a local variable inside the generator (ugly hack)
             local_vars = generator.gi_frame.f_locals
 
-            # If the generator changes state immediately after yielding, then
-            # it's not really stateless. And if new_state is not None, it might
-            # be just about to do that.
+            # If new_state variable is not None, it will be used to change
+            # state after the yielding, and this is not a suitable place for
+            # restarting the highlighting later.
             return (local_vars['statestack'] == ['root'] and
                     local_vars.get('new_state', None) is None)
 
