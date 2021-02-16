@@ -1,5 +1,7 @@
 # this file is currently not being used
 
+from __future__ import annotations
+
 import contextlib
 import pathlib
 import queue
@@ -36,7 +38,7 @@ def send(objects: List[Any]) -> None:
 
 
 def _listener2queue(listener: connection.Listener,
-                    object_queue: 'queue.Queue[Any]') -> None:
+                    object_queue: queue.Queue[Any]) -> None:
     """Accept connections. Receive and queue objects."""
     while True:
         try:

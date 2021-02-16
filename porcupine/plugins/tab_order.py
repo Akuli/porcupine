@@ -1,4 +1,5 @@
 """Allow dragging tabs or pressing keys to change their order."""
+from __future__ import annotations
 
 import tkinter
 from functools import partial
@@ -6,7 +7,7 @@ from functools import partial
 from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
-def on_drag(event: 'tkinter.Event[tabs.TabManager]') -> utils.BreakOrNone:
+def on_drag(event: tkinter.Event[tabs.TabManager]) -> utils.BreakOrNone:
     if event.widget.identify(event.x, event.y) == 'label':
         destination_index = event.widget.index(f'@{event.x},{event.y}')
         event.widget.insert(destination_index, event.widget.select())
@@ -14,7 +15,7 @@ def on_drag(event: 'tkinter.Event[tabs.TabManager]') -> utils.BreakOrNone:
     return None
 
 
-def select_tab_n(n: int, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+def select_tab_n(n: int, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
     try:
         get_tab_manager().select(n - 1)
         return 'break'

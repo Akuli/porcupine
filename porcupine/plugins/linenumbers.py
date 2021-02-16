@@ -1,4 +1,5 @@
 """Line numbers on left side of the file being edited."""
+from __future__ import annotations
 
 import tkinter.font
 from typing import Optional, cast
@@ -67,21 +68,21 @@ class LineNumbers:
     def _update_canvas_width(self, junk: object = None) -> None:
         self.canvas.config(width=tkinter.font.Font(name='TkFixedFont', exists=True).measure(' 1234 '))
 
-    def _on_click(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def _on_click(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # go to clicked line
         self.textwidget.tag_remove('sel', '1.0', 'end')
         self.textwidget.mark_set('insert', f'@0,{event.y}')
         self._clicked_place = self.textwidget.index('insert')
 
-    def _on_unclick(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def _on_unclick(self, event: tkinter.Event[tkinter.Misc]) -> None:
         self._clicked_place = None
 
-    def _on_double_click(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def _on_double_click(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # select the line the cursor is on, including trailing newline
         self.textwidget.tag_remove('sel', '1.0', 'end')
         self.textwidget.tag_add('sel', 'insert', 'insert + 1 line')
 
-    def _on_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def _on_drag(self, event: tkinter.Event[tkinter.Misc]) -> None:
         if self._clicked_place is None:
             # the user pressed down the mouse button and then moved the
             # mouse over the line numbers

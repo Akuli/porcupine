@@ -1,4 +1,6 @@
 """Add "Use this" buttons into files that contain Git merge conflicts."""
+from __future__ import annotations
+
 import itertools
 import tkinter
 import weakref
@@ -135,7 +137,7 @@ class ConflictDisplayer:
         self.stop_displaying()
 
 
-conflict_displayers: 'weakref.WeakKeyDictionary[tabs.FileTab, List[ConflictDisplayer]]' = weakref.WeakKeyDictionary()
+conflict_displayers: weakref.WeakKeyDictionary[tabs.FileTab, List[ConflictDisplayer]] = weakref.WeakKeyDictionary()
 
 
 def setup_displayers(tab: tabs.FileTab) -> None:

@@ -1,4 +1,5 @@
 """Indent new lines automatically when Enter is pressed."""
+from __future__ import annotations
 
 import dataclasses
 import logging
@@ -85,13 +86,13 @@ def after_enter(tab: tabs.FileTab, shifted: bool) -> None:
         tab.textwidget.dedent('insert')
 
 
-def on_enter_press(tab: tabs.FileTab, event: 'tkinter.Event[tkinter.Text]') -> None:
+def on_enter_press(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> None:
     assert isinstance(event.state, int)
     shifted = bool(event.state & SHIFT_FLAG)
     tab.textwidget.after_idle(after_enter, tab, shifted)
 
 
-def on_closing_brace(tab: tabs.FileTab, event: 'tkinter.Event[tkinter.Text]') -> None:
+def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> None:
     # Don't dedent when there's some garbage before cursor, other than comment
     # prefix. It's handy to have autodedent working inside big comments with
     # example code in them.

@@ -1,6 +1,7 @@
 """Tetris game."""
 # TODO: make pause feature discoverable to users
 # FIXME: "game over" text doesn't show up very well on top of white squares
+from __future__ import annotations
 
 import functools
 import itertools
@@ -52,7 +53,7 @@ class Block:
     Other blocks end up in Game.frozen_squares.
     """
 
-    def __init__(self, game: 'Game', shape_letter: ShapeLetter) -> None:
+    def __init__(self, game: Game, shape_letter: ShapeLetter) -> None:
         self._game = game
         self.shape_letter = shape_letter
         self.shape = SHAPES[shape_letter].copy()
@@ -253,7 +254,7 @@ class TetrisTab(tabs.Tab):
         # yes, this needs force for some reason
         self.bind('<<TabSelected>>', (lambda event: self._canvas.focus_force()), add=True)
 
-    def _on_key(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+    def _on_key(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         control_flag = 0x4
         assert isinstance(event.state, int)
         if event.state & control_flag:

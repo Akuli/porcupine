@@ -1,6 +1,7 @@
 """Langserver support for autocompletions."""
 # TODO: CompletionProvider
 # TODO: error reporting in gui somehow
+from __future__ import annotations
 
 import dataclasses
 import errno
@@ -40,7 +41,7 @@ CHUNK_SIZE = 64*1024
 
 class SubprocessStdIO:
 
-    def __init__(self, process: 'subprocess.Popen[bytes]') -> None:
+    def __init__(self, process: subprocess.Popen[bytes]) -> None:
         self._process = process
 
         if sys.platform == 'win32':
@@ -115,7 +116,7 @@ class LocalhostSocketIO:
         #   - I don't feel like learning to do non-blocking send right now.
         #   - It must be possible to .write() before the socket is connected.
         #     The written bytes get sent when the socket connects.
-        self._send_queue: 'queue.Queue[Optional[bytes]]' = queue.Queue()
+        self._send_queue: queue.Queue[Optional[bytes]] = queue.Queue()
 
         self._worker_thread = threading.Thread(
             target=self._send_queue_to_socket, args=[port, log], daemon=True)
@@ -257,7 +258,7 @@ class LangServer:
 
     def __init__(
             self,
-            process: 'subprocess.Popen[bytes]',
+            process: subprocess.Popen[bytes],
             the_id: LangServerId,
             log: logging.LoggerAdapter) -> None:
         self._process = process

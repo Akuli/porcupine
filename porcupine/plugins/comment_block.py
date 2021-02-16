@@ -5,6 +5,7 @@ lines are commented out.
 A different character is used in other programming languages. This can be
 configured with comment_prefix in filetypes.toml.
 """
+from __future__ import annotations
 
 import functools
 import tkinter
@@ -13,7 +14,7 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
-def comment_or_uncomment(tab: tabs.FileTab, event: 'Optional[tkinter.Event[tkinter.Text]]') -> utils.BreakOrNone:
+def comment_or_uncomment(tab: tabs.FileTab, event: Optional[tkinter.Event[tkinter.Text]]) -> utils.BreakOrNone:
     comment_prefix = tab.settings.get('comment_prefix', Optional[str])
     if event is not None and event.char != comment_prefix:
         return None

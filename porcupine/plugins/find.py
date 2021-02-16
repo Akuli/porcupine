@@ -1,5 +1,6 @@
 """Find and replace text."""
 # FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
+from __future__ import annotations
 
 import re
 import sys
@@ -16,7 +17,7 @@ else:
 
 from porcupine import get_tab_manager, images, menubar, tabs
 
-finders: 'weakref.WeakKeyDictionary[tabs.FileTab, Finder]' = weakref.WeakKeyDictionary()
+finders: weakref.WeakKeyDictionary[tabs.FileTab, Finder] = weakref.WeakKeyDictionary()
 
 
 class Finder(ttk.Frame):

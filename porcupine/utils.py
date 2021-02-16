@@ -1,4 +1,5 @@
 """Handy utility functions."""
+from __future__ import annotations
 
 import collections
 import contextlib
@@ -234,12 +235,12 @@ class _TooltipManager:
 
     @classmethod
     def destroy_tipwindow(
-            cls, junk_event: Optional['tkinter.Event[tkinter.Misc]'] = None) -> None:
+            cls, junk_event: Optional[tkinter.Event[tkinter.Misc]] = None) -> None:
         if cls.tipwindow is not None:
             cls.tipwindow.destroy()
             cls.tipwindow = None
 
-    def enter(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def enter(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # For some reason, toplevels get also notified of their
         # childrens' events.
         if event.widget is self.widget:
@@ -247,12 +248,12 @@ class _TooltipManager:
             self.got_mouse = True
             self.widget.after(1000, self.show)
 
-    def leave(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def leave(self, event: tkinter.Event[tkinter.Misc]) -> None:
         if event.widget is self.widget:
             self.destroy_tipwindow()
             self.got_mouse = False
 
-    def motion(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def motion(self, event: tkinter.Event[tkinter.Misc]) -> None:
         self.mousex = event.x_root
         self.mousey = event.y_root
 
@@ -443,7 +444,7 @@ def bind_with_data(
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``
     argument of ``event_generate()``. Note that the callback takes an argument
-    of type :class:`EventWithData` rather than a usual ``'tkinter.Event[tkinter.Misc]'``.
+    of type :class:`EventWithData` rather than a usual ``tkinter.Event[tkinter.Misc]``.
 
     Here's an example::
 
@@ -464,7 +465,7 @@ def bind_with_data(
     # event objects and runs callback(event)
     #
     # TODO: is it possible to do this without a deque?
-    event_objects: Deque[Union['tkinter.Event[tkinter.Misc]', EventWithData]] = collections.deque()
+    event_objects: Deque[Union[tkinter.Event[tkinter.Misc], EventWithData]] = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
 
     def run_the_callback(data_string: str) -> Optional[str]:
@@ -608,7 +609,7 @@ def bind_tab_key(
     """
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
-    def callback(shifted: bool, event: 'tkinter.Event[tkinter.Misc]') -> BreakOrNone:
+    def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> BreakOrNone:
         return on_tab(event, shifted)
 
     if widget.tk.call('tk', 'windowingsystem') == 'x11':
@@ -654,7 +655,7 @@ def bind_mouse_wheel(
         bind = widget_or_class_name.bind
 
     if some_widget.tk.call('tk', 'windowingsystem') == 'x11':
-        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
+        def real_callback(event: tkinter.Event[tkinter.Misc]) -> None:
             callback('up' if event.num == 4 else 'down')
 
         bind(f'<{prefixes}Button-4>', real_callback, add)
@@ -664,11 +665,11 @@ def bind_mouse_wheel(
         # Handle smooth scrolling
         accumulator = 0.0
 
-        def reset(event: 'tkinter.Event[tkinter.Misc]') -> None:
+        def reset(event: tkinter.Event[tkinter.Misc]) -> None:
             nonlocal accumulator
             accumulator = 0
 
-        def scroll(event: 'tkinter.Event[tkinter.Misc]') -> None:
+        def scroll(event: tkinter.Event[tkinter.Misc]) -> None:
             nonlocal accumulator
             accumulator += event.delta
             if accumulator > MACOS_MOUSE_WHEEL_STEP:
@@ -682,7 +683,7 @@ def bind_mouse_wheel(
         bind('<Leave>', reset, add=True)
 
     else:  # Windows
-        def real_callback(event: 'tkinter.Event[tkinter.Misc]') -> None:
+        def real_callback(event: tkinter.Event[tkinter.Misc]) -> None:
             callback('up' if event.delta > 0 else 'down')
 
         bind(f'<{prefixes}MouseWheel>', real_callback, add)
