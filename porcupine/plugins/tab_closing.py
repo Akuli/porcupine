@@ -39,7 +39,7 @@ def on_x_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
             close_clicked_tab(event)
 
 
-def show_menu(event: tkinter.Event[tabs.TabManager]):
+def show_menu(event: tkinter.Event[tabs.TabManager]) -> None:
     menu = tkinter.Menu(tearoff=False)
     menu.add_command(label="Close this tab", command=partial(close_clicked_tab, event))
     menu.add_command(label="Close tabs to left", command=partial(close_clicked_tab, event, what2close='left'))
@@ -47,7 +47,7 @@ def show_menu(event: tkinter.Event[tabs.TabManager]):
     menu.add_command(label="Close other tabs", command=partial(close_clicked_tab, event, what2close='others'))
 
     menu.tk_popup(event.x_root, event.y_root)
-    menu.bind('<Unmap>', (lambda event: menu.after_idle(menu.destroy)), add=True)
+    menu.bind('<Unmap>', (lambda event: menu.after_idle(menu.destroy)), add=True)   # type: ignore
 
 
 # Close tab on middle-click (press down the wheel of the mouse)
