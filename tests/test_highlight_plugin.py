@@ -30,3 +30,37 @@ def test_yaml_highlighting(filetab, tmp_path):
     filetab.textwidget.insert('1.0', '"lol"')
     filetab.update()
     assert filetab.textwidget.tag_names('1.2') == ('Token.Literal.String',)
+
+
+def test_tcl_bug(filetab, tmp_path):
+    filetab.path = tmp_path / "foo.tcl"
+    filetab.save()
+    filetab.textwidget.insert('1.0', '''\
+# a
+
+# a
+a
+a
+a
+a
+a
+
+a
+a
+a
+a
+a
+a
+a
+a
+a
+
+# blah
+# blah
+''')
+    filetab.update()
+    assert filetab.textwidget.tag_names('21.5') == ('Token.Comment',)
+
+    filetab.textwidget.insert('21.2', ' ')
+    filetab.update()
+    assert filetab.textwidget.tag_names('21.5') == ('Token.Comment',)
