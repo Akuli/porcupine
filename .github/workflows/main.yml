@@ -1,4 +1,3 @@
-# https://medium.com/@doedotdev/mypy-for-github-action-7da1ebee99e7
 on:
   push:
     branches:
