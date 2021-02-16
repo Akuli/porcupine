@@ -7,7 +7,7 @@ import time
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -64,7 +64,7 @@ class DirectoryTree(ttk.Treeview):
         super().__init__(master, selectmode='browse', show='tree', style='DirectoryTree.Treeview')
 
         # Needs after_idle because selection hasn't updated when binding runs
-        self.bind('<Button-1>', (lambda event: self.after_idle(self.on_click, event)), add=True)  # type: ignore
+        self.bind('<Button-1>', (lambda event: self.after_idle(self.on_click, event)), add=True)
 
         self.bind('<<TreeviewOpen>>', self.open_file_or_dir, add=True)
         self.bind('<<TreeviewSelect>>', self.update_selection_color, add=True)
@@ -84,7 +84,7 @@ class DirectoryTree(ttk.Treeview):
         #
         # To find time between the two clicks of double-click, I made a program
         # that printed times when I clicked.
-        selection: Tuple[str, ...] = self.selection()   # type: ignore
+        selection = self.selection()
         if event.time - self._last_click_time < 500 and self._last_click_selection == selection:
             # double click
             self.open_file_or_dir()
@@ -321,8 +321,7 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
 
-        # https://github.com/python/typeshed/issues/5010
-        tab.bind('<<Save>>', (lambda event: cast(None, tab.after_idle(tree.refresh_everything))), add=True)
+        tab.bind('<<Save>>', (lambda event: tab.after_idle(tree.refresh_everything)), add=True)
         tab.textwidget.bind('<FocusIn>', tree.refresh_everything, add=True)
 
 

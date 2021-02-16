@@ -640,8 +640,7 @@ def add_label(text: str) -> ttk.Label:
     label = ttk.Label(get_dialog_content(), text=text)
     label.grid(column=0, columnspan=3, sticky='we', pady=10)
 
-    # https://github.com/python/typeshed/issues/5010
-    get_dialog_content().bind('<Configure>', (lambda event: cast(None, label.config(wraplength=event.width))), add=True)
+    get_dialog_content().bind('<Configure>', (lambda event: label.config(wraplength=event.width)), add=True)
     return label
 
 
@@ -666,8 +665,7 @@ def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, d
         set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
 
     # don't know why after_idle is needed, but it is
-    # https://github.com/python/typeshed/issues/5010
-    panedwindow.bind('<Map>', (lambda event: cast(None, panedwindow.after_idle(settings2panedwindow))), add=True)
+    panedwindow.bind('<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True)
     panedwindow.bind('<<DividersFromSettings>>', settings2panedwindow, add=True)
     panedwindow.bind('<ButtonRelease-1>', panedwindow2settings, add=True)
 
