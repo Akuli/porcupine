@@ -1,4 +1,5 @@
 """Display the contents of the file being edited with small font on the side."""
+from __future__ import annotations
 
 import sys
 import tkinter

@@ -76,7 +76,8 @@ def _type_check(type_: type, obj: object) -> object:
     class ValueContainer:
         __annotations__ = {'value': type_}   # avoid the string 'type_'
 
-    return dacite.from_dict(ValueContainer, {'value': obj}).value
+    parsed = dacite.from_dict(ValueContainer, {'value': obj})
+    return parsed.value   # type: ignore
 
 
 class _Option:
