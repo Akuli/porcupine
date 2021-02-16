@@ -100,7 +100,7 @@ class Highlighter:
         # TODO: support ExtendedRegexLexer's context thing
         assert self._lexer is not None
         if type(self._lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
-            # Use a local variable inside the generator (ugly hack)
+            # Use local variables inside the generator (ugly hack)
             local_vars = generator.gi_frame.f_locals
 
             # If new_state variable is not None, it will be used to change
