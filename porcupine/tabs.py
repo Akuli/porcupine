@@ -517,7 +517,7 @@ bers.py>` use this attribute.
 
     def _get_char_count(self) -> int:
         # Why not 'end - 1 char': try .count('1.0', 'end - 1 char') with empty text widget
-        (n,) = self.textwidget.count('1.0', 'end')
+        (n,) = self.textwidget.count('1.0', 'end', 'chars')
         return n
 
     def _get_hash(self, string: Optional[str] = None) -> str:

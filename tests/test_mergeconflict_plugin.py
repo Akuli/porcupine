@@ -57,6 +57,13 @@ def test_find_merge_conflicts(filetab):
     assert find_merge_conflicts(text) == []
 
 
+def test_not_modified(filetab, tmp_path):
+    filetab.path = tmp_path / 'foo.txt'
+    filetab.path.write_text(merge_conflict_string)
+    filetab.reload()
+    assert not filetab.is_modified()
+
+
 def check_use_button(textwidget, button_number):
     textwidget.delete('1.0', 'end')
     textwidget.insert('1.0', merge_conflict_string)
