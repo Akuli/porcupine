@@ -1,6 +1,7 @@
 """
 When you put the cursor next to ')', this plugin highlights the matching '('.
 """
+from __future__ import annotations
 
 import tkinter
 from functools import partial
@@ -16,7 +17,7 @@ OPEN = OPEN_TO_CLOSE.keys()
 CLOSE = OPEN_TO_CLOSE.values()
 
 
-def on_cursor_moved(event: 'tkinter.Event[tkinter.Text]') -> None:
+def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
     event.widget.tag_remove('matching_paren', '1.0', 'end')
 
     if event.widget.index('insert') == '1.0':

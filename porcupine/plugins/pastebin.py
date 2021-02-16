@@ -4,6 +4,7 @@ If a part of the file is selected when you click something in the "Share" menu,
 then only the selected part of the file is shared.
 """
 # TODO: make this work with pythonprompt plugin?
+from __future__ import annotations
 
 import logging
 import socket
@@ -95,7 +96,7 @@ class MyHTTPConnection(HTTPConnection):
 # HTTPSConnection does super().connect(), which calls MyHTTPConnection.connect,
 # and then it SSL-wraps the socket created by MyHTTPConnection.
 class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
-    def __init__(self, *args: Any, dpaste: 'DPaste', **kwargs: Any) -> None:
+    def __init__(self, *args: Any, dpaste: DPaste, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._dpaste = dpaste
 

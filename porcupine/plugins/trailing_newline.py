@@ -1,11 +1,12 @@
 """Add a trailing newline character to the end of file when saving."""
+from __future__ import annotations
 
 import tkinter
 
 from porcupine import get_tab_manager, tabs
 
 
-def on_save(event: 'tkinter.Event[tabs.FileTab]') -> None:
+def on_save(event: tkinter.Event[tabs.FileTab]) -> None:
     if event.widget.settings.get('insert_final_newline', bool):
         textwidget = event.widget.textwidget
         if textwidget.get('end - 2 chars', 'end - 1 char') != '\n':

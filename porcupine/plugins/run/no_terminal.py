@@ -24,8 +24,8 @@ class NoTerminalRunner:
         self.textwidget.tag_config('output')    # use default colors
         self.textwidget.tag_config('error', foreground='red')
 
-        self._output_queue: 'queue.Queue[QueueMessage]' = queue.Queue()
-        self._running_process: Optional['subprocess.Popen[bytes]'] = None
+        self._output_queue: queue.Queue[QueueMessage] = queue.Queue()
+        self._running_process: Optional[subprocess.Popen[bytes]] = None
         self._queue_clearer()
 
     def _runner_thread(

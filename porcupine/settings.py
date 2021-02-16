@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import atexit
 import copy
 import dataclasses
@@ -72,9 +74,10 @@ def _type_check(type_: type, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
-        value: type_  # type: ignore[valid-type]
+        __annotations__ = {'value': type_}   # avoid the string 'type_'
 
-    return dacite.from_dict(ValueContainer, {'value': obj}).value
+    parsed = dacite.from_dict(ValueContainer, {'value': obj})
+    return parsed.value   # type: ignore
 
 
 class _Option:
@@ -400,7 +403,7 @@ def _init_global_gui_settings() -> None:
     add_option('font_size', fixedfont.cget('size'))
 
     # keep TkFixedFont up to date with settings
-    def update_fixedfont(event: Optional['tkinter.Event[tkinter.Misc]']) -> None:
+    def update_fixedfont(event: Optional[tkinter.Event[tkinter.Misc]]) -> None:
         # can't bind to get_tab_manager() as recommended in docs because tab
         # manager isn't ready yet when settings get inited
         if event is None or event.widget == porcupine.get_main_window():

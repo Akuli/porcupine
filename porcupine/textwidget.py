@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import dataclasses
 import re
@@ -366,7 +368,7 @@ class _ChangeTracker:
             self._change_batch = None
 
 
-_change_trackers: 'weakref.WeakKeyDictionary[tkinter.Text, _ChangeTracker]' = weakref.WeakKeyDictionary()
+_change_trackers: weakref.WeakKeyDictionary[tkinter.Text, _ChangeTracker] = weakref.WeakKeyDictionary()
 
 
 def track_changes(widget: tkinter.Text) -> None:
@@ -598,7 +600,7 @@ def config_tab_displaying(textwidget: tkinter.Text, indent_size: int, *, tag: Op
 class MainText(tkinter.Text):
     """Don't use this. It may be changed later."""
 
-    def __init__(self, tab: 'tabs.FileTab', **kwargs: Any) -> None:
+    def __init__(self, tab: tabs.FileTab, **kwargs: Any) -> None:
         super().__init__(tab, **kwargs)
         self._tab = tab
         track_changes(self)
@@ -625,7 +627,7 @@ class MainText(tkinter.Text):
     def _on_indent_size_changed(self, junk: object = None) -> None:
         config_tab_displaying(self, self._tab.settings.get('indent_size', int))
 
-    def _on_delete(self, control_down: bool, event: 'tkinter.Event[tkinter.Misc]',
+    def _on_delete(self, control_down: bool, event: tkinter.Event[tkinter.Misc],
                    shifted: bool = False) -> utils.BreakOrNone:
         """This runs when the user presses backspace or delete."""
         if not self.tag_ranges('sel'):
@@ -728,11 +730,11 @@ class MainText(tkinter.Text):
         self.delete(f'{lineno}.{start}', f'{lineno}.{end}')
         return (start != end)
 
-    def _redo(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+    def _redo(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         self.event_generate('<<Redo>>')
         return 'break'
 
-    def _paste(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+    def _paste(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         self.event_generate('<<Paste>>')
 
         # by default, selected text doesn't go away when pasting
@@ -746,7 +748,7 @@ class MainText(tkinter.Text):
 
         return 'break'
 
-    def _select_all(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+    def _select_all(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         self.tag_add('sel', '1.0', 'end - 1 char')
         return 'break'
 

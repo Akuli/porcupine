@@ -1,4 +1,5 @@
 """Display the contents of the file being edited with small font on the side."""
+from __future__ import annotations
 
 import sys
 import tkinter
@@ -176,7 +177,7 @@ class MiniMap(tkinter.Text):
         # TODO: figure out when exactly this is needed, remove unnecessary calls?
         self._update_sel_tag()
 
-    def _on_click_and_drag(self, event: 'tkinter.Event[tkinter.Misc]') -> utils.BreakOrNone:
+    def _on_click_and_drag(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         self._tab.textwidget.see(self.index(f'@0,{event.y}'))
         return 'break'
 

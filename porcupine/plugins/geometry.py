@@ -1,10 +1,12 @@
 """Remember the size and location of the Porcupine window."""
+from __future__ import annotations
+
 import tkinter
 
 from porcupine import get_main_window, settings
 
 
-def save_geometry(event: 'tkinter.Event[tkinter.Misc]') -> None:
+def save_geometry(event: tkinter.Event[tkinter.Misc]) -> None:
     assert isinstance(event.widget, (tkinter.Tk, tkinter.Toplevel))
     settings.set_('default_geometry', event.widget.geometry())
 

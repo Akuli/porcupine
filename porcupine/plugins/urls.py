@@ -1,4 +1,5 @@
 """Find URLs in code and make them clickable."""
+from __future__ import annotations
 
 import tkinter
 import webbrowser

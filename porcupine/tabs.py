@@ -1,4 +1,5 @@
 r"""Tabs as in browser tabs, not \t characters."""
+from __future__ import annotations
 
 import dataclasses
 import hashlib
@@ -77,7 +78,7 @@ class TabManager(ttk.Notebook):
         # the string is call stack for adding callback
         self._tab_callbacks: List[Tuple[Callable[[Tab], Any], str]] = []
 
-    def _notify_selected_tab(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def _notify_selected_tab(self, event: tkinter.Event[tkinter.Misc]) -> None:
         tab = self.select()
         if tab is not None:
             tab.event_generate('<<TabSelected>>')
@@ -103,7 +104,7 @@ class TabManager(ttk.Notebook):
     # fixing tkinter weirdness: some methods returns widget names as
     # strings instead of widget objects, these str() everything anyway
     # because tkinter might be fixed some day
-    def select(self, tab_id: Union[None, int, 'Tab'] = None) -> Optional['Tab']:
+    def select(self, tab_id: Union[None, int, Tab] = None) -> Optional[Tab]:
         """Select the given tab as if the user clicked it.
 
         Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
@@ -120,7 +121,7 @@ class TabManager(ttk.Notebook):
         super().select(tab_id)
         return None
 
-    def tabs(self) -> Tuple['Tab', ...]:
+    def tabs(self) -> Tuple[Tab, ...]:
         """Return a tuple of tabs in the tab manager.
 
         This returns a tuple instead of a list for compatibility with
@@ -130,7 +131,7 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())
 
-    def add_tab(self, tab: 'Tab', select: bool = True) -> 'Tab':
+    def add_tab(self, tab: Tab, select: bool = True) -> Tab:
         """Append a :class:`.Tab` to this tab manager.
 
         If ``tab.equivalent(existing_tab)`` returns True for any
@@ -168,7 +169,7 @@ class TabManager(ttk.Notebook):
                 log.error(f"the callback was added here\n{add_stack}")
         return tab
 
-    def close_tab(self, tab: 'Tab') -> None:
+    def close_tab(self, tab: Tab) -> None:
         """Destroy a tab without calling :meth:`~Tab.can_be_closed`.
 
         The closed tab cannot be added back to the tab manager later.
@@ -179,7 +180,7 @@ class TabManager(ttk.Notebook):
         tab.destroy()
         self._update_tab_titles()
 
-    def add_tab_callback(self, func: Callable[['Tab'], Any]) -> None:
+    def add_tab_callback(self, func: Callable[[Tab], Any]) -> None:
         """Run a callback for each tab in the tab manager.
 
         When new tabs are added later, the callback will be ran for them too.
@@ -302,7 +303,7 @@ class Tab(ttk.Frame):
         """
         return True
 
-    def equivalent(self, other: 'Tab') -> bool:
+    def equivalent(self, other: Tab) -> bool:
         """This is explained in :meth:`.TabManager.add_tab`.
 
         This always returns False by default, but you can override it in
