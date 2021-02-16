@@ -50,10 +50,15 @@ for {set i 1} {$i <= 9} {incr i} {
     event add "<<TabOrder:SelectTab$i>>" <Alt-Key-$i>
 }
 
-# xbutton plugin
-event add "<<XButton:CloseWhenCloseButtonClicked>>" <Button-1>
-if {[tk windowingsystem] != "aqua"} {   # doesn't make sense on mac, see #303
-    event add "<<XButton:CloseWhenTabClicked>>" <Button-2>
+# tab_closing plugin
+event add "<<TabClosing:XButtonClickClose>>" <Button-1>
+if {[tk windowingsystem] == "aqua"} {
+    # right-click is Button-2, no wheel-click (afaik)
+    event add "<<TabClosing:ShowMenu>>" <Button-2>
+} else {
+    # right-click is Button-3, wheel-click is Button-2
+    event add "<<TabClosing:ShowMenu>>" <Button-3>
+    event add "<<TabClosing:HeaderClickClose>>" <Button-2>
 }
 
 # more_plugins/terminal.py

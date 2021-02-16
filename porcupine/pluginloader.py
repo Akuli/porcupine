@@ -174,7 +174,7 @@ def _did_plugin_come_with_porcupine(finder: object) -> bool:
 
 
 # workaround for #328
-_plugins_that_no_longer_exist = {'overview', 'drag_to_open'}
+_plugins_that_no_longer_exist = {'overview', 'drag_to_open', 'xbutton'}
 
 
 # undocumented on purpose, don't use in plugins
