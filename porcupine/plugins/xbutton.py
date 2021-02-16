@@ -1,17 +1,18 @@
 """Allow tabs to be closed with "X" button or middle-click."""
+from __future__ import annotations
 
 import tkinter
 
 from porcupine import get_tab_manager, images, tabs
 
 
-def close_clicked_tab(event: 'tkinter.Event[tabs.TabManager]') -> None:
+def close_clicked_tab(event: tkinter.Event[tabs.TabManager]) -> None:
     tab = event.widget.tabs()[event.widget.index(f'@{event.x},{event.y}')]
     if tab.can_be_closed():
         event.widget.close_tab(tab)
 
 
-def on_x_clicked(event: 'tkinter.Event[tabs.TabManager]') -> None:
+def on_x_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
     if event.widget.identify(event.x, event.y) == 'label':
         # find the right edge of the top label (including close button)
         right = event.x
@@ -24,7 +25,7 @@ def on_x_clicked(event: 'tkinter.Event[tabs.TabManager]') -> None:
 
 
 # Close tab on middle-click (press down the wheel of the mouse)
-def on_tab_clicked(event: 'tkinter.Event[tabs.TabManager]') -> None:
+def on_tab_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
     if event.widget.identify(event.x, event.y) == 'label':
         close_clicked_tab(event)
 

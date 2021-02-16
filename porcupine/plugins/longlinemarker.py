@@ -1,4 +1,5 @@
 """Maximum line length marker."""
+from __future__ import annotations
 
 import tkinter
 import tkinter.font as tkfont
@@ -62,7 +63,7 @@ class LongLineMarker:
         # stupid fallback
         self.frame.config(bg='red')
 
-    def on_configure(self, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    def on_configure(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # this way to calculate it is weird but seems to work
         bbox = self.tab.textwidget.bbox('@0,0')
         assert bbox is not None

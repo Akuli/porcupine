@@ -3,6 +3,7 @@
 Currently the langserver plugin displays errors and warnings with this plugin
 and the urls plugin uses this to create control-clickable links.
 """
+from __future__ import annotations
 
 import dataclasses
 import logging
@@ -160,7 +161,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
         utils.bind_with_data(tab, '<<SetUnderlines>>', underliner.set_underlines, add=True)
 
 
-def hide_all_message_labels(event: 'tkinter.Event[tkinter.Misc]') -> None:
+def hide_all_message_labels(event: tkinter.Event[tkinter.Misc]) -> None:
     if event.widget is get_main_window():   # Tk and Toplevel events need this check
         for tab in get_tab_manager().tabs():
             if isinstance(tab, tabs.FileTab):

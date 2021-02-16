@@ -1,4 +1,5 @@
 """Display a "Color Styles" menu."""
+from __future__ import annotations
 
 import threading
 import tkinter
@@ -54,7 +55,7 @@ def setup() -> None:
 
         var = tkinter.StringVar(value=settings.get('pygments_style', str))
 
-        def settings2var(event: 'tkinter.Event[tkinter.Misc]') -> None:
+        def settings2var(event: tkinter.Event[tkinter.Misc]) -> None:
             var.set(settings.get('pygments_style', str))
 
         def var2settings(*junk: str) -> None:
