@@ -22,6 +22,9 @@ jobs:
         mypy --platform win32 --python-version 3.7 porcupine more_plugins
         mypy --platform win32 --python-version 3.8 porcupine more_plugins
         mypy --platform win32 --python-version 3.9 porcupine more_plugins
+        mypy --platform darwin --python-version 3.7 porcupine more_plugins
+        mypy --platform darwin --python-version 3.8 porcupine more_plugins
+        mypy --platform darwin --python-version 3.9 porcupine more_plugins
   pytest-windows:
     strategy:
       matrix:
