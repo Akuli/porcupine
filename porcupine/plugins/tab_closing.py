@@ -1,4 +1,4 @@
-"""Allow tabs to be closed with "X" button or middle-click."""
+"""Allow tabs to be closed in different ways."""
 from __future__ import annotations
 
 import tkinter
@@ -25,7 +25,7 @@ def on_x_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
 
 
 # Close tab on middle-click (press down the wheel of the mouse)
-def on_tab_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
+def on_header_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
     if event.widget.identify(event.x, event.y) == 'label':
         close_clicked_tab(event)
 
@@ -35,5 +35,5 @@ def setup() -> None:
     tabmanager.add_tab_callback(lambda tab: get_tab_manager().tab(
         tab, image=images.get('closebutton'), compound='right'
     ))
-    tabmanager.bind('<<XButton:CloseWhenCloseButtonClicked>>', on_x_clicked, add=True)
-    tabmanager.bind('<<XButton:CloseWhenTabClicked>>', on_tab_clicked, add=True)
+    tabmanager.bind('<<TabClosing:XButton>>', on_x_clicked, add=True)
+    tabmanager.bind('<<TabClosing:Header>>', on_header_clicked, add=True)
