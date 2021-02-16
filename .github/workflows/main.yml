@@ -16,15 +16,15 @@ jobs:
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: git submodule init && git submodule update
     - run: |
-        mypy --platform linux --python-version 3.7 porcupine more_plugins
-        mypy --platform linux --python-version 3.8 porcupine more_plugins
-        mypy --platform linux --python-version 3.9 porcupine more_plugins
-        mypy --platform win32 --python-version 3.7 porcupine more_plugins
-        mypy --platform win32 --python-version 3.8 porcupine more_plugins
-        mypy --platform win32 --python-version 3.9 porcupine more_plugins
-        mypy --platform darwin --python-version 3.7 porcupine more_plugins
-        mypy --platform darwin --python-version 3.8 porcupine more_plugins
-        mypy --platform darwin --python-version 3.9 porcupine more_plugins
+        time mypy --platform linux --python-version 3.7 porcupine more_plugins
+        time mypy --platform linux --python-version 3.8 porcupine more_plugins
+        time mypy --platform linux --python-version 3.9 porcupine more_plugins
+        time mypy --platform win32 --python-version 3.7 porcupine more_plugins
+        time mypy --platform win32 --python-version 3.8 porcupine more_plugins
+        time mypy --platform win32 --python-version 3.9 porcupine more_plugins
+        time mypy --platform darwin --python-version 3.7 porcupine more_plugins
+        time mypy --platform darwin --python-version 3.8 porcupine more_plugins
+        time mypy --platform darwin --python-version 3.9 porcupine more_plugins
   pytest-windows:
     strategy:
       matrix:
