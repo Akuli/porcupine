@@ -244,12 +244,10 @@ class TetrisTab(tabs.Tab):
             wraplength=self._canvas['width'],
         ).pack()
 
-        # this also requires binding on the tab when the tab is detached
         for key in ['<W>', '<w>', '<A>', '<a>', '<S>', '<s>', '<D>', '<d>',
                     '<Left>', '<Right>', '<Up>', '<Down>', '<Return>',
                     '<space>', '<F2>', '<P>', '<p>']:
             self._canvas.bind(key, self._on_key, add=True)
-            self.bind(key, self._on_key, add=True)
 
         self._canvas_content = {}
         for x in range(WIDTH):
