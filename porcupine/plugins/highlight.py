@@ -100,8 +100,14 @@ class Highlighter:
         # TODO: support ExtendedRegexLexer's context thing
         assert self._lexer is not None
         if type(self._lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
-            # Use a local variable inside the generator (ugly hack)
-            return (generator.gi_frame.f_locals['statestack'] == ['root'])
+            # Use local variables inside the generator (ugly hack)
+            local_vars = generator.gi_frame.f_locals
+
+            # If new_state variable is not None, it will be used to change
+            # state after the yielding, and this is not a suitable place for
+            # restarting the highlighting later.
+            return (local_vars['statestack'] == ['root'] and
+                    local_vars.get('new_state', None) is None)
 
         # Start of line (column zero) and not indentation or blank line
         return end_location.endswith('.0') and bool(self.textwidget.get(end_location).strip())
