@@ -234,7 +234,7 @@ class TetrisTab(tabs.Tab):
         self._score_label.pack()
 
         help_text = ' '.join(f'''
-        You can move the blocks with arrow keys or WASD keys.
+        You can move the blocks with arrow keys.
         Press {utils.get_binding('<<Tetris:Pause>>')} to pause
         or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game.
         '''.split())
@@ -245,8 +245,7 @@ class TetrisTab(tabs.Tab):
             wraplength=self._canvas['width'],
         ).pack()
 
-        for key in ['<W>', '<w>', '<A>', '<a>', '<S>', '<s>', '<D>', '<d>',
-                    '<Left>', '<Right>', '<Up>', '<Down>', '<Return>', '<space>']:
+        for key in ['<Left>', '<Right>', '<Up>', '<Down>', '<Return>', '<space>']:
             self._canvas.bind(key, self._on_key, add=True)
 
         self._canvas.bind('<<Tetris:NewGame>>', (lambda event: self.new_game()), add=True)
@@ -278,13 +277,13 @@ class TetrisTab(tabs.Tab):
             return None
 
         if not self._game.paused:
-            if event.keysym in {'A', 'a', 'Left'}:
+            if event.keysym == 'Left':
                 self._game.moving_block.move_left()
-            elif event.keysym in {'D', 'd', 'Right'}:
+            elif event.keysym == 'Right':
                 self._game.moving_block.move_right()
-            elif event.keysym in {'W', 'w', 'Return', 'Up'}:
+            elif event.keysym in {'Return', 'Up'}:
                 self._game.moving_block.rotate()
-            elif event.keysym in {'S', 's', 'space', 'Down'}:
+            elif event.keysym in {'space', 'Down'}:
                 self._game.moving_block.move_down_all_the_way()
             else:
                 raise ValueError(f"unknown keysym {event.keysym!r}")
