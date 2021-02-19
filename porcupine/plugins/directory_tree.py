@@ -154,6 +154,18 @@ class DirectoryTree(ttk.Treeview):
         if refresh:
             self.refresh_everything()
 
+    def select_file(self, path: pathlib.Path) -> None:
+        project_root = utils.find_project_root(path)
+
+        [id] = [child for child in self.get_children() if self.get_path(child) == project_root]
+        for part in path.relative_to(project_root).parts:
+            if self.item(id, 'open'):
+                [id] = [child for child in self.get_children(id) if self.get_path(child).name == part]
+            else:
+                break
+
+        self.selection_set(id)
+
     def _insert_dummy(self, parent: str) -> None:
         assert parent
         self.insert(parent, 'end', text='(empty)', tags='dummy')
@@ -311,8 +323,6 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         def path_callback(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
-                # Please avoid using find_project_root elsewhere. It doesn't
-                # work with nested projects, for example.
                 tree.add_project(utils.find_project_root(tab.path))
 
         path_callback()
