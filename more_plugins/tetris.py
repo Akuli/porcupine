@@ -239,7 +239,7 @@ class TetrisTab(tabs.Tab):
         '''.split())
         ttk.Label(
             self,
-            text=re.sub('\s+', ' ', help_text).strip(),
+            text=re.sub(r'\s+', ' ', help_text).strip(),
             justify='center',
             wraplength=self._canvas['width'],
         ).pack()
