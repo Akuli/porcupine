@@ -315,7 +315,7 @@ class TetrisTab(tabs.Tab):
                     fill=utils.invert_color(self._canvas.cget('bg')))
                 return
 
-        self._timeout_id = self._canvas.after(self._game.delay, self._on_timeout)
+        self._timeout_id = self.after(self._game.delay, self._on_timeout)
 
     def get_state(self) -> Game:
         return self._game       # it should be picklable
