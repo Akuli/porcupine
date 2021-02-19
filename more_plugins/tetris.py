@@ -260,21 +260,18 @@ class TetrisTab(tabs.Tab):
         if event.state & control_flag:
             return None
 
-        if event.keysym in {'A', 'a', 'Left'}:
+        if event.keysym in {'A', 'a', 'Left'} and not self._game.paused:
             self._game.moving_block.move_left()
-        elif event.keysym in {'D', 'd', 'Right'}:
+        elif event.keysym in {'D', 'd', 'Right'} and not self._game.paused:
             self._game.moving_block.move_right()
-        elif event.keysym in {'W', 'w', 'Return', 'Up'}:
+        elif event.keysym in {'W', 'w', 'Return', 'Up'} and not self._game.paused:
             self._game.moving_block.rotate()
-        elif event.keysym in {'S', 's', 'space', 'Down'}:
+        elif event.keysym in {'S', 's', 'space', 'Down'} and not self._game.paused:
             self._game.moving_block.move_down_all_the_way()
-        elif event.keysym in {'P', 'p'}:
-            if not self._game.game_over():
-                self._game.paused = (not self._game.paused)
+        elif event.keysym in {'P', 'p'} and not self._game.game_over():
+            self._game.paused = (not self._game.paused)
         elif event.keysym == 'F2':
             self.new_game()
-        else:
-            raise ValueError(f"unknown keysym {event.keysym!r}")
 
         self._refresh()
         return 'break'
