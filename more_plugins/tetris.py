@@ -1,12 +1,10 @@
 """Tetris game."""
-# TODO: make pause feature discoverable to users
 # FIXME: "game over" text doesn't show up very well on top of white squares
 from __future__ import annotations
 
 import functools
 import itertools
 import random
-import re
 import tkinter
 from tkinter import ttk
 from typing import Dict, Iterator, List, Optional, Tuple
@@ -240,7 +238,7 @@ class TetrisTab(tabs.Tab):
         '''.split())
         ttk.Label(
             self,
-            text=re.sub(r'\s+', ' ', help_text).strip(),
+            text=help_text,
             justify='center',
             wraplength=self._canvas['width'],
         ).pack()
