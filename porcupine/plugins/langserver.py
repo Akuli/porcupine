@@ -100,10 +100,7 @@ class SubprocessStdIO:
 
 def error_says_socket_not_connected(error: OSError) -> bool:
     if sys.platform == 'win32':
-        # i tried socket.socket().recv(1024) on windows and this is what i got
-        # https://github.com/python/mypy/issues/8823
-        # https://github.com/python/typeshed/issues/5028
-        return (cast(Any, error).winerror == 10057)
+        return (error.winerror == 10057)
     else:
         return (error.errno == errno.ENOTCONN)
 
