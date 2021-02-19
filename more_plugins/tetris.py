@@ -302,34 +302,31 @@ class TetrisTab(tabs.Tab):
         self._on_timeout()
 
     def _on_timeout(self) -> None:
-        if self._game.paused:
-            self._timeout_id = self._canvas.after(
-                self._game.delay, self._on_timeout)
-            return
+        if not self._game.paused:
+            self._game.do_something()
+            self._refresh()
 
-        self._game.do_something()
-        self._refresh()
+            if self._game.game_over():
+                centerx = int(self._canvas.cget('width')) // 2
+                centery = int(self._canvas.cget('height')) // 3
+                self._game_over_id = self._canvas.create_text(
+                    centerx, centery, anchor='center',
+                    text="Game Over :(", font=('', 18, 'bold'),
+                    fill=utils.invert_color(self._canvas.cget('bg')))
+                return
 
-        if self._game.game_over():
-            centerx = int(self._canvas.cget('width')) // 2
-            centery = int(self._canvas.cget('height')) // 3
-            self._game_over_id = self._canvas.create_text(
-                centerx, centery, anchor='center',
-                text="Game Over :(", font=('', 18, 'bold'),
-                fill=utils.invert_color(self._canvas.cget('bg')))
-        else:
-            self._timeout_id = self._canvas.after(
-                self._game.delay, self._on_timeout)
+        self._timeout_id = self._canvas.after(self._game.delay, self._on_timeout)
 
     def get_state(self) -> Game:
         return self._game       # it should be picklable
 
     @classmethod
     def from_state(cls, manager: tabs.TabManager, game: Game) -> 'TetrisTab':
+        game.paused = True
         self = cls(manager)
         self._game = game
         self._refresh()
-        self._timeout_id = self._canvas.after(game.delay, self._on_timeout)
+        self._on_timeout()
         return self
 
 
