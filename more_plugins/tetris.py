@@ -6,6 +6,7 @@ from __future__ import annotations
 import functools
 import itertools
 import random
+import re
 import tkinter
 from tkinter import ttk
 from typing import Dict, Iterator, List, Optional, Tuple
@@ -231,6 +232,17 @@ class TetrisTab(tabs.Tab):
 
         self._score_label = ttk.Label(self, justify='center')
         self._score_label.pack()
+
+        help_text = ' '.join('''
+        You can move the blocks with arrow keys or WASD keys.
+        Press p to pause or F2 to start a new game.
+        '''.split())
+        ttk.Label(
+            self,
+            text=re.sub('\s+', ' ', help_text).strip(),
+            justify='center',
+            wraplength=self._canvas['width'],
+        ).pack()
 
         # this also requires binding on the tab when the tab is detached
         for key in ['<W>', '<w>', '<A>', '<a>', '<S>', '<s>', '<D>', '<d>',
