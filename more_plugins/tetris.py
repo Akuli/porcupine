@@ -1,5 +1,4 @@
 """Tetris game."""
-# FIXME: "game over" text doesn't show up very well on top of white squares
 from __future__ import annotations
 
 import functools
@@ -318,12 +317,20 @@ class TetrisTab(tabs.Tab):
             self._refresh()
 
             if self._game.game_over():
-                centerx = int(self._canvas.cget('width')) // 2
-                centery = int(self._canvas.cget('height')) // 3
+                centerx = int(self._canvas['width']) // 2
+                centery = int(self._canvas['height']) // 3
+                font_size = 18
+
+                self._canvas.create_rectangle(
+                    0, centery - font_size, self._canvas['width'], centery + font_size,
+                    fill='black')
                 self._game_over_id = self._canvas.create_text(
-                    centerx, centery, anchor='center',
-                    text="Game Over :(", font=('', 18, 'bold'),
-                    fill=utils.invert_color(self._canvas.cget('bg')))
+                    centerx, centery,
+                    anchor='center',
+                    text="Game Over :(",
+                    font=('', font_size, 'bold'),
+                    fill='white',
+                )
                 return
 
         self._timeout_id = self.after(self._game.delay, self._on_timeout)
