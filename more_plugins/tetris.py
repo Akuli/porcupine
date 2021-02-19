@@ -229,7 +229,7 @@ class TetrisTab(tabs.Tab):
             relief='ridge', bg='black', takefocus=True)
         self._canvas.pack()
 
-        self._score_label = ttk.Label(self)
+        self._score_label = ttk.Label(self, justify='center')
         self._score_label.pack()
 
         # this also requires binding on the tab when the tab is detached
@@ -288,7 +288,8 @@ class TetrisTab(tabs.Tab):
                 color = COLORS[shape]
             self._canvas.itemconfig(item_id, fill=color)
 
-        self._score_label['text'] = f"Score {self._game.score}, level {self._game.level}"
+        self._score_label['text'] = f"Score {self._game.score}, level {self._game.level}\n" + (
+            "Paused" if self._game.paused else "")
 
     def new_game(self) -> None:
         if self._timeout_id is not None:
