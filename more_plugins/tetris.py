@@ -263,7 +263,7 @@ class TetrisTab(tabs.Tab):
         # yes, this needs force for some reason
         self.bind('<<TabSelected>>', (lambda event: self._canvas.focus_force()), add=True)
 
-    def _toggle_pause(self, event):
+    def _toggle_pause(self, event: tkinter.Event[tkinter.Misc]) -> None:
         if not self._game.game_over():
             self._game.paused = not self._game.paused
 
