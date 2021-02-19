@@ -233,9 +233,10 @@ class TetrisTab(tabs.Tab):
         self._score_label = ttk.Label(self, justify='center')
         self._score_label.pack()
 
-        help_text = ' '.join('''
+        help_text = ' '.join(f'''
         You can move the blocks with arrow keys or WASD keys.
-        Press p to pause or F2 to start a new game.
+        Press {utils.get_binding('<<Tetris:Pause>>')} to pause
+        or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game.
         '''.split())
         ttk.Label(
             self,
@@ -245,9 +246,11 @@ class TetrisTab(tabs.Tab):
         ).pack()
 
         for key in ['<W>', '<w>', '<A>', '<a>', '<S>', '<s>', '<D>', '<d>',
-                    '<Left>', '<Right>', '<Up>', '<Down>', '<Return>',
-                    '<space>', '<F2>', '<P>', '<p>']:
+                    '<Left>', '<Right>', '<Up>', '<Down>', '<Return>', '<space>']:
             self._canvas.bind(key, self._on_key, add=True)
+
+        self._canvas.bind('<<Tetris:NewGame>>', (lambda event: self.new_game()), add=True)
+        self._canvas.bind('<<Tetris:Pause>>', self._toggle_pause, add=True)
 
         self._canvas_content = {}
         for x in range(WIDTH):
@@ -264,24 +267,27 @@ class TetrisTab(tabs.Tab):
         # yes, this needs force for some reason
         self.bind('<<TabSelected>>', (lambda event: self._canvas.focus_force()), add=True)
 
+    def _toggle_pause(self, event):
+        if not self._game.game_over():
+            self._game.paused = not self._game.paused
+
     def _on_key(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         control_flag = 0x4
         assert isinstance(event.state, int)
         if event.state & control_flag:
             return None
 
-        if event.keysym in {'A', 'a', 'Left'} and not self._game.paused:
-            self._game.moving_block.move_left()
-        elif event.keysym in {'D', 'd', 'Right'} and not self._game.paused:
-            self._game.moving_block.move_right()
-        elif event.keysym in {'W', 'w', 'Return', 'Up'} and not self._game.paused:
-            self._game.moving_block.rotate()
-        elif event.keysym in {'S', 's', 'space', 'Down'} and not self._game.paused:
-            self._game.moving_block.move_down_all_the_way()
-        elif event.keysym in {'P', 'p'} and not self._game.game_over():
-            self._game.paused = (not self._game.paused)
-        elif event.keysym == 'F2':
-            self.new_game()
+        if not self._game.paused:
+            if event.keysym in {'A', 'a', 'Left'}:
+                self._game.moving_block.move_left()
+            elif event.keysym in {'D', 'd', 'Right'}:
+                self._game.moving_block.move_right()
+            elif event.keysym in {'W', 'w', 'Return', 'Up'}:
+                self._game.moving_block.rotate()
+            elif event.keysym in {'S', 's', 'space', 'Down'}:
+                self._game.moving_block.move_down_all_the_way()
+            else:
+                raise ValueError(f"unknown keysym {event.keysym!r}")
 
         self._refresh()
         return 'break'
