@@ -95,6 +95,10 @@ Please [update Porcupine](https://github.com/Akuli/porcupine/wiki/Installing-and
 If it still doesn't work, [let me know by creating an issue on
 GitHub](http://github.com/Akuli/porcupine/issues/new).
 
+### Is Porcupine written in Porcupine?
+
+Yes. I wrote the very first version in `nano`, but Porcupine has changed a lot since.
+
 ### Why not use editor X?
 Because Porcupine is better.
 
