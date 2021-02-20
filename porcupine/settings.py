@@ -654,6 +654,13 @@ def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, d
         value = get(option_name, List[int])
         if len(value) == len(panedwindow.panes()) - 1:
             _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
+            # Prevent funny bug with invisible panes becoming huge
+            #
+            # TODO: figure out how to handle panes other than first pane
+            #       (need to know width of the dragging handle?)
+            if value and value[0] == 0:
+                value[0] = 1
+
             for index, pos in enumerate(value):
                 panedwindow.sashpos(index, pos)
         else:
