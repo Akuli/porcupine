@@ -2,7 +2,6 @@ pytest>=5.4.3
 pytest-cov>=2.10.1
 isort>=5.7.0
 sphinx>=3.0.0, <4.0.0
-git+https://github.com/python/mypy.git@2738c73695e2d2f963fbe2a0056329c43a0f6e58
 types-toml>=0.1.1
 pyflakes>=2.2.0
 pycodestyle>=2.6.0
@@ -10,3 +9,8 @@ pytest-mock>=3.2.0,<4.0.0
 pynsist>=2.6
 pillow>=5.4.1
 requests>=2.24.0, <3.0.0
+
+# no new mypy releases with mypyc yet, mypy without mypyc is slow
+# https://github.com/python/mypy/issues/10116
+git+https://github.com/python/mypy.git@2738c73695e2d2f963fbe2a0056329c43a0f6e58; sys_platform != 'linux' or python_version != '3.9'
+https://github.com/mypyc/mypy_mypyc-wheels/releases/download/v0.820%2Bdev.497556f466dcda90d850b23e86c55ec4082be3f5/mypy-0.820+dev.497556f466dcda90d850b23e86c55ec4082be3f5-cp39-cp39-manylinux1_x86_64.whl; sys_platform == 'linux' and python_version == '3.9'
