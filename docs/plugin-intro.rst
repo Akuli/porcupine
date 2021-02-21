@@ -96,7 +96,7 @@ implemented as plugins. They come with Porcupine (see `Where are the plugins?`_
 above), but you can also :source:`read them on GitHub <porcupine/plugins>`.
 
 This tutorial is all about writing *more* plugins, but we'll start by running
-Porcupine with *no* plugins at all just to get an idea of how much can be done with plugins.
+Porcupine with *no* plugins at all, just to get an idea of how much can be done with plugins.
 Open Porcupine's plugin manager from the *Settings* menu, select all plugins with shift+click,
 and then click "Disable" and restart Porcupine.
 Alternatively, if you `installed Porcupine <https://github.com/Akuli/porcupine#installing-porcupine>`_
