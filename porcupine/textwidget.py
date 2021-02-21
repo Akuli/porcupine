@@ -609,69 +609,14 @@ class MainText(tkinter.Text):
         tab.bind('<<TabSettingChanged:indent_size>>', self._on_indent_size_changed, add=True)
         self._on_indent_size_changed()
 
-        # FIXME: lots of things have been turned into plugins, but
-        # there's still wayyyy too much stuff in here...
-        self.bind('<BackSpace>', partial(self._on_delete, False), add=True)
-        self.bind(f'<{utils.contmand()}-BackSpace>', partial(self._on_delete, True), add=True)
-        self.bind(f'<{utils.contmand()}-Delete>', partial(self._on_delete, True), add=True)
-        self.bind(f'<Shift-{utils.contmand()}-Delete>',
-                  partial(self._on_delete, True, shifted=True), add=True)
-        self.bind(f'<Shift-{utils.contmand()}-BackSpace>',
-                  partial(self._on_delete, True, shifted=True), add=True)
-
         # most other things work by default, but these don't
+        # TODO: use default_keybindings.tcl
         self.bind(f'<{utils.contmand()}-v>', self._paste, add=True)
         self.bind(f'<{utils.contmand()}-y>', self._redo, add=True)
         self.bind(f'<{utils.contmand()}-a>', self._select_all, add=True)
 
     def _on_indent_size_changed(self, junk: object = None) -> None:
         config_tab_displaying(self, self._tab.settings.get('indent_size', int))
-
-    def _on_delete(self, control_down: bool, event: tkinter.Event[tkinter.Misc],
-                   shifted: bool = False) -> utils.BreakOrNone:
-        """This runs when the user presses backspace or delete."""
-        if not self.tag_ranges('sel'):
-            # nothing is selected, we can do non-default stuff
-            if control_down and shifted:
-                # plan A: delete until end or beginning of line
-                # plan B: delete a newline character if there's nothing
-                #         to delete with plan A
-                if event.keysym == 'Delete':
-                    plan_a = ('insert', 'insert lineend')
-                    plan_b = ('insert', 'insert + 1 char')
-                else:
-                    plan_a = ('insert linestart', 'insert')
-                    plan_b = ('insert - 1 char', 'insert')
-
-                if self.index(plan_a[0]) == self.index(plan_a[1]):
-                    # nothing can be deleted with plan a
-                    self.delete(*plan_b)
-                else:
-                    self.delete(*plan_a)
-                return 'break'
-
-            if event.keysym == 'BackSpace':
-                lineno = int(self.index('insert').split('.')[0])
-                before_cursor = self.get(f'{lineno}.0', 'insert')
-                if before_cursor and before_cursor.isspace():
-                    self.dedent('insert')
-                    return 'break'
-
-                if control_down:
-                    # delete previous word
-                    end = self.index('insert')
-                    self.event_generate('<<PrevWord>>')
-                    self.delete('insert', end)
-                    return 'break'
-
-            if event.keysym == 'Delete' and control_down:
-                # delete next word
-                old_cursor_pos = self.index('insert')
-                self.event_generate('<<NextWord>>')
-                self.delete(old_cursor_pos, 'insert')
-                return 'break'
-
-        return None
 
     def indent(self, location: str) -> None:
         """Insert indentation character(s) at the given location."""
