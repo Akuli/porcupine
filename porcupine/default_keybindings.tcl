@@ -98,9 +98,8 @@ bind Text <$contmand-Delete> {
 
 bind Text <BackSpace> {
     set beforecursor [%W get {insert linestart} insert]
-    set binding [bind %W <<Dedent>>]
     if {
-        [string length $binding] != 0 &&
+        [string length [bind %W <<Dedent>>]] != 0 &&
         [string length $beforecursor] != 0 &&
         [string is space $beforecursor]
     } {
