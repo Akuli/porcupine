@@ -609,6 +609,8 @@ class MainText(tkinter.Text):
         tab.bind('<<TabSettingChanged:indent_size>>', self._on_indent_size_changed, add=True)
         self._on_indent_size_changed()
 
+        self.bind('<<Dedent>>', (lambda event: self.dedent('insert')), add=True)
+
         # most other things work by default, but these don't
         # TODO: use default_keybindings.tcl
         self.bind(f'<{utils.contmand()}-v>', self._paste, add=True)
