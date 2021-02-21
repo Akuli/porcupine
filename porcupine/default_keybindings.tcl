@@ -87,3 +87,58 @@ bind Text <$contmand-Button-1> {}
 # Also, by default, Control+Slash selects all and Control+A goes to beginning.
 event delete "<<LineStart>>" <$contmand-a>
 event add "<<SelectAll>>" <$contmand-a>
+
+bind Text <$contmand-Delete> {
+    try {%W delete sel.first sel.last} on error {} {
+        set start [%W index insert]
+        event generate %W <<NextWord>>
+        %W delete $start insert
+    }
+}
+
+bind Text <BackSpace> {
+    set beforecursor [%W get {insert linestart} insert]
+    if {
+        [string length [bind %W <<Dedent>>]] != 0 &&
+        [string length $beforecursor] != 0 &&
+        [string is space $beforecursor]
+    } {
+        event generate %W <<Dedent>>
+    } else {
+        %W delete {insert - 1 char}
+    }
+}
+
+bind Text <$contmand-BackSpace> {
+    try {%W delete sel.first sel.last} on error {} {
+        set end [%W index insert]
+        event generate %W <<PrevWord>>
+        %W delete insert $end
+    }
+}
+
+bind Text <Shift-$contmand-Delete> {
+    try {%W delete sel.first sel.last} on error {} {
+        if {[%W index insert] == [%W index {insert lineend}]} {
+            %W delete insert
+        } else {
+            %W delete insert {insert lineend}
+        }
+    }
+}
+
+bind Text <Shift-$contmand-BackSpace> {
+    try {%W delete sel.first sel.last} on error {} {
+        if {[%W index insert] == [%W index {insert linestart}]} {
+            %W delete {insert - 1 char}
+        } else {
+            %W delete {insert linestart} insert
+        }
+    }
+}
+
+# When pasting, delete what was selected
+# Here + adds to end of existing binding
+bind Text <<Paste>> {+
+    catch {%W delete sel.first sel.last}
+}

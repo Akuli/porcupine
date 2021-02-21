@@ -159,12 +159,6 @@ def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
     return likely_root or project_file_path.parent
 
 
-# TODO: get rid of this and use virtual events and keybindings.tcl instead
-def contmand() -> str:
-    widget = porcupine.get_main_window()    # any widget would do
-    return 'Command' if widget.tk.call('tk', 'windowingsystem') == "aqua" else 'Control'
-
-
 # i know, i shouldn't do math with rgb colors, but this is good enough
 def invert_color(color: str, *, black_or_white: bool = False) -> str:
     """Return a color with opposite red, green and blue values.
