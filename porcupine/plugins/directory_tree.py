@@ -334,7 +334,7 @@ class DirectoryTree(ttk.Treeview):
         return pathlib.Path(self.item(item_id, 'values')[0])
 
 
-def select_current_file(tree: DirectoryTree, event: 'tkinter.Event[tkinter.Misc]') -> None:
+def select_current_file(tree: DirectoryTree, event: object) -> None:
     tab = get_tab_manager().select()
     if isinstance(tab, tabs.FileTab) and tab.path is not None:
         tree.select_file(tab.path)

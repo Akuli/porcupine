@@ -664,7 +664,7 @@ bers.py>` use this attribute.
         # no was clicked, can be closed
         return True
 
-    def _do_the_save(self, path: pathlib.Path) -> None:
+    def _do_the_save(self, path: pathlib.Path) -> bool:
         self.event_generate('<<Save>>')
 
         encoding = self.settings.get('encoding', str)
@@ -736,7 +736,7 @@ bers.py>` use this attribute.
                 parent=self.winfo_toplevel())
             return False
 
-        self._do_the_save(path)
+        return self._do_the_save(path)
 
     # FIXME: don't ignore undo history :/
     # FIXME: when called from reload plugin, require saving file first
