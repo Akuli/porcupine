@@ -102,8 +102,7 @@ class _AboutDialogContent(ttk.Frame):
         tag = next(self._link_tag_names)
         self._textwidget.insert('end', description + ' ')
         self._textwidget.insert('end', str(path), ['link', tag])
-        self._textwidget.tag_bind(      # bindcheck: ignore
-            tag, '<Button-1>', functools.partial(self._open_directory, path))
+        self._textwidget.tag_bind(tag, '<Button-1>', functools.partial(self._open_directory, path))
         self._textwidget.insert('end', '.\n')
 
     def _enter_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
