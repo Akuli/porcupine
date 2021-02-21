@@ -137,3 +137,8 @@ bind Text <Shift-$contmand-BackSpace> {
         }
     }
 }
+
+# When pasting, delete what was selected
+bind Text <<Paste>> {+   # + means add to end of existing binding
+    catch {%W delete sel.first sel.last}
+}

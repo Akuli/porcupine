@@ -611,12 +611,6 @@ class MainText(tkinter.Text):
 
         self.bind('<<Dedent>>', (lambda event: self.dedent('insert')), add=True)
 
-        # most other things work by default, but these don't
-        # TODO: use default_keybindings.tcl
-        self.bind(f'<{utils.contmand()}-v>', self._paste, add=True)
-        self.bind(f'<{utils.contmand()}-y>', self._redo, add=True)
-        self.bind(f'<{utils.contmand()}-a>', self._select_all, add=True)
-
     def _on_indent_size_changed(self, junk: object = None) -> None:
         config_tab_displaying(self, self._tab.settings.get('indent_size', int))
 
@@ -676,28 +670,6 @@ class MainText(tkinter.Text):
         assert start <= end
         self.delete(f'{lineno}.{start}', f'{lineno}.{end}')
         return (start != end)
-
-    def _redo(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
-        self.event_generate('<<Redo>>')
-        return 'break'
-
-    def _paste(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
-        self.event_generate('<<Paste>>')
-
-        # by default, selected text doesn't go away when pasting
-        try:
-            sel_start, sel_end = self.tag_ranges('sel')
-        except ValueError:
-            # nothing selected
-            pass
-        else:
-            self.delete(sel_start, sel_end)
-
-        return 'break'
-
-    def _select_all(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
-        self.tag_add('sel', '1.0', 'end - 1 char')
-        return 'break'
 
 
 def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter.Text:
