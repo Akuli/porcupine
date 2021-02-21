@@ -146,7 +146,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     assert set(tree.item(project_id, 'tags')) == {'project', 'dir', 'git_mergeconflict'}
 
 
-def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
+def test_select_file(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread):
     (tmp_path / 'a').mkdir(parents=True)
     (tmp_path / 'b').mkdir(parents=True)
     (tmp_path / 'a' / 'README').touch()
@@ -160,6 +160,7 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
     tabmanager.add_tab(a_readme)
     tabmanager.add_tab(b_file1)
     tabmanager.add_tab(b_file2)
+    tree.update()
 
     tabmanager.select(a_readme)
     tree.update()
@@ -179,9 +180,9 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
     tree.update()
     assert tree.get_path(tree.selection()[0]) == tmp_path / 'b' / 'file2'
 
-    # FIXME: this fails
-#    b_file2.save_as(tmp_path / 'b' / 'file3')
-#    assert tree.get_path(tree.selection()[0]) == tmp_path / 'b' / 'file3'
+    b_file2.save_as(tmp_path / 'b' / 'file3')
+    tree.update()
+    assert tree.get_path(tree.selection()[0]) == tmp_path / 'b' / 'file3'
 
     tabmanager.close_tab(a_readme)
     tabmanager.close_tab(b_file1)

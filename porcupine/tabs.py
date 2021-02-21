@@ -664,7 +664,29 @@ bers.py>` use this attribute.
         # no was clicked, can be closed
         return True
 
-    def save(self, *, check_if_other_program_has_changed: bool = True) -> bool:
+    def _do_the_save(self, path: pathlib.Path) -> None:
+        self.event_generate('<<Save>>')
+
+        encoding = self.settings.get('encoding', str)
+        line_ending = self.settings.get('line_ending', settings.LineEnding)
+
+        try:
+            with utils.backup_open(path, 'w', encoding=encoding, newline=line_ending.value) as f:
+                f.write(self.textwidget.get('1.0', 'end - 1 char'))
+                f.flush()   # needed to get right file size in stat
+                self._set_saved_state(os.fstat(f.fileno()))
+        except (OSError, UnicodeError) as e:
+            log.exception(f"saving to '{path}' failed")
+            utils.errordialog(type(e).__name__, "Saving failed!",
+                              traceback.format_exc())
+            return False
+
+        self._save_hash = self._get_hash()
+        self.path = path
+        self._update_titles()
+        return True
+
+    def save(self) -> bool:
         """Save the file to the current :attr:`path`.
 
         This returns whether the file was actually saved. This means that
@@ -672,43 +694,23 @@ bers.py>` use this attribute.
         (can happen when :attr:`path` is None) or an error occurs (the error is
         logged).
 
-        If ``check_if_other_program_has_changed`` is set to True and the saving
-        would overwrite changes done by other programs than Porcupine, then
-        before saving, this function will ask whether the user really wants to
-        save.
+        If the saving would overwrite changes done by other programs than
+        Porcupine, then before saving, this function will ask whether the user
+        really wants to save.
 
         .. seealso:: The :virtevt:`Save` event.
         """
         if self.path is None:
             return self.save_as()
 
-        if check_if_other_program_has_changed and self.other_program_changed_file():
+        if self.other_program_changed_file():
             user_is_sure = messagebox.askyesno(
                 "File changed",
                 f"Another program has changed {self.path.name}. Are you sure you want to save it?")
             if not user_is_sure:
                 return False
 
-        self.event_generate('<<Save>>')
-
-        encoding = self.settings.get('encoding', str)
-        line_ending = self.settings.get('line_ending', settings.LineEnding)
-
-        try:
-            with utils.backup_open(self.path, 'w', encoding=encoding, newline=line_ending.value) as f:
-                f.write(self.textwidget.get('1.0', 'end - 1 char'))
-                f.flush()   # needed to get right file size in stat
-                self._set_saved_state(os.fstat(f.fileno()))
-        except (OSError, UnicodeError) as e:
-            log.exception(f"saving '{self.path}' failed")
-            utils.errordialog(type(e).__name__, "Saving failed!",
-                              traceback.format_exc())
-            return False
-
-        self._set_saved_state
-        self._save_hash = self._get_hash()
-        self._update_titles()
-        return True
+        return self._do_the_save(self.path)
 
     def save_as(self, path: Optional[pathlib.Path] = None) -> bool:
         """Ask the user where to save the file and save it there.
@@ -734,8 +736,7 @@ bers.py>` use this attribute.
                 parent=self.winfo_toplevel())
             return False
 
-        self.path = path
-        return self.save(check_if_other_program_has_changed=False)
+        self._do_the_save(path)
 
     # FIXME: don't ignore undo history :/
     # FIXME: when called from reload plugin, require saving file first
