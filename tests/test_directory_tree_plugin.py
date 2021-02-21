@@ -88,7 +88,7 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
 
 @pytest.fixture
 def dont_run_in_thread(monkeypatch):
-    def func(blocking_function, done_callback, check_interval_ms=1):
+    def func(blocking_function, done_callback, check_interval_ms=69):
         done_callback(True, blocking_function())
     monkeypatch.setattr(utils, 'run_in_thread', func)
 
@@ -144,3 +144,46 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     [project_id] = tree.get_children()
     tree.refresh_everything()
     assert set(tree.item(project_id, 'tags')) == {'project', 'dir', 'git_mergeconflict'}
+
+
+def test_select_file(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread):
+    (tmp_path / 'a').mkdir(parents=True)
+    (tmp_path / 'b').mkdir(parents=True)
+    (tmp_path / 'a' / 'README').touch()
+    (tmp_path / 'b' / 'README').touch()
+    (tmp_path / 'b' / 'file1').touch()
+    (tmp_path / 'b' / 'file2').touch()
+
+    a_readme = tabs.FileTab.open_file(tabmanager, tmp_path / 'a' / 'README')
+    b_file1 = tabs.FileTab.open_file(tabmanager, tmp_path / 'b' / 'file1')
+    b_file2 = tabs.FileTab.open_file(tabmanager, tmp_path / 'b' / 'file2')
+    tabmanager.add_tab(a_readme)
+    tabmanager.add_tab(b_file1)
+    tabmanager.add_tab(b_file2)
+    tree.update()
+
+    tabmanager.select(a_readme)
+    tree.update()
+    assert tree.get_path(tree.selection()[0]) == tmp_path / 'a'
+
+    tabmanager.select(b_file1)
+    tree.update()
+    assert tree.get_path(tree.selection()[0]) == tmp_path / 'b'
+
+    # Simulate user opening selected item
+    tree.item(tree.selection()[0], open=True)
+    tree.event_generate('<<TreeviewOpen>>')
+    tree.update()
+    assert tree.get_path(tree.selection()[0]) == tmp_path / 'b' / 'file1'
+
+    tabmanager.select(b_file2)
+    tree.update()
+    assert tree.get_path(tree.selection()[0]) == tmp_path / 'b' / 'file2'
+
+    b_file2.save_as(tmp_path / 'b' / 'file3')
+    tree.update()
+    assert tree.get_path(tree.selection()[0]) == tmp_path / 'b' / 'file3'
+
+    tabmanager.close_tab(a_readme)
+    tabmanager.close_tab(b_file1)
+    tabmanager.close_tab(b_file2)

@@ -7,7 +7,7 @@ import time
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
 
@@ -154,6 +154,25 @@ class DirectoryTree(ttk.Treeview):
         if refresh:
             self.refresh_everything()
 
+    def select_file(self, path: pathlib.Path) -> None:
+        project_root = utils.find_project_root(path)
+
+        matching_project_ids = [child for child in self.get_children() if self.get_path(child) == project_root]
+        if not matching_project_ids:
+            # Happens when tab changes because a file was just opened. This
+            # will be called soon once the project has been added.
+            log.info(f"can't select '{path}' because its project '{project_root}' was not found")
+            return
+
+        [id] = matching_project_ids
+        for part in path.relative_to(project_root).parts:
+            if self.item(id, 'open'):
+                [id] = [child for child in self.get_children(id) if self.get_path(child).name == part]
+            else:
+                break
+
+        self.selection_set(id)
+
     def _insert_dummy(self, parent: str) -> None:
         assert parent
         self.insert(parent, 'end', text='(empty)', tags='dummy')
@@ -182,7 +201,7 @@ class DirectoryTree(ttk.Treeview):
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set_('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
 
-    def refresh_everything(self, junk: object = None) -> None:
+    def refresh_everything(self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)) -> None:
         log.debug("refreshing begins")
         self.hide_old_projects()
 
@@ -199,8 +218,10 @@ class DirectoryTree(ttk.Treeview):
                 self.open_and_refresh_directory(None, '')
                 self.update_selection_color()
                 log.debug("refreshing done")
+                when_done()
             elif success:
                 log.info("projects added/removed while refreshing, assuming another fresh is coming soon")
+                when_done()
             else:
                 log.error(f"error in git status running thread\n{result}")
 
@@ -298,6 +319,13 @@ class DirectoryTree(ttk.Treeview):
 
         if self.tag_has('dir', selected_id):
             self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
+
+            tab = get_tab_manager().select()
+            if (isinstance(tab, tabs.FileTab)
+                    and tab.path is not None
+                    and self.get_path(selected_id) in tab.path.parents):
+                # Don't know why after_idle is needed
+                self.after_idle(self.select_file, tab.path)
         elif self.tag_has('file', selected_id):
             get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id)))
 
@@ -306,22 +334,25 @@ class DirectoryTree(ttk.Treeview):
         return pathlib.Path(self.item(item_id, 'values')[0])
 
 
+def select_current_file(tree: DirectoryTree, event: object) -> None:
+    tab = get_tab_manager().select()
+    if isinstance(tab, tabs.FileTab) and tab.path is not None:
+        tree.select_file(tab.path)
+
+
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         def path_callback(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
-                # Please avoid using find_project_root elsewhere. It doesn't
-                # work with nested projects, for example.
                 tree.add_project(utils.find_project_root(tab.path))
+                tree.refresh_everything(when_done=partial(tree.select_file, tab.path))
 
         path_callback()
 
         tab.bind('<<PathChanged>>', path_callback, add=True)
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
-
-        tab.bind('<<Save>>', (lambda event: tab.after_idle(tree.refresh_everything)), add=True)
         tab.textwidget.bind('<FocusIn>', tree.refresh_everything, add=True)
 
 
@@ -341,6 +372,7 @@ def setup() -> None:
 
     get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
+    get_tab_manager().bind('<<NotebookTabChanged>>', partial(select_current_file, tree), add=True)
 
     settings.add_option('directory_tree_projects', [], List[str])
     string_paths = settings.get('directory_tree_projects', List[str])
