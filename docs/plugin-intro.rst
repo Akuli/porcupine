@@ -96,17 +96,16 @@ implemented as plugins. They come with Porcupine (see `Where are the plugins?`_
 above), but you can also :source:`read them on GitHub <porcupine/plugins>`.
 
 This tutorial is all about writing *more* plugins, but we'll start by running
-Porcupine with *no* plugins at all just to get an idea of how much can be done
-with plugins. Open a command prompt or terminal and run this command on it::
+Porcupine with *no* plugins at all just to get an idea of how much can be done with plugins.
+Open Porcupine's plugin manager from the *Settings* menu, select all plugins with shift+click,
+and then click "Disable" and restart Porcupine.
+Alternatively, if you `installed Porcupine <https://github.com/Akuli/porcupine#installing-porcupine>`_
+with ``pip``, you can run this command on a terminal::
 
-   porcu --no-plugins
+    python3 -m porcupine --no-plugins
 
-If the ``porcu`` command doesn't work you can use ``pyw -m porcupine`` or
-``python3 -m porcupine`` instead of ``porcu`` as shown in
-`Porcupine's README <https://github.com/Akuli/porcupine#installing-porcupine>`_.
-
-This will run Porcupine without any plugins, and it's a window with only the
-menubar in it. You can still create and open files though.
+Without plugins, Porcupine is a window with just the menubar in it,
+although you can still create and open files.
 
 
 Porcupine's Widgets
