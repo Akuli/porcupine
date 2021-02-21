@@ -135,7 +135,7 @@ def show_about_dialog() -> None:
 
     content.update()       # make sure that the winfo stuff works
     dialog.minsize(content.winfo_reqwidth(), content.winfo_reqheight())
-    dialog.title("About Porcupine")
+    dialog.title(f"About Porcupine {porcupine_version}")
     dialog.transient(get_main_window())
     dialog.wait_window()
 
