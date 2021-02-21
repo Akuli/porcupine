@@ -318,6 +318,12 @@ class DirectoryTree(ttk.Treeview):
         return pathlib.Path(self.item(item_id, 'values')[0])
 
 
+def on_tab_changed(tree: DirectoryTree, event: 'tkinter.Event[tabs.TabManager]') -> None:
+    tab = event.widget.select()
+    if isinstance(tab, tabs.FileTab) and tab.path is not None:
+        tree.select_file(tab.path)
+
+
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         def path_callback(junk: object = None) -> None:
@@ -351,6 +357,7 @@ def setup() -> None:
 
     get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
+    get_tab_manager().bind('<<NotebookTabChanged>>', partial(on_tab_changed, tree), add=True)
 
     settings.add_option('directory_tree_projects', [], List[str])
     string_paths = settings.get('directory_tree_projects', List[str])
