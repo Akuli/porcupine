@@ -52,9 +52,6 @@ class _AboutDialogContent(ttk.Frame):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        big_label = ttk.Label(self, font=('', 16, ()), text=f"About Porcupine {porcupine_version}")
-        big_label.pack(pady=5)
-
         self._textwidget = textwidget.create_passive_text_widget(
             self, width=60, height=18)
         self._textwidget.pack(fill='both', expand=True, padx=5, pady=5)
