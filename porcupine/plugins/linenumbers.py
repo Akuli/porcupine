@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import tkinter.font
-from typing import Optional, cast
+from typing import Optional
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
 
@@ -22,9 +22,8 @@ class LineNumbers:
         textwidget.use_pygments_theme(self.canvas, self._set_colors)
         utils.add_scroll_command(textwidget_of_tab, 'yscrollcommand', self._do_update)
 
-        # https://github.com/python/typeshed/issues/5010
         textwidget_of_tab.bind('<<ContentChanged>>', (
-            cast(None, lambda event: textwidget_of_tab.after_idle(self._do_update))
+            lambda event: textwidget_of_tab.after_idle(self._do_update)
         ), add=True)
         textwidget_of_tab.bind('<<UpdateLineNumbers>>', self._do_update, add=True)  # TODO: document this?
         self._do_update()
