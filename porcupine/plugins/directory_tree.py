@@ -157,7 +157,14 @@ class DirectoryTree(ttk.Treeview):
     def select_file(self, path: pathlib.Path) -> None:
         project_root = utils.find_project_root(path)
 
-        [id] = [child for child in self.get_children() if self.get_path(child) == project_root]
+        matching_project_ids = [child for child in self.get_children() if self.get_path(child) == project_root]
+        if not matching_project_ids:
+            # Happens when tab changes because a file was just opened. This
+            # will be called soon once the project has been added.
+            log.info(f"can't select '{path}' because its project '{project_root}' was not found")
+            return
+
+        [id] = matching_project_ids
         for part in path.relative_to(project_root).parts:
             if self.item(id, 'open'):
                 [id] = [child for child in self.get_children(id) if self.get_path(child).name == part]
@@ -310,6 +317,13 @@ class DirectoryTree(ttk.Treeview):
 
         if self.tag_has('dir', selected_id):
             self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
+
+            tab = get_tab_manager().select()
+            if (isinstance(tab, tabs.FileTab)
+                    and tab.path is not None
+                    and self.get_path(selected_id) in tab.path.parents):
+                # Don't know why after_idle is needed
+                self.after_idle(self.select_file, tab.path)
         elif self.tag_has('file', selected_id):
             get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id)))
 
@@ -318,8 +332,8 @@ class DirectoryTree(ttk.Treeview):
         return pathlib.Path(self.item(item_id, 'values')[0])
 
 
-def on_tab_changed(tree: DirectoryTree, event: 'tkinter.Event[tabs.TabManager]') -> None:
-    tab = event.widget.select()
+def on_tab_changed(tree: DirectoryTree, event: 'tkinter.Event[tkinter.Misc]') -> None:
+    tab = get_tab_manager().select()
     if isinstance(tab, tabs.FileTab) and tab.path is not None:
         tree.select_file(tab.path)
 
@@ -330,10 +344,12 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
                 tree.add_project(utils.find_project_root(tab.path))
+                tree.select_file(tab.path)
 
         path_callback()
 
         tab.bind('<<PathChanged>>', path_callback, add=True)
+        tab.bind('<<PathChanged>>', partial(on_tab_changed, tree), add=True)
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
 
