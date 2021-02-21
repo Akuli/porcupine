@@ -6,14 +6,8 @@ play tetris in Porcupine you're in the right place!
 
 Installing these plugins is easy:
 
-1. Figure out where to put the plugins by running this on a terminal,
-   command prompt or PowerShell:
-
-        porcu --print-plugindir
-
-   If the `porcu` command doesn't work use `py -m porcupine` on Windows or
-   `python3 -m porcupine` on other operating systems instead.
-
+1. Figure out where to put the plugins by opening *About Porcupine* from the *Help* menu.
+   You should see your plugin directory at the end of the text.
 2. Copy/paste a plugin file to your plugin directory.
 3. Restart Porcupine.
 4. Customize the plugin if you don't like it.
