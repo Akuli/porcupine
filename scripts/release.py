@@ -7,7 +7,8 @@ import pathlib
 import subprocess
 import sys
 
-from porcupine import version_info as old_info
+sys.path.append('')
+from porcupine import version_info as old_info  # noqa
 
 TAG_FORMAT = 'v%d.%d.%d'
 
