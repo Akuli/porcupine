@@ -29,13 +29,11 @@ page](https://github.com/Akuli/porcupine/graphs/contributors) for details.
 Links:
 \N{bullet} [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki)
 \N{bullet} [Porcupine on GitHub](https://github.com/Akuli/porcupine)
-\N{bullet} [Plugin API documentation for Python \
-programmers](https://akuli.github.io/porcupine/)
+\N{bullet} [Plugin API documentation for Python programmers](https://akuli.github.io/porcupine/)
 
 Porcupine is available under the MIT license. It means that you can do \
 pretty much anything you want with it as long as you distribute the \
-LICENSE file with it. [Click \
-here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
+LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 """
 
 
