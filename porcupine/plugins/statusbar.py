@@ -2,7 +2,7 @@
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
 class StatusBar(ttk.Frame):
@@ -21,22 +21,17 @@ class StatusBar(ttk.Frame):
     def show_cursor_or_selection(self, junk: object = None) -> None:
         try:
             # For line count, if the cursor is in beginning of line, don't count that as another line.
-            count_chars_result = self.tab.textwidget.count('sel.first', 'sel.last')
-            count_lines_result = self.tab.textwidget.count('sel.first', 'sel.last - 1 char', 'lines')
+            chars = textwidget.count(self.tab.textwidget, 'sel.first', 'sel.last')
+            lines = textwidget.count(self.tab.textwidget, 'sel.first', 'sel.last - 1 char', option='-lines')
         except tkinter.TclError:
             # no text selected
             line, column = self.tab.textwidget.index('insert').split('.')
             self.right_label.config(text=f"Line {line}, column {column}")
         else:
-            # don't know why .count() returns one-element tuples
-            [n] = count_chars_result
-            if count_lines_result is None:
-                # all on same line
-                self.right_label.config(text=f"{n} characters selected")
+            if lines == 0:
+                self.right_label.config(text=f"{chars} characters selected")
             else:
-                # different lines
-                [k] = count_lines_result
-                self.right_label.config(text=f"{n} characters on {k+1} lines selected")
+                self.right_label.config(text=f"{chars} characters on {lines+1} lines selected")
 
     def show_reload_warning(self, event: utils.EventWithData) -> None:
         if event.data_class(tabs.ReloadInfo).was_modified:

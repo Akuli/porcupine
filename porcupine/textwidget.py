@@ -82,9 +82,11 @@ class Changes(utils.EventDataclass):
     change_list: List[Change]
 
 
-def _count_chars(widget: tkinter.Text, start: str, end: str) -> int:
+# TODO: document this
+def count(widget: tkinter.Text, start: str, end: str, *, option: str = '-chars') -> int:
     # tkinter's .count() method is retarded, returns tuples and Nones weirdly
-    return widget.tk.call(str(widget), 'count', '-chars', start, end)
+    # TODO: typeshed issue
+    return widget.tk.call(widget, 'count', option, start, end)  # type: ignore
 
 
 class _ChangeTracker:
@@ -229,8 +231,8 @@ class _ChangeTracker:
         start_line = int(start.split('.')[0])
         end_line = int(end.split('.')[0])
         return Change(
-            start=[start_line, _count_chars(widget, f'{start_line}.0', start)],
-            end=[end_line, _count_chars(widget, f'{end_line}.0', end)],
+            start=[start_line, count(widget, f'{start_line}.0', start)],
+            end=[end_line, count(widget, f'{end_line}.0', end)],
             old_text_len=len(widget.get(start, end)),
             new_text=new_text,
         )
