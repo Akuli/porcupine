@@ -97,15 +97,17 @@ bind Text <$contmand-Delete> {
 }
 
 bind Text <BackSpace> {
-    set beforecursor [%W get {insert linestart} insert]
-    if {
-        [string length [bind %W <<Dedent>>]] != 0 &&
-        [string length $beforecursor] != 0 &&
-        [string is space $beforecursor]
-    } {
-        event generate %W <<Dedent>>
-    } else {
-        %W delete {insert - 1 char}
+    try {%W delete sel.first sel.last} on error {} {
+        set beforecursor [%W get {insert linestart} insert]
+        if {
+            [string length [bind %W <<Dedent>>]] != 0 &&
+            [string length $beforecursor] != 0 &&
+            [string is space $beforecursor]
+        } {
+            event generate %W <<Dedent>>
+        } else {
+            %W delete {insert - 1 char}
+        }
     }
 }
 
@@ -137,8 +139,7 @@ bind Text <Shift-$contmand-BackSpace> {
     }
 }
 
-# When pasting, delete what was selected
-# Here + adds to end of existing binding
+# When pasting, delete what was selected. Here + adds to end of existing binding.
 bind Text <<Paste>> {+
     catch {%W delete sel.first sel.last}
 }
