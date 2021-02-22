@@ -186,10 +186,10 @@ class Highlighter:
         change_list = event.data_class(textwidget.Changes).change_list
         if len(change_list) == 1:
             [change] = change_list
-            if len(change.new_text) < 5:
+            if len(change.new_text) <= 1:
                 # Optimization for typical key strokes (but not for reloading entire file):
                 # only highlight the area that might have changed
-                self.highlight_range(change.start, f'{change.start} + {len(change.new_text)} chars')
+                self.highlight_range(f'{change.start[0]}.0', f'{change.end[0]}.0 lineend')
                 return
         self.highlight_visible()
 

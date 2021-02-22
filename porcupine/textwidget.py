@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
-import re
 import tkinter
 import weakref
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload, Sequence
 
 from pygments import styles  # type: ignore[import]
 
@@ -31,34 +30,40 @@ class Change:
     \...changes the ``'hello'`` to ``'toot'``, and that's represented by a
     ``Change`` like this::
 
-        Change(start='1.0', end='1.5', old_text_len=5, new_text='toot')
+        Change(start=(1, 0), end=(1, 5), old_text_len=5, new_text='toot')
 
     Insertions are represented with ``Change`` objects having ``old_text_len=0``
     and the same ``start`` and ``end``. For example,
     ``textwidget.insert('1.0', 'hello')`` corresponds to this ``Change``::
 
-        Change(start='1.0', end='1.0', old_text_len=0, new_text='hello')
+        Change(start=(1, 0), end=(1, 0), old_text_len=0, new_text='hello')
 
     For deletions, ``start`` and ``end`` differ and ``new_text`` is empty.
     If the first line of a text widget contains at least 5 characters, then
     deleting the first 5 characters looks like this::
 
-        Change(start='1.0', end='1.5', old_text_len=5, new_text='')
+        Change(start=(1, 0), end=(1, 5), old_text_len=5, new_text='')
 
     Unlike you might think, the ``old_text_len`` is not redundant. Let's
     say that the text widget contains ``'toot world'`` and all that is
     deleted::
 
-        Change(start='1.0', end='1.10', old_text_len=10, new_text='')
+        Change(start=(1, 0), end=(1, 10), old_text_len=10, new_text='')
 
-    After the deletion, ``'1.10'`` is no longer a valid index in the text
-    widget because it contains 0 characters (and 0 is less than 10).
-    In this case, checking only the ``0`` of ``1.0`` and the ``10`` of ``1.10``
-    could be used to calculate the 10,
-    but that doesn't work right when changing multiple lines.
+    In this case, ``old_text_len`` happens to be ``10 - 0``, where ``10`` and
+    ``0`` are the column numbers of ``start`` and ``end``. But for changing
+    multiple lines, this doesn't work, because you need to know what exactly
+    was deleted.
+
+    Technically, ``start=(1, 0)`` is not same as having the change start at
+    ``'1.0'``. If there is an embedded window (such as a button widget) at the
+    beginning of the line, then the text on the line starts at text index
+    ``'1.1'``, represented as ``(1, 0)`` here.
     """
-    start: str
-    end: str
+    # These should be Tuple[int, int], but they can't be because converting to
+    # json and back turns tuples to lists
+    start: Sequence[int]
+    end: Sequence[int]
     old_text_len: int
     new_text: str
 
@@ -75,6 +80,14 @@ class Changes(utils.EventDataclass):
     because of how :class:`porcupine.utils.EventDataclass` works.
     """
     change_list: List[Change]
+
+
+def _count_chars(widget: tkinter.Text, start: str, end: str) -> int:
+    # don't know why tkinter makes this so difficult
+    result = widget.count(start, end, 'chars')
+    if result is None:
+        return 0
+    return result[0]   # it's a tuple of one item
 
 
 class _ChangeTracker:
@@ -216,11 +229,11 @@ class _ChangeTracker:
 
     def _create_change(
             self, widget: tkinter.Text, start: str, end: str, new_text: str) -> Change:
-        assert re.fullmatch(r'[0-9]+\.[0-9]+', start)
-        assert re.fullmatch(r'[0-9]+\.[0-9]+', end)
+        start_line = int(start.split('.')[0])
+        end_line = int(end.split('.')[0])
         return Change(
-            start=start,
-            end=end,
+            start=(start_line, _count_chars(widget, f'{start_line}.0', start)),
+            end=(end_line, _count_chars(widget, f'{end_line}.0', end)),
             old_text_len=len(widget.get(start, end)),
             new_text=new_text,
         )
