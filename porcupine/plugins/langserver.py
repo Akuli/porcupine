@@ -216,10 +216,13 @@ def exit_code_string(exit_code: int) -> str:
     return result
 
 
-def _position_tk2lsp(tk_position: str) -> lsp.Position:
+def _position_tk2lsp(tk_position: Union[str, List[int]]) -> lsp.Position:
     # this can't use tab.textwidget.index, because it needs to handle text
     # locations that don't exist anymore when text has been deleted
-    line, column = map(int, tk_position.split('.'))
+    if isinstance(tk_position, str):
+        line, column = map(int, tk_position.split('.'))
+    else:
+        line, column = tk_position
 
     # lsp line numbering starts at 0
     # tk line numbering starts at 1

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
-import re
 import tkinter
 import weakref
 from functools import partial
@@ -31,34 +30,40 @@ class Change:
     \...changes the ``'hello'`` to ``'toot'``, and that's represented by a
     ``Change`` like this::
 
-        Change(start='1.0', end='1.5', old_text_len=5, new_text='toot')
+        Change(start=[1, 0], end=[1, 5], old_text_len=5, new_text='toot')
 
     Insertions are represented with ``Change`` objects having ``old_text_len=0``
     and the same ``start`` and ``end``. For example,
     ``textwidget.insert('1.0', 'hello')`` corresponds to this ``Change``::
 
-        Change(start='1.0', end='1.0', old_text_len=0, new_text='hello')
+        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='hello')
 
     For deletions, ``start`` and ``end`` differ and ``new_text`` is empty.
     If the first line of a text widget contains at least 5 characters, then
     deleting the first 5 characters looks like this::
 
-        Change(start='1.0', end='1.5', old_text_len=5, new_text='')
+        Change(start=[1, 0], end=[1, 5], old_text_len=5, new_text='')
 
     Unlike you might think, the ``old_text_len`` is not redundant. Let's
     say that the text widget contains ``'toot world'`` and all that is
     deleted::
 
-        Change(start='1.0', end='1.10', old_text_len=10, new_text='')
+        Change(start=[1, 0], end=[1, 10], old_text_len=10, new_text='')
 
-    After the deletion, ``'1.10'`` is no longer a valid index in the text
-    widget because it contains 0 characters (and 0 is less than 10).
-    In this case, checking only the ``0`` of ``1.0`` and the ``10`` of ``1.10``
-    could be used to calculate the 10,
-    but that doesn't work right when changing multiple lines.
+    In this case, ``old_text_len`` happens to be ``10 - 0``, where ``10`` and
+    ``0`` are the column numbers of ``start`` and ``end``. But for changing
+    multiple lines, this doesn't work, because you need to know what exactly
+    was deleted.
+
+    Technically, ``start=[1, 0]`` is not same as having the change start at
+    ``'1.0'``. If there is an embedded window (such as a button widget) at the
+    beginning of the line, then the text on the line starts at text index
+    ``'1.1'``, represented as ``(1, 0)`` here.
     """
-    start: str
-    end: str
+    # These should be Tuple[int, int], but they can't be because converting to
+    # json and back turns tuples to lists
+    start: List[int]
+    end: List[int]
     old_text_len: int
     new_text: str
 
@@ -75,6 +80,12 @@ class Changes(utils.EventDataclass):
     because of how :class:`porcupine.utils.EventDataclass` works.
     """
     change_list: List[Change]
+
+
+# TODO: document this
+def count(widget: tkinter.Text, start: str, end: str, *, option: str = '-chars') -> int:
+    # tkinter's .count() method is retarded, returns tuples and Nones weirdly
+    return widget.tk.call(widget, 'count', option, start, end)  # type: ignore
 
 
 class _ChangeTracker:
@@ -159,14 +170,9 @@ class _ChangeTracker:
                 return
             }
 
-            set cursor_may_have_moved 0
-            set prepared_event ""
-
             # only these subcommands can change the text, but they can also
             # move the cursor by changing the text before the cursor
-            if {$subcommand == "delete" ||
-                    $subcommand == "insert" ||
-                    $subcommand == "replace"} {
+            if {$subcommand == "delete" || $subcommand == "insert" || $subcommand == "replace"} {
                 # Validate and clean up indexes here so that any problems
                 # result in Tcl error
                 if {$subcommand == "delete"} {
@@ -181,9 +187,9 @@ class _ChangeTracker:
                     lset args 1 [%(actual_widget)s index [lindex $args 1]]
                     lset args 2 [%(actual_widget)s index [lindex $args 2]]
                 }
-
-                set cursor_may_have_moved 1
                 set prepared_event [%(change_event_from_command)s {*}$args]
+            } else {
+                set prepared_event ""
             }
 
             # it's important that this comes after the change cb stuff because
@@ -205,13 +211,7 @@ class _ChangeTracker:
             #
             # [*] i lied, hehe >:D MUHAHAHA ... inserting text before the
             # cursor also changes it
-            if {$subcommand == "mark" &&
-                    [lindex $args 1] == "set" &&
-                    [lindex $args 2] == "insert"} {
-                set cursor_may_have_moved 1
-            }
-
-            if {$cursor_may_have_moved} {
+            if {[lrange $args 0 2] == {mark set insert} || $prepared_event != ""} {
                 %(cursor_moved_callback)s
             }
 
@@ -227,11 +227,11 @@ class _ChangeTracker:
 
     def _create_change(
             self, widget: tkinter.Text, start: str, end: str, new_text: str) -> Change:
-        assert re.fullmatch(r'[0-9]+\.[0-9]+', start)
-        assert re.fullmatch(r'[0-9]+\.[0-9]+', end)
+        start_line = int(start.split('.')[0])
+        end_line = int(end.split('.')[0])
         return Change(
-            start=start,
-            end=end,
+            start=[start_line, count(widget, f'{start_line}.0', start)],
+            end=[end_line, count(widget, f'{end_line}.0', end)],
             old_text_len=len(widget.get(start, end)),
             new_text=new_text,
         )

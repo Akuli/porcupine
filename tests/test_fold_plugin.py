@@ -77,3 +77,19 @@ def test_invisible_character_bug(text):
     text.update()
     three_dots.event_generate('<Button-1>')   # click it
     assert text.index('5.0 lineend') == '5.23'
+
+
+def test_doesnt_trigger_change_events(filetab):
+    filetab.textwidget.insert('1.0', 'if True:\n    print("lol")')
+    events = []
+    filetab.textwidget.bind('<<ContentChanged>>', events.append, add=True)
+
+    # fold and unfold
+    filetab.textwidget.mark_set('insert', '1.0 lineend')
+    get_main_window().event_generate('<<Menubar:Edit/Fold>>')
+    filetab.textwidget.mark_set('insert', '1.0 lineend')
+    filetab.textwidget.event_generate('<BackSpace>')
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == 'if True:\n    print("lol")'
+
+    # This should not trigger change events
+    assert not events
