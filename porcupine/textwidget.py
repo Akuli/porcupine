@@ -83,11 +83,8 @@ class Changes(utils.EventDataclass):
 
 
 def _count_chars(widget: tkinter.Text, start: str, end: str) -> int:
-    # don't know why tkinter makes this so difficult
-    result = widget.count(start, end, 'chars')
-    if result is None:
-        return 0
-    return result[0]   # it's a tuple of one item
+    # tkinter's .count() method is retarded, returns tuples and Nones weirdly
+    return widget.tk.call(str(widget), 'count', '-chars', start, end)
 
 
 class _ChangeTracker:
