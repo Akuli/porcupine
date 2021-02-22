@@ -99,11 +99,7 @@ bind Text <$contmand-Delete> {
 bind Text <BackSpace> {
     try {%W delete sel.first sel.last} on error {} {
         set beforecursor [%W get {insert linestart} insert]
-        if {
-            [string length [bind %W <<Dedent>>]] != 0 &&
-            [string length $beforecursor] != 0 &&
-            [string is space $beforecursor]
-        } {
+        if {[bind %W <<Dedent>>] != "" && $beforecursor != "" && [string is space $beforecursor]} {
             event generate %W <<Dedent>>
         } else {
             %W delete {insert - 1 char}
