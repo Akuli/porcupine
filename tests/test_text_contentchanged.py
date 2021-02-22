@@ -169,14 +169,14 @@ def test_change_batch_nested(text_and_events):
 
 
 def test_peer_cursor_moved(text_and_events):
-    text, change_events = text_and_events
+    text, events = text_and_events
     peer = tkinter.Text(get_main_window())
     create_peer_widget(text, peer)
 
     text.insert('1.0', 'hello world')
     text.mark_set('insert', '1.5')
     peer.mark_set('insert', '1.5')
-    change_events.clear()
+    events.clear()
 
     text_move_events = []
     peer_move_events = []
@@ -192,3 +192,19 @@ def test_peer_cursor_moved(text_and_events):
     assert not text_move_events
     assert len(peer_move_events) == 1
     peer_move_events.clear()
+
+
+def test_embedded_window(text_and_events):
+    text, events = text_and_events
+    text.insert('1.0', 'abc')
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='abc'),
+    ]
+    text.window_create('1.0', window=tkinter.Button(text))
+    text.insert('1.0 lineend', 'xyz')
+
+    # Notice that text index says 4 counting button, change event says 3 ignoring button
+    assert text.search('xyz', '1.0') == '1.4'
+    assert events.pop().data_class(Changes).change_list == [
+        Change(start=[1, 3], end=[1, 3], old_text_len=0, new_text='xyz'),
+    ]
