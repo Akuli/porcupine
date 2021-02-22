@@ -159,14 +159,9 @@ class _ChangeTracker:
                 return
             }
 
-            set cursor_may_have_moved 0
-            set prepared_event ""
-
             # only these subcommands can change the text, but they can also
             # move the cursor by changing the text before the cursor
-            if {$subcommand == "delete" ||
-                    $subcommand == "insert" ||
-                    $subcommand == "replace"} {
+            if {$subcommand == "delete" || $subcommand == "insert" || $subcommand == "replace"} {
                 # Validate and clean up indexes here so that any problems
                 # result in Tcl error
                 if {$subcommand == "delete"} {
@@ -181,9 +176,9 @@ class _ChangeTracker:
                     lset args 1 [%(actual_widget)s index [lindex $args 1]]
                     lset args 2 [%(actual_widget)s index [lindex $args 2]]
                 }
-
-                set cursor_may_have_moved 1
                 set prepared_event [%(change_event_from_command)s {*}$args]
+            } else {
+                set prepared_event ""
             }
 
             # it's important that this comes after the change cb stuff because
@@ -205,13 +200,7 @@ class _ChangeTracker:
             #
             # [*] i lied, hehe >:D MUHAHAHA ... inserting text before the
             # cursor also changes it
-            if {$subcommand == "mark" &&
-                    [lindex $args 1] == "set" &&
-                    [lindex $args 2] == "insert"} {
-                set cursor_may_have_moved 1
-            }
-
-            if {$cursor_may_have_moved} {
+            if {[lrange $args 0 2] == {mark set insert} || $prepared_event != ""} {
                 %(cursor_moved_callback)s
             }
 
