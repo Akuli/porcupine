@@ -5,7 +5,7 @@ import dataclasses
 import tkinter
 import weakref
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Sequence, Tuple, overload
 
 from pygments import styles  # type: ignore[import]
 

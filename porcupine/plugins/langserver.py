@@ -21,7 +21,7 @@ import sys
 import threading
 import time
 from functools import partial
-from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union, Sequence
+from typing import IO, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 if sys.platform != 'win32':
     import fcntl
