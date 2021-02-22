@@ -81,6 +81,10 @@ def test_wrong_paren_between(filetab):
 def test_backslash(filetab):
     text = filetab.textwidget
     text.insert('1.0', r'[abc\[]')
+
     text.mark_set('insert', '1.0 lineend')
     assert text.index('matching_paren.first') == '1.0'
     assert text.index('matching_paren.last') == text.index('1.0 lineend')
+
+    text.mark_set('insert', '1.6')
+    assert not text.tag_ranges('matching_paren')

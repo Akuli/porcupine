@@ -20,8 +20,8 @@ CLOSE = OPEN_TO_CLOSE.values()
 def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
     event.widget.tag_remove('matching_paren', '1.0', 'end')
 
-    if event.widget.index('insert') == '1.0':
-        # cursor at very start of text widget, no character before cursor
+    if event.widget.index('insert') == '1.0' or event.widget.get('insert - 2 chars') == '\\':
+        # cursor at very start of text widget or backslash escape found
         return
 
     last_char = event.widget.get('insert - 1 char')
