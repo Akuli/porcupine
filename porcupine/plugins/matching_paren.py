@@ -42,16 +42,18 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
         if not match:
             return   # unclosed parentheses
 
-        paren = event.widget.get(match)
-        if (paren in OPEN and not search_backwards) or (paren in CLOSE and search_backwards):
-            stack.append(paren)
-        elif (paren in CLOSE and not search_backwards) or (paren in OPEN and search_backwards):
-            pair = (stack.pop(), paren)
-            if pair not in OPEN_TO_CLOSE.items() and pair[::-1] not in OPEN_TO_CLOSE.items():
-                # foo([) does not highlight its () because you forgot to close square bracket
-                return
-        else:
-            raise NotImplementedError(paren)
+        # ignore backslash-escaped parens
+        if event.widget.get(f'{match} - 1 char') != '\\':
+            paren = event.widget.get(match)
+            if (paren in OPEN and not search_backwards) or (paren in CLOSE and search_backwards):
+                stack.append(paren)
+            elif (paren in CLOSE and not search_backwards) or (paren in OPEN and search_backwards):
+                pair = (stack.pop(), paren)
+                if pair not in OPEN_TO_CLOSE.items() and pair[::-1] not in OPEN_TO_CLOSE.items():
+                    # foo([) does not highlight its () because you forgot to close square bracket
+                    return
+            else:
+                raise NotImplementedError(paren)
         search_start = match if search_backwards else f'{match} + 1 char'
 
     event.widget.tag_add('matching_paren', 'insert - 1 char')
