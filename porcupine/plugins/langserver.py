@@ -21,7 +21,7 @@ import sys
 import threading
 import time
 from functools import partial
-from typing import IO, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union
 
 if sys.platform != 'win32':
     import fcntl
@@ -216,7 +216,7 @@ def exit_code_string(exit_code: int) -> str:
     return result
 
 
-def _position_tk2lsp(tk_position: Union[str, Sequence[int]]) -> lsp.Position:
+def _position_tk2lsp(tk_position: Union[str, List[int]]) -> lsp.Position:
     # this can't use tab.textwidget.index, because it needs to handle text
     # locations that don't exist anymore when text has been deleted
     if isinstance(tk_position, str):
