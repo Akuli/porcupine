@@ -39,7 +39,5 @@ def test_tcl_bug(filetab, tmp_path):
     filetab.textwidget.see('end')
     filetab.textwidget.insert('end - 1 char', 'a')
     filetab.update()
-    assert not any(
-        'Token.Name.Variable' in filetab.textwidget.tag_names(f'{lineno}.3')
-        for lineno in range(1, 51)
-    )
+    for lineno in range(1, 51):
+        assert filetab.textwidget.tag_names(f'{lineno}.3') == ('Token.Comment',)
