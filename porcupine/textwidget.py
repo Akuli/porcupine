@@ -58,7 +58,7 @@ class Change:
     Technically, ``start=[1, 0]`` is not same as having the change start at
     ``'1.0'``. If there is an embedded window (such as a button widget) at the
     beginning of the line, then the text on the line starts at text index
-    ``'1.1'``, represented as ``(1, 0)`` here.
+    ``'1.1'``, represented as ``[1, 0]`` here.
     """
     # These should be Tuple[int, int], but they can't be because converting to
     # json and back turns tuples to lists
