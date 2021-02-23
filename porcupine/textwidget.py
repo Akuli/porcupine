@@ -84,8 +84,8 @@ class Changes(utils.EventDataclass):
 
 # TODO: document this
 def count(widget: tkinter.Text, start: str, end: str, *, option: str = '-chars') -> int:
-    # tkinter's .count() method is retarded, returns tuples and Nones weirdly
-    return widget.tk.call(widget, 'count', option, start, end)  # type: ignore
+    # tkinter's .count() method is weird, returns tuples and Nones weirdly
+    return widget.tk.call(widget, 'count', option, start, end)
 
 
 class _ChangeTracker:
