@@ -62,7 +62,9 @@ def setup() -> None:
     for n in range(1, 10):
         get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(select_tab_n, n), add=True)
 
-    def scroll_callback(direction: str) -> None:
-        select_left_or_right({'up': -1, 'down': +1}[direction])
+    def scroll_callback(direction: str, event: tkinter.Event[tkinter.Misc]) -> None:
+        # It's possible to trigger this somewhere else than at top of tab manager
+        if event.y < 50:
+            select_left_or_right({'up': -1, 'down': +1}[direction])
 
     utils.bind_mouse_wheel(get_tab_manager(), scroll_callback, add=True)

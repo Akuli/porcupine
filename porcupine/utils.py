@@ -623,7 +623,7 @@ MACOS_MOUSE_WHEEL_STEP = 2.5
 
 def bind_mouse_wheel(
         widget_or_class_name: Union[tkinter.Misc, str],
-        callback: Callable[[Literal['up', 'down']], None],
+        callback: Callable[[Literal['up', 'down'], tkinter.Event[tkinter.Misc]], None],
         *,
         prefixes: str = '',
         add: Optional[bool] = None) -> None:
@@ -650,7 +650,7 @@ def bind_mouse_wheel(
 
     if some_widget.tk.call('tk', 'windowingsystem') == 'x11':
         def real_callback(event: tkinter.Event[tkinter.Misc]) -> None:
-            callback('up' if event.num == 4 else 'down')
+            callback('up' if event.num == 4 else 'down', event)
 
         bind(f'<{prefixes}Button-4>', real_callback, add)
         bind(f'<{prefixes}Button-5>', real_callback, add)
@@ -668,17 +668,17 @@ def bind_mouse_wheel(
             accumulator += event.delta
             if accumulator > MACOS_MOUSE_WHEEL_STEP:
                 accumulator -= MACOS_MOUSE_WHEEL_STEP
-                callback('up')
+                callback('up', event)
             elif accumulator < -MACOS_MOUSE_WHEEL_STEP:
                 accumulator += MACOS_MOUSE_WHEEL_STEP
-                callback('down')
+                callback('down', event)
 
         bind(f'<{prefixes}MouseWheel>', scroll, add)
         bind('<Leave>', reset, add=True)
 
     else:  # Windows
         def real_callback(event: tkinter.Event[tkinter.Misc]) -> None:
-            callback('up' if event.delta > 0 else 'down')
+            callback('up' if event.delta > 0 else 'down', event)
 
         bind(f'<{prefixes}MouseWheel>', real_callback, add)
 
