@@ -35,32 +35,11 @@ def test_yaml_highlighting(filetab, tmp_path):
 def test_tcl_bug(filetab, tmp_path):
     filetab.path = tmp_path / "foo.tcl"
     filetab.save()
-    filetab.textwidget.insert('1.0', '''\
-# a
-
-# a
-a
-a
-a
-a
-a
-
-a
-a
-a
-a
-a
-a
-a
-a
-a
-
-# blah
-# blah
-''')
+    filetab.textwidget.replace('1.0', 'end - 1 char', '# bla\n' * 50)
+    filetab.textwidget.see('end')
+    filetab.textwidget.insert('end - 1 char', 'a')
     filetab.update()
-    assert filetab.textwidget.tag_names('21.5') == ('Token.Comment',)
-
-    filetab.textwidget.insert('21.2', ' ')
-    filetab.update()
-    assert filetab.textwidget.tag_names('21.5') == ('Token.Comment',)
+    assert not any(
+        'Token.Name.Variable' in filetab.textwidget.tag_names(f'{lineno}.3')
+        for lineno in range(1, 51)
+    )
