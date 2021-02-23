@@ -180,23 +180,25 @@ def completion_item_doc_contains_label(doc: str, label: str) -> bool:
 
 
 def get_completion_item_doc(item: lsp.CompletionItem) -> str:
-    if item.documentation:
-        # try this with clangd
-        #
-        #    // comment
-        #    void foo(int x, char c) { }
-        #
-        #    int main(void)
-        #    {
-        #        fo<Tab>
-        #    }
-        if completion_item_doc_contains_label(item.documentation, item.label):
-            result = item.documentation
-        else:
-            result = item.label.strip() + '\n\n' + item.documentation
-    else:
-        result = item.label
+    if not item.documentation:
+        return item.label
 
+    if isinstance(item.documentation, lsp.MarkupContent):
+        result = item.documentation.value
+    else:
+        result = item.documentation
+
+    # try this with clangd
+    #
+    #    // comment
+    #    void foo(int x, char c) { }
+    #
+    #    int main(void)
+    #    {
+    #        fo<Tab>
+    #    }
+    if not completion_item_doc_contains_label(result, item.label):
+        result = item.label.strip() + '\n\n' + result
     return result
 
 
@@ -429,11 +431,6 @@ class LangServer:
             prefix_len = len(match.group(1))
 
             assert lsp_event.completion_list is not None
-            if isinstance(lsp_event.completion_list, list):
-                completions = lsp_event.completion_list
-            else:
-                completions = lsp_event.completion_list.items
-
             tab.event_generate(
                 '<<AutoCompletionResponse>>',
                 data=autocomplete.Response(
@@ -451,7 +448,7 @@ class LangServer:
                                          or item.label)[prefix_len:],
                             documentation=get_completion_item_doc(item),
                         ) for item in sorted(
-                            completions,
+                            lsp_event.completion_list.items,
                             key=(lambda item: item.sortText or item.label),
                         )
                     ]
