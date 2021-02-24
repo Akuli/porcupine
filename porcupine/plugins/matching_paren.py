@@ -27,61 +27,49 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
         return
 
     last_char = event.widget.get('insert - 1 char')
+    lineno, cursor_column = map(int, event.widget.index('insert').split('.'))
+    stack = [last_char]
+
+    # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
+    # See "PERFORMANCE ISSUES" in text widget manual page
     if last_char in OPEN:
-        # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
-        # See "PERFORMANCE ISSUES" in text widget manual page
+        backwards = False
         text = event.widget.get('insert', 'end - 1 char')
-
-        lineno, cursor_column = map(int, event.widget.index('insert').split('.'))
-
-        stack = [last_char]
-        for match in re.finditer(r'(?<!\\)[()\[\]{}]|\n', text):
-            char = match.group()
-            if char == '\n':
-                lineno += 1
-            elif char in OPEN:
-                stack.append(char)
-            elif char in CLOSE:
-                if stack.pop() != CLOSE_TO_OPEN[char]:
-                    # foo([) does not highlight its () because you forgot to close square bracket
-                    return
-                if not stack:
-                    try:
-                        column = match.start() - text.rindex('\n', 0, match.start()) - 1
-                    except ValueError:
-                        column = cursor_column + match.start()
-                    break
-        else:
-            return
-
+        regex = r'(?<!\\)[()\[\]{}]|\n'
+        mapping = CLOSE_TO_OPEN
     elif last_char in CLOSE:
+        backwards = True
         text = event.widget.get('1.0', 'insert - 1 char')[::-1]
-        lineno, cursor_column = map(int, event.widget.index('insert').split('.'))
+        regex = r'[()\[\]{}](?!\\)|\n'
+        mapping = OPEN_TO_CLOSE
+    else:
+        return
 
-        stack = [last_char]
-        for match in re.finditer(r'[()\[\]{}](?!\\)|\n', text):
-            char = match.group()
-            if char == '\n':
-                lineno -= 1
-            elif char in CLOSE:
-                stack.append(char)
-            elif char in OPEN:
-                if stack.pop() != OPEN_TO_CLOSE[char]:
-                    return
-                if not stack:
+    for match in re.finditer(regex, text):
+        char = match.group()
+        if char == '\n':
+            lineno += (-1 if backwards else 1)
+        elif char in mapping.values():
+            stack.append(char)
+        elif char in mapping.keys():
+            if stack.pop() != mapping[char]:
+                return
+            if not stack:
+                if backwards:
                     try:
                         column = text.index('\n', match.end()) - match.end()
                     except ValueError:
                         column = len(text) - match.end()
-                    break
+                else:
+                    try:
+                        column = match.start() - text.rindex('\n', 0, match.start()) - 1
+                    except ValueError:
+                        column = cursor_column + match.start()
+                event.widget.tag_add('matching_paren', 'insert - 1 char')
+                event.widget.tag_add('matching_paren', f'{lineno}.{column}')
+                return
         else:
-            return
-
-    else:
-        return
-
-    event.widget.tag_add('matching_paren', 'insert - 1 char')
-    event.widget.tag_add('matching_paren', f'{lineno}.{column}')
+            raise RuntimeError("wat")
 
 
 def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
