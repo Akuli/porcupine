@@ -33,13 +33,11 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
         text = event.widget.get('insert', 'end - 1 char')
 
         lineno, cursor_column = map(int, event.widget.index('insert').split('.'))
-        line_start = -cursor_column
 
         stack = [last_char]
         for match in re.finditer(r'(?<!\\)[()\[\]{}]|\n', text):
             char = match.group()
             if char == '\n':
-                line_start = match.end()
                 lineno += 1
             elif char in OPEN:
                 stack.append(char)
@@ -48,9 +46,13 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
                     # foo([) does not highlight its () because you forgot to close square bracket
                     return
                 if not stack:
-                    event.widget.tag_add('matching_paren', 'insert - 1 char')
-                    event.widget.tag_add('matching_paren', f'{lineno}.{match.start() - line_start}')
-                    return
+                    try:
+                        column = text[:match.start()][::-1].index('\n')
+                    except ValueError:
+                        column = cursor_column + len(text[:match.start()][::-1])
+                    break
+        else:
+            return
 
     elif last_char in CLOSE:
         text = event.widget.get('1.0', 'insert - 1 char')[::-1]
@@ -71,10 +73,15 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
                         column = text.index('\n', match.end()) - match.end()
                     except ValueError:
                         column = len(text) - match.end()
+                    break
+        else:
+            return
 
-                    event.widget.tag_add('matching_paren', 'insert - 1 char')
-                    event.widget.tag_add('matching_paren', f'{lineno}.{column}')
-                    return
+    else:
+        return
+
+    event.widget.tag_add('matching_paren', 'insert - 1 char')
+    event.widget.tag_add('matching_paren', f'{lineno}.{column}')
 
 
 def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
