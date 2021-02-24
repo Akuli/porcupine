@@ -49,6 +49,56 @@ def move_left_or_right(diff: int) -> utils.BreakOrNone:
         return None
 
 
+# bigger value --> less sensitive
+MACOS_WHEEL_STEP = 2.5
+
+# ignore mouse wheeling when mouse is below this height
+WHEEL_Y_MAX = 50
+
+
+def wheel_callback(diff: int, event: tkinter.Event) -> None:
+    # It's possible to trigger this somewhere else than at top of tab manager
+    if event.y < 50:
+        select_left_or_right(diff)
+
+
+def switch_tabs_on_mouse_wheel() -> None:
+    tabmanager = get_tab_manager()
+    if tabmanager.tk.call('tk', 'windowingsystem') == 'x11':
+        tabmanager.bind('<Button-4>', partial(wheel_callback, -1), add=True)
+        tabmanager.bind('<Button-5>', partial(wheel_callback, 1), add=True)
+
+    elif tabmanager.tk.call('tk', 'windowingsystem') == 'aqua':
+        # Handle smooth scrolling
+        accumulator = 0.0
+
+        def reset(event: tkinter.Event[tkinter.Misc]) -> None:
+            nonlocal accumulator
+            accumulator = 0
+
+        def scroll(event: tkinter.Event[tkinter.Misc]) -> None:
+            nonlocal accumulator
+            accumulator += event.delta
+            if accumulator > MACOS_WHEEL_STEP:
+                accumulator -= MACOS_WHEEL_STEP
+                wheel_callback(-1, event)
+            elif accumulator < -MACOS_WHEEL_STEP:
+                accumulator += MACOS_WHEEL_STEP
+                wheel_callback(1, event)
+
+        tabmanager.bind('<MouseWheel>', scroll, add=True)
+        tabmanager.bind('<Leave>', reset, add=True)
+
+    else:  # Windows
+        def real_callback(event: tkinter.Event[tkinter.Misc]) -> None:
+            if event.delta > 0:
+                wheel_callback(-1, event)
+            else:
+                wheel_callback(1, event)
+
+        tabmanager.bind('<MouseWheel>', real_callback, add=True)
+
+
 def setup() -> None:
     get_tab_manager().bind('<Button1-Motion>', on_drag, add=True)
 
@@ -62,9 +112,4 @@ def setup() -> None:
     for n in range(1, 10):
         get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(select_tab_n, n), add=True)
 
-    def scroll_callback(direction: str, event: tkinter.Event[tkinter.Misc]) -> None:
-        # It's possible to trigger this somewhere else than at top of tab manager
-        if event.y < 50:
-            select_left_or_right({'up': -1, 'down': +1}[direction])
-
-    utils.bind_mouse_wheel(get_tab_manager(), scroll_callback, add=True)
+    switch_tabs_on_mouse_wheel()
