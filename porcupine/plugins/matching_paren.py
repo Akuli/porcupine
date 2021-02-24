@@ -45,29 +45,29 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
 
     for match in re.finditer(regex, text):
         char = match.group()
-        if char in mapping.values():
+        if char not in mapping:
+            assert char in mapping.values()
             stack.append(char)
-        elif char in mapping.keys():
-            if stack.pop() != mapping[char]:
-                return
-            if not stack:
-                if backwards:
-                    lineno = 1 + text.count('\n', match.end())
-                    if lineno == 1:
-                        column = len(text) - match.end()
-                    else:
-                        column = text.index('\n', match.end()) - match.end()
+            continue
+
+        if stack.pop() != mapping[char]:
+            return
+        if not stack:
+            if backwards:
+                lineno = 1 + text.count('\n', match.end())
+                if lineno == 1:
+                    column = len(text) - match.end()
                 else:
-                    lineno = cursor_line + text.count('\n', 0, match.start())
-                    if lineno == cursor_line:
-                        column = cursor_column + match.start()
-                    else:
-                        column = match.start() - text.rindex('\n', 0, match.start()) - 1
-                event.widget.tag_add('matching_paren', 'insert - 1 char')
-                event.widget.tag_add('matching_paren', f'{lineno}.{column}')
-                return
-        else:
-            raise RuntimeError("wat")
+                    column = text.index('\n', match.end()) - match.end()
+            else:
+                lineno = cursor_line + text.count('\n', 0, match.start())
+                if lineno == cursor_line:
+                    column = cursor_column + match.start()
+                else:
+                    column = match.start() - text.rindex('\n', 0, match.start()) - 1
+            event.widget.tag_add('matching_paren', 'insert - 1 char')
+            event.widget.tag_add('matching_paren', f'{lineno}.{column}')
+            break
 
 
 def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
