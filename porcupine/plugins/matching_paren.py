@@ -15,8 +15,6 @@ OPEN_TO_CLOSE = {
     '(': ')',
 }
 CLOSE_TO_OPEN = {close: open_ for open_, close in OPEN_TO_CLOSE.items()}
-OPEN = OPEN_TO_CLOSE.keys()
-CLOSE = OPEN_TO_CLOSE.values()
 
 
 def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
@@ -32,12 +30,12 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
 
     # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
     # See "PERFORMANCE ISSUES" in text widget manual page
-    if last_char in OPEN:
+    if last_char in OPEN_TO_CLOSE.keys():
         backwards = False
         text = event.widget.get('insert', 'end - 1 char')
         regex = r'(?<!\\)[()\[\]{}]|\n'
         mapping = CLOSE_TO_OPEN
-    elif last_char in CLOSE:
+    elif last_char in OPEN_TO_CLOSE.values():
         backwards = True
         text = event.widget.get('1.0', 'insert - 1 char')[::-1]
         regex = r'[()\[\]{}](?!\\)|\n'
