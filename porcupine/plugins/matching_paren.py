@@ -68,9 +68,9 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
                     return
                 if not stack:
                     try:
-                        column = text[match.end():].index('\n')
+                        column = text.index('\n', match.end()) - match.end()
                     except ValueError:
-                        column = len(text[match.end():])
+                        column = len(text) - match.end()
 
                     event.widget.tag_add('matching_paren', 'insert - 1 char')
                     event.widget.tag_add('matching_paren', f'{lineno}.{column}')
