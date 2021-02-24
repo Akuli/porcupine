@@ -159,8 +159,7 @@ class Finder(ttk.Frame):
     # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
     # gives a list of (start, end) pairs
     def get_match_ranges(self) -> List[Tuple[str, str]]:
-        starts_and_ends = list(
-            map(str, self._textwidget.tag_ranges('find_highlight')))
+        starts_and_ends = list(map(str, self._textwidget.tag_ranges('find_highlight')))
         assert len(starts_and_ends) % 2 == 0
         pairs = list(zip(starts_and_ends[0::2], starts_and_ends[1::2]))
         return pairs
@@ -188,41 +187,26 @@ class Finder(ttk.Frame):
         self.replace_all_button.config(state=matches_something_state)
 
     def _get_matches_to_highlight(self, looking4: str) -> Iterator[str]:
-        nocase_opt = self.ignore_case_var.get()
+        # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
+        # See "PERFORMANCE ISSUES" in text widget manual page
+        text = self._textwidget.get('1.0', 'end - 1 char')
+
         if self.full_words_var.get():
-            # tk doesn't have python-style \b, but it has \m and \M that match
-            # the beginning and end of word, see re_syntax(3tcl)
-            #
-            # TODO: are there \w characters that need to be escaped? this is
-            # validated in highlight_all_matches()
-            search_arg = r'\m' + looking4 + r'\M'
-            regexp_opt = True
+            regex = r'\b' + re.escape(looking4) + r'\b|\n'
         else:
-            search_arg = looking4
-            regexp_opt = False
+            regex = re.escape(looking4) + '|\n'
+        flags = re.IGNORECASE if self.ignore_case_var.get() else 0
 
-        start_index = '1.0'
-        first_time = True
-
-        while True:
-            # searching at the beginning of a match gives that match, not
-            # the next match, so we need + 1 char... unless we are looking
-            # at the beginning of the file, and to avoid infinite
-            # recursion, we check for that by checking if we have done it
-            # before
-            if first_time:
-                start_index_for_search = start_index
-                first_time = False
+        lineno = 1
+        for match in re.finditer(regex, text, flags):
+            if match.group(0) == '\n':
+                lineno += 1
             else:
-                start_index_for_search = f'{start_index} + 1 char'
-
-            start_index = self._textwidget.search(
-                search_arg, start_index_for_search, 'end',
-                nocase=nocase_opt, regexp=regexp_opt)
-            if not start_index:
-                # no more matches
-                break
-            yield start_index
+                if lineno == 1:
+                    column = match.start()
+                else:
+                    column = match.start() - text.rindex('\n', 0, match.start()) - 1
+                yield f'{lineno}.{column}'
 
     def highlight_all_matches(self, *junk: object) -> None:
         # clear previous highlights
