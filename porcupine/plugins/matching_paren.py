@@ -3,6 +3,7 @@ When you put the cursor next to ')', this plugin highlights the matching '('.
 """
 from __future__ import annotations
 
+import re
 import tkinter
 from functools import partial
 
@@ -13,6 +14,7 @@ OPEN_TO_CLOSE = {
     '[': ']',
     '(': ')',
 }
+CLOSE_TO_OPEN = {close: open_ for open_, close in OPEN_TO_CLOSE.items()}
 OPEN = OPEN_TO_CLOSE.keys()
 CLOSE = OPEN_TO_CLOSE.values()
 
@@ -26,38 +28,53 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
 
     last_char = event.widget.get('insert - 1 char')
     if last_char in OPEN:
-        search_backwards = False
-        search_start = 'insert'
-    elif last_char in CLOSE:
-        search_backwards = True
-        search_start = 'insert - 1 char'
-    else:
-        return
+        # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
+        # See "PERFORMANCE ISSUES" in text widget manual page
+        text = event.widget.get('insert', 'end - 1 char')
 
-    stack = [last_char]
-    while stack:
-        match = event.widget.search(
-            r'[()\[\]{}]', search_start, ('1.0' if search_backwards else 'end'),
-            regexp=True, backwards=search_backwards)
-        if not match:
-            return   # unclosed parentheses
+        lineno, cursor_column = map(int, event.widget.index('insert').split('.'))
+        line_start = -cursor_column
 
-        # ignore backslash-escaped parens
-        if event.widget.get(f'{match} - 1 char') != '\\':
-            paren = event.widget.get(match)
-            if (paren in OPEN and not search_backwards) or (paren in CLOSE and search_backwards):
-                stack.append(paren)
-            elif (paren in CLOSE and not search_backwards) or (paren in OPEN and search_backwards):
-                pair = (stack.pop(), paren)
-                if pair not in OPEN_TO_CLOSE.items() and pair[::-1] not in OPEN_TO_CLOSE.items():
+        stack = [last_char]
+        for match in re.finditer(r'(?<!\\)[()\[\]{}]|\n', text):
+            char = match.group()
+            if char == '\n':
+                line_start = match.end()
+                lineno += 1
+            elif char in OPEN:
+                stack.append(char)
+            elif char in CLOSE:
+                if stack.pop() != CLOSE_TO_OPEN[char]:
                     # foo([) does not highlight its () because you forgot to close square bracket
                     return
-            else:
-                raise NotImplementedError(paren)
-        search_start = match if search_backwards else f'{match} + 1 char'
+                if not stack:
+                    event.widget.tag_add('matching_paren', 'insert - 1 char')
+                    event.widget.tag_add('matching_paren', f'{lineno}.{match.start() - line_start}')
+                    return
 
-    event.widget.tag_add('matching_paren', 'insert - 1 char')
-    event.widget.tag_add('matching_paren', match)
+    elif last_char in CLOSE:
+        text = event.widget.get('1.0', 'insert - 1 char')[::-1]
+        lineno, cursor_column = map(int, event.widget.index('insert').split('.'))
+
+        stack = [last_char]
+        for match in re.finditer(r'[()\[\]{}](?!\\)|\n', text):
+            char = match.group()
+            if char == '\n':
+                lineno -= 1
+            elif char in CLOSE:
+                stack.append(char)
+            elif char in OPEN:
+                if stack.pop() != OPEN_TO_CLOSE[char]:
+                    return
+                if not stack:
+                    try:
+                        column = text[match.end():].index('\n')
+                    except ValueError:
+                        column = len(text[match.end():])
+
+                    event.widget.tag_add('matching_paren', 'insert - 1 char')
+                    event.widget.tag_add('matching_paren', f'{lineno}.{column}')
+                    return
 
 
 def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
