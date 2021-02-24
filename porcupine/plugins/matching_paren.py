@@ -25,7 +25,7 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
         return
 
     last_char = event.widget.get('insert - 1 char')
-    lineno, cursor_column = map(int, event.widget.index('insert').split('.'))
+    cursor_line, cursor_column = map(int, event.widget.index('insert').split('.'))
     stack = [last_char]
 
     # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
@@ -33,36 +33,36 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
     if last_char in OPEN_TO_CLOSE.keys():
         backwards = False
         text = event.widget.get('insert', 'end - 1 char')
-        regex = r'(?<!\\)[()\[\]{}]|\n'
+        regex = r'(?<!\\)[()\[\]{}]'
         mapping = CLOSE_TO_OPEN
     elif last_char in OPEN_TO_CLOSE.values():
         backwards = True
         text = event.widget.get('1.0', 'insert - 1 char')[::-1]
-        regex = r'[()\[\]{}](?!\\)|\n'
+        regex = r'[()\[\]{}](?!\\)'
         mapping = OPEN_TO_CLOSE
     else:
         return
 
     for match in re.finditer(regex, text):
         char = match.group()
-        if char == '\n':
-            lineno += (-1 if backwards else 1)
-        elif char in mapping.values():
+        if char in mapping.values():
             stack.append(char)
         elif char in mapping.keys():
             if stack.pop() != mapping[char]:
                 return
             if not stack:
                 if backwards:
-                    try:
-                        column = text.index('\n', match.end()) - match.end()
-                    except ValueError:
+                    lineno = 1 + text.count('\n', match.end())
+                    if lineno == 1:
                         column = len(text) - match.end()
+                    else:
+                        column = text.index('\n', match.end()) - match.end()
                 else:
-                    try:
-                        column = match.start() - text.rindex('\n', 0, match.start()) - 1
-                    except ValueError:
+                    lineno = cursor_line + text.count('\n', 0, match.start())
+                    if lineno == cursor_line:
                         column = cursor_column + match.start()
+                    else:
+                        column = match.start() - text.rindex('\n', 0, match.start()) - 1
                 event.widget.tag_add('matching_paren', 'insert - 1 char')
                 event.widget.tag_add('matching_paren', f'{lineno}.{column}')
                 return
