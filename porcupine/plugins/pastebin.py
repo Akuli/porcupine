@@ -256,6 +256,6 @@ def start_pasting(paste_class: Type[Paste]) -> None:
 
 def setup() -> None:
     for klass in [DPaste, Termbin]:
-        menubar.get_menu("Share").add_command(label=klass.name, command=partial(start_pasting, klass))
+        menubar.get_menu("Pastebin").add_command(label=klass.name, command=partial(start_pasting, klass))
         assert '/' not in klass.name
-        menubar.set_enabled_based_on_tab(f"Share/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab)))
+        menubar.set_enabled_based_on_tab(f"Pastebin/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab)))

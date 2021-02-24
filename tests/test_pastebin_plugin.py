@@ -132,7 +132,7 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager):
             fake_wait_window_done = True
 
         monkeypatch.setattr(tkinter.Toplevel, 'wait_window', fake_wait_window)
-        get_main_window().event_generate('<<Menubar:Share/termbin.com>>')
+        get_main_window().event_generate('<<Menubar:Pastebin/termbin.com>>')
 
         thread.join()
         get_main_window().update()
@@ -147,7 +147,7 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab):
     mocker.patch('porcupine.utils.errordialog')
 
     tabmanager.select(filetab)
-    get_main_window().event_generate('<<Menubar:Share/dpaste.com>>')
+    get_main_window().event_generate('<<Menubar:Pastebin/dpaste.com>>')
     get_main_window().update()
 
     utils.errordialog.assert_called_once()
@@ -162,7 +162,7 @@ def test_invalid_return(filetab, monkeypatch, tabmanager, mocker):
     monkeypatch.setattr(pastebin_module.DPaste, 'run', (lambda *args: 'lol'))
 
     tabmanager.select(filetab)
-    get_main_window().event_generate('<<Menubar:Share/dpaste.com>>')
+    get_main_window().event_generate('<<Menubar:Pastebin/dpaste.com>>')
     get_main_window().update()
 
     tkinter.messagebox.showerror.assert_called_once_with(
