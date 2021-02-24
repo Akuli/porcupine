@@ -39,7 +39,6 @@ Other Tkinter Utilities
 See :mod:`porcupine.textwidget` for ``tkinter.Text`` specific things.
 
 .. autofunction:: set_tooltip
-.. autofunction:: bind_mouse_wheel
 .. autofunction:: bind_tab_key
 .. autofunction:: add_scroll_command
 .. autofunction:: run_in_thread
