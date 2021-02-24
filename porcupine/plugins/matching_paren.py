@@ -47,9 +47,9 @@ def on_cursor_moved(event: tkinter.Event[tkinter.Text]) -> None:
                     return
                 if not stack:
                     try:
-                        column = text[:match.start()][::-1].index('\n')
+                        column = match.start() - text.rindex('\n', 0, match.start()) - 1
                     except ValueError:
-                        column = cursor_column + len(text[:match.start()][::-1])
+                        column = cursor_column + match.start()
                     break
         else:
             return
