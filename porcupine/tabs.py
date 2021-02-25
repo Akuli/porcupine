@@ -459,8 +459,7 @@ bers.py>` use this attribute.
     """
 
     def __init__(self, manager: TabManager, content: str = '',
-                 path: Optional[pathlib.Path] = None,
-                 filetype: Optional[Dict[str, Any]] = None) -> None:
+                 path: Optional[pathlib.Path] = None) -> None:
         super().__init__(manager)
 
         if path is None:
@@ -628,8 +627,6 @@ bers.py>` use this attribute.
         it_changes = (self._path != new_path)
         self._path = new_path
         if it_changes:
-            # filetype guessing must happen before <<PathChanged>> so that
-            # plugins can override guessed stuff
             self.event_generate('<<PathChanged>>')
 
     # TODO: plugin
