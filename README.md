@@ -137,10 +137,12 @@ started. Even if you are not going to write Porcupine plugins or do anything
 related to plugins, they will probably give you an idea of how things are done
 in Porcupine.
 
-If you want to develop porcupine, install Python 3.7 or newer and
+If you want to develop porcupine, make a fork of Porcupine
+with the button in the top right corner of this page.
+Then install Python 3.7 or newer and
 [git](https://git-scm.com/), and run these commands:
 
-    git clone https://github.com/Akuli/porcupine
+    git clone https://github.com/YourUserName/porcupine
     cd porcupine
     python3 -m venv env
     source env/bin/activate
