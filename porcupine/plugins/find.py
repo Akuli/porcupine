@@ -8,7 +8,7 @@ import tkinter
 import weakref
 from functools import partial
 from tkinter import ttk
-from typing import Any, Iterator, List, Tuple, cast
+from typing import Any, Iterator, List, Optional, Tuple, cast
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -139,7 +139,7 @@ class Finder(ttk.Frame):
 
     def show(self) -> None:
         try:
-            selected_text = self._textwidget.get('sel.first', 'sel.last')
+            selected_text: Optional[str] = self._textwidget.get('sel.first', 'sel.last')
         except tkinter.TclError:
             selected_text = None  # A little weird, but gets the job done.
 
