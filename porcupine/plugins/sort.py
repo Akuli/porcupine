@@ -21,12 +21,10 @@ def sort():
     old_lines = tab.textwidget.get(f'{first_line}.0', f'{last_line}.0 lineend').splitlines()
     new_lines = sorted(old_lines)
 
-    cursor_pos = tab.textwidget.index('insert')
     with textwidget.change_batch(tab.textwidget):
         for lineno, (old, new) in enumerate(zip(old_lines, new_lines), start=first_line):
             if old != new:
                 tab.textwidget.replace(f'{lineno}.0', f'{lineno}.0 lineend', new)
-    tab.textwidget.mark_set('insert', cursor_pos)
 
     tab.textwidget.tag_remove('sel', '1.0', 'end')
     tab.textwidget.tag_add('sel', f'{first_line}.0', f'{last_line + 1}.0')

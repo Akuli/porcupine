@@ -448,28 +448,35 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
                 textwidget.insert(...)
 
     Using this context manager also affects undoing so that whole batch can be
-    undone with one Ctrl+Z press.
+    undone with one Ctrl+Z press. When the ``with`` block ends, the cursor
+    position is restored back to what it was when the ``with`` started.
 
     This context manager can be used without calling :func:`track_changes`. In
-    that case, it only affects undoing.
+    that case, it only affects undoing and cursor position.
 
     See :source:`porcupine/plugins/indent_block.py` for a complete example.
     """
+    cursor_pos = widget.index('insert')
+    autoseparators_value = widget['autoseparators']
+
     try:
-        tracker = _change_trackers[widget]
-    except KeyError:
-        yield
-    else:
-        old_value = widget['autoseparators']
         widget.config(autoseparators=False)
         widget.edit_separator()
-        tracker.begin_batch()
         try:
+            tracker = _change_trackers[widget]
+        except KeyError:
             yield
-        finally:
-            tracker.finish_batch()
-            widget.edit_separator()
-            widget.config(autoseparators=old_value)
+        else:
+            tracker.begin_batch()
+            try:
+                yield
+            finally:
+                tracker.finish_batch()
+        widget.edit_separator()
+
+    finally:
+        widget.config(autoseparators=autoseparators_value)
+        widget.mark_set('insert', cursor_pos)
 
 
 def create_peer_widget(

@@ -14,9 +14,9 @@ from porcupine.plugins.directory_tree import DirectoryTree
 @pytest.fixture
 def tree():
     [tree] = [w for w in utils.get_children_recursively(get_paned_window()) if isinstance(w, DirectoryTree)]
-    yield tree
     for child in tree.get_children(''):
         tree.delete(child)
+    yield tree
 
 
 def test_adding_nested_projects(tree, tmp_path):
