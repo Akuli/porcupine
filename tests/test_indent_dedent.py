@@ -1,3 +1,5 @@
+import pytest
+
 from porcupine.plugins.autoindent import ALT_FLAG
 
 _FUNNY = '''\
@@ -88,6 +90,8 @@ def test_autoindent(filetab):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}{indent}'
 
 
+# FIXME: figure out how to do this on mac
+@pytest.mark.skipif(platform.system() == 'Darwin')
 def test_shift_enter_and_alt_enter(filetab):
     # See issue #404 (not the HTTP status, lol)
     indent = ' ' * 4
