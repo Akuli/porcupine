@@ -26,11 +26,8 @@ def on_tab_key(event: tkinter.Event[textwidget.MainText], shifted: bool) -> None
             if shifted:
                 event.widget.dedent(f'{lineno}.0')
             else:
-                # if the line is empty or it contains nothing but
-                # whitespace, don't touch it
-                content = event.widget.get(
-                    f'{lineno}.0', f'{lineno}.0 lineend')
-                if not (content.isspace() or not content):
+                # if the line is empty or whitespace-only, don't touch it
+                if event.widget.get(f'{lineno}.0', f'{lineno}.0 lineend').strip():
                     event.widget.indent(f'{lineno}.0')
 
     # select only the lines we indented but everything on them

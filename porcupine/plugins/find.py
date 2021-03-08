@@ -141,7 +141,7 @@ class Finder(ttk.Frame):
         try:
             selected_text: Optional[str] = self._textwidget.get('sel.first', 'sel.last')
         except tkinter.TclError:
-            selected_text = None  # A little weird, but gets the job done.
+            selected_text = None
 
         self.pack(fill='x')
 

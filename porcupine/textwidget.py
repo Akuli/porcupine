@@ -447,12 +447,11 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
                 textwidget.delete(...)
                 textwidget.insert(...)
 
-    Using this context manager also affects undoing so that whole batch can be
-    undone with one Ctrl+Z press. When the ``with`` block ends, the cursor
-    position is restored back to what it was when the ``with`` started.
-
-    This context manager can be used without calling :func:`track_changes`. In
-    that case, it only affects undoing and cursor position.
+    This context manager also affects some other things, and so it can be
+    useful even with text widgets that don't use :func:`track_changes`:
+    * Undoing the whole batch is done with one Ctrl+Z press.
+    * When the ``with`` statement ends, the cursor is moved back to where it
+      was when the ``with`` statement started.
 
     See :source:`porcupine/plugins/indent_block.py` for a complete example.
     """
