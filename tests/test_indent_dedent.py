@@ -134,34 +134,6 @@ def test_double_dedent_bug(filetab):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}{indent}return foo\n{indent})'
 
 
-def test_markdown_autoindent(filetab, tmp_path):
-    filetab.save_as(tmp_path / 'hello.md')
-    filetab.textwidget.insert('insert', '1. Lol and')
-    filetab.textwidget.event_generate('<Return>')
-    filetab.update()
-    filetab.textwidget.insert('insert', 'wat.')
-    filetab.textwidget.event_generate('<Return>')
-    filetab.update()
-    filetab.textwidget.insert('insert', '- Foo and')
-    filetab.textwidget.event_generate('<Return>')
-    filetab.update()
-    filetab.textwidget.insert('insert', 'bar and')
-    filetab.textwidget.event_generate('<Return>')
-    filetab.update()
-    filetab.textwidget.insert('insert', 'baz.')
-    filetab.textwidget.event_generate('<Return>')
-    filetab.update()
-    filetab.textwidget.insert('insert', 'End of list')
-    assert filetab.textwidget.get('1.0', 'end - 1 char') == '''\
-1. Lol and
-    wat.
-- Foo and
-    bar and
-    baz.
-End of list
-'''
-
-
 def test_space_in_tabs_file_bug(filetab, tmp_path):
     filetab.settings.set('tabs2spaces', False)
     filetab.textwidget.insert('end', '    a')
@@ -178,3 +150,68 @@ def test_space_in_tabs_file_bug(filetab, tmp_path):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == ' a'
     filetab.textwidget.event_generate('<<Dedent>>')
     assert filetab.textwidget.get('1.0', 'end - 1 char') == 'a'
+
+
+@pytest.fixture
+def check_autoindents(filetab, tmp_path):
+    def check(filename, input_commands, output):
+        filetab.save_as(tmp_path / filename)
+        for command in input_commands.strip().split('\n'):
+            while command.startswith('<DEDENT>'):
+                filetab.textwidget.event_generate('<<Dedent>>')
+                filetab.update()
+                command = command[8:]
+
+            filetab.textwidget.insert('insert', command)
+            filetab.textwidget.event_generate('<Return>')
+            filetab.update()
+
+        assert filetab.textwidget.get('1.0', 'end').strip() == output.strip()
+
+    return check
+
+
+def test_markdown_autoindent(check_autoindents):
+    check_autoindents('hello.md', '''
+1. Lol and
+wat.
+- Foo and
+bar and
+baz.
+End of list
+''', '''
+1. Lol and
+    wat.
+- Foo and
+    bar and
+    baz.
+End of list
+''')
+
+
+def test_shell_autoindent(check_autoindents):
+    check_autoindents('loll.sh', '''
+case foo in
+bla*)
+echo lol
+;;
+*)
+if foo; then
+bar
+<DEDENT>else
+exit
+fi
+<DEDENT><DEDENT>esac
+''', '''
+case foo in
+    bla*)
+        echo lol
+        ;;
+    *)
+        if foo; then
+            bar
+        else
+            exit
+        fi
+esac
+''')

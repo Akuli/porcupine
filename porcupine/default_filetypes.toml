@@ -241,6 +241,7 @@ shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
 commands = {run = "bash {file}"}
 comment_prefix = '#'
+autoindent_regexes = {dedent = '(return|exit)( .+)?|break|continue|;;', indent = '[^()]+\)|.*\b(then|else|in)'}
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
