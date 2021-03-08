@@ -1,15 +1,19 @@
 from porcupine import tabs
 
 
-def test_reload(tabmanager, tmp_path):
+def trigger_reload(tab):
+    tab.textwidget.event_generate('<Button-1>')
+    tab.update()
+
+
+def test_reload_basic(tabmanager, tmp_path):
     (tmp_path / 'foo.py').write_text("hello")
     tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'foo.py')
     tabmanager.add_tab(tab, select=True)
     assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello'
 
     (tmp_path / 'foo.py').write_text('lol')
-    tab.textwidget.event_generate('<Button-1>')
-    tab.update()
+    trigger_reload(tab)
     assert tab.textwidget.get('1.0', 'end - 1 char') == 'lol'
 
     # It should be possible to undo a reload
@@ -17,7 +21,21 @@ def test_reload(tabmanager, tmp_path):
     assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello'
 
 
-def test_tab_switch(tabmanager, tmp_path):
+def test_many_lines(tabmanager, tmp_path):
+    (tmp_path / 'foo.py').write_text("lol\nhello\nlol")
+    tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'foo.py')
+    tabmanager.add_tab(tab, select=True)
+
+    (tmp_path / 'foo.py').write_text('hello')
+    trigger_reload(tab)
+    assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello'
+
+    (tmp_path / 'foo.py').write_text('hello\nhello\nhello')
+    trigger_reload(tab)
+    assert tab.textwidget.get('1.0', 'end - 1 char') == 'hello\nhello\nhello'
+
+
+def test_tab_switch_triggers_reload(tabmanager, tmp_path):
     (tmp_path / 'a.py').write_text("hello")
     (tmp_path / 'b.py').write_text("world")
     tab_a = tabs.FileTab.open_file(tabmanager, tmp_path / 'a.py')

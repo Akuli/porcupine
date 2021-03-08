@@ -1,6 +1,7 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
+import collections
 import dataclasses
 import hashlib
 import importlib
@@ -553,13 +554,33 @@ bers.py>` use this attribute.
             assert isinstance(f.newlines, str)
             self.settings.set('line_ending', settings.LineEnding(f.newlines))
 
+        # Find changed part in O(n) time where n = max(len(old_lines), len(new_lines))
+        old_lines = collections.deque(self.textwidget.get('1.0', 'end - 1 char').splitlines(keepends=True))
+        new_lines = collections.deque(content.splitlines(keepends=True))
+        start_line = 1
+        start_column = 0
+        end_line, end_column = map(int, self.textwidget.index('end - 1 char').split('.'))
+        while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
+            popped = old_lines.pop()
+            popped2 = new_lines.pop()
+            assert popped == popped2
+            if popped.endswith('\n'):
+                assert end_column == 0
+                end_line -= 1
+            else:
+                end_column = 0
+        while old_lines and new_lines and old_lines[0] == new_lines[0]:
+            old_lines.popleft()
+            new_lines.popleft()
+            start_line += 1
+
         modified_before = self.is_modified()
 
         # Reloading can be undoed with Ctrl+Z
         self.textwidget.config(autoseparators=False)
         try:
             self.textwidget.edit_separator()
-            self.textwidget.replace('1.0', 'end', content)
+            self.textwidget.replace(f'{start_line}.{start_column}', f'{end_line}.{end_column}', ''.join(new_lines))
             self.textwidget.edit_separator()
         finally:
             self.textwidget.config(autoseparators=True)
