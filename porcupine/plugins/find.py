@@ -141,13 +141,19 @@ class Finder(ttk.Frame):
         try:
             selected_text = self._textwidget.get('sel.first', 'sel.last')
         except tkinter.TclError:
-            pass   # nothing is selected, leave find entry content as is
-        else:
-            self.find_entry.delete(0, 'end')
-            self.find_entry.insert(0, selected_text)
+            selected_text = None  # A little weird, but gets the job done.
 
         self.pack(fill='x')
-        self.find_entry.focus_set()
+
+        if selected_text is None or '\n' in selected_text:
+            self.find_entry.focus_set()
+        else:
+            # Get ready to replace this text with something else
+            for entry in [self.find_entry, self.replace_entry]:
+                entry.delete(0, 'end')
+                entry.insert(0, selected_text)
+            self.replace_entry.focus_set()
+
         self.highlight_all_matches()
 
     def hide(self, junk: object = None) -> None:

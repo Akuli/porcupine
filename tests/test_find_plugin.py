@@ -349,7 +349,7 @@ def test_selecting_messing_up_button_disableds(filetab_and_finder):
     assert str(finder.replace_this_button.cget('state')) == 'disabled'
 
 
-def test_find_selected(filetab_and_finder):
+def test_replace_selected(filetab_and_finder):
     filetab, finder = filetab_and_finder
     finder.hide()
     filetab.textwidget.insert('end', "foo bar baz bar")
@@ -358,6 +358,7 @@ def test_find_selected(filetab_and_finder):
 
     finder.show()
     assert finder.find_entry.get() == 'bar'
+    assert finder.replace_entry.get() == 'bar'
     assert list(map(str, filetab.textwidget.tag_ranges('find_highlight'))) == ['1.4', '1.7', '1.12', '1.15']
 
     finder.hide()
