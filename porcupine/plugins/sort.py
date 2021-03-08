@@ -3,7 +3,7 @@ import tkinter
 from porcupine import get_tab_manager, menubar, tabs, textwidget
 
 
-def sort():
+def sort() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
 
