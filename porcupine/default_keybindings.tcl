@@ -61,6 +61,9 @@ if {[tk windowingsystem] == "aqua"} {
     event add "<<TabClosing:HeaderClickClose>>" <Button-2>
 }
 
+# sort plugin
+event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
+
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
 # I use non-shifted ctrl+t for swapping two characters before cursor while editing
