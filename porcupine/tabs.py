@@ -702,10 +702,10 @@ bers.py>` use this attribute.
                               traceback.format_exc())
             return False
 
-        self.event_generate('<<AfterSave>>')
         self._save_hash = self._get_hash()
         self.path = path
         self._update_titles()
+        self.event_generate('<<AfterSave>>')
         return True
 
     def save(self) -> bool:
