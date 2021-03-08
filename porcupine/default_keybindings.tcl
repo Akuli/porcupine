@@ -97,6 +97,12 @@ bind Text <$contmand-Button-1> {}
 event delete "<<LineStart>>" <$contmand-a>
 event add "<<SelectAll>>" <$contmand-a>
 
+# Don't select all the way to end (issue #382)
+bind Text <<SelectAll>> {
+    %W tag remove sel 1.0 end
+    %W tag add sel 1.0 {end - 1 char}
+}
+
 bind Text <$contmand-Delete> {
     try {%W delete sel.first sel.last} on error {} {
         set start [%W index insert]
