@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import pathlib
@@ -9,7 +11,7 @@ from functools import partial
 from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from porcupine import get_paned_window, get_tab_manager, menubar, settings, tabs, utils
+from porcupine import get_main_window, get_paned_window, get_tab_manager, menubar, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ class DirectoryTree(ttk.Treeview):
         self._last_click_time = 0
         self._last_click_selection: Optional[Tuple[str, ...]] = None
 
-    def on_click(self, event: tkinter.Event) -> None:
+    def on_click(self, event: tkinter.Event[DirectoryTree]) -> None:
         # Don't know why the usual double-click handling doesn't work. It
         # didn't work at all when update_selection_color was bound to
         # <<TreeviewSelect>>, but even without that, it was a bit fragile and
@@ -310,7 +312,7 @@ class DirectoryTree(ttk.Treeview):
             str(path),
         )
 
-    def open_file_or_dir(self, event: Optional[tkinter.Event] = None) -> None:
+    def open_file_or_dir(self, event: object = None) -> None:
         try:
             [selected_id] = self.selection()
         except ValueError:
@@ -353,10 +355,9 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         tab.bind('<<PathChanged>>', path_callback, add=True)
         tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
-        tab.textwidget.bind('<FocusIn>', tree.refresh_everything, add=True)
 
 
-def focus(tree: DirectoryTree) -> None:
+def focus_treeview(tree: DirectoryTree) -> None:
     # We need to do two things:
     #   - Tell the treeview to set its focus to the first item, if no item is focused.
     #     In Tcl, this is '$tree focus', where $tree is the name of the widget.
@@ -369,6 +370,18 @@ def focus(tree: DirectoryTree) -> None:
     tree.tk.call('focus', tree)
 
 
+# There's no way to bind so you get only main window's events.
+#
+# When the treeview is focused inside the Porcupine window but the Porcupine
+# window itself is not focused, this refreshes twice when the window gets
+# focus. If that ever becomes a problem, it can be fixed with a debouncer. At
+# the time of writing this, Porcupine contains debouncer code used for
+# something else. That can be found with grep.
+def on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc]) -> None:
+    if event.widget is get_main_window() or event.widget is tree:
+        tree.refresh_everything()
+
+
 def setup() -> None:
     # TODO: add something for finding a file by typing its name?
     container = ttk.Frame(get_paned_window())
@@ -378,7 +391,7 @@ def setup() -> None:
     scrollbar.pack(side='right', fill='y')
     tree = DirectoryTree(container)
     tree.pack(side='left', fill='both', expand=True)
-    tree.bind('<FocusIn>', tree.refresh_everything, add=True)
+    get_main_window().bind('<FocusIn>', partial(on_any_widget_focused, tree), add=True)
 
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
@@ -387,7 +400,7 @@ def setup() -> None:
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
     get_tab_manager().bind('<<NotebookTabChanged>>', partial(select_current_file, tree), add=True)
 
-    menubar.get_menu("View").add_command(label="Focus directory tree", command=partial(focus, tree))
+    menubar.get_menu("View").add_command(label="Focus directory tree", command=partial(focus_treeview, tree))
 
     settings.add_option('directory_tree_projects', [], List[str])
     string_paths = settings.get('directory_tree_projects', List[str])
