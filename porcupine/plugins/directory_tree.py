@@ -9,7 +9,7 @@ from functools import partial
 from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from porcupine import get_paned_window, get_tab_manager, settings, tabs, utils
+from porcupine import get_paned_window, get_tab_manager, menubar, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -356,6 +356,19 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
         tab.textwidget.bind('<FocusIn>', tree.refresh_everything, add=True)
 
 
+def focus(tree: DirectoryTree) -> None:
+    # We need to do two things:
+    #   - Tell the treeview to set its focus to the first item, if no item is focused.
+    #     In Tcl, this is '$tree focus', where $tree is the name of the widget.
+    #   - Tell the rest of the GUI to focus the treeview. In Tcl, 'focus $tree'.
+    #
+    # In tkinter, both are called .focus(), and they conflict. To be explicit about
+    # what focus method is being used, I decided to call the Tcl commands directly.
+    if tree.get_children() and not tree.tk.call(tree, 'focus'):
+        tree.tk.call(tree, 'focus', tree.get_children()[0])
+    tree.tk.call('focus', tree)
+
+
 def setup() -> None:
     # TODO: add something for finding a file by typing its name?
     container = ttk.Frame(get_paned_window())
@@ -373,6 +386,8 @@ def setup() -> None:
     get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
     get_tab_manager().bind('<<NotebookTabChanged>>', partial(select_current_file, tree), add=True)
+
+    menubar.get_menu("View").add_command(label="Focus directory tree", command=partial(focus, tree))
 
     settings.add_option('directory_tree_projects', [], List[str])
     string_paths = settings.get('directory_tree_projects', List[str])
