@@ -1,3 +1,5 @@
+from porcupine.plugins.autoindent import ALT_FLAG
+
 _FUNNY = '''\
 def foo(
     x,
@@ -86,12 +88,18 @@ def test_autoindent(filetab):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}{indent}'
 
 
-def test_shift_enter_means_no_more_indent(filetab):
+def test_shift_enter_doesnt_mean_anything(filetab):
     indent = ' ' * 4
-    filetab.textwidget.insert('end', f'{indent}if blah:  # comment')
-    filetab.textwidget.event_generate('<Shift-Return>')
+    filetab.textwidget.insert('1.0', f'{indent}if blah:  # comment')
+    filetab.textwidget.event_generate('<Shift-Return>')  # just like <Return>
     filetab.update()
-    assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}'
+    assert filetab.textwidget.get('1.0', 'end - 1 char').endswith(f'\n{indent}{indent}')
+
+    filetab.textwidget.delete('1.0 lineend', 'end')
+    # Unfortunately event_generate('<Alt-Return>') doesn't work, need to trust that ALT_FLAG is correct
+    filetab.textwidget.event_generate('<Return>', state=ALT_FLAG)
+    filetab.update()
+    assert filetab.textwidget.get('1.0', 'end - 1 char').endswith(f'\n{indent}')
 
 
 def test_dedent_on_closing_paren(filetab):

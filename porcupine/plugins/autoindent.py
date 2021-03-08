@@ -16,7 +16,7 @@ from porcupine import get_tab_manager, tabs
 setup_before = ['rstrip']
 
 log = logging.getLogger(__name__)
-SHIFT_FLAG = 1
+ALT_FLAG = 0b1000
 
 
 def leading_whitespace(string: str) -> str:
@@ -63,7 +63,7 @@ def get_regexes(tab: tabs.FileTab) -> Tuple[str, str]:
     )
 
 
-def after_enter(tab: tabs.FileTab, shifted: bool) -> None:
+def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
     lineno = int(tab.textwidget.index('insert').split('.')[0])
     prevline = tab.textwidget.get(f'{lineno}.0 - 1 line', f'{lineno}.0')
 
@@ -79,7 +79,7 @@ def after_enter(tab: tabs.FileTab, shifted: bool) -> None:
         prevline = prevline.split(comment_prefix)[0].strip()
 
     indent_regex, dedent_regex = get_regexes(tab)
-    if (prevline.endswith(('(', '[', '{')) or re.fullmatch(indent_regex, prevline)) and not shifted:
+    if (prevline.endswith(('(', '[', '{')) or re.fullmatch(indent_regex, prevline)) and not alt_pressed:
         tab.textwidget.indent('insert')
     elif re.fullmatch(dedent_regex, prevline):
         # must be end of a block
@@ -88,8 +88,8 @@ def after_enter(tab: tabs.FileTab, shifted: bool) -> None:
 
 def on_enter_press(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> None:
     assert isinstance(event.state, int)
-    shifted = bool(event.state & SHIFT_FLAG)
-    tab.textwidget.after_idle(after_enter, tab, shifted)
+    alt_pressed = bool(event.state & ALT_FLAG)
+    tab.textwidget.after_idle(after_enter, tab, alt_pressed)
 
 
 def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> None:
