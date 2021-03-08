@@ -352,8 +352,8 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
 
         path_callback()
 
-        tab.bind('<<PathChanged>>', path_callback, add=True)
-        tab.bind('<<PathChanged>>', tree.hide_old_projects, add=True)
+        tab.bind('<<AfterSave>>', path_callback, add=True)
+        tab.bind('<<AfterSave>>', tree.hide_old_projects, add=True)
         tab.bind('<Destroy>', tree.hide_old_projects, add=True)
 
 

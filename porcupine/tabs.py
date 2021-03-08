@@ -425,9 +425,13 @@ class FileTab(Tab):
         a virtual event named ``<<TabSettingChanged:indent_size>>``.
         This works similarly for other tab settings.
 
-    .. virtualevent:: Save
+    .. virtualevent:: BeforeSave
 
         This runs before the file is saved with the :meth:`save` method.
+
+    .. virtualevent:: AfterSave
+
+        This runs after the file is saved with the :meth:`save` method.
 
     .. attribute:: textwidget
         :type: porcupine.textwidget.MainText
@@ -682,7 +686,7 @@ bers.py>` use this attribute.
         return True
 
     def _do_the_save(self, path: pathlib.Path) -> bool:
-        self.event_generate('<<Save>>')
+        self.event_generate('<<BeforeSave>>')
 
         encoding = self.settings.get('encoding', str)
         line_ending = self.settings.get('line_ending', settings.LineEnding)
@@ -698,6 +702,7 @@ bers.py>` use this attribute.
                               traceback.format_exc())
             return False
 
+        self.event_generate('<<AfterSave>>')
         self._save_hash = self._get_hash()
         self.path = path
         self._update_titles()
@@ -715,7 +720,7 @@ bers.py>` use this attribute.
         Porcupine, then before saving, this function will ask whether the user
         really wants to save.
 
-        .. seealso:: The :virtevt:`Save` event.
+        .. seealso:: The :virtevt:`BeforeSave` and :virtevt:`AfterSave` virtual events.
         """
         if self.path is None:
             return self.save_as()
