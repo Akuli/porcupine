@@ -292,7 +292,7 @@ class TetrisTab(tabs.Tab):
         for (x, y), item_id in self._canvas_content.items():
             shape = self._game.shape_at(x, y)
             if shape is None:
-                color = self._canvas.cget('bg')
+                color = self._canvas['bg']
             else:
                 color = COLORS[shape]
             self._canvas.itemconfig(item_id, fill=color)

@@ -293,7 +293,7 @@ class Finder(ttk.Frame):
         return
 
     def _replace_this(self, junk: object = None) -> None:
-        if str(self.replace_this_button.cget('state')) == 'disabled':
+        if str(self.replace_this_button['state']) == 'disabled':
             self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
             return
 

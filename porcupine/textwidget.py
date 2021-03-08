@@ -600,9 +600,9 @@ def config_tab_displaying(textwidget: tkinter.Text, indent_size: int, *, tag: Op
     affected, not the entire ``textwidget``.
     """
     if tag is None:
-        font = textwidget.cget('font')
+        font = textwidget['font']
     else:
-        font = textwidget.tag_cget(tag, 'font') or textwidget.cget('font')
+        font = textwidget.tag_cget(tag, 'font') or textwidget['font']
 
     # from the text(3tk) man page: "To achieve a different standard
     # spacing, for example every 4 characters, simply configure the

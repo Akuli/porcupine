@@ -130,8 +130,8 @@ class _Underliner:
             text=self._tag2underline[tag].message,
             wraplength=(self.textwidget.winfo_width() - 2*gap_size),
             # opposite colors as in the text widget
-            bg=self.textwidget.cget('fg'),
-            fg=self.textwidget.cget('bg'),
+            bg=self.textwidget['fg'],
+            fg=self.textwidget['bg'],
         )
 
         label_width = self._message_label.winfo_reqwidth()

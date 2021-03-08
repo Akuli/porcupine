@@ -37,7 +37,7 @@ class LongLineMarker:
             self.frame.place_forget()
             return
 
-        font = tkfont.Font(name=self.tab.textwidget.cget('font'), exists=True)
+        font = tkfont.Font(name=self.tab.textwidget['font'], exists=True)
         marker_x = font.measure(' ' * max_line_length)
 
         # these are relative to the length of the longest line in the text widget

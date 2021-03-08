@@ -133,7 +133,7 @@ class MiniMap(tkinter.Text):
             # whole file content on screen at once, show screen size instead of file content size
             # this does not take in account wrap plugin
             how_tall_are_lines_on_editor: int = self._tab.tk.call(
-                'font', 'metrics', self._tab.textwidget.cget('font'), '-linespace')
+                'font', 'metrics', self._tab.textwidget['font'], '-linespace')
             how_tall_are_lines_on_minimap: int = self._tab.tk.call(
                 'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace')
             editor_height: int = self._tab.textwidget.winfo_height()

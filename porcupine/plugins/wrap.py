@@ -16,7 +16,7 @@ def on_menu_toggled(wrap_var: tkinter.BooleanVar, *junk: object) -> None:
 # return value = whether to enable menu item that changes wrap_var
 def on_tab_changed(wrap_var: tkinter.BooleanVar, tab: tabs.Tab) -> bool:
     if isinstance(tab, tabs.FileTab):
-        wrap_var.set(tab.textwidget.cget('wrap') == 'word')
+        wrap_var.set(tab.textwidget['wrap'] == 'word')
         return True
     return False
 

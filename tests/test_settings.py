@@ -139,9 +139,9 @@ def test_font_gets_updated():
     fixedfont = Font(name='TkFixedFont', exists=True)
 
     settings.set_('font_family', 'Helvetica')
-    assert fixedfont.cget('family') == 'Helvetica'
+    assert fixedfont['family'] == 'Helvetica'
     settings.set_('font_size', 123)
-    assert fixedfont.cget('size') == 123
+    assert fixedfont['size'] == 123
 
 
 @dataclasses.dataclass

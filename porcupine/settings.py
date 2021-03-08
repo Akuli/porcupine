@@ -385,7 +385,7 @@ def _init_global_gui_settings() -> None:
     add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
-    if fixedfont.cget('size') < 0:
+    if fixedfont['size'] < 0:
         # negative sizes have a special meaning in Tk, and i don't care much
         # about it for porcupine, using stupid hard-coded default instead
         fixedfont.config(size=10)
@@ -394,13 +394,13 @@ def _init_global_gui_settings() -> None:
         # Windows default monospace font sucks, see #245
         default_font_family = 'Consolas'
     else:
-        # fixedfont.cget('family') is typically e.g. 'Monospace', that's not included in
+        # fixedfont['family'] is typically e.g. 'Monospace', that's not included in
         # tkinter.font.families() because it refers to another font family that is
         # in tkinter.font.families()
         default_font_family = fixedfont.actual('family')
 
     add_option('font_family', default_font_family)
-    add_option('font_size', fixedfont.cget('size'))
+    add_option('font_size', fixedfont['size'])
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: Optional[tkinter.Event[tkinter.Misc]]) -> None:
@@ -593,17 +593,17 @@ def add_combobox(
     Usually you should pass at least ``values=list_of_strings``.
 
     The content of the combobox is checked whenever it changes.
-    If it's in ``combobox.cget('values')``
+    If it's in ``combobox['values']``
     (given with the ``values=list_of_strings`` keyword argument or changed
     later by configuring the returned combobox), then the option given by
     *option_name* is set to the content of the combobox. The converter passed
     to :func:`add_option` will be used. If the content of the combobox is not
-    in ``combobox.cget('values')``, then |triangle| is shown.
+    in ``combobox['values']``, then |triangle| is shown.
     """
     combo = ttk.Combobox(get_dialog_content(), **combobox_kwargs)
     triangle = _create_validation_triangle(
         combo, option_name, str,
-        lambda value: value in combo.cget('values'))
+        lambda value: value in combo['values'])
     _grid_widgets(text, combo, triangle)
     return combo
 
@@ -619,14 +619,14 @@ def add_spinbox(
     Usually you should pass at least ``from_=some_integer, to=another_integer``.
 
     The content of the spinbox is checked whenever it changes.
-    If it's a valid integer between ``spinbox.cget('from')`` and ``spinbox.cget('to')`` (inclusive),
+    If it's a valid integer between ``spinbox['from']`` and ``spinbox['to']`` (inclusive),
     then the option given by *option_name* is set to the :class:`int`.
     Otherwise |triangle| is shown.
     """
     spinbox = ttk.Spinbox(get_dialog_content(), **spinbox_kwargs)
     triangle = _create_validation_triangle(
         spinbox, option_name, int,
-        lambda value: int(spinbox.cget('from')) <= value <= int(spinbox.cget('to')))
+        lambda value: int(spinbox['from']) <= value <= int(spinbox['to']))
     _grid_widgets(text, spinbox, triangle)
     return spinbox
 

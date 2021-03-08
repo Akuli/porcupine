@@ -52,7 +52,7 @@ class PythonPrompt:
         except ProcessLookupError:
             # the subprocess has terminated, _queue_clearer should have
             # taken care of it already
-            assert self.widget.cget('state') == 'disabled'
+            assert self.widget['state'] == 'disabled'
 
     def _copy(self, junk: object) -> None:
         # i didn't find a way to do this like tkinter does it by default

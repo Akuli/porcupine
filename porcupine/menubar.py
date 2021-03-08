@@ -94,7 +94,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
     If *path* is ``None``, then the menubar itself is returned.
     """
     main_window = get_main_window()
-    main_menu: tkinter.Menu = main_window.nametowidget(main_window.cget('menu'))
+    main_menu: tkinter.Menu = main_window.nametowidget(main_window['menu'])
     if path is None:
         return main_menu
 
