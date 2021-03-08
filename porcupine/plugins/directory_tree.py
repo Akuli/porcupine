@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 # If more than this many projects are opened, then the least recently opened
 # project will be closed, unless a file has been opened from that project.
-PROJECT_AUTOCLOSE_COUNT = 5
+PROJECT_AUTOCLOSE_COUNT = 10
 
 
 def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
