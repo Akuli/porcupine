@@ -108,50 +108,52 @@ class PopManager:
             y = min(y, screen_height - height)
             x = max(0, x)
             y = max(0, y)
-
-            message = (type(tab), state, f'{width}x{height}+{x}+{y}')
-            with tempfile.NamedTemporaryFile(delete=False) as file:
-                log.debug(f"writing pickled state to {file.name}")
-                pickle.dump(message, file)
-
-            settings.save()     # let the new process use up-to-date settings
-
-            # The subprocess must be called so that it has a sane sys.path.
-            # In particular, import or don't import from current working
-            # directory exactly like the porcupine that is currently running.
-            # Importing from current working directory is bad if it contains
-            # e.g. queue.py (#31), but good when that's where porcupine is
-            # meant to be imported from (#230).
-            code = f'import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()'
-            args = [sys.executable, '-c', code]
-
-            args.append('--without-plugins')
-            args.append(','.join({
-                info.name
-                for info in pluginloader.plugin_infos
-                if info.status == pluginloader.Status.DISABLED_ON_COMMAND_LINE
-            } | {
-                # these plugins are not suitable for popups
-                # TODO: geometry and restart stuff don't get saved
-                'restart',
-                'geometry',
-            }))
-
-            if get_parsed_args().verbose_logger is not None:
-                args.append('--verbose-logger')
-                args.append(get_parsed_args().verbose_logger)
-
-            process = subprocess.Popen(
-                args,
-                env={**os.environ, 'PORCUPINE_POPPINGTABS_STATE_FILE': file.name})
-            log.debug(f"started subprocess with PID {process.pid}")
-            get_tab_manager().close_tab(tab)
-
-            # don't exit python until the subprocess exits, also log stuff
-            threading.Thread(target=self._waiter_thread,
-                             args=[process]).start()
+            self.pop(tab, state, f'{width}x{height}+{x}+{y}')
 
         self._dragged_state = NOT_DRAGGING
+
+    def pop(self, tab: tabs.Tab, state: Any, geometry: str) -> None:
+        message = (type(tab), state, geometry)
+        with tempfile.NamedTemporaryFile(delete=False) as file:
+            log.debug(f"writing pickled state to {file.name}")
+            pickle.dump(message, file)
+
+        settings.save()     # let the new process use up-to-date settings
+
+        # The subprocess must be called so that it has a sane sys.path.
+        # In particular, import or don't import from current working
+        # directory exactly like the porcupine that is currently running.
+        # Importing from current working directory is bad if it contains
+        # e.g. queue.py (#31), but good when that's where porcupine is
+        # meant to be imported from (#230).
+        code = f'import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()'
+        args = [sys.executable, '-c', code]
+
+        args.append('--without-plugins')
+        args.append(','.join({
+            info.name
+            for info in pluginloader.plugin_infos
+            if info.status == pluginloader.Status.DISABLED_ON_COMMAND_LINE
+        } | {
+            # these plugins are not suitable for popups
+            # TODO: geometry and restart stuff don't get saved
+            'restart',
+            'geometry',
+        }))
+
+        if get_parsed_args().verbose_logger is not None:
+            args.append('--verbose-logger')
+            args.append(get_parsed_args().verbose_logger)
+
+        process = subprocess.Popen(
+            args,
+            env={**os.environ, 'PORCUPINE_POPPINGTABS_STATE_FILE': file.name})
+        log.debug(f"started subprocess with PID {process.pid}")
+        get_tab_manager().close_tab(tab)
+
+        # don't exit python until the subprocess exits, also log stuff
+        threading.Thread(target=self._waiter_thread,
+                         args=[process]).start()
 
     def _waiter_thread(self, process: subprocess.Popen[bytes]) -> None:
         status = process.wait()
