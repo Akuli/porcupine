@@ -21,7 +21,6 @@ def sort():
     old_lines = tab.textwidget.get(f'{first_line}.0', f'{last_line}.0 lineend').splitlines()
     new_lines = sorted(old_lines)
 
-    # TODO: should change_batch also affect undoing?
     cursor_pos = tab.textwidget.index('insert')
     with textwidget.change_batch(tab.textwidget):
         for lineno, (old, new) in enumerate(zip(old_lines, new_lines), start=first_line):

@@ -447,7 +447,11 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
                 textwidget.delete(...)
                 textwidget.insert(...)
 
-    This does nothing if :func:`track_changes` hasn't been called.
+    Using this context manager also affects undoing so that whole batch can be
+    undone with one Ctrl+Z press.
+
+    This context manager can be used without calling :func:`track_changes`. In
+    that case, it only affects undoing.
 
     See :source:`porcupine/plugins/indent_block.py` for a complete example.
     """
@@ -456,11 +460,16 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
     except KeyError:
         yield
     else:
+        old_value = widget['autoseparators']
+        widget.config(autoseparators=False)
+        widget.edit_separator()
         tracker.begin_batch()
         try:
             yield
         finally:
             tracker.finish_batch()
+            widget.edit_separator()
+            widget.config(autoseparators=old_value)
 
 
 def create_peer_widget(
