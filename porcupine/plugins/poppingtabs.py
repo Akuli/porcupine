@@ -11,7 +11,7 @@ import threading
 import tkinter
 from typing import Any, Tuple, Union
 
-from porcupine import get_main_window, get_parsed_args, get_tab_manager, pluginloader, settings, tabs
+from porcupine import get_main_window, get_parsed_args, get_tab_manager, menubar, pluginloader, settings, tabs
 
 log = logging.getLogger(__name__)
 
@@ -113,9 +113,10 @@ class PopManager:
         self._dragged_state = NOT_DRAGGING
 
     def pop(self, tab: tabs.Tab, state: Any, geometry: str) -> None:
+        log.info(f"Popping {repr(tab)} to {geometry} begins")
         message = (type(tab), state, geometry)
         with tempfile.NamedTemporaryFile(delete=False) as file:
-            log.debug(f"writing pickled state to {file.name}")
+            log.info(f"writing pickled state to {file.name}")
             pickle.dump(message, file)
 
         settings.save()     # let the new process use up-to-date settings
@@ -155,6 +156,22 @@ class PopManager:
         threading.Thread(target=self._waiter_thread,
                          args=[process]).start()
 
+    def pop_next_to_current_window(self) -> None:
+        tab = get_tab_manager().select()
+        assert tab is not None
+        state = tab.get_state()
+        assert state is not None
+
+        # Popup goes on the half of screen where the current main window is not
+        window_center = get_main_window().winfo_rootx() + get_main_window().winfo_width()/2
+        half_screen_width = round(get_main_window().winfo_screenwidth() / 2)
+        screen_height = get_main_window().winfo_screenheight()
+        if window_center > half_screen_width:
+            geometry = f'{half_screen_width}x{screen_height}+0+0'
+        else:
+            geometry = f'{half_screen_width}x{screen_height}+{half_screen_width}+0'
+        self.pop(tab, state, geometry)
+
     def _waiter_thread(self, process: subprocess.Popen[bytes]) -> None:
         status = process.wait()
         if status == 0:
@@ -186,5 +203,7 @@ def setup() -> None:
     manager = PopManager()
     get_tab_manager().bind('<Button1-Motion>', manager.on_drag, add=True)
     get_tab_manager().bind('<ButtonRelease-1>', manager.on_drop, add=True)
+    menubar.get_menu("View").add_command(label="Pop Tab", command=manager.pop_next_to_current_window)
+    menubar.set_enabled_based_on_tab("View/Pop Tab", (lambda tab: tab is not None and tab.get_state() is not None))
 
     open_tab_from_state_file()

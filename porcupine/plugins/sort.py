@@ -1,5 +1,6 @@
 import tkinter
-from porcupine import menubar, get_tab_manager, tabs, textwidget
+
+from porcupine import get_tab_manager, menubar, tabs, textwidget
 
 
 def sort():
