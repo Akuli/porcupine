@@ -512,6 +512,7 @@ bers.py>` use this attribute.
         """
         tab = cls(manager, path=path)
         tab.reload()
+        tab.textwidget.mark_set('insert', '1.0')
         tab.textwidget.edit_reset()
         return tab
 

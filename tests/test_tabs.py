@@ -123,3 +123,12 @@ def test_save_as(filetab, tmp_path):
     filetab.reload()
     filetab.save_as(tmp_path / 'bar.py')
     assert (tmp_path / 'foo.py').read_text() == 'hello world\n'
+
+
+def test_initial_cursor_pos(tabmanager, tmp_path):
+    (tmp_path / 'foo.py').write_text("hello")
+    tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'foo.py')
+    try:
+        assert tab.textwidget.index('insert') == '1.0'
+    finally:
+        tab.destroy()
