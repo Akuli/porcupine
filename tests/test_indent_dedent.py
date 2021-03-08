@@ -88,7 +88,8 @@ def test_autoindent(filetab):
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}if blah:  # comment\n{indent}{indent}'
 
 
-def test_shift_enter_doesnt_mean_anything(filetab):
+def test_shift_enter_and_alt_enter(filetab):
+    # See issue #404 (not the HTTP status, lol)
     indent = ' ' * 4
     filetab.textwidget.insert('1.0', f'{indent}if blah:  # comment')
     filetab.textwidget.event_generate('<Shift-Return>')  # just like <Return>
@@ -125,3 +126,31 @@ def test_double_dedent_bug(filetab):
     filetab.textwidget.event_generate('<Key>', keysym='parenright')
     filetab.update()
     assert filetab.textwidget.get('1.0', 'end - 1 char') == f'{indent}{indent}return foo\n{indent})'
+
+
+def test_markdown_autoindent(filetab, tmp_path):
+    filetab.save_as(tmp_path / 'hello.md')
+    filetab.textwidget.insert('insert', '1. Lol and')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    filetab.textwidget.insert('insert', 'wat.')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    filetab.textwidget.insert('insert', '- Foo and')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    filetab.textwidget.insert('insert', 'bar and')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    filetab.textwidget.insert('insert', 'baz.')
+    filetab.textwidget.event_generate('<Return>')
+    filetab.update()
+    filetab.textwidget.insert('insert', 'End of list')
+    assert filetab.textwidget.get('1.0', 'end - 1 char') == '''\
+1. Lol and
+    wat.
+- Foo and
+    bar and
+    baz.
+End of list
+'''
