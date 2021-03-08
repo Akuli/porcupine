@@ -3,12 +3,14 @@ from __future__ import annotations
 import functools
 import logging
 import pathlib
+import re
 import sys
 import tkinter
 import traceback
 import webbrowser
+from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Callable, Iterator, Optional, Sequence, Tuple
+from typing import Callable, Iterator, Optional, Sequence, Set, Tuple
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -156,17 +158,7 @@ def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkin
     return 'break'
 
 
-def update_keyboard_shortcuts() -> None:
-    """
-    This function does two things to the *New File* menu item in the *File*
-    menu, and similarly to all other menu items in all menus:
-
-        * Show *Ctrl+N* (or *⌘N* on Mac) next to *New File*.
-        * Ensure that the menu item's callback runs when Ctrl+N (or Command+N) is pressed.
-
-    This has to be called when menus or keyboard shortcuts have been modified.
-    It's called automatically when a plugin has been set up.
-    """
+def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
     for path, menu, index in _walk_menu_contents():
         event_name = f'<<Menubar:{path}>>'
@@ -179,6 +171,42 @@ def update_keyboard_shortcuts() -> None:
             # FIXME: what if menu item is inserted somewhere else than to end, and indexes change?
             command = functools.partial(_menu_event_handler, menu, index)
             main_window.bind(event_name, command, add=True)
+
+
+# Make sure that alt+e opens edit menu
+def _update_shortcuts_for_opening_submenus() -> None:
+    used_letters = set()
+    for virtual_event in get_main_window().event_info():
+        for physical_event in get_main_window().event_info(virtual_event):
+            match = re.fullmatch(r'<Alt-Key-([a-z])>', physical_event)
+            if match is not None:
+                used_letters.add(match.group(1))
+
+    menu = get_menu(None)
+    for submenu_index in range(menu.index('end') + 1):
+        for letter_index, letter in enumerate(menu.entrycget(submenu_index, 'label').lower()):
+            if letter in ascii_lowercase and letter not in used_letters:
+                menu.entryconfig(submenu_index, underline=letter_index)
+                used_letters.add(letter)
+                break
+        else:
+            menu.entryconfig(submenu_index, accelerator='')
+
+
+def update_keyboard_shortcuts() -> None:
+    """
+    This function does several different things to each menu item. Here's what
+    it does to the *Edit* menu and the *Find and Replace* menu item inside it:
+
+        * Show *Ctrl+F* (or *⌘F* on Mac) next to *Find and Replace*.
+        * Ensure that the menu item's callback runs when Ctrl+F (or Command+F) is pressed.
+        * Allow the *Edit* menu to be accessed by pressing Alt+E.
+
+    This has to be called when menus or keyboard shortcuts have been modified.
+    It's called automatically when a plugin has been set up.
+    """
+    _update_keyboard_shortcuts_inside_submenus()
+    _update_shortcuts_for_opening_submenus()
 
 
 def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]], bool]) -> Callable[..., None]:
