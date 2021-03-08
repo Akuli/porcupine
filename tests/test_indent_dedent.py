@@ -1,3 +1,5 @@
+import platform
+
 import pytest
 
 from porcupine.plugins.autoindent import ALT_FLAG
