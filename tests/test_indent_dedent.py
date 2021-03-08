@@ -160,3 +160,21 @@ def test_markdown_autoindent(filetab, tmp_path):
     baz.
 End of list
 '''
+
+
+def test_space_in_tabs_file_bug(filetab, tmp_path):
+    filetab.settings.set('tabs2spaces', False)
+    filetab.textwidget.insert('end', '    a')
+    filetab.mark_set('insert', '1.2')
+
+    # Backspacing one char at a time is annoying, but it should be, since
+    # someone is using tabs when they should be using spaces, and you should
+    # be mad at them.
+    filetab.textwidget.event_generate('<<Dedent>>')
+    assert filetab.get('1.0', 'end - 1 char') == '   a'
+    filetab.textwidget.event_generate('<<Dedent>>')
+    assert filetab.get('1.0', 'end - 1 char') == '  a'
+    filetab.textwidget.event_generate('<<Dedent>>')
+    assert filetab.get('1.0', 'end - 1 char') == ' a'
+    filetab.textwidget.event_generate('<<Dedent>>')
+    assert filetab.get('1.0', 'end - 1 char') == 'a'
