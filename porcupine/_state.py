@@ -34,7 +34,7 @@ def init(args: Any) -> None:
     log.debug("init() starts")
     _parsed_args = args
 
-    _root = tkinter.Tk()
+    _root = tkinter.Tk(className="Porcupine")   # class name shows up in my alt+tab list
     _root.protocol('WM_DELETE_WINDOW', quit)
     _root.report_callback_exception = _log_tkinter_error
 
