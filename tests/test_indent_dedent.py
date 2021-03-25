@@ -202,6 +202,12 @@ bar
 exit
 fi
 <DEDENT><DEDENT>esac
+while [ 1 == 2 ]; do
+blah
+<DEDENT>done
+for thing in a b c; do
+echo $thing
+<DEDENT>done
 ''', '''
 case foo in
     bla*)
@@ -214,4 +220,10 @@ case foo in
             exit
         fi
 esac
+while [ 1 == 2 ]; do
+    blah
+done
+for thing in a b c; do
+    echo $thing
+done
 ''')
