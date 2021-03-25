@@ -233,7 +233,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
         tab.bind('<<TabSettingChanged:pygments_lexer>>', on_lexer_changed, add=True)
         on_lexer_changed()
         utils.bind_with_data(tab.textwidget, '<<ContentChanged>>', highlighter.on_change, add=True)
-        utils.add_scroll_command(tab.textwidget, 'yscrollcommand', debounce(tab, highlighter.highlight_visible, 50))
+        utils.add_scroll_command(tab.textwidget, 'yscrollcommand', debounce(tab, highlighter.highlight_visible, 100))
         highlighter.highlight_visible()
 
 
