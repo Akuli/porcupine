@@ -292,10 +292,10 @@ class Finder(ttk.Frame):
         self._update_buttons()
         return
 
-    def _replace_this(self, junk: object = None) -> None:
+    def _replace_this(self, junk: object = None) -> Literal['break']:
         if str(self.replace_this_button['state']) == 'disabled':
             self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
-            return
+            return 'break'
 
         # highlighted areas must not be moved after .replace, think about what
         # happens when you replace 'asd' with 'asd'
@@ -314,8 +314,9 @@ class Finder(ttk.Frame):
             self.statuslabel.config(text="Replaced a match. There is 1 more match.")
         else:
             self.statuslabel.config(text=f"Replaced a match. There are {left} more matches.")
+        return 'break'
 
-    def _replace_all(self, junk: object = None) -> None:
+    def _replace_all(self, junk: object = None) -> Literal['break']:
         match_ranges = self.get_match_ranges()
 
         # must do this backwards because replacing may screw up indexes AFTER
@@ -329,6 +330,7 @@ class Finder(ttk.Frame):
             self.statuslabel.config(text="Replaced 1 match.")
         else:
             self.statuslabel.config(text=f"Replaced {len(match_ranges)} matches.")
+        return 'break'
 
 
 def find() -> None:
