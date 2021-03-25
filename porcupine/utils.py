@@ -658,6 +658,8 @@ def errordialog(title: str, message: str,
 
     button = ttk.Button(big_frame, text="OK", command=window.destroy)
     button.pack(pady=10)
+    button.focus()
+    button.bind('<Return>', (lambda event: button.invoke()), add=True)
 
     window.title(title)
     window.geometry(geometry)
