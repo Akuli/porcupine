@@ -148,11 +148,10 @@ class Finder(ttk.Frame):
         if selected_text is None or '\n' in selected_text:
             self.find_entry.focus_set()
         else:
-            # Get ready to replace this text with something else
-            for entry in [self.find_entry, self.replace_entry]:
-                entry.delete(0, 'end')
-                entry.insert(0, selected_text)
-            self.replace_entry.focus_set()
+            self.find_entry.delete(0, 'end')
+            self.find_entry.insert(0, selected_text)
+            self.find_entry.select_range(0, 'end')
+            self.find_entry.focus_set()
 
         self.highlight_all_matches()
 
