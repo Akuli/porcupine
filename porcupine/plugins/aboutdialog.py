@@ -50,8 +50,9 @@ class _AboutDialogContent(ttk.Frame):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
+        # TODO: calculate height automagically, instead of hard-coding
         self._textwidget = textwidget.create_passive_text_widget(
-            self, width=60, height=18)
+            self, width=60, height=25)
         self._textwidget.pack(fill='both', expand=True, padx=5, pady=5)
 
         # http://effbot.org/zone/tkinter-text-hyperlink.htm
