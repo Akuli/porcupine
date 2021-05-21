@@ -99,6 +99,11 @@ GitHub](http://github.com/Akuli/porcupine/issues/new).
 
 Yes. I wrote the very first version in `nano`, but Porcupine has changed a lot since.
 
+### Why is it named Porcupine?
+
+I think because I didn't find other projects named porcupine, but I don't remember exactly.
+Originally, Porcupine was named "Akuli's Editor".
+
 ### Why not use editor X?
 Because Porcupine is better.
 
