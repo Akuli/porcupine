@@ -340,6 +340,6 @@ def _fill_menus_with_default_stuff() -> None:
     # TODO: does ##learnpython IRC link still work?
     add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
     add_link("Help", "Report a problem or request a feature", "https://github.com/Akuli/porcupine/issues/new")
-    add_link("Help/Python", "Free help chat", "http://webchat.freenode.net/?channels=%23%23learnpython")
+    add_link("Help/Python", "Free help chat", "https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython")
     add_link("Help/Python", "My Python tutorial", "https://github.com/Akuli/python-tutorial/blob/master/README.md")
     add_link("Help/Python", "Official documentation", "https://docs.python.org/")
