@@ -50,8 +50,7 @@ def get_command(
         'python': 'py' if sys.platform == 'win32' else 'python3',
         'exe': f'{no_ext}.exe' if sys.platform == 'win32' else f'./{no_ext}',
     }
-    # TODO: is this really supposed to be shlex.split even on windows?
-    result = [part.format(**format_args) for part in shlex.split(template)]
+    result = [part.format(**format_args) for part in shlex.split(template, posix=(sys.platform != 'win32'))]
     return result
 
 
