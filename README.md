@@ -142,6 +142,12 @@ started. Even if you are not going to write Porcupine plugins or do anything
 related to plugins, they will probably give you an idea of how things are done
 in Porcupine.
 
+If you don't know what to do, ask me (by making a new issue, for example).
+I will likely go through the open issues and choose a few that you can
+work on, considering your experience with tkinter and porcupine,
+and then explain to you what exactly is the problem with each issue and how
+I imagine it could be fixed. Feel free to ask help if you get stuck.
+
 If you want to develop porcupine, make a fork of Porcupine
 with the button in the top right corner of this page.
 Then install Python 3.7 or newer and
