@@ -90,6 +90,11 @@ See [below](#developing-porcupine).
 
 ## FAQ
 
+### Does Porcupine support programming language X?
+You will likely get syntax highlighting without any configuring
+and autocompletions with a few lines of configuration file editing.
+See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+
 ### Help! Porcupine doesn't work.
 Please [update Porcupine](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#updating-porcupine).
 If it still doesn't work, [let me know by creating an issue on
@@ -104,17 +109,11 @@ Yes. I wrote the very first version in `nano`, but Porcupine has changed a lot s
 I think because I didn't find other projects named porcupine, but I don't remember exactly.
 Originally, Porcupine was named "Akuli's Editor".
 
-### Why not use editor X?
-Because Porcupine is better.
-
 ### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
 Maybe it can, see [the more_plugins directory](more_plugins/). If you don't
 find what you are looking for you can write your own plugin, or alternatively,
 you can [create an issue on GitHub](https://github.com/Akuli/porcupine/issues/new)
 and hope that I feel like writing the plugin for you.
-
-### Is Porcupine based on IDLE?
-Of course not. IDLE is an awful mess that you should stay far away from.
 
 ### Why did you create a new editor?
 Because I can.
@@ -125,10 +124,11 @@ Because I can.
 ### How does feature X work?
 See [porcupine/](porcupine/)X.py or [porcupine/plugins/](porcupine/plugins/)X.py.
 
-### Does Porcupine support programming language X?
-You will likely get syntax highlighting without any configuring
-and autocompletions with a few lines of configuration file editing.
-See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+### Why not use editor X?
+Because Porcupine is better.
+
+### Is Porcupine based on IDLE?
+Of course not. IDLE is an awful mess that you should stay far away from.
 
 ### Can I play tetris with Porcupine?
 Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
