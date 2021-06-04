@@ -27,9 +27,6 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
         url = url.split("'")[0]
         url = url.split('"')[0]
 
-        # urls in middle of text: URL, and URL.
-        url = url.rstrip('.,')
-
         open2close = {'(': ')', '{': '}', '<': '>'}
         close2open = {')': '(', '}': '{', '>': '<'}
 
@@ -39,6 +36,9 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
         if url[-1] in close2open and close2open[url[-1]] not in url:
             # url isn't like "Bla(bla)" but ends with ")" or similar, assume that's not part of url
             url = url[:-1]
+
+        # urls in middle of text: URL, and URL.
+        url = url.rstrip('.,')
 
         match_ends_and_search_begins = f'{match_start} + {len(url)} chars'
         yield (match_start, match_ends_and_search_begins)
