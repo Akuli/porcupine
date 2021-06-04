@@ -186,19 +186,18 @@ class DirectoryTree(ttk.Treeview):
         return (len(children) == 1 and self.tag_has('dummy', children[0]))
 
     def hide_old_projects(self, junk: object = None) -> None:
-        for project_id in reversed(self.get_children('')):
-            project_path = self.get_path(project_id)
+        for project_id in self.get_children(''):
+            if not self.get_path(project_id).is_dir():
+                self.delete(project_id)
 
-            if (
-                not project_path.is_dir()
-            ) or (
-                len(self.get_children('')) > PROJECT_AUTOCLOSE_COUNT
-                and not any(
-                    isinstance(tab, tabs.FileTab)
-                    and tab.path is not None
-                    and project_path in tab.path.parents
-                    for tab in get_tab_manager().tabs()
-                )
+        # To avoid getting rid of existing projects when not necessary, we do
+        # shortening after deleting non-existent projects
+        for project_id in reversed(self.get_children('')):
+            if len(self.get_children('')) > PROJECT_AUTOCLOSE_COUNT and not any(
+                isinstance(tab, tabs.FileTab)
+                and tab.path is not None
+                and self.get_path(project_id) in tab.path.parents
+                for tab in get_tab_manager().tabs()
             ):
                 self.delete(project_id)
 
