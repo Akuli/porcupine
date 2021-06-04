@@ -22,11 +22,13 @@ def test_find_urls_basic():
          <URL>
         ("URL")bla
         "(URL)" :)
- Bla bla (URL, bla)
+ Bla bla  URL.
+ Bla bla  URL, foo and bar.
+ Bla bla (URL) bla.
+ Bla bla (URL).
+ Bla bla (URL.)
+ Bla bla (URL, bla).
  Bla (see URL)
-      See URL.
-     (See URL.)
-      See URL, foo and bar.
    [Link](URL)
    [Link](URL), foo and bar
    [Link](URL).
