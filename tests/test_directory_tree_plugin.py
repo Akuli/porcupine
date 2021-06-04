@@ -67,7 +67,7 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     a_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'a' / 'README')
     b_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'b' / 'README')
     c_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'c' / 'README')
-    monkeypatch.setattr(plugin_module, 'PROJECT_AUTOCLOSE_COUNT', 2)
+    monkeypatch.setattr(plugin_module, 'MAX_PROJECTS', 2)
 
     assert get_project_names() == []
 
