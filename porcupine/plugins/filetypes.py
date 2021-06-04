@@ -70,29 +70,43 @@ def load_filetypes() -> None:
         filetype.setdefault('langserver', None)
 
 
+def set_filedialog_kwargs():
+    filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
+        (name, [
+            # "*.py" doesn't work on windows, but ".py" works and does the same thing
+            # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
+            pattern.split("/")[-1].lstrip("*")
+            for pattern in filetype['filename_patterns']
+        ])
+        for name, filetype in filetypes.items()
+        if name != 'Plain Text'    # can just use "All Files" for this
+    ]
+
+
 def get_filetype_from_matches(
     matches: Dict[str, FileType],
     they_match_what: str,
 ) -> Optional[FileType]:
     if not matches:
         return None
-
-    [result, *rest] = matches.values()
-    if rest:
+    if len(matches) >= 2:
         names = ', '.join(matches.keys())
-        log.warning(f"multiple file types match {they_match_what}: {names}")
-    return result
+        log.warning(
+            f"{len(matches)} file types match {they_match_what}: {names}. The last match will be used."
+        )
+    return list(matches.values())[-1]
 
 
 def guess_filetype_from_path(filepath: pathlib.Path) -> Optional[FileType]:
+    assert filepath.is_absolute()
     return get_filetype_from_matches({
         name: filetype
         for name, filetype in filetypes.items()
         if any(
-            fnmatch.fnmatch(filepath.name, pat)
+            fnmatch.fnmatch(filepath.as_posix(), '*/' + pat)
             for pat in filetype['filename_patterns']
         )
-    }, f"filename {filepath.name!r}")
+    }, f"path {filepath}")
 
 
 def guess_filetype_from_shebang(content_start: str) -> Optional[FileType]:
@@ -203,17 +217,7 @@ def setup() -> None:
         values=sorted(filetypes.keys(), key=str.casefold),
     )
     menubar.add_config_file_button(pathlib.Path(dirs.user_config_dir) / 'filetypes.toml')
-
-    filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
-        (name, [
-            # "*.py" doesn't work on windows, but ".py" works and does the same thing
-            # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
-            pattern.lstrip("*")
-            for pattern in filetype['filename_patterns']
-        ])
-        for name, filetype in filetypes.items()
-        if name != 'Plain Text'    # can just use "All Files" for this
-    ]
+    set_filedialog_kwargs()
 
     for name, filetype in filetypes.items():
         safe_name = name.replace('/', '\N{division slash}')  # lol
