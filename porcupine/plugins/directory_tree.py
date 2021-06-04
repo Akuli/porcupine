@@ -159,23 +159,31 @@ class DirectoryTree(ttk.Treeview):
     def select_file(self, path: pathlib.Path) -> None:
         project_root = utils.find_project_root(path)
 
-        matching_project_ids = [child for child in self.get_children() if self.get_path(child) == project_root]
-        if not matching_project_ids:
-            # Happens when tab changes because a file was just opened. This
-            # will be called soon once the project has been added.
-            log.info(f"can't select '{path}' because its project '{project_root}' was not found")
+        for project_root_id in self.get_children():
+            if self.get_path(project_root_id) != project_root:
+                continue
+
+            # Find the sub-item representing the file
+            file_id = project_root_id
+            for part in path.relative_to(project_root).parts:
+                if self.item(file_id, 'open'):
+                    [file_id] = [child for child in self.get_children(file_id) if self.get_path(child).name == part]
+                else:
+                    # ...or a closed folder that contains the file
+                    break
+
+            self.selection_set(file_id)
+            self.focus(file_id)
+            self.see(file_id)
+
+            # Multiple projects may match when project roots are nested. It's
+            # fine to use the first match, because recently used projects tend
+            # to go first.
             return
 
-        [id] = matching_project_ids
-        for part in path.relative_to(project_root).parts:
-            if self.item(id, 'open'):
-                [id] = [child for child in self.get_children(id) if self.get_path(child).name == part]
-            else:
-                break
-
-        self.selection_set(id)
-        self.focus(id)
-        self.see(id)
+        # Happens when tab changes because a file was just opened. This
+        # will be called soon once the project has been added.
+        log.info(f"can't select '{path}' because its project '{project_root}' was not found")
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
