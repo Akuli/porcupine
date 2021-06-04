@@ -67,23 +67,23 @@ digraph G {
     assert lexer_class_name.endswith('.TextLexer')
 
 
-def test_slash_in_filename_patterns(custom_filetypes, caplog):
+def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
     assert filetypes.guess_filetype_from_path(
-        pathlib.Path.home() / "foo" / "bar.html"
+        tmp_path / "foo" / "bar.html"
     )['pygments_lexer'] == 'pygments.lexers.HtmlLexer'
 
     assert filetypes.guess_filetype_from_path(
-        pathlib.Path.home() / "foobar-mako-templates" / "bar.html"
+        tmp_path / "foobar-mako-templates" / "bar.html"
     )['pygments_lexer'] == 'pygments.lexers.HtmlLexer'
 
     with caplog.at_level(logging.WARNING):
         assert filetypes.guess_filetype_from_path(
-            pathlib.Path.home() / "mako-templates" / "bar.html"
+            tmp_path / "mako-templates" / "bar.html"
         )['pygments_lexer'] == 'pygments.lexers.MakoHtmlLexer'
 
     assert len(caplog.records) == 1
     assert "2 file types match path" in caplog.records[0].message
-    assert str(pathlib.Path.home()) in caplog.records[0].message
+    assert str(tmp_path) in caplog.records[0].message
     assert "HTML, Mako template" in caplog.records[0].message
 
     # Filedialog doesn't support slashes in patterns
