@@ -126,7 +126,8 @@ class Highlighter:
         tag_locations: Dict[str, List[str]] = {}
         mark_locations = [start]
 
-        generator = self._lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end - 1 char'))
+        # The one time where tk's magic trailing newline is helpful! See #436.
+        generator = self._lexer.get_tokens_unprocessed(self.textwidget.get(start, 'end'))
         for position, tokentype, text in generator:
             token_start = f'{lineno}.{column}'
             newline_count = text.count('\n')
