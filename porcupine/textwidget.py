@@ -449,6 +449,7 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
 
     This context manager also affects some other things, and so it can be
     useful even with text widgets that don't use :func:`track_changes`:
+
     * Undoing the whole batch is done with one Ctrl+Z press.
     * When the ``with`` statement ends, the cursor is moved back to where it
       was when the ``with`` statement started.
