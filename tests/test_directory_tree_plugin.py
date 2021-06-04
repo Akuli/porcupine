@@ -187,3 +187,14 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread
     tabmanager.close_tab(a_readme)
     tabmanager.close_tab(b_file1)
     tabmanager.close_tab(b_file2)
+
+
+def test_shows_up_as_empty_bug(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread):
+    (tmp_path / 'README').touch()
+    (tmp_path / 'hello.py').touch()
+    project_id = tree.add_project(tmp_path, refresh=False)
+
+    # Simulate navigating with the key binding that focuses treeview
+    tree.focus(project_id)
+    tree.open_file_or_dir()
+    assert not tree._contains_dummy(project_id)

@@ -136,12 +136,12 @@ class DirectoryTree(ttk.Treeview):
     # directory tree, and home folder somehow becomes a project (e.g. when
     # editing ~/blah.py), then the directory tree will present everything
     # inside the home folder as one project.
-    def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> None:
+    def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> str:
         for project_item_id in self.get_children():
             if self.get_path(project_item_id) == root_path:
                 # Move project first to avoid hiding it soon
                 self.move(project_item_id, '', 0)
-                return
+                return project_item_id
 
         # TODO: show long paths more nicely
         if pathlib.Path.home() in root_path.parents:
@@ -155,6 +155,7 @@ class DirectoryTree(ttk.Treeview):
         self.hide_old_projects()
         if refresh:
             self.refresh_everything()
+        return project_item_id
 
     def select_file(self, path: pathlib.Path) -> None:
         project_root = utils.find_project_root(path)
@@ -325,8 +326,11 @@ class DirectoryTree(ttk.Treeview):
         try:
             [selected_id] = self.selection()
         except ValueError:
-            # nothing selected, can happen when double-clicking something else than one of the items
-            return
+            # There is a key binding that focuses treeview but doesn't update selection
+            selected_id = self.focus()
+            if not selected_id:
+                # Can happen when double-clicking something else than one of the items
+                return
 
         if self.tag_has('dir', selected_id):
             self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
