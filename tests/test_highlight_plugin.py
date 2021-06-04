@@ -41,3 +41,12 @@ def test_tcl_bug(filetab, tmp_path):
     filetab.update()
     for lineno in range(1, 51):
         assert filetab.textwidget.tag_names(f'{lineno}.3') == ('Token.Comment',)
+
+
+def test_last_line_bug(filetab, tmp_path):
+    filetab.path = tmp_path / "foo.sh"
+    filetab.save()
+    filetab.textwidget.delete('1.0', 'end')   # Delete inserted trailing newline
+    filetab.textwidget.insert('1.0', '# This is a comment')
+    filetab.update()
+    assert filetab.textwidget.tag_names('1.5') == ('Token.Comment.Single',)

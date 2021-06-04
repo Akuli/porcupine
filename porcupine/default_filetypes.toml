@@ -9,7 +9,9 @@
 #
 #    filename_patterns
 #        List of strings with * used as wildcard, such as "*.py" to match files
-#        named "something.py".
+#        named "something.py". You can also specify "foo/*.py" to only match
+#        Python files inside a folder named foo, but you must use forward
+#        slashes for this, even on Windows.
 #
 #    shebang_regex
 #        Regular expression checked against the first line of a file when no
