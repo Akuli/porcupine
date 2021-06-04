@@ -17,7 +17,8 @@ log = logging.getLogger(__name__)
 
 # If more than this many projects are opened, then the least recently opened
 # project will be closed, unless a file has been opened from that project.
-PROJECT_AUTOCLOSE_COUNT = 10
+# Note that this can be exceeded if many files from different projects are open.
+MAX_PROJECTS = 10
 
 
 def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
@@ -202,14 +203,18 @@ class DirectoryTree(ttk.Treeview):
                 self.delete(project_id)
 
         # To avoid getting rid of existing projects when not necessary, we do
-        # shortening after deleting non-existent projects
+        # shortening after deleting non-existent projects.
+        opened_paths = [
+            tab.path
+            for tab in get_tab_manager().tabs()
+            if isinstance(tab, tabs.FileTab) and tab.path is not None
+        ]
         for project_id in reversed(self.get_children('')):
-            if len(self.get_children('')) > PROJECT_AUTOCLOSE_COUNT and not any(
-                isinstance(tab, tabs.FileTab)
-                and tab.path is not None
-                and self.get_path(project_id) in tab.path.parents
-                for tab in get_tab_manager().tabs()
-            ):
+            if len(self.get_children('')) <= MAX_PROJECTS:
+                break
+
+            project_path = self.get_path(project_id)
+            if not any(project_path in opened.parents for opened in opened_paths):
                 self.delete(project_id)
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
@@ -420,7 +425,7 @@ def setup() -> None:
     string_paths = settings.get('directory_tree_projects', List[str])
 
     # Must reverse because last added project goes first
-    for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT][::-1]):
+    for path in map(pathlib.Path, string_paths[:MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh_everything()
