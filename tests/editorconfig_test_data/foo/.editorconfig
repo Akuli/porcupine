@@ -5,7 +5,7 @@
     # comment
     ; comment
 
-[[abc].py]
+[[abc].py]  # comment
 Indent_Style = UnSet
 Indent_Size = 4
 this_option_does_not_exist = unset
@@ -16,5 +16,5 @@ trim_trailing_whitespace = true
 foo_bar = baz
 
 # duplicate
-[A.py]  # comment
+[A.py]
 lol_wut = wtf
