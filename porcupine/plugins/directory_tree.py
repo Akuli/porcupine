@@ -174,6 +174,8 @@ class DirectoryTree(ttk.Treeview):
                 break
 
         self.selection_set(id)
+        self.focus(id)
+        self.see(id)
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
