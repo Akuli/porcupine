@@ -5,7 +5,7 @@ from tkinter import filedialog
 
 import pytest
 
-from porcupine import filedialog_kwargs, get_main_window, dirs
+from porcupine import dirs, filedialog_kwargs, get_main_window
 from porcupine.plugins import filetypes
 
 
