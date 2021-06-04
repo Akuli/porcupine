@@ -70,7 +70,7 @@ def load_filetypes() -> None:
         filetype.setdefault('langserver', None)
 
 
-def set_filedialog_kwargs():
+def set_filedialog_kwargs() -> None:
     filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
         (name, [
             # "*.py" doesn't work on windows, but ".py" works and does the same thing
