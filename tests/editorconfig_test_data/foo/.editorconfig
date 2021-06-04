@@ -14,3 +14,7 @@ trim_trailing_whitespace = true
 # should be case insensitive
 [A.py]
 foo_bar = baz
+
+# duplicate
+[A.py]  # comment
+lol_wut = wtf

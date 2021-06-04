@@ -59,6 +59,8 @@ def parse_file(path: pathlib.Path) -> Tuple[List[Section], bool]:
         # whitespace should be ignored, but configparser uses it to do
         # multiline values by default
         empty_lines_in_values=False,
+        # allow duplicate sections #444 https://stackoverflow.com/a/9888814
+        strict=False,
     )
 
     # "... [ and ] are allowed in the section names."
