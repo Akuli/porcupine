@@ -82,11 +82,11 @@ def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
         )['pygments_lexer'] == 'pygments.lexers.MakoHtmlLexer'
 
     assert len(caplog.records) == 1
-    assert "2 file types match path" in caplog.records[0].message
+    assert "2 file types match" in caplog.records[0].message
     assert str(tmp_path) in caplog.records[0].message
     assert "HTML, Mako template" in caplog.records[0].message
 
-    # Filedialog doesn't support slashes in patterns
+    # filedialog doesn't support slashes in patterns
     for filetype_name, patterns in filedialog_kwargs['filetypes']:
         for pattern in patterns:
             assert "/" not in pattern

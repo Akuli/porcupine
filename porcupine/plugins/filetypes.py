@@ -106,7 +106,7 @@ def guess_filetype_from_path(filepath: pathlib.Path) -> Optional[FileType]:
             fnmatch.fnmatch(filepath.as_posix(), '*/' + pat)
             for pat in filetype['filename_patterns']
         )
-    }, f"path {filepath}")
+    }, str(filepath))
 
 
 def guess_filetype_from_shebang(content_start: str) -> Optional[FileType]:
