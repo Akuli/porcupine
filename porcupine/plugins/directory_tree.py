@@ -136,12 +136,12 @@ class DirectoryTree(ttk.Treeview):
     # directory tree, and home folder somehow becomes a project (e.g. when
     # editing ~/blah.py), then the directory tree will present everything
     # inside the home folder as one project.
-    def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> str:
+    def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> None:
         for project_item_id in self.get_children():
             if self.get_path(project_item_id) == root_path:
                 # Move project first to avoid hiding it soon
                 self.move(project_item_id, '', 0)
-                return project_item_id
+                return
 
         # TODO: show long paths more nicely
         if pathlib.Path.home() in root_path.parents:
@@ -155,7 +155,10 @@ class DirectoryTree(ttk.Treeview):
         self.hide_old_projects()
         if refresh:
             self.refresh_everything()
-        return project_item_id
+
+    def set_the_selection_correctly(self, id: str) -> None:
+        self.selection_set(id)
+        self.focus(id)
 
     def select_file(self, path: pathlib.Path) -> None:
         project_root = utils.find_project_root(path)
@@ -173,8 +176,7 @@ class DirectoryTree(ttk.Treeview):
                     # ...or a closed folder that contains the file
                     break
 
-            self.selection_set(file_id)
-            self.focus(file_id)
+            self.set_the_selection_correctly(file_id)
             self.see(file_id)
 
             # Multiple projects may match when project roots are nested. It's
@@ -371,15 +373,14 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
 
 
 def focus_treeview(tree: DirectoryTree) -> None:
-    # We need to do two things:
-    #   - Tell the treeview to set its focus to the first item, if no item is focused.
-    #     In Tcl, this is '$tree focus', where $tree is the name of the widget.
-    #   - Tell the rest of the GUI to focus the treeview. In Tcl, 'focus $tree'.
-    #
-    # In tkinter, both are called .focus(), and they conflict. To be explicit about
-    # what focus method is being used, I decided to call the Tcl commands directly.
-    if tree.get_children() and not tree.tk.call(tree, 'focus'):
-        tree.tk.call(tree, 'focus', tree.get_children()[0])
+    if tree.get_children() and not tree.focus():
+        tree.set_the_selection_correctly(tree.get_children()[0])
+
+    # Tkinter has two things called .focus(), and they conflict:
+    #  - Telling the treeview to set its focus to the first item, if no item is
+    #    focused. In Tcl, '$tree focus', where $tree is the widget name. This
+    #    is what the .focus() method does.
+    #  - Tell the rest of the GUI to focus the treeview. In Tcl, 'focus $tree'.
     tree.tk.call('focus', tree)
 
 
