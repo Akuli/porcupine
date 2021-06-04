@@ -4,7 +4,7 @@ from porcupine import get_main_window
 from porcupine.plugins.urls import find_urls
 
 
-def test_find_urls_basic():
+def test_find_urls():
     text = tkinter.Text(get_main_window())
     urls = [
         'https://github.com/Akuli/porcupine/',
