@@ -329,11 +329,8 @@ class DirectoryTree(ttk.Treeview):
         try:
             [selected_id] = self.selection()
         except ValueError:
-            # There is a key binding that focuses treeview but doesn't update selection
-            selected_id = self.focus()
-            if not selected_id:
-                # Can happen when double-clicking something else than one of the items
-                return
+            # Can happen when double-clicking something else than one of the items
+            return
 
         if self.tag_has('dir', selected_id):
             self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
