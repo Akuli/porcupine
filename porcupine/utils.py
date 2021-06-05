@@ -671,7 +671,7 @@ def run_in_thread(
     done_callback: Callable[[bool, Union[str, _T]], None],
     *,
     check_interval_ms: int = 100,
-    daemon: bool = False,
+    daemon: bool = True,
 ) -> None:
     """Run ``blocking_function()`` in another thread.
 
@@ -687,10 +687,10 @@ def run_in_thread(
     100 milliseconds by default (so 10 times per second). Specify
     *check_interval_ms* to customize this.
 
-    As with :class:`threading.Thread`, set ``daemon=True`` to use a daemon
-    thread. Then the thread will end forcefully when Porcupine exits, so
-    Porcupine will exit even if the thread gets stuck, but the thread might not
-    get a chance to finish whatever it is doing.
+    Unlike :class:`threading.Thread`, this function uses a daemon thread by
+    default. This means that the thread will end forcefully when Porcupine
+    exits, and it might not get a chance to finish whatever it is doing. Pass
+    ``daemon=False`` to change this.
     """
     root = porcupine.get_main_window()  # any widget would do
 

@@ -240,7 +240,7 @@ class DirectoryTree(ttk.Treeview):
             else:
                 log.error(f"error in git status running thread\n{result}")
 
-        utils.run_in_thread(thread_target, done_callback, check_interval_ms=25, daemon=True)
+        utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
     def open_and_refresh_directory(self, dir_path: Optional[pathlib.Path], dir_id: str) -> None:
         if self._contains_dummy(dir_id):
