@@ -23,7 +23,7 @@ class LineNumbers:
 
         textwidget_of_tab.bind(
             '<<ContentChanged>>',
-            (lambda event: textwidget_of_tab.after_idle(self._do_update)),
+            lambda event: textwidget_of_tab.after_idle(self._do_update),
             add=True,
         )
         textwidget_of_tab.bind(
