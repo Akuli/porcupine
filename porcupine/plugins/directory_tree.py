@@ -329,7 +329,7 @@ class DirectoryTree(ttk.Treeview):
         try:
             [selected_id] = self.selection()
         except ValueError:
-            # Can happen when double-clicking something else than one of the items
+            # nothing selected, can happen when double-clicking something else than one of the items
             return
 
         if self.tag_has('dir', selected_id):
