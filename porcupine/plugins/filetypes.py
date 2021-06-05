@@ -252,7 +252,8 @@ def setup() -> None:
             f"Filetypes/{safe_name}", (lambda tab: isinstance(tab, tabs.FileTab))
         )
 
-    for filetype in get_parsed_args().new_file or []:  # new_file may be None
+    new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None
+    for filetype in new_file_filetypes:
         tab = tabs.FileTab(get_tab_manager())
         get_tab_manager().add_tab(tab)  # sets default filetype
         apply_filetype_to_tab(tab, filetype)  # sets correct filetype
