@@ -6,8 +6,8 @@ from porcupine import get_tab_manager, menubar, tabs, utils
 
 
 def get_indent(tab: tabs.FileTab, lineno: int) -> Optional[int]:
-    line = tab.textwidget.get(f'{lineno}.0', f'{lineno}.0 lineend')
-    line = line.expandtabs(tab.settings.get('indent_size', int))
+    line = tab.textwidget.get(f"{lineno}.0", f"{lineno}.0 lineend")
+    line = line.expandtabs(tab.settings.get("indent_size", int))
     without_indent = line.lstrip()
     if not without_indent:
         return None
@@ -20,7 +20,7 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
         return None
 
     last_lineno = lineno
-    max_lineno = int(tab.textwidget.index('end - 1 line').split('.')[0])
+    max_lineno = int(tab.textwidget.index("end - 1 line").split(".")[0])
     while last_lineno < max_lineno:
         next_indent = get_indent(tab, last_lineno + 1)
         if next_indent is not None and next_indent <= original_indent:
@@ -30,7 +30,7 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     # Don't hide trailing blank lines
     while (
         last_lineno > lineno
-        and not tab.textwidget.get(f'{last_lineno}.0', f'{last_lineno}.0 lineend').strip()
+        and not tab.textwidget.get(f"{last_lineno}.0", f"{last_lineno}.0 lineend").strip()
     ):
         last_lineno -= 1
 
@@ -42,43 +42,43 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
 def fold() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
-    lineno = int(tab.textwidget.index('insert').split('.')[0])
+    lineno = int(tab.textwidget.index("insert").split(".")[0])
 
     end = find_indented_block(tab, lineno)
     if end is None:
         return
 
     old_folds = [
-        tag for tag in tab.textwidget.tag_names(f'{lineno + 1}.0') if tag.startswith('fold_')
+        tag for tag in tab.textwidget.tag_names(f"{lineno + 1}.0") if tag.startswith("fold_")
     ]
     if old_folds:
         [tag] = old_folds
-        assert tag.startswith('fold_')
-        window_name = tag[len('fold_') :]
+        assert tag.startswith("fold_")
+        window_name = tag[len("fold_") :]
         tab.textwidget.delete(window_name)
         return
 
     # Make it possible to get dots widget from tag name (needed above)
     dots = tkinter.Label(
         tab.textwidget,
-        text='    ⬤ ⬤ ⬤    ',
-        font=('', 3, ''),
-        cursor='hand2',
-        fg=tab.textwidget['fg'],
-        bg=utils.mix_colors(tab.textwidget['fg'], tab.textwidget['bg'], 0.2),
+        text="    ⬤ ⬤ ⬤    ",
+        font=("", 3, ""),
+        cursor="hand2",
+        fg=tab.textwidget["fg"],
+        bg=utils.mix_colors(tab.textwidget["fg"], tab.textwidget["bg"], 0.2),
     )
-    tag = f'fold_{dots}'
+    tag = f"fold_{dots}"
 
     tab.textwidget.tag_config(tag, elide=True)
-    tab.textwidget.tag_add(tag, f'{lineno + 1}.0', f'{end + 1}.0')
+    tab.textwidget.tag_add(tag, f"{lineno + 1}.0", f"{end + 1}.0")
 
     # https://github.com/python/mypy/issues/9658
     dots.bind(
-        '<Destroy>', lambda event: cast(tabs.FileTab, tab).textwidget.tag_delete(tag), add=True
+        "<Destroy>", lambda event: cast(tabs.FileTab, tab).textwidget.tag_delete(tag), add=True
     )
-    dots.bind('<Button-1>', lambda event: cast(tabs.FileTab, tab).textwidget.delete(dots), add=True)
-    tab.textwidget.window_create(f'{lineno}.0 lineend', window=dots)
-    tab.textwidget.event_generate('<<UpdateLineNumbers>>')
+    dots.bind("<Button-1>", lambda event: cast(tabs.FileTab, tab).textwidget.delete(dots), add=True)
+    tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)
+    tab.textwidget.event_generate("<<UpdateLineNumbers>>")
 
 
 def setup() -> None:

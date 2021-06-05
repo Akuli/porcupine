@@ -37,17 +37,17 @@ def init(args: Any) -> None:
     _parsed_args = args
 
     _root = tkinter.Tk(className="Porcupine")  # class name shows up in my alt+tab list
-    _root.protocol('WM_DELETE_WINDOW', quit)
+    _root.protocol("WM_DELETE_WINDOW", quit)
     _root.report_callback_exception = _log_tkinter_error
 
-    _paned_window = ttk.Panedwindow(_root, orient='horizontal')
-    settings.remember_divider_positions(_paned_window, 'main_panedwindow_dividers', [250])
+    _paned_window = ttk.Panedwindow(_root, orient="horizontal")
+    settings.remember_divider_positions(_paned_window, "main_panedwindow_dividers", [250])
     _root.bind(
-        '<<PluginsLoaded>>',
-        lambda event: get_paned_window().event_generate('<<DividersFromSettings>>'),
+        "<<PluginsLoaded>>",
+        lambda event: get_paned_window().event_generate("<<DividersFromSettings>>"),
         add=True,
     )
-    _paned_window.pack(fill='both', expand=True)
+    _paned_window.pack(fill="both", expand=True)
 
     _tab_manager = tabs.TabManager(_paned_window)
     _paned_window.add(_tab_manager)
@@ -102,7 +102,7 @@ def quit() -> None:
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    _root.event_generate('<<PorcupineQuit>>')
+    _root.event_generate("<<PorcupineQuit>>")
     for tab in _tab_manager.tabs():
         _tab_manager.close_tab(tab)
     _root.destroy()

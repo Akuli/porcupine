@@ -17,7 +17,7 @@ from typing import List, Optional, Union
 
 from porcupine import get_tab_manager, settings, tabs, textwidget, utils
 
-setup_before = ['tabs2spaces']  # see tabs2spaces.py
+setup_before = ["tabs2spaces"]  # see tabs2spaces.py
 
 log = logging.getLogger(__name__)
 
@@ -38,13 +38,13 @@ def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrol
     scrollbar.config(command=widget.yview)
 
     # scroll bar must be packed first to make sure that it's always displayed
-    scrollbar.pack(side='right', fill='y')
-    widget.pack(side='left', fill='both', expand=True)
+    scrollbar.pack(side="right", fill="y")
+    widget.pack(side="left", fill="both", expand=True)
     return scrollbar
 
 
 def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
-    bbox = textwidget.bbox('insert')
+    bbox = textwidget.bbox("insert")
     assert bbox is not None  # cursor must be visible
     (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
 
@@ -56,8 +56,8 @@ def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
     cursor_y -= 5
     cursor_height += 10
 
-    popup_width = settings.get('autocomplete_popup_width', int)
-    popup_height = settings.get('autocomplete_popup_height', int)
+    popup_width = settings.get("autocomplete_popup_width", int)
+    popup_height = settings.get("autocomplete_popup_height", int)
     screen_width = textwidget.winfo_screenwidth()
     screen_height = textwidget.winfo_screenheight()
 
@@ -74,7 +74,7 @@ def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
         # huge popup size.
         y = cursor_y - popup_height
 
-    return f'{popup_width}x{popup_height}+{x}+{y}'
+    return f"{popup_width}x{popup_height}+{x}+{y}"
 
 
 class _Popup:
@@ -91,28 +91,28 @@ class _Popup:
         #
         # I'm using Panedwindow here in case the PanedWindow alias is deleted
         # in a future version of python.
-        self._panedwindow = ttk.Panedwindow(self.toplevel, orient='horizontal')
-        settings.remember_divider_positions(self._panedwindow, 'autocomplete_dividers', [200])
-        self._panedwindow.pack(fill='both', expand=True)
+        self._panedwindow = ttk.Panedwindow(self.toplevel, orient="horizontal")
+        settings.remember_divider_positions(self._panedwindow, "autocomplete_dividers", [200])
+        self._panedwindow.pack(fill="both", expand=True)
 
         left_pane = ttk.Frame(self._panedwindow)
         right_pane = ttk.Frame(self._panedwindow)
         self._panedwindow.add(left_pane)
         self._panedwindow.add(right_pane)
 
-        self.treeview = ttk.Treeview(left_pane, show='tree', selectmode='browse')
-        self.treeview.bind('<Motion>', self._on_mouse_move, add=True)
-        self.treeview.bind('<<TreeviewSelect>>', self._on_select, add=True)
+        self.treeview = ttk.Treeview(left_pane, show="tree", selectmode="browse")
+        self.treeview.bind("<Motion>", self._on_mouse_move, add=True)
+        self.treeview.bind("<<TreeviewSelect>>", self._on_select, add=True)
         self._left_scrollbar = _pack_with_scrollbar(self.treeview)
 
         self._doc_text = textwidget.create_passive_text_widget(
-            right_pane, width=50, height=15, wrap='word'
+            right_pane, width=50, height=15, wrap="word"
         )
         self._right_scrollbar = _pack_with_scrollbar(self._doc_text)
 
         self._resize_handle = ttk.Sizegrip(self.toplevel)
-        self._resize_handle.place(relx=1, rely=1, anchor='se')
-        self.toplevel.bind('<Configure>', self._on_anything_resized, add=True)
+        self._resize_handle.place(relx=1, rely=1, anchor="se")
+        self.toplevel.bind("<Configure>", self._on_anything_resized, add=True)
 
     def _on_anything_resized(self, junk: object) -> None:
         # When the separator is dragged all the way to left or the popup is
@@ -165,13 +165,13 @@ class _Popup:
         if completion_list:
             for index, completion in enumerate(completion_list):
                 # id=str(index) is used in the rest of this class
-                self.treeview.insert('', 'end', id=str(index), text=completion.display_text)
-            self._select_item('0')
+                self.treeview.insert("", "end", id=str(index), text=completion.display_text)
+            self._select_item("0")
         else:
-            self._doc_text.config(state='normal')
-            self._doc_text.delete('1.0', 'end')
-            self._doc_text.insert('1.0', "No completions")
-            self._doc_text.config(state='disabled')
+            self._doc_text.config(state="normal")
+            self._doc_text.delete("1.0", "end")
+            self._doc_text.insert("1.0", "No completions")
+            self._doc_text.config(state="disabled")
 
         if geometry is not None:
             self.toplevel.geometry(geometry)
@@ -182,8 +182,8 @@ class _Popup:
     def stop_completing(self, *, withdraw: bool = True) -> Optional[Completion]:
         # putting this here avoids some bugs
         if self.is_showing():
-            settings.set_('autocomplete_popup_width', self.toplevel.winfo_width())
-            settings.set_('autocomplete_popup_height', self.toplevel.winfo_height())
+            settings.set_("autocomplete_popup_width", self.toplevel.winfo_width())
+            settings.set_("autocomplete_popup_height", self.toplevel.winfo_height())
 
         selected = self._get_selected_completion()
 
@@ -212,17 +212,17 @@ class _Popup:
         if not self.is_showing():
             return None
 
-        page_count = {'Prior': -1, 'Next': 1}[event.keysym]
-        self._doc_text.yview_scroll(page_count, 'pages')
-        return 'break'
+        page_count = {"Prior": -1, "Next": 1}[event.keysym]
+        self._doc_text.yview_scroll(page_count, "pages")
+        return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
-        method = {'Up': self.select_previous, 'Down': self.select_next}[event.keysym]
+        method = {"Up": self.select_previous, "Down": self.select_next}[event.keysym]
         method()
-        return 'break'
+        return "break"
 
     def _on_mouse_move(self, event: tkinter.Event[tkinter.Misc]) -> None:
         hovered_id = self.treeview.identify_row(event.y)
@@ -232,10 +232,10 @@ class _Popup:
     def _on_select(self, event: tkinter.Event[tkinter.Misc]) -> None:
         completion = self._get_selected_completion()
         if completion is not None:
-            self._doc_text.config(state='normal')
-            self._doc_text.delete('1.0', 'end')
-            self._doc_text.insert('1.0', completion.documentation)
-            self._doc_text.config(state='disabled')
+            self._doc_text.config(state="normal")
+            self._doc_text.delete("1.0", "end")
+            self._doc_text.insert("1.0", completion.documentation)
+            self._doc_text.config(state="disabled")
 
 
 @dataclasses.dataclass
@@ -255,24 +255,24 @@ class Response(utils.EventDataclass):
 #     no longer exist in the text widget.
 #   - Start and end must be in 'x.y' format.
 def text_index_less_than(index1: str, index2: str) -> bool:
-    tuple1 = tuple(map(int, index1.split('.')))
-    tuple2 = tuple(map(int, index2.split('.')))
+    tuple1 = tuple(map(int, index1.split(".")))
+    tuple2 = tuple(map(int, index2.split(".")))
     return tuple1 < tuple2
 
 
 # stupid fallback
 def _all_words_in_file_completions(textwidget: tkinter.Text) -> List[Completion]:
-    match = re.search(r'\w*$', textwidget.get('insert linestart', 'insert'))
+    match = re.search(r"\w*$", textwidget.get("insert linestart", "insert"))
     assert match is not None
     before_cursor = match.group(0)
-    replace_start = textwidget.index(f'insert - {len(before_cursor)} chars')
-    replace_end = textwidget.index('insert')
+    replace_start = textwidget.index(f"insert - {len(before_cursor)} chars")
+    replace_end = textwidget.index("insert")
 
     counts = dict(
         collections.Counter(
             [
                 word
-                for word in re.findall(r'\w+', textwidget.get('1.0', 'end'))
+                for word in re.findall(r"\w+", textwidget.get("1.0", "end"))
                 if before_cursor.casefold() in word.casefold()
             ]
         )
@@ -302,7 +302,7 @@ class AutoCompleter:
         self.popup = _Popup()
         utils.bind_with_data(
             tab,
-            '<<AutoCompletionResponse>>',
+            "<<AutoCompletionResponse>>",
             lambda event: self.receive_completions(event.data_class(Response)),
             add=True,
         )
@@ -314,12 +314,12 @@ class AutoCompleter:
 
         # use this cursor pos when needed because while processing the
         # completion request or filtering, user might type more
-        self._orig_cursorpos = self._tab.textwidget.index('insert')
+        self._orig_cursorpos = self._tab.textwidget.index("insert")
 
-        if self._tab.bind('<<AutoCompletionRequest>>'):
+        if self._tab.bind("<<AutoCompletionRequest>>"):
             # an event handler is bound, use that
             self._tab.event_generate(
-                '<<AutoCompletionRequest>>',
+                "<<AutoCompletionRequest>>",
                 data=Request(id=the_id, cursor_pos=self._orig_cursorpos),
             )
         else:
@@ -332,8 +332,8 @@ class AutoCompleter:
 
     def _user_wants_to_see_popup(self) -> bool:
         assert self._orig_cursorpos is not None
-        initial_line, initial_column = map(int, self._orig_cursorpos.split('.'))
-        current_line, current_column = map(int, self._tab.textwidget.index('insert').split('.'))
+        initial_line, initial_column = map(int, self._orig_cursorpos.split("."))
+        current_line, current_column = map(int, self._tab.textwidget.index("insert").split("."))
 
         # Make sure that while waiting for completions, the user didn't
         #   - switch porcupine tab
@@ -368,7 +368,7 @@ class AutoCompleter:
     def _get_filtered_completions(self) -> List[Completion]:
         log.debug("getting filtered completions")
         assert self._orig_cursorpos is not None
-        filter_text = self._tab.textwidget.get(self._orig_cursorpos, 'insert')
+        filter_text = self._tab.textwidget.get(self._orig_cursorpos, "insert")
 
         return [
             completion
@@ -378,21 +378,21 @@ class AutoCompleter:
 
     # returns None if this isn't a place where it's good to autocomplete
     def _can_complete_here(self) -> bool:
-        before_cursor = self._tab.textwidget.get('insert linestart', 'insert')
-        after_cursor = self._tab.textwidget.get('insert', 'insert lineend')
+        before_cursor = self._tab.textwidget.get("insert linestart", "insert")
+        after_cursor = self._tab.textwidget.get("insert", "insert lineend")
 
         # don't complete in beginning of line or with space before cursor
-        if not re.search(r'\S$', before_cursor):
+        if not re.search(r"\S$", before_cursor):
             return False
 
         # don't complete in the beginning or middle of a word
-        if re.search(r'^\w', after_cursor):
+        if re.search(r"^\w", after_cursor):
             return False
 
         return True
 
     def on_tab(self, event: tkinter.Event[tkinter.Misc], shifted: bool) -> utils.BreakOrNone:
-        if self._tab.textwidget.tag_ranges('sel'):
+        if self._tab.textwidget.tag_ranges("sel"):
             # something's selected, autocompleting is not the right thing to do
             return None
 
@@ -402,13 +402,13 @@ class AutoCompleter:
                 return None
 
             self._request_completions()
-            return 'break'
+            return "break"
 
         if shifted:
             self.popup.select_previous()
         else:
             self.popup.select_next()
-        return 'break'
+        return "break"
 
     def _accept(self) -> None:
         if not self.popup.is_completing():
@@ -418,7 +418,7 @@ class AutoCompleter:
         completion = self.popup.stop_completing()
         if completion is not None:
             assert self._orig_cursorpos is not None
-            self._tab.textwidget.delete(self._orig_cursorpos, 'insert')
+            self._tab.textwidget.delete(self._orig_cursorpos, "insert")
             self._tab.textwidget.replace(
                 completion.replace_start, completion.replace_end, completion.replace_text
             )
@@ -434,20 +434,20 @@ class AutoCompleter:
             self._orig_cursorpos = None
 
     def on_any_key(self, event: tkinter.Event[tkinter.Misc]) -> None:
-        if event.keysym.startswith('Shift'):
+        if event.keysym.startswith("Shift"):
             return
 
         if self.popup.is_completing():
             # TODO: use language-specific identifier character?
-            its_just_a_letter = bool(re.fullmatch(r'\w', event.char))
-            if (not its_just_a_letter) and event.keysym != 'BackSpace':
+            its_just_a_letter = bool(re.fullmatch(r"\w", event.char))
+            if (not its_just_a_letter) and event.keysym != "BackSpace":
                 self._reject()
                 return
 
             # let the text get inserted before continuing
             self._tab.textwidget.after_idle(self._filter_through_completions)
 
-        elif event.char in self._tab.settings.get('autocomplete_chars', List[str]):
+        elif event.char in self._tab.settings.get("autocomplete_chars", List[str]):
 
             def do_request() -> None:
                 if (not self.popup.is_completing()) and self._can_complete_here():
@@ -471,7 +471,7 @@ class AutoCompleter:
 
         # if cursor has moved back more since requesting completions: User
         # has backspaced away a lot and likely doesn't want completions.
-        if text_index_less_than(self._tab.textwidget.index('insert'), self._orig_cursorpos):
+        if text_index_less_than(self._tab.textwidget.index("insert"), self._orig_cursorpos):
             self._reject()
             return
 
@@ -481,13 +481,13 @@ class AutoCompleter:
     def on_enter(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._accept()
-            return 'break'
+            return "break"
         return None
 
     def on_escape(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         if self.popup.is_completing():
             self._reject()
-            return 'break'
+            return "break"
         return None
 
 
@@ -495,36 +495,36 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if not isinstance(tab, tabs.FileTab):
         return
 
-    tab.settings.add_option('autocomplete_chars', [], List[str])
+    tab.settings.add_option("autocomplete_chars", [], List[str])
 
     completer = AutoCompleter(tab)
 
     # no idea why backspace has to be bound separately
-    utils.bind_with_data(tab.textwidget, '<Key>', completer.on_any_key, add=True)
-    tab.textwidget.bind('<BackSpace>', completer.on_any_key, add=True)
+    utils.bind_with_data(tab.textwidget, "<Key>", completer.on_any_key, add=True)
+    tab.textwidget.bind("<BackSpace>", completer.on_any_key, add=True)
 
     utils.bind_tab_key(tab.textwidget, completer.on_tab, add=True)
-    tab.textwidget.bind('<Return>', completer.on_enter, add=True)
-    tab.textwidget.bind('<Escape>', completer.on_escape, add=True)
-    tab.textwidget.bind('<Prior>', completer.popup.on_page_up_down, add=True)
-    tab.textwidget.bind('<Next>', completer.popup.on_page_up_down, add=True)
-    tab.textwidget.bind('<Up>', completer.popup.on_arrow_key_up_down, add=True)
-    tab.textwidget.bind('<Down>', completer.popup.on_arrow_key_up_down, add=True)
-    completer.popup.treeview.bind('<Button-1>', (lambda event: completer._accept()), add=True)
+    tab.textwidget.bind("<Return>", completer.on_enter, add=True)
+    tab.textwidget.bind("<Escape>", completer.on_escape, add=True)
+    tab.textwidget.bind("<Prior>", completer.popup.on_page_up_down, add=True)
+    tab.textwidget.bind("<Next>", completer.popup.on_page_up_down, add=True)
+    tab.textwidget.bind("<Up>", completer.popup.on_arrow_key_up_down, add=True)
+    tab.textwidget.bind("<Down>", completer.popup.on_arrow_key_up_down, add=True)
+    completer.popup.treeview.bind("<Button-1>", (lambda event: completer._accept()), add=True)
 
     # avoid weird corner cases
-    tab.winfo_toplevel().bind('<FocusOut>', (lambda event: completer._reject()), add=True)
+    tab.winfo_toplevel().bind("<FocusOut>", (lambda event: completer._reject()), add=True)
     tab.textwidget.bind(
         # any mouse button
-        '<Button>',
+        "<Button>",
         lambda event: completer._reject(),
         add=True,
     )
 
-    tab.bind('<Destroy>', (lambda event: completer.popup.toplevel.destroy()), add=True)
+    tab.bind("<Destroy>", (lambda event: completer.popup.toplevel.destroy()), add=True)
 
 
 def setup() -> None:
     get_tab_manager().add_tab_callback(on_new_tab)
-    settings.add_option('autocomplete_popup_width', 500)
-    settings.add_option('autocomplete_popup_height', 200)
+    settings.add_option("autocomplete_popup_width", 500)
+    settings.add_option("autocomplete_popup_height", 200)

@@ -59,24 +59,24 @@ def main() -> None:
         add_help=False,  # help in step 1 wouldn't show options added by plugins
     )
     parser.add_argument(
-        '--version',
-        action='version',
+        "--version",
+        action="version",
         version=f"Porcupine {porcupine_version}",
         help="display the Porcupine version number and exit",
     )
     parser.add_argument(
-        '--print-plugindir',
+        "--print-plugindir",
         action=_PrintPlugindirAction,
         help="find out where to install custom plugins",
     )
 
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
-        '-v',
-        '--verbose',
-        dest='verbose_logger',
-        action='store_const',
-        const='',
+        "-v",
+        "--verbose",
+        dest="verbose_logger",
+        action="store_const",
+        const="",
         help=(
             "print all logging messages to stderr, only warnings and errors "
             "are printed by default (but all messages always go to a log "
@@ -84,7 +84,7 @@ def main() -> None:
         ),
     )
     verbose_group.add_argument(
-        '--verbose-logger',
+        "--verbose-logger",
         help=(
             "increase verbosity for just one logger only, e.g. "
             "--verbose-logger=porcupine.plugins.highlight "
@@ -94,18 +94,18 @@ def main() -> None:
 
     plugingroup = parser.add_argument_group("plugin loading options")
     plugingroup.add_argument(
-        '--no-plugins',
-        action='store_false',
-        dest='use_plugins',
+        "--no-plugins",
+        action="store_false",
+        dest="use_plugins",
         help=(
             "don't load any plugins, this is useful for "
             "understanding how much can be done with plugins"
         ),
     )
     plugingroup.add_argument(
-        '--without-plugins',
-        metavar='PLUGINS',
-        default='',
+        "--without-plugins",
+        metavar="PLUGINS",
+        default="",
         help=(
             "don't load PLUGINS (see --print-plugindir), "
             "e.g. --without-plugins=highlight disables syntax highlighting, "
@@ -116,14 +116,14 @@ def main() -> None:
     args_parsed_in_first_step, junk = parser.parse_known_args()
 
     pathlib.Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
-    (pathlib.Path(dirs.user_config_dir) / 'plugins').mkdir(parents=True, exist_ok=True)
+    (pathlib.Path(dirs.user_config_dir) / "plugins").mkdir(parents=True, exist_ok=True)
     pathlib.Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
     _logs.setup(args_parsed_in_first_step.verbose_logger)
 
     settings.init_enough_for_using_disabled_plugins_list()
     if args_parsed_in_first_step.use_plugins:
         if args_parsed_in_first_step.without_plugins:
-            disable_list = args_parsed_in_first_step.without_plugins.split(',')
+            disable_list = args_parsed_in_first_step.without_plugins.split(",")
         else:
             disable_list = []
         pluginloader.import_plugins(disable_list)
@@ -133,17 +133,17 @@ def main() -> None:
             one_of_them, *the_rest = bad_disables
             parser.error(f"--without-plugins: no plugin named {one_of_them!r}")
 
-    parser.add_argument('--help', action='help', help="show this message")
+    parser.add_argument("--help", action="help", help="show this message")
     pluginloader.run_setup_argument_parser_functions(parser)
     parser.add_argument(
-        'files',
-        metavar='FILES',
+        "files",
+        metavar="FILES",
         nargs=argparse.ZERO_OR_MORE,
         help="open these files when Porcupine starts, - means stdin",
     )
     plugingroup.add_argument(
-        '--shuffle-plugins',
-        action='store_true',
+        "--shuffle-plugins",
+        action="store_true",
         help=(
             "respect setup_before and setup_after, but otherwise setup the "
             "plugins in a random order instead of sorting by name "
@@ -165,7 +165,7 @@ def main() -> None:
 
     tabmanager = get_tab_manager()
     for path_string in args.files:
-        if path_string == '-':
+        if path_string == "-":
             # don't close stdin so it's possible to do this:
             #
             #   $ porcu - -
@@ -187,5 +187,5 @@ def main() -> None:
 
 
 # python3 -m pocupine
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

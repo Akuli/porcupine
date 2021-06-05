@@ -65,18 +65,18 @@ class LineEnding(enum.Enum):
 
     Use ``LineEnding(os.linesep)`` to get the platform-specific default.
     """
-    CR = '\r'
-    LF = '\n'
-    CRLF = '\r\n'
+    CR = "\r"
+    LF = "\n"
+    CRLF = "\r\n"
 
 
 def _type_check(type_: type, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
-        __annotations__ = {'value': type_}  # avoid the string 'type_'
+        __annotations__ = {"value": type_}  # avoid the string 'type_'
 
-    parsed = dacite.from_dict(ValueContainer, {'value': obj})
+    parsed = dacite.from_dict(ValueContainer, {"value": obj})
     return parsed.value  # type: ignore
 
 
@@ -93,15 +93,15 @@ class _Option:
 
 
 def _get_json_path() -> pathlib.Path:
-    return pathlib.Path(dirs.user_config_dir) / 'settings.json'
+    return pathlib.Path(dirs.user_config_dir) / "settings.json"
 
 
 class Settings:
     def __init__(self, change_event_widget: Optional[tkinter.Misc], change_event_format: str):
         # '<<Foo:{}>>'
-        assert '{}' in change_event_format
-        assert change_event_format.startswith('<<')
-        assert change_event_format.endswith('>>')
+        assert "{}" in change_event_format
+        assert change_event_format.startswith("<<")
+        assert change_event_format.endswith(">>")
 
         self._options: Dict[str, _Option] = {}
         self._unknown_options: Dict[str, Any] = {}
@@ -223,7 +223,7 @@ class Settings:
                 main_window = porcupine.get_main_window()
             except RuntimeError as e:
                 # on porcupine startup, plugin disable list needs to be set before main window exists
-                if option_name != 'disabled_plugins':
+                if option_name != "disabled_plugins":
                     raise e
             else:
                 for widget in utils.get_children_recursively(main_window, include_parent=True):
@@ -281,16 +281,16 @@ class Settings:
         """Print all settings and their values. This is useful for debugging."""
         print(f"{len(self._options)} known options (add_option called)")
         for name, option in self._options.items():
-            print(f'  {name} = {option.value!r}    (type: {option.type!r})')
+            print(f"  {name} = {option.value!r}    (type: {option.type!r})")
         print()
 
         print(f"{len(self._unknown_options)} unknown options (add_option not called)")
         for name, value in self._unknown_options.items():
-            print(f'  {name} = {value!r}')
+            print(f"  {name} = {value!r}")
         print()
 
 
-_global_settings = Settings(None, '<<SettingChanged:{}>>')
+_global_settings = Settings(None, "<<SettingChanged:{}>>")
 add_option = _global_settings.add_option
 set_ = _global_settings.set
 get = _global_settings.get
@@ -339,13 +339,13 @@ def save() -> None:
         if name in writing and writing[name] == default:
             del writing[name]
 
-    with _get_json_path().open('w', encoding='utf-8') as file:
+    with _get_json_path().open("w", encoding="utf-8") as file:
         json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
 
 
 def _load_from_file() -> None:
     try:
-        with _get_json_path().open('r', encoding='utf-8') as file:
+        with _get_json_path().open("r", encoding="utf-8") as file:
             options = json.load(file)
     except FileNotFoundError:
         return
@@ -368,40 +368,40 @@ def init_enough_for_using_disabled_plugins_list() -> None:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {_get_json_path()} failed")
-    add_option('disabled_plugins', [], List[str])
+    add_option("disabled_plugins", [], List[str])
 
 
 def _init_global_gui_settings() -> None:
-    add_option('pygments_style', 'default', converter=_check_pygments_style)
-    add_option('default_line_ending', LineEnding(os.linesep), converter=LineEnding.__getitem__)
+    add_option("pygments_style", "default", converter=_check_pygments_style)
+    add_option("default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
-    fixedfont = tkinter.font.Font(name='TkFixedFont', exists=True)
-    if fixedfont['size'] < 0:
+    fixedfont = tkinter.font.Font(name="TkFixedFont", exists=True)
+    if fixedfont["size"] < 0:
         # negative sizes have a special meaning in Tk, and i don't care much
         # about it for porcupine, using stupid hard-coded default instead
         fixedfont.config(size=10)
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         # Windows default monospace font sucks, see #245
-        default_font_family = 'Consolas'
+        default_font_family = "Consolas"
     else:
         # fixedfont['family'] is typically e.g. 'Monospace', that's not included in
         # tkinter.font.families() because it refers to another font family that is
         # in tkinter.font.families()
-        default_font_family = fixedfont.actual('family')
+        default_font_family = fixedfont.actual("family")
 
-    add_option('font_family', default_font_family)
-    add_option('font_size', fixedfont['size'])
+    add_option("font_family", default_font_family)
+    add_option("font_size", fixedfont["size"])
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: Optional[tkinter.Event[tkinter.Misc]]) -> None:
         # can't bind to get_tab_manager() as recommended in docs because tab
         # manager isn't ready yet when settings get inited
         if event is None or event.widget == porcupine.get_main_window():
-            fixedfont.config(family=get('font_family', str), size=get('font_size', int))
+            fixedfont.config(family=get("font_family", str), size=get("font_size", int))
 
-    porcupine.get_main_window().bind('<<SettingChanged:font_family>>', update_fixedfont, add=True)
-    porcupine.get_main_window().bind('<<SettingChanged:font_size>>', update_fixedfont, add=True)
+    porcupine.get_main_window().bind("<<SettingChanged:font_family>>", update_fixedfont, add=True)
+    porcupine.get_main_window().bind("<<SettingChanged:font_size>>", update_fixedfont, add=True)
     update_fixedfont(None)
 
 
@@ -409,9 +409,9 @@ def _create_dialog_content() -> ttk.Frame:
     dialog = tkinter.Toplevel()
     dialog.withdraw()
     dialog.title("Porcupine Settings")
-    dialog.protocol('WM_DELETE_WINDOW', dialog.withdraw)
-    dialog.bind('<Escape>', (lambda event: dialog.withdraw()), add=True)
-    dialog.geometry('500x350')
+    dialog.protocol("WM_DELETE_WINDOW", dialog.withdraw)
+    dialog.bind("<Escape>", (lambda event: dialog.withdraw()), add=True)
+    dialog.geometry("500x350")
 
     def confirm_and_reset_all() -> None:
         if messagebox.askyesno(
@@ -420,17 +420,17 @@ def _create_dialog_content() -> ttk.Frame:
             reset_all()
 
     big_frame = ttk.Frame(dialog)
-    big_frame.pack(fill='both', expand=True)
+    big_frame.pack(fill="both", expand=True)
     content = ttk.Frame(big_frame)
-    content.pack(fill='both', expand=True)
-    ttk.Separator(big_frame).pack(fill='x')
+    content.pack(fill="both", expand=True)
+    ttk.Separator(big_frame).pack(fill="x")
     buttonframe = ttk.Frame(big_frame)
-    buttonframe.pack(fill='x')
+    buttonframe.pack(fill="x")
 
     ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all).pack(
-        side='right'
+        side="right"
     )
-    ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side='right')
+    ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side="right")
 
     content.grid_columnconfigure(0, weight=1)
     content.grid_columnconfigure(1, weight=1)
@@ -499,14 +499,14 @@ def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) ->
     if not _cache:
         _cache.append(
             tkinter.PhotoImage(
-                width=images.get('triangle').width(), height=images.get('triangle').height()
+                width=images.get("triangle").width(), height=images.get("triangle").height()
             )
         )
         atexit.register(_cache.clear)
     return _cache[0]
 
 
-_StrOrInt = TypeVar('_StrOrInt', str, int)
+_StrOrInt = TypeVar("_StrOrInt", str, int)
 
 
 def _create_validation_triangle(
@@ -532,7 +532,7 @@ def _create_validation_triangle(
                 value = None
 
         if value is None:
-            triangle.config(image=images.get('triangle'))
+            triangle.config(image=images.get("triangle"))
         else:
             triangle.config(image=_get_blank_triangle_sized_image())
             set_(option_name, value, from_config=True)
@@ -540,8 +540,8 @@ def _create_validation_triangle(
     def setting_changed(junk: object = None) -> None:
         var.set(str(_value_to_save(get(option_name, object))))
 
-    widget.bind(f'<<SettingChanged:{option_name}>>', setting_changed, add=True)
-    var.trace_add('write', var_changed)
+    widget.bind(f"<<SettingChanged:{option_name}>>", setting_changed, add=True)
+    var.trace_add("write", var_changed)
     setting_changed()
 
     widget.config(textvariable=var)
@@ -552,10 +552,10 @@ def _grid_widgets(
     label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]
 ) -> None:
     label = ttk.Label(chooser.master, text=label_text)
-    label.grid(column=0, sticky='w')
-    chooser.grid(row=label.grid_info()['row'], column=1, sticky='we')
+    label.grid(column=0, sticky="w")
+    chooser.grid(row=label.grid_info()["row"], column=1, sticky="we")
     if triangle is not None:
-        triangle.grid(row=label.grid_info()['row'], column=2)
+        triangle.grid(row=label.grid_info()["row"], column=2)
 
 
 def add_entry(
@@ -594,7 +594,7 @@ def add_combobox(option_name: str, text: str, **combobox_kwargs: Any) -> ttk.Com
     """
     combo = ttk.Combobox(get_dialog_content(), **combobox_kwargs)
     triangle = _create_validation_triangle(
-        combo, option_name, str, (lambda value: value in combo['values'])
+        combo, option_name, str, (lambda value: value in combo["values"])
     )
     _grid_widgets(text, combo, triangle)
     return combo
@@ -613,7 +613,7 @@ def add_spinbox(option_name: str, text: str, **spinbox_kwargs: Any) -> tkinter.t
     """
     spinbox = ttk.Spinbox(get_dialog_content(), **spinbox_kwargs)
     triangle = _create_validation_triangle(
-        spinbox, option_name, int, lambda value: int(spinbox['from']) <= value <= int(spinbox['to'])
+        spinbox, option_name, int, lambda value: int(spinbox["from"]) <= value <= int(spinbox["to"])
     )
     _grid_widgets(text, spinbox, triangle)
     return spinbox
@@ -626,10 +626,10 @@ def add_label(text: str) -> ttk.Label:
     The text is always as wide as the dialog is, even when the dialog is resized.
     """
     label = ttk.Label(get_dialog_content(), text=text)
-    label.grid(column=0, columnspan=3, sticky='we', pady=10)
+    label.grid(column=0, columnspan=3, sticky="we", pady=10)
 
     get_dialog_content().bind(
-        '<Configure>', (lambda event: label.config(wraplength=event.width)), add=True
+        "<Configure>", (lambda event: label.config(wraplength=event.width)), add=True
     )
     return label
 
@@ -666,37 +666,37 @@ def remember_divider_positions(
 
     # don't know why after_idle is needed, but it is
     panedwindow.bind(
-        '<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True
+        "<Map>", (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True
     )
-    panedwindow.bind('<<DividersFromSettings>>', settings2panedwindow, add=True)
-    panedwindow.bind('<ButtonRelease-1>', panedwindow2settings, add=True)
+    panedwindow.bind("<<DividersFromSettings>>", settings2panedwindow, add=True)
+    panedwindow.bind("<ButtonRelease-1>", panedwindow2settings, add=True)
 
 
 def _is_monospace(font_family: str) -> bool:
     # Ignore weird fonts starting with @ (happens on Windows)
-    if font_family.startswith('@'):
+    if font_family.startswith("@"):
         return False
 
     # I don't want to create font objects just for this, lol
     tcl_interpreter = get_dialog_content().tk
 
     # https://core.tcl-lang.org/tk/info/3767882e06
-    version = tuple(map(int, tcl_interpreter.eval('info patchlevel').split('.')))
-    if version < (8, 6, 11) and 'emoji' in font_family.lower():
+    version = tuple(map(int, tcl_interpreter.eval("info patchlevel").split(".")))
+    if version < (8, 6, 11) and "emoji" in font_family.lower():
         return False
 
     # Let's first ask Tcl whether the font is fixed. This is fastest but
     # returns the wrong result for some fonts that are not actually monospace.
-    if not tcl_interpreter.call('font', 'metrics', (font_family, '12'), '-fixed'):
+    if not tcl_interpreter.call("font", "metrics", (font_family, "12"), "-fixed"):
         return False
 
     # In non-monospace fonts, i is very narrow and m is very wide.
     # Also, make sure that bolding or italic doesn't change the width.
     sizes = [
-        tcl_interpreter.call('font', 'measure', (font_family, '12'), 'iii'),
-        tcl_interpreter.call('font', 'measure', (font_family, '12'), 'mmm'),
-        tcl_interpreter.call('font', 'measure', (font_family, '12', 'bold'), 'mmm'),
-        tcl_interpreter.call('font', 'measure', (font_family, '12', 'italic'), 'mmm'),
+        tcl_interpreter.call("font", "measure", (font_family, "12"), "iii"),
+        tcl_interpreter.call("font", "measure", (font_family, "12"), "mmm"),
+        tcl_interpreter.call("font", "measure", (font_family, "12", "bold"), "mmm"),
+        tcl_interpreter.call("font", "measure", (font_family, "12", "italic"), "mmm"),
     ]
 
     # Allow off-by-one errors, just in case. Don't know if they ever actually happen.
@@ -704,18 +704,18 @@ def _is_monospace(font_family: str) -> bool:
 
 
 def _get_monospace_font_families() -> List[str]:
-    cache_path = pathlib.Path(dirs.user_cache_dir) / 'font_cache.json'
+    cache_path = pathlib.Path(dirs.user_cache_dir) / "font_cache.json"
     all_families = sorted(set(tkinter.font.families()))
 
     # This is surprisingly slow when there are lots of fonts. Let's cache.
     try:
-        with cache_path.open('r') as file:
+        with cache_path.open("r") as file:
             cache = json.load(file)
 
         # all_families stored to cache in case user installs more fonts
-        if cache['version'] == 2 and cache['all_families'] == all_families:
+        if cache["version"] == 2 and cache["all_families"] == all_families:
             _log.debug(f"Taking list of monospace families from {cache_path}")
-            return cache['monospace_families']
+            return cache["monospace_families"]
 
     except FileNotFoundError:
         pass
@@ -726,12 +726,12 @@ def _get_monospace_font_families() -> List[str]:
     monospace_families = list(filter(_is_monospace, all_families))
 
     try:
-        with cache_path.open('w') as file:
+        with cache_path.open("w") as file:
             json.dump(
                 {
-                    'version': 2,
-                    'all_families': all_families,
-                    'monospace_families': monospace_families,
+                    "version": 2,
+                    "all_families": all_families,
+                    "monospace_families": monospace_families,
                 },
                 file,
             )
@@ -747,10 +747,10 @@ def _fill_dialog_content_with_defaults() -> None:
     monospace_families = _get_monospace_font_families()
     _log.debug(f"Found monospace fonts in {round((time.perf_counter() - start_time)*1000)}ms")
 
-    add_combobox('font_family', "Font family:", values=monospace_families)
-    add_spinbox('font_size', "Font size:", from_=3, to=1000)
+    add_combobox("font_family", "Font family:", values=monospace_families)
+    add_spinbox("font_size", "Font size:", from_=3, to=1000)
     add_combobox(
-        'default_line_ending', "Default line ending:", values=[ending.name for ending in LineEnding]
+        "default_line_ending", "Default line ending:", values=[ending.name for ending in LineEnding]
     )
 
 

@@ -33,8 +33,8 @@ def is_list_of_strings(obj: object) -> bool:
 
 def load_filetypes() -> None:
     # user_path can't be global var because tests monkeypatch
-    user_path = pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'
-    defaults_path = pathlib.Path(__file__).absolute().parent.parent / 'default_filetypes.toml'
+    user_path = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
+    defaults_path = pathlib.Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
     filetypes.update(toml.load(defaults_path))
 
@@ -43,14 +43,14 @@ def load_filetypes() -> None:
         user_filetypes = dict(toml.load(user_path))
     except FileNotFoundError:
         log.info(f"'{user_path}' not found, creating")
-        with user_path.open('x') as file:  # error if exists
+        with user_path.open("x") as file:  # error if exists
             file.write(
-                '''\
+                """\
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
 #
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
-'''
+"""
             )
     except (OSError, UnicodeError, toml.TomlDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
@@ -61,40 +61,40 @@ def load_filetypes() -> None:
 
     for name, filetype in filetypes.items():
         # everything except filename_patterns and shebang_regex is handled by Settings objects
-        if 'filename_patterns' in filetype and not is_list_of_strings(
-            filetype['filename_patterns']
+        if "filename_patterns" in filetype and not is_list_of_strings(
+            filetype["filename_patterns"]
         ):
             log.error(f"filename_patterns is not a list of strings in [{name}] section")
-            del filetype['filename_patterns']
+            del filetype["filename_patterns"]
 
-        if 'shebang_regex' in filetype:
+        if "shebang_regex" in filetype:
             try:
-                re.compile(filetype['shebang_regex'])
+                re.compile(filetype["shebang_regex"])
             except re.error:
                 log.error(f"invalid shebang_regex in [{name}] section")
-                del filetype['shebang_regex']
+                del filetype["shebang_regex"]
 
-        filetype.setdefault('filename_patterns', [])
-        filetype.setdefault('shebang_regex', r'this regex matches nothing^')
+        filetype.setdefault("filename_patterns", [])
+        filetype.setdefault("shebang_regex", r"this regex matches nothing^")
 
         # if no langserver configured, then don't leave langserver from
         # previous filetype around when switching filetype
-        filetype.setdefault('langserver', None)
+        filetype.setdefault("langserver", None)
 
 
 def set_filedialog_kwargs() -> None:
-    filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
+    filedialog_kwargs["filetypes"] = [("All Files", ["*"])] + [
         (
             name,
             [
                 # "*.py" doesn't work on windows, but ".py" works and does the same thing
                 # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
                 pattern.split("/")[-1].lstrip("*")
-                for pattern in filetype['filename_patterns']
+                for pattern in filetype["filename_patterns"]
             ],
         )
         for name, filetype in filetypes.items()
-        if name != 'Plain Text'  # can just use "All Files" for this
+        if name != "Plain Text"  # can just use "All Files" for this
     ]
 
 
@@ -104,7 +104,7 @@ def get_filetype_from_matches(
     if not matches:
         return None
     if len(matches) >= 2:
-        names = ', '.join(matches.keys())
+        names = ", ".join(matches.keys())
         log.warning(
             f"{len(matches)} file types match {they_match_what}: {names}. The last match will be"
             " used."
@@ -119,8 +119,8 @@ def guess_filetype_from_path(filepath: pathlib.Path) -> Optional[FileType]:
             name: filetype
             for name, filetype in filetypes.items()
             if any(
-                fnmatch.fnmatch(filepath.as_posix(), '*/' + pat)
-                for pat in filetype['filename_patterns']
+                fnmatch.fnmatch(filepath.as_posix(), "*/" + pat)
+                for pat in filetype["filename_patterns"]
             )
         },
         str(filepath),
@@ -128,11 +128,11 @@ def guess_filetype_from_path(filepath: pathlib.Path) -> Optional[FileType]:
 
 
 def guess_filetype_from_shebang(content_start: str) -> Optional[FileType]:
-    shebang_line = content_start.split('\n')[0]
+    shebang_line = content_start.split("\n")[0]
     matches: Dict[str, FileType] = {}
 
     for name, filetype in filetypes.items():
-        if re.search(filetype['shebang_regex'], shebang_line) is not None:
+        if re.search(filetype["shebang_regex"], shebang_line) is not None:
             matches[name] = filetype
 
     return get_filetype_from_matches(matches, f"shebang {shebang_line!r}")
@@ -147,14 +147,14 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
     try:
         # the shebang is read as utf-8 because the filetype config file
         # is utf-8
-        with filepath.open('r', encoding='utf-8') as file:
+        with filepath.open("r", encoding="utf-8") as file:
             # don't read the entire file if it's huge and all on one line
             shebang_line: Optional[str] = file.readline(1000)
     except (UnicodeError, OSError):
         shebang_line = None
 
     # don't guess from first line of file when it's not a shebang
-    if shebang_line is not None and not shebang_line.startswith('#!'):
+    if shebang_line is not None and not shebang_line.startswith("#!"):
         shebang_line = None
 
     if shebang_line is not None:
@@ -167,20 +167,20 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
         lexer = lexers.get_lexer_for_filename(filepath)
     except ClassNotFound:
         if shebang_line is None:
-            return filetypes['Plain Text']  # give up
+            return filetypes["Plain Text"]  # give up
         lexer = lexers.guess_lexer(shebang_line)
         if isinstance(lexer, lexers.TextLexer):
-            return filetypes['Plain Text']  # give up
+            return filetypes["Plain Text"]  # give up
 
     return {
-        'pygments_lexer': type(lexer).__module__ + '.' + type(lexer).__name__,
-        'langserver': None,
+        "pygments_lexer": type(lexer).__module__ + "." + type(lexer).__name__,
+        "langserver": None,
     }
 
 
 def get_filetype_for_tab(tab: tabs.FileTab) -> FileType:
     if tab.path is None:
-        return filetypes[settings.get('default_filetype', str)]
+        return filetypes[settings.get("default_filetype", str)]
     # FIXME: this may read the shebang from the file, but the file
     #        might not be saved yet because save_as() sets self.path
     #        before saving, and that's when this runs
@@ -191,7 +191,7 @@ def apply_filetype_to_tab(tab: tabs.FileTab, filetype: FileType) -> None:
     log.info(f"applying filetype settings: {filetype!r}")
     for name, value in filetype.items():
         # Ignore stuff used only for guessing the correct filetype
-        if name not in {'filename_patterns', 'shebang_regex'}:
+        if name not in {"filename_patterns", "shebang_regex"}:
             tab.settings.set(name, value, from_config=True)
 
 
@@ -203,7 +203,7 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         on_path_changed(tab)
-        tab.bind('<<PathChanged>>', partial(on_path_changed, tab), add=True)
+        tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
@@ -215,10 +215,10 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
 
     load_filetypes()
     parser.add_argument(
-        '-n',
-        '--new-file',
-        metavar='FILETYPE',
-        action='append',
+        "-n",
+        "--new-file",
+        metavar="FILETYPE",
+        action="append",
         type=parse_filetype_name,
         help='create a "New File" tab with a filetype from filetypes.toml',
     )
@@ -234,18 +234,18 @@ def setup() -> None:
     # load_filetypes() got already called in setup_argument_parser()
     get_tab_manager().add_tab_callback(on_new_tab)
 
-    settings.add_option('default_filetype', 'Python')
+    settings.add_option("default_filetype", "Python")
     settings.add_combobox(
-        'default_filetype',
+        "default_filetype",
         "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    menubar.add_config_file_button(pathlib.Path(dirs.user_config_dir) / 'filetypes.toml')
+    menubar.add_config_file_button(pathlib.Path(dirs.user_config_dir) / "filetypes.toml")
     set_filedialog_kwargs()
 
     for name, filetype in filetypes.items():
-        safe_name = name.replace('/', '\N{division slash}')  # lol
-        assert '/' not in safe_name
+        safe_name = name.replace("/", "\N{division slash}")  # lol
+        assert "/" not in safe_name
         menubar.get_menu("Filetypes").add_command(
             label=safe_name, command=partial(menu_callback, filetype)
         )

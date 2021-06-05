@@ -12,16 +12,16 @@ import sys
 import appdirs  # type: ignore[import]
 
 version_info = (0, 92, 4)  # this is updated with scripts/release.py
-__version__ = '%d.%d.%d' % version_info
-__author__ = 'Akuli'
-__copyright__ = 'Copyright (c) 2017-2021 Akuli'
-__license__ = 'MIT'
+__version__ = "%d.%d.%d" % version_info
+__author__ = "Akuli"
+__copyright__ = "Copyright (c) 2017-2021 Akuli"
+__license__ = "MIT"
 
-if sys.platform in {'win32', 'darwin'}:
+if sys.platform in {"win32", "darwin"}:
     # these platforms like path names like "Program Files" or "Application Support"
-    dirs = appdirs.AppDirs('Porcupine', 'Akuli')
+    dirs = appdirs.AppDirs("Porcupine", "Akuli")
 else:
-    dirs = appdirs.AppDirs('porcupine', 'akuli')
+    dirs = appdirs.AppDirs("porcupine", "akuli")
 
 # Must be after creating dirs. Must be conditional to silence pyflakes.
 if True:

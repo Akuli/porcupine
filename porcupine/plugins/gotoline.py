@@ -16,9 +16,9 @@ def gotoline() -> None:
     if lineno is not None:  # not cancelled
         # there's no need to do a bounds check because tk ignores out-of-bounds
         # text indexes
-        column = tab.textwidget.index('insert').split('.')[1]
-        tab.textwidget.mark_set('insert', f'{lineno}.{column}')
-        tab.textwidget.see('insert')
+        column = tab.textwidget.index("insert").split(".")[1]
+        tab.textwidget.mark_set("insert", f"{lineno}.{column}")
+        tab.textwidget.see("insert")
 
     tab.textwidget.focus()
 

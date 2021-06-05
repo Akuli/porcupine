@@ -13,7 +13,7 @@ from porcupine.plugins import filetypes
 def custom_filetypes():
     # We don't overwrite the user's file because porcupine.dirs is monkeypatched
     assert not dirs.user_config_dir.startswith(str(pathlib.Path.home()))
-    user_filetypes = pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'
+    user_filetypes = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
 
     user_filetypes.write_text(
         """
@@ -33,16 +33,16 @@ pygments_lexer = 'pygments.lexers.MakoHtmlLexer'
 
 
 def test_filedialog_patterns_got_stripped():
-    python_patterns = dict(filedialog_kwargs['filetypes'])['Python']
-    assert '*.py' not in python_patterns
-    assert '.py' in python_patterns
+    python_patterns = dict(filedialog_kwargs["filetypes"])["Python"]
+    assert "*.py" not in python_patterns
+    assert ".py" in python_patterns
 
 
-@pytest.mark.skipif(sys.platform != 'linux', reason="don't know how filedialog works on non-Linux")
+@pytest.mark.skipif(sys.platform != "linux", reason="don't know how filedialog works on non-Linux")
 def test_actually_running_filedialog(custom_filetypes):
     # Wait and then press Esc. That's done as Tcl code because the Tk widget
     # representing the dialog can't be used with tkinter.
-    root = get_main_window().nametowidget('.')
+    root = get_main_window().nametowidget(".")
     root.after(1000, root.eval, "event generate [focus] <Escape>")
 
     # If filedialog_kwargs are wrong, then this errors.
@@ -50,35 +50,35 @@ def test_actually_running_filedialog(custom_filetypes):
 
 
 def test_bad_filetype_on_command_line(run_porcupine):
-    output = run_porcupine(['-n', 'FooBar'], 2)
+    output = run_porcupine(["-n", "FooBar"], 2)
     assert "no filetype named 'FooBar'" in output
 
 
 def test_unknown_filetype(filetab, tmp_path):
     # pygments does not know graphviz, see how it gets handled
     filetab.textwidget.insert(
-        'end',
-        '''\
+        "end",
+        """\
 digraph G {
     Hello->World;
 }
-''',
+""",
     )
-    filetab.path = tmp_path / 'graphviz-hello-world.gvz'
+    filetab.path = tmp_path / "graphviz-hello-world.gvz"
     filetab.save()
-    lexer_class_name = filetypes.get_filetype_for_tab(filetab)['pygments_lexer']
-    assert lexer_class_name.endswith('.TextLexer')
+    lexer_class_name = filetypes.get_filetype_for_tab(filetab)["pygments_lexer"]
+    assert lexer_class_name.endswith(".TextLexer")
 
 
 def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
     def lexer_name(path):
-        return filetypes.guess_filetype_from_path(path)['pygments_lexer']
+        return filetypes.guess_filetype_from_path(path)["pygments_lexer"]
 
-    assert lexer_name(tmp_path / "foo" / "bar.html") == 'pygments.lexers.HtmlLexer'
-    assert lexer_name(tmp_path / "lol-mako-templates" / "bar.html") == 'pygments.lexers.HtmlLexer'
+    assert lexer_name(tmp_path / "foo" / "bar.html") == "pygments.lexers.HtmlLexer"
+    assert lexer_name(tmp_path / "lol-mako-templates" / "bar.html") == "pygments.lexers.HtmlLexer"
     with caplog.at_level(logging.WARNING):
         assert (
-            lexer_name(tmp_path / "mako-templates" / "bar.html") == 'pygments.lexers.MakoHtmlLexer'
+            lexer_name(tmp_path / "mako-templates" / "bar.html") == "pygments.lexers.MakoHtmlLexer"
         )
 
     assert len(caplog.records) == 1
@@ -87,6 +87,6 @@ def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
     assert "HTML, Mako template" in caplog.records[0].message
 
     # filedialog doesn't support slashes in patterns
-    for filetype_name, patterns in filedialog_kwargs['filetypes']:
+    for filetype_name, patterns in filedialog_kwargs["filetypes"]:
         for pattern in patterns:
             assert "/" not in pattern

@@ -11,11 +11,11 @@ from porcupine.plugins import __path__ as plugin_paths
 setup_after = [
     name
     for finder, name, ispkg in pkgutil.iter_modules(plugin_paths)
-    if 'porcupine.plugins.' + name != __name__
+    if "porcupine.plugins." + name != __name__
 ]
 
 # https://fileinfo.com/extension/pkl
-STATE_FILE = pathlib.Path(dirs.user_cache_dir) / 'restart_state.pkl'
+STATE_FILE = pathlib.Path(dirs.user_cache_dir) / "restart_state.pkl"
 
 
 def save_states(junk: object) -> None:
@@ -25,16 +25,16 @@ def save_states(junk: object) -> None:
         if state is not None:
             states.append((type(tab), state))
 
-    with STATE_FILE.open('wb') as file:
+    with STATE_FILE.open("wb") as file:
         pickle.dump(states, file)
 
 
 def setup() -> None:
     # this must run even if loading tabs from states below fails
-    get_main_window().bind('<<PorcupineQuit>>', save_states, add=True)
+    get_main_window().bind("<<PorcupineQuit>>", save_states, add=True)
 
     try:
-        with STATE_FILE.open('rb') as file:
+        with STATE_FILE.open("rb") as file:
             states = pickle.load(file)
     except FileNotFoundError:
         states = []
