@@ -521,7 +521,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
     tab.textwidget.bind(
         # any mouse button
         '<Button>',
-        (lambda event: completer._reject()),
+        lambda event: completer._reject(),
         add=True,
     )
 
