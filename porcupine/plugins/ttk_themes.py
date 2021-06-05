@@ -25,7 +25,7 @@ def setup() -> None:
     # Connect var and settings
     get_main_window().bind(
         '<<SettingChanged:ttk_theme>>',
-        (lambda event: var.set(settings.get('ttk_theme', str))),
+        lambda event: var.set(settings.get('ttk_theme', str)),
         add=True,
     )
     var.set(settings.get('ttk_theme', str))
