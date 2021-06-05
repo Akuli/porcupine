@@ -4,5 +4,6 @@ skip-magic-trailing-comma = true
 skip-string-normalization = true
 
 [tool.isort]
+line_length = 100
 profile = "black"
 multi_line_output = 3
