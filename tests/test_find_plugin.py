@@ -110,10 +110,7 @@ def test_finding(filetab_and_finder):
     ]
     assert finder.statuslabel['text'] == "Found 4 matches."
 
-    assert search_for('n') == [
-        '2.10',
-        '2.11'
-    ]  # fuN
+    assert search_for('n') == ['2.10', '2.11']  # fuN
     assert finder.statuslabel['text'] == "Found 1 match."
 
     # corner case: match in the beginning of file

@@ -111,6 +111,7 @@ def dont_run_in_thread(monkeypatch):
             done_callback(False, traceback.format_exc())
         else:
             done_callback(True, result)
+
     monkeypatch.setattr(utils, 'run_in_thread', func)
 
 

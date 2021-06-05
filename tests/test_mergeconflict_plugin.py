@@ -41,7 +41,7 @@ def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     subprocess.run(['git', 'commit', '--all', '-m', 'hello my friend'])
     subprocess.run(['git', 'merge', 'other_branch'])
     assert pathlib.Path('foo.txt').read_text() == merge_conflict_string
-    capfd.readouterr()   # hide unnecessary prints from git
+    capfd.readouterr()  # hide unnecessary prints from git
 
 
 def test_find_merge_conflicts(filetab):
