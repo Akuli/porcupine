@@ -5,16 +5,7 @@ import dataclasses
 import tkinter
 import weakref
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
 
 from pygments import styles  # type: ignore[import]
 
@@ -497,8 +488,7 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
 
 
 def create_peer_widget(
-    original_text_widget: tkinter.Text,
-    the_widget_that_becomes_a_peer: tkinter.Text,
+    original_text_widget: tkinter.Text, the_widget_that_becomes_a_peer: tkinter.Text
 ) -> None:
     """
     Make sure that *the_widget_that_becomes_a_peer* always has the same content
@@ -563,8 +553,7 @@ def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None:
 
 
 def use_pygments_theme(
-    widget: tkinter.Misc,
-    callback: Optional[Callable[[str, str], None]] = None,
+    widget: tkinter.Misc, callback: Optional[Callable[[str, str], None]] = None
 ) -> None:
     """
     Configure *widget* to use the colors of the Pygments theme whenever the

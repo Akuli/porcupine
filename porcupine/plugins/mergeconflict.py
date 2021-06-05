@@ -67,22 +67,13 @@ class ConflictDisplayer:
 
         # TODO: also specify fg color
         self.part1_button = self.make_button(
-            start_lineno,
-            part1_color,
-            text="Use this",
-            command=self.use_part1,
+            start_lineno, part1_color, text="Use this", command=self.use_part1
         )
         self.manual_button = self.make_button(
-            middle_lineno,
-            manual_color,
-            text="Edit manually",
-            command=self.stop_displaying,
+            middle_lineno, manual_color, text="Edit manually", command=self.stop_displaying
         )
         self.part2_button = self.make_button(
-            end_lineno,
-            part2_color,
-            text="Use this",
-            command=self.use_part2,
+            end_lineno, part2_color, text="Use this", command=self.use_part2
         )
 
         textwidget.tag_config(self.part1_tag, background=part1_color)

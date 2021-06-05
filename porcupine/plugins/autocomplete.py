@@ -320,17 +320,13 @@ class AutoCompleter:
             # an event handler is bound, use that
             self._tab.event_generate(
                 '<<AutoCompletionRequest>>',
-                data=Request(
-                    id=the_id,
-                    cursor_pos=self._orig_cursorpos,
-                ),
+                data=Request(id=the_id, cursor_pos=self._orig_cursorpos),
             )
         else:
             # fall back to "all words in file" autocompleting
             self.receive_completions(
                 Response(
-                    id=the_id,
-                    completions=_all_words_in_file_completions(self._tab.textwidget),
+                    id=the_id, completions=_all_words_in_file_completions(self._tab.textwidget)
                 )
             )
 

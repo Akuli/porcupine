@@ -181,7 +181,7 @@ Here is a list of the commands I use when developing Porcupine:
     - `mypy porcupine more_plugins`
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
-- Code formatting tools: `black -S porcupine/` and `isort porcupine/`
+- Code formatting tools: `black porcupine/` and `isort porcupine/`
 - To see a report of test coverage, add `--cov=porcupine` to the above pytest
   command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
   browser to view it. If you don't have anything else to do, you can write more

@@ -29,9 +29,7 @@ class CommandsConfig:
 
 
 def get_command(
-    tab: tabs.FileTab,
-    which_command: Literal['compile', 'run', 'lint'],
-    basename: str,
+    tab: tabs.FileTab, which_command: Literal['compile', 'run', 'lint'], basename: str
 ) -> Optional[List[str]]:
     assert os.sep not in basename, f"{basename!r} is not a basename"
 

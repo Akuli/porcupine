@@ -145,14 +145,7 @@ def test_ignore_case_and_full_words_only(filetab_and_finder):
     ]
 
     finder.full_words_var.set(True)
-    assert find_stuff() == [
-        '1.4',
-        '1.7',
-        '1.13',
-        '1.16',
-        '1.22',
-        '1.25',
-    ]
+    assert find_stuff() == ['1.4', '1.7', '1.13', '1.16', '1.22', '1.25']
 
     finder.ignore_case_var.set(True)
     assert find_stuff() == [
@@ -217,13 +210,7 @@ def test_basic_statuses_and_previous_and_next_match_buttons(filetab_and_finder):
         assert filetab.textwidget.index('insert') == str(start)
         return (str(start), str(end))
 
-    selecteds = [
-        ('1.0', '1.3'),
-        ('1.4', '1.7'),
-        ('1.8', '1.11'),
-        ('2.0', '2.3'),
-        ('2.4', '2.7'),
-    ]
+    selecteds = [('1.0', '1.3'), ('1.4', '1.7'), ('1.8', '1.11'), ('2.0', '2.3'), ('2.4', '2.7')]
 
     tag_locations = filetab.textwidget.tag_ranges('find_highlight')
     flatten = itertools.chain.from_iterable

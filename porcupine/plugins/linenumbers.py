@@ -60,12 +60,7 @@ class LineNumbers:
 
             x, y, *junk = dlineinfo
             self.canvas.create_text(
-                0,
-                y,
-                text=f' {lineno}',
-                anchor='nw',
-                font='TkFixedFont',
-                fill=self._text_color,
+                0, y, text=f' {lineno}', anchor='nw', font='TkFixedFont', fill=self._text_color
             )
 
     def _update_canvas_width(self, junk: object = None) -> None:

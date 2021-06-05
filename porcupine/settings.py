@@ -567,10 +567,7 @@ def _grid_widgets(
 
 
 def add_entry(
-    option_name: str,
-    text: str,
-    validate_callback: Callable[[str], bool],
-    **entry_kwargs: Any,
+    option_name: str, text: str, validate_callback: Callable[[str], bool], **entry_kwargs: Any
 ) -> ttk.Entry:
     """Add a :class:`tkinter.ttk.Entry` to the setting dialog.
 
@@ -589,11 +586,7 @@ def add_entry(
     return entry
 
 
-def add_combobox(
-    option_name: str,
-    text: str,
-    **combobox_kwargs: Any,
-) -> ttk.Combobox:
+def add_combobox(option_name: str, text: str, **combobox_kwargs: Any) -> ttk.Combobox:
     """Add a :class:`tkinter.ttk.Combobox` to the setting dialog.
 
     All ``**combobox_kwargs`` go to :class:`tkinter.ttk.Combobox`.
@@ -615,11 +608,7 @@ def add_combobox(
     return combo
 
 
-def add_spinbox(
-    option_name: str,
-    text: str,
-    **spinbox_kwargs: Any,
-) -> tkinter.ttk.Spinbox:
+def add_spinbox(option_name: str, text: str, **spinbox_kwargs: Any) -> tkinter.ttk.Spinbox:
     """Add a :class:`tkinter.ttk.Spinbox` to the setting dialog.
 
     All ``**spinbox_kwargs`` go to :class:`tkinter.ttk.Spinbox`.
@@ -632,10 +621,7 @@ def add_spinbox(
     """
     spinbox = ttk.Spinbox(get_dialog_content(), **spinbox_kwargs)
     triangle = _create_validation_triangle(
-        spinbox,
-        option_name,
-        int,
-        lambda value: int(spinbox['from']) <= value <= int(spinbox['to']),
+        spinbox, option_name, int, lambda value: int(spinbox['from']) <= value <= int(spinbox['to'])
     )
     _grid_widgets(text, spinbox, triangle)
     return spinbox

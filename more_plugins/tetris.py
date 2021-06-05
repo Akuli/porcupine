@@ -226,12 +226,7 @@ class TetrisTab(tabs.Tab):
         or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game.
         '''.split()
         )
-        ttk.Label(
-            self,
-            text=help_text,
-            justify='center',
-            wraplength=self._canvas['width'],
-        ).pack()
+        ttk.Label(self, text=help_text, justify='center', wraplength=self._canvas['width']).pack()
 
         for key in ['<Left>', '<Right>', '<Up>', '<Down>', '<Return>', '<space>']:
             self._canvas.bind(key, self._on_key, add=True)

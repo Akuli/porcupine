@@ -58,10 +58,7 @@ class PluginDialogContent:
         panedwindow.add(right_side)
 
         self.treeview = ttk.Treeview(
-            left_side,
-            show='headings',
-            columns=('name', 'type', 'status'),
-            selectmode='extended',
+            left_side, show='headings', columns=('name', 'type', 'status'), selectmode='extended'
         )
         self.treeview.bind('<<TreeviewSelect>>', self._on_select, add=True)
 

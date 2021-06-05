@@ -243,11 +243,7 @@ def get_config(path: pathlib.Path) -> Dict[str, str]:
 
 
 def get_bool(
-    config: Dict[str, str],
-    option: str,
-    *,
-    true_string: str = 'true',
-    false_string: str = 'false',
+    config: Dict[str, str], option: str, *, true_string: str = 'true', false_string: str = 'false'
 ) -> Optional[bool]:
     if option in config:
         if config[option] == true_string:

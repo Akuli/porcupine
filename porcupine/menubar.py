@@ -141,8 +141,7 @@ def add_config_file_button(path: pathlib.Path) -> None:
 
 
 def _walk_menu_contents(
-    menu: Optional[tkinter.Menu] = None,
-    path_prefix: str = '',
+    menu: Optional[tkinter.Menu] = None, path_prefix: str = ''
 ) -> Iterator[Tuple[str, tkinter.Menu, int]]:
 
     if menu is None:

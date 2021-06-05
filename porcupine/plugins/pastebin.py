@@ -136,12 +136,7 @@ class DPaste(Paste):
         # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
         request = Request(
             DPASTE_URL,
-            data=urlencode(
-                {
-                    'syntax': lexer_class.aliases[0],
-                    'content': code,
-                }
-            ).encode('utf-8'),
+            data=urlencode({'syntax': lexer_class.aliases[0], 'content': code}).encode('utf-8'),
         )
 
         with build_opener(handler).open(request) as response:

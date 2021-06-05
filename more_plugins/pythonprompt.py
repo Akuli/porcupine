@@ -124,8 +124,7 @@ class PythonPrompt:
                 self.close_callback()
             else:
                 self.widget.insert(
-                    'end',
-                    f"\n\n***********************\nthe subprocess exited with code {value!r}",
+                    'end', f"\n\n***********************\nthe subprocess exited with code {value!r}"
                 )
                 self.widget.config(state='disabled')
             return

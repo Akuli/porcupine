@@ -20,8 +20,7 @@ def start_xterm() -> None:
         process = subprocess.Popen(['xterm', '-into', str(content.winfo_id())])
     except FileNotFoundError:
         messagebox.showerror(
-            "xterm not found",
-            "Seems like xterm is not installed. Please install it and try again.",
+            "xterm not found", "Seems like xterm is not installed. Please install it and try again."
         )
         return
 

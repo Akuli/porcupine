@@ -558,7 +558,7 @@ class LangServer:
             context=lsp.CompletionContext(
                 # FIXME: this isn't always the case, porcupine can also trigger
                 #        it automagically
-                triggerKind=lsp.CompletionTriggerKind.INVOKED,
+                triggerKind=lsp.CompletionTriggerKind.INVOKED
             ),
         )
 
@@ -577,14 +577,12 @@ class LangServer:
         assert tab.path is not None
         self._lsp_client.did_change(
             text_document=lsp.VersionedTextDocumentIdentifier(
-                uri=tab.path.as_uri(),
-                version=next(self._version_counter),
+                uri=tab.path.as_uri(), version=next(self._version_counter)
             ),
             content_changes=[
                 lsp.TextDocumentContentChangeEvent(
                     range=lsp.Range(
-                        start=_position_tk2lsp(change.start),
-                        end=_position_tk2lsp(change.end),
+                        start=_position_tk2lsp(change.start), end=_position_tk2lsp(change.end)
                     ),
                     text=change.new_text,
                 )

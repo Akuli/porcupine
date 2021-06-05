@@ -99,8 +99,7 @@ def set_filedialog_kwargs() -> None:
 
 
 def get_filetype_from_matches(
-    matches: Dict[str, FileType],
-    they_match_what: str,
+    matches: Dict[str, FileType], they_match_what: str
 ) -> Optional[FileType]:
     if not matches:
         return None

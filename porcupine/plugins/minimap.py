@@ -79,9 +79,8 @@ class MiniMap(tkinter.Text):
 
     def set_colors(self, foreground: str, background: str) -> None:
         self.config(
-            fg=foreground,
-            bg=background,
-            inactiveselectbackground=background,  # must be non-empty?
+            # Seems like inactiveselectbackground must be non-empty
+            fg=foreground, bg=background, inactiveselectbackground=background
         )
 
         self._tab.textwidget.config(highlightcolor=foreground)
@@ -91,11 +90,7 @@ class MiniMap(tkinter.Text):
     def set_font(self, junk: object = None) -> None:
         self.tag_config(
             'sel',
-            font=(
-                settings.get('font_family', str),
-                round(settings.get('font_size', int) / 3),
-                (),
-            ),
+            font=(settings.get('font_family', str), round(settings.get('font_size', int) / 3), ()),
         )
         textwidget.config_tab_displaying(
             self, self._tab.settings.get('indent_size', int), tag='sel'
