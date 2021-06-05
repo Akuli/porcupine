@@ -21,7 +21,7 @@ def start_xterm() -> None:
     except FileNotFoundError:
         messagebox.showerror(
             "xterm not found",
-            ("Seems like xterm is not installed. " + "Please install it and try again."),
+            "Seems like xterm is not installed. Please install it and try again.",
         )
         return
 
