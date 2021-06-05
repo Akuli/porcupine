@@ -80,7 +80,9 @@ class MiniMap(tkinter.Text):
     def set_colors(self, foreground: str, background: str) -> None:
         self.config(
             # Seems like inactiveselectbackground must be non-empty
-            fg=foreground, bg=background, inactiveselectbackground=background
+            fg=foreground,
+            bg=background,
+            inactiveselectbackground=background,
         )
 
         self._tab.textwidget.config(highlightcolor=foreground)

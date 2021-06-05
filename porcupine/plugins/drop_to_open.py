@@ -19,15 +19,15 @@ def setup() -> None:
     root = get_main_window()
     root.tk.eval(
         '''
-    package require tkdnd
+        package require tkdnd
 
-    # https://github.com/petasis/tkdnd/blob/master/demos/simple_target.tcl
-    tkdnd::drop_target register . DND_Files
+        # https://github.com/petasis/tkdnd/blob/master/demos/simple_target.tcl
+        tkdnd::drop_target register . DND_Files
 
-    # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
-    # _tkinter.TclError: expected integer but got "%#"
-    bind . <<Drop:DND_Files>> {'''
-        + root.register(handle_drop)
-        + ''' %D}
-    '''
+        # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
+        # _tkinter.TclError: expected integer but got "%#"
+        bind . <<Drop:DND_Files>> {DROPCOMMAND %D}
+        '''.replace(
+            'DROPCOMMAND', root.register(handle_drop)
+        )
     )
