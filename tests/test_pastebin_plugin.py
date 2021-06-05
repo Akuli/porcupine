@@ -100,8 +100,7 @@ def test_success_dialog(monkeypatch):
     dialog.destroy()
 
 
-@pytest.mark.skipif(sys.platform == 'darwin', reason="freezes Mac CI if menubar stuff is buggy")
-def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager):
+def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, dont_run_in_thread):
     with socket.socket() as termbin:
         termbin.bind(('localhost', 0))
         termbin.listen(1)
