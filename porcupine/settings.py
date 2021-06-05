@@ -609,7 +609,7 @@ def add_combobox(
     """
     combo = ttk.Combobox(get_dialog_content(), **combobox_kwargs)
     triangle = _create_validation_triangle(
-        combo, option_name, str, lambda value: value in combo['values']
+        combo, option_name, str, (lambda value: value in combo['values'])
     )
     _grid_widgets(text, combo, triangle)
     return combo
