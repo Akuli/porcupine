@@ -101,7 +101,7 @@ def porcusession(monkeypatch_dirs):
 # utils.run_in_thread() can make tests fragile
 @pytest.fixture
 def dont_run_in_thread(monkeypatch):
-    def func(blocking_function, done_callback, check_interval_ms=69):
+    def func(blocking_function, done_callback, check_interval_ms=69, daemon=True):
         try:
             result = blocking_function()
         except Exception:
