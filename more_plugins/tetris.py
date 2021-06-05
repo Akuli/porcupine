@@ -234,12 +234,10 @@ class TetrisTab(tabs.Tab):
         self._score_label = ttk.Label(self, justify='center')
         self._score_label.pack()
 
-        help_text = ' '.join(
-            f'''
-        You can move the blocks with arrow keys.
-        Press {utils.get_binding('<<Tetris:Pause>>')} to pause
-        or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game.
-        '''.split()
+        help_text = (
+            "You can move the blocks with arrow keys. "
+            f"Press {utils.get_binding('<<Tetris:Pause>>')} to pause "
+            f"or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game."
         )
         ttk.Label(self, text=help_text, justify='center', wraplength=self._canvas['width']).pack()
 
