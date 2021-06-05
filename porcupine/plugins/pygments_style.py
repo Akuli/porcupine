@@ -74,8 +74,9 @@ def setup() -> None:
                 variable=var,
                 foreground=fg,
                 background=bg,
+                # swapped colors
                 activeforeground=bg,
-                activebackground=fg,  # swapped colors
+                activebackground=fg,
             )
 
     get_main_window().after(200, check_if_it_finished)
