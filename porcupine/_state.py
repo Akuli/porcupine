@@ -63,7 +63,7 @@ def get_main_window() -> tkinter.Tk:
 
 
 def get_tab_manager() -> tabs.TabManager:
-    """Return the :class:`porcupine.tabs.TabManager` widget in the main window."""  # these are on a separate line because pep-8 line length
+    """Return the :class:`porcupine.tabs.TabManager` widget in the main window."""
     if _tab_manager is None:
         raise RuntimeError("Porcupine is not running")
     return _tab_manager
