@@ -55,18 +55,18 @@ class Finder(ttk.Frame):
 
         self.find_entry = self._add_entry(0, "Find:")
         self.find_entry.config(textvariable=find_var)
-        find_var.trace_add('write', self.highlight_all_matches)
+        find_var.trace_add("write", self.highlight_all_matches)
 
         # because cpython gc
         cast(Any, self.find_entry).lol = find_var
 
         self.replace_entry = self._add_entry(1, "Replace with:")
 
-        self.find_entry.bind('<Shift-Return>', self._go_to_previous_match, add=True)
-        self.find_entry.bind('<Return>', self._go_to_next_match, add=True)
+        self.find_entry.bind("<Shift-Return>", self._go_to_previous_match, add=True)
+        self.find_entry.bind("<Return>", self._go_to_next_match, add=True)
 
         buttonframe = ttk.Frame(self)
-        buttonframe.grid(row=2, column=0, columnspan=4, sticky='we')
+        buttonframe.grid(row=2, column=0, columnspan=4, sticky="we")
 
         self.previous_button = ttk.Button(
             buttonframe, text="Previous match", command=self._go_to_previous_match
@@ -84,91 +84,91 @@ class Finder(ttk.Frame):
             buttonframe, text="Replace all", underline=len("Replace "), command=self._replace_all
         )
 
-        self.previous_button.pack(side='left')
-        self.next_button.pack(side='left')
-        self.replace_this_button.pack(side='left')
-        self.replace_all_button.pack(side='left')
+        self.previous_button.pack(side="left")
+        self.next_button.pack(side="left")
+        self.replace_this_button.pack(side="left")
+        self.replace_all_button.pack(side="left")
         self._update_buttons()
 
-        self.full_words_var.trace_add('write', self.highlight_all_matches)
-        self.ignore_case_var.trace_add('write', self.highlight_all_matches)
+        self.full_words_var.trace_add("write", self.highlight_all_matches)
+        self.ignore_case_var.trace_add("write", self.highlight_all_matches)
 
         ttk.Checkbutton(
             self, text="Full words only", underline=0, variable=self.full_words_var
-        ).grid(row=0, column=3, sticky='w')
+        ).grid(row=0, column=3, sticky="w")
         ttk.Checkbutton(self, text="Ignore case", underline=0, variable=self.ignore_case_var).grid(
-            row=1, column=3, sticky='w'
+            row=1, column=3, sticky="w"
         )
 
         self.statuslabel = ttk.Label(self)
-        self.statuslabel.grid(row=3, column=0, columnspan=4, sticky='we')
+        self.statuslabel.grid(row=3, column=0, columnspan=4, sticky="we")
 
-        ttk.Separator(self, orient='horizontal').grid(row=4, column=0, columnspan=4, sticky='we')
+        ttk.Separator(self, orient="horizontal").grid(row=4, column=0, columnspan=4, sticky="we")
 
-        closebutton = ttk.Label(self, cursor='hand2')
-        closebutton.place(relx=1, rely=0, anchor='ne')
-        closebutton.bind('<Button-1>', self.hide, add=True)
+        closebutton = ttk.Label(self, cursor="hand2")
+        closebutton.place(relx=1, rely=0, anchor="ne")
+        closebutton.bind("<Button-1>", self.hide, add=True)
 
-        closebutton.config(image=images.get('closebutton'))
+        closebutton.config(image=images.get("closebutton"))
 
         # explained in test_find_plugin.py
-        textwidget.bind('<<Selection>>', self._update_buttons, add=True)
+        textwidget.bind("<<Selection>>", self._update_buttons, add=True)
 
-        textwidget.bind('<<SettingChanged:pygments_style>>', self._config_tags, add=True)
+        textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
         self._config_tags()
 
     def _config_tags(self, junk: object = None) -> None:
         # TODO: use more pygments theme instead of hard-coded colors?
-        self._textwidget.tag_config('find_highlight', foreground='black', background='yellow')
+        self._textwidget.tag_config("find_highlight", foreground="black", background="yellow")
         self._textwidget.tag_config(
-            'find_highlight_selected', foreground='black', background='orange'
+            "find_highlight_selected", foreground="black", background="orange"
         )
-        self._textwidget.tag_raise('find_highlight', 'sel')
-        self._textwidget.tag_raise('find_highlight_selected', 'find_highlight')
+        self._textwidget.tag_raise("find_highlight", "sel")
+        self._textwidget.tag_raise("find_highlight_selected", "find_highlight")
 
     def _add_entry(self, row: int, text: str) -> ttk.Entry:
-        ttk.Label(self, text=text).grid(row=row, column=0, sticky='w')
-        entry = ttk.Entry(self, width=35, font='TkFixedFont')
-        entry.bind('<Escape>', self.hide, add=True)
-        entry.bind('<Alt-t>', self._replace_this, add=True)
-        entry.bind('<Alt-a>', self._replace_all, add=True)
-        entry.bind('<Alt-f>', partial(self._toggle_var, self.full_words_var), add=True)
-        entry.bind('<Alt-i>', partial(self._toggle_var, self.ignore_case_var), add=True)
-        entry.grid(row=row, column=1, sticky='we')
+        ttk.Label(self, text=text).grid(row=row, column=0, sticky="w")
+        entry = ttk.Entry(self, width=35, font="TkFixedFont")
+        entry.bind("<Escape>", self.hide, add=True)
+        entry.bind("<Alt-t>", self._replace_this, add=True)
+        entry.bind("<Alt-a>", self._replace_all, add=True)
+        entry.bind("<Alt-f>", partial(self._toggle_var, self.full_words_var), add=True)
+        entry.bind("<Alt-i>", partial(self._toggle_var, self.ignore_case_var), add=True)
+        entry.grid(row=row, column=1, sticky="we")
         return entry
 
-    def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> Literal['break']:
+    def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> Literal["break"]:
         var.set(not var.get())
-        return 'break'
+        return "break"
 
     def show(self) -> None:
         try:
-            selected_text: Optional[str] = self._textwidget.get('sel.first', 'sel.last')
+            selected_text: Optional[str] = self._textwidget.get("sel.first", "sel.last")
         except tkinter.TclError:
             selected_text = None
 
-        self.pack(fill='x')
+        self.pack(fill="x")
 
-        if selected_text is None or '\n' in selected_text:
+        if selected_text is None or "\n" in selected_text:
             self.find_entry.focus_set()
         else:
-            self.find_entry.delete(0, 'end')
+            self.find_entry.delete(0, "end")
             self.find_entry.insert(0, selected_text)
-            self.find_entry.select_range(0, 'end')
+            self.find_entry.select_range(0, "end")
             self.find_entry.focus_set()
 
         self.highlight_all_matches()
 
     def hide(self, junk: object = None) -> None:
-        self._textwidget.tag_remove('find_highlight', '1.0', 'end')
-        self._textwidget.tag_remove('find_highlight_selected', '1.0', 'end')
+        self._textwidget.tag_remove("find_highlight", "1.0", "end")
+        self._textwidget.tag_remove("find_highlight_selected", "1.0", "end")
         self.pack_forget()
         self._textwidget.focus_set()
 
     # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
     # gives a list of (start, end) pairs
     def get_match_ranges(self) -> List[Tuple[str, str]]:
-        starts_and_ends = list(map(str, self._textwidget.tag_ranges('find_highlight')))
+        starts_and_ends = list(map(str, self._textwidget.tag_ranges("find_highlight")))
         assert len(starts_and_ends) % 2 == 0
         pairs = list(zip(starts_and_ends[0::2], starts_and_ends[1::2]))
         return pairs
@@ -176,19 +176,19 @@ class Finder(ttk.Frame):
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self, junk: object = None) -> None:
-        State = Literal['normal', 'disabled']
-        matches_something_state: State = 'normal' if self.get_match_ranges() else 'disabled'
+        State = Literal["normal", "disabled"]
+        matches_something_state: State = "normal" if self.get_match_ranges() else "disabled"
         replace_this_state: State
 
         try:
-            start, end = map(str, self._textwidget.tag_ranges('sel'))
+            start, end = map(str, self._textwidget.tag_ranges("sel"))
         except ValueError:
-            replace_this_state = 'disabled'
+            replace_this_state = "disabled"
         else:  # no, elif doesn't work here
             if (start, end) in self.get_match_ranges():
-                replace_this_state = 'normal'
+                replace_this_state = "normal"
             else:
-                replace_this_state = 'disabled'
+                replace_this_state = "disabled"
 
         self.previous_button.config(state=matches_something_state)
         self.next_button.config(state=matches_something_state)
@@ -198,28 +198,28 @@ class Finder(ttk.Frame):
     def _get_matches_to_highlight(self, looking4: str) -> Iterator[str]:
         # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
         # See "PERFORMANCE ISSUES" in text widget manual page
-        text = self._textwidget.get('1.0', 'end - 1 char')
+        text = self._textwidget.get("1.0", "end - 1 char")
 
         if self.full_words_var.get():
-            regex = r'\b' + re.escape(looking4) + r'\b|\n'
+            regex = r"\b" + re.escape(looking4) + r"\b|\n"
         else:
-            regex = re.escape(looking4) + '|\n'
+            regex = re.escape(looking4) + "|\n"
         flags = re.IGNORECASE if self.ignore_case_var.get() else 0
 
         lineno = 1
         for match in re.finditer(regex, text, flags):
-            if match.group(0) == '\n':
+            if match.group(0) == "\n":
                 lineno += 1
             else:
                 if lineno == 1:
                     column = match.start()
                 else:
-                    column = match.start() - text.rindex('\n', 0, match.start()) - 1
-                yield f'{lineno}.{column}'
+                    column = match.start() - text.rindex("\n", 0, match.start()) - 1
+                yield f"{lineno}.{column}"
 
     def highlight_all_matches(self, *junk: object) -> None:
         # clear previous highlights
-        self._textwidget.tag_remove('find_highlight', '1.0', 'end')
+        self._textwidget.tag_remove("find_highlight", "1.0", "end")
 
         looking4 = self.find_entry.get()
         if not looking4:  # don't search for empty string
@@ -228,7 +228,7 @@ class Finder(ttk.Frame):
             return
         if self.full_words_var.get():
             # check for non-wordy characters
-            match = re.search(r'\W', looking4)
+            match = re.search(r"\W", looking4)
             if match is not None:
                 self._update_buttons()
                 self.statuslabel.config(
@@ -242,7 +242,7 @@ class Finder(ttk.Frame):
         count = 0
         for start_index in self._get_matches_to_highlight(looking4):
             self._textwidget.tag_add(
-                'find_highlight', start_index, f'{start_index} + {len(looking4)} chars'
+                "find_highlight", start_index, f"{start_index} + {len(looking4)} chars"
             )
             count += 1
 
@@ -255,11 +255,11 @@ class Finder(ttk.Frame):
             self.statuslabel.config(text=f"Found {count} matches.")
 
     def _select_match(self, start: str, end: str) -> None:
-        self._textwidget.tag_remove('sel', '1.0', 'end')
-        self._textwidget.tag_remove('find_highlight_selected', '1.0', 'end')
-        self._textwidget.tag_add('sel', start, end)
-        self._textwidget.tag_add('find_highlight_selected', start, end)
-        self._textwidget.mark_set('insert', start)
+        self._textwidget.tag_remove("sel", "1.0", "end")
+        self._textwidget.tag_remove("find_highlight_selected", "1.0", "end")
+        self._textwidget.tag_add("sel", start, end)
+        self._textwidget.tag_add("find_highlight_selected", start, end)
+        self._textwidget.mark_set("insert", start)
         self._textwidget.see(start)
 
     def _go_to_next_match(self, junk: object = None) -> None:
@@ -272,7 +272,7 @@ class Finder(ttk.Frame):
 
         # find first pair that starts after the cursor
         for start, end in pairs:
-            if self._textwidget.compare(start, '>', 'insert'):
+            if self._textwidget.compare(start, ">", "insert"):
                 self._select_match(start, end)
                 break
         else:
@@ -290,7 +290,7 @@ class Finder(ttk.Frame):
             return
 
         for start, end in reversed(pairs):
-            if self._textwidget.compare(start, '<', 'insert'):
+            if self._textwidget.compare(start, "<", "insert"):
                 self._select_match(start, end)
                 break
         else:
@@ -300,19 +300,19 @@ class Finder(ttk.Frame):
         self._update_buttons()
         return
 
-    def _replace_this(self, junk: object = None) -> Literal['break']:
-        if str(self.replace_this_button['state']) == 'disabled':
+    def _replace_this(self, junk: object = None) -> Literal["break"]:
+        if str(self.replace_this_button["state"]) == "disabled":
             self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
-            return 'break'
+            return "break"
 
         # highlighted areas must not be moved after .replace, think about what
         # happens when you replace 'asd' with 'asd'
-        start, end = self._textwidget.tag_ranges('sel')
-        self._textwidget.tag_remove('find_highlight', start, end)
+        start, end = self._textwidget.tag_ranges("sel")
+        self._textwidget.tag_remove("find_highlight", start, end)
         self._update_buttons()
         self._textwidget.replace(start, end, self.replace_entry.get())
 
-        self._textwidget.mark_set('insert', start)
+        self._textwidget.mark_set("insert", start)
         self._go_to_next_match()
 
         left = len(self.get_match_ranges())
@@ -322,23 +322,23 @@ class Finder(ttk.Frame):
             self.statuslabel.config(text="Replaced a match. There is 1 more match.")
         else:
             self.statuslabel.config(text=f"Replaced a match. There are {left} more matches.")
-        return 'break'
+        return "break"
 
-    def _replace_all(self, junk: object = None) -> Literal['break']:
+    def _replace_all(self, junk: object = None) -> Literal["break"]:
         match_ranges = self.get_match_ranges()
 
         # must do this backwards because replacing may screw up indexes AFTER
         # the replaced place
         for start, end in reversed(match_ranges):
             self._textwidget.replace(start, end, self.replace_entry.get())
-        self._textwidget.tag_remove('find_highlight', '1.0', 'end')
+        self._textwidget.tag_remove("find_highlight", "1.0", "end")
         self._update_buttons()
 
         if len(match_ranges) == 1:
             self.statuslabel.config(text="Replaced 1 match.")
         else:
             self.statuslabel.config(text=f"Replaced {len(match_ranges)} matches.")
-        return 'break'
+        return "break"
 
 
 def find() -> None:

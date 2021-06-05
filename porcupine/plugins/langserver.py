@@ -23,7 +23,7 @@ import time
 from functools import partial
 from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union
 
-if sys.platform != 'win32':
+if sys.platform != "win32":
     import fcntl
 
 import sansio_lsp_client as lsp
@@ -43,7 +43,7 @@ class SubprocessStdIO:
     def __init__(self, process: subprocess.Popen[bytes]) -> None:
         self._process = process
 
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             self._read_queue: queue.Queue[bytes] = queue.Queue()
             self._running = True
             self._worker_thread = threading.Thread(target=self._stdout_to_read_queue, daemon=True)
@@ -57,7 +57,7 @@ class SubprocessStdIO:
             new_flags = old_flags | os.O_NONBLOCK
             fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
 
         def _stdout_to_read_queue(self) -> None:
             while True:
@@ -74,7 +74,7 @@ class SubprocessStdIO:
     #   - empty bytes object: process exited
     #   - None: no data to read
     def read(self) -> Optional[bytes]:
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             # shitty windows code
             buf = bytearray()
             while True:
@@ -98,7 +98,7 @@ class SubprocessStdIO:
 
 
 def error_says_socket_not_connected(error: OSError) -> bool:
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         return error.winerror == 10057
     else:
         return error.errno == errno.ENOTCONN
@@ -122,7 +122,7 @@ class LocalhostSocketIO:
     def _send_queue_to_socket(self, port: int, log: logging.LoggerAdapter) -> None:
         while True:
             try:
-                self._sock.connect(('localhost', port))
+                self._sock.connect(("localhost", port))
                 log.info(f"connected to localhost:{port}")
                 break
             except ConnectionRefusedError:
@@ -160,7 +160,7 @@ class LocalhostSocketIO:
             raise e
 
         if not result:
-            assert result == b''
+            assert result == b""
             # stop worker thread
             if self._worker_thread.is_alive():
                 self._send_queue.put(None)
@@ -170,8 +170,8 @@ class LocalhostSocketIO:
 def completion_item_doc_contains_label(doc: str, label: str) -> bool:
     # this used to be doc.startswith(label), but see issue #67
     label = label.strip()
-    if '(' in label:
-        prefix = label.strip().split('(')[0] + '('
+    if "(" in label:
+        prefix = label.strip().split("(")[0] + "("
     else:
         prefix = label.strip()
     return doc.startswith(prefix)
@@ -196,7 +196,7 @@ def get_completion_item_doc(item: lsp.CompletionItem) -> str:
     #        fo<Tab>
     #    }
     if not completion_item_doc_contains_label(result, item.label):
-        result = item.label.strip() + '\n\n' + result
+        result = item.label.strip() + "\n\n" + result
     return result
 
 
@@ -220,7 +220,7 @@ def _position_tk2lsp(tk_position: Union[str, List[int]]) -> lsp.Position:
     # this can't use tab.textwidget.index, because it needs to handle text
     # locations that don't exist anymore when text has been deleted
     if isinstance(tk_position, str):
-        line, column = map(int, tk_position.split('.'))
+        line, column = map(int, tk_position.split("."))
     else:
         line, column = tk_position
 
@@ -231,14 +231,14 @@ def _position_tk2lsp(tk_position: Union[str, List[int]]) -> lsp.Position:
 
 
 def _position_lsp2tk(lsp_position: lsp.Position) -> str:
-    return f'{lsp_position.line + 1}.{lsp_position.character}'
+    return f"{lsp_position.line + 1}.{lsp_position.character}"
 
 
 def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
     if diagnostic.source is None:
         assert diagnostic.message is not None  # TODO
         return diagnostic.message
-    return f'{diagnostic.source}: {diagnostic.message}'
+    return f"{diagnostic.source}: {diagnostic.message}"
 
 
 @dataclasses.dataclass
@@ -261,7 +261,7 @@ class LangServer:
     ) -> None:
         self._process = process
         self._id = the_id
-        self._lsp_client = lsp.Client(trace='verbose', root_uri=the_id.project_root.as_uri())
+        self._lsp_client = lsp.Client(trace="verbose", root_uri=the_id.project_root.as_uri())
 
         self._lsp_id_to_tab_and_request: Dict[
             lsp.Id, Tuple[tabs.FileTab, autocomplete.Request]
@@ -311,7 +311,7 @@ class LangServer:
                 return
 
             # langserver doesn't want to exit, let's kill it
-            what_closed = 'stdout' if self._id.port is None else 'socket connection'
+            what_closed = "stdout" if self._id.port is None else "socket connection"
             self.log.warning(
                 f"killing langserver process {self._process.pid} "
                 f"because {what_closed} has closed for some reason"
@@ -338,7 +338,7 @@ class LangServer:
         if received_bytes is None:
             # no data received
             return True
-        elif received_bytes == b'':
+        elif received_bytes == b"":
             # stdout or langserver socket is closed. Communicating with the
             # langserver process is impossible, so this LangServer object and
             # the process are useless.
@@ -365,7 +365,7 @@ class LangServer:
         return True
 
     def _send_tab_opened_message(self, tab: tabs.FileTab) -> None:
-        config = tab.settings.get('langserver', Optional[LangServerConfig])
+        config = tab.settings.get("langserver", Optional[LangServerConfig])
         assert isinstance(config, LangServerConfig)
         assert tab.path is not None
 
@@ -373,7 +373,7 @@ class LangServer:
             lsp.TextDocumentItem(
                 uri=tab.path.as_uri(),
                 languageId=config.language_id,
-                text=tab.textwidget.get('1.0', 'end - 1 char'),
+                text=tab.textwidget.get("1.0", "end - 1 char"),
                 version=next(self._version_counter),
             )
         )
@@ -424,21 +424,21 @@ class LangServer:
             # this is "open to interpretation", as the lsp spec says
             # TODO: use textEdit when available (need to find langserver that
             #       gives completions with textEdit for that to work)
-            before_cursor = tab.textwidget.get(f'{req.cursor_pos} linestart', req.cursor_pos)
-            match = re.fullmatch(r'.*?(\w*)', before_cursor)
+            before_cursor = tab.textwidget.get(f"{req.cursor_pos} linestart", req.cursor_pos)
+            match = re.fullmatch(r".*?(\w*)", before_cursor)
             assert match is not None
             prefix_len = len(match.group(1))
 
             assert lsp_event.completion_list is not None
             tab.event_generate(
-                '<<AutoCompletionResponse>>',
+                "<<AutoCompletionResponse>>",
                 data=autocomplete.Response(
                     id=req.id,
                     completions=[
                         autocomplete.Completion(
                             display_text=item.label,
                             replace_start=tab.textwidget.index(
-                                f'{req.cursor_pos} - {prefix_len} chars'
+                                f"{req.cursor_pos} - {prefix_len} chars"
                             ),
                             replace_end=req.cursor_pos,
                             replace_text=item.insertText or item.label,
@@ -470,9 +470,9 @@ class LangServer:
             [tab] = matching_tabs
 
             tab.event_generate(
-                '<<SetUnderlines>>',
+                "<<SetUnderlines>>",
                 data=underlines.Underlines(
-                    id='langserver_diagnostics',
+                    id="langserver_diagnostics",
                     underline_list=[
                         underlines.Underline(
                             start=_position_lsp2tk(diagnostic.range.start),
@@ -480,9 +480,9 @@ class LangServer:
                             message=_get_diagnostic_string(diagnostic),
                             # TODO: there are plenty of other severities than ERROR and WARNING
                             color=(
-                                'red'
+                                "red"
                                 if diagnostic.severity == lsp.DiagnosticSeverity.ERROR
-                                else 'orange'
+                                else "orange"
                             ),
                         )
                         for diagnostic in sorted(
@@ -505,11 +505,11 @@ class LangServer:
     def open_tab(self, tab: tabs.FileTab) -> None:
         assert tab not in self.tabs_opened
         self.tabs_opened[tab] = [
-            utils.TemporaryBind(tab, '<<AutoCompletionRequest>>', self.request_completions),
+            utils.TemporaryBind(tab, "<<AutoCompletionRequest>>", self.request_completions),
             utils.TemporaryBind(
-                tab.textwidget, '<<ContentChanged>>', partial(self.send_change_events, tab)
+                tab.textwidget, "<<ContentChanged>>", partial(self.send_change_events, tab)
             ),
-            utils.TemporaryBind(tab, '<Destroy>', (lambda event: self.forget_tab(tab))),
+            utils.TemporaryBind(tab, "<Destroy>", (lambda event: self.forget_tab(tab))),
         ]
 
         self.log.debug("tab opened")
@@ -600,7 +600,7 @@ langservers: Dict[LangServerId, LangServer] = {}
 
 def stream_to_log(stream: IO[bytes], log: logging.LoggerAdapter) -> None:
     for line_bytes in stream:
-        line = line_bytes.rstrip(b'\r\n').decode('utf-8', errors='replace')
+        line = line_bytes.rstrip(b"\r\n").decode("utf-8", errors="replace")
         log.info(f"langserver logged: {line}")
 
 
@@ -608,7 +608,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     if tab.path is None:
         return None
 
-    config = tab.settings.get('langserver', Optional[LangServerConfig])
+    config = tab.settings.get("langserver", Optional[LangServerConfig])
     if config is None:
         return None
     assert isinstance(config, LangServerConfig)
@@ -626,7 +626,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     #
     # on windows, there is no shell and it's all about whether to quote or not
     actual_command: Union[str, List[str]]
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         shell = True
         actual_command = config.command
     else:
@@ -653,7 +653,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
         return None
 
     log = logging.LoggerAdapter(global_log, {})
-    log.process = lambda msg, kwargs: (f'(PID={process.pid}) {msg}', kwargs)  # type: ignore
+    log.process = lambda msg, kwargs: (f"(PID={process.pid}) {msg}", kwargs)  # type: ignore
     log.info(
         f"Langserver process started with command '{config.command}', project root '{project_root}'"
     )
@@ -692,12 +692,12 @@ def switch_langservers(
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option('langserver', None, Optional[LangServerConfig])
+        tab.settings.add_option("langserver", None, Optional[LangServerConfig])
 
         tab.bind(
-            '<<TabSettingChanged:langserver>>', partial(switch_langservers, tab, False), add=True
+            "<<TabSettingChanged:langserver>>", partial(switch_langservers, tab, False), add=True
         )
-        tab.bind('<<PathChanged>>', partial(switch_langservers, tab, True), add=True)
+        tab.bind("<<PathChanged>>", partial(switch_langservers, tab, True), add=True)
         switch_langservers(tab, False)
 
 

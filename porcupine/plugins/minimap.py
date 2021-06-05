@@ -33,13 +33,13 @@ class MiniMap(tkinter.Text):
             exportselection=False,
             takefocus=False,
             yscrollcommand=self._update_vast,
-            wrap='none',
+            wrap="none",
         )
 
         self._tab = tab
         self._tab.textwidget.config(highlightthickness=LINE_THICKNESS)
 
-        self.tag_config('sel', foreground='', background='')
+        self.tag_config("sel", foreground="", background="")
 
         # To indicate the area visible in tab.textwidget, we can't use a tag,
         # because tag configuration is the same for both widgets (except for
@@ -47,34 +47,34 @@ class MiniMap(tkinter.Text):
         # frames on top of the text widget to make up a border. I call this
         # "vast" for "visible area showing thingies".
         self._vast = {
-            'top': tkinter.Frame(self),
-            'left': tkinter.Frame(self),
-            'bottom': tkinter.Frame(self),
-            'right': tkinter.Frame(self),
+            "top": tkinter.Frame(self),
+            "left": tkinter.Frame(self),
+            "bottom": tkinter.Frame(self),
+            "right": tkinter.Frame(self),
         }
 
-        utils.add_scroll_command(tab.textwidget, 'yscrollcommand', self._scroll_callback)
-        self.bind('<Button-1>', self._on_click_and_drag, add=True)
-        self.bind('<Button1-Motion>', self._on_click_and_drag, add=True)
+        utils.add_scroll_command(tab.textwidget, "yscrollcommand", self._scroll_callback)
+        self.bind("<Button-1>", self._on_click_and_drag, add=True)
+        self.bind("<Button1-Motion>", self._on_click_and_drag, add=True)
 
         # We want to prevent the user from selecting anything in self, because
         # of abusing the 'sel' tag. Binding <Button-1> and <Button1-Motion>
         # isn't quite enough.
-        self.bind('<Button1-Enter>', self._on_click_and_drag, add=True)
-        self.bind('<Button1-Leave>', self._on_click_and_drag, add=True)
+        self.bind("<Button1-Enter>", self._on_click_and_drag, add=True)
+        self.bind("<Button1-Leave>", self._on_click_and_drag, add=True)
 
-        self.bind('<<SettingChanged:font_family>>', self.set_font, add=True)
-        self.bind('<<SettingChanged:font_size>>', self.set_font, add=True)
-        tab.bind('<<TabSettingChanged:indent_size>>', self.set_font, add=True)
+        self.bind("<<SettingChanged:font_family>>", self.set_font, add=True)
+        self.bind("<<SettingChanged:font_size>>", self.set_font, add=True)
+        tab.bind("<<TabSettingChanged:indent_size>>", self.set_font, add=True)
 
         self.set_font()
 
         # Make sure that 'sel' tag stays added even when text widget becomes empty
-        tab.textwidget.bind('<<ContentChanged>>', self._update_sel_tag, add=True)
+        tab.textwidget.bind("<<ContentChanged>>", self._update_sel_tag, add=True)
 
         # don't know why after_idle doesn't work. Adding a timeout causes
         # issues with tests.
-        if 'pytest' not in sys.modules:
+        if "pytest" not in sys.modules:
             self.after(50, self._scroll_callback)
 
     def set_colors(self, foreground: str, background: str) -> None:
@@ -91,31 +91,31 @@ class MiniMap(tkinter.Text):
 
     def set_font(self, junk: object = None) -> None:
         self.tag_config(
-            'sel',
-            font=(settings.get('font_family', str), round(settings.get('font_size', int) / 3), ()),
+            "sel",
+            font=(settings.get("font_family", str), round(settings.get("font_size", int) / 3), ()),
         )
         textwidget.config_tab_displaying(
-            self, self._tab.settings.get('indent_size', int), tag='sel'
+            self, self._tab.settings.get("indent_size", int), tag="sel"
         )
         self._update_vast()
 
     def _scroll_callback(self) -> None:
-        first_visible_index = self._tab.textwidget.index('@0,0 linestart')
-        last_visible_index = self._tab.textwidget.index('@0,10000000 linestart')
+        first_visible_index = self._tab.textwidget.index("@0,0 linestart")
+        last_visible_index = self._tab.textwidget.index("@0,10000000 linestart")
         self.see(first_visible_index)
         self.see(last_visible_index)
         self._update_vast()
 
     def _update_sel_tag(self, junk: object = None) -> None:
-        self.tag_add('sel', '1.0', 'end')
+        self.tag_add("sel", "1.0", "end")
 
     def _update_vast(self, *junk: object) -> None:
-        if not self.tag_cget('sel', 'font'):
+        if not self.tag_cget("sel", "font"):
             # view was created just a moment ago, set_font() hasn't ran yet
             return
 
-        start_bbox = self.bbox(self._tab.textwidget.index('@0,0 linestart'))
-        end_bbox = self.bbox(self._tab.textwidget.index('@0,10000000 linestart'))
+        start_bbox = self.bbox(self._tab.textwidget.index("@0,0 linestart"))
+        end_bbox = self.bbox(self._tab.textwidget.index("@0,10000000 linestart"))
 
         hide = set()
         if start_bbox is None and end_bbox is None:
@@ -127,17 +127,17 @@ class MiniMap(tkinter.Text):
         # this, think about (or TIAS) what this code does if you use
         # LINE_THICKNESS instead of +1, and LINE_THICKNESS is set to a huge
         # value such as 15.
-        x_offset = self['borderwidth'] + self['padx'] + 1
-        y_offset = self['borderwidth'] + self['pady'] + 1
+        x_offset = self["borderwidth"] + self["padx"] + 1
+        y_offset = self["borderwidth"] + self["pady"] + 1
 
         if self._tab.textwidget.yview() == (0.0, 1.0):
             # whole file content on screen at once, show screen size instead of file content size
             # this does not take in account wrap plugin
             how_tall_are_lines_on_editor: int = self._tab.tk.call(
-                'font', 'metrics', self._tab.textwidget['font'], '-linespace'
+                "font", "metrics", self._tab.textwidget["font"], "-linespace"
             )
             how_tall_are_lines_on_minimap: int = self._tab.tk.call(
-                'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace'
+                "font", "metrics", self.tag_cget("sel", "font"), "-linespace"
             )
             editor_height: int = self._tab.textwidget.winfo_height()
             how_many_lines_fit_on_editor = editor_height / how_tall_are_lines_on_editor
@@ -148,14 +148,14 @@ class MiniMap(tkinter.Text):
         else:
             if start_bbox is None:
                 vast_top = 0
-                hide.add('top')
+                hide.add("top")
             else:
                 x, y, w, h = start_bbox
                 vast_top = y - y_offset
 
             if end_bbox is None:
                 vast_bottom = self.winfo_height()
-                hide.add('bottom')
+                hide.add("bottom")
             else:
                 x, y, w, h = end_bbox
                 vast_bottom = y - y_offset + h
@@ -164,10 +164,10 @@ class MiniMap(tkinter.Text):
         width = self.winfo_width() - 2 * x_offset
 
         coords = {
-            'top': (0, vast_top, width, LINE_THICKNESS),
-            'left': (0, vast_top, LINE_THICKNESS, vast_height),
-            'bottom': (0, vast_bottom - LINE_THICKNESS, width, LINE_THICKNESS),
-            'right': (width - LINE_THICKNESS, vast_top, LINE_THICKNESS, vast_height),
+            "top": (0, vast_top, width, LINE_THICKNESS),
+            "left": (0, vast_top, LINE_THICKNESS, vast_height),
+            "bottom": (0, vast_bottom - LINE_THICKNESS, width, LINE_THICKNESS),
+            "right": (width - LINE_THICKNESS, vast_top, LINE_THICKNESS, vast_height),
         }
 
         for name, widget in self._vast.items():
@@ -181,15 +181,15 @@ class MiniMap(tkinter.Text):
         self._update_sel_tag()
 
     def _on_click_and_drag(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
-        self._tab.textwidget.see(self.index(f'@0,{event.y}'))
-        return 'break'
+        self._tab.textwidget.see(self.index(f"@0,{event.y}"))
+        return "break"
 
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         minimap = MiniMap(tab.right_frame, tab)
         textwidget.use_pygments_theme(minimap, minimap.set_colors)
-        minimap.pack(fill='y', expand=True)
+        minimap.pack(fill="y", expand=True)
 
 
 def setup() -> None:

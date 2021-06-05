@@ -20,7 +20,7 @@ def test_it_doesnt_crash(monkeypatch):
         called += 1
         self.destroy()
 
-    monkeypatch.setattr(tkinter.Toplevel, 'wait_window', fake_wait_window)
+    monkeypatch.setattr(tkinter.Toplevel, "wait_window", fake_wait_window)
 
     get_main_window().event_generate("<<Menubar:Help/About Porcupine>>")
     assert called == 1
@@ -29,15 +29,15 @@ def test_it_doesnt_crash(monkeypatch):
 def test_show_huge_logo(monkeypatch):
     opened = []
     fake_webbrowser = types.SimpleNamespace(open=opened.append)
-    monkeypatch.setattr(aboutdialog, 'webbrowser', fake_webbrowser)
+    monkeypatch.setattr(aboutdialog, "webbrowser", fake_webbrowser)
     aboutdialog.show_huge_logo()
 
     [url] = opened
-    assert url.startswith('file://')
-    path = url2pathname(url[len('file://') :])
+    assert url.startswith("file://")
+    path = url2pathname(url[len("file://") :])
     assert os.path.exists(path)
 
     # make sure it's a gif
-    assert path.endswith('.gif')
-    with open(path, 'rb') as file:
-        assert file.read(3) == b'GIF'  # every gif file starts with this
+    assert path.endswith(".gif")
+    with open(path, "rb") as file:
+        assert file.read(3) == b"GIF"  # every gif file starts with this

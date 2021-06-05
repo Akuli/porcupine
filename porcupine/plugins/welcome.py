@@ -8,7 +8,7 @@ from tkinter import ttk
 from porcupine import get_tab_manager, images, tabs, utils
 
 # Key bindings are included in the message
-setup_after = ['keybindings']
+setup_after = ["keybindings"]
 
 
 def get_message() -> str:
@@ -23,7 +23,7 @@ their keyboard shortcuts.
 """
 
     # replace single newlines with spaces
-    return re.sub(r'(.)\n(.)', r'\1 \2', result.strip())
+    return re.sub(r"(.)\n(.)", r"\1 \2", result.strip())
 
 
 BORDER_SIZE = 30  # pixels
@@ -36,16 +36,16 @@ class WelcomeMessageDisplayer:
 
         # pad only on left side so the image goes as far right as possible
         top = ttk.Frame(self._frame)
-        top.pack(fill='x', padx=(BORDER_SIZE, 0))
-        ttk.Label(top, image=images.get('logo-200x200')).pack(side='right')
+        top.pack(fill="x", padx=(BORDER_SIZE, 0))
+        ttk.Label(top, image=images.get("logo-200x200")).pack(side="right")
 
         # TODO: better way to center the label in its space?
         centerer = ttk.Frame(top)
-        centerer.pack(fill='both', expand=True)
-        self.title_label = ttk.Label(centerer, text="Welcome to Porcupine!", font=('', 25, 'bold'))
-        self.title_label.place(relx=0.5, rely=0.5, anchor='center')
+        centerer.pack(fill="both", expand=True)
+        self.title_label = ttk.Label(centerer, text="Welcome to Porcupine!", font=("", 25, "bold"))
+        self.title_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.message_label = ttk.Label(self._frame, text=get_message(), font=('', 15, ''))
+        self.message_label = ttk.Label(self._frame, text=get_message(), font=("", 15, ""))
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()
@@ -53,20 +53,20 @@ class WelcomeMessageDisplayer:
     def update_wraplen(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # images.get('logo-200x200').width() is always 200, but hard-coding is bad
         self.title_label.config(
-            wraplength=(event.width - images.get('logo-200x200').width() - BORDER_SIZE)
+            wraplength=(event.width - images.get("logo-200x200").width() - BORDER_SIZE)
         )
         self.message_label.config(wraplength=(event.width - 2 * BORDER_SIZE))
 
     def on_new_tab(self, tab: tabs.Tab) -> None:
         self._frame.pack_forget()
-        tab.bind('<Destroy>', self._on_tab_closed, add=True)
+        tab.bind("<Destroy>", self._on_tab_closed, add=True)
 
     def _on_tab_closed(self, junk: object = None) -> None:
         if not get_tab_manager().tabs():
-            self._frame.pack(fill='both', expand=True)
+            self._frame.pack(fill="both", expand=True)
 
 
 def setup() -> None:
     displayer = WelcomeMessageDisplayer()
-    get_tab_manager().bind('<Configure>', displayer.update_wraplen, add=True)
+    get_tab_manager().bind("<Configure>", displayer.update_wraplen, add=True)
     get_tab_manager().add_tab_callback(displayer.on_new_tab)

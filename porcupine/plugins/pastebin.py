@@ -25,8 +25,8 @@ from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 log = logging.getLogger(__name__)
 
 
-DPASTE_URL = 'https://dpaste.com/api/v2/'
-TERMBIN_HOST_AND_PORT = ('termbin.com', 9999)
+DPASTE_URL = "https://dpaste.com/api/v2/"
+TERMBIN_HOST_AND_PORT = ("termbin.com", 9999)
 
 
 class Paste:
@@ -57,7 +57,7 @@ class Paste:
 
 
 class Termbin(Paste):
-    name = 'termbin.com'
+    name = "termbin.com"
 
     def __init__(self) -> None:
         super().__init__()
@@ -69,11 +69,11 @@ class Termbin(Paste):
     def run(self, code: str, lexer_class: LexerMeta) -> str:
         with socket.socket() as self._socket:
             self._socket.connect(TERMBIN_HOST_AND_PORT)
-            self._socket.sendall(code.encode('utf-8'))
+            self._socket.sendall(code.encode("utf-8"))
             url = self._socket.recv(1024)
             # today termbin adds zero bytes to my URL's 0_o it hasn't done sit before
             # i've never seen it add \r but i'm not surprised if it adds it
-            return url.rstrip(b'\n\r\0').decode('ascii')
+            return url.rstrip(b"\n\r\0").decode("ascii")
 
 
 # Hello there, random person reading my code. You are probably wondering why in
@@ -116,7 +116,7 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
 
 
 class DPaste(Paste):
-    name = 'dpaste.com'
+    name = "dpaste.com"
 
     def __init__(self) -> None:
         super().__init__()
@@ -136,7 +136,7 @@ class DPaste(Paste):
         # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
         request = Request(
             DPASTE_URL,
-            data=urlencode({'syntax': lexer_class.aliases[0], 'content': code}).encode('utf-8'),
+            data=urlencode({"syntax": lexer_class.aliases[0], "content": code}).encode("utf-8"),
         )
 
         with build_opener(handler).open(request) as response:
@@ -149,16 +149,16 @@ class SuccessDialog(tkinter.Toplevel):
         self.url = url
 
         content = ttk.Frame(self)
-        content.pack(fill='both', expand=True)
+        content.pack(fill="both", expand=True)
 
         label = ttk.Label(content, text="Here's your link:")
-        label.place(relx=0.5, rely=0.15, anchor='center')
+        label.place(relx=0.5, rely=0.15, anchor="center")
 
-        self._entry = ttk.Entry(self, justify='center')
-        self._entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
+        self._entry = ttk.Entry(self, justify="center")
+        self._entry.place(relx=0.5, rely=0.4, anchor="center", relwidth=1)
         self._entry.insert(0, url)
-        self._entry.config(state='readonly')  # must be after the insert
-        self.bind('<FocusIn>', self._select_all, add=True)
+        self._entry.config(state="readonly")  # must be after the insert
+        self.bind("<FocusIn>", self._select_all, add=True)
         self._select_all()
 
         button_info = [
@@ -167,14 +167,14 @@ class SuccessDialog(tkinter.Toplevel):
             ("Close this dialog", self.destroy),
         ]
         buttonframe = ttk.Frame(self)
-        buttonframe.place(relx=0.5, rely=0.8, anchor='center', relwidth=1)
+        buttonframe.place(relx=0.5, rely=0.8, anchor="center", relwidth=1)
         for text, callback in button_info:
-            ttk.Button(buttonframe, text=text, command=callback).pack(side='left', expand=True)
+            ttk.Button(buttonframe, text=text, command=callback).pack(side="left", expand=True)
 
     def _select_all(self, event: Optional[tkinter.Event] = None) -> None:
         # toplevels annoyingly get notified of child events
         if event is None or event.widget is self:
-            self._entry.selection_range(0, 'end')
+            self._entry.selection_range(0, "end")
             self._entry.focus()
 
     def open_in_browser(self) -> None:
@@ -190,40 +190,40 @@ def make_please_wait_window(paste: Paste) -> tkinter.Toplevel:
     window = tkinter.Toplevel()
     window.transient(get_main_window())
     window.title("Pasting...")
-    window.geometry('350x150')
+    window.geometry("350x150")
     window.resizable(False, False)
-    window.protocol('WM_DELETE_WINDOW', paste.cancel)
+    window.protocol("WM_DELETE_WINDOW", paste.cancel)
 
     content = ttk.Frame(window)
-    content.pack(fill='both', expand=True)
+    content.pack(fill="both", expand=True)
 
     label = ttk.Label(
-        content, font=('', 12, ()), text=f"Pasting to {type(paste).name}, please wait..."
+        content, font=("", 12, ()), text=f"Pasting to {type(paste).name}, please wait..."
     )
     label.pack(expand=True)
 
-    progressbar = ttk.Progressbar(content, mode='indeterminate')
-    progressbar.pack(fill='x', padx=15, pady=15)
+    progressbar = ttk.Progressbar(content, mode="indeterminate")
+    progressbar.pack(fill="x", padx=15, pady=15)
     progressbar.start()
 
     ttk.Button(content, text="Cancel", command=paste.cancel).pack(pady=15)
 
-    get_main_window().tk.call('tk', 'busy', 'hold', get_main_window())
+    get_main_window().tk.call("tk", "busy", "hold", get_main_window())
     return window
 
 
 def pasting_done_callback(
     paste: Paste, please_wait_window: tkinter.Toplevel, success: bool, result: str
 ) -> None:
-    get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
+    get_main_window().tk.call("tk", "busy", "forget", get_main_window())
     please_wait_window.destroy()
 
     if success:
-        if result.startswith(('http://', 'https://')):
+        if result.startswith(("http://", "https://")):
             log.info("pasting succeeded")
             dialog = SuccessDialog(url=result)
             dialog.title("Pasting Succeeded")
-            dialog.geometry('450x150')
+            dialog.geometry("450x150")
             dialog.transient(get_main_window())
             dialog.wait_window()
         else:
@@ -251,12 +251,12 @@ def start_pasting(paste_class: Type[Paste]) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
 
-    lexer_class = tab.settings.get('pygments_lexer', LexerMeta)
+    lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
     try:
-        code = tab.textwidget.get('sel.first', 'sel.last')
+        code = tab.textwidget.get("sel.first", "sel.last")
     except tkinter.TclError:
         # nothing is selected, pastebin everything
-        code = tab.textwidget.get('1.0', 'end - 1 char')
+        code = tab.textwidget.get("1.0", "end - 1 char")
 
     paste = paste_class()
     plz_wait = make_please_wait_window(paste)
@@ -270,7 +270,7 @@ def setup() -> None:
         menubar.get_menu("Pastebin").add_command(
             label=klass.name, command=partial(start_pasting, klass)
         )
-        assert '/' not in klass.name
+        assert "/" not in klass.name
         menubar.set_enabled_based_on_tab(
             f"Pastebin/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab))
         )

@@ -8,17 +8,17 @@ from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
 def on_drag(event: tkinter.Event[tabs.TabManager]) -> utils.BreakOrNone:
-    if event.widget.identify(event.x, event.y) == 'label':
-        destination_index = event.widget.index(f'@{event.x},{event.y}')
+    if event.widget.identify(event.x, event.y) == "label":
+        destination_index = event.widget.index(f"@{event.x},{event.y}")
         event.widget.insert(destination_index, event.widget.select())
-        return 'break'
+        return "break"
     return None
 
 
 def select_tab_n(n: int, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
     try:
         get_tab_manager().select(n - 1)
-        return 'break'
+        return "break"
     except tkinter.TclError:  # index out of bounds
         return None
 
@@ -31,7 +31,7 @@ def select_left_or_right(diff: int) -> utils.BreakOrNone:
     new_index = get_tab_manager().index(selected_tab) + diff
     try:
         get_tab_manager().select(new_index)
-        return 'break'
+        return "break"
     except tkinter.TclError:  # index out of bounds
         return None
 
@@ -44,7 +44,7 @@ def move_left_or_right(diff: int) -> utils.BreakOrNone:
     destination_index = get_tab_manager().index(selected_tab) + diff
     try:
         get_tab_manager().insert(destination_index, selected_tab)
-        return 'break'
+        return "break"
     except tkinter.TclError:  # index out of bounds
         return None
 
@@ -64,11 +64,11 @@ def wheel_callback(diff: int, event: tkinter.Event) -> None:
 
 def switch_tabs_on_mouse_wheel() -> None:
     tabmanager = get_tab_manager()
-    if tabmanager.tk.call('tk', 'windowingsystem') == 'x11':
-        tabmanager.bind('<Button-4>', partial(wheel_callback, -1), add=True)
-        tabmanager.bind('<Button-5>', partial(wheel_callback, 1), add=True)
+    if tabmanager.tk.call("tk", "windowingsystem") == "x11":
+        tabmanager.bind("<Button-4>", partial(wheel_callback, -1), add=True)
+        tabmanager.bind("<Button-5>", partial(wheel_callback, 1), add=True)
 
-    elif tabmanager.tk.call('tk', 'windowingsystem') == 'aqua':
+    elif tabmanager.tk.call("tk", "windowingsystem") == "aqua":
         # Handle smooth scrolling
         accumulator = 0.0
 
@@ -86,8 +86,8 @@ def switch_tabs_on_mouse_wheel() -> None:
                 accumulator += MACOS_WHEEL_STEP
                 wheel_callback(1, event)
 
-        tabmanager.bind('<MouseWheel>', scroll, add=True)
-        tabmanager.bind('<Leave>', reset, add=True)
+        tabmanager.bind("<MouseWheel>", scroll, add=True)
+        tabmanager.bind("<Leave>", reset, add=True)
 
     else:  # Windows
 
@@ -97,28 +97,28 @@ def switch_tabs_on_mouse_wheel() -> None:
             else:
                 wheel_callback(1, event)
 
-        tabmanager.bind('<MouseWheel>', real_callback, add=True)
+        tabmanager.bind("<MouseWheel>", real_callback, add=True)
 
 
 def setup() -> None:
-    get_tab_manager().bind('<Button1-Motion>', on_drag, add=True)
+    get_tab_manager().bind("<Button1-Motion>", on_drag, add=True)
 
     # This doesn't use enable_traversal() because we want more bindings than it creates.
     # The bindings also need to be configurable.
     get_main_window().bind(
-        '<<TabOrder:SelectLeft>>', (lambda event: select_left_or_right(-1)), add=True
+        "<<TabOrder:SelectLeft>>", (lambda event: select_left_or_right(-1)), add=True
     )
     get_main_window().bind(
-        '<<TabOrder:SelectRight>>', (lambda event: select_left_or_right(1)), add=True
+        "<<TabOrder:SelectRight>>", (lambda event: select_left_or_right(1)), add=True
     )
     get_main_window().bind(
-        '<<TabOrder:MoveLeft>>', (lambda event: move_left_or_right(-1)), add=True
+        "<<TabOrder:MoveLeft>>", (lambda event: move_left_or_right(-1)), add=True
     )
     get_main_window().bind(
-        '<<TabOrder:MoveRight>>', (lambda event: move_left_or_right(1)), add=True
+        "<<TabOrder:MoveRight>>", (lambda event: move_left_or_right(1)), add=True
     )
 
     for n in range(1, 10):
-        get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(select_tab_n, n), add=True)
+        get_main_window().bind(f"<<TabOrder:SelectTab{n}>>", partial(select_tab_n, n), add=True)
 
     switch_tabs_on_mouse_wheel()

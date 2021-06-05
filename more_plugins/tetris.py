@@ -62,7 +62,7 @@ class Block:
 
     # for debugging
     def __repr__(self) -> str:
-        return f'<{self.shape_letter}-shaped {type(self).__name__} at ({self.x}, {self.y})>'
+        return f"<{self.shape_letter}-shaped {type(self).__name__} at ({self.x}, {self.y})>"
 
     def get_coords(self) -> Iterator[Point]:
         for shapex, shapey in self.shape:
@@ -155,9 +155,9 @@ class Game:
 
     def add_block(self) -> None:
         letter = random.choice(list(SHAPES.keys()))
-        if letter == 'O':
+        if letter == "O":
             self.moving_block = NonRotatingBlock(self, letter)
-        elif letter in {'I', 'S', 'Z'}:
+        elif letter in {"I", "S", "Z"}:
             self.moving_block = TwoRotationsBlock(self, letter)
         else:
             self.moving_block = Block(self, letter)
@@ -204,13 +204,13 @@ class Game:
 
 
 COLORS: Dict[ShapeLetter, str] = {
-    'I': 'red',
-    'O': 'blue',
-    'T': 'yellow',
-    'L': 'magenta',
-    'J': 'white',
-    'S': 'green',
-    'Z': 'cyan',
+    "I": "red",
+    "O": "blue",
+    "T": "yellow",
+    "L": "magenta",
+    "J": "white",
+    "S": "green",
+    "Z": "cyan",
 }
 
 
@@ -225,13 +225,13 @@ class TetrisTab(tabs.Tab):
             self,
             width=WIDTH * SCALE,
             height=HEIGHT * SCALE,
-            relief='ridge',
-            bg='black',
+            relief="ridge",
+            bg="black",
             takefocus=True,
         )
         self._canvas.pack()
 
-        self._score_label = ttk.Label(self, justify='center')
+        self._score_label = ttk.Label(self, justify="center")
         self._score_label.pack()
 
         help_text = (
@@ -239,13 +239,13 @@ class TetrisTab(tabs.Tab):
             f"Press {utils.get_binding('<<Tetris:Pause>>')} to pause "
             f"or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game."
         )
-        ttk.Label(self, text=help_text, justify='center', wraplength=self._canvas['width']).pack()
+        ttk.Label(self, text=help_text, justify="center", wraplength=self._canvas["width"]).pack()
 
-        for key in ['<Left>', '<Right>', '<Up>', '<Down>', '<Return>', '<space>']:
+        for key in ["<Left>", "<Right>", "<Up>", "<Down>", "<Return>", "<space>"]:
             self._canvas.bind(key, self._on_key, add=True)
 
-        self._canvas.bind('<<Tetris:NewGame>>', (lambda event: self.new_game()), add=True)
-        self._canvas.bind('<<Tetris:Pause>>', self._toggle_pause, add=True)
+        self._canvas.bind("<<Tetris:NewGame>>", (lambda event: self.new_game()), add=True)
+        self._canvas.bind("<<Tetris:Pause>>", self._toggle_pause, add=True)
 
         self._canvas_content = {}
         for x in range(WIDTH):
@@ -253,14 +253,14 @@ class TetrisTab(tabs.Tab):
                 left = x * SCALE
                 bottom = (HEIGHT - y) * SCALE
                 self._canvas_content[(x, y)] = self._canvas.create_rectangle(
-                    left, bottom - SCALE, left + SCALE, bottom, outline='black', fill='black'
+                    left, bottom - SCALE, left + SCALE, bottom, outline="black", fill="black"
                 )
 
         self._timeout_id: Optional[str] = None
         self._game_over_id: Optional[int] = None
 
         # yes, this needs force for some reason
-        self.bind('<<TabSelected>>', (lambda event: self._canvas.focus_force()), add=True)
+        self.bind("<<TabSelected>>", (lambda event: self._canvas.focus_force()), add=True)
 
     def _toggle_pause(self, event: tkinter.Event[tkinter.Misc]) -> None:
         if not self._game.game_over():
@@ -273,30 +273,30 @@ class TetrisTab(tabs.Tab):
             return None
 
         if not self._game.paused:
-            if event.keysym == 'Left':
+            if event.keysym == "Left":
                 self._game.moving_block.move_left()
-            elif event.keysym == 'Right':
+            elif event.keysym == "Right":
                 self._game.moving_block.move_right()
-            elif event.keysym in {'Return', 'Up'}:
+            elif event.keysym in {"Return", "Up"}:
                 self._game.moving_block.rotate()
-            elif event.keysym in {'space', 'Down'}:
+            elif event.keysym in {"space", "Down"}:
                 self._game.moving_block.move_down_all_the_way()
             else:
                 raise ValueError(f"unknown keysym {event.keysym!r}")
 
         self._refresh()
-        return 'break'
+        return "break"
 
     def _refresh(self) -> None:
         for (x, y), item_id in self._canvas_content.items():
             shape = self._game.shape_at(x, y)
             if shape is None:
-                color = self._canvas['bg']
+                color = self._canvas["bg"]
             else:
                 color = COLORS[shape]
             self._canvas.itemconfig(item_id, fill=color)
 
-        self._score_label['text'] = f"Score {self._game.score}, level {self._game.level}\n" + (
+        self._score_label["text"] = f"Score {self._game.score}, level {self._game.level}\n" + (
             "Paused" if self._game.paused else ""
         )
 
@@ -317,20 +317,20 @@ class TetrisTab(tabs.Tab):
             self._refresh()
 
             if self._game.game_over():
-                centerx = int(self._canvas['width']) // 2
-                centery = int(self._canvas['height']) // 3
+                centerx = int(self._canvas["width"]) // 2
+                centery = int(self._canvas["height"]) // 3
                 font_size = 18
 
                 self._canvas.create_rectangle(
-                    0, centery - font_size, self._canvas['width'], centery + font_size, fill='black'
+                    0, centery - font_size, self._canvas["width"], centery + font_size, fill="black"
                 )
                 self._game_over_id = self._canvas.create_text(
                     centerx,
                     centery,
-                    anchor='center',
+                    anchor="center",
                     text="Game Over :(",
-                    font=('', font_size, 'bold'),
-                    fill='white',
+                    font=("", font_size, "bold"),
+                    fill="white",
                 )
                 return
 
@@ -340,7 +340,7 @@ class TetrisTab(tabs.Tab):
         return self._game  # it should be picklable
 
     @classmethod
-    def from_state(cls, manager: tabs.TabManager, game: Game) -> 'TetrisTab':
+    def from_state(cls, manager: tabs.TabManager, game: Game) -> "TetrisTab":
         game.paused = True
         self = cls(manager)
         self._game = game

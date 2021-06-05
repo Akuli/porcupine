@@ -10,5 +10,5 @@ def test_all_plugins_loaded_successfully():
 
 # filetypes plugin adds custom command line arguments
 def test_filetypes_plugin_cant_be_loaded_while_running():
-    [info] = [info for info in pluginloader.plugin_infos if info.name == 'filetypes']
+    [info] = [info for info in pluginloader.plugin_infos if info.name == "filetypes"]
     assert not pluginloader.can_setup_while_running(info)

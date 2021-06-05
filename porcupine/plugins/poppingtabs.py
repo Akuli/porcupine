@@ -53,18 +53,18 @@ class PopManager:
         self._window.overrideredirect(True)
 
         # this is not ttk because i want it to look yellowish
-        self._label = tkinter.Label(self._window, fg='#000', bg='#ffc')
+        self._label = tkinter.Label(self._window, fg="#000", bg="#ffc")
         self._label.pack()
 
         self._dragged_state: Union[SpecialState, Tuple[tabs.Tab, Any]] = NOT_DRAGGING
 
     def _show_tooltip(self, event: tkinter.Event[tkinter.Misc]) -> None:
-        if self._window.state() == 'withdrawn':
+        if self._window.state() == "withdrawn":
             self._window.deiconify()
 
         left = event.x_root - (self._label.winfo_reqwidth() // 2)  # centered
         top = event.y_root - self._label.winfo_reqheight()  # above cursor
-        self._window.geometry(f'+{left}+{top}')
+        self._window.geometry(f"+{left}+{top}")
 
     # no need to return 'break' imo, other plugins are free to follow
     # drags and drops
@@ -116,7 +116,7 @@ class PopManager:
             y = min(y, screen_height - height)
             x = max(0, x)
             y = max(0, y)
-            self.pop(tab, state, f'{width}x{height}+{x}+{y}')
+            self.pop(tab, state, f"{width}x{height}+{x}+{y}")
 
         self._dragged_state = NOT_DRAGGING
 
@@ -135,12 +135,12 @@ class PopManager:
         # Importing from current working directory is bad if it contains
         # e.g. queue.py (#31), but good when that's where porcupine is
         # meant to be imported from (#230).
-        code = f'import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()'
-        args = [sys.executable, '-c', code]
+        code = f"import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()"
+        args = [sys.executable, "-c", code]
 
-        args.append('--without-plugins')
+        args.append("--without-plugins")
         args.append(
-            ','.join(
+            ",".join(
                 {
                     info.name
                     for info in pluginloader.plugin_infos
@@ -149,18 +149,18 @@ class PopManager:
                 | {
                     # these plugins are not suitable for popups
                     # TODO: geometry and restart stuff don't get saved
-                    'restart',
-                    'geometry',
+                    "restart",
+                    "geometry",
                 }
             )
         )
 
         if get_parsed_args().verbose_logger is not None:
-            args.append('--verbose-logger')
+            args.append("--verbose-logger")
             args.append(get_parsed_args().verbose_logger)
 
         process = subprocess.Popen(
-            args, env={**os.environ, 'PORCUPINE_POPPINGTABS_STATE_FILE': file.name}
+            args, env={**os.environ, "PORCUPINE_POPPINGTABS_STATE_FILE": file.name}
         )
         log.debug(f"started subprocess with PID {process.pid}")
         get_tab_manager().close_tab(tab)
@@ -179,9 +179,9 @@ class PopManager:
         half_screen_width = round(get_main_window().winfo_screenwidth() / 2)
         screen_height = get_main_window().winfo_screenheight()
         if window_center > half_screen_width:
-            geometry = f'{half_screen_width}x{screen_height}+0+0'
+            geometry = f"{half_screen_width}x{screen_height}+0+0"
         else:
-            geometry = f'{half_screen_width}x{screen_height}+{half_screen_width}+0'
+            geometry = f"{half_screen_width}x{screen_height}+{half_screen_width}+0"
         self.pop(tab, state, geometry)
 
     def _waiting_thread(self, process: subprocess.Popen[bytes]) -> None:
@@ -194,11 +194,11 @@ class PopManager:
 
 def open_tab_from_state_file() -> None:
     try:
-        path = os.environ.pop('PORCUPINE_POPPINGTABS_STATE_FILE')
+        path = os.environ.pop("PORCUPINE_POPPINGTABS_STATE_FILE")
     except KeyError:
         return
 
-    with open(path, 'rb') as file:
+    with open(path, "rb") as file:
         (tabtype, state, geometry) = pickle.load(file)
     get_main_window().geometry(geometry)
     get_tab_manager().add_tab(tabtype.from_state(get_tab_manager(), state))
@@ -213,8 +213,8 @@ def open_tab_from_state_file() -> None:
 
 def setup() -> None:
     manager = PopManager()
-    get_tab_manager().bind('<Button1-Motion>', manager.on_drag, add=True)
-    get_tab_manager().bind('<ButtonRelease-1>', manager.on_drop, add=True)
+    get_tab_manager().bind("<Button1-Motion>", manager.on_drag, add=True)
+    get_tab_manager().bind("<ButtonRelease-1>", manager.on_drop, add=True)
     menubar.get_menu("View").add_command(
         label="Pop Tab", command=manager.pop_next_to_current_window
     )

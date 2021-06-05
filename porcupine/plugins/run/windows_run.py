@@ -17,7 +17,7 @@ colorama.init()
 # should run with the user's own Python, not Porcupine's python.
 new_env = dict(os.environ)
 try:
-    del new_env['PYTHONPATH']
+    del new_env["PYTHONPATH"]
 except KeyError:
     pass
 

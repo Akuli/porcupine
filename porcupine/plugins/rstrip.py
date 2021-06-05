@@ -6,11 +6,11 @@ from porcupine import get_tab_manager, tabs
 
 
 def after_enter(tab: tabs.FileTab) -> None:
-    if tab.settings.get('trim_trailing_whitespace', bool):
-        lineno = int(tab.textwidget.index('insert').split('.')[0]) - 1
-        line = tab.textwidget.get(f'{lineno}.0', f'{lineno}.0 lineend')
+    if tab.settings.get("trim_trailing_whitespace", bool):
+        lineno = int(tab.textwidget.index("insert").split(".")[0]) - 1
+        line = tab.textwidget.get(f"{lineno}.0", f"{lineno}.0 lineend")
         if len(line) != len(line.rstrip()):
-            tab.textwidget.delete(f'{lineno}.{len(line.rstrip())}', f'{lineno}.0 lineend')
+            tab.textwidget.delete(f"{lineno}.{len(line.rstrip())}", f"{lineno}.0 lineend")
 
 
 def on_enter(tab: tabs.FileTab, junk: object) -> None:
@@ -19,8 +19,8 @@ def on_enter(tab: tabs.FileTab, junk: object) -> None:
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option('trim_trailing_whitespace', True)
-        tab.textwidget.bind('<Return>', functools.partial(on_enter, tab), add=True)
+        tab.settings.add_option("trim_trailing_whitespace", True)
+        tab.textwidget.bind("<Return>", functools.partial(on_enter, tab), add=True)
 
 
 def setup() -> None:

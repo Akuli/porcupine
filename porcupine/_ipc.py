@@ -11,7 +11,7 @@ from typing import Any, Iterator, List
 
 from porcupine import dirs
 
-_ADDRESS_FILE = pathlib.Path(dirs.user_cache_dir) / 'ipc_address.txt'
+_ADDRESS_FILE = pathlib.Path(dirs.user_cache_dir) / "ipc_address.txt"
 
 
 # the addresses contain random junk so they are very unlikely to
@@ -26,7 +26,7 @@ def send(objects: List[Any]) -> None:
     # reading the address file, connecting to a windows named pipe and
     # connecting to an AF_UNIX socket all raise FileNotFoundError :D
     try:
-        with _ADDRESS_FILE.open('r') as file:
+        with _ADDRESS_FILE.open("r") as file:
             address = file.read().strip()
         client = connection.Client(address)
     except FileNotFoundError:
@@ -55,7 +55,7 @@ def _listener2queue(listener: connection.Listener, object_queue: queue.Queue[Any
 
 
 @contextlib.contextmanager
-def session() -> Iterator['queue.Queue[Any]']:
+def session() -> Iterator["queue.Queue[Any]"]:
     """Context manager that listens for send().
 
     Use this as a context manager:
@@ -67,7 +67,7 @@ def session() -> Iterator['queue.Queue[Any]']:
     """
     message_queue: queue.Queue[Any] = queue.Queue()
     with connection.Listener() as listener:
-        with _ADDRESS_FILE.open('w') as file:
+        with _ADDRESS_FILE.open("w") as file:
             print(listener.address, file=file)
         thread = threading.Thread(
             target=_listener2queue, args=[listener, message_queue], daemon=True
@@ -76,7 +76,7 @@ def session() -> Iterator['queue.Queue[Any]']:
         yield message_queue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # simple test
     try:
         send([1, 2, 3])

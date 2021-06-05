@@ -47,14 +47,14 @@ log = logging.getLogger(__name__)
 #
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
-def _generate_event(name: str, junk: object) -> Literal['break']:
+def _generate_event(name: str, junk: object) -> Literal["break"]:
     get_main_window().event_generate(name)
-    return 'break'
+    return "break"
 
 
 def _fix_text_widget_bindings(event: tkinter.Event[tkinter.Misc]) -> None:
     for virtual_event in event.widget.event_info():
-        if virtual_event.startswith('<<Menubar:') and not event.widget.bind(virtual_event):
+        if virtual_event.startswith("<<Menubar:") and not event.widget.bind(virtual_event):
             # When the keys are pressed, generate the event on the main
             # window so the menu callback will trigger.
             event.widget.bind(
@@ -67,22 +67,22 @@ def _init() -> None:
     log.debug("_init() starts")
     main_window = get_main_window()
     main_window.config(menu=tkinter.Menu(main_window, tearoff=False))
-    main_window.bind('<<PluginsLoaded>>', (lambda event: update_keyboard_shortcuts()), add=True)
-    main_window.bind_class('Text', '<FocusIn>', _fix_text_widget_bindings, add=True)
+    main_window.bind("<<PluginsLoaded>>", (lambda event: update_keyboard_shortcuts()), add=True)
+    main_window.bind_class("Text", "<FocusIn>", _fix_text_widget_bindings, add=True)
     _fill_menus_with_default_stuff()
     log.debug("_init() done")
 
 
-_MENU_ITEM_TYPES_WITH_LABEL = {'command', 'checkbutton', 'radiobutton', 'cascade'}
+_MENU_ITEM_TYPES_WITH_LABEL = {"command", "checkbutton", "radiobutton", "cascade"}
 
 
 def _find_item(menu: tkinter.Menu, label: str) -> Optional[int]:
-    last_index = menu.index('end')
+    last_index = menu.index("end")
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
             if (
                 menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL
-                and menu.entrycget(index, 'label') == label
+                and menu.entrycget(index, "label") == label
             ):
                 return index
     return None
@@ -99,19 +99,19 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
     If *path* is ``None``, then the menubar itself is returned.
     """
     main_window = get_main_window()
-    main_menu: tkinter.Menu = main_window.nametowidget(main_window['menu'])
+    main_menu: tkinter.Menu = main_window.nametowidget(main_window["menu"])
     if path is None:
         return main_menu
 
     menu = main_menu
-    for label in path.split('/'):
+    for label in path.split("/"):
         submenu_index = _find_item(menu, label)
         if submenu_index is None:
             # Need to pass the menu as an explicit argument to tkinter.Menu.
             # Otherwise add_cascade() below tries to allocate a crazy amount of
             # memory and freezes everything when running tests (don't know why)
             submenu = tkinter.Menu(menu, tearoff=False)
-            if menu == main_menu and menu.index('end') is not None:
+            if menu == main_menu and menu.index("end") is not None:
                 # adding something to non-empty main menu, don't add all the
                 # way to end so that "Help" menu stays at very end
                 last_index = menu.index("end")
@@ -122,7 +122,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
             menu = submenu
 
         else:
-            menu = menu.nametowidget(menu.entrycget(submenu_index, 'menu'))
+            menu = menu.nametowidget(menu.entrycget(submenu_index, "menu"))
 
     return menu
 
@@ -141,21 +141,21 @@ def add_config_file_button(path: pathlib.Path) -> None:
 
 
 def _walk_menu_contents(
-    menu: Optional[tkinter.Menu] = None, path_prefix: str = ''
+    menu: Optional[tkinter.Menu] = None, path_prefix: str = ""
 ) -> Iterator[Tuple[str, tkinter.Menu, int]]:
 
     if menu is None:
         menu = get_menu(None)
 
-    last_index = menu.index('end')
+    last_index = menu.index("end")
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
-            if menu.type(index) == 'cascade':
-                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, 'menu'))
-                new_prefix = path_prefix + menu.entrycget(index, 'label') + '/'
+            if menu.type(index) == "cascade":
+                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, "menu"))
+                new_prefix = path_prefix + menu.entrycget(index, "label") + "/"
                 yield from _walk_menu_contents(submenu, new_prefix)
             elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:
-                path = path_prefix + menu.entrycget(index, 'label')
+                path = path_prefix + menu.entrycget(index, "label")
                 yield (path, menu, index)
 
 
@@ -163,13 +163,13 @@ def _menu_event_handler(
     menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]
 ) -> utils.BreakOrNone:
     menu.invoke(index)
-    return 'break'
+    return "break"
 
 
 def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
     for path, menu, index in _walk_menu_contents():
-        event_name = f'<<Menubar:{path}>>'
+        event_name = f"<<Menubar:{path}>>"
 
         # show keyboard shortcuts in menus
         menu.entryconfig(index, accelerator=utils.get_binding(event_name, menu=True))
@@ -186,19 +186,19 @@ def _update_shortcuts_for_opening_submenus() -> None:
     used_letters = set()
     for virtual_event in get_main_window().event_info():
         for physical_event in get_main_window().event_info(virtual_event):
-            match = re.fullmatch(r'<Alt-Key-([a-z])>', physical_event)
+            match = re.fullmatch(r"<Alt-Key-([a-z])>", physical_event)
             if match is not None:
                 used_letters.add(match.group(1))
 
     menu = get_menu(None)
-    for submenu_index in range(menu.index('end') + 1):
-        for letter_index, letter in enumerate(menu.entrycget(submenu_index, 'label').lower()):
+    for submenu_index in range(menu.index("end") + 1):
+        for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):
             if letter in ascii_lowercase and letter not in used_letters:
                 menu.entryconfig(submenu_index, underline=letter_index)
                 used_letters.add(letter)
                 break
         else:
-            menu.entryconfig(submenu_index, accelerator='')
+            menu.entryconfig(submenu_index, accelerator="")
 
 
 def update_keyboard_shortcuts() -> None:
@@ -253,14 +253,14 @@ def set_enabled_based_on_tab(
 
     def update_enabledness(*junk: object) -> None:
         tab = get_tab_manager().select()
-        menu = get_menu(path.rsplit('/', 1)[0] if '/' in path else None)
-        index = _find_item(menu, path.split('/')[-1])
+        menu = get_menu(path.rsplit("/", 1)[0] if "/" in path else None)
+        index = _find_item(menu, path.split("/")[-1])
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
-        menu.entryconfig(index, state=('normal' if callback(tab) else 'disabled'))
+        menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
 
     update_enabledness()
-    get_tab_manager().bind('<<NotebookTabChanged>>', update_enabledness, add=True)
+    get_tab_manager().bind("<<NotebookTabChanged>>", update_enabledness, add=True)
     return update_enabledness
 
 
@@ -320,29 +320,29 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("File/Close", (lambda tab: tab is not None))
     set_enabled_based_on_tab("File/Quit", (lambda tab: tab is None))
 
-    def change_font_size(how: Literal['bigger', 'smaller', 'reset']) -> None:
-        if how == 'reset':
-            settings.reset('font_size')
+    def change_font_size(how: Literal["bigger", "smaller", "reset"]) -> None:
+        if how == "reset":
+            settings.reset("font_size")
             return
 
-        size = settings.get('font_size', int)
-        if how == 'bigger':
+        size = settings.get("font_size", int)
+        if how == "bigger":
             size += 1
         else:
             size -= 1
             if size < 3:
                 return
 
-        settings.set_('font_size', size)
+        settings.set_("font_size", size)
 
     get_menu("View").add_command(
-        label="Bigger Font", command=functools.partial(change_font_size, 'bigger')
+        label="Bigger Font", command=functools.partial(change_font_size, "bigger")
     )
     get_menu("View").add_command(
-        label="Smaller Font", command=functools.partial(change_font_size, 'smaller')
+        label="Smaller Font", command=functools.partial(change_font_size, "smaller")
     )
     get_menu("View").add_command(
-        label="Reset Font Size", command=functools.partial(change_font_size, 'reset')
+        label="Reset Font Size", command=functools.partial(change_font_size, "reset")
     )
     set_enabled_based_on_tab("View/Bigger Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Smaller Font", (lambda tab: tab is not None))

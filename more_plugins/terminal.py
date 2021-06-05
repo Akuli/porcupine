@@ -14,10 +14,10 @@ def start_xterm() -> None:
     tab = tabs.Tab(get_tab_manager())
     tab.title_choices = ["Terminal"]
     content = tkinter.Frame(tab, container=True)
-    content.pack(fill='both', expand=True)  # FIXME: doesn't stretch correctly?
+    content.pack(fill="both", expand=True)  # FIXME: doesn't stretch correctly?
 
     try:
-        process = subprocess.Popen(['xterm', '-into', str(content.winfo_id())])
+        process = subprocess.Popen(["xterm", "-into", str(content.winfo_id())])
     except FileNotFoundError:
         messagebox.showerror(
             "xterm not found", "Seems like xterm is not installed. Please install it and try again."
@@ -28,14 +28,14 @@ def start_xterm() -> None:
         if tab in get_tab_manager().tabs():
             get_tab_manager().close_tab(tab)
 
-    content.bind('<Destroy>', terminal_wants_to_exit, add=True)
-    tab.bind('<Destroy>', (lambda event: process.terminate()), add=True)
+    content.bind("<Destroy>", terminal_wants_to_exit, add=True)
+    tab.bind("<Destroy>", (lambda event: process.terminate()), add=True)
     get_tab_manager().add_tab(tab)
 
 
 def setup() -> None:
     # FIXME: i think it's possible to run xterm in aqua? would that work here?
-    if get_tab_manager().tk.call('tk', 'windowingsystem') != 'x11':
+    if get_tab_manager().tk.call("tk", "windowingsystem") != "x11":
         # TODO: more noob-friendly "u have the wrong os lel" message?
         messagebox.showerror(
             "Unsupported windowing system", "Sorry, the terminal plugin only works on X11 :("
