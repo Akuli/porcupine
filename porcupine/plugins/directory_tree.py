@@ -17,7 +17,8 @@ log = logging.getLogger(__name__)
 
 # If more than this many projects are opened, then the least recently opened
 # project will be closed, unless a file has been opened from that project.
-PROJECT_AUTOCLOSE_COUNT = 10
+# Note that this can be exceeded if many files from different projects are open
+MAX_PROJECTS = 10
 
 
 def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
@@ -156,26 +157,37 @@ class DirectoryTree(ttk.Treeview):
         if refresh:
             self.refresh_everything()
 
+    def set_the_selection_correctly(self, id: str) -> None:
+        self.selection_set(id)
+        self.focus(id)
+
     def select_file(self, path: pathlib.Path) -> None:
         project_root = utils.find_project_root(path)
 
-        matching_project_ids = [child for child in self.get_children() if self.get_path(child) == project_root]
-        if not matching_project_ids:
-            # Happens when tab changes because a file was just opened. This
-            # will be called soon once the project has been added.
-            log.info(f"can't select '{path}' because its project '{project_root}' was not found")
+        for project_root_id in self.get_children():
+            if self.get_path(project_root_id) != project_root:
+                continue
+
+            # Find the sub-item representing the file
+            file_id = project_root_id
+            for part in path.relative_to(project_root).parts:
+                if self.item(file_id, 'open'):
+                    [file_id] = [child for child in self.get_children(file_id) if self.get_path(child).name == part]
+                else:
+                    # ...or a closed folder that contains the file
+                    break
+
+            self.set_the_selection_correctly(file_id)
+            self.see(file_id)
+
+            # Multiple projects may match when project roots are nested. It's
+            # fine to use the first match, because recently used projects tend
+            # to go first.
             return
 
-        [id] = matching_project_ids
-        for part in path.relative_to(project_root).parts:
-            if self.item(id, 'open'):
-                [id] = [child for child in self.get_children(id) if self.get_path(child).name == part]
-            else:
-                break
-
-        self.selection_set(id)
-        self.focus(id)
-        self.see(id)
+        # Happens when tab changes because a file was just opened. This
+        # will be called soon once the project has been added.
+        log.info(f"can't select '{path}' because its project '{project_root}' was not found")
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
@@ -186,19 +198,18 @@ class DirectoryTree(ttk.Treeview):
         return (len(children) == 1 and self.tag_has('dummy', children[0]))
 
     def hide_old_projects(self, junk: object = None) -> None:
-        for project_id in reversed(self.get_children('')):
-            project_path = self.get_path(project_id)
+        for project_id in self.get_children(''):
+            if not self.get_path(project_id).is_dir():
+                self.delete(project_id)
 
-            if (
-                not project_path.is_dir()
-            ) or (
-                len(self.get_children('')) > PROJECT_AUTOCLOSE_COUNT
-                and not any(
-                    isinstance(tab, tabs.FileTab)
-                    and tab.path is not None
-                    and project_path in tab.path.parents
-                    for tab in get_tab_manager().tabs()
-                )
+        # To avoid getting rid of existing projects when not necessary, we do
+        # shortening after deleting non-existent projects
+        for project_id in reversed(self.get_children('')):
+            if len(self.get_children('')) > MAX_PROJECTS and not any(
+                isinstance(tab, tabs.FileTab)
+                and tab.path is not None
+                and self.get_path(project_id) in tab.path.parents
+                for tab in get_tab_manager().tabs()
             ):
                 self.delete(project_id)
 
@@ -360,15 +371,14 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
 
 
 def focus_treeview(tree: DirectoryTree) -> None:
-    # We need to do two things:
-    #   - Tell the treeview to set its focus to the first item, if no item is focused.
-    #     In Tcl, this is '$tree focus', where $tree is the name of the widget.
-    #   - Tell the rest of the GUI to focus the treeview. In Tcl, 'focus $tree'.
-    #
-    # In tkinter, both are called .focus(), and they conflict. To be explicit about
-    # what focus method is being used, I decided to call the Tcl commands directly.
-    if tree.get_children() and not tree.tk.call(tree, 'focus'):
-        tree.tk.call(tree, 'focus', tree.get_children()[0])
+    if tree.get_children() and not tree.focus():
+        tree.set_the_selection_correctly(tree.get_children()[0])
+
+    # Tkinter has two things called .focus(), and they conflict:
+    #  - Telling the treeview to set its focus to the first item, if no item is
+    #    focused. In Tcl, '$tree focus', where $tree is the widget name. This
+    #    is what the .focus() method does.
+    #  - Tell the rest of the GUI to focus the treeview. In Tcl, 'focus $tree'.
     tree.tk.call('focus', tree)
 
 
@@ -408,7 +418,7 @@ def setup() -> None:
     string_paths = settings.get('directory_tree_projects', List[str])
 
     # Must reverse because last added project goes first
-    for path in map(pathlib.Path, string_paths[:PROJECT_AUTOCLOSE_COUNT][::-1]):
+    for path in map(pathlib.Path, string_paths[:MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh_everything()

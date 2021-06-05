@@ -8,7 +8,7 @@ import pytest
 
 from porcupine import get_paned_window, tabs, utils
 from porcupine.plugins import directory_tree as plugin_module
-from porcupine.plugins.directory_tree import DirectoryTree
+from porcupine.plugins.directory_tree import DirectoryTree, focus_treeview
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     a_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'a' / 'README')
     b_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'b' / 'README')
     c_tab = tabs.FileTab.open_file(tabmanager, tmp_path / 'c' / 'README')
-    monkeypatch.setattr(plugin_module, 'PROJECT_AUTOCLOSE_COUNT', 2)
+    monkeypatch.setattr(plugin_module, 'MAX_PROJECTS', 2)
 
     assert get_project_names() == []
 
@@ -187,3 +187,11 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread
     tabmanager.close_tab(a_readme)
     tabmanager.close_tab(b_file1)
     tabmanager.close_tab(b_file2)
+
+
+def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path, dont_run_in_thread):
+    (tmp_path / 'README').touch()
+    (tmp_path / 'hello.py').touch()
+    tree.add_project(tmp_path, refresh=False)
+    focus_treeview(tree)
+    assert tree.selection()
