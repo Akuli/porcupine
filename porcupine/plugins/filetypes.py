@@ -32,9 +32,8 @@ def is_list_of_strings(obj: object) -> bool:
 
 
 def load_filetypes() -> None:
-    user_path = (
-        pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'
-    )  # not global, tests monkeypatch dirs
+    # user_path can't be global var because tests monkeypatch
+    user_path = pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'
     defaults_path = pathlib.Path(__file__).absolute().parent.parent / 'default_filetypes.toml'
 
     filetypes.update(toml.load(defaults_path))
