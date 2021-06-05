@@ -139,10 +139,7 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager):
         assert thread_done and fake_wait_window_done
 
 
-@pytest.mark.skipif(
-    os.getenv('GITHUB_ACTIONS') == 'true',
-    reason="somehow doesn't work with gh actions")
-def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab):
+def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, dont_run_in_thread):
     monkeypatch.setattr(pastebin_module, 'DPASTE_URL', 'ThisIsNotValidUrlStart://wat')
     mocker.patch('porcupine.utils.errordialog')
 

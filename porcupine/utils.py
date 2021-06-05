@@ -695,8 +695,6 @@ def run_in_thread(
         nonlocal value
         nonlocal error_traceback
 
-        # the logging module uses locks so calling it from another
-        # thread should be safe
         try:
             value = blocking_function()
         except Exception:

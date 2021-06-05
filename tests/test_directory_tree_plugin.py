@@ -86,13 +86,6 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     assert get_project_names() == ['c', 'a']
 
 
-@pytest.fixture
-def dont_run_in_thread(monkeypatch):
-    def func(blocking_function, done_callback, check_interval_ms=69):
-        done_callback(True, blocking_function())
-    monkeypatch.setattr(utils, 'run_in_thread', func)
-
-
 @pytest.mark.skipif(shutil.which('git') is None, reason="git not found")
 def test_added_and_modified_content(tree, tmp_path, monkeypatch, dont_run_in_thread):
     monkeypatch.chdir(tmp_path)
