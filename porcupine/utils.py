@@ -599,9 +599,9 @@ class TemporaryBind:
                 return
 
         assert bound_and_stuff.count(self._new_things) == 1
-        self._widget.bind(
+        self._widget.bind(  # bindcheck: ignore
             self._sequence, bound_and_stuff.replace(self._new_things, '')
-        )  # bindcheck: ignore
+        )
 
         # tkinter's unbind() does this too to avoid memory leaks
         self._widget.deletecommand(self._tcl_command)

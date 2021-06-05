@@ -82,7 +82,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check scripts/*.py porcupine tests more_plugins
+    - run: python3 -m black -S --check scripts/*.py porcupine tests more_plugins
   isort:
     runs-on: ubuntu-latest
     steps:
