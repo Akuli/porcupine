@@ -269,7 +269,7 @@ def test_replace(filetab_and_finder):
 
     finder.replace_this_button.invoke()
     assert str(finder.replace_this_button['state']) == 'normal'
-    assert finder.statuslabel['text'] == ("Replaced a match. There is 1 more match.")
+    assert finder.statuslabel['text'] == "Replaced a match. There is 1 more match."
     assert finder.get_match_ranges() == [('1.10', '1.13')]
 
     assert str(finder.previous_button['state']) == 'normal'
