@@ -1,4 +1,3 @@
-import os
 import pathlib
 import shutil
 import subprocess
@@ -20,12 +19,15 @@ merge_conflict_string = '''\
 
 
 @pytest.mark.skipif(shutil.which('git') is None, reason="need git to make merge conflicts")
-@pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason="somehow doesn't work in gh actions")
 def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     monkeypatch.chdir(tmp_path)
     file_content = 'before\nhello\nafter\n'
 
     subprocess.run(['git', 'init'])
+    # No --global, only affects test repo
+    subprocess.run(['git', 'config', 'user.name', 'foo'])
+    subprocess.run(['git', 'config', 'user.email', 'foo@example.com'])
+
     pathlib.Path('foo.txt').write_text(file_content)
     subprocess.run(['git', 'add', 'foo.txt'])
     subprocess.run(['git', 'commit', '-m', 'create foo.txt'])
@@ -37,7 +39,7 @@ def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     subprocess.run(['git', 'commit', '--all', '-m', 'hello my friend'])
     subprocess.run(['git', 'merge', 'other_branch'])
     assert pathlib.Path('foo.txt').read_text() == merge_conflict_string
-    capfd.readouterr()   # prevents unnecessary prints from git
+    capfd.readouterr()   # hide unnecessary prints from git
 
 
 def test_find_merge_conflicts(filetab):
