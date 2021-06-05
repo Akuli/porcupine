@@ -10,7 +10,11 @@ paths = list(pathlib.Path(code_dir).rglob('*.py'))
 
 
 def is_method_call(node, names):
-    return isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in names
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in names
+    )
 
 
 missing_add = {
@@ -21,7 +25,7 @@ missing_add = {
     # created tag with no other bindings that would accidentally go away
     if is_method_call(node, {'bind', 'bind_all', 'bind_class', 'bind_with_data'})
     and 'add' not in (kw.arg for kw in node.keywords)
-    and len(node.args) >= 2   # widget.bind(one_argument) doesn't need add=True
+    and len(node.args) >= 2  # widget.bind(one_argument) doesn't need add=True
 }
 tag_bind_in_loop = {
     (path, body_node.lineno)
@@ -39,16 +43,17 @@ ignores = {
     if '# bindcheck: ignore' in line
 }
 
-messages = [
-    f'  {path}:{lineno}: missing add=True'
-    for path, lineno in sorted(missing_add - ignores)
-] + [
-    f'  {path}:{lineno}: tag_bind() in loop without .append()'
-    for path, lineno in sorted(tag_bind_in_loop - ignores)
-] + [
-    f'  {path}:{lineno}: unused ignore comment'
-    for path, lineno in sorted(ignores - (missing_add | tag_bind_in_loop))
-]
+messages = (
+    [f'  {path}:{lineno}: missing add=True' for path, lineno in sorted(missing_add - ignores)]
+    + [
+        f'  {path}:{lineno}: tag_bind() in loop without .append()'
+        for path, lineno in sorted(tag_bind_in_loop - ignores)
+    ]
+    + [
+        f'  {path}:{lineno}: unused ignore comment'
+        for path, lineno in sorted(ignores - (missing_add | tag_bind_in_loop))
+    ]
+)
 
 if messages:
     print("bind errors:")

@@ -19,7 +19,8 @@ assert sys.platform == 'win32', "this script must be ran on windows"
 # bits depending on the python, and 32 bits == 4 bytes
 assert not (struct.calcsize('P') == 4 and '64' in platform.machine()), (
     "this script can't be ran with 32-bit Python on a 64-bit Windows, "
-    "install a 64-bit Python instead")
+    "install a 64-bit Python instead"
+)
 
 [this_script_name, porcupine_version] = sys.argv
 
@@ -28,12 +29,16 @@ info = functools.partial(print, this_script_name + ':', file=sys.stderr, flush=T
 
 
 def get_frozen_requirements_in_a_crazy_way():
-    info("Creating a temporary virtualenv and installing everything into it "
-         "in order to get output from 'pip freeze' to figure out which "
-         "dependencies to bundle...")
+    info(
+        "Creating a temporary virtualenv and installing everything into it "
+        "in order to get output from 'pip freeze' to figure out which "
+        "dependencies to bundle..."
+    )
     subprocess.check_call([sys.executable, '-m', 'venv', 'temp_env'])
     try:
-        subprocess.check_call([r'temp_env\Scripts\python.exe', '-m', 'pip', 'install', '-r', 'requirements.txt'])
+        subprocess.check_call(
+            [r'temp_env\Scripts\python.exe', '-m', 'pip', 'install', '-r', 'requirements.txt']
+        )
         frozen = subprocess.check_output([r'temp_env\Scripts\python.exe', '-m', 'pip', 'freeze'])
     finally:
         shutil.rmtree('temp_env')
@@ -54,7 +59,9 @@ def copy_tkinter_files():
 
 def download_tkdnd():
     info("Downloading tkdnd")
-    subprocess.check_call([sys.executable, 'scripts/download-tkdnd.py'], cwd=pathlib.Path(__file__).parent.parent)
+    subprocess.check_call(
+        [sys.executable, 'scripts/download-tkdnd.py'], cwd=pathlib.Path(__file__).parent.parent
+    )
 
     info("Ensuring that tkdnd is usable")
     root = tkinter.Tk()
@@ -87,13 +94,11 @@ def create_pynsist_cfg():
     parser['Application'] = {
         'name': 'Porcupine',
         'version': porcupine_version,
-        'entry_point': 'porcupine.__main__:main',    # setup.py copy pasta
+        'entry_point': 'porcupine.__main__:main',  # setup.py copy pasta
         'icon': 'porcupine-logo.ico',
         'license_file': 'LICENSE',
     }
-    parser['Python'] = {
-        'version': '%d.%d.%d' % sys.version_info[:3],
-    }
+    parser['Python'] = {'version': '%d.%d.%d' % sys.version_info[:3]}
     parser['Include'] = {
         'pypi_wheels': '\n'.join(deps_from_pypi_wheels),
         'packages': '\n'.join(deps_without_pypi_wheels),
