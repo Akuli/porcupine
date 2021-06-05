@@ -358,7 +358,7 @@ class _ChangeTracker:
         changes = [
             change
             for change in changes
-            if (change.start != change.end or change.old_text_len != 0 or change.new_text)
+            if change.start != change.end or change.old_text_len != 0 or change.new_text
         ]
 
         if self._change_batch is None:
