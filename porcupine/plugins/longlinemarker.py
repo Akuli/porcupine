@@ -10,14 +10,13 @@ from porcupine import get_tab_manager, settings, tabs, utils
 
 
 class LongLineMarker:
-
     def __init__(self, filetab: tabs.FileTab) -> None:
         self.tab = filetab
 
         # this must not be a ttk frame because the background color
         # comes from the pygments style, not from the ttk theme
         self.frame = tkinter.Frame(filetab.textwidget, width=1)
-        self._width = self._height = 1        # on_configure() will run soon
+        self._width = self._height = 1  # on_configure() will run soon
 
     def setup(self) -> None:
         utils.add_scroll_command(self.tab.textwidget, 'xscrollcommand', self.do_update)
@@ -46,13 +45,11 @@ class LongLineMarker:
         # we want relative to visible area width
         relative_scroll_start = scroll_start / (scroll_end - scroll_start)
 
-        self.frame.place(
-            relx=(marker_x/self._width - relative_scroll_start),
-            height=self._height)
+        self.frame.place(relx=(marker_x / self._width - relative_scroll_start), height=self._height)
 
     def on_style_changed(self, junk: object = None) -> None:
         style = styles.get_style_by_name(settings.get('pygments_style', str))
-        infos = dict(iter(style))   # iterating is documented
+        infos = dict(iter(style))  # iterating is documented
         for tokentype in [token.Error, token.Name.Exception]:
             if tokentype in infos:
                 for key in ['bgcolor', 'color', 'border']:
@@ -68,8 +65,8 @@ class LongLineMarker:
         bbox = self.tab.textwidget.bbox('@0,0')
         assert bbox is not None
         x, y, width, height = bbox
-        weird_x_padding = 2*x
-        weird_y_padding = weird_x_padding   # don't know better way, bbox y may be off screen
+        weird_x_padding = 2 * x
+        weird_y_padding = weird_x_padding  # don't know better way, bbox y may be off screen
 
         self._width = event.width - weird_x_padding
         self._height = event.height - weird_y_padding

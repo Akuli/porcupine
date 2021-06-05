@@ -23,8 +23,10 @@ def setup() -> None:
     var.trace_add('write', lambda *junk: style.set_theme(var.get()))
 
     # Connect var and settings
-    get_main_window().bind('<<SettingChanged:ttk_theme>>', (
-        lambda event: var.set(settings.get('ttk_theme', str))
-    ), add=True)
+    get_main_window().bind(
+        '<<SettingChanged:ttk_theme>>',
+        lambda event: var.set(settings.get('ttk_theme', str)),
+        add=True,
+    )
     var.set(settings.get('ttk_theme', str))
     var.trace_add('write', lambda *junk: settings.set_('ttk_theme', var.get()))

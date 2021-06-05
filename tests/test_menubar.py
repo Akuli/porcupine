@@ -6,7 +6,9 @@ from porcupine import get_main_window, menubar, tabs
 def test_virtual_events_calling_menu_callbacks():
     called = []
     menubar.get_menu("Foo").add_command(label="Bar", command=(lambda: called.append('bar')))
-    menubar.get_menu("Foo").add_command(label="Baz", command=(lambda: called.append('baz')), state='disabled')
+    menubar.get_menu("Foo").add_command(
+        label="Baz", command=(lambda: called.append('baz')), state='disabled'
+    )
     menubar.update_keyboard_shortcuts()
     get_main_window().update()
     get_main_window().event_generate('<<Menubar:Foo/Bar>>')
@@ -53,6 +55,7 @@ def test_text_widget_binding_weirdness(filetab):
         nonlocal called
         called += 1
         return False
+
     filetab.can_be_closed = fake_can_be_closed
 
     # pressing ctrl+w should leave the text as is (default bindings don't run)

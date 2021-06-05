@@ -15,7 +15,9 @@ merge_conflict_string = '''\
     hello world
     >>>>>>> other_branch
     after
-    '''.replace(' ' * 4, '')
+    '''.replace(
+    ' ' * 4, ''
+)
 
 
 @pytest.mark.skipif(shutil.which('git') is None, reason="need git to make merge conflicts")
@@ -39,7 +41,7 @@ def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     subprocess.run(['git', 'commit', '--all', '-m', 'hello my friend'])
     subprocess.run(['git', 'merge', 'other_branch'])
     assert pathlib.Path('foo.txt').read_text() == merge_conflict_string
-    capfd.readouterr()   # hide unnecessary prints from git
+    capfd.readouterr()  # hide unnecessary prints from git
 
 
 def test_find_merge_conflicts(filetab):
@@ -49,8 +51,8 @@ def test_find_merge_conflicts(filetab):
     text.insert('end - 1 char', merge_conflict_string)
     assert find_merge_conflicts(text) == [[2, 4, 6], [9, 11, 13]]
 
-    text.insert('2.1', '<')    # too many '<' characters
-    assert find_merge_conflicts(text) == []   # it gave up
+    text.insert('2.1', '<')  # too many '<' characters
+    assert find_merge_conflicts(text) == []  # it gave up
     text.delete('2.1')
     assert find_merge_conflicts(text) == [[2, 4, 6], [9, 11, 13]]
 

@@ -24,7 +24,6 @@ def _tupleindex(index: str) -> Tuple[int, int]:
 
 
 class PythonPrompt:
-
     def __init__(self, textwidget: tkinter.Text, close_callback: Callable[[], None]):
         self.widget = textwidget
         self.close_callback = close_callback
@@ -37,8 +36,12 @@ class PythonPrompt:
         # without -u python buffers stdout and everything is one enter
         # press late :( see python --help
         self.process = subprocess.Popen(
-            [sys.executable, '-i', '-u'], stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0)
+            [sys.executable, '-i', '-u'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=0,
+        )
 
         # the queuer thread is a daemon thread because it makes exiting
         # porcupine easier and interrupting it isn't a problem
@@ -88,7 +91,7 @@ class PythonPrompt:
 
         # this needs to return 'break' to allow pressing enter with the
         # cursor anywhere on the line
-        text = self.widget.get('%d.%d' % end_of_output, 'end')   # ends with \n
+        text = self.widget.get('%d.%d' % end_of_output, 'end')  # ends with \n
         self.widget.insert('end', '\n')
         self.widget.mark_set('insert', 'end')
         assert self.process.stdin is not None
@@ -121,16 +124,15 @@ class PythonPrompt:
                 self.close_callback()
             else:
                 self.widget.insert(
-                    'end', "\n\n***********************\n" +
-                    f"the subprocess exited with code {value!r}")
+                    'end', f"\n\n***********************\nthe subprocess exited with code {value!r}"
+                )
                 self.widget.config(state='disabled')
             return
 
         assert state == 'output' and isinstance(value, bytes)
         if sys.platform == 'win32':
             value = value.replace(b'\r\n', b'\n')
-        self.widget.insert(
-            'end-1c', value.decode('utf-8', errors='replace'), 'output')
+        self.widget.insert('end-1c', value.decode('utf-8', errors='replace'), 'output')
         self.widget.see('end-1c')
 
         # we got something, let's try again as soon as possible
@@ -138,7 +140,6 @@ class PythonPrompt:
 
 
 class PromptTab(tabs.Tab):
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.title_choices = ["Interactive Prompt"]

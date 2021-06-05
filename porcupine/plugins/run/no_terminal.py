@@ -16,12 +16,11 @@ QueueMessage = Tuple[str, Union[str, Callable[[], None]]]
 
 
 class NoTerminalRunner:
-
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
         self.textwidget = tkinter.Text(master, height=12, state='disabled')
         self.textwidget.tag_config('info', foreground='blue')
-        self.textwidget.tag_config('output')    # use default colors
+        self.textwidget.tag_config('output')  # use default colors
         self.textwidget.tag_config('error', foreground='red')
 
         self._output_queue: queue.Queue[QueueMessage] = queue.Queue()
@@ -29,8 +28,8 @@ class NoTerminalRunner:
         self._queue_clearer()
 
     def _runner_thread(
-            self, workingdir: pathlib.Path, command: List[str],
-            succeeded_callback: Callable[[], None]) -> None:
+        self, workingdir: pathlib.Path, command: List[str], succeeded_callback: Callable[[], None]
+    ) -> None:
         process = None
 
         def emit_message(msg: QueueMessage) -> None:
@@ -44,8 +43,8 @@ class NoTerminalRunner:
 
         try:
             process = self._running_process = subprocess.Popen(
-                command, cwd=workingdir,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                command, cwd=workingdir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            )
         except OSError as e:
             emit_message(('error', f'{type(e).__name__}: {e}\n'))
             log.debug("here's full traceback", exc_info=True)
@@ -55,7 +54,7 @@ class NoTerminalRunner:
         for line in process.stdout:
             # TODO: is utf-8 the correct choice on all platforms?
             emit_message(('output', line.decode('utf-8', errors='replace')))
-        process.communicate()    # make sure process.returncode is set
+        process.communicate()  # make sure process.returncode is set
 
         if process.returncode == 0:
             # can't do succeeded_callback() here because this is running
@@ -65,13 +64,14 @@ class NoTerminalRunner:
         else:
             emit_message(('error', f"The process failed with status {process.returncode}."))
 
-    def run_command(self, workingdir: pathlib.Path, command: List[str],
-                    succeeded_callback: Callable[[], None]) -> None:
+    def run_command(
+        self, workingdir: pathlib.Path, command: List[str], succeeded_callback: Callable[[], None]
+    ) -> None:
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
-        threading.Thread(target=self._runner_thread,
-                         args=[workingdir, command, succeeded_callback],
-                         daemon=True).start()
+        threading.Thread(
+            target=self._runner_thread, args=[workingdir, command, succeeded_callback], daemon=True
+        ).start()
 
     def _queue_clearer(self) -> None:
         messages: List[QueueMessage] = []
@@ -134,7 +134,8 @@ def run_command(
             del _no_terminal_runners[str(tab)]
 
         closebutton = tkinter.Label(
-            runner.textwidget, image=images.get('closebutton'), cursor='hand2')
+            runner.textwidget, image=images.get('closebutton'), cursor='hand2'
+        )
         closebutton.bind('<Button-1>', on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor='ne')
 

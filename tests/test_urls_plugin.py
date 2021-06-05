@@ -48,16 +48,21 @@ def test_find_urls():
 
 # urls with parentheses in them don't need to work in all cases, just very basic support wanted
 def test_url_containing_parens():
-    for url in ['https://en.wikipedia.org/wiki/Whitespace_(programming_language)', 'https://example.com/foo(bar)baz']:
+    for url in [
+        'https://en.wikipedia.org/wiki/Whitespace_(programming_language)',
+        'https://example.com/foo(bar)baz',
+    ]:
         text = tkinter.Text(get_main_window())
-        text.insert('1.0', f'''\
+        text.insert(
+            '1.0',
+            f'''\
  bla {url}
  bla {url} bla
  Bla {url}.
 bla "{url}" bla
 bla '{url}' bla
-''')
-        assert [(text.index(start), text.index(end)) for start, end in find_urls(text, '1.0', 'end')] == [
-            (f'{lineno}.5', f'{lineno}.{5 + len(url)}')
-            for lineno in range(1, 6)
-        ]
+''',
+        )
+        assert [
+            (text.index(start), text.index(end)) for start, end in find_urls(text, '1.0', 'end')
+        ] == [(f'{lineno}.5', f'{lineno}.{5 + len(url)}') for lineno in range(1, 6)]

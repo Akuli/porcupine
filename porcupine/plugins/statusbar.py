@@ -6,7 +6,6 @@ from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
 class StatusBar(ttk.Frame):
-
     def __init__(self, tab: tabs.FileTab):
         super().__init__(tab.bottom_frame)
         self.tab = tab
@@ -22,7 +21,9 @@ class StatusBar(ttk.Frame):
         try:
             # For line count, if the cursor is in beginning of line, don't count that as another line.
             chars = textwidget.count(self.tab.textwidget, 'sel.first', 'sel.last')
-            lines = textwidget.count(self.tab.textwidget, 'sel.first', 'sel.last - 1 char', option='-lines')
+            lines = textwidget.count(
+                self.tab.textwidget, 'sel.first', 'sel.last - 1 char', option='-lines'
+            )
         except tkinter.TclError:
             # no text selected
             line, column = self.tab.textwidget.index('insert').split('.')

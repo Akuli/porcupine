@@ -9,7 +9,8 @@ from porcupine.plugins import __path__ as plugin_paths
 
 # setup() must be called after setting up everything else
 setup_after = [
-    name for finder, name, ispkg in pkgutil.iter_modules(plugin_paths)
+    name
+    for finder, name, ispkg in pkgutil.iter_modules(plugin_paths)
     if 'porcupine.plugins.' + name != __name__
 ]
 

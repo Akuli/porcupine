@@ -18,7 +18,9 @@ _parsed_args: Optional[Any] = None
 filedialog_kwargs: Dict[str, Any] = {}
 
 
-def _log_tkinter_error(exc: Type[BaseException], val: BaseException, tb: types.TracebackType) -> Any:
+def _log_tkinter_error(
+    exc: Type[BaseException], val: BaseException, tb: types.TracebackType
+) -> Any:
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
 
 
@@ -34,15 +36,17 @@ def init(args: Any) -> None:
     log.debug("init() starts")
     _parsed_args = args
 
-    _root = tkinter.Tk(className="Porcupine")   # class name shows up in my alt+tab list
+    _root = tkinter.Tk(className="Porcupine")  # class name shows up in my alt+tab list
     _root.protocol('WM_DELETE_WINDOW', quit)
     _root.report_callback_exception = _log_tkinter_error
 
     _paned_window = ttk.Panedwindow(_root, orient='horizontal')
     settings.remember_divider_positions(_paned_window, 'main_panedwindow_dividers', [250])
-    _root.bind('<<PluginsLoaded>>', (
-        lambda event: get_paned_window().event_generate('<<DividersFromSettings>>')
-    ), add=True)
+    _root.bind(
+        '<<PluginsLoaded>>',
+        lambda event: get_paned_window().event_generate('<<DividersFromSettings>>'),
+        add=True,
+    )
     _paned_window.pack(fill='both', expand=True)
 
     _tab_manager = tabs.TabManager(_paned_window)
@@ -59,8 +63,7 @@ def get_main_window() -> tkinter.Tk:
 
 
 def get_tab_manager() -> tabs.TabManager:
-    """Return the :class:`porcupine.tabs.TabManager` widget in the main window.
-    """  # these are on a separate line because pep-8 line length
+    """Return the :class:`porcupine.tabs.TabManager` widget in the main window."""
     if _tab_manager is None:
         raise RuntimeError("Porcupine is not running")
     return _tab_manager

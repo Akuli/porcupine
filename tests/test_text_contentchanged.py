@@ -9,7 +9,7 @@ from porcupine.textwidget import Change, Changes, change_batch, create_peer_widg
 @pytest.fixture(scope='function')
 def text_and_events():
     text = tkinter.Text(get_main_window())
-    text.config(undo=True)    # must be before track_changes()
+    text.config(undo=True)  # must be before track_changes()
     track_changes(text)
 
     # peers can mess things up
@@ -27,7 +27,7 @@ def test_insert_basic(text_and_events):
     text.update()
 
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='foo'),
+        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='foo')
     ]
 
 
@@ -42,14 +42,14 @@ def test_delete_basic(text_and_events):
     text.update()
     assert text.get('1.0', 'end - 1 char') == 'foobarz'
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 6], end=[1, 8], old_text_len=2, new_text=''),
+        Change(start=[1, 6], end=[1, 8], old_text_len=2, new_text='')
     ]
 
     text.delete('1.4')
     text.update()
     assert text.get('1.0', 'end - 1 char') == 'foobrz'
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 4], end=[1, 5], old_text_len=1, new_text=''),
+        Change(start=[1, 4], end=[1, 5], old_text_len=1, new_text='')
     ]
 
 
@@ -69,8 +69,7 @@ def test_delete_many_args(text_and_events):
         Change(start=[1, 0], end=[1, 1], old_text_len=1, new_text=''),
     ]
 
-    for args in [('1.4', '1.6', '1.4', '1.5'),
-                 ('1.4', '1.5', '1.4', '1.6')]:
+    for args in [('1.4', '1.6', '1.4', '1.5'), ('1.4', '1.5', '1.4', '1.6')]:
         text.delete('1.0', 'end')
         text.insert('1.0', 'hello world')
         text.update()
@@ -80,7 +79,7 @@ def test_delete_many_args(text_and_events):
         text.update()
         assert text.get('1.0', 'end - 1 char') == 'hellworld'
         assert events.pop().data_class(Changes).change_list == [
-            Change(start=[1, 4], end=[1, 6], old_text_len=2, new_text=''),
+            Change(start=[1, 4], end=[1, 6], old_text_len=2, new_text='')
         ]
 
 
@@ -94,7 +93,7 @@ def test_replace_at_very_end(text_and_events):
     text.replace('end', 'end', 'bar')
     text.update()
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 3], end=[1, 3], old_text_len=0, new_text='bar'),
+        Change(start=[1, 3], end=[1, 3], old_text_len=0, new_text='bar')
     ]
 
 
@@ -105,21 +104,23 @@ def test_undo(text_and_events):
     text.update()
     assert text.get('1.0', 'end - 1 char') == 'a'
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='a'),
+        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='a')
     ]
 
     text.edit_undo()
     text.update()
     assert text.get('1.0', 'end - 1 char') == ''
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 0], end=[1, 1], old_text_len=1, new_text=''),
+        Change(start=[1, 0], end=[1, 1], old_text_len=1, new_text='')
     ]
 
 
 def test_track_changes_twice():
     text = tkinter.Text(get_main_window())
     track_changes(text)
-    with pytest.raises(RuntimeError, match=r'^track_changes\(\) called twice for same text widget$'):
+    with pytest.raises(
+        RuntimeError, match=r'^track_changes\(\) called twice for same text widget$'
+    ):
         track_changes(text)
 
 
@@ -128,15 +129,19 @@ def test_track_changes_after_create_peer_widget():
     peer = tkinter.Text(get_main_window())
     create_peer_widget(text, peer)
 
-    with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
+    with pytest.raises(
+        RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'
+    ):
         track_changes(text)
-    with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
+    with pytest.raises(
+        RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'
+    ):
         track_changes(peer)
 
 
 def test_change_batch_no_tracking():
     text = tkinter.Text(get_main_window())
-    with change_batch(text):    # should do nothing
+    with change_batch(text):  # should do nothing
         text.insert('end', 'hello\n')
 
 
@@ -151,7 +156,7 @@ def test_change_batch_with_tracking(text_and_events):
     assert text.get('1.0', end) == 'hello world'
 
     text.update()
-    assert len(events) == 1    # would be multiple events without change_batch
+    assert len(events) == 1  # would be multiple events without change_batch
     assert events.pop().data_class(Changes).change_list == [
         Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='hello '),
         Change(start=[1, 6], end=[1, 6], old_text_len=0, new_text='there'),
@@ -198,7 +203,7 @@ def test_embedded_window(text_and_events):
     text, events = text_and_events
     text.insert('1.0', 'abc')
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='abc'),
+        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='abc')
     ]
     text.window_create('1.0', window=tkinter.Button(text))
     text.insert('1.0 lineend', 'xyz')
@@ -206,5 +211,5 @@ def test_embedded_window(text_and_events):
     # Notice that text index says 4 counting button, change event says 3 ignoring button
     assert text.search('xyz', '1.0') == '1.4'
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 3], end=[1, 3], old_text_len=0, new_text='xyz'),
+        Change(start=[1, 3], end=[1, 3], old_text_len=0, new_text='xyz')
     ]

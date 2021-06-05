@@ -28,7 +28,10 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
         last_lineno += 1
 
     # Don't hide trailing blank lines
-    while last_lineno > lineno and not tab.textwidget.get(f'{last_lineno}.0', f'{last_lineno}.0 lineend').strip():
+    while (
+        last_lineno > lineno
+        and not tab.textwidget.get(f'{last_lineno}.0', f'{last_lineno}.0 lineend').strip()
+    ):
         last_lineno -= 1
 
     if last_lineno == lineno:
@@ -45,11 +48,13 @@ def fold() -> None:
     if end is None:
         return
 
-    old_folds = [tag for tag in tab.textwidget.tag_names(f'{lineno + 1}.0') if tag.startswith('fold_')]
+    old_folds = [
+        tag for tag in tab.textwidget.tag_names(f'{lineno + 1}.0') if tag.startswith('fold_')
+    ]
     if old_folds:
         [tag] = old_folds
         assert tag.startswith('fold_')
-        window_name = tag[len('fold_'):]
+        window_name = tag[len('fold_') :]
         tab.textwidget.delete(window_name)
         return
 
@@ -68,7 +73,9 @@ def fold() -> None:
     tab.textwidget.tag_add(tag, f'{lineno + 1}.0', f'{end + 1}.0')
 
     # https://github.com/python/mypy/issues/9658
-    dots.bind('<Destroy>', lambda event: cast(tabs.FileTab, tab).textwidget.tag_delete(tag), add=True)
+    dots.bind(
+        '<Destroy>', lambda event: cast(tabs.FileTab, tab).textwidget.tag_delete(tag), add=True
+    )
     dots.bind('<Button-1>', lambda event: cast(tabs.FileTab, tab).textwidget.delete(dots), add=True)
     tab.textwidget.window_create(f'{lineno}.0 lineend', window=dots)
     tab.textwidget.event_generate('<<UpdateLineNumbers>>')

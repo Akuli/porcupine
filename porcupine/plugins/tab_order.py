@@ -19,7 +19,7 @@ def select_tab_n(n: int, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNon
     try:
         get_tab_manager().select(n - 1)
         return 'break'
-    except tkinter.TclError:        # index out of bounds
+    except tkinter.TclError:  # index out of bounds
         return None
 
 
@@ -32,7 +32,7 @@ def select_left_or_right(diff: int) -> utils.BreakOrNone:
     try:
         get_tab_manager().select(new_index)
         return 'break'
-    except tkinter.TclError:        # index out of bounds
+    except tkinter.TclError:  # index out of bounds
         return None
 
 
@@ -45,7 +45,7 @@ def move_left_or_right(diff: int) -> utils.BreakOrNone:
     try:
         get_tab_manager().insert(destination_index, selected_tab)
         return 'break'
-    except tkinter.TclError:        # index out of bounds
+    except tkinter.TclError:  # index out of bounds
         return None
 
 
@@ -90,6 +90,7 @@ def switch_tabs_on_mouse_wheel() -> None:
         tabmanager.bind('<Leave>', reset, add=True)
 
     else:  # Windows
+
         def real_callback(event: tkinter.Event[tkinter.Misc]) -> None:
             if event.delta > 0:
                 wheel_callback(-1, event)
@@ -104,10 +105,18 @@ def setup() -> None:
 
     # This doesn't use enable_traversal() because we want more bindings than it creates.
     # The bindings also need to be configurable.
-    get_main_window().bind('<<TabOrder:SelectLeft>>', (lambda event: select_left_or_right(-1)), add=True)
-    get_main_window().bind('<<TabOrder:SelectRight>>', (lambda event: select_left_or_right(1)), add=True)
-    get_main_window().bind('<<TabOrder:MoveLeft>>', (lambda event: move_left_or_right(-1)), add=True)
-    get_main_window().bind('<<TabOrder:MoveRight>>', (lambda event: move_left_or_right(1)), add=True)
+    get_main_window().bind(
+        '<<TabOrder:SelectLeft>>', (lambda event: select_left_or_right(-1)), add=True
+    )
+    get_main_window().bind(
+        '<<TabOrder:SelectRight>>', (lambda event: select_left_or_right(1)), add=True
+    )
+    get_main_window().bind(
+        '<<TabOrder:MoveLeft>>', (lambda event: move_left_or_right(-1)), add=True
+    )
+    get_main_window().bind(
+        '<<TabOrder:MoveRight>>', (lambda event: move_left_or_right(1)), add=True
+    )
 
     for n in range(1, 10):
         get_main_window().bind(f'<<TabOrder:SelectTab{n}>>', partial(select_tab_n, n), add=True)

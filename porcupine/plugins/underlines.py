@@ -33,11 +33,10 @@ class Underlines(utils.EventDataclass):
 def _tag_spans_multiple_lines(textwidget: tkinter.Text, tag: str) -> bool:
     first_lineno: str = textwidget.index(f'{tag}.first')[0]
     last_lineno: str = textwidget.index(f'{tag}.last')[0]
-    return (first_lineno != last_lineno)
+    return first_lineno != last_lineno
 
 
 class _Underliner:
-
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
         self.textwidget.bind('<<CursorMoved>>', self._on_cursor_moved, add=True)
@@ -128,7 +127,7 @@ class _Underliner:
         self._message_label = tkinter.Label(
             self.textwidget,
             text=self._tag2underline[tag].message,
-            wraplength=(self.textwidget.winfo_width() - 2*gap_size),
+            wraplength=(self.textwidget.winfo_width() - 2 * gap_size),
             # opposite colors as in the text widget
             bg=self.textwidget['fg'],
             fg=self.textwidget['bg'],
@@ -162,7 +161,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
 
 def hide_all_message_labels(event: tkinter.Event[tkinter.Misc]) -> None:
-    if event.widget is get_main_window():   # Tk and Toplevel events need this check
+    if event.widget is get_main_window():  # Tk and Toplevel events need this check
         for tab in get_tab_manager().tabs():
             if isinstance(tab, tabs.FileTab):
                 tab.textwidget.event_generate('<<UnderlinerHidePopup>>')

@@ -5,7 +5,7 @@ import tkinter
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
 
-setup_before = ['tabs2spaces']      # see tabs2spaces.py
+setup_before = ['tabs2spaces']  # see tabs2spaces.py
 
 
 def on_tab_key(event: tkinter.Event[textwidget.MainText], shifted: bool) -> None:

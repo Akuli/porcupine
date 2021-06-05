@@ -58,8 +58,8 @@ def test_funny_files():
     code_file = TEST_DATA_DIR / 'foo' / 'a.py'
     assert get_config(code_file) == {
         # no indent_style, foo/.editorconfig unsets it
-        'indent_size': '4',                  # foo/.editorconfig takes precedence
-        'end_of_line': 'crlf',               # only in non-foo .editorconfig
+        'indent_size': '4',  # foo/.editorconfig takes precedence
+        'end_of_line': 'crlf',  # only in non-foo .editorconfig
         'trim_trailing_whitespace': 'true',  # only in foo/.editorconfig
     }
 
@@ -112,16 +112,19 @@ def test_example_file_from_editorconfig_org():
 
 
 def test_good_values(filetab):
-    apply_config({
-        'indent_style': 'tab',
-        'indent_size': 'tab',
-        'tab_width': '8',
-        'charset': 'latin1',
-        'max_line_length': '123',
-        'end_of_line': 'crlf',
-        'trim_trailing_whitespace': 'false',
-        'insert_final_newline': 'false',
-    }, filetab)
+    apply_config(
+        {
+            'indent_style': 'tab',
+            'indent_size': 'tab',
+            'tab_width': '8',
+            'charset': 'latin1',
+            'max_line_length': '123',
+            'end_of_line': 'crlf',
+            'trim_trailing_whitespace': 'false',
+            'insert_final_newline': 'false',
+        },
+        filetab,
+    )
     assert not filetab.settings.get('tabs2spaces', bool)
     assert filetab.settings.get('indent_size', int) == 8
     assert filetab.settings.get('encoding', str) == 'latin1'

@@ -37,9 +37,9 @@ def _remove_old_logs() -> None:
 
 def _run_command(command: str) -> None:
     try:
-        output = subprocess.check_output(
-            shlex.split(command), stderr=subprocess.STDOUT
-        ).decode('utf-8', errors='replace')
+        output = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT).decode(
+            'utf-8', errors='replace'
+        )
         log.info(f"output from '{command}':\n{output}")
     except FileNotFoundError as e:
         log.info(f"cannot run '{command}': {e}")
@@ -50,8 +50,7 @@ def _run_command(command: str) -> None:
 def _open_log_file() -> TextIO:
     timestamp = datetime.now().strftime(FILENAME_FIRST_PART_FORMAT)
     filenames = (
-        f'{timestamp}.txt' if i == 0 else f'{timestamp}_{i}.txt'
-        for i in itertools.count()
+        f'{timestamp}.txt' if i == 0 else f'{timestamp}_{i}.txt' for i in itertools.count()
     )
     for filename in filenames:
         try:
@@ -73,8 +72,9 @@ def setup(verbose_logger: Optional[str]) -> None:
 
     file_handler = logging.StreamHandler(log_file)
     file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(logging.Formatter(
-        '[%(asctime)s] %(name)s %(levelname)s: %(message)s'))
+    file_handler.setFormatter(
+        logging.Formatter('[%(asctime)s] %(name)s %(levelname)s: %(message)s')
+    )
     handlers.append(file_handler)
 
     if sys.stderr is not None:
@@ -85,8 +85,7 @@ def setup(verbose_logger: Optional[str]) -> None:
         else:
             print_handler.setLevel(logging.DEBUG)
             print_handler.addFilter(logging.Filter(verbose_logger))
-        print_handler.setFormatter(logging.Formatter(
-            '%(name)s %(levelname)s: %(message)s'))
+        print_handler.setFormatter(logging.Formatter('%(name)s %(levelname)s: %(message)s'))
         handlers.append(print_handler)
 
     # don't know why level must be specified here

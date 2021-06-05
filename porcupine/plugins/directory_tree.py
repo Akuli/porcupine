@@ -11,7 +11,15 @@ from functools import partial
 from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from porcupine import get_main_window, get_paned_window, get_tab_manager, menubar, settings, tabs, utils
+from porcupine import (
+    get_main_window,
+    get_paned_window,
+    get_tab_manager,
+    menubar,
+    settings,
+    tabs,
+    utils,
+)
 
 log = logging.getLogger(__name__)
 
@@ -28,9 +36,10 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
             ['git', 'status', '--ignored', '--porcelain'],
             cwd=project_root,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,   # for logging error message
+            stderr=subprocess.PIPE,  # for logging error message
             encoding=sys.getfilesystemencoding(),
-            **utils.subprocess_kwargs)
+            **utils.subprocess_kwargs,
+        )
         log.debug(f"git ran in {round((time.perf_counter() - start)*1000)}ms")
 
         if run_result.returncode != 0:
@@ -62,7 +71,6 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
 
 
 class DirectoryTree(ttk.Treeview):
-
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode='browse', show='tree', style='DirectoryTree.Treeview')
 
@@ -72,7 +80,7 @@ class DirectoryTree(ttk.Treeview):
         self.bind('<<TreeviewOpen>>', self.open_file_or_dir, add=True)
         self.bind('<<TreeviewSelect>>', self.update_selection_color, add=True)
         self.bind('<<ThemeChanged>>', self._config_tags, add=True)
-        self.column('#0', minwidth=500)   # allow scrolling sideways
+        self.column('#0', minwidth=500)  # allow scrolling sideways
         self._config_tags()
         self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
 
@@ -100,7 +108,7 @@ class DirectoryTree(ttk.Treeview):
         bg = self.tk.eval('ttk::style lookup Treeview -background')
         gray = utils.mix_colors(fg, bg, 0.5)
 
-        if sum(self.winfo_rgb(fg)) > 3*0x7fff:
+        if sum(self.winfo_rgb(fg)) > 3 * 0x7FFF:
             # bright foreground color
             green = '#00ff00'
             orange = '#ff6e00'
@@ -118,7 +126,7 @@ class DirectoryTree(ttk.Treeview):
     def update_selection_color(self, event: object = None) -> None:
         try:
             [selected_id] = self.selection()
-        except ValueError:   # nothing selected
+        except ValueError:  # nothing selected
             git_tags = []
         else:
             git_tags = [tag for tag in self.item(selected_id, 'tags') if tag.startswith('git_')]
@@ -126,7 +134,9 @@ class DirectoryTree(ttk.Treeview):
         if git_tags:
             [tag] = git_tags
             color = self.tag_configure(tag, 'foreground')
-            self.tk.call('ttk::style', 'map', 'DirectoryTree.Treeview', '-foreground', ['selected', color])
+            self.tk.call(
+                'ttk::style', 'map', 'DirectoryTree.Treeview', '-foreground', ['selected', color]
+            )
         else:
             # use default colors
             self.tk.eval('ttk::style map DirectoryTree.Treeview -foreground {}')
@@ -151,7 +161,9 @@ class DirectoryTree(ttk.Treeview):
             text = str(root_path)
 
         # Add project to beginning so it won't be hidden soon
-        project_item_id = self.insert('', 0, text=text, values=[root_path], tags=['dir', 'project'], open=False)
+        project_item_id = self.insert(
+            '', 0, text=text, values=[root_path], tags=['dir', 'project'], open=False
+        )
         self._insert_dummy(project_item_id)
         self.hide_old_projects()
         if refresh:
@@ -172,7 +184,11 @@ class DirectoryTree(ttk.Treeview):
             file_id = project_root_id
             for part in path.relative_to(project_root).parts:
                 if self.item(file_id, 'open'):
-                    [file_id] = [child for child in self.get_children(file_id) if self.get_path(child).name == part]
+                    [file_id] = [
+                        child
+                        for child in self.get_children(file_id)
+                        if self.get_path(child).name == part
+                    ]
                 else:
                     # ...or a closed folder that contains the file
                     break
@@ -195,7 +211,7 @@ class DirectoryTree(ttk.Treeview):
 
     def _contains_dummy(self, parent: str) -> bool:
         children = self.get_children(parent)
-        return (len(children) == 1 and self.tag_has('dummy', children[0]))
+        return len(children) == 1 and self.tag_has('dummy', children[0])
 
     def hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(''):
@@ -214,9 +230,13 @@ class DirectoryTree(ttk.Treeview):
                 self.delete(project_id)
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
-        settings.set_('directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()])
+        settings.set_(
+            'directory_tree_projects', [str(self.get_path(id)) for id in self.get_children()]
+        )
 
-    def refresh_everything(self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)) -> None:
+    def refresh_everything(
+        self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)
+    ) -> None:
         log.debug("refreshing begins")
         self.hide_old_projects()
 
@@ -226,7 +246,9 @@ class DirectoryTree(ttk.Treeview):
         def thread_target() -> Dict[pathlib.Path, Dict[pathlib.Path, str]]:
             return {path: run_git_status(path) for path in paths.values()}
 
-        def done_callback(success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]) -> None:
+        def done_callback(
+            success: bool, result: Union[str, Dict[pathlib.Path, Dict[pathlib.Path, str]]]
+        ) -> None:
             if success and set(self.get_children()) == paths.keys():
                 assert not isinstance(result, str)
                 self.git_statuses = result
@@ -235,7 +257,9 @@ class DirectoryTree(ttk.Treeview):
                 log.debug("refreshing done")
                 when_done()
             elif success:
-                log.info("projects added/removed while refreshing, assuming another fresh is coming soon")
+                log.info(
+                    "projects added/removed while refreshing, assuming another fresh is coming soon"
+                )
                 when_done()
             else:
                 log.error(f"error in git status running thread\n{result}")
@@ -262,7 +286,9 @@ class DirectoryTree(ttk.Treeview):
             self.delete(path2id.pop(path))
         for path in list(new_paths - path2id.keys()):
             tag = 'dir' if path.is_dir() else 'file'
-            path2id[path] = self.insert(dir_id, 'end', text=path.name, values=[path], tags=tag, open=False)
+            path2id[path] = self.insert(
+                dir_id, 'end', text=path.name, values=[path], tags=tag, open=False
+            )
             if path.is_dir():
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
@@ -308,7 +334,9 @@ class DirectoryTree(ttk.Treeview):
 
         if dir_path is not None:
             assert set(self.get_children(dir_id)) == set(path2id.values())
-            for index, (path, child_id) in enumerate(sorted(path2id.items(), key=self._sorting_key)):
+            for index, (path, child_id) in enumerate(
+                sorted(path2id.items(), key=self._sorting_key)
+            ):
                 self.move(child_id, dir_id, index)
 
     def _sorting_key(self, path_id_pair: Tuple[pathlib.Path, str]) -> Tuple[Any, ...]:
@@ -320,7 +348,14 @@ class DirectoryTree(ttk.Treeview):
         git_tag = git_tags[0] if git_tags else None
 
         return (
-            ['git_added', 'git_modified', 'git_mergeconflict', None, 'git_untracked', 'git_ignored'].index(git_tag),
+            [
+                'git_added',
+                'git_modified',
+                'git_mergeconflict',
+                None,
+                'git_untracked',
+                'git_ignored',
+            ].index(git_tag),
             1 if 'dir' in tags else 2,
             str(path),
         )
@@ -336,13 +371,17 @@ class DirectoryTree(ttk.Treeview):
             self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
 
             tab = get_tab_manager().select()
-            if (isinstance(tab, tabs.FileTab)
-                    and tab.path is not None
-                    and self.get_path(selected_id) in tab.path.parents):
+            if (
+                isinstance(tab, tabs.FileTab)
+                and tab.path is not None
+                and self.get_path(selected_id) in tab.path.parents
+            ):
                 # Don't know why after_idle is needed
                 self.after_idle(self.select_file, tab.path)
         elif self.tag_has('file', selected_id):
-            get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id)))
+            get_tab_manager().add_tab(
+                tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id))
+            )
 
     def get_path(self, item_id: str) -> pathlib.Path:
         assert not self.tag_has('dummy', item_id)
@@ -357,6 +396,7 @@ def select_current_file(tree: DirectoryTree, event: object) -> None:
 
 def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
+
         def path_callback(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
@@ -408,11 +448,13 @@ def setup() -> None:
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
 
-    get_paned_window().insert(get_tab_manager(), container)   # insert before tab manager
+    get_paned_window().insert(get_tab_manager(), container)  # insert before tab manager
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
     get_tab_manager().bind('<<NotebookTabChanged>>', partial(select_current_file, tree), add=True)
 
-    menubar.get_menu("View").add_command(label="Focus directory tree", command=partial(focus_treeview, tree))
+    menubar.get_menu("View").add_command(
+        label="Focus directory tree", command=partial(focus_treeview, tree)
+    )
 
     settings.add_option('directory_tree_projects', [], List[str])
     string_paths = settings.get('directory_tree_projects', List[str])

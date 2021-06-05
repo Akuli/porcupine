@@ -14,14 +14,14 @@ def start_xterm() -> None:
     tab = tabs.Tab(get_tab_manager())
     tab.title_choices = ["Terminal"]
     content = tkinter.Frame(tab, container=True)
-    content.pack(fill='both', expand=True)   # FIXME: doesn't stretch correctly?
+    content.pack(fill='both', expand=True)  # FIXME: doesn't stretch correctly?
 
     try:
         process = subprocess.Popen(['xterm', '-into', str(content.winfo_id())])
     except FileNotFoundError:
-        messagebox.showerror("xterm not found", (
-            "Seems like xterm is not installed. " +
-            "Please install it and try again."))
+        messagebox.showerror(
+            "xterm not found", "Seems like xterm is not installed. Please install it and try again."
+        )
         return
 
     def terminal_wants_to_exit(junk: object) -> None:
@@ -38,8 +38,8 @@ def setup() -> None:
     if get_tab_manager().tk.call('tk', 'windowingsystem') != 'x11':
         # TODO: more noob-friendly "u have the wrong os lel" message?
         messagebox.showerror(
-            "Unsupported windowing system",
-            "Sorry, the terminal plugin only works on X11 :(")
+            "Unsupported windowing system", "Sorry, the terminal plugin only works on X11 :("
+        )
         return
 
     menubar.get_menu("Tools").add_command(label="Terminal", command=start_xterm)

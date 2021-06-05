@@ -42,9 +42,15 @@ def on_x_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
 def show_menu(event: tkinter.Event[tabs.TabManager]) -> None:
     menu = tkinter.Menu(tearoff=False)
     menu.add_command(label="Close this tab", command=partial(close_clicked_tab, event))
-    menu.add_command(label="Close tabs to left", command=partial(close_clicked_tab, event, what2close='left'))
-    menu.add_command(label="Close tabs to right", command=partial(close_clicked_tab, event, what2close='right'))
-    menu.add_command(label="Close other tabs", command=partial(close_clicked_tab, event, what2close='others'))
+    menu.add_command(
+        label="Close tabs to left", command=partial(close_clicked_tab, event, what2close='left')
+    )
+    menu.add_command(
+        label="Close tabs to right", command=partial(close_clicked_tab, event, what2close='right')
+    )
+    menu.add_command(
+        label="Close other tabs", command=partial(close_clicked_tab, event, what2close='others')
+    )
 
     menu.tk_popup(event.x_root, event.y_root)
     menu.bind('<Unmap>', (lambda event: menu.after_idle(menu.destroy)), add=True)
@@ -58,9 +64,9 @@ def on_header_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
 
 def setup() -> None:
     tabmanager = get_tab_manager()
-    tabmanager.add_tab_callback(lambda tab: get_tab_manager().tab(
-        tab, image=images.get('closebutton'), compound='right'
-    ))
+    tabmanager.add_tab_callback(
+        lambda tab: get_tab_manager().tab(tab, image=images.get('closebutton'), compound='right')
+    )
     tabmanager.bind('<<TabClosing:XButtonClickClose>>', on_x_clicked, add=True)
     tabmanager.bind('<<TabClosing:ShowMenu>>', show_menu, add=True)
     tabmanager.bind('<<TabClosing:HeaderClickClose>>', on_header_clicked, add=True)

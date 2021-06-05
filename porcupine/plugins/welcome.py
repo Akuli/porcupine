@@ -26,12 +26,11 @@ their keyboard shortcuts.
     return re.sub(r'(.)\n(.)', r'\1 \2', result.strip())
 
 
-BORDER_SIZE = 30    # pixels
+BORDER_SIZE = 30  # pixels
 
 
 # this is a class just to avoid globals (lol)
 class WelcomeMessageDisplayer:
-
     def __init__(self) -> None:
         self._frame = ttk.Frame(get_tab_manager())
 
@@ -43,21 +42,20 @@ class WelcomeMessageDisplayer:
         # TODO: better way to center the label in its space?
         centerer = ttk.Frame(top)
         centerer.pack(fill='both', expand=True)
-        self.title_label = ttk.Label(
-            centerer, text="Welcome to Porcupine!", font=('', 25, 'bold'))
+        self.title_label = ttk.Label(centerer, text="Welcome to Porcupine!", font=('', 25, 'bold'))
         self.title_label.place(relx=0.5, rely=0.5, anchor='center')
 
-        self.message_label = ttk.Label(
-            self._frame, text=get_message(), font=('', 15, ''))
+        self.message_label = ttk.Label(self._frame, text=get_message(), font=('', 15, ''))
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()
 
     def update_wraplen(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # images.get('logo-200x200').width() is always 200, but hard-coding is bad
-        self.title_label.config(wraplength=(
-            event.width - images.get('logo-200x200').width() - BORDER_SIZE))
-        self.message_label.config(wraplength=(event.width - 2*BORDER_SIZE))
+        self.title_label.config(
+            wraplength=(event.width - images.get('logo-200x200').width() - BORDER_SIZE)
+        )
+        self.message_label.config(wraplength=(event.width - 2 * BORDER_SIZE))
 
     def on_new_tab(self, tab: tabs.Tab) -> None:
         self._frame.pack_forget()

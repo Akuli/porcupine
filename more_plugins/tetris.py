@@ -12,7 +12,7 @@ from porcupine import get_tab_manager, menubar, tabs, utils
 
 WIDTH = 10
 HEIGHT = 20
-SCALE = 20     # each square is 20x20 pixels
+SCALE = 20  # each square is 20x20 pixels
 
 Point = Tuple[int, int]
 ShapeLetter = str
@@ -22,6 +22,7 @@ ShapeLetter = str
 # shape is added to it
 # y is like in math, so more y means higher
 SHAPES: Dict[ShapeLetter, List[Point]] = {
+    # fmt: off
     'I': [(0, 2),
           (0, 1),
           (0, 0),
@@ -34,14 +35,15 @@ SHAPES: Dict[ShapeLetter, List[Point]] = {
           (0, 0),
           (0, -1), (1, -1)],
     'J': [
-            (0, 1),            # noqa
+            (0, 1),
             (0, 0),
-  (-1, -1), (0, -1)],          # noqa
+  (-1, -1), (0, -1)],
     'S': [
-            (0, 1), (1, 1),    # noqa
-   (-1, 0), (0, 0)],           # noqa
+            (0, 1), (1, 1),
+   (-1, 0), (0, 0)],
     'Z': [(-1, 1), (0, 1),
                    (0, 0), (1, 0)],
+    # fmt: on
 }
 
 
@@ -67,7 +69,7 @@ class Block:
             yield (self.x + shapex, self.y + shapey)
 
     def bumps(self, x: int, y: int) -> bool:
-        return (x not in range(WIDTH) or y < 0 or (x, y) in self._game.frozen_squares)
+        return x not in range(WIDTH) or y < 0 or (x, y) in self._game.frozen_squares
 
     def _move(self, deltax: int, deltay: int) -> bool:
         for x, y in self.get_coords():
@@ -99,7 +101,6 @@ class Block:
 
 
 class NonRotatingBlock(Block):
-
     def rotate(self) -> bool:
         return False
 
@@ -138,14 +139,14 @@ class Game:
 
     def __init__(self) -> None:
         self.frozen_squares: Dict[Point, str] = {}
-        self.score = 0        # each new block increments score
-        self.add_block()      # creates self.moving_block
-        self.paused = False   # only used outside this class definition
+        self.score = 0  # each new block increments score
+        self.add_block()  # creates self.moving_block
+        self.paused = False  # only used outside this class definition
 
     @property
     def level(self) -> int:
         # levels start at 1
-        return self.score//30 + 1    # noqa
+        return self.score // 30 + 1
 
     @property
     def delay(self) -> int:
@@ -178,8 +179,7 @@ class Game:
         # this is much easier with a nested list
         lines = []
         for y in range(HEIGHT):
-            line = [self.frozen_squares.pop((x, y), None)
-                    for x in range(WIDTH)]
+            line = [self.frozen_squares.pop((x, y), None) for x in range(WIDTH)]
             if None in line:
                 # it's not full, we can keep it
                 lines.append(line)
@@ -215,7 +215,6 @@ COLORS: Dict[ShapeLetter, str] = {
 
 
 class TetrisTab(tabs.Tab):
-
     def __init__(self, manager: tabs.TabManager) -> None:
         super().__init__(manager)
         self.title_choices = ["Tetris"]
@@ -223,24 +222,24 @@ class TetrisTab(tabs.Tab):
         # the takefocus thing is important, it's hard to bind the keys
         # correctly without it
         self._canvas = tkinter.Canvas(
-            self, width=WIDTH*SCALE, height=HEIGHT*SCALE,
-            relief='ridge', bg='black', takefocus=True)
+            self,
+            width=WIDTH * SCALE,
+            height=HEIGHT * SCALE,
+            relief='ridge',
+            bg='black',
+            takefocus=True,
+        )
         self._canvas.pack()
 
         self._score_label = ttk.Label(self, justify='center')
         self._score_label.pack()
 
-        help_text = ' '.join(f'''
-        You can move the blocks with arrow keys.
-        Press {utils.get_binding('<<Tetris:Pause>>')} to pause
-        or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game.
-        '''.split())
-        ttk.Label(
-            self,
-            text=help_text,
-            justify='center',
-            wraplength=self._canvas['width'],
-        ).pack()
+        help_text = (
+            "You can move the blocks with arrow keys. "
+            f"Press {utils.get_binding('<<Tetris:Pause>>')} to pause "
+            f"or {utils.get_binding('<<Tetris:NewGame>>')} to start a new game."
+        )
+        ttk.Label(self, text=help_text, justify='center', wraplength=self._canvas['width']).pack()
 
         for key in ['<Left>', '<Right>', '<Up>', '<Down>', '<Return>', '<space>']:
             self._canvas.bind(key, self._on_key, add=True)
@@ -254,8 +253,8 @@ class TetrisTab(tabs.Tab):
                 left = x * SCALE
                 bottom = (HEIGHT - y) * SCALE
                 self._canvas_content[(x, y)] = self._canvas.create_rectangle(
-                    left, bottom - SCALE, left + SCALE, bottom,
-                    outline='black', fill='black')
+                    left, bottom - SCALE, left + SCALE, bottom, outline='black', fill='black'
+                )
 
         self._timeout_id: Optional[str] = None
         self._game_over_id: Optional[int] = None
@@ -298,7 +297,8 @@ class TetrisTab(tabs.Tab):
             self._canvas.itemconfig(item_id, fill=color)
 
         self._score_label['text'] = f"Score {self._game.score}, level {self._game.level}\n" + (
-            "Paused" if self._game.paused else "")
+            "Paused" if self._game.paused else ""
+        )
 
     def new_game(self) -> None:
         if self._timeout_id is not None:
@@ -322,10 +322,11 @@ class TetrisTab(tabs.Tab):
                 font_size = 18
 
                 self._canvas.create_rectangle(
-                    0, centery - font_size, self._canvas['width'], centery + font_size,
-                    fill='black')
+                    0, centery - font_size, self._canvas['width'], centery + font_size, fill='black'
+                )
                 self._game_over_id = self._canvas.create_text(
-                    centerx, centery,
+                    centerx,
+                    centery,
                     anchor='center',
                     text="Game Over :(",
                     font=('', font_size, 'bold'),
@@ -336,7 +337,7 @@ class TetrisTab(tabs.Tab):
         self._timeout_id = self.after(self._game.delay, self._on_timeout)
 
     def get_state(self) -> Game:
-        return self._game       # it should be picklable
+        return self._game  # it should be picklable
 
     @classmethod
     def from_state(cls, manager: tabs.TabManager, game: Game) -> 'TetrisTab':

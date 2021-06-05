@@ -96,7 +96,7 @@ class _ChangeTracker:
         self._change_batch: Optional[List[Change]] = None
 
     def setup(self, widget: tkinter.Text) -> None:
-        old_cursor_pos = widget.index('insert')    # must be widget specific
+        old_cursor_pos = widget.index('insert')  # must be widget specific
 
         def cursor_pos_changed() -> None:
             nonlocal old_cursor_pos
@@ -146,7 +146,8 @@ class _ChangeTracker:
         widget.tk.call('rename', str(widget), actual_widget_command)
 
         # this part is tcl because i couldn't get a python callback to work
-        widget.tk.eval('''
+        widget.tk.eval(
+            '''
         proc %(fake_widget)s {args} {
             # subcommand is e.g. insert, delete, replace, index, search, ...
             # see text(3tk) for all possible subcommands
@@ -217,16 +218,19 @@ class _ChangeTracker:
 
             return $result
         }
-        ''' % {
-            'fake_widget': str(widget),
-            'actual_widget': actual_widget_command,
-            'change_event_from_command': widget.register(partial(self._change_event_from_command, widget)),
-            'event_receiver': self._event_receiver_widget,
-            'cursor_moved_callback': widget.register(cursor_pos_changed),
-        })
+        '''
+            % {
+                'fake_widget': str(widget),
+                'actual_widget': actual_widget_command,
+                'change_event_from_command': widget.register(
+                    partial(self._change_event_from_command, widget)
+                ),
+                'event_receiver': self._event_receiver_widget,
+                'cursor_moved_callback': widget.register(cursor_pos_changed),
+            }
+        )
 
-    def _create_change(
-            self, widget: tkinter.Text, start: str, end: str, new_text: str) -> Change:
+    def _create_change(self, widget: tkinter.Text, start: str, end: str, new_text: str) -> Change:
         start_line = int(start.split('.')[0])
         end_line = int(end.split('.')[0])
         return Change(
@@ -237,7 +241,9 @@ class _ChangeTracker:
         )
 
     # Must be called before widget content actually changes
-    def _change_event_from_command(self, widget: tkinter.Text, subcommand: str, *args_tuple: str) -> str:
+    def _change_event_from_command(
+        self, widget: tkinter.Text, subcommand: str, *args_tuple: str
+    ) -> str:
         changes: List[Change] = []
 
         # search for 'pathName delete' in text(3tk)... it's a wall of text,
@@ -262,8 +268,7 @@ class _ChangeTracker:
 
             # "If index2 does not specify a position later in the text than
             # index1 then no characters are deleted."
-            pairs = [(start, end) for (start, end) in pairs
-                     if widget.compare(start, '<', end)]
+            pairs = [(start, end) for (start, end) in pairs if widget.compare(start, '<', end)]
 
             # "They [index pairs, aka ranges] are sorted [...]."
             # (line, column) tuples sort nicely
@@ -278,19 +283,19 @@ class _ChangeTracker:
             # will be merged into spans that do not cause deletion of text
             # outside the given ranges due to text shifted during deletion."
             def merge_index_ranges(
-                    start1: str, end1: str,
-                    start2: str, end2: str) -> Tuple[str, str]:
+                start1: str, end1: str, start2: str, end2: str
+            ) -> Tuple[str, str]:
                 start = start1 if widget.compare(start1, '<', start2) else start2
                 end = end1 if widget.compare(end1, '>', end2) else end2
                 return (start, end)
 
             # loop through pairs of pairs
-            for i in range(len(pairs)-2, -1, -1):
-                (start1, end1), (start2, end2) = pairs[i:i+2]
+            for i in range(len(pairs) - 2, -1, -1):
+                (start1, end1), (start2, end2) = pairs[i : i + 2]
                 if widget.compare(end1, '>=', start2):
                     # they overlap
                     new_pair = merge_index_ranges(start1, end1, start2, end2)
-                    pairs[i:i+2] = [new_pair]
+                    pairs[i : i + 2] = [new_pair]
 
             # "[...] and the text is removed from the last range to the first
             # range so deleted text does not cause an undesired index shifting
@@ -337,22 +342,21 @@ class _ChangeTracker:
 
             changes.append(self._create_change(widget, start, end, new_text))
 
-        else:   # pragma: no cover
+        else:  # pragma: no cover
             raise ValueError(f"unexpected subcommand: {subcommand}")
 
         # remove changes that don't actually do anything
         changes = [
-            change for change in changes
-            if (change.start != change.end
-                or change.old_text_len != 0
-                or change.new_text)
+            change
+            for change in changes
+            if change.start != change.end or change.old_text_len != 0 or change.new_text
         ]
 
         if self._change_batch is None:
             return str(Changes(changes)) if changes else ''
         else:
             self._change_batch.extend(changes)
-            return ''   # don't generate event
+            return ''  # don't generate event
 
     def begin_batch(self) -> None:
         if self._change_batch is not None:
@@ -363,12 +367,16 @@ class _ChangeTracker:
         assert self._change_batch is not None
         try:
             if self._change_batch:
-                self._event_receiver_widget.event_generate('<<ContentChanged>>', data=Changes(self._change_batch))
+                self._event_receiver_widget.event_generate(
+                    '<<ContentChanged>>', data=Changes(self._change_batch)
+                )
         finally:
             self._change_batch = None
 
 
-_change_trackers: weakref.WeakKeyDictionary[tkinter.Text, _ChangeTracker] = weakref.WeakKeyDictionary()
+_change_trackers: weakref.WeakKeyDictionary[
+    tkinter.Text, _ChangeTracker
+] = weakref.WeakKeyDictionary()
 
 
 def track_changes(widget: tkinter.Text) -> None:
@@ -480,8 +488,7 @@ def change_batch(widget: tkinter.Text) -> Iterator[None]:
 
 
 def create_peer_widget(
-    original_text_widget: tkinter.Text,
-    the_widget_that_becomes_a_peer: tkinter.Text,
+    original_text_widget: tkinter.Text, the_widget_that_becomes_a_peer: tkinter.Text
 ) -> None:
     """
     Make sure that *the_widget_that_becomes_a_peer* always has the same content
@@ -535,15 +542,14 @@ def create_peer_widget(
         change_tracker.setup(the_widget_that_becomes_a_peer)
 
 
+# fmt: off
 @overload
 def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None: ...
 @overload
 def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...
-
-
+# fmt: on
 def use_pygments_theme(
-    widget: tkinter.Misc,
-    callback: Optional[Callable[[str, str], None]] = None,
+    widget: tkinter.Misc, callback: Optional[Callable[[str, str], None]] = None
 ) -> None:
     """
     Configure *widget* to use the colors of the Pygments theme whenever the
@@ -560,6 +566,7 @@ def use_pygments_theme(
         Syntax highlighting is implemented in
         :source:`porcupine/plugins/highlight.py`.
     """
+
     def on_style_changed(junk: object = None) -> None:
         style = styles.get_style_by_name(settings.get('pygments_style', str))
         bg = style.background_color
@@ -590,7 +597,9 @@ def use_pygments_theme(
     on_style_changed()
 
 
-def config_tab_displaying(textwidget: tkinter.Text, indent_size: int, *, tag: Optional[str] = None) -> None:
+def config_tab_displaying(
+    textwidget: tkinter.Text, indent_size: int, *, tag: Optional[str] = None
+) -> None:
     """Make ``textwidget`` display tabs as ``indent_size`` characters wide.
 
     For example, if ``indent_size`` is 4, then each tab character will look
@@ -610,7 +619,7 @@ def config_tab_displaying(textwidget: tkinter.Text, indent_size: int, *, tag: Op
     # widget with “-tabs "[expr {4 * [font measure $font 0]}] left"
     # -tabstyle wordprocessor”."
     measure_result = int(textwidget.tk.call('font', 'measure', font, '0'))
-    textwidget.config(tabs=(indent_size*measure_result, 'left'), tabstyle='wordprocessor')
+    textwidget.config(tabs=(indent_size * measure_result, 'left'), tabstyle='wordprocessor')
 
 
 class MainText(tkinter.Text):
@@ -668,8 +677,8 @@ class MainText(tkinter.Text):
         line = self.get(f'{location} linestart', f'{location} lineend')
 
         indent_size = self._tab.settings.get('indent_size', int)
-        start = column - (column % indent_size)   # round down to indent_size multiple
-        if start == column and start != 0:    # prefer deleting from left side
+        start = column - (column % indent_size)  # round down to indent_size multiple
+        if start == column and start != 0:  # prefer deleting from left side
             start -= indent_size
         assert start >= 0
 
@@ -685,7 +694,7 @@ class MainText(tkinter.Text):
 
         assert start <= end
         self.delete(f'{lineno}.{start}', f'{lineno}.{end}')
-        return (start != end)
+        return start != end
 
 
 def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter.Text:

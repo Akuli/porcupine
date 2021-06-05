@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 sys.path.append('')
-from porcupine import version_info as old_info  # noqa
+from porcupine import version_info as old_info
 
 TAG_FORMAT = 'v%d.%d.%d'
 
@@ -22,16 +22,18 @@ def replace_in_file(path, old, new):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'what_to_bump', choices=['major', 'minor', 'patch'],
-        help="which part of major.minor.patch version number to increment")
+        'what_to_bump',
+        choices=['major', 'minor', 'patch'],
+        help="which part of major.minor.patch version number to increment",
+    )
     args = parser.parse_args()
 
     if args.what_to_bump == 'major':
-        new_info = (old_info[0]+1, 0, 0)
+        new_info = (old_info[0] + 1, 0, 0)
     elif args.what_to_bump == 'minor':
-        new_info = (old_info[0], old_info[1]+1, 0)
+        new_info = (old_info[0], old_info[1] + 1, 0)
     elif args.what_to_bump == 'patch':
-        new_info = (old_info[0], old_info[1], old_info[2]+1)
+        new_info = (old_info[0], old_info[1], old_info[2] + 1)
     else:
         assert False, f"unexpected what_to_bump {args.what_to_bump!r}"
 

@@ -38,14 +38,14 @@ def get_colors(style_name: str) -> Tuple[str, str]:
 # on this system, setup() took 0.287940 seconds before adding threads
 # and 0.000371 seconds after adding threads
 def load_style_names_to_list(target_list: List[str]) -> None:
-    target_list.extend(styles.get_all_styles())    # slow
+    target_list.extend(styles.get_all_styles())  # slow
     target_list.sort()
 
 
 def setup() -> None:
     style_names: List[str] = []
     thread = threading.Thread(target=load_style_names_to_list, args=[style_names])
-    thread.daemon = True     # i don't care wtf happens to this
+    thread.daemon = True  # i don't care wtf happens to this
     thread.start()
 
     def check_if_it_finished() -> None:
@@ -69,9 +69,14 @@ def setup() -> None:
         for style_name in style_names:
             fg, bg = get_colors(style_name)
             menubar.get_menu("Color Styles").add_radiobutton(
-                label=style_name, value=style_name, variable=var,
-                foreground=fg, background=bg,
-                activeforeground=bg, activebackground=fg,   # swapped colors
+                label=style_name,
+                value=style_name,
+                variable=var,
+                foreground=fg,
+                background=bg,
+                # swapped colors
+                activeforeground=bg,
+                activebackground=fg,
             )
 
     get_main_window().after(200, check_if_it_finished)

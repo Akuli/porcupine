@@ -14,7 +14,9 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
-def comment_or_uncomment(tab: tabs.FileTab, event: Optional[tkinter.Event[tkinter.Text]]) -> utils.BreakOrNone:
+def comment_or_uncomment(
+    tab: tabs.FileTab, event: Optional[tkinter.Event[tkinter.Text]]
+) -> utils.BreakOrNone:
     comment_prefix = tab.settings.get('comment_prefix', Optional[str])
     if event is not None and event.char != comment_prefix:
         return None
@@ -33,7 +35,8 @@ def comment_or_uncomment(tab: tabs.FileTab, event: Optional[tkinter.Event[tkinte
 
     gonna_uncomment = all(
         tab.textwidget.get(f'{lineno}.0', f'{lineno}.1') == comment_prefix
-        for lineno in range(start, end))
+        for lineno in range(start, end)
+    )
 
     with textwidget.change_batch(tab.textwidget):
         for lineno in range(start, end):
@@ -62,6 +65,10 @@ def on_new_tab(tab: tabs.Tab) -> None:
 def setup() -> None:
     # the action's binding feature cannot be used because then typing
     # a '#' outside the main text widget inserts a # to the main widget
-    menubar.get_menu("Edit").add_command(label="Comment Block", command=comment_or_uncomment_in_current_tab)
-    menubar.set_enabled_based_on_tab("Edit/Comment Block", (lambda tab: isinstance(tab, tabs.FileTab)))
+    menubar.get_menu("Edit").add_command(
+        label="Comment Block", command=comment_or_uncomment_in_current_tab
+    )
+    menubar.set_enabled_based_on_tab(
+        "Edit/Comment Block", (lambda tab: isinstance(tab, tabs.FileTab))
+    )
     get_tab_manager().add_tab_callback(on_new_tab)

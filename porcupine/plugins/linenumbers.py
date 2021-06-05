@@ -15,17 +15,20 @@ def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:
 
 
 class LineNumbers:
-
     def __init__(self, parent: tkinter.Misc, textwidget_of_tab: tkinter.Text) -> None:
         self.textwidget = textwidget_of_tab
         self.canvas = tkinter.Canvas(parent, width=40, highlightthickness=0)
         textwidget.use_pygments_theme(self.canvas, self._set_colors)
         utils.add_scroll_command(textwidget_of_tab, 'yscrollcommand', self._do_update)
 
-        textwidget_of_tab.bind('<<ContentChanged>>', (
-            lambda event: textwidget_of_tab.after_idle(self._do_update)
-        ), add=True)
-        textwidget_of_tab.bind('<<UpdateLineNumbers>>', self._do_update, add=True)  # TODO: document this?
+        textwidget_of_tab.bind(
+            '<<ContentChanged>>',
+            lambda event: textwidget_of_tab.after_idle(self._do_update),
+            add=True,
+        )
+        textwidget_of_tab.bind(
+            '<<UpdateLineNumbers>>', self._do_update, add=True
+        )  # TODO: document this?
         self._do_update()
 
         self.canvas.bind('<<SettingChanged:font_family>>', self._update_canvas_width, add=True)
@@ -57,15 +60,13 @@ class LineNumbers:
 
             x, y, *junk = dlineinfo
             self.canvas.create_text(
-                0, y,
-                text=f' {lineno}',
-                anchor='nw',
-                font='TkFixedFont',
-                fill=self._text_color,
+                0, y, text=f' {lineno}', anchor='nw', font='TkFixedFont', fill=self._text_color
             )
 
     def _update_canvas_width(self, junk: object = None) -> None:
-        self.canvas.config(width=tkinter.font.Font(name='TkFixedFont', exists=True).measure(' 1234 '))
+        self.canvas.config(
+            width=tkinter.font.Font(name='TkFixedFont', exists=True).measure(' 1234 ')
+        )
 
     def _on_click(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # go to clicked line

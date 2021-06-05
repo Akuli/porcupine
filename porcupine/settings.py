@@ -74,15 +74,16 @@ def _type_check(type_: type, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
-        __annotations__ = {'value': type_}   # avoid the string 'type_'
+        __annotations__ = {'value': type_}  # avoid the string 'type_'
 
     parsed = dacite.from_dict(ValueContainer, {'value': obj})
-    return parsed.value   # type: ignore
+    return parsed.value  # type: ignore
 
 
 class _Option:
-
-    def __init__(self, name: str, default: object, type_: Any, converter: Callable[[Any], Any]) -> None:
+    def __init__(
+        self, name: str, default: object, type_: Any, converter: Callable[[Any], Any]
+    ) -> None:
         default = _type_check(type_, default)
         self.name = name
         self.value = default
@@ -96,11 +97,7 @@ def _get_json_path() -> pathlib.Path:
 
 
 class Settings:
-
-    def __init__(
-            self,
-            change_event_widget: Optional[tkinter.Misc],
-            change_event_format: str):
+    def __init__(self, change_event_widget: Optional[tkinter.Misc], change_event_format: str):
         # '<<Foo:{}>>'
         assert '{}' in change_event_format
         assert change_event_format.startswith('<<')
@@ -176,7 +173,7 @@ class Settings:
         try:
             value = self._unknown_options.pop(option_name)
         except KeyError:
-            pass   # nothing relevant in config file, use default
+            pass  # nothing relevant in config file, use default
         else:
             # Error handling here because it's not possible to fail early when
             # an option goes to _unknown_options, and bad data in a config file
@@ -236,6 +233,7 @@ class Settings:
 
     # I don't like how this requires overloads for every type
     # https://stackoverflow.com/q/61471700
+    # fmt: off
     @overload
     def get(self, option_name: str, type_: Type[pathlib.Path]) -> pathlib.Path: ...
     @overload
@@ -246,7 +244,7 @@ class Settings:
     def get(self, option_name: str, type_: Type[int]) -> int: ...
     @overload
     def get(self, option_name: str, type_: object) -> Any: ...
-
+    # fmt: on
     def get(self, option_name: str, type_: Any) -> Any:
         """
         Return the current value of an option.
@@ -328,17 +326,13 @@ def save() -> None:
     so usually you don't need to worry about calling this yourself.
     """
     currently_known_defaults = {
-        name: opt.default
-        for name, opt in _global_settings._options.items()
+        name: opt.default for name, opt in _global_settings._options.items()
     }
 
     writing: Dict[str, Any] = _global_settings._unknown_options.copy()
 
     # don't wipe unknown stuff from config file
-    writing.update({
-        name: get(name, object)
-        for name in currently_known_defaults.keys()
-    })
+    writing.update({name: get(name, object) for name in currently_known_defaults.keys()})
 
     # don't store anything that doesn't differ from defaults
     for name, default in currently_known_defaults.items():
@@ -346,10 +340,7 @@ def save() -> None:
             del writing[name]
 
     with _get_json_path().open('w', encoding='utf-8') as file:
-        json.dump({
-            name: _value_to_save(value)
-            for name, value in writing.items()
-        }, file)
+        json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
 
 
 def _load_from_file() -> None:
@@ -365,7 +356,7 @@ def _load_from_file() -> None:
 
 # pygments styles can be uninstalled, must not end up with invalid pygments style that way
 def _check_pygments_style(name: str) -> str:
-    styles.get_style_by_name(name)   # may raise error that will get logged
+    styles.get_style_by_name(name)  # may raise error that will get logged
     return name
 
 
@@ -423,7 +414,9 @@ def _create_dialog_content() -> ttk.Frame:
     dialog.geometry('500x350')
 
     def confirm_and_reset_all() -> None:
-        if messagebox.askyesno("Reset Settings", "Are you sure you want to reset all settings?", parent=dialog):
+        if messagebox.askyesno(
+            "Reset Settings", "Are you sure you want to reset all settings?", parent=dialog
+        ):
             reset_all()
 
     big_frame = ttk.Frame(dialog)
@@ -434,7 +427,9 @@ def _create_dialog_content() -> ttk.Frame:
     buttonframe = ttk.Frame(big_frame)
     buttonframe.pack(fill='x')
 
-    ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all).pack(side='right')
+    ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all).pack(
+        side='right'
+    )
     ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side='right')
 
     content.grid_columnconfigure(0, weight=1)
@@ -502,9 +497,11 @@ def get_dialog_content() -> ttk.Frame:
 def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
     # see images/__init__.py
     if not _cache:
-        _cache.append(tkinter.PhotoImage(
-            width=images.get('triangle').width(),
-            height=images.get('triangle').height()))
+        _cache.append(
+            tkinter.PhotoImage(
+                width=images.get('triangle').width(), height=images.get('triangle').height()
+            )
+        )
         atexit.register(_cache.clear)
     return _cache[0]
 
@@ -528,7 +525,7 @@ def _create_validation_triangle(
         value: Optional[_StrOrInt]
         try:
             value = type_(value_string)
-        except ValueError:   # e.g. int('foo')
+        except ValueError:  # e.g. int('foo')
             value = None
         else:
             if not callback(value):
@@ -551,7 +548,9 @@ def _create_validation_triangle(
     return triangle
 
 
-def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]) -> None:
+def _grid_widgets(
+    label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]
+) -> None:
     label = ttk.Label(chooser.master, text=label_text)
     label.grid(column=0, sticky='w')
     chooser.grid(row=label.grid_info()['row'], column=1, sticky='we')
@@ -560,10 +559,7 @@ def _grid_widgets(label_text: str, chooser: tkinter.Widget, triangle: Optional[t
 
 
 def add_entry(
-    option_name: str,
-    text: str,
-    validate_callback: Callable[[str], bool],
-    **entry_kwargs: Any,
+    option_name: str, text: str, validate_callback: Callable[[str], bool], **entry_kwargs: Any
 ) -> ttk.Entry:
     """Add a :class:`tkinter.ttk.Entry` to the setting dialog.
 
@@ -582,11 +578,7 @@ def add_entry(
     return entry
 
 
-def add_combobox(
-    option_name: str,
-    text: str,
-    **combobox_kwargs: Any,
-) -> ttk.Combobox:
+def add_combobox(option_name: str, text: str, **combobox_kwargs: Any) -> ttk.Combobox:
     """Add a :class:`tkinter.ttk.Combobox` to the setting dialog.
 
     All ``**combobox_kwargs`` go to :class:`tkinter.ttk.Combobox`.
@@ -602,17 +594,13 @@ def add_combobox(
     """
     combo = ttk.Combobox(get_dialog_content(), **combobox_kwargs)
     triangle = _create_validation_triangle(
-        combo, option_name, str,
-        lambda value: value in combo['values'])
+        combo, option_name, str, (lambda value: value in combo['values'])
+    )
     _grid_widgets(text, combo, triangle)
     return combo
 
 
-def add_spinbox(
-    option_name: str,
-    text: str,
-    **spinbox_kwargs: Any,
-) -> tkinter.ttk.Spinbox:
+def add_spinbox(option_name: str, text: str, **spinbox_kwargs: Any) -> tkinter.ttk.Spinbox:
     """Add a :class:`tkinter.ttk.Spinbox` to the setting dialog.
 
     All ``**spinbox_kwargs`` go to :class:`tkinter.ttk.Spinbox`.
@@ -625,8 +613,8 @@ def add_spinbox(
     """
     spinbox = ttk.Spinbox(get_dialog_content(), **spinbox_kwargs)
     triangle = _create_validation_triangle(
-        spinbox, option_name, int,
-        lambda value: int(spinbox['from']) <= value <= int(spinbox['to']))
+        spinbox, option_name, int, lambda value: int(spinbox['from']) <= value <= int(spinbox['to'])
+    )
     _grid_widgets(text, spinbox, triangle)
     return spinbox
 
@@ -640,12 +628,16 @@ def add_label(text: str) -> ttk.Label:
     label = ttk.Label(get_dialog_content(), text=text)
     label.grid(column=0, columnspan=3, sticky='we', pady=10)
 
-    get_dialog_content().bind('<Configure>', (lambda event: label.config(wraplength=event.width)), add=True)
+    get_dialog_content().bind(
+        '<Configure>', (lambda event: label.config(wraplength=event.width)), add=True
+    )
     return label
 
 
 # TODO: document this
-def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, defaults: List[int]) -> None:
+def remember_divider_positions(
+    panedwindow: ttk.Panedwindow, option_name: str, defaults: List[int]
+) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
     add_option(option_name, defaults, List[int], exist_ok=True)
 
@@ -666,13 +658,16 @@ def remember_divider_positions(panedwindow: ttk.Panedwindow, option_name: str, d
             # number of panes can change if e.g. a plugin is enabled/disabled
             _log.info(
                 f"{option_name} is set to {value}, of length {len(value)}, "
-                f"but there are {len(panedwindow.panes())} panes")
+                f"but there are {len(panedwindow.panes())} panes"
+            )
 
     def panedwindow2settings(junk: object) -> None:
         set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
 
     # don't know why after_idle is needed, but it is
-    panedwindow.bind('<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True)
+    panedwindow.bind(
+        '<Map>', (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True
+    )
     panedwindow.bind('<<DividersFromSettings>>', settings2panedwindow, add=True)
     panedwindow.bind('<ButtonRelease-1>', panedwindow2settings, add=True)
 
@@ -705,7 +700,7 @@ def _is_monospace(font_family: str) -> bool:
     ]
 
     # Allow off-by-one errors, just in case. Don't know if they ever actually happen.
-    return (max(sizes) - min(sizes) <= 1)
+    return max(sizes) - min(sizes) <= 1
 
 
 def _get_monospace_font_families() -> List[str]:
@@ -732,11 +727,14 @@ def _get_monospace_font_families() -> List[str]:
 
     try:
         with cache_path.open('w') as file:
-            json.dump({
-                'version': 2,
-                'all_families': all_families,
-                'monospace_families': monospace_families,
-            }, file)
+            json.dump(
+                {
+                    'version': 2,
+                    'all_families': all_families,
+                    'monospace_families': monospace_families,
+                },
+                file,
+            )
         _log.debug(f"Wrote {cache_path}")
     except Exception:
         _log.error(f"unexpected {cache_path} writing error", exc_info=True)
@@ -752,8 +750,8 @@ def _fill_dialog_content_with_defaults() -> None:
     add_combobox('font_family', "Font family:", values=monospace_families)
     add_spinbox('font_size', "Font size:", from_=3, to=1000)
     add_combobox(
-        'default_line_ending', "Default line ending:",
-        values=[ending.name for ending in LineEnding])
+        'default_line_ending', "Default line ending:", values=[ending.name for ending in LineEnding]
+    )
 
 
 # undocumented on purpose, don't use in plugins
