@@ -72,7 +72,7 @@ digraph G {
 
 def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
     def lexer_name(path):
-        return filetypes.guess_filetype_from_path(tmp_path / "foo" / "bar.html")['pygments_lexer']
+        return filetypes.guess_filetype_from_path(path)['pygments_lexer']
 
     assert lexer_name(tmp_path / "foo" / "bar.html") == 'pygments.lexers.HtmlLexer'
     assert lexer_name(tmp_path / "lol-mako-templates" / "bar.html") == 'pygments.lexers.HtmlLexer'
