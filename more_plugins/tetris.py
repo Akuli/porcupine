@@ -146,7 +146,7 @@ class Game:
     @property
     def level(self) -> int:
         # levels start at 1
-        return self.score // 30 + 1  # noqa
+        return self.score // 30 + 1
 
     @property
     def delay(self) -> int:
