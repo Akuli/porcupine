@@ -165,3 +165,25 @@ bind Text <Alt-Down> {
     %W yview scroll $scroll_amount units
     %W mark set insert "@0,[expr [winfo height %W] / 2]"
 }
+
+# Do not do weird stuff when selecting text with shift+click. See #429
+bind Text <Shift-Button-1> {
+    if {[.t tag ranges sel] == ""} {
+        set select_between_clicked_and_this [%W index insert]
+    } else {
+        # Something already selected, keep the end of selection where cursor is not
+        if {[%W index insert] == [%W index sel.first]} {
+            set select_between_clicked_and_this [%W index sel.last]
+        } else {
+            set select_between_clicked_and_this [%W index sel.first]
+        }
+    }
+
+    %W mark set insert @%x,%y
+    %W tag remove sel 1.0 end
+    if {[%W compare insert < $select_between_clicked_and_this]} {
+        %W tag add sel insert $select_between_clicked_and_this
+    } else {
+        %W tag add sel $select_between_clicked_and_this insert
+    }
+}
