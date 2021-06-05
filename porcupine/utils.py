@@ -710,7 +710,7 @@ def run_in_thread(
             else:
                 done_callback(False, error_traceback)
 
-    thread = threading.Thread(target=thread_target)
+    thread = threading.Thread(target=thread_target, name=f'run_in_thread_' + str(locals()))
     thread.start()
     root.after_idle(check)
 
