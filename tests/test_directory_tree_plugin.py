@@ -13,7 +13,11 @@ from porcupine.plugins.directory_tree import DirectoryTree, focus_treeview
 
 @pytest.fixture
 def tree():
-    [tree] = [w for w in utils.get_children_recursively(get_paned_window()) if isinstance(w, DirectoryTree)]
+    [tree] = [
+        w
+        for w in utils.get_children_recursively(get_paned_window())
+        if isinstance(w, DirectoryTree)
+    ]
     for child in tree.get_children(''):
         tree.delete(child)
     yield tree
@@ -90,6 +94,7 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
 def dont_run_in_thread(monkeypatch):
     def func(blocking_function, done_callback, check_interval_ms=69):
         done_callback(True, blocking_function())
+
     monkeypatch.setattr(utils, 'run_in_thread', func)
 
 
@@ -126,7 +131,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     #    * e16c2a7 initial
     run = partial(subprocess.run, stdout=subprocess.DEVNULL, shell=True, check=True)
     run('git init --quiet')
-    run('git config user.name foo')   # not --global, will stay inside repo
+    run('git config user.name foo')  # not --global, will stay inside repo
     run('git config user.email foo@bar.baz')
     pathlib.Path('file').write_text('initial')
     run('git add file')
@@ -134,11 +139,11 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     pathlib.Path('file').write_text('a')
     run('git add file')
     run('git commit -m a')
-    run('git checkout --quiet -b b HEAD~')   # can't use HEAD^ because ^ is special in windows
+    run('git checkout --quiet -b b HEAD~')  # can't use HEAD^ because ^ is special in windows
     pathlib.Path('file').write_text('b')
     run('git add file')
     run('git commit -m b')
-    run('git merge master', check=False)    # Git returns status 1 when merge conflict occurs
+    run('git merge master', check=False)  # Git returns status 1 when merge conflict occurs
 
     tree.add_project(tmp_path)
     [project_id] = tree.get_children()

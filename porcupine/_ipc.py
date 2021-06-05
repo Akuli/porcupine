@@ -37,8 +37,7 @@ def send(objects: List[Any]) -> None:
             client.send(message)
 
 
-def _listener2queue(listener: connection.Listener,
-                    object_queue: queue.Queue[Any]) -> None:
+def _listener2queue(listener: connection.Listener, object_queue: queue.Queue[Any]) -> None:
     """Accept connections. Receive and queue objects."""
     while True:
         try:
@@ -70,8 +69,9 @@ def session() -> Iterator['queue.Queue[Any]']:
     with connection.Listener() as listener:
         with _ADDRESS_FILE.open('w') as file:
             print(listener.address, file=file)
-        thread = threading.Thread(target=_listener2queue,
-                                  args=[listener, message_queue], daemon=True)
+        thread = threading.Thread(
+            target=_listener2queue, args=[listener, message_queue], daemon=True
+        )
         thread.start()
         yield message_queue
 

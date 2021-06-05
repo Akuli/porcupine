@@ -77,7 +77,9 @@ def test_same_filename_inside_and_outside_subdir(tabmanager, tmp_path):
 
 
 def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
-    dir1_baz, dir2_baz = create_files(['lol/dir1/foo/bar/baz.py', 'lol/dir2/foo/bar/baz.py'], tmp_path)
+    dir1_baz, dir2_baz = create_files(
+        ['lol/dir1/foo/bar/baz.py', 'lol/dir2/foo/bar/baz.py'], tmp_path
+    )
 
     tab1 = tabs.FileTab.open_file(tabmanager, dir1_baz)
     tab2 = tabs.FileTab.open_file(tabmanager, dir2_baz)

@@ -58,7 +58,7 @@ def test_dpaste():
     check_pastebin(pastebin_module.DPaste)
 
 
-@pytest.mark.pastebin_test   # TODO: switch to localhost HTTPS server?
+@pytest.mark.pastebin_test  # TODO: switch to localhost HTTPS server?
 def test_dpaste_canceling(monkeypatch):
     monkeypatch.setattr(pastebin_module, 'DPASTE_URL', 'https://httpbin.org/delay/3')
     paste = pastebin_module.DPaste()
@@ -68,7 +68,7 @@ def test_dpaste_canceling(monkeypatch):
         nonlocal got_error
         try:
             paste.run('hello world', TextLexer)
-        except RemoteDisconnected:    # the error that it raises when canceled
+        except RemoteDisconnected:  # the error that it raises when canceled
             got_error = True
 
     thread = threading.Thread(target=thread_target)
@@ -91,8 +91,7 @@ def test_success_dialog(monkeypatch):
 
     # make sure that webbrowser.open is called
     opened = []
-    monkeypatch.setattr(pastebin_module, 'webbrowser',
-                        types.SimpleNamespace(open=opened.append))
+    monkeypatch.setattr(pastebin_module, 'webbrowser', types.SimpleNamespace(open=opened.append))
     assert dialog.winfo_exists()
     dialog.open_in_browser()
     assert not dialog.winfo_exists()
@@ -140,8 +139,8 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager):
 
 
 @pytest.mark.skipif(
-    os.getenv('GITHUB_ACTIONS') == 'true',
-    reason="somehow doesn't work with gh actions")
+    os.getenv('GITHUB_ACTIONS') == 'true', reason="somehow doesn't work with gh actions"
+)
 def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab):
     monkeypatch.setattr(pastebin_module, 'DPASTE_URL', 'ThisIsNotValidUrlStart://wat')
     mocker.patch('porcupine.utils.errordialog')
@@ -152,7 +151,10 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab):
 
     utils.errordialog.assert_called_once()
     args, kwargs = utils.errordialog.call_args
-    assert args == ('Pasting Failed', "Check your internet connection and try again.\n\nHere's the full error message:")
+    assert args == (
+        'Pasting Failed',
+        "Check your internet connection and try again.\n\nHere's the full error message:",
+    )
     assert 'ThisIsNotValidUrlStart'.lower() in kwargs['monospace_text']
     assert 'ThisIsNotValidUrlStart'.lower() in caplog.records[-1].message
 
@@ -166,4 +168,5 @@ def test_invalid_return(filetab, monkeypatch, tabmanager, mocker):
     get_main_window().update()
 
     tkinter.messagebox.showerror.assert_called_once_with(
-        'Pasting failed', "Instead of a valid URL, dpaste.com returned 'lol'.")
+        'Pasting failed', "Instead of a valid URL, dpaste.com returned 'lol'."
+    )

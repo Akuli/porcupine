@@ -3,13 +3,19 @@ import tkinter
 import pytest
 
 from porcupine import get_main_window, utils
-from porcupine.textwidget import Change, Changes, change_batch, create_peer_widget, track_changes
+from porcupine.textwidget import (
+    Change,
+    Changes,
+    change_batch,
+    create_peer_widget,
+    track_changes,
+)
 
 
 @pytest.fixture(scope='function')
 def text_and_events():
     text = tkinter.Text(get_main_window())
-    text.config(undo=True)    # must be before track_changes()
+    text.config(undo=True)  # must be before track_changes()
     track_changes(text)
 
     # peers can mess things up
@@ -69,8 +75,7 @@ def test_delete_many_args(text_and_events):
         Change(start=[1, 0], end=[1, 1], old_text_len=1, new_text=''),
     ]
 
-    for args in [('1.4', '1.6', '1.4', '1.5'),
-                 ('1.4', '1.5', '1.4', '1.6')]:
+    for args in [('1.4', '1.6', '1.4', '1.5'), ('1.4', '1.5', '1.4', '1.6')]:
         text.delete('1.0', 'end')
         text.insert('1.0', 'hello world')
         text.update()
@@ -119,7 +124,9 @@ def test_undo(text_and_events):
 def test_track_changes_twice():
     text = tkinter.Text(get_main_window())
     track_changes(text)
-    with pytest.raises(RuntimeError, match=r'^track_changes\(\) called twice for same text widget$'):
+    with pytest.raises(
+        RuntimeError, match=r'^track_changes\(\) called twice for same text widget$'
+    ):
         track_changes(text)
 
 
@@ -128,15 +135,19 @@ def test_track_changes_after_create_peer_widget():
     peer = tkinter.Text(get_main_window())
     create_peer_widget(text, peer)
 
-    with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
+    with pytest.raises(
+        RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'
+    ):
         track_changes(text)
-    with pytest.raises(RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'):
+    with pytest.raises(
+        RuntimeError, match=r'^track_changes\(\) must be called before create_peer_widget\(\)$'
+    ):
         track_changes(peer)
 
 
 def test_change_batch_no_tracking():
     text = tkinter.Text(get_main_window())
-    with change_batch(text):    # should do nothing
+    with change_batch(text):  # should do nothing
         text.insert('end', 'hello\n')
 
 
@@ -151,7 +162,7 @@ def test_change_batch_with_tracking(text_and_events):
     assert text.get('1.0', end) == 'hello world'
 
     text.update()
-    assert len(events) == 1    # would be multiple events without change_batch
+    assert len(events) == 1  # would be multiple events without change_batch
     assert events.pop().data_class(Changes).change_list == [
         Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='hello '),
         Change(start=[1, 6], end=[1, 6], old_text_len=0, new_text='there'),

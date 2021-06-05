@@ -5,23 +5,34 @@ import sys
 
 # imports spread across multiple lines to keep sane line lengths and make it greppable
 from porcupine import __version__ as porcupine_version
-from porcupine import (_logs, _state, dirs, get_main_window, get_tab_manager, menubar, pluginloader, plugins, settings,
-                       tabs)
+from porcupine import (
+    _logs,
+    _state,
+    dirs,
+    get_main_window,
+    get_tab_manager,
+    menubar,
+    pluginloader,
+    plugins,
+    settings,
+    tabs,
+)
 
 log = logging.getLogger(__name__)
 
 
 # see the --help action in argparse's source code
 class _PrintPlugindirAction(argparse.Action):
+    def __init__(  # type: ignore[no-untyped-def]
+        self, option_strings, dest=argparse.SUPPRESS, default=argparse.SUPPRESS, help=None
+    ):
+        super().__init__(
+            option_strings=option_strings, dest=dest, default=default, nargs=0, help=help
+        )
 
-    def __init__(   # type: ignore[no-untyped-def]
-            self, option_strings, dest=argparse.SUPPRESS,
-            default=argparse.SUPPRESS, help=None):
-        super().__init__(option_strings=option_strings, dest=dest,
-                         default=default, nargs=0, help=help)
-
-    def __call__(   # type: ignore[no-untyped-def]
-            self, parser, namespace, values, option_string=None):
+    def __call__(  # type: ignore[no-untyped-def]
+        self, parser, namespace, values, option_string=None
+    ):
         print(f"You can install plugins here:\n\n    {plugins.__path__[0]}\n")
         parser.exit()
 
@@ -48,35 +59,59 @@ def main() -> None:
         add_help=False,  # help in step 1 wouldn't show options added by plugins
     )
     parser.add_argument(
-        '--version', action='version',
+        '--version',
+        action='version',
         version=f"Porcupine {porcupine_version}",
-        help="display the Porcupine version number and exit")
+        help="display the Porcupine version number and exit",
+    )
     parser.add_argument(
-        '--print-plugindir', action=_PrintPlugindirAction,
-        help="find out where to install custom plugins")
+        '--print-plugindir',
+        action=_PrintPlugindirAction,
+        help="find out where to install custom plugins",
+    )
 
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
-        '-v', '--verbose', dest='verbose_logger', action='store_const', const='',
-        help=("print all logging messages to stderr, only warnings and errors "
-              "are printed by default (but all messages always go to a log "
-              "file as well)"))
+        '-v',
+        '--verbose',
+        dest='verbose_logger',
+        action='store_const',
+        const='',
+        help=(
+            "print all logging messages to stderr, only warnings and errors "
+            "are printed by default (but all messages always go to a log "
+            "file as well)"
+        ),
+    )
     verbose_group.add_argument(
         '--verbose-logger',
-        help=("increase verbosity for just one logger only, e.g. "
-              "--verbose-logger=porcupine.plugins.highlight "
-              "to see messages from highlight plugin"))
+        help=(
+            "increase verbosity for just one logger only, e.g. "
+            "--verbose-logger=porcupine.plugins.highlight "
+            "to see messages from highlight plugin"
+        ),
+    )
 
     plugingroup = parser.add_argument_group("plugin loading options")
     plugingroup.add_argument(
-        '--no-plugins', action='store_false', dest='use_plugins',
-        help=("don't load any plugins, this is useful for "
-              "understanding how much can be done with plugins"))
+        '--no-plugins',
+        action='store_false',
+        dest='use_plugins',
+        help=(
+            "don't load any plugins, this is useful for "
+            "understanding how much can be done with plugins"
+        ),
+    )
     plugingroup.add_argument(
-        '--without-plugins', metavar='PLUGINS', default='',
-        help=("don't load PLUGINS (see --print-plugindir), "
-              "e.g. --without-plugins=highlight disables syntax highlighting, "
-              "multiple plugin names can be given comma-separated"))
+        '--without-plugins',
+        metavar='PLUGINS',
+        default='',
+        help=(
+            "don't load PLUGINS (see --print-plugindir), "
+            "e.g. --without-plugins=highlight disables syntax highlighting, "
+            "multiple plugin names can be given comma-separated"
+        ),
+    )
 
     args_parsed_in_first_step, junk = parser.parse_known_args()
 
@@ -101,15 +136,22 @@ def main() -> None:
     parser.add_argument('--help', action='help', help="show this message")
     pluginloader.run_setup_argument_parser_functions(parser)
     parser.add_argument(
-        'files', metavar='FILES', nargs=argparse.ZERO_OR_MORE,
-        help="open these files when Porcupine starts, - means stdin")
+        'files',
+        metavar='FILES',
+        nargs=argparse.ZERO_OR_MORE,
+        help="open these files when Porcupine starts, - means stdin",
+    )
     plugingroup.add_argument(
-        '--shuffle-plugins', action='store_true',
-        help=("respect setup_before and setup_after, but otherwise setup the "
-              "plugins in a random order instead of sorting by name "
-              "alphabetically, useful for making sure that your plugin's "
-              "setup_before and setup_after define everything needed; usually "
-              "plugins are not shuffled in order to make the UI consistent"))
+        '--shuffle-plugins',
+        action='store_true',
+        help=(
+            "respect setup_before and setup_after, but otherwise setup the "
+            "plugins in a random order instead of sorting by name "
+            "alphabetically, useful for making sure that your plugin's "
+            "setup_before and setup_after define everything needed; usually "
+            "plugins are not shuffled in order to make the UI consistent"
+        ),
+    )
 
     args = parser.parse_args()
     _state.init(args)

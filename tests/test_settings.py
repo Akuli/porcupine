@@ -69,12 +69,14 @@ def test_wrong_type(cleared_global_settings):
     settings.add_option('magic_message', 'bla')
 
     with pytest.raises(
-            dacite.exceptions.WrongTypeError,
-            match=r'wrong value type .* should be "int" instead of .* "str"'):
+        dacite.exceptions.WrongTypeError,
+        match=r'wrong value type .* should be "int" instead of .* "str"',
+    ):
         settings.get('magic_message', int)
     with pytest.raises(
-            dacite.exceptions.WrongTypeError,
-            match=r'wrong value type .* should be "str" instead of .* "int"'):
+        dacite.exceptions.WrongTypeError,
+        match=r'wrong value type .* should be "str" instead of .* "int"',
+    ):
         settings.set_('magic_message', 123)
 
 
@@ -172,7 +174,9 @@ def test_debug_dump(capsys):
     assert not errors
     if sys.version_info < (3, 9):
         output = output.replace('typing.Union[str, NoneType]', 'typing.Optional[str]')
-    assert output == '''\
+    assert (
+        output
+        == '''\
 1 known options (add_option called)
   foo = None    (type: typing.Optional[str])
 
@@ -180,6 +184,7 @@ def test_debug_dump(capsys):
   bar = ['a', 'b', 'c']
 
 '''
+    )
 
 
 def test_font_family_chooser():
@@ -208,5 +213,5 @@ def test_remember_panedwindow_positions(toplevel):
     assert pw.sashpos(0) == 123
 
     pw.sashpos(0, 456)
-    pw.event_generate('<ButtonRelease-1>')   # happens after user drags pane
+    pw.event_generate('<ButtonRelease-1>')  # happens after user drags pane
     assert settings.get('pw_dividers', List[int]) == [456]

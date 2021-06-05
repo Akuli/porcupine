@@ -46,11 +46,14 @@ def get_command(
     format_args = {
         'file': basename,
         'no_ext': no_ext,
-        'no_exts': basename[:-len(exts)] if exts else basename,
+        'no_exts': basename[: -len(exts)] if exts else basename,
         'python': 'py' if sys.platform == 'win32' else 'python3',
         'exe': f'{no_ext}.exe' if sys.platform == 'win32' else f'./{no_ext}',
     }
-    result = [part.format(**format_args) for part in shlex.split(template, posix=(sys.platform != 'win32'))]
+    result = [
+        part.format(**format_args)
+        for part in shlex.split(template, posix=(sys.platform != 'win32'))
+    ]
     return result
 
 
@@ -72,6 +75,7 @@ def do_something(something: Literal['compile', 'run', 'compilerun', 'lint']) -> 
             terminal.run_command(workingdir, command)
 
     elif something == 'compilerun':
+
         def run_after_compile() -> None:
             assert isinstance(tab, tabs.FileTab)
             command = get_command(tab, 'run', basename)
@@ -98,9 +102,13 @@ def setup() -> None:
 
     menubar.get_menu("Run").add_command(label="Compile", command=partial(do_something, 'compile'))
     menubar.get_menu("Run").add_command(label="Run", command=partial(do_something, 'run'))
-    menubar.get_menu("Run").add_command(label="Compile and Run", command=partial(do_something, 'compilerun'))
+    menubar.get_menu("Run").add_command(
+        label="Compile and Run", command=partial(do_something, 'compilerun')
+    )
     menubar.get_menu("Run").add_command(label="Lint", command=partial(do_something, 'compilerun'))
 
     # TODO: disable the menu items when they don't correspond to actual commands
     for label in {"Compile", "Run", "Compile and Run", "Lint"}:
-        menubar.set_enabled_based_on_tab(f"Run/{label}", (lambda tab: isinstance(tab, tabs.FileTab)))
+        menubar.set_enabled_based_on_tab(
+            f"Run/{label}", (lambda tab: isinstance(tab, tabs.FileTab))
+        )

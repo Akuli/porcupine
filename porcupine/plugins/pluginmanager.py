@@ -19,7 +19,7 @@ def get_docstring(module_name: str) -> str:
         docstring = str(module.__doc__ or '').strip()
         if docstring:
             return docstring
-    except Exception:   # importing runs arbitrary code
+    except Exception:  # importing runs arbitrary code
         pass
 
     # importing won't work (broken plugin has been disabled)
@@ -44,7 +44,6 @@ DIALOG_HEIGHT = 300
 
 
 class PluginDialogContent:
-
     def __init__(self, master: tkinter.Misc) -> None:
         self.content_frame = ttk.Frame(master)
 
@@ -71,7 +70,9 @@ class PluginDialogContent:
 
         self._search_var = tkinter.StringVar()
         search_entry = ttk.Entry(left_side, textvariable=self._search_var)
-        search_entry.bind('<FocusIn>', (lambda event: search_entry.selection_range(0, 'end')), add=True)
+        search_entry.bind(
+            '<FocusIn>', (lambda event: search_entry.selection_range(0, 'end')), add=True
+        )
         search_entry.insert(0, "Filter by name, type or status...")
         self._search_var.trace_add('write', self._search)
 
@@ -95,9 +96,13 @@ class PluginDialogContent:
         button_frame = ttk.Frame(right_side)
         button_frame.pack(side='bottom', fill='x')
 
-        self.enable_button = ttk.Button(button_frame, text="Enable", command=partial(self._set_enabled, True))
+        self.enable_button = ttk.Button(
+            button_frame, text="Enable", command=partial(self._set_enabled, True)
+        )
         self.enable_button.pack(side='left', expand=True)
-        self.disable_button = ttk.Button(button_frame, text="Disable", command=partial(self._set_enabled, False))
+        self.disable_button = ttk.Button(
+            button_frame, text="Disable", command=partial(self._set_enabled, False)
+        )
         self.disable_button.pack(side='left', expand=True)
 
         self.description = textwidget.create_passive_text_widget(right_side)
@@ -107,7 +112,7 @@ class PluginDialogContent:
         # I had some trouble getting this to work. With after_idle, this makes
         # the left side invisibly small. With 50ms timeout, it still happened
         # sometimes.
-        panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7*DIALOG_WIDTH)))
+        panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7 * DIALOG_WIDTH)))
 
     def _set_description(self, text: str) -> None:
         self.description.config(state='normal')
@@ -124,8 +129,10 @@ class PluginDialogContent:
         search_regex = '.*'.join(map(re.escape, self._search_var.get()))
         index = 0
         for name in sorted(info.name for info in pluginloader.plugin_infos):
-            if any(re.search(search_regex, v, flags=re.IGNORECASE)
-                   for v in self.treeview.item(name, 'values')):
+            if any(
+                re.search(search_regex, v, flags=re.IGNORECASE)
+                for v in self.treeview.item(name, 'values')
+            ):
                 self.treeview.move(name, '', index)
                 index += 1
             else:
@@ -138,7 +145,10 @@ class PluginDialogContent:
             how_it_got_installed = "You installed this"
 
         disable_list = settings.get('disabled_plugins', List[str])
-        if info.status == pluginloader.Status.DISABLED_BY_SETTINGS and info.name not in disable_list:
+        if (
+            info.status == pluginloader.Status.DISABLED_BY_SETTINGS
+            and info.name not in disable_list
+        ):
             message = "Will be enabled upon restart"
         elif info.status != pluginloader.Status.DISABLED_BY_SETTINGS and info.name in disable_list:
             message = "Will be disabled upon restart"
@@ -156,10 +166,7 @@ class PluginDialogContent:
         self.treeview.item(info.name, values=(info.name, how_it_got_installed, message))
 
     def _update_plz_restart_label(self) -> None:
-        statuses = (
-            self.treeview.item(name, 'values')[-1]
-            for name in self.treeview.get_children()
-        )
+        statuses = (self.treeview.item(name, 'values')[-1] for name in self.treeview.get_children())
         if any(status.endswith('upon restart') for status in statuses):
             self._plz_restart_label.config(text="Please restart Porcupine to apply the changes.")
         else:
@@ -196,12 +203,12 @@ class PluginDialogContent:
             self._title_label.config(text="")
             self._set_description(f"{len(infos)} plugins selected.")
 
-        self.enable_button.config(state=(
-            'normal' if any(info.name in disable_list for info in infos) else 'disabled'
-        ))
-        self.disable_button.config(state=(
-            'normal' if any(info.name not in disable_list for info in infos) else 'disabled'
-        ))
+        self.enable_button.config(
+            state=('normal' if any(info.name in disable_list for info in infos) else 'disabled')
+        )
+        self.disable_button.config(
+            state=('normal' if any(info.name not in disable_list for info in infos) else 'disabled')
+        )
 
     def _set_enabled(self, they_become_enabled: bool) -> None:
         infos = self._get_selected_infos()
@@ -230,7 +237,7 @@ def show_dialog() -> PluginDialogContent:
     dialog.geometry(f'{DIALOG_WIDTH}x{DIALOG_HEIGHT}')
     dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
     dialog.wait_window()
-    return content   # for tests
+    return content  # for tests
 
 
 def setup() -> None:

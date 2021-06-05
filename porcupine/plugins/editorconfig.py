@@ -86,7 +86,7 @@ def parse_file(path: pathlib.Path) -> Tuple[List[Section], bool]:
                 # configparser lowercases keys by default
                 key: value.lower()
                 for key, value in section.items()
-            }
+            },
         )
         for name, section in parser.items()
         if name not in {_STUFF_WITH_NO_SECTION, _DEFAULT_SECTION_NAME}
@@ -98,7 +98,8 @@ def parse_file(path: pathlib.Path) -> Tuple[List[Section], bool]:
     except KeyError:
         log.error(
             "'root' should be set to 'true' or 'false' (case insensitive), "
-            f"but it was set to {root_string!r}")
+            f"but it was set to {root_string!r}"
+        )
         is_root = False
     return (result, is_root)
 
@@ -133,7 +134,7 @@ def glob_match(glob: str, string: str) -> bool:
                 regex += r'[^' + re.escape(glob[2:end]) + r']'
             else:
                 regex += r'[' + re.escape(glob[1:end]) + r']'
-            glob = glob[(end + 1):]    # +1 to skip ']'
+            glob = glob[(end + 1) :]  # +1 to skip ']'
         elif glob.startswith('{'):
             # {num1..num2}	 Matches any integer numbers between num1 and num2,
             #               where num1 and num2 can be either positive or
@@ -148,7 +149,7 @@ def glob_match(glob: str, string: str) -> bool:
                 end = glob.index('}')
                 strings = glob[1:end].split(',')
                 regex += r'(?:' + r'|'.join(map(re.escape, strings)) + r')'
-                glob = glob[(end + 1):]   # +1 to skip '}'
+                glob = glob[(end + 1) :]  # +1 to skip '}'
             else:
                 # {num1..num2}
                 #
@@ -162,7 +163,7 @@ def glob_match(glob: str, string: str) -> bool:
                 max_value = int(match.group(2))
                 ranges.append(range(min_value, max_value + 1))
                 regex += r'(-?[0-9]+)'
-                glob = glob[match.end():]
+                glob = glob[match.end() :]
         else:
             # The character doesn't have a special meaning in globs, but it
             # might still have some special meaning in regexes (e.g. dot)
@@ -259,6 +260,7 @@ def get_bool(
 
 # https://github.com/editorconfig/editorconfig/wiki/EditorConfig-Properties
 
+
 def get_indent_size(config: Dict[str, str]) -> Optional[int]:
     # "When set to tab, the value of tab_width (if specified) will be used."
     if 'indent_size' in config and config['indent_size'] != 'tab':
@@ -281,7 +283,7 @@ def get_encoding(config: Dict[str, str]) -> Optional[str]:
 
         # "set to latin1, utf-8, utf-8-bom, utf-16be or utf-16le to control the character set"
         if encoding == 'utf-8-bom':
-            return 'utf-8-sig'    # this appears to be the Python name of this encoding
+            return 'utf-8-sig'  # this appears to be the Python name of this encoding
         if encoding in {'latin1', 'utf-8', 'utf-16be', 'utf-16le'}:
             return encoding
         log.error(f"bad charset: {encoding!r}")

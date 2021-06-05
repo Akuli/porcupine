@@ -75,7 +75,7 @@ def test_invisible_character_bug(text):
     [three_dots] = [text.nametowidget(name) for name in text.window_names()]
     assert text.index('5.0 lineend') == '5.24'
     text.update()
-    three_dots.event_generate('<Button-1>')   # click it
+    three_dots.event_generate('<Button-1>')  # click it
     assert text.index('5.0 lineend') == '5.23'
 
 

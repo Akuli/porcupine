@@ -34,10 +34,10 @@ def test_show_huge_logo(monkeypatch):
 
     [url] = opened
     assert url.startswith('file://')
-    path = url2pathname(url[len('file://'):])
+    path = url2pathname(url[len('file://') :])
     assert os.path.exists(path)
 
     # make sure it's a gif
     assert path.endswith('.gif')
     with open(path, 'rb') as file:
-        assert file.read(3) == b'GIF'      # every gif file starts with this
+        assert file.read(3) == b'GIF'  # every gif file starts with this

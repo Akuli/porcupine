@@ -68,16 +68,21 @@ class Finder(ttk.Frame):
         buttonframe = ttk.Frame(self)
         buttonframe.grid(row=2, column=0, columnspan=4, sticky='we')
 
-        self.previous_button = ttk.Button(buttonframe, text="Previous match",
-                                          command=self._go_to_previous_match)
-        self.next_button = ttk.Button(buttonframe, text="Next match",
-                                      command=self._go_to_next_match)
+        self.previous_button = ttk.Button(
+            buttonframe, text="Previous match", command=self._go_to_previous_match
+        )
+        self.next_button = ttk.Button(
+            buttonframe, text="Next match", command=self._go_to_next_match
+        )
         self.replace_this_button = ttk.Button(
-            buttonframe, text="Replace this match", underline=len("Replace "),
-            command=self._replace_this)
+            buttonframe,
+            text="Replace this match",
+            underline=len("Replace "),
+            command=self._replace_this,
+        )
         self.replace_all_button = ttk.Button(
-            buttonframe, text="Replace all", underline=len("Replace "),
-            command=self._replace_all)
+            buttonframe, text="Replace all", underline=len("Replace "), command=self._replace_all
+        )
 
         self.previous_button.pack(side='left')
         self.next_button.pack(side='left')
@@ -91,15 +96,14 @@ class Finder(ttk.Frame):
         ttk.Checkbutton(
             self, text="Full words only", underline=0, variable=self.full_words_var
         ).grid(row=0, column=3, sticky='w')
-        ttk.Checkbutton(
-            self, text="Ignore case", underline=0, variable=self.ignore_case_var
-        ).grid(row=1, column=3, sticky='w')
+        ttk.Checkbutton(self, text="Ignore case", underline=0, variable=self.ignore_case_var).grid(
+            row=1, column=3, sticky='w'
+        )
 
         self.statuslabel = ttk.Label(self)
         self.statuslabel.grid(row=3, column=0, columnspan=4, sticky='we')
 
-        ttk.Separator(self, orient='horizontal').grid(
-            row=4, column=0, columnspan=4, sticky='we')
+        ttk.Separator(self, orient='horizontal').grid(row=4, column=0, columnspan=4, sticky='we')
 
         closebutton = ttk.Label(self, cursor='hand2')
         closebutton.place(relx=1, rely=0, anchor='ne')
@@ -115,10 +119,10 @@ class Finder(ttk.Frame):
 
     def _config_tags(self, junk: object = None) -> None:
         # TODO: use more pygments theme instead of hard-coded colors?
+        self._textwidget.tag_config('find_highlight', foreground='black', background='yellow')
         self._textwidget.tag_config(
-            'find_highlight', foreground='black', background='yellow')
-        self._textwidget.tag_config(
-            'find_highlight_selected', foreground='black', background='orange')
+            'find_highlight_selected', foreground='black', background='orange'
+        )
         self._textwidget.tag_raise('find_highlight', 'sel')
         self._textwidget.tag_raise('find_highlight_selected', 'find_highlight')
 
@@ -180,7 +184,7 @@ class Finder(ttk.Frame):
             start, end = map(str, self._textwidget.tag_ranges('sel'))
         except ValueError:
             replace_this_state = 'disabled'
-        else:   # no, elif doesn't work here
+        else:  # no, elif doesn't work here
             if (start, end) in self.get_match_ranges():
                 replace_this_state = 'normal'
             else:
@@ -218,7 +222,7 @@ class Finder(ttk.Frame):
         self._textwidget.tag_remove('find_highlight', '1.0', 'end')
 
         looking4 = self.find_entry.get()
-        if not looking4:    # don't search for empty string
+        if not looking4:  # don't search for empty string
             self._update_buttons()
             self.statuslabel.config(text="Type something to find.")
             return
@@ -234,7 +238,9 @@ class Finder(ttk.Frame):
 
         count = 0
         for start_index in self._get_matches_to_highlight(looking4):
-            self._textwidget.tag_add('find_highlight', start_index, f'{start_index} + {len(looking4)} chars')
+            self._textwidget.tag_add(
+                'find_highlight', start_index, f'{start_index} + {len(looking4)} chars'
+            )
             count += 1
 
         self._update_buttons()
@@ -342,4 +348,6 @@ def find() -> None:
 
 def setup() -> None:
     menubar.get_menu("Edit").add_command(label="Find and Replace", command=find)
-    menubar.set_enabled_based_on_tab("Edit/Find and Replace", (lambda tab: isinstance(tab, tabs.FileTab)))
+    menubar.set_enabled_based_on_tab(
+        "Edit/Find and Replace", (lambda tab: isinstance(tab, tabs.FileTab))
+    )

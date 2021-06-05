@@ -12,7 +12,19 @@ import pathlib
 import tkinter
 import traceback
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, Iterable, List, NamedTuple, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
@@ -34,8 +46,7 @@ def _find_duplicates(items: List[_T], key: Callable[[_T], str]) -> Iterable[List
 def _short_ways_to_display_path(path: pathlib.Path) -> List[str]:
     parts = str(path).split(os.sep)
     return [parts[-1], parts[-2] + os.sep + parts[-1]] + [
-        first_part + os.sep + '...' + os.sep + parts[-1]
-        for first_part in parts[:-2]
+        first_part + os.sep + '...' + os.sep + parts[-1] for first_part in parts[:-2]
     ]
 
 
@@ -88,7 +99,9 @@ class TabManager(ttk.Notebook):
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
         while True:
             did_something = False
-            for conflicting_title_lists in _find_duplicates(titlelists, key=(lambda lizt: lizt[0].strip("*"))):
+            for conflicting_title_lists in _find_duplicates(
+                titlelists, key=(lambda lizt: lizt[0].strip("*"))
+            ):
                 # shorten longest title lists
                 maxlen = max(len(titlelist) for titlelist in conflicting_title_lists)
                 if maxlen >= 2:
@@ -114,7 +127,7 @@ class TabManager(ttk.Notebook):
         """
         if tab_id is None:
             selected = super().select()
-            if not selected:        # no tabs, selected == ''
+            if not selected:  # no tabs, selected == ''
                 return None
             return self.nametowidget(str(selected))
 
@@ -263,6 +276,7 @@ class Tab(ttk.Frame):
         These frames should contain no widgets when Porcupine is running
         without plugins. Use pack when adding things here.
     """
+
     # TODO: write types into above docstring
 
     master: TabManager
@@ -345,14 +359,12 @@ restarting Porcupine.
         return None
 
     @classmethod
-    def from_state(
-            cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
+    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
         """
         Create a new tab from the return value of :meth:`get_state`.
         Be sure to override this if you override :meth:`get_state`.
         """
-        raise NotImplementedError(
-            "from_state() wasn't overrided but get_state() was overrided")
+        raise NotImplementedError("from_state() wasn't overrided but get_state() was overrided")
 
 
 class _FileTabState(NamedTuple):
@@ -463,8 +475,9 @@ bers.py>` use this attribute.
         .. seealso:: The :virtevt:`PathChanged` virtual event.
     """
 
-    def __init__(self, manager: TabManager, content: str = '',
-                 path: Optional[pathlib.Path] = None) -> None:
+    def __init__(
+        self, manager: TabManager, content: str = '', path: Optional[pathlib.Path] = None
+    ) -> None:
         super().__init__(manager)
 
         if path is None:
@@ -474,24 +487,28 @@ bers.py>` use this attribute.
 
         self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
         self.settings.add_option(
-            'pygments_lexer', TextLexer, LexerMeta, converter=_import_lexer_class)
+            'pygments_lexer', TextLexer, LexerMeta, converter=_import_lexer_class
+        )
         self.settings.add_option('tabs2spaces', True)
         self.settings.add_option('indent_size', 4)
         self.settings.add_option('encoding', 'utf-8')
         self.settings.add_option('comment_prefix', None, Optional[str])
         self.settings.add_option(
-            'line_ending', settings.get('default_line_ending', settings.LineEnding),
-            converter=settings.LineEnding.__getitem__)
+            'line_ending',
+            settings.get('default_line_ending', settings.LineEnding),
+            converter=settings.LineEnding.__getitem__,
+        )
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
-            self, width=1, height=1, wrap='none', undo=True, padx=3)
+            self, width=1, height=1, wrap='none', undo=True, padx=3
+        )
         self.textwidget.pack(side='left', fill='both', expand=True)
 
         if content:
             self.textwidget.insert('1.0', content)
-            self.textwidget.edit_reset()   # reset undo/redo
+            self.textwidget.edit_reset()  # reset undo/redo
         self._set_saved_state(None)
 
         self.bind('<<TabSelected>>', (lambda event: self.textwidget.focus()), add=True)
@@ -540,7 +557,7 @@ bers.py>` use this attribute.
         """
         stat_result, char_count, save_hash = self._saved_state
         # Don't call _get_hash() if not necessary
-        return (self._get_char_count() != char_count or self._get_hash() != save_hash)
+        return self._get_char_count() != char_count or self._get_hash() != save_hash
 
     def reload(self) -> None:
         """Read the contents of the file from disk.
@@ -560,7 +577,9 @@ bers.py>` use this attribute.
             self.settings.set('line_ending', settings.LineEnding(f.newlines))
 
         # Find changed part in O(n) time where n = max(len(old_lines), len(new_lines))
-        old_lines = collections.deque(self.textwidget.get('1.0', 'end - 1 char').splitlines(keepends=True))
+        old_lines = collections.deque(
+            self.textwidget.get('1.0', 'end - 1 char').splitlines(keepends=True)
+        )
         new_lines = collections.deque(content.splitlines(keepends=True))
         start_line = 1
         start_column = 0
@@ -585,7 +604,9 @@ bers.py>` use this attribute.
         self.textwidget.config(autoseparators=False)
         try:
             self.textwidget.edit_separator()
-            self.textwidget.replace(f'{start_line}.{start_column}', f'{end_line}.{end_column}', ''.join(new_lines))
+            self.textwidget.replace(
+                f'{start_line}.{start_column}', f'{end_line}.{end_column}', ''.join(new_lines)
+            )
             self.textwidget.edit_separator()
         finally:
             self.textwidget.config(autoseparators=True)
@@ -627,19 +648,23 @@ bers.py>` use this attribute.
             return False
 
         except (OSError, UnicodeError):
-            log.exception(f"error when figuring out if '{self.path}' needs reloading, assuming it does")
+            log.exception(
+                f"error when figuring out if '{self.path}' needs reloading, assuming it does"
+            )
             return True
 
-    def equivalent(self, other: Tab) -> bool:    # override
+    def equivalent(self, other: Tab) -> bool:  # override
         # this used to have hasattr(other, "path") instead of isinstance
         # but it screws up if a plugin defines something different with
         # a path attribute, for example, a debugger plugin might have
         # tabs that represent files and they might need to be opened at
         # the same time as FileTabs are
-        return (isinstance(other, FileTab) and
-                self.path is not None and
-                other.path is not None and
-                self.path.samefile(other.path))
+        return (
+            isinstance(other, FileTab)
+            and self.path is not None
+            and other.path is not None
+            and self.path.samefile(other.path)
+        )
 
     @property
     def path(self) -> Optional[pathlib.Path]:
@@ -650,7 +675,7 @@ bers.py>` use this attribute.
         if new_path is not None:
             new_path = new_path.resolve()
 
-        it_changes = (self._path != new_path)
+        it_changes = self._path != new_path
         self._path = new_path
         if it_changes:
             self.event_generate('<<PathChanged>>')
@@ -667,7 +692,7 @@ bers.py>` use this attribute.
 
         self.title_choices = titles
 
-    def can_be_closed(self) -> bool:    # override
+    def can_be_closed(self) -> bool:  # override
         if not self.is_modified():
             return True
 
@@ -694,12 +719,11 @@ bers.py>` use this attribute.
         try:
             with utils.backup_open(path, 'w', encoding=encoding, newline=line_ending.value) as f:
                 f.write(self.textwidget.get('1.0', 'end - 1 char'))
-                f.flush()   # needed to get right file size in stat
+                f.flush()  # needed to get right file size in stat
                 self._set_saved_state(os.fstat(f.fileno()))
         except (OSError, UnicodeError) as e:
             log.exception(f"saving to '{path}' failed")
-            utils.errordialog(type(e).__name__, "Saving failed!",
-                              traceback.format_exc())
+            utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
             return False
 
         self._save_hash = self._get_hash()
@@ -728,7 +752,8 @@ bers.py>` use this attribute.
         if self.other_program_changed_file():
             user_is_sure = messagebox.askyesno(
                 "File changed",
-                f"Another program has changed {self.path.name}. Are you sure you want to save it?")
+                f"Another program has changed {self.path.name}. Are you sure you want to save it?",
+            )
             if not user_is_sure:
                 return False
 
@@ -743,19 +768,22 @@ bers.py>` use this attribute.
         """
         if path is None:
             path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
-            if not path_string:     # it may be '' because tkinter
+            if not path_string:  # it may be '' because tkinter
                 return False
             path = pathlib.Path(path_string)
 
         # see equivalent()
-        if any(isinstance(other, FileTab) and other.path == path
-               for other in self.master.tabs()
-               if other is not self):
+        if any(
+            isinstance(other, FileTab) and other.path == path
+            for other in self.master.tabs()
+            if other is not self
+        ):
             messagebox.showerror(
                 "Save As",
                 f"{path.name!r} is already opened. "
                 "Please close it before overwriting it with another file.",
-                parent=self.winfo_toplevel())
+                parent=self.winfo_toplevel(),
+            )
             return False
 
         return self._do_the_save(path)
@@ -764,7 +792,11 @@ bers.py>` use this attribute.
     # FIXME: when called from reload plugin, require saving file first
     def get_state(self) -> _FileTabState:
         # e.g. "New File" tabs are saved even though the .path is None
-        if self.path is not None and not self.is_modified() and not self.other_program_changed_file():
+        if (
+            self.path is not None
+            and not self.is_modified()
+            and not self.other_program_changed_file()
+        ):
             # this is really saved
             content = None
         else:
@@ -774,7 +806,7 @@ bers.py>` use this attribute.
 
     @classmethod
     def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
-        assert isinstance(state, _FileTabState)   # not namedtuple in older porcupines
+        assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
         if state.content is None:
             # nothing has changed since saving, read from the saved file

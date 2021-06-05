@@ -64,6 +64,7 @@ class Status(enum.Enum):
         should be set up before *A*, then *A*, *B* and *C* will all fail with
         ``CIRCULAR_DEPENDENCY_ERROR``.
     """
+
     LOADING = enum.auto()
     ACTIVE = enum.auto()
     DISABLED_BY_SETTINGS = enum.auto()
@@ -94,6 +95,7 @@ class PluginInfo:
         * If *status* is ``CIRCULAR_DEPENDENCY_ERROR``, then *error* is a
           user-readable one-line message.
     """
+
     name: str
     came_with_porcupine: bool
     status: Status
@@ -120,7 +122,7 @@ def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.Argum
             info.error = traceback.format_exc()
 
         duration = time.perf_counter() - start
-        log.debug("ran %s.setup_argument_parser() in %.3f milliseconds", info.name, duration*1000)
+        log.debug("ran %s.setup_argument_parser() in %.3f milliseconds", info.name, duration * 1000)
 
 
 def _import_plugin(info: PluginInfo) -> None:
@@ -147,7 +149,7 @@ def _import_plugin(info: PluginInfo) -> None:
             _dependencies[dep_info].add(info)
 
     duration = time.perf_counter() - start
-    log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration*1000)
+    log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration * 1000)
 
 
 # Remember to generate <<PluginsLoaded>> when this succeeds
@@ -166,7 +168,7 @@ def _run_setup(info: PluginInfo) -> None:
         info.status = Status.ACTIVE
 
     duration = time.perf_counter() - start
-    log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration*1000)
+    log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
 
 
 def _did_plugin_come_with_porcupine(finder: object) -> bool:
@@ -274,8 +276,7 @@ def can_setup_while_running(info: PluginInfo) -> bool:
         return False
 
     return not any(
-        info.status == Status.ACTIVE and info in deps
-        for info, deps in _dependencies.items()
+        info.status == Status.ACTIVE and info in deps for info, deps in _dependencies.items()
     )
 
 

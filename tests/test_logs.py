@@ -17,7 +17,9 @@ def test_race_conditions():
 
     def thread_target(index):
         try:
-            subprocess.run([sys.executable, '-m', 'porcupine'], timeout=2, stdout=subprocess.DEVNULL)
+            subprocess.run(
+                [sys.executable, '-m', 'porcupine'], timeout=2, stdout=subprocess.DEVNULL
+            )
         except subprocess.TimeoutExpired:
             timed_out[index] = True
 
@@ -55,11 +57,11 @@ def test_remove_old_logs(monkeypatch, caplog):
 
 def test_log_path_printed(mocker):
     mocker.patch('porcupine._logs.print')
-    _logs.print.side_effect = ZeroDivisionError   # to make it stop when it prints
+    _logs.print.side_effect = ZeroDivisionError  # to make it stop when it prints
     with pytest.raises(ZeroDivisionError):
         _logs.setup(None)
 
     _logs.print.assert_called_once()
     printed = _logs.print.call_args[0][0]
     assert printed.startswith('log file: ')
-    assert os.path.isfile(printed[len('log file: '):])
+    assert os.path.isfile(printed[len('log file: ') :])

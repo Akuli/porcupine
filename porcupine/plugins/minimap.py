@@ -25,7 +25,6 @@ LINE_THICKNESS = 1
 # the text being selected, and we abuse it for setting the smaller font size.
 # This means that all of the text has to be selected all the time.
 class MiniMap(tkinter.Text):
-
     def __init__(self, master: tkinter.Misc, tab: tabs.FileTab) -> None:
         super().__init__(master)
         textwidget.create_peer_widget(tab.textwidget, self)
@@ -82,7 +81,7 @@ class MiniMap(tkinter.Text):
         self.config(
             fg=foreground,
             bg=background,
-            inactiveselectbackground=background,   # must be non-empty?
+            inactiveselectbackground=background,  # must be non-empty?
         )
 
         self._tab.textwidget.config(highlightcolor=foreground)
@@ -90,12 +89,17 @@ class MiniMap(tkinter.Text):
             frame.config(bg=foreground)
 
     def set_font(self, junk: object = None) -> None:
-        self.tag_config('sel', font=(
-            settings.get('font_family', str),
-            round(settings.get('font_size', int) / 3),
-            (),
-        ))
-        textwidget.config_tab_displaying(self, self._tab.settings.get('indent_size', int), tag='sel')
+        self.tag_config(
+            'sel',
+            font=(
+                settings.get('font_family', str),
+                round(settings.get('font_size', int) / 3),
+                (),
+            ),
+        )
+        textwidget.config_tab_displaying(
+            self, self._tab.settings.get('indent_size', int), tag='sel'
+        )
         self._update_vast()
 
     def _scroll_callback(self) -> None:
@@ -133,9 +137,11 @@ class MiniMap(tkinter.Text):
             # whole file content on screen at once, show screen size instead of file content size
             # this does not take in account wrap plugin
             how_tall_are_lines_on_editor: int = self._tab.tk.call(
-                'font', 'metrics', self._tab.textwidget['font'], '-linespace')
+                'font', 'metrics', self._tab.textwidget['font'], '-linespace'
+            )
             how_tall_are_lines_on_minimap: int = self._tab.tk.call(
-                'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace')
+                'font', 'metrics', self.tag_cget('sel', 'font'), '-linespace'
+            )
             editor_height: int = self._tab.textwidget.winfo_height()
             how_many_lines_fit_on_editor = editor_height / how_tall_are_lines_on_editor
 
@@ -158,7 +164,7 @@ class MiniMap(tkinter.Text):
                 vast_bottom = y - y_offset + h
 
         vast_height = vast_bottom - vast_top
-        width = self.winfo_width() - 2*x_offset
+        width = self.winfo_width() - 2 * x_offset
 
         coords = {
             'top': (0, vast_top, width, LINE_THICKNESS),

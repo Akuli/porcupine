@@ -26,8 +26,11 @@ from porcupine.__main__ import main
 # repeatedly too fast
 def pytest_addoption(parser):
     parser.addoption(
-        '--test-pastebins', action='store_true', default=False,
-        help="run tests that invoke online pastebins")
+        '--test-pastebins',
+        action='store_true',
+        default=False,
+        help="run tests that invoke online pastebins",
+    )
 
 
 def pytest_collection_modifyitems(config, items):
@@ -117,7 +120,10 @@ def run_porcupine():
     def actually_run_porcupine(args, expected_exit_status):
         run_result = subprocess.run(
             [sys.executable, '-m', 'porcupine'] + args,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+        )
         assert run_result.returncode == expected_exit_status
         return run_result.stdout
 

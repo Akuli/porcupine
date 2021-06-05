@@ -24,15 +24,14 @@ CommandArgument = Union[str, pathlib.Path]
 
 
 # getting this to work in powershell turned out to be hard :(
-def _run_in_windows_cmd(
-        blue_message: str,
-        workingdir: pathlib.Path,
-        command: List[str]) -> None:
+def _run_in_windows_cmd(blue_message: str, workingdir: pathlib.Path, command: List[str]) -> None:
     log.debug("using Windows command prompt")
 
     command = [
-        str(utils.python_executable), str(run_script),
-        blue_message, str(workingdir),
+        str(utils.python_executable),
+        str(run_script),
+        blue_message,
+        str(workingdir),
     ] + command
 
     if not utils.running_pythonw:
@@ -45,9 +44,8 @@ def _run_in_windows_cmd(
 
 
 def _run_in_osx_terminal_app(
-        blue_message: str,
-        workingdir: pathlib.Path,
-        command: List[str]) -> None:
+    blue_message: str, workingdir: pathlib.Path, command: List[str]
+) -> None:
     log.debug("using OSX terminal.app")
 
     bash = shutil.which('bash')
@@ -61,10 +59,10 @@ def _run_in_osx_terminal_app(
     #    OSX versions need to change their terminal settings
     # big thanks to go|dfish for testing an older version of this code!
     # this exact code is NOT TESTED :/
-    real_command = [str(run_script), '--dont-wait',
-                    blue_message, str(workingdir)] + list(map(str, command))
-    with tempfile.NamedTemporaryFile(
-            'w', delete=False, prefix='porcupine-run-') as file:
+    real_command = [str(run_script), '--dont-wait', blue_message, str(workingdir)] + list(
+        map(str, command)
+    )
+    with tempfile.NamedTemporaryFile('w', delete=False, prefix='porcupine-run-') as file:
         print('#!/usr/bin/env bash', file=file)
         print('rm', shlex.quote(file.name), file=file)  # see below
         print(' '.join(map(shlex.quote, real_command)), file=file)
@@ -78,8 +76,8 @@ def _run_in_osx_terminal_app(
 
 
 def _run_in_x11_like_terminal(
-        blue_message: str, workingdir: pathlib.Path,
-        command: List[str]) -> None:
+    blue_message: str, workingdir: pathlib.Path, command: List[str]
+) -> None:
     terminal: str = os.environ.get('TERMINAL', 'x-terminal-emulator')
 
     # to config what x-terminal-emulator is:
@@ -105,7 +103,8 @@ def _run_in_x11_like_terminal(
                 messagebox.showerror(
                     "x-terminal-emulator not found",
                     "Cannot find x-terminal-emulator in $PATH. "
-                    "Are you sure that you have a terminal installed?")
+                    "Are you sure that you have a terminal installed?",
+                )
                 return
 
         terminal_path = pathlib.Path(terminal_or_none)
@@ -129,13 +128,13 @@ def _run_in_x11_like_terminal(
     if shutil.which(terminal) is None:
         messagebox.showerror(
             f"{terminal!r} not found",
-            f"Cannot find {terminal!r} in $PATH. Try setting $TERMINAL to a path to a working terminal program.")
+            f"Cannot find {terminal!r} in $PATH. Try setting $TERMINAL to a path to a working terminal program.",
+        )
         return
 
     real_command = [str(run_script), blue_message, str(workingdir)]
     real_command.extend(map(str, command))
-    subprocess.Popen([terminal, '-e',
-                      ' '.join(map(shlex.quote, real_command))])
+    subprocess.Popen([terminal, '-e', ' '.join(map(shlex.quote, real_command))])
 
 
 # this figures out which terminal to use every time the user wants to run
@@ -144,7 +143,7 @@ def _run_in_x11_like_terminal(
 def run_command(workingdir: pathlib.Path, command: List[str]) -> None:
     blue_message = ' '.join(map(utils.quote, command))
 
-    widget = get_main_window()    # any tkinter widget works
+    widget = get_main_window()  # any tkinter widget works
     windowingsystem = widget.tk.call('tk', 'windowingsystem')
 
     if windowingsystem == 'win32':

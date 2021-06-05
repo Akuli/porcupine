@@ -46,13 +46,11 @@ def show_huge_logo(junk: object = None) -> None:
 
 
 class _AboutDialogContent(ttk.Frame):
-
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         # TODO: calculate height automagically, instead of hard-coding
-        self._textwidget = textwidget.create_passive_text_widget(
-            self, width=60, height=25)
+        self._textwidget = textwidget.create_passive_text_widget(self, width=60, height=25)
         self._textwidget.pack(fill='both', expand=True, padx=5, pady=5)
 
         # http://effbot.org/zone/tkinter-text-hyperlink.htm
@@ -66,12 +64,13 @@ class _AboutDialogContent(ttk.Frame):
         for text_chunk in _BORING_TEXT.strip().split('\n\n'):
             self._add_minimal_markdown(text_chunk)
             self._textwidget.insert('end', '\n\n')
-        self._add_directory_link("Porcupine is installed to", pathlib.Path(__file__).absolute().parent.parent.parent)
+        self._add_directory_link(
+            "Porcupine is installed to", pathlib.Path(__file__).absolute().parent.parent.parent
+        )
         self._add_directory_link("You can install plugins to", pathlib.Path(plugins.__path__[0]))
         self._textwidget.config(state='disabled')
 
-        label = ttk.Label(self, image=images.get('logo-200x200'),
-                          cursor='hand2')
+        label = ttk.Label(self, image=images.get('logo-200x200'), cursor='hand2')
         label.pack(anchor='e')
         utils.set_tooltip(label, "Click to view in full size")
         label.bind('<Button-1>', show_huge_logo, add=True)
@@ -81,7 +80,7 @@ class _AboutDialogContent(ttk.Frame):
 
         previous_end = 0
         for link in re.finditer(r'\[(.+?)\]\((.+?)\)', text):
-            parts.append(text[previous_end:link.start()])
+            parts.append(text[previous_end : link.start()])
             parts.append(link)
             previous_end = link.end()
         parts.append(text[previous_end:])
@@ -93,8 +92,9 @@ class _AboutDialogContent(ttk.Frame):
                 # a link
                 text, href = part.groups()
                 tag = next(self._link_tag_names)
-                self._textwidget.tag_bind(      # bindcheck: ignore
-                    tag, '<Button-1>', functools.partial(self._open_link, href))
+                self._textwidget.tag_bind(  # bindcheck: ignore
+                    tag, '<Button-1>', functools.partial(self._open_link, href)
+                )
                 self._textwidget.insert('end', text, ['link', tag])
 
     def _add_directory_link(self, description: str, path: pathlib.Path) -> None:
@@ -128,7 +128,7 @@ def show_about_dialog() -> None:
     content = _AboutDialogContent(dialog)
     content.pack(fill='both', expand=True)
 
-    content.update()       # make sure that the winfo stuff works
+    content.update()  # make sure that the winfo stuff works
     dialog.minsize(content.winfo_reqwidth(), content.winfo_reqheight())
     dialog.title(f"About Porcupine {porcupine_version}")
     dialog.transient(get_main_window())

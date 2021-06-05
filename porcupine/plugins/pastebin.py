@@ -101,8 +101,8 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
         self._dpaste = dpaste
 
     # https://github.com/python/mypy/issues/10049
-    @property     # type: ignore
-    def sock(self) -> Union[socket.socket, ssl.SSLSocket]:   # type: ignore
+    @property  # type: ignore
+    def sock(self) -> Union[socket.socket, ssl.SSLSocket]:  # type: ignore
         return self.__sock
 
     @sock.setter
@@ -130,21 +130,25 @@ class DPaste(Paste):
     def run(self, code: str, lexer_class: LexerMeta) -> str:
         # kwargs of do_open() go to MyHTTPSConnection
         handler = HTTPSHandler()
-        handler.https_open = partial(handler.do_open, MyHTTPSConnection, dpaste=self)   # type: ignore
+        handler.https_open = partial(handler.do_open, MyHTTPSConnection, dpaste=self)  # type: ignore
 
         # docs: https://dpaste.com/api/v2/
         # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
-        request = Request(DPASTE_URL, data=urlencode({
-            'syntax': lexer_class.aliases[0],
-            'content': code,
-        }).encode('utf-8'))
+        request = Request(
+            DPASTE_URL,
+            data=urlencode(
+                {
+                    'syntax': lexer_class.aliases[0],
+                    'content': code,
+                }
+            ).encode('utf-8'),
+        )
 
         with build_opener(handler).open(request) as response:
             return response.read().decode().strip()
 
 
 class SuccessDialog(tkinter.Toplevel):
-
     def __init__(self, url: str, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.url = url
@@ -158,7 +162,7 @@ class SuccessDialog(tkinter.Toplevel):
         self._entry = ttk.Entry(self, justify='center')
         self._entry.place(relx=0.5, rely=0.4, anchor='center', relwidth=1)
         self._entry.insert(0, url)
-        self._entry.config(state='readonly')     # must be after the insert
+        self._entry.config(state='readonly')  # must be after the insert
         self.bind('<FocusIn>', self._select_all, add=True)
         self._select_all()
 
@@ -173,7 +177,9 @@ class SuccessDialog(tkinter.Toplevel):
             ttk.Button(buttonframe, text=text, command=callback).pack(side='left', expand=True)
 
     def _select_all(self, event: Optional[tkinter.Event] = None) -> None:
-        if event is None or event.widget is self:   # toplevels annoyingly get notified of child events
+        if (
+            event is None or event.widget is self
+        ):  # toplevels annoyingly get notified of child events
             self._entry.selection_range(0, 'end')
             self._entry.focus()
 
@@ -197,7 +203,9 @@ def make_please_wait_window(paste: Paste) -> tkinter.Toplevel:
     content = ttk.Frame(window)
     content.pack(fill='both', expand=True)
 
-    label = ttk.Label(content, font=('', 12, ()), text=f"Pasting to {type(paste).name}, please wait...")
+    label = ttk.Label(
+        content, font=('', 12, ()), text=f"Pasting to {type(paste).name}, please wait..."
+    )
     label.pack(expand=True)
 
     progressbar = ttk.Progressbar(content, mode='indeterminate')
@@ -210,7 +218,9 @@ def make_please_wait_window(paste: Paste) -> tkinter.Toplevel:
     return window
 
 
-def pasting_done_callback(paste: Paste, please_wait_window: tkinter.Toplevel, success: bool, result: str) -> None:
+def pasting_done_callback(
+    paste: Paste, please_wait_window: tkinter.Toplevel, success: bool, result: str
+) -> None:
     get_main_window().tk.call('tk', 'busy', 'forget', get_main_window())
     please_wait_window.destroy()
 
@@ -224,7 +234,9 @@ def pasting_done_callback(paste: Paste, please_wait_window: tkinter.Toplevel, su
             dialog.wait_window()
         else:
             log.error(f"pastebin returned invalid url: {result!r}")
-            messagebox.showerror("Pasting failed", f"Instead of a valid URL, {type(paste).name} returned {result!r}.")
+            messagebox.showerror(
+                "Pasting failed", f"Instead of a valid URL, {type(paste).name} returned {result!r}."
+            )
     elif paste.canceled:
         # Log error with less dramatic log level and don't show in GUI
         log.debug("Pasting failed and was cancelled. Here is the error.", exc_info=True)
@@ -233,9 +245,12 @@ def pasting_done_callback(paste: Paste, please_wait_window: tkinter.Toplevel, su
         log.error(f"pasting failed\n{result}")
         utils.errordialog(
             "Pasting Failed",
-            ("Check your internet connection and try again.\n\n" +
-             "Here's the full error message:"),
-            monospace_text=result)
+            (
+                "Check your internet connection and try again.\n\n"
+                + "Here's the full error message:"
+            ),
+            monospace_text=result,
+        )
 
 
 def start_pasting(paste_class: Type[Paste]) -> None:
@@ -251,11 +266,17 @@ def start_pasting(paste_class: Type[Paste]) -> None:
 
     paste = paste_class()
     plz_wait = make_please_wait_window(paste)
-    utils.run_in_thread(partial(paste.run, code, lexer_class), partial(pasting_done_callback, paste, plz_wait))
+    utils.run_in_thread(
+        partial(paste.run, code, lexer_class), partial(pasting_done_callback, paste, plz_wait)
+    )
 
 
 def setup() -> None:
     for klass in [DPaste, Termbin]:
-        menubar.get_menu("Pastebin").add_command(label=klass.name, command=partial(start_pasting, klass))
+        menubar.get_menu("Pastebin").add_command(
+            label=klass.name, command=partial(start_pasting, klass)
+        )
         assert '/' not in klass.name
-        menubar.set_enabled_based_on_tab(f"Pastebin/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab)))
+        menubar.set_enabled_based_on_tab(
+            f"Pastebin/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab))
+        )

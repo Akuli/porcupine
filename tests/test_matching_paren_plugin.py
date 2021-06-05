@@ -15,7 +15,7 @@ def test_nested(filetab):
 
     # outer braces
     text.mark_set('insert', '1.0')
-    assert not text.tag_ranges('matching_paren')   # cursor must always be after the paren
+    assert not text.tag_ranges('matching_paren')  # cursor must always be after the paren
     text.mark_set('insert', '1.1')
     assert text.index('matching_paren.first') == '1.0'
     assert text.index('matching_paren.last') == text.index('1.0 lineend')
@@ -32,20 +32,29 @@ def test_nested(filetab):
 
 def test_square_brackets_and_round_parens_and_curly_braces_nested(filetab):
     text = filetab.textwidget
-    text.insert('1.0', '''\
+    text.insert(
+        '1.0',
+        '''\
 stuff = [
     ('a', 'b', {'c', 'd'})
-]''')
+]''',
+    )
 
     # [square brackets]
     text.mark_set('insert', '1.0 lineend')
-    assert text.get('matching_paren.first', 'matching_paren.last') == '''[
+    assert (
+        text.get('matching_paren.first', 'matching_paren.last')
+        == '''[
     ('a', 'b', {'c', 'd'})
 ]'''
+    )
     text.mark_set('insert', '3.1')
-    assert text.get('matching_paren.first', 'matching_paren.last') == '''[
+    assert (
+        text.get('matching_paren.first', 'matching_paren.last')
+        == '''[
     ('a', 'b', {'c', 'd'})
 ]'''
+    )
 
     # (round parens)
     text.mark_set('insert', '2.5')

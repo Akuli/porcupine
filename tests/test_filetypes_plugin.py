@@ -15,11 +15,13 @@ def custom_filetypes():
     assert not dirs.user_config_dir.startswith(str(pathlib.Path.home()))
     user_filetypes = pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'
 
-    user_filetypes.write_text("""
+    user_filetypes.write_text(
+        """
 ['Mako template']
 filename_patterns = ["mako-templates/*.html"]
 pygments_lexer = 'pygments.lexers.MakoHtmlLexer'
-""")
+"""
+    )
     filetypes.load_filetypes()
     filetypes.set_filedialog_kwargs()
 
@@ -36,9 +38,7 @@ def test_filedialog_patterns_got_stripped():
     assert '.py' in python_patterns
 
 
-@pytest.mark.skipif(
-    sys.platform != 'linux',
-    reason="don't know how filedialog works on non-Linux")
+@pytest.mark.skipif(sys.platform != 'linux', reason="don't know how filedialog works on non-Linux")
 def test_actually_running_filedialog(custom_filetypes):
     # Wait and then press Esc. That's done as Tcl code because the Tk widget
     # representing the dialog can't be used with tkinter.
@@ -56,11 +56,14 @@ def test_bad_filetype_on_command_line(run_porcupine):
 
 def test_unknown_filetype(filetab, tmp_path):
     # pygments does not know graphviz, see how it gets handled
-    filetab.textwidget.insert('end', '''\
+    filetab.textwidget.insert(
+        'end',
+        '''\
 digraph G {
     Hello->World;
 }
-''')
+''',
+    )
     filetab.path = tmp_path / 'graphviz-hello-world.gvz'
     filetab.save()
     lexer_class_name = filetypes.get_filetype_for_tab(filetab)['pygments_lexer']
@@ -68,18 +71,25 @@ digraph G {
 
 
 def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
-    assert filetypes.guess_filetype_from_path(
-        tmp_path / "foo" / "bar.html"
-    )['pygments_lexer'] == 'pygments.lexers.HtmlLexer'
+    assert (
+        filetypes.guess_filetype_from_path(tmp_path / "foo" / "bar.html")['pygments_lexer']
+        == 'pygments.lexers.HtmlLexer'
+    )
 
-    assert filetypes.guess_filetype_from_path(
-        tmp_path / "foobar-mako-templates" / "bar.html"
-    )['pygments_lexer'] == 'pygments.lexers.HtmlLexer'
+    assert (
+        filetypes.guess_filetype_from_path(tmp_path / "foobar-mako-templates" / "bar.html")[
+            'pygments_lexer'
+        ]
+        == 'pygments.lexers.HtmlLexer'
+    )
 
     with caplog.at_level(logging.WARNING):
-        assert filetypes.guess_filetype_from_path(
-            tmp_path / "mako-templates" / "bar.html"
-        )['pygments_lexer'] == 'pygments.lexers.MakoHtmlLexer'
+        assert (
+            filetypes.guess_filetype_from_path(tmp_path / "mako-templates" / "bar.html")[
+                'pygments_lexer'
+            ]
+            == 'pygments.lexers.MakoHtmlLexer'
+        )
 
     assert len(caplog.records) == 1
     assert "2 file types match" in caplog.records[0].message

@@ -12,7 +12,15 @@ import toml
 from pygments import lexers  # type: ignore[import]
 from pygments.util import ClassNotFound  # type: ignore[import]
 
-from porcupine import dirs, filedialog_kwargs, get_parsed_args, get_tab_manager, menubar, settings, tabs
+from porcupine import (
+    dirs,
+    filedialog_kwargs,
+    get_parsed_args,
+    get_tab_manager,
+    menubar,
+    settings,
+    tabs,
+)
 
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]
@@ -24,7 +32,9 @@ def is_list_of_strings(obj: object) -> bool:
 
 
 def load_filetypes() -> None:
-    user_path = pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'   # not global, tests monkeypatch dirs
+    user_path = (
+        pathlib.Path(dirs.user_config_dir) / 'filetypes.toml'
+    )  # not global, tests monkeypatch dirs
     defaults_path = pathlib.Path(__file__).absolute().parent.parent / 'default_filetypes.toml'
 
     filetypes.update(toml.load(defaults_path))
@@ -34,13 +44,15 @@ def load_filetypes() -> None:
         user_filetypes = dict(toml.load(user_path))
     except FileNotFoundError:
         log.info(f"'{user_path}' not found, creating")
-        with user_path.open('x') as file:   # error if exists
-            file.write('''\
+        with user_path.open('x') as file:  # error if exists
+            file.write(
+                '''\
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
 #
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
-''')
+'''
+            )
     except (OSError, UnicodeError, toml.TomlDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
 
@@ -50,8 +62,9 @@ def load_filetypes() -> None:
 
     for name, filetype in filetypes.items():
         # everything except filename_patterns and shebang_regex is handled by Settings objects
-        if ('filename_patterns' in filetype and
-                not is_list_of_strings(filetype['filename_patterns'])):
+        if 'filename_patterns' in filetype and not is_list_of_strings(
+            filetype['filename_patterns']
+        ):
             log.error(f"filename_patterns is not a list of strings in [{name}] section")
             del filetype['filename_patterns']
 
@@ -72,14 +85,17 @@ def load_filetypes() -> None:
 
 def set_filedialog_kwargs() -> None:
     filedialog_kwargs['filetypes'] = [("All Files", ["*"])] + [
-        (name, [
-            # "*.py" doesn't work on windows, but ".py" works and does the same thing
-            # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
-            pattern.split("/")[-1].lstrip("*")
-            for pattern in filetype['filename_patterns']
-        ])
+        (
+            name,
+            [
+                # "*.py" doesn't work on windows, but ".py" works and does the same thing
+                # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
+                pattern.split("/")[-1].lstrip("*")
+                for pattern in filetype['filename_patterns']
+            ],
+        )
         for name, filetype in filetypes.items()
-        if name != 'Plain Text'    # can just use "All Files" for this
+        if name != 'Plain Text'  # can just use "All Files" for this
     ]
 
 
@@ -99,14 +115,17 @@ def get_filetype_from_matches(
 
 def guess_filetype_from_path(filepath: pathlib.Path) -> Optional[FileType]:
     assert filepath.is_absolute()
-    return get_filetype_from_matches({
-        name: filetype
-        for name, filetype in filetypes.items()
-        if any(
-            fnmatch.fnmatch(filepath.as_posix(), '*/' + pat)
-            for pat in filetype['filename_patterns']
-        )
-    }, str(filepath))
+    return get_filetype_from_matches(
+        {
+            name: filetype
+            for name, filetype in filetypes.items()
+            if any(
+                fnmatch.fnmatch(filepath.as_posix(), '*/' + pat)
+                for pat in filetype['filename_patterns']
+            )
+        },
+        str(filepath),
+    )
 
 
 def guess_filetype_from_shebang(content_start: str) -> Optional[FileType]:
@@ -197,8 +216,13 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
 
     load_filetypes()
     parser.add_argument(
-        '-n', '--new-file', metavar='FILETYPE', action='append', type=parse_filetype_name,
-        help='create a "New File" tab with a filetype from filetypes.toml')
+        '-n',
+        '--new-file',
+        metavar='FILETYPE',
+        action='append',
+        type=parse_filetype_name,
+        help='create a "New File" tab with a filetype from filetypes.toml',
+    )
 
 
 def menu_callback(filetype: FileType) -> None:
@@ -213,7 +237,8 @@ def setup() -> None:
 
     settings.add_option('default_filetype', 'Python')
     settings.add_combobox(
-        'default_filetype', "Default filetype for new files:",
+        'default_filetype',
+        "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
     menubar.add_config_file_button(pathlib.Path(dirs.user_config_dir) / 'filetypes.toml')
@@ -223,11 +248,13 @@ def setup() -> None:
         safe_name = name.replace('/', '\N{division slash}')  # lol
         assert '/' not in safe_name
         menubar.get_menu("Filetypes").add_command(
-            label=safe_name,
-            command=partial(menu_callback, filetype))
-        menubar.set_enabled_based_on_tab(f"Filetypes/{safe_name}", (lambda tab: isinstance(tab, tabs.FileTab)))
+            label=safe_name, command=partial(menu_callback, filetype)
+        )
+        menubar.set_enabled_based_on_tab(
+            f"Filetypes/{safe_name}", (lambda tab: isinstance(tab, tabs.FileTab))
+        )
 
-    for filetype in (get_parsed_args().new_file or []):   # new_file may be None
+    for filetype in get_parsed_args().new_file or []:  # new_file may be None
         tab = tabs.FileTab(get_tab_manager())
         get_tab_manager().add_tab(tab)  # sets default filetype
         apply_filetype_to_tab(tab, filetype)  # sets correct filetype

@@ -17,7 +17,20 @@ import threading
 import tkinter
 import traceback
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Deque, Dict, Iterator, Optional, TextIO, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Deque,
+    Dict,
+    Iterator,
+    Optional,
+    TextIO,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import dacite
 
@@ -39,9 +52,10 @@ BreakOrNone = Optional[Literal['break']]
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
 _installed_with_pynsist = (
-    sys.platform == 'win32' and
-    pathlib.Path(sys.executable).parent.name.lower() == 'python' and
-    pathlib.Path(sys.executable).parent.parent.name.lower() == 'porcupine')
+    sys.platform == 'win32'
+    and pathlib.Path(sys.executable).parent.name.lower() == 'python'
+    and pathlib.Path(sys.executable).parent.parent.name.lower() == 'porcupine'
+)
 
 
 if sys.platform == 'win32':
@@ -49,10 +63,13 @@ if sys.platform == 'win32':
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
         running_pythonw = True
-    elif (_installed_with_pynsist and
-          sys.stdout is sys.stderr and
-          sys.stdout.name is not None and       # not sure if necessary
-          pathlib.Path(sys.stdout.name).parent == pathlib.Path(os.environ['APPDATA'])):
+    elif (
+        _installed_with_pynsist
+        and sys.stdout is sys.stderr
+        and sys.stdout.name is not None
+        and pathlib.Path(sys.stdout.name).parent  # not sure if necessary
+        == pathlib.Path(os.environ['APPDATA'])
+    ):
         # pynsist generates a script that does this:
         #
         #   sys.stdout = sys.stderr = open(blablabla, 'w', **kw)
@@ -105,7 +122,7 @@ if sys.platform == 'win32':
                 bs_buf.append(c)
             elif c == '"':
                 # Double backslashes.
-                result.append('\\' * len(bs_buf)*2)
+                result.append('\\' * len(bs_buf) * 2)
                 bs_buf = []
                 result.append('\\"')
             else:
@@ -125,9 +142,11 @@ if sys.platform == 'win32':
 
         return ''.join(result)
 
+
 else:
     from shlex import quote
-    quote = quote       # silence pyflakes warning
+
+    quote = quote  # silence pyflakes warning
 
 
 # Using these with subprocess prevents opening unnecessary cmd windows
@@ -135,7 +154,9 @@ else:
 subprocess_kwargs: Dict[str, Any] = {}
 if sys.platform == 'win32':
     # https://stackoverflow.com/a/1813893
-    subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW)
+    subprocess_kwargs['startupinfo'] = subprocess.STARTUPINFO(
+        dwFlags=subprocess.STARTF_USESHOWWINDOW
+    )
 
 
 _LIKELY_PROJECT_ROOT_THINGS = ['.editorconfig'] + [
@@ -152,8 +173,10 @@ def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
     likely_root = None
     for path in project_file_path.parents:
         if (path / '.git').exists():
-            return path   # trust this the most, if it exists
-        elif likely_root is None and any((path / thing).exists() for thing in _LIKELY_PROJECT_ROOT_THINGS):
+            return path  # trust this the most, if it exists
+        elif likely_root is None and any(
+            (path / thing).exists() for thing in _LIKELY_PROJECT_ROOT_THINGS
+        ):
             likely_root = path
 
     return likely_root or project_file_path.parent
@@ -177,14 +200,14 @@ def invert_color(color: str, *, black_or_white: bool = False) -> str:
     """
     # tkinter uses 16-bit colors for some reason, so gotta convert them
     # to 8-bit (with >> 8)
-    widget = porcupine.get_main_window()    # any widget would do
+    widget = porcupine.get_main_window()  # any widget would do
     r, g, b = (value >> 8 for value in widget.winfo_rgb(color))
 
     if black_or_white:
-        average = (r + g + b)/3
+        average = (r + g + b) / 3
         return '#ffffff' if average < 0x80 else '#000000'
     else:
-        return '#%02x%02x%02x' % (0xff - r, 0xff - g, 0xff - b)
+        return '#%02x%02x%02x' % (0xFF - r, 0xFF - g, 0xFF - b)
 
 
 def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
@@ -200,13 +223,15 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
 
     widget = porcupine.get_main_window()
     r, g, b = (
-        round(color1_amount*value1 + color2_amount*value2)
+        round(color1_amount * value1 + color2_amount * value2)
         for value1, value2 in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
     )
     return '#%02x%02x%02x' % (r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
 
 
-def get_children_recursively(parent: tkinter.Misc, *, include_parent: bool = False) -> Iterator[tkinter.Misc]:
+def get_children_recursively(
+    parent: tkinter.Misc, *, include_parent: bool = False
+) -> Iterator[tkinter.Misc]:
     if include_parent:
         yield parent
     for child in parent.winfo_children():
@@ -225,11 +250,10 @@ class _TooltipManager:
         widget.bind('<Motion>', self.motion, add=True)
         self.widget = widget
         self.got_mouse = False
-        self.text = text    # can be changed after creating tooltip manager
+        self.text = text  # can be changed after creating tooltip manager
 
     @classmethod
-    def destroy_tipwindow(
-            cls, junk_event: Optional[tkinter.Event[tkinter.Misc]] = None) -> None:
+    def destroy_tipwindow(cls, junk_event: Optional[tkinter.Event[tkinter.Misc]] = None) -> None:
         if cls.tipwindow is not None:
             cls.tipwindow.destroy()
             cls.tipwindow = None
@@ -263,8 +287,7 @@ class _TooltipManager:
             # colors at all or both foreground and background. Otherwise
             # the label will have light text on a light background or
             # dark text on a dark background on some systems.
-            tkinter.Label(tipwindow, text=self.text, border=3,
-                          fg='black', bg='white').pack()
+            tkinter.Label(tipwindow, text=self.text, border=3, fg='black', bg='white').pack()
 
 
 def set_tooltip(widget: tkinter.Widget, text: str) -> None:
@@ -297,7 +320,7 @@ def _handle_letter(match: Match[str]) -> str:
 
 def _format_binding(binding: str, menu: bool) -> str:
     # this doesn't handle all possible cases, see bind(3tk)
-    mac = (porcupine.get_main_window().tk.call('tk', 'windowingsystem') == 'aqua')
+    mac = porcupine.get_main_window().tk.call('tk', 'windowingsystem') == 'aqua'
     binding = binding.lstrip('<').rstrip('>')
 
     # don't know how to show click in mac menus
@@ -308,9 +331,11 @@ def _format_binding(binding: str, menu: bool) -> str:
     binding = re.sub(r'\b[A-Za-z]\b', _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
     binding = re.sub(r'\bKey-', '', binding)
     if mac:
-        binding = re.sub(r'\bMod1\b', 'Command', binding)  # event_info() returns <Mod1-Key-x> for <Command-x>
+        binding = re.sub(
+            r'\bMod1\b', 'Command', binding
+        )  # event_info() returns <Mod1-Key-x> for <Command-x>
         binding = re.sub(r'\bplus\b', '+', binding)
-        binding = re.sub(r'\bminus\b', '-', binding)   # e.g. "Command-minus" --> "Command--"
+        binding = re.sub(r'\bminus\b', '-', binding)  # e.g. "Command-minus" --> "Command--"
 
         if menu:
             # Tk will use the proper symbols automagically, and it expects dash-separated
@@ -322,7 +347,9 @@ def _format_binding(binding: str, menu: bool) -> str:
         # We need to sub backwards, because each sub puts its thing before everything else
         binding = re.sub(r'^(.*)\bCommand-', r'⌘-\1', binding)
         binding = re.sub(r'^(.*)\bAlt-', r'⌥-\1', binding)
-        binding = re.sub(r'^(.*)\bControl-', r'⌃-\1', binding)   # look carefully, two different kinds of hats
+        binding = re.sub(
+            r'^(.*)\bControl-', r'⌃-\1', binding
+        )  # look carefully, two different kinds of hats
         binding = re.sub(r'^(.*)\bShift-', r'⇧-\1', binding)
 
         # "Command--" --> "Command-"
@@ -334,7 +361,9 @@ def _format_binding(binding: str, menu: bool) -> str:
 
     else:
         binding = re.sub(r'\bControl\b', 'Ctrl', binding)
-        binding = re.sub(r'\b0\b', 'Zero', binding)   # most fonts don't distinguishes O and 0 nicely, mac font does
+        binding = re.sub(
+            r'\b0\b', 'Zero', binding
+        )  # most fonts don't distinguishes O and 0 nicely, mac font does
         binding = re.sub(r'\bplus\b', 'Plus', binding)
         binding = re.sub(r'\bminus\b', 'Minus', binding)
         binding = re.sub(r'\bReturn\b', 'Enter', binding)
@@ -420,7 +449,7 @@ class EventWithData(_Event):
         ``T`` must be a dataclass that inherits from :class:`EventDataclass`.
         """
         assert self.data_string.startswith(T.__name__ + '{')
-        result = dacite.from_dict(T, json.loads(self.data_string[len(T.__name__):]))
+        result = dacite.from_dict(T, json.loads(self.data_string[len(T.__name__) :]))
         assert isinstance(result, T)
         return result
 
@@ -431,10 +460,11 @@ class EventWithData(_Event):
 
 
 def bind_with_data(
-        widget: tkinter.Misc,
-        sequence: str,
-        callback: Callable[[EventWithData], Optional[str]],
-        add: bool = False) -> str:
+    widget: tkinter.Misc,
+    sequence: str,
+    callback: Callable[[EventWithData], Optional[str]],
+    add: bool = False,
+) -> str:
     """
     Like ``widget.bind(sequence, callback)``, but supports the ``data``
     argument of ``event_generate()``. Note that the callback takes an argument
@@ -464,24 +494,25 @@ def bind_with_data(
 
     def run_the_callback(data_string: str) -> Optional[str]:
         event = event_objects.popleft()
-        event.__class__ = EventWithData    # evil haxor muhaha
+        event.__class__ = EventWithData  # evil haxor muhaha
         assert isinstance(event, EventWithData)
         event.data_string = data_string
-        return callback(event)      # may return 'break'
+        return callback(event)  # may return 'break'
 
     # tkinter's bind() ignores the add argument when the callback is a
     # string :(
     funcname = widget.register(run_the_callback)
     widget.tk.eval(
-        'bind %s %s {+ if {"[%s %%d]" == "break"} break }'
-        % (widget, sequence, funcname))
+        'bind %s %s {+ if {"[%s %%d]" == "break"} break }' % (widget, sequence, funcname)
+    )
     return funcname
 
 
 def add_scroll_command(
-        widget: tkinter.Text,
-        option: Literal['xscrollcommand', 'yscrollcommand'],
-        callback: Callable[[], None]) -> None:
+    widget: tkinter.Text,
+    option: Literal['xscrollcommand', 'yscrollcommand'],
+    callback: Callable[[], None],
+) -> None:
     """Schedule ``callback`` to run with no arguments when ``widget`` is scrolled.
 
     The option should be ``'xscrollcommand'`` for horizontal scrolling or
@@ -492,7 +523,7 @@ def add_scroll_command(
     callbacks.
     """
     if not widget[option]:
-        widget[option] = (lambda *args: None)
+        widget[option] = lambda *args: None
     tcl_code = widget[option]
     assert isinstance(tcl_code, str)
     assert tcl_code
@@ -544,7 +575,9 @@ class TemporaryBind:
     The event objects are just like with :func:`bind_with_data`.
     """
 
-    def __init__(self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], BreakOrNone]) -> None:
+    def __init__(
+        self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], BreakOrNone]
+    ) -> None:
         self._widget = widget
         self._sequence = sequence
 
@@ -552,7 +585,7 @@ class TemporaryBind:
         self._tcl_command = bind_with_data(widget, sequence, func, add=True)
         bound_commands = widget.bind(sequence)
         assert bound_commands.startswith(not_bound_commands)
-        self._new_things = bound_commands[len(not_bound_commands):]
+        self._new_things = bound_commands[len(not_bound_commands) :]
 
     def unbind(self) -> None:
         # other stuff might be bound too while this thing was yielding
@@ -566,7 +599,9 @@ class TemporaryBind:
                 return
 
         assert bound_and_stuff.count(self._new_things) == 1
-        self._widget.bind(self._sequence, bound_and_stuff.replace(self._new_things, ''))  # bindcheck: ignore
+        self._widget.bind(
+            self._sequence, bound_and_stuff.replace(self._new_things, '')
+        )  # bindcheck: ignore
 
         # tkinter's unbind() does this too to avoid memory leaks
         self._widget.deletecommand(self._tcl_command)
@@ -580,9 +615,10 @@ class TemporaryBind:
 
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
-        widget: tkinter.Widget,
-        on_tab: Callable[['tkinter.Event[Any]', bool], BreakOrNone],
-        **bind_kwargs: Any) -> None:
+    widget: tkinter.Widget,
+    on_tab: Callable[['tkinter.Event[Any]', bool], BreakOrNone],
+    **bind_kwargs: Any,
+) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 
     Use this function like this::
@@ -613,12 +649,11 @@ def bind_tab_key(
     else:
         shift_tab = '<Shift-Tab>'
 
-    widget.bind('<Tab>', functools.partial(callback, False), **bind_kwargs)   # bindcheck: ignore
+    widget.bind('<Tab>', functools.partial(callback, False), **bind_kwargs)  # bindcheck: ignore
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
 
 
-def errordialog(title: str, message: str,
-                monospace_text: Optional[str] = None) -> None:
+def errordialog(title: str, message: str, monospace_text: Optional[str] = None) -> None:
     """This is a lot like ``tkinter.messagebox.showerror``.
 
     This function can be called with or without creating a root window
@@ -742,8 +777,7 @@ def backup_open(path: pathlib.Path, *args: Any, **kwargs: Any) -> Iterator[TextI
         # if foo-backup.py, then use foo-backup-backup.py etc
         backuppath = path
         while backuppath.exists():
-            backuppath = backuppath.with_name(
-                backuppath.stem + '-backup' + backuppath.suffix)
+            backuppath = backuppath.with_name(backuppath.stem + '-backup' + backuppath.suffix)
 
         log.info(f"backing up '{path}' to '{backuppath}'")
         shutil.copy(path, backuppath)

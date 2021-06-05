@@ -26,7 +26,7 @@ def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
             expected_current_state = 'second'
             new_state = 'outside'
         else:
-            int("123")   # needed for coverage to notice that the continue runs
+            int("123")  # needed for coverage to notice that the continue runs
             continue
 
         if current_state != expected_current_state:
@@ -51,7 +51,9 @@ tag_counter = itertools.count()
 class ConflictDisplayer:
 
     # line numbers not stored to self because they may change as text is edited
-    def __init__(self, textwidget: tkinter.Text, start_lineno: int, middle_lineno: int, end_lineno: int) -> None:
+    def __init__(
+        self, textwidget: tkinter.Text, start_lineno: int, middle_lineno: int, end_lineno: int
+    ) -> None:
         self.textwidget = textwidget
 
         n = next(tag_counter)
@@ -65,17 +67,20 @@ class ConflictDisplayer:
 
         # TODO: also specify fg color
         self.part1_button = self.make_button(
-            start_lineno, part1_color,
+            start_lineno,
+            part1_color,
             text="Use this",
             command=self.use_part1,
         )
         self.manual_button = self.make_button(
-            middle_lineno, manual_color,
+            middle_lineno,
+            manual_color,
             text="Edit manually",
             command=self.stop_displaying,
         )
         self.part2_button = self.make_button(
-            end_lineno, part2_color,
+            end_lineno,
+            part2_color,
             text="Use this",
             command=self.use_part2,
         )
@@ -95,11 +100,7 @@ class ConflictDisplayer:
     def make_button(self, lineno: int, bg_color: str, **options: Any) -> tkinter.Button:
         # tkinter.Button to use custom color, that's more difficult with ttk
         button = tkinter.Button(
-            self.textwidget,
-            bg=bg_color,
-            fg=utils.invert_color(bg_color),
-            cursor='arrow',
-            **options
+            self.textwidget, bg=bg_color, fg=utils.invert_color(bg_color), cursor='arrow', **options
         )
 
         def on_destroy(event: tkinter.Event) -> None:
@@ -128,16 +129,22 @@ class ConflictDisplayer:
 
     def use_part1(self) -> None:
         self.textwidget.delete(f'{self.middle_tag}.first', f'{self.part2_tag}.last')
-        self.textwidget.delete(f'{self.part1_button} linestart', f'{self.part1_button} linestart + 1 line')
+        self.textwidget.delete(
+            f'{self.part1_button} linestart', f'{self.part1_button} linestart + 1 line'
+        )
         self.stop_displaying()
 
     def use_part2(self) -> None:
-        self.textwidget.delete(f'{self.part2_button} linestart', f'{self.part2_button} linestart + 1 line')
+        self.textwidget.delete(
+            f'{self.part2_button} linestart', f'{self.part2_button} linestart + 1 line'
+        )
         self.textwidget.delete(f'{self.part1_tag}.first', f'{self.middle_tag}.last')
         self.stop_displaying()
 
 
-conflict_displayers: weakref.WeakKeyDictionary[tabs.FileTab, List[ConflictDisplayer]] = weakref.WeakKeyDictionary()
+conflict_displayers: weakref.WeakKeyDictionary[
+    tabs.FileTab, List[ConflictDisplayer]
+] = weakref.WeakKeyDictionary()
 
 
 def setup_displayers(tab: tabs.FileTab) -> None:
@@ -155,12 +162,18 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         setup_displayers(tab)
         # https://github.com/python/mypy/issues/9658
-        tab.bind('<<Reloaded>>', (lambda event: setup_displayers(cast(tabs.FileTab, tab))), add=True)
-        tab.textwidget.bind('<Enter>', (
-            # This runs after clicking "Use this" button, mouse <Enter>s text widget
-            # Don't know why this needs a small timeout instead of after_idle
-            lambda event: tab.after(50, tab.textwidget.event_generate, '<<UpdateLineNumbers>>')  # type: ignore
-        ), add=True)
+        tab.bind(
+            '<<Reloaded>>', (lambda event: setup_displayers(cast(tabs.FileTab, tab))), add=True
+        )
+        tab.textwidget.bind(
+            '<Enter>',
+            (
+                # This runs after clicking "Use this" button, mouse <Enter>s text widget
+                # Don't know why this needs a small timeout instead of after_idle
+                lambda event: tab.after(50, tab.textwidget.event_generate, '<<UpdateLineNumbers>>')  # type: ignore
+            ),
+            add=True,
+        )
 
 
 def setup() -> None:

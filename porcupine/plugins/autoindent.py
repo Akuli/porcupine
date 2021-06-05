@@ -79,7 +79,9 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
         prevline = prevline.split(comment_prefix)[0].strip()
 
     indent_regex, dedent_regex = get_regexes(tab)
-    if (prevline.endswith(('(', '[', '{')) or re.fullmatch(indent_regex, prevline)) and not alt_pressed:
+    if (
+        prevline.endswith(('(', '[', '{')) or re.fullmatch(indent_regex, prevline)
+    ) and not alt_pressed:
         tab.textwidget.indent('insert')
     elif re.fullmatch(dedent_regex, prevline):
         # must be end of a block
@@ -97,7 +99,9 @@ def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> N
     # prefix. It's handy to have autodedent working inside big comments with
     # example code in them.
     before_cursor = tab.textwidget.get('insert linestart', 'insert')
-    before_cursor = before_cursor.replace(tab.settings.get('comment_prefix', Optional[str]) or '', '')
+    before_cursor = before_cursor.replace(
+        tab.settings.get('comment_prefix', Optional[str]) or '', ''
+    )
     if before_cursor.strip():
         return
 

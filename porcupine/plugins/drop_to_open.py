@@ -17,7 +17,8 @@ def handle_drop(paths_from_tcl: str) -> None:
 
 def setup() -> None:
     root = get_main_window()
-    root.tk.eval('''
+    root.tk.eval(
+        '''
     package require tkdnd
 
     # https://github.com/petasis/tkdnd/blob/master/demos/simple_target.tcl
@@ -25,5 +26,8 @@ def setup() -> None:
 
     # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
     # _tkinter.TclError: expected integer but got "%#"
-    bind . <<Drop:DND_Files>> {''' + root.register(handle_drop) + ''' %D}
-    ''')
+    bind . <<Drop:DND_Files>> {'''
+        + root.register(handle_drop)
+        + ''' %D}
+    '''
+    )
