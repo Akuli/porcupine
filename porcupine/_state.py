@@ -44,7 +44,7 @@ def init(args: Any) -> None:
     settings.remember_divider_positions(_paned_window, 'main_panedwindow_dividers', [250])
     _root.bind(
         '<<PluginsLoaded>>',
-        (lambda event: get_paned_window().event_generate('<<DividersFromSettings>>')),
+        lambda event: get_paned_window().event_generate('<<DividersFromSettings>>'),
         add=True,
     )
     _paned_window.pack(fill='both', expand=True)
