@@ -706,6 +706,7 @@ def run_in_thread(
     done_callback: Callable[[bool, Union[str, _T]], None],
     *,
     check_interval_ms: int = 100,
+    daemon: bool = True,
 ) -> None:
     """Run ``blocking_function()`` in another thread.
 
@@ -720,6 +721,11 @@ def run_in_thread(
     Internally, this function checks whether the thread has completed every
     100 milliseconds by default (so 10 times per second). Specify
     *check_interval_ms* to customize this.
+
+    Unlike :class:`threading.Thread`, this function uses a daemon thread by
+    default. This means that the thread will end forcefully when Porcupine
+    exits, and it might not get a chance to finish whatever it is doing. Pass
+    ``daemon=False`` to change this.
     """
     root = porcupine.get_main_window()  # any widget would do
 
@@ -730,8 +736,6 @@ def run_in_thread(
         nonlocal value
         nonlocal error_traceback
 
-        # the logging module uses locks so calling it from another
-        # thread should be safe
         try:
             value = blocking_function()
         except Exception:
@@ -747,7 +751,7 @@ def run_in_thread(
             else:
                 done_callback(False, error_traceback)
 
-    thread = threading.Thread(target=thread_target)
+    thread = threading.Thread(target=thread_target, daemon=daemon)
     thread.start()
     root.after_idle(check)
 
