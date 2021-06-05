@@ -168,7 +168,7 @@ bind Text <Alt-Down> {
 
 # Do not do weird stuff when selecting text with shift+click. See #429
 bind Text <Shift-Button-1> {
-    if {[.t tag ranges sel] == ""} {
+    if {[%W tag ranges sel] == ""} {
         set select_between_clicked_and_this [%W index insert]
     } else {
         # Something already selected, keep the end of selection where cursor is not
