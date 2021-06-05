@@ -95,21 +95,25 @@ def test_finding(filetab_and_finder):
         return result
 
     assert search_for('is') == [
+        # thIS is a test
         '1.2',
-        '1.4',  # thIS is a test
+        '1.4',
+        # this IS a test
         '1.5',
-        '1.7',  # this IS a test
+        '1.7',
+        # thIS is fun
         '2.2',
-        '2.4',  # thIS is fun
+        '2.4',
+        # this IS fun
         '2.5',
-        '2.7',  # this IS fun
+        '2.7',
     ]
     assert finder.statuslabel['text'] == "Found 4 matches."
 
     assert search_for('n') == [
         '2.10',
-        '2.11',  # fuN
-    ]
+        '2.11'
+    ]  # fuN
     assert finder.statuslabel['text'] == "Found 1 match."
 
     # corner case: match in the beginning of file
@@ -256,7 +260,7 @@ def test_replace(filetab_and_finder):
     assert finder.get_match_ranges() == [('1.0', '1.3'), ('1.4', '1.7'), ('1.8', '1.11')]
 
     click_disabled_button(finder.replace_this_button)
-    assert finder.statuslabel['text'] == ('Click "Previous match" or "Next match" first.')
+    assert finder.statuslabel['text'] == 'Click "Previous match" or "Next match" first.'
 
     finder.next_button.invoke()
     assert str(finder.replace_this_button['state']) == 'normal'
