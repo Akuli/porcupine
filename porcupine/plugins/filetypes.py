@@ -106,7 +106,8 @@ def get_filetype_from_matches(
     if len(matches) >= 2:
         names = ', '.join(matches.keys())
         log.warning(
-            f"{len(matches)} file types match {they_match_what}: {names}. The last match will be used."
+            f"{len(matches)} file types match {they_match_what}: {names}. The last match will be"
+            " used."
         )
     return list(matches.values())[-1]
 

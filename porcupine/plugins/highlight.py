@@ -173,8 +173,9 @@ class Highlighter:
 
         mark_count = len(list(self._get_root_marks('1.0', 'end')))
         log.debug(
-            f"Highlighted between {start} and {end} in {round((time.perf_counter() - start_time)*1000)}ms. "
-            f"Root state marks: {len(marks_to_unset)} deleted, {len(mark_locations)} added, {mark_count} total"
+            f"Highlighted between {start} and {end} in"
+            f" {round((time.perf_counter() - start_time)*1000)}ms. Root state marks:"
+            f" {len(marks_to_unset)} deleted, {len(mark_locations)} added, {mark_count} total"
         )
 
     def highlight_visible(self, junk: object = None) -> None:

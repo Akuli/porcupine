@@ -39,7 +39,10 @@ class StatusBar(ttk.Frame):
             oops = utils.get_binding('<<Undo>>')
             self.left_label.config(
                 foreground='red',
-                text=f"File was reloaded with unsaved changes. Press {oops} to get your changes back.",
+                text=(
+                    f"File was reloaded with unsaved changes. Press {oops} to get your changes"
+                    " back."
+                ),
             )
 
     def clear_reload_warning(self, junk: object) -> None:

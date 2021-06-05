@@ -128,7 +128,8 @@ def _run_in_x11_like_terminal(
     if shutil.which(terminal) is None:
         messagebox.showerror(
             f"{terminal!r} not found",
-            f"Cannot find {terminal!r} in $PATH. Try setting $TERMINAL to a path to a working terminal program.",
+            f"Cannot find {terminal!r} in $PATH. Try setting $TERMINAL to a path to a working"
+            " terminal program.",
         )
         return
 

@@ -519,8 +519,7 @@ class LangServer:
     def forget_tab(self, tab: tabs.FileTab, *, may_shutdown: bool = True) -> None:
         if not self._is_in_langservers():
             self.log.debug(
-                "a tab was closed, but langserver process is no longer "
-                "running (maybe it crashed?)"
+                "a tab was closed, but langserver process is no longer running (maybe it crashed?)"
             )
             return
 

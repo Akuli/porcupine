@@ -232,7 +232,10 @@ class Finder(ttk.Frame):
             if match is not None:
                 self._update_buttons()
                 self.statuslabel.config(
-                    text=f'The search string can\'t contain "{match.group(0)}" when "Full words only" is checked.'
+                    text=(
+                        f'The search string can\'t contain "{match.group(0)}" when "Full words'
+                        ' only" is checked.'
+                    )
                 )
                 return
 
