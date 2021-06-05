@@ -38,7 +38,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: python scripts/download-tkdnd.py
-    - run: python -m pytest -vvvv
+    - run: python -m pytest -vvvv --durations=10
   pytest-linux:
     strategy:
       matrix:
@@ -54,7 +54,7 @@ jobs:
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - uses: GabrielBB/xvfb-action@v1.4
       with:
-        run: python3 -m pytest -vvvv
+        run: python3 -m pytest -vvvv --durations=10
   pytest-macos:
     # https://github.com/actions/setup-python/issues/58
     # Brew-installed python 3.8 and 3.9 seem to already be there, so it's not slow
@@ -73,7 +73,7 @@ jobs:
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
-    - run: $PYTHON -m pytest -vvvv
+    - run: $PYTHON -m pytest -vvvv --durations=10
   pycodestyle:
     runs-on: ubuntu-latest
     steps:
