@@ -71,24 +71,14 @@ digraph G {
 
 
 def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
-    assert (
-        filetypes.guess_filetype_from_path(tmp_path / "foo" / "bar.html")['pygments_lexer']
-        == 'pygments.lexers.HtmlLexer'
-    )
+    def lexer_name(path):
+        return filetypes.guess_filetype_from_path(tmp_path / "foo" / "bar.html")['pygments_lexer']
 
-    assert (
-        filetypes.guess_filetype_from_path(tmp_path / "foobar-mako-templates" / "bar.html")[
-            'pygments_lexer'
-        ]
-        == 'pygments.lexers.HtmlLexer'
-    )
-
+    assert lexer_name(tmp_path / "foo" / "bar.html") == 'pygments.lexers.HtmlLexer'
+    assert lexer_name(tmp_path / "lol-mako-templates" / "bar.html") == 'pygments.lexers.HtmlLexer'
     with caplog.at_level(logging.WARNING):
         assert (
-            filetypes.guess_filetype_from_path(tmp_path / "mako-templates" / "bar.html")[
-                'pygments_lexer'
-            ]
-            == 'pygments.lexers.MakoHtmlLexer'
+            lexer_name(tmp_path / "mako-templates" / "bar.html") == 'pygments.lexers.MakoHtmlLexer'
         )
 
     assert len(caplog.records) == 1
