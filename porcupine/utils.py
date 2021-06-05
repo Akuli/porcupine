@@ -67,8 +67,7 @@ if sys.platform == 'win32':
         _installed_with_pynsist
         and sys.stdout is sys.stderr
         and sys.stdout.name is not None  # not sure if necessary
-        and pathlib.Path(sys.stdout.name).parent
-        == pathlib.Path(os.environ['APPDATA'])
+        and pathlib.Path(sys.stdout.name).parent == pathlib.Path(os.environ['APPDATA'])
     ):
         # pynsist generates a script that does this:
         #
@@ -361,7 +360,7 @@ def _format_binding(binding: str, menu: bool) -> str:
     else:
         binding = re.sub(r'\bControl\b', 'Ctrl', binding)
         # most fonts don't distinguish O and 0 nicely, mac font does
-        binding = re.sub(r'\b0\b', 'Zero', binding)  
+        binding = re.sub(r'\b0\b', 'Zero', binding)
         binding = re.sub(r'\bplus\b', 'Plus', binding)
         binding = re.sub(r'\bminus\b', 'Minus', binding)
         binding = re.sub(r'\bReturn\b', 'Enter', binding)

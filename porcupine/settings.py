@@ -632,7 +632,10 @@ def add_spinbox(
     """
     spinbox = ttk.Spinbox(get_dialog_content(), **spinbox_kwargs)
     triangle = _create_validation_triangle(
-        spinbox, option_name, int, (lambda value: int(spinbox['from']) <= value <= int(spinbox['to']))
+        spinbox,
+        option_name,
+        int,
+        lambda value: int(spinbox['from']) <= value <= int(spinbox['to']),
     )
     _grid_widgets(text, spinbox, triangle)
     return spinbox
