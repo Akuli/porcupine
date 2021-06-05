@@ -177,9 +177,8 @@ class SuccessDialog(tkinter.Toplevel):
             ttk.Button(buttonframe, text=text, command=callback).pack(side='left', expand=True)
 
     def _select_all(self, event: Optional[tkinter.Event] = None) -> None:
-        if (
-            event is None or event.widget is self
-        ):  # toplevels annoyingly get notified of child events
+        # toplevels annoyingly get notified of child events
+        if event is None or event.widget is self:
             self._entry.selection_range(0, 'end')
             self._entry.focus()
 
