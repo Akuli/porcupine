@@ -716,7 +716,7 @@ def run_in_thread(
             else:
                 done_callback(False, error_traceback)
 
-    thread = threading.Thread(target=thread_target, name='run_in_thread_' + str(locals()), daemon=daemon)
+    thread = threading.Thread(target=thread_target, daemon=daemon)
     thread.start()
     root.after_idle(check)
 
