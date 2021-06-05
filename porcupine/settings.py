@@ -233,26 +233,18 @@ class Settings:
 
     # I don't like how this requires overloads for every type
     # https://stackoverflow.com/q/61471700
+    # fmt: off
     @overload
-    def get(self, option_name: str, type_: Type[pathlib.Path]) -> pathlib.Path:
-        ...
-
+    def get(self, option_name: str, type_: Type[pathlib.Path]) -> pathlib.Path: ...
     @overload
-    def get(self, option_name: str, type_: Type[LineEnding]) -> LineEnding:
-        ...
-
+    def get(self, option_name: str, type_: Type[LineEnding]) -> LineEnding: ...
     @overload
-    def get(self, option_name: str, type_: Type[str]) -> str:
-        ...
-
+    def get(self, option_name: str, type_: Type[str]) -> str: ...
     @overload
-    def get(self, option_name: str, type_: Type[int]) -> int:
-        ...
-
+    def get(self, option_name: str, type_: Type[int]) -> int: ...
     @overload
-    def get(self, option_name: str, type_: object) -> Any:
-        ...
-
+    def get(self, option_name: str, type_: object) -> Any: ...
+    # fmt: on
     def get(self, option_name: str, type_: Any) -> Any:
         """
         Return the current value of an option.

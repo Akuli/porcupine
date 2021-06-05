@@ -542,16 +542,12 @@ def create_peer_widget(
         change_tracker.setup(the_widget_that_becomes_a_peer)
 
 
+# fmt: off
 @overload
-def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None:
-    ...
-
-
+def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None: ...
 @overload
-def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None:
-    ...
-
-
+def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...
+# fmt: on
 def use_pygments_theme(
     widget: tkinter.Misc, callback: Optional[Callable[[str, str], None]] = None
 ) -> None:
