@@ -145,6 +145,12 @@ class Finder(ttk.Frame):
         try:
             selected_text: Optional[str] = self._textwidget.get("sel.first", "sel.last")
         except tkinter.TclError:
+            selected_text = None
+
+        self.pack(fill="x")
+
+        if selected_text is None or "\n" in selected_text:
+            self.find_entry.focus_set()
             self.find_entry.selection_range(0, "end")  # when ctrl + f without text selected
         else:
             self.find_entry.delete(0, "end")
