@@ -141,6 +141,8 @@ def test_venv_creation(tmp_path):
     assert utils.find_python_venv(file1) is None
     assert utils.find_python_venv(file2) is None
 
-    subprocess.run([sys.executable, "-m", "venv", "barenv2"], cwd=tmp_path / "project", check=True)
-    assert utils.find_python_venv(file1) == tmp_path / "project" / "barenv2"
-    assert utils.find_python_venv(file2) == tmp_path / "project" / "barenv2"
+    # typeshed's CONTRIBUTING.md uses virtual env named .venv3
+    # make sure it detects names starting with dot
+    subprocess.run([sys.executable, "-m", "venv", ".venv3"], cwd=tmp_path / "project", check=True)
+    assert utils.find_python_venv(file1) == tmp_path / "project" / ".venv3"
+    assert utils.find_python_venv(file2) == tmp_path / "project" / ".venv3"
