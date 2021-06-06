@@ -767,7 +767,7 @@ bers.py>` use this attribute.
         asking the user.
         """
         if path is None:
-            path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)  # type: ignore[no-untyped-call]
+            path_string = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
             if not path_string:  # it may be '' because tkinter
                 return False
             path = pathlib.Path(path_string)

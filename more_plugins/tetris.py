@@ -252,7 +252,7 @@ class TetrisTab(tabs.Tab):
             for y in range(HEIGHT):
                 left = x * SCALE
                 bottom = (HEIGHT - y) * SCALE
-                self._canvas_content[(x, y)] = self._canvas.create_rectangle(  # type: ignore[no-untyped-call]
+                self._canvas_content[(x, y)] = self._canvas.create_rectangle(
                     left, bottom - SCALE, left + SCALE, bottom, outline="black", fill="black"
                 )
 
@@ -304,7 +304,7 @@ class TetrisTab(tabs.Tab):
         if self._timeout_id is not None:
             self.after_cancel(self._timeout_id)
         if self._game_over_id is not None:
-            self._canvas.delete(self._game_over_id)  # type: ignore[no-untyped-call]
+            self._canvas.delete(self._game_over_id)
             self._game_over_id = None
 
         self._game = Game()
@@ -321,10 +321,10 @@ class TetrisTab(tabs.Tab):
                 centery = int(self._canvas["height"]) // 3
                 font_size = 18
 
-                self._canvas.create_rectangle(  # type: ignore[no-untyped-call]
+                self._canvas.create_rectangle(
                     0, centery - font_size, self._canvas["width"], centery + font_size, fill="black"
                 )
-                self._game_over_id = self._canvas.create_text(  # type: ignore[no-untyped-call]
+                self._game_over_id = self._canvas.create_text(
                     centerx,
                     centery,
                     anchor="center",

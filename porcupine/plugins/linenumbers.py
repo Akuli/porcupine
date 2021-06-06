@@ -47,7 +47,7 @@ class LineNumbers:
         self.canvas.itemconfig("all", fill=fg)
 
     def _do_update(self, junk: object = None) -> None:
-        self.canvas.delete("all")  # type: ignore[no-untyped-call]
+        self.canvas.delete("all")
 
         first_line = int(self.textwidget.index("@0,0").split(".")[0])
         last_line = int(self.textwidget.index(f"@0,{self.textwidget.winfo_height()}").split(".")[0])
@@ -59,7 +59,7 @@ class LineNumbers:
                 continue
 
             x, y, *junk = dlineinfo
-            self.canvas.create_text(  # type: ignore[no-untyped-call]
+            self.canvas.create_text(
                 0, y, text=f" {lineno}", anchor="nw", font="TkFixedFont", fill=self._text_color
             )
 
