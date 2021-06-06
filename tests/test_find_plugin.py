@@ -373,3 +373,13 @@ def test_find_selected(filetab_and_finder):
 
     finder.hide()
     assert filetab.textwidget.index("insert") == "1.4"
+
+
+def test_highlight_text(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    finder.find_entry.insert("end", "foo")
+    finder.hide()
+    finder.show()
+
+    assert finder.find_entry.get() == "foo"
+    assert finder.find_entry.selection_present()
