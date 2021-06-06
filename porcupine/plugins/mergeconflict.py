@@ -101,7 +101,7 @@ class ConflictDisplayer:
 
         button.bind("<Destroy>", on_destroy, add=True)
 
-        self.textwidget.window_create(f"{lineno}.0 lineend", window=button)
+        self.textwidget.window_create(f"{lineno}.0 lineend", window=button)  # type: ignore[no-untyped-call]
         return button
 
     # may get called multiple times

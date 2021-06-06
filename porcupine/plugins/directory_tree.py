@@ -151,7 +151,7 @@ class DirectoryTree(ttk.Treeview):
         for project_item_id in self.get_children():
             if self.get_path(project_item_id) == root_path:
                 # Move project first to avoid hiding it soon
-                self.move(project_item_id, "", 0)
+                self.move(project_item_id, "", 0)  # type: ignore[no-untyped-call]
                 return
 
         # TODO: show long paths more nicely
@@ -170,7 +170,7 @@ class DirectoryTree(ttk.Treeview):
             self.refresh_everything()
 
     def set_the_selection_correctly(self, id: str) -> None:
-        self.selection_set(id)
+        self.selection_set(id)  # type: ignore[no-untyped-call]
         self.focus(id)
 
     def select_file(self, path: pathlib.Path) -> None:
@@ -194,7 +194,7 @@ class DirectoryTree(ttk.Treeview):
                     break
 
             self.set_the_selection_correctly(file_id)
-            self.see(file_id)
+            self.see(file_id)  # type: ignore[no-untyped-call]
 
             # Multiple projects may match when project roots are nested. It's
             # fine to use the first match, because recently used projects tend
@@ -216,7 +216,7 @@ class DirectoryTree(ttk.Treeview):
     def hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(""):
             if not self.get_path(project_id).is_dir():
-                self.delete(project_id)
+                self.delete(project_id)  # type: ignore[no-untyped-call]
 
         # To avoid getting rid of existing projects when not necessary, we do
         # shortening after deleting non-existent projects
@@ -227,7 +227,7 @@ class DirectoryTree(ttk.Treeview):
                 and self.get_path(project_id) in tab.path.parents
                 for tab in get_tab_manager().tabs()
             ):
-                self.delete(project_id)
+                self.delete(project_id)  # type: ignore[no-untyped-call]
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set_(
@@ -268,7 +268,7 @@ class DirectoryTree(ttk.Treeview):
 
     def open_and_refresh_directory(self, dir_path: Optional[pathlib.Path], dir_id: str) -> None:
         if self._contains_dummy(dir_id):
-            self.delete(self.get_children(dir_id)[0])
+            self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
 
         path2id = {self.get_path(id): id for id in self.get_children(dir_id)}
         if dir_path is None:
@@ -283,7 +283,7 @@ class DirectoryTree(ttk.Treeview):
 
         # TODO: handle changing directory to file
         for path in list(path2id.keys() - new_paths):
-            self.delete(path2id.pop(path))
+            self.delete(path2id.pop(path))  # type: ignore[no-untyped-call]
         for path in list(new_paths - path2id.keys()):
             tag = "dir" if path.is_dir() else "file"
             path2id[path] = self.insert(
@@ -337,7 +337,7 @@ class DirectoryTree(ttk.Treeview):
             for index, (path, child_id) in enumerate(
                 sorted(path2id.items(), key=self._sorting_key)
             ):
-                self.move(child_id, dir_id, index)
+                self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
     def _sorting_key(self, path_id_pair: Tuple[pathlib.Path, str]) -> Tuple[Any, ...]:
         path, item_id = path_id_pair
@@ -448,7 +448,9 @@ def setup() -> None:
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
 
-    get_paned_window().insert(get_tab_manager(), container)  # insert before tab manager
+    # Insert directory tree before tab manager
+    get_paned_window().insert(get_tab_manager(), container)  # type: ignore[no-untyped-call]
+
     get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(select_current_file, tree), add=True)
 

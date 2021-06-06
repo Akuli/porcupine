@@ -11,7 +11,7 @@ def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:
     tags = textwidget.tag_names(f"{lineno}.0")
     elide_values = (textwidget.tag_cget(tag, "elide") for tag in tags)
     # elide values can be empty
-    return any(tkinter.getboolean(v or "false") for v in elide_values)
+    return any(tkinter.getboolean(v or "false") for v in elide_values)  # type: ignore[no-untyped-call]
 
 
 class LineNumbers:
@@ -47,7 +47,7 @@ class LineNumbers:
         self.canvas.itemconfig("all", fill=fg)
 
     def _do_update(self, junk: object = None) -> None:
-        self.canvas.delete("all")
+        self.canvas.delete("all")  # type: ignore[no-untyped-call]
 
         first_line = int(self.textwidget.index("@0,0").split(".")[0])
         last_line = int(self.textwidget.index(f"@0,{self.textwidget.winfo_height()}").split(".")[0])
@@ -59,7 +59,7 @@ class LineNumbers:
                 continue
 
             x, y, *junk = dlineinfo
-            self.canvas.create_text(
+            self.canvas.create_text(  # type: ignore[no-untyped-call]
                 0, y, text=f" {lineno}", anchor="nw", font="TkFixedFont", fill=self._text_color
             )
 

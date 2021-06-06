@@ -97,8 +97,8 @@ class _Popup:
 
         left_pane = ttk.Frame(self._panedwindow)
         right_pane = ttk.Frame(self._panedwindow)
-        self._panedwindow.add(left_pane)
-        self._panedwindow.add(right_pane)
+        self._panedwindow.add(left_pane)  # type: ignore[no-untyped-call]
+        self._panedwindow.add(right_pane)  # type: ignore[no-untyped-call]
 
         self.treeview = ttk.Treeview(left_pane, show="tree", selectmode="browse")
         self.treeview.bind("<Motion>", self._on_mouse_move, add=True)
@@ -139,8 +139,8 @@ class _Popup:
         return bool(self.toplevel.winfo_ismapped() and self._panedwindow.winfo_ismapped())
 
     def _select_item(self, item_id: str) -> None:
-        self.treeview.selection_set(item_id)
-        self.treeview.see(item_id)
+        self.treeview.selection_set(item_id)  # type: ignore[no-untyped-call]
+        self.treeview.see(item_id)  # type: ignore[no-untyped-call]
 
     def _get_selected_completion(self) -> Optional[Completion]:
         if not self.is_completing():
@@ -189,7 +189,7 @@ class _Popup:
 
         if withdraw:
             self.toplevel.withdraw()
-        self.treeview.delete(*self.treeview.get_children())
+        self.treeview.delete(*self.treeview.get_children())  # type: ignore[no-untyped-call]
         self._completion_list = None
 
         return selected
@@ -199,21 +199,21 @@ class _Popup:
         selected_ids = self.treeview.selection()
         if selected_ids:
             [the_id] = selected_ids
-            self._select_item(self.treeview.prev(the_id) or self.treeview.get_children()[-1])
+            self._select_item(self.treeview.prev(the_id) or self.treeview.get_children()[-1])  # type: ignore[no-untyped-call]
 
     def select_next(self) -> None:
         assert self.is_completing()
         selected_ids = self.treeview.selection()
         if selected_ids:
             [the_id] = selected_ids
-            self._select_item(self.treeview.next(the_id) or self.treeview.get_children()[0])
+            self._select_item(self.treeview.next(the_id) or self.treeview.get_children()[0])  # type: ignore[no-untyped-call]
 
     def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
         if not self.is_showing():
             return None
 
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
-        self._doc_text.yview_scroll(page_count, "pages")
+        self._doc_text.yview_scroll(page_count, "pages")  # type: ignore[no-untyped-call]
         return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
@@ -225,9 +225,9 @@ class _Popup:
         return "break"
 
     def _on_mouse_move(self, event: tkinter.Event[tkinter.Misc]) -> None:
-        hovered_id = self.treeview.identify_row(event.y)
+        hovered_id = self.treeview.identify_row(event.y)  # type: ignore[no-untyped-call]
         if hovered_id:
-            self.treeview.selection_set(hovered_id)
+            self.treeview.selection_set(hovered_id)  # type: ignore[no-untyped-call]
 
     def _on_select(self, event: tkinter.Event[tkinter.Misc]) -> None:
         completion = self._get_selected_completion()

@@ -143,7 +143,7 @@ class TabManager(ttk.Notebook):
         """
         # tkinter has a bug that makes the original tabs() return widget name
         # strings instead of widget objects
-        return tuple(self.nametowidget(tab) for tab in super().tabs())
+        return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
 
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
         """Append a :class:`.Tab` to this tab manager.
@@ -167,7 +167,7 @@ class TabManager(ttk.Notebook):
                 tab.destroy()
                 return existing_tab
 
-        self.add(tab)
+        self.add(tab)  # type: ignore[no-untyped-call]
         self._update_tab_titles()
         if select:
             self.select(tab)
@@ -190,7 +190,7 @@ class TabManager(ttk.Notebook):
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
-        self.forget(tab)
+        self.forget(tab)  # type: ignore[no-untyped-call]
         tab.destroy()
         self._update_tab_titles()
 
@@ -767,7 +767,7 @@ bers.py>` use this attribute.
         asking the user.
         """
         if path is None:
-            path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
+            path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)  # type: ignore[no-untyped-call]
             if not path_string:  # it may be '' because tkinter
                 return False
             path = pathlib.Path(path_string)

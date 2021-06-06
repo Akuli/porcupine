@@ -8,9 +8,9 @@ from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
 def on_drag(event: tkinter.Event[tabs.TabManager]) -> utils.BreakOrNone:
-    if event.widget.identify(event.x, event.y) == "label":
-        destination_index = event.widget.index(f"@{event.x},{event.y}")
-        event.widget.insert(destination_index, event.widget.select())
+    if event.widget.identify(event.x, event.y) == "label":  # type: ignore[no-untyped-call]
+        destination_index = event.widget.index(f"@{event.x},{event.y}")  # type: ignore[no-untyped-call]
+        event.widget.insert(destination_index, event.widget.select())  # type: ignore[no-untyped-call]
         return "break"
     return None
 
@@ -28,7 +28,7 @@ def select_left_or_right(diff: int) -> utils.BreakOrNone:
     if selected_tab is None:
         return None
 
-    new_index = get_tab_manager().index(selected_tab) + diff
+    new_index = get_tab_manager().index(selected_tab) + diff  # type: ignore[no-untyped-call]
     try:
         get_tab_manager().select(new_index)
         return "break"
@@ -41,9 +41,9 @@ def move_left_or_right(diff: int) -> utils.BreakOrNone:
     if selected_tab is None:
         return None
 
-    destination_index = get_tab_manager().index(selected_tab) + diff
+    destination_index = get_tab_manager().index(selected_tab) + diff  # type: ignore[no-untyped-call]
     try:
-        get_tab_manager().insert(destination_index, selected_tab)
+        get_tab_manager().insert(destination_index, selected_tab)  # type: ignore[no-untyped-call]
         return "break"
     except tkinter.TclError:  # index out of bounds
         return None

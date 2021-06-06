@@ -75,7 +75,7 @@ def fold() -> None:
     # https://github.com/python/mypy/issues/9658
     dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)  # type: ignore
     dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)  # type: ignore
-    tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)
+    tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)  # type: ignore[no-untyped-call]
     tab.textwidget.event_generate("<<UpdateLineNumbers>>")
 
 

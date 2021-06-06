@@ -40,7 +40,7 @@ class LongLineMarker:
         marker_x = font.measure(" " * max_line_length)
 
         # these are relative to the length of the longest line in the text widget
-        scroll_start, scroll_end = self.tab.textwidget.xview()
+        scroll_start, scroll_end = self.tab.textwidget.xview()  # type: ignore[no-untyped-call]
 
         # we want relative to visible area width
         relative_scroll_start = scroll_start / (scroll_end - scroll_start)
