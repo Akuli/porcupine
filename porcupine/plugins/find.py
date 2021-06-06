@@ -141,6 +141,7 @@ class Finder(ttk.Frame):
         try:
             selected_text = self._textwidget.get('sel.first', 'sel.last')
         except tkinter.TclError:
+            self.find_entry.selection_range(0, 'end')
             pass   # nothing is selected, leave find entry content as is
         else:
             self.find_entry.delete(0, 'end')
