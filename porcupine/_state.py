@@ -50,7 +50,7 @@ def init(args: Any) -> None:
     _paned_window.pack(fill="both", expand=True)
 
     _tab_manager = tabs.TabManager(_paned_window)
-    _paned_window.add(_tab_manager)
+    _paned_window.add(_tab_manager)  # type: ignore[no-untyped-call]
 
     log.debug("init() done")
 

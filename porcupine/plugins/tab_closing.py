@@ -8,7 +8,7 @@ from porcupine import get_tab_manager, images, tabs
 
 
 def close_clicked_tab(event: tkinter.Event[tabs.TabManager], *, what2close: str = "this") -> None:
-    before = event.widget.index(f"@{event.x},{event.y}")
+    before = event.widget.index(f"@{event.x},{event.y}")  # type: ignore[no-untyped-call]
     after = before + 1
 
     if what2close == "this":
@@ -28,10 +28,10 @@ def close_clicked_tab(event: tkinter.Event[tabs.TabManager], *, what2close: str 
 
 
 def on_x_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
-    if event.widget.identify(event.x, event.y) == "label":
+    if event.widget.identify(event.x, event.y) == "label":  # type: ignore[no-untyped-call]
         # find the right edge of the top label (including close button)
         right = event.x
-        while event.widget.identify(right, event.y) == "label":
+        while event.widget.identify(right, event.y) == "label":  # type: ignore[no-untyped-call]
             right += 1
 
         # hopefully the image is on the right edge of the label and there's no padding :O
@@ -58,7 +58,7 @@ def show_menu(event: tkinter.Event[tabs.TabManager]) -> None:
 
 # Close tab on middle-click (press down the wheel of the mouse)
 def on_header_clicked(event: tkinter.Event[tabs.TabManager]) -> None:
-    if event.widget.identify(event.x, event.y) == "label":
+    if event.widget.identify(event.x, event.y) == "label":  # type: ignore[no-untyped-call]
         close_clicked_tab(event)
 
 

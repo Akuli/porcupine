@@ -11,7 +11,7 @@ def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:
     tags = textwidget.tag_names(f"{lineno}.0")
     elide_values = (textwidget.tag_cget(tag, "elide") for tag in tags)
     # elide values can be empty
-    return any(tkinter.getboolean(v or "false") for v in elide_values)
+    return any(tkinter.getboolean(v or "false") for v in elide_values)  # type: ignore[no-untyped-call]
 
 
 class LineNumbers:

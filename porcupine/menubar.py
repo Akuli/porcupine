@@ -10,7 +10,7 @@ import traceback
 import webbrowser
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Callable, Iterator, Optional, Sequence, Tuple
+from typing import Callable, Iterator, Optional, Tuple
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -77,12 +77,12 @@ _MENU_ITEM_TYPES_WITH_LABEL = {"command", "checkbutton", "radiobutton", "cascade
 
 
 def _find_item(menu: tkinter.Menu, label: str) -> Optional[int]:
-    last_index = menu.index("end")
+    last_index = menu.index("end")  # type: ignore[no-untyped-call]
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
             if (
-                menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL
-                and menu.entrycget(index, "label") == label
+                menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL  # type: ignore[no-untyped-call]
+                and menu.entrycget(index, "label") == label  # type: ignore[no-untyped-call]
             ):
                 return index
     return None
@@ -111,10 +111,10 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
             # Otherwise add_cascade() below tries to allocate a crazy amount of
             # memory and freezes everything when running tests (don't know why)
             submenu = tkinter.Menu(menu, tearoff=False)
-            if menu == main_menu and menu.index("end") is not None:
+            if menu == main_menu and menu.index("end") is not None:  # type: ignore[no-untyped-call]
                 # adding something to non-empty main menu, don't add all the
                 # way to end so that "Help" menu stays at very end
-                last_index = menu.index("end")
+                last_index = menu.index("end")  # type: ignore[no-untyped-call]
                 assert last_index is not None
                 menu.insert_cascade(last_index, label=label, menu=submenu)
             else:
@@ -122,7 +122,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
             menu = submenu
 
         else:
-            menu = menu.nametowidget(menu.entrycget(submenu_index, "menu"))
+            menu = menu.nametowidget(menu.entrycget(submenu_index, "menu"))  # type: ignore[no-untyped-call]
 
     return menu
 
@@ -147,22 +147,22 @@ def _walk_menu_contents(
     if menu is None:
         menu = get_menu(None)
 
-    last_index = menu.index("end")
+    last_index = menu.index("end")  # type: ignore[no-untyped-call]
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
-            if menu.type(index) == "cascade":
-                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, "menu"))
-                new_prefix = path_prefix + menu.entrycget(index, "label") + "/"
+            if menu.type(index) == "cascade":  # type: ignore[no-untyped-call]
+                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, "menu"))  # type: ignore[no-untyped-call]
+                new_prefix = path_prefix + menu.entrycget(index, "label") + "/"  # type: ignore[no-untyped-call]
                 yield from _walk_menu_contents(submenu, new_prefix)
-            elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:
-                path = path_prefix + menu.entrycget(index, "label")
+            elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:  # type: ignore[no-untyped-call]
+                path = path_prefix + menu.entrycget(index, "label")  # type: ignore[no-untyped-call]
                 yield (path, menu, index)
 
 
 def _menu_event_handler(
     menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]
 ) -> utils.BreakOrNone:
-    menu.invoke(index)
+    menu.invoke(index)  # type: ignore[no-untyped-call]
     return "break"
 
 
@@ -191,8 +191,8 @@ def _update_shortcuts_for_opening_submenus() -> None:
                 used_letters.add(match.group(1))
 
     menu = get_menu(None)
-    for submenu_index in range(menu.index("end") + 1):
-        for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):
+    for submenu_index in range(menu.index("end") + 1):  # type: ignore[no-untyped-call]
+        for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):  # type: ignore[no-untyped-call]
             if letter in ascii_lowercase and letter not in used_letters:
                 menu.entryconfig(submenu_index, underline=letter_index)
                 used_letters.add(letter)
@@ -276,13 +276,7 @@ def _fill_menus_with_default_stuff() -> None:
         get_tab_manager().add_tab(tabs.FileTab(get_tab_manager()))
 
     def open_files() -> None:
-        paths: Sequence[str] = filedialog.askopenfilenames(**filedialog_kwargs)
-
-        # tkinter returns '' if the user cancels, and i'm arfaid that python
-        # devs might "fix" a future version to return None
-        if not paths:
-            return
-
+        paths = filedialog.askopenfilenames(**filedialog_kwargs)  # "" or tuple
         for path in map(pathlib.Path, paths):
             try:
                 tab = tabs.FileTab.open_file(get_tab_manager(), path)

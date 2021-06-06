@@ -4,7 +4,7 @@ from __future__ import annotations
 import itertools
 import tkinter
 import weakref
-from typing import Any, List, cast
+from typing import Any, List
 
 from porcupine import get_tab_manager, tabs, utils
 
@@ -94,14 +94,14 @@ class ConflictDisplayer:
             self.textwidget, bg=bg_color, fg=utils.invert_color(bg_color), cursor="arrow", **options
         )
 
-        def on_destroy(event: tkinter.Event) -> None:
+        def on_destroy(event: tkinter.Event[tkinter.Misc]) -> None:
             # after_idle needed to prevent segfault
             # https://core.tcl-lang.org/tk/tktview/54fe7a5e718423d16f4a11f9d672cd7bae7da39f
             self.textwidget.after_idle(self.stop_displaying)
 
         button.bind("<Destroy>", on_destroy, add=True)
 
-        self.textwidget.window_create(f"{lineno}.0 lineend", window=button)
+        self.textwidget.window_create(f"{lineno}.0 lineend", window=button)  # type: ignore[no-untyped-call]
         return button
 
     # may get called multiple times
@@ -153,9 +153,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         setup_displayers(tab)
         # https://github.com/python/mypy/issues/9658
-        tab.bind(
-            "<<Reloaded>>", (lambda event: setup_displayers(cast(tabs.FileTab, tab))), add=True
-        )
+        tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
         tab.textwidget.bind(
             "<Enter>",
             (

@@ -432,8 +432,8 @@ def _create_dialog_content() -> ttk.Frame:
     )
     ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side="right")
 
-    content.grid_columnconfigure(0, weight=1)
-    content.grid_columnconfigure(1, weight=1)
+    content.grid_columnconfigure(0, weight=1)  # type: ignore[no-untyped-call]
+    content.grid_columnconfigure(1, weight=1)  # type: ignore[no-untyped-call]
     return content
 
 
@@ -643,7 +643,9 @@ def remember_divider_positions(
 
     def settings2panedwindow(junk: object = None) -> None:
         value = get(option_name, List[int])
-        if len(value) == len(panedwindow.panes()) - 1:
+        pane_count = len(panedwindow.panes())  # type: ignore[no-untyped-call]
+
+        if len(value) == pane_count - 1:
             _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
             # Prevent funny bug with invisible panes becoming huge
             #
@@ -658,11 +660,11 @@ def remember_divider_positions(
             # number of panes can change if e.g. a plugin is enabled/disabled
             _log.info(
                 f"{option_name} is set to {value}, of length {len(value)}, "
-                f"but there are {len(panedwindow.panes())} panes"
+                f"but there are {pane_count} panes"
             )
 
     def panedwindow2settings(junk: object) -> None:
-        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
+        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])  # type: ignore[no-untyped-call]
 
     # don't know why after_idle is needed, but it is
     panedwindow.bind(

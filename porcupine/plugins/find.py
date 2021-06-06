@@ -46,8 +46,8 @@ class Finder(ttk.Frame):
         #
         # note that column 2 is used just for spacing, the separator helps
         # distinguish this from e.g. status bar below this
-        self.grid_columnconfigure(2, minsize=30)
-        self.grid_columnconfigure(3, weight=1)
+        self.grid_columnconfigure(2, minsize=30)  # type: ignore[no-untyped-call]
+        self.grid_columnconfigure(3, weight=1)  # type: ignore[no-untyped-call]
 
         self.full_words_var = tkinter.BooleanVar()
         self.ignore_case_var = tkinter.BooleanVar()
@@ -153,7 +153,7 @@ class Finder(ttk.Frame):
             self.find_entry.focus_set()
         else:
             self.find_entry.delete(0, "end")
-            self.find_entry.insert(0, selected_text)
+            self.find_entry.insert(0, selected_text)  # type: ignore[no-untyped-call]
             self.find_entry.select_range(0, "end")
             self.find_entry.focus_set()
 
@@ -221,7 +221,7 @@ class Finder(ttk.Frame):
         # clear previous highlights
         self._textwidget.tag_remove("find_highlight", "1.0", "end")
 
-        looking4 = self.find_entry.get()
+        looking4 = self.find_entry.get()  # type: ignore[no-untyped-call]
         if not looking4:  # don't search for empty string
             self._update_buttons()
             self.statuslabel.config(text="Type something to find.")
@@ -310,7 +310,7 @@ class Finder(ttk.Frame):
         start, end = self._textwidget.tag_ranges("sel")
         self._textwidget.tag_remove("find_highlight", start, end)
         self._update_buttons()
-        self._textwidget.replace(start, end, self.replace_entry.get())
+        self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
 
         self._textwidget.mark_set("insert", start)
         self._go_to_next_match()
@@ -330,7 +330,7 @@ class Finder(ttk.Frame):
         # must do this backwards because replacing may screw up indexes AFTER
         # the replaced place
         for start, end in reversed(match_ranges):
-            self._textwidget.replace(start, end, self.replace_entry.get())
+            self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
         self._textwidget.tag_remove("find_highlight", "1.0", "end")
         self._update_buttons()
 

@@ -691,7 +691,7 @@ def errordialog(title: str, message: str, monospace_text: Optional[str] = None) 
     button = ttk.Button(big_frame, text="OK", command=window.destroy)
     button.pack(pady=10)
     button.focus()
-    button.bind("<Return>", (lambda event: button.invoke()), add=True)
+    button.bind("<Return>", (lambda event: button.invoke()), add=True)  # type: ignore[no-untyped-call]
 
     window.title(title)
     window.geometry(geometry)

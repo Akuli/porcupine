@@ -156,7 +156,7 @@ class SuccessDialog(tkinter.Toplevel):
 
         self._entry = ttk.Entry(self, justify="center")
         self._entry.place(relx=0.5, rely=0.4, anchor="center", relwidth=1)
-        self._entry.insert(0, url)
+        self._entry.insert(0, url)  # type: ignore[no-untyped-call]
         self._entry.config(state="readonly")  # must be after the insert
         self.bind("<FocusIn>", self._select_all, add=True)
         self._select_all()
@@ -171,10 +171,10 @@ class SuccessDialog(tkinter.Toplevel):
         for text, callback in button_info:
             ttk.Button(buttonframe, text=text, command=callback).pack(side="left", expand=True)
 
-    def _select_all(self, event: Optional[tkinter.Event] = None) -> None:
+    def _select_all(self, event: Optional[tkinter.Event[tkinter.Misc]] = None) -> None:
         # toplevels annoyingly get notified of child events
         if event is None or event.widget is self:
-            self._entry.selection_range(0, "end")
+            self._entry.selection_range(0, "end")  # type: ignore[no-untyped-call]
             self._entry.focus()
 
     def open_in_browser(self) -> None:

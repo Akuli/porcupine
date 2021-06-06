@@ -130,7 +130,7 @@ class MiniMap(tkinter.Text):
         x_offset = self["borderwidth"] + self["padx"] + 1
         y_offset = self["borderwidth"] + self["pady"] + 1
 
-        if self._tab.textwidget.yview() == (0.0, 1.0):
+        if self._tab.textwidget.yview() == (0.0, 1.0):  # type: ignore[no-untyped-call]
             # whole file content on screen at once, show screen size instead of file content size
             # this does not take in account wrap plugin
             how_tall_are_lines_on_editor: int = self._tab.tk.call(
