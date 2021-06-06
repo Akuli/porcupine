@@ -383,3 +383,18 @@ def test_highlight_text(filetab_and_finder):
 
     assert finder.find_entry.get() == "foo"
     assert finder.find_entry.selection_present()
+
+
+def test_find_undo(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    finder.hide()
+    filetab.textwidget.insert("end", "foo bar foo")
+    filetab.textwidget.mark_set("insert", "1.0")
+    filetab.textwidget.tag_add("sel", "1.0", "1.3")
+    finder.show()
+
+    finder.replace_entry.insert("end", "baz")
+    finder.replace_all_button.invoke()
+    filetab.textwidget.edit_undo()
+
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar foo"
