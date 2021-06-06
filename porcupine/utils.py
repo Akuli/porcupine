@@ -187,8 +187,8 @@ def _looks_like_venv(path: pathlib.Path) -> bool:
         landmarks.append(path / "Scripts" / "activate.bat")
         landmarks.append(path / "Scripts" / "python.exe")
     else:
-        landmarks.append(path / "bin"/"activate")
-        landmarks.append(path / "bin"/"python3")
+        landmarks.append(path / "bin" / "activate")
+        landmarks.append(path / "bin" / "python3")
 
     return all(landmark.exists() for landmark in landmarks)
 
@@ -200,7 +200,10 @@ def find_python_venv(project_file_path: pathlib.Path) -> pathlib.Path | None:
     for parent in project_file_path.parents:
         possible_envs = [path for path in parent.glob("*env*") if _looks_like_venv(path)]
         if len(possible_envs) >= 2:
-            log.warning("Found several possible virtual envs to choose from, choosing first one: " + ", ".join(map(str, possible_envs)))
+            log.warning(
+                "Found several possible virtual envs to choose from, choosing first one: "
+                + ", ".join(map(str, possible_envs))
+            )
         if possible_envs:
             return possible_envs[0]
 
