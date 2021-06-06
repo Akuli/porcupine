@@ -151,7 +151,8 @@ class Finder(ttk.Frame):
 
         if selected_text is None or "\n" in selected_text:
             self.find_entry.focus_set()
-            self.find_entry.selection_range(0, "end")  # when ctrl + f without text selected
+            # when ctrl + f without text selected
+            self.find_entry.selection_range(0, "end")  # type: ignore[no-untyped-call]
         else:
             self.find_entry.delete(0, "end")
             self.find_entry.insert(0, selected_text)  # type: ignore[no-untyped-call]
