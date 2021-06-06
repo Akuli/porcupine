@@ -23,9 +23,8 @@ if sys.platform in {"win32", "darwin"}:
 else:
     dirs = appdirs.AppDirs("porcupine", "akuli")
 
-# Must be after creating dirs. Must be conditional to silence pyflakes.
-if True:
-    from porcupine import _state
+# Must be after creating dirs
+from porcupine import _state
 
 get_main_window = _state.get_main_window
 get_parsed_args = _state.get_parsed_args
