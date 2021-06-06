@@ -643,7 +643,9 @@ def remember_divider_positions(
 
     def settings2panedwindow(junk: object = None) -> None:
         value = get(option_name, List[int])
-        if len(value) == len(panedwindow.panes()) - 1:  # type: ignore[no-untyped-call]
+        pane_count = len(panedwindow.panes())  # type: ignore[no-untyped-call]
+
+        if len(value) == pane_count - 1:
             _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
             # Prevent funny bug with invisible panes becoming huge
             #
@@ -657,8 +659,8 @@ def remember_divider_positions(
         else:
             # number of panes can change if e.g. a plugin is enabled/disabled
             _log.info(
-                f"{option_name} is set to {value}, of length {len(value)}, "  # type: ignore[no-untyped-call]
-                f"but there are {len(panedwindow.panes())} panes"
+                f"{option_name} is set to {value}, of length {len(value)}, "
+                f"but there are {pane_count} panes"
             )
 
     def panedwindow2settings(junk: object) -> None:
