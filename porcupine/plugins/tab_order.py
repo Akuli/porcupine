@@ -56,7 +56,7 @@ MACOS_WHEEL_STEP = 2.5
 WHEEL_Y_MAX = 50
 
 
-def wheel_callback(diff: int, event: tkinter.Event) -> None:
+def wheel_callback(diff: int, event: tkinter.Event[tkinter.Misc]) -> None:
     # It's possible to trigger this somewhere else than at top of tab manager
     if event.y < 50:
         select_left_or_right(diff)

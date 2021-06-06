@@ -129,7 +129,7 @@ def run_command(
         _no_terminal_runners[str(tab)] = runner
 
         # TODO: can this also be ran when tab is closed?
-        def on_close(event: tkinter.Event) -> None:
+        def on_close(event: tkinter.Event[tkinter.Misc]) -> None:
             runner.destroy()
             del _no_terminal_runners[str(tab)]
 
