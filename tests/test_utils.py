@@ -124,11 +124,23 @@ def test_project_root(tmp_path):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
 
 
+# This test is slow, because making venvs is slow
 def test_venv_creation(tmp_path):
     (tmp_path / "project").mkdir()
-    path = tmp_path / "project" / "file.py"
-    path.touch()
+    (tmp_path / "project" / "README").touch()
+    (tmp_path / "project" / "subdir").mkdir()
+    file1 = tmp_path / "project" / "file1.py"
+    file2 = tmp_path / "project" / "subdir" / "file2.py"
+    file1.touch()
+    file2.touch()
 
-    assert 
-    subprocess.call([sys.executable, "-m", "venv", "fooenv1"], check=True)
-    (tmp_path / "README").touch()
+    assert utils.find_python_venv(file1) is None
+    assert utils.find_python_venv(file2) is None
+
+    subprocess.run([sys.executable, "-m", "venv", "fooenv1"], cwd=tmp_path, check=True)
+    assert utils.find_python_venv(file1) is None
+    assert utils.find_python_venv(file2) is None
+
+    subprocess.run([sys.executable, "-m", "venv", "barenv2"], cwd=tmp_path / "project", check=True)
+    assert utils.find_python_venv(file1) == tmp_path / "project" / "barenv2"
+    assert utils.find_python_venv(file2) == tmp_path / "project" / "barenv2"

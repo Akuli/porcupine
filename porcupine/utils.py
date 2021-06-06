@@ -182,18 +182,15 @@ def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
 
 
 def _looks_like_venv(path: pathlib.Path) -> bool:
+    landmarks = [path / "pyvenv.cfg"]
     if sys.platform == "win32":
-        return (path / "Scripts" / "python.exe").exists()
+        landmarks.append(path / "Scripts" / "activate.bat")
+        landmarks.append(path / "Scripts" / "python.exe")
+    else:
+        landmarks.append(path / "bin"/"activate")
+        landmarks.append(path / "bin"/"python3")
 
-    # Check if env/bin/python3 is executable
-    try:
-        stat = (path / "bin" / "python3").stat()
-    except OSError:
-        return False
-    # Unix permission bits
-    # 1 = executable
-    # 3 oct digits = user,group,others
-    return bool(stat.st_mode & 0o100)
+    return all(landmark.exists() for landmark in landmarks)
 
 
 # TODO: document this
@@ -211,6 +208,7 @@ def find_python_venv(project_file_path: pathlib.Path) -> pathlib.Path | None:
         if parent == project_root:
             break
 
+    log.debug(f"no virtualenvs found, checked from {project_file_path.parent} to {project_root}")
     return None
 
 
