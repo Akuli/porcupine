@@ -111,7 +111,7 @@ def test_get_binding():
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_project_root(tmp_path, monkeypatch):
+def test_project_root(tmp_path):
     (tmp_path / "foo").mkdir()
     (tmp_path / "bar.py").touch()
     (tmp_path / "foo" / "baz.py").touch()
@@ -122,3 +122,13 @@ def test_project_root(tmp_path, monkeypatch):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path / "foo"
     subprocess.run("git init -q", cwd=tmp_path, shell=True, check=True)
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
+
+
+def test_venv_creation(tmp_path):
+    (tmp_path / "project").mkdir()
+    path = tmp_path / "project" / "file.py"
+    path.touch()
+
+    assert 
+    subprocess.call([sys.executable, "-m", "venv", "fooenv1"], check=True)
+    (tmp_path / "README").touch()
