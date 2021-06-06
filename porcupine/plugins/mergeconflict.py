@@ -4,7 +4,7 @@ from __future__ import annotations
 import itertools
 import tkinter
 import weakref
-from typing import Any, List, cast
+from typing import Any, List
 
 from porcupine import get_tab_manager, tabs, utils
 

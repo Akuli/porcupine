@@ -1,6 +1,6 @@
 """Fold parts of code with Edit/Fold."""
 import tkinter
-from typing import Optional, cast, Any
+from typing import Optional
 
 from porcupine import get_tab_manager, menubar, tabs, utils
 
