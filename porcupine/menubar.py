@@ -3,12 +3,14 @@ from __future__ import annotations
 import functools
 import logging
 import pathlib
+import re
 import sys
 import tkinter
 import traceback
 import webbrowser
+from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Callable, Iterator, Optional, Sequence, Tuple
+from typing import Callable, Iterator, Optional, Tuple
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -45,17 +47,19 @@ log = logging.getLogger(__name__)
 #
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
-def _generate_event(name: str, junk: object) -> Literal['break']:
+def _generate_event(name: str, junk: object) -> Literal["break"]:
     get_main_window().event_generate(name)
-    return 'break'
+    return "break"
 
 
 def _fix_text_widget_bindings(event: tkinter.Event[tkinter.Misc]) -> None:
     for virtual_event in event.widget.event_info():
-        if virtual_event.startswith('<<Menubar:') and not event.widget.bind(virtual_event):
+        if virtual_event.startswith("<<Menubar:") and not event.widget.bind(virtual_event):
             # When the keys are pressed, generate the event on the main
             # window so the menu callback will trigger.
-            event.widget.bind(virtual_event, functools.partial(_generate_event, virtual_event), add=True)
+            event.widget.bind(
+                virtual_event, functools.partial(_generate_event, virtual_event), add=True
+            )
             assert event.widget.bind(virtual_event)
 
 
@@ -63,20 +67,23 @@ def _init() -> None:
     log.debug("_init() starts")
     main_window = get_main_window()
     main_window.config(menu=tkinter.Menu(main_window, tearoff=False))
-    main_window.bind('<<PluginsLoaded>>', (lambda event: update_keyboard_shortcuts()), add=True)
-    main_window.bind_class('Text', '<FocusIn>', _fix_text_widget_bindings, add=True)
+    main_window.bind("<<PluginsLoaded>>", (lambda event: update_keyboard_shortcuts()), add=True)
+    main_window.bind_class("Text", "<FocusIn>", _fix_text_widget_bindings, add=True)
     _fill_menus_with_default_stuff()
     log.debug("_init() done")
 
 
-_MENU_ITEM_TYPES_WITH_LABEL = {'command', 'checkbutton', 'radiobutton', 'cascade'}
+_MENU_ITEM_TYPES_WITH_LABEL = {"command", "checkbutton", "radiobutton", "cascade"}
 
 
 def _find_item(menu: tkinter.Menu, label: str) -> Optional[int]:
-    last_index = menu.index('end')
-    if last_index is not None:   # menu not empty
+    last_index = menu.index("end")  # type: ignore[no-untyped-call]
+    if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
-            if menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL and menu.entrycget(index, 'label') == label:
+            if (
+                menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL  # type: ignore[no-untyped-call]
+                and menu.entrycget(index, "label") == label  # type: ignore[no-untyped-call]
+            ):
                 return index
     return None
 
@@ -92,22 +99,22 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
     If *path* is ``None``, then the menubar itself is returned.
     """
     main_window = get_main_window()
-    main_menu: tkinter.Menu = main_window.nametowidget(main_window.cget('menu'))
+    main_menu: tkinter.Menu = main_window.nametowidget(main_window["menu"])
     if path is None:
         return main_menu
 
     menu = main_menu
-    for label in path.split('/'):
+    for label in path.split("/"):
         submenu_index = _find_item(menu, label)
         if submenu_index is None:
             # Need to pass the menu as an explicit argument to tkinter.Menu.
             # Otherwise add_cascade() below tries to allocate a crazy amount of
             # memory and freezes everything when running tests (don't know why)
             submenu = tkinter.Menu(menu, tearoff=False)
-            if menu == main_menu and menu.index('end') is not None:
+            if menu == main_menu and menu.index("end") is not None:  # type: ignore[no-untyped-call]
                 # adding something to non-empty main menu, don't add all the
                 # way to end so that "Help" menu stays at very end
-                last_index = menu.index("end")
+                last_index = menu.index("end")  # type: ignore[no-untyped-call]
                 assert last_index is not None
                 menu.insert_cascade(last_index, label=label, menu=submenu)
             else:
@@ -115,7 +122,7 @@ def get_menu(path: Optional[str]) -> tkinter.Menu:
             menu = submenu
 
         else:
-            menu = menu.nametowidget(menu.entrycget(submenu_index, 'menu'))
+            menu = menu.nametowidget(menu.entrycget(submenu_index, "menu"))  # type: ignore[no-untyped-call]
 
     return menu
 
@@ -127,49 +134,42 @@ def add_config_file_button(path: pathlib.Path) -> None:
     """
     get_menu("Settings/Config Files").add_command(
         label=path.name,
-        command=(lambda: get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))),
+        command=(
+            lambda: get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
+        ),
     )
 
 
 def _walk_menu_contents(
-    menu: Optional[tkinter.Menu] = None,
-    path_prefix: str = '',
+    menu: Optional[tkinter.Menu] = None, path_prefix: str = ""
 ) -> Iterator[Tuple[str, tkinter.Menu, int]]:
 
     if menu is None:
         menu = get_menu(None)
 
-    last_index = menu.index('end')
-    if last_index is not None:   # menu not empty
+    last_index = menu.index("end")  # type: ignore[no-untyped-call]
+    if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
-            if menu.type(index) == 'cascade':
-                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, 'menu'))
-                new_prefix = path_prefix + menu.entrycget(index, 'label') + '/'
+            if menu.type(index) == "cascade":  # type: ignore[no-untyped-call]
+                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, "menu"))  # type: ignore[no-untyped-call]
+                new_prefix = path_prefix + menu.entrycget(index, "label") + "/"  # type: ignore[no-untyped-call]
                 yield from _walk_menu_contents(submenu, new_prefix)
-            elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:
-                path = path_prefix + menu.entrycget(index, 'label')
+            elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:  # type: ignore[no-untyped-call]
+                path = path_prefix + menu.entrycget(index, "label")  # type: ignore[no-untyped-call]
                 yield (path, menu, index)
 
 
-def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
-    menu.invoke(index)
-    return 'break'
+def _menu_event_handler(
+    menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]
+) -> utils.BreakOrNone:
+    menu.invoke(index)  # type: ignore[no-untyped-call]
+    return "break"
 
 
-def update_keyboard_shortcuts() -> None:
-    """
-    This function does two things to the *New File* menu item in the *File*
-    menu, and similarly to all other menu items in all menus:
-
-        * Show *Ctrl+N* (or *⌘N* on Mac) next to *New File*.
-        * Ensure that the menu item's callback runs when Ctrl+N (or Command+N) is pressed.
-
-    This has to be called when menus or keyboard shortcuts have been modified.
-    It's called automatically when a plugin has been set up.
-    """
+def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
     for path, menu, index in _walk_menu_contents():
-        event_name = f'<<Menubar:{path}>>'
+        event_name = f"<<Menubar:{path}>>"
 
         # show keyboard shortcuts in menus
         menu.entryconfig(index, accelerator=utils.get_binding(event_name, menu=True))
@@ -181,7 +181,45 @@ def update_keyboard_shortcuts() -> None:
             main_window.bind(event_name, command, add=True)
 
 
-def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]], bool]) -> Callable[..., None]:
+# Make sure that alt+e opens edit menu
+def _update_shortcuts_for_opening_submenus() -> None:
+    used_letters = set()
+    for virtual_event in get_main_window().event_info():
+        for physical_event in get_main_window().event_info(virtual_event):
+            match = re.fullmatch(r"<Alt-Key-([a-z])>", physical_event)
+            if match is not None:
+                used_letters.add(match.group(1))
+
+    menu = get_menu(None)
+    for submenu_index in range(menu.index("end") + 1):  # type: ignore[no-untyped-call]
+        for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):  # type: ignore[no-untyped-call]
+            if letter in ascii_lowercase and letter not in used_letters:
+                menu.entryconfig(submenu_index, underline=letter_index)
+                used_letters.add(letter)
+                break
+        else:
+            menu.entryconfig(submenu_index, accelerator="")
+
+
+def update_keyboard_shortcuts() -> None:
+    """
+    This function does several different things to each menu item. Here's what
+    it does to the *Edit* menu and the *Find and Replace* menu item inside it:
+
+        * Show *Ctrl+F* (or *⌘F* on Mac) next to *Find and Replace*.
+        * Ensure that the menu item's callback runs when Ctrl+F (or Command+F) is pressed.
+        * Allow the *Edit* menu to be accessed by pressing Alt+E.
+
+    This has to be called when menus or keyboard shortcuts have been modified.
+    It's called automatically when a plugin has been set up.
+    """
+    _update_keyboard_shortcuts_inside_submenus()
+    _update_shortcuts_for_opening_submenus()
+
+
+def set_enabled_based_on_tab(
+    path: str, callback: Callable[[Optional[tabs.Tab]], bool]
+) -> Callable[..., None]:
     """Use this for disabling menu items depending on the currently selected tab.
 
     When the selected :class:`~porcupine.tabs.Tab` changes, ``callback`` will
@@ -212,16 +250,17 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]],
     ignores all arguments given to it, which makes using it with ``.bind()``
     easier.
     """
+
     def update_enabledness(*junk: object) -> None:
         tab = get_tab_manager().select()
-        menu = get_menu(path.rsplit('/', 1)[0] if '/' in path else None)
-        index = _find_item(menu, path.split('/')[-1])
+        menu = get_menu(path.rsplit("/", 1)[0] if "/" in path else None)
+        index = _find_item(menu, path.split("/")[-1])
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
-        menu.entryconfig(index, state=('normal' if callback(tab) else 'disabled'))
+        menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
 
     update_enabledness()
-    get_tab_manager().bind('<<NotebookTabChanged>>', update_enabledness, add=True)
+    get_tab_manager().bind("<<NotebookTabChanged>>", update_enabledness, add=True)
     return update_enabledness
 
 
@@ -229,7 +268,7 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[Optional[tabs.Tab]],
 def _fill_menus_with_default_stuff() -> None:
     # Make sure to get the order of menus right:
     #   File, Edit, <everything else>, Help
-    get_menu("Help")   # handled specially in get_menu
+    get_menu("Help")  # handled specially in get_menu
     get_menu("File")
     get_menu("Edit")
 
@@ -237,13 +276,7 @@ def _fill_menus_with_default_stuff() -> None:
         get_tab_manager().add_tab(tabs.FileTab(get_tab_manager()))
 
     def open_files() -> None:
-        paths: Sequence[str] = filedialog.askopenfilenames(**filedialog_kwargs)
-
-        # tkinter returns '' if the user cancels, and i'm arfaid that python
-        # devs might "fix" a future version to return None
-        if not paths:
-            return
-
+        paths = filedialog.askopenfilenames(**filedialog_kwargs)  # "" or tuple
         for path in map(pathlib.Path, paths):
             try:
                 tab = tabs.FileTab.open_file(get_tab_manager(), path)
@@ -281,24 +314,30 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("File/Close", (lambda tab: tab is not None))
     set_enabled_based_on_tab("File/Quit", (lambda tab: tab is None))
 
-    def change_font_size(how: Literal['bigger', 'smaller', 'reset']) -> None:
-        if how == 'reset':
-            settings.reset('font_size')
+    def change_font_size(how: Literal["bigger", "smaller", "reset"]) -> None:
+        if how == "reset":
+            settings.reset("font_size")
             return
 
-        size = settings.get('font_size', int)
-        if how == 'bigger':
+        size = settings.get("font_size", int)
+        if how == "bigger":
             size += 1
         else:
             size -= 1
             if size < 3:
                 return
 
-        settings.set_('font_size', size)
+        settings.set_("font_size", size)
 
-    get_menu("View").add_command(label="Bigger Font", command=functools.partial(change_font_size, 'bigger'))
-    get_menu("View").add_command(label="Smaller Font", command=functools.partial(change_font_size, 'smaller'))
-    get_menu("View").add_command(label="Reset Font Size", command=functools.partial(change_font_size, 'reset'))
+    get_menu("View").add_command(
+        label="Bigger Font", command=functools.partial(change_font_size, "bigger")
+    )
+    get_menu("View").add_command(
+        label="Smaller Font", command=functools.partial(change_font_size, "smaller")
+    )
+    get_menu("View").add_command(
+        label="Reset Font Size", command=functools.partial(change_font_size, "reset")
+    )
     set_enabled_based_on_tab("View/Bigger Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Smaller Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))
@@ -311,7 +350,19 @@ def _fill_menus_with_default_stuff() -> None:
     # TODO: porcupine starring button
     # TODO: does ##learnpython IRC link still work?
     add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
-    add_link("Help", "Report a problem or request a feature", "https://github.com/Akuli/porcupine/issues/new")
-    add_link("Help/Python", "Free help chat", "http://webchat.freenode.net/?channels=%23%23learnpython")
-    add_link("Help/Python", "My Python tutorial", "https://github.com/Akuli/python-tutorial/blob/master/README.md")
+    add_link(
+        "Help",
+        "Report a problem or request a feature",
+        "https://github.com/Akuli/porcupine/issues/new",
+    )
+    add_link(
+        "Help/Python",
+        "Free help chat",
+        "https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython",
+    )
+    add_link(
+        "Help/Python",
+        "My Python tutorial",
+        "https://github.com/Akuli/python-tutorial/blob/master/README.md",
+    )
     add_link("Help/Python", "Official documentation", "https://docs.python.org/")

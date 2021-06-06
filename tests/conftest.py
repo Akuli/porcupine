@@ -10,12 +10,13 @@ import subprocess
 import sys
 import tempfile
 import tkinter
+import traceback
 
 import appdirs
 import pytest
 
 import porcupine
-from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
+from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs, utils
 from porcupine.__main__ import main
 
 
@@ -26,8 +27,11 @@ from porcupine.__main__ import main
 # repeatedly too fast
 def pytest_addoption(parser):
     parser.addoption(
-        '--test-pastebins', action='store_true', default=False,
-        help="run tests that invoke online pastebins")
+        "--test-pastebins",
+        action="store_true",
+        default=False,
+        help="run tests that invoke online pastebins",
+    )
 
 
 def pytest_collection_modifyitems(config, items):
@@ -41,16 +45,16 @@ def pytest_collection_modifyitems(config, items):
 
 
 class MonkeypatchedAppDirs(appdirs.AppDirs):
-    user_cache_dir = property(operator.attrgetter('_cache'))
-    user_config_dir = property(operator.attrgetter('_config'))
-    user_log_dir = property(operator.attrgetter('_logs'))
+    user_cache_dir = property(operator.attrgetter("_cache"))
+    user_config_dir = property(operator.attrgetter("_config"))
+    user_log_dir = property(operator.attrgetter("_logs"))
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def monkeypatch_dirs():
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
-    assert user_plugindir == os.path.join(dirs.user_config_dir, 'plugins')
+    assert user_plugindir == os.path.join(dirs.user_config_dir, "plugins")
 
     with tempfile.TemporaryDirectory() as d:
         # This is a hack because:
@@ -58,14 +62,14 @@ def monkeypatch_dirs():
         #   - assigning to dirs.user_cache_dir doesn't work (appdirs uses @property)
         #   - "porcupine.dirs = blahblah" doesn't work (from porcupine import dirs)
         dirs.__class__ = MonkeypatchedAppDirs
-        dirs._cache = os.path.join(d, 'cache')
-        dirs._config = os.path.join(d, 'config')
-        dirs._logs = os.path.join(d, 'logs')
+        dirs._cache = os.path.join(d, "cache")
+        dirs._config = os.path.join(d, "config")
+        dirs._logs = os.path.join(d, "logs")
         assert dirs.user_cache_dir.startswith(d)
         yield
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def porcusession(monkeypatch_dirs):
     # these errors should not occur while porcupine is running
     with pytest.raises(RuntimeError):
@@ -81,7 +85,7 @@ def porcusession(monkeypatch_dirs):
     try:
         # --verbose here doesn't work for whatever reason
         # I tried to make it work, but then pytest caplog fixture didn't work
-        sys.argv[1:] = ['--shuffle-plugins']
+        sys.argv[1:] = ["--shuffle-plugins"]
         tkinter.Tk.mainloop = lambda self: None
         main()
     finally:
@@ -95,6 +99,20 @@ def porcusession(monkeypatch_dirs):
         porcupine.get_tab_manager().close_tab(tab)
 
     porcupine.quit()
+
+
+# utils.run_in_thread() can make tests fragile
+@pytest.fixture
+def dont_run_in_thread(monkeypatch):
+    def func(blocking_function, done_callback, check_interval_ms=69, daemon=True):
+        try:
+            result = blocking_function()
+        except Exception:
+            done_callback(False, traceback.format_exc())
+        else:
+            done_callback(True, result)
+
+    monkeypatch.setattr(utils, "run_in_thread", func)
 
 
 @pytest.fixture
@@ -116,8 +134,11 @@ def filetab(porcusession, tabmanager):
 def run_porcupine():
     def actually_run_porcupine(args, expected_exit_status):
         run_result = subprocess.run(
-            [sys.executable, '-m', 'porcupine'] + args,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
+            [sys.executable, "-m", "porcupine"] + args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+        )
         assert run_result.returncode == expected_exit_status
         return run_result.stdout
 

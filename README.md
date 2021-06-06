@@ -45,7 +45,7 @@ Open a terminal and run these commands:
     sudo apt install python3-tk python3-pip
     sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.91.0.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.92.4.zip
     python3 -m porcupine
 
 If you want to leave Porcupine running and use the same terminal for something else,
@@ -58,7 +58,7 @@ If you want drag and drop support, also install tkdnd for the Tcl interpreter th
 Then run these commands:
 
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.91.0.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.92.4.zip
     python3 -m porcupine
 
 If you want to leave Porcupine running and use the same terminal for something else,
@@ -90,6 +90,11 @@ See [below](#developing-porcupine).
 
 ## FAQ
 
+### Does Porcupine support programming language X?
+You will likely get syntax highlighting without any configuring
+and autocompletions with a few lines of configuration file editing.
+See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+
 ### Help! Porcupine doesn't work.
 Please [update Porcupine](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#updating-porcupine).
 If it still doesn't work, [let me know by creating an issue on
@@ -99,17 +104,16 @@ GitHub](http://github.com/Akuli/porcupine/issues/new).
 
 Yes. I wrote the very first version in `nano`, but Porcupine has changed a lot since.
 
-### Why not use editor X?
-Because Porcupine is better.
+### Why is it named Porcupine?
+
+I think because I didn't find other projects named porcupine, but I don't remember exactly.
+Originally, Porcupine was named "Akuli's Editor".
 
 ### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
 Maybe it can, see [the more_plugins directory](more_plugins/). If you don't
 find what you are looking for you can write your own plugin, or alternatively,
 you can [create an issue on GitHub](https://github.com/Akuli/porcupine/issues/new)
 and hope that I feel like writing the plugin for you.
-
-### Is Porcupine based on IDLE?
-Of course not. IDLE is an awful mess that you should stay far away from.
 
 ### Why did you create a new editor?
 Because I can.
@@ -120,10 +124,11 @@ Because I can.
 ### How does feature X work?
 See [porcupine/](porcupine/)X.py or [porcupine/plugins/](porcupine/plugins/)X.py.
 
-### Does Porcupine support programming language X?
-You will likely get syntax highlighting without any configuring
-and autocompletions with a few lines of configuration file editing.
-See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+### Why not use editor X?
+Because Porcupine is better.
+
+### Is Porcupine based on IDLE?
+Of course not. IDLE is an awful mess that you should stay far away from.
 
 ### Can I play tetris with Porcupine?
 Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
@@ -136,6 +141,12 @@ If you are interested in doing something to Porcupine yourself, that's awesome!
 started. Even if you are not going to write Porcupine plugins or do anything
 related to plugins, they will probably give you an idea of how things are done
 in Porcupine.
+
+If you don't know what to do, ask me (by making a new issue, for example).
+I will likely go through the open issues and choose a few that you can
+work on, considering your experience with tkinter and porcupine,
+and then explain to you what exactly is the problem with each issue and how
+I imagine it could be fixed. Feel free to ask help if you get stuck.
 
 If you want to develop porcupine, make a fork of Porcupine
 with the button in the top right corner of this page.
@@ -170,6 +181,7 @@ Here is a list of the commands I use when developing Porcupine:
     - `mypy porcupine more_plugins`
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
+- Code formatting tools: `black porcupine/` and `isort porcupine/`
 - To see a report of test coverage, add `--cov=porcupine` to the above pytest
   command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
   browser to view it. If you don't have anything else to do, you can write more

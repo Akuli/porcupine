@@ -1,6 +1,7 @@
 """Open a file in Porcupine when it's dragged and dropped from file manager."""
 import logging
 import pathlib
+import tkinter
 
 from porcupine import get_main_window, get_tab_manager, tabs
 
@@ -17,13 +18,26 @@ def handle_drop(paths_from_tcl: str) -> None:
 
 def setup() -> None:
     root = get_main_window()
-    root.tk.eval('''
-    package require tkdnd
+    try:
+        root.tk.eval("package require tkdnd")
+    except tkinter.TclError:
+        log.warning("dragging files to Porcupine won't work because tkdnd isn't installed")
+        log.debug("full error:", exc_info=True)
 
-    # https://github.com/petasis/tkdnd/blob/master/demos/simple_target.tcl
-    tkdnd::drop_target register . DND_Files
+        # TODO: nicer way to make something show up in pluing manager?
+        global __doc__
+        __doc__ += "\n\nNOTE: This plugin failed to load because tkdnd isn't installed."
+        return
 
-    # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
-    # _tkinter.TclError: expected integer but got "%#"
-    bind . <<Drop:DND_Files>> {''' + root.register(handle_drop) + ''' %D}
-    ''')
+    root.tk.eval(
+        """
+        # https://github.com/petasis/tkdnd/blob/master/demos/simple_target.tcl
+        tkdnd::drop_target register . DND_Files
+
+        # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
+        # _tkinter.TclError: expected integer but got "%#"
+        bind . <<Drop:DND_Files>> {DROPCOMMAND %D}
+        """.replace(
+            "DROPCOMMAND", root.register(handle_drop)
+        )
+    )

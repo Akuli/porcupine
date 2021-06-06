@@ -1,6 +1,7 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
+import collections
 import dataclasses
 import hashlib
 import importlib
@@ -11,7 +12,19 @@ import pathlib
 import tkinter
 import traceback
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, Iterable, List, NamedTuple, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
@@ -20,7 +33,7 @@ from porcupine import _state, settings, textwidget, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 
 def _find_duplicates(items: List[_T], key: Callable[[_T], str]) -> Iterable[List[_T]]:
@@ -33,8 +46,7 @@ def _find_duplicates(items: List[_T], key: Callable[[_T], str]) -> Iterable[List
 def _short_ways_to_display_path(path: pathlib.Path) -> List[str]:
     parts = str(path).split(os.sep)
     return [parts[-1], parts[-2] + os.sep + parts[-1]] + [
-        first_part + os.sep + '...' + os.sep + parts[-1]
-        for first_part in parts[:-2]
+        first_part + os.sep + "..." + os.sep + parts[-1] for first_part in parts[:-2]
     ]
 
 
@@ -73,7 +85,7 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.bind('<<NotebookTabChanged>>', self._notify_selected_tab, add=True)
+        self.bind("<<NotebookTabChanged>>", self._notify_selected_tab, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: List[Tuple[Callable[[Tab], Any], str]] = []
@@ -81,13 +93,15 @@ class TabManager(ttk.Notebook):
     def _notify_selected_tab(self, event: tkinter.Event[tkinter.Misc]) -> None:
         tab = self.select()
         if tab is not None:
-            tab.event_generate('<<TabSelected>>')
+            tab.event_generate("<<TabSelected>>")
 
     def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
         while True:
             did_something = False
-            for conflicting_title_lists in _find_duplicates(titlelists, key=(lambda lizt: lizt[0].strip("*"))):
+            for conflicting_title_lists in _find_duplicates(
+                titlelists, key=(lambda lizt: lizt[0].strip("*"))
+            ):
                 # shorten longest title lists
                 maxlen = max(len(titlelist) for titlelist in conflicting_title_lists)
                 if maxlen >= 2:
@@ -113,7 +127,7 @@ class TabManager(ttk.Notebook):
         """
         if tab_id is None:
             selected = super().select()
-            if not selected:        # no tabs, selected == ''
+            if not selected:  # no tabs, selected == ''
                 return None
             return self.nametowidget(str(selected))
 
@@ -129,7 +143,7 @@ class TabManager(ttk.Notebook):
         """
         # tkinter has a bug that makes the original tabs() return widget name
         # strings instead of widget objects
-        return tuple(self.nametowidget(tab) for tab in super().tabs())
+        return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
 
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
         """Append a :class:`.Tab` to this tab manager.
@@ -153,7 +167,7 @@ class TabManager(ttk.Notebook):
                 tab.destroy()
                 return existing_tab
 
-        self.add(tab)
+        self.add(tab)  # type: ignore[no-untyped-call]
         self._update_tab_titles()
         if select:
             self.select(tab)
@@ -176,7 +190,7 @@ class TabManager(ttk.Notebook):
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
-        self.forget(tab)
+        self.forget(tab)  # type: ignore[no-untyped-call]
         tab.destroy()
         self._update_tab_titles()
 
@@ -191,13 +205,13 @@ class TabManager(ttk.Notebook):
         """
         for tab in self.tabs():
             func(tab)
-        self._tab_callbacks.append((func, ''.join(traceback.format_stack())))
+        self._tab_callbacks.append((func, "".join(traceback.format_stack())))
 
 
 # _FileTabT represents a subclass of FileTab. Don't know if there's a better
 # way to tell that to mypy than passing FileTab twice...
-_TabT = TypeVar('_TabT', 'Tab', 'Tab')
-_FileTabT = TypeVar('_FileTabT', 'FileTab', 'FileTab')
+_TabT = TypeVar("_TabT", "Tab", "Tab")
+_FileTabT = TypeVar("_FileTabT", "FileTab", "FileTab")
 
 
 class Tab(ttk.Frame):
@@ -262,13 +276,14 @@ class Tab(ttk.Frame):
         These frames should contain no widgets when Porcupine is running
         without plugins. Use pack when adding things here.
     """
+
     # TODO: write types into above docstring
 
     master: TabManager
 
     def __init__(self, manager: TabManager) -> None:
         super().__init__(manager)
-        self._titles: Sequence[str] = ['']
+        self._titles: Sequence[str] = [""]
 
         # top and bottom frames must be packed first because this way
         # they extend past other frames in the corners
@@ -276,10 +291,10 @@ class Tab(ttk.Frame):
         self.bottom_frame = ttk.Frame(self)
         self.left_frame = ttk.Frame(self)
         self.right_frame = ttk.Frame(self)
-        self.top_frame.pack(side='top', fill='x')
-        self.bottom_frame.pack(side='bottom', fill='x')
-        self.left_frame.pack(side='left', fill='y')
-        self.right_frame.pack(side='right', fill='y')
+        self.top_frame.pack(side="top", fill="x")
+        self.bottom_frame.pack(side="bottom", fill="x")
+        self.left_frame.pack(side="left", fill="y")
+        self.right_frame.pack(side="right", fill="y")
 
     @property
     def title_choices(self) -> Sequence[str]:
@@ -344,14 +359,12 @@ restarting Porcupine.
         return None
 
     @classmethod
-    def from_state(
-            cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
+    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
         """
         Create a new tab from the return value of :meth:`get_state`.
         Be sure to override this if you override :meth:`get_state`.
         """
-        raise NotImplementedError(
-            "from_state() wasn't overrided but get_state() was overrided")
+        raise NotImplementedError("from_state() wasn't overrided but get_state() was overrided")
 
 
 class _FileTabState(NamedTuple):
@@ -362,7 +375,7 @@ class _FileTabState(NamedTuple):
 
 
 def _import_lexer_class(name: str) -> LexerMeta:
-    modulename, classname = name.rsplit('.', 1)
+    modulename, classname = name.rsplit(".", 1)
     module = importlib.import_module(modulename)
     klass = getattr(module, classname)
     if not isinstance(klass, LexerMeta):
@@ -424,9 +437,13 @@ class FileTab(Tab):
         a virtual event named ``<<TabSettingChanged:indent_size>>``.
         This works similarly for other tab settings.
 
-    .. virtualevent:: Save
+    .. virtualevent:: BeforeSave
 
         This runs before the file is saved with the :meth:`save` method.
+
+    .. virtualevent:: AfterSave
+
+        This runs after the file is saved with the :meth:`save` method.
 
     .. attribute:: textwidget
         :type: porcupine.textwidget.MainText
@@ -458,8 +475,9 @@ bers.py>` use this attribute.
         .. seealso:: The :virtevt:`PathChanged` virtual event.
     """
 
-    def __init__(self, manager: TabManager, content: str = '',
-                 path: Optional[pathlib.Path] = None) -> None:
+    def __init__(
+        self, manager: TabManager, content: str = "", path: Optional[pathlib.Path] = None
+    ) -> None:
         super().__init__(manager)
 
         if path is None:
@@ -467,36 +485,40 @@ bers.py>` use this attribute.
         else:
             self._path = path.resolve()
 
-        self.settings = settings.Settings(self, '<<TabSettingChanged:{}>>')
+        self.settings = settings.Settings(self, "<<TabSettingChanged:{}>>")
         self.settings.add_option(
-            'pygments_lexer', TextLexer, LexerMeta, converter=_import_lexer_class)
-        self.settings.add_option('tabs2spaces', True)
-        self.settings.add_option('indent_size', 4)
-        self.settings.add_option('encoding', 'utf-8')
-        self.settings.add_option('comment_prefix', None, Optional[str])
+            "pygments_lexer", TextLexer, LexerMeta, converter=_import_lexer_class
+        )
+        self.settings.add_option("tabs2spaces", True)
+        self.settings.add_option("indent_size", 4)
+        self.settings.add_option("encoding", "utf-8")
+        self.settings.add_option("comment_prefix", None, Optional[str])
         self.settings.add_option(
-            'line_ending', settings.get('default_line_ending', settings.LineEnding),
-            converter=settings.LineEnding.__getitem__)
+            "line_ending",
+            settings.get("default_line_ending", settings.LineEnding),
+            converter=settings.LineEnding.__getitem__,
+        )
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         self.textwidget = textwidget.MainText(
-            self, width=1, height=1, wrap='none', undo=True, padx=3)
-        self.textwidget.pack(side='left', fill='both', expand=True)
+            self, width=1, height=1, wrap="none", undo=True, padx=3
+        )
+        self.textwidget.pack(side="left", fill="both", expand=True)
 
         if content:
-            self.textwidget.insert('1.0', content)
-            self.textwidget.edit_reset()   # reset undo/redo
+            self.textwidget.insert("1.0", content)
+            self.textwidget.edit_reset()  # reset undo/redo
         self._set_saved_state(None)
 
-        self.bind('<<TabSelected>>', (lambda event: self.textwidget.focus()), add=True)
+        self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
 
         self.scrollbar = ttk.Scrollbar(self.right_frame)
-        self.scrollbar.pack(side='right', fill='y')
+        self.scrollbar.pack(side="right", fill="y")
         self.textwidget.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.textwidget.yview)
 
-        self.textwidget.bind('<<ContentChanged>>', self._update_titles, add=True)
+        self.textwidget.bind("<<ContentChanged>>", self._update_titles, add=True)
         self._update_titles()
 
     @classmethod
@@ -511,16 +533,17 @@ bers.py>` use this attribute.
         """
         tab = cls(manager, path=path)
         tab.reload()
+        tab.textwidget.mark_set("insert", "1.0")
         tab.textwidget.edit_reset()
         return tab
 
     def _get_char_count(self) -> int:
-        return textwidget.count(self.textwidget, '1.0', 'end - 1 char')
+        return textwidget.count(self.textwidget, "1.0", "end - 1 char")
 
     def _get_hash(self, string: Optional[str] = None) -> str:
         if string is None:
-            string = self.textwidget.get('1.0', 'end - 1 char')
-        return hashlib.md5(string.encode('utf-8')).hexdigest()
+            string = self.textwidget.get("1.0", "end - 1 char")
+        return hashlib.md5(string.encode("utf-8")).hexdigest()
 
     def _set_saved_state(self, stat_result: Optional[os.stat_result]) -> None:
         self._saved_state = (stat_result, self._get_char_count(), self._get_hash())
@@ -534,7 +557,7 @@ bers.py>` use this attribute.
         """
         stat_result, char_count, save_hash = self._saved_state
         # Don't call _get_hash() if not necessary
-        return (self._get_char_count() != char_count or self._get_hash() != save_hash)
+        return self._get_char_count() != char_count or self._get_hash() != save_hash
 
     def reload(self) -> None:
         """Read the contents of the file from disk.
@@ -542,7 +565,7 @@ bers.py>` use this attribute.
         .. seealso:: :meth:`open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
-        with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
+        with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
             stat_result = os.fstat(f.fileno())
             content = f.read()
 
@@ -551,23 +574,41 @@ bers.py>` use this attribute.
             log.warning(f"file '{self.path}' contains mixed line endings: {f.newlines}")
         elif f.newlines is not None:
             assert isinstance(f.newlines, str)
-            self.settings.set('line_ending', settings.LineEnding(f.newlines))
+            self.settings.set("line_ending", settings.LineEnding(f.newlines))
+
+        # Find changed part in O(n) time where n = max(len(old_lines), len(new_lines))
+        old_lines = collections.deque(
+            self.textwidget.get("1.0", "end - 1 char").splitlines(keepends=True)
+        )
+        new_lines = collections.deque(content.splitlines(keepends=True))
+        start_line = 1
+        start_column = 0
+        end_line, end_column = map(int, self.textwidget.index("end - 1 char").split("."))
+        while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
+            popped = old_lines.pop()
+            popped2 = new_lines.pop()
+            assert popped == popped2
+            if popped.endswith("\n"):
+                assert end_column == 0
+                end_line -= 1
+            else:
+                end_column = 0
+        while old_lines and new_lines and old_lines[0] == new_lines[0]:
+            old_lines.popleft()
+            new_lines.popleft()
+            start_line += 1
 
         modified_before = self.is_modified()
 
-        # Reloading can be undoed with Ctrl+Z
-        self.textwidget.config(autoseparators=False)
-        try:
-            self.textwidget.edit_separator()
-            self.textwidget.replace('1.0', 'end', content)
-            self.textwidget.edit_separator()
-        finally:
-            self.textwidget.config(autoseparators=True)
+        with textwidget.change_batch(self.textwidget):
+            self.textwidget.replace(
+                f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
+            )
 
         self._set_saved_state(stat_result)
 
         # TODO: document this
-        self.event_generate('<<Reloaded>>', data=ReloadInfo(was_modified=modified_before))
+        self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
 
     def other_program_changed_file(self) -> bool:
         """Check whether some other program has changed the file.
@@ -591,7 +632,7 @@ bers.py>` use this attribute.
                 return True
 
             log.info(f"reading {self.path} to figure out if reload is needed")
-            with self.path.open('r', encoding=self.settings.get('encoding', str)) as f:
+            with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                 actual_hash = self._get_hash(f.read())
             if actual_hash != save_hash:
                 return True
@@ -601,19 +642,23 @@ bers.py>` use this attribute.
             return False
 
         except (OSError, UnicodeError):
-            log.exception(f"error when figuring out if '{self.path}' needs reloading, assuming it does")
+            log.exception(
+                f"error when figuring out if '{self.path}' needs reloading, assuming it does"
+            )
             return True
 
-    def equivalent(self, other: Tab) -> bool:    # override
+    def equivalent(self, other: Tab) -> bool:  # override
         # this used to have hasattr(other, "path") instead of isinstance
         # but it screws up if a plugin defines something different with
         # a path attribute, for example, a debugger plugin might have
         # tabs that represent files and they might need to be opened at
         # the same time as FileTabs are
-        return (isinstance(other, FileTab) and
-                self.path is not None and
-                other.path is not None and
-                self.path.samefile(other.path))
+        return (
+            isinstance(other, FileTab)
+            and self.path is not None
+            and other.path is not None
+            and self.path.samefile(other.path)
+        )
 
     @property
     def path(self) -> Optional[pathlib.Path]:
@@ -624,24 +669,24 @@ bers.py>` use this attribute.
         if new_path is not None:
             new_path = new_path.resolve()
 
-        it_changes = (self._path != new_path)
+        it_changes = self._path != new_path
         self._path = new_path
         if it_changes:
-            self.event_generate('<<PathChanged>>')
+            self.event_generate("<<PathChanged>>")
 
     # TODO: plugin
     def _update_titles(self, junk: object = None) -> None:
         if self.path is None:
-            titles = ['New File']
+            titles = ["New File"]
         else:
             titles = _short_ways_to_display_path(self.path)
 
         if self.is_modified():
-            titles = [f'*{title}*' for title in titles]
+            titles = [f"*{title}*" for title in titles]
 
         self.title_choices = titles
 
-    def can_be_closed(self) -> bool:    # override
+    def can_be_closed(self) -> bool:  # override
         if not self.is_modified():
             return True
 
@@ -660,25 +705,25 @@ bers.py>` use this attribute.
         return True
 
     def _do_the_save(self, path: pathlib.Path) -> bool:
-        self.event_generate('<<Save>>')
+        self.event_generate("<<BeforeSave>>")
 
-        encoding = self.settings.get('encoding', str)
-        line_ending = self.settings.get('line_ending', settings.LineEnding)
+        encoding = self.settings.get("encoding", str)
+        line_ending = self.settings.get("line_ending", settings.LineEnding)
 
         try:
-            with utils.backup_open(path, 'w', encoding=encoding, newline=line_ending.value) as f:
-                f.write(self.textwidget.get('1.0', 'end - 1 char'))
-                f.flush()   # needed to get right file size in stat
+            with utils.backup_open(path, "w", encoding=encoding, newline=line_ending.value) as f:
+                f.write(self.textwidget.get("1.0", "end - 1 char"))
+                f.flush()  # needed to get right file size in stat
                 self._set_saved_state(os.fstat(f.fileno()))
         except (OSError, UnicodeError) as e:
             log.exception(f"saving to '{path}' failed")
-            utils.errordialog(type(e).__name__, "Saving failed!",
-                              traceback.format_exc())
+            utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
             return False
 
         self._save_hash = self._get_hash()
         self.path = path
         self._update_titles()
+        self.event_generate("<<AfterSave>>")
         return True
 
     def save(self) -> bool:
@@ -693,7 +738,7 @@ bers.py>` use this attribute.
         Porcupine, then before saving, this function will ask whether the user
         really wants to save.
 
-        .. seealso:: The :virtevt:`Save` event.
+        .. seealso:: The :virtevt:`BeforeSave` and :virtevt:`AfterSave` virtual events.
         """
         if self.path is None:
             return self.save_as()
@@ -701,7 +746,8 @@ bers.py>` use this attribute.
         if self.other_program_changed_file():
             user_is_sure = messagebox.askyesno(
                 "File changed",
-                f"Another program has changed {self.path.name}. Are you sure you want to save it?")
+                f"Another program has changed {self.path.name}. Are you sure you want to save it?",
+            )
             if not user_is_sure:
                 return False
 
@@ -715,20 +761,23 @@ bers.py>` use this attribute.
         asking the user.
         """
         if path is None:
-            path_string: str = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
-            if not path_string:     # it may be '' because tkinter
+            path_string = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
+            if not path_string:  # it may be '' because tkinter
                 return False
             path = pathlib.Path(path_string)
 
         # see equivalent()
-        if any(isinstance(other, FileTab) and other.path == path
-               for other in self.master.tabs()
-               if other is not self):
+        if any(
+            isinstance(other, FileTab) and other.path == path
+            for other in self.master.tabs()
+            if other is not self
+        ):
             messagebox.showerror(
                 "Save As",
                 f"{path.name!r} is already opened. "
                 "Please close it before overwriting it with another file.",
-                parent=self.winfo_toplevel())
+                parent=self.winfo_toplevel(),
+            )
             return False
 
         return self._do_the_save(path)
@@ -737,17 +786,21 @@ bers.py>` use this attribute.
     # FIXME: when called from reload plugin, require saving file first
     def get_state(self) -> _FileTabState:
         # e.g. "New File" tabs are saved even though the .path is None
-        if self.path is not None and not self.is_modified() and not self.other_program_changed_file():
+        if (
+            self.path is not None
+            and not self.is_modified()
+            and not self.other_program_changed_file()
+        ):
             # this is really saved
             content = None
         else:
-            content = self.textwidget.get('1.0', 'end - 1 char')
+            content = self.textwidget.get("1.0", "end - 1 char")
 
-        return _FileTabState(self.path, content, self._saved_state, self.textwidget.index('insert'))
+        return _FileTabState(self.path, content, self._saved_state, self.textwidget.index("insert"))
 
     @classmethod
     def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
-        assert isinstance(state, _FileTabState)   # not namedtuple in older porcupines
+        assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
         if state.content is None:
             # nothing has changed since saving, read from the saved file
@@ -760,6 +813,6 @@ bers.py>` use this attribute.
         self._saved_state = state.saved_state
         self._update_titles()
 
-        self.textwidget.mark_set('insert', state.cursor_pos)
-        self.textwidget.see('insert linestart')
+        self.textwidget.mark_set("insert", state.cursor_pos)
+        self.textwidget.see("insert linestart")
         return self

@@ -61,6 +61,15 @@ if {[tk windowingsystem] == "aqua"} {
     event add "<<TabClosing:HeaderClickClose>>" <Button-2>
 }
 
+# sort plugin
+event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
+
+# poppingtabs plugin
+event add "<<Menubar:View/Pop Tab>>" <Control-P>
+
+# directory tree plugin (don't use <Alt-t>, see #425)
+event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
+
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
 # I use non-shifted ctrl+t for swapping two characters before cursor while editing
@@ -87,6 +96,12 @@ bind Text <$contmand-Button-1> {}
 # Also, by default, Control+Slash selects all and Control+A goes to beginning.
 event delete "<<LineStart>>" <$contmand-a>
 event add "<<SelectAll>>" <$contmand-a>
+
+# Don't select all the way to end (issue #382)
+bind Text <<SelectAll>> {
+    %W tag remove sel 1.0 end
+    %W tag add sel 1.0 {end - 1 char}
+}
 
 bind Text <$contmand-Delete> {
     try {%W delete sel.first sel.last} on error {} {
@@ -138,4 +153,37 @@ bind Text <Shift-$contmand-BackSpace> {
 # When pasting, delete what was selected. Here + adds to end of existing binding.
 bind Text <<Paste>> {+
     catch {%W delete sel.first sel.last}
+}
+
+# Alt and arrow keys to scroll
+set scroll_amount 2
+bind Text <Alt-Up> {
+    %W yview scroll -$scroll_amount units
+    %W mark set insert @0,[expr [winfo height %W] / 2]
+}
+bind Text <Alt-Down> {
+    %W yview scroll $scroll_amount units
+    %W mark set insert @0,[expr [winfo height %W] / 2]
+}
+
+# Do not do weird stuff when selecting text with shift+click. See #429
+bind Text <Shift-Button-1> {
+    if {[%W tag ranges sel] == ""} {
+        set select_between_clicked_and_this [%W index insert]
+    } else {
+        # Something already selected, keep the end of selection where cursor is not
+        if {[%W index insert] == [%W index sel.first]} {
+            set select_between_clicked_and_this [%W index sel.last]
+        } else {
+            set select_between_clicked_and_this [%W index sel.first]
+        }
+    }
+
+    %W mark set insert @%x,%y
+    %W tag remove sel 1.0 end
+    if {[%W compare insert < $select_between_clicked_and_this]} {
+        %W tag add sel insert $select_between_clicked_and_this
+    } else {
+        %W tag add sel $select_between_clicked_and_this insert
+    }
 }

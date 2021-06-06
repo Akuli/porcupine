@@ -15,16 +15,16 @@ from porcupine import get_tab_manager, tabs, textwidget, utils
 
 
 def on_tab_key(event: tkinter.Event[textwidget.MainText], shift_pressed: bool) -> utils.BreakOrNone:
-    if not event.widget.tag_ranges('sel'):
+    if not event.widget.tag_ranges("sel"):
         # nothing selected
         if shift_pressed:
-            event.widget.dedent('insert')
+            event.widget.dedent("insert")
         else:
-            event.widget.indent('insert')
+            event.widget.indent("insert")
 
     # don't insert a tab when it's not supposed to be inserted, or if
     # shift is pressed down, don't move focus out of the widget
-    return 'break'
+    return "break"
 
 
 def on_new_tab(tab: tabs.Tab) -> None:

@@ -9,7 +9,9 @@
 #
 #    filename_patterns
 #        List of strings with * used as wildcard, such as "*.py" to match files
-#        named "something.py".
+#        named "something.py". You can also specify "foo/*.py" to only match
+#        Python files inside a folder named foo, but you must use forward
+#        slashes for this, even on Windows.
 #
 #    shebang_regex
 #        Regular expression checked against the first line of a file when no
@@ -241,6 +243,7 @@ shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
 commands = {run = "bash {file}"}
 comment_prefix = '#'
+autoindent_regexes = {dedent = '(return|exit)( .+)?|break|continue|;;', indent = '[^()]+\)|.*\b(then|do|else|in)'}
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
@@ -271,6 +274,7 @@ pygments_lexer = "pygments.lexers.RstLexer"
 [Markdown]
 filename_patterns = ["*.md", "*.markdown"]
 pygments_lexer = "pygments.lexers.MarkdownLexer"
+autoindent_regexes = {dedent = '.*\.', indent = '^([0-9]+\.|-) .*'}
 
 [YAML]
 filename_patterns = ["*.yml", "*.yaml"]

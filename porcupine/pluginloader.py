@@ -64,6 +64,7 @@ class Status(enum.Enum):
         should be set up before *A*, then *A*, *B* and *C* will all fail with
         ``CIRCULAR_DEPENDENCY_ERROR``.
     """
+
     LOADING = enum.auto()
     ACTIVE = enum.auto()
     DISABLED_BY_SETTINGS = enum.auto()
@@ -94,6 +95,7 @@ class PluginInfo:
         * If *status* is ``CIRCULAR_DEPENDENCY_ERROR``, then *error* is a
           user-readable one-line message.
     """
+
     name: str
     came_with_porcupine: bool
     status: Status
@@ -110,7 +112,7 @@ def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.Argum
     assert info.status == Status.LOADING
     assert info.module is not None
 
-    if hasattr(info.module, 'setup_argument_parser'):
+    if hasattr(info.module, "setup_argument_parser"):
         start = time.perf_counter()
         try:
             info.module.setup_argument_parser(parser)
@@ -120,7 +122,7 @@ def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.Argum
             info.error = traceback.format_exc()
 
         duration = time.perf_counter() - start
-        log.debug("ran %s.setup_argument_parser() in %.3f milliseconds", info.name, duration*1000)
+        log.debug("ran %s.setup_argument_parser() in %.3f milliseconds", info.name, duration * 1000)
 
 
 def _import_plugin(info: PluginInfo) -> None:
@@ -131,9 +133,9 @@ def _import_plugin(info: PluginInfo) -> None:
     start = time.perf_counter()
 
     try:
-        info.module = importlib.import_module(f'porcupine.plugins.{info.name}')
-        setup_before = set(getattr(info.module, 'setup_before', []))
-        setup_after = set(getattr(info.module, 'setup_after', []))
+        info.module = importlib.import_module(f"porcupine.plugins.{info.name}")
+        setup_before = set(getattr(info.module, "setup_before", []))
+        setup_after = set(getattr(info.module, "setup_after", []))
     except Exception:
         log.exception(f"can't import porcupine.plugins.{info.name}")
         info.status = Status.IMPORT_FAILED
@@ -147,7 +149,7 @@ def _import_plugin(info: PluginInfo) -> None:
             _dependencies[dep_info].add(info)
 
     duration = time.perf_counter() - start
-    log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration*1000)
+    log.debug("imported porcupine.plugins.%s in %.3f milliseconds", info.name, duration * 1000)
 
 
 # Remember to generate <<PluginsLoaded>> when this succeeds
@@ -166,7 +168,7 @@ def _run_setup(info: PluginInfo) -> None:
         info.status = Status.ACTIVE
 
     duration = time.perf_counter() - start
-    log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration*1000)
+    log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
 
 
 def _did_plugin_come_with_porcupine(finder: object) -> bool:
@@ -174,7 +176,7 @@ def _did_plugin_come_with_porcupine(finder: object) -> bool:
 
 
 # workaround for #328
-_plugins_that_no_longer_exist = {'overview', 'drag_to_open', 'xbutton'}
+_plugins_that_no_longer_exist = {"overview", "drag_to_open", "xbutton"}
 
 
 # undocumented on purpose, don't use in plugins
@@ -189,7 +191,7 @@ def import_plugins(disabled_on_command_line: List[str]) -> None:
             error=None,
         )
         for finder, name, is_pkg in pkgutil.iter_modules(plugin_paths)
-        if name not in _plugins_that_no_longer_exist and not name.startswith('_')
+        if name not in _plugins_that_no_longer_exist and not name.startswith("_")
     )
     _dependencies.update({info: set() for info in plugin_infos})
 
@@ -197,7 +199,7 @@ def import_plugins(disabled_on_command_line: List[str]) -> None:
         # If it's disabled in settings and on command line, then status is set
         # to DISABLED_BY_SETTINGS. This makes more sense for the user of the
         # plugin manager dialog.
-        if info.name in settings.get('disabled_plugins', List[str]):
+        if info.name in settings.get("disabled_plugins", List[str]):
             info.status = Status.DISABLED_BY_SETTINGS
             continue
         if info.name in disabled_on_command_line:
@@ -241,14 +243,14 @@ def run_setup_functions(shuffle: bool) -> None:
 
         for info in set(imported_infos) - set(loading_order):
             info.status = Status.CIRCULAR_DEPENDENCY_ERROR
-            parts = ', '.join(f"{a} depends on {b}" for a, b in e.data.items())
+            parts = ", ".join(f"{a} depends on {b}" for a, b in e.data.items())
             info.error = f"Circular dependency error: {parts}"
 
     for info in loading_order:
         assert info.status == Status.LOADING
         _run_setup(info)
 
-    get_main_window().event_generate('<<PluginsLoaded>>')
+    get_main_window().event_generate("<<PluginsLoaded>>")
 
 
 def can_setup_while_running(info: PluginInfo) -> bool:
@@ -270,12 +272,11 @@ def can_setup_while_running(info: PluginInfo) -> bool:
 
     # If a plugin defines setup_argument_parser, it likely wants it to run on
     # startup, and now it's too late.
-    if hasattr(info.module, 'setup_argument_parser'):
+    if hasattr(info.module, "setup_argument_parser"):
         return False
 
     return not any(
-        info.status == Status.ACTIVE and info in deps
-        for info, deps in _dependencies.items()
+        info.status == Status.ACTIVE and info in deps for info, deps in _dependencies.items()
     )
 
 
@@ -295,4 +296,4 @@ def setup_while_running(info: PluginInfo) -> None:
     _run_setup(info)
     assert info.status != Status.LOADING
     if info.status == Status.ACTIVE:
-        get_main_window().event_generate('<<PluginsLoaded>>')
+        get_main_window().event_generate("<<PluginsLoaded>>")
