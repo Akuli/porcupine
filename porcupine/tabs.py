@@ -600,16 +600,10 @@ bers.py>` use this attribute.
 
         modified_before = self.is_modified()
 
-        # Reloading can be undoed with Ctrl+Z
-        self.textwidget.config(autoseparators=False)
-        try:
-            self.textwidget.edit_separator()
+        with textwidget.change_batch(self.textwidget):
             self.textwidget.replace(
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
             )
-            self.textwidget.edit_separator()
-        finally:
-            self.textwidget.config(autoseparators=True)
 
         self._set_saved_state(stat_result)
 
