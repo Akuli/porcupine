@@ -410,7 +410,7 @@ def test_replace_this_match(filetab_and_finder):
     assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar baz"
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=True)
 def test_replace_this_greyed_out(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert("end", "foo bar foo")
