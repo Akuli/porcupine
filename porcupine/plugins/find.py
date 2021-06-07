@@ -163,6 +163,7 @@ class Finder(ttk.Frame):
             self.find_entry.focus_set()
 
         self.highlight_all_matches()
+        self.update_idletasks()
 
     def hide(self, junk: object = None) -> None:
         self._textwidget.tag_remove("find_highlight", "1.0", "end")
