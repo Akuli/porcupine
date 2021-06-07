@@ -3,6 +3,7 @@
 # plugins using Porcupine, so Porcupine must run if the plugins are
 # broken
 from __future__ import annotations
+
 import argparse
 import dataclasses
 import enum
