@@ -52,8 +52,26 @@ class Status(enum.Enum):
 
     .. data:: SETUP_FAILED
 
-        The plugin was imported successfully, but calling its ``setup()``
-        function raised an error.
+        The plugin was imported successfully, but its ``setup()`` function
+        raised an exception or logged an error.
+
+        In a plugin named ``foo``, any message logged with severity ``ERROR``
+        or ``CRITICAL`` to the logger named ``porcupine.plugins.foo`` counts as
+        logging an error. Therefore you can do this::
+
+            import logging
+
+            log = logging.getLogger(__name__)  # __name__ == "porcupine.plugins.foo"
+
+            def setup() -> None:
+                if bar_is_installed:
+                    ...
+                else:
+                    log.error("bar is not installed")
+
+        When bar is not installed, this plugin will show a one-line error
+        message in the plugin manager and the terminal. If an exception is
+        raised, the full traceback is shown instead.
 
     .. data:: CIRCULAR_DEPENDENCY_ERROR
 
