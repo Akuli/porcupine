@@ -101,6 +101,7 @@ class PluginInfo:
     status: Status
     module: Optional[Any]
     error: Optional[str]
+    setup_log: List[logging.LogRecord]
 
 
 _mutable_plugin_infos: List[PluginInfo] = []
@@ -157,18 +158,24 @@ def _run_setup(info: PluginInfo) -> None:
     assert info.status == Status.LOADING
     assert info.module is not None
 
+    logger = logging.getLogger(f"porcupine.plugins.{info.name}")
+    handler = logging.Handler()
+    handler.emit = info.setup_log.append
+    logger.addHandler(handler)
+
     start = time.perf_counter()
     try:
         info.module.setup()
     except Exception:
-        log.exception(f"{info.name}.setup() doesn't work")
+        logger.exception(f"{info.name}.setup() doesn't work")
         info.status = Status.SETUP_FAILED
         info.error = traceback.format_exc()
     else:
         info.status = Status.ACTIVE
 
     duration = time.perf_counter() - start
-    log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
+    logger.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
+    logger.removeHandler(handler)
 
 
 def _did_plugin_come_with_porcupine(finder: object) -> bool:
@@ -189,6 +196,7 @@ def import_plugins(disabled_on_command_line: List[str]) -> None:
             status=Status.LOADING,
             module=None,
             error=None,
+            setup_log=[],
         )
         for finder, name, is_pkg in pkgutil.iter_modules(plugin_paths)
         if name not in _plugins_that_no_longer_exist and not name.startswith("_")

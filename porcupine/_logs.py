@@ -7,10 +7,10 @@ import subprocess
 import sys
 import threading
 from datetime import datetime, timedelta
-from typing import Any, List, Optional, TextIO, cast
+from typing import Any, List, Optional, TextIO, cast, Tuple
 
 import porcupine
-from porcupine import dirs
+from porcupine import dirs, textwidget
 
 log = logging.getLogger(__name__)
 FILENAME_FIRST_PART_FORMAT = "%Y-%m-%dT%H-%M-%S"
@@ -47,17 +47,22 @@ def _run_command(command: str) -> None:
         log.warning(f"unexpected error when running '{command}'", exc_info=True)
 
 
-def _open_log_file() -> TextIO:
+def _open_log_file() -> Tuple[pathlib.Path, TextIO]:
     timestamp = datetime.now().strftime(FILENAME_FIRST_PART_FORMAT)
     filenames = (
         f"{timestamp}.txt" if i == 0 else f"{timestamp}_{i}.txt" for i in itertools.count()
     )
     for filename in filenames:
+        path = pathlib.Path(dirs.user_log_dir) / filename
         try:
-            return (pathlib.Path(dirs.user_log_dir) / filename).open("x", encoding="utf-8")
+            return (path, path.open("x", encoding="utf-8"))
         except FileExistsError:
             continue
     assert False  # makes mypy happy
+
+
+# TODO: document this, maybe rename this file too?
+current_log_path: pathlib.Path
 
 
 # verbose_logger can be:
@@ -67,7 +72,8 @@ def _open_log_file() -> TextIO:
 def setup(verbose_logger: Optional[str]) -> None:
     handlers: List[logging.Handler] = []
 
-    log_file = _open_log_file()
+    global current_log_path
+    current_log_path, log_file = _open_log_file()
     print(f"log file: {log_file.name}")
 
     file_handler = logging.StreamHandler(log_file)

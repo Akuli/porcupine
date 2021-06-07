@@ -19,25 +19,20 @@ def handle_drop(paths_from_tcl: str) -> None:
 def setup() -> None:
     root = get_main_window()
     try:
-        root.tk.eval("package require tkdnd")
+        root.tk.eval("package require tkdndddd")
     except tkinter.TclError:
         log.warning("dragging files to Porcupine won't work because tkdnd isn't installed")
         log.debug("full error:", exc_info=True)
+    else:
+        root.tk.eval(
+            """
+            # https://github.com/petasis/tkdnd/blob/master/demos/simple_target.tcl
+            tkdnd::drop_target register . DND_Files
 
-        # TODO: nicer way to make something show up in pluing manager?
-        global __doc__
-        __doc__ += "\n\nNOTE: This plugin failed to load because tkdnd isn't installed."
-        return
-
-    root.tk.eval(
-        """
-        # https://github.com/petasis/tkdnd/blob/master/demos/simple_target.tcl
-        tkdnd::drop_target register . DND_Files
-
-        # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
-        # _tkinter.TclError: expected integer but got "%#"
-        bind . <<Drop:DND_Files>> {DROPCOMMAND %D}
-        """.replace(
-            "DROPCOMMAND", root.register(handle_drop)
+            # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
+            # _tkinter.TclError: expected integer but got "%#"
+            bind . <<Drop:DND_Files>> {DROPCOMMAND %D}
+            """.replace(
+                "DROPCOMMAND", root.register(handle_drop)
+            )
         )
-    )
