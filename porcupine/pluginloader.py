@@ -158,9 +158,11 @@ def _run_setup(info: PluginInfo) -> None:
     assert info.status == Status.LOADING
     assert info.module is not None
 
+    error_log = []
     logger = logging.getLogger(f"porcupine.plugins.{info.name}")
     handler = logging.Handler()
-    handler.emit = info.setup_log.append
+    handler.setLevel(logging.ERROR)
+    handler.emit = error_log.append
     logger.addHandler(handler)
 
     start = time.perf_counter()
@@ -171,10 +173,15 @@ def _run_setup(info: PluginInfo) -> None:
         info.status = Status.SETUP_FAILED
         info.error = traceback.format_exc()
     else:
-        info.status = Status.ACTIVE
+        if error_log:
+            info.status = Status.SETUP_FAILED
+            info.error = "".join(f"{record.levelname}: {record.message}\n" for record in error_log)
+        else:
+            info.status = Status.ACTIVE
 
     duration = time.perf_counter() - start
     logger.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
+
     logger.removeHandler(handler)
 
 

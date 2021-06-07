@@ -19,9 +19,9 @@ def handle_drop(paths_from_tcl: str) -> None:
 def setup() -> None:
     root = get_main_window()
     try:
-        root.tk.eval("package require tkdndddd")
+        root.tk.eval("package require tkdnd")
     except tkinter.TclError:
-        log.warning("dragging files to Porcupine won't work because tkdnd isn't installed")
+        log.error("dragging files to Porcupine won't work because tkdnd isn't installed")
         log.debug("full error:", exc_info=True)
     else:
         root.tk.eval(
