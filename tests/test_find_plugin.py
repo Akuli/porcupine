@@ -383,3 +383,41 @@ def test_highlight_text(filetab_and_finder):
 
     assert finder.find_entry.get() == "foo"
     assert finder.find_entry.selection_present()
+
+
+def test_undo_replace_all(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "foo bar foo")
+    finder.find_entry.insert("end", "foo")
+
+    finder.replace_entry.insert("end", "baz")
+    finder.replace_all_button.invoke()
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "baz bar baz"
+    filetab.textwidget.edit_undo()
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar foo"
+
+
+def test_replace_this_match(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "foo bar baz")
+    finder.find_entry.insert("end", "bar")
+    finder.replace_entry.insert("end", "lol")
+
+    finder.next_button.invoke()
+    finder.replace_this_button.invoke()
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo lol baz"
+    filetab.textwidget.edit_undo()
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar baz"
+
+
+@pytest.mark.xfail
+def test_replace_this_greyed_out(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "foo bar foo")
+    filetab.textwidget.mark_set("insert", "1.0")
+    filetab.textwidget.tag_add("sel", "1.0", "1.3")  # Select foo so it goes to find entry
+    finder.find_entry.insert("end", "foo")
+    finder.show()
+
+    finder.replace_entry.insert("end", "baz")
+    assert str(finder.replace_this_button["state"]) == "disabled"

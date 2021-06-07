@@ -15,7 +15,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import get_tab_manager, images, menubar, tabs
+from porcupine import get_tab_manager, images, menubar, tabs, textwidget
 
 finders: weakref.WeakKeyDictionary[tabs.FileTab, Finder] = weakref.WeakKeyDictionary()
 
@@ -312,7 +312,9 @@ class Finder(ttk.Frame):
         start, end = self._textwidget.tag_ranges("sel")
         self._textwidget.tag_remove("find_highlight", start, end)
         self._update_buttons()
-        self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+
+        with textwidget.change_batch(self._textwidget):
+            self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
 
         self._textwidget.mark_set("insert", start)
         self._go_to_next_match()
@@ -329,10 +331,12 @@ class Finder(ttk.Frame):
     def _replace_all(self, junk: object = None) -> Literal["break"]:
         match_ranges = self.get_match_ranges()
 
-        # must do this backwards because replacing may screw up indexes AFTER
-        # the replaced place
-        for start, end in reversed(match_ranges):
-            self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+        with textwidget.change_batch(self._textwidget):
+            # must do this backwards because replacing may screw up indexes AFTER
+            # the replaced place
+            for start, end in reversed(match_ranges):
+                self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+
         self._textwidget.tag_remove("find_highlight", "1.0", "end")
         self._update_buttons()
 
