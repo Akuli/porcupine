@@ -2,7 +2,7 @@
 # many things are wrapped in try/except here to allow writing Porcupine
 # plugins using Porcupine, so Porcupine must run if the plugins are
 # broken
-
+from __future__ import annotations
 import argparse
 import dataclasses
 import enum
@@ -157,11 +157,11 @@ def _run_setup(info: PluginInfo) -> None:
     assert info.status == Status.LOADING
     assert info.module is not None
 
-    error_log = []
+    error_log: list[logging.LogRecord] = []
     logger = logging.getLogger(f"porcupine.plugins.{info.name}")
     handler = logging.Handler()
     handler.setLevel(logging.ERROR)
-    handler.emit = error_log.append
+    handler.emit = error_log.append  # type: ignore
     logger.addHandler(handler)
 
     start = time.perf_counter()
