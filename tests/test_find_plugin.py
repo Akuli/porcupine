@@ -385,6 +385,22 @@ def test_highlight_text(filetab_and_finder):
     assert finder.find_entry.selection_present()
 
 
+def test_highight_on_undo(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "foo")
+    finder.find_entry.insert("end", "foo")
+
+    finder.replace_entry.insert("end", "baz")
+    finder.replace_all_button.invoke()
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "baz"
+    filetab.update()
+    filetab.textwidget.event_generate("<<Undo>>")
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo"
+    filetab.update()
+    print(filetab.textwidget.tag_ranges("find_highlight"))
+    assert filetab.textwidget.tag_ranges("find_highlight")
+
+
 def test_undo_replace_all(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert("end", "foo bar foo")
