@@ -2,6 +2,7 @@
 # many things are wrapped in try/except here to allow writing Porcupine
 # plugins using Porcupine, so Porcupine must run if the plugins are
 # broken
+from __future__ import annotations
 
 import argparse
 import dataclasses
@@ -52,8 +53,26 @@ class Status(enum.Enum):
 
     .. data:: SETUP_FAILED
 
-        The plugin was imported successfully, but calling its ``setup()``
-        function raised an error.
+        The plugin was imported successfully, but its ``setup()`` function
+        raised an exception or logged an error.
+
+        In a plugin named ``foo``, any message logged with severity ``ERROR``
+        or ``CRITICAL`` to the logger named ``porcupine.plugins.foo`` counts as
+        logging an error. Therefore you can do this::
+
+            import logging
+
+            log = logging.getLogger(__name__)  # __name__ == "porcupine.plugins.foo"
+
+            def setup() -> None:
+                if bar_is_installed:
+                    ...
+                else:
+                    log.error("bar is not installed")
+
+        When bar is not installed, this plugin will show a one-line error
+        message in the plugin manager and the terminal. If an exception is
+        raised, the full traceback is shown instead.
 
     .. data:: CIRCULAR_DEPENDENCY_ERROR
 
@@ -157,18 +176,31 @@ def _run_setup(info: PluginInfo) -> None:
     assert info.status == Status.LOADING
     assert info.module is not None
 
+    error_log: list[logging.LogRecord] = []
+    logger = logging.getLogger(f"porcupine.plugins.{info.name}")
+    handler = logging.Handler()
+    handler.setLevel(logging.ERROR)
+    handler.emit = error_log.append  # type: ignore
+    logger.addHandler(handler)
+
     start = time.perf_counter()
     try:
         info.module.setup()
     except Exception:
-        log.exception(f"{info.name}.setup() doesn't work")
+        logger.exception(f"{info.name}.setup() doesn't work")
         info.status = Status.SETUP_FAILED
         info.error = traceback.format_exc()
     else:
-        info.status = Status.ACTIVE
+        if error_log:
+            info.status = Status.SETUP_FAILED
+            info.error = "".join(f"{record.levelname}: {record.message}\n" for record in error_log)
+        else:
+            info.status = Status.ACTIVE
 
     duration = time.perf_counter() - start
-    log.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
+    logger.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
+
+    logger.removeHandler(handler)
 
 
 def _did_plugin_come_with_porcupine(finder: object) -> bool:
