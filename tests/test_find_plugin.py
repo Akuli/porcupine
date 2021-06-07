@@ -397,7 +397,6 @@ def test_highight_on_undo(filetab_and_finder):
     filetab.textwidget.event_generate("<<Undo>>")
     assert filetab.textwidget.get("1.0", "end - 1 char") == "foo"
     filetab.update()
-    print(filetab.textwidget.tag_ranges("find_highlight"))
     assert filetab.textwidget.tag_ranges("find_highlight")
 
 
