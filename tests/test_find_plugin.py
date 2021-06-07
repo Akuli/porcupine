@@ -395,3 +395,16 @@ def test_undo_replace_all(filetab_and_finder):
     assert filetab.textwidget.get("1.0", "end - 1 char") == "baz bar baz"
     filetab.textwidget.edit_undo()
     assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar foo"
+
+
+def test_replace_this_match(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "foo bar baz")
+    finder.find_entry.insert("end", "bar")
+    finder.replace_entry.insert("end", "lol")
+
+    finder.next_button.invoke()
+    finder.replace_this_button.invoke()
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo lol baz"
+    filetab.textwidget.edit_undo()
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar baz"
