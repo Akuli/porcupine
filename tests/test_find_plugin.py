@@ -411,7 +411,7 @@ def test_replace_this_match(filetab_and_finder):
 
 
 @pytest.mark.xfail
-def replace_this_greyed_out(filetab_and_finder):
+def test_replace_this_greyed_out(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert("end", "foo bar foo")
     filetab.textwidget.mark_set("insert", "1.0")
