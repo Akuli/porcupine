@@ -389,7 +389,7 @@ def test_find_undo(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert("end", "foo bar foo")
     filetab.textwidget.mark_set("insert", "1.0")
-    filetab.textwidget.tag_add("sel", "1.0", "1.3")
+    filetab.textwidget.tag_add("sel", "1.0", "1.3")  # Select foo so it goes to find entry
     finder.find_entry.insert("end", "foo")
     finder.show()
 
