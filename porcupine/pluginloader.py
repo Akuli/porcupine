@@ -101,7 +101,6 @@ class PluginInfo:
     status: Status
     module: Optional[Any]
     error: Optional[str]
-    setup_log: List[logging.LogRecord]
 
 
 _mutable_plugin_infos: List[PluginInfo] = []
@@ -203,7 +202,6 @@ def import_plugins(disabled_on_command_line: List[str]) -> None:
             status=Status.LOADING,
             module=None,
             error=None,
-            setup_log=[],
         )
         for finder, name, is_pkg in pkgutil.iter_modules(plugin_paths)
         if name not in _plugins_that_no_longer_exist and not name.startswith("_")
