@@ -186,6 +186,15 @@ Here is a list of the commands I use when developing Porcupine:
     See [#472](https://github.com/Akuli/porcupine/issues/472).
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
+    A good way to debug a test to see what is actually going on is to add traces.
+    It pauses the test to show you the current state of the program.
+      - Use `import pdb` to implement the functionality
+      - Use `pdb.set_trace()` to set the pause points in the program. You can
+        set as many as you like. (A good way is to use `import pdb; pdb.set_trace()`
+        for the first pause and `pdb.set_trace()` for successive pauses)
+      - When the test pauses, type `cont` in terminal to continue the test.
+      - If you at any time need to interact with the program during the pause,
+        type `interact` in terminal. Exit interactive mode with `ctrl + D`.
 - Code formatting tools: `black porcupine/` and `isort porcupine/`
 - To see a report of test coverage, add `--cov=porcupine` to the above pytest
   command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
