@@ -408,3 +408,16 @@ def test_replace_this_match(filetab_and_finder):
     assert filetab.textwidget.get("1.0", "end - 1 char") == "foo lol baz"
     filetab.textwidget.edit_undo()
     assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar baz"
+
+
+@pytest.mark.xfail
+def replace_this_greyed_out(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "foo bar foo")
+    filetab.textwidget.mark_set("insert", "1.0")
+    filetab.textwidget.tag_add("sel", "1.0", "1.3")  # Select foo so it goes to find entry
+    finder.find_entry.insert("end", "foo")
+    finder.show()
+
+    finder.replace_entry.insert("end", "baz")
+    assert str(finder.replace_this_button["state"]) == "disabled"
