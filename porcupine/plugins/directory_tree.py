@@ -20,6 +20,7 @@ from porcupine import (
     tabs,
     utils,
 )
+from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)
 
@@ -123,14 +124,29 @@ class DirectoryTree(ttk.Treeview):
             self._last_click_time = event.time
         return "break"
 
+    # TODO: use this more instead of utils.get_project_root(), better for nested projects
+    def get_project_item(self, item):
+        # Item named empty string contains the projects
+        while self.parent(item):
+            item = self.parent(item)
+        return item
+
     def on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str:
         self.tk.call("focus", self)
 
         item = self.identify_row(event.y)
         self.set_the_selection_correctly(item)
 
-        print(item)
-        print(self.item(item))
+        path = self.get_path(item)
+        project_root = self.get_path(self.get_project_item(item))
+        if python_venv.is_venv(path) and python_venv.get_venv(project_root) != path:
+            menu = tkinter.Menu(tearoff=False)
+            menu.add_command(
+                label="Use this Python virtualenv",
+                command=partial(python_venv.set_venv, project_root, path),
+            )
+            menu.tk_popup(event.x_root, event.y_root)
+            menu.bind("<Unmap>", (lambda event: menu.after_idle(menu.destroy)), add=True)
         return "break"
 
     def open_selected_file_or_dir(self, event: object = None) -> None:

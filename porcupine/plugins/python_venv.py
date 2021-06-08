@@ -52,7 +52,7 @@ def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
 
 
 def set_venv(project_root: pathlib.Path, venv: pathlib.Path) -> None:
-    assert is_venv(venv)
+    assert is_venv(venv), venv
     custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
     custom_paths[str(project_root)] = str(venv)
     settings.set_("python_venvs", custom_paths)
