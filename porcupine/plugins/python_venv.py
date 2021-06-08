@@ -37,7 +37,7 @@ def _find_venv(project_root: pathlib.Path) -> pathlib.Path | None:
 
 
 def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
-    assert project_root.is_dir()  # If this fails, you probably forgot to use utils.find_project_root()
+    assert project_root.is_dir()
     custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
 
     if str(project_root) in custom_paths:
