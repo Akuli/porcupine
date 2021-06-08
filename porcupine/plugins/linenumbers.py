@@ -14,11 +14,13 @@ def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:
     return any(tkinter.getboolean(v or "false") for v in elide_values)  # type: ignore[no-untyped-call]
 
 
-class LineNumbers:
+class LineNumbers(tkinter.Canvas):
     def __init__(self, parent: tkinter.Misc, textwidget_of_tab: tkinter.Text) -> None:
+        super().__init__(parent, highlightthickness=0)
+        self._update_width()
+
         self.textwidget = textwidget_of_tab
-        self.canvas = tkinter.Canvas(parent, width=40, highlightthickness=0)
-        textwidget.use_pygments_theme(self.canvas, self._set_colors)
+        textwidget.use_pygments_theme(self, self._set_colors)
         utils.add_scroll_command(textwidget_of_tab, "yscrollcommand", self._do_update)
 
         textwidget_of_tab.bind(
@@ -31,23 +33,22 @@ class LineNumbers:
         )  # TODO: document this?
         self._do_update()
 
-        self.canvas.bind("<<SettingChanged:font_family>>", self._update_canvas_width, add=True)
-        self.canvas.bind("<<SettingChanged:font_size>>", self._update_canvas_width, add=True)
-        self._update_canvas_width()
+        self.bind("<<SettingChanged:font_family>>", self._update_width, add=True)
+        self.bind("<<SettingChanged:font_size>>", self._update_width, add=True)
 
         self._clicked_place: Optional[str] = None
-        self.canvas.bind("<Button-1>", self._on_click, add=True)
-        self.canvas.bind("<ButtonRelease-1>", self._on_unclick, add=True)
-        self.canvas.bind("<Double-Button-1>", self._on_double_click, add=True)
-        self.canvas.bind("<Button1-Motion>", self._on_drag, add=True)
+        self.bind("<Button-1>", self._on_click, add=True)
+        self.bind("<ButtonRelease-1>", self._on_unclick, add=True)
+        self.bind("<Double-Button-1>", self._on_double_click, add=True)
+        self.bind("<Button1-Motion>", self._on_drag, add=True)
 
     def _set_colors(self, fg: str, bg: str) -> None:
-        self.canvas.config(background=bg)
+        self.config(background=bg)
         self._text_color = fg
-        self.canvas.itemconfig("all", fill=fg)
+        self.itemconfig("all", fill=fg)
 
     def _do_update(self, junk: object = None) -> None:
-        self.canvas.delete("all")
+        self.delete("all")
 
         first_line = int(self.textwidget.index("@0,0").split(".")[0])
         last_line = int(self.textwidget.index(f"@0,{self.textwidget.winfo_height()}").split(".")[0])
@@ -59,12 +60,12 @@ class LineNumbers:
                 continue
 
             x, y, *junk = dlineinfo
-            self.canvas.create_text(
+            self.create_text(
                 0, y, text=f" {lineno}", anchor="nw", font="TkFixedFont", fill=self._text_color
             )
 
-    def _update_canvas_width(self, junk: object = None) -> None:
-        self.canvas.config(
+    def _update_width(self, junk: object = None) -> None:
+        self.config(
             width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(" 1234 ")
         )
 
@@ -101,8 +102,9 @@ class LineNumbers:
 
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
-        linenumbers = LineNumbers(tab.left_frame, tab.textwidget)
-        linenumbers.canvas.pack(side="left", fill="y")
+        # Use tab.left_frame.winfo_children() and isinstance to access
+        # the LineNumbers instance from another plugin
+        LineNumbers(tab.left_frame, tab.textwidget).pack(side="left", fill="y")
 
 
 def setup() -> None:
