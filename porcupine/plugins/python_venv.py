@@ -40,6 +40,11 @@ def _find_venv(project_root: pathlib.Path) -> pathlib.Path | None:
     return None
 
 
+# mypy+decorator weirdness
+def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
+    ...
+
+
 # TODO: cache is a bit of a hack. Directory tree calls this too much.
 # Focus Porcupine when running with --verbose:
 #
@@ -50,7 +55,7 @@ def _find_venv(project_root: pathlib.Path) -> pathlib.Path | None:
 #       porcupine.plugins.directory_tree DEBUG: refreshing done in 153ms
 #       porcupine.plugins.directory_tree DEBUG: refreshing done in 149ms
 #   Yes, it does it twice. That's another bug.
-@ttl_cache(ttl=0.100, maxsize=10)
+@ttl_cache(ttl=0.100, maxsize=10)  # type: ignore
 def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
     assert project_root.is_dir()
     custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])

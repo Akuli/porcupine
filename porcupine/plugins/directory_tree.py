@@ -94,13 +94,13 @@ class DirectoryTree(ttk.Treeview):
         self.selection_set(id)  # type: ignore[no-untyped-call]
         self.focus(id)
 
-    def on_click(self, event: tkinter.Event[DirectoryTree]) -> str:
+    def on_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
 
         # Man page says identify_row is "obsolescent" but tkinter doesn't have the new thing yet
-        item = self.identify_row(event.y)
+        item = self.identify_row(event.y)  # type: ignore[no-untyped-call]
         if item is None:
-            return
+            return None
 
         # Couldn't get <Double-Button-1> to work, so I wrote a program to
         # measure max time between double clicks. It's 500ms on my system.
@@ -111,7 +111,7 @@ class DirectoryTree(ttk.Treeview):
             if double_click:
                 self.open_selected_file_or_dir()
         else:
-            little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"
+            little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"  # type: ignore[no-untyped-call]
             if double_click or little_arrow_clicked:
                 self.item(item, open=(not self.item(item, "open")))
                 if self.item(item, "open"):
@@ -126,16 +126,16 @@ class DirectoryTree(ttk.Treeview):
         return "break"
 
     # TODO: use this more instead of utils.get_project_root(), better for nested projects
-    def get_project_item(self, item):
+    def get_project_item(self, item: str) -> str:
         # Item named empty string contains the projects
-        while self.parent(item):
-            item = self.parent(item)
+        while self.parent(item):  # type: ignore[no-untyped-call]
+            item = self.parent(item)  # type: ignore[no-untyped-call]
         return item
 
     def on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str:
         self.tk.call("focus", self)
 
-        item = self.identify_row(event.y)
+        item: str = self.identify_row(event.y)  # type: ignore[no-untyped-call]
         self.set_the_selection_correctly(item)
 
         path = self.get_path(item)
@@ -155,7 +155,7 @@ class DirectoryTree(ttk.Treeview):
             [selected_id] = self.selection()
         except ValueError:
             # nothing selected, can happen when clicking something else than one of the items
-            return "break"
+            return
 
         if self.tag_has("dir", selected_id):
             self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
@@ -172,7 +172,6 @@ class DirectoryTree(ttk.Treeview):
             get_tab_manager().add_tab(
                 tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id))
             )
-        return "break"
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval("ttk::style lookup Treeview -foreground")
