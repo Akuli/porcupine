@@ -54,7 +54,7 @@ def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
 # - After adding cache:
 #       porcupine.plugins.directory_tree DEBUG: refreshing done in 153ms
 #       porcupine.plugins.directory_tree DEBUG: refreshing done in 149ms
-#   Yes, it does it twice. That's another bug.
+#   Yes, it can run twice. That's another perf problem.
 @ttl_cache(ttl=0.100, maxsize=10)  # type: ignore
 def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:  # noqa
     assert project_root.is_dir()
@@ -67,18 +67,22 @@ def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:  # noqa
         log.warning(f"Python venv is no longer valid: {from_settings}")
 
     result = _find_venv(project_root)
-    log.info(f"Using {result} as venv of {project_root}")
-    custom_paths[str(project_root)] = str(result)  # Do not automagically switch to new venvs
+    if result is None:
+        log.info(f"No venv found in {project_root}")
+    else:
+        log.info(f"Using {result} as venv of {project_root}")
+        custom_paths[str(project_root)] = str(result)  # Do not automagically switch to new venvs
+        settings.set_("python_venvs", custom_paths)  # custom_paths is copy
     return result
 
 
 def set_venv(project_root: pathlib.Path, venv: pathlib.Path) -> None:
     assert is_venv(venv), venv
-    custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
+    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
     custom_paths[str(project_root)] = str(venv)
-    settings.set_("python_venvs", custom_paths)
+    settings.set_("python_venvs", custom_paths)  # custom_paths is copy
     log.info(f"Venv of {project_root} set to {venv}")
 
 
 def setup() -> None:
-    settings.add_option("python_venvs", {}, Dict[str, str])  # actually paths, not strings
+    settings.add_option("python_venvs", {}, Dict[str, str])  # paths as strings, for json
