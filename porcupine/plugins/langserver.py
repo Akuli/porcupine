@@ -449,7 +449,7 @@ class LangServer:
                             documentation=get_completion_item_doc(item),
                         )
                         for item in sorted(
-                            lsp_event.completion_list.items,  # type: ignore
+                            lsp_event.completion_list.items,
                             key=(lambda item: item.sortText or item.label),
                         )
                     ],
