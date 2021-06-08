@@ -188,6 +188,7 @@ Here is a list of the commands I use when developing Porcupine:
   while testing, and that's expected.
     A good way to debug a test to see what is actually going on is to add traces.
     It pauses the test to show you the current state of the program.
+
       - Use `import pdb` to implement the functionality
       - Use `pdb.set_trace()` to set the pause points in the program. You can
         set as many as you like. (A good way is to use `import pdb; pdb.set_trace()`
