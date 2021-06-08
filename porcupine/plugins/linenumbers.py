@@ -51,7 +51,9 @@ class LineNumbers(tkinter.Canvas):
         self.delete("all")
 
         first_line = int(self._textwidget.index("@0,0").split(".")[0])
-        last_line = int(self._textwidget.index(f"@0,{self._textwidget.winfo_height()}").split(".")[0])
+        last_line = int(
+            self._textwidget.index(f"@0,{self._textwidget.winfo_height()}").split(".")[0]
+        )
         for lineno in range(first_line, last_line + 1):
             # index('@0,y') doesn't work when scrolled a lot to side, but dlineinfo seems to work
             dlineinfo = self._textwidget.dlineinfo(f"{lineno}.0")
@@ -68,9 +70,7 @@ class LineNumbers(tkinter.Canvas):
         self.event_generate("<<Updated>>")
 
     def _update_width(self, junk: object = None) -> None:
-        self.config(
-            width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(" 1234 ")
-        )
+        self.config(width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(" 1234 "))
 
     def _on_click(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # go to clicked line
