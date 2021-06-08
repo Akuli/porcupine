@@ -188,12 +188,11 @@ Here is a list of the commands I use when developing Porcupine:
   while testing, and that's expected.
     A good way to debug a test to see what is actually going on is to add traces.
     It pauses the test to show you the current state of the program.
-
-      - Use `import pdb` and `pdb.set_trace()` to set the pause points in the test. You can
-        set as many as you like, and it can conveniently be done on one line: `import pdb; pdb.set_trace()`.
-      - When the test pauses, type `cont` in terminal to continue the test.
-      - If you at any time need to interact with the program during the pause,
-        type `interact` in terminal. Exit interactive mode with `ctrl + D`.
+    - Use `import pdb` and `pdb.set_trace()` to set the pause points in the test. You can
+      set as many as you like, and it can conveniently be done on one line: `import pdb; pdb.set_trace()`.
+    - When the test pauses, type `cont` in terminal to continue the test.
+    - If you at any time need to interact with the program during the pause,
+      type `interact` in terminal. Exit interactive mode with `ctrl + D`.
 - Code formatting tools: `black porcupine/` and `isort porcupine/`
 - To see a report of test coverage, add `--cov=porcupine` to the above pytest
   command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
