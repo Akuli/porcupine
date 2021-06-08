@@ -64,6 +64,9 @@ class LineNumbers(tkinter.Canvas):
                 0, y, text=f" {lineno}", anchor="nw", font="TkFixedFont", fill=self._text_color
             )
 
+        # Do this in other plugins: linenumbers.bind("<<Updated>>", do_something, add=True)
+        self.event_generate("<<Updated>>")
+
     def _update_width(self, junk: object = None) -> None:
         self.config(
             width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(" 1234 ")
