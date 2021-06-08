@@ -5,7 +5,6 @@ import sys
 from porcupine.plugins import python_venv
 
 
-
 # This test is slow, because making venvs is slow
 def test_venv_setting(tmp_path):
     assert python_venv.get_venv(tmp_path) is None

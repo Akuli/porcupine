@@ -4,11 +4,14 @@ To choose which venv to use, right-click it in directory tree and select
 "Use this venv".
 """
 from __future__ import annotations
+
 import logging
 import pathlib
-from typing import Dict
 import sys
+from typing import Dict
+
 from cachetools.func import ttl_cache
+
 from porcupine import settings
 
 log = logging.getLogger(__name__)
@@ -69,7 +72,7 @@ def set_venv(project_root: pathlib.Path, venv: pathlib.Path) -> None:
     custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
     custom_paths[str(project_root)] = str(venv)
     settings.set_("python_venvs", custom_paths)
-    log.info(f"Venv of {project_root} set to {env}")
+    log.info(f"Venv of {project_root} set to {venv}")
 
 
 def setup() -> None:

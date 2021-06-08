@@ -109,6 +109,7 @@ def test_get_binding():
             assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=boolean) == "Ctrl+click"
             assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=boolean) == "Ctrl+Enter"
 
+
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
 def test_project_root(tmp_path):
     (tmp_path / "foo").mkdir()
@@ -121,6 +122,3 @@ def test_project_root(tmp_path):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path / "foo"
     subprocess.run("git init -q", cwd=tmp_path, shell=True, check=True)
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
-
-
-

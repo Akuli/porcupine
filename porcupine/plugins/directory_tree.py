@@ -12,10 +12,10 @@ from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from porcupine import (
-    images,
     get_main_window,
     get_paned_window,
     get_tab_manager,
+    images,
     menubar,
     settings,
     tabs,
@@ -235,7 +235,12 @@ class DirectoryTree(ttk.Treeview):
         # Add project to beginning so it won't be hidden soon
         project_item_id = self.insert(
             # TODO: project tag needed? is it even used?
-            "", 0, text=text, values=[root_path], tags=["dir", "project"], open=False
+            "",
+            0,
+            text=text,
+            values=[root_path],
+            tags=["dir", "project"],
+            open=False,
         )
         self._insert_dummy(project_item_id)
         self.hide_old_projects()
