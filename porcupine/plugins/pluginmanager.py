@@ -109,6 +109,9 @@ class PluginDialogContent:
         # I had some trouble getting this to work. With after_idle, this makes
         # the left side invisibly small. With 50ms timeout, it still happened
         # sometimes.
+        #
+        # FIXME: still happens sometimes, but very rarely, more timeout is not
+        # good because it causes slowness
         panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7 * DIALOG_WIDTH)))
 
     def _set_description(self, text: str) -> None:

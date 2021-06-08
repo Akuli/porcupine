@@ -15,7 +15,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import get_tab_manager, images, menubar, tabs
+from porcupine import get_tab_manager, images, menubar, tabs, textwidget
 
 finders: weakref.WeakKeyDictionary[tabs.FileTab, Finder] = weakref.WeakKeyDictionary()
 
@@ -26,9 +26,9 @@ class Finder(ttk.Frame):
     Use the pack geometry manager with this widget.
     """
 
-    def __init__(self, parent: tkinter.Misc, textwidget: tkinter.Text, **kwargs: Any) -> None:
+    def __init__(self, parent: tkinter.Misc, tab_textwidget: tkinter.Text, **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
-        self._textwidget = textwidget
+        self._textwidget = tab_textwidget
 
         # grid layout:
         #         column 0        column 1     column 2        column 3
@@ -112,10 +112,13 @@ class Finder(ttk.Frame):
         closebutton.config(image=images.get("closebutton"))
 
         # explained in test_find_plugin.py
-        textwidget.bind("<<Selection>>", self._update_buttons, add=True)
+        tab_textwidget.bind("<<Selection>>", self._update_buttons, add=True)
 
-        textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
+        tab_textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
         self._config_tags()
+
+        # catch highlight issue after undo
+        tab_textwidget.bind("<<Undo>>", self._handle_undo, add=True)
 
     def _config_tags(self, junk: object = None) -> None:
         # TODO: use more pygments theme instead of hard-coded colors?
@@ -151,6 +154,8 @@ class Finder(ttk.Frame):
 
         if selected_text is None or "\n" in selected_text:
             self.find_entry.focus_set()
+            # when ctrl + f without text selected
+            self.find_entry.selection_range(0, "end")  # type: ignore[no-untyped-call]
         else:
             self.find_entry.delete(0, "end")
             self.find_entry.insert(0, selected_text)  # type: ignore[no-untyped-call]
@@ -310,7 +315,9 @@ class Finder(ttk.Frame):
         start, end = self._textwidget.tag_ranges("sel")
         self._textwidget.tag_remove("find_highlight", start, end)
         self._update_buttons()
-        self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+
+        with textwidget.change_batch(self._textwidget):
+            self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
 
         self._textwidget.mark_set("insert", start)
         self._go_to_next_match()
@@ -327,10 +334,12 @@ class Finder(ttk.Frame):
     def _replace_all(self, junk: object = None) -> Literal["break"]:
         match_ranges = self.get_match_ranges()
 
-        # must do this backwards because replacing may screw up indexes AFTER
-        # the replaced place
-        for start, end in reversed(match_ranges):
-            self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+        with textwidget.change_batch(self._textwidget):
+            # must do this backwards because replacing may screw up indexes AFTER
+            # the replaced place
+            for start, end in reversed(match_ranges):
+                self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+
         self._textwidget.tag_remove("find_highlight", "1.0", "end")
         self._update_buttons()
 
@@ -339,6 +348,10 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel.config(text=f"Replaced {len(match_ranges)} matches.")
         return "break"
+
+    def _handle_undo(self, event: object) -> None:
+        if self.winfo_viewable():
+            self.after_idle(self.highlight_all_matches)
 
 
 def find() -> None:
