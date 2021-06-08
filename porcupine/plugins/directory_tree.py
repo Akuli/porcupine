@@ -76,16 +76,16 @@ class DirectoryTree(ttk.Treeview):
 
         # Needs after_idle because selection hasn't updated when binding runs
         self.bind("<Button-1>", self.on_click, add=True)
-        self.bind("<Button-2>", self.on_right_click, add=True)  # TODO: mac right click = button 3?
+        self.bind("<Button-3>", self.on_right_click, add=True)  # TODO: mac right click = button 2?
 
-        self.bind("<<TreeviewOpen>>", self.open_file_or_dir, add=True)
+        self.bind("<<TreeviewOpen>>", self.open_selected_file_or_dir, add=True)
         self.bind("<<TreeviewSelect>>", self.update_selection_color, add=True)
         self.bind("<<ThemeChanged>>", self._config_tags, add=True)
         self.column("#0", minwidth=500)  # allow scrolling sideways
         self._config_tags()
         self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
 
-        self._last_click_time = 0
+        self._last_click_time = 0  # Very long time since previous click, no double click
         self._last_click_item: str | None = None
 
     def set_the_selection_correctly(self, id: str) -> None:
@@ -93,35 +93,68 @@ class DirectoryTree(ttk.Treeview):
         self.focus(id)
 
     def on_click(self, event: tkinter.Event[DirectoryTree]) -> str:
+        self.tk.call("focus", self)
+
         # Man page says identify_row is "obsolescent" but tkinter doesn't have the new thing yet
         item = self.identify_row(event.y)
         if item is None:
             return
+
+        # Couldn't get <Double-Button-1> to work, so I wrote a program to
+        # measure max time between double clicks. It's 500ms on my system.
+        double_click = event.time - self._last_click_time < 500 and self._last_click_item == item
+
         self.set_the_selection_correctly(item)
+        if self.tag_has("file", item):
+            if double_click:
+                self.open_selected_file_or_dir()
+        else:
+            little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"
+            if double_click or little_arrow_clicked:
+                self.item(item, open=(not self.item(item, "open")))
+                if self.item(item, "open"):
+                    self.open_selected_file_or_dir()
 
-        # Don't know why the usual double-click handling doesn't work. It
-        # didn't work at all when update_selection_color was bound to
-        # <<TreeviewSelect>>, but even without that, it was a bit fragile and
-        # only worked sometimes.
-        #
-        # To find time between the two clicks of double-click, I made a program
-        # that printed times when I clicked.
-        #
-        # TODO: would double-click bind work now that clicking is more custom?
-        if event.time - self._last_click_time < 500 and self._last_click_item == item:
-            # double click
-            self.open_file_or_dir()
-
-        self._last_click_time = event.time
         self._last_click_item = item
+        if double_click:
+            # Prevent getting two double clicks with 3 quick subsequent clicks
+            self._last_click_time = 0
+        else:
+            self._last_click_time = event.time
         return "break"
 
     def on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str:
+        self.tk.call("focus", self)
+
         item = self.identify_row(event.y)
         self.set_the_selection_correctly(item)
 
         print(item)
         print(self.item(item))
+        return "break"
+
+    def open_selected_file_or_dir(self, event: object = None) -> None:
+        try:
+            [selected_id] = self.selection()
+        except ValueError:
+            # nothing selected, can happen when clicking something else than one of the items
+            return "break"
+
+        if self.tag_has("dir", selected_id):
+            self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
+
+            tab = get_tab_manager().select()
+            if (
+                isinstance(tab, tabs.FileTab)
+                and tab.path is not None
+                and self.get_path(selected_id) in tab.path.parents
+            ):
+                # Don't know why after_idle is needed
+                self.after_idle(self.select_file, tab.path)
+        elif self.tag_has("file", selected_id):
+            get_tab_manager().add_tab(
+                tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id))
+            )
         return "break"
 
     def _config_tags(self, junk: object = None) -> None:
@@ -376,29 +409,6 @@ class DirectoryTree(ttk.Treeview):
             1 if "dir" in tags else 2,
             str(path),
         )
-
-    def open_file_or_dir(self, event: object = None) -> None:
-        try:
-            [selected_id] = self.selection()
-        except ValueError:
-            # nothing selected, can happen when double-clicking something else than one of the items
-            return
-
-        if self.tag_has("dir", selected_id):
-            self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
-
-            tab = get_tab_manager().select()
-            if (
-                isinstance(tab, tabs.FileTab)
-                and tab.path is not None
-                and self.get_path(selected_id) in tab.path.parents
-            ):
-                # Don't know why after_idle is needed
-                self.after_idle(self.select_file, tab.path)
-        elif self.tag_has("file", selected_id):
-            get_tab_manager().add_tab(
-                tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id))
-            )
 
     def get_path(self, item_id: str) -> pathlib.Path:
         assert not self.tag_has("dummy", item_id)
