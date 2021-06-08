@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import pathlib
 import subprocess
 import sys
@@ -68,6 +67,16 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
         else:
             log.warning(f"unknown git status line: {repr(line)}")
     return result
+
+
+# Return "potential_parent in path.parents", but faster
+# Yes, this has measurable impact. Try changing it and look at "refreshing done in ...ms" log messages.
+def _has_parent(path, potential_parent):
+    return str(path).startswith(str(potential_parent)) and potential_parent in path.parents
+
+
+from line_profiler import LineProfiler
+profiler = LineProfiler()
 
 
 class DirectoryTree(ttk.Treeview):
@@ -155,15 +164,13 @@ class DirectoryTree(ttk.Treeview):
                 return
 
         # TODO: show long paths more nicely
+        text = str(root_path)
         if pathlib.Path.home() in root_path.parents:
-            text = "~" + os.sep + str(root_path.relative_to(pathlib.Path.home()))
-        else:
-            text = str(root_path)
+            text = text.replace(str(pathlib.Path.home()), "~", 1)
 
         # Add project to beginning so it won't be hidden soon
         project_item_id = self.insert(
-            # TODO: project tag needed? is it even used?
-            "", 0, text=text, values=[root_path], tags=["dir", "project"], open=False
+            "", 0, text=text, values=[root_path], tags=["dir"], open=False
         )
         self._insert_dummy(project_item_id)
         self.hide_old_projects()
@@ -175,10 +182,9 @@ class DirectoryTree(ttk.Treeview):
         self.focus(id)
 
     def select_file(self, path: pathlib.Path) -> None:
-        project_root = utils.find_project_root(path)
-
         for project_root_id in self.get_children():
-            if self.get_path(project_root_id) != project_root:
+            project_root = self.get_path(project_root_id)
+            if not _has_parent(path, project_root):
                 continue
 
             # Find the sub-item representing the file
@@ -269,13 +275,65 @@ class DirectoryTree(ttk.Treeview):
 
         utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
+    def _find_project_id(self, item_id: str) -> str:
+        while True:
+            parent = self.parent(item_id)
+            if not parent:
+                return item_id
+            item_id = parent
+
+    # The following two functions call each other recursively.
+
+    #@profiler
+    def _update_tags_and_content(
+        self, project_root: pathlib.Path, child_path: pathlib.Path, child_id: str
+    ) -> str | None:
+        path_to_status = self.git_statuses[project_root]
+
+        # Search for status, from child_path to project_root inclusive
+        path = child_path
+        while path not in path_to_status and path != project_root:
+            path = path.parent
+
+        try:
+            status: str | None = path_to_status[path]
+        except KeyError:
+            # Handle directories containing files with different statuses
+            child_tags = {
+                status
+                for subpath, status in path_to_status.items()
+                if status in {"git_added", "git_modified", "git_mergeconflict"}
+                and _has_parent(subpath, child_path)
+            }
+            if "git_mergeconflict" in child_tags:
+                status = "git_mergeconflict"
+            elif "git_modified" in child_tags:
+                status = "git_modified"
+            elif "git_added" in child_tags:
+                status = "git_added"
+            else:
+                assert not child_tags
+                status = None
+
+        old_tags = set(self.item(child_id, "tags"))
+        new_tags = old_tags & {"file", "dir"}
+        if status is not None:
+            new_tags.add(status)
+
+        if old_tags != new_tags:
+            self.item(child_id, tags=list(new_tags))
+
+        if "dir" in new_tags and not self._contains_dummy(child_id):
+            self.open_and_refresh_directory(child_path, child_id)
+
+    #@profiler
     def open_and_refresh_directory(self, dir_path: Optional[pathlib.Path], dir_id: str) -> None:
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
 
         path2id = {self.get_path(id): id for id in self.get_children(dir_id)}
         if dir_path is None:
-            # refreshing an entire project
+            # refreshing all projects
             assert not dir_id
             new_paths = set(path2id.keys())
         else:
@@ -296,44 +354,14 @@ class DirectoryTree(ttk.Treeview):
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
 
-        project_roots = set(map(self.get_path, self.get_children()))
-
-        for child_path, child_id in path2id.items():
-            relevant_parents = [child_path]
-            parent_iterator = iter(child_path.parents)
-            while relevant_parents[-1] not in project_roots:
-                relevant_parents.append(next(parent_iterator))
-            git_status = self.git_statuses[relevant_parents[-1]]
-
-            old_tags = set(self.item(child_id, "tags"))
-            new_tags = {tag for tag in old_tags if not tag.startswith("git_")}
-
-            for path in relevant_parents:
-                if path in git_status:
-                    new_tags.add(git_status[path])
-                    break
-            else:
-                # Handle directories containing files with different statuses
-                child_tags = {
-                    status
-                    for subpath, status in git_status.items()
-                    if status in {"git_added", "git_modified", "git_mergeconflict"}
-                    and str(subpath).startswith(str(child_path))  # optimization
-                    and child_path in subpath.parents
-                }
-                if "git_mergeconflict" in child_tags:
-                    new_tags.add("git_mergeconflict")
-                elif "git_modified" in child_tags:
-                    new_tags.add("git_modified")
-                else:
-                    assert len(child_tags) <= 1
-                    new_tags |= child_tags
-
-            if old_tags != new_tags:
-                self.item(child_id, tags=list(new_tags))
-
-            if "dir" in new_tags and not self._contains_dummy(child_id):
-                self.open_and_refresh_directory(child_path, child_id)
+        if dir_path is None:
+            for project_path, project_id in path2id.items():
+                self._update_tags_and_content(project_path, project_path, project_id)
+        else:
+            # Everything is within the same project
+            project_root = self.get_path(self._find_project_id(dir_id))
+            for child_path, child_id in path2id.items():
+                self._update_tags_and_content(project_root, child_path, child_id)
 
         if dir_path is not None:
             assert set(self.get_children(dir_id)) == set(path2id.values())
@@ -469,3 +497,5 @@ def setup() -> None:
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh_everything()
+
+    #tree.after(5000, profiler.print_stats)
