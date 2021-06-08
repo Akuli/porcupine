@@ -109,7 +109,6 @@ def test_get_binding():
             assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=boolean) == "Ctrl+click"
             assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=boolean) == "Ctrl+Enter"
 
-
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
 def test_project_root(tmp_path):
     (tmp_path / "foo").mkdir()
@@ -124,25 +123,4 @@ def test_project_root(tmp_path):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
 
 
-# This test is slow, because making venvs is slow
-def test_venv_creation(tmp_path):
-    (tmp_path / "project").mkdir()
-    (tmp_path / "project" / "README").touch()
-    (tmp_path / "project" / "subdir").mkdir()
-    file1 = tmp_path / "project" / "file1.py"
-    file2 = tmp_path / "project" / "subdir" / "file2.py"
-    file1.touch()
-    file2.touch()
 
-    assert utils.find_python_venv(file1) is None
-    assert utils.find_python_venv(file2) is None
-
-    subprocess.run([sys.executable, "-m", "venv", "fooenv1"], cwd=tmp_path, check=True)
-    assert utils.find_python_venv(file1) is None
-    assert utils.find_python_venv(file2) is None
-
-    # typeshed's CONTRIBUTING.md uses virtual env named .venv3
-    # make sure it detects names starting with dot
-    subprocess.run([sys.executable, "-m", "venv", ".venv3"], cwd=tmp_path / "project", check=True)
-    assert utils.find_python_venv(file1) == tmp_path / "project" / ".venv3"
-    assert utils.find_python_venv(file2) == tmp_path / "project" / ".venv3"

@@ -75,7 +75,8 @@ class DirectoryTree(ttk.Treeview):
         super().__init__(master, selectmode="browse", show="tree", style="DirectoryTree.Treeview")
 
         # Needs after_idle because selection hasn't updated when binding runs
-        self.bind("<Button-1>", (lambda event: self.after_idle(self.on_click, event)), add=True)
+        self.bind("<Button-1>", self.on_click, add=True)
+        self.bind("<Button-2>", self.on_right_click, add=True)  # TODO: mac right click = button 3?
 
         self.bind("<<TreeviewOpen>>", self.open_file_or_dir, add=True)
         self.bind("<<TreeviewSelect>>", self.update_selection_color, add=True)
@@ -85,9 +86,19 @@ class DirectoryTree(ttk.Treeview):
         self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
 
         self._last_click_time = 0
-        self._last_click_selection: Optional[Tuple[str, ...]] = None
+        self._last_click_item: str | None = None
 
-    def on_click(self, event: tkinter.Event[DirectoryTree]) -> None:
+    def set_the_selection_correctly(self, id: str) -> None:
+        self.selection_set(id)  # type: ignore[no-untyped-call]
+        self.focus(id)
+
+    def on_click(self, event: tkinter.Event[DirectoryTree]) -> str:
+        # Man page says identify_row is "obsolescent" but tkinter doesn't have the new thing yet
+        item = self.identify_row(event.y)
+        if item is None:
+            return
+        self.set_the_selection_correctly(item)
+
         # Don't know why the usual double-click handling doesn't work. It
         # didn't work at all when update_selection_color was bound to
         # <<TreeviewSelect>>, but even without that, it was a bit fragile and
@@ -95,13 +106,23 @@ class DirectoryTree(ttk.Treeview):
         #
         # To find time between the two clicks of double-click, I made a program
         # that printed times when I clicked.
-        selection = self.selection()
-        if event.time - self._last_click_time < 500 and self._last_click_selection == selection:
+        #
+        # TODO: would double-click bind work now that clicking is more custom?
+        if event.time - self._last_click_time < 500 and self._last_click_item == item:
             # double click
             self.open_file_or_dir()
 
         self._last_click_time = event.time
-        self._last_click_selection = selection
+        self._last_click_item = item
+        return "break"
+
+    def on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str:
+        item = self.identify_row(event.y)
+        self.set_the_selection_correctly(item)
+
+        print(item)
+        print(self.item(item))
+        return "break"
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval("ttk::style lookup Treeview -foreground")
@@ -168,10 +189,6 @@ class DirectoryTree(ttk.Treeview):
         self.hide_old_projects()
         if refresh:
             self.refresh_everything()
-
-    def set_the_selection_correctly(self, id: str) -> None:
-        self.selection_set(id)  # type: ignore[no-untyped-call]
-        self.focus(id)
 
     def select_file(self, path: pathlib.Path) -> None:
         project_root = utils.find_project_root(path)

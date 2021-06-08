@@ -181,40 +181,6 @@ def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
     return likely_root or project_file_path.parent
 
 
-def _looks_like_venv(path: pathlib.Path) -> bool:
-    landmarks = [path / "pyvenv.cfg"]
-    if sys.platform == "win32":
-        landmarks.append(path / "Scripts" / "activate.bat")
-        landmarks.append(path / "Scripts" / "python.exe")
-    else:
-        landmarks.append(path / "bin" / "activate")
-        landmarks.append(path / "bin" / "python3")
-
-    return all(landmark.exists() for landmark in landmarks)
-
-
-# TODO: document this
-def find_python_venv(project_file_path: pathlib.Path) -> pathlib.Path | None:
-    project_root = find_project_root(project_file_path)
-
-    for parent in project_file_path.parents:
-        possible_envs = [path for path in parent.glob("*env*") if _looks_like_venv(path)]
-        if len(possible_envs) >= 2:
-            log.warning(
-                "Found several possible virtual envs to choose from, choosing first one: "
-                + ", ".join(map(str, possible_envs))
-            )
-        if possible_envs:
-            return possible_envs[0]
-
-        # Do not search beyond project root, but look in project root
-        if parent == project_root:
-            break
-
-    log.debug(f"no virtualenvs found, checked from {project_file_path.parent} to {project_root}")
-    return None
-
-
 # i know, i shouldn't do math with rgb colors, but this is good enough
 def invert_color(color: str, *, black_or_white: bool = False) -> str:
     """Return a color with opposite red, green and blue values.
