@@ -55,8 +55,8 @@ def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
 #       porcupine.plugins.directory_tree DEBUG: refreshing done in 153ms
 #       porcupine.plugins.directory_tree DEBUG: refreshing done in 149ms
 #   Yes, it can run twice. That's another perf problem.
-@ttl_cache(ttl=0.100, maxsize=10)  # type: ignore
-def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:  # noqa
+@ttl_cache(ttl=0.100, maxsize=10)  # noqa  # type: ignore
+def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
     assert project_root.is_dir()
     custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
 
