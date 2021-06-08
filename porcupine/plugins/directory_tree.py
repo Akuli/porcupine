@@ -162,6 +162,7 @@ class DirectoryTree(ttk.Treeview):
 
         # Add project to beginning so it won't be hidden soon
         project_item_id = self.insert(
+            # TODO: project tag needed? is it even used?
             "", 0, text=text, values=[root_path], tags=["dir", "project"], open=False
         )
         self._insert_dummy(project_item_id)
@@ -238,6 +239,7 @@ class DirectoryTree(ttk.Treeview):
         self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)
     ) -> None:
         log.debug("refreshing begins")
+        start_time = time.time()
         self.hide_old_projects()
 
         # This must not be an iterator, otherwise thread calls self.get_path which does tkinter stuff
@@ -254,7 +256,7 @@ class DirectoryTree(ttk.Treeview):
                 self.git_statuses = result
                 self.open_and_refresh_directory(None, "")
                 self.update_selection_color()
-                log.debug("refreshing done")
+                log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 when_done()
             elif success:
                 log.info(
