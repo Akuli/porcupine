@@ -9,7 +9,7 @@ import pathlib
 from typing import Dict
 import sys
 
-from porcupine import settings
+from porcupine import settings, get_main_window
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,8 @@ def _find_venv(project_root: pathlib.Path) -> pathlib.Path | None:
     # that contain several subfolders with their own venvs?
     possible_envs = [path for path in project_root.glob("*env*") if is_venv(path)]
     if possible_envs:
-        return min(possible_envs)  # Consistent result
+        # Pick one consistently. Prefer shorter: env instead of env-old.
+        return min(possible_envs, key=(lambda e: (len(str(e)), e)))
     log.debug(f"no virtualenvs found in {project_root}")
     return None
 
@@ -41,12 +42,13 @@ def get_venv(project_root: pathlib.Path) -> pathlib.Path | None:
     custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
 
     if str(project_root) in custom_paths:
-        result = pathlib.Path(custom_paths[str(project_root)])
-        if is_venv(result):
-            return result
-        log.warning(f"custom-chosen Python venv is no longer valid: {result}")
+        from_settings = pathlib.Path(custom_paths[str(project_root)])
+        if is_venv(from_settings):
+            return from_settings
+        log.warning(f"Python venv is no longer valid: {from_settings}")
 
     result = _find_venv(project_root)
+    log.info(f"Using {result} as venv of {project_root}")
     custom_paths[str(project_root)] = str(result)  # Do not automagically switch to new venvs
     return result
 
@@ -56,6 +58,7 @@ def set_venv(project_root: pathlib.Path, venv: pathlib.Path) -> None:
     custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
     custom_paths[str(project_root)] = str(venv)
     settings.set_("python_venvs", custom_paths)
+    log.info(f"Venv of {project_root} set to {env}")
 
 
 def setup() -> None:

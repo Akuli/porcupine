@@ -12,6 +12,7 @@ from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from porcupine import (
+    images,
     get_main_window,
     get_paned_window,
     get_tab_manager,
@@ -192,6 +193,7 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure("git_added", foreground=green)
         self.tag_configure("git_untracked", foreground="red4")
         self.tag_configure("git_ignored", foreground=gray)
+        self.tag_configure("venv", image=images.get("venv"))
 
     def update_selection_color(self, event: object = None) -> None:
         try:
@@ -232,6 +234,7 @@ class DirectoryTree(ttk.Treeview):
 
         # Add project to beginning so it won't be hidden soon
         project_item_id = self.insert(
+            # TODO: project tag needed? is it even used?
             "", 0, text=text, values=[root_path], tags=["dir", "project"], open=False
         )
         self._insert_dummy(project_item_id)
@@ -304,6 +307,7 @@ class DirectoryTree(ttk.Treeview):
         self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)
     ) -> None:
         log.debug("refreshing begins")
+        start_time = time.time()
         self.hide_old_projects()
 
         # This must not be an iterator, otherwise thread calls self.get_path which does tkinter stuff
@@ -320,7 +324,7 @@ class DirectoryTree(ttk.Treeview):
                 self.git_statuses = result
                 self.open_and_refresh_directory(None, "")
                 self.update_selection_color()
-                log.debug("refreshing done")
+                log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 when_done()
             elif success:
                 log.info(
@@ -362,16 +366,23 @@ class DirectoryTree(ttk.Treeview):
         project_roots = set(map(self.get_path, self.get_children()))
 
         for child_path, child_id in path2id.items():
-            relevant_parents = [child_path]
-            parent_iterator = iter(child_path.parents)
-            while relevant_parents[-1] not in project_roots:
-                relevant_parents.append(next(parent_iterator))
-            git_status = self.git_statuses[relevant_parents[-1]]
+            child_path_to_project_root_inclusive = [child_path]
+            parent_iter = iter(child_path.parents)
+            while child_path_to_project_root_inclusive[-1] not in project_roots:
+                child_path_to_project_root_inclusive.append(next(parent_iter))
+            project_root = child_path_to_project_root_inclusive[-1]
+
+            git_status = self.git_statuses[project_root]
 
             old_tags = set(self.item(child_id, "tags"))
             new_tags = {tag for tag in old_tags if not tag.startswith("git_")}
 
-            for path in relevant_parents:
+            if child_path == python_venv.get_venv(project_root):
+                new_tags.add("venv")
+            else:
+                new_tags.discard("venv")
+
+            for path in child_path_to_project_root_inclusive:
                 if path in git_status:
                     new_tags.add(git_status[path])
                     break
