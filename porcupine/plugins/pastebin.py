@@ -1,7 +1,7 @@
-"""Display a "Share" menu that allows you to pastebin files easily.
+"""Display a "Pastebin" menu that allows you to pastebin files easily.
 
-If a part of the file is selected when you click something in the "Share" menu,
-then only the selected part of the file is shared.
+If a part of the file is selected when you click something in the "Pastebin"
+menu, then only the selected part of the file is shared.
 """
 # TODO: make this work with pythonprompt plugin?
 from __future__ import annotations
