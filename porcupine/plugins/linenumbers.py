@@ -21,17 +21,14 @@ class LineNumbers(tkinter.Canvas):
 
         self._textwidget = textwidget_of_tab
         textwidget.use_pygments_theme(self, self._set_colors)
-        utils.add_scroll_command(textwidget_of_tab, "yscrollcommand", self._do_update)
+        utils.add_scroll_command(textwidget_of_tab, "yscrollcommand", self.do_update)
 
         textwidget_of_tab.bind(
             "<<ContentChanged>>",
-            lambda event: textwidget_of_tab.after_idle(self._do_update),
+            lambda event: textwidget_of_tab.after_idle(self.do_update),
             add=True,
         )
-        textwidget_of_tab.bind(
-            "<<UpdateLineNumbers>>", self._do_update, add=True
-        )  # TODO: document this?
-        self._do_update()
+        self.do_update()
 
         self.bind("<<SettingChanged:font_family>>", self._update_width, add=True)
         self.bind("<<SettingChanged:font_size>>", self._update_width, add=True)
@@ -47,7 +44,7 @@ class LineNumbers(tkinter.Canvas):
         self._text_color = fg
         self.itemconfig("all", fill=fg)
 
-    def _do_update(self, junk: object = None) -> None:
+    def do_update(self, junk: object = None) -> None:
         self.delete("all")
 
         first_line = int(self._textwidget.index("@0,0").split(".")[0])
