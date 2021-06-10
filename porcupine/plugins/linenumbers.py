@@ -28,9 +28,6 @@ class LineNumbers(tkinter.Canvas):
             lambda event: textwidget_of_tab.after_idle(self.do_update),
             add=True,
         )
-        textwidget_of_tab.bind(
-            "<<UpdateLineNumbers>>", self.do_update, add=True
-        )  # TODO: document this?
         self.do_update()
 
         self.bind("<<SettingChanged:font_family>>", self._update_width, add=True)
