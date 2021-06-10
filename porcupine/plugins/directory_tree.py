@@ -69,8 +69,8 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
     return result
 
 
-from line_profiler import LineProfiler
-profiler = LineProfiler()
+#from line_profiler import LineProfiler
+#profiler = LineProfiler()
 
 
 # For perf reasons, we want to avoid unnecessary Tcl calls when
@@ -263,11 +263,12 @@ class DirectoryTree(ttk.Treeview):
             if success and set(self.get_children()) == set(project_ids):
                 assert isinstance(result, dict)
                 self.git_statuses = result
-                self.open_and_refresh_directory(None, "")
+                for project_id in self.get_children(""):
+                    self._update_tags_and_content(get_path(project_id), project_id)
                 self.update_selection_color()
                 log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-                profiler.print_stats()
+#                profiler.print_stats()
                 when_done()
             elif success:
                 log.info(
@@ -286,10 +287,11 @@ class DirectoryTree(ttk.Treeview):
 
     # The following two functions call each other recursively.
 
-    @profiler
+#    @profiler
     def _update_tags_and_content(
-        self, project_root: pathlib.Path, child_path: pathlib.Path, child_id: str
+        self, project_root: pathlib.Path, child_id: str
     ) -> str | None:
+        child_path = get_path(child_id)
         path_to_status = self.git_statuses[project_root]
 
         # Search for status, from child_path to project_root inclusive
@@ -327,28 +329,20 @@ class DirectoryTree(ttk.Treeview):
         if child_id.startswith("dir:") and not self._contains_dummy(child_id):
             self.open_and_refresh_directory(child_path, child_id)
 
-    @profiler
-    def open_and_refresh_directory(self, dir_path: Optional[pathlib.Path], dir_id: str) -> None:
+#    @profiler
+    def open_and_refresh_directory(self, dir_path: pathlib.Path, dir_id: str) -> None:
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
 
         path2id = {get_path(id): id for id in self.get_children(dir_id)}
-        if dir_path is None:
-            # refreshing all projects
-            assert not dir_id
-            new_paths = set(path2id.keys())
-        else:
-            new_paths = set(dir_path.iterdir())
-            if not new_paths:
-                self._insert_dummy(dir_id)
-                return
-            project_id = self._find_project_id(dir_id)
+        new_paths = set(dir_path.iterdir())
+        if not new_paths:
+            self._insert_dummy(dir_id)
+            return
 
-        # TODO: handle changing directory to file
         for path in list(path2id.keys() - new_paths):
             self.delete(path2id.pop(path))  # type: ignore[no-untyped-call]
         for path in list(new_paths - path2id.keys()):
-            assert dir_id is not None
             project_num = dir_id.split(":", maxsplit=2)[1]
             if path.is_dir():
                 item_id = f"dir:{project_num}:{path}"
@@ -362,21 +356,15 @@ class DirectoryTree(ttk.Treeview):
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
 
-        if dir_path is None:
-            for project_path, project_id in path2id.items():
-                self._update_tags_and_content(project_path, project_path, project_id)
-        else:
-            # Everything is within the same project
-            project_root = get_path(self._find_project_id(dir_id))
-            for child_path, child_id in path2id.items():
-                self._update_tags_and_content(project_root, child_path, child_id)
+        project_root = get_path(self._find_project_id(dir_id))
+        for child_path, child_id in path2id.items():
+            self._update_tags_and_content(project_root, child_id)
 
-        if dir_path is not None:
-            assert set(self.get_children(dir_id)) == set(path2id.values())
-            for index, child_id in enumerate(
-                sorted(path2id.values(), key=self._sorting_key)
-            ):
-                self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
+        assert set(self.get_children(dir_id)) == set(path2id.values())
+        for index, child_id in enumerate(
+            sorted(path2id.values(), key=self._sorting_key)
+        ):
+            self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
         git_tags = [tag for tag in self.item(item_id, "tags") if tag.startswith("git_")]
