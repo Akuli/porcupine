@@ -227,6 +227,7 @@ class DirectoryTree(ttk.Treeview):
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
+        assert not self.get_children(parent)
         self.insert(parent, "end", text="(empty)", tags="dummy")
 
     def _contains_dummy(self, parent: str) -> bool:
@@ -336,6 +337,7 @@ class DirectoryTree(ttk.Treeview):
             self._insert_dummy(dir_id)
             return
 
+        # TODO: handle changing directory to file
         for path in list(path2id.keys() - new_paths):
             self.delete(path2id.pop(path))  # type: ignore[no-untyped-call]
         for path in list(new_paths - path2id.keys()):
