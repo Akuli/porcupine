@@ -192,3 +192,22 @@ def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path, dont_
     tree.add_project(tmp_path, refresh=False)
     focus_treeview(tree)
     assert tree.selection()
+
+
+def test_all_files_deleted(tree, tmp_path, tabmanager, dont_run_in_thread):
+    (tmp_path / "README").touch()
+    (tmp_path / "hello.py").touch()
+    tree.add_project(tmp_path)
+    project_id = tree.get_children()[0]
+    tree.selection_set(project_id)
+
+    # Simulate user opening selected item
+    tree.item(tree.selection()[0], open=True)
+    tree.event_generate("<<TreeviewOpen>>")
+    tree.update()
+    assert len(tree.get_children(project_id)) == 2
+
+    (tmp_path / "README").unlink()
+    (tmp_path / "hello.py").unlink()
+    tree.refresh_everything()
+    assert tree.contains_dummy(project_id)

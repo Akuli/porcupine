@@ -230,7 +230,7 @@ class DirectoryTree(ttk.Treeview):
         assert not self.get_children(parent)
         self.insert(parent, "end", text="(empty)", tags="dummy")
 
-    def _contains_dummy(self, parent: str) -> bool:
+    def contains_dummy(self, parent: str) -> bool:
         children = self.get_children(parent)
         return len(children) == 1 and self.tag_has("dummy", children[0])
 
@@ -324,11 +324,11 @@ class DirectoryTree(ttk.Treeview):
                 status = None
 
         self.item(child_id, tags=([] if status is None else status))
-        if child_id.startswith(("dir:", "project:")) and not self._contains_dummy(child_id):
+        if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
             self.open_and_refresh_directory(child_path, child_id)
 
     def open_and_refresh_directory(self, dir_path: pathlib.Path, dir_id: str) -> None:
-        if self._contains_dummy(dir_id):
+        if self.contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
 
         path2id = {get_path(id): id for id in self.get_children(dir_id)}
