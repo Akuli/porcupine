@@ -336,7 +336,7 @@ class DirectoryTree(ttk.Treeview):
         new_paths = set(dir_path.iterdir())
         if not new_paths:
             for child in self.get_children(dir_id):
-                self.delete(child)
+                self.delete(child)  # type: ignore[no-untyped-call]
             self._insert_dummy(dir_id)
             return
 
