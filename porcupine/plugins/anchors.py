@@ -16,7 +16,7 @@ class AnchorManager:
 
         linenumber_instance.bind("<<Updated>>", self.update_linenumbers, add=True)
 
-    def toggle_on_off(self, event):
+    def toggle_on_off(self, event: tkinter.Event[tkinter.Misc]) -> None:
         [cursor_index] = [self.tab_textwidget.index("insert linestart")]
         for anchor in self.tab_textwidget.mark_names():
             if anchor.startswith("anchor_") and self.tab_textwidget.index(anchor) == cursor_index:
@@ -27,7 +27,19 @@ class AnchorManager:
 
         self.linenumber_instance.do_update()
 
-    def update_linenumbers(self, event):
+    def jump_to_next(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        pass
+
+    def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        pass
+
+    # def bind_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
+    #     pass
+
+    # def jump_to_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
+    #     pass
+
+    def update_linenumbers(self, event: tkinter.Event[tkinter.Misc]) -> None:
         """Re-draws the anchor points every time the linenumber instance updates (scroll, insertion/deletion of text)"""
         anchor_list = [
             anchor for anchor in self.tab_textwidget.mark_names() if anchor.startswith("anchor_")
