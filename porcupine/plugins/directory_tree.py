@@ -258,6 +258,7 @@ class DirectoryTree(ttk.Treeview):
                 self.update_selection_color()
                 log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
+                profiler.print_stats()
                 when_done()
             elif success:
                 log.info(
@@ -278,7 +279,7 @@ class DirectoryTree(ttk.Treeview):
 
     # The following two functions call each other recursively.
 
-    #@profiler
+    @profiler
     def _update_tags_and_content(
         self, project_root: pathlib.Path, child_path: pathlib.Path, child_id: str
     ) -> str | None:
@@ -320,7 +321,7 @@ class DirectoryTree(ttk.Treeview):
         if "dir" in new_tags and not self._contains_dummy(child_id):
             self.open_and_refresh_directory(child_path, child_id)
 
-    #@profiler
+    @profiler
     def open_and_refresh_directory(self, dir_path: Optional[pathlib.Path], dir_id: str) -> None:
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
@@ -491,5 +492,3 @@ def setup() -> None:
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh_everything()
-
-    #tree.after(5000, profiler.print_stats)
