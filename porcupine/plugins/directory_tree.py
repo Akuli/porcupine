@@ -348,8 +348,7 @@ class DirectoryTree(ttk.Treeview):
         for child_path, child_id in path2id.items():
             self._update_tags_and_content(project_root, child_id)
 
-        assert set(self.get_children(dir_id)) == set(path2id.values())
-        for index, child_id in enumerate(sorted(path2id.values(), key=self._sorting_key)):
+        for index, child_id in enumerate(sorted(self.get_children(dir_id), key=self._sorting_key)):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
