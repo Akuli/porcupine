@@ -274,7 +274,6 @@ class DirectoryTree(ttk.Treeview):
                     self._update_tags_and_content(get_path(project_id), project_id)
                 self.update_selection_color()
                 log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-                print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 when_done()
             elif success:
                 log.info(
@@ -307,11 +306,10 @@ class DirectoryTree(ttk.Treeview):
             status: str | None = path_to_status[path]
         except KeyError:
             # Handle directories containing files with different statuses
-            relevant_substatuses = {"git_added", "git_modified", "git_mergeconflict"}  # perf optimization
             substatuses = {
                 s
                 for p, s in path_to_status.items()
-                if s in relevant_substatuses and child_path in p.parents
+                if s in {"git_added", "git_modified", "git_mergeconflict"} and child_path in p.parents
             }
 
             if "git_mergeconflict" in substatuses:
@@ -356,8 +354,7 @@ class DirectoryTree(ttk.Treeview):
         for child_path, child_id in path2id.items():
             self._update_tags_and_content(project_root, child_id)
 
-        assert set(self.get_children(dir_id)) == set(path2id.values())
-        for index, child_id in enumerate(sorted(path2id.values(), key=self._sorting_key)):
+        for index, child_id in enumerate(sorted(self.get_children(dir_id), key=self._sorting_key)):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
@@ -372,8 +369,7 @@ class DirectoryTree(ttk.Treeview):
                 "git_untracked",
                 "git_ignored",
             ].index(git_tag),
-            item_id.startswith("file:"),  # False < True, non-files first
-            str(get_path(item_id)),
+            item_id,  # "dir" before "file", sort each by path
         )
 
     def open_file_or_dir(self, event: object = None) -> None:
