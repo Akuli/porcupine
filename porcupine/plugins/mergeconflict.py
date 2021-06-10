@@ -9,6 +9,8 @@ from typing import Any, List
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
 
+setup_after = ["linenumbers"]
+
 
 def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
     result = []
@@ -154,19 +156,20 @@ def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         [linenums] = [
             child for child in tab.left_frame.winfo_children() if isinstance(child, LineNumbers)
-        ]
+        ] or [None]
         setup_displayers(tab)
         # https://github.com/python/mypy/issues/9658
         tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
-        tab.textwidget.bind(
-            "<Enter>",
-            (
-                # This runs after clicking "Use this" button, mouse <Enter>s text widget
-                # Don't know why this needs a small timeout instead of after_idle
-                lambda event: tab.after(50, linenums.do_update)
-            ),
-            add=True,
-        )
+        if linenums is not None:
+            tab.textwidget.bind(
+                "<Enter>",
+                (
+                    # This runs after clicking "Use this" button, mouse <Enter>s text widget
+                    # Don't know why this needs a small timeout instead of after_idle
+                    lambda event: tab.after(50, linenums.do_update)
+                ),
+                add=True,
+            )
 
 
 def setup() -> None:

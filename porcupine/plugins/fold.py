@@ -45,9 +45,10 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
 def fold() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
+
     [linenums] = [
         child for child in tab.left_frame.winfo_children() if isinstance(child, LineNumbers)
-    ]
+    ] or [None]
 
     lineno = int(tab.textwidget.index("insert").split(".")[0])
     end = find_indented_block(tab, lineno)
@@ -82,7 +83,9 @@ def fold() -> None:
     dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)  # type: ignore
     dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)  # type: ignore
     tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)  # type: ignore[no-untyped-call]
-    linenums.do_update()
+
+    if linenums is not None:
+        linenums.do_update()
 
 
 def setup() -> None:
