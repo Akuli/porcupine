@@ -310,7 +310,8 @@ class DirectoryTree(ttk.Treeview):
             substatuses = {
                 s
                 for p, s in path_to_status.items()
-                if s in {"git_added", "git_modified", "git_mergeconflict"} and child_path in p.parents
+                if s in {"git_added", "git_modified", "git_mergeconflict"}
+                and child_path in p.parents
             }
 
             if "git_mergeconflict" in substatuses:
