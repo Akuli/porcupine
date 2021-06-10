@@ -300,7 +300,6 @@ class DirectoryTree(ttk.Treeview):
             status: str | None = path_to_status[path]
         except KeyError:
             # Handle directories containing files with different statuses
-            relevant_substatuses = {"git_added", "git_modified", "git_mergeconflict"}  # perf optimization
             substatuses = {
                 s
                 for p, s in path_to_status.items()
