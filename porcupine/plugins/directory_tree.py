@@ -69,8 +69,8 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
     return result
 
 
-#from line_profiler import LineProfiler
-#profiler = LineProfiler()
+# from line_profiler import LineProfiler
+# profiler = LineProfiler()
 
 
 # For perf reasons, we want to avoid unnecessary Tcl calls when
@@ -242,9 +242,7 @@ class DirectoryTree(ttk.Treeview):
                 self.delete(project_id)  # type: ignore[no-untyped-call]
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
-        settings.set_(
-            "directory_tree_projects", [str(get_path(id)) for id in self.get_children()]
-        )
+        settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
 
     def refresh_everything(
         self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)
@@ -268,7 +266,7 @@ class DirectoryTree(ttk.Treeview):
                 self.update_selection_color()
                 log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-#                profiler.print_stats()
+                #                profiler.print_stats()
                 when_done()
             elif success:
                 log.info(
@@ -287,10 +285,8 @@ class DirectoryTree(ttk.Treeview):
 
     # The following two functions call each other recursively.
 
-#    @profiler
-    def _update_tags_and_content(
-        self, project_root: pathlib.Path, child_id: str
-    ) -> str | None:
+    #    @profiler
+    def _update_tags_and_content(self, project_root: pathlib.Path, child_id: str) -> None:
         child_path = get_path(child_id)
         path_to_status = self.git_statuses[project_root]
 
@@ -329,7 +325,7 @@ class DirectoryTree(ttk.Treeview):
         if child_id.startswith("dir:") and not self._contains_dummy(child_id):
             self.open_and_refresh_directory(child_path, child_id)
 
-#    @profiler
+    #    @profiler
     def open_and_refresh_directory(self, dir_path: pathlib.Path, dir_id: str) -> None:
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
@@ -349,9 +345,7 @@ class DirectoryTree(ttk.Treeview):
             else:
                 item_id = f"file:{project_num}:{path}"
 
-            path2id[path] = self.insert(
-                dir_id, "end", item_id, text=path.name, open=False
-            )
+            path2id[path] = self.insert(dir_id, "end", item_id, text=path.name, open=False)
             if path.is_dir():
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
@@ -361,9 +355,7 @@ class DirectoryTree(ttk.Treeview):
             self._update_tags_and_content(project_root, child_id)
 
         assert set(self.get_children(dir_id)) == set(path2id.values())
-        for index, child_id in enumerate(
-            sorted(path2id.values(), key=self._sorting_key)
-        ):
+        for index, child_id in enumerate(sorted(path2id.values(), key=self._sorting_key)):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
