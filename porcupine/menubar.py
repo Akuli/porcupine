@@ -276,7 +276,8 @@ def _fill_menus_with_default_stuff() -> None:
         get_tab_manager().add_tab(tabs.FileTab(get_tab_manager()))
 
     def open_files() -> None:
-        paths = filedialog.askopenfilenames(**filedialog_kwargs)  # "" or tuple
+        # paths is "" or tuple
+        paths = filedialog.askopenfilenames(**filedialog_kwargs)  # type: ignore[no-untyped-call]
         for path in map(pathlib.Path, paths):
             try:
                 tab = tabs.FileTab.open_file(get_tab_manager(), path)
