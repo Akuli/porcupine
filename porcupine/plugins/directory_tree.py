@@ -22,10 +22,16 @@ from porcupine import (
 
 log = logging.getLogger(__name__)
 
-# If more than this many projects are opened, then the least recently opened
-# project will be closed, unless a file has been opened from that project.
-# Note that this can be exceeded if many files from different projects are open
-MAX_PROJECTS = 10
+# The idea: If more than this many projects are opened, then the least recently
+# opened project will be closed.
+#
+# Gotchas:
+#   - Git run time is the bottleneck of refreshing, and it's proportional to
+#     this. For that reason, keep it small.
+#   - If you have more than this many files open, each from a different
+#     project, there will be one project for each file in the directory tree
+#     and this number is exceeded.
+MAX_PROJECTS = 5
 
 
 def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
@@ -67,10 +73,6 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
         else:
             log.warning(f"unknown git status line: {repr(line)}")
     return result
-
-
-# from line_profiler import LineProfiler
-# profiler = LineProfiler()
 
 
 # For perf reasons, we want to avoid unnecessary Tcl calls when
@@ -258,6 +260,7 @@ class DirectoryTree(ttk.Treeview):
         def done_callback(
             success: bool, result: str | dict[pathlib.Path, dict[pathlib.Path, str]]
         ) -> None:
+            log.debug(f"thread done in {round((time.time()-start_time)*1000)}ms")
             if success and set(self.get_children()) == set(project_ids):
                 assert isinstance(result, dict)
                 self.git_statuses = result
@@ -266,7 +269,6 @@ class DirectoryTree(ttk.Treeview):
                 self.update_selection_color()
                 log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-                #                profiler.print_stats()
                 when_done()
             elif success:
                 log.info(
@@ -279,13 +281,13 @@ class DirectoryTree(ttk.Treeview):
         utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
     def _find_project_id(self, item_id: str) -> str:
+        # Does not work for dummy items, because they don't use type:num:path scheme
         num = item_id.split(":", maxsplit=2)[1]
         [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
         return result
 
     # The following two functions call each other recursively.
 
-    #    @profiler
     def _update_tags_and_content(self, project_root: pathlib.Path, child_id: str) -> None:
         child_path = get_path(child_id)
         path_to_status = self.git_statuses[project_root]
@@ -299,33 +301,27 @@ class DirectoryTree(ttk.Treeview):
             status: str | None = path_to_status[path]
         except KeyError:
             # Handle directories containing files with different statuses
-            child_tags = set()
-            for subpath, status in path_to_status.items():
-                if status in {"git_added", "git_modified", "git_mergeconflict"}:
-                    if child_path in subpath.parents:
-                        child_tags.add(status)
-            if "git_mergeconflict" in child_tags:
+            relevant_substatuses = {"git_added", "git_modified", "git_mergeconflict"}  # perf optimization
+            substatuses = {
+                s
+                for p, s in path_to_status.items()
+                if s in relevant_substatuses and child_path in p.parents
+            }
+
+            if "git_mergeconflict" in substatuses:
                 status = "git_mergeconflict"
-            elif "git_modified" in child_tags:
+            elif "git_modified" in substatuses:
                 status = "git_modified"
-            elif "git_added" in child_tags:
+            elif "git_added" in substatuses:
                 status = "git_added"
             else:
-                assert not child_tags
+                assert not substatuses
                 status = None
 
-        old_tags = set(self.item(child_id, "tags"))
-        new_tags = set()
-        if status is not None:
-            new_tags.add(status)
-
-        if old_tags != new_tags:
-            self.item(child_id, tags=list(new_tags))
-
+        self.item(child_id, tags=([] if status is None else status))
         if child_id.startswith(("dir:", "project:")) and not self._contains_dummy(child_id):
             self.open_and_refresh_directory(child_path, child_id)
 
-    #    @profiler
     def open_and_refresh_directory(self, dir_path: pathlib.Path, dir_id: str) -> None:
         if self._contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
@@ -359,9 +355,7 @@ class DirectoryTree(ttk.Treeview):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
-        git_tags = [tag for tag in self.item(item_id, "tags") if tag.startswith("git_")]
-        assert len(git_tags) < 2
-        git_tag = git_tags[0] if git_tags else None
+        [git_tag] = self.item(item_id, "tags") or [None]
 
         return (
             [
