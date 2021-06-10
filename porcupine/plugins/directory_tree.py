@@ -387,7 +387,7 @@ class DirectoryTree(ttk.Treeview):
             get_tab_manager().add_tab(
                 tabs.FileTab.open_file(get_tab_manager(), get_path(selected_id))
             )
-        elif selected_id.startswith(("dir:", "project:")):
+        elif selected_id.startswith(("dir:", "project:")):  # not dummy item
             self.open_and_refresh_directory(get_path(selected_id), selected_id)
 
             tab = get_tab_manager().select()
