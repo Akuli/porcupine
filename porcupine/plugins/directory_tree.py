@@ -363,8 +363,7 @@ class DirectoryTree(ttk.Treeview):
                 "git_untracked",
                 "git_ignored",
             ].index(git_tag),
-            item_id.startswith("file:"),  # False < True, non-files first
-            str(get_path(item_id)),
+            item_id,  # "dir" before "file", sort each by path
         )
 
     def open_file_or_dir(self, event: object = None) -> None:
