@@ -69,12 +69,6 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
     return result
 
 
-# Return "potential_parent in path.parents", but faster
-# Yes, this has measurable impact. Try changing it and look at "refreshing done in ...ms" log messages.
-def _has_parent(path, potential_parent):
-    return str(path).startswith(str(potential_parent)) and potential_parent in path.parents
-
-
 from line_profiler import LineProfiler
 profiler = LineProfiler()
 
@@ -184,7 +178,7 @@ class DirectoryTree(ttk.Treeview):
     def select_file(self, path: pathlib.Path) -> None:
         for project_root_id in self.get_children():
             project_root = self.get_path(project_root_id)
-            if not _has_parent(path, project_root):
+            if project_root not in path.parents:
                 continue
 
             # Find the sub-item representing the file
@@ -303,7 +297,7 @@ class DirectoryTree(ttk.Treeview):
                 status
                 for subpath, status in path_to_status.items()
                 if status in {"git_added", "git_modified", "git_mergeconflict"}
-                and _has_parent(subpath, child_path)
+                and child_path in subpath.parents
             }
             if "git_mergeconflict" in child_tags:
                 status = "git_mergeconflict"
