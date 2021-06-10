@@ -268,7 +268,6 @@ class DirectoryTree(ttk.Treeview):
                     self._update_tags_and_content(get_path(project_id), project_id)
                 self.update_selection_color()
                 log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-                print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 when_done()
             elif success:
                 log.info(
