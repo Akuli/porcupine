@@ -77,9 +77,8 @@ profiler = LineProfiler()
 # looking up information by id. Easiest solution is to include the
 # information in the id. It's a bit lol.
 def get_path(item_id: str) -> pathlib.Path:
-    part1, part2 = item_id.split(":", maxsplit=1)
-    assert part1 in {"project", "dir", "file"}
-    return pathlib.Path(part2)
+    item_type, project_number, path = item_id.split(":", maxsplit=2)
+    return pathlib.Path(path)
 
 
 class DirectoryTree(ttk.Treeview):
@@ -98,6 +97,8 @@ class DirectoryTree(ttk.Treeview):
 
         self._last_click_time = 0
         self._last_click_selection: Optional[Tuple[str, ...]] = None
+
+        self._project_num_counter = 0
 
     def on_click(self, event: tkinter.Event[DirectoryTree]) -> None:
         # Don't know why the usual double-click handling doesn't work. It
@@ -172,8 +173,9 @@ class DirectoryTree(ttk.Treeview):
             text = text.replace(str(pathlib.Path.home()), "~", 1)
 
         # Add project to beginning so it won't be hidden soon
+        self._project_num_counter += 1
         project_item_id = self.insert(
-            "", 0, "project:" + str(root_path), text=text, open=False
+            "", 0, f"project:{self._project_num_counter}:{root_path}", text=text, open=False
         )
         self._insert_dummy(project_item_id)
         self.hide_old_projects()
@@ -213,7 +215,7 @@ class DirectoryTree(ttk.Treeview):
 
         # Happens when tab changes because a file was just opened. This
         # will be called soon once the project has been added.
-        log.info(f"can't select '{path}' because its project '{project_root}' was not found")
+        log.info(f"can't select '{path}' because its project was not found")
 
     def _insert_dummy(self, parent: str) -> None:
         assert parent
@@ -278,11 +280,9 @@ class DirectoryTree(ttk.Treeview):
         utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
     def _find_project_id(self, item_id: str) -> str:
-        while True:
-            parent = self.parent(item_id)
-            if not parent:
-                return item_id
-            item_id = parent
+        num = item_id.split(":", maxsplit=2)[1]
+        [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
+        return result
 
     # The following two functions call each other recursively.
 
@@ -348,12 +348,12 @@ class DirectoryTree(ttk.Treeview):
         for path in list(path2id.keys() - new_paths):
             self.delete(path2id.pop(path))  # type: ignore[no-untyped-call]
         for path in list(new_paths - path2id.keys()):
-            if dir_id is None:
-                item_id = f"project:{path}"
-            elif path.is_dir():
-                item_id = f"dir:{path}"
+            assert dir_id is not None
+            project_num = dir_id.split(":", maxsplit=2)[1]
+            if path.is_dir():
+                item_id = f"dir:{project_num}:{path}"
             else:
-                item_id = f"file:{path}"
+                item_id = f"file:{project_num}:{path}"
 
             path2id[path] = self.insert(
                 dir_id, "end", item_id, text=path.name, open=False
@@ -392,7 +392,7 @@ class DirectoryTree(ttk.Treeview):
                 "git_untracked",
                 "git_ignored",
             ].index(git_tag),
-            int(item_id.startswith("file:")),
+            item_id.startswith("file:"),  # False < True, non-files first
             str(get_path(item_id)),
         )
 
