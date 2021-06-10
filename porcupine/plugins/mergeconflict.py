@@ -4,7 +4,7 @@ from __future__ import annotations
 import itertools
 import tkinter
 import weakref
-from typing import Any, List
+from typing import Any, List, cast
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
@@ -165,7 +165,8 @@ def on_new_tab(tab: tabs.Tab) -> None:
                     (
                         # This runs after clicking "Use this" button, mouse <Enter>s text widget
                         # Don't know why this needs a small timeout instead of after_idle
-                        lambda event: tab.after(50, child.do_update)
+                        # https://github.com/python/mypy/issues/9658
+                        lambda event: tab.after(50, cast(Any, child).do_update)
                     ),
                     add=True,
                 )

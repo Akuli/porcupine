@@ -5,8 +5,6 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
 
-setup_after = ["linenumbers"]
-
 
 def get_indent(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     line = tab.textwidget.get(f"{lineno}.0", f"{lineno}.0 lineend")
