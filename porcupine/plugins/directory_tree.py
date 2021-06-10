@@ -99,7 +99,7 @@ class DirectoryTree(ttk.Treeview):
         self.bind("<Button-1>", self.on_click, add=True)
         self.bind("<Button-3>", self.on_right_click, add=True)  # TODO: mac right click = button 2?
 
-        self.bind("<<TreeviewOpen>>", self.open_selected_file_or_dir, add=True)
+        self.bind("<<TreeviewOpen>>", self.open_file_or_dir, add=True)
         self.bind("<<TreeviewSelect>>", self.update_selection_color, add=True)
         self.bind("<<ThemeChanged>>", self._config_tags, add=True)
         self.column("#0", minwidth=500)  # allow scrolling sideways
@@ -108,6 +108,8 @@ class DirectoryTree(ttk.Treeview):
 
         self._last_click_time = 0  # Very long time since previous click, no double click
         self._last_click_item: str | None = None
+
+        self._project_num_counter = 0
 
     def set_the_selection_correctly(self, id: str) -> None:
         self.selection_set(id)  # type: ignore[no-untyped-call]
@@ -126,15 +128,15 @@ class DirectoryTree(ttk.Treeview):
         double_click = event.time - self._last_click_time < 500 and self._last_click_item == item
 
         self.set_the_selection_correctly(item)
-        if self.tag_has("file", item):
+        if item.startswith("file:"):
             if double_click:
-                self.open_selected_file_or_dir()
+                self.open_file_or_dir()
         else:
             little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"  # type: ignore[no-untyped-call]
             if double_click or little_arrow_clicked:
                 self.item(item, open=(not self.item(item, "open")))
                 if self.item(item, "open"):
-                    self.open_selected_file_or_dir()
+                    self.open_file_or_dir()
 
         self._last_click_item = item
         if double_click:
@@ -144,21 +146,14 @@ class DirectoryTree(ttk.Treeview):
             self._last_click_time = event.time
         return "break"
 
-    # TODO: use this more instead of utils.get_project_root(), better for nested projects
-    def get_project_item(self, item: str) -> str:
-        # Item named empty string contains the projects
-        while self.parent(item):  # type: ignore[no-untyped-call]
-            item = self.parent(item)  # type: ignore[no-untyped-call]
-        return item
-
     def on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str:
         self.tk.call("focus", self)
 
         item: str = self.identify_row(event.y)  # type: ignore[no-untyped-call]
         self.set_the_selection_correctly(item)
 
-        path = self.get_path(item)
-        project_root = self.get_path(self.get_project_item(item))
+        path = get_path(item)
+        project_root = get_path(self._find_project_id(item))
         if python_venv.is_venv(path) and python_venv.get_venv(project_root) != path:
             menu = tkinter.Menu(tearoff=False)
             menu.add_command(
@@ -168,29 +163,6 @@ class DirectoryTree(ttk.Treeview):
             menu.tk_popup(event.x_root, event.y_root)
             menu.bind("<Unmap>", (lambda event: menu.after_idle(menu.destroy)), add=True)
         return "break"
-
-    def open_selected_file_or_dir(self, event: object = None) -> None:
-        try:
-            [selected_id] = self.selection()
-        except ValueError:
-            # nothing selected, can happen when clicking something else than one of the items
-            return
-
-        if self.tag_has("dir", selected_id):
-            self.open_and_refresh_directory(self.get_path(selected_id), selected_id)
-
-            tab = get_tab_manager().select()
-            if (
-                isinstance(tab, tabs.FileTab)
-                and tab.path is not None
-                and self.get_path(selected_id) in tab.path.parents
-            ):
-                # Don't know why after_idle is needed
-                self.after_idle(self.select_file, tab.path)
-        elif self.tag_has("file", selected_id):
-            get_tab_manager().add_tab(
-                tabs.FileTab.open_file(get_tab_manager(), self.get_path(selected_id))
-            )
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval("ttk::style lookup Treeview -foreground")
@@ -389,7 +361,13 @@ class DirectoryTree(ttk.Treeview):
                 assert not substatuses
                 status = None
 
-        self.item(child_id, tags=([] if status is None else status))
+        tags = []
+        if child_path == python_venv.get_venv(project_root):
+            tags.append("venv")
+        if status is not None:
+            tags.append(status)
+
+        self.item(child_id, tags=tags)
         if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
             self.open_and_refresh_directory(child_path, child_id)
 
@@ -428,7 +406,7 @@ class DirectoryTree(ttk.Treeview):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
-        [git_tag] = self.item(item_id, "tags") or [None]
+        [git_tag] = [t for t in self.item(item_id, "tags") if t.startswith("git_")] or [None]
 
         return (
             [
