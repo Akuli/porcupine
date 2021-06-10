@@ -315,14 +315,14 @@ class DirectoryTree(ttk.Treeview):
                 status = None
 
         old_tags = set(self.item(child_id, "tags"))
-        new_tags = old_tags.copy()
+        new_tags = set()
         if status is not None:
             new_tags.add(status)
 
         if old_tags != new_tags:
             self.item(child_id, tags=list(new_tags))
 
-        if child_id.startswith("dir:") and not self._contains_dummy(child_id):
+        if child_id.startswith(("dir:", "project:")) and not self._contains_dummy(child_id):
             self.open_and_refresh_directory(child_path, child_id)
 
     #    @profiler
