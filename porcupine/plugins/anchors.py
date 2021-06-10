@@ -17,7 +17,7 @@ class AnchorManager:
         linenumber_instance.bind("<<Updated>>", self.update_linenumbers, add=True)
 
     def toggle_on_off(self, event):
-        [cursor_index] = [self.tab_textwidget.index("insert linestart")]
+        cursor_index = self.tab_textwidget.index("insert linestart")
         for anchor in self.tab_textwidget.mark_names():
             if anchor.startswith("anchor_") and self.tab_textwidget.index(anchor) == cursor_index:
                 self.tab_textwidget.mark_unset(anchor)
