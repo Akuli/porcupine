@@ -3,6 +3,7 @@ import tkinter
 from typing import Optional
 
 from porcupine import get_tab_manager, menubar, tabs, utils
+from porcupine.plugins.linenumbers import LineNumbers
 
 
 def get_indent(tab: tabs.FileTab, lineno: int) -> Optional[int]:
@@ -42,8 +43,8 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
 def fold() -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
-    lineno = int(tab.textwidget.index("insert").split(".")[0])
 
+    lineno = int(tab.textwidget.index("insert").split(".")[0])
     end = find_indented_block(tab, lineno)
     if end is None:
         return
@@ -76,7 +77,10 @@ def fold() -> None:
     dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)  # type: ignore
     dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)  # type: ignore
     tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)  # type: ignore[no-untyped-call]
-    tab.textwidget.event_generate("<<UpdateLineNumbers>>")
+
+    for child in tab.left_frame.winfo_children():
+        if isinstance(child, LineNumbers):
+            child.do_update()
 
 
 def setup() -> None:
