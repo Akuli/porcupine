@@ -77,7 +77,13 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
 
 # For perf reasons, we want to avoid unnecessary Tcl calls when
 # looking up information by id. Easiest solution is to include the
-# information in the id. It's a bit lol.
+# information in the id. It's a bit lol. The format is:
+#
+#   "{type}:{project_number}:{path}"
+#
+# where:
+#   - type is "file", "dir", "project"
+#   - project_number is unique to each project
 def get_path(item_id: str) -> pathlib.Path:
     item_type, project_number, path = item_id.split(":", maxsplit=2)
     return pathlib.Path(path)
