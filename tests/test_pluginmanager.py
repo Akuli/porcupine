@@ -10,7 +10,7 @@ from porcupine.plugins.pluginmanager import create_dialog
 def dialog_content(mocker):
     dialog, content = create_dialog()
     yield content
-    tkinter.Toplevel.wait_window.call_args[0][0].destroy()
+    dialog.destroy()
 
 
 def test_select_one(dialog_content):
