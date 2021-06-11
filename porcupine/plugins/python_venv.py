@@ -67,7 +67,7 @@ def set_venv(project_root: Path, venv: Path) -> None:
     custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
     custom_paths[str(project_root)] = str(venv)
     settings.set_("python_venvs", custom_paths)  # custom_paths is copy
-    log.info(f"Venv of {project_root} set to {venv}")
+    log.info(f"venv of {project_root} set to {venv}")
 
 
 # This doesn't use Porcupine's python, unless py or python3 points to it
