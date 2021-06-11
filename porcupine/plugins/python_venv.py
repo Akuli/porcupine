@@ -81,10 +81,10 @@ def find_python(project_root: Path | None) -> Path | None:
             return venv / "bin" / "python"
 
     if sys.platform == "win32":
-        log.info(f"No venv found, using py")
+        log.info("No venv found, using py")
         result = shutil.which("py")
     else:
-        log.info(f"No venv found, using python3")
+        log.info("No venv found, using python3")
         result = shutil.which("python3")
 
     if result is None:
