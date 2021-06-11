@@ -1,13 +1,16 @@
+import tkinter
+
 import pytest
 
 from porcupine import pluginloader
-from porcupine.plugins.pluginmanager import show_dialog
+from porcupine.plugins.pluginmanager import create_dialog
 
 
 @pytest.fixture
 def dialog_content(mocker):
-    content = show_dialog()
+    content = create_dialog()
     yield content
+    tkinter.Toplevel.wait_window.call_args[0][0].destroy()
 
 
 def test_select_one(dialog_content):
