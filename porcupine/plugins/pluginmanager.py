@@ -12,7 +12,7 @@ from porcupine import get_main_window, menubar, pluginloader, settings, textwidg
 
 log = logging.getLogger(__name__)
 
-dialog = None
+dialog: Optional[tkinter.Toplevel] = None
 
 
 def get_docstring(module_name: str) -> str:
