@@ -51,7 +51,7 @@ def run_git_status(project_root: Path) -> Dict[Path, str]:
 
         if run_result.returncode != 0:
             # likely not a git repo because missing ".git" dir
-            log.info(f"git failed in {project_root}: {run_result}")
+            log.debug(f"git failed in {project_root}: {run_result}")
             return {}
 
     except (OSError, UnicodeError):
@@ -232,18 +232,24 @@ class DirectoryTree(ttk.Treeview):
             if get_path(project_id) not in path.parents:
                 continue
 
-            for parent_path in _path_to_root_inclusive(path, get_path(project_id)):
-                id = self.get_id_from_path(parent_path, project_id)
-                if id is None or not self.item(id, "open"):
-                    continue
+            root_to_path_excluding_root = list(_path_to_root_inclusive(path, get_path(project_id)))[::-1][1:]
 
-                self.set_the_selection_correctly(id)
-                self.see(id)  # type: ignore[no-untyped-call]
+            # Find the visible sub-item representing the file
+            file_id = project_id
+            for subpath in root_to_path_excluding_root:
+                if self.item(file_id, "open"):
+                    file_id = self.get_id_from_path(subpath, project_id)
+                else:
+                    # ...or a closed folder that contains the file
+                    break
 
-                # Multiple projects may match when project roots are nested. It's
-                # fine to use the first match, because recently used projects tend
-                # to go first.
-                return
+            self.set_the_selection_correctly(file_id)
+            self.see(file_id)  # type: ignore[no-untyped-call]
+
+            # Multiple projects may match when project roots are nested. It's
+            # fine to use the first match, because recently used projects tend
+            # to go first.
+            return
 
         # Happens when tab changes because a file was just opened. This
         # will be called soon once the project has been added.
@@ -300,8 +306,7 @@ class DirectoryTree(ttk.Treeview):
                 for project_id in self.get_children(""):
                     self._update_tags_and_content(get_path(project_id), project_id)
                 self._update_selection_color()
-                log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-                print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
+                log.info(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 when_done()
             elif success:
                 log.info(

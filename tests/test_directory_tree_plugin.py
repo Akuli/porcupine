@@ -175,6 +175,9 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread
     # Simulate user opening selected item
     tree.item(tree.selection()[0], open=True)
     tree.event_generate("<<TreeviewOpen>>")
+
+    tree.update()
+    tabmanager.select(b_file1)
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b" / "file1"
 
