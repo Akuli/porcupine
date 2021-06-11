@@ -81,24 +81,29 @@ def set_venv(project_root: Path, venv: Path) -> None:
     log.info(f"Venv of {project_root} set to {venv}")
 
 
-def _on_dirtree_refreshed(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
-    for project_id in event.widget.get_children(""):
-        venv = get_venv(dirtree.get_path(project_id))
-        if venv is not None:
-            venv_id = event.widget.get_id_from_path(venv, project_id)
-            if venv_id is not None:
-                # tkinter is lacking tag_add
-                event.widget.tk.call(event.widget, "tag", "add", "venv", venv_id)
+def _on_folder_refreshed(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
+    tree = event.widget
+    info = event.data_class(dirtree.FolderRefreshed)
+
+    # tkinter is lacking tag_remove and tag_add
+    tree.tk.call(tree, "tag", "remove", "venv", tree.get_children(info.folder_id))
+
+    venv = get_venv(dirtree.get_path(info.project_id))
+    if venv is not None:
+        venv_id = tree.get_id_from_path(venv, info.project_id)
+        if venv_id is not None:
+            tree.tk.call(tree, "tag", "add", "venv", venv_id)
 
 
 def _on_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str:
-    event.widget.tk.call("focus", event.widget)
+    tree = event.widget
+    tree.tk.call("focus", tree)
 
-    item: str = event.widget.identify_row(event.y)  # type: ignore[no-untyped-call]
-    event.widget.set_the_selection_correctly(item)
+    item: str = tree.identify_row(event.y)  # type: ignore[no-untyped-call]
+    tree.set_the_selection_correctly(item)
 
     path = dirtree.get_path(item)
-    project_root = dirtree.get_path(event.widget._find_project_id(item))
+    project_root = dirtree.get_path(tree.find_project_id(item))
     if is_venv(path) and get_venv(project_root) != path:
         menu = tkinter.Menu(tearoff=False)
         menu.add_command(
@@ -116,7 +121,7 @@ def setup() -> None:
 
     for widget in utils.get_children_recursively(get_paned_window()):
         if isinstance(widget, dirtree.DirectoryTree):
-            widget.bind("<<DirectoryTreeRefreshed>>", _on_dirtree_refreshed, add=True)
+            utils.bind_with_data(widget, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
             widget.bind(
                 "<Button-3>", _on_right_click, add=True
             )  # TODO: mac right click = button 2?

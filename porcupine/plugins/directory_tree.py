@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import logging
 import pathlib
 import subprocess
@@ -97,6 +98,12 @@ def _path_to_root_inclusive(path: pathlib.Path, root: pathlib.Path):
         if path == root:
             break
         path = path.parent
+
+
+@dataclasses.dataclass
+class FolderRefreshed(utils.EventDataclass):
+    project_id: str
+    folder_id: str
 
 
 class DirectoryTree(ttk.Treeview):
@@ -295,7 +302,6 @@ class DirectoryTree(ttk.Treeview):
                 for project_id in self.get_children(""):
                     self._update_tags_and_content(get_path(project_id), project_id)
                 self._update_selection_color()
-                self.event_generate("<<DirectoryTreeRefreshed>>")
                 log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 print(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 when_done()
@@ -309,7 +315,7 @@ class DirectoryTree(ttk.Treeview):
 
         utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
-    def _find_project_id(self, item_id: str) -> str:
+    def find_project_id(self, item_id: str) -> str:
         # Does not work for dummy items, because they don't use type:num:path scheme
         num = item_id.split(":", maxsplit=2)[1]
         [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
@@ -377,12 +383,17 @@ class DirectoryTree(ttk.Treeview):
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
 
-        project_root = get_path(self._find_project_id(dir_id))
+        project_id = self.find_project_id(dir_id)
+        project_root = get_path(project_id)
         for child_path, child_id in path2id.items():
             self._update_tags_and_content(project_root, child_id)
 
         for index, child_id in enumerate(sorted(self.get_children(dir_id), key=self._sorting_key)):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
+
+        self.event_generate(
+            "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
+        )
 
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
         [git_tag] = [t for t in self.item(item_id, "tags") if t.startswith("git_")] or [None]

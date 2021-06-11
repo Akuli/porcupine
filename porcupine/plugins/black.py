@@ -1,12 +1,12 @@
-import traceback
-import shutil
 import logging
 import pathlib
+import shutil
 import subprocess
+import traceback
 import typing
 from tkinter import messagebox
 
-from porcupine import get_tab_manager, menubar, tabs, utils, textwidget
+from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def run_black(code: str, path: typing.Optional[pathlib.Path]) -> typing.Optional
         log.debug("No file path available, using black from PATH")
     else:
         project_root = utils.find_project_root(path)
-        venv = python_venv.get_venv( project_root)
+        venv = python_venv.get_venv(project_root)
         if venv is None:
             log.debug(f"No venv found from {project_root}")
         else:
@@ -33,22 +33,23 @@ def run_black(code: str, path: typing.Optional[pathlib.Path]) -> typing.Optional
     log.info(f"Using black: {black}")
     if black is None:
         log.exception("can't find black")
-        messagebox.showerror(
-            "Can't find black", "Make sure that black is installed and try again."
-        )
+        messagebox.showerror("Can't find black", "Make sure that black is installed and try again.")
         return None
 
     try:
         # run black in subprocess just to make sure that it can't crash porcupine
         # set cwd so that black finds its config in pyproject.toml
-        result = subprocess.run([black, "-"], check=True, stdout=subprocess.PIPE, cwd=(pathlib.Path.home() if path is None else path.parent), input=code.encode("utf-8"))
+        result = subprocess.run(
+            [black, "-"],
+            check=True,
+            stdout=subprocess.PIPE,
+            cwd=(pathlib.Path.home() if path is None else path.parent),
+            input=code.encode("utf-8"),
+        )
         return result.stdout.decode("utf-8")
     except Exception as e:
         log.exception(e)
-        messagebox.showerror(
-            "Running black failed",
-            traceback.format_exc()
-        )
+        messagebox.showerror("Running black failed", traceback.format_exc())
         return None
 
 
