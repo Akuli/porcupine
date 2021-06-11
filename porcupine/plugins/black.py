@@ -1,58 +1,66 @@
+import traceback
+import shutil
+import logging
 import pathlib
 import subprocess
 import typing
 from tkinter import messagebox
 
-from porcupine import get_tab_manager, menubar, tabs
+from porcupine import get_tab_manager, menubar, tabs, utils, textwidget
+from porcupine.plugins import python_venv
+
+log = logging.getLogger(__name__)
 
 
 def run_black(code: str, path: typing.Optional[pathlib.Path]) -> typing.Optional[str]:
-    # run black in subprocess just to make sure that it can't crash porcupine
-    # set cwd so that black finds its config in pyproject.toml
-    try:
-        process = subprocess.Popen(
-            ["black", "-"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=(pathlib.Path.home() if path is None else path.parent),
-        )
-    except FileNotFoundError as e:
+    black = shutil.which("black")
+    log.debug(f"black from PATH: {black}")
+    if path is None:
+        log.debug("No file path available, using black from PATH")
+    else:
+        project_root = utils.find_project_root(path)
+        venv = python_venv.get_venv( project_root)
+        if venv is None:
+            log.debug(f"No venv found from {project_root}")
+        else:
+            black_path = python_venv.get_exe(venv, "black")
+            if black_path is not None:
+                black = str(black_path)
+                log.info(f"Found black from venv: {black}")
+            else:
+                log.debug(f"No black in venv: {venv}")
+
+    log.info(f"Using black: {black}")
+    if black is None:
+        log.exception("can't find black")
         messagebox.showerror(
-            "Can't find black", str(e) + "\n\nMake sure that black is installed and try again."
+            "Can't find black", "Make sure that black is installed and try again."
         )
         return None
 
-    (output, errors) = process.communicate(code.encode("utf-8"))
-    if process.returncode != 0:
+    try:
+        # run black in subprocess just to make sure that it can't crash porcupine
+        # set cwd so that black finds its config in pyproject.toml
+        result = subprocess.run([black, "-"], check=True, stdout=subprocess.PIPE, cwd=(pathlib.Path.home() if path is None else path.parent), input=code.encode("utf-8"))
+        return result.stdout.decode("utf-8")
+    except Exception as e:
+        log.exception(e)
         messagebox.showerror(
             "Running black failed",
-            (
-                "Black exited with status code {process.returncode}.\n"
-                + errors.decode("utf-8", errors="replace")
-            ),
+            traceback.format_exc()
         )
         return None
-
-    return output.decode("utf-8")
 
 
 def callback() -> None:
-    selected_tab = get_tab_manager().select()
-    assert isinstance(selected_tab, tabs.FileTab)
-    widget = selected_tab.textwidget
-    before = widget.get("1.0", "end - 1 char")
-    after = run_black(before, selected_tab.path)
-    if after is None:
-        # error
-        return
+    tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
+    before = tab.textwidget.get("1.0", "end - 1 char")
+    after = run_black(before, tab.path)
 
-    if before != after:
-        widget["autoseparators"] = False
-        widget.delete("1.0", "end - 1 char")
-        widget.insert("1.0", after)
-        widget.edit_separator()
-        widget["autoseparators"] = True
+    if after is not None and before != after:
+        with textwidget.change_batch(tab.textwidget):
+            tab.textwidget.replace("1.0", "end - 1 char", after)
 
 
 def setup() -> None:

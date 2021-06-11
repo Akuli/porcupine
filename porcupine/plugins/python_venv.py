@@ -19,15 +19,26 @@ log = logging.getLogger(__name__)
 setup_after = ["directory_tree"]
 
 
+def get_exe(venv: Path, name: str) -> Path:
+    if sys.platform != "win32":
+        if (venv / "bin" / name).exists():
+            return venv / "bin" / name
+    else:
+        # TODO: which should be preferred, foo.bat or foo.exe?
+        if (venv / "Scripts" / (name + ".bat")).exists():  # activate.bat
+            return venv / "Scripts" / (name + ".bat")
+        if (venv / "Scripts" / (name + ".exe")).exists():  # python.exe
+            return venv / "Scripts" / (name + ".exe")
+
+    return None
+
+
 def is_venv(path: Path) -> bool:
-    landmarks = [path / "pyvenv.cfg"]
+    landmarks = [path / "pyvenv.cfg", get_exe(path, "python")]
     if sys.platform == "win32":
         landmarks.append(path / "Scripts" / "activate.bat")
-        landmarks.append(path / "Scripts" / "python.exe")
     else:
         landmarks.append(path / "bin" / "activate")
-        landmarks.append(path / "bin" / "python3")
-
     return all(landmark.exists() for landmark in landmarks)
 
 
