@@ -108,11 +108,11 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch, dont_run_in_thr
     Path("b").write_text("lol")
     [project_id] = tree.get_children()
 
-    tree.refresh_everything()
+    tree.refresh()
     assert set(tree.item(project_id, "tags")) == {"git_modified"}
 
     subprocess.check_call(["git", "add", "a", "b"])
-    tree.refresh_everything()
+    tree.refresh()
     assert set(tree.item(project_id, "tags")) == {"git_added"}
 
 
@@ -144,7 +144,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
 
     tree.add_project(tmp_path)
     [project_id] = tree.get_children()
-    tree.refresh_everything()
+    tree.refresh()
     assert set(tree.item(project_id, "tags")) == {"git_mergeconflict"}
 
 
@@ -214,7 +214,7 @@ def test_all_files_deleted(tree, tmp_path, tabmanager, dont_run_in_thread):
 
     (tmp_path / "README").unlink()
     (tmp_path / "hello.py").unlink()
-    tree.refresh_everything()
+    tree.refresh()
     assert tree.contains_dummy(project_id)
 
 
