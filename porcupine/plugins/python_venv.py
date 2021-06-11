@@ -57,7 +57,7 @@ def get_venv(project_root: Path) -> Path | None:
         log.info(f"No venv found in {project_root}")
     else:
         log.info(f"Using {result} as venv of {project_root}")
-        custom_paths[str(project_root)] = str(result)  # Do not automagically switch to new venvs
+        custom_paths[str(project_root)] = str(result)  # Do not switch venv unless user wants
         settings.set_("python_venvs", custom_paths)  # custom_paths is copy
     return result
 
