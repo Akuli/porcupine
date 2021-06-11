@@ -111,7 +111,7 @@ def test_get_binding():
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_project_root(tmp_path, monkeypatch):
+def test_project_root(tmp_path):
     (tmp_path / "foo").mkdir()
     (tmp_path / "bar.py").touch()
     (tmp_path / "foo" / "baz.py").touch()

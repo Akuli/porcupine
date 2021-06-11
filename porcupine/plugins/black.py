@@ -1,58 +1,52 @@
-import pathlib
+# TODO: add other formatters, at least isort
+from __future__ import annotations
+
+import logging
 import subprocess
-import typing
+import traceback
+from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import get_tab_manager, menubar, tabs
+from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
+from porcupine.plugins import python_venv
+
+log = logging.getLogger(__name__)
 
 
-def run_black(code: str, path: typing.Optional[pathlib.Path]) -> typing.Optional[str]:
-    # run black in subprocess just to make sure that it can't crash porcupine
-    # set cwd so that black finds its config in pyproject.toml
+def run_black(code: str, path: Path | None) -> str:
+    python = python_venv.find_python(None if path is None else utils.find_project_root(path))
+    if python is None:
+        messagebox.showerror(
+            "Can't find a Python installation", "You need to install Python to run black."
+        )
+        return code
+
     try:
-        process = subprocess.Popen(
-            ["black", "-"],
-            stdin=subprocess.PIPE,
+        # run black in subprocess just to make sure that it can't crash porcupine
+        # set cwd so that black finds its config in pyproject.toml
+        result = subprocess.run(
+            [str(python), "-m", "black", "-"],
+            check=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=(pathlib.Path.home() if path is None else path.parent),
+            cwd=(Path.home() if path is None else path.parent),
+            input=code.encode("utf-8"),
         )
-    except FileNotFoundError as e:
-        messagebox.showerror(
-            "Can't find black", str(e) + "\n\nMake sure that black is installed and try again."
-        )
-        return None
-
-    (output, errors) = process.communicate(code.encode("utf-8"))
-    if process.returncode != 0:
-        messagebox.showerror(
-            "Running black failed",
-            (
-                "Black exited with status code {process.returncode}.\n"
-                + errors.decode("utf-8", errors="replace")
-            ),
-        )
-        return None
-
-    return output.decode("utf-8")
+        return result.stdout.decode("utf-8")
+    except Exception:
+        log.exception("running black failed")
+        messagebox.showerror("Running black failed", traceback.format_exc())
+        return code
 
 
 def callback() -> None:
-    selected_tab = get_tab_manager().select()
-    assert isinstance(selected_tab, tabs.FileTab)
-    widget = selected_tab.textwidget
-    before = widget.get("1.0", "end - 1 char")
-    after = run_black(before, selected_tab.path)
-    if after is None:
-        # error
-        return
+    tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
 
+    before = tab.textwidget.get("1.0", "end - 1 char")
+    after = run_black(before, tab.path)
     if before != after:
-        widget["autoseparators"] = False
-        widget.delete("1.0", "end - 1 char")
-        widget.insert("1.0", after)
-        widget.edit_separator()
-        widget["autoseparators"] = True
+        with textwidget.change_batch(tab.textwidget):
+            tab.textwidget.replace("1.0", "end - 1 char", after)
 
 
 def setup() -> None:

@@ -14,7 +14,8 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import get_tab_manager, menubar, tabs
+from porcupine import get_tab_manager, menubar, tabs, utils
+from porcupine.plugins import python_venv
 
 from . import no_terminal, terminal
 
@@ -45,7 +46,9 @@ def get_command(
         "file": basename,
         "no_ext": no_ext,
         "no_exts": basename[: -len(exts)] if exts else basename,
-        "python": "py" if sys.platform == "win32" else "python3",
+        "python": python_venv.find_python(
+            None if tab.path is None else utils.find_project_root(tab.path)
+        ),
         "exe": f"{no_ext}.exe" if sys.platform == "win32" else f"./{no_ext}",
     }
     result = [

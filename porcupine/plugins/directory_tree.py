@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import dataclasses
 import logging
-import pathlib
 import subprocess
 import sys
 import time
 import tkinter
 from functools import partial
+from pathlib import Path
 from tkinter import ttk
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Tuple
 
 from porcupine import (
     get_main_window,
@@ -34,7 +35,7 @@ log = logging.getLogger(__name__)
 MAX_PROJECTS = 5
 
 
-def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
+def run_git_status(project_root: Path) -> Dict[Path, str]:
     try:
         start = time.perf_counter()
         run_result = subprocess.run(
@@ -49,7 +50,7 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
 
         if run_result.returncode != 0:
             # likely not a git repo because missing ".git" dir
-            log.info(f"git failed in {project_root}: {run_result}")
+            log.debug(f"git failed in {project_root}: {run_result}")
             return {}
 
     except (OSError, UnicodeError):
@@ -84,9 +85,24 @@ def run_git_status(project_root: pathlib.Path) -> Dict[pathlib.Path, str]:
 # where:
 #   - type is "file", "dir", "project"
 #   - project_number is unique to each project
-def get_path(item_id: str) -> pathlib.Path:
+def get_path(item_id: str) -> Path:
     item_type, project_number, path = item_id.split(":", maxsplit=2)
-    return pathlib.Path(path)
+    return Path(path)
+
+
+def _path_to_root_inclusive(path: Path, root: Path) -> Iterator[Path]:
+    assert path == root or root in path.parents
+    while True:
+        yield path
+        if path == root:
+            break
+        path = path.parent
+
+
+@dataclasses.dataclass
+class FolderRefreshed(utils.EventDataclass):
+    project_id: str
+    folder_id: str
 
 
 class DirectoryTree(ttk.Treeview):
@@ -94,35 +110,54 @@ class DirectoryTree(ttk.Treeview):
         super().__init__(master, selectmode="browse", show="tree", style="DirectoryTree.Treeview")
 
         # Needs after_idle because selection hasn't updated when binding runs
-        self.bind("<Button-1>", (lambda event: self.after_idle(self.on_click, event)), add=True)
+        self.bind("<Button-1>", self._on_click, add=True)
 
         self.bind("<<TreeviewOpen>>", self.open_file_or_dir, add=True)
-        self.bind("<<TreeviewSelect>>", self.update_selection_color, add=True)
+        self.bind("<<TreeviewSelect>>", self._update_selection_color, add=True)
         self.bind("<<ThemeChanged>>", self._config_tags, add=True)
         self.column("#0", minwidth=500)  # allow scrolling sideways
         self._config_tags()
-        self.git_statuses: Dict[pathlib.Path, Dict[pathlib.Path, str]] = {}
+        self.git_statuses: Dict[Path, Dict[Path, str]] = {}
 
-        self._last_click_time = 0
-        self._last_click_selection: Optional[Tuple[str, ...]] = None
+        self._last_click_time = 0  # Very long time since previous click, no double click
+        self._last_click_item: str | None = None
 
         self._project_num_counter = 0
 
-    def on_click(self, event: tkinter.Event[DirectoryTree]) -> None:
-        # Don't know why the usual double-click handling doesn't work. It
-        # didn't work at all when update_selection_color was bound to
-        # <<TreeviewSelect>>, but even without that, it was a bit fragile and
-        # only worked sometimes.
-        #
-        # To find time between the two clicks of double-click, I made a program
-        # that printed times when I clicked.
-        selection = self.selection()
-        if event.time - self._last_click_time < 500 and self._last_click_selection == selection:
-            # double click
-            self.open_file_or_dir()
+    def set_the_selection_correctly(self, id: str) -> None:
+        self.selection_set(id)  # type: ignore[no-untyped-call]
+        self.focus(id)
 
-        self._last_click_time = event.time
-        self._last_click_selection = selection
+    def _on_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
+        self.tk.call("focus", self)
+
+        # Man page says identify_row is "obsolescent" but tkinter doesn't have the new thing yet
+        item = self.identify_row(event.y)  # type: ignore[no-untyped-call]
+        if item is None:
+            return None
+
+        # Couldn't get <Double-Button-1> to work, so I wrote a program to
+        # measure max time between double clicks. It's 500ms on my system.
+        double_click = event.time - self._last_click_time < 500 and self._last_click_item == item
+
+        self.set_the_selection_correctly(item)
+        if item.startswith("file:"):
+            if double_click:
+                self.open_file_or_dir()
+        else:
+            little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"  # type: ignore[no-untyped-call]
+            if double_click or little_arrow_clicked:
+                self.item(item, open=(not self.item(item, "open")))
+                if self.item(item, "open"):
+                    self.open_file_or_dir()
+
+        self._last_click_item = item
+        if double_click:
+            # Prevent getting two double clicks with 3 quick subsequent clicks
+            self._last_click_time = 0
+        else:
+            self._last_click_time = event.time
+        return "break"
 
     def _config_tags(self, junk: object = None) -> None:
         fg = self.tk.eval("ttk::style lookup Treeview -foreground")
@@ -144,7 +179,7 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure("git_untracked", foreground="red4")
         self.tag_configure("git_ignored", foreground=gray)
 
-    def update_selection_color(self, event: object = None) -> None:
+    def _update_selection_color(self, event: object = None) -> None:
         try:
             [selected_id] = self.selection()
         except ValueError:  # nothing selected
@@ -168,7 +203,7 @@ class DirectoryTree(ttk.Treeview):
     # directory tree, and home folder somehow becomes a project (e.g. when
     # editing ~/blah.py), then the directory tree will present everything
     # inside the home folder as one project.
-    def add_project(self, root_path: pathlib.Path, *, refresh: bool = True) -> None:
+    def add_project(self, root_path: Path, *, refresh: bool = True) -> None:
         for project_item_id in self.get_children():
             if get_path(project_item_id) == root_path:
                 # Move project first to avoid hiding it soon
@@ -177,8 +212,8 @@ class DirectoryTree(ttk.Treeview):
 
         # TODO: show long paths more nicely
         text = str(root_path)
-        if pathlib.Path.home() in root_path.parents:
-            text = text.replace(str(pathlib.Path.home()), "~", 1)
+        if Path.home() in root_path.parents:
+            text = text.replace(str(Path.home()), "~", 1)
 
         # Add project to beginning so it won't be hidden soon
         self._project_num_counter += 1
@@ -186,29 +221,23 @@ class DirectoryTree(ttk.Treeview):
             "", 0, f"project:{self._project_num_counter}:{root_path}", text=text, open=False
         )
         self._insert_dummy(project_item_id)
-        self.hide_old_projects()
+        self._hide_old_projects()
         if refresh:
-            self.refresh_everything()
+            self.refresh()
 
-    def set_the_selection_correctly(self, id: str) -> None:
-        self.selection_set(id)  # type: ignore[no-untyped-call]
-        self.focus(id)
-
-    def select_file(self, path: pathlib.Path) -> None:
-        for project_root_id in self.get_children():
-            project_root = get_path(project_root_id)
-            if project_root not in path.parents:
+    def select_file(self, path: Path) -> None:
+        for project_id in self.get_children():
+            if get_path(project_id) not in path.parents:
                 continue
 
-            # Find the sub-item representing the file
-            file_id = project_root_id
-            for part in path.relative_to(project_root).parts:
+            path_to_root = list(_path_to_root_inclusive(path, get_path(project_id)))
+            root_to_path_excluding_root = path_to_root[::-1][1:]
+
+            # Find the visible sub-item representing the file
+            file_id = project_id
+            for subpath in root_to_path_excluding_root:
                 if self.item(file_id, "open"):
-                    [file_id] = [
-                        child
-                        for child in self.get_children(file_id)
-                        if get_path(child).name == part
-                    ]
+                    file_id = self.get_id_from_path(subpath, project_id)
                 else:
                     # ...or a closed folder that contains the file
                     break
@@ -234,7 +263,7 @@ class DirectoryTree(ttk.Treeview):
         children = self.get_children(parent)
         return len(children) == 1 and self.tag_has("dummy", children[0])
 
-    def hide_old_projects(self, junk: object = None) -> None:
+    def _hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(""):
             if not get_path(project_id).is_dir():
                 self.delete(project_id)  # type: ignore[no-untyped-call]
@@ -253,28 +282,26 @@ class DirectoryTree(ttk.Treeview):
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
 
-    def refresh_everything(
+    def refresh(
         self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)
     ) -> None:
         log.debug("refreshing begins")
         start_time = time.time()
-        self.hide_old_projects()
+        self._hide_old_projects()
         project_ids = self.get_children()
 
-        def thread_target() -> dict[pathlib.Path, dict[pathlib.Path, str]]:
+        def thread_target() -> dict[Path, dict[Path, str]]:
             return {path: run_git_status(path) for path in map(get_path, project_ids)}
 
-        def done_callback(
-            success: bool, result: str | dict[pathlib.Path, dict[pathlib.Path, str]]
-        ) -> None:
+        def done_callback(success: bool, result: str | dict[Path, dict[Path, str]]) -> None:
             log.debug(f"thread done in {round((time.time()-start_time)*1000)}ms")
             if success and set(self.get_children()) == set(project_ids):
                 assert isinstance(result, dict)
                 self.git_statuses = result
                 for project_id in self.get_children(""):
                     self._update_tags_and_content(get_path(project_id), project_id)
-                self.update_selection_color()
-                log.debug(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
+                self._update_selection_color()
+                log.info(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
                 when_done()
             elif success:
                 log.info(
@@ -286,26 +313,25 @@ class DirectoryTree(ttk.Treeview):
 
         utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
 
-    def _find_project_id(self, item_id: str) -> str:
+    def find_project_id(self, item_id: str) -> str:
         # Does not work for dummy items, because they don't use type:num:path scheme
         num = item_id.split(":", maxsplit=2)[1]
         [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
         return result
 
-    # The following two functions call each other recursively.
+    # The following two methods call each other recursively.
 
-    def _update_tags_and_content(self, project_root: pathlib.Path, child_id: str) -> None:
+    def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
         child_path = get_path(child_id)
         path_to_status = self.git_statuses[project_root]
 
-        # Search for status, from child_path to project_root inclusive
-        path = child_path
-        while path not in path_to_status and path != project_root:
-            path = path.parent
-
-        try:
-            status: str | None = path_to_status[path]
-        except KeyError:
+        for path in _path_to_root_inclusive(child_path, project_root):
+            try:
+                status: str | None = path_to_status[path]
+                break
+            except KeyError:
+                continue
+        else:
             # Handle directories containing files with different statuses
             substatuses = {
                 s
@@ -326,9 +352,9 @@ class DirectoryTree(ttk.Treeview):
 
         self.item(child_id, tags=([] if status is None else status))
         if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
-            self.open_and_refresh_directory(child_path, child_id)
+            self._open_and_refresh_directory(child_path, child_id)
 
-    def open_and_refresh_directory(self, dir_path: pathlib.Path, dir_id: str) -> None:
+    def _open_and_refresh_directory(self, dir_path: Path, dir_id: str) -> None:
         if self.contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
 
@@ -355,15 +381,22 @@ class DirectoryTree(ttk.Treeview):
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
 
-        project_root = get_path(self._find_project_id(dir_id))
+        project_id = self.find_project_id(dir_id)
+        project_root = get_path(project_id)
         for child_path, child_id in path2id.items():
             self._update_tags_and_content(project_root, child_id)
 
         for index, child_id in enumerate(sorted(self.get_children(dir_id), key=self._sorting_key)):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
+        # When binding to this event, make sure you delete all tags you created on previous update.
+        # Even though refersh() deletes tags, this method by itself doesn't.
+        self.event_generate(
+            "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
+        )
+
     def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
-        [git_tag] = self.item(item_id, "tags") or [None]
+        [git_tag] = [t for t in self.item(item_id, "tags") if t.startswith("git_")] or [None]
 
         return (
             [
@@ -389,7 +422,7 @@ class DirectoryTree(ttk.Treeview):
                 tabs.FileTab.open_file(get_tab_manager(), get_path(selected_id))
             )
         elif selected_id.startswith(("dir:", "project:")):  # not dummy item
-            self.open_and_refresh_directory(get_path(selected_id), selected_id)
+            self._open_and_refresh_directory(get_path(selected_id), selected_id)
 
             tab = get_tab_manager().select()
             if (
@@ -399,6 +432,22 @@ class DirectoryTree(ttk.Treeview):
             ):
                 # Don't know why after_idle is needed
                 self.after_idle(self.select_file, tab.path)
+
+    def get_id_from_path(self, path: Path, project_id: str) -> str | None:
+        """Find an item from the directory tree given its path.
+
+        Because the treeview loads items lazily as needed, this may return None
+        even if the path exists inside the project.
+        """
+        project_num = project_id.split(":", maxsplit=2)[1]
+        if path.is_dir():
+            result = f"dir:{project_num}:{path}"
+        else:
+            result = f"file:{project_num}:{path}"
+
+        if self.exists(result):  # type: ignore[no-untyped-call]
+            return result
+        return None
 
 
 def select_current_file(tree: DirectoryTree, event: object) -> None:
@@ -414,13 +463,13 @@ def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
             assert isinstance(tab, tabs.FileTab)
             if tab.path is not None:
                 tree.add_project(utils.find_project_root(tab.path))
-                tree.refresh_everything(when_done=partial(tree.select_file, tab.path))
+                tree.refresh(when_done=partial(tree.select_file, tab.path))
 
         path_callback()
 
         tab.bind("<<AfterSave>>", path_callback, add=True)
-        tab.bind("<<AfterSave>>", tree.hide_old_projects, add=True)
-        tab.bind("<Destroy>", tree.hide_old_projects, add=True)
+        tab.bind("<<AfterSave>>", tree._hide_old_projects, add=True)
+        tab.bind("<Destroy>", tree._hide_old_projects, add=True)
 
 
 def focus_treeview(tree: DirectoryTree) -> None:
@@ -444,7 +493,7 @@ def focus_treeview(tree: DirectoryTree) -> None:
 # something else. That can be found with grep.
 def on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc]) -> None:
     if event.widget is get_main_window() or event.widget is tree:
-        tree.refresh_everything()
+        tree.refresh()
 
 
 def setup() -> None:
@@ -475,7 +524,7 @@ def setup() -> None:
     string_paths = settings.get("directory_tree_projects", List[str])
 
     # Must reverse because last added project goes first
-    for path in map(pathlib.Path, string_paths[:MAX_PROJECTS][::-1]):
+    for path in map(Path, string_paths[:MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
-    tree.refresh_everything()
+    tree.refresh()
