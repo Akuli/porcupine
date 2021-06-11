@@ -32,8 +32,8 @@ def run_black(code: str, path: Path | None) -> str:
             input=code.encode("utf-8"),
         )
         return result.stdout.decode("utf-8")
-    except Exception as e:
-        log.exception(e)
+    except Exception:
+        log.exception("running black failed")
         messagebox.showerror("Running black failed", traceback.format_exc())
         return code
 
