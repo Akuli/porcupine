@@ -8,7 +8,7 @@ from porcupine.plugins.pluginmanager import create_dialog
 
 @pytest.fixture
 def dialog_content(mocker):
-    content = create_dialog()
+    dialog, content = create_dialog()
     yield content
     tkinter.Toplevel.wait_window.call_args[0][0].destroy()
 
