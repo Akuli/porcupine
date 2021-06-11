@@ -6,7 +6,7 @@ import re
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import List
+from typing import List, Optional
 
 from porcupine import get_main_window, menubar, pluginloader, settings, textwidget
 
