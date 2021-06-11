@@ -1,7 +1,7 @@
 """Detects Python venvs (virtual environments).
 
 To choose which venv to use, right-click it in directory tree and select
-"Use this venv".
+"Use this Python venv".
 """
 from __future__ import annotations
 
@@ -91,7 +91,7 @@ def _on_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str:
     if is_venv(path) and get_venv(project_root) != path:
         menu = tkinter.Menu(tearoff=False)
         menu.add_command(
-            label="Use this Python virtualenv",
+            label="Use this Python venv",
             # No need to refresh when clicked, somehow already refreshes 4 times (lol)
             command=partial(set_venv, project_root, path),
         )

@@ -105,7 +105,6 @@ class DirectoryTree(ttk.Treeview):
 
         # Needs after_idle because selection hasn't updated when binding runs
         self.bind("<Button-1>", self._on_click, add=True)
-        # self.bind("<Button-3>", self.on_right_click, add=True)  # TODO: mac right click = button 2?
 
         self.bind("<<TreeviewOpen>>", self.open_file_or_dir, add=True)
         self.bind("<<TreeviewSelect>>", self._update_selection_color, add=True)
@@ -347,11 +346,7 @@ class DirectoryTree(ttk.Treeview):
                 assert not substatuses
                 status = None
 
-        tags = []
-        if status is not None:
-            tags.append(status)
-
-        self.item(child_id, tags=tags)
+        self.item(child_id, tags=([] if status is None else status))
         if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
             self._open_and_refresh_directory(child_path, child_id)
 
@@ -427,12 +422,11 @@ class DirectoryTree(ttk.Treeview):
                 # Don't know why after_idle is needed
                 self.after_idle(self.select_file, tab.path)
 
-    def get_id_from_path(self, path: pathlib.Path, project_id: str) -> None:
+    def get_id_from_path(self, path: pathlib.Path, project_id: str) -> str | None:
         """Find an item from the directory tree given its path.
 
-        The first project containing the path is used if project_id is not
-        given. Because the treeview loads items lazily as needed, this may
-        return None even if the path exists inside the project.
+        Because the treeview loads items lazily as needed, this may return None
+        even if the path exists inside the project.
         """
         project_num = project_id.split(":", maxsplit=2)[1]
         if path.is_dir():
