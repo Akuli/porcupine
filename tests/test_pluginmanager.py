@@ -9,9 +9,7 @@ from porcupine.plugins.pluginmanager import show_dialog
 @pytest.fixture
 def dialog_content(mocker):
     content = show_dialog()
-    tkinter.Toplevel.wait_window.assert_called_once()
     yield content
-    tkinter.Toplevel.wait_window.call_args[0][0].destroy()
 
 
 def test_select_one(dialog_content):
