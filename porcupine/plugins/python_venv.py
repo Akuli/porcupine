@@ -78,7 +78,7 @@ def find_python(project_root: Path | None) -> Path | None:
             log.info(f"Using python from venv: {venv}")
             if sys.platform == "win32":
                 return venv / "Scripts" / "python.exe"
-            return venv / "bin" / "python3"
+            return venv / "bin" / "python"
 
     if sys.platform == "win32":
         log.info(f"No venv found, using py")
