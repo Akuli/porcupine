@@ -1,14 +1,19 @@
-import pathlib
 import shutil
 import subprocess
 import sys
 from functools import partial
+from pathlib import Path
 
 import pytest
 
 from porcupine import get_paned_window, tabs, utils
 from porcupine.plugins import directory_tree as plugin_module
-from porcupine.plugins.directory_tree import DirectoryTree, focus_treeview, get_path
+from porcupine.plugins.directory_tree import (
+    DirectoryTree,
+    _path_to_root_inclusive,
+    focus_treeview,
+    get_path,
+)
 
 
 @pytest.fixture
@@ -97,10 +102,10 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch, dont_run_in_thr
     subprocess.check_call(["git", "init", "--quiet"], stdout=subprocess.DEVNULL)
     tree.add_project(tmp_path)
 
-    pathlib.Path("a").write_text("a")
-    pathlib.Path("b").write_text("b")
+    Path("a").write_text("a")
+    Path("b").write_text("b")
     subprocess.check_call(["git", "add", "a", "b"])
-    pathlib.Path("b").write_text("lol")
+    Path("b").write_text("lol")
     [project_id] = tree.get_children()
 
     tree.refresh_everything()
@@ -125,14 +130,14 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     run("git init --quiet")
     run("git config user.name foo")  # not --global, will stay inside repo
     run("git config user.email foo@bar.baz")
-    pathlib.Path("file").write_text("initial")
+    Path("file").write_text("initial")
     run("git add file")
     run("git commit -m initial")
-    pathlib.Path("file").write_text("a")
+    Path("file").write_text("a")
     run("git add file")
     run("git commit -m a")
     run("git checkout --quiet -b b HEAD~")  # can't use HEAD^ because ^ is special in windows
-    pathlib.Path("file").write_text("b")
+    Path("file").write_text("b")
     run("git add file")
     run("git commit -m b")
     run("git merge master", check=False)  # Git returns status 1 when merge conflict occurs
@@ -211,3 +216,12 @@ def test_all_files_deleted(tree, tmp_path, tabmanager, dont_run_in_thread):
     (tmp_path / "hello.py").unlink()
     tree.refresh_everything()
     assert tree.contains_dummy(project_id)
+
+
+def test_path_to_root_inclusive():
+    assert list(_path_to_root_inclusive(Path("foo/bar/baz"), Path("foo"))) == [
+        Path("foo/bar/baz"),
+        Path("foo/bar"),
+        Path("foo"),
+    ]
+    assert list(_path_to_root_inclusive(Path("foo"), Path("foo"))) == [Path("foo")]

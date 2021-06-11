@@ -8,5 +8,4 @@ pyflakes==2.3.1
 pytest-mock>=3.2.0,<4.0.0
 pynsist>=2.6
 pillow>=5.4.1
-types-cachetools==0.1.6
 mypy==0.901
