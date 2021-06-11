@@ -61,9 +61,6 @@ def _open_log_file() -> TextIO:
 
 
 class _FilterThatDoesntHideWarnings(logging.Filter):
-    def __init__(self, verbose_logger_name: str):
-        super().__init__(verbose_logger_name)
-
     def filter(self, record: logging.LogRecord) -> bool:
         return record.levelno >= logging.WARNING or super().filter(record)
 
