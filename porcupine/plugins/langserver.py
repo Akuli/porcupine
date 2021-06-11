@@ -29,7 +29,7 @@ if sys.platform != "win32":
 import sansio_lsp_client as lsp
 
 from porcupine import get_tab_manager, tabs, textwidget, utils
-from porcupine.plugins import autocomplete, underlines
+from porcupine.plugins import autocomplete, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
 
@@ -352,8 +352,12 @@ class LangServer:
 
         try:
             lsp_events = self._lsp_client.recv(received_bytes)
-        except Exception:
-            self.log.exception("error while receiving lsp events")
+        except Exception as e:
+            if isinstance(e, NotImplementedError) and "workspace/didChangeConfiguration" in str(e):
+                # FIXME: this is hack. To find rest of the hack, ctrl+f hack.
+                self.log.debug("workspace/didChangeConfiguration errored, as expected")
+            else:
+                self.log.exception("error while receiving lsp events")
             lsp_events = []
 
         for lsp_event in lsp_events:
@@ -412,6 +416,27 @@ class LangServer:
 
             for tab in self.tabs_opened.keys():
                 self._send_tab_opened_message(tab)
+
+            # TODO: this is a terrible hack:
+            #   - This only works for pyls, and kinda defeats the purpose of langservers.
+            #   - It should be configured in filetypes.toml.
+            #   - This causes an error elsewhere because sansio-lsp-client doesn't
+            #     officially support workspace/didChangeConfiguration yet.
+            #   - This doesn't refresh as venv changes.
+            self._lsp_client._send_request(
+                "workspace/didChangeConfiguration",
+                {
+                    "settings": {
+                        "pyls": {
+                            "plugins": {
+                                "jedi": {
+                                    "environment": str(python_venv.get_venv(self._id.project_root))
+                                }
+                            }
+                        }
+                    }
+                },
+            )
             return
 
         if isinstance(lsp_event, lsp.Completion):
