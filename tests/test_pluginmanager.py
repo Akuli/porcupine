@@ -8,7 +8,6 @@ from porcupine.plugins.pluginmanager import show_dialog
 
 @pytest.fixture
 def dialog_content(mocker):
-    mocker.patch("tkinter.Toplevel.wait_window", autospec=True)
     content = show_dialog()
     tkinter.Toplevel.wait_window.assert_called_once()
     yield content

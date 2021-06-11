@@ -245,7 +245,6 @@ def create_dialog() -> Tuple[tkinter.Toplevel, PluginDialogContent]:
     dialog.transient(get_main_window())
     dialog.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
     dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
-    dialog.wait_window()
     return (dialog, content)  # for tests
 
 
