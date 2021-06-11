@@ -238,6 +238,7 @@ def show_dialog() -> None:
     else:
         dialog = create_dialog()[0]
 
+
 def create_dialog() -> Tuple[tkinter.Toplevel, PluginDialogContent]:
     dialog = tkinter.Toplevel()
     content = PluginDialogContent(dialog)
