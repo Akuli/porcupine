@@ -60,6 +60,14 @@ def _open_log_file() -> TextIO:
     assert False  # makes mypy happy
 
 
+class _FilterThatDoesntHideWarnings(logging.Filter):
+    def __init__(self, verbose_logger_name: str):
+        super().__init__(verbose_logger_name)
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno >= logging.WARNING or super().filter(record)
+
+
 # verbose_logger can be:
 #   - empty string (print everything)
 #   - logger name (print only messages from that logger)
@@ -84,7 +92,7 @@ def setup(verbose_logger: Optional[str]) -> None:
             print_handler.setLevel(logging.WARNING)
         else:
             print_handler.setLevel(logging.DEBUG)
-            print_handler.addFilter(logging.Filter(verbose_logger))
+            print_handler.addFilter(_FilterThatDoesntHideWarnings(verbose_logger))
         print_handler.setFormatter(logging.Formatter("%(name)s %(levelname)s: %(message)s"))
         handlers.append(print_handler)
 
