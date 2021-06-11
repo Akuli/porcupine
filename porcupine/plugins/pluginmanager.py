@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 dialog = None
 
+
 def get_docstring(module_name: str) -> str:
     try:
         module = importlib.import_module(module_name)
