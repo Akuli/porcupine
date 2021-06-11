@@ -4,7 +4,7 @@ black==21.5b2
 isort==5.8.0
 sphinx>=3.0.0, <4.0.0
 types-toml>=0.1.1
-pyflakes==2.3.1
+pyflakes==2.2.0
 pytest-mock>=3.2.0,<4.0.0
 pynsist>=2.6
 pillow>=5.4.1
