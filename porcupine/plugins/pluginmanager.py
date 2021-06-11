@@ -6,11 +6,13 @@ import re
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import List
+from typing import List, Optional, Tuple
 
 from porcupine import get_main_window, menubar, pluginloader, settings, textwidget
 
 log = logging.getLogger(__name__)
+
+dialog: Optional[tkinter.Toplevel] = None
 
 
 def get_docstring(module_name: str) -> str:
@@ -229,15 +231,22 @@ class PluginDialogContent:
         self._update_plz_restart_label()
 
 
-def show_dialog() -> PluginDialogContent:
+def show_dialog() -> None:
+    global dialog
+    if dialog is not None and dialog.winfo_exists():
+        dialog.lift()
+    else:
+        dialog = create_dialog()[0]
+
+
+def create_dialog() -> Tuple[tkinter.Toplevel, PluginDialogContent]:
     dialog = tkinter.Toplevel()
     content = PluginDialogContent(dialog)
     content.content_frame.pack(fill="both", expand=True)
     dialog.transient(get_main_window())
     dialog.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
     dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
-    dialog.wait_window()
-    return content  # for tests
+    return (dialog, content)  # for tests
 
 
 def setup() -> None:
