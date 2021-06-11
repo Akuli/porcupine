@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict
 
 import porcupine.plugins.directory_tree as dirtree
-from porcupine import get_paned_window, settings, utils
+from porcupine import get_paned_window, settings, utils, images
 
 log = logging.getLogger(__name__)
 setup_after = ["directory_tree"]
@@ -134,6 +134,7 @@ def setup() -> None:
 
     for widget in utils.get_children_recursively(get_paned_window()):
         if isinstance(widget, dirtree.DirectoryTree):
+            widget.tag_configure("venv", image=images.get("venv"))
             utils.bind_with_data(widget, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
             widget.bind(
                 "<Button-3>", _on_right_click, add=True

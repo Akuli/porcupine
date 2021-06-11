@@ -15,7 +15,6 @@ from porcupine import (
     get_main_window,
     get_paned_window,
     get_tab_manager,
-    images,
     menubar,
     settings,
     tabs,
@@ -179,7 +178,6 @@ class DirectoryTree(ttk.Treeview):
         self.tag_configure("git_added", foreground=green)
         self.tag_configure("git_untracked", foreground="red4")
         self.tag_configure("git_ignored", foreground=gray)
-        self.tag_configure("venv", image=images.get("venv"))
 
     def _update_selection_color(self, event: object = None) -> None:
         try:
@@ -232,7 +230,8 @@ class DirectoryTree(ttk.Treeview):
             if get_path(project_id) not in path.parents:
                 continue
 
-            root_to_path_excluding_root = list(_path_to_root_inclusive(path, get_path(project_id)))[::-1][1:]
+            path_to_root = list(_path_to_root_inclusive(path, get_path(project_id)))
+            root_to_path_excluding_root = path_to_root[::-1][1:]
 
             # Find the visible sub-item representing the file
             file_id = project_id
@@ -286,10 +285,6 @@ class DirectoryTree(ttk.Treeview):
     def refresh(
         self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)
     ) -> None:
-        """This is called whenever something may have changed and the treeview needs updating.
-
-        All tags are deleted, including tags added by other plugins.
-        """
         log.debug("refreshing begins")
         start_time = time.time()
         self._hide_old_projects()
@@ -394,6 +389,8 @@ class DirectoryTree(ttk.Treeview):
         for index, child_id in enumerate(sorted(self.get_children(dir_id), key=self._sorting_key)):
             self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
 
+        # When binding to this event, make sure you delete all tags you created on previous update.
+        # Even though refersh() deletes tags, this method by itself doesn't.
         self.event_generate(
             "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
         )
