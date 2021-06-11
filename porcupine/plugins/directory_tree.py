@@ -319,7 +319,7 @@ class DirectoryTree(ttk.Treeview):
         [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
         return result
 
-    # The following two functions call each other recursively.
+    # The following two methods call each other recursively.
 
     def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
         child_path = get_path(child_id)
