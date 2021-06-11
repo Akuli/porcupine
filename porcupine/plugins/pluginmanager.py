@@ -12,6 +12,7 @@ from porcupine import get_main_window, menubar, pluginloader, settings, textwidg
 
 log = logging.getLogger(__name__)
 
+dialog = None
 
 def get_docstring(module_name: str) -> str:
     try:
@@ -230,14 +231,18 @@ class PluginDialogContent:
 
 
 def show_dialog() -> PluginDialogContent:
-    dialog = tkinter.Toplevel()
-    content = PluginDialogContent(dialog)
-    content.content_frame.pack(fill="both", expand=True)
-    dialog.transient(get_main_window())
-    dialog.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
-    dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
-    dialog.wait_window()
-    return content  # for tests
+    global dialog
+    if dialog is not None and dialog.winfo_exists():
+        dialog.lift()
+    else:
+        dialog = tkinter.Toplevel()
+        content = PluginDialogContent(dialog)
+        content.content_frame.pack(fill="both", expand=True)
+        dialog.transient(get_main_window())
+        dialog.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
+        dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
+        dialog.wait_window()
+        return content  # for tests
 
 
 def setup() -> None:
