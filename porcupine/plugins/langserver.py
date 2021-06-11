@@ -8,7 +8,6 @@ import errno
 import itertools
 import logging
 import os
-import pathlib
 import pprint
 import queue
 import re
@@ -21,7 +20,8 @@ import sys
 import threading
 import time
 from functools import partial
-from typing import IO, Dict, List, NamedTuple, Optional, Tuple, Union
+from pathlib import Path
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 if sys.platform != "win32":
     import fcntl
@@ -241,26 +241,45 @@ def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
     return f"{diagnostic.source}: {diagnostic.message}"
 
 
+def _substitute_python_venv_recursively(obj: object, venv: Path | None) -> Any:
+    if isinstance(obj, list):
+        return [_substitute_python_venv_recursively(item, venv) for item in obj]
+    if isinstance(obj, dict):
+        return {key: _substitute_python_venv_recursively(value, venv) for key, value in obj.items()}
+    if isinstance(obj, str):
+        # This doesn't account for weird formatting tricks, but those aren't useful here anyway
+        if "{python_venv}" in obj and venv is None:
+            return None
+        return obj.format(python_venv=str(venv))
+    return obj
+
+
 @dataclasses.dataclass
 class LangServerConfig:
     command: str
     language_id: str
     port: Optional[int] = None
+    settings: Any = dataclasses.field(default_factory=dict)
 
 
 # FIXME: two langservers with same command, same port, different project_root
 class LangServerId(NamedTuple):
     command: str
     port: Optional[int]
-    project_root: pathlib.Path
+    project_root: Path
 
 
 class LangServer:
     def __init__(
-        self, process: subprocess.Popen[bytes], the_id: LangServerId, log: logging.LoggerAdapter
+        self,
+        process: subprocess.Popen[bytes],
+        the_id: LangServerId,
+        log: logging.LoggerAdapter,
+        config: LangServerConfig,
     ) -> None:
         self._process = process
-        self._id = the_id
+        self._config = config
+        self._id = the_id  # TODO: replace with config
         self._lsp_client = lsp.Client(trace="verbose", root_uri=the_id.project_root.as_uri())
 
         self._lsp_id_to_tab_and_request: Dict[
@@ -370,7 +389,6 @@ class LangServer:
 
     def _send_tab_opened_message(self, tab: tabs.FileTab) -> None:
         config = tab.settings.get("langserver", Optional[LangServerConfig])
-        assert isinstance(config, LangServerConfig)
         assert tab.path is not None
 
         self._lsp_client.did_open(
@@ -426,15 +444,9 @@ class LangServer:
             self._lsp_client._send_request(
                 "workspace/didChangeConfiguration",
                 {
-                    "settings": {
-                        "pyls": {
-                            "plugins": {
-                                "jedi": {
-                                    "environment": str(python_venv.get_venv(self._id.project_root))
-                                }
-                            }
-                        }
-                    }
+                    "settings": _substitute_python_venv_recursively(
+                        self._config.settings, python_venv.get_venv(self._id.project_root)
+                    )
                 },
             )
             return
@@ -687,7 +699,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     assert logging_stream is not None
     threading.Thread(target=stream_to_log, args=[logging_stream, log], daemon=True).start()
 
-    langserver = LangServer(process, the_id, log)
+    langserver = LangServer(process, the_id, log, config)
     langserver.run_stuff()
     langservers[the_id] = langserver
     return langserver

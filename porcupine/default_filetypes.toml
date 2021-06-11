@@ -120,9 +120,8 @@
 #                Like {file}, but with no file extensions, e.g. "hello world".
 #
 #            {python}
-#                "py" on Windows, "python3" on other platforms. This way I don't
-#                need to write separate default configuration files for Windows
-#                and Linux.
+#                Path to a Python executable suitable for running the user's
+#                programs. The Python executable may be inside a virtualenv.
 #
 #            {exe}
 #                Same as {no_ext}.exe on Windows and ./{no_ext} on other
@@ -153,6 +152,14 @@
 #            Leave this unset if you want to use stdin and stdout with the
 #            langserver. If the langserver uses a TCP socket listening on
 #            localhost instead, then set this to the port number that it uses.
+#
+#        settings
+#            Configuration that will be passed to the langserver, as a nested
+#            mapping. See the langserver's for what you can include here.
+#
+#            In strings, {python_venv} will be replaced with a path to the
+#            currently selected Python virtual environment. If no venv is set,
+#            the whole string will be replaced with null.
 
 ["Plain Text"]
 pygments_lexer = "pygments.lexers.TextLexer"

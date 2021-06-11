@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict
 
 import porcupine.plugins.directory_tree as dirtree
-from porcupine import get_paned_window, settings, utils, images
+from porcupine import get_paned_window, images, settings, utils
 
 log = logging.getLogger(__name__)
 setup_after = ["directory_tree"]
