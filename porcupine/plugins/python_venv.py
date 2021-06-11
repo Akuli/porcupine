@@ -6,6 +6,7 @@ To choose which venv to use, right-click it in directory tree and select
 from __future__ import annotations
 
 import logging
+import shutil
 import sys
 import tkinter
 from functools import partial
@@ -19,25 +20,13 @@ log = logging.getLogger(__name__)
 setup_after = ["directory_tree"]
 
 
-def get_exe(venv: Path, name: str) -> Path:
-    if sys.platform != "win32":
-        if (venv / "bin" / name).exists():
-            return venv / "bin" / name
-    else:
-        # TODO: which should be preferred, foo.bat or foo.exe?
-        if (venv / "Scripts" / (name + ".bat")).exists():  # activate.bat
-            return venv / "Scripts" / (name + ".bat")
-        if (venv / "Scripts" / (name + ".exe")).exists():  # python.exe
-            return venv / "Scripts" / (name + ".exe")
-
-    return None
-
-
 def is_venv(path: Path) -> bool:
-    landmarks = [path / "pyvenv.cfg", get_exe(path, "python")]
+    landmarks = [path / "pyvenv.cfg"]
     if sys.platform == "win32":
+        landmarks.append(path / "Scripts" / "python.exe")
         landmarks.append(path / "Scripts" / "activate.bat")
     else:
+        landmarks.append(path / "bin" / "python3")
         landmarks.append(path / "bin" / "activate")
     return all(landmark.exists() for landmark in landmarks)
 
@@ -81,8 +70,32 @@ def set_venv(project_root: Path, venv: Path) -> None:
     log.info(f"Venv of {project_root} set to {venv}")
 
 
-def _on_folder_refreshed(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
+# This doesn't use Porcupine's python, unless py or python3 points to it
+def find_python(project_root: Path | None) -> Path | None:
+    if project_root is not None:
+        venv = get_venv(project_root)
+        if venv is not None:
+            log.info(f"Using python from venv: {venv}")
+            if sys.platform == "win32":
+                return venv / "Scripts" / "python.exe"
+            return venv / "bin" / "python3"
+
+    if sys.platform == "win32":
+        log.info(f"No venv found, using py")
+        result = shutil.which("py")
+    else:
+        log.info(f"No venv found, using python3")
+        result = shutil.which("python3")
+
+    if result is None:
+        log.warning("no Python found")
+        return None
+    return Path(result)
+
+
+def _on_folder_refreshed(event: utils.EventWithData) -> None:
     tree = event.widget
+    assert isinstance(tree, dirtree.DirectoryTree)
     info = event.data_class(dirtree.FolderRefreshed)
 
     # tkinter is lacking tag_remove and tag_add
