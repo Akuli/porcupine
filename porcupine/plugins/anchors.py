@@ -53,14 +53,9 @@ class AnchorManager:
     def jump_to_next(self, event: tkinter.Event[tkinter.Misc]) -> None:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
-        anchor_rows = reversed(
-            sorted(
-                [
-                    int(self.tab_textwidget.index(anchorpoint).split(".")[0])
-                    for anchorpoint in anchor_list
-                ]
-            )
-        )
+        anchor_rows = [
+            int(self.tab_textwidget.index(anchorpoint).split(".")[0]) for anchorpoint in anchor_list
+        ]
 
         rows_after_cursor = [n for n in anchor_rows if n > int(cursor_row)]
         if not rows_after_cursor:
@@ -68,12 +63,7 @@ class AnchorManager:
 
         next_anchor_row = min(rows_after_cursor)
         self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
-
-        # If cursor is below last row
-        if int(self._get_cursor_index().split(".")[0]) > int(
-            self.tab_textwidget.index(f"@0,{self.tab_textwidget.winfo_height()}").split(".")[0]
-        ):
-            self.tab_textwidget.see("insert")
+        self.tab_textwidget.see("insert")
 
     def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> None:
         cursor_row = self._get_cursor_index().split(".")[0]
