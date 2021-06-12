@@ -231,7 +231,6 @@ def debounce(
 def on_new_filetab(tab: tabs.FileTab) -> None:
     # needed because pygments_lexer might change
     def on_lexer_changed(junk: object = None) -> None:
-        assert isinstance(tab, tabs.FileTab)  # f u mypy
         highlighter.set_lexer(tab.settings.get("pygments_lexer", LexerMeta)())
 
     highlighter = Highlighter(tab.textwidget)

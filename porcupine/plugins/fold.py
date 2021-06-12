@@ -70,9 +70,8 @@ def fold(tab: tabs.FileTab) -> None:
     tab.textwidget.tag_config(tag, elide=True)
     tab.textwidget.tag_add(tag, f"{lineno + 1}.0", f"{end + 1}.0")
 
-    # https://github.com/python/mypy/issues/9658
-    dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)  # type: ignore
-    dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)  # type: ignore
+    dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)
+    dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)
     tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)  # type: ignore[no-untyped-call]
 
     for child in tab.left_frame.winfo_children():

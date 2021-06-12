@@ -224,6 +224,7 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
 
 
 def menu_callback(filetype: FileType) -> None:
+    # TODO: modernize this? see #511
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     apply_filetype_to_tab(tab, filetype)

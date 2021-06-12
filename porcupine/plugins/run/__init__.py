@@ -61,9 +61,6 @@ def get_command(
 def do_something(
     tab: tabs.FileTab, something: Literal["compile", "run", "compilerun", "lint"]
 ) -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
     tab.save()
     if tab.path is None:
         # user cancelled a save as dialog
@@ -80,7 +77,6 @@ def do_something(
     elif something == "compilerun":
 
         def run_after_compile() -> None:
-            assert isinstance(tab, tabs.FileTab)
             command = get_command(tab, "run", basename)
             if command is not None:
                 terminal.run_command(workingdir, command)

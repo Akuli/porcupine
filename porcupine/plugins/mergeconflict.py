@@ -154,8 +154,7 @@ def setup_displayers(tab: tabs.FileTab) -> None:
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     setup_displayers(tab)
-    # https://github.com/python/mypy/issues/9658
-    tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
+    tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)
 
     for child in tab.left_frame.winfo_children():
         if isinstance(child, LineNumbers):

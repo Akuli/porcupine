@@ -192,4 +192,4 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_filetab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

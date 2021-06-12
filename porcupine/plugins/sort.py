@@ -28,7 +28,7 @@ def sort(tab: tabs.FileTab) -> None:
     tab.textwidget.tag_add("sel", f"{first_line}.0", f"{last_line + 1}.0")
 
 
-def on_new_filetab(tab: tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.bind("<<FiletabCommand:Edit/Sort Lines>>", (lambda event: sort(tab)), add=True)
 
 
