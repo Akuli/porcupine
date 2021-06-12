@@ -38,11 +38,8 @@ class AnchorManager:
         self.prevent_duplicate_anchors()
 
         cursor_index = self._get_cursor_index()
-        for anchor in self.tab_textwidget.mark_names():
-            if (
-                anchor.startswith(self.custom_anchor_prefix)
-                and self.tab_textwidget.index(anchor) == cursor_index
-            ):
+        for anchor in self._get_anchors():
+            if self.tab_textwidget.index(anchor) == cursor_index:
                 self.tab_textwidget.mark_unset(anchor)
                 self.linenumbers.do_update()
                 return
