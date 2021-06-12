@@ -201,8 +201,8 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        on_path_changed(tab)
-        tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
+    on_path_changed(tab)
+    tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:

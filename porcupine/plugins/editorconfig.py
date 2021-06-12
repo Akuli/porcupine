@@ -351,8 +351,8 @@ def get_config_and_apply_to_tab(tab: tabs.FileTab, junk: object = None) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        get_config_and_apply_to_tab(tab)
-        tab.bind("<<PathChanged>>", partial(get_config_and_apply_to_tab, tab), add=True)
+    get_config_and_apply_to_tab(tab)
+    tab.bind("<<PathChanged>>", partial(get_config_and_apply_to_tab, tab), add=True)
 
 
 def setup() -> None:

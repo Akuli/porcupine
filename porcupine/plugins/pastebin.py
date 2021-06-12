@@ -264,7 +264,11 @@ def start_pasting(tab: tabs.FileTab, paste_class: Type[Paste], junk_event: objec
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     for klass in [DPaste, Termbin]:
-        tab.bind(f"<<FiletabCommand:Pastebin/{klass.name}>>", partial(start_pasting, tab, klass), add=True)
+        tab.bind(
+            f"<<FiletabCommand:Pastebin/{klass.name}>>",
+            partial(start_pasting, tab, klass),
+            add=True,
+        )
 
 
 def setup() -> None:

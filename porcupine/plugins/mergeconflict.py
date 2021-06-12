@@ -153,22 +153,22 @@ def setup_displayers(tab: tabs.FileTab) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        setup_displayers(tab)
-        # https://github.com/python/mypy/issues/9658
-        tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
+    setup_displayers(tab)
+    # https://github.com/python/mypy/issues/9658
+    tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
 
-        for child in tab.left_frame.winfo_children():
-            if isinstance(child, LineNumbers):
-                tab.textwidget.bind(
-                    "<Enter>",
-                    (
-                        # This runs after clicking "Use this" button, mouse <Enter>s text widget
-                        # Don't know why this needs a small timeout instead of after_idle
-                        # https://github.com/python/mypy/issues/9658
-                        lambda event: tab.after(50, cast(Any, child).do_update)
-                    ),
-                    add=True,
-                )
+    for child in tab.left_frame.winfo_children():
+        if isinstance(child, LineNumbers):
+            tab.textwidget.bind(
+                "<Enter>",
+                (
+                    # This runs after clicking "Use this" button, mouse <Enter>s text widget
+                    # Don't know why this needs a small timeout instead of after_idle
+                    # https://github.com/python/mypy/issues/9658
+                    lambda event: tab.after(50, cast(Any, child).do_update)
+                ),
+                add=True,
+            )
 
 
 def setup() -> None:

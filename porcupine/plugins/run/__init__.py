@@ -58,7 +58,9 @@ def get_command(
     return result
 
 
-def do_something(tab: tabs.FileTab, something: Literal["compile", "run", "compilerun", "lint"]) -> None:
+def do_something(
+    tab: tabs.FileTab, something: Literal["compile", "run", "compilerun", "lint"]
+) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
 
@@ -95,9 +97,15 @@ def do_something(tab: tabs.FileTab, something: Literal["compile", "run", "compil
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("commands", CommandsConfig())
-    tab.bind("<<FiletabCommand:Run/Compile>>", (lambda event: do_something(tab, "compile")), add=True)
+    tab.bind(
+        "<<FiletabCommand:Run/Compile>>", (lambda event: do_something(tab, "compile")), add=True
+    )
     tab.bind("<<FiletabCommand:Run/Run>>", (lambda event: do_something(tab, "run")), add=True)
-    tab.bind("<<FiletabCommand:Run/Compile and Run>>", (lambda event: do_something(tab, "compilerun")), add=True)
+    tab.bind(
+        "<<FiletabCommand:Run/Compile and Run>>",
+        (lambda event: do_something(tab, "compilerun")),
+        add=True,
+    )
     tab.bind("<<FiletabCommand:Run/Lint>>", (lambda event: do_something(tab, "lint")), add=True)
 
 

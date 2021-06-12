@@ -107,9 +107,9 @@ class LineNumbers(tkinter.Canvas):
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        # Use tab.left_frame.winfo_children() and isinstance to access
-        # the LineNumbers instance from another plugin
-        LineNumbers(tab.left_frame, tab.textwidget).pack(side="left", fill="y")
+    # Use tab.left_frame.winfo_children() and isinstance to access
+    # the LineNumbers instance from another plugin
+    LineNumbers(tab.left_frame, tab.textwidget).pack(side="left", fill="y")
 
 
 def setup() -> None:

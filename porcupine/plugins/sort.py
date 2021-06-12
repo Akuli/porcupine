@@ -1,6 +1,6 @@
 import tkinter
 
-from porcupine import menubar, tabs, textwidget, get_tab_manager
+from porcupine import get_tab_manager, menubar, tabs, textwidget
 
 
 def sort(tab: tabs.FileTab) -> None:

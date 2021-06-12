@@ -1,14 +1,14 @@
 # TODO: add other formatters, at least isort
 from __future__ import annotations
 
-from functools import partial
 import logging
 import subprocess
 import traceback
+from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import menubar, tabs, textwidget, utils, get_tab_manager
+from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)

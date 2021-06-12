@@ -212,6 +212,7 @@ class TabManager(ttk.Notebook):
         Just like :meth:`add_tab_callback`, but the callback doesn't run if the
         tab is not a :class:`FileTab`.
         """
+
         def func_with_checking_for_filetab(tab: Tab) -> None:
             if isinstance(tab, FileTab):
                 func(tab)

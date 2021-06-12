@@ -52,16 +52,16 @@ class StatusBar(ttk.Frame):
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        statusbar = StatusBar(tab)
-        statusbar.pack(side="bottom", fill="x")
-        tab.bind("<<PathChanged>>", statusbar.show_path, add=True)
-        utils.bind_with_data(tab, "<<Reloaded>>", statusbar.show_reload_warning, add=True)
-        tab.textwidget.bind("<<CursorMoved>>", statusbar.show_cursor_or_selection, add=True)
-        tab.textwidget.bind("<<Selection>>", statusbar.show_cursor_or_selection, add=True)
-        tab.textwidget.bind("<<ContentChanged>>", statusbar.clear_reload_warning, add=True)
+    statusbar = StatusBar(tab)
+    statusbar.pack(side="bottom", fill="x")
+    tab.bind("<<PathChanged>>", statusbar.show_path, add=True)
+    utils.bind_with_data(tab, "<<Reloaded>>", statusbar.show_reload_warning, add=True)
+    tab.textwidget.bind("<<CursorMoved>>", statusbar.show_cursor_or_selection, add=True)
+    tab.textwidget.bind("<<Selection>>", statusbar.show_cursor_or_selection, add=True)
+    tab.textwidget.bind("<<ContentChanged>>", statusbar.clear_reload_warning, add=True)
 
-        statusbar.show_path()
-        statusbar.show_cursor_or_selection()
+    statusbar.show_path()
+    statusbar.show_cursor_or_selection()
 
 
 def setup() -> None:

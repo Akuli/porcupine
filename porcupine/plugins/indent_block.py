@@ -36,7 +36,7 @@ def on_tab_key(event: tkinter.Event[textwidget.MainText], shifted: bool) -> None
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
+    utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
 
 
 def setup() -> None:

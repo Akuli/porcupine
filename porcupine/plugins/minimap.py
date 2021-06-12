@@ -186,9 +186,9 @@ class MiniMap(tkinter.Text):
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        minimap = MiniMap(tab.right_frame, tab)
-        textwidget.use_pygments_theme(minimap, minimap.set_colors)
-        minimap.pack(fill="y", expand=True)
+    minimap = MiniMap(tab.right_frame, tab)
+    textwidget.use_pygments_theme(minimap, minimap.set_colors)
+    minimap.pack(fill="y", expand=True)
 
 
 def setup() -> None:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import partial
 import logging
 import pathlib
 import re
@@ -8,6 +7,7 @@ import sys
 import tkinter
 import traceback
 import webbrowser
+from functools import partial
 from string import ascii_lowercase
 from tkinter import filedialog
 from typing import Callable, Iterator, Optional, Tuple
@@ -58,9 +58,7 @@ def _fix_text_widget_bindings(event: tkinter.Event[tkinter.Misc]) -> None:
         if virtual_event.startswith("<<Menubar:") and not event.widget.bind(virtual_event):
             # When the keys are pressed, generate the event on the main
             # window so the menu callback will trigger.
-            event.widget.bind(
-                virtual_event, partial(_generate_event, virtual_event), add=True
-            )
+            event.widget.bind(virtual_event, partial(_generate_event, virtual_event), add=True)
             assert event.widget.bind(virtual_event)
 
 
@@ -365,12 +363,8 @@ def _fill_menus_with_default_stuff() -> None:
 
         settings.set_("font_size", size)
 
-    get_menu("View").add_command(
-        label="Bigger Font", command=partial(change_font_size, "bigger")
-    )
-    get_menu("View").add_command(
-        label="Smaller Font", command=partial(change_font_size, "smaller")
-    )
+    get_menu("View").add_command(label="Bigger Font", command=partial(change_font_size, "bigger"))
+    get_menu("View").add_command(label="Smaller Font", command=partial(change_font_size, "smaller"))
     get_menu("View").add_command(
         label="Reset Font Size", command=partial(change_font_size, "reset")
     )

@@ -18,8 +18,8 @@ def on_enter(tab: tabs.FileTab, junk: object) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        tab.settings.add_option("trim_trailing_whitespace", True)
-        tab.textwidget.bind("<Return>", functools.partial(on_enter, tab), add=True)
+    tab.settings.add_option("trim_trailing_whitespace", True)
+    tab.textwidget.bind("<Return>", functools.partial(on_enter, tab), add=True)
 
 
 def setup() -> None:

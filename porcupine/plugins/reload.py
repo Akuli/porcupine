@@ -14,10 +14,10 @@ def reload_if_necessary(tab: tabs.FileTab, junk: object) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-        callback = partial(reload_if_necessary, tab)
-        tab.bind("<<TabSelected>>", callback, add=True)
-        tab.textwidget.bind("<FocusIn>", callback, add=True)
-        tab.textwidget.bind("<Button-1>", callback, add=True)
+    callback = partial(reload_if_necessary, tab)
+    tab.bind("<<TabSelected>>", callback, add=True)
+    tab.textwidget.bind("<FocusIn>", callback, add=True)
+    tab.textwidget.bind("<Button-1>", callback, add=True)
 
 
 def setup() -> None:
