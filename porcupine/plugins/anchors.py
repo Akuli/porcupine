@@ -93,9 +93,6 @@ class AnchorManager:
         ):
             self.tab_textwidget.see("insert")
 
-        # TODO: Current Bugs:
-        # 1) Jump to previous will delete code on current row if no more anchors above.
-
     # def bind_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
     #     pass
 
@@ -141,8 +138,8 @@ def on_new_tab(tab: tabs.Tab) -> None:
         ]
         anchor = AnchorManager(tab.textwidget, linenumbers)
         tab.textwidget.bind("<Control-g>", anchor.toggle_on_off, add=True)
-        tab.textwidget.bind("<Control-k>", anchor.jump_to_previous, add=True)
-        tab.textwidget.bind("<Control-l>", anchor.jump_to_next, add=True)
+        tab.textwidget.bind("<Control-e>", anchor.jump_to_previous, add=True)
+        tab.textwidget.bind("<Control-r>", anchor.jump_to_next, add=True)
         # TODO: When keybindings decided, add to default_keybindings.tcl
 
 
