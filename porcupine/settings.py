@@ -595,7 +595,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
                 print("Foobar disabled")
 
         def setup() -> None:
-            settings.add_option("foobar", False, bool)  # False is default value
+            settings.add_option("foobar", False)  # False is default value
             settings.add_checkbutton("foobar", text="Enable foobar")
 
     Currently it is not possible to display a |triangle| next to the
