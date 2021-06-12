@@ -2,10 +2,8 @@
 # TODO: remember which tab was selected
 import pathlib
 import pickle
-import pkgutil
 
 from porcupine import dirs, get_main_window, get_tab_manager
-from porcupine.plugins import __path__ as plugin_paths
 
 # https://fileinfo.com/extension/pkl
 STATE_FILE = pathlib.Path(dirs.user_cache_dir) / "restart_state.pkl"
