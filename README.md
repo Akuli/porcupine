@@ -175,15 +175,7 @@ If you are using Windows, you need to use `py` instead of `python3` and
 
 Here is a list of the commands I use when developing Porcupine:
 - Git commands. I'll assume that you know how to use Git and GitHub.
-- Type checking with mypy:
-    - `git submodule init`
-    - `git submodule update`
-    - `mypy porcupine more_plugins`
-
-    Porcupine uses a custom copy of typeshed in a Git submodule,
-    which is what the first two commands are for.
-    This causes some problems and will hopefully be changed soon.
-    See [#472](https://github.com/Akuli/porcupine/issues/472).
+- Type checking with mypy: `mypy porcupine more_plugins`
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
     A good way to debug a test to see what is actually going on is to add traces.

@@ -1,18 +1,14 @@
-import tkinter
-
 import pytest
 
 from porcupine import pluginloader
-from porcupine.plugins.pluginmanager import show_dialog
+from porcupine.plugins.pluginmanager import create_dialog
 
 
 @pytest.fixture
 def dialog_content(mocker):
-    mocker.patch("tkinter.Toplevel.wait_window", autospec=True)
-    content = show_dialog()
-    tkinter.Toplevel.wait_window.assert_called_once()
+    dialog, content = create_dialog()
     yield content
-    tkinter.Toplevel.wait_window.call_args[0][0].destroy()
+    dialog.destroy()
 
 
 def test_select_one(dialog_content):
@@ -44,3 +40,11 @@ def test_enable_disable_multiple(dialog_content):
     assert get_states() == ("normal", "normal")
     dialog_content.enable_button.invoke()
     assert get_states() == ("disabled", "normal")
+
+
+def test_disable_itself(mocker, dialog_content):
+    mock = mocker.patch("tkinter.messagebox.askokcancel", return_value=False)
+    dialog_content.treeview.selection_set(["pluginmanager"])
+    dialog_content.disable_button.invoke()
+    mock.assert_called_once()
+    assert "settings.json" in str(mock.call_args)

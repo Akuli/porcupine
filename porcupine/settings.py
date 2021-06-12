@@ -92,7 +92,7 @@ class _Option:
         self.converter = converter
 
 
-def _get_json_path() -> pathlib.Path:
+def get_json_path() -> pathlib.Path:
     return pathlib.Path(dirs.user_config_dir) / "settings.json"
 
 
@@ -339,13 +339,13 @@ def save() -> None:
         if name in writing and writing[name] == default:
             del writing[name]
 
-    with _get_json_path().open("w", encoding="utf-8") as file:
+    with get_json_path().open("w", encoding="utf-8") as file:
         json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
 
 
 def _load_from_file() -> None:
     try:
-        with _get_json_path().open("r", encoding="utf-8") as file:
+        with get_json_path().open("r", encoding="utf-8") as file:
             options = json.load(file)
     except FileNotFoundError:
         return
@@ -367,7 +367,7 @@ def init_enough_for_using_disabled_plugins_list() -> None:
     try:
         _load_from_file()
     except Exception:
-        _log.exception(f"reading {_get_json_path()} failed")
+        _log.exception(f"reading {get_json_path()} failed")
     add_option("disabled_plugins", [], List[str])
 
 
