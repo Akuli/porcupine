@@ -63,15 +63,11 @@ class AnchorManager:
         )
 
         rows_after_cursor = [n for n in anchor_rows if n > int(cursor_row)]
-        if rows_after_cursor:
-            next_anchor_row = min(rows_after_cursor)
-        else:
-            next_anchor_row = 0
-
-        if not next_anchor_row:
+        if not rows_after_cursor:
             return
-        else:
-            self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
+
+        next_anchor_row = min(rows_after_cursor)
+        self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
 
         # If cursor is below last row
         if int(self._get_cursor_index().split(".")[0]) > int(
