@@ -220,10 +220,8 @@ class TabManager(ttk.Notebook):
         self.add_tab_callback(func_with_checking_for_filetab)
 
 
-# _FileTabT represents a subclass of FileTab. Don't know if there's a better
-# way to tell that to mypy than passing FileTab twice...
-_TabT = TypeVar("_TabT", "Tab", "Tab")
-_FileTabT = TypeVar("_FileTabT", "FileTab", "FileTab")
+_TabT = TypeVar("_TabT", bound="Tab")
+_FileTabT = TypeVar("_FileTabT", bound="FileTab")
 
 
 class Tab(ttk.Frame):
