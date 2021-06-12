@@ -18,18 +18,18 @@ from porcupine import settings
 def cleared_global_settings(monkeypatch, tmp_path):
     monkeypatch.setattr(settings._global_settings, "_options", {})
     monkeypatch.setattr(settings._global_settings, "_unknown_options", {})
-    monkeypatch.setattr(settings, "_get_json_path", (lambda: tmp_path / "settings.json"))
+    monkeypatch.setattr(settings, "get_json_path", (lambda: tmp_path / "settings.json"))
 
 
 def load_from_json_string(json_string: str) -> None:
-    with settings._get_json_path().open("x", encoding="utf-8") as file:
+    with settings.get_json_path().open("x", encoding="utf-8") as file:
         file.write(json_string)
     settings._load_from_file()
 
 
 def save_and_read_file() -> str:
     settings.save()
-    with settings._get_json_path().open("r", encoding="utf-8") as file:
+    with settings.get_json_path().open("r", encoding="utf-8") as file:
         return json.load(file)
 
 
@@ -113,13 +113,13 @@ def test_reset(cleared_global_settings):
 
 
 def test_no_json_file(cleared_global_settings):
-    assert not settings._get_json_path().exists()
+    assert not settings.get_json_path().exists()
     settings._load_from_file()
 
     settings.add_option("foo", "default")
     settings.set_("foo", "custom")
 
-    assert not settings._get_json_path().exists()
+    assert not settings.get_json_path().exists()
     settings.reset_all()
     assert settings.get("foo", str) == "default"
 
@@ -133,7 +133,7 @@ def test_save(cleared_global_settings):
     settings.set_("foo", "custom foo")
 
     settings.save()
-    with settings._get_json_path().open("r") as file:
+    with settings.get_json_path().open("r") as file:
         assert json.load(file) == {"foo": "custom foo", "bar": "custom bar"}
 
 
