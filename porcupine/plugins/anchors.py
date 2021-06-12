@@ -9,6 +9,7 @@ from porcupine.plugins.linenumbers import LineNumbers
 # Dependent on code from linenumbers.py
 setup_after = ["linenumbers"]
 
+# TODO: Add checkbox to settings window to allow/disallow cycling from last anchor to first anchor with "jump_to_next"
 
 class AnchorManager:
     def __init__(self, tab_textwidget: tkinter.Text, linenumbers: LineNumbers) -> None:
@@ -71,9 +72,11 @@ class AnchorManager:
         else:
             self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
 
-        self.tab_textwidget.see("insert")
-
-        # TODO: If user jumps to the last anchor and then to next, it should jump to the first one in the file.
+        # If cursor is below last row
+        if int(self._get_cursor_index().split(".")[0]) > int(
+            self.tab_textwidget.index(f"@0,{self.tab_textwidget.winfo_height()}").split(".")[0]
+        ):
+            self.tab_textwidget.see("insert")
 
     def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> None:
         cursor_row = self._get_cursor_index().split(".")[0]
@@ -125,10 +128,11 @@ class AnchorManager:
             row_tag = "line_" + self.tab_textwidget.index(anchorpoint).split(".")[0]
             try:
                 [row_id] = self.linenumbers.find_withtag(row_tag)
+            except ValueError:  # if line with anchor isn't visible.
+                pass
+            else:
                 row_text = self.linenumbers.itemcget(row_id, "text")  # type: ignore[no-untyped-call]
                 self.linenumbers.itemconfigure(row_id, text=row_text + " " + self.anchor_symbol)
-            except ValueError:
-                pass
 
     def prevent_duplicate_anchors(self) -> None:
         current_rows = set()
