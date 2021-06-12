@@ -39,7 +39,7 @@ class AnchorManager:
     def _get_cursor_index(self) -> str:
         return self.tab_textwidget.index("insert linestart")
 
-    def toggle_on_off(self) -> None:
+    def toggle_on_off(self, event: tkinter.Event[tabs.FileTab]) -> None:
         self.prevent_duplicate_anchors()
 
         cursor_index = self._get_cursor_index()
@@ -54,7 +54,7 @@ class AnchorManager:
 
         self.linenumbers.do_update()
 
-    def jump_to_next(self) -> str:
+    def jump_to_next(self, event: tkinter.Event[tabs.FileTab]) -> str:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
         anchor_rows = [
@@ -73,7 +73,7 @@ class AnchorManager:
 
         return "break"
 
-    def jump_to_previous(self) -> str:
+    def jump_to_previous(self, event: tkinter.Event[tabs.FileTab]) -> str:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
         anchor_rows = [
@@ -141,9 +141,9 @@ def setup() -> None:
     )
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
-    # Disable accessing submenu, makes gui look nicer
-    menubar.set_enabled_based_on_tab("Edit/Anchors", lambda tab: isinstance(tab, tabs.FileTab))
-
     menubar.add_filetab_command("Edit/Anchors/Add or remove on this line")
     menubar.add_filetab_command("Edit/Anchors/Jump to previous")
     menubar.add_filetab_command("Edit/Anchors/Jump to next")
+
+    # Disable accessing submenu, makes gui look nicer
+    menubar.set_enabled_based_on_tab("Edit/Anchors", lambda tab: isinstance(tab, tabs.FileTab))
