@@ -35,6 +35,11 @@ event add "<<Menubar:Edit/Find and Replace>>" <$contmand-f>
 # fold plugin
 event add "<<Menubar:Edit/Fold>>" <Alt-f>
 
+# anchor plugin
+event add "<<Anchor:Toggle>>" <Alt-A>
+event add "<<Anchor:Previous>>" <Alt-Shift-Up>
+event add "<<Anchor:Next>>" <Alt-Shift-Down>
+
 # urls plugin
 event add "<<Urls:OpenWithMouse>>" <$contmand-Button-1>
 event add "<<Urls:OpenWithKeyboard>>" <$contmand-Return>

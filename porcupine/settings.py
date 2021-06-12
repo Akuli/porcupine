@@ -589,6 +589,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
         from porcupine import settings
 
         def do_something() -> None:
+            # 'bool' here is a keyword and should not be replaced with 'True' or 'False'
             if settings.get("foobar", bool):
                 print("Foobar enabled")
             else:

@@ -60,7 +60,13 @@ class LineNumbers(tkinter.Canvas):
 
             x, y, *junk = dlineinfo
             self.create_text(
-                0, y, text=f" {lineno}", anchor="nw", font="TkFixedFont", fill=self._text_color
+                0,
+                y,
+                text=f" {lineno}",
+                anchor="nw",
+                font="TkFixedFont",
+                fill=self._text_color,
+                tags=f"line_{lineno}",
             )
 
         # Do this in other plugins: linenumbers.bind("<<Updated>>", do_something, add=True)
