@@ -1,6 +1,6 @@
 """
 Allow for easy navigation in your files by toggling on/off anchorpoints,
-and jumpbing back and forth between them
+and jumping back and forth between them.
 """
 from __future__ import annotations
 
