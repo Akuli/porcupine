@@ -583,7 +583,7 @@ def add_entry(
 def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbutton:
     """Add a :class:`tkinter.ttk.Checkbutton` to the setting dialog.
 
-    All ``**checkbutton_kwargs`` go to :class:`tkinter.ttk.Entry`.
+    All ``**checkbutton_kwargs`` go to :class:`tkinter.ttk.Checkbutton`.
     You can do this, for example::
 
         from porcupine import settings
