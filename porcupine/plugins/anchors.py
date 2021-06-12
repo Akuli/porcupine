@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import tkinter
-from typing import List
 
 from porcupine import get_tab_manager, tabs
 from porcupine.plugins.linenumbers import LineNumbers
@@ -12,7 +11,7 @@ setup_after = ["linenumbers"]
 
 
 class AnchorManager:
-    def __init__(self, tab_textwidget: tkinter.Text, linenumbers: tkinter.Canvas) -> None:
+    def __init__(self, tab_textwidget: tkinter.Text, linenumbers: LineNumbers) -> None:
         self.tab_textwidget = tab_textwidget
         self.linenumbers = linenumbers
 
@@ -23,7 +22,7 @@ class AnchorManager:
 
         linenumbers.bind("<<Updated>>", self.update_linenumbers, add=True)
 
-    def _get_anchors(self) -> List:
+    def _get_anchors(self) -> list[str]:
         return [
             anchor
             for anchor in self.tab_textwidget.mark_names()
@@ -131,7 +130,7 @@ class AnchorManager:
             row_tag = "line_" + self.tab_textwidget.index(anchorpoint).split(".")[0]
             try:
                 [row_id] = self.linenumbers.find_withtag(row_tag)
-                row_text = self.linenumbers.itemcget(row_id, "text")
+                row_text = self.linenumbers.itemcget(row_id, "text")  # type: ignore[no-untyped-call]
                 self.linenumbers.itemconfigure(row_id, text=row_text + " " + self.anchor_symbol)
             except ValueError:
                 pass
