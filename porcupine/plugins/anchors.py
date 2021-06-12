@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 import tkinter
 
-from porcupine import get_tab_manager, tabs
+from porcupine import get_tab_manager, settings, tabs
 from porcupine.plugins.linenumbers import LineNumbers
 
 # Dependent on code from linenumbers.py
@@ -66,6 +66,10 @@ class AnchorManager:
             next_anchor_row = min(rows_after_cursor)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
+        elif not rows_after_cursor and len(anchor_list) >= 2 and settings.get("anchors", True):
+            next_anchor_row = min(anchor_rows)
+            self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
+            self.tab_textwidget.see("insert")
 
         return "break"
 
@@ -79,6 +83,10 @@ class AnchorManager:
         rows_before_cursor = [n for n in anchor_rows if n < int(cursor_row)]
         if rows_before_cursor:
             previous_anchor_row = max(rows_before_cursor)
+            self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
+            self.tab_textwidget.see("insert")
+        elif not rows_before_cursor and len(anchor_list) >= 2 and settings.get("anchors", True):
+            previous_anchor_row = max(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
 
@@ -129,3 +137,5 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
 def setup() -> None:
     get_tab_manager().add_tab_callback(on_new_tab)
+    settings.add_option("anchors", False)  # False is default value
+    settings.add_checkbutton("anchors", text="Jumping to previous/next anchor cycles to end/start of file")
