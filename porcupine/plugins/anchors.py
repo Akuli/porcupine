@@ -58,12 +58,12 @@ class AnchorManager:
         ]
 
         rows_after_cursor = [n for n in anchor_rows if n > int(cursor_row)]
-        if not rows_after_cursor:
-            return
+        if rows_after_cursor:
+            next_anchor_row = min(rows_after_cursor)
+            self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
+            self.tab_textwidget.see("insert")
 
-        next_anchor_row = min(rows_after_cursor)
-        self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
-        self.tab_textwidget.see("insert")
+        return "break"
 
     def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> None:
         cursor_row = self._get_cursor_index().split(".")[0]
@@ -82,16 +82,16 @@ class AnchorManager:
             else:
                 break
 
-        if not next_anchor_row:
-            return
-        else:
+        if next_anchor_row:
             self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
 
-        # If cursor is above first row
-        if int(self._get_cursor_index().split(".")[0]) < int(
-            self.tab_textwidget.index("@0,0").split(".")[0]
-        ):
-            self.tab_textwidget.see("insert")
+            # If cursor is above first row
+            if int(self._get_cursor_index().split(".")[0]) < int(
+                self.tab_textwidget.index("@0,0").split(".")[0]
+            ):
+                self.tab_textwidget.see("insert")
+
+        return "break"
 
     # def bind_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
     #     pass
@@ -137,10 +137,9 @@ def on_new_tab(tab: tabs.Tab) -> None:
             child for child in tab.left_frame.winfo_children() if isinstance(child, LineNumbers)
         ]
         anchor = AnchorManager(tab.textwidget, linenumbers)
-        tab.textwidget.bind("<Control-g>", anchor.toggle_on_off, add=True)
-        tab.textwidget.bind("<Control-e>", anchor.jump_to_previous, add=True)
-        tab.textwidget.bind("<Control-r>", anchor.jump_to_next, add=True)
-        # TODO: When keybindings decided, add to default_keybindings.tcl
+        tab.textwidget.bind("<<Anchor:Toggle>>", anchor.toggle_on_off, add=True)
+        tab.textwidget.bind("<<Anchor:Previous>>", anchor.jump_to_previous, add=True)
+        tab.textwidget.bind("<<Anchor:Next>>", anchor.jump_to_next, add=True)
 
 
 def setup() -> None:
