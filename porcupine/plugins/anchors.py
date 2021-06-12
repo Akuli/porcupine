@@ -71,11 +71,7 @@ class AnchorManager:
         else:
             self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
 
-        # If cursor is below last row
-        if int(self._get_cursor_index().split(".")[0]) > int(
-            self.tab_textwidget.index(f"@0,{self.tab_textwidget.winfo_height()}").split(".")[0]
-        ):
-            self.tab_textwidget.see("insert")
+        self.tab_textwidget.see("insert")
 
         # TODO: If user jumps to the last anchor and then to next, it should jump to the first one in the file.
 
