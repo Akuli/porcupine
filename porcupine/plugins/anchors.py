@@ -161,6 +161,7 @@ def on_new_tab(tab: tabs.Tab) -> None:
         tab.textwidget.bind("<Control-g>", anchor.toggle_on_off, add=True)
         tab.textwidget.bind("<Control-k>", anchor.jump_to_previous, add=True)
         tab.textwidget.bind("<Control-l>", anchor.jump_to_next, add=True)
+        # TODO: When keybindings decided, add to default_keybindings.tcl
 
 
 def setup() -> None:
