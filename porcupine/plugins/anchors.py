@@ -68,30 +68,17 @@ class AnchorManager:
     def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> None:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
-        anchor_rows = sorted(
-            [
-                int(self.tab_textwidget.index(anchorpoint).split(".")[0])
-                for anchorpoint in anchor_list
-            ]
-        )
+        anchor_rows = [
+            int(self.tab_textwidget.index(anchorpoint).split(".")[0]) for anchorpoint in anchor_list
+        ]
 
-        next_anchor_row = 0
-        for anchor_row in anchor_rows:
-            if anchor_row < int(cursor_row):
-                next_anchor_row = anchor_row
-            else:
-                break
-
-        if not next_anchor_row:
+        rows_before_cursor = [n for n in anchor_rows if n < int(cursor_row)]
+        if not rows_before_cursor:
             return
-        else:
-            self.tab_textwidget.mark_set("insert", f"{str(next_anchor_row)}.0")
 
-        # If cursor is above first row
-        if int(self._get_cursor_index().split(".")[0]) < int(
-            self.tab_textwidget.index("@0,0").split(".")[0]
-        ):
-            self.tab_textwidget.see("insert")
+        previous_anchor_row = max(rows_before_cursor)
+        self.tab_textwidget.mark_set("insert", f"{str(previous_anchor_row)}.0")
+        self.tab_textwidget.see("insert")
 
     # def bind_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
     #     pass
