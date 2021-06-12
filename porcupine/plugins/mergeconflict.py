@@ -4,9 +4,12 @@ from __future__ import annotations
 import itertools
 import tkinter
 import weakref
-from typing import Any, List
+from typing import Any, List, cast
 
 from porcupine import get_tab_manager, tabs, utils
+from porcupine.plugins.linenumbers import LineNumbers
+
+setup_after = ["linenumbers"]
 
 
 def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
@@ -154,15 +157,19 @@ def on_new_tab(tab: tabs.Tab) -> None:
         setup_displayers(tab)
         # https://github.com/python/mypy/issues/9658
         tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
-        tab.textwidget.bind(
-            "<Enter>",
-            (
-                # This runs after clicking "Use this" button, mouse <Enter>s text widget
-                # Don't know why this needs a small timeout instead of after_idle
-                lambda event: tab.after(50, tab.textwidget.event_generate, "<<UpdateLineNumbers>>")  # type: ignore
-            ),
-            add=True,
-        )
+
+        for child in tab.left_frame.winfo_children():
+            if isinstance(child, LineNumbers):
+                tab.textwidget.bind(
+                    "<Enter>",
+                    (
+                        # This runs after clicking "Use this" button, mouse <Enter>s text widget
+                        # Don't know why this needs a small timeout instead of after_idle
+                        # https://github.com/python/mypy/issues/9658
+                        lambda event: tab.after(50, cast(Any, child).do_update)
+                    ),
+                    add=True,
+                )
 
 
 def setup() -> None:
