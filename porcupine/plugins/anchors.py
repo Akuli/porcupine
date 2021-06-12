@@ -50,7 +50,7 @@ class AnchorManager:
 
         self.linenumbers.do_update()
 
-    def jump_to_next(self, event: tkinter.Event[tkinter.Misc]) -> None:
+    def jump_to_next(self, event: tkinter.Event[tkinter.Misc]) -> str:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
         anchor_rows = [
@@ -65,7 +65,7 @@ class AnchorManager:
 
         return "break"
 
-    def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> None:
+    def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> str:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
         anchor_rows = sorted(
