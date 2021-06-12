@@ -85,7 +85,7 @@ class AnchorManager:
             previous_anchor_row = max(rows_before_cursor)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif not rows_before_cursor and len(anchor_list) >= 2 and settings.get("anchors", bool):
+        elif len(anchor_list) >= 2 and settings.get("anchors", bool):
             previous_anchor_row = max(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
