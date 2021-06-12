@@ -110,6 +110,7 @@ A label that displays *text* is added to column 0 (see the ascii art above).
 When setting the values, the converter passed to :func:`add_option` is used.
 
 .. autofunction:: add_entry
+.. autofunction:: add_checkbutton
 .. autofunction:: add_combobox
 .. autofunction:: add_spinbox
 .. autofunction:: add_label
