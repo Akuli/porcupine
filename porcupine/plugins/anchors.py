@@ -129,7 +129,7 @@ managers: weakref.WeakKeyDictionary[tabs.FileTab, AnchorManager] = weakref.WeakK
 
 def get_anchor_manager() -> AnchorManager:
     tab = get_tab_manager().select()
-    assert tab is not None
+    assert isinstance(tab, tabs.FileTab)
     return managers[tab]
 
 
