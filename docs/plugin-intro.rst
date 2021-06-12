@@ -19,8 +19,12 @@ Porcupine's API documentation assume
 Where are the plugins?
 ----------------------
 
+At the time of writing this guide, making a new plugin usually requires some
+changes to the rest of Porcupine, so you should start by following
+`the developing instructions in Porcupine's README <https://github.com/Akuli/porcupine#developing-porcupine>`_.
+
 Porcupine searches for plugins in two places. The plugins that come with
-Porcupine are installed along with it, but Porcupine also creates a user-wide
+Porcupine are installed along with it, but Porcupine also creates a user-specific
 ``plugins`` folder in its config directory. You can check where it is using
 Python::
 
@@ -28,17 +32,18 @@ Python::
     >>> print(porcupine.plugins.__path__[0])
     /home/akuli/.config/porcupine/plugins
 
-You can also use ``--print-plugindir`` as shown :source:`here <more_plugins/>`.
+You can also open Porcupine's about dialog from the *Help* menu.
 
-Of course, your plugins are probably not in ``/home/akuli/.config/porcupine/plugins``,
-so you need to run the above commands yourself to find out where your plugins
-should go. Rest of this tutorial calls this place **the plugin directory**.
-
-Your plugin directory is empty by default. The plugins that come with Porcupine
-are installed in a different place::
+Your plugin directory is empty by default.
+The plugins that come with Porcupine are in a different ``plugins`` folder::
 
     >>> print(porcupine.plugins.__path__[1])
-    /home/akuli/.local/lib/python3.7/site-packages/porcupine/plugins
+    /home/akuli/porcu/porcupine/plugins
+
+In the rest of this tutorial, **the plugin directory** means the place where you
+will put your plugin. It can be either of the two ``plugins`` folders.
+If you want your plugin to come with Porcupine, then you shouldn't use your
+user-specific ``plugins`` folder.
 
 
 Hello World!

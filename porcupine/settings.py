@@ -241,6 +241,8 @@ class Settings:
     @overload
     def get(self, option_name: str, type_: Type[str]) -> str: ...
     @overload
+    def get(self, option_name: str, type_: Type[bool]) -> bool: ...
+    @overload
     def get(self, option_name: str, type_: Type[int]) -> int: ...
     @overload
     def get(self, option_name: str, type_: object) -> Any: ...
@@ -576,6 +578,47 @@ def add_entry(
     triangle = _create_validation_triangle(entry, option_name, str, validate_callback)
     _grid_widgets(text, entry, triangle)
     return entry
+
+
+def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbutton:
+    """Add a :class:`tkinter.ttk.Checkbutton` to the setting dialog.
+
+    All ``**checkbutton_kwargs`` go to :class:`tkinter.ttk.Checkbutton`.
+    You can do this, for example::
+
+        from porcupine import settings
+
+        def do_something() -> None:
+            if settings.get("foobar", bool):
+                print("Foobar enabled")
+            else:
+                print("Foobar disabled")
+
+        def setup() -> None:
+            settings.add_option("foobar", False)  # False is default value
+            settings.add_checkbutton("foobar", text="Enable foobar")
+
+    Currently it is not possible to display a |triangle| next to the
+    checkbutton. Let me know if you need it.
+    """
+    checkbutton = ttk.Checkbutton(get_dialog_content(), **checkbutton_kwargs)
+    checkbutton.grid(column=0, columnspan=2, sticky="w")
+
+    var = tkinter.BooleanVar()
+
+    def var_changed(*junk: object) -> None:
+        value = var.get()
+        set_(option_name, value)
+
+    def setting_changed(junk: object = None) -> None:
+        var.set(get(option_name, bool))
+
+    checkbutton.bind(f"<<SettingChanged:{option_name}>>", setting_changed, add=True)
+    var.trace_add("write", var_changed)
+    setting_changed()
+
+    checkbutton.config(variable=var)
+    return checkbutton
 
 
 def add_combobox(option_name: str, text: str, **combobox_kwargs: Any) -> ttk.Combobox:
