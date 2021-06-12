@@ -207,6 +207,17 @@ class TabManager(ttk.Notebook):
             func(tab)
         self._tab_callbacks.append((func, "".join(traceback.format_stack())))
 
+    def add_filetab_callback(self, func: Callable[[FileTab], Any]) -> None:
+        """
+        Just like :meth:`add_tab_callback`, but the callback doesn't run if the
+        tab is not a :class:`FileTab`.
+        """
+        def func_with_checking_for_filetab(tab: Tab) -> None:
+            if isinstance(tab, FileTab):
+                func(tab)
+
+        self.add_tab_callback(func_with_checking_for_filetab)
+
 
 # _FileTabT represents a subclass of FileTab. Don't know if there's a better
 # way to tell that to mypy than passing FileTab twice...
