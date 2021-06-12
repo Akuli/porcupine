@@ -25,6 +25,7 @@ def test_setup_order_bugs(monkeypatch):
         # can setup rstrip when autoindent is already active
         monkey.setattr(rstrip, "status", pluginloader.Status.DISABLED_BY_SETTINGS)
         assert pluginloader.can_setup_while_running(rstrip)
+
     with monkeypatch.context() as monkey:
         # but not the other way, autoindent must go first
         monkey.setattr(autoindent, "status", pluginloader.Status.DISABLED_BY_SETTINGS)
