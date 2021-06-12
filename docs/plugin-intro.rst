@@ -42,7 +42,7 @@ The plugins that come with Porcupine are in a different ``plugins`` folder::
 
 In the rest of this tutorial, **the plugin directory** means the place where you
 will put your plugin. It can be either of the two ``plugins`` folders.
-If your plugin will be included with Porcupine, then you shouldn't use your
+If you want your plugin to come with Porcupine, then you shouldn't use your
 user-specific ``plugins`` folder.
 
 
