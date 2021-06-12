@@ -727,8 +727,7 @@ def switch_langservers(
             new.open_tab(tab)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         tab.settings.add_option("langserver", None, Optional[LangServerConfig])
 
         tab.bind(
@@ -739,4 +738,4 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

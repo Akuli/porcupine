@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 import sys
 import tkinter
-import weakref
 from functools import partial
 from tkinter import ttk
 from typing import Any, Iterator, List, Optional, Tuple, cast
@@ -16,8 +15,6 @@ else:
     from typing_extensions import Literal
 
 from porcupine import get_tab_manager, images, menubar, tabs, textwidget
-
-finders: weakref.WeakKeyDictionary[tabs.FileTab, Finder] = weakref.WeakKeyDictionary()
 
 
 class Finder(ttk.Frame):
@@ -144,7 +141,7 @@ class Finder(ttk.Frame):
         var.set(not var.get())
         return "break"
 
-    def show(self) -> None:
+    def show(self, junk: object = None) -> None:
         try:
             selected_text: Optional[str] = self._textwidget.get("sel.first", "sel.last")
         except tkinter.TclError:
@@ -354,16 +351,11 @@ class Finder(ttk.Frame):
             self.after_idle(self.highlight_all_matches)
 
 
-def find() -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-    if tab not in finders:
-        finders[tab] = Finder(tab.bottom_frame, tab.textwidget)
-    finders[tab].show()
+def on_new_tab(tab: tabs.FileTab) -> None:
+    finder = Finder(tab.bottom_frame, tab.textwidget)
+    tab.bind("<<FiletabForward:Edit/Find and Replace>>", finder.show, add=True)
 
 
 def setup() -> None:
-    menubar.get_menu("Edit").add_command(label="Find and Replace", command=find)
-    menubar.set_enabled_based_on_tab(
-        "Edit/Find and Replace", (lambda tab: isinstance(tab, tabs.FileTab))
-    )
+    get_tab_manager().add_filetab_callback(on_new_tab)
+    menubar.add_filetab_command("Edit/Find and Replace")

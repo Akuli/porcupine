@@ -17,11 +17,10 @@ def on_enter(tab: tabs.FileTab, junk: object) -> None:
     tab.after_idle(after_enter, tab)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         tab.settings.add_option("trim_trailing_whitespace", True)
         tab.textwidget.bind("<Return>", functools.partial(on_enter, tab), add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_tab_callback(on_new_filetab)

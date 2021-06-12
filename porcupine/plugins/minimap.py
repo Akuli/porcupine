@@ -185,12 +185,11 @@ class MiniMap(tkinter.Text):
         return "break"
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         minimap = MiniMap(tab.right_frame, tab)
         textwidget.use_pygments_theme(minimap, minimap.set_colors)
         minimap.pack(fill="y", expand=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_tab_callback(on_new_filetab)

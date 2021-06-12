@@ -40,10 +40,7 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     return last_lineno
 
 
-def fold() -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
+def fold(tab: tabs.FileTab) -> None:
     lineno = int(tab.textwidget.index("insert").split(".")[0])
     end = find_indented_block(tab, lineno)
     if end is None:
@@ -83,6 +80,10 @@ def fold() -> None:
             child.do_update()
 
 
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.bind("<<FiletabCommand:Edit/Fold>>", (lambda event: fold(tab)), add=True)
+
+
 def setup() -> None:
-    menubar.get_menu("Edit").add_command(label="Fold", command=fold)
-    menubar.set_enabled_based_on_tab("Edit/Fold", (lambda tab: isinstance(tab, tabs.FileTab)))
+    get_tab_manager().add_filetab_callback(on_new_filetab)
+    menubar.add_filetab_command("Edit/Fold")

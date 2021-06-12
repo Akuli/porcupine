@@ -152,8 +152,7 @@ def setup_displayers(tab: tabs.FileTab) -> None:
         displayer_list.append(ConflictDisplayer(tab.textwidget, *line_numbers))
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         setup_displayers(tab)
         # https://github.com/python/mypy/issues/9658
         tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
@@ -173,4 +172,4 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

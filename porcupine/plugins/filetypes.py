@@ -200,8 +200,7 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     apply_filetype_to_tab(tab, get_filetype_for_tab(tab))
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         on_path_changed(tab)
         tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
 
@@ -232,7 +231,7 @@ def menu_callback(filetype: FileType) -> None:
 
 def setup() -> None:
     # load_filetypes() got already called in setup_argument_parser()
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)
 
     settings.add_option("default_filetype", "Python")
     settings.add_combobox(

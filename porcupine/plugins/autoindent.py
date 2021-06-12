@@ -112,8 +112,7 @@ def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> N
     tab.textwidget.dedent("insert")
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         tab.settings.add_option("autoindent_regexes", None, Optional[AutoIndentRegexes])
         tab.textwidget.bind("<Return>", partial(on_enter_press, tab), add=True)
         tab.textwidget.bind("<parenright>", partial(on_closing_brace, tab), add=True)
@@ -122,4 +121,4 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_tab_callback(on_new_filetab)

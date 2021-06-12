@@ -228,8 +228,7 @@ def debounce(
     return request_running
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         # needed because pygments_lexer might change
         def on_lexer_changed(junk: object = None) -> None:
             assert isinstance(tab, tabs.FileTab)  # f u mypy
@@ -246,4 +245,4 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

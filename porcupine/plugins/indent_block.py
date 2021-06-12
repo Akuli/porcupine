@@ -35,10 +35,9 @@ def on_tab_key(event: tkinter.Event[textwidget.MainText], shifted: bool) -> None
     event.widget.tag_add("sel", f"{start}.0", f"{end}.0")
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         utils.bind_tab_key(tab.textwidget, on_tab_key, add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

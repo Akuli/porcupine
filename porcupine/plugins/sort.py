@@ -1,12 +1,9 @@
 import tkinter
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget
+from porcupine import menubar, tabs, textwidget, get_tab_manager
 
 
-def sort() -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
+def sort(tab: tabs.FileTab) -> None:
     try:
         first_line = int(tab.textwidget.index("sel.first").split(".")[0])
         # If last selected character is newline, ignore it
@@ -31,6 +28,10 @@ def sort() -> None:
     tab.textwidget.tag_add("sel", f"{first_line}.0", f"{last_line + 1}.0")
 
 
+def on_new_filetab(tab: tabs.FileTab):
+    tab.bind("<<FiletabCommand:Edit/Sort Lines>>", (lambda event: sort(tab)), add=True)
+
+
 def setup() -> None:
-    menubar.get_menu("Edit").add_command(label="Sort Lines", command=sort)
-    menubar.set_enabled_based_on_tab("Edit/Sort Lines", (lambda tab: isinstance(tab, tabs.FileTab)))
+    menubar.add_filetab_command("Edit/Sort Lines")
+    get_tab_manager().add_filetab_callback(on_new_filetab)

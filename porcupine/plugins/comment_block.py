@@ -51,24 +51,11 @@ def comment_or_uncomment(
     return "break"
 
 
-def comment_or_uncomment_in_current_tab() -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-    comment_or_uncomment(tab, None)
-
-
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        tab.textwidget.bind("<Key>", functools.partial(comment_or_uncomment, tab), add=True)
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.bind("<<FiletabCommand:Edit/Comment Block>>", (lambda event: comment_or_uncomment(None)), add=True)
+    tab.textwidget.bind("<Key>", functools.partial(comment_or_uncomment, tab), add=True)
 
 
 def setup() -> None:
-    # the action's binding feature cannot be used because then typing
-    # a '#' outside the main text widget inserts a # to the main widget
-    menubar.get_menu("Edit").add_command(
-        label="Comment Block", command=comment_or_uncomment_in_current_tab
-    )
-    menubar.set_enabled_based_on_tab(
-        "Edit/Comment Block", (lambda tab: isinstance(tab, tabs.FileTab))
-    )
-    get_tab_manager().add_tab_callback(on_new_tab)
+    menubar.add_filetab_command("Edit/Comment Block")
+    get_tab_manager().add_filetab_callback(on_new_filetab)

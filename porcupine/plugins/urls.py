@@ -74,24 +74,23 @@ def open_the_url(tab: tabs.FileTab, index: str, junk: object) -> utils.BreakOrNo
     return None
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        tab.textwidget.bind("<<ContentChanged>>", partial(update_url_underlines, tab), add=True)
-        utils.add_scroll_command(
-            tab.textwidget, "yscrollcommand", partial(update_url_underlines, tab)
-        )
-        update_url_underlines(tab)
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.textwidget.bind("<<ContentChanged>>", partial(update_url_underlines, tab), add=True)
+    utils.add_scroll_command(
+        tab.textwidget, "yscrollcommand", partial(update_url_underlines, tab)
+    )
+    update_url_underlines(tab)
 
-        tab.textwidget.tag_bind(
-            "underline:urls",
-            "<<Urls:OpenWithMouse>>",
-            partial(open_the_url, tab, "current"),
-            add=True,
-        )
-        tab.textwidget.bind(
-            "<<Urls:OpenWithKeyboard>>", partial(open_the_url, tab, "insert"), add=True
-        )
+    tab.textwidget.tag_bind(
+        "underline:urls",
+        "<<Urls:OpenWithMouse>>",
+        partial(open_the_url, tab, "current"),
+        add=True,
+    )
+    tab.textwidget.bind(
+        "<<Urls:OpenWithKeyboard>>", partial(open_the_url, tab, "insert"), add=True
+    )
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_tab_callback(on_new_filetab)

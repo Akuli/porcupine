@@ -71,11 +71,10 @@ def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
     text.tag_config("matching_paren", background=utils.mix_colors(fg, bg, 0.2))
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         textwidget.use_pygments_theme(tab, partial(on_pygments_theme_changed, tab.textwidget))
         tab.textwidget.bind("<<CursorMoved>>", on_cursor_moved, add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

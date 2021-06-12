@@ -106,12 +106,11 @@ class LineNumbers(tkinter.Canvas):
         self._textwidget.tag_add("sel", start, end)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tab: tabs.FileTab) -> None:
         # Use tab.left_frame.winfo_children() and isinstance to access
         # the LineNumbers instance from another plugin
         LineNumbers(tab.left_frame, tab.textwidget).pack(side="left", fill="y")
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

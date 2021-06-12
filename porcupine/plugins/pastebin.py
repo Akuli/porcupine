@@ -247,10 +247,7 @@ def pasting_done_callback(
         )
 
 
-def start_pasting(paste_class: Type[Paste]) -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
+def start_pasting(tab: tabs.FileTab, paste_class: Type[Paste], junk_event: object) -> None:
     lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
     try:
         code = tab.textwidget.get("sel.first", "sel.last")
@@ -265,12 +262,13 @@ def start_pasting(paste_class: Type[Paste]) -> None:
     )
 
 
-def setup() -> None:
+def on_new_filetab(tab: tabs.FileTab) -> None:
     for klass in [DPaste, Termbin]:
-        menubar.get_menu("Pastebin").add_command(
-            label=klass.name, command=partial(start_pasting, klass)
-        )
+        tab.bind(f"<<FiletabCommand:Pastebin/{klass.name}>>", partial(start_pasting, tab, klass), add=True)
+
+
+def setup() -> None:
+    get_tab_manager().add_filetab_callback(on_new_filetab)
+    for klass in [DPaste, Termbin]:
         assert "/" not in klass.name
-        menubar.set_enabled_based_on_tab(
-            f"Pastebin/{klass.name}", (lambda tab: isinstance(tab, tabs.FileTab))
-        )
+        menubar.add_filetab_command(f"Pastebin/{klass.name}")

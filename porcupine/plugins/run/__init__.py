@@ -58,7 +58,7 @@ def get_command(
     return result
 
 
-def do_something(something: Literal["compile", "run", "compilerun", "lint"]) -> None:
+def do_something(tab: tabs.FileTab, something: Literal["compile", "run", "compilerun", "lint"]) -> None:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
 
@@ -93,23 +93,19 @@ def do_something(something: Literal["compile", "run", "compilerun", "lint"]) -> 
             no_terminal.run_command(workingdir, command)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option("commands", CommandsConfig())
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("commands", CommandsConfig())
+    tab.bind("<<FiletabCommand:Run/Compile>>", (lambda event: do_something(tab, "compile")), add=True)
+    tab.bind("<<FiletabCommand:Run/Run>>", (lambda event: do_something(tab, "run")), add=True)
+    tab.bind("<<FiletabCommand:Run/Compile and Run>>", (lambda event: do_something(tab, "compilerun")), add=True)
+    tab.bind("<<FiletabCommand:Run/Lint>>", (lambda event: do_something(tab, "lint")), add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
-
-    menubar.get_menu("Run").add_command(label="Compile", command=partial(do_something, "compile"))
-    menubar.get_menu("Run").add_command(label="Run", command=partial(do_something, "run"))
-    menubar.get_menu("Run").add_command(
-        label="Compile and Run", command=partial(do_something, "compilerun")
-    )
-    menubar.get_menu("Run").add_command(label="Lint", command=partial(do_something, "compilerun"))
+    get_tab_manager().add_filetab_callback(on_new_filetab)
 
     # TODO: disable the menu items when they don't correspond to actual commands
-    for label in {"Compile", "Run", "Compile and Run", "Lint"}:
-        menubar.set_enabled_based_on_tab(
-            f"Run/{label}", (lambda tab: isinstance(tab, tabs.FileTab))
-        )
+    menubar.add_filetab_command("Run/Compile")
+    menubar.add_filetab_command("Run/Run")
+    menubar.add_filetab_command("Run/Compile and Run")
+    menubar.add_filetab_command("Run/Lint")
