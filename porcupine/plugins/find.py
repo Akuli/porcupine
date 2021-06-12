@@ -351,11 +351,11 @@ class Finder(ttk.Frame):
             self.after_idle(self.highlight_all_matches)
 
 
-def on_new_tab(tab: tabs.FileTab) -> None:
+def on_new_filetab(tab: tabs.FileTab) -> None:
     finder = Finder(tab.bottom_frame, tab.textwidget)
-    tab.bind("<<FiletabForward:Edit/Find and Replace>>", finder.show, add=True)
+    tab.bind("<<FiletabCommand:Edit/Find and Replace>>", finder.show, add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_filetab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)
     menubar.add_filetab_command("Edit/Find and Replace")

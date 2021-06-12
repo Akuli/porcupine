@@ -512,11 +512,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     # avoid weird corner cases
     tab.winfo_toplevel().bind("<FocusOut>", (lambda event: completer._reject()), add=True)
     # any mouse button
-    tab.textwidget.bind(
-        "<Button>",
-        (lambda event: completer._reject()),
-        add=True
-    )
+    tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
 
     tab.bind("<Destroy>", (lambda event: completer.popup.toplevel.destroy()), add=True)
 

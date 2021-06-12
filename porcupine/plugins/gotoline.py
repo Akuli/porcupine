@@ -21,9 +21,9 @@ def gotoline(tab: tabs.FileTab) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<FiletabCommand:Edit/Go to line>>", (lambda event: gotoline(tab)), add=True)
+    tab.bind("<<FiletabCommand:Edit/Go to Line>>", (lambda event: gotoline(tab)), add=True)
 
 
 def setup() -> None:
-    menubar.add_filetab_command("Edit/Go to line")
+    menubar.add_filetab_command("Edit/Go to Line")
     get_tab_manager().add_filetab_callback(on_new_filetab)

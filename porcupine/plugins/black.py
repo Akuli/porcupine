@@ -1,6 +1,7 @@
 # TODO: add other formatters, at least isort
 from __future__ import annotations
 
+from functools import partial
 import logging
 import subprocess
 import traceback
@@ -24,6 +25,8 @@ def run_black(code: str, path: Path | None) -> str:
     try:
         # run black in subprocess just to make sure that it can't crash porcupine
         # set cwd so that black finds its config in pyproject.toml
+        #
+        # FIXME: file must not be named black.py or similar
         result = subprocess.run(
             [str(python), "-m", "black", "-"],
             check=True,
@@ -47,7 +50,7 @@ def black_the_code(tab: tabs.FileTab, event: object) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<FiletabCommand:Tools/Python/Black>>", black_the_code, add=True)
+    tab.bind("<<FiletabCommand:Tools/Python/Black>>", partial(black_the_code, tab), add=True)
 
 
 def setup() -> None:

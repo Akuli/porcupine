@@ -52,7 +52,7 @@ def comment_or_uncomment(
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<FiletabCommand:Edit/Comment Block>>", (lambda event: comment_or_uncomment(None)), add=True)
+    tab.bind("<<FiletabCommand:Edit/Comment Block>>", (lambda event: comment_or_uncomment(tab, None)), add=True)
     tab.textwidget.bind("<Key>", functools.partial(comment_or_uncomment, tab), add=True)
 
 
