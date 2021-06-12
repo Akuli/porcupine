@@ -66,7 +66,7 @@ class AnchorManager:
             next_anchor_row = min(rows_after_cursor)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif not rows_after_cursor and len(anchor_list) >= 2 and settings.get("anchors", bool):
+        elif len(anchor_list) >= 2 and settings.get("anchors", bool):
             next_anchor_row = min(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
