@@ -1,3 +1,7 @@
+"""
+Allow for easy navigation in your files by toggling on/off anchorpoints,
+and jumpbing back and forth between them
+"""
 from __future__ import annotations
 
 import time
@@ -79,12 +83,6 @@ class AnchorManager:
             self.tab_textwidget.see("insert")
 
         return "break"
-
-    # def bind_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
-    #     pass
-
-    # def jump_to_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
-    #     pass
 
     def update_linenumbers(self, event: tkinter.Event[tkinter.Misc]) -> None:
         """
