@@ -53,7 +53,7 @@ class _AboutDialogContent(ttk.Frame):
         self._textwidget = textwidget.create_passive_text_widget(self, width=60, height=25)
         self._textwidget.pack(fill="both", expand=True, padx=5, pady=5)
 
-        if sum(self.winfo_rgb(self._textwidget["bg"])) / 3 > 0xFFFF:
+        if sum(self.winfo_rgb(self._textwidget["bg"])) / 3 > 0x7FFF:
             # Bright background
             link_color = "blue"
         else:
