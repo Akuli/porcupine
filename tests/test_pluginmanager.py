@@ -40,3 +40,11 @@ def test_enable_disable_multiple(dialog_content):
     assert get_states() == ("normal", "normal")
     dialog_content.enable_button.invoke()
     assert get_states() == ("disabled", "normal")
+
+
+def test_disable_itself(mocker, dialog_content):
+    mock = mocker.patch("tkinter.messagebox.askokcancel", return_value=False)
+    dialog_content.treeview.selection_set(["pluginmanager"])
+    dialog_content.disable_button.invoke()
+    mock.assert_called_once()
+    assert "settings.json" in str(mock.call_args)
