@@ -422,7 +422,7 @@ def _create_dialog_content() -> ttk.Frame:
             reset_all()
 
     big_frame = ttk.Frame(dialog)
-    big_frame.pack(fill="both", expand=True)
+    big_frame.pack(fill="both", expand=True, padx=5, pady=5)
     content = ttk.Frame(big_frame)
     content.pack(fill="both", expand=True)
     ttk.Separator(big_frame).pack(fill="x")
