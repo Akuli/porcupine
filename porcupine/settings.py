@@ -241,6 +241,8 @@ class Settings:
     @overload
     def get(self, option_name: str, type_: Type[str]) -> str: ...
     @overload
+    def get(self, option_name: str, type_: Type[bool]) -> bool: ...
+    @overload
     def get(self, option_name: str, type_: Type[int]) -> int: ...
     @overload
     def get(self, option_name: str, type_: object) -> Any: ...
@@ -578,7 +580,7 @@ def add_entry(
     return entry
 
 
-def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Entry:
+def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbutton:
     """Add a :class:`tkinter.ttk.Checkbutton` to the setting dialog.
 
     All ``**checkbutton_kwargs`` go to :class:`tkinter.ttk.Entry`.
