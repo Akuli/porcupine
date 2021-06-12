@@ -11,6 +11,7 @@ setup_after = ["linenumbers"]
 
 # TODO: Add checkbox to settings window to allow/disallow cycling from last anchor to first anchor with "jump_to_next"
 
+
 class AnchorManager:
     def __init__(self, tab_textwidget: tkinter.Text, linenumbers: LineNumbers) -> None:
         self.tab_textwidget = tab_textwidget
