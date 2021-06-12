@@ -61,12 +61,11 @@ class AnchorManager:
             )
         )
 
-        next_anchor_row = 0
-        for anchor_row in anchor_rows:
-            if anchor_row > int(cursor_row):
-                next_anchor_row = anchor_row
-            else:
-                break
+        rows_after_cursor = [n for n in anchor_rows if n > int(cursor_row)]
+        if rows_after_cursor:
+            next_anchor_row = min(rows_after_cursor)
+        else:
+            next_anchor_row = 0
 
         if not next_anchor_row:
             return
