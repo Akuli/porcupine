@@ -19,6 +19,10 @@ Porcupine's API documentation assume
 Where are the plugins?
 ----------------------
 
+At the time of writing this guide, making a new plugin usually requires some
+changes to the rest of Porcupine, so you should start by following
+`the developing instructions in Porcupine's README <https://github.com/Akuli/porcupine#developing-porcupine>`_.
+
 Porcupine searches for plugins in two places. The plugins that come with
 Porcupine are installed along with it, but Porcupine also creates a user-specific
 ``plugins`` folder in its config directory. You can check where it is using
@@ -35,10 +39,6 @@ The plugins that come with Porcupine are in a different ``plugins`` folder::
 
     >>> print(porcupine.plugins.__path__[1])
     /home/akuli/porcu/porcupine/plugins
-
-At the time of writing this guide, making a new plugin usually requires some
-changes to the rest of Porcupine, so you should follow
-`the developing instructions in Porcupine's README <https://github.com/Akuli/porcupine#developing-porcupine>`_.
 
 In the rest of this tutorial, **the plugin directory** means the place where you
 will put your plugin. It can be either of the two ``plugins`` folders.
