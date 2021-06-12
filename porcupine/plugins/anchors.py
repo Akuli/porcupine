@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import time
 import tkinter
-import weakref
 
 from porcupine import get_tab_manager, menubar, settings, tabs
 from porcupine.plugins.linenumbers import LineNumbers

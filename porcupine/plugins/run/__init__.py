@@ -6,7 +6,6 @@ import os
 import pathlib
 import shlex
 import sys
-from functools import partial
 from typing import List, Optional
 
 if sys.version_info >= (3, 8):
