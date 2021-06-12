@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import time
 import tkinter
+import weakref
 
-from porcupine import get_tab_manager, settings, tabs
+from porcupine import get_tab_manager, menubar, settings, tabs
 from porcupine.plugins.linenumbers import LineNumbers
 
 # Dependent on code from linenumbers.py
@@ -38,8 +39,7 @@ class AnchorManager:
     def _get_cursor_index(self) -> str:
         return self.tab_textwidget.index("insert linestart")
 
-    def toggle_on_off(self, event: tkinter.Event[tkinter.Misc]) -> None:
-
+    def toggle_on_off(self) -> None:
         self.prevent_duplicate_anchors()
 
         cursor_index = self._get_cursor_index()
@@ -54,7 +54,7 @@ class AnchorManager:
 
         self.linenumbers.do_update()
 
-    def jump_to_next(self, event: tkinter.Event[tkinter.Misc]) -> str:
+    def jump_to_next(self) -> str:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
         anchor_rows = [
@@ -73,7 +73,7 @@ class AnchorManager:
 
         return "break"
 
-    def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> str:
+    def jump_to_previous(self) -> str:
         cursor_row = self._get_cursor_index().split(".")[0]
         anchor_list = self._get_anchors()
         anchor_rows = [
@@ -124,15 +124,21 @@ class AnchorManager:
                 current_rows.add(anchor_row)
 
 
+managers: weakref.WeakKeyDictionary[tabs.FileTab, AnchorManager] = weakref.WeakKeyDictionary()
+
+
+def get_anchor_manager() -> AnchorManager:
+    tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
+    return managers[tab]
+
+
 def on_new_tab(tab: tabs.Tab) -> None:
     if isinstance(tab, tabs.FileTab):
         [linenumbers] = [
             child for child in tab.left_frame.winfo_children() if isinstance(child, LineNumbers)
         ]
-        anchor = AnchorManager(tab.textwidget, linenumbers)
-        tab.textwidget.bind("<<Anchor:Toggle>>", anchor.toggle_on_off, add=True)
-        tab.textwidget.bind("<<Anchor:Previous>>", anchor.jump_to_previous, add=True)
-        tab.textwidget.bind("<<Anchor:Next>>", anchor.jump_to_next, add=True)
+        managers[tab] = AnchorManager(tab.textwidget, linenumbers)
 
 
 def setup() -> None:
@@ -141,3 +147,17 @@ def setup() -> None:
         "anchors", text="Jumping to previous/next anchor cycles to end/start of file"
     )
     get_tab_manager().add_tab_callback(on_new_tab)
+
+    menu = menubar.get_menu("Edit/Anchors")
+    # fmt: off
+    menu.add_command(label="Add or remove on this line", command=(lambda: get_anchor_manager().toggle_on_off()))
+    menu.add_command(label="Jump to previous", command=(lambda: get_anchor_manager().jump_to_previous()))
+    menu.add_command(label="Jump to next", command=(lambda: get_anchor_manager().jump_to_next()))
+    # fmt: on
+
+    # TODO: would be nice if disabling submenu would disable its contents too
+    filetabs_only = lambda tab: isinstance(tab, tabs.FileTab)
+    menubar.set_enabled_based_on_tab("Edit/Anchors", filetabs_only)
+    menubar.set_enabled_based_on_tab("Edit/Anchors/Add or remove on this line", filetabs_only)
+    menubar.set_enabled_based_on_tab("Edit/Anchors/Jump to previous", filetabs_only)
+    menubar.set_enabled_based_on_tab("Edit/Anchors/Jump to next", filetabs_only)
