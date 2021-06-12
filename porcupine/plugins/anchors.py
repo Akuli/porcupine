@@ -66,7 +66,7 @@ class AnchorManager:
             next_anchor_row = min(rows_after_cursor)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif not rows_after_cursor and len(anchor_list) >= 2 and settings.get("anchors", True):
+        elif not rows_after_cursor and len(anchor_list) >= 2 and settings.get("anchors", bool):
             next_anchor_row = min(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
@@ -85,7 +85,7 @@ class AnchorManager:
             previous_anchor_row = max(rows_before_cursor)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif not rows_before_cursor and len(anchor_list) >= 2 and settings.get("anchors", True):
+        elif not rows_before_cursor and len(anchor_list) >= 2 and settings.get("anchors", bool):
             previous_anchor_row = max(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
@@ -136,6 +136,8 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
 
 def setup() -> None:
+    settings.add_option("anchors", False)
+    settings.add_checkbutton(
+        "anchors", text="Jumping to previous/next anchor cycles to end/start of file"
+    )
     get_tab_manager().add_tab_callback(on_new_tab)
-    settings.add_option("anchors", False)  # False is default value
-    settings.add_checkbutton("anchors", text="Jumping to previous/next anchor cycles to end/start of file")
