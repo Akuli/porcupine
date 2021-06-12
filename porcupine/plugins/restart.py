@@ -7,13 +7,6 @@ import pkgutil
 from porcupine import dirs, get_main_window, get_tab_manager
 from porcupine.plugins import __path__ as plugin_paths
 
-# setup() must be called after setting up everything else
-setup_after = [
-    name
-    for finder, name, ispkg in pkgutil.iter_modules(plugin_paths)
-    if "porcupine.plugins." + name != __name__
-]
-
 # https://fileinfo.com/extension/pkl
 STATE_FILE = pathlib.Path(dirs.user_cache_dir) / "restart_state.pkl"
 
