@@ -53,9 +53,16 @@ class _AboutDialogContent(ttk.Frame):
         self._textwidget = textwidget.create_passive_text_widget(self, width=60, height=25)
         self._textwidget.pack(fill="both", expand=True, padx=5, pady=5)
 
+        if sum(self.winfo_rgb(self._textwidget["bg"]))/3 > 0xffff:
+            # Bright background
+            link_color = "blue"
+        else:
+            # Dark background
+            link_color = "DarkOrange1"
+
         # http://effbot.org/zone/tkinter-text-hyperlink.htm
         # that tutorial is almost as old as i am, but it's still usable
-        self._textwidget.tag_config("link", foreground="blue", underline=True)
+        self._textwidget.tag_config("link", foreground=link_color, underline=True)
         self._textwidget.tag_bind("link", "<Enter>", self._enter_link)
         self._textwidget.tag_bind("link", "<Leave>", self._leave_link)
         self._link_tag_names = map("link-{}".format, itertools.count())
