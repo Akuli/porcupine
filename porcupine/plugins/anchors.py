@@ -1,8 +1,10 @@
 from __future__ import annotations
-import tkinter
+
 import time
+import tkinter
 from typing import List
-from porcupine import tabs, get_tab_manager
+
+from porcupine import get_tab_manager, tabs
 from porcupine.plugins.linenumbers import LineNumbers
 
 # Dependent on code from linenumbers.py
@@ -28,7 +30,7 @@ class AnchorManager:
             if anchor.startswith(self.custom_anchor_prefix)
         ]
 
-    def _get_cursor_index(self):
+    def _get_cursor_index(self) -> str:
         return self.tab_textwidget.index("insert linestart")
 
     def toggle_on_off(self, event: tkinter.Event[tkinter.Misc]) -> None:
@@ -80,13 +82,6 @@ class AnchorManager:
         ):
             self.tab_textwidget.see("insert")
 
-        # text.see("insert")
-
-        # first_line = int(self._textwidget.index("@0,0").split(".")[0])
-        # last_line = int(
-        #     self._textwidget.index(f"@0,{self._textwidget.winfo_height()}").split(".")[0]
-        # )
-
         # TODO: If user jumps to the last anchor and then to next, it should jump to the first one in the file.
 
     def jump_to_previous(self, event: tkinter.Event[tkinter.Misc]) -> None:
@@ -119,7 +114,6 @@ class AnchorManager:
 
         # TODO: Current Bugs:
         # 1) Jump to previous will delete code on current row if no more anchors above.
-        # 2) Can't commit/push because of git merge weirdness
 
     # def bind_specific(self, event: tkinter.Event[tkinter.Misc], partial ?) -> None:
     #     pass
