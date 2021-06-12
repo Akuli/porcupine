@@ -307,9 +307,21 @@ def can_setup_while_running(info: PluginInfo) -> bool:
     if hasattr(info.module, "setup_argument_parser"):
         return False
 
-    return not any(
-        info.status == Status.ACTIVE and info in deps for info, deps in _dependencies.items()
-    )
+    # Check whether no other active plugin depends on loading after this plugin
+    setup_preventors = [
+        other.name
+        for other, other_must_setup_after_these in _dependencies.items()
+        if other.status == Status.ACTIVE and info in other_must_setup_after_these
+    ]
+    if setup_preventors:
+        log.info(
+            f"can't setup {info.name} now because it must be done before setting up the following"
+            " plugins, which are already active: "
+            + "\n".join(setup_preventors)
+        )
+        return False
+
+    return True
 
 
 def setup_while_running(info: PluginInfo) -> None:
