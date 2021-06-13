@@ -7,18 +7,14 @@ configured with comment_prefix in filetypes.toml.
 """
 from __future__ import annotations
 
-import functools
-import tkinter
 from typing import Optional
 
 from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
-def comment_or_uncomment(
-    tab: tabs.FileTab, event: Optional[tkinter.Event[tkinter.Text]]
-) -> utils.BreakOrNone:
+def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None) -> utils.BreakOrNone:
     comment_prefix = tab.settings.get("comment_prefix", Optional[str])
-    if event is not None and event.char != comment_prefix:
+    if pressed_key is not None and pressed_key != comment_prefix:
         return None
 
     try:
@@ -57,7 +53,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
         (lambda event: comment_or_uncomment(tab, None)),
         add=True,
     )
-    tab.textwidget.bind("<Key>", functools.partial(comment_or_uncomment, tab), add=True)
+    tab.textwidget.bind("<Key>", (lambda event: comment_or_uncomment(tab, event.char)), add=True)
 
 
 def setup() -> None:
