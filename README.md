@@ -145,7 +145,7 @@ I have tried to make contributing easy:
     Instead of working on an issue, you can also create something that you would
     like to have in an editor, for example.
 - You don't need to read anything before you can get started.
-    I recommend having a look at [the plugin API docs](https://akuli.github.io/porcupine/),
+    I recommend having a look at [the Porcupine plugin API docs](https://akuli.github.io/porcupine/),
     but that's not required.
 - Don't worry too much about whether your code is good or not.
     I review the pull requests, and there's checks running on GitHub Actions.
