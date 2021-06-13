@@ -153,8 +153,7 @@ I have tried to make contributing easy:
     or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
     I am on ##learnpython at about 3PM to 9PM UTC.
     Don't worry about asking too many questions.
-    I'm not easily annoyed by that,
-    and if you create several pull requests after I answer all your questions,
+    It's not annoying, and if you create several pull requests after I answer all your questions,
     I think answering the questions was definitely worth it.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
