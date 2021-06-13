@@ -10,7 +10,7 @@ import webbrowser
 from functools import partial
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Callable, Iterator, Optional, Tuple, Any
+from typing import Any, Callable, Iterator, Optional, Tuple
 
 if sys.version_info >= (3, 8):
     from typing import Literal

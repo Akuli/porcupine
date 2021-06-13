@@ -238,7 +238,9 @@ def setup() -> None:
 
     for name, filetype in filetypes.items():
         safe_name = name.replace("/", "\N{division slash}")  # lol
-        menubar.add_filetab_command(f"Filetypes/{safe_name}", partial(apply_filetype_to_tab, filetype))
+        menubar.add_filetab_command(
+            f"Filetypes/{safe_name}", partial(apply_filetype_to_tab, filetype)
+        )
 
     new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None
     for filetype in new_file_filetypes:
