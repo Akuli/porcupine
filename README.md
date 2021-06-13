@@ -140,8 +140,7 @@ If you want to do something to Porcupine, that's awesome!
 I have tried to make contributing easy:
 - There is not much boilerplate involved in the contributing process.
     You just create a pull request and that's it.
-    You can choose an issue and start working on it;
-    you don't have to ask me to assign the issue to you or anything like that.
+    You can choose an issue and start working on it, without prior permission.
     Instead of working on an issue, you can also create something that you would
     like to have in an editor, for example.
 - You don't need to read anything before you can get started.
