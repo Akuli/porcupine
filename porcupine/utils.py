@@ -424,19 +424,6 @@ class EventWithData(_Event):
     #: then this is that string.
     data_string: str
 
-    def data_widget(self) -> tkinter.Misc:
-        """
-        If a widget was passed as ``data`` to ``event_generate()``, then this
-        returns that widget. Otherwise this raises an error.
-
-        Note that ``event.widget`` is the widget whose ``event_generate()``
-        method was used while ``event.data_widget()`` is the ``data`` argument
-        of ``widget.event_generate(..., data=the_data_widget)``. Usually these
-        are different widgets; if they are known to be the same widget, then
-        you probably don't need :func:`bind_with_data` at all.
-        """
-        return self.widget.nametowidget(self.data_string)
-
     def data_class(self, T: Type[_T]) -> _T:
         """
         If a dataclass instance of type ``T`` was passed as ``data`` to
