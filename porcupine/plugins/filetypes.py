@@ -187,7 +187,7 @@ def get_filetype_for_tab(tab: tabs.FileTab) -> FileType:
     return guess_filetype(tab.path)
 
 
-def apply_filetype_to_tab(tab: tabs.FileTab, filetype: FileType) -> None:
+def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
     log.info(f"applying filetype settings: {filetype!r}")
     for name, value in filetype.items():
         # Ignore stuff used only for guessing the correct filetype
@@ -197,7 +197,7 @@ def apply_filetype_to_tab(tab: tabs.FileTab, filetype: FileType) -> None:
 
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     log.info(f"file path changed: {tab.path}")
-    apply_filetype_to_tab(tab, get_filetype_for_tab(tab))
+    apply_filetype_to_tab(get_filetype_for_tab(tab), tab)
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
@@ -223,13 +223,6 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def menu_callback(filetype: FileType) -> None:
-    # TODO: modernize this? see #511
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-    apply_filetype_to_tab(tab, filetype)
-
-
 def setup() -> None:
     # load_filetypes() got already called in setup_argument_parser()
     get_tab_manager().add_filetab_callback(on_new_filetab)
@@ -245,16 +238,10 @@ def setup() -> None:
 
     for name, filetype in filetypes.items():
         safe_name = name.replace("/", "\N{division slash}")  # lol
-        assert "/" not in safe_name
-        menubar.get_menu("Filetypes").add_command(
-            label=safe_name, command=partial(menu_callback, filetype)
-        )
-        menubar.set_enabled_based_on_tab(
-            f"Filetypes/{safe_name}", (lambda tab: isinstance(tab, tabs.FileTab))
-        )
+        menubar.add_filetab_command(f"Filetypes/{safe_name}", partial(apply_filetype_to_tab, filetype))
 
     new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None
     for filetype in new_file_filetypes:
         tab = tabs.FileTab(get_tab_manager())
         get_tab_manager().add_tab(tab)  # sets default filetype
-        apply_filetype_to_tab(tab, filetype)  # sets correct filetype
+        apply_filetype_to_tab(filetype, tab)  # sets correct filetype

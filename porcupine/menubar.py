@@ -10,7 +10,7 @@ import webbrowser
 from functools import partial
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Callable, Iterator, Optional, Tuple
+from typing import Callable, Iterator, Optional, Tuple, Any
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -269,7 +269,7 @@ def _get_filetab() -> tabs.FileTab:
     return tab
 
 
-def add_filetab_command(path: str, func: Callable[[tabs.FileTab], None] | None = None) -> None:
+def add_filetab_command(path: str, func: Callable[[tabs.FileTab], Any] | None = None) -> None:
     """
     This is a convenience function that does several things:
 
@@ -314,7 +314,7 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], None] | None =
     if func is None:
         command = lambda: _get_filetab().event_generate(f"<<FiletabCommand:{path}>>")
     else:
-        command = lambda: func(_get_filetab())
+        command = lambda: func(_get_filetab())  # type: ignore
 
     menu_path, item_text = path.rsplit("/", maxsplit=1)
     get_menu(menu_path).add_command(label=item_text, command=command)
