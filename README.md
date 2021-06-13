@@ -136,22 +136,28 @@ Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
 ## Developing Porcupine
 
-If you are interested in doing something to Porcupine yourself, that's awesome!
-[The plugin API docs](https://akuli.github.io/porcupine/) will help you get
-started. Even if you are not going to write Porcupine plugins or do anything
-related to plugins, they will probably give you an idea of how things are done
-in Porcupine.
+If you want to do something to Porcupine, that's awesome!
+I have tried to make contributing easy:
+- There is not much boilerplate involved in the contributing process.
+    You just create a pull request and that's it.
+    You can choose an issue and start working on it, without prior permission.
+    Instead of working on an issue, you can also create something that you would
+    like to have in an editor.
+- You don't need to read anything before you can get started.
+    I recommend having a look at [the Porcupine plugin API docs](https://akuli.github.io/porcupine/),
+    but that's not required.
+- Don't worry too much about whether your code is good or not.
+    I will review the pull requests and try to help you out.
+    There are also checks running on GitHub Actions.
+- You can talk with me on GitHub issues,
+    or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
+    I am on ##learnpython at about 3PM to 9PM UTC.
+    Don't worry about asking too many questions.
+    It's not annoying, and if you create several pull requests after I answer all your questions,
+    I think answering the questions was definitely worth it.
 
-If you don't know what to do, ask me (by making a new issue, for example).
-I will likely go through the open issues and choose a few that you can
-work on, considering your experience with tkinter and porcupine,
-and then explain to you what exactly is the problem with each issue and how
-I imagine it could be fixed. Feel free to ask help if you get stuck.
-
-If you want to develop porcupine, make a fork of Porcupine
-with the button in the top right corner of this page.
-Then install Python 3.7 or newer and
-[git](https://git-scm.com/), and run these commands:
+To get started, make a fork of Porcupine with the button in the top right corner of this page.
+Then install Python 3.7 or newer and [git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/YourUserName/porcupine
     cd porcupine
