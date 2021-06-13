@@ -150,8 +150,8 @@ I have tried to make contributing easy:
 - Don't worry too much about whether your pull code is good or not.
     I review the pull requests, and there's checks running on GitHub Actions.
 - You can talk with me on GitHub issues,
-    or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython)
-    at about 3PM to 9PM UTC.
+    or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
+    I am on ##learnpython at about 3PM to 9PM UTC.
     Don't worry about asking too many questions.
     I'm not easily annoyed by that,
     and if you create several pull requests after I answer all your questions,
