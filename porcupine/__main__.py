@@ -13,28 +13,11 @@ from porcupine import (
     get_tab_manager,
     menubar,
     pluginloader,
-    plugins,
     settings,
     tabs,
 )
 
 log = logging.getLogger(__name__)
-
-
-# see the --help action in argparse's source code
-class _PrintPlugindirAction(argparse.Action):
-    def __init__(  # type: ignore[no-untyped-def]
-        self, option_strings, dest=argparse.SUPPRESS, default=argparse.SUPPRESS, help=None
-    ):
-        super().__init__(
-            option_strings=option_strings, dest=dest, default=default, nargs=0, help=help
-        )
-
-    def __call__(  # type: ignore[no-untyped-def]
-        self, parser, namespace, values, option_string=None
-    ):
-        print(f"You can install plugins here:\n\n    {plugins.__path__[0]}\n")
-        parser.exit()
 
 
 _EPILOG = r"""
@@ -63,11 +46,6 @@ def main() -> None:
         action="version",
         version=f"Porcupine {porcupine_version}",
         help="display the Porcupine version number and exit",
-    )
-    parser.add_argument(
-        "--print-plugindir",
-        action=_PrintPlugindirAction,
-        help="find out where to install custom plugins",
     )
 
     verbose_group = parser.add_mutually_exclusive_group()
@@ -107,9 +85,8 @@ def main() -> None:
         metavar="PLUGINS",
         default="",
         help=(
-            "don't load PLUGINS (see --print-plugindir), "
-            "e.g. --without-plugins=highlight disables syntax highlighting, "
-            "multiple plugin names can be given comma-separated"
+            "don't load PLUGINS, e.g. --without-plugins=highlight disables syntax highlighting,"
+            " multiple plugin names can be given comma-separated"
         ),
     )
 
