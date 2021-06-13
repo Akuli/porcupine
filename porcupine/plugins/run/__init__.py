@@ -5,7 +5,6 @@ import dataclasses
 import logging
 import os
 import pathlib
-import shlex
 import sys
 from functools import partial
 
@@ -42,20 +41,18 @@ def get_command(
 
     exts = "".join(pathlib.Path(basename).suffixes)
     no_ext = pathlib.Path(basename).stem
-    format_args = {
-        "file": basename,
-        "no_ext": no_ext,
-        "no_exts": basename[: -len(exts)] if exts else basename,
-        "python": python_venv.find_python(
-            None if tab.path is None else utils.find_project_root(tab.path)
-        ),
-        "exe": f"{no_ext}.exe" if sys.platform == "win32" else f"./{no_ext}",
-    }
-    result = [
-        part.format(**format_args)
-        for part in shlex.split(template, posix=(sys.platform != "win32"))
-    ]
-    return result
+    return utils.format_command(
+        template,
+        {
+            "file": basename,
+            "no_ext": no_ext,
+            "no_exts": basename[: -len(exts)] if exts else basename,
+            "python": python_venv.find_python(
+                None if tab.path is None else utils.find_project_root(tab.path)
+            ),
+            "exe": f"{no_ext}.exe" if sys.platform == "win32" else f"./{no_ext}",
+        },
+    )
 
 
 def do_something(

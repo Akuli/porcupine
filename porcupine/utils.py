@@ -10,6 +10,7 @@ import logging
 import os
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -144,9 +145,13 @@ if sys.platform == "win32":
 
 
 else:
-    from shlex import quote
+    quote = shlex.quote
 
-    quote = quote  # silence pyflakes warning
+
+# TODO: document this
+def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
+    parts = shlex.split(command, posix=(sys.platform != "win32"))
+    return [part.format_map(substitutions) for part in parts]
 
 
 # Using these with subprocess prevents opening unnecessary cmd windows
