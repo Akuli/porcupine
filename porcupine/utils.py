@@ -59,7 +59,8 @@ _installed_with_pynsist = (
 
 
 if sys.platform == "win32":
-    if sys.stdout is None and sys.stderr is None:
+    # Casting because mypy thinks stdout and stderr can't be None
+    if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
         running_pythonw = True
