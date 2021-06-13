@@ -51,19 +51,18 @@ class StatusBar(ttk.Frame):
             self.show_path()
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        statusbar = StatusBar(tab)
-        statusbar.pack(side="bottom", fill="x")
-        tab.bind("<<PathChanged>>", statusbar.show_path, add=True)
-        utils.bind_with_data(tab, "<<Reloaded>>", statusbar.show_reload_warning, add=True)
-        tab.textwidget.bind("<<CursorMoved>>", statusbar.show_cursor_or_selection, add=True)
-        tab.textwidget.bind("<<Selection>>", statusbar.show_cursor_or_selection, add=True)
-        tab.textwidget.bind("<<ContentChanged>>", statusbar.clear_reload_warning, add=True)
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    statusbar = StatusBar(tab)
+    statusbar.pack(side="bottom", fill="x")
+    tab.bind("<<PathChanged>>", statusbar.show_path, add=True)
+    utils.bind_with_data(tab, "<<Reloaded>>", statusbar.show_reload_warning, add=True)
+    tab.textwidget.bind("<<CursorMoved>>", statusbar.show_cursor_or_selection, add=True)
+    tab.textwidget.bind("<<Selection>>", statusbar.show_cursor_or_selection, add=True)
+    tab.textwidget.bind("<<ContentChanged>>", statusbar.clear_reload_warning, add=True)
 
-        statusbar.show_path()
-        statusbar.show_cursor_or_selection()
+    statusbar.show_path()
+    statusbar.show_cursor_or_selection()
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

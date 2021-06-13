@@ -7,7 +7,7 @@ import traceback
 from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
+from porcupine import menubar, tabs, textwidget, utils
 from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)
@@ -24,6 +24,8 @@ def run_black(code: str, path: Path | None) -> str:
     try:
         # run black in subprocess just to make sure that it can't crash porcupine
         # set cwd so that black finds its config in pyproject.toml
+        #
+        # FIXME: file must not be named black.py or similar
         result = subprocess.run(
             [str(python), "-m", "black", "-"],
             check=True,
@@ -38,10 +40,7 @@ def run_black(code: str, path: Path | None) -> str:
         return code
 
 
-def callback() -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
+def blacken_the_code(tab: tabs.FileTab) -> None:
     before = tab.textwidget.get("1.0", "end - 1 char")
     after = run_black(before, tab.path)
     if before != after:
@@ -50,7 +49,4 @@ def callback() -> None:
 
 
 def setup() -> None:
-    menubar.get_menu("Tools/Python").add_command(label="black", command=callback)
-    menubar.set_enabled_based_on_tab(
-        "Tools/Python/black", (lambda tab: isinstance(tab, tabs.FileTab))
-    )
+    menubar.add_filetab_command("Tools/Python/Black", blacken_the_code)

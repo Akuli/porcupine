@@ -456,20 +456,17 @@ def select_current_file(tree: DirectoryTree, event: object) -> None:
         tree.select_file(tab.path)
 
 
-def on_new_tab(tree: DirectoryTree, tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
+def on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
+    def path_callback(junk: object = None) -> None:
+        if tab.path is not None:
+            tree.add_project(utils.find_project_root(tab.path))
+            tree.refresh(when_done=partial(tree.select_file, tab.path))
 
-        def path_callback(junk: object = None) -> None:
-            assert isinstance(tab, tabs.FileTab)
-            if tab.path is not None:
-                tree.add_project(utils.find_project_root(tab.path))
-                tree.refresh(when_done=partial(tree.select_file, tab.path))
+    path_callback()
 
-        path_callback()
-
-        tab.bind("<<AfterSave>>", path_callback, add=True)
-        tab.bind("<<AfterSave>>", tree._hide_old_projects, add=True)
-        tab.bind("<Destroy>", tree._hide_old_projects, add=True)
+    tab.bind("<<AfterSave>>", path_callback, add=True)
+    tab.bind("<<AfterSave>>", tree._hide_old_projects, add=True)
+    tab.bind("<Destroy>", tree._hide_old_projects, add=True)
 
 
 def focus_treeview(tree: DirectoryTree) -> None:
@@ -513,7 +510,7 @@ def setup() -> None:
     # Insert directory tree before tab manager
     get_paned_window().insert(get_tab_manager(), container)  # type: ignore[no-untyped-call]
 
-    get_tab_manager().add_tab_callback(partial(on_new_tab, tree))
+    get_tab_manager().add_filetab_callback(partial(on_new_filetab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(select_current_file, tree), add=True)
 
     menubar.get_menu("View").add_command(

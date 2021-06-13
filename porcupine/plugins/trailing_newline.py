@@ -17,11 +17,10 @@ def on_save(event: tkinter.Event[tabs.FileTab]) -> None:
             textwidget.mark_set("insert", cursor)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option("insert_final_newline", True)
-        tab.bind("<<BeforeSave>>", on_save, add=True)
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("insert_final_newline", True)
+    tab.bind("<<BeforeSave>>", on_save, add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

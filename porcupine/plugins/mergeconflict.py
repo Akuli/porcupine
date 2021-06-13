@@ -152,25 +152,23 @@ def setup_displayers(tab: tabs.FileTab) -> None:
         displayer_list.append(ConflictDisplayer(tab.textwidget, *line_numbers))
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        setup_displayers(tab)
-        # https://github.com/python/mypy/issues/9658
-        tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)  # type: ignore
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    setup_displayers(tab)
+    tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)
 
-        for child in tab.left_frame.winfo_children():
-            if isinstance(child, LineNumbers):
-                tab.textwidget.bind(
-                    "<Enter>",
-                    (
-                        # This runs after clicking "Use this" button, mouse <Enter>s text widget
-                        # Don't know why this needs a small timeout instead of after_idle
-                        # https://github.com/python/mypy/issues/9658
-                        lambda event: tab.after(50, cast(Any, child).do_update)
-                    ),
-                    add=True,
-                )
+    for child in tab.left_frame.winfo_children():
+        if isinstance(child, LineNumbers):
+            tab.textwidget.bind(
+                "<Enter>",
+                (
+                    # This runs after clicking "Use this" button, mouse <Enter>s text widget
+                    # Don't know why this needs a small timeout instead of after_idle
+                    # https://github.com/python/mypy/issues/9658
+                    lambda event: tab.after(50, cast(Any, child).do_update)
+                ),
+                add=True,
+            )
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

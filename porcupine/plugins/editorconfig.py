@@ -350,11 +350,10 @@ def get_config_and_apply_to_tab(tab: tabs.FileTab, junk: object = None) -> None:
         apply_config(get_config(tab.path), tab)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        get_config_and_apply_to_tab(tab)
-        tab.bind("<<PathChanged>>", partial(get_config_and_apply_to_tab, tab), add=True)
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    get_config_and_apply_to_tab(tab)
+    tab.bind("<<PathChanged>>", partial(get_config_and_apply_to_tab, tab), add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

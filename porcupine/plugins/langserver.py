@@ -727,16 +727,13 @@ def switch_langservers(
             new.open_tab(tab)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option("langserver", None, Optional[LangServerConfig])
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("langserver", None, Optional[LangServerConfig])
 
-        tab.bind(
-            "<<TabSettingChanged:langserver>>", partial(switch_langservers, tab, False), add=True
-        )
-        tab.bind("<<PathChanged>>", partial(switch_langservers, tab, True), add=True)
-        switch_langservers(tab, False)
+    tab.bind("<<TabSettingChanged:langserver>>", partial(switch_langservers, tab, False), add=True)
+    tab.bind("<<PathChanged>>", partial(switch_langservers, tab, True), add=True)
+    switch_langservers(tab, called_because_path_changed=False)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

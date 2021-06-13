@@ -2,7 +2,7 @@
 import tkinter
 from typing import Optional
 
-from porcupine import get_tab_manager, menubar, tabs, utils
+from porcupine import menubar, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
 
 
@@ -40,10 +40,7 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     return last_lineno
 
 
-def fold() -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
+def fold(tab: tabs.FileTab) -> None:
     lineno = int(tab.textwidget.index("insert").split(".")[0])
     end = find_indented_block(tab, lineno)
     if end is None:
@@ -73,9 +70,8 @@ def fold() -> None:
     tab.textwidget.tag_config(tag, elide=True)
     tab.textwidget.tag_add(tag, f"{lineno + 1}.0", f"{end + 1}.0")
 
-    # https://github.com/python/mypy/issues/9658
-    dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)  # type: ignore
-    dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)  # type: ignore
+    dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)
+    dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)
     tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)  # type: ignore[no-untyped-call]
 
     for child in tab.left_frame.winfo_children():
@@ -84,5 +80,4 @@ def fold() -> None:
 
 
 def setup() -> None:
-    menubar.get_menu("Edit").add_command(label="Fold", command=fold)
-    menubar.set_enabled_based_on_tab("Edit/Fold", (lambda tab: isinstance(tab, tabs.FileTab)))
+    menubar.add_filetab_command("Edit/Fold", fold)

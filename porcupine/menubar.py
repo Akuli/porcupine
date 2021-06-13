@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import logging
 import pathlib
 import re
@@ -8,9 +7,10 @@ import sys
 import tkinter
 import traceback
 import webbrowser
+from functools import partial
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Callable, Iterator, Optional, Tuple
+from typing import Any, Callable, Iterator, Optional, Tuple
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -48,6 +48,7 @@ log = logging.getLogger(__name__)
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
 def _generate_event(name: str, junk: object) -> Literal["break"]:
+    log.debug(f"Generating event: {name}")
     get_main_window().event_generate(name)
     return "break"
 
@@ -57,9 +58,7 @@ def _fix_text_widget_bindings(event: tkinter.Event[tkinter.Misc]) -> None:
         if virtual_event.startswith("<<Menubar:") and not event.widget.bind(virtual_event):
             # When the keys are pressed, generate the event on the main
             # window so the menu callback will trigger.
-            event.widget.bind(
-                virtual_event, functools.partial(_generate_event, virtual_event), add=True
-            )
+            event.widget.bind(virtual_event, partial(_generate_event, virtual_event), add=True)
             assert event.widget.bind(virtual_event)
 
 
@@ -177,7 +176,7 @@ def _update_keyboard_shortcuts_inside_submenus() -> None:
         # trigger menu items when <<Menubar:Foo/Bar>> events are generated
         if not main_window.bind(event_name):
             # FIXME: what if menu item is inserted somewhere else than to end, and indexes change?
-            command = functools.partial(_menu_event_handler, menu, index)
+            command = partial(_menu_event_handler, menu, index)
             main_window.bind(event_name, command, add=True)
 
 
@@ -264,6 +263,63 @@ def set_enabled_based_on_tab(
     return update_enabledness
 
 
+def _get_filetab() -> tabs.FileTab:
+    tab = get_tab_manager().select()
+    assert isinstance(tab, tabs.FileTab)
+    return tab
+
+
+def add_filetab_command(path: str, func: Callable[[tabs.FileTab], Any] | None = None) -> None:
+    """
+    This is a convenience function that does several things:
+
+    * Create a menu item at the given path.
+    * Ensure the menu item is enabled only when the selected tab is a
+      :class:`~porcupine.tabs.FileTab`.
+    * Do something when the menu item is clicked. See below.
+
+    If ``func`` is given, it is called with the selected tab as the only
+    argument when the menu item is clicked. For example::
+
+        from procupine import menubar, tabs
+
+        def do_something(tab: tabs.FileTab) -> None:
+            ...
+
+        def setup() -> None:
+            menubar.add_filetab_command("Edit/Do something", do_something)
+
+    If ``func`` is not given, then an event is generated to the tab. The event
+    is named so that if ``path`` is ``"Edit/Foo"``, then the event is
+    ``<<FiletabCommand:Edit/Foo>>``. This is useful, for example, if you want
+    to create an instance of a class for every new tab, and then call a method
+    of the instance when a menu item is clicked. For example::
+
+        from __future__ import annotations
+        import tkinter
+        from procupine import get_tab_manager, menubar, tabs
+
+        class FooBar:
+            def do_something(self, event: tkinter.Event[tabs.FileTab]) -> None:
+                ...
+
+        def on_new_filetab(tab: tabs.FileTab) -> None:
+            foobar = FooBar()
+            tab.bind("<<FiletabCommand:Edit/Do something>>", foobar.do_something, add=True)
+
+        def setup() -> None:
+            get_tab_manager().add_filetab_callback(on_new_filetab)
+            menubar.add_filetab_command("Edit/Do something")
+    """
+    if func is None:
+        command = lambda: _get_filetab().event_generate(f"<<FiletabCommand:{path}>>")
+    else:
+        command = lambda: func(_get_filetab())  # type: ignore
+
+    menu_path, item_text = path.rsplit("/", maxsplit=1)
+    get_menu(menu_path).add_command(label=item_text, command=command)
+
+
 # TODO: pluginify?
 def _fill_menus_with_default_stuff() -> None:
     # Make sure to get the order of menus right:
@@ -304,8 +360,8 @@ def _fill_menus_with_default_stuff() -> None:
 
     get_menu("File").add_command(label="New File", command=new_file)
     get_menu("File").add_command(label="Open", command=open_files)
-    get_menu("File").add_command(label="Save", command=functools.partial(save_file, False))
-    get_menu("File").add_command(label="Save As", command=functools.partial(save_file, True))
+    get_menu("File").add_command(label="Save", command=partial(save_file, False))
+    get_menu("File").add_command(label="Save As", command=partial(save_file, True))
     get_menu("File").add_separator()
     get_menu("File").add_command(label="Close", command=close_selected_tab)
     get_menu("File").add_command(label="Quit", command=quit)
@@ -330,14 +386,10 @@ def _fill_menus_with_default_stuff() -> None:
 
         settings.set_("font_size", size)
 
+    get_menu("View").add_command(label="Bigger Font", command=partial(change_font_size, "bigger"))
+    get_menu("View").add_command(label="Smaller Font", command=partial(change_font_size, "smaller"))
     get_menu("View").add_command(
-        label="Bigger Font", command=functools.partial(change_font_size, "bigger")
-    )
-    get_menu("View").add_command(
-        label="Smaller Font", command=functools.partial(change_font_size, "smaller")
-    )
-    get_menu("View").add_command(
-        label="Reset Font Size", command=functools.partial(change_font_size, "reset")
+        label="Reset Font Size", command=partial(change_font_size, "reset")
     )
     set_enabled_based_on_tab("View/Bigger Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Smaller Font", (lambda tab: tab is not None))

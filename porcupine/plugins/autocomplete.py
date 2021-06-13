@@ -491,10 +491,7 @@ class AutoCompleter:
         return None
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if not isinstance(tab, tabs.FileTab):
-        return
-
+def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("autocomplete_chars", [], List[str])
 
     completer = AutoCompleter(tab)
@@ -514,17 +511,13 @@ def on_new_tab(tab: tabs.Tab) -> None:
 
     # avoid weird corner cases
     tab.winfo_toplevel().bind("<FocusOut>", (lambda event: completer._reject()), add=True)
-    tab.textwidget.bind(
-        # any mouse button
-        "<Button>",
-        lambda event: completer._reject(),
-        add=True,
-    )
+    # any mouse button
+    tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
 
     tab.bind("<Destroy>", (lambda event: completer.popup.toplevel.destroy()), add=True)
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)
     settings.add_option("autocomplete_popup_width", 500)
     settings.add_option("autocomplete_popup_height", 200)

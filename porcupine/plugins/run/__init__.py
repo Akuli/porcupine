@@ -1,4 +1,5 @@
 """Compile, run and lint files."""
+from __future__ import annotations
 
 import dataclasses
 import logging
@@ -7,7 +8,6 @@ import pathlib
 import shlex
 import sys
 from functools import partial
-from typing import List, Optional
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -31,7 +31,7 @@ class CommandsConfig:
 
 def get_command(
     tab: tabs.FileTab, which_command: Literal["compile", "run", "lint"], basename: str
-) -> Optional[List[str]]:
+) -> list[str] | None:
     assert os.sep not in basename, f"{basename!r} is not a basename"
 
     commands = tab.settings.get("commands", CommandsConfig)
@@ -58,10 +58,9 @@ def get_command(
     return result
 
 
-def do_something(something: Literal["compile", "run", "compilerun", "lint"]) -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
+def do_something(
+    something: Literal["compile", "run", "compilerun", "lint"], tab: tabs.FileTab
+) -> None:
     tab.save()
     if tab.path is None:
         # user cancelled a save as dialog
@@ -78,7 +77,6 @@ def do_something(something: Literal["compile", "run", "compilerun", "lint"]) -> 
     elif something == "compilerun":
 
         def run_after_compile() -> None:
-            assert isinstance(tab, tabs.FileTab)
             command = get_command(tab, "run", basename)
             if command is not None:
                 terminal.run_command(workingdir, command)
@@ -93,23 +91,15 @@ def do_something(something: Literal["compile", "run", "compilerun", "lint"]) -> 
             no_terminal.run_command(workingdir, command)
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        tab.settings.add_option("commands", CommandsConfig())
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("commands", CommandsConfig())
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
-
-    menubar.get_menu("Run").add_command(label="Compile", command=partial(do_something, "compile"))
-    menubar.get_menu("Run").add_command(label="Run", command=partial(do_something, "run"))
-    menubar.get_menu("Run").add_command(
-        label="Compile and Run", command=partial(do_something, "compilerun")
-    )
-    menubar.get_menu("Run").add_command(label="Lint", command=partial(do_something, "compilerun"))
+    get_tab_manager().add_filetab_callback(on_new_filetab)
 
     # TODO: disable the menu items when they don't correspond to actual commands
-    for label in {"Compile", "Run", "Compile and Run", "Lint"}:
-        menubar.set_enabled_based_on_tab(
-            f"Run/{label}", (lambda tab: isinstance(tab, tabs.FileTab))
-        )
+    menubar.add_filetab_command("Run/Compile", partial(do_something, "compile"))
+    menubar.add_filetab_command("Run/Run", partial(do_something, "run"))
+    menubar.add_filetab_command("Run/Compile and Run", partial(do_something, "compilerun"))
+    menubar.add_filetab_command("Run/Lint", partial(do_something, "lint"))

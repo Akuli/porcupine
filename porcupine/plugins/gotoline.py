@@ -2,13 +2,10 @@
 
 from tkinter import simpledialog
 
-from porcupine import get_tab_manager, menubar, tabs
+from porcupine import menubar, tabs
 
 
-def gotoline() -> None:
-    tab = get_tab_manager().select()
-    assert isinstance(tab, tabs.FileTab)
-
+def gotoline(tab: tabs.FileTab) -> None:
     # simpledialog isn't ttk yet, but it's not a huge problem imo
     lineno = simpledialog.askinteger(
         "Go to Line", "Type a line number and press Enter:", parent=tab.winfo_toplevel()
@@ -24,5 +21,4 @@ def gotoline() -> None:
 
 
 def setup() -> None:
-    menubar.get_menu("Edit").add_command(label="Go to Line", command=gotoline)
-    menubar.set_enabled_based_on_tab("Edit/Go to Line", (lambda tab: isinstance(tab, tabs.FileTab)))
+    menubar.add_filetab_command("Edit/Go to Line", gotoline)

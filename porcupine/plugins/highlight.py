@@ -228,22 +228,20 @@ def debounce(
     return request_running
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        # needed because pygments_lexer might change
-        def on_lexer_changed(junk: object = None) -> None:
-            assert isinstance(tab, tabs.FileTab)  # f u mypy
-            highlighter.set_lexer(tab.settings.get("pygments_lexer", LexerMeta)())
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    # needed because pygments_lexer might change
+    def on_lexer_changed(junk: object = None) -> None:
+        highlighter.set_lexer(tab.settings.get("pygments_lexer", LexerMeta)())
 
-        highlighter = Highlighter(tab.textwidget)
-        tab.bind("<<TabSettingChanged:pygments_lexer>>", on_lexer_changed, add=True)
-        on_lexer_changed()
-        utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", highlighter.on_change, add=True)
-        utils.add_scroll_command(
-            tab.textwidget, "yscrollcommand", debounce(tab, highlighter.highlight_visible, 100)
-        )
-        highlighter.highlight_visible()
+    highlighter = Highlighter(tab.textwidget)
+    tab.bind("<<TabSettingChanged:pygments_lexer>>", on_lexer_changed, add=True)
+    on_lexer_changed()
+    utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", highlighter.on_change, add=True)
+    utils.add_scroll_command(
+        tab.textwidget, "yscrollcommand", debounce(tab, highlighter.highlight_visible, 100)
+    )
+    highlighter.highlight_visible()
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

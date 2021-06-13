@@ -10,27 +10,22 @@ from porcupine import get_main_window
 from porcupine.plugins import find
 
 
-def test_finder_creation(filetab):
-    assert filetab not in find.finders
-    get_main_window().event_generate("<<Menubar:Edit/Find and Replace>>")
-    assert filetab in find.finders
-
-
 @pytest.fixture
 def filetab_and_finder(filetab):
+    [finder] = [w for w in filetab.bottom_frame.winfo_children() if isinstance(w, find.Finder)]
     get_main_window().event_generate("<<Menubar:Edit/Find and Replace>>")
-    return (filetab, find.finders[filetab])
+    return (filetab, finder)
 
 
 # i don't know why, but this does not work on windows
 @pytest.mark.skipif(
     sys.platform == "win32", reason="focus_get() doesn't work on windows like this test assumes"
 )
-def test_key_bindings_that_are_annoying_if_they_dont_work(filetab):
+def test_key_bindings_that_are_annoying_if_they_dont_work(filetab_and_finder):
+    filetab, finder = filetab_and_finder
     assert filetab.focus_get() is filetab.textwidget
 
     get_main_window().event_generate("<<Menubar:Edit/Find and Replace>>")
-    finder = find.finders[filetab]
     filetab.update()
     assert filetab.focus_get() is finder.find_entry
 

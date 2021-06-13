@@ -154,10 +154,9 @@ class _Underliner:
             self._message_tag = None
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        underliner = _Underliner(tab.textwidget)
-        utils.bind_with_data(tab, "<<SetUnderlines>>", underliner.set_underlines, add=True)
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    underliner = _Underliner(tab.textwidget)
+    utils.bind_with_data(tab, "<<SetUnderlines>>", underliner.set_underlines, add=True)
 
 
 def hide_all_message_labels(event: tkinter.Event[tkinter.Misc]) -> None:
@@ -174,4 +173,4 @@ def setup() -> None:
     # and when the entire porcupine window loses input focus (binding here to avoid unbinding)
     get_main_window().bind("<FocusOut>", hide_all_message_labels, add=True)
 
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)

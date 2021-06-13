@@ -108,7 +108,7 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
             tree.tk.call(tree, "tag", "add", "venv", venv_id)
 
 
-def _on_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str:
+def _on_treeview_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str:
     tree = event.widget
     tree.tk.call("focus", tree)
 
@@ -137,5 +137,5 @@ def setup() -> None:
             widget.tag_configure("venv", image=images.get("venv"))
             utils.bind_with_data(widget, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
             widget.bind(
-                "<Button-3>", _on_right_click, add=True
+                "<Button-3>", _on_treeview_right_click, add=True
             )  # TODO: mac right click = button 2?

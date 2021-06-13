@@ -73,12 +73,11 @@ class LongLineMarker:
         self.do_update()
 
 
-def on_new_tab(tab: tabs.Tab) -> None:
-    if isinstance(tab, tabs.FileTab):
-        # raymond hettinger says 90-ish
-        tab.settings.add_option("max_line_length", 90)
-        LongLineMarker(tab).setup()
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    # raymond hettinger says 90-ish
+    tab.settings.add_option("max_line_length", 90)
+    LongLineMarker(tab).setup()
 
 
 def setup() -> None:
-    get_tab_manager().add_tab_callback(on_new_tab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)
