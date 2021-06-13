@@ -148,7 +148,7 @@ else:
     quote = shlex.quote
 
 
-# TODO: document this
+# TODO: document this?
 def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
     parts = shlex.split(command, posix=(sys.platform != "win32"))
     return [part.format_map(substitutions) for part in parts]
