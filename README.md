@@ -143,7 +143,7 @@ I have tried to make contributing easy:
     You can choose an issue and start working on it;
     you don't have to ask me to assign the issue to you or anything like that.
     Instead of working on an issue, you can also create something that you would
-    like to have in an editor, for example.
+    like to have in an editor.
 - You don't need to read anything before you can get started.
     I recommend having a look at [the Porcupine plugin API docs](https://akuli.github.io/porcupine/),
     but that's not required.
