@@ -401,7 +401,6 @@ def _fill_menus_with_default_stuff() -> None:
         get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))
 
     # TODO: porcupine starring button
-    # TODO: does ##learnpython IRC link still work?
     add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
     add_link(
         "Help",
