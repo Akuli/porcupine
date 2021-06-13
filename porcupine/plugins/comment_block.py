@@ -12,7 +12,7 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
-def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None) -> utils.BreakOrNone:
+def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> utils.BreakOrNone:
     comment_prefix = tab.settings.get("comment_prefix", Optional[str])
     if pressed_key is not None and pressed_key != comment_prefix:
         return None
@@ -48,14 +48,9 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None) -> utils.Br
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind(
-        "<<FiletabCommand:Edit/Comment Block>>",
-        (lambda event: comment_or_uncomment(tab, None)),
-        add=True,
-    )
     tab.textwidget.bind("<Key>", (lambda event: comment_or_uncomment(tab, event.char)), add=True)
 
 
 def setup() -> None:
-    menubar.add_filetab_command("Edit/Comment Block")
+    menubar.add_filetab_command("Edit/Comment Block", comment_or_uncomment)
     get_tab_manager().add_filetab_callback(on_new_filetab)

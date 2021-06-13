@@ -20,7 +20,7 @@ from urllib.request import HTTPSHandler, Request, build_opener
 
 from pygments.lexer import LexerMeta  # type: ignore[import]
 
-from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
+from porcupine import get_main_window, menubar, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -247,7 +247,7 @@ def pasting_done_callback(
         )
 
 
-def start_pasting(tab: tabs.FileTab, paste_class: Type[Paste], junk_event: object) -> None:
+def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
     lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
     try:
         code = tab.textwidget.get("sel.first", "sel.last")
@@ -262,17 +262,7 @@ def start_pasting(tab: tabs.FileTab, paste_class: Type[Paste], junk_event: objec
     )
 
 
-def on_new_filetab(tab: tabs.FileTab) -> None:
-    for klass in [DPaste, Termbin]:
-        tab.bind(
-            f"<<FiletabCommand:Pastebin/{klass.name}>>",
-            partial(start_pasting, tab, klass),
-            add=True,
-        )
-
-
 def setup() -> None:
-    get_tab_manager().add_filetab_callback(on_new_filetab)
     for klass in [DPaste, Termbin]:
         assert "/" not in klass.name
-        menubar.add_filetab_command(f"Pastebin/{klass.name}")
+        menubar.add_filetab_command(f"Pastebin/{klass.name}", partial(start_pasting, klass))

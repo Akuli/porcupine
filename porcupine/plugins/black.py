@@ -4,11 +4,10 @@ from __future__ import annotations
 import logging
 import subprocess
 import traceback
-from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
+from porcupine import menubar, tabs, textwidget, utils
 from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ def run_black(code: str, path: Path | None) -> str:
         return code
 
 
-def black_the_code(tab: tabs.FileTab, event: object) -> None:
+def blacken_the_code(tab: tabs.FileTab) -> None:
     before = tab.textwidget.get("1.0", "end - 1 char")
     after = run_black(before, tab.path)
     if before != after:
@@ -49,10 +48,5 @@ def black_the_code(tab: tabs.FileTab, event: object) -> None:
             tab.textwidget.replace("1.0", "end - 1 char", after)
 
 
-def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<FiletabCommand:Tools/Python/Black>>", partial(black_the_code, tab), add=True)
-
-
 def setup() -> None:
-    menubar.add_filetab_command("Tools/Python/Black")
-    get_tab_manager().add_filetab_callback(on_new_filetab)
+    menubar.add_filetab_command("Tools/Python/Black", blacken_the_code)

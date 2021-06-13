@@ -1,6 +1,6 @@
 import tkinter
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget
+from porcupine import menubar, tabs, textwidget
 
 
 def sort(tab: tabs.FileTab) -> None:
@@ -28,10 +28,5 @@ def sort(tab: tabs.FileTab) -> None:
     tab.textwidget.tag_add("sel", f"{first_line}.0", f"{last_line + 1}.0")
 
 
-def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<FiletabCommand:Edit/Sort Lines>>", (lambda event: sort(tab)), add=True)
-
-
 def setup() -> None:
-    menubar.add_filetab_command("Edit/Sort Lines")
-    get_tab_manager().add_filetab_callback(on_new_filetab)
+    menubar.add_filetab_command("Edit/Sort Lines", sort)

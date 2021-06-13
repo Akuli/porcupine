@@ -1,4 +1,5 @@
 """Compile, run and lint files."""
+from __future__ import annotations
 
 import dataclasses
 import logging
@@ -6,7 +7,7 @@ import os
 import pathlib
 import shlex
 import sys
-from typing import List, Optional
+from functools import partial
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -30,7 +31,7 @@ class CommandsConfig:
 
 def get_command(
     tab: tabs.FileTab, which_command: Literal["compile", "run", "lint"], basename: str
-) -> Optional[List[str]]:
+) -> list[str] | None:
     assert os.sep not in basename, f"{basename!r} is not a basename"
 
     commands = tab.settings.get("commands", CommandsConfig)
@@ -58,7 +59,7 @@ def get_command(
 
 
 def do_something(
-    tab: tabs.FileTab, something: Literal["compile", "run", "compilerun", "lint"]
+    something: Literal["compile", "run", "compilerun", "lint"], tab: tabs.FileTab
 ) -> None:
     tab.save()
     if tab.path is None:
@@ -92,23 +93,13 @@ def do_something(
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("commands", CommandsConfig())
-    tab.bind(
-        "<<FiletabCommand:Run/Compile>>", (lambda event: do_something(tab, "compile")), add=True
-    )
-    tab.bind("<<FiletabCommand:Run/Run>>", (lambda event: do_something(tab, "run")), add=True)
-    tab.bind(
-        "<<FiletabCommand:Run/Compile and Run>>",
-        (lambda event: do_something(tab, "compilerun")),
-        add=True,
-    )
-    tab.bind("<<FiletabCommand:Run/Lint>>", (lambda event: do_something(tab, "lint")), add=True)
 
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
     # TODO: disable the menu items when they don't correspond to actual commands
-    menubar.add_filetab_command("Run/Compile")
-    menubar.add_filetab_command("Run/Run")
-    menubar.add_filetab_command("Run/Compile and Run")
-    menubar.add_filetab_command("Run/Lint")
+    menubar.add_filetab_command("Run/Compile", partial(do_something, "compile"))
+    menubar.add_filetab_command("Run/Run", partial(do_something, "run"))
+    menubar.add_filetab_command("Run/Compile and Run", partial(do_something, "compilerun"))
+    menubar.add_filetab_command("Run/Lint", partial(do_something, "lint"))

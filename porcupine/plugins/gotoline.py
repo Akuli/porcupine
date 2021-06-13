@@ -2,7 +2,7 @@
 
 from tkinter import simpledialog
 
-from porcupine import get_tab_manager, menubar, tabs
+from porcupine import menubar, tabs
 
 
 def gotoline(tab: tabs.FileTab) -> None:
@@ -20,10 +20,5 @@ def gotoline(tab: tabs.FileTab) -> None:
     tab.textwidget.focus()
 
 
-def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<FiletabCommand:Edit/Go to Line>>", (lambda event: gotoline(tab)), add=True)
-
-
 def setup() -> None:
-    menubar.add_filetab_command("Edit/Go to Line")
-    get_tab_manager().add_filetab_callback(on_new_filetab)
+    menubar.add_filetab_command("Edit/Go to Line", gotoline)

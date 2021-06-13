@@ -2,7 +2,7 @@
 import tkinter
 from typing import Optional
 
-from porcupine import get_tab_manager, menubar, tabs, utils
+from porcupine import menubar, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
 
 
@@ -79,10 +79,5 @@ def fold(tab: tabs.FileTab) -> None:
             child.do_update()
 
 
-def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<FiletabCommand:Edit/Fold>>", (lambda event: fold(tab)), add=True)
-
-
 def setup() -> None:
-    get_tab_manager().add_filetab_callback(on_new_filetab)
-    menubar.add_filetab_command("Edit/Fold")
+    menubar.add_filetab_command("Edit/Fold", fold)
