@@ -148,7 +148,8 @@ I have tried to make contributing easy:
     I recommend having a look at [the Porcupine plugin API docs](https://akuli.github.io/porcupine/),
     but that's not required.
 - Don't worry too much about whether your code is good or not.
-    I review the pull requests, and there's checks running on GitHub Actions.
+    I will review the pull requests and try to help you out.
+    There are also checks running on GitHub Actions.
 - You can talk with me on GitHub issues,
     or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
     I am on ##learnpython at about 3PM to 9PM UTC.
