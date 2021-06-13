@@ -149,7 +149,7 @@
 #                Path to the Python executable that Porcupine is currently
 #                running with. This is not necessarily the same Python that is
 #                used for running programs written by the user. For example, on
-#                Windows, the Porcupine installer includes a copy of the Python,
+#                Windows, the Porcupine installer includes a copy of Python,
 #                and {porcupine_python} points to that.
 #
 #            The command string is first split into parts and then substituted,
