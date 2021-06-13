@@ -241,7 +241,7 @@ class _TooltipManager:
 
     # This needs to be shared by all instances because there's only one
     # mouse pointer.
-    tipwindow = None
+    tipwindow: tkinter.Toplevel | None = None
 
     def __init__(self, widget: tkinter.Widget, text: str) -> None:
         widget.bind("<Enter>", self.enter, add=True)
