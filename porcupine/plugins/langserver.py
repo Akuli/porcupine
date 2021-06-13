@@ -732,7 +732,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
     tab.bind("<<TabSettingChanged:langserver>>", partial(switch_langservers, tab, False), add=True)
     tab.bind("<<PathChanged>>", partial(switch_langservers, tab, True), add=True)
-    switch_langservers(tab, False)
+    switch_langservers(tab, called_because_path_changed=False)
 
 
 def setup() -> None:
