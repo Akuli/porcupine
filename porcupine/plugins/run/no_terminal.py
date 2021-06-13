@@ -1,4 +1,5 @@
 """Run commands within the Porcupine window."""
+from __future__ import annotations
 
 import logging
 import pathlib
@@ -6,7 +7,7 @@ import queue
 import subprocess
 import threading
 import tkinter
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 from porcupine import get_tab_manager, images, utils
 
@@ -24,13 +25,13 @@ class NoTerminalRunner:
         self.textwidget.tag_config("error", foreground="red")
 
         self._output_queue: queue.Queue[QueueMessage] = queue.Queue()
-        self._running_process: Optional[subprocess.Popen[bytes]] = None
+        self._running_process: subprocess.Popen[bytes] | None = None
         self._queue_clearer()
 
     def _runner_thread(
         self, workingdir: pathlib.Path, command: List[str], succeeded_callback: Callable[[], None]
     ) -> None:
-        process = None
+        process: subprocess.Popen[bytes] | None = None
 
         def emit_message(msg: QueueMessage) -> None:
             if process is not None and self._running_process is not process:

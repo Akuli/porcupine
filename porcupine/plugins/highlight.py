@@ -28,7 +28,7 @@ root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 class Highlighter:
     def __init__(self, text: tkinter.Text) -> None:
         self.textwidget = text
-        self._lexer = None
+        self._lexer: Lexer = None
 
         # the tags use fonts from here
         self._fonts: Dict[Tuple[bool, bool], Font] = {}

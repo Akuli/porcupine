@@ -59,7 +59,8 @@ _installed_with_pynsist = (
 
 
 if sys.platform == "win32":
-    if sys.stdout is None and sys.stderr is None:
+    # Casting because mypy thinks stdout and stderr can't be None
+    if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
         # running in pythonw.exe so there's no console window, print still
         # works because it checks if sys.stdout is None
         running_pythonw = True
@@ -241,7 +242,7 @@ class _TooltipManager:
 
     # This needs to be shared by all instances because there's only one
     # mouse pointer.
-    tipwindow = None
+    tipwindow: tkinter.Toplevel | None = None
 
     def __init__(self, widget: tkinter.Widget, text: str) -> None:
         widget.bind("<Enter>", self.enter, add=True)
