@@ -657,6 +657,7 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
         pass
 
     command = utils.format_command(config.command, {"porcupine_python": utils.python_executable})
+    global_log.info(f"Running command: {command}")
 
     try:
         # TODO: should use utils.subprocess_kwargs?
