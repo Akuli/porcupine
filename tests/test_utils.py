@@ -122,3 +122,14 @@ def test_project_root(tmp_path):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path / "foo"
     subprocess.run("git init -q", cwd=tmp_path, shell=True, check=True)
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
+
+
+def test_format_command(monkeypatch):
+    assert utils.format_command("{foo} --help", {"foo": "bar baz"}) == ["bar baz", "--help"]
+
+    if sys.platform == "win32":
+        # https://github.com/Akuli/porcupine/issues/154#issuecomment-849102842
+        path = r"C:\Users\Martin\tetris\env\Scripts\python.exe"
+        assert utils.format_command(path + " {file}", {"file": "tetris.py"}) == [path, "tetris.py"]
+    else:
+        assert utils.format_command(r"foo\ bar", {}) == ["foo bar"]

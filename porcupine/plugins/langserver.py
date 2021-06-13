@@ -12,7 +12,6 @@ import pprint
 import queue
 import re
 import select
-import shlex
 import signal
 import socket
 import subprocess
@@ -657,34 +656,19 @@ def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
     except KeyError:
         pass
 
-    # avoid shell=True on non-windows to get process.pid to do the right thing
-    #
-    # with shell=True it's the pid of the shell, not the pid of the program
-    #
-    # on windows, there is no shell and it's all about whether to quote or not
-    actual_command: Union[str, List[str]]
-    if sys.platform == "win32":
-        shell = True
-        actual_command = config.command
-    else:
-        shell = False
-        actual_command = shlex.split(config.command)
+    command = utils.format_command(config.command, {"porcupine_python": utils.python_executable})
+    global_log.info(f"Running command: {command}")
 
     try:
+        # TODO: should use utils.subprocess_kwargs?
         if the_id.port is None:
             # langserver writes log messages to stderr
             process = subprocess.Popen(
-                actual_command,
-                shell=shell,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         else:
             # most langservers log to stderr, but also watch stdout
-            process = subprocess.Popen(
-                actual_command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-            )
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     except (OSError, subprocess.CalledProcessError):
         global_log.exception(f"failed to start langserver with command {config.command!r}")
         return None
