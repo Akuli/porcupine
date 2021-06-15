@@ -435,7 +435,6 @@ class LangServer:
                 self._send_tab_opened_message(tab)
 
             # TODO: this is a terrible hack:
-            #   - This only works for pyls, and kinda defeats the purpose of langservers.
             #   - This causes an error elsewhere because sansio-lsp-client doesn't
             #     officially support workspace/didChangeConfiguration yet.
             #   - This doesn't refresh as venv changes.
