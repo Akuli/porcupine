@@ -11,4 +11,3 @@ typing_extensions
 dacite>=1.5.1,<2.0.0
 toml
 ttkthemes>=3.0.0
-requests>=2.24.0, <3.0.0
