@@ -31,6 +31,7 @@ from porcupine import get_tab_manager, tabs, textwidget, utils
 from porcupine.plugins import autocomplete, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
+setup_after = ["python_venv"]
 
 
 # 1024 bytes was way too small, and with this chunk size, it
