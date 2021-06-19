@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import os
-from concurrent.futures import ThreadPoolExecutor
 import dataclasses
 import logging
+import os
 import subprocess
 import sys
 import time
 import tkinter
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
