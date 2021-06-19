@@ -75,7 +75,6 @@ def run_git_status(project_root: Path) -> Dict[Path, str]:
             result[path] = "git_mergeconflict"
         else:
             log.warning(f"unknown git status line: {repr(line)}")
-    print("git status:", project_root, "-->", result)
     return result
 
 
@@ -302,22 +301,17 @@ class DirectoryTree(ttk.Treeview):
         }
 
         def check_if_done() -> None:
-            print("check if done")
             if not all(future.done() for future in git_futures.values()):
-                print("  need other check")
                 self.after(25, check_if_done)
                 return
 
             if set(self.get_children()) == set(project_ids):
-                print("  projects same")
                 self.git_statuses = {path: future.result() for path, future in git_futures.items()}
-                print("  self.git_statuses =", self.git_statuses)
                 for project_id in self.get_children(""):
                     self._update_tags_and_content(get_path(project_id), project_id)
                 self._update_selection_color()
                 log.info(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
             else:
-                print("  projects ch")
                 log.info(
                     "projects added/removed while refreshing, assuming another fresh is coming soon"
                 )
