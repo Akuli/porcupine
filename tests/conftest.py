@@ -10,13 +10,12 @@ import subprocess
 import sys
 import tempfile
 import tkinter
-import traceback
 
 import appdirs
 import pytest
 
 import porcupine
-from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs, utils
+from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
 
 
@@ -99,20 +98,6 @@ def porcusession(monkeypatch_dirs):
         porcupine.get_tab_manager().close_tab(tab)
 
     porcupine.quit()
-
-
-# utils.run_in_thread() can make tests fragile
-@pytest.fixture
-def dont_run_in_thread(monkeypatch):
-    def func(blocking_function, done_callback, check_interval_ms=69, daemon=True):
-        try:
-            result = blocking_function()
-        except Exception:
-            done_callback(False, traceback.format_exc())
-        else:
-            done_callback(True, result)
-
-    monkeypatch.setattr(utils, "run_in_thread", func)
 
 
 @pytest.fixture
