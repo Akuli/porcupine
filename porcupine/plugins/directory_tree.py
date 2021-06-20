@@ -232,34 +232,32 @@ class DirectoryTree(ttk.Treeview):
             self.refresh()
 
     def select_file(self, path: Path) -> None:
-        for project_id in self.get_children():
-            if get_path(project_id) not in path.parents:
-                continue
-
-            path_to_root = list(_path_to_root_inclusive(path, get_path(project_id)))
-            root_to_path_excluding_root = path_to_root[::-1][1:]
-
-            # Find the visible sub-item representing the file
-            file_id = project_id
-            for subpath in root_to_path_excluding_root:
-                if self.item(file_id, "open"):
-                    file_id = self.get_id_from_path(subpath, project_id)
-                    assert file_id is not None
-                else:
-                    # ...or a closed folder that contains the file
-                    break
-
-            self.set_the_selection_correctly(file_id)
-            self.see(file_id)  # type: ignore[no-untyped-call]
-
-            # Multiple projects may match when project roots are nested. It's
-            # fine to use the first match, because recently used projects tend
-            # to go first.
+        matching_projects = [project_id for project_id in self.get_children() if get_path(project_id) in path.parents]
+        if not matching_projects:
+            # Happens when tab changes because a file was just opened. This
+            # will be called soon once the project has been added.
+            log.info(f"can't select '{path}', found no projects containing it")
             return
 
-        # Happens when tab changes because a file was just opened. This
-        # will be called soon once the project has been added.
-        log.info(f"can't select '{path}' because its project was not found")
+        # Multiple projects shouldn't match, because nested projects are handled specially
+        [project_id] = matching_projects
+
+        path_to_root = list(_path_to_root_inclusive(path, get_path(project_id)))
+        root_to_path = path_to_root[::-1]
+        root_to_path_excluding_root = root_to_path[1:]
+
+        # Find the visible sub-item representing the file
+        file_id = project_id
+        for subpath in root_to_path_excluding_root:
+            if self.item(file_id, "open"):
+                file_id = self.get_id_from_path(subpath, project_id)
+                assert file_id is not None
+            else:
+                # ...or a closed folder that contains the file
+                break
+
+        self.set_the_selection_correctly(file_id)
+        self.see(file_id)  # type: ignore[no-untyped-call]
 
     def _insert_dummy(self, parent: str, text: str = "") -> None:
         assert parent
