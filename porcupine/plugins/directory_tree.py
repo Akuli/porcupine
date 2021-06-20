@@ -259,9 +259,13 @@ class DirectoryTree(ttk.Treeview):
         self.set_the_selection_correctly(file_id)
         self.see(file_id)  # type: ignore[no-untyped-call]
 
-    def _insert_dummy(self, parent: str, text: str = "") -> None:
+    def _insert_dummy(self, parent: str, *, text: str = "", clear: bool = False) -> None:
         assert parent
-        assert not self.get_children(parent)
+        if clear:
+            self.delete(*self.get_children(parent))  # type: ignore[no-untyped-call]
+        else:
+            assert not self.get_children(parent)
+
         self.insert(parent, "end", text=text, tags="dummy")
 
     def contains_dummy(self, parent: str) -> bool:
@@ -366,17 +370,13 @@ class DirectoryTree(ttk.Treeview):
 
         project_ids = self.get_children("")
         if dir_id not in project_ids and dir_path in map(get_path, project_ids):
-            for child in self.get_children(dir_id):
-                self.delete(child)  # type: ignore[no-untyped-call]
-            self._insert_dummy(dir_id, text="(open as a separate project)")
+            self._insert_dummy(dir_id, text="(open as a separate project)", clear=True)
             return
 
         path2id = {get_path(id): id for id in self.get_children(dir_id)}
         new_paths = set(dir_path.iterdir())
         if not new_paths:
-            for child in self.get_children(dir_id):
-                self.delete(child)  # type: ignore[no-untyped-call]
-            self._insert_dummy(dir_id, text="(empty)")
+            self._insert_dummy(dir_id, text="(empty)", clear=True)
             return
 
         # TODO: handle changing directory to file
