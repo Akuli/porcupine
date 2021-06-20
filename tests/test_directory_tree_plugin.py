@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import sys
+from concurrent.futures import Future
 from functools import partial
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from porcupine import get_paned_window, tabs, utils
 from porcupine.plugins import directory_tree as plugin_module
 from porcupine.plugins.directory_tree import (
     DirectoryTree,
+    _git_pool,
     _path_to_root_inclusive,
     focus_treeview,
     get_path,
@@ -26,6 +28,16 @@ def tree():
     for child in tree.get_children(""):
         tree.delete(child)
     yield tree
+
+
+@pytest.fixture
+def disable_thread_pool(monkeypatch):
+    def fake_submit(func):
+        fut = Future()
+        fut.set_result(func())
+        return fut
+
+    monkeypatch.setattr(_git_pool, "submit", fake_submit)
 
 
 def test_adding_nested_projects(tree, tmp_path):
@@ -96,7 +108,7 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_added_and_modified_content(tree, tmp_path, monkeypatch, dont_run_in_thread):
+def test_added_and_modified_content(tree, tmp_path, monkeypatch, disable_thread_pool):
     monkeypatch.chdir(tmp_path)
 
     subprocess.check_call(["git", "init", "--quiet"], stdout=subprocess.DEVNULL)
@@ -117,7 +129,7 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch, dont_run_in_thr
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
+def test_merge_conflict(tree, tmp_path, monkeypatch, disable_thread_pool):
     monkeypatch.chdir(tmp_path)
 
     # Resulting output of 'git log --graph --oneline --all':
@@ -148,7 +160,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, dont_run_in_thread):
     assert set(tree.item(project_id, "tags")) == {"git_mergeconflict"}
 
 
-def test_select_file(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread):
+def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_pool):
     (tmp_path / "a").mkdir(parents=True)
     (tmp_path / "b").mkdir(parents=True)
     (tmp_path / "a" / "README").touch()
@@ -194,7 +206,7 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, dont_run_in_thread
     tabmanager.close_tab(b_file2)
 
 
-def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path, dont_run_in_thread):
+def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path, disable_thread_pool):
     (tmp_path / "README").touch()
     (tmp_path / "hello.py").touch()
     tree.add_project(tmp_path, refresh=False)
@@ -202,7 +214,7 @@ def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path, dont_
     assert tree.selection()
 
 
-def test_all_files_deleted(tree, tmp_path, tabmanager, dont_run_in_thread):
+def test_all_files_deleted(tree, tmp_path, tabmanager, disable_thread_pool):
     (tmp_path / "README").touch()
     (tmp_path / "hello.py").touch()
     tree.add_project(tmp_path)
