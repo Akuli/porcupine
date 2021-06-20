@@ -191,7 +191,7 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_poo
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b"
 
-    open_as_if_user_clicked(tree.selection()[0])
+    open_as_if_user_clicked(tree, tree.selection()[0])
     tabmanager.select(b_file1)
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b" / "file1"
@@ -244,14 +244,20 @@ def test_nested_projects(tree, tmp_path, tabmanager, disable_thread_pool):
     tree.add_project(tmp_path)
     tree.add_project(tmp_path / "subdir")
 
-    [outer_project_id] = [project_id for project_id in tree.get_children("") if get_path(project_id) == tmp_path]
+    [outer_project_id] = [
+        project_id for project_id in tree.get_children("") if get_path(project_id) == tmp_path
+    ]
     open_as_if_user_clicked(tree, outer_project_id)
-    [subdir_as_nested_project] = [item_id for item_id in tree.get_children(outer_project_id) if get_path(item_id) == tmp_path / "subdir"]
+    [subdir_as_nested_project] = [
+        item_id
+        for item_id in tree.get_children(outer_project_id)
+        if get_path(item_id) == tmp_path / "subdir"
+    ]
     open_as_if_user_clicked(tree, subdir_as_nested_project)
 
     assert tree.contains_dummy(subdir_as_nested_project)
     dummy_id = tree.get_children(subdir_as_nested_project)[0]
-    assert tree.item(dummy_id, 'text') == '(open as a separate project)'
+    assert tree.item(dummy_id, "text") == "(open as a separate project)"
 
 
 def test_path_to_root_inclusive():
