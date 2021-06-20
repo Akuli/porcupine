@@ -236,7 +236,7 @@ class DirectoryTree(ttk.Treeview):
         if not matching_projects:
             # Happens when tab changes because a file was just opened. This
             # will be called soon once the project has been added.
-            log.info(f"can't select '{path}', found no projects containing it")
+            log.info(f"can't select '{path}' because there are no projects containing it")
             return
 
         # Multiple projects shouldn't match, because nested projects are handled specially
