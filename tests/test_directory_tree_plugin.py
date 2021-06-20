@@ -160,6 +160,13 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, disable_thread_pool):
     assert set(tree.item(project_id, "tags")) == {"git_mergeconflict"}
 
 
+def open_as_if_user_clicked(tree, item):
+    tree.selection_set(item)
+    tree.item(item, open=True)
+    tree.event_generate("<<TreeviewOpen>>")
+    tree.update()
+
+
 def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_pool):
     (tmp_path / "a").mkdir(parents=True)
     (tmp_path / "b").mkdir(parents=True)
@@ -184,11 +191,7 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_poo
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b"
 
-    # Simulate user opening selected item
-    tree.item(tree.selection()[0], open=True)
-    tree.event_generate("<<TreeviewOpen>>")
-
-    tree.update()
+    open_as_if_user_clicked(tree, tree.selection()[0])
     tabmanager.select(b_file1)
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b" / "file1"
@@ -231,6 +234,31 @@ def test_all_files_deleted(tree, tmp_path, tabmanager, disable_thread_pool):
     (tmp_path / "hello.py").unlink()
     tree.refresh()
     assert tree.contains_dummy(project_id)
+
+
+def test_nested_projects(tree, tmp_path, tabmanager, disable_thread_pool):
+    (tmp_path / "README").touch()
+    (tmp_path / "subdir").mkdir()
+    (tmp_path / "subdir" / "README").touch()
+
+    tree.add_project(tmp_path)
+
+    [outer_project_id] = [
+        project_id for project_id in tree.get_children("") if get_path(project_id) == tmp_path
+    ]
+    open_as_if_user_clicked(tree, outer_project_id)
+    [subdir_inside_other_project] = [
+        item_id
+        for item_id in tree.get_children(outer_project_id)
+        if get_path(item_id) == tmp_path / "subdir"
+    ]
+    open_as_if_user_clicked(tree, subdir_inside_other_project)
+
+    assert not tree.contains_dummy(subdir_inside_other_project)
+    tree.add_project(tmp_path / "subdir")
+    assert tree.contains_dummy(subdir_inside_other_project)
+    dummy_id = tree.get_children(subdir_inside_other_project)[0]
+    assert tree.item(dummy_id, "text") == "(open as a separate project)"
 
 
 def test_path_to_root_inclusive():
