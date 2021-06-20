@@ -138,6 +138,12 @@ Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
 If you want to do something to Porcupine, that's awesome!
 I have tried to make contributing easy:
+- If you don't understand what I meant in an issue, please ask for clarification.
+    I have written most issues so that I understand what I wrote,
+    and if you are new to Porcupine, you likely need a longer explanation to understand what the problem is.
+- Don't worry about asking too many questions!
+    It's not annoying, and if you create several pull requests after I answer all your questions,
+    I think answering the questions was definitely worth it.
 - There is not much boilerplate involved in the contributing process.
     You just create a pull request and that's it.
     You can choose an issue and start working on it, without prior permission.
@@ -149,12 +155,10 @@ I have tried to make contributing easy:
 - Don't worry too much about whether your code is good or not.
     I will review the pull requests and try to help you out.
     There are also checks running on GitHub Actions.
-- You can talk with me on GitHub issues,
-    or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
-    I am on ##learnpython at about 3PM to 9PM UTC.
-    Don't worry about asking too many questions.
-    It's not annoying, and if you create several pull requests after I answer all your questions,
-    I think answering the questions was definitely worth it.
+
+You can talk with me on GitHub issues,
+or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
+I am on ##learnpython at about 3PM to 9PM UTC.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
 Then install Python 3.7 or newer and [git](https://git-scm.com/), and run these commands:
