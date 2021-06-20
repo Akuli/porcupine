@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import os
 import subprocess
 import sys
 import time
 import tkinter
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
@@ -74,6 +76,10 @@ def run_git_status(project_root: Path) -> Dict[Path, str]:
         else:
             log.warning(f"unknown git status line: {repr(line)}")
     return result
+
+
+# Each git subprocess uses one cpu core
+_git_pool = ThreadPoolExecutor(max_workers=os.cpu_count())
 
 
 # For perf reasons, we want to avoid unnecessary Tcl calls when
@@ -284,35 +290,36 @@ class DirectoryTree(ttk.Treeview):
         settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
 
     def refresh(
-        self, junk: object = None, *, when_done: Callable[[], None] = (lambda: None)
+        self, junk: object = None, *, done_callback: Callable[[], None] = (lambda: None)
     ) -> None:
         log.debug("refreshing begins")
         start_time = time.time()
         self._hide_old_projects()
-        project_ids = self.get_children()
+        project_ids = self.get_children("")
+        git_futures = {
+            path: _git_pool.submit(partial(run_git_status, path))
+            for path in map(get_path, project_ids)
+        }
 
-        def thread_target() -> dict[Path, dict[Path, str]]:
-            return {path: run_git_status(path) for path in map(get_path, project_ids)}
+        def check_if_done() -> None:
+            if not all(future.done() for future in git_futures.values()):
+                self.after(25, check_if_done)
+                return
 
-        def done_callback(success: bool, result: str | dict[Path, dict[Path, str]]) -> None:
-            log.debug(f"thread done in {round((time.time()-start_time)*1000)}ms")
-            if success and set(self.get_children()) == set(project_ids):
-                assert isinstance(result, dict)
-                self.git_statuses = result
+            if set(self.get_children()) == set(project_ids):
+                self.git_statuses = {path: future.result() for path, future in git_futures.items()}
                 for project_id in self.get_children(""):
                     self._update_tags_and_content(get_path(project_id), project_id)
                 self._update_selection_color()
                 log.info(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-                when_done()
-            elif success:
+            else:
                 log.info(
                     "projects added/removed while refreshing, assuming another fresh is coming soon"
                 )
-                when_done()
-            else:
-                log.error(f"error in git status running thread\n{result}")
 
-        utils.run_in_thread(thread_target, done_callback, check_interval_ms=25)
+            done_callback()
+
+        check_if_done()
 
     def find_project_id(self, item_id: str) -> str:
         # Does not work for dummy items, because they don't use type:num:path scheme
@@ -469,7 +476,7 @@ def on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     def path_callback(junk: object = None) -> None:
         if tab.path is not None:
             tree.add_project(utils.find_project_root(tab.path))
-            tree.refresh(when_done=partial(tree.select_file, tab.path))
+            tree.refresh(done_callback=partial(tree.select_file, tab.path))
 
     path_callback()
 

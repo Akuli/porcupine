@@ -3,6 +3,7 @@ import socket
 import threading
 import time
 import tkinter
+import traceback
 import types
 from http.client import RemoteDisconnected
 
@@ -12,6 +13,20 @@ from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 
 import porcupine.plugins.pastebin as pastebin_module
 from porcupine import get_main_window, utils
+
+
+# utils.run_in_thread() can make tests fragile
+@pytest.fixture
+def dont_run_in_thread(monkeypatch):
+    def func(blocking_function, done_callback, check_interval_ms=69, daemon=True):
+        try:
+            result = blocking_function()
+        except Exception:
+            done_callback(False, traceback.format_exc())
+        else:
+            done_callback(True, result)
+
+    monkeypatch.setattr(utils, "run_in_thread", func)
 
 
 @pytest.mark.pastebin_test
