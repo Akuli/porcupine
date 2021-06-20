@@ -238,6 +238,7 @@ class DirectoryTree(ttk.Treeview):
             for subpath in root_to_path_excluding_root:
                 if self.item(file_id, "open"):
                     file_id = self.get_id_from_path(subpath, project_id)
+                    assert file_id is not None
                 else:
                     # ...or a closed folder that contains the file
                     break
@@ -254,10 +255,10 @@ class DirectoryTree(ttk.Treeview):
         # will be called soon once the project has been added.
         log.info(f"can't select '{path}' because its project was not found")
 
-    def _insert_dummy(self, parent: str) -> None:
+    def _insert_dummy(self, parent: str, text: str = "") -> None:
         assert parent
         assert not self.get_children(parent)
-        self.insert(parent, "end", text="(empty)", tags="dummy")
+        self.insert(parent, "end", text=text, tags="dummy")
 
     def contains_dummy(self, parent: str) -> bool:
         children = self.get_children(parent)
@@ -358,12 +359,19 @@ class DirectoryTree(ttk.Treeview):
         if self.contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
 
+        project_ids = self.get_children("")
+        if dir_id not in project_ids and dir_path in map(get_path, project_ids):
+            for child in self.get_children(dir_id):
+                self.delete(child)  # type: ignore[no-untyped-call]
+            self._insert_dummy(dir_id, text="(open as a separate project)")
+            return
+
         path2id = {get_path(id): id for id in self.get_children(dir_id)}
         new_paths = set(dir_path.iterdir())
         if not new_paths:
             for child in self.get_children(dir_id):
                 self.delete(child)  # type: ignore[no-untyped-call]
-            self._insert_dummy(dir_id)
+            self._insert_dummy(dir_id, text="(empty)")
             return
 
         # TODO: handle changing directory to file
@@ -376,7 +384,8 @@ class DirectoryTree(ttk.Treeview):
             else:
                 item_id = f"file:{project_num}:{path}"
 
-            path2id[path] = self.insert(dir_id, "end", item_id, text=path.name, open=False)
+            self.insert(dir_id, "end", item_id, text=path.name, open=False)
+            path2id[path] = item_id
             if path.is_dir():
                 assert dir_path is not None
                 self._insert_dummy(path2id[path])
