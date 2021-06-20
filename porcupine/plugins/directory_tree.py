@@ -232,7 +232,9 @@ class DirectoryTree(ttk.Treeview):
             self.refresh()
 
     def select_file(self, path: Path) -> None:
-        matching_projects = [project_id for project_id in self.get_children() if get_path(project_id) in path.parents]
+        matching_projects = [
+            project_id for project_id in self.get_children() if get_path(project_id) in path.parents
+        ]
         if not matching_projects:
             # Happens when tab changes because a file was just opened. This
             # will be called soon once the project has been added.
