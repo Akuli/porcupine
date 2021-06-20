@@ -242,21 +242,22 @@ def test_nested_projects(tree, tmp_path, tabmanager, disable_thread_pool):
     (tmp_path / "subdir" / "README").touch()
 
     tree.add_project(tmp_path)
-    tree.add_project(tmp_path / "subdir")
 
     [outer_project_id] = [
         project_id for project_id in tree.get_children("") if get_path(project_id) == tmp_path
     ]
     open_as_if_user_clicked(tree, outer_project_id)
-    [subdir_as_nested_project] = [
+    [subdir_inside_other_project] = [
         item_id
         for item_id in tree.get_children(outer_project_id)
         if get_path(item_id) == tmp_path / "subdir"
     ]
-    open_as_if_user_clicked(tree, subdir_as_nested_project)
+    open_as_if_user_clicked(tree, subdir_inside_other_project)
 
-    assert tree.contains_dummy(subdir_as_nested_project)
-    dummy_id = tree.get_children(subdir_as_nested_project)[0]
+    assert not tree.contains_dummy(subdir_inside_other_project)
+    tree.add_project(tmp_path / "subdir")
+    assert tree.contains_dummy(subdir_inside_other_project)
+    dummy_id = tree.get_children(subdir_inside_other_project)[0]
     assert tree.item(dummy_id, "text") == "(open as a separate project)"
 
 
