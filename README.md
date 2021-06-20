@@ -138,7 +138,7 @@ Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
 If you want to do something to Porcupine, that's awesome!
 I have tried to make contributing easy:
-- If you don't understand what I meant in an issue, please ask for clarification.
+- If you don't understand what I meant in an issue, please ask me to clarify it.
     I have written most issues so that I understand what I wrote,
     and if you are new to Porcupine, you likely need a longer explanation to understand what the problem is.
 - Don't worry about asking too many questions!
