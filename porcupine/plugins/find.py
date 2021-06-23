@@ -161,6 +161,10 @@ class Finder(ttk.Frame):
 
         self.highlight_all_matches()
 
+        # weird hack to prevent rendering issue on mac
+        # https://stackoverflow.com/questions/55366795/does-anyone-know-why-my-tkinter-buttons-arent-rendering
+        self.update_idletasks()
+
     def hide(self, junk: object = None) -> None:
         self._textwidget.tag_remove("find_highlight", "1.0", "end")
         self._textwidget.tag_remove("find_highlight_selected", "1.0", "end")
