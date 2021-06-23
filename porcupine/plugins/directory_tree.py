@@ -241,8 +241,8 @@ class DirectoryTree(ttk.Treeview):
             log.info(f"can't select '{path}' because there are no projects containing it")
             return
 
-        # Multiple projects shouldn't match, because nested projects are handled specially
-        [project_id] = matching_projects
+        # When opening ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
+        project_id = max(matching_projects, key=(lambda id: len(str(get_path(id)))))
 
         path_to_root = list(_path_to_root_inclusive(path, get_path(project_id)))
         root_to_path = path_to_root[::-1]
