@@ -111,6 +111,14 @@ class FolderRefreshed(utils.EventDataclass):
     folder_id: str
 
 
+# TODO: show long paths more nicely?
+def _stringify_path(path: Path) -> str:
+    home = Path.home()
+    if path == home or home in path.parents:
+        return os.sep.join(["~"] + list(path.relative_to(home).parts))
+    return str(path)
+
+
 class DirectoryTree(ttk.Treeview):
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode="browse", show="tree", style="DirectoryTree.Treeview")
@@ -216,15 +224,14 @@ class DirectoryTree(ttk.Treeview):
                 self.move(project_item_id, "", 0)  # type: ignore[no-untyped-call]
                 return
 
-        # TODO: show long paths more nicely
-        text = str(root_path)
-        if Path.home() in root_path.parents:
-            text = text.replace(str(Path.home()), "~", 1)
-
         # Add project to beginning so it won't be hidden soon
         self._project_num_counter += 1
         project_item_id = self.insert(
-            "", 0, f"project:{self._project_num_counter}:{root_path}", text=text, open=False
+            "",
+            0,
+            f"project:{self._project_num_counter}:{root_path}",
+            text=_stringify_path(root_path),
+            open=False,
         )
         self._insert_dummy(project_item_id)
         self._hide_old_projects()

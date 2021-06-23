@@ -3,7 +3,7 @@ import subprocess
 import sys
 from concurrent.futures import Future
 from functools import partial
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -12,6 +12,7 @@ from porcupine.plugins import directory_tree as plugin_module
 from porcupine.plugins.directory_tree import (
     DirectoryTree,
     _git_pool,
+    _stringify_path,
     _path_to_root_inclusive,
     focus_treeview,
     get_path,
@@ -268,3 +269,9 @@ def test_path_to_root_inclusive():
         Path("foo"),
     ]
     assert list(_path_to_root_inclusive(Path("foo"), Path("foo"))) == [Path("foo")]
+
+
+def test_home_folder_displaying():
+    assert _stringify_path(Path.home()) == "~"
+    assert _stringify_path(Path.home() / "lol") in ["~/lol", r"~\lol"]
+    assert "~" not in _stringify_path(Path.home().parent / "asdfggg")
