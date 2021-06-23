@@ -242,9 +242,7 @@ def test_nested_projects(tree, tmp_path, tabmanager, disable_thread_pool):
     (tmp_path / "subdir" / "README").touch()
 
     tree.add_project(tmp_path)
-    [outer_project_id] = [
-        id for id in tree.get_children("") if get_path(id) == tmp_path
-    ]
+    [outer_project_id] = [id for id in tree.get_children("") if get_path(id) == tmp_path]
 
     open_as_if_user_clicked(tree, outer_project_id)
     [subdir_inside_other_project] = [
@@ -259,15 +257,13 @@ def test_nested_projects(tree, tmp_path, tabmanager, disable_thread_pool):
     assert tree.contains_dummy(subdir_inside_other_project)
     dummy_id = tree.get_children(subdir_inside_other_project)[0]
     assert tree.item(dummy_id, "text") == "(open as a separate project)"
-    [subdir_id] = [
-        id for id in tree.get_children("") if get_path(id) == tmp_path / "subdir"
-    ]
+    [subdir_id] = [id for id in tree.get_children("") if get_path(id) == tmp_path / "subdir"]
 
-    tree.select_file(tmp_path / 'subdir' / 'README')
+    tree.select_file(tmp_path / "subdir" / "README")
     assert tree.selection() == (subdir_id,)
     open_as_if_user_clicked(tree, subdir_id)
-    tree.select_file(tmp_path / 'subdir' / 'README')
-    assert get_path(tree.selection()[0]) == tmp_path / 'subdir' / 'README'
+    tree.select_file(tmp_path / "subdir" / "README")
+    assert get_path(tree.selection()[0]) == tmp_path / "subdir" / "README"
 
 
 def test_path_to_root_inclusive():
