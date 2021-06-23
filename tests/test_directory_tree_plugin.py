@@ -12,8 +12,8 @@ from porcupine.plugins import directory_tree as plugin_module
 from porcupine.plugins.directory_tree import (
     DirectoryTree,
     _git_pool,
-    _stringify_path,
     _path_to_root_inclusive,
+    _stringify_path,
     focus_treeview,
     get_path,
 )
