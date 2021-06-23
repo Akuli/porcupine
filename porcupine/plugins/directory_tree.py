@@ -224,11 +224,10 @@ class DirectoryTree(ttk.Treeview):
                 self.move(project_item_id, "", 0)  # type: ignore[no-untyped-call]
                 return
 
-        # Add project to beginning so it won't be hidden soon
         self._project_num_counter += 1
         project_item_id = self.insert(
             "",
-            0,
+            0,  # beginning, so it won't be hidden soon
             f"project:{self._project_num_counter}:{root_path}",
             text=_stringify_path(root_path),
             open=False,
