@@ -111,6 +111,14 @@ class FolderRefreshed(utils.EventDataclass):
     folder_id: str
 
 
+# TODO: show long paths more nicely?
+def _stringify_path(path: Path) -> str:
+    home = Path.home()
+    if path == home or home in path.parents:
+        return os.sep.join(["~"] + list(path.relative_to(home).parts))
+    return str(path)
+
+
 class DirectoryTree(ttk.Treeview):
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(master, selectmode="browse", show="tree", style="DirectoryTree.Treeview")
@@ -210,22 +218,16 @@ class DirectoryTree(ttk.Treeview):
     # editing ~/blah.py), then the directory tree will present everything
     # inside the home folder as one project.
     def add_project(self, root_path: Path, *, refresh: bool = True) -> None:
-        for project_item_id in self.get_children():
-            if get_path(project_item_id) == root_path:
+        for existing_id in self.get_children():
+            if get_path(existing_id) == root_path:
                 # Move project first to avoid hiding it soon
-                self.move(project_item_id, "", 0)  # type: ignore[no-untyped-call]
+                self.move(existing_id, "", 0)  # type: ignore[no-untyped-call]
                 return
 
-        # TODO: show long paths more nicely
-        text = str(root_path)
-        if Path.home() in root_path.parents:
-            text = text.replace(str(Path.home()), "~", 1)
-
-        # Add project to beginning so it won't be hidden soon
         self._project_num_counter += 1
-        project_item_id = self.insert(
-            "", 0, f"project:{self._project_num_counter}:{root_path}", text=text, open=False
-        )
+        project_item_id = f"project:{self._project_num_counter}:{root_path}"
+        # insert to beginning, so it won't be hidden soon
+        self.insert("", 0, project_item_id, text=_stringify_path(root_path), open=False)
         self._insert_dummy(project_item_id)
         self._hide_old_projects()
         if refresh:
