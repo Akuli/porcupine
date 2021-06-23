@@ -3,7 +3,7 @@ import subprocess
 import sys
 from concurrent.futures import Future
 from functools import partial
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 import pytest
 
