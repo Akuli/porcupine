@@ -604,9 +604,7 @@ class TemporaryBind:
 
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
-    widget: tkinter.Widget,
-    on_tab: Callable[["tkinter.Event[Any]", bool], Any],
-    **bind_kwargs: Any,
+    widget: tkinter.Widget, on_tab: Callable[["tkinter.Event[Any]", bool], Any], **bind_kwargs: Any
 ) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 

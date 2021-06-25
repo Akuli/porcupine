@@ -158,9 +158,7 @@ def _walk_menu_contents(
                 yield (path, menu, index)
 
 
-def _menu_event_handler(
-    menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]
-) -> str:
+def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]) -> str:
     menu.invoke(index)  # type: ignore[no-untyped-call]
     return "break"
 
