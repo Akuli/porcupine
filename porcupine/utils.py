@@ -628,7 +628,7 @@ def bind_tab_key(
     """
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
-    def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> str | None:
+    def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> Any:
         return on_tab(event, shifted)
 
     if widget.tk.call("tk", "windowingsystem") == "x11":
