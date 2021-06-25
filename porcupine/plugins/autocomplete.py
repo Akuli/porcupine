@@ -208,7 +208,7 @@ class _Popup:
             [the_id] = selected_ids
             self._select_item(self.treeview.next(the_id) or self.treeview.get_children()[0])  # type: ignore[no-untyped-call]
 
-    def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
+    def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         if not self.is_showing():
             return None
 
@@ -216,7 +216,7 @@ class _Popup:
         self._doc_text.yview_scroll(page_count, "pages")  # type: ignore[no-untyped-call]
         return "break"
 
-    def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
+    def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         if not self.is_showing():
             return None
 
@@ -391,7 +391,7 @@ class AutoCompleter:
 
         return True
 
-    def on_tab(self, event: tkinter.Event[tkinter.Misc], shifted: bool) -> utils.BreakOrNone:
+    def on_tab(self, event: tkinter.Event[tkinter.Misc], shifted: bool) -> str | None:
         if self._tab.textwidget.tag_ranges("sel"):
             # something's selected, autocompleting is not the right thing to do
             return None
@@ -478,13 +478,13 @@ class AutoCompleter:
         self.popup.stop_completing(withdraw=False)  # TODO: is this needed?
         self.popup.start_completing(self._get_filtered_completions())
 
-    def on_enter(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
+    def on_enter(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         if self.popup.is_completing():
             self._accept()
             return "break"
         return None
 
-    def on_escape(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
+    def on_escape(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         if self.popup.is_completing():
             self._reject()
             return "break"
