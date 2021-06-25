@@ -100,7 +100,7 @@ class ConflictDisplayer:
             fg=utils.invert_color(bg_color),
         )
 
-        def on_release(event: tkinter.Event[tkinter.Label]):
+        def on_release(event: tkinter.Event[tkinter.Label]) -> None:
             clicked = label["relief"] == "sunken"
             label.config(relief="raised")
             if clicked:
