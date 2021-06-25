@@ -571,11 +571,11 @@ class LangServer:
             )
             return
 
-        request = event.data_class(autocomplete.Request)
+        assert tab.path is not None
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
-                position=_position_tk2lsp(request.cursor_pos),
+                position=_position_tk2lsp(event.data_class(autocomplete.Request).cursor_pos),
             ),
             context=lsp.CompletionContext(
                 # FIXME: this isn't always the case, porcupine can also trigger
