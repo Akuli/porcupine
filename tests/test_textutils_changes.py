@@ -3,7 +3,7 @@ import tkinter
 import pytest
 
 from porcupine import get_main_window, utils
-from porcupine.textwidget import Change, Changes, change_batch, create_peer_widget, track_changes
+from porcupine.textutils import Change, Changes, change_batch, create_peer_widget, track_changes
 
 
 @pytest.fixture(scope="function")
