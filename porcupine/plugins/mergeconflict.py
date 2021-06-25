@@ -4,7 +4,7 @@ from __future__ import annotations
 import itertools
 import tkinter
 import weakref
-from typing import Any, List, cast
+from typing import Any, Callable, List, cast
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
@@ -69,15 +69,11 @@ class ConflictDisplayer:
         part2_color = utils.mix_colors(self.textwidget["bg"], "cyan", 0.8)
 
         # TODO: also specify fg color
-        self.part1_button = self.make_button(
-            start_lineno, part1_color, text="Use this", command=self.use_part1
-        )
+        self.part1_button = self.make_button(start_lineno, part1_color, "Use this", self.use_part1)
         self.manual_button = self.make_button(
-            middle_lineno, manual_color, text="Edit manually", command=self.stop_displaying
+            middle_lineno, manual_color, "Edit manually", self.stop_displaying
         )
-        self.part2_button = self.make_button(
-            end_lineno, part2_color, text="Use this", command=self.use_part2
-        )
+        self.part2_button = self.make_button(end_lineno, part2_color, "Use this", self.use_part2)
 
         textwidget.tag_config(self.part1_tag, background=part1_color)
         textwidget.tag_config(self.middle_tag, background=manual_color)
@@ -91,21 +87,37 @@ class ConflictDisplayer:
 
         self._stopped = False
 
-    def make_button(self, lineno: int, bg_color: str, **options: Any) -> tkinter.Button:
-        # tkinter.Button to use custom color, that's more difficult with ttk
-        button = tkinter.Button(
-            self.textwidget, bg=bg_color, fg=utils.invert_color(bg_color), cursor="arrow", **options
+    def make_button(
+        self, lineno: int, bg_color: str, text: str, on_click: Callable[[], None]
+    ) -> tkinter.Label:
+        # Want custom colors. Usually tkinter.Button works for it, but not on mac.
+        label = tkinter.Label(
+            text=text,
+            relief="raised",
+            padx=15,
+            pady=5,
+            bg=bg_color,
+            fg=utils.invert_color(bg_color),
         )
 
-        def on_destroy(event: tkinter.Event[tkinter.Misc]) -> None:
+        def on_release(event: tkinter.Event[tkinter.Label]):
+            clicked = label["relief"] == "sunken"
+            label.config(relief="raised")
+            if clicked:
+                on_click()  # can destroy label
+
+        def on_destroy(event: tkinter.Event[tkinter.Label]) -> None:
             # after_idle needed to prevent segfault
             # https://core.tcl-lang.org/tk/tktview/54fe7a5e718423d16f4a11f9d672cd7bae7da39f
             self.textwidget.after_idle(self.stop_displaying)
 
-        button.bind("<Destroy>", on_destroy, add=True)
+        label.bind("<Button1-Enter>", (lambda event: label.config(relief="sunken")), add=True)
+        label.bind("<Button1-Leave>", (lambda event: label.config(relief="raised")), add=True)
+        label.bind("<ButtonRelease-1>", on_release, add=True)
+        label.bind("<Destroy>", on_destroy, add=True)
 
-        self.textwidget.window_create(f"{lineno}.0 lineend", window=button)  # type: ignore[no-untyped-call]
-        return button
+        self.textwidget.window_create(f"{lineno}.0 lineend", window=label)  # type: ignore[no-untyped-call]
+        return label
 
     # may get called multiple times
     def stop_displaying(self) -> None:
