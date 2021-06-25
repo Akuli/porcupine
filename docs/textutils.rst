@@ -1,7 +1,7 @@
-:mod:`porcupine.textwidget` --- Things for ``tkinter.Text`` widgets
+:mod:`porcupine.textutils` --- Things for ``tkinter.Text`` widgets
 ===================================================================
 
-.. module:: porcupine.textwidget
+.. module:: porcupine.textutils
 
 
 Change Information

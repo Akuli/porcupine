@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import tkinter
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 
 setup_before = ["tabs2spaces"]  # see tabs2spaces.py
 
 
-def on_tab_key(event: tkinter.Event[textwidget.MainText], shifted: bool) -> None:
+def on_tab_key(event: tkinter.Event[textutils.MainText], shifted: bool) -> None:
     try:
         start_index, end_index = map(str, event.widget.tag_ranges("sel"))
     except ValueError:
@@ -21,7 +21,7 @@ def on_tab_key(event: tkinter.Event[textwidget.MainText], shifted: bool) -> None
         # something's selected on the end line, let's indent/dedent it too
         end += 1
 
-    with textwidget.change_batch(event.widget):
+    with textutils.change_batch(event.widget):
         for lineno in range(start, end):
             if shifted:
                 event.widget.dedent(f"{lineno}.0")

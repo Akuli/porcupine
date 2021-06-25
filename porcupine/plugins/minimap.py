@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 import tkinter
 
-from porcupine import get_tab_manager, settings, tabs, textwidget, utils
+from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
 LINE_THICKNESS = 1
 
@@ -27,7 +27,7 @@ LINE_THICKNESS = 1
 class MiniMap(tkinter.Text):
     def __init__(self, master: tkinter.Misc, tab: tabs.FileTab) -> None:
         super().__init__(master)
-        textwidget.create_peer_widget(tab.textwidget, self)
+        textutils.create_peer_widget(tab.textwidget, self)
         self.config(
             width=25,
             exportselection=False,
@@ -94,9 +94,7 @@ class MiniMap(tkinter.Text):
             "sel",
             font=(settings.get("font_family", str), round(settings.get("font_size", int) / 3), ()),
         )
-        textwidget.config_tab_displaying(
-            self, self._tab.settings.get("indent_size", int), tag="sel"
-        )
+        textutils.config_tab_displaying(self, self._tab.settings.get("indent_size", int), tag="sel")
         self._update_vast()
 
     def _scroll_callback(self) -> None:
@@ -187,7 +185,7 @@ class MiniMap(tkinter.Text):
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     minimap = MiniMap(tab.right_frame, tab)
-    textwidget.use_pygments_theme(minimap, minimap.set_colors)
+    textutils.use_pygments_theme(minimap, minimap.set_colors)
     minimap.pack(fill="y", expand=True)
 
 

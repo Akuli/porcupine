@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget
+from porcupine import get_tab_manager, menubar, tabs, textutils
 
 
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
@@ -34,7 +34,7 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         for lineno in range(start, end)
     )
 
-    with textwidget.change_batch(tab.textwidget):
+    with textutils.change_batch(tab.textwidget):
         for lineno in range(start, end):
             if gonna_uncomment:
                 tab.textwidget.delete(f"{lineno}.0", f"{lineno}.1")

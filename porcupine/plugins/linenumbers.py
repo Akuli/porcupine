@@ -4,7 +4,7 @@ from __future__ import annotations
 import tkinter.font
 from typing import Optional
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 
 
 def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:
@@ -20,7 +20,7 @@ class LineNumbers(tkinter.Canvas):
         self._update_width()
 
         self._textwidget = textwidget_of_tab
-        textwidget.use_pygments_theme(self, self._set_colors)
+        textutils.use_pygments_theme(self, self._set_colors)
         utils.add_scroll_command(textwidget_of_tab, "yscrollcommand", self.do_update)
 
         textwidget_of_tab.bind(

@@ -8,7 +8,7 @@ from functools import partial
 from tkinter import messagebox, ttk
 from typing import List, Optional, Tuple
 
-from porcupine import get_main_window, menubar, pluginloader, settings, textwidget
+from porcupine import get_main_window, menubar, pluginloader, settings, textutils
 
 log = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ class PluginDialogContent:
         )
         self.disable_button.pack(side="left", expand=True)
 
-        self.description = textwidget.create_passive_text_widget(right_side)
+        self.description = textutils.create_passive_text_widget(right_side)
         self._set_description("Please select a plugin.")
         self.description.pack(fill="both", expand=True)
 

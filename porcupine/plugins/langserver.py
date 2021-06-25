@@ -27,7 +27,7 @@ if sys.platform != "win32":
 
 import sansio_lsp_client as lsp
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins import autocomplete, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
@@ -588,7 +588,7 @@ class LangServer:
         assert lsp_id not in self._lsp_id_to_tab_and_request
         self._lsp_id_to_tab_and_request[lsp_id] = (tab, request)
 
-    def send_change_events(self, tab: tabs.FileTab, changes: textwidget.Changes) -> None:
+    def send_change_events(self, tab: tabs.FileTab, changes: textutils.Changes) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             # The langserver will receive the actual content of the file once
             # it starts.
@@ -711,7 +711,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     def content_changed(event: utils.EventWithData) -> None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
-                langserver.send_change_events(tab, event.data_class(textwidget.Changes))
+                langserver.send_change_events(tab, event.data_class(textutils.Changes))
 
     def on_destroy(event: object) -> None:
         for langserver in list(langservers.values()):

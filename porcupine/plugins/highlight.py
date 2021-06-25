@@ -1,5 +1,7 @@
 """Syntax highlighting."""
 
+from __future__ import annotations
+
 import itertools
 import logging
 import time
@@ -10,7 +12,7 @@ from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple, cast
 from pygments import styles, token  # type: ignore[import]
 from pygments.lexer import Lexer, LexerMeta, RegexLexer  # type: ignore[import]
 
-from porcupine import get_tab_manager, settings, tabs, textwidget, utils
+from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
@@ -187,7 +189,7 @@ class Highlighter:
         self.highlight_visible()
 
     def on_change(self, event: utils.EventWithData) -> None:
-        change_list = event.data_class(textwidget.Changes).change_list
+        change_list = event.data_class(textutils.Changes).change_list
         if len(change_list) == 1:
             [change] = change_list
             if len(change.new_text) <= 1:
