@@ -15,7 +15,7 @@ import tkinter
 from tkinter import ttk
 from typing import List, Optional, Union
 
-from porcupine import get_tab_manager, settings, tabs, textwidget, utils
+from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
 setup_before = ["tabs2spaces"]  # see tabs2spaces.py
 
@@ -105,7 +105,7 @@ class _Popup:
         self.treeview.bind("<<TreeviewSelect>>", self._on_select, add=True)
         self._left_scrollbar = _pack_with_scrollbar(self.treeview)
 
-        self._doc_text = textwidget.create_passive_text_widget(
+        self._doc_text = textutils.create_passive_text_widget(
             right_pane, width=50, height=15, wrap="word"
         )
         self._right_scrollbar = _pack_with_scrollbar(self._doc_text)
@@ -213,7 +213,7 @@ class _Popup:
             return None
 
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
-        self._doc_text.yview_scroll(page_count, "pages")  # type: ignore[no-untyped-call]
+        self._doc_text.yview_scroll(page_count, "pages")  # type: ignore
         return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:

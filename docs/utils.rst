@@ -36,7 +36,7 @@ Events with Data
 Other Tkinter Utilities
 -----------------------
 
-See :mod:`porcupine.textwidget` for ``tkinter.Text`` specific things.
+See :mod:`porcupine.textutils` for ``tkinter.Text`` specific things.
 
 .. autofunction:: set_tooltip
 .. autofunction:: bind_tab_key

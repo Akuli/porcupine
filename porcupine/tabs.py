@@ -29,7 +29,7 @@ from typing import (
 from pygments.lexer import LexerMeta  # type: ignore[import]
 from pygments.lexers import TextLexer  # type: ignore[import]
 
-from porcupine import _state, settings, textwidget, utils
+from porcupine import _state, settings, textutils, utils
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
@@ -456,15 +456,15 @@ class FileTab(Tab):
         This runs after the file is saved with the :meth:`save` method.
 
     .. attribute:: textwidget
-        :type: porcupine.textwidget.MainText
+        :type: porcupine.textutils.MainText
 
         The central text widget of the tab.
 
         When a new :class:`FileTab` is created, these functions will be called
         for the text widget:
 
-            * :func:`porcupine.textwidget.use_pygments_theme`
-            * :func:`porcupine.textwidget.track_changes`
+            * :func:`porcupine.textutils.use_pygments_theme`
+            * :func:`porcupine.textutils.track_changes`
 
     .. attribute:: scrollbar
         :type: tkinter.ttk.Scrollbar
@@ -511,7 +511,7 @@ bers.py>` use this attribute.
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
-        self.textwidget = textwidget.MainText(
+        self.textwidget = textutils.MainText(
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
         self.textwidget.pack(side="left", fill="both", expand=True)
@@ -548,7 +548,7 @@ bers.py>` use this attribute.
         return tab
 
     def _get_char_count(self) -> int:
-        return textwidget.count(self.textwidget, "1.0", "end - 1 char")
+        return textutils.count(self.textwidget, "1.0", "end - 1 char")
 
     def _get_hash(self, string: Optional[str] = None) -> str:
         if string is None:
@@ -610,7 +610,7 @@ bers.py>` use this attribute.
 
         modified_before = self.is_modified()
 
-        with textwidget.change_batch(self.textwidget):
+        with textutils.change_batch(self.textwidget):
             self.textwidget.replace(
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
             )

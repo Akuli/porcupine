@@ -2,7 +2,8 @@
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, utils
+from porcupine.textutils import count
 
 
 class StatusBar(ttk.Frame):
@@ -20,8 +21,8 @@ class StatusBar(ttk.Frame):
     def show_cursor_or_selection(self, junk: object = None) -> None:
         try:
             # For line count, if the cursor is in beginning of line, don't count that as another line.
-            chars = textwidget.count(self.tab.textwidget, "sel.first", "sel.last")
-            lines = textwidget.count(
+            chars = count(self.tab.textwidget, "sel.first", "sel.last")
+            lines = count(
                 self.tab.textwidget, "sel.first", "sel.last - 1 char", option="-lines"
             )
         except tkinter.TclError:

@@ -27,7 +27,7 @@ if sys.platform != "win32":
 
 import sansio_lsp_client as lsp
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins import autocomplete, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
@@ -620,7 +620,7 @@ class LangServer:
                     ),
                     text=change.new_text,
                 )
-                for change in event.data_class(textwidget.Changes).change_list
+                for change in event.data_class(textutils.Changes).change_list
             ],
         )
 

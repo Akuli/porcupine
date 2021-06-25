@@ -7,7 +7,7 @@ import traceback
 from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import menubar, tabs, textwidget, utils
+from porcupine import menubar, tabs, textutils, utils
 from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def blacken_the_code(tab: tabs.FileTab) -> None:
     before = tab.textwidget.get("1.0", "end - 1 char")
     after = run_black(before, tab.path)
     if before != after:
-        with textwidget.change_batch(tab.textwidget):
+        with textutils.change_batch(tab.textwidget):
             tab.textwidget.replace("1.0", "end - 1 char", after)
 
 

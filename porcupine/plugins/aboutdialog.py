@@ -14,7 +14,7 @@ from tkinter import ttk
 from typing import Any, List, Match, Union
 
 from porcupine import __version__ as porcupine_version
-from porcupine import get_main_window, images, menubar, plugins, textwidget, utils
+from porcupine import get_main_window, images, menubar, plugins, textutils, utils
 
 _BORING_TEXT = """
 Porcupine is a simple but powerful and configurable text editor written in \
@@ -50,7 +50,7 @@ class _AboutDialogContent(ttk.Frame):
         super().__init__(*args, **kwargs)
 
         # TODO: calculate height automagically, instead of hard-coding
-        self._textwidget = textwidget.create_passive_text_widget(self, width=60, height=25)
+        self._textwidget = textutils.create_passive_text_widget(self, width=60, height=25)
         self._textwidget.pack(fill="both", expand=True, padx=5, pady=5)
 
         if sum(self.winfo_rgb(self._textwidget["bg"])) / 3 > 0x7FFF:

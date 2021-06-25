@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import tkinter
 
-from porcupine import get_tab_manager, tabs, textwidget, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 
 
-def on_tab_key(event: tkinter.Event[textwidget.MainText], shift_pressed: bool) -> utils.BreakOrNone:
+def on_tab_key(event: tkinter.Event[textutils.MainText], shift_pressed: bool) -> utils.BreakOrNone:
     if not event.widget.tag_ranges("sel"):
         # nothing selected
         if shift_pressed:

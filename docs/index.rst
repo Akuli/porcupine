@@ -35,7 +35,7 @@ Everything that you can use in plugins is documented here.
       porcupine
       menubar
       tabs
-      textwidget
+      textutils
       images
       settings
       pluginloader

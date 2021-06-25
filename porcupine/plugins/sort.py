@@ -1,6 +1,6 @@
 import tkinter
 
-from porcupine import menubar, tabs, textwidget
+from porcupine import menubar, tabs, textutils
 
 
 def sort(tab: tabs.FileTab) -> None:
@@ -19,7 +19,7 @@ def sort(tab: tabs.FileTab) -> None:
     old_lines = tab.textwidget.get(f"{first_line}.0", f"{last_line}.0 lineend").splitlines()
     new_lines = sorted(old_lines)
 
-    with textwidget.change_batch(tab.textwidget):
+    with textutils.change_batch(tab.textwidget):
         for lineno, (old, new) in enumerate(zip(old_lines, new_lines), start=first_line):
             if old != new:
                 tab.textwidget.replace(f"{lineno}.0", f"{lineno}.0 lineend", new)

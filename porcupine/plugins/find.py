@@ -14,7 +14,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import get_tab_manager, images, menubar, tabs, textwidget
+from porcupine import get_tab_manager, images, menubar, tabs, textutils
 
 
 class Finder(ttk.Frame):
@@ -23,9 +23,9 @@ class Finder(ttk.Frame):
     Use the pack geometry manager with this widget.
     """
 
-    def __init__(self, parent: tkinter.Misc, tab_textwidget: tkinter.Text, **kwargs: Any) -> None:
+    def __init__(self, parent: tkinter.Misc, textwidget: tkinter.Text, **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
-        self._textwidget = tab_textwidget
+        self._textwidget = textwidget
 
         # grid layout:
         #         column 0        column 1     column 2        column 3
@@ -109,13 +109,13 @@ class Finder(ttk.Frame):
         closebutton.config(image=images.get("closebutton"))
 
         # explained in test_find_plugin.py
-        tab_textwidget.bind("<<Selection>>", self._update_buttons, add=True)
+        textwidget.bind("<<Selection>>", self._update_buttons, add=True)
 
-        tab_textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
+        textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
         self._config_tags()
 
         # catch highlight issue after undo
-        tab_textwidget.bind("<<Undo>>", self._handle_undo, add=True)
+        textwidget.bind("<<Undo>>", self._handle_undo, add=True)
 
     def _config_tags(self, junk: object = None) -> None:
         # TODO: use more pygments theme instead of hard-coded colors?
@@ -317,7 +317,7 @@ class Finder(ttk.Frame):
         self._textwidget.tag_remove("find_highlight", start, end)
         self._update_buttons()
 
-        with textwidget.change_batch(self._textwidget):
+        with textutils.change_batch(self._textwidget):
             self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
 
         self._textwidget.mark_set("insert", start)
@@ -335,7 +335,7 @@ class Finder(ttk.Frame):
     def _replace_all(self, junk: object = None) -> Literal["break"]:
         match_ranges = self.get_match_ranges()
 
-        with textwidget.change_batch(self._textwidget):
+        with textutils.change_batch(self._textwidget):
             # must do this backwards because replacing may screw up indexes AFTER
             # the replaced place
             for start, end in reversed(match_ranges):
