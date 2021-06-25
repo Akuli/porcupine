@@ -20,7 +20,7 @@ import threading
 import time
 from functools import partial
 from pathlib import Path
-from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Union
 
 if sys.platform != "win32":
     import fcntl
@@ -73,7 +73,7 @@ class SubprocessStdIO:
     #   - nonempty bytes object: data was read
     #   - empty bytes object: process exited
     #   - None: no data to read
-    def read(self) -> Optional[bytes]:
+    def read(self) -> bytes | None:
         if sys.platform == "win32":
             # shitty windows code
             buf = bytearray()
@@ -112,7 +112,7 @@ class LocalhostSocketIO:
         #   - I don't feel like learning to do non-blocking send right now.
         #   - It must be possible to .write() before the socket is connected.
         #     The written bytes get sent when the socket connects.
-        self._send_queue: queue.Queue[Optional[bytes]] = queue.Queue()
+        self._send_queue: queue.Queue[bytes | None] = queue.Queue()
 
         self._worker_thread = threading.Thread(
             target=self._send_queue_to_socket, args=[port, log], daemon=True
@@ -142,7 +142,7 @@ class LocalhostSocketIO:
     #   - nonempty bytes object: data was received
     #   - empty bytes object: socket closed
     #   - None: no data to receive
-    def read(self) -> Optional[bytes]:
+    def read(self) -> bytes | None:
         # figure out if we can read from the socket without blocking
         # 0 is timeout, i.e. return immediately
         #
@@ -282,13 +282,13 @@ class LangServer:
         self._id = the_id  # TODO: replace with config
         self._lsp_client = lsp.Client(trace="verbose", root_uri=the_id.project_root.as_uri())
 
-        self._lsp_id_to_tab_and_request: Dict[
-            lsp.Id, Tuple[tabs.FileTab, autocomplete.Request]
+        self._lsp_id_to_tab_and_request: dict[
+            lsp.Id, tuple[tabs.FileTab, autocomplete.Request]
         ] = {}
 
         self._version_counter = itertools.count()
         self.log = log
-        self.tabs_opened: Dict[tabs.FileTab, List[utils.TemporaryBind]] = {}
+        self.tabs_opened: set[tabs.FileTab] = set()
         self._is_shutting_down_cleanly = False
 
         self._io: Union[SubprocessStdIO, LocalhostSocketIO]
@@ -317,7 +317,6 @@ class LangServer:
             self.log.debug("getting removed from langservers")
             del langservers[self._id]
 
-    # returns whether this should be called again later
     def _ensure_langserver_process_quits_soon(self) -> None:
         exit_code = self._process.poll()
         if exit_code is None:
@@ -432,7 +431,7 @@ class LangServer:
                 "langserver initialized, capabilities:\n" + pprint.pformat(lsp_event.capabilities)
             )
 
-            for tab in self.tabs_opened.keys():
+            for tab in self.tabs_opened:
                 self._send_tab_opened_message(tab)
 
             # TODO: this is a terrible hack:
@@ -495,7 +494,7 @@ class LangServer:
         if isinstance(lsp_event, lsp.PublishDiagnostics):
             matching_tabs = [
                 tab
-                for tab in self.tabs_opened.keys()
+                for tab in self.tabs_opened
                 if tab.path is not None and tab.path.as_uri() == lsp_event.uri
             ]
             if not matching_tabs:
@@ -539,14 +538,7 @@ class LangServer:
 
     def open_tab(self, tab: tabs.FileTab) -> None:
         assert tab not in self.tabs_opened
-        self.tabs_opened[tab] = [
-            utils.TemporaryBind(tab, "<<AutoCompletionRequest>>", self.request_completions),
-            utils.TemporaryBind(
-                tab.textwidget, "<<ContentChanged>>", partial(self.send_change_events, tab)
-            ),
-            utils.TemporaryBind(tab, "<Destroy>", (lambda event: self.forget_tab(tab))),
-        ]
-
+        self.tabs_opened.add(tab)
         self.log.debug("tab opened")
         if self._lsp_client.state == lsp.ClientState.NORMAL:
             self._send_tab_opened_message(tab)
@@ -558,9 +550,8 @@ class LangServer:
             )
             return
 
+        self.tabs_opened.remove(tab)
         self.log.debug("tab closed")
-        for binding in self.tabs_opened.pop(tab):
-            binding.unbind()
 
         if may_shutdown and not self.tabs_opened:
             self.log.info("no more open tabs, shutting down")
@@ -573,17 +564,15 @@ class LangServer:
                 # it was never fully started
                 self._process.kill()
 
-    def request_completions(self, event: utils.EventWithData) -> None:
+    def request_completions(self, tab: tabs.FileTab, event: utils.EventWithData) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             self.log.warning(
                 f"autocompletions requested but langserver state == {self._lsp_client.state!r}"
             )
             return
 
-        tab = event.widget
-        assert isinstance(tab, tabs.FileTab) and tab.path is not None
+        assert tab.path is not None
         request = event.data_class(autocomplete.Request)
-
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
@@ -599,7 +588,7 @@ class LangServer:
         assert lsp_id not in self._lsp_id_to_tab_and_request
         self._lsp_id_to_tab_and_request[lsp_id] = (tab, request)
 
-    def send_change_events(self, tab: tabs.FileTab, event: utils.EventWithData) -> None:
+    def send_change_events(self, tab: tabs.FileTab, changes: textwidget.Changes) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
             # The langserver will receive the actual content of the file once
             # it starts.
@@ -620,7 +609,7 @@ class LangServer:
                     ),
                     text=change.new_text,
                 )
-                for change in event.data_class(textwidget.Changes).change_list
+                for change in changes.change_list
             ],
         )
 
@@ -639,7 +628,7 @@ def stream_to_log(stream: IO[bytes], log: logging.LoggerAdapter) -> None:
         log.info(f"langserver logged: {line}")
 
 
-def get_lang_server(tab: tabs.FileTab) -> Optional[LangServer]:
+def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
     if tab.path is None:
         return None
 
@@ -712,6 +701,26 @@ def switch_langservers(
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("langserver", None, Optional[LangServerConfig])
+
+    # TODO: some better way to pass events to the correct langsever?
+    def request_completions(event: utils.EventWithData) -> None:
+        for langserver in langservers.values():
+            if tab in langserver.tabs_opened:
+                langserver.request_completions(tab, event)
+
+    def content_changed(event: utils.EventWithData) -> None:
+        for langserver in langservers.values():
+            if tab in langserver.tabs_opened:
+                langserver.send_change_events(tab, event.data_class(textwidget.Changes))
+
+    def on_destroy(event: object) -> None:
+        for langserver in list(langservers.values()):
+            if tab in langserver.tabs_opened:
+                langserver.forget_tab(tab)
+
+    utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", content_changed, add=True)
+    utils.bind_with_data(tab, "<<AutoCompletionRequest>>", request_completions, add=True)
+    tab.bind("<Destroy>", on_destroy, add=True)
 
     tab.bind("<<TabSettingChanged:langserver>>", partial(switch_langservers, tab, False), add=True)
     tab.bind("<<PathChanged>>", partial(switch_langservers, tab, True), add=True)
