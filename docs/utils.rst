@@ -43,7 +43,6 @@ See :mod:`porcupine.textwidget` for ``tkinter.Text`` specific things.
 .. autofunction:: add_scroll_command
 .. autofunction:: run_in_thread
 .. autofunction:: errordialog
-.. autoclass:: TemporaryBind
 
 .. data:: BreakOrNone
 
