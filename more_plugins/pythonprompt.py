@@ -76,7 +76,7 @@ class PythonPrompt:
         assert self.process.stdin is not None
         self.process.stdin.close()
 
-    def _on_return(self, junk: object) -> str | None:
+    def _on_return(self, junk: object) -> str:
         end_of_output = _tupleindex(str(self.widget.tag_ranges("output")[-1]))
         cursor = _tupleindex(self.widget.index("insert"))
         end = _tupleindex(self.widget.index("end - 1 char"))

@@ -565,7 +565,7 @@ class TemporaryBind:
     """
 
     def __init__(
-        self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], str | None]
+        self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], Any]
     ) -> None:
         self._widget = widget
         self._sequence = sequence
@@ -605,7 +605,7 @@ class TemporaryBind:
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
     widget: tkinter.Widget,
-    on_tab: Callable[["tkinter.Event[Any]", bool], str | None],
+    on_tab: Callable[["tkinter.Event[Any]", bool], Any],
     **bind_kwargs: Any,
 ) -> None:
     """A convenience function for binding Tab and Shift+Tab.
@@ -628,7 +628,7 @@ def bind_tab_key(
     """
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
-    def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> str | None:
+    def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> Any:
         return on_tab(event, shifted)
 
     if widget.tk.call("tk", "windowingsystem") == "x11":
