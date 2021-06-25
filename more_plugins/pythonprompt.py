@@ -14,7 +14,7 @@ import tkinter
 from tkinter import ttk
 from typing import Any, Callable, Tuple, Union
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
+from porcupine import get_tab_manager, menubar, tabs, textwidget
 
 
 def _tupleindex(index: str) -> Tuple[int, int]:
@@ -76,7 +76,7 @@ class PythonPrompt:
         assert self.process.stdin is not None
         self.process.stdin.close()
 
-    def _on_return(self, junk: object) -> utils.BreakOrNone:
+    def _on_return(self, junk: object) -> str:
         end_of_output = _tupleindex(str(self.widget.tag_ranges("output")[-1]))
         cursor = _tupleindex(self.widget.index("insert"))
         end = _tupleindex(self.widget.index("end - 1 char"))

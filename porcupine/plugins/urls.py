@@ -64,7 +64,7 @@ def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
     )
 
 
-def open_the_url(tab: tabs.FileTab, index: str, junk: object) -> utils.BreakOrNone:
+def open_the_url(tab: tabs.FileTab, index: str, junk: object) -> str | None:
     # tag_ranges is a painful method to use
     ranges = tab.textwidget.tag_ranges("underline:urls")
     for start, end in zip(ranges[0::2], ranges[1::2]):
