@@ -33,7 +33,9 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
     commented = {
         lineno
         for lineno in all_linenos
-        if tab.textwidget.get(f"{lineno}.0", f"{lineno}.1") == comment_prefix
+        if tab.textwidget.get(f"{lineno}.0") == comment_prefix
+        # Do not touch comments starting with '# '
+        and tab.textwidget.get(f"{lineno}.1") != " "
     }
 
     with textutils.change_batch(tab.textwidget):
