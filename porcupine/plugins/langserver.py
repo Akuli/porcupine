@@ -20,7 +20,7 @@ import threading
 import time
 from functools import partial
 from pathlib import Path
-from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Union
 
 if sys.platform != "win32":
     import fcntl
