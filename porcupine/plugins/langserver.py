@@ -317,7 +317,6 @@ class LangServer:
             self.log.debug("getting removed from langservers")
             del langservers[self._id]
 
-    # returns whether this should be called again later
     def _ensure_langserver_process_quits_soon(self) -> None:
         exit_code = self._process.poll()
         if exit_code is None:
@@ -702,6 +701,7 @@ def switch_langservers(
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("langserver", None, Optional[LangServerConfig])
 
+    # TODO: some better way to pass events to the correct langsever?
     def request_completions(event: utils.EventWithData) -> None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
