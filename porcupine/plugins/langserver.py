@@ -73,7 +73,7 @@ class SubprocessStdIO:
     #   - nonempty bytes object: data was read
     #   - empty bytes object: process exited
     #   - None: no data to read
-    def read(self) -> Optional[bytes]:
+    def read(self) -> bytes | None:
         if sys.platform == "win32":
             # shitty windows code
             buf = bytearray()
@@ -112,7 +112,7 @@ class LocalhostSocketIO:
         #   - I don't feel like learning to do non-blocking send right now.
         #   - It must be possible to .write() before the socket is connected.
         #     The written bytes get sent when the socket connects.
-        self._send_queue: queue.Queue[Optional[bytes]] = queue.Queue()
+        self._send_queue: queue.Queue[bytes | None] = queue.Queue()
 
         self._worker_thread = threading.Thread(
             target=self._send_queue_to_socket, args=[port, log], daemon=True
@@ -142,7 +142,7 @@ class LocalhostSocketIO:
     #   - nonempty bytes object: data was received
     #   - empty bytes object: socket closed
     #   - None: no data to receive
-    def read(self) -> Optional[bytes]:
+    def read(self) -> bytes | None:
         # figure out if we can read from the socket without blocking
         # 0 is timeout, i.e. return immediately
         #
