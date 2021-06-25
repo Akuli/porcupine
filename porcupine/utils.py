@@ -565,7 +565,7 @@ class TemporaryBind:
     """
 
     def __init__(
-        self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], str | None]
+        self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], Any]
     ) -> None:
         self._widget = widget
         self._sequence = sequence
