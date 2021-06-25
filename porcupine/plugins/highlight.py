@@ -1,6 +1,7 @@
 """Syntax highlighting."""
 
 from __future__ import annotations
+
 import itertools
 import logging
 import time

@@ -94,9 +94,7 @@ class MiniMap(tkinter.Text):
             "sel",
             font=(settings.get("font_family", str), round(settings.get("font_size", int) / 3), ()),
         )
-        textutils.config_tab_displaying(
-            self, self._tab.settings.get("indent_size", int), tag="sel"
-        )
+        textutils.config_tab_displaying(self, self._tab.settings.get("indent_size", int), tag="sel")
         self._update_vast()
 
     def _scroll_callback(self) -> None:
