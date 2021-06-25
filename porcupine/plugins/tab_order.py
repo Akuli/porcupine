@@ -4,7 +4,7 @@ from __future__ import annotations
 import tkinter
 from functools import partial
 
-from porcupine import get_main_window, get_tab_manager, tabs, utils
+from porcupine import get_main_window, get_tab_manager, tabs
 
 
 def on_drag(event: tkinter.Event[tabs.TabManager]) -> str | None:

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
+from porcupine import get_tab_manager, menubar, tabs, textwidget
 
 
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
