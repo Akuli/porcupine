@@ -282,8 +282,8 @@ class LangServer:
         self._id = the_id  # TODO: replace with config
         self._lsp_client = lsp.Client(trace="verbose", root_uri=the_id.project_root.as_uri())
 
-        self._lsp_id_to_tab_and_request: Dict[
-            lsp.Id, Tuple[tabs.FileTab, autocomplete.Request]
+        self._lsp_id_to_tab_and_request: dict[
+            lsp.Id, tuple[tabs.FileTab, autocomplete.Request]
         ] = {}
 
         self._version_counter = itertools.count()
@@ -572,10 +572,11 @@ class LangServer:
             return
 
         assert tab.path is not None
+        request = event.data_class(autocomplete.Request)
         lsp_id = self._lsp_client.completions(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
-                position=_position_tk2lsp(event.data_class(autocomplete.Request).cursor_pos),
+                position=_position_tk2lsp(request.cursor_pos),
             ),
             context=lsp.CompletionContext(
                 # FIXME: this isn't always the case, porcupine can also trigger
