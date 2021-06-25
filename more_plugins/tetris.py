@@ -266,7 +266,7 @@ class TetrisTab(tabs.Tab):
         if not self._game.game_over():
             self._game.paused = not self._game.paused
 
-    def _on_key(self, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
+    def _on_key(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         control_flag = 0x4
         assert isinstance(event.state, int)
         if event.state & control_flag:

@@ -45,12 +45,6 @@ See :mod:`porcupine.textwidget` for ``tkinter.Text`` specific things.
 .. autofunction:: errordialog
 .. autoclass:: TemporaryBind
 
-.. data:: BreakOrNone
-
-    Same as ``Optional[Literal['break']]``, where ``Optional`` and ``Literal`` come from :mod:`typing`,
-    except that this uses ``typing_extensions.Literal`` on Python versions that don't have ``typing.Literal``.
-    This is the correct return type for tkinter bind callbacks.
-
 
 Miscellaneous
 -------------

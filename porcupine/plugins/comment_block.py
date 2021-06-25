@@ -12,7 +12,7 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
 
 
-def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> utils.BreakOrNone:
+def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
     comment_prefix = tab.settings.get("comment_prefix", Optional[str])
     if pressed_key is not None and pressed_key != comment_prefix:
         return None

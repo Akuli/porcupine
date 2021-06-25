@@ -7,7 +7,7 @@ from functools import partial
 from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
-def on_drag(event: tkinter.Event[tabs.TabManager]) -> utils.BreakOrNone:
+def on_drag(event: tkinter.Event[tabs.TabManager]) -> str | None:
     if event.widget.identify(event.x, event.y) == "label":  # type: ignore[no-untyped-call]
         destination_index = event.widget.index(f"@{event.x},{event.y}")  # type: ignore[no-untyped-call]
         event.widget.insert(destination_index, event.widget.select())  # type: ignore[no-untyped-call]
@@ -15,7 +15,7 @@ def on_drag(event: tkinter.Event[tabs.TabManager]) -> utils.BreakOrNone:
     return None
 
 
-def select_tab_n(n: int, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNone:
+def select_tab_n(n: int, event: tkinter.Event[tkinter.Misc]) -> str | None:
     try:
         get_tab_manager().select(n - 1)
         return "break"
@@ -23,7 +23,7 @@ def select_tab_n(n: int, event: tkinter.Event[tkinter.Misc]) -> utils.BreakOrNon
         return None
 
 
-def select_left_or_right(diff: int) -> utils.BreakOrNone:
+def select_left_or_right(diff: int) -> str | None:
     selected_tab = get_tab_manager().select()
     if selected_tab is None:
         return None
@@ -36,7 +36,7 @@ def select_left_or_right(diff: int) -> utils.BreakOrNone:
         return None
 
 
-def move_left_or_right(diff: int) -> utils.BreakOrNone:
+def move_left_or_right(diff: int) -> str | None:
     selected_tab = get_tab_manager().select()
     if selected_tab is None:
         return None

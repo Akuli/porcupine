@@ -48,7 +48,6 @@ import porcupine
 
 log = logging.getLogger(__name__)
 _T = TypeVar("_T")
-BreakOrNone = Optional[Literal["break"]]
 
 
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
@@ -566,7 +565,7 @@ class TemporaryBind:
     """
 
     def __init__(
-        self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], BreakOrNone]
+        self, widget: tkinter.Misc, sequence: str, func: Callable[[EventWithData], str | None]
     ) -> None:
         self._widget = widget
         self._sequence = sequence
@@ -606,7 +605,7 @@ class TemporaryBind:
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
     widget: tkinter.Widget,
-    on_tab: Callable[["tkinter.Event[Any]", bool], BreakOrNone],
+    on_tab: Callable[["tkinter.Event[Any]", bool], str | None],
     **bind_kwargs: Any,
 ) -> None:
     """A convenience function for binding Tab and Shift+Tab.
@@ -629,7 +628,7 @@ def bind_tab_key(
     """
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
-    def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> BreakOrNone:
+    def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> str | None:
         return on_tab(event, shifted)
 
     if widget.tk.call("tk", "windowingsystem") == "x11":
