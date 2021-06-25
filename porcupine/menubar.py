@@ -160,7 +160,7 @@ def _walk_menu_contents(
 
 def _menu_event_handler(
     menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]
-) -> str | None:
+) -> str:
     menu.invoke(index)  # type: ignore[no-untyped-call]
     return "break"
 
