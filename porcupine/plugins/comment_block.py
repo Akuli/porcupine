@@ -43,7 +43,7 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
                 tab.textwidget.delete(f"{lineno}.0", f"{lineno}.1")
         else:
             # Comment uncommented lines
-            for lineno in (all_linenos - commented):
+            for lineno in all_linenos - commented:
                 tab.textwidget.insert(f"{lineno}.0", comment_prefix)
 
     # select everything on the (un)commented lines
