@@ -14,7 +14,7 @@ import tkinter
 from tkinter import ttk
 from typing import Any, Callable, Tuple, Union
 
-from porcupine import get_tab_manager, menubar, tabs, textwidget, utils
+from porcupine import get_tab_manager, menubar, tabs, textutils, utils
 
 
 def _tupleindex(index: str) -> Tuple[int, int]:
@@ -146,7 +146,7 @@ class PromptTab(tabs.Tab):
 
         self.textwidget = tkinter.Text(self, width=1, height=1)
         self.textwidget.pack(side="left", fill="both", expand=True)
-        textwidget.use_pygments_theme(self.textwidget)
+        textutils.use_pygments_theme(self.textwidget)
         self.prompt = PythonPrompt(self.textwidget, (lambda: self.master.close_tab(self)))
 
         self.scrollbar = ttk.Scrollbar(self)
