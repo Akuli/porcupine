@@ -29,16 +29,23 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         # something's selected on the end line, let's (un)comment it too
         end += 1
 
-    gonna_uncomment = all(
-        tab.textwidget.get(f"{lineno}.0", f"{lineno}.1") == comment_prefix
-        for lineno in range(start, end)
-    )
+    all_linenos = set(range(start, end))
+    commented = {
+        lineno
+        for lineno in all_linenos
+        if tab.textwidget.get(f"{lineno}.0") == comment_prefix
+        # Do not touch comments starting with '# '
+        and tab.textwidget.get(f"{lineno}.1") != " "
+    }
 
     with textutils.change_batch(tab.textwidget):
-        for lineno in range(start, end):
-            if gonna_uncomment:
+        if commented == all_linenos:
+            # Uncomment everything
+            for lineno in all_linenos:
                 tab.textwidget.delete(f"{lineno}.0", f"{lineno}.1")
-            else:
+        else:
+            # Comment uncommented lines
+            for lineno in all_linenos - commented:
                 tab.textwidget.insert(f"{lineno}.0", comment_prefix)
 
     # select everything on the (un)commented lines
