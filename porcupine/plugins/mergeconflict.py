@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import itertools
 import tkinter
-import weakref
-from typing import Any, List, cast
+from typing import Any, cast
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
@@ -12,7 +11,7 @@ from porcupine.plugins.linenumbers import LineNumbers
 setup_after = ["linenumbers"]
 
 
-def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
+def find_merge_conflicts(textwidget: tkinter.Text) -> list[list[int]]:
     result = []
     current_state = "outside"
 
@@ -136,25 +135,19 @@ class ConflictDisplayer:
         self.stop_displaying()
 
 
-conflict_displayers: weakref.WeakKeyDictionary[
-    tabs.FileTab, List[ConflictDisplayer]
-] = weakref.WeakKeyDictionary()
-
-
-def setup_displayers(tab: tabs.FileTab) -> None:
-    displayer_list = conflict_displayers.setdefault(tab, [])
-
-    for displayer in displayer_list:
+def update_displayers(tab: tabs.FileTab, displayers: list[ConflictDisplayer]) -> None:
+    for displayer in displayers:
         displayer.stop_displaying()
-    displayer_list.clear()
+    displayers.clear()
 
     for line_numbers in find_merge_conflicts(tab.textwidget):
-        displayer_list.append(ConflictDisplayer(tab.textwidget, *line_numbers))
+        displayers.append(ConflictDisplayer(tab.textwidget, *line_numbers))
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    setup_displayers(tab)
-    tab.bind("<<Reloaded>>", (lambda event: setup_displayers(tab)), add=True)
+    displayers: list[ConflictDisplayer] = []
+    update_displayers(tab, displayers)
+    tab.bind("<<Reloaded>>", (lambda event: update_displayers(tab, displayers)), add=True)
 
     for child in tab.left_frame.winfo_children():
         if isinstance(child, LineNumbers):
