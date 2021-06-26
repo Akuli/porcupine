@@ -68,7 +68,6 @@ class ConflictDisplayer:
         manual_color = utils.mix_colors(self.textwidget["bg"], "tomato", 0.8)
         part2_color = utils.mix_colors(self.textwidget["bg"], "cyan", 0.8)
 
-        # TODO: also specify fg color
         self.part1_button = self.make_button(start_lineno, part1_color, "Use this", self.use_part1)
         self.manual_button = self.make_button(
             middle_lineno, manual_color, "Edit manually", self.stop_displaying
@@ -100,7 +99,7 @@ class ConflictDisplayer:
             fg=utils.invert_color(bg_color),
         )
 
-        def on_release(event: tkinter.Event[tkinter.Label]):
+        def on_release(event: tkinter.Event[tkinter.Label]) -> None:
             clicked = label["relief"] == "sunken"
             label.config(relief="raised")
             if clicked:
