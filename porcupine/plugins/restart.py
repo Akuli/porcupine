@@ -48,7 +48,7 @@ def setup() -> None:
             tab = state_dict["tab_type"].from_state(get_tab_manager(), state_dict["tab_state"])
         except FileNotFoundError:
             log.debug(
-                "file has been deleted, can't reopen tab: " + repr(state_dict["tab_state"]),
+                f"file has been deleted, can't reopen tab: {state_dict}",
                 exc_info=True,
             )
             continue
