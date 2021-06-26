@@ -37,8 +37,9 @@ def find_merge_conflicts(textwidget: tkinter.Text) -> list[list[int]]:
 
         current_state = new_state
         if new_state == "first":
-            result.append([])
-        result[-1].append(lineno)
+            result.append([lineno])
+        else:
+            result[-1].append(lineno)
 
     if current_state == "outside":
         return result
