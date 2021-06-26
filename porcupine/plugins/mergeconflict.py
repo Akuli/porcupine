@@ -110,11 +110,10 @@ class ConflictDisplayer:
             # https://core.tcl-lang.org/tk/tktview/54fe7a5e718423d16f4a11f9d672cd7bae7da39f
             self.textwidget.after_idle(self.stop_displaying)
 
-        label.bind(
-            "<Enter>",
-            (lambda event: label.config(bg=utils.mix_colors(bg_color, "white", 0.5))),
-            add=True,
-        )
+        # Light themes need a lot of white, dark themes would be ok with less
+        hover_bg = utils.mix_colors(bg_color, "white", 0.5)
+
+        label.bind("<Enter>", (lambda event: label.config(bg=hover_bg)), add=True)
         label.bind("<Leave>", (lambda event: label.config(bg=bg_color)), add=True)
         label.bind("<Button1-Enter>", (lambda event: label.config(relief="sunken")), add=True)
         label.bind("<Button1-Leave>", (lambda event: label.config(relief="raised")), add=True)
