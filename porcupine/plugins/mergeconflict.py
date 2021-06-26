@@ -145,7 +145,7 @@ def update_displayers(tab: tabs.FileTab, displayers: list[ConflictDisplayer]) ->
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    displayers = []
+    displayers: list[ConflictDisplayer] = []
     update_displayers(tab, displayers)
     tab.bind("<<Reloaded>>", (lambda event: update_displayers(tab, displayers)), add=True)
 
