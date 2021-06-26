@@ -112,7 +112,7 @@ class ConflictDisplayer:
 
         label.bind(
             "<Enter>",
-            (lambda event: label.config(bg=utils.mix_colors(bg_color, "white", 0.9))),
+            (lambda event: label.config(bg=utils.mix_colors(bg_color, "white", 0.5))),
             add=True,
         )
         label.bind("<Leave>", (lambda event: label.config(bg=bg_color)), add=True)
