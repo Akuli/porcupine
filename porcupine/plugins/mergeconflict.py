@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import itertools
 import tkinter
-import weakref
-from typing import Any, List, cast
+from typing import Any, cast
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
@@ -12,7 +11,7 @@ from porcupine.plugins.linenumbers import LineNumbers
 setup_after = ["linenumbers"]
 
 
-def find_merge_conflicts(textwidget: tkinter.Text) -> List[List[int]]:
+def find_merge_conflicts(textwidget: tkinter.Text) -> list[list[int]]:
     result = []
     current_state = "outside"
 
