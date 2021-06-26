@@ -38,19 +38,14 @@ def setup() -> None:
 
     for state_dict in file_contents:
         if isinstance(state_dict, tuple):
-            log.info(
-                f"state file contains a tab saved by Porcupine 0.93.x or older: {state_dict}"
-            )
+            log.info(f"state file contains a tab saved by Porcupine 0.93.x or older: {state_dict}")
             tab_type, tab_state = state_dict
             state_dict = {"tab_type": tab_type, "tab_state": tab_state, "selected": True}
 
         try:
             tab = state_dict["tab_type"].from_state(get_tab_manager(), state_dict["tab_state"])
         except FileNotFoundError:
-            log.debug(
-                f"file has been deleted, can't reopen tab: {state_dict}",
-                exc_info=True,
-            )
+            log.debug(f"file has been deleted, can't reopen tab: {state_dict}", exc_info=True)
             continue
 
         get_tab_manager().add_tab(tab, select=state_dict["selected"])
