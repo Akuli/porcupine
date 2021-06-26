@@ -39,7 +39,7 @@ def setup() -> None:
     for state_dict in file_contents:
         if isinstance(state_dict, tuple):
             log.info(
-                "state file contains a tab saved by Porcupine 0.93.x or older: " + repr(state_dict)
+                f"state file contains a tab saved by Porcupine 0.93.x or older: {state_dict}"
             )
             tab_type, tab_state = state_dict
             state_dict = {"tab_type": tab_type, "tab_state": tab_state, "selected": True}
