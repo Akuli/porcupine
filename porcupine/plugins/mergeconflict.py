@@ -15,9 +15,8 @@ def find_merge_conflicts(textwidget: tkinter.Text) -> list[list[int]]:
     result = []
     current_state = "outside"
 
-    for lineno in range(1, int(textwidget.index("end - 1 char").split(".")[0]) + 1):
-        line = textwidget.get(f"{lineno}.0", f"{lineno}.0 lineend")
-        # Line might contain whitespace characters after '<<<<<<< '
+    for lineno, line in enumerate(textwidget.get("1.0", "end - 1 char").split("\n")):
+        # Line can have basically anything after '<<<<<<< ', even whitespace characters
         if line.startswith("<<<<<<< "):
             expected_current_state = "outside"
             new_state = "first"
@@ -38,9 +37,8 @@ def find_merge_conflicts(textwidget: tkinter.Text) -> list[list[int]]:
 
         current_state = new_state
         if new_state == "first":
-            result.append([lineno])
-        else:
-            result[-1].append(lineno)
+            result.append([])
+        result[-1].append(lineno)
 
     if current_state == "outside":
         return result
