@@ -79,6 +79,7 @@ class Jumper:
         # ButtonRelease because cursor moves when pressing button
         # TODO: virtual events
         tab.textwidget.bind("<Control-ButtonRelease-1>", (lambda event: self.request_jump(tab)), add=True)
+        tab.textwidget.bind("<<JumpToDefinition>>", (lambda event: self.request_jump(tab)), add=True)
         utils.bind_with_data(tab, "<<JumpToDefinitionResponse>>", self.receive_jump, add=True)
 
 
