@@ -82,7 +82,7 @@ foo()
     assert "Line 2" in str(first_call)
     assert "Line 5" in str(second_call)
 
-    # Click first menu item
+    # Click first menu item, [1] means kwargs
     first_call[1]["command"]()
     assert filetab.textwidget.get("sel.first", "sel.last") == "foo"
     assert (
