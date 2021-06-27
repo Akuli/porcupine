@@ -27,7 +27,7 @@ if sys.platform != "win32":
 
 import sansio_lsp_client as lsp
 
-from porcupine import get_main_window, get_tab_manager, tabs, textutils, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins import autocomplete, jump_to_definition, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
