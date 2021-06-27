@@ -79,7 +79,7 @@ event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
 # jump_to_definition plugin
 # cursor moves between button press and release, don't bind to press
 event add "<<JumpToDefinition>>" <$contmand-ButtonRelease-1>
-event add "<<JumpToDefinition>>" <$contmand-Return>
+event add "<<JumpToDefinition>>" <$contmand-Return>  ;# FIXME doesnt work
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
