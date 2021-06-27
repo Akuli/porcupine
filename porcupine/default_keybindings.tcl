@@ -76,7 +76,7 @@ event add "<<Menubar:View/Pop Tab>>" <Control-P>
 # directory tree plugin (don't use <Alt-t>, see #425)
 event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
 
-# jump to definition plugin
+# jump_to_definition plugin
 # cursor moves between button press and release, don't bind to press
 event add "<<JumpToDefinition>>" <$contmand-ButtonRelease-1>
 event add "<<JumpToDefinition>>" <$contmand-Return>
