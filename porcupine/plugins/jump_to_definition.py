@@ -75,9 +75,7 @@ def receive_jump(event: utils.EventWithData) -> str | None:
 
     if not response.location_ranges:
         log.warning("no possible definitions found")
-        return None
-
-    if len(response.location_ranges) == 1:
+    elif len(response.location_ranges) == 1:
         show_location_range(response.location_ranges[0])
     else:
         menu = tkinter.Menu(tearoff=False)
