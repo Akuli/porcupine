@@ -375,17 +375,7 @@ class LangServer:
         assert received_bytes
         self.log.debug(f"got {len(received_bytes)} bytes of data")
 
-        try:
-            lsp_events = self._lsp_client.recv(received_bytes)
-        except Exception as e:
-            if isinstance(e, NotImplementedError) and "workspace/didChangeConfiguration" in str(e):
-                # FIXME: this is hack. To find rest of the hack, ctrl+f hack.
-                self.log.debug("workspace/didChangeConfiguration errored, as expected")
-            else:
-                self.log.exception("error while receiving lsp events")
-            lsp_events = []
-
-        for lsp_event in lsp_events:
+        for lsp_event in self._lsp_client.recv(received_bytes):
             try:
                 self._handle_lsp_event(lsp_event)
             except Exception:
@@ -442,7 +432,7 @@ class LangServer:
                 self._send_tab_opened_message(tab)
 
             # TODO: this is a terrible hack:
-            #   - This causes an error elsewhere because sansio-lsp-client doesn't
+            #   - This causes an error because sansio-lsp-client doesn't
             #     officially support workspace/didChangeConfiguration yet.
             #   - This doesn't refresh as venv changes.
             self._lsp_client._send_request(
@@ -782,5 +772,19 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     switch_langservers(tab, called_because_path_changed=False)
 
 
+# A hack elsewhere in this file causes an event that sansio-lsp-client doesn't understand.
+# To find it, ctrl+f hack.
+class HackFilter:
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Hide NotImplementedError saying something about didChangeConfiguration
+        return not (
+            record.levelname == "ERROR"
+            and record.exc_info is not None
+            and record.exc_info[0] is NotImplementedError
+            and "workspace/didChangeConfiguration" in str(record.exc_info[1])
+        )
+
+
 def setup() -> None:
+    logging.getLogger("sansio_lsp_client.client").addFilter(HackFilter())  # type: ignore
     get_tab_manager().add_filetab_callback(on_new_filetab)
