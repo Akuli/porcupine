@@ -91,8 +91,8 @@ def test_get_binding():
         assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=False) == "⌘0"
         assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=False) == "⌥F"
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=False) == "F5"
-        assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "⇧⌘-click"
-        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⇧⌘⏎"
+        assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "⇧⌥-click"
+        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⇧⌥⏎"
 
     else:
         # menu option has no effect
