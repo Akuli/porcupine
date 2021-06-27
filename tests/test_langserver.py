@@ -15,7 +15,6 @@ def wait_until(condition):
         if condition():
             return
     raise RuntimeError("timed out waiting")
-    return False
 
 
 def wait_for_langserver_to_start(filetab):
