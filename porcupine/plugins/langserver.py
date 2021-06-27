@@ -235,7 +235,9 @@ def _position_lsp2tk(lsp_position: lsp.Position) -> str:
 
 
 # TODO: handle this better in sansio-lsp-client
-def _get_path_and_range_of_lsp_location(location: lsp.Location | lsp.LocationLink | tuple[str, Any]) -> tuple[Path, lsp.Range]:
+def _get_path_and_range_of_lsp_location(
+    location: lsp.Location | lsp.LocationLink | tuple[str, Any]
+) -> tuple[Path, lsp.Range]:
     assert isinstance(location, lsp.Location)
     return (utils.file_url_to_path(location.uri), location.range)
 
