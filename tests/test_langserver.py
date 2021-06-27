@@ -38,7 +38,7 @@ def bar():
     foo()
 """,
     )
-    filetab.save_as(tmp_path / "foo.py")  # start lang server
+    filetab.save_as(tmp_path / "foo.py")  # starts lang server
     wait_for_langserver_to_start(filetab)
 
     filetab.textwidget.mark_set("insert", "5.5")  # in middle of calling foo()
