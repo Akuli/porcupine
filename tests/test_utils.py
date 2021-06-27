@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import sys
 import typing
+from pathlib import Path
 from tkinter import ttk
 
 import pytest
@@ -80,7 +81,7 @@ def test_get_binding():
         assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=True) == "Alt-F"
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=True) == "F5"
         assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=True) == ""  # not possible to show
-        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=True) == "Command-Return"
+        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=True) == "Shift-Alt-Return"
 
         assert utils.get_binding("<<Menubar:File/New File>>", menu=False) == "⌘N"
         assert utils.get_binding("<<Menubar:File/Save>>", menu=False) == "⌘S"
@@ -90,8 +91,8 @@ def test_get_binding():
         assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=False) == "⌘0"
         assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=False) == "⌥F"
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=False) == "F5"
-        assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "⌘-click"
-        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⌘⏎"
+        assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "⇧⌥-click"
+        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⇧⌥⏎"
 
     else:
         # menu option has no effect
@@ -106,8 +107,8 @@ def test_get_binding():
             )
             assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=boolean) == "Alt+F"
             assert utils.get_binding("<<Menubar:Run/Run>>", menu=boolean) == "F5"
-            assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=boolean) == "Ctrl+click"
-            assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=boolean) == "Ctrl+Enter"
+            assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=boolean) == "Shift+Alt+click"
+            assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=boolean) == "Shift+Alt+Enter"
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
@@ -133,3 +134,13 @@ def test_format_command(monkeypatch):
         assert utils.format_command(path + " {file}", {"file": "tetris.py"}) == [path, "tetris.py"]
     else:
         assert utils.format_command(r"foo\ bar", {}) == ["foo bar"]
+
+
+def test_file_url_to_path():
+    if sys.platform == "win32":
+        paths = [Path(r"\\Server\Share\Test\Foo Bar.txt"), Path(r"C:\Users\Akuli\Foo Bar.txt")]
+    else:
+        paths = [Path("/home/akuli/Foo Bar.txt")]
+
+    for path in paths:
+        assert utils.file_url_to_path(path.as_uri()) == path

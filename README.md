@@ -10,6 +10,7 @@ Most important features:
 - Syntax highlighting with [Pygments][] (supports many programming languages
   and color themes, extensible)
 - Autocompletions
+- Jump to definition with Ctrl+click
 - [Langserver] support
 - [Editorconfig][] support
 - Compiling files inside the editor window

@@ -41,8 +41,8 @@ event add "<<Menubar:Edit/Anchors/Jump to previous>>" <Alt-Shift-Up>
 event add "<<Menubar:Edit/Anchors/Jump to next>>" <Alt-Shift-Down>
 
 # urls plugin
-event add "<<Urls:OpenWithMouse>>" <$contmand-Button-1>
-event add "<<Urls:OpenWithKeyboard>>" <$contmand-Return>
+event add "<<Urls:OpenWithMouse>>" <Alt-Shift-Button-1>
+event add "<<Urls:OpenWithKeyboard>>" <Alt-Shift-Return>
 
 # tab_order plugin
 # Prior = Page Up, Next = Page Down
@@ -70,10 +70,16 @@ if {[tk windowingsystem] == "aqua"} {
 event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
 
 # poppingtabs plugin
+# FIXME: $contmand
 event add "<<Menubar:View/Pop Tab>>" <Control-P>
 
 # directory tree plugin (don't use <Alt-t>, see #425)
 event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
+
+# jump_to_definition plugin
+# cursor moves between button press and release, don't bind to press
+event add "<<JumpToDefinition>>" <$contmand-ButtonRelease-1>
+event add "<<JumpToDefinition>>" <$contmand-Return>  ;# FIXME doesnt work
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T

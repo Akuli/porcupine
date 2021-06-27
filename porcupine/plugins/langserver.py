@@ -28,7 +28,7 @@ if sys.platform != "win32":
 import sansio_lsp_client as lsp
 
 from porcupine import get_tab_manager, tabs, textutils, utils
-from porcupine.plugins import autocomplete, python_venv, underlines
+from porcupine.plugins import autocomplete, jump_to_definition, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
 setup_after = ["python_venv"]
@@ -234,6 +234,14 @@ def _position_lsp2tk(lsp_position: lsp.Position) -> str:
     return f"{lsp_position.line + 1}.{lsp_position.character}"
 
 
+# TODO: handle this better in sansio-lsp-client
+def _get_path_and_range_of_lsp_location(
+    location: lsp.Location | lsp.LocationLink | tuple[str, Any]
+) -> tuple[Path, lsp.Range]:
+    assert isinstance(location, lsp.Location)
+    return (utils.file_url_to_path(location.uri), location.range)
+
+
 def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
     if diagnostic.source is None:
         assert diagnostic.message is not None  # TODO
@@ -282,9 +290,8 @@ class LangServer:
         self._id = the_id  # TODO: replace with config
         self._lsp_client = lsp.Client(trace="verbose", root_uri=the_id.project_root.as_uri())
 
-        self._lsp_id_to_tab_and_request: dict[
-            lsp.Id, tuple[tabs.FileTab, autocomplete.Request]
-        ] = {}
+        self._autocompletion_requests: dict[lsp.Id, tuple[tabs.FileTab, autocomplete.Request]] = {}
+        self._jump2def_requests: dict[lsp.Id, tabs.FileTab] = {}
 
         self._version_counter = itertools.count()
         self.log = log
@@ -449,7 +456,7 @@ class LangServer:
             return
 
         if isinstance(lsp_event, lsp.Completion):
-            tab, req = self._lsp_id_to_tab_and_request.pop(lsp_event.message_id)
+            tab, req = self._autocompletion_requests.pop(lsp_event.message_id)
             if tab not in self.tabs_opened:
                 # I wouldn't be surprised if some langserver sent completions to closed tabs
                 self.log.debug(f"Completion sent to closed tab: {lsp_event}")
@@ -522,7 +529,7 @@ class LangServer:
                         for diagnostic in sorted(
                             lsp_event.diagnostics,
                             # error red underlines should be shown over orange warning underlines
-                            key=(lambda diagn: diagn.severity),
+                            key=(lambda diagn: diagn.severity or lsp.DiagnosticSeverity.WARNING),
                             reverse=True,
                         )
                     ],
@@ -530,7 +537,37 @@ class LangServer:
             )
             return
 
-        raise NotImplementedError(lsp_event)
+        if isinstance(lsp_event, lsp.Definition):
+            assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
+            requesting_tab = self._jump2def_requests.pop(lsp_event.message_id)
+            if requesting_tab in get_tab_manager().tabs():
+                # TODO: do this in sansio-lsp-client
+                if isinstance(lsp_event.result, list):
+                    locations = lsp_event.result
+                elif lsp_event.result is None:
+                    locations = []
+                else:
+                    locations = [lsp_event.result]
+
+                requesting_tab.event_generate(
+                    "<<JumpToDefinitionResponse>>",
+                    data=jump_to_definition.Response(
+                        [
+                            jump_to_definition.LocationRange(
+                                file_path=str(path),
+                                start=_position_lsp2tk(range.start),
+                                end=_position_lsp2tk(range.end),
+                            )
+                            for path, range in map(_get_path_and_range_of_lsp_location, locations)
+                        ]
+                    ),
+                )
+            else:
+                self.log.info("not jumping to definition because tab was closed")
+            return
+
+        # str(lsp_event) or just lsp_event won't show the type
+        raise NotImplementedError(repr(lsp_event))
 
     def run_stuff(self) -> None:
         if self._run_stuff_once():
@@ -573,7 +610,7 @@ class LangServer:
 
         assert tab.path is not None
         request = event.data_class(autocomplete.Request)
-        lsp_id = self._lsp_client.completions(
+        lsp_id = self._lsp_client.completion(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
                 position=_position_tk2lsp(request.cursor_pos),
@@ -585,8 +622,19 @@ class LangServer:
             ),
         )
 
-        assert lsp_id not in self._lsp_id_to_tab_and_request
-        self._lsp_id_to_tab_and_request[lsp_id] = (tab, request)
+        assert lsp_id not in self._autocompletion_requests
+        self._autocompletion_requests[lsp_id] = (tab, request)
+
+    def request_jump_to_definition(self, tab: tabs.FileTab) -> None:
+        self.log.info(f"Jump to definition requested: {tab.path}")
+        if tab.path is not None:
+            request_id = self._lsp_client.definition(
+                lsp.TextDocumentPosition(
+                    textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
+                    position=_position_tk2lsp(tab.textwidget.index("insert")),
+                )
+            )
+            self._jump2def_requests[request_id] = tab
 
     def send_change_events(self, tab: tabs.FileTab, changes: textutils.Changes) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
@@ -713,12 +761,19 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
             if tab in langserver.tabs_opened:
                 langserver.send_change_events(tab, event.data_class(textutils.Changes))
 
+    def request_jump2def(event: object) -> str:
+        for langserver in langservers.values():
+            if tab in langserver.tabs_opened:
+                langserver.request_jump_to_definition(tab)
+        return "break"  # Do not insert newline
+
     def on_destroy(event: object) -> None:
         for langserver in list(langservers.values()):
             if tab in langserver.tabs_opened:
                 langserver.forget_tab(tab)
 
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", content_changed, add=True)
+    utils.bind_with_data(tab.textwidget, "<<JumpToDefinition>>", request_jump2def, add=True)
     utils.bind_with_data(tab, "<<AutoCompletionRequest>>", request_completions, add=True)
     tab.bind("<Destroy>", on_destroy, add=True)
 
