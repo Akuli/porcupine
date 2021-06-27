@@ -81,7 +81,7 @@ def test_get_binding():
         assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=True) == "Alt-F"
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=True) == "F5"
         assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=True) == ""  # not possible to show
-        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=True) == "Command-Return"
+        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=True) == "Shift-Alt-Return"
 
         assert utils.get_binding("<<Menubar:File/New File>>", menu=False) == "⌘N"
         assert utils.get_binding("<<Menubar:File/Save>>", menu=False) == "⌘S"
