@@ -1,6 +1,6 @@
 # TODO: create much more tests for langserver
-import tkinter
 import time
+import tkinter
 
 from sansio_lsp_client import ClientState
 
@@ -83,6 +83,9 @@ foo()
     assert "Line 5" in str(second_call)
 
     # Click first menu item
-    first_call[1]['command']()
+    first_call[1]["command"]()
     assert filetab.textwidget.get("sel.first", "sel.last") == "foo"
-    assert filetab.textwidget.get("sel.first linestart", "sel.last lineend") == "    def foo():  # first"
+    assert (
+        filetab.textwidget.get("sel.first linestart", "sel.last lineend")
+        == "    def foo():  # first"
+    )
