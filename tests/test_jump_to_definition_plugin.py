@@ -9,7 +9,7 @@ from porcupine.plugins.langserver import langservers
 
 
 def wait_until(condition):
-    end = time.time() + 5
+    end = time.time() + 10  # big timeout because windows is slow
     while time.time() < end:
         get_main_window().update()
         if condition():
