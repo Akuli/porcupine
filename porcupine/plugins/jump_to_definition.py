@@ -55,7 +55,6 @@ def receive_jump(event: utils.EventWithData) -> str | None:
         get_tab_manager().select(tab)
     else:
         log.info(f"{path} not opened yet, opening now")
-        # Need to make new tab
         tab = tabs.FileTab.open_file(get_tab_manager(), path)
         get_tab_manager().add_tab(tab, select=True)
 
