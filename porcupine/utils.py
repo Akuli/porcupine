@@ -154,12 +154,12 @@ def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
     return [part.format_map(substitutions) for part in parts]
 
 
+# There doesn't seem to be standard library trick that works in all cases
+# https://stackoverflow.com/q/5977576
+#
 # TODO: document this?
 def file_url_to_path(file_url: str) -> Path:
     assert file_url.startswith("file://")
-
-    # There doesn't seem to be standard library trick that works in all cases
-    # https://stackoverflow.com/q/5977576
 
     if sys.platform == "win32":
         if file_url.startswith("file:///"):

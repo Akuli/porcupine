@@ -140,7 +140,7 @@ def test_file_url_to_path():
     if sys.platform == "win32":
         paths = [Path(r"\\Server\Share\Test\Foo Bar.txt"), Path(r"C:\Users\Akuli\Foo Bar.txt")]
     else:
-        path = [Path("/home/akuli/foo bar.txt")]
+        paths = [Path("/home/akuli/Foo Bar.txt")]
 
     for path in paths:
         assert utils.file_url_to_path(path.as_uri()) == path

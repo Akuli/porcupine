@@ -39,7 +39,7 @@ def receive_jump(event: utils.EventWithData) -> str | None:
 
     # FIXME: there can be multiple ranges
     if not response.location_ranges:
-        log.warning("definition not found")
+        log.warning("no possible definitions found")
         return None
     range = response.location_ranges[0]
 
@@ -55,7 +55,6 @@ def receive_jump(event: utils.EventWithData) -> str | None:
         get_tab_manager().select(tab)
     else:
         log.info(f"{path} not opened yet, opening now")
-        # Need to make new tab
         tab = tabs.FileTab.open_file(get_tab_manager(), path)
         get_tab_manager().add_tab(tab, select=True)
 
@@ -67,7 +66,6 @@ def receive_jump(event: utils.EventWithData) -> str | None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    # ButtonRelease because cursor moves when pressing button
     utils.bind_with_data(tab, "<<JumpToDefinitionResponse>>", receive_jump, add=True)
 
 
