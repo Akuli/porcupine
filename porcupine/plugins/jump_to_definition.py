@@ -39,7 +39,7 @@ def receive_jump(event: utils.EventWithData) -> str | None:
 
     # FIXME: there can be multiple ranges
     if not response.location_ranges:
-        log.warning("definition not found")
+        log.warning("no possible definitions found")
         return None
     range = response.location_ranges[0]
 
