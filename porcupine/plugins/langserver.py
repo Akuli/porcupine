@@ -39,19 +39,6 @@ setup_after = ["python_venv"]
 CHUNK_SIZE = 64 * 1024
 
 
-# A hack later in this file causes an event that sansio-lsp-client doesn't understand.
-# To find it, ctrl+f hack.
-class HackFilter:
-    def filter(self, record: logging.LogRecord) -> bool:
-        # Hide NotImplementedError saying something about didChangeConfiguration
-        return not (
-            record.levelname == "ERROR"
-            and record.exc_info is not None
-            and record.exc_info[0] is NotImplementedError
-            and "workspace/didChangeConfiguration" in str(record.exc_info[1])
-        )
-
-
 class SubprocessStdIO:
     def __init__(self, process: subprocess.Popen[bytes]) -> None:
         self._process = process
@@ -783,6 +770,19 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.bind("<<TabSettingChanged:langserver>>", partial(switch_langservers, tab, False), add=True)
     tab.bind("<<PathChanged>>", partial(switch_langservers, tab, True), add=True)
     switch_langservers(tab, called_because_path_changed=False)
+
+
+# A hack elsewhere in this file causes an event that sansio-lsp-client doesn't understand.
+# To find it, ctrl+f hack.
+class HackFilter:
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Hide NotImplementedError saying something about didChangeConfiguration
+        return not (
+            record.levelname == "ERROR"
+            and record.exc_info is not None
+            and record.exc_info[0] is NotImplementedError
+            and "workspace/didChangeConfiguration" in str(record.exc_info[1])
+        )
 
 
 def setup() -> None:
