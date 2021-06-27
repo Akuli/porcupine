@@ -66,7 +66,6 @@ def receive_jump(event: utils.EventWithData) -> str | None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    # ButtonRelease because cursor moves when pressing button
     utils.bind_with_data(tab, "<<JumpToDefinitionResponse>>", receive_jump, add=True)
 
 
