@@ -27,8 +27,8 @@ if sys.platform != "win32":
 
 import sansio_lsp_client as lsp
 
-from porcupine import get_tab_manager, tabs, textutils, utils, get_main_window
-from porcupine.plugins import autocomplete, python_venv, underlines, jump_to_definition
+from porcupine import get_main_window, get_tab_manager, tabs, textutils, utils
+from porcupine.plugins import autocomplete, jump_to_definition, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
 setup_after = ["python_venv"]
@@ -282,12 +282,8 @@ class LangServer:
         self._id = the_id  # TODO: replace with config
         self._lsp_client = lsp.Client(trace="verbose", root_uri=the_id.project_root.as_uri())
 
-        self._autocompletion_requests: dict[
-            lsp.Id, tuple[tabs.FileTab, autocomplete.Request]
-        ] = {}
-        self._jump2def_requests: dict[
-            lsp.Id, tabs.FileTab
-        ] = {}
+        self._autocompletion_requests: dict[lsp.Id, tuple[tabs.FileTab, autocomplete.Request]] = {}
+        self._jump2def_requests: dict[lsp.Id, tabs.FileTab] = {}
 
         self._version_counter = itertools.count()
         self.log = log
@@ -538,14 +534,16 @@ class LangServer:
             if requesting_tab in get_tab_manager().tabs():
                 requesting_tab.event_generate(
                     "<<JumpToDefinitionResponse>>",
-                    data=jump_to_definition.Response([
-                        jump_to_definition.LocationRange(
-                            file_path=str(utils.file_url_to_path(lsp_location.uri)),
-                            start=_position_lsp2tk(lsp_location.range.start),
-                            end=_position_lsp2tk(lsp_location.range.end),
-                        )
-                        for lsp_location in lsp_event.result
-                    ])
+                    data=jump_to_definition.Response(
+                        [
+                            jump_to_definition.LocationRange(
+                                file_path=str(utils.file_url_to_path(lsp_location.uri)),
+                                start=_position_lsp2tk(lsp_location.range.start),
+                                end=_position_lsp2tk(lsp_location.range.end),
+                            )
+                            for lsp_location in lsp_event.result
+                        ]
+                    ),
                 )
             else:
                 self.log.info("not jumping to definition because tab was closed")
@@ -610,12 +608,13 @@ class LangServer:
         assert lsp_id not in self._autocompletion_requests
         self._autocompletion_requests[lsp_id] = (tab, request)
 
-    def request_jump_to_definition(self, tab: tabs.FileTab, position: str) -> None:
+    def request_jump_to_definition(self, tab: tabs.FileTab) -> None:
+        self.log.info(f"Jump to definition requested: {tab.path}")
         if tab.path is not None:
             request_id = self._lsp_client.definition(
                 lsp.TextDocumentPosition(
                     textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
-                    position=_position_tk2lsp(position),
+                    position=_position_tk2lsp(tab.textwidget.index("insert")),
                 )
             )
             self._jump2def_requests[request_id] = tab
@@ -740,15 +739,15 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
             if tab in langserver.tabs_opened:
                 langserver.request_completions(tab, event)
 
-    def request_jump2def(event: utils.EventWithData) -> None:
-        for langserver in langservers.values():
-            if tab in langserver.tabs_opened:
-                langserver.request_jump_to_definition(tab, event.data_string)
-
     def content_changed(event: utils.EventWithData) -> None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.send_change_events(tab, event.data_class(textutils.Changes))
+
+    def request_jump2def(event: object) -> None:
+        for langserver in langservers.values():
+            if tab in langserver.tabs_opened:
+                langserver.request_jump_to_definition(tab)
 
     def on_destroy(event: object) -> None:
         for langserver in list(langservers.values()):
@@ -756,8 +755,8 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
                 langserver.forget_tab(tab)
 
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", content_changed, add=True)
+    utils.bind_with_data(tab.textwidget, "<<JumpToDefinition>>", request_jump2def, add=True)
     utils.bind_with_data(tab, "<<AutoCompletionRequest>>", request_completions, add=True)
-    utils.bind_with_data(tab, "<<JumpToDefinitionRequest>>", request_jump2def, add=True)
     tab.bind("<Destroy>", on_destroy, add=True)
 
     tab.bind("<<TabSettingChanged:langserver>>", partial(switch_langservers, tab, False), add=True)

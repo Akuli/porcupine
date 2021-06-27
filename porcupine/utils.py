@@ -1,7 +1,6 @@
 """Handy utility functions."""
 from __future__ import annotations
 
-from urllib.request import url2pathname
 import collections
 import contextlib
 import dataclasses
@@ -9,7 +8,6 @@ import functools
 import json
 import logging
 import os
-import pathlib
 import re
 import shlex
 import shutil
@@ -18,6 +16,7 @@ import sys
 import threading
 import tkinter
 import traceback
+from pathlib import Path
 from tkinter import ttk
 from typing import (
     TYPE_CHECKING,
@@ -33,6 +32,7 @@ from typing import (
     Union,
     cast,
 )
+from urllib.request import url2pathname
 
 import dacite
 
@@ -54,8 +54,8 @@ _T = TypeVar("_T")
 # nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
 _installed_with_pynsist = (
     sys.platform == "win32"
-    and pathlib.Path(sys.executable).parent.name.lower() == "python"
-    and pathlib.Path(sys.executable).parent.parent.name.lower() == "porcupine"
+    and Path(sys.executable).parent.name.lower() == "python"
+    and Path(sys.executable).parent.parent.name.lower() == "porcupine"
 )
 
 
@@ -69,7 +69,7 @@ if sys.platform == "win32":
         _installed_with_pynsist
         and sys.stdout is sys.stderr
         and sys.stdout.name is not None  # not sure if necessary
-        and pathlib.Path(sys.stdout.name).parent == pathlib.Path(os.environ["APPDATA"])
+        and Path(sys.stdout.name).parent == Path(os.environ["APPDATA"])
     ):
         # pynsist generates a script that does this:
         #
@@ -97,10 +97,10 @@ else:
     running_pythonw = False
 
 
-python_executable = pathlib.Path(sys.executable)
-if running_pythonw and pathlib.Path(sys.executable).name.lower() == "pythonw.exe":
+python_executable = Path(sys.executable)
+if running_pythonw and Path(sys.executable).name.lower() == "pythonw.exe":
     # get rid of the 'w' and hope for the best...
-    _possible_python = pathlib.Path(sys.executable).with_name("python.exe")
+    _possible_python = Path(sys.executable).with_name("python.exe")
     if _possible_python.is_file():
         python_executable = _possible_python
 
@@ -155,7 +155,7 @@ def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
 
 
 # TODO: document this?
-def file_url_to_path(file_url: str) -> pathlib.Path:
+def file_url_to_path(file_url: str) -> Path:
     assert file_url.startswith("file://")
 
     # There doesn't seem to be standard library trick that works in all cases
@@ -164,13 +164,13 @@ def file_url_to_path(file_url: str) -> pathlib.Path:
     if sys.platform == "win32":
         if file_url.startswith("file:///"):
             # File on this computer: 'file:///C:/Users/Akuli/Foo%20Bar.txt'
-            return pathlib.Path(url2pathname(file_url[8:]))
+            return Path(url2pathname(file_url[8:]))
         else:
             # Network share: 'file://Server2/Share/Test/Foo%20Bar.txt'
-            return pathlib.Path(url2pathname(file_url[5:]))
+            return Path(url2pathname(file_url[5:]))
     else:
         # 'file:///home/akuli/foo%20bar.txt'
-        return pathlib.Path(url2pathname(file_url[7:]))
+        return Path(url2pathname(file_url[7:]))
 
 
 # Using these with subprocess prevents opening unnecessary cmd windows
@@ -191,7 +191,7 @@ _LIKELY_PROJECT_ROOT_THINGS = [".editorconfig"] + [
 
 
 # TODO: document this
-def find_project_root(project_file_path: pathlib.Path) -> pathlib.Path:
+def find_project_root(project_file_path: Path) -> Path:
     assert project_file_path.is_absolute()
 
     likely_root = None
@@ -694,7 +694,7 @@ def run_in_thread(
 
 # how to type hint context manager: https://stackoverflow.com/a/49736916
 @contextlib.contextmanager
-def backup_open(path: pathlib.Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
+def backup_open(path: Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
     """Like :func:`open`, but uses a backup file if needed.
 
     This is useless with modes like ``'r'`` because they don't modify

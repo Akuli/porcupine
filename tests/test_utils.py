@@ -3,8 +3,9 @@ import shutil
 import subprocess
 import sys
 import typing
-from tkinter import ttk
 from pathlib import Path
+from tkinter import ttk
+
 import pytest
 
 from porcupine import get_main_window, utils
@@ -137,10 +138,9 @@ def test_format_command(monkeypatch):
 
 def test_file_url_to_path():
     if sys.platform == "win32":
-        paths = [Path(r'\\Server\Share\Test\Foo Bar.txt'),
-        Path(r'C:\Users\Akuli\Foo Bar.txt')]
+        paths = [Path(r"\\Server\Share\Test\Foo Bar.txt"), Path(r"C:\Users\Akuli\Foo Bar.txt")]
     else:
-        path = [Path('/home/akuli/foo bar.txt')]
+        path = [Path("/home/akuli/foo bar.txt")]
 
     for path in paths:
         assert utils.file_url_to_path(path.as_uri()) == path
