@@ -68,7 +68,7 @@ def find_cursor_xy(textwidget: tkinter.Text) -> tuple[int, int]:
     return (left, top + height)
 
 
-def receive_jump(event: utils.EventWithData) -> str | None:
+def receive_jump(event: utils.EventWithData) -> None:
     tab = event.widget
     assert isinstance(tab, tabs.FileTab), repr(tab)
     response = event.data_class(Response)
