@@ -761,10 +761,11 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
             if tab in langserver.tabs_opened:
                 langserver.send_change_events(tab, event.data_class(textutils.Changes))
 
-    def request_jump2def(event: object) -> None:
+    def request_jump2def(event: object) -> str:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_jump_to_definition(tab)
+        return "break"
 
     def on_destroy(event: object) -> None:
         for langserver in list(langservers.values()):
