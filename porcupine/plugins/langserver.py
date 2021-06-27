@@ -765,7 +765,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_jump_to_definition(tab)
-        return "break"
+        return "break"  # Do not insert newline
 
     def on_destroy(event: object) -> None:
         for langserver in list(langservers.values()):
