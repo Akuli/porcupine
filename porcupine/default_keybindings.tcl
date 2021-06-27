@@ -70,8 +70,7 @@ if {[tk windowingsystem] == "aqua"} {
 event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
 
 # poppingtabs plugin
-# FIXME: $contmand
-event add "<<Menubar:View/Pop Tab>>" <Control-P>
+event add "<<Menubar:View/Pop Tab>>" <$contmand-P>
 
 # directory tree plugin (don't use <Alt-t>, see #425)
 event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
