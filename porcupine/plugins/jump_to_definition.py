@@ -56,6 +56,7 @@ def show_location_range(loc_range: LocationRange) -> None:
     tab.textwidget.see("insert")
 
 
+# Find where cursor of text widget is, not necessarily anywhere near mouse
 def find_cursor_xy(textwidget: tkinter.Text) -> tuple[int, int]:
     bbox = textwidget.bbox("insert")
     assert bbox is not None
