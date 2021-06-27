@@ -234,6 +234,12 @@ def _position_lsp2tk(lsp_position: lsp.Position) -> str:
     return f"{lsp_position.line + 1}.{lsp_position.character}"
 
 
+# TODO: handle this better in sansio-lsp-client
+def _get_path_and_range_of_lsp_location(location: lsp.Location | lsp.LocationLink | tuple[str, Any]) -> tuple[Path, lsp.Range]:
+    assert isinstance(location, lsp.Location)
+    return (utils.file_url_to_path(location.uri), location.range)
+
+
 def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
     if diagnostic.source is None:
         assert diagnostic.message is not None  # TODO
@@ -521,7 +527,7 @@ class LangServer:
                         for diagnostic in sorted(
                             lsp_event.diagnostics,
                             # error red underlines should be shown over orange warning underlines
-                            key=(lambda diagn: diagn.severity),
+                            key=(lambda diagn: diagn.severity or lsp.DiagnosticSeverity.WARNING),
                             reverse=True,
                         )
                     ],
@@ -530,18 +536,27 @@ class LangServer:
             return
 
         if isinstance(lsp_event, lsp.Definition):
+            assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
             requesting_tab = self._jump2def_requests.pop(lsp_event.message_id)
             if requesting_tab in get_tab_manager().tabs():
+                # TODO: do this in sansio-lsp-client
+                if isinstance(lsp_event.result, list):
+                    locations = lsp_event.result
+                elif lsp_event.result is None:
+                    locations = []
+                else:
+                    locations = [lsp_event.result]
+
                 requesting_tab.event_generate(
                     "<<JumpToDefinitionResponse>>",
                     data=jump_to_definition.Response(
                         [
                             jump_to_definition.LocationRange(
-                                file_path=str(utils.file_url_to_path(lsp_location.uri)),
-                                start=_position_lsp2tk(lsp_location.range.start),
-                                end=_position_lsp2tk(lsp_location.range.end),
+                                file_path=str(path),
+                                start=_position_lsp2tk(range.start),
+                                end=_position_lsp2tk(range.end),
                             )
-                            for lsp_location in lsp_event.result
+                            for path, range in map(_get_path_and_range_of_lsp_location, locations)
                         ]
                     ),
                 )
@@ -593,7 +608,7 @@ class LangServer:
 
         assert tab.path is not None
         request = event.data_class(autocomplete.Request)
-        lsp_id = self._lsp_client.completions(
+        lsp_id = self._lsp_client.completion(
             text_document_position=lsp.TextDocumentPosition(
                 textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
                 position=_position_tk2lsp(request.cursor_pos),
