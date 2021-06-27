@@ -4,7 +4,7 @@ import subprocess
 import sys
 import typing
 from tkinter import ttk
-
+from pathlib import Path
 import pytest
 
 from porcupine import get_main_window, utils
@@ -133,3 +133,14 @@ def test_format_command(monkeypatch):
         assert utils.format_command(path + " {file}", {"file": "tetris.py"}) == [path, "tetris.py"]
     else:
         assert utils.format_command(r"foo\ bar", {}) == ["foo bar"]
+
+
+def test_file_url_to_path():
+    if sys.platform == "win32":
+        paths = [Path(r'\\Server\Share\Test\Foo Bar.txt'),
+        Path(r'C:\Users\Akuli\Foo Bar.txt')]
+    else:
+        path = [Path('/home/akuli/foo bar.txt')]
+
+    for path in paths:
+        assert utils.file_url_to_path(path.as_uri()) == path

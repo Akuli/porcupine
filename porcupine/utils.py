@@ -1,6 +1,7 @@
 """Handy utility functions."""
 from __future__ import annotations
 
+from urllib.request import url2pathname
 import collections
 import contextlib
 import dataclasses
@@ -151,6 +152,25 @@ else:
 def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
     parts = shlex.split(command, posix=(sys.platform != "win32"))
     return [part.format_map(substitutions) for part in parts]
+
+
+# TODO: document this?
+def file_url_to_path(file_url: str) -> pathlib.Path:
+    assert file_url.startswith("file://")
+
+    # There doesn't seem to be standard library trick that works in all cases
+    # https://stackoverflow.com/q/5977576
+
+    if sys.platform == "win32":
+        if file_url.startswith("file:///"):
+            # File on this computer: 'file:///C:/Users/Akuli/Foo%20Bar.txt'
+            return pathlib.Path(url2pathname(file_url[8:]))
+        else:
+            # Network share: 'file://Server2/Share/Test/Foo%20Bar.txt'
+            return pathlib.Path(url2pathname(file_url[5:]))
+    else:
+        # 'file:///home/akuli/foo%20bar.txt'
+        return pathlib.Path(url2pathname(file_url[7:]))
 
 
 # Using these with subprocess prevents opening unnecessary cmd windows
