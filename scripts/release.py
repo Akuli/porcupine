@@ -51,7 +51,6 @@ def main():
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
     subprocess.check_call(["git", "push", "origin", "master"])
     subprocess.check_call(["git", "push", "--tags", "origin", "master"])
-    subprocess.check_call([sys.executable, "docs/publish.py"])
 
 
 if __name__ == "__main__":
