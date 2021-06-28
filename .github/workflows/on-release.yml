@@ -4,7 +4,7 @@ on:
       - v*
 
 jobs:
-  build:
+  windows_build:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
