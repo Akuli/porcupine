@@ -6,7 +6,7 @@ to make Porcupine do something fun that it doesn't do by default.
 
 If you write a nice plugin, please share it with me! I'm interested to see what you have made.
 Just create a pull request on GitHub
-and we can add your plugin to the :source:`plugins` or :source:`more_plugins` directory.
+and we can add your plugin to the :source:`porcupine/plugins` or :source:`more_plugins` directory.
 
 
 The Tutorial
