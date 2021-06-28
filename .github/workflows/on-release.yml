@@ -1,9 +1,42 @@
 on:
   push:
-    branches:
-      - docs-gh-actions
+    tags:
+      - v*
 
 jobs:
+  windows_build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    # Next step copied from https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
+    - name: Install NSIS
+      run: |
+        Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+        scoop bucket add extras
+        scoop install nsis
+    - id: get_version
+      uses: battila7/get-version-action@v2
+    - run: python scripts/build-exe-installer.py ${{ steps.get_version.outputs.version-without-v }}
+    - id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+    - uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/nsis/Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
+        asset_name: Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
+        asset_content_type: application/vnd.microsoft.portable-executable
+
   docs:
     runs-on: ubuntu-latest
     steps:
