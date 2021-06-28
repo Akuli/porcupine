@@ -1,4 +1,5 @@
 # TODO: create much more tests for langserver
+import os
 import time
 import tkinter
 
@@ -9,7 +10,14 @@ from porcupine.plugins.langserver import langservers
 
 
 def wait_until(condition):
-    end = time.time() + 10  # big timeout because windows is slow
+    if os.getenv('GITHUB_ACTIONS') == 'true':
+        # github actions can be slow, especially windows
+        timeout = 60
+    else:
+        # otherwise slowness usually means it froze
+        timeout = 5
+
+    end = time.time() + timeout
     while time.time() < end:
         get_main_window().update()
         if condition():
