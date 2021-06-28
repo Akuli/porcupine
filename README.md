@@ -216,6 +216,5 @@ Instead, ask me to run them if you need to.
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
-  Note that `porcupine.wiki` may need updating when a new version is released.
-  Also, after running the release script, `.github/workflows/windows-build.yml` triggers
-  and adds a Windows installer to the release.
+  Docs and Windows exe are built automatically after running the install script
+  (see `.github/workflows/on-release.yml`), but `porcupine.wiki` may need manual updating.
