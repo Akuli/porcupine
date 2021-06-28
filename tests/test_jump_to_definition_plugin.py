@@ -10,7 +10,7 @@ from porcupine.plugins.langserver import langservers
 
 
 def wait_until(condition):
-    if os.getenv('GITHUB_ACTIONS') == 'true':
+    if os.getenv("GITHUB_ACTIONS") == "true":
         # github actions can be slow, especially windows
         timeout = 60
     else:
