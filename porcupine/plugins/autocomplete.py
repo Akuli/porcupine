@@ -257,8 +257,7 @@ class Response(utils.EventDataclass):
 
 
 # stupid fallback
-def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) -> List[Completion]:
-    print("_all_words_in_file_completer")
+def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) -> str:
     request = event.data_class(Request)
     match = re.search(
         r"\w*$", tab.textwidget.get(f"{request.cursor_pos} linestart", request.cursor_pos)
@@ -280,7 +279,6 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
         del counts[before_cursor]
 
     words = list(counts.keys())
-    print(words, before_cursor)
     words.sort(
         key=lambda word: (
             # Prefer prefixes
@@ -313,6 +311,7 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
             ],
         ),
     )
+    return "break"
 
 
 # How this differs from using sometextwidget.compare(start, '<', end):
@@ -348,8 +347,6 @@ class AutoCompleter:
         # completion request or filtering, user might type more
         self._orig_cursorpos = self._tab.textwidget.index("insert")
 
-        print("generate AutoCompletionRequest")
-        print(repr(self._tab.bind("<<AutoCompletionRequest>>")))
         self._tab.event_generate(
             "<<AutoCompletionRequest>>", data=Request(id=the_id, cursor_pos=self._orig_cursorpos)
         )

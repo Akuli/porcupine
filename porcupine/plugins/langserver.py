@@ -746,7 +746,6 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_completions(tab, event)
-                print("langserver says break")
                 return "break"
         return None
 
