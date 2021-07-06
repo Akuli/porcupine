@@ -275,8 +275,6 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
             ]
         )
     )
-    if counts.get(before_cursor, 0) == 1:
-        del counts[before_cursor]
 
     words = list(counts.keys())
     words.sort(

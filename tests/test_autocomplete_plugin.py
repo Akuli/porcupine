@@ -36,7 +36,7 @@ latex_code = r"""\documentclass[12pt]{article}
 \subsection*{Hello World}
 
 \begin{theorem}
-Foo
+It's the thing that does it
 \end{theorem}
 
 \begin{theorem}
@@ -56,10 +56,10 @@ def test_rare_thing_goes_last(filetab):
 
     # Theorem first
     assert get_completions(filetab)[0] == "theorem"
-    # If we type "the", then we get less matches and it makes sense to check exact
-    filetab.textwidget.insert("insert", "he")
+    # If we type "th", we get less matches and it makes sense to check exactly
+    filetab.textwidget.insert("insert", "h")
     filetab.textwidget.mark_set("insert", "insert lineend")
-    assert get_completions(filetab) == ["theorem", "theoremstyle", "newtheorem", "Theorem"]
+    assert get_completions(filetab) == ["theorem", "theoremstyle", "the", "newtheorem", "Theorem"]
 
 
 def test_case_sensitive_match_goes_first(filetab):
@@ -71,3 +71,9 @@ def test_case_sensitive_match_goes_first(filetab):
     filetab.textwidget.insert("end", "Foo foo F")
     filetab.textwidget.mark_set("insert", "1.0 lineend")
     assert get_completions(filetab) == ["Foo", "foo"]
+
+
+def test_not_suggesting_what_you_just_typed(filetab):
+    filetab.textwidget.insert("end", "Foo")
+    filetab.textwidget.mark_set("insert", "1.0 lineend")
+    assert get_completions(filetab) == []
