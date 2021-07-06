@@ -28,6 +28,7 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
         url = url.split(" ")[0]
         url = url.split("'")[0]
         url = url.split('"')[0]
+        url = url.split("`")[0]
 
         open2close = {"(": ")", "{": "}", "<": ">"}
         close2open = {")": "(", "}": "{", ">": "<"}

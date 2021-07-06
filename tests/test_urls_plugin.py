@@ -23,6 +23,7 @@ def test_find_urls():
          <URL>
         ("URL")bla
         "(URL)" :)
+         `URL`
  Bla bla  URL.
  Bla bla  URL, foo and bar.
  Bla bla (URL) bla.
