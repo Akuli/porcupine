@@ -46,6 +46,50 @@ def test_find_urls():
             assert text.index(end) == f"1.{10 + len(url)}"
 
 
+# test if url gets splitted at quote or backtick
+def test_url_split_at_quote():
+    text = tkinter.Text(get_main_window())
+    urls = [
+        "https://example.com/single`quote",
+        "https://example.com/double`quote",
+        "https://example.com/backtick`something",
+    ]        
+    test_cases = """\
+          URL
+          URL bla bla
+"See also URL"
+         'URL bla'
+         (URL)
+         (URL )     often used with tools that don't understand parenthesized urls
+         {URL}      might occur in Tcl code, for example
+         <URL>
+        ("URL")bla
+        "(URL)" :)
+ Bla bla  URL.
+ Bla bla  URL, foo and bar.
+ Bla bla (URL) bla.
+ Bla bla (URL).
+ Bla bla (URL.)
+ Bla bla (URL, bla).
+ Bla (see URL)
+   [Link](URL)
+   [Link](URL), foo and bar
+   [Link](URL).
+   [Link](URL).</small>    mixed markdown and HTML
+    `foo <URL>`_           RST link
+""".splitlines()
+
+    for url in urls:
+        for line in test_cases:
+            text.delete("1.0", "end")
+            text.insert("1.0", line.replace("URL", url))
+
+            [(start, end)] = find_urls(text, "1.0", "end")
+            assert text.index(start) == "1.10"
+            # assert if text content is equals to url len, so if it is not splitted
+            assert text.index(end) != f"1.{10 + len(url)}"
+
+
 # urls with parentheses in them don't need to work in all cases, just very basic support wanted
 def test_url_containing_parens():
     for url in [
