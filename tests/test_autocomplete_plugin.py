@@ -59,7 +59,17 @@ def test_rare_thing_goes_last(filetab):
     # If we type "th", we get less matches and it makes sense to check exactly
     filetab.textwidget.insert("insert", "h")
     filetab.textwidget.mark_set("insert", "insert lineend")
-    assert get_completions(filetab) == ["theorem", "theoremstyle", "the", "newtheorem", "Theorem"]
+    assert get_completions(filetab) == [
+        "theorem",
+        "the",
+        "that",
+        "thing",
+        "theoremstyle",
+        "amsthm",
+        "amsmath",
+        "newtheorem",
+        "Theorem",
+    ]
 
 
 def test_case_sensitive_match_goes_first(filetab):
