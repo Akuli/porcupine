@@ -264,13 +264,20 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
     )
     assert match is not None
     before_cursor = match.group(0)
-    replace_start = tab.textwidget.index(f"{request.cursor_pos} - {len(before_cursor)} chars")
+    word_start = tab.textwidget.index(f"{request.cursor_pos} - {len(before_cursor)} chars")
 
     counts = dict(
         collections.Counter(
             [
                 word
-                for word in re.findall(r"\w+", tab.textwidget.get("1.0", replace_start) + " " + tab.textwidget.get(request.cursor_pos, "end"))
+                for word in re.findall(
+                    r"\w+",
+                    (
+                        tab.textwidget.get("1.0", word_start)
+                        + " "
+                        + tab.textwidget.get(request.cursor_pos, "end")
+                    ),
+                )
                 if before_cursor.casefold() in word.casefold()
             ]
         )
@@ -299,7 +306,7 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
             completions=[
                 Completion(
                     display_text=word,
-                    replace_start=replace_start,
+                    replace_start=word_start,
                     replace_end=request.cursor_pos,
                     replace_text=word,
                     filter_text=word,

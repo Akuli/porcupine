@@ -742,7 +742,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("langserver", None, Optional[LangServerConfig])
 
     # TODO: some better way to pass events to the correct langsever?
-    def request_completions(event: utils.EventWithData) -> None:
+    def request_completions(event: utils.EventWithData) -> str | None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_completions(tab, event)
