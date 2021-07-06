@@ -270,7 +270,7 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
         collections.Counter(
             [
                 word
-                for word in re.findall(r"\w+", tab.textwidget.get("1.0", "end"))
+                for word in re.findall(r"\w+", tab.textwidget.get("1.0", replace_start) + " " + tab.textwidget.get(request.cursor_pos, "end"))
                 if before_cursor.casefold() in word.casefold()
             ]
         )
