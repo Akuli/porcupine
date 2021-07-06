@@ -4,6 +4,11 @@ To get the most out of this plugin, you also need some other plugin such as the
 langserver plugin. If no such plugin is loaded, then this plugin falls back to
 "all words in file" style autocompletions.
 """
+
+# If your plugin sets up an autocompleter, it should be setup before this
+# plugin. That way its <<AutoCompletionRequest>> binding will be used instead
+# of the all-words-in-file fallback.
+
 from __future__ import annotations
 
 import collections
@@ -12,6 +17,7 @@ import itertools
 import logging
 import re
 import tkinter
+from functools import partial
 from tkinter import ttk
 from typing import List, Optional, Union
 
@@ -250,29 +256,22 @@ class Response(utils.EventDataclass):
     completions: List[Completion]
 
 
-# How this differs from using sometextwidget.compare(start, '<', end):
-#   - This does the right thing if text has been deleted so that start and end
-#     no longer exist in the text widget.
-#   - Start and end must be in 'x.y' format.
-def text_index_less_than(index1: str, index2: str) -> bool:
-    tuple1 = tuple(map(int, index1.split(".")))
-    tuple2 = tuple(map(int, index2.split(".")))
-    return tuple1 < tuple2
-
-
 # stupid fallback
-def _all_words_in_file_completions(textwidget: tkinter.Text) -> List[Completion]:
-    match = re.search(r"\w*$", textwidget.get("insert linestart", "insert"))
+def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) -> List[Completion]:
+    print("_all_words_in_file_completer")
+    request = event.data_class(Request)
+    match = re.search(
+        r"\w*$", tab.textwidget.get(f"{request.cursor_pos} linestart", request.cursor_pos)
+    )
     assert match is not None
     before_cursor = match.group(0)
-    replace_start = textwidget.index(f"insert - {len(before_cursor)} chars")
-    replace_end = textwidget.index("insert")
+    replace_start = tab.textwidget.index(f"{request.cursor_pos} - {len(before_cursor)} chars")
 
     counts = dict(
         collections.Counter(
             [
                 word
-                for word in re.findall(r"\w+", textwidget.get("1.0", "end"))
+                for word in re.findall(r"\w+", tab.textwidget.get("1.0", "end"))
                 if before_cursor.casefold() in word.casefold()
             ]
         )
@@ -280,17 +279,46 @@ def _all_words_in_file_completions(textwidget: tkinter.Text) -> List[Completion]
     if counts.get(before_cursor, 0) == 1:
         del counts[before_cursor]
 
-    return [
-        Completion(
-            display_text=word,
-            replace_start=replace_start,
-            replace_end=replace_end,
-            replace_text=word,
-            filter_text=word,
-            documentation=word,
+    words = list(counts.keys())
+    print(words, before_cursor)
+    words.sort(
+        key=lambda word: (
+            # Prefer prefixes
+            1 if word.startswith(before_cursor) else 2,
+            # Prefer case-sensitive matches (insensitive included too)
+            1 if before_cursor in word else 2,
+            # Lastly, most common goes first
+            counts[word],
         )
-        for word in sorted(counts.keys(), key=counts.__getitem__)
-    ]
+    )
+
+    tab.event_generate(
+        "<<AutoCompletionResponse>>",
+        data=Response(
+            id=request.id,
+            completions=[
+                Completion(
+                    display_text=word,
+                    replace_start=replace_start,
+                    replace_end=request.cursor_pos,
+                    replace_text=word,
+                    filter_text=word,
+                    documentation=word,
+                )
+                for word in words
+            ],
+        ),
+    )
+
+
+# How this differs from using sometextwidget.compare(start, '<', end):
+#   - This does the right thing if text has been deleted so that start and end
+#     no longer exist in the text widget.
+#   - Start and end must be in 'x.y' format.
+def _text_index_less_than(index1: str, index2: str) -> bool:
+    tuple1 = tuple(map(int, index1.split(".")))
+    tuple2 = tuple(map(int, index2.split(".")))
+    return tuple1 < tuple2
 
 
 class AutoCompleter:
@@ -316,19 +344,11 @@ class AutoCompleter:
         # completion request or filtering, user might type more
         self._orig_cursorpos = self._tab.textwidget.index("insert")
 
-        if self._tab.bind("<<AutoCompletionRequest>>"):
-            # an event handler is bound, use that
-            self._tab.event_generate(
-                "<<AutoCompletionRequest>>",
-                data=Request(id=the_id, cursor_pos=self._orig_cursorpos),
-            )
-        else:
-            # fall back to "all words in file" autocompleting
-            self.receive_completions(
-                Response(
-                    id=the_id, completions=_all_words_in_file_completions(self._tab.textwidget)
-                )
-            )
+        print("generate AutoCompletionRequest")
+        print(repr(self._tab.bind("<<AutoCompletionRequest>>")))
+        self._tab.event_generate(
+            "<<AutoCompletionRequest>>", data=Request(id=the_id, cursor_pos=self._orig_cursorpos)
+        )
 
     def _user_wants_to_see_popup(self) -> bool:
         assert self._orig_cursorpos is not None
@@ -471,7 +491,7 @@ class AutoCompleter:
 
         # if cursor has moved back more since requesting completions: User
         # has backspaced away a lot and likely doesn't want completions.
-        if text_index_less_than(self._tab.textwidget.index("insert"), self._orig_cursorpos):
+        if _text_index_less_than(self._tab.textwidget.index("insert"), self._orig_cursorpos):
             self._reject()
             return
 
@@ -515,6 +535,11 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
 
     tab.bind("<Destroy>", (lambda event: completer.popup.toplevel.destroy()), add=True)
+
+    # fallback completer, other completers must be bound before
+    utils.bind_with_data(
+        tab, "<<AutoCompletionRequest>>", partial(_all_words_in_file_completer, tab), add=True
+    )
 
 
 def setup() -> None:
