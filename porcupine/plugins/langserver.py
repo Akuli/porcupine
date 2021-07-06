@@ -31,6 +31,7 @@ from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins import autocomplete, jump_to_definition, python_venv, underlines
 
 global_log = logging.getLogger(__name__)
+setup_before = ["autocomplete"]  # Prefer this plugin's autocompleter, must bind first
 setup_after = ["python_venv"]
 
 
@@ -741,10 +742,12 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("langserver", None, Optional[LangServerConfig])
 
     # TODO: some better way to pass events to the correct langsever?
-    def request_completions(event: utils.EventWithData) -> None:
+    def request_completions(event: utils.EventWithData) -> str | None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_completions(tab, event)
+                return "break"
+        return None
 
     def content_changed(event: utils.EventWithData) -> None:
         for langserver in langservers.values():
