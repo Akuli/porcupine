@@ -10,6 +10,7 @@ def test_find_urls():
         "https://github.com/Akuli/porcupine/",
         "http://example.com/",
         "http://example.com/comma,stuff",
+        "http://127.0.0.1:12345/foo.html",
     ]
     test_cases = """\
           URL

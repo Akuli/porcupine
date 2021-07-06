@@ -14,7 +14,7 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
     match_ends_and_search_begins = start
     while True:
         match_start = text.search(
-            r"\mhttps?://[a-z]", match_ends_and_search_begins, end, nocase=True, regexp=True
+            r"\mhttps?://[a-z0-9:]", match_ends_and_search_begins, end, nocase=True, regexp=True
         )
         if not match_start:  # empty string means not found
             break
