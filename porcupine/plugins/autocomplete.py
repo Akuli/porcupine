@@ -287,8 +287,10 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
             1 if word.startswith(before_cursor) else 2,
             # Prefer case-sensitive matches (insensitive included too)
             1 if before_cursor in word else 2,
-            # Lastly, most common goes first
+            # Most common goes first
             counts[word],
+            # Alphabetically just to get consistent results
+            word,
         )
     )
 
