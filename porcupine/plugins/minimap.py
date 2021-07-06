@@ -34,6 +34,7 @@ class MiniMap(tkinter.Text):
             takefocus=False,
             yscrollcommand=self._update_vast,
             wrap="none",
+            cursor="arrow",
         )
 
         self._tab = tab
