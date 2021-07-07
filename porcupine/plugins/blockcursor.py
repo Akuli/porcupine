@@ -6,11 +6,11 @@ import tkinter
 from porcupine import get_tab_manager, settings, tabs
 
 
-def do_toggle(event: tkinter.Event[tabs.FileTab.textwidget]) -> None:
+def do_toggle(event: tkinter.Event[tkinter.Text]) -> None:
     if settings.get("blockcursor", object):
-        event.widget.config(blockcursor=True, insertwidth=0)  # minimize the cursor thickness
+        event.widget.configure(blockcursor=True, insertwidth=0)  # minimize the cursor thickness
     else:
-        event.widget.config(blockcursor=False, insertwidth=2)  # set insertwidth back to tk default
+        event.widget.configure(blockcursor=False, insertwidth=2)  # set insertwidth back to tk default
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
