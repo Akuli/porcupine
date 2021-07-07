@@ -36,8 +36,8 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         for lineno, line in enumerate(
             tab.textwidget.get(f"{start}.0", f"{end}.0").splitlines(), start
         )
-        # Don't ignore indented '#    blah', that is most likely by this plugin
-        # But ignore '# blah' comments because they are likely written by hand
+        # Ignore '# blah' comments because they are likely written by hand
+        # But don't ignore indented '#    blah', that is most likely by this plugin
         if line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix) :])
     }
 
