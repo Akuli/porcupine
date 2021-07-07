@@ -358,6 +358,7 @@ def test_find_selected(filetab_and_finder):
 
     finder.show()
     assert finder.find_entry.get() == "bar"
+    assert finder.find_entry.selection_present()
     assert not finder.replace_entry.get()
     assert list(map(str, filetab.textwidget.tag_ranges("find_highlight"))) == [
         "1.4",
@@ -373,11 +374,13 @@ def test_find_selected(filetab_and_finder):
 def test_highlight_text(filetab_and_finder):
     filetab, finder = filetab_and_finder
     finder.find_entry.insert("end", "foo")
+    finder.find_entry.icursor(1)
     finder.hide()
     finder.show()
 
     assert finder.find_entry.get() == "foo"
     assert finder.find_entry.selection_present()
+    assert finder.find_entry.index("insert") == 1  # remember cursor location
 
 
 def test_highight_on_undo(filetab_and_finder):

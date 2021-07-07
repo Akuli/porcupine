@@ -46,3 +46,50 @@ We select starting from this line
 To start of this line, so that the plugin shouldn't see this line as selected
 """
     )
+
+
+def test_cant_uncomment_bug(filetab):
+    filetab.textwidget.insert(
+        "1.0",
+        """\
+    def __init__(self, f):
+        self._i_opened_the_file = None
+        try:
+            self.initfp(f)
+        except:
+            if self._i_opened_the_file:
+                f.close()
+            raise
+""",
+    )
+    filetab.textwidget.tag_add("sel", "3.8", "3.8 + 5 lines")
+
+    filetab.textwidget.event_generate("<numbersign>")
+    assert (
+        filetab.textwidget.get("1.0", "end - 1 char")
+        == """\
+    def __init__(self, f):
+        self._i_opened_the_file = None
+#        try:
+#            self.initfp(f)
+#        except:
+#            if self._i_opened_the_file:
+#                f.close()
+#            raise
+"""
+    )
+
+    filetab.textwidget.event_generate("<numbersign>")
+    assert (
+        filetab.textwidget.get("1.0", "end - 1 char")
+        == """\
+    def __init__(self, f):
+        self._i_opened_the_file = None
+        try:
+            self.initfp(f)
+        except:
+            if self._i_opened_the_file:
+                f.close()
+            raise
+"""
+    )
