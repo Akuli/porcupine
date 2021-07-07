@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import tkinter
 
-from porcupine import get_tab_manager, settings
+from porcupine import get_tab_manager, tabs, settings
 
 
 def on_insert_key(event: tkinter.Event = None) -> None:

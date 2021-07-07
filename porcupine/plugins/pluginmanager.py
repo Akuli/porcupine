@@ -114,7 +114,7 @@ class PluginDialogContent:
         #
         # FIXME: still happens sometimes, but very rarely, more timeout is not
         # good because it causes slowness
-        panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7 * DIALOG_WIDTH)))
+        # panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7 * DIALOG_WIDTH)))
 
     def _set_description(self, text: str) -> None:
         self.description.config(state="normal")
