@@ -154,7 +154,7 @@ class Finder(ttk.Frame):
             self.find_entry.delete(0, "end")
             self.find_entry.insert(0, selected_text)  # type: ignore[no-untyped-call]
 
-        self.find_entry.select_range(0, "end")  # type: ignore[no-untyped-call]
+        self.find_entry.select_range(0, "end")
         self.find_entry.focus_set()
 
         self.highlight_all_matches()
