@@ -1,4 +1,4 @@
-"""Toggles between the ❚ and | cursor state when the insert key is pressed."""
+"""Toggles between the ❚ and | cursor state of the textwidgets."""
 from __future__ import annotations
 
 import tkinter
@@ -6,18 +6,21 @@ import tkinter
 from porcupine import get_tab_manager, settings, tabs
 
 
-def on_insert_key(event: tkinter.Event[tkinter.Misc]) -> str:
-    event.widget["blockcursor"] = False if event.widget["blockcursor"] else True
-    settings.set_("blockcursor", bool(event.widget["blockcursor"]))
-    return "break"  # sometimes the insert key also inserts the content of the cb, we abort it
+def do_toggle(event: tkinter.Event[tkinter.Misc]) -> None:
+    if settings.get("blockcursor", object):
+        event.widget.config(blockcursor=True, insertwidth=0)  # minimize the cursor thickness
+    else:
+        event.widget.config(blockcursor=False, insertwidth=2)  # set insertwidth back to tk default
 
 
-def on_filetab(tab: tabs.FileTab) -> None:
-    tab.textwidget.config(blockcursor=settings.get("blockcursor", object))
-    tab.textwidget.bind("<Insert>", on_insert_key, add=True)
-    tab.textwidget.bind("<KP_Insert>", on_insert_key, add=True)
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    is_block = settings.get("blockcursor", object)
+    tab.textwidget.config(blockcursor=is_block, insertwidth=0 if is_block else 2)
+    tab.textwidget.bind("<<SettingChanged:blockcursor>>", do_toggle, add=True)
 
 
 def setup() -> None:
     settings.add_option("blockcursor", False)
-    get_tab_manager().add_filetab_callback(on_filetab)
+    settings.add_checkbutton("blockcursor", text="Use blockcursor")
+    get_tab_manager().add_filetab_callback(on_new_filetab)
+
