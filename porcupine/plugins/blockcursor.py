@@ -6,7 +6,7 @@ import tkinter
 from porcupine import get_tab_manager, settings, tabs
 
 
-def on_insert_key(event: tkinter.Event) -> str:
+def on_insert_key(event: tkinter.Event[tkinter.Misc]) -> str:
     event.widget["blockcursor"] = False if event.widget["blockcursor"] else True
     settings.set_("blockcursor", bool(event.widget["blockcursor"]))
     return "break"  # sometimes the insert key also inserts the content of the cb, we abort it
