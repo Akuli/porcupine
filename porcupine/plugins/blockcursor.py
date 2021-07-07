@@ -10,7 +10,9 @@ def do_toggle(event: tkinter.Event[tkinter.Text]) -> None:
     if settings.get("blockcursor", object):
         event.widget.configure(blockcursor=True, insertwidth=0)  # minimize the cursor thickness
     else:
-        event.widget.configure(blockcursor=False, insertwidth=2)  # set insertwidth back to tk default
+        event.widget.configure(
+            blockcursor=False, insertwidth=2
+        )  # set insertwidth back to tk default
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
@@ -23,4 +25,3 @@ def setup() -> None:
     settings.add_option("blockcursor", False)
     settings.add_checkbutton("blockcursor", text="Use blockcursor")
     get_tab_manager().add_filetab_callback(on_new_filetab)
-
