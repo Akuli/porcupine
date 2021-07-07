@@ -21,4 +21,3 @@ def on_filetab(tab: tabs.FileTab) -> None:
 def setup() -> None:
     settings.add_option("blockcursor", False)
     get_tab_manager().add_filetab_callback(on_filetab)
-
