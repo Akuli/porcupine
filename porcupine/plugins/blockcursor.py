@@ -4,6 +4,9 @@ from __future__ import annotations
 from porcupine import get_tab_manager, settings, tabs
 
 
+setup_after = ["filetypes"]  # don't setup it in filename order, so checkbuttons will grouped 
+
+
 def do_toggle(tab: tabs.FileTab) -> None:
     if settings.get("blockcursor", bool):
         tab.textwidget.configure(blockcursor=True, insertwidth=0)  # minimize the cursor thickness
