@@ -13,12 +13,6 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textutils
 
 
-def is_commented(line: str, comment_prefix: str) -> bool:
-    # Don't ignore indented '#    blah', that is most likely by this plugin
-    # But ignore '# blah' comments because they are likely written by hand
-    return line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix) :])
-
-
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
     comment_prefix = tab.settings.get("comment_prefix", Optional[str])
     if pressed_key is not None and pressed_key != comment_prefix:
@@ -42,7 +36,9 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         for lineno, line in enumerate(
             tab.textwidget.get(f"{start}.0", f"{end}.0").splitlines(), start
         )
-        if is_commented(line, comment_prefix)
+        # Don't ignore indented '#    blah', that is most likely by this plugin
+        # But ignore '# blah' comments because they are likely written by hand
+        if line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix) :])
     }
 
     with textutils.change_batch(tab.textwidget):
