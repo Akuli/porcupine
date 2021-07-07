@@ -7,9 +7,16 @@ configured with comment_prefix in filetypes.toml.
 """
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 from porcupine import get_tab_manager, menubar, tabs, textutils
+
+
+def is_commented(line: str, comment_prefix: str) -> bool:
+    # Don't ignore indented '#    blah', that is most likely by this plugin
+    # But ignore '# blah' comments because they are likely written by hand
+    return line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix) :])
 
 
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
@@ -32,17 +39,17 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
     all_linenos = set(range(start, end))
     commented = {
         lineno
-        for lineno in all_linenos
-        if tab.textwidget.get(f"{lineno}.0") == comment_prefix
-        # Do not touch comments starting with '# '
-        and tab.textwidget.get(f"{lineno}.1") != " "
+        for lineno, line in enumerate(
+            tab.textwidget.get(f"{start}.0", f"{end}.0").splitlines(), start
+        )
+        if is_commented(line, comment_prefix)
     }
 
     with textutils.change_batch(tab.textwidget):
         if commented == all_linenos:
             # Uncomment everything
             for lineno in all_linenos:
-                tab.textwidget.delete(f"{lineno}.0", f"{lineno}.1")
+                tab.textwidget.delete(f"{lineno}.0", f"{lineno}.{len(comment_prefix)}")
         else:
             # Comment uncommented lines
             for lineno in all_linenos - commented:
