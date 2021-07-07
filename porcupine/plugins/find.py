@@ -7,7 +7,7 @@ import sys
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Iterator, List, Optional, Tuple, cast
+from typing import Any, Iterator, cast
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -143,21 +143,19 @@ class Finder(ttk.Frame):
 
     def show(self, junk: object = None) -> None:
         try:
-            selected_text: Optional[str] = self._textwidget.get("sel.first", "sel.last")
+            selected_text: str | None = self._textwidget.get("sel.first", "sel.last")
         except tkinter.TclError:
             selected_text = None
 
         self.pack(fill="x")
 
-        if selected_text is None or "\n" in selected_text:
-            self.find_entry.focus_set()
-            # when ctrl + f without text selected
-            self.find_entry.selection_range(0, "end")  # type: ignore[no-untyped-call]
-        else:
+        if selected_text is not None and "\n" not in selected_text:
+            # Selected text is usable, search for that
             self.find_entry.delete(0, "end")
             self.find_entry.insert(0, selected_text)  # type: ignore[no-untyped-call]
-            self.find_entry.select_range(0, "end")
-            self.find_entry.focus_set()
+
+        self.find_entry.select_range(0, "end")
+        self.find_entry.focus_set()
 
         self.highlight_all_matches()
 
@@ -173,7 +171,7 @@ class Finder(ttk.Frame):
 
     # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
     # gives a list of (start, end) pairs
-    def get_match_ranges(self) -> List[Tuple[str, str]]:
+    def get_match_ranges(self) -> list[tuple[str, str]]:
         starts_and_ends = list(map(str, self._textwidget.tag_ranges("find_highlight")))
         assert len(starts_and_ends) % 2 == 0
         pairs = list(zip(starts_and_ends[0::2], starts_and_ends[1::2]))
