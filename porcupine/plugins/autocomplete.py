@@ -21,7 +21,7 @@ from functools import partial
 from tkinter import ttk
 from typing import List, Optional, Union
 
-from porcupine import get_tab_manager, settings, tabs, textutils, utils , get_main_window
+from porcupine import get_main_window, get_tab_manager, settings, tabs, textutils, utils
 
 setup_before = ["tabs2spaces"]  # see tabs2spaces.py
 
