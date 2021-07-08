@@ -13,7 +13,12 @@ from porcupine import get_main_window, menubar, settings
 
 def setup() -> None:
     style = ttkthemes.ThemedStyle()
-    settings.add_option("ttk_theme", style.theme_use())
+
+    if get_main_window().tk.call("tk", "windowingsystem") == "x11":
+        # Default theme sucks on linux
+        settings.add_option("ttk_theme", "black")
+    else:
+        settings.add_option("ttk_theme", style.theme_use())
 
     var = tkinter.StringVar()
     for name in sorted(style.get_themes()):
