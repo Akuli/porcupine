@@ -536,9 +536,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     completer.popup.treeview.bind("<Button-1>", (lambda event: completer._accept()), add=True)
 
     # avoid weird corner cases
-    # On Windows, <FocusOut> runs before treeview click handler, must accept when clicked
-    tab.winfo_toplevel().bind("<FocusOut>", (lambda event: tab.after_idle(completer._reject)), add=True)
-
+    tab.winfo_toplevel().bind("<FocusOut>", (lambda event: completer._reject()), add=True)
     # any mouse button
     tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
 
