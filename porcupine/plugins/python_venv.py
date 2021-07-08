@@ -106,7 +106,7 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
     if venv is not None:
         venv_id = tree.get_id_from_path(venv, info.project_id)
         if venv_id is not None:
-            tree.tk.call(tree, "tag", "add", "venv", venv_id)
+            tree.tk.call(tree, "tag", "add", "venv", [venv_id])
 
 
 def _on_treeview_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str:
