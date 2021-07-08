@@ -21,7 +21,7 @@ from functools import partial
 from tkinter import ttk
 from typing import List, Optional, Union
 
-from porcupine import get_tab_manager, settings, tabs, textutils, utils
+from porcupine import get_tab_manager, settings, tabs, textutils, utils , get_main_window
 
 setup_before = ["tabs2spaces"]  # see tabs2spaces.py
 
@@ -536,7 +536,14 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     completer.popup.treeview.bind("<Button-1>", (lambda event: completer._accept()), add=True)
 
     # avoid weird corner cases
-    tab.winfo_toplevel().bind("<FocusOut>", (lambda event: completer._reject()), add=True)
+    def on_focus_out(event: tkinter.Event[tkinter.Misc]) -> None:
+        if event.widget == get_main_window():
+            # On Windows, <FocusOut> runs before treeview click handler
+            # We must accept when clicked, so reject later
+            tab.after_idle(completer._reject)
+
+    get_main_window().bind("<FocusOut>", on_focus_out, add=True)
+
     # any mouse button
     tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
 
