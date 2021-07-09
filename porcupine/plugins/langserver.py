@@ -31,8 +31,12 @@ from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins import autocomplete, jump_to_definition, python_venv, underlines, hover
 
 global_log = logging.getLogger(__name__)
-setup_before = ["autocomplete"]  # Prefer this plugin's autocompleter, must bind first
-setup_after = ["python_venv"]
+
+# Before autocomplete: use this plugin's autocompleter, so must bind first
+# After underlines: so that when hovering something underlined, we don't ask langserver what to show
+# After python venv: ???
+setup_before = ["autocomplete"]
+setup_after = ["python_venv", "underlines"]
 
 
 # 1024 bytes was way too small, and with this chunk size, it
@@ -571,7 +575,7 @@ class LangServer:
                 part.value if isinstance(part, lsp.MarkedString) else part
                 for part in lsp_event.contents
             )
-            requesting_tab.event_generate(
+            requesting_tab.textwidget.event_generate(
                 "<<HoverResponse>>", data=hover.Response(location, hover_string)
             )
             return
@@ -790,10 +794,12 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
                 langserver.request_jump_to_definition(tab)
         return "break"  # Do not insert newline
 
-    def request_hover(event: object) -> str:
+    def request_hover(event: object) -> str | None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_hover(tab, event.data_string)
+                return "break"
+        return None
 
     def on_destroy(event: object) -> None:
         for langserver in list(langservers.values()):
