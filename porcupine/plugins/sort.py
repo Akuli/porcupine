@@ -1,5 +1,5 @@
 """
-Sorts the selected rows, or if there's no selection, to the next blank line.
+Sort the selected lines alphabetically, or if there's no selection, sort between surrounding blank lines.
 
 Available in Edit/Sort Lines.
 """
