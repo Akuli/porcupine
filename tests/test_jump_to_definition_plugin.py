@@ -1,9 +1,6 @@
 # TODO: create much more tests for langserver
-import os
-import sys
 import time
 
-import pytest
 from sansio_lsp_client import ClientState
 
 from porcupine import get_main_window
