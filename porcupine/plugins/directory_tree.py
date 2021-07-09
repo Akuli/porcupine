@@ -1,5 +1,5 @@
 """
-Displays a directory tree on the left side of the editor with the folders containing the 5 most recently edited files.
+Displays a directory tree on the left side of the editor.
 
 You can navigate directories, and open files in Porcupine.
 """
