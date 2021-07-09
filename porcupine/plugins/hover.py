@@ -72,10 +72,10 @@ class HoverManager:
             self.hide_label()
             self.textwidget.event_generate("<<HoverRequest>>", data=location)
 
-    def on_mouse_move(self, event):
+    def on_mouse_move(self, junk_event: object) -> None:
         self._request_hover(self.textwidget.index("current"))
 
-    def on_cursor_move(self, event):
+    def on_cursor_move(self, junk_event: object) -> None:
         self._request_hover(self.textwidget.index("insert"))
 
 

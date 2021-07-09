@@ -254,6 +254,17 @@ def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
     return f"{diagnostic.source}: {diagnostic.message}"
 
 
+# TODO: should handle better in sansio-lsp-client
+def _get_hover_string(
+    hover_contents: list[lsp.MarkedString | str] | lsp.MarkedString | lsp.MarkupContent | str,
+) -> str:
+    if isinstance(hover_contents, (lsp.MarkedString, lsp.MarkupContent)):
+        return hover_contents.value
+    if isinstance(hover_contents, list):
+        return "\n\n".join(_get_hover_string(item) for item in hover_contents)
+    return hover_contents
+
+
 def _substitute_python_venv_recursively(obj: object, venv: Path | None) -> Any:
     if isinstance(obj, list):
         return [_substitute_python_venv_recursively(item, venv) for item in obj]
@@ -535,7 +546,7 @@ class LangServer:
 
         if isinstance(lsp_event, lsp.Definition):
             assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
-            requesting_tab, location = self._jump2def_requests.pop(lsp_event.message_id)
+            requesting_tab = self._jump2def_requests.pop(lsp_event.message_id)
             if requesting_tab not in get_tab_manager().tabs():
                 self.log.debug("tab was closed")
                 return
@@ -570,13 +581,9 @@ class LangServer:
                 self.log.debug("tab was closed")
                 return
 
-            hover_string = "\n\n".join(
-                # TODO: MarkedStrings could use some syntax highlighting
-                part.value if isinstance(part, lsp.MarkedString) else part
-                for part in lsp_event.contents
-            )
             requesting_tab.textwidget.event_generate(
-                "<<HoverResponse>>", data=hover.Response(location, hover_string)
+                "<<HoverResponse>>",
+                data=hover.Response(location, _get_hover_string(lsp_event.contents)),
             )
             return
 
@@ -794,7 +801,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
                 langserver.request_jump_to_definition(tab)
         return "break"  # Do not insert newline
 
-    def request_hover(event: object) -> str | None:
+    def request_hover(event: utils.EventWithData) -> str | None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_hover(tab, event.data_string)
