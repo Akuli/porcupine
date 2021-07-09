@@ -73,7 +73,7 @@ class HoverManager:
     def on_hover_response(self, event: utils.EventWithData) -> None:
         response = event.data_class(Response)
         if response.location == self._location:
-            if response.text.strip():
+            if response.text.strip() and self.textwidget.focus_get() == self.textwidget:
                 self._show_label(response.text)
             else:
                 self.hide_label()
