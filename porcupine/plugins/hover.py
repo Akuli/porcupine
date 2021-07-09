@@ -6,6 +6,7 @@ import tkinter
 from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
+# Data of request is a text widget location. Use event.data_string to access it.
 @dataclasses.dataclass
 class Response(utils.EventDataclass):
     location: str

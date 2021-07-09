@@ -249,7 +249,7 @@ def _get_jump_paths_and_ranges(
         locations = [locations]
 
     for location in locations:
-        assert isinstance(location, lsp.Location)  # lol
+        assert not isinstance(location, lsp.LocationLink)  # TODO
         yield (utils.file_url_to_path(location.uri), location.range)
 
 
@@ -802,7 +802,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     def request_hover(event: utils.EventWithData) -> str | None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
-                langserver.request_hover(tab, event.data_string)
+                langserver.request_hover(tab, location=event.data_string)
                 return "break"
         return None
 
