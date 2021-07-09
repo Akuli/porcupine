@@ -28,7 +28,7 @@ if sys.platform != "win32":
 import sansio_lsp_client as lsp
 
 from porcupine import get_tab_manager, tabs, textutils, utils
-from porcupine.plugins import autocomplete, jump_to_definition, python_venv, underlines
+from porcupine.plugins import autocomplete, jump_to_definition, python_venv, underlines, hover
 
 global_log = logging.getLogger(__name__)
 setup_before = ["autocomplete"]  # Prefer this plugin's autocompleter, must bind first
@@ -293,6 +293,7 @@ class LangServer:
 
         self._autocompletion_requests: dict[lsp.Id, tuple[tabs.FileTab, autocomplete.Request]] = {}
         self._jump2def_requests: dict[lsp.Id, tabs.FileTab] = {}
+        self._hover_requests: dict[lsp.Id, tuple[tabs.FileTab, str]] = {}
 
         self._version_counter = itertools.count()
         self.log = log
@@ -530,31 +531,50 @@ class LangServer:
 
         if isinstance(lsp_event, lsp.Definition):
             assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
-            requesting_tab = self._jump2def_requests.pop(lsp_event.message_id)
-            if requesting_tab in get_tab_manager().tabs():
-                # TODO: do this in sansio-lsp-client
-                if isinstance(lsp_event.result, list):
-                    locations = lsp_event.result
-                elif lsp_event.result is None:
-                    locations = []
-                else:
-                    locations = [lsp_event.result]
+            requesting_tab, location = self._jump2def_requests.pop(lsp_event.message_id)
+            if requesting_tab not in get_tab_manager().tabs():
+                self.log.debug("tab was closed")
+                return
 
-                requesting_tab.event_generate(
-                    "<<JumpToDefinitionResponse>>",
-                    data=jump_to_definition.Response(
-                        [
-                            jump_to_definition.LocationRange(
-                                file_path=str(path),
-                                start=_position_lsp2tk(range.start),
-                                end=_position_lsp2tk(range.end),
-                            )
-                            for path, range in map(_get_path_and_range_of_lsp_location, locations)
-                        ]
-                    ),
-                )
+            # TODO: do this in sansio-lsp-client
+            if isinstance(lsp_event.result, list):
+                locations = lsp_event.result
+            elif lsp_event.result is None:
+                locations = []
             else:
-                self.log.info("not jumping to definition because tab was closed")
+                locations = [lsp_event.result]
+
+            requesting_tab.event_generate(
+                "<<JumpToDefinitionResponse>>",
+                data=jump_to_definition.Response(
+                    [
+                        jump_to_definition.LocationRange(
+                            file_path=str(path),
+                            start=_position_lsp2tk(range.start),
+                            end=_position_lsp2tk(range.end),
+                        )
+                        for path, range in map(_get_path_and_range_of_lsp_location, locations)
+                    ]
+                ),
+            )
+            return
+
+        if isinstance(lsp_event, lsp.Hover):
+            assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
+            requesting_tab, location = self._hover_requests.pop(lsp_event.message_id)
+            if requesting_tab not in get_tab_manager().tabs():
+                self.log.debug("tab was closed")
+                return
+
+            hover_string = "\n\n".join(
+                # TODO: MarkedStrings could use some syntax highlighting
+                part.value if isinstance(part, lsp.MarkedString) else part
+                for part in lsp_event.contents
+            )
+            requesting_tab.event_generate(
+                "<<HoverResponse>>",
+                data=hover.Response(location, hover_string)
+            )
             return
 
         # str(lsp_event) or just lsp_event won't show the type
@@ -617,8 +637,8 @@ class LangServer:
         self._autocompletion_requests[lsp_id] = (tab, request)
 
     def request_jump_to_definition(self, tab: tabs.FileTab) -> None:
-        self.log.info(f"Jump to definition requested: {tab.path}")
-        if tab.path is not None:
+        self.log.info(f"Jump to definition requested: {tab.path} {self._lsp_client.state}")
+        if tab.path is not None and self._lsp_client        .state == lsp.ClientState        .NORMAL        :
             request_id = self._lsp_client.definition(
                 lsp.TextDocumentPosition(
                     textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
@@ -626,6 +646,17 @@ class LangServer:
                 )
             )
             self._jump2def_requests[request_id] = tab
+
+    def request_hover(self, tab: tabs.FileTab, location: str) -> None:
+        self.log.info(f"Hover requested: {tab.path} {self._lsp_client.state}")
+        if tab.path is not None and self._lsp_client        .state == lsp.ClientState        .NORMAL        :
+            request_id = self._lsp_client.hover(
+                lsp.TextDocumentPosition(
+                    textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
+                    position=_position_tk2lsp(location),
+                )
+            )
+            self._hover_requests[request_id] = (tab, location)
 
     def send_change_events(self, tab: tabs.FileTab, changes: textutils.Changes) -> None:
         if self._lsp_client.state != lsp.ClientState.NORMAL:
@@ -760,6 +791,11 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
                 langserver.request_jump_to_definition(tab)
         return "break"  # Do not insert newline
 
+    def request_hover(event: object) -> str:
+        for langserver in langservers.values():
+            if tab in langserver.tabs_opened:
+                langserver.request_hover(tab, event.data_string)
+
     def on_destroy(event: object) -> None:
         for langserver in list(langservers.values()):
             if tab in langserver.tabs_opened:
@@ -767,6 +803,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", content_changed, add=True)
     utils.bind_with_data(tab.textwidget, "<<JumpToDefinition>>", request_jump2def, add=True)
+    utils.bind_with_data(tab.textwidget, "<<HoverRequest>>", request_hover, add=True)
     utils.bind_with_data(tab, "<<AutoCompletionRequest>>", request_completions, add=True)
     tab.bind("<Destroy>", on_destroy, add=True)
 
