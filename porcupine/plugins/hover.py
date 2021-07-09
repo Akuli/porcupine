@@ -74,7 +74,11 @@ class HoverManager:
         response = event.data_class(Response)
         if response.location == self._location:
             if response.text.strip() and self.textwidget.focus_get() == self.textwidget:
-                self._show_label(response.text)
+                if response.text.count("\n") > 10:
+                    text = "\n".join(response.text.split("\n")[:10]) + "\n..."
+                else:
+                    text = response.text
+                self._show_label(text)
             else:
                 self.hide_label()
 
