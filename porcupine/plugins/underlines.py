@@ -92,7 +92,7 @@ class _Underliner:
                         location=event.data_string, text=self._tag2underline[tag].message
                     ),
                 )
-                return "break"
+                return "break"  # Do not pass hover event to langserver
         return None
 
 
