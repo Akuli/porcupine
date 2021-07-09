@@ -80,7 +80,7 @@ class _Underliner:
                 for start, end in zip(ranges[0::2], ranges[1::2]):
                     self.textwidget.tag_add("underline_common", start, end)
 
-        # FIXME: update what hover plugin is showing
+        # FIXME: update what hover plugin is showing (broke in #585)
 
     def handle_hover_request(self, event: utils.EventWithData) -> str | None:
         # Reversing to prefer topmost tags (i.e. tags added last)
