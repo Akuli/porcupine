@@ -249,7 +249,7 @@ def _get_jump_paths_and_ranges(
         locations = [locations]
 
     for location in locations:
-        assert isinstance(location, lsp.Location)  # lol
+        assert not isinstance(location, lsp.LocationLink)  # TODO
         yield (utils.file_url_to_path(location.uri), location.range)
 
 
