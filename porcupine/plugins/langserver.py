@@ -34,7 +34,7 @@ global_log = logging.getLogger(__name__)
 
 # Before autocomplete: use this plugin's autocompleter, so must bind first
 # After underlines: when hovering something underlined, don't ask langserver what to show
-# After python venv: ???
+# After python_venv: needed for python_venv.get_venv() to work
 setup_before = ["autocomplete"]
 setup_after = ["python_venv", "underlines"]
 
