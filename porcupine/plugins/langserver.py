@@ -572,8 +572,7 @@ class LangServer:
                 for part in lsp_event.contents
             )
             requesting_tab.event_generate(
-                "<<HoverResponse>>",
-                data=hover.Response(location, hover_string)
+                "<<HoverResponse>>", data=hover.Response(location, hover_string)
             )
             return
 
@@ -638,7 +637,7 @@ class LangServer:
 
     def request_jump_to_definition(self, tab: tabs.FileTab) -> None:
         self.log.info(f"Jump to definition requested: {tab.path} {self._lsp_client.state}")
-        if tab.path is not None and self._lsp_client        .state == lsp.ClientState        .NORMAL        :
+        if tab.path is not None and self._lsp_client.state == lsp.ClientState.NORMAL:
             request_id = self._lsp_client.definition(
                 lsp.TextDocumentPosition(
                     textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),
@@ -649,7 +648,7 @@ class LangServer:
 
     def request_hover(self, tab: tabs.FileTab, location: str) -> None:
         self.log.info(f"Hover requested: {tab.path} {self._lsp_client.state}")
-        if tab.path is not None and self._lsp_client        .state == lsp.ClientState        .NORMAL        :
+        if tab.path is not None and self._lsp_client.state == lsp.ClientState.NORMAL:
             request_id = self._lsp_client.hover(
                 lsp.TextDocumentPosition(
                     textDocument=lsp.TextDocumentIdentifier(uri=tab.path.as_uri()),

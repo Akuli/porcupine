@@ -1,6 +1,5 @@
 import tkinter
 import dataclasses
-from tkinter import ttk
 from porcupine import utils, get_tab_manager, tabs
 
 
@@ -11,17 +10,18 @@ class Response(utils.EventDataclass):
 
 
 class HoverManager:
-
     def __init__(self, tab: tabs.FileTab):
         self._tab = tab
-        self._label = tkinter.Label(tab.textwidget, justify='left')
+        self._label = tkinter.Label(tab.textwidget, justify="left")
         self._location = tab.textwidget.index("insert")
 
     def on_hover_response(self, event: utils.EventWithData):
-        response = event.data_class(Response     )
+        response = event.data_class(Response)
         print(response.location, self._location)
-        if response.location        == self._location:
-            if response.text        .strip() and 'underline_common' not in self._tab.textwidget.tag_names            (response.location):
+        if response.location == self._location:
+            if response.text.strip() and "underline_common" not in self._tab.textwidget.tag_names(
+                response.location
+            ):
                 print("Hello world")
                 self._label.configure(
                     text=response.text,
@@ -31,7 +31,7 @@ class HoverManager:
                     fg=self._tab.textwidget["bg"],
                 )
                 x, y, width, height = self._tab.textwidget.bbox(self._location)
-                self._label.place(x=x, y=y+height+10)
+                self._label.place(x=x, y=y + height + 10)
             else:
                 self._label.place_forget()
 
@@ -42,10 +42,10 @@ class HoverManager:
             self._tab.textwidget.event_generate("<<HoverRequest>>", data=location)
 
     def on_mouse_move(self, event):
-        self._request_hover    (self._tab       .textwidget     .index('current'))
+        self._request_hover(self._tab.textwidget.index("current"))
 
     def on_cursor_move(self, event):
-        self._request_hover    (self._tab       .textwidget     .index('insert'))
+        self._request_hover(self._tab.textwidget.index("insert"))
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
