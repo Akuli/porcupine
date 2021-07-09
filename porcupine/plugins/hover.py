@@ -58,14 +58,6 @@ class HoverManager:
             label_y = bbox_y - gap_size - label_height
         self._label.place(x=label_x, y=label_y)
 
-    def on_hover_response(self, event: utils.EventWithData) -> None:
-        response = event.data_class(Response)
-        if response.location == self._location:
-            if response.text.strip():
-                self._show_label(response.text)
-            else:
-                self.hide_label()
-
     def _request_hover(self, location: str) -> None:
         if self._location != location:
             self._location = location
@@ -77,6 +69,14 @@ class HoverManager:
 
     def on_cursor_move(self, junk_event: object) -> None:
         self._request_hover(self.textwidget.index("insert"))
+
+    def on_hover_response(self, event: utils.EventWithData) -> None:
+        response = event.data_class(Response)
+        if response.location == self._location:
+            if response.text.strip():
+                self._show_label(response.text)
+            else:
+                self.hide_label()
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:

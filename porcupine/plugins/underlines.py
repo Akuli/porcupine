@@ -47,13 +47,11 @@ class _Underliner:
         log.debug(f"Setting underlines: {underlines}")
         self.textwidget.tag_remove(f"underline:{underlines.id}", "1.0", "end")
 
-        old_underlines_deleted = False
         for tag in list(self._tag2underline.keys()):
             literally_underline, tag_id, number = tag.split(":")
             if tag_id == underlines.id:
                 self.textwidget.tag_delete(tag)
                 del self._tag2underline[tag]
-                old_underlines_deleted = True
 
         for index, underline in enumerate(underlines.underline_list):
             tag = f"underline:{underlines.id}:{index}"
@@ -67,18 +65,6 @@ class _Underliner:
 
             self.textwidget.tag_add(tag, underline.start, underline.end)
             self.textwidget.tag_add(less_specific_tag, underline.start, underline.end)
-
-        # Updating underline_common tag is kind of brute-force because overlapping non-common
-        # underline tags make it difficult. But let's not run it at every key press unless something
-        # actually changed.
-        #
-        # TODO: underline_common tag needed?
-        if old_underlines_deleted or underlines.underline_list:
-            self.textwidget.tag_remove("underline_common", "1.0", "end")
-            for tag in self._tag2underline.keys():
-                ranges = self.textwidget.tag_ranges(tag)
-                for start, end in zip(ranges[0::2], ranges[1::2]):
-                    self.textwidget.tag_add("underline_common", start, end)
 
         # FIXME: update what hover plugin is showing (broke in #585)
 

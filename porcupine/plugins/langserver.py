@@ -20,7 +20,7 @@ import threading
 import time
 from functools import partial
 from pathlib import Path
-from typing import IO, Any, Dict, List, NamedTuple, Optional, Union
+from typing import IO, Any, Iterator, NamedTuple, Optional
 
 if sys.platform != "win32":
     import fcntl
@@ -221,7 +221,7 @@ def exit_code_string(exit_code: int) -> str:
     return result
 
 
-def _position_tk2lsp(tk_position: Union[str, List[int]]) -> lsp.Position:
+def _position_tk2lsp(tk_position: str | list[int]) -> lsp.Position:
     # this can't use tab.textwidget.index, because it needs to handle text
     # locations that don't exist anymore when text has been deleted
     if isinstance(tk_position, str):
@@ -239,12 +239,18 @@ def _position_lsp2tk(lsp_position: lsp.Position) -> str:
     return f"{lsp_position.line + 1}.{lsp_position.character}"
 
 
-# TODO: handle this better in sansio-lsp-client
-def _get_path_and_range_of_lsp_location(
-    location: lsp.Location | lsp.LocationLink | tuple[str, Any]
-) -> tuple[Path, lsp.Range]:
-    assert isinstance(location, lsp.Location)
-    return (utils.file_url_to_path(location.uri), location.range)
+# TODO: do this better in sansio-lsp-client
+def _get_jump_paths_and_ranges(
+    locations: list[lsp.Location | lsp.LocationLink] | lsp.Location | None,
+) -> Iterator[tuple[Path, lsp.Range]]:
+    if locations is None:
+        locations = []
+    if not isinstance(locations, list):
+        locations = [locations]
+
+    for location in locations:
+        assert isinstance(location, lsp.Location)  # lol
+        yield (utils.file_url_to_path(location.uri), location.range)
 
 
 def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:
@@ -315,7 +321,7 @@ class LangServer:
         self.tabs_opened: set[tabs.FileTab] = set()
         self._is_shutting_down_cleanly = False
 
-        self._io: Union[SubprocessStdIO, LocalhostSocketIO]
+        self._io: SubprocessStdIO | LocalhostSocketIO
         if the_id.port is None:
             self._io = SubprocessStdIO(process)
         else:
@@ -547,44 +553,36 @@ class LangServer:
         if isinstance(lsp_event, lsp.Definition):
             assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
             requesting_tab = self._jump2def_requests.pop(lsp_event.message_id)
-            if requesting_tab not in get_tab_manager().tabs():
-                self.log.debug("not jumping to definition, tab was closed")
-                return
 
-            # TODO: do this in sansio-lsp-client
-            if isinstance(lsp_event.result, list):
-                locations = lsp_event.result
-            elif lsp_event.result is None:
-                locations = []
+            if requesting_tab in get_tab_manager().tabs():
+                requesting_tab.event_generate(
+                    "<<JumpToDefinitionResponse>>",
+                    data=jump_to_definition.Response(
+                        [
+                            jump_to_definition.LocationRange(
+                                file_path=str(path),
+                                start=_position_lsp2tk(range.start),
+                                end=_position_lsp2tk(range.end),
+                            )
+                            for path, range in _get_jump_paths_and_ranges(lsp_event.result)
+                        ]
+                    ),
+                )
             else:
-                locations = [lsp_event.result]
-
-            requesting_tab.event_generate(
-                "<<JumpToDefinitionResponse>>",
-                data=jump_to_definition.Response(
-                    [
-                        jump_to_definition.LocationRange(
-                            file_path=str(path),
-                            start=_position_lsp2tk(range.start),
-                            end=_position_lsp2tk(range.end),
-                        )
-                        for path, range in map(_get_path_and_range_of_lsp_location, locations)
-                    ]
-                ),
-            )
+                self.log.debug("not jumping to definition, tab was closed")
             return
 
         if isinstance(lsp_event, lsp.Hover):
             assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
             requesting_tab, location = self._hover_requests.pop(lsp_event.message_id)
-            if requesting_tab not in get_tab_manager().tabs():
-                self.log.debug("not showing hover, tab was closed")
-                return
 
-            requesting_tab.textwidget.event_generate(
-                "<<HoverResponse>>",
-                data=hover.Response(location, _get_hover_string(lsp_event.contents)),
-            )
+            if requesting_tab in get_tab_manager().tabs():
+                requesting_tab.textwidget.event_generate(
+                    "<<HoverResponse>>",
+                    data=hover.Response(location, _get_hover_string(lsp_event.contents)),
+                )
+            else:
+                self.log.debug("not showing hover, tab was closed")
             return
 
         # str(lsp_event) or just lsp_event won't show the type
@@ -694,7 +692,7 @@ class LangServer:
         )
 
 
-langservers: Dict[LangServerId, LangServer] = {}
+langservers: dict[LangServerId, LangServer] = {}
 
 
 # I was going to add code that checks if two langservers use the same port
