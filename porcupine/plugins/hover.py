@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import tkinter
 import dataclasses
-from porcupine import utils, get_tab_manager, tabs, get_main_window
+import tkinter
+
+from porcupine import get_main_window, get_tab_manager, tabs, utils
 
 
 @dataclasses.dataclass
@@ -12,21 +13,18 @@ class Response(utils.EventDataclass):
 
 
 class HoverManager:
-    def __init__(self, textwidget: tkinter.Text ):
-        textwidget.bind("<<HoverHide>>", self._hide_label, add=True)
-        utils.add_scroll_command(textwidget, "yscrollcommand", self._hide_label)
-
+    def __init__(self, textwidget: tkinter.Text):
         self.textwidget = textwidget
         self._label: tkinter.Label | None = None
         self._location = textwidget.index("insert")
 
-    def _hide_label(self, junk: object = None) -> None:
+    def hide_label(self, junk: object = None) -> None:
         if self._label is not None:
             self._label.destroy()
             self._label = None
 
     def _show_label(self, message: str) -> None:
-        self._hide_label()
+        self.hide_label()
 
         bbox = self.textwidget.bbox(self._location)
         if bbox is None:
@@ -39,7 +37,8 @@ class HoverManager:
         self._label = tkinter.Label(
             self.textwidget,
             text=message,
-            wraplength=(self.textwidget.winfo_width() - 2 * gap_size),justify="left",
+            wraplength=(self.textwidget.winfo_width() - 2 * gap_size),
+            justify="left",
             # opposite colors as in the text widget
             bg=self.textwidget["fg"],
             fg=self.textwidget["bg"],
@@ -63,14 +62,14 @@ class HoverManager:
         response = event.data_class(Response)
         if response.location == self._location:
             if response.text.strip():
-                self._show_label                (response.text)
+                self._show_label(response.text)
             else:
-                self._hide_label                ()
+                self.hide_label()
 
     def _request_hover(self, location: str) -> None:
         if self._location != location:
             self._location = location
-            self._hide_label()
+            self.hide_label()
             self.textwidget.event_generate("<<HoverRequest>>", data=location)
 
     def on_mouse_move(self, event):
@@ -81,7 +80,10 @@ class HoverManager:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    manager = HoverManager(tab.textwidget   )
+    manager = HoverManager(tab.textwidget)
+    tab.textwidget.bind("<<HoverHide>>", manager.hide_label, add=True)
+    utils.add_scroll_command(tab.textwidget, "yscrollcommand", manager.hide_label)
+
     tab.textwidget.bind("<Motion>", manager.on_mouse_move, add=True)
     tab.textwidget.bind("<<CursorMoved>>", manager.on_cursor_move, add=True)
     utils.bind_with_data(tab.textwidget, "<<HoverResponse>>", manager.on_hover_response, add=True)
