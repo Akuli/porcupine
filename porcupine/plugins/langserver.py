@@ -548,7 +548,7 @@ class LangServer:
             assert lsp_event.message_id is not None  # TODO: fix in sansio-lsp-client
             requesting_tab = self._jump2def_requests.pop(lsp_event.message_id)
             if requesting_tab not in get_tab_manager().tabs():
-                self.log.debug("tab was closed")
+                self.log.debug("not jumping to definition, tab was closed")
                 return
 
             # TODO: do this in sansio-lsp-client
