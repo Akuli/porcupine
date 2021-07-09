@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-import tkinter
 
 import pytest
 from sansio_lsp_client import ClientState
