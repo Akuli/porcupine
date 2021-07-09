@@ -14,7 +14,7 @@ class Response(utils.EventDataclass):
 
 class HoverManager:
     def __init__(self, textwidget: tkinter.Text):
-        self.textwidget = textwidget
+        self._textwidget = textwidget
         self._label: tkinter.Label | None = None
         self._location = textwidget.index("insert")
 
@@ -26,7 +26,7 @@ class HoverManager:
     def _show_label(self, message: str) -> None:
         self.hide_label()
 
-        bbox = self.textwidget.bbox(self._location)
+        bbox = self._textwidget.bbox(self._location)
         if bbox is None:
             # this is called even though the relevant part of text isn't visible? weird
             return
@@ -35,22 +35,22 @@ class HoverManager:
         gap_size = 8
 
         self._label = tkinter.Label(
-            self.textwidget,
+            self._textwidget,
             text=message,
-            wraplength=(self.textwidget.winfo_width() - 2 * gap_size),
+            wraplength=(self._textwidget.winfo_width() - 2 * gap_size),
             justify="left",
             # opposite colors as in the text widget
-            bg=self.textwidget["fg"],
-            fg=self.textwidget["bg"],
+            bg=self._textwidget["fg"],
+            fg=self._textwidget["bg"],
         )
 
         label_width = self._label.winfo_reqwidth()
         label_height = self._label.winfo_reqheight()
 
         # don't go beyond the right edge of textwidget
-        label_x = min(bbox_x, self.textwidget.winfo_width() - gap_size - label_width)
+        label_x = min(bbox_x, self._textwidget.winfo_width() - gap_size - label_width)
 
-        if bbox_y + bbox_height + gap_size + label_height < self.textwidget.winfo_height():
+        if bbox_y + bbox_height + gap_size + label_height < self._textwidget.winfo_height():
             # label goes below bbox
             label_y = bbox_y + bbox_height + gap_size
         else:
@@ -62,18 +62,18 @@ class HoverManager:
         if self._location != location:
             self._location = location
             self.hide_label()
-            self.textwidget.event_generate("<<HoverRequest>>", data=location)
+            self._textwidget.event_generate("<<HoverRequest>>", data=location)
 
     def on_mouse_move(self, junk_event: object) -> None:
-        self._request_hover(self.textwidget.index("current"))
+        self._request_hover(self._textwidget.index("current"))
 
     def on_cursor_move(self, junk_event: object) -> None:
-        self._request_hover(self.textwidget.index("insert"))
+        self._request_hover(self._textwidget.index("insert"))
 
     def on_hover_response(self, event: utils.EventWithData) -> None:
         response = event.data_class(Response)
         if response.location == self._location:
-            if response.text.strip() and self.textwidget.focus_get() == self.textwidget:
+            if response.text.strip() and self._textwidget.focus_get() == self._textwidget:
                 if response.text.count("\n") > 10:
                     text = "\n".join(response.text.split("\n")[:10]) + "\n..."
                 else:
