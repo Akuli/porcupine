@@ -1,3 +1,9 @@
+"""
+Displays a directory tree on the left side of the editor with the folders containing the 5 most recently edited files.
+
+You can navigate directories, and open files in Porcupine.
+"""
+
 from __future__ import annotations
 
 import dataclasses

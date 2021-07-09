@@ -1,3 +1,9 @@
+"""
+Sorts the selected rows, or if there's no selection, to the next blank line.
+
+Available in Edit/Sort Lines.
+"""
+
 import tkinter
 
 from porcupine import menubar, tabs, textutils
