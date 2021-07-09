@@ -8,9 +8,9 @@ from __future__ import annotations
 import dataclasses
 import logging
 import tkinter
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from porcupine import get_main_window, get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import hover
 
 log = logging.getLogger(__name__)
@@ -31,16 +31,10 @@ class Underlines(utils.EventDataclass):
     underline_list: List[Underline]
 
 
-def _tag_spans_multiple_lines(textwidget: tkinter.Text, tag: str) -> bool:
-    first_lineno: str = textwidget.index(f"{tag}.first")[0]
-    last_lineno: str = textwidget.index(f"{tag}.last")[0]
-    return first_lineno != last_lineno
-
-
 class _Underliner:
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
-        self._tag2underline: Dict[str, Underline] = {}
+        self._tag2underline: dict[str, Underline] = {}
 
     def set_underlines(self, event: utils.EventWithData) -> None:
         underlines = event.data_class(Underlines)
