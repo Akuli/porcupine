@@ -33,7 +33,7 @@ from porcupine.plugins import autocomplete, hover, jump_to_definition, python_ve
 global_log = logging.getLogger(__name__)
 
 # Before autocomplete: use this plugin's autocompleter, so must bind first
-# After underlines: so that when hovering something underlined, we don't ask langserver what to show
+# After underlines: when hovering something underlined, don't ask langserver what to show
 # After python venv: ???
 setup_before = ["autocomplete"]
 setup_after = ["python_venv", "underlines"]
