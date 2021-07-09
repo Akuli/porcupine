@@ -802,7 +802,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     def request_hover(event: utils.EventWithData) -> str | None:
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
-                langserver.request_hover(tab, event.data_string)
+                langserver.request_hover(tab, location=event.data_string)
                 return "break"
         return None
 
