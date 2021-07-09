@@ -72,15 +72,18 @@ class HoverManager:
 
     def on_hover_response(self, event: utils.EventWithData) -> None:
         response = event.data_class(Response)
-        if response.location == self._location:
-            if response.text.strip() and self._textwidget.focus_get() == self._textwidget:
-                if response.text.count("\n") > 10:
-                    text = "\n".join(response.text.split("\n")[:10]) + "\n..."
-                else:
-                    text = response.text
-                self._show_label(text)
+        if response.location != self._location:
+            # User touched something while waiting for response, new request sent
+            return
+
+        if response.text.strip() and self._textwidget.focus_get() == self._textwidget:
+            if response.text.count("\n") > 10:
+                text = "\n".join(response.text.split("\n")[:10]) + "\n..."
             else:
-                self.hide_label()
+                text = response.text
+            self._show_label(text)
+        else:
+            self.hide_label()
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
