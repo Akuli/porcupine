@@ -33,7 +33,7 @@ def wait_for_langserver_to_start(filetab):
 # Don't know why this is sometimes needed
 def intense_super_update():
     start = time.time()
-    while time.time() < start + 1:
+    while time.time() < start + 3:
         get_main_window().update()
 
 
