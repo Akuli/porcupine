@@ -90,7 +90,7 @@ class PluginDialogContent:
         for index, width in enumerate(_cols_width):
             self.treeview.column(index, width=width, minwidth=width)
 
-        for index, header_title in enumerate(["Name", "Type", "Status"]):  # be consistent
+        for index, header_title in enumerate(["Name", "Type", "Status"]):
             self.treeview.heading(index, text=header_title)
 
         self._insert_data()
