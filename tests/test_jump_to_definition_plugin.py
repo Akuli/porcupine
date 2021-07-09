@@ -1,9 +1,6 @@
 # TODO: create much more tests for langserver
-import os
-import sys
 import time
 
-import pytest
 from sansio_lsp_client import ClientState
 
 from porcupine import get_main_window
@@ -37,10 +34,6 @@ def intense_super_update():
         get_main_window().update()
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32" and os.getenv("GITHUB_ACTIONS") == "true",
-    reason="github actions windows very random",
-)
 def test_basic(filetab, tmp_path):
     filetab.textwidget.insert(
         "1.0",
@@ -65,10 +58,6 @@ foo()
     assert filetab.textwidget.get("sel.first linestart", "sel.last lineend") == "def foo():"
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32" and os.getenv("GITHUB_ACTIONS") == "true",
-    reason="github actions windows very random",
-)
 def test_two_definitions(filetab, tmp_path, mocker):
     filetab.textwidget.insert(
         "1.0",
