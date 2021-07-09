@@ -1,3 +1,9 @@
+"""
+Sort the selected lines alphabetically, or if there's no selection, sort between surrounding blank lines.
+
+Available in Edit/Sort Lines.
+"""
+
 import tkinter
 
 from porcupine import menubar, tabs, textutils

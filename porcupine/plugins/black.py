@@ -1,3 +1,9 @@
+"""
+Format the current file with black.
+
+Available in Tools/Python/Black.
+"""
+
 # TODO: add other formatters, at least isort
 from __future__ import annotations
 

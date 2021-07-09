@@ -1,3 +1,9 @@
+"""
+Displays a directory tree on the left side of the editor.
+
+You can navigate directories, and open files in Porcupine.
+"""
+
 from __future__ import annotations
 
 import dataclasses
