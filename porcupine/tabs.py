@@ -519,7 +519,7 @@ bers.py>` use this attribute.
         if content:
             self.textwidget.insert("1.0", content)
             self.textwidget.edit_reset()  # reset undo/redo
-        self._set_saved_state(None)
+        self._set_saved_state((None, self._get_char_count(), self._get_hash()))
 
         self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
 
@@ -556,13 +556,8 @@ bers.py>` use this attribute.
             string = self.textwidget.get("1.0", "end - 1 char")
         return hashlib.md5(string.encode("utf-8")).hexdigest()
 
-    def _set_saved_state(
-        self, state: tuple[os.stat_result | None, int, str] | os.stat_result | None
-    ) -> None:
-        if isinstance(state, tuple):
-            self._saved_state = state
-        else:
-            self._saved_state = (state, self._get_char_count(), self._get_hash())
+    def _set_saved_state(self, state: tuple[os.stat_result | None, int, str]) -> None:
+        self._saved_state = state
         self._update_titles()
 
     def is_modified(self) -> bool:
@@ -621,7 +616,7 @@ bers.py>` use this attribute.
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
             )
 
-        self._set_saved_state(stat_result)
+        self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
 
         # TODO: document this
         self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
@@ -730,7 +725,9 @@ bers.py>` use this attribute.
             with utils.backup_open(path, "w", encoding=encoding, newline=line_ending.value) as f:
                 f.write(self.textwidget.get("1.0", "end - 1 char"))
                 f.flush()  # needed to get right file size in stat
-                self._set_saved_state(os.fstat(f.fileno()))
+                self._set_saved_state(
+                    (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+                )
         except (OSError, UnicodeError) as e:
             log.exception(f"saving to '{path}' failed")
             utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
