@@ -197,3 +197,10 @@ bind Text <Shift-Button-1> {
         %W tag add sel $select_between_clicked_and_this insert
     }
 }
+
+# https://core.tcl-lang.org/tcl/info/f1253530cd
+if {[tk windowingsystem] == "win32"} {
+    catch {tcl_endOfWord}
+    set tcl_wordchars {\w}
+    set tcl_nonwordchars {\W}
+}
