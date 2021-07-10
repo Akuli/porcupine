@@ -116,7 +116,7 @@ def filetab(porcusession, tabmanager):
     return tab
 
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def check_nothing_logged(request):
     if "caplog" in request.fixturenames:
         # Test uses caplog fixture, expects to get logging errors
