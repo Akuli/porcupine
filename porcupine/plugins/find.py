@@ -137,7 +137,7 @@ class Finder(ttk.Frame):
         entry.grid(row=row, column=1, sticky="we")
         return entry
 
-    def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> Literal["break"]:
+    def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> str:
         var.set(not var.get())
         return "break"
 
@@ -276,6 +276,7 @@ class Finder(ttk.Frame):
         # this was invoked through key binding
         pairs = self.get_match_ranges()
         if pairs:
+            operator: Literal[">=", ">"]
             if str(self.replace_this_button["state"]) == "disabled":
                 # No matches highlighted, can highlight match exactly at cursor
                 # Applies only to next match, previous always search before cursor
@@ -303,7 +304,7 @@ class Finder(ttk.Frame):
             index = next(possible_indexes, len(pairs) - 1)
             self._select_match(pairs, index)
 
-    def _replace_this(self, junk: object = None) -> Literal["break"]:
+    def _replace_this(self, junk: object = None) -> str:
         if str(self.replace_this_button["state"]) == "disabled":
             self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
             return "break"
@@ -329,7 +330,7 @@ class Finder(ttk.Frame):
             self.statuslabel.config(text=f"Replaced a match. There are {left} more matches.")
         return "break"
 
-    def _replace_all(self, junk: object = None) -> Literal["break"]:
+    def _replace_all(self, junk: object = None) -> str:
         match_ranges = self.get_match_ranges()
 
         with textutils.change_batch(self._textwidget):
