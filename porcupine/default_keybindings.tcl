@@ -197,3 +197,18 @@ bind Text <Shift-Button-1> {
         %W tag add sel $select_between_clicked_and_this insert
     }
 }
+
+# Hack to make Ctrl+Arrow keys behave sanely on Windows.
+# How I came up with this:
+#   1. Remember there is virtual event named <<PrevWord>>. Grep for it
+#      in Tk source code
+#   2. Source code of <<PrevWord>> binding uses tcl_startOfPreviousWord. Read
+#      man page of tcl_startOfPreviousWord
+#   3. Man page refers to tcl_wordchars for the logic. Grep it from Tcl
+#      source code
+#   4. Tcl source code refers to this issue: https://core.tcl-lang.org/tcl/info/f1253530cd
+if {[tk windowingsystem] == "win32"} {
+    catch {tcl_endOfWord}
+    set tcl_wordchars {\w}
+    set tcl_nonwordchars {\W}
+}
