@@ -556,7 +556,9 @@ bers.py>` use this attribute.
             string = self.textwidget.get("1.0", "end - 1 char")
         return hashlib.md5(string.encode("utf-8")).hexdigest()
 
-    def _set_saved_state(self, state: tuple[os.stat_result | None, int, str] | os.stat_result | None) -> None:
+    def _set_saved_state(
+        self, state: tuple[os.stat_result | None, int, str] | os.stat_result | None
+    ) -> None:
         if isinstance(state, tuple):
             self._saved_state = state
         else:
