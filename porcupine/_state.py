@@ -55,6 +55,22 @@ def init(args: Any) -> None:
     _tab_manager = tabs.TabManager(_paned_window)
     _paned_window.add(_tab_manager)  # type: ignore[no-untyped-call]
 
+    # Hack to make Ctrl+Arrow keys behave sanely on Windows
+    # How I came up with this:
+    #   1. Remember there is virtual event named <<PrevWord>>. Grep for it
+    #      in Tk source code
+    #   2. See it uses tcl_startOfPreviousWord. Read its man page.
+    #   3. Man page refers to tcl_wordchars for the logic. Grep it from Tcl
+    #      source code
+    #   4. Tcl source code refers to this issue: https://core.tcl-lang.org/tcl/info/f1253530cd
+    _root.eval(r"""
+    if {[tk windowingsystem] == "win32"} {
+        catch {tcl_endOfWord}
+        set tcl_wordchars {\w}
+        set tcl_nonwordchars {\W}
+    }
+    """)
+
     log.debug("init() done")
 
 
