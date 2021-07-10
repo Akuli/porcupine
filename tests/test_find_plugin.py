@@ -190,9 +190,8 @@ def test_basic_statuses_and_previous_and_next_match_buttons(filetab_and_finder):
         assert str(button["state"]) == "disabled"
 
     for button in [finder.previous_button, finder.next_button]:
-        finder.statuslabel.config(text="this should be overwritten")
-        click_disabled_button(button)
-        assert finder.statuslabel["text"] == "No matches found!"
+        click_disabled_button(button)  # shouldn't do anything
+        assert finder.statuslabel["text"] == "Found no matches :("
 
     finder.find_entry.delete(0, "end")
     finder.find_entry.insert(0, "asd")
@@ -201,15 +200,22 @@ def test_basic_statuses_and_previous_and_next_match_buttons(filetab_and_finder):
     assert finder.statuslabel["text"] == "Found 5 matches."
 
     def get_selected():
-        start, end = filetab.textwidget.tag_ranges("sel")
-        assert filetab.textwidget.index("insert") == str(start)
-        return (str(start), str(end))
+        start, end = map(str, filetab.textwidget.tag_ranges("sel"))
+        start2, end2 = map(str, filetab.textwidget.tag_ranges("find_highlight_selected"))
+        assert start == start2
+        assert end == end2
+        assert filetab.textwidget.index("insert") == start
+        return (start, end)
 
     selecteds = [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11"), ("2.0", "2.3"), ("2.4", "2.7")]
 
     tag_locations = filetab.textwidget.tag_ranges("find_highlight")
     flatten = itertools.chain.from_iterable
     assert list(map(str, tag_locations)) == list(flatten(selecteds))
+
+    finder.next_button.invoke()  # highlight first match
+    assert finder.statuslabel["text"] == "Match 1/5"
+    assert get_selected() == selecteds[0]
 
     index = 0
     for lol in range(500):  # many times back and forth to check corner cases
@@ -220,8 +226,8 @@ def test_basic_statuses_and_previous_and_next_match_buttons(filetab_and_finder):
             finder.next_button.invoke()
             index = (index + 1) % len(selecteds)
 
-        assert finder.statuslabel["text"] == ""
-        assert selecteds[index] == get_selected()
+        assert finder.statuslabel["text"] == f"Match {index + 1}/5"
+        assert get_selected() == selecteds[index]
 
 
 def test_replace(filetab_and_finder):
@@ -423,13 +429,11 @@ def test_replace_this_match(filetab_and_finder):
     assert filetab.textwidget.get("1.0", "end - 1 char") == "foo bar baz"
 
 
-@pytest.mark.xfail
 def test_replace_this_greyed_out(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert("end", "foo bar foo")
     filetab.textwidget.mark_set("insert", "1.0")
     filetab.textwidget.tag_add("sel", "1.0", "1.3")  # Select foo so it goes to find entry
-    finder.find_entry.insert("end", "foo")
     finder.show()
 
     finder.replace_entry.insert("end", "baz")
