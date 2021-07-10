@@ -1,3 +1,4 @@
+import logging
 import re
 import socket
 import threading
@@ -168,7 +169,7 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, 
     assert "ThisIsNotValidUrlStart".lower() in caplog.records[-1].message
 
 
-def test_invalid_return(filetab, monkeypatch, tabmanager, mocker):
+def test_invalid_return(filetab, monkeypatch, tabmanager, mocker, caplog):
     mocker.patch("tkinter.messagebox.showerror")
     monkeypatch.setattr(pastebin_module.DPaste, "run", (lambda *args: "lol"))
 
@@ -179,3 +180,10 @@ def test_invalid_return(filetab, monkeypatch, tabmanager, mocker):
     tkinter.messagebox.showerror.assert_called_once_with(
         "Pasting failed", "Instead of a valid URL, dpaste.com returned 'lol'."
     )
+    assert caplog.record_tuples == [
+        (
+            "porcupine.plugins.pastebin",
+            logging.ERROR,
+            "pastebin 'dpaste.com' returned invalid url: 'lol'",
+        )
+    ]

@@ -227,7 +227,7 @@ def pasting_done_callback(
             dialog.transient(get_main_window())
             dialog.wait_window()
         else:
-            log.error(f"pastebin returned invalid url: {result!r}")
+            log.error(f"pastebin {paste.name!r} returned invalid url: {result!r}")
             messagebox.showerror(
                 "Pasting failed", f"Instead of a valid URL, {type(paste).name} returned {result!r}."
             )
