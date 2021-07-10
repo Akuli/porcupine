@@ -108,7 +108,7 @@ class Finder(ttk.Frame):
 
         closebutton.config(image=images.get("closebutton"))
 
-        # explained in test_find_plugin.py
+        # _update_buttons() uses current selection, update when changes
         textwidget.bind("<<Selection>>", self._update_buttons, add=True)
 
         textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
@@ -180,19 +180,20 @@ class Finder(ttk.Frame):
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self, junk: object = None) -> None:
-        State = Literal["normal", "disabled"]
-        matches_something_state: State = "normal" if self.get_match_ranges() else "disabled"
-        replace_this_state: State
+        matches_something_state = "normal" if self.get_match_ranges() else "disabled"
 
-        try:
-            start, end = map(str, self._textwidget.tag_ranges("sel"))
-        except ValueError:
+        # Currently selected match is specified with two tags, "sel" and
+        # "find_highlight_selected". Both have to match.
+        locations = [str(loc) for loc in self._textwidget.tag_ranges("sel")]
+        locations2 = [str(loc) for loc in self._textwidget.tag_ranges("find_highlight_selected")]
+        if (
+            locations == locations2
+            and len(locations) == 2
+            and tuple(locations) in self.get_match_ranges()
+        ):
+            replace_this_state = "normal"
+        else:
             replace_this_state = "disabled"
-        else:  # no, elif doesn't work here
-            if (start, end) in self.get_match_ranges():
-                replace_this_state = "normal"
-            else:
-                replace_this_state = "disabled"
 
         self.previous_button.config(state=matches_something_state)
         self.next_button.config(state=matches_something_state)
