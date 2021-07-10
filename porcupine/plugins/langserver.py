@@ -836,5 +836,4 @@ class HackFilter:
 
 
 def setup() -> None:
-    logging.getLogger("sansio_lsp_client.client").addFilter(HackFilter())  # type: ignore
     get_tab_manager().add_filetab_callback(on_new_filetab)
