@@ -276,7 +276,7 @@ class Finder(ttk.Frame):
         # this was invoked through key binding
         pairs = self.get_match_ranges()
         if pairs:
-            # If no matches highlighted, can highlight match exactly at cursor
+            # If no matches highlighted yet, can highlight match exactly at cursor
             # Applies only to next match, previous always search before cursor
             some_match_already_highlighted = str(self.replace_this_button["state"]) == "normal"
             operator: Literal[">=", ">"] = ">" if some_match_already_highlighted else ">="
