@@ -529,6 +529,7 @@ bers.py>` use this attribute.
         self.scrollbar.config(command=self.textwidget.yview)
 
         self.textwidget.bind("<<ContentChanged>>", self._update_titles, add=True)
+        self.textwidget.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
 
     @classmethod
@@ -732,7 +733,6 @@ bers.py>` use this attribute.
 
         self._save_hash = self._get_hash()
         self.path = path
-        self._update_titles()
         self.event_generate("<<AfterSave>>")
         return True
 
