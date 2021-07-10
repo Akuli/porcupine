@@ -259,7 +259,8 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel.config(text=f"Found {count} matches.")
 
-    def _select_match(self, start: str, end: str) -> None:
+    def _select_match(self, match_ranges: list[tuple[str, str]], index: int) -> None:
+        start, end = match_ranges[index]
         self._textwidget.tag_remove("sel", "1.0", "end")
         self._textwidget.tag_remove("find_highlight_selected", "1.0", "end")
         self._textwidget.tag_add("sel", start, end)
@@ -267,43 +268,33 @@ class Finder(ttk.Frame):
         self._textwidget.mark_set("insert", start)
         self._textwidget.see(start)
 
-    def _go_to_next_match(self, junk: object = None) -> None:
-        pairs = self.get_match_ranges()
-        if not pairs:
-            # the "Next match" button is disabled in this case, but the key
-            # binding of the find entry is not
-            self.statuslabel.config(text="No matches found!")
-            return
-
-        # find first pair that starts after the cursor
-        for start, end in pairs:
-            if self._textwidget.compare(start, ">", "insert"):
-                self._select_match(start, end)
-                break
-        else:
-            # reached end of file, use the first match
-            self._select_match(*pairs[0])
-
-        self.statuslabel.config(text="")
+        self.statuslabel.config(text=f"Match {index + 1}/{len(match_ranges)}")
         self._update_buttons()
 
-    # see _go_to_next_match for comments
+    def _go_to_next_match(self, junk: object = None) -> None:
+        # If we have no match ranges, then "Next match" button is disabled and
+        # this was invoked through key binding
+        pairs = self.get_match_ranges()
+        if pairs:
+            # find first pair that starts after the cursor, or cycle back to first
+            possible_indexes = (
+                i
+                for i, (start, end) in enumerate(pairs)
+                if self._textwidget.compare(start, ">", "insert")
+            )
+            index = next(possible_indexes, 0)
+            self._select_match(pairs, index)
+
     def _go_to_previous_match(self, junk: object = None) -> None:
         pairs = self.get_match_ranges()
-        if not pairs:
-            self.statuslabel.config(text="No matches found!")
-            return
-
-        for start, end in reversed(pairs):
-            if self._textwidget.compare(start, "<", "insert"):
-                self._select_match(start, end)
-                break
-        else:
-            self._select_match(*pairs[-1])
-
-        self.statuslabel.config(text="")
-        self._update_buttons()
-        return
+        if pairs:
+            possible_indexes = (
+                i
+                for i, (start, end) in reversed(list(enumerate(pairs)))
+                if self._textwidget.compare(start, "<", "insert")
+            )
+            index = next(possible_indexes, len(pairs) - 1)
+            self._select_match(pairs, index)
 
     def _replace_this(self, junk: object = None) -> Literal["break"]:
         if str(self.replace_this_button["state"]) == "disabled":
