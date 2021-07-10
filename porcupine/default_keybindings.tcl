@@ -198,12 +198,7 @@ bind Text <Shift-Button-1> {
     }
 }
 
-# Hack to make Ctrl+Arrow keys behave sanely on Windows.
-# How I came up with this:
-#   1. Remember there is virtual event named <<PrevWord>>. Grep for it in Tk source code
-#   2. Source code of <<PrevWord>> binding uses tcl_startOfPreviousWord. Read its man page
-#   3. Man page refers to tcl_wordchars for the logic. Grep it from Tcl source code
-#   4. Source code refers to https://core.tcl-lang.org/tcl/info/f1253530cd
+# https://core.tcl-lang.org/tcl/info/f1253530cd
 if {[tk windowingsystem] == "win32"} {
     catch {tcl_endOfWord}
     set tcl_wordchars {\w}
