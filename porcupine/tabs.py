@@ -556,8 +556,11 @@ bers.py>` use this attribute.
             string = self.textwidget.get("1.0", "end - 1 char")
         return hashlib.md5(string.encode("utf-8")).hexdigest()
 
-    def _set_saved_state(self, stat_result: Optional[os.stat_result]) -> None:
-        self._saved_state = (stat_result, self._get_char_count(), self._get_hash())
+    def _set_saved_state(self, state: tuple[os.stat_result, int, str] | os.stat_result | None) -> None:
+        if isinstance(state, tuple):
+            self._saved_state = state
+        else:
+            self._saved_state = (state, self._get_char_count(), self._get_hash())
         self._update_titles()
 
     def is_modified(self) -> bool:
@@ -649,7 +652,7 @@ bers.py>` use this attribute.
                 return True
 
             # Avoid reading file contents again soon
-            self._saved_state = (actual_stat, save_char_count, save_hash)
+            self._set_saved_state((actual_stat, save_char_count, save_hash))
             return False
 
         except (OSError, UnicodeError):
@@ -819,10 +822,7 @@ bers.py>` use this attribute.
         else:
             self = cls(manager, state.content, state.path)
 
-        # title depends on _saved_state
-        self._saved_state = state.saved_state
-        self._update_titles()
-
+        self._set_saved_state(state.saved_state)
         self.textwidget.mark_set("insert", state.cursor_pos)
         self.textwidget.see("insert linestart")
         return self
