@@ -186,14 +186,11 @@ class Finder(ttk.Frame):
         # "find_highlight_selected". Both have to match.
         locations = [str(loc) for loc in self._textwidget.tag_ranges("sel")]
         locations2 = [str(loc) for loc in self._textwidget.tag_ranges("find_highlight_selected")]
-        if (
+        replace_this_state = "normal" if (
             locations == locations2
             and len(locations) == 2
             and tuple(locations) in self.get_match_ranges()
-        ):
-            replace_this_state = "normal"
-        else:
-            replace_this_state = "disabled"
+        ) else "disabled"
 
         self.previous_button.config(state=matches_something_state)
         self.next_button.config(state=matches_something_state)
