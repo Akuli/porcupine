@@ -434,3 +434,26 @@ def test_replace_this_greyed_out(filetab_and_finder):
 
     finder.replace_entry.insert("end", "baz")
     assert str(finder.replace_this_button["state"]) == "disabled"
+
+
+def test_find_next_corner_case(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "foo bar foo")
+    filetab.textwidget.mark_set("insert", "1.0")
+    finder.show()
+    finder.find_entry.insert("end", "foo")
+
+    # Go to first foo, cursor already at start of it
+    finder.next_button.invoke()
+    assert filetab.textwidget.index("find_highlight_selected.first") == "1.0"
+    assert filetab.textwidget.index("find_highlight_selected.last") == "1.3"
+
+    # But then move on to second foo, even though cursor hasn't moved
+    finder.next_button.invoke()
+    assert filetab.textwidget.index("find_highlight_selected.first") == "1.8"
+    assert filetab.textwidget.index("find_highlight_selected.last") == "1.11"
+
+    # And back to first
+    finder.next_button.invoke()
+    assert filetab.textwidget.index("find_highlight_selected.first") == "1.0"
+    assert filetab.textwidget.index("find_highlight_selected.last") == "1.3"

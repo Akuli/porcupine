@@ -276,11 +276,18 @@ class Finder(ttk.Frame):
         # this was invoked through key binding
         pairs = self.get_match_ranges()
         if pairs:
+            if str(self.replace_this_button["state"]) == "disabled":
+                # No matches highlighted, can highlight match exactly at cursor
+                # Applies only to next match, previous always search before cursor
+                operator = ">="
+            else:
+                operator = ">"
+
             # find first pair that starts after the cursor, or cycle back to first
             possible_indexes = (
                 i
                 for i, (start, end) in enumerate(pairs)
-                if self._textwidget.compare(start, ">", "insert")
+                if self._textwidget.compare(start, operator, "insert")
             )
             index = next(possible_indexes, 0)
             self._select_match(pairs, index)
