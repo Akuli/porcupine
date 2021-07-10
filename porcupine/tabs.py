@@ -821,7 +821,7 @@ bers.py>` use this attribute.
         else:
             self = cls(manager, state.content, state.path)
 
-        self._set_saved_state(state.saved_state)
+        self._set_saved_state(state.saved_state)  # TODO: does this make any sense?
         self.textwidget.mark_set("insert", state.cursor_pos)
         self.textwidget.see("insert linestart")
         return self
