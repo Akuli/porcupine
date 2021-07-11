@@ -10,3 +10,4 @@ pynsist>=2.6
 pillow>=5.4.1
 mypy==0.910
 requests>=2.24.0, <3.0.0
+types-docutils==0.1.7

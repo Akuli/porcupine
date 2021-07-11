@@ -1,5 +1,4 @@
 """Syntax highlighting."""
-
 from __future__ import annotations
 
 import itertools
@@ -7,7 +6,7 @@ import logging
 import time
 import tkinter
 from tkinter.font import Font
-from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple, cast
+from typing import Any, Callable, Generator, Iterator
 
 from pygments import styles, token  # type: ignore[import]
 from pygments.lexer import Lexer, LexerMeta, RegexLexer  # type: ignore[import]
@@ -33,10 +32,10 @@ class Highlighter:
         self._lexer: Lexer | None = None
 
         # the tags use fonts from here
-        self._fonts: Dict[Tuple[bool, bool], Font] = {}
+        self._fonts: dict[tuple[bool, bool], Font] = {}
         for bold in (True, False):
             for italic in (True, False):
-                # the fonts will be updated later, see _config_changed()
+                # the fonts will be updated later, see below
                 self._fonts[(bold, italic)] = Font(
                     weight=("bold" if bold else "normal"), slant=("italic" if italic else "roman")
                 )
@@ -48,7 +47,7 @@ class Highlighter:
         self._style_changed()
 
     def _font_changed(self, junk: object = None) -> None:
-        font_updates = cast(Dict[str, Any], Font(name="TkFixedFont", exists=True).actual())
+        font_updates = dict(Font(name="TkFixedFont", exists=True).actual())
         del font_updates["weight"]  # ignore boldness
         del font_updates["slant"]  # ignore italicness
 
@@ -125,7 +124,7 @@ class Highlighter:
         if self.textwidget.compare(first_possible_end, ">", end_of_view):
             first_possible_end = end_of_view
 
-        tag_locations: Dict[str, List[str]] = {}
+        tag_locations: dict[str, list[str]] = {}
         mark_locations = [start]
 
         # The one time where tk's magic trailing newline is helpful! See #436.

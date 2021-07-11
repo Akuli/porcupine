@@ -42,7 +42,7 @@ File Dialogs
 ------------
 
 .. data:: filedialog_kwargs
-    :type: Dict[str, Any]
+    :type: dict[str, Any]
 
     Porcupine uses :mod:`tkinter.filedialog` functions similarly to this::
 
