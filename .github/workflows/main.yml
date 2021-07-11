@@ -14,15 +14,15 @@ jobs:
         python-version: "3.9"
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: |
-        time mypy --platform linux --python-version 3.7 porcupine more_plugins
-        time mypy --platform linux --python-version 3.8 porcupine more_plugins
-        time mypy --platform linux --python-version 3.9 porcupine more_plugins
-        time mypy --platform win32 --python-version 3.7 porcupine more_plugins
-        time mypy --platform win32 --python-version 3.8 porcupine more_plugins
-        time mypy --platform win32 --python-version 3.9 porcupine more_plugins
-        time mypy --platform darwin --python-version 3.7 porcupine more_plugins
-        time mypy --platform darwin --python-version 3.8 porcupine more_plugins
-        time mypy --platform darwin --python-version 3.9 porcupine more_plugins
+        time mypy --platform linux --python-version 3.7 porcupine more_plugins docs/extensions.py
+        time mypy --platform linux --python-version 3.8 porcupine more_plugins docs/extensions.py
+        time mypy --platform linux --python-version 3.9 porcupine more_plugins docs/extensions.py
+        time mypy --platform win32 --python-version 3.7 porcupine more_plugins docs/extensions.py
+        time mypy --platform win32 --python-version 3.8 porcupine more_plugins docs/extensions.py
+        time mypy --platform win32 --python-version 3.9 porcupine more_plugins docs/extensions.py
+        time mypy --platform darwin --python-version 3.7 porcupine more_plugins docs/extensions.py
+        time mypy --platform darwin --python-version 3.8 porcupine more_plugins docs/extensions.py
+        time mypy --platform darwin --python-version 3.9 porcupine more_plugins docs/extensions.py
   pytest-windows:
     strategy:
       matrix:
@@ -81,7 +81,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check scripts/*.py porcupine tests more_plugins
+    - run: python3 -m black --check scripts/*.py porcupine tests more_plugins docs/extensions.py
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -90,7 +90,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m isort --check scripts/*.py porcupine tests more_plugins
+    - run: python3 -m isort --check scripts/*.py porcupine tests more_plugins docs/extensions.py
   pyflakes:
     runs-on: ubuntu-latest
     steps:
@@ -99,7 +99,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m pyflakes scripts/*.py porcupine tests more_plugins
+    - run: python3 -m pyflakes scripts/*.py porcupine tests more_plugins docs/extensions.py
   bindcheck:
     runs-on: ubuntu-latest
     steps:
