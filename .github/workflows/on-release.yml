@@ -1,7 +1,7 @@
 on:
   push:
-    branches:
-      - lsp-no-wheel
+    tags:
+      - v*
 
 jobs:
   windows_build:
@@ -21,3 +21,32 @@ jobs:
     - id: get_version
       uses: battila7/get-version-action@v2
     - run: python scripts/build-exe-installer.py ${{ steps.get_version.outputs.version-without-v }}
+    - id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+    - uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/nsis/Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
+        asset_name: Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
+        asset_content_type: application/vnd.microsoft.portable-executable
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: "3.9"
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: python3 -m sphinx ./docs ./build
+    - uses: JamesIves/github-pages-deploy-action@4.1.3
+      with:
+        branch: gh-pages
+        folder: build
