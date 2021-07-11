@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import threading
 import tkinter
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
-from pygments import styles, token  # type: ignore[import]
+from pygments import styles, token
 
 from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 
@@ -19,12 +19,13 @@ def get_colors(style_name: str) -> Tuple[str, str]:
     # i'm using iter() to make sure that dict() really treats
     # the style as an iterable of pairs instead of some other
     # metaprogramming fanciness
-    fg: Optional[str] = None
+    fg: str | None = None
     style_infos = dict(iter(style))
 
     for tokentype in [token.String, token.Text]:
-        if style_infos[tokentype]["color"] is not None:
-            fg = "#" + style_infos[tokentype]["color"]
+        color = style_infos[tokentype]["color"]
+        if color is not None:
+            fg = "#" + color
             break
 
     if fg is None:

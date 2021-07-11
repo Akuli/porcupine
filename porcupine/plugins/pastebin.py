@@ -18,7 +18,7 @@ from typing import Any, ClassVar, Optional, Type, Union, cast
 from urllib.parse import urlencode
 from urllib.request import HTTPSHandler, Request, build_opener
 
-from pygments.lexer import LexerMeta  # type: ignore[import]
+from pygments.lexer import LexerMeta
 
 from porcupine import get_main_window, menubar, tabs, utils
 

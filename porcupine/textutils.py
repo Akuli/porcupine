@@ -7,7 +7,7 @@ import weakref
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
 
-from pygments import styles  # type: ignore[import]
+from pygments import styles
 
 from porcupine import settings, utils
 

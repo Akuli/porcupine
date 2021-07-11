@@ -9,8 +9,8 @@ import tkinter
 from tkinter.font import Font
 from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple, cast
 
-from pygments import styles, token  # type: ignore[import]
-from pygments.lexer import Lexer, LexerMeta, RegexLexer  # type: ignore[import]
+from pygments import styles, token
+from pygments.lexer import Lexer, LexerMeta, RegexLexer
 
 from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
@@ -96,7 +96,7 @@ class Highlighter:
             return False
         return True
 
-    def _detect_root_state(self, generator: Generator[Any, Any, Any], end_location: str) -> bool:
+    def _detect_root_state(self, generator: Any, end_location: str) -> bool:
         # Only for subclasses of RegexLexer that don't override get_tokens_unprocessed
         # TODO: support ExtendedRegexLexer's context thing
         assert self._lexer is not None

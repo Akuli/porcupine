@@ -26,8 +26,8 @@ from typing import (
     Union,
 )
 
-from pygments.lexer import LexerMeta  # type: ignore[import]
-from pygments.lexers import TextLexer  # type: ignore[import]
+from pygments.lexer import LexerMeta
+from pygments.lexers import TextLexer
 
 from porcupine import _state, settings, textutils, utils
 

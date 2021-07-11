@@ -1,12 +1,19 @@
 """Maximum line length marker."""
 from __future__ import annotations
 
+import sys
 import tkinter
 import tkinter.font as tkfont
 
-from pygments import styles, token  # type: ignore[import]
+from pygments import styles, token
 
 from porcupine import get_tab_manager, settings, tabs, utils
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 
 
 class LongLineMarker:
@@ -52,9 +59,11 @@ class LongLineMarker:
         infos = dict(iter(style))  # iterating is documented
         for tokentype in [token.Error, token.Name.Exception]:
             if tokentype in infos:
-                for key in ["bgcolor", "color", "border"]:
-                    if infos[tokentype][key] is not None:
-                        self.frame.config(bg=("#" + infos[tokentype][key]))
+                keys: list[Literal["bgcolor", "color", "border"]] = ["bgcolor", "color", "border"]
+                for key in keys:
+                    value = infos[tokentype][key]
+                    if value is not None:
+                        self.frame.config(bg=("#" + value))
                         return
 
         # stupid fallback
