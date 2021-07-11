@@ -519,7 +519,7 @@ bers.py>` use this attribute.
         if content:
             self.textwidget.insert("1.0", content)
             self.textwidget.edit_reset()  # reset undo/redo
-        self._set_saved_state(None)
+        self._set_saved_state((None, self._get_char_count(), self._get_hash()))
 
         self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
 
@@ -529,6 +529,7 @@ bers.py>` use this attribute.
         self.scrollbar.config(command=self.textwidget.yview)
 
         self.textwidget.bind("<<ContentChanged>>", self._update_titles, add=True)
+        self.textwidget.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
 
     @classmethod
@@ -555,8 +556,8 @@ bers.py>` use this attribute.
             string = self.textwidget.get("1.0", "end - 1 char")
         return hashlib.md5(string.encode("utf-8")).hexdigest()
 
-    def _set_saved_state(self, stat_result: Optional[os.stat_result]) -> None:
-        self._saved_state = (stat_result, self._get_char_count(), self._get_hash())
+    def _set_saved_state(self, state: tuple[os.stat_result | None, int, str]) -> None:
+        self._saved_state = state
         self._update_titles()
 
     def is_modified(self) -> bool:
@@ -615,7 +616,7 @@ bers.py>` use this attribute.
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
             )
 
-        self._set_saved_state(stat_result)
+        self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
 
         # TODO: document this
         self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
@@ -648,7 +649,7 @@ bers.py>` use this attribute.
                 return True
 
             # Avoid reading file contents again soon
-            self._saved_state = (actual_stat, save_char_count, save_hash)
+            self._set_saved_state((actual_stat, save_char_count, save_hash))
             return False
 
         except (OSError, UnicodeError):
@@ -724,7 +725,9 @@ bers.py>` use this attribute.
             with utils.backup_open(path, "w", encoding=encoding, newline=line_ending.value) as f:
                 f.write(self.textwidget.get("1.0", "end - 1 char"))
                 f.flush()  # needed to get right file size in stat
-                self._set_saved_state(os.fstat(f.fileno()))
+                self._set_saved_state(
+                    (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+                )
         except (OSError, UnicodeError) as e:
             log.exception(f"saving to '{path}' failed")
             utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
@@ -732,7 +735,6 @@ bers.py>` use this attribute.
 
         self._save_hash = self._get_hash()
         self.path = path
-        self._update_titles()
         self.event_generate("<<AfterSave>>")
         return True
 
@@ -819,10 +821,7 @@ bers.py>` use this attribute.
         else:
             self = cls(manager, state.content, state.path)
 
-        # title depends on _saved_state
-        self._saved_state = state.saved_state
-        self._update_titles()
-
+        self._set_saved_state(state.saved_state)  # TODO: does this make any sense?
         self.textwidget.mark_set("insert", state.cursor_pos)
         self.textwidget.see("insert linestart")
         return self
