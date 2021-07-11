@@ -85,7 +85,8 @@ def create_pynsist_cfg():
         name, version = dependency.split("==")
         if name.lower() == "porcupine":
             pass
-        elif name.lower() in {"ttkthemes", "black", "rope"}:
+        # TODO: remove sansio-lsp-client in #550
+        elif name.lower() in {"ttkthemes", "black", "rope", "sansio-lsp-client"}:
             deps_without_pypi_wheels.append(name)
         else:
             deps_from_pypi_wheels.append(dependency)
