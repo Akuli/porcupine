@@ -6,9 +6,8 @@ from typing import Any
 
 import docutils.nodes
 import docutils.utils
-
-from sphinx.application import Sphinx
 from sphinx.addnodes import desc_annotation, desc_name
+from sphinx.application import Sphinx
 from sphinx.domains.python import PyObject, PyXRefRole
 from sphinx.util.nodes import split_explicit_title
 
@@ -24,7 +23,7 @@ def source_role(
     lineno: int,
     inliner: docutils.parsers.rst.states.Inliner,
     options: dict[Any, Any] = {},
-    content: list[Any]= [],
+    content: list[Any] = [],
 ) -> tuple[list[docutils.nodes.Node], list[Any]]:
     has_t, title, target = split_explicit_title(text)
     title = docutils.utils.unescape(title)

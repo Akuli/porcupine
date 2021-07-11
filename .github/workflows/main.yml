@@ -81,7 +81,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check scripts/*.py porcupine tests more_plugins docs/extensions.py
+    - run: python3 -m black --check scripts/*.py porcupine tests more_plugins docs/*.py
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -90,7 +90,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m isort --check scripts/*.py porcupine tests more_plugins docs/extensions.py
+    - run: python3 -m isort --check scripts/*.py porcupine tests more_plugins docs/*.py
   pyflakes:
     runs-on: ubuntu-latest
     steps:
