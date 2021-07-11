@@ -82,11 +82,15 @@ def create_pynsist_cfg():
     deps_from_pypi_wheels = []
     deps_without_pypi_wheels = ["tkinter", "_tkinter"]
     for dependency in get_frozen_requirements_in_a_crazy_way():
+        # TODO: remove hack later, see #550
+        if dependency == "sansio-lsp-client @ git+https://github.com/Akuli/sansio-lsp-client@62205e44162cf734ce345c17322f64f82ceb17d7":
+            deps_without_pypi_wheels.append("sansio-lsp-client")
+            continue
+
         name, version = dependency.split("==")
         if name.lower() == "porcupine":
             pass
-        # TODO: remove sansio-lsp-client in #550
-        elif name.lower() in {"ttkthemes", "black", "rope", "sansio-lsp-client"}:
+        elif name.lower() in {"ttkthemes", "black", "rope"}:
             deps_without_pypi_wheels.append(name)
         else:
             deps_from_pypi_wheels.append(dependency)
