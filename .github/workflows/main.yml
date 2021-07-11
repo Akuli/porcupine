@@ -99,7 +99,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m pyflakes scripts/*.py porcupine tests more_plugins docs/extensions.py
+    - run: python3 -m pyflakes scripts/*.py porcupine tests more_plugins docs/*.py
   bindcheck:
     runs-on: ubuntu-latest
     steps:
