@@ -15,7 +15,6 @@ else:
     from typing_extensions import Literal
 
 
-
 class LongLineMarker:
     def __init__(self, filetab: tabs.FileTab) -> None:
         self.tab = filetab

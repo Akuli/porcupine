@@ -7,7 +7,7 @@ import logging
 import time
 import tkinter
 from tkinter.font import Font
-from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple, cast
+from typing import Any, Callable, Dict, Iterator, List, Tuple, cast
 
 from pygments import styles, token
 from pygments.lexer import Lexer, LexerMeta, RegexLexer
