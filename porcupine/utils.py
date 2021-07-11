@@ -419,7 +419,7 @@ class EventDataclass:
     Note that before Python 3.10, you need ``List[str]`` instead of
     ``list[str]``, even if you use ``from __future__ import annotations``. This
     is because Porcupine uses a library that needs to evaluate the type
-    annotations regardless of whether ``from __future__ import annotations``
+    annotations even if ``from __future__ import annotations``
     was used.
     """
 
