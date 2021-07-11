@@ -1,4 +1,6 @@
 """Enable and disable Porcupine plugins."""
+from __future__ import annotations
+
 import ast
 import importlib.util
 import logging
@@ -6,13 +8,13 @@ import re
 import tkinter
 from functools import partial
 from tkinter import messagebox, ttk
-from typing import List, Optional, Tuple
+from typing import List
 
 from porcupine import get_main_window, menubar, pluginloader, settings, textutils
 
 log = logging.getLogger(__name__)
 
-dialog: Optional[tkinter.Toplevel] = None
+dialog: tkinter.Toplevel | None = None
 
 
 def get_docstring(module_name: str) -> str:
@@ -181,7 +183,7 @@ class PluginDialogContent:
         else:
             self._plz_restart_label.config(text="")
 
-    def _get_selected_infos(self) -> List[pluginloader.PluginInfo]:
+    def _get_selected_infos(self) -> list[pluginloader.PluginInfo]:
         selection = self.treeview.selection()
         infos = [info for info in pluginloader.plugin_infos if info.name in selection]
         assert len(infos) == len(selection)
@@ -258,7 +260,7 @@ def show_dialog() -> None:
         dialog = create_dialog()[0]
 
 
-def create_dialog() -> Tuple[tkinter.Toplevel, PluginDialogContent]:
+def create_dialog() -> tuple[tkinter.Toplevel, PluginDialogContent]:
     dialog = tkinter.Toplevel()
     content = PluginDialogContent(dialog)
     content.content_frame.pack(fill="both", expand=True)

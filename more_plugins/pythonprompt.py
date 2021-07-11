@@ -3,7 +3,7 @@
 # FIXME: >>> while True: print("lel")   (avoid making it as slow as idle is)
 # FIXME: prevent writing anywhere except to the end of the prompt
 # TODO: test this on windows, this may turn out to be pretty broken :(
-
+from __future__ import annotations
 import io
 import queue
 import signal
@@ -12,12 +12,12 @@ import sys
 import threading
 import tkinter
 from tkinter import ttk
-from typing import Any, Callable, Tuple, Union
+from typing import Any, Callable
 
 from porcupine import get_tab_manager, menubar, tabs, textutils
 
 
-def _tupleindex(index: str) -> Tuple[int, int]:
+def _tupleindex(index: str) -> tuple[int, int]:
     """Convert 'line.column' to (line, column)."""
     line, column = index.split(".")
     return (int(line), int(column))
@@ -45,7 +45,7 @@ class PythonPrompt:
 
         # the queuer thread is a daemon thread because it makes exiting
         # porcupine easier and interrupting it isn't a problem
-        self._queue: queue.Queue[Tuple[str, Union[int, bytes]]] = queue.Queue()
+        self._queue: queue.Queue[tuple[str, int | bytes]] = queue.Queue()
         threading.Thread(target=self._queuer, daemon=True).start()
         self.widget.after_idle(self._queue_clearer)
 

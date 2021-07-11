@@ -7,7 +7,7 @@ import queue
 import subprocess
 import threading
 import tkinter
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Tuple, Union
 
 from porcupine import get_tab_manager, images, utils
 
@@ -29,7 +29,7 @@ class NoTerminalRunner:
         self._queue_clearer()
 
     def _runner_thread(
-        self, workingdir: pathlib.Path, command: List[str], succeeded_callback: Callable[[], None]
+        self, workingdir: pathlib.Path, command: list[str], succeeded_callback: Callable[[], None]
     ) -> None:
         process: subprocess.Popen[bytes] | None = None
 
@@ -66,7 +66,7 @@ class NoTerminalRunner:
             emit_message(("error", f"The process failed with status {process.returncode}."))
 
     def run_command(
-        self, workingdir: pathlib.Path, command: List[str], succeeded_callback: Callable[[], None]
+        self, workingdir: pathlib.Path, command: list[str], succeeded_callback: Callable[[], None]
     ) -> None:
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
@@ -75,7 +75,7 @@ class NoTerminalRunner:
         ).start()
 
     def _queue_clearer(self) -> None:
-        messages: List[QueueMessage] = []
+        messages: list[QueueMessage] = []
         while True:
             try:
                 messages.append(self._output_queue.get(block=False))
@@ -110,13 +110,13 @@ class NoTerminalRunner:
 
 
 # keys are tkinter widget paths from str(tab), they identify tabs uniquely
-_no_terminal_runners: Dict[str, NoTerminalRunner] = {}
+_no_terminal_runners: dict[str, NoTerminalRunner] = {}
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(
     workingdir: pathlib.Path,
-    command: List[str],
+    command: list[str],
     succeeded_callback: Callable[[], None] = (lambda: None),
 ) -> None:
 

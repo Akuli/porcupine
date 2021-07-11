@@ -1,12 +1,13 @@
 """Fold parts of code with Edit/Fold."""
+from __future__ import annotations
+
 import tkinter
-from typing import Optional
 
 from porcupine import menubar, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
 
 
-def get_indent(tab: tabs.FileTab, lineno: int) -> Optional[int]:
+def get_indent(tab: tabs.FileTab, lineno: int) -> int | None:
     line = tab.textwidget.get(f"{lineno}.0", f"{lineno}.0 lineend")
     line = line.expandtabs(tab.settings.get("indent_size", int))
     without_indent = line.lstrip()
@@ -15,7 +16,7 @@ def get_indent(tab: tabs.FileTab, lineno: int) -> Optional[int]:
     return len(line) - len(without_indent)
 
 
-def find_indented_block(tab: tabs.FileTab, lineno: int) -> Optional[int]:
+def find_indented_block(tab: tabs.FileTab, lineno: int) -> int | None:
     original_indent = get_indent(tab, lineno)
     if original_indent is None:
         return None

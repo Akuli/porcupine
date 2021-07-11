@@ -7,7 +7,7 @@ import pathlib
 import queue
 import threading
 from multiprocessing import connection
-from typing import Any, Iterator, List
+from typing import Any, Iterator
 
 from porcupine import dirs
 
@@ -18,7 +18,7 @@ _ADDRESS_FILE = pathlib.Path(dirs.user_cache_dir) / "ipc_address.txt"
 # conflict with each other
 # example addresses: r'\\.\pipe\pyc-1412-1-7hyryfd_',
 # '/tmp/pymp-_lk54sed/listener-4o8n1xrc',
-def send(objects: List[Any]) -> None:
+def send(objects: list[Any]) -> None:
     """Send objects from an iterable to a process running session().
 
     Raise ConnectionRefusedError if session() is not running.

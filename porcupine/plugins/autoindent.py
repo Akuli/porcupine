@@ -6,7 +6,7 @@ import logging
 import re
 import tkinter
 from functools import partial
-from typing import Optional, Tuple
+from typing import Optional
 
 from porcupine import get_tab_manager, tabs
 
@@ -37,7 +37,7 @@ class AutoIndentRegexes:
     dedent: Optional[str] = None
 
 
-def get_regexes(tab: tabs.FileTab) -> Tuple[str, str]:
+def get_regexes(tab: tabs.FileTab) -> tuple[str, str]:
     config = tab.settings.get("autoindent_regexes", Optional[AutoIndentRegexes])
     if config is None:
         config = AutoIndentRegexes(None, None)

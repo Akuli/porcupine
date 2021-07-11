@@ -12,7 +12,7 @@ import sys
 import time
 import tkinter.font
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, overload
+from typing import Any, Callable, List, Type, TypeVar, overload
 
 import dacite
 from pygments import styles  # type: ignore[import]
@@ -70,11 +70,11 @@ class LineEnding(enum.Enum):
     CRLF = "\r\n"
 
 
-def _type_check(type_: type, obj: object) -> object:
+def _type_check(type_: object, obj: object) -> object:
     # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
     @dataclasses.dataclass
     class ValueContainer:
-        __annotations__ = {"value": type_}  # avoid the string 'type_'
+        __annotations__ = {"value": type_}
 
     parsed = dacite.from_dict(ValueContainer, {"value": obj})
     return parsed.value  # type: ignore
@@ -97,14 +97,14 @@ def get_json_path() -> pathlib.Path:
 
 
 class Settings:
-    def __init__(self, change_event_widget: Optional[tkinter.Misc], change_event_format: str):
+    def __init__(self, change_event_widget: tkinter.Misc | None, change_event_format: str):
         # '<<Foo:{}>>'
         assert "{}" in change_event_format
         assert change_event_format.startswith("<<")
         assert change_event_format.endswith(">>")
 
-        self._options: Dict[str, _Option] = {}
-        self._unknown_options: Dict[str, Any] = {}
+        self._options: dict[str, _Option] = {}
+        self._unknown_options: dict[str, Any] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
 
@@ -112,7 +112,7 @@ class Settings:
         self,
         option_name: str,
         default: Any,
-        type_: Optional[Any] = None,
+        type_: Any | None = None,
         *,
         converter: Callable[[Any], Any] = (lambda x: x),
         exist_ok: bool = False,
@@ -265,8 +265,13 @@ class Settings:
         Use a type annotation to work around this (and make sure to write the
         same type two times)::
 
-            good_bar: Optional[pathlib.Path] = settings.get('something', Optional[pathlib.Path])
+            good_bar: pathlib.Path | None = settings.get('something', Optional[pathlib.Path])
             reveal_type(good_bar)  # Optional[pathlib.Path]
+
+        Before Python 3.10, you can't use the new ``|`` syntax as an argument to ``settings.get()``,
+        even though it otherwise works with ``from __future__ import annotations``.
+        The same goes for built-in generics,
+        such as ``list[str]`` with lower-case ``list``.
 
         Options of mutable types are returned as copies, so things like
         ``settings.get('something', List[str])`` always return a new list.
@@ -331,7 +336,7 @@ def save() -> None:
         name: opt.default for name, opt in _global_settings._options.items()
     }
 
-    writing: Dict[str, Any] = _global_settings._unknown_options.copy()
+    writing: dict[str, Any] = _global_settings._unknown_options.copy()
 
     # don't wipe unknown stuff from config file
     writing.update({name: get(name, object) for name in currently_known_defaults.keys()})
@@ -396,7 +401,7 @@ def _init_global_gui_settings() -> None:
     add_option("font_size", fixedfont["size"])
 
     # keep TkFixedFont up to date with settings
-    def update_fixedfont(event: Optional[tkinter.Event[tkinter.Misc]]) -> None:
+    def update_fixedfont(event: tkinter.Event[tkinter.Misc] | None) -> None:
         # can't bind to get_tab_manager() as recommended in docs because tab
         # manager isn't ready yet when settings get inited
         if event is None or event.widget == porcupine.get_main_window():
@@ -439,7 +444,7 @@ def _create_dialog_content() -> ttk.Frame:
     return content
 
 
-_dialog_content: Optional[ttk.Frame] = None
+_dialog_content: ttk.Frame | None = None
 
 
 def show_dialog() -> None:
@@ -496,7 +501,7 @@ def get_dialog_content() -> ttk.Frame:
     return _dialog_content
 
 
-def _get_blank_triangle_sized_image(*, _cache: List[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
+def _get_blank_triangle_sized_image(*, _cache: list[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
     # see images/__init__.py
     if not _cache:
         _cache.append(
@@ -524,7 +529,7 @@ def _create_validation_triangle(
     def var_changed(*junk: object) -> None:
         value_string = var.get()
 
-        value: Optional[_StrOrInt]
+        value: _StrOrInt | None
         try:
             value = type_(value_string)
         except ValueError:  # e.g. int('foo')
@@ -551,7 +556,7 @@ def _create_validation_triangle(
 
 
 def _grid_widgets(
-    label_text: str, chooser: tkinter.Widget, triangle: Optional[tkinter.Widget]
+    label_text: str, chooser: tkinter.Widget, triangle: tkinter.Widget | None
 ) -> None:
     label = ttk.Label(chooser.master, text=label_text)
     label.grid(column=0, sticky="w")
@@ -680,7 +685,7 @@ def add_label(text: str) -> ttk.Label:
 
 # TODO: document this
 def remember_divider_positions(
-    panedwindow: ttk.Panedwindow, option_name: str, defaults: List[int]
+    panedwindow: ttk.Panedwindow, option_name: str, defaults: list[int]
 ) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
     add_option(option_name, defaults, List[int], exist_ok=True)
@@ -749,7 +754,7 @@ def _is_monospace(font_family: str) -> bool:
     return max(sizes) - min(sizes) <= 1
 
 
-def _get_monospace_font_families() -> List[str]:
+def _get_monospace_font_families() -> list[str]:
     cache_path = pathlib.Path(dirs.user_cache_dir) / "font_cache.json"
     all_families = sorted(set(tkinter.font.families()))
 

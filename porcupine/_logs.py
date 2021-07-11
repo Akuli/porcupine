@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 import logging
 import os
@@ -7,7 +9,7 @@ import subprocess
 import sys
 import threading
 from datetime import datetime, timedelta
-from typing import Any, List, Optional, TextIO, cast
+from typing import Any, TextIO, cast
 
 import porcupine
 from porcupine import dirs
@@ -69,8 +71,8 @@ class _FilterThatDoesntHideWarnings(logging.Filter):
 #   - empty string (print everything)
 #   - logger name (print only messages from that logger)
 #   - None (only print errors)
-def setup(verbose_logger: Optional[str]) -> None:
-    handlers: List[logging.Handler] = []
+def setup(verbose_logger: str | None) -> None:
+    handlers: list[logging.Handler] = []
 
     log_file = _open_log_file()
     print(f"log file: {log_file.name}")
