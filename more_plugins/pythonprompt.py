@@ -4,6 +4,7 @@
 # FIXME: prevent writing anywhere except to the end of the prompt
 # TODO: test this on windows, this may turn out to be pretty broken :(
 from __future__ import annotations
+
 import io
 import queue
 import signal

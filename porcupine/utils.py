@@ -18,7 +18,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Deque, Iterator, TextIO, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TextIO, Type, TypeVar, cast
 from urllib.request import url2pathname
 
 import dacite
