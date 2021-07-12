@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import dataclasses
-import logging
 import os
 import pathlib
 import sys
@@ -18,8 +17,6 @@ from porcupine import get_tab_manager, menubar, tabs, utils
 from porcupine.plugins import python_venv
 
 from . import no_terminal, terminal
-
-log = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
