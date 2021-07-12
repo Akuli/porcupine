@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import threading
 import tkinter
-from typing import List, Tuple
 
 from pygments import styles, token
 
 from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 
 
-def get_colors(style_name: str) -> Tuple[str, str]:
+def get_colors(style_name: str) -> tuple[str, str]:
     style = styles.get_style_by_name(style_name)
     bg: str = style.background_color
 
@@ -38,13 +37,13 @@ def get_colors(style_name: str) -> Tuple[str, str]:
 # threading this gives a significant speed improvement on startup
 # on this system, setup() took 0.287940 seconds before adding threads
 # and 0.000371 seconds after adding threads
-def load_style_names_to_list(target_list: List[str]) -> None:
+def load_style_names_to_list(target_list: list[str]) -> None:
     target_list.extend(styles.get_all_styles())  # slow
     target_list.sort()
 
 
 def setup() -> None:
-    style_names: List[str] = []
+    style_names: list[str] = []
     thread = threading.Thread(target=load_style_names_to_list, args=[style_names])
     thread.daemon = True  # i don't care wtf happens to this
     thread.start()

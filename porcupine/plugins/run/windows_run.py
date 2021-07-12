@@ -2,11 +2,11 @@
 # scripts seems to be impossible
 #
 # This should always run in the same python that Porcupine uses.
+from __future__ import annotations
 
 import os
 import subprocess
 import sys
-from typing import Optional
 
 import colorama  # type: ignore[import]
 
@@ -24,7 +24,7 @@ except KeyError:
 prog, blue_message, directory, *command = sys.argv
 print(colorama.Fore.BLUE + blue_message + colorama.Fore.RESET)
 try:
-    returncode: Optional[int] = subprocess.call(command, cwd=directory, env=new_env)
+    returncode: int | None = subprocess.call(command, cwd=directory, env=new_env)
 except KeyboardInterrupt:
     # the subprocess should have already printed any traceback or
     # whatever it might want to print

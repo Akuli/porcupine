@@ -11,7 +11,12 @@ import sys
 import tkinter
 import webbrowser
 from tkinter import ttk
-from typing import Any, List, Match, Union
+from typing import Any
+
+if sys.version_info >= (3, 9):
+    from re import Match
+else:
+    from typing import Match
 
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils
@@ -83,7 +88,7 @@ class _AboutDialogContent(ttk.Frame):
         label.bind("<Button-1>", show_huge_logo, add=True)
 
     def _add_minimal_markdown(self, text: str) -> None:
-        parts: List[Union[str, Match[str]]] = []
+        parts: list[str | Match[str]] = []
 
         previous_end = 0
         for link in re.finditer(r"\[(.+?)\]\((.+?)\)", text):

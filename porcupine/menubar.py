@@ -10,7 +10,7 @@ import webbrowser
 from functools import partial
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Iterator, Optional, Tuple
+from typing import Any, Callable, Iterator
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -75,7 +75,7 @@ def _init() -> None:
 _MENU_ITEM_TYPES_WITH_LABEL = {"command", "checkbutton", "radiobutton", "cascade"}
 
 
-def _find_item(menu: tkinter.Menu, label: str) -> Optional[int]:
+def _find_item(menu: tkinter.Menu, label: str) -> int | None:
     last_index = menu.index("end")  # type: ignore[no-untyped-call]
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
@@ -87,7 +87,7 @@ def _find_item(menu: tkinter.Menu, label: str) -> Optional[int]:
     return None
 
 
-def get_menu(path: Optional[str]) -> tkinter.Menu:
+def get_menu(path: str | None) -> tkinter.Menu:
     """
     Find a menu widget, creating menus as necessary.
 
@@ -140,8 +140,8 @@ def add_config_file_button(path: pathlib.Path) -> None:
 
 
 def _walk_menu_contents(
-    menu: Optional[tkinter.Menu] = None, path_prefix: str = ""
-) -> Iterator[Tuple[str, tkinter.Menu, int]]:
+    menu: tkinter.Menu | None = None, path_prefix: str = ""
+) -> Iterator[tuple[str, tkinter.Menu, int]]:
 
     if menu is None:
         menu = get_menu(None)
@@ -215,7 +215,7 @@ def update_keyboard_shortcuts() -> None:
 
 
 def set_enabled_based_on_tab(
-    path: str, callback: Callable[[Optional[tabs.Tab]], bool]
+    path: str, callback: Callable[[tabs.Tab | None], bool]
 ) -> Callable[..., None]:
     """Use this for disabling menu items depending on the currently selected tab.
 

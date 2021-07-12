@@ -5,7 +5,7 @@ import dataclasses
 import tkinter
 import weakref
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, overload
 
 from pygments import styles
 
@@ -93,7 +93,7 @@ class _ChangeTracker:
     # event_receiver_widget will receive the change events
     def __init__(self, event_receiver_widget: tkinter.Text) -> None:
         self._event_receiver_widget = event_receiver_widget
-        self._change_batch: Optional[List[Change]] = None
+        self._change_batch: list[Change] | None = None
 
     def setup(self, widget: tkinter.Text) -> None:
         old_cursor_pos = widget.index("insert")  # must be widget specific
@@ -244,7 +244,7 @@ class _ChangeTracker:
     def _change_event_from_command(
         self, widget: tkinter.Text, subcommand: str, *args_tuple: str
     ) -> str:
-        changes: List[Change] = []
+        changes = []
 
         # search for 'pathName delete' in text(3tk)... it's a wall of text,
         # and this thing has to implement every detail of that wall
@@ -272,7 +272,7 @@ class _ChangeTracker:
 
             # "They [index pairs, aka ranges] are sorted [...]."
             # (line, column) tuples sort nicely
-            def get_range_beginning_as_tuple(start_and_end: Tuple[str, str]) -> Tuple[int, int]:
+            def get_range_beginning_as_tuple(start_and_end: tuple[str, str]) -> tuple[int, int]:
                 line, column = map(int, start_and_end[0].split("."))
                 return (line, column)
 
@@ -284,7 +284,7 @@ class _ChangeTracker:
             # outside the given ranges due to text shifted during deletion."
             def merge_index_ranges(
                 start1: str, end1: str, start2: str, end2: str
-            ) -> Tuple[str, str]:
+            ) -> tuple[str, str]:
                 start = start1 if widget.compare(start1, "<", start2) else start2
                 end = end1 if widget.compare(end1, ">", end2) else end2
                 return (start, end)
@@ -549,7 +549,7 @@ def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None
 def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...
 # fmt: on
 def use_pygments_theme(
-    widget: tkinter.Misc, callback: Optional[Callable[[str, str], None]] = None
+    widget: tkinter.Misc, callback: Callable[[str, str], None] | None = None
 ) -> None:
     """
     Configure *widget* to use the colors of the Pygments theme whenever the
@@ -598,7 +598,7 @@ def use_pygments_theme(
 
 
 def config_tab_displaying(
-    textwidget: tkinter.Text, indent_size: int, *, tag: Optional[str] = None
+    textwidget: tkinter.Text, indent_size: int, *, tag: str | None = None
 ) -> None:
     """Make ``textwidget`` display tabs as ``indent_size`` characters wide.
 

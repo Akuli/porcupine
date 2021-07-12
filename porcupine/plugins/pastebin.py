@@ -14,7 +14,7 @@ import webbrowser
 from functools import partial
 from http.client import HTTPConnection, HTTPSConnection
 from tkinter import messagebox, ttk
-from typing import Any, ClassVar, Optional, Type, Union, cast
+from typing import Any, ClassVar, Type, cast
 from urllib.parse import urlencode
 from urllib.request import HTTPSHandler, Request, build_opener
 
@@ -35,7 +35,7 @@ class Paste:
     def __init__(self) -> None:
         self.canceled = False
 
-    def get_socket(self) -> Optional[Union[socket.socket, ssl.SSLSocket]]:
+    def get_socket(self) -> socket.socket | ssl.SSLSocket | None:
         raise NotImplementedError
 
     # runs in a new thread
@@ -61,9 +61,9 @@ class Termbin(Paste):
 
     def __init__(self) -> None:
         super().__init__()
-        self._socket: Optional[socket.socket] = None
+        self._socket: socket.socket | None = None
 
-    def get_socket(self) -> Optional[socket.socket]:
+    def get_socket(self) -> socket.socket | None:
         return self._socket
 
     def run(self, code: str, lexer_class: LexerMeta) -> str:
@@ -88,7 +88,7 @@ class MyHTTPConnection(HTTPConnection):
     def connect(self) -> None:
         # Unlike HTTPConnection.connect, this creates the socket so that it is
         # assinged to self.sock before it's connected.
-        self.sock: Union[socket.socket, ssl.SSLSocket] = socket.socket()
+        self.sock: socket.socket | ssl.SSLSocket = socket.socket()
         self.sock.connect((self.host, self.port))
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
@@ -102,11 +102,11 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
 
     # https://github.com/python/mypy/issues/10049
     @property  # type: ignore
-    def sock(self) -> Union[socket.socket, ssl.SSLSocket]:  # type: ignore
+    def sock(self) -> socket.socket | ssl.SSLSocket:  # type: ignore
         return self.__sock
 
     @sock.setter
-    def sock(self, new_sock: Union[socket.socket, ssl.SSLSocket]) -> None:
+    def sock(self, new_sock: socket.socket | ssl.SSLSocket) -> None:
         # Canceling with the non-SSL socket fails because making the SSL socket
         # closes the non-SSL socket. So, don't tell the dpaste object about
         # being able to cancel until self.sock is set to SSL socket.
@@ -120,9 +120,9 @@ class DPaste(Paste):
 
     def __init__(self) -> None:
         super().__init__()
-        self.connection: Optional[MyHTTPSConnection] = None
+        self.connection: MyHTTPSConnection | None = None
 
-    def get_socket(self) -> Optional[ssl.SSLSocket]:
+    def get_socket(self) -> ssl.SSLSocket | None:
         if self.connection is None:
             return None
         return cast(ssl.SSLSocket, self.connection.sock)
@@ -171,7 +171,7 @@ class SuccessDialog(tkinter.Toplevel):
         for text, callback in button_info:
             ttk.Button(buttonframe, text=text, command=callback).pack(side="left", expand=True)
 
-    def _select_all(self, event: Optional[tkinter.Event[tkinter.Misc]] = None) -> None:
+    def _select_all(self, event: tkinter.Event[tkinter.Misc] | None = None) -> None:
         # toplevels annoyingly get notified of child events
         if event is None or event.widget is self:
             self._entry.selection_range(0, "end")  # type: ignore[no-untyped-call]

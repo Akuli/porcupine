@@ -13,7 +13,7 @@ import pkgutil
 import random
 import time
 import traceback
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
+from typing import Any, Iterable, List, Sequence
 
 import toposort  # type: ignore[import]
 
@@ -118,13 +118,13 @@ class PluginInfo:
     name: str
     came_with_porcupine: bool
     status: Status
-    module: Optional[Any]
-    error: Optional[str]
+    module: Any | None  # you have to check for None, otherwise mypy won't complain
+    error: str | None
 
 
-_mutable_plugin_infos: List[PluginInfo] = []
+_mutable_plugin_infos: list[PluginInfo] = []
 plugin_infos: Sequence[PluginInfo] = _mutable_plugin_infos  # changing content is mypy error
-_dependencies: Dict[PluginInfo, Set[PluginInfo]] = {}
+_dependencies: dict[PluginInfo, set[PluginInfo]] = {}
 
 
 def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.ArgumentParser) -> None:
@@ -172,7 +172,7 @@ def _import_plugin(info: PluginInfo) -> None:
 
 
 # Remember to generate <<PluginsLoaded>> when this succeeds
-def _run_setup(info: PluginInfo) -> None:
+def _run_setup_and_set_status(info: PluginInfo) -> None:
     assert info.status == Status.LOADING
     assert info.module is not None
 
@@ -212,7 +212,7 @@ _plugins_that_no_longer_exist = {"overview", "drag_to_open", "xbutton"}
 
 
 # undocumented on purpose, don't use in plugins
-def import_plugins(disabled_on_command_line: List[str]) -> None:
+def import_plugins(disabled_on_command_line: list[str]) -> None:
     assert not _mutable_plugin_infos and not _dependencies
     _mutable_plugin_infos.extend(
         PluginInfo(
@@ -255,11 +255,11 @@ def run_setup_functions(shuffle: bool) -> None:
     # the toposort will partially work even if there's a circular
     # dependency, the CircularDependencyError is raised after doing
     # everything possible (see source code)
-    loading_order: List[PluginInfo] = []
+    loading_order = []
     try:
         toposort_result: Iterable[Iterable[PluginInfo]] = toposort.toposort(_dependencies)
         for infos in toposort_result:
-            load_list: List[PluginInfo] = [info for info in infos if info.status == Status.LOADING]
+            load_list = [info for info in infos if info.status == Status.LOADING]
             if shuffle:
                 # for plugin developers wanting to make sure that the
                 # dependencies specified in setup_before and setup_after
@@ -280,7 +280,7 @@ def run_setup_functions(shuffle: bool) -> None:
 
     for info in loading_order:
         assert info.status == Status.LOADING
-        _run_setup(info)
+        _run_setup_and_set_status(info)
 
     get_main_window().event_generate("<<PluginsLoaded>>")
 
@@ -337,7 +337,7 @@ def setup_while_running(info: PluginInfo) -> None:
     if info.status != Status.LOADING:  # error
         return
 
-    _run_setup(info)
+    _run_setup_and_set_status(info)
     assert info.status != Status.LOADING
     if info.status == Status.ACTIVE:
         get_main_window().event_generate("<<PluginsLoaded>>")
