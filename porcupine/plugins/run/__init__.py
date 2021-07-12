@@ -7,7 +7,6 @@ import os
 import pathlib
 import sys
 from functools import partial
-from typing import Callable
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -29,32 +28,16 @@ class CommandsConfig:
     lint: str = ""
 
 
-def has_command(
-    which_command: Literal["compile", "run", "compilerun", "lint"], tab: tabs.Tab | None
-) -> bool:
-    if not isinstance(tab, tabs.FileTab):
-        return False
-
-    try:
-        config = tab.settings.get("commands", CommandsConfig)
-    except KeyError:
-        # Happens when opening new tab, option will be added and will be called again soon
-        return False
-
-    if which_command == "compilerun":
-        return bool(config.compile) and bool(config.run)
-    return bool(getattr(config, which_command))
-
-
 def get_command(
     tab: tabs.FileTab, which_command: Literal["compile", "run", "lint"], basename: str
-) -> list[str]:
+) -> list[str] | None:
     assert os.sep not in basename, f"{basename!r} is not a basename"
 
     commands = tab.settings.get("commands", CommandsConfig)
     assert isinstance(commands, CommandsConfig)
     template = getattr(commands, which_command)
-    assert template.strip(), (commands, which_command)
+    if not template.strip():
+        return None
 
     exts = "".join(pathlib.Path(basename).suffixes)
     no_ext = pathlib.Path(basename).stem
@@ -84,35 +67,36 @@ def do_something(
     basename = tab.path.name
 
     if something == "run":
-        terminal.run_command(workingdir, get_command(tab, "run", basename))
+        command = get_command(tab, "run", basename)
+        if command is not None:
+            terminal.run_command(workingdir, command)
+
     elif something == "compilerun":
+
+        def run_after_compile() -> None:
+            command = get_command(tab, "run", basename)
+            if command is not None:
+                terminal.run_command(workingdir, command)
+
         compile_command = get_command(tab, "compile", basename)
-        run_command = get_command(tab, "run", basename)
-        no_terminal.run_command(
-            workingdir, compile_command, partial(terminal.run_command, workingdir, run_command)
-        )
+        if compile_command is not None:
+            no_terminal.run_command(workingdir, compile_command, run_after_compile)
+
     else:
-        no_terminal.run_command(workingdir, get_command(tab, something, basename))
+        command = get_command(tab, something, basename)
+        if command is not None:
+            no_terminal.run_command(workingdir, command)
 
 
-def on_new_filetab(call_when_commands_change: list[Callable[..., None]], tab: tabs.FileTab) -> None:
+def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("commands", CommandsConfig())
-    for func in call_when_commands_change:
-        tab.bind("<<TabSettingChanged:commands>>", func, add=True)
-        func()
 
 
 def setup() -> None:
-    call_when_commands_change: list[Callable[..., None]] = []
-    get_tab_manager().add_filetab_callback(partial(on_new_filetab, call_when_commands_change))
+    get_tab_manager().add_filetab_callback(on_new_filetab)
 
-    for name, command in [
-        ("Compile", "compile"),
-        ("Run", "run"),
-        ("Compile and Run", "compilerun"),
-        ("Lint", "lint"),
-    ]:
-        menubar.add_filetab_command(f"Run/{name}", partial(do_something, command))
-        call_when_commands_change.append(
-            menubar.set_enabled_based_on_tab(f"Run/{name}", partial(has_command, command))
-        )
+    # TODO: disable the menu items when they don't correspond to actual commands
+    menubar.add_filetab_command("Run/Compile", partial(do_something, "compile"))
+    menubar.add_filetab_command("Run/Run", partial(do_something, "run"))
+    menubar.add_filetab_command("Run/Compile and Run", partial(do_something, "compilerun"))
+    menubar.add_filetab_command("Run/Lint", partial(do_something, "lint"))
