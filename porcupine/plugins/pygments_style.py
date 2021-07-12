@@ -23,7 +23,7 @@ def get_colors(style_name: str) -> tuple[str, str]:
     fg = style_infos[token.String]["color"] or style_infos[token.Text]["color"]
     if fg:
         # style_infos doesn't contain leading '#' for whatever reason
-        fg = '#' + fg
+        fg = "#" + fg
     else:
         # do like textutils.use_pygments_theme does
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
