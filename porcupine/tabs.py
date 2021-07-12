@@ -14,8 +14,8 @@ import traceback
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
-from pygments.lexer import LexerMeta  # type: ignore[import]
-from pygments.lexers import TextLexer  # type: ignore[import]
+from pygments.lexer import LexerMeta
+from pygments.lexers import TextLexer
 
 from porcupine import _state, settings, textutils, utils
 

@@ -15,7 +15,7 @@ from tkinter import messagebox, ttk
 from typing import Any, Callable, List, Type, TypeVar, overload
 
 import dacite
-from pygments import styles  # type: ignore[import]
+from pygments import styles
 
 import porcupine
 from porcupine import dirs, images, utils

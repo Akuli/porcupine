@@ -10,8 +10,8 @@ from functools import partial
 from typing import Any, Dict
 
 import toml
-from pygments import lexers  # type: ignore[import]
-from pygments.util import ClassNotFound  # type: ignore[import]
+from pygments import lexers
+from pygments.util import ClassNotFound
 
 from porcupine import (
     dirs,
