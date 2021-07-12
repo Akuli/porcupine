@@ -726,20 +726,15 @@ def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
     global_log.info(f"Running command: {command}")
 
     try:
+        # TODO: should use utils.subprocess_kwargs?
         if the_id.port is None:
             # langserver writes log messages to stderr
             process = subprocess.Popen(
-                command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                **utils.subprocess_kwargs,
+                command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         else:
             # most langservers log to stderr, but also watch stdout
-            process = subprocess.Popen(
-                command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **utils.subprocess_kwargs
-            )
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     except (OSError, subprocess.CalledProcessError):
         global_log.exception(f"failed to start langserver with command {config.command!r}")
         return None
