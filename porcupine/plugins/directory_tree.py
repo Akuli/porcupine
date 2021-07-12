@@ -1,3 +1,9 @@
+"""
+Displays a directory tree on the left side of the editor.
+
+You can navigate directories, and open files in Porcupine.
+"""
+
 from __future__ import annotations
 
 import dataclasses
@@ -11,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Any, Callable, Dict, Iterator, List, Tuple
+from typing import Any, Callable, Iterator, List
 
 from porcupine import (
     get_main_window,
@@ -37,7 +43,7 @@ log = logging.getLogger(__name__)
 MAX_PROJECTS = 5
 
 
-def run_git_status(project_root: Path) -> Dict[Path, str]:
+def run_git_status(project_root: Path) -> dict[Path, str]:
     try:
         start = time.perf_counter()
         run_result = subprocess.run(
@@ -131,7 +137,7 @@ class DirectoryTree(ttk.Treeview):
         self.bind("<<ThemeChanged>>", self._config_tags, add=True)
         self.column("#0", minwidth=500)  # allow scrolling sideways
         self._config_tags()
-        self.git_statuses: Dict[Path, Dict[Path, str]] = {}
+        self.git_statuses: dict[Path, dict[Path, str]] = {}
 
         self._last_click_time = 0  # Very long time since previous click, no double click
         self._last_click_item: str | None = None
@@ -413,9 +419,8 @@ class DirectoryTree(ttk.Treeview):
             "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
         )
 
-    def _sorting_key(self, item_id: str) -> Tuple[Any, ...]:
+    def _sorting_key(self, item_id: str) -> Any:
         [git_tag] = [t for t in self.item(item_id, "tags") if t.startswith("git_")] or [None]
-
         return (
             [
                 "git_added",

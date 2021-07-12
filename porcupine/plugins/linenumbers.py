@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import tkinter.font
-from typing import Optional
 
 from porcupine import get_tab_manager, tabs, textutils, utils
 
@@ -33,7 +32,7 @@ class LineNumbers(tkinter.Canvas):
         self.bind("<<SettingChanged:font_family>>", self._update_width, add=True)
         self.bind("<<SettingChanged:font_size>>", self._update_width, add=True)
 
-        self._clicked_place: Optional[str] = None
+        self._clicked_place: str | None = None
         self.bind("<Button-1>", self._on_click, add=True)
         self.bind("<ButtonRelease-1>", self._on_unclick, add=True)
         self.bind("<Double-Button-1>", self._on_double_click, add=True)

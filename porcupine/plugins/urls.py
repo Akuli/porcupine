@@ -4,13 +4,13 @@ from __future__ import annotations
 import tkinter
 import webbrowser
 from functools import partial
-from typing import Iterable, Tuple
+from typing import Iterable
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import underlines
 
 
-def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, str]]:
+def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[tuple[str, str]]:
     match_ends_and_search_begins = start
     while True:
         match_start = text.search(

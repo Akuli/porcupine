@@ -1,4 +1,6 @@
 """Enable and disable Porcupine plugins."""
+from __future__ import annotations
+
 import ast
 import importlib.util
 import logging
@@ -6,13 +8,13 @@ import re
 import tkinter
 from functools import partial
 from tkinter import messagebox, ttk
-from typing import List, Optional, Tuple
+from typing import List
 
 from porcupine import get_main_window, menubar, pluginloader, settings, textutils
 
 log = logging.getLogger(__name__)
 
-dialog: Optional[tkinter.Toplevel] = None
+dialog: tkinter.Toplevel | None = None
 
 
 def get_docstring(module_name: str) -> str:
@@ -49,15 +51,23 @@ class PluginDialogContent:
     def __init__(self, master: tkinter.Misc) -> None:
         self.content_frame = ttk.Frame(master)
 
-        panedwindow = ttk.Panedwindow(self.content_frame, orient="horizontal")
+        _cols_width = [120, 150, 180]
+
+        # borrowed code from textutils.create_passive_text_widget
+        ttk_bg = self.content_frame.tk.eval("ttk::style lookup TLabel.label -background")
+        if not ttk_bg:
+            ttk_bg = "white"
+
+        panedwindow = tkinter.PanedWindow(self.content_frame, orient="horizontal", bg=ttk_bg)
         panedwindow.pack(side="top", fill="both", expand=True)
+
         self._plz_restart_label = ttk.Label(self.content_frame)
         self._plz_restart_label.pack(side="bottom", fill="x")
 
         left_side = ttk.Frame(panedwindow)
-        right_side = ttk.Frame(panedwindow)
-        panedwindow.add(left_side)  # type: ignore[no-untyped-call]
-        panedwindow.add(right_side)  # type: ignore[no-untyped-call]
+        right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side
+        panedwindow.add(left_side, minsize=sum(_cols_width))  # type: ignore[no-untyped-call]
+        panedwindow.add(right_side, minsize=250)  # type: ignore[no-untyped-call]
 
         self.treeview = ttk.Treeview(
             left_side, show="headings", columns=("name", "type", "status"), selectmode="extended"
@@ -79,42 +89,41 @@ class PluginDialogContent:
         self.treeview.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        for index, width in enumerate([100, 150, 180]):
+        for index, width in enumerate(_cols_width):
             self.treeview.column(index, width=width, minwidth=width)
 
-        self.treeview.heading(0, text="Name")
-        self.treeview.heading(1, text="Type")
-        self.treeview.heading(2, text="Status")
+        for index, header_title in enumerate(["Name", "Type", "Status"]):
+            self.treeview.heading(index, text=header_title)
+
         self._insert_data()
         self._update_plz_restart_label()
 
         # Must pack everything else before description label so that if
         # description is very long, it doesn't cover up other things
         self._title_label = ttk.Label(right_side, font=("", 15, "bold"))
-        self._title_label.pack(side="top", pady=5)
+        self._title_label.pack(side="top", pady=(0, 10))
         button_frame = ttk.Frame(right_side)
         button_frame.pack(side="bottom", fill="x")
 
         self.enable_button = ttk.Button(
-            button_frame, text="Enable", command=partial(self._set_enabled, True)
+            button_frame, text="Enable", command=partial(self._set_enabled, True), state="disabled"
         )
-        self.enable_button.pack(side="left", expand=True)
+        # here was an expand=True, but fill wasn't, it looks better with fill
+        self.enable_button.pack(side="left", expand=True, fill="x", padx=(0, 5))
+
         self.disable_button = ttk.Button(
-            button_frame, text="Disable", command=partial(self._set_enabled, False)
+            button_frame,
+            text="Disable",
+            command=partial(self._set_enabled, False),
+            state="disabled",
         )
-        self.disable_button.pack(side="left", expand=True)
+        self.disable_button.pack(side="left", expand=True, fill="x", padx=(5, 0))
 
         self.description = textutils.create_passive_text_widget(right_side)
-        self._set_description("Please select a plugin.")
+        self._set_description(
+            "No plugin selected. Select one or more from the list to disable or enable it."
+        )
         self.description.pack(fill="both", expand=True)
-
-        # I had some trouble getting this to work. With after_idle, this makes
-        # the left side invisibly small. With 50ms timeout, it still happened
-        # sometimes.
-        #
-        # FIXME: still happens sometimes, but very rarely, more timeout is not
-        # good because it causes slowness
-        panedwindow.after(100, lambda: panedwindow.sashpos(0, round(0.7 * DIALOG_WIDTH)))
 
     def _set_description(self, text: str) -> None:
         self.description.config(state="normal")
@@ -174,7 +183,7 @@ class PluginDialogContent:
         else:
             self._plz_restart_label.config(text="")
 
-    def _get_selected_infos(self) -> List[pluginloader.PluginInfo]:
+    def _get_selected_infos(self) -> list[pluginloader.PluginInfo]:
         selection = self.treeview.selection()
         infos = [info for info in pluginloader.plugin_infos if info.name in selection]
         assert len(infos) == len(selection)
@@ -251,7 +260,7 @@ def show_dialog() -> None:
         dialog = create_dialog()[0]
 
 
-def create_dialog() -> Tuple[tkinter.Toplevel, PluginDialogContent]:
+def create_dialog() -> tuple[tkinter.Toplevel, PluginDialogContent]:
     dialog = tkinter.Toplevel()
     content = PluginDialogContent(dialog)
     content.content_frame.pack(fill="both", expand=True)

@@ -47,7 +47,7 @@ Porcupine has these options by default (but you can add your own options too, se
             from pygments import styles
             the_style = styles.get_style_by_name(settings.get('pygments_style', str))
 
-    ``disabled_plugins``: List[:class:`str`]
+    ``disabled_plugins``: list[:class:`str`]
 
         Names of plugins that the user has disabled. See :mod:`porcupine.pluginloader`.
 

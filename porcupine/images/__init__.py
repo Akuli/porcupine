@@ -1,12 +1,12 @@
-"""An API for accessing images."""
+"""Load image files from :source:`porcupine/images`."""
+from __future__ import annotations
 
 import atexit
 import pathlib
 import tkinter
-from typing import Dict, List
 
 # __path__[0] is the directory where this __init__.py is
-__path__: List[str]
+__path__: list[str]
 images_dir = pathlib.Path(__path__[0]).absolute()
 
 
@@ -24,7 +24,7 @@ images_dir = pathlib.Path(__path__[0]).absolute()
 #   - the images must be destroyed before step 2 above
 #
 # tldr: the cache is not just a performance or memory optimization
-_image_cache: Dict[str, tkinter.PhotoImage] = {}
+_image_cache: dict[str, tkinter.PhotoImage] = {}
 atexit.register(_image_cache.clear)
 
 

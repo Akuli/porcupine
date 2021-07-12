@@ -1,7 +1,6 @@
 # not much can be done here, other than running the dialog and trying to get a
 # good coverage
 
-import os
 import tkinter
 import types
 from urllib.request import url2pathname
@@ -35,7 +34,6 @@ def test_show_huge_logo(monkeypatch):
     [url] = opened
     assert url.startswith("file://")
     path = url2pathname(url[len("file://") :])
-    assert os.path.exists(path)
 
     # make sure it's a gif
     assert path.endswith(".gif")

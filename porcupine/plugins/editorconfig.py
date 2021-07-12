@@ -4,13 +4,14 @@
 #    https://pypi.org/project/EditorConfig/
 #
 # Many comments in this file are quotes from https://editorconfig.org/
+from __future__ import annotations
+
 import configparser
 import dataclasses
 import logging
 import pathlib
 import re
 from functools import partial
-from typing import Dict, List, Optional, Tuple
 
 from porcupine import get_tab_manager, settings, tabs
 
@@ -31,12 +32,12 @@ _DEFAULT_SECTION_NAME = "this section is not used for anything but can't be disa
 class Section:
     glob_relative_to: pathlib.Path
     path_glob: str
-    config: Dict[str, str]
+    config: dict[str, str]
 
 
 # Sections later in resulting list override earlier sections: "EditorConfig
 # files are read top to bottom and the most recent rules found take precedence."
-def parse_file(path: pathlib.Path) -> Tuple[List[Section], bool]:
+def parse_file(path: pathlib.Path) -> tuple[list[Section], bool]:
     log.debug(f"parsing {path}")
 
     # "EditorConfig files should be UTF-8 encoded, with either CRLF or LF line
@@ -105,7 +106,7 @@ def parse_file(path: pathlib.Path) -> Tuple[List[Section], bool]:
 
 
 def glob_match(glob: str, string: str) -> bool:
-    ranges: List[range] = []
+    ranges = []
     regex = ""
 
     while glob:
@@ -179,12 +180,12 @@ def glob_match(glob: str, string: str) -> bool:
     return all(integer in ranke for integer, ranke in zip(integers, ranges))
 
 
-def get_config(path: pathlib.Path) -> Dict[str, str]:
+def get_config(path: pathlib.Path) -> dict[str, str]:
     assert path.is_absolute()
 
     # last items in this list is considered the most important
     # i.e. every item overrides ones before it
-    all_sections: List[Section] = []
+    all_sections: list[Section] = []
 
     # "When opening a file, EditorConfig plugins look for a file named
     # .editorconfig in the directory of the opened file and in every parent
@@ -210,7 +211,7 @@ def get_config(path: pathlib.Path) -> Dict[str, str]:
         if is_root:
             break
 
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     for section in all_sections:
         # "Only forward slashes (/, not backslashes) are used as path separators"
         relative = "/" + path.relative_to(section.glob_relative_to).as_posix()
@@ -243,8 +244,8 @@ def get_config(path: pathlib.Path) -> Dict[str, str]:
 
 
 def get_bool(
-    config: Dict[str, str], option: str, *, true_string: str = "true", false_string: str = "false"
-) -> Optional[bool]:
+    config: dict[str, str], option: str, *, true_string: str = "true", false_string: str = "false"
+) -> bool | None:
     if option in config:
         if config[option] == true_string:
             return True
@@ -257,7 +258,7 @@ def get_bool(
 # https://github.com/editorconfig/editorconfig/wiki/EditorConfig-Properties
 
 
-def get_indent_size(config: Dict[str, str]) -> Optional[int]:
+def get_indent_size(config: dict[str, str]) -> int | None:
     # "When set to tab, the value of tab_width (if specified) will be used."
     if "indent_size" in config and config["indent_size"] != "tab":
         string_value = config["indent_size"]
@@ -273,7 +274,7 @@ def get_indent_size(config: Dict[str, str]) -> Optional[int]:
         return None
 
 
-def get_encoding(config: Dict[str, str]) -> Optional[str]:
+def get_encoding(config: dict[str, str]) -> str | None:
     if "charset" in config:
         encoding = config["charset"]
 
@@ -287,7 +288,7 @@ def get_encoding(config: Dict[str, str]) -> Optional[str]:
     return None
 
 
-def get_max_line_length(config: Dict[str, str]) -> Optional[int]:
+def get_max_line_length(config: dict[str, str]) -> int | None:
     if "max_line_length" in config:
         string = config["max_line_length"]
         try:
@@ -297,7 +298,7 @@ def get_max_line_length(config: Dict[str, str]) -> Optional[int]:
     return None
 
 
-def get_line_ending(config: Dict[str, str]) -> Optional[settings.LineEnding]:
+def get_line_ending(config: dict[str, str]) -> settings.LineEnding | None:
     if "end_of_line" in config:
         string = config["end_of_line"]
         if string in {"cr", "lf", "crlf"}:
@@ -306,8 +307,8 @@ def get_line_ending(config: Dict[str, str]) -> Optional[settings.LineEnding]:
     return None
 
 
-def apply_config(config: Dict[str, str], tab: tabs.FileTab) -> None:
-    updates: Dict[str, Optional[object]] = {
+def apply_config(config: dict[str, str], tab: tabs.FileTab) -> None:
+    updates: dict[str, object | None] = {
         "tabs2spaces": get_bool(config, "indent_style", true_string="space", false_string="tab"),
         "indent_size": get_indent_size(config),
         "encoding": get_encoding(config),

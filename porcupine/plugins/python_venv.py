@@ -44,7 +44,7 @@ def _find_venv(project_root: Path) -> Path | None:
 
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
-    custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
+    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
 
     if str(project_root) in custom_paths:
         from_settings = Path(custom_paths[str(project_root)])

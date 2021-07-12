@@ -19,11 +19,13 @@ import re
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import List, Optional, Union
+from typing import List
 
 from porcupine import get_main_window, get_tab_manager, settings, tabs, textutils, utils
 
-setup_before = ["tabs2spaces"]  # see tabs2spaces.py
+# autoindent: it shouldn't indent when pressing enter to choose completion
+# tabs2spaces: all plugins binding tab or shift+tab must bind first
+setup_before = ["autoindent", "tabs2spaces"]
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +40,19 @@ class Completion:
     documentation: str
 
 
-def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
+@dataclasses.dataclass
+class Request(utils.EventDataclass):
+    id: int
+    cursor_pos: str
+
+
+@dataclasses.dataclass
+class Response(utils.EventDataclass):
+    id: int
+    completions: List[Completion]
+
+
+def _pack_with_scrollbar(widget: ttk.Treeview | tkinter.Text) -> ttk.Scrollbar:
     scrollbar = ttk.Scrollbar(widget.master)
     widget.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=widget.yview)
@@ -85,7 +99,7 @@ def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
 
 class _Popup:
     def __init__(self) -> None:
-        self._completion_list: Optional[List[Completion]] = None
+        self._completion_list: list[Completion] | None = None
 
         self.toplevel = tkinter.Toplevel()
         self.toplevel.withdraw()
@@ -148,7 +162,7 @@ class _Popup:
         self.treeview.selection_set(item_id)  # type: ignore[no-untyped-call]
         self.treeview.see(item_id)  # type: ignore[no-untyped-call]
 
-    def _get_selected_completion(self) -> Optional[Completion]:
+    def _get_selected_completion(self) -> Completion | None:
         if not self.is_completing():
             return None
         assert self._completion_list is not None
@@ -161,7 +175,7 @@ class _Popup:
         return self._completion_list[int(the_id)]
 
     def start_completing(
-        self, completion_list: List[Completion], geometry: Optional[str] = None
+        self, completion_list: list[Completion], geometry: str | None = None
     ) -> None:
         if self.is_completing():
             self.stop_completing(withdraw=False)
@@ -185,7 +199,7 @@ class _Popup:
 
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
-    def stop_completing(self, *, withdraw: bool = True) -> Optional[Completion]:
+    def stop_completing(self, *, withdraw: bool = True) -> Completion | None:
         # putting this here avoids some bugs
         if self.is_showing():
             settings.set_("autocomplete_popup_width", self.toplevel.winfo_width())
@@ -242,18 +256,6 @@ class _Popup:
             self._doc_text.delete("1.0", "end")
             self._doc_text.insert("1.0", completion.documentation)
             self._doc_text.config(state="disabled")
-
-
-@dataclasses.dataclass
-class Request(utils.EventDataclass):
-    id: int
-    cursor_pos: str
-
-
-@dataclasses.dataclass
-class Response(utils.EventDataclass):
-    id: int
-    completions: List[Completion]
 
 
 # stupid fallback
@@ -332,9 +334,9 @@ def _text_index_less_than(index1: str, index2: str) -> bool:
 class AutoCompleter:
     def __init__(self, tab: tabs.FileTab) -> None:
         self._tab = tab
-        self._orig_cursorpos: Optional[str] = None
+        self._orig_cursorpos: str | None = None
         self._id_counter = itertools.count()
-        self._waiting_for_response_id: Optional[int] = None
+        self._waiting_for_response_id: int | None = None
         self.popup = _Popup()
         utils.bind_with_data(
             tab,
@@ -391,7 +393,7 @@ class AutoCompleter:
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
-    def _get_filtered_completions(self) -> List[Completion]:
+    def _get_filtered_completions(self) -> list[Completion]:
         log.debug("getting filtered completions")
         assert self._orig_cursorpos is not None
         filter_text = self._tab.textwidget.get(self._orig_cursorpos, "insert")
