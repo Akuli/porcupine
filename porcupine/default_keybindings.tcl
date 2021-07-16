@@ -123,11 +123,13 @@ bind Text <$contmand-Delete> {
 
 bind Text <BackSpace> {
     try {%W delete sel.first sel.last} on error {} {
-        set beforecursor [%W get {insert linestart} insert]
-        if {[bind %W <<Dedent>>] != "" && $beforecursor != "" && [string is space $beforecursor]} {
-            event generate %W <<Dedent>>
-        } else {
-            %W delete {insert - 1 char}
+        if {[%W index insert] != 1.0} {
+            set beforecursor [%W get {insert linestart} insert]
+            if {[bind %W <<Dedent>>] != "" && $beforecursor != "" && [string is space $beforecursor]} {
+                event generate %W <<Dedent>>
+            } else {
+                %W delete {insert - 1 char}
+            }
         }
     }
 }
@@ -196,4 +198,11 @@ bind Text <Shift-Button-1> {
     } else {
         %W tag add sel $select_between_clicked_and_this insert
     }
+}
+
+# https://core.tcl-lang.org/tcl/info/f1253530cd
+if {[tk windowingsystem] == "win32"} {
+    catch {tcl_endOfWord}
+    set tcl_wordchars {\w}
+    set tcl_nonwordchars {\W}
 }

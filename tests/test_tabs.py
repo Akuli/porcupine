@@ -127,6 +127,11 @@ def test_save_as(filetab, tmp_path):
     assert (tmp_path / "foo.py").read_text() == "hello world\n"
 
 
+def test_save_as_title_bug(filetab, tmp_path, tabmanager):
+    filetab.save_as(tmp_path / "bar.py")
+    assert tabmanager.tab(filetab, "text") == "bar.py"
+
+
 def test_initial_cursor_pos(tabmanager, tmp_path):
     (tmp_path / "foo.py").write_text("hello")
     tab = tabs.FileTab.open_file(tabmanager, tmp_path / "foo.py")

@@ -6,7 +6,7 @@ import itertools
 import random
 import tkinter
 from tkinter import ttk
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Iterator, Tuple
 
 from porcupine import get_tab_manager, menubar, tabs, utils
 
@@ -21,7 +21,7 @@ ShapeLetter = str
 # that the shape rotates around and top center of the game when the
 # shape is added to it
 # y is like in math, so more y means higher
-SHAPES: Dict[ShapeLetter, List[Point]] = {
+SHAPES: dict[ShapeLetter, list[Point]] = {
     # fmt: off
     'I': [(0, 2),
           (0, 1),
@@ -89,7 +89,7 @@ class Block:
             pass
 
     def rotate(self) -> bool:
-        new_shape: List[Point] = []
+        new_shape: list[Point] = []
         for old_x, old_y in self.shape:
             x, y = -old_y, old_x
             if self.bumps(self.x + x, self.y + y):
@@ -107,7 +107,7 @@ class NonRotatingBlock(Block):
 
 class TwoRotationsBlock(Block):
 
-    _rotations: Optional[Iterator[List[Point]]] = None
+    _rotations: Iterator[list[Point]] | None = None
 
     def rotate(self) -> bool:
         if self._rotations is None:
@@ -138,7 +138,7 @@ class Game:
     moving_block: Block
 
     def __init__(self) -> None:
-        self.frozen_squares: Dict[Point, str] = {}
+        self.frozen_squares: dict[Point, str] = {}
         self.score = 0  # each new block increments score
         self.add_block()  # creates self.moving_block
         self.paused = False  # only used outside this class definition
@@ -162,7 +162,7 @@ class Game:
         else:
             self.moving_block = Block(self, letter)
 
-    def shape_at(self, x: int, y: int) -> Optional[ShapeLetter]:
+    def shape_at(self, x: int, y: int) -> ShapeLetter | None:
         try:
             return self.frozen_squares[(x, y)]
         except KeyError:
@@ -203,7 +203,7 @@ class Game:
         return any((x, HEIGHT) in self.frozen_squares for x in range(WIDTH))
 
 
-COLORS: Dict[ShapeLetter, str] = {
+COLORS: dict[ShapeLetter, str] = {
     "I": "red",
     "O": "blue",
     "T": "yellow",
@@ -256,8 +256,8 @@ class TetrisTab(tabs.Tab):
                     left, bottom - SCALE, left + SCALE, bottom, outline="black", fill="black"
                 )
 
-        self._timeout_id: Optional[str] = None
-        self._game_over_id: Optional[int] = None
+        self._timeout_id: str | None = None
+        self._game_over_id: int | None = None
 
         # yes, this needs force for some reason
         self.bind("<<TabSelected>>", (lambda event: self._canvas.focus_force()), add=True)

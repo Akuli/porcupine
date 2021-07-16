@@ -4,6 +4,11 @@ To get the most out of this plugin, you also need some other plugin such as the
 langserver plugin. If no such plugin is loaded, then this plugin falls back to
 "all words in file" style autocompletions.
 """
+
+# If your plugin sets up an autocompleter, it should be setup before this
+# plugin. That way its <<AutoCompletionRequest>> binding will be used instead
+# of the all-words-in-file fallback.
+
 from __future__ import annotations
 
 import collections
@@ -12,12 +17,15 @@ import itertools
 import logging
 import re
 import tkinter
+from functools import partial
 from tkinter import ttk
-from typing import List, Optional, Union
+from typing import List
 
-from porcupine import get_tab_manager, settings, tabs, textutils, utils
+from porcupine import get_main_window, get_tab_manager, settings, tabs, textutils, utils
 
-setup_before = ["tabs2spaces"]  # see tabs2spaces.py
+# autoindent: it shouldn't indent when pressing enter to choose completion
+# tabs2spaces: all plugins binding tab or shift+tab must bind first
+setup_before = ["autoindent", "tabs2spaces"]
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +40,19 @@ class Completion:
     documentation: str
 
 
-def _pack_with_scrollbar(widget: Union[ttk.Treeview, tkinter.Text]) -> ttk.Scrollbar:
+@dataclasses.dataclass
+class Request(utils.EventDataclass):
+    id: int
+    cursor_pos: str
+
+
+@dataclasses.dataclass
+class Response(utils.EventDataclass):
+    id: int
+    completions: List[Completion]
+
+
+def _pack_with_scrollbar(widget: ttk.Treeview | tkinter.Text) -> ttk.Scrollbar:
     scrollbar = ttk.Scrollbar(widget.master)
     widget.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=widget.yview)
@@ -79,7 +99,7 @@ def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
 
 class _Popup:
     def __init__(self) -> None:
-        self._completion_list: Optional[List[Completion]] = None
+        self._completion_list: list[Completion] | None = None
 
         self.toplevel = tkinter.Toplevel()
         self.toplevel.withdraw()
@@ -142,7 +162,7 @@ class _Popup:
         self.treeview.selection_set(item_id)  # type: ignore[no-untyped-call]
         self.treeview.see(item_id)  # type: ignore[no-untyped-call]
 
-    def _get_selected_completion(self) -> Optional[Completion]:
+    def _get_selected_completion(self) -> Completion | None:
         if not self.is_completing():
             return None
         assert self._completion_list is not None
@@ -155,7 +175,7 @@ class _Popup:
         return self._completion_list[int(the_id)]
 
     def start_completing(
-        self, completion_list: List[Completion], geometry: Optional[str] = None
+        self, completion_list: list[Completion], geometry: str | None = None
     ) -> None:
         if self.is_completing():
             self.stop_completing(withdraw=False)
@@ -179,7 +199,7 @@ class _Popup:
 
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
-    def stop_completing(self, *, withdraw: bool = True) -> Optional[Completion]:
+    def stop_completing(self, *, withdraw: bool = True) -> Completion | None:
         # putting this here avoids some bugs
         if self.is_showing():
             settings.set_("autocomplete_popup_width", self.toplevel.winfo_width())
@@ -238,67 +258,85 @@ class _Popup:
             self._doc_text.config(state="disabled")
 
 
-@dataclasses.dataclass
-class Request(utils.EventDataclass):
-    id: int
-    cursor_pos: str
+# stupid fallback
+def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) -> str:
+    request = event.data_class(Request)
+    match = re.search(
+        r"\w*$", tab.textwidget.get(f"{request.cursor_pos} linestart", request.cursor_pos)
+    )
+    assert match is not None
+    before_cursor = match.group(0)
+    word_start = tab.textwidget.index(f"{request.cursor_pos} - {len(before_cursor)} chars")
 
+    counts = dict(
+        collections.Counter(
+            [
+                word
+                for word in re.findall(
+                    r"\w+",
+                    (
+                        tab.textwidget.get("1.0", word_start)
+                        + " "
+                        + tab.textwidget.get(request.cursor_pos, "end")
+                    ),
+                )
+                if before_cursor.casefold() in word.casefold()
+            ]
+        )
+    )
 
-@dataclasses.dataclass
-class Response(utils.EventDataclass):
-    id: int
-    completions: List[Completion]
+    words = list(counts.keys())
+    words.sort(
+        key=lambda word: (
+            # Prefer prefixes
+            1 if word.startswith(before_cursor) else 2,
+            # Prefer case-sensitive matches (insensitive included too)
+            1 if before_cursor in word else 2,
+            # Most common goes first
+            -counts[word],
+            # Short first
+            len(word),
+            # Alphabetically just to get consistent results
+            word,
+        )
+    )
+
+    tab.event_generate(
+        "<<AutoCompletionResponse>>",
+        data=Response(
+            id=request.id,
+            completions=[
+                Completion(
+                    display_text=word,
+                    replace_start=word_start,
+                    replace_end=request.cursor_pos,
+                    replace_text=word,
+                    filter_text=word,
+                    documentation=word,
+                )
+                for word in words
+            ],
+        ),
+    )
+    return "break"
 
 
 # How this differs from using sometextwidget.compare(start, '<', end):
 #   - This does the right thing if text has been deleted so that start and end
 #     no longer exist in the text widget.
 #   - Start and end must be in 'x.y' format.
-def text_index_less_than(index1: str, index2: str) -> bool:
+def _text_index_less_than(index1: str, index2: str) -> bool:
     tuple1 = tuple(map(int, index1.split(".")))
     tuple2 = tuple(map(int, index2.split(".")))
     return tuple1 < tuple2
 
 
-# stupid fallback
-def _all_words_in_file_completions(textwidget: tkinter.Text) -> List[Completion]:
-    match = re.search(r"\w*$", textwidget.get("insert linestart", "insert"))
-    assert match is not None
-    before_cursor = match.group(0)
-    replace_start = textwidget.index(f"insert - {len(before_cursor)} chars")
-    replace_end = textwidget.index("insert")
-
-    counts = dict(
-        collections.Counter(
-            [
-                word
-                for word in re.findall(r"\w+", textwidget.get("1.0", "end"))
-                if before_cursor.casefold() in word.casefold()
-            ]
-        )
-    )
-    if counts.get(before_cursor, 0) == 1:
-        del counts[before_cursor]
-
-    return [
-        Completion(
-            display_text=word,
-            replace_start=replace_start,
-            replace_end=replace_end,
-            replace_text=word,
-            filter_text=word,
-            documentation=word,
-        )
-        for word in sorted(counts.keys(), key=counts.__getitem__)
-    ]
-
-
 class AutoCompleter:
     def __init__(self, tab: tabs.FileTab) -> None:
         self._tab = tab
-        self._orig_cursorpos: Optional[str] = None
+        self._orig_cursorpos: str | None = None
         self._id_counter = itertools.count()
-        self._waiting_for_response_id: Optional[int] = None
+        self._waiting_for_response_id: int | None = None
         self.popup = _Popup()
         utils.bind_with_data(
             tab,
@@ -316,19 +354,9 @@ class AutoCompleter:
         # completion request or filtering, user might type more
         self._orig_cursorpos = self._tab.textwidget.index("insert")
 
-        if self._tab.bind("<<AutoCompletionRequest>>"):
-            # an event handler is bound, use that
-            self._tab.event_generate(
-                "<<AutoCompletionRequest>>",
-                data=Request(id=the_id, cursor_pos=self._orig_cursorpos),
-            )
-        else:
-            # fall back to "all words in file" autocompleting
-            self.receive_completions(
-                Response(
-                    id=the_id, completions=_all_words_in_file_completions(self._tab.textwidget)
-                )
-            )
+        self._tab.event_generate(
+            "<<AutoCompletionRequest>>", data=Request(id=the_id, cursor_pos=self._orig_cursorpos)
+        )
 
     def _user_wants_to_see_popup(self) -> bool:
         assert self._orig_cursorpos is not None
@@ -365,7 +393,7 @@ class AutoCompleter:
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
-    def _get_filtered_completions(self) -> List[Completion]:
+    def _get_filtered_completions(self) -> list[Completion]:
         log.debug("getting filtered completions")
         assert self._orig_cursorpos is not None
         filter_text = self._tab.textwidget.get(self._orig_cursorpos, "insert")
@@ -471,7 +499,7 @@ class AutoCompleter:
 
         # if cursor has moved back more since requesting completions: User
         # has backspaced away a lot and likely doesn't want completions.
-        if text_index_less_than(self._tab.textwidget.index("insert"), self._orig_cursorpos):
+        if _text_index_less_than(self._tab.textwidget.index("insert"), self._orig_cursorpos):
             self._reject()
             return
 
@@ -510,11 +538,23 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     completer.popup.treeview.bind("<Button-1>", (lambda event: completer._accept()), add=True)
 
     # avoid weird corner cases
-    tab.winfo_toplevel().bind("<FocusOut>", (lambda event: completer._reject()), add=True)
+    def on_focus_out(event: tkinter.Event[tkinter.Misc]) -> None:
+        if event.widget == get_main_window():
+            # On Windows, <FocusOut> runs before treeview click handler
+            # We must accept when clicked, so reject later
+            tab.after_idle(completer._reject)
+
+    get_main_window().bind("<FocusOut>", on_focus_out, add=True)
+
     # any mouse button
     tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
 
     tab.bind("<Destroy>", (lambda event: completer.popup.toplevel.destroy()), add=True)
+
+    # fallback completer, other completers must be bound before
+    utils.bind_with_data(
+        tab, "<<AutoCompletionRequest>>", partial(_all_words_in_file_completer, tab), add=True
+    )
 
 
 def setup() -> None:

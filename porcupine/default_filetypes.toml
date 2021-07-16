@@ -183,7 +183,6 @@ tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
 commands = {run = "{python} {file}"}
-autocomplete_chars = ["."]
 langserver = {command = "{porcupine_python} -m pyls", language_id = "python"}
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}

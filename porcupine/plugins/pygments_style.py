@@ -3,32 +3,29 @@ from __future__ import annotations
 
 import threading
 import tkinter
-from typing import List, Optional, Tuple
 
-from pygments import styles, token  # type: ignore[import]
+from pygments import styles, token
 
 from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 
 
-def get_colors(style_name: str) -> Tuple[str, str]:
+def get_colors(style_name: str) -> tuple[str, str]:
     style = styles.get_style_by_name(style_name)
-    bg: str = style.background_color
+    bg = style.background_color
 
     # style_names have a style_for_token() method, but only iterating
     # is documented :( http://pygments.org/docs/formatterdevelopment/
     # i'm using iter() to make sure that dict() really treats
     # the style as an iterable of pairs instead of some other
     # metaprogramming fanciness
-    fg: Optional[str] = None
     style_infos = dict(iter(style))
 
-    for tokentype in [token.String, token.Text]:
-        if style_infos[tokentype]["color"] is not None:
-            fg = "#" + style_infos[tokentype]["color"]
-            break
-
-    if fg is None:
-        # do like textwidget.use_pygments_theme does
+    fg = style_infos[token.String]["color"] or style_infos[token.Text]["color"]
+    if fg:
+        # style_infos doesn't contain leading '#' for whatever reason
+        fg = "#" + fg
+    else:
+        # do like textutils.use_pygments_theme does
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
 
     return (fg, bg)
@@ -37,13 +34,13 @@ def get_colors(style_name: str) -> Tuple[str, str]:
 # threading this gives a significant speed improvement on startup
 # on this system, setup() took 0.287940 seconds before adding threads
 # and 0.000371 seconds after adding threads
-def load_style_names_to_list(target_list: List[str]) -> None:
+def load_style_names_to_list(target_list: list[str]) -> None:
     target_list.extend(styles.get_all_styles())  # slow
     target_list.sort()
 
 
 def setup() -> None:
-    style_names: List[str] = []
+    style_names: list[str] = []
     thread = threading.Thread(target=load_style_names_to_list, args=[style_names])
     thread.daemon = True  # i don't care wtf happens to this
     thread.start()

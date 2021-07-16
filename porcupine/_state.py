@@ -1,21 +1,22 @@
 """The main window and tab manager globals are here."""
+from __future__ import annotations
 
 import logging
 import tkinter
 import types
 from tkinter import ttk
-from typing import Any, Dict, Optional, Type
+from typing import Any, Type
 
 from porcupine import settings, tabs
 
 log = logging.getLogger(__name__)
 
-# global state makes some things a lot easier
-_root: Optional[tkinter.Tk] = None
-_paned_window: Optional[ttk.Panedwindow] = None
-_tab_manager: Optional[tabs.TabManager] = None
-_parsed_args: Optional[Any] = None
-filedialog_kwargs: Dict[str, Any] = {}
+# global state makes some things a lot easier (I'm sorry)
+_root: tkinter.Tk | None = None
+_paned_window: ttk.Panedwindow | None = None
+_tab_manager: tabs.TabManager | None = None
+_parsed_args: Any | None = None  # Any | None means you have to check if its None
+filedialog_kwargs: dict[str, Any] = {}
 
 
 def _log_tkinter_error(

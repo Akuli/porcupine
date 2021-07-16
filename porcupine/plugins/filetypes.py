@@ -1,4 +1,5 @@
 """Everything related to filetypes.toml."""
+from __future__ import annotations
 
 import argparse
 import fnmatch
@@ -6,11 +7,11 @@ import logging
 import pathlib
 import re
 from functools import partial
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import toml
-from pygments import lexers  # type: ignore[import]
-from pygments.util import ClassNotFound  # type: ignore[import]
+from pygments import lexers
+from pygments.util import ClassNotFound
 
 from porcupine import (
     dirs,
@@ -24,7 +25,7 @@ from porcupine import (
 
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]
-filetypes: Dict[str, FileType] = {}
+filetypes: dict[str, FileType] = {}
 
 
 def is_list_of_strings(obj: object) -> bool:
@@ -38,7 +39,7 @@ def load_filetypes() -> None:
 
     filetypes.update(toml.load(defaults_path))
 
-    user_filetypes: Dict[str, FileType] = {}
+    user_filetypes: dict[str, FileType] = {}
     try:
         user_filetypes = dict(toml.load(user_path))
     except FileNotFoundError:
@@ -99,8 +100,8 @@ def set_filedialog_kwargs() -> None:
 
 
 def get_filetype_from_matches(
-    matches: Dict[str, FileType], they_match_what: str
-) -> Optional[FileType]:
+    matches: dict[str, FileType], they_match_what: str
+) -> FileType | None:
     if not matches:
         return None
     if len(matches) >= 2:
@@ -112,7 +113,7 @@ def get_filetype_from_matches(
     return list(matches.values())[-1]
 
 
-def guess_filetype_from_path(filepath: pathlib.Path) -> Optional[FileType]:
+def guess_filetype_from_path(filepath: pathlib.Path) -> FileType | None:
     assert filepath.is_absolute()
     return get_filetype_from_matches(
         {
@@ -127,9 +128,9 @@ def guess_filetype_from_path(filepath: pathlib.Path) -> Optional[FileType]:
     )
 
 
-def guess_filetype_from_shebang(content_start: str) -> Optional[FileType]:
+def guess_filetype_from_shebang(content_start: str) -> FileType | None:
     shebang_line = content_start.split("\n")[0]
-    matches: Dict[str, FileType] = {}
+    matches = {}
 
     for name, filetype in filetypes.items():
         if re.search(filetype["shebang_regex"], shebang_line) is not None:
@@ -149,7 +150,7 @@ def guess_filetype(filepath: pathlib.Path) -> FileType:
         # is utf-8
         with filepath.open("r", encoding="utf-8") as file:
             # don't read the entire file if it's huge and all on one line
-            shebang_line: Optional[str] = file.readline(1000)
+            shebang_line: str | None = file.readline(1000)
     except (UnicodeError, OSError):
         shebang_line = None
 

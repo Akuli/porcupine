@@ -7,7 +7,7 @@ import sys
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Iterator, List, Optional, Tuple, cast
+from typing import Any, Iterator, cast
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -108,7 +108,7 @@ class Finder(ttk.Frame):
 
         closebutton.config(image=images.get("closebutton"))
 
-        # explained in test_find_plugin.py
+        # _update_buttons() uses current selection, update when changes
         textwidget.bind("<<Selection>>", self._update_buttons, add=True)
 
         textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
@@ -137,27 +137,25 @@ class Finder(ttk.Frame):
         entry.grid(row=row, column=1, sticky="we")
         return entry
 
-    def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> Literal["break"]:
+    def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> str:
         var.set(not var.get())
         return "break"
 
     def show(self, junk: object = None) -> None:
         try:
-            selected_text: Optional[str] = self._textwidget.get("sel.first", "sel.last")
+            selected_text: str | None = self._textwidget.get("sel.first", "sel.last")
         except tkinter.TclError:
             selected_text = None
 
         self.pack(fill="x")
 
-        if selected_text is None or "\n" in selected_text:
-            self.find_entry.focus_set()
-            # when ctrl + f without text selected
-            self.find_entry.selection_range(0, "end")  # type: ignore[no-untyped-call]
-        else:
+        if selected_text is not None and "\n" not in selected_text:
+            # Selected text is usable, search for that
             self.find_entry.delete(0, "end")
             self.find_entry.insert(0, selected_text)  # type: ignore[no-untyped-call]
-            self.find_entry.select_range(0, "end")
-            self.find_entry.focus_set()
+
+        self.find_entry.select_range(0, "end")
+        self.find_entry.focus_set()
 
         self.highlight_all_matches()
 
@@ -173,7 +171,7 @@ class Finder(ttk.Frame):
 
     # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
     # gives a list of (start, end) pairs
-    def get_match_ranges(self) -> List[Tuple[str, str]]:
+    def get_match_ranges(self) -> list[tuple[str, str]]:
         starts_and_ends = list(map(str, self._textwidget.tag_ranges("find_highlight")))
         assert len(starts_and_ends) % 2 == 0
         pairs = list(zip(starts_and_ends[0::2], starts_and_ends[1::2]))
@@ -182,19 +180,21 @@ class Finder(ttk.Frame):
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self, junk: object = None) -> None:
-        State = Literal["normal", "disabled"]
-        matches_something_state: State = "normal" if self.get_match_ranges() else "disabled"
-        replace_this_state: State
+        matches_something_state = "normal" if self.get_match_ranges() else "disabled"
 
-        try:
-            start, end = map(str, self._textwidget.tag_ranges("sel"))
-        except ValueError:
-            replace_this_state = "disabled"
-        else:  # no, elif doesn't work here
-            if (start, end) in self.get_match_ranges():
-                replace_this_state = "normal"
-            else:
-                replace_this_state = "disabled"
+        # Currently selected match is specified with two tags, "sel" and
+        # "find_highlight_selected". Both have to match.
+        locations = [str(loc) for loc in self._textwidget.tag_ranges("sel")]
+        locations2 = [str(loc) for loc in self._textwidget.tag_ranges("find_highlight_selected")]
+        replace_this_state = (
+            "normal"
+            if (
+                locations == locations2
+                and len(locations) == 2
+                and tuple(locations) in self.get_match_ranges()
+            )
+            else "disabled"
+        )
 
         self.previous_button.config(state=matches_something_state)
         self.next_button.config(state=matches_something_state)
@@ -260,7 +260,8 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel.config(text=f"Found {count} matches.")
 
-    def _select_match(self, start: str, end: str) -> None:
+    def _select_match(self, match_ranges: list[tuple[str, str]], index: int) -> None:
+        start, end = match_ranges[index]
         self._textwidget.tag_remove("sel", "1.0", "end")
         self._textwidget.tag_remove("find_highlight_selected", "1.0", "end")
         self._textwidget.tag_add("sel", start, end)
@@ -268,45 +269,40 @@ class Finder(ttk.Frame):
         self._textwidget.mark_set("insert", start)
         self._textwidget.see(start)
 
-    def _go_to_next_match(self, junk: object = None) -> None:
-        pairs = self.get_match_ranges()
-        if not pairs:
-            # the "Next match" button is disabled in this case, but the key
-            # binding of the find entry is not
-            self.statuslabel.config(text="No matches found!")
-            return
-
-        # find first pair that starts after the cursor
-        for start, end in pairs:
-            if self._textwidget.compare(start, ">", "insert"):
-                self._select_match(start, end)
-                break
-        else:
-            # reached end of file, use the first match
-            self._select_match(*pairs[0])
-
-        self.statuslabel.config(text="")
+        self.statuslabel.config(text=f"Match {index + 1}/{len(match_ranges)}")
         self._update_buttons()
 
-    # see _go_to_next_match for comments
+    def _go_to_next_match(self, junk: object = None) -> None:
+        # If we have no match ranges, then "Next match" button is disabled and
+        # this was invoked through key binding
+        pairs = self.get_match_ranges()
+        if pairs:
+            # If no matches highlighted yet, can highlight match exactly at cursor
+            # Applies only to next match, previous always search before cursor
+            some_match_already_highlighted = str(self.replace_this_button["state"]) == "normal"
+            operator: Literal[">=", ">"] = ">" if some_match_already_highlighted else ">="
+
+            # find first pair that starts after the cursor, or cycle back to first
+            possible_indexes = (
+                i
+                for i, (start, end) in enumerate(pairs)
+                if self._textwidget.compare(start, operator, "insert")
+            )
+            index = next(possible_indexes, 0)
+            self._select_match(pairs, index)
+
     def _go_to_previous_match(self, junk: object = None) -> None:
         pairs = self.get_match_ranges()
-        if not pairs:
-            self.statuslabel.config(text="No matches found!")
-            return
+        if pairs:
+            possible_indexes = (
+                i
+                for i, (start, end) in reversed(list(enumerate(pairs)))
+                if self._textwidget.compare(start, "<", "insert")
+            )
+            index = next(possible_indexes, len(pairs) - 1)
+            self._select_match(pairs, index)
 
-        for start, end in reversed(pairs):
-            if self._textwidget.compare(start, "<", "insert"):
-                self._select_match(start, end)
-                break
-        else:
-            self._select_match(*pairs[-1])
-
-        self.statuslabel.config(text="")
-        self._update_buttons()
-        return
-
-    def _replace_this(self, junk: object = None) -> Literal["break"]:
+    def _replace_this(self, junk: object = None) -> str:
         if str(self.replace_this_button["state"]) == "disabled":
             self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
             return "break"
@@ -332,7 +328,7 @@ class Finder(ttk.Frame):
             self.statuslabel.config(text=f"Replaced a match. There are {left} more matches.")
         return "break"
 
-    def _replace_all(self, junk: object = None) -> Literal["break"]:
+    def _replace_all(self, junk: object = None) -> str:
         match_ranges = self.get_match_ranges()
 
         with textutils.change_batch(self._textwidget):

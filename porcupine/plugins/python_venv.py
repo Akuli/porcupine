@@ -44,7 +44,7 @@ def _find_venv(project_root: Path) -> Path | None:
 
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
-    custom_paths: Dict[str, str] = settings.get("python_venvs", Dict[str, str])
+    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
 
     if str(project_root) in custom_paths:
         from_settings = Path(custom_paths[str(project_root)])
@@ -106,7 +106,7 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
     if venv is not None:
         venv_id = tree.get_id_from_path(venv, info.project_id)
         if venv_id is not None:
-            tree.tk.call(tree, "tag", "add", "venv", venv_id)
+            tree.tk.call(tree, "tag", "add", "venv", [venv_id])
 
 
 def _on_treeview_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str:

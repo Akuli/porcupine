@@ -1,6 +1,7 @@
 """Allow dragging tabs out of the Porcupine window."""
 from __future__ import annotations
 
+import enum
 import logging
 import os
 import pickle
@@ -9,7 +10,7 @@ import sys
 import tempfile
 import threading
 import tkinter
-from typing import Any, Tuple, Union
+from typing import Any
 
 from porcupine import (
     get_main_window,
@@ -24,13 +25,10 @@ from porcupine import (
 log = logging.getLogger(__name__)
 
 
-class SpecialState:
-    pass
-
-
-NO_TABS = SpecialState()
-NOT_POPPABLE = SpecialState()
-NOT_DRAGGING = SpecialState()
+class DragState(enum.Enum):
+    NO_TABS = enum.auto()
+    NOT_POPPABLE = enum.auto()
+    NOT_DRAGGING = enum.auto()
 
 
 def is_on_window(event: tkinter.Event[tkinter.Misc]) -> bool:
@@ -56,7 +54,7 @@ class PopManager:
         self._label = tkinter.Label(self._window, fg="#000", bg="#ffc")
         self._label.pack()
 
-        self._dragged_state: Union[SpecialState, Tuple[tabs.Tab, Any]] = NOT_DRAGGING
+        self._dragged_state: DragState | tuple[tabs.Tab, Any] = DragState.NOT_DRAGGING
 
     def _show_tooltip(self, event: tkinter.Event[tkinter.Misc]) -> None:
         if self._window.state() == "withdrawn":
@@ -73,17 +71,17 @@ class PopManager:
             self._window.withdraw()
             return
 
-        if self._dragged_state is NOT_DRAGGING:
+        if self._dragged_state == DragState.NOT_DRAGGING:
             tab = get_tab_manager().select()
             if tab is None:
                 # no tabs to pop up
-                self._dragged_state = NO_TABS
+                self._dragged_state = DragState.NO_TABS
                 self._window.withdraw()
                 return
 
             state = tab.get_state()
             if state is None:
-                self._dragged_state = NOT_POPPABLE
+                self._dragged_state = DragState.NOT_POPPABLE
                 self._label.config(text="This tab cannot\nbe popped up.")
             else:
                 self._dragged_state = (tab, state)
@@ -93,7 +91,7 @@ class PopManager:
 
     def on_drop(self, event: tkinter.Event[tkinter.Misc]) -> None:
         self._window.withdraw()
-        if not (is_on_window(event) or isinstance(self._dragged_state, SpecialState)):
+        if not (is_on_window(event) or isinstance(self._dragged_state, DragState)):
             log.info("popping off a tab")
             tab, state = self._dragged_state
 
@@ -118,7 +116,7 @@ class PopManager:
             y = max(0, y)
             self.pop(tab, state, f"{width}x{height}+{x}+{y}")
 
-        self._dragged_state = NOT_DRAGGING
+        self._dragged_state = DragState.NOT_DRAGGING
 
     def pop(self, tab: tabs.Tab, state: Any, geometry: str) -> None:
         log.info(f"Popping {repr(tab)} to {geometry} begins")

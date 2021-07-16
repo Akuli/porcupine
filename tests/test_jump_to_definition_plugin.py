@@ -1,7 +1,5 @@
 # TODO: create much more tests for langserver
-import os
 import time
-import tkinter
 
 from sansio_lsp_client import ClientState
 
@@ -10,12 +8,7 @@ from porcupine.plugins.langserver import langservers
 
 
 def wait_until(condition):
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        # github actions can be slow, especially windows
-        timeout = 60
-    else:
-        # otherwise slowness usually means it froze
-        timeout = 5
+    timeout = 5
 
     end = time.time() + timeout
     while time.time() < end:
@@ -34,6 +27,13 @@ def wait_for_langserver_to_start(filetab):
     )
 
 
+# Don't know why this is sometimes needed
+def intense_super_update():
+    start = time.time()
+    while time.time() < start + 3:
+        get_main_window().update()
+
+
 def test_basic(filetab, tmp_path):
     filetab.textwidget.insert(
         "1.0",
@@ -48,10 +48,9 @@ foo()
     wait_for_langserver_to_start(filetab)
 
     # Put cursor to middle of calling foo()
-    filetab.textwidget.mark_set("insert", "end - 1 char")
-    filetab.textwidget.mark_set("insert", "insert - 1 line")
-    filetab.textwidget.mark_set("insert", "insert + 2 chars")
+    filetab.textwidget.mark_set("insert", "end - 1 char - 1 line + 2 chars")
 
+    intense_super_update()
     filetab.textwidget.event_generate("<<JumpToDefinition>>")
     wait_until(lambda: bool(filetab.textwidget.tag_ranges("sel")))
 
@@ -81,12 +80,13 @@ foo()
     filetab.textwidget.mark_set("insert", "insert - 1 line")
     filetab.textwidget.mark_set("insert", "insert + 2 chars")
 
-    mocker.patch("tkinter.Menu")
+    mock = mocker.patch("tkinter.Menu")
+    intense_super_update()
     filetab.textwidget.event_generate("<<JumpToDefinition>>")
-    wait_until(lambda: tkinter.Menu.call_args is not None)
+    wait_until(lambda: mock.call_args is not None)
 
     # It should add two menu items pointing at 2 different lines
-    [first_call, second_call] = tkinter.Menu.return_value.add_command.call_args_list
+    [first_call, second_call] = mock.return_value.add_command.call_args_list
     assert "Line 2" in str(first_call)
     assert "Line 5" in str(second_call)
 

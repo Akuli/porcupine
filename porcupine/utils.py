@@ -18,20 +18,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Deque,
-    Dict,
-    Iterator,
-    Optional,
-    TextIO,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TextIO, Type, TypeVar, cast
 from urllib.request import url2pathname
 
 import dacite
@@ -175,7 +162,7 @@ def file_url_to_path(file_url: str) -> Path:
 
 # Using these with subprocess prevents opening unnecessary cmd windows
 # TODO: document this
-subprocess_kwargs: Dict[str, Any] = {}
+subprocess_kwargs: dict[str, Any] = {}
 if sys.platform == "win32":
     # https://stackoverflow.com/a/1813893
     subprocess_kwargs["startupinfo"] = subprocess.STARTUPINFO(
@@ -353,6 +340,12 @@ class EventDataclass:
         ...
         foos = [Foo('ab', 123), Foo('cd', 456)]
         some_widget.event_generate('<<Thingy>>', data=Bar(foos))
+
+    Note that before Python 3.10, you need ``List[str]`` instead of
+    ``list[str]``, even if you use ``from __future__ import annotations``. This
+    is because Porcupine uses a library that needs to evaluate the type
+    annotations even if ``from __future__ import annotations``
+    was used.
     """
 
     def __str__(self) -> str:
@@ -396,7 +389,7 @@ class EventWithData(_Event):
 def bind_with_data(
     widget: tkinter.Misc,
     sequence: str,
-    callback: Callable[[EventWithData], Optional[str]],
+    callback: Callable[[EventWithData], str | None],
     add: bool = False,
 ) -> str:
     """
@@ -423,22 +416,19 @@ def bind_with_data(
     # event objects and runs callback(event)
     #
     # TODO: is it possible to do this without a deque?
-    event_objects: Deque[Union[tkinter.Event[tkinter.Misc], EventWithData]] = collections.deque()
+    event_objects: collections.deque[tkinter.Event[tkinter.Misc]] = collections.deque()
     widget.bind(sequence, event_objects.append, add=add)
 
-    def run_the_callback(data_string: str) -> Optional[str]:
-        event = event_objects.popleft()
+    def run_the_callback(data_string: str) -> str | None:
+        event: tkinter.Event[tkinter.Misc] | EventWithData = event_objects.popleft()
         event.__class__ = EventWithData  # evil haxor muhaha
         assert isinstance(event, EventWithData)
         event.data_string = data_string
         return callback(event)  # may return 'break'
 
-    # tkinter's bind() ignores the add argument when the callback is a
-    # string :(
+    # tkinter's bind() ignores the add argument when the callback is a string :(
     funcname = widget.register(run_the_callback)
-    widget.tk.eval(
-        'bind %s %s {+ if {"[%s %%d]" == "break"} break }' % (widget, sequence, funcname)
-    )
+    widget.tk.call("bind", widget, sequence, '+ if {"[%s %%d]" == "break"} break' % funcname)
     return funcname
 
 
@@ -514,7 +504,7 @@ def bind_tab_key(
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
 
 
-def errordialog(title: str, message: str, monospace_text: Optional[str] = None) -> None:
+def errordialog(title: str, message: str, monospace_text: str | None = None) -> None:
     """This is a lot like ``tkinter.messagebox.showerror``.
 
     This function can be called with or without creating a root window
@@ -564,7 +554,7 @@ def errordialog(title: str, message: str, monospace_text: Optional[str] = None) 
 
 def run_in_thread(
     blocking_function: Callable[[], _T],
-    done_callback: Callable[[bool, Union[str, _T]], None],
+    done_callback: Callable[[bool, str | _T], None],
     *,
     check_interval_ms: int = 100,
     daemon: bool = True,
@@ -591,7 +581,7 @@ def run_in_thread(
     root = porcupine.get_main_window()  # any widget would do
 
     value: _T
-    error_traceback: Optional[str] = None
+    error_traceback: str | None = None
 
     def thread_target() -> None:
         nonlocal value

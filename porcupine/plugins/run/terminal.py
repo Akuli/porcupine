@@ -1,4 +1,6 @@
 """Run commands in a new terminal window."""
+from __future__ import annotations
+
 import logging
 import os
 import pathlib
@@ -8,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 from tkinter import messagebox
-from typing import List, Union
+from typing import Union
 
 from porcupine import get_main_window, utils
 
@@ -24,7 +26,7 @@ CommandArgument = Union[str, pathlib.Path]
 
 
 # getting this to work in powershell turned out to be hard :(
-def _run_in_windows_cmd(blue_message: str, workingdir: pathlib.Path, command: List[str]) -> None:
+def _run_in_windows_cmd(blue_message: str, workingdir: pathlib.Path, command: list[str]) -> None:
     log.debug("using Windows command prompt")
 
     command = [
@@ -44,7 +46,7 @@ def _run_in_windows_cmd(blue_message: str, workingdir: pathlib.Path, command: Li
 
 
 def _run_in_osx_terminal_app(
-    blue_message: str, workingdir: pathlib.Path, command: List[str]
+    blue_message: str, workingdir: pathlib.Path, command: list[str]
 ) -> None:
     log.debug("using OSX terminal.app")
 
@@ -76,7 +78,7 @@ def _run_in_osx_terminal_app(
 
 
 def _run_in_x11_like_terminal(
-    blue_message: str, workingdir: pathlib.Path, command: List[str]
+    blue_message: str, workingdir: pathlib.Path, command: list[str]
 ) -> None:
     terminal: str = os.environ.get("TERMINAL", "x-terminal-emulator")
 
@@ -141,7 +143,7 @@ def _run_in_x11_like_terminal(
 # this figures out which terminal to use every time the user wants to run
 # something but it doesn't really matter, this way the user can install a
 # terminal while porcupine is running without restarting porcupine
-def run_command(workingdir: pathlib.Path, command: List[str]) -> None:
+def run_command(workingdir: pathlib.Path, command: list[str]) -> None:
     blue_message = " ".join(map(utils.quote, command))
 
     widget = get_main_window()  # any tkinter widget works

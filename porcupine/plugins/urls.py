@@ -4,17 +4,17 @@ from __future__ import annotations
 import tkinter
 import webbrowser
 from functools import partial
-from typing import Iterable, Tuple
+from typing import Iterable
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import underlines
 
 
-def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, str]]:
+def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[tuple[str, str]]:
     match_ends_and_search_begins = start
     while True:
         match_start = text.search(
-            r"\mhttps?://[a-z]", match_ends_and_search_begins, end, nocase=True, regexp=True
+            r"\mhttps?://[a-z0-9:]", match_ends_and_search_begins, end, nocase=True, regexp=True
         )
         if not match_start:  # empty string means not found
             break
@@ -28,6 +28,7 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[Tuple[str, s
         url = url.split(" ")[0]
         url = url.split("'")[0]
         url = url.split('"')[0]
+        url = url.split("`")[0]
 
         open2close = {"(": ")", "{": "}", "<": ">"}
         close2open = {")": "(", "}": "{", ">": "<"}

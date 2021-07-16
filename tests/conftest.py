@@ -4,6 +4,7 @@
 # adding any_widget.update() calls
 # see also update(3tcl)
 
+import logging
 import operator
 import os
 import subprocess
@@ -113,6 +114,24 @@ def filetab(porcusession, tabmanager):
     tab = tabs.FileTab(tabmanager)
     tabmanager.add_tab(tab)
     return tab
+
+
+@pytest.fixture(scope="function", autouse=True)
+def check_nothing_logged(request):
+    if "caplog" in request.fixturenames:
+        # Test uses caplog fixture, expects to get logging errors
+        yield
+    else:
+        # Fail test if it logs an error
+        def emit(record: logging.LogRecord):
+            raise RuntimeError(f"test logged error: {record}")
+
+        handler = logging.Handler()
+        handler.setLevel(logging.ERROR)
+        handler.emit = emit
+        logging.getLogger().addHandler(handler)
+        yield
+        logging.getLogger().removeHandler(handler)
 
 
 @pytest.fixture

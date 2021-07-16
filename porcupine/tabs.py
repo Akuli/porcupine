@@ -12,22 +12,10 @@ import pathlib
 import tkinter
 import traceback
 from tkinter import filedialog, messagebox, ttk
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
-from pygments.lexer import LexerMeta  # type: ignore[import]
-from pygments.lexers import TextLexer  # type: ignore[import]
+from pygments.lexer import LexerMeta
+from pygments.lexers import TextLexer
 
 from porcupine import _state, settings, textutils, utils
 
@@ -36,14 +24,14 @@ _flatten = itertools.chain.from_iterable
 _T = TypeVar("_T")
 
 
-def _find_duplicates(items: List[_T], key: Callable[[_T], str]) -> Iterable[List[_T]]:
+def _find_duplicates(items: list[_T], key: Callable[[_T], str]) -> Iterable[list[_T]]:
     for key_return_value, similar_items_iter in itertools.groupby(items, key=key):
         similar_items = list(similar_items_iter)
         if len(similar_items) >= 2:
             yield similar_items
 
 
-def _short_ways_to_display_path(path: pathlib.Path) -> List[str]:
+def _short_ways_to_display_path(path: pathlib.Path) -> list[str]:
     parts = str(path).split(os.sep)
     return [parts[-1], parts[-2] + os.sep + parts[-1]] + [
         first_part + os.sep + "..." + os.sep + parts[-1] for first_part in parts[:-2]
@@ -88,7 +76,7 @@ class TabManager(ttk.Notebook):
         self.bind("<<NotebookTabChanged>>", self._notify_selected_tab, add=True)
 
         # the string is call stack for adding callback
-        self._tab_callbacks: List[Tuple[Callable[[Tab], Any], str]] = []
+        self._tab_callbacks: list[tuple[Callable[[Tab], Any], str]] = []
 
     def _notify_selected_tab(self, event: tkinter.Event[tkinter.Misc]) -> None:
         tab = self.select()
@@ -118,7 +106,7 @@ class TabManager(ttk.Notebook):
     # fixing tkinter weirdness: some methods returns widget names as
     # strings instead of widget objects, these str() everything anyway
     # because tkinter might be fixed some day
-    def select(self, tab_id: Union[None, int, Tab] = None) -> Optional[Tab]:
+    def select(self, tab_id: Tab | int | None = None) -> Tab | None:
         """Select the given tab as if the user clicked it.
 
         Usually the ``tab_id`` should be a :class:`.Tab` widget. If it is not
@@ -135,7 +123,7 @@ class TabManager(ttk.Notebook):
         super().select(tab_id)
         return None
 
-    def tabs(self) -> Tuple[Tab, ...]:
+    def tabs(self) -> tuple[Tab, ...]:
         """Return a tuple of tabs in the tab manager.
 
         This returns a tuple instead of a list for compatibility with
@@ -353,7 +341,7 @@ class Tab(ttk.Frame):
         """
         return False
 
-    def get_state(self) -> Optional[Any]:
+    def get_state(self) -> Any | None:
         """Override this method to support opening a similar tab after \
 restarting Porcupine.
 
@@ -378,9 +366,9 @@ restarting Porcupine.
 
 
 class _FileTabState(NamedTuple):
-    path: Optional[pathlib.Path]
-    content: Optional[str]
-    saved_state: Tuple[Optional[os.stat_result], int, str]
+    path: pathlib.Path | None
+    content: str | None
+    saved_state: tuple[os.stat_result | None, int, str]
     cursor_pos: str
 
 
@@ -475,7 +463,7 @@ class FileTab(Tab):
 bers.py>` use this attribute.
 
     .. attribute:: path
-        :type: Optional[pathlib.Path]
+        :type: pathlib.Path | None
 
         The path where this file is currently saved.
 
@@ -486,7 +474,7 @@ bers.py>` use this attribute.
     """
 
     def __init__(
-        self, manager: TabManager, content: str = "", path: Optional[pathlib.Path] = None
+        self, manager: TabManager, content: str = "", path: pathlib.Path | None = None
     ) -> None:
         super().__init__(manager)
 
@@ -519,7 +507,7 @@ bers.py>` use this attribute.
         if content:
             self.textwidget.insert("1.0", content)
             self.textwidget.edit_reset()  # reset undo/redo
-        self._set_saved_state(None)
+        self._set_saved_state((None, self._get_char_count(), self._get_hash()))
 
         self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
 
@@ -529,6 +517,7 @@ bers.py>` use this attribute.
         self.scrollbar.config(command=self.textwidget.yview)
 
         self.textwidget.bind("<<ContentChanged>>", self._update_titles, add=True)
+        self.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
 
     @classmethod
@@ -550,13 +539,13 @@ bers.py>` use this attribute.
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
 
-    def _get_hash(self, string: Optional[str] = None) -> str:
+    def _get_hash(self, string: str | None = None) -> str:
         if string is None:
             string = self.textwidget.get("1.0", "end - 1 char")
         return hashlib.md5(string.encode("utf-8")).hexdigest()
 
-    def _set_saved_state(self, stat_result: Optional[os.stat_result]) -> None:
-        self._saved_state = (stat_result, self._get_char_count(), self._get_hash())
+    def _set_saved_state(self, state: tuple[os.stat_result | None, int, str]) -> None:
+        self._saved_state = state
         self._update_titles()
 
     def is_modified(self) -> bool:
@@ -615,7 +604,7 @@ bers.py>` use this attribute.
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
             )
 
-        self._set_saved_state(stat_result)
+        self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
 
         # TODO: document this
         self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
@@ -648,7 +637,7 @@ bers.py>` use this attribute.
                 return True
 
             # Avoid reading file contents again soon
-            self._saved_state = (actual_stat, save_char_count, save_hash)
+            self._set_saved_state((actual_stat, save_char_count, save_hash))
             return False
 
         except (OSError, UnicodeError):
@@ -671,11 +660,11 @@ bers.py>` use this attribute.
         )
 
     @property
-    def path(self) -> Optional[pathlib.Path]:
+    def path(self) -> pathlib.Path | None:
         return self._path
 
     @path.setter
-    def path(self, new_path: Optional[pathlib.Path]) -> None:
+    def path(self, new_path: pathlib.Path | None) -> None:
         if new_path is not None:
             new_path = new_path.resolve()
 
@@ -724,7 +713,9 @@ bers.py>` use this attribute.
             with utils.backup_open(path, "w", encoding=encoding, newline=line_ending.value) as f:
                 f.write(self.textwidget.get("1.0", "end - 1 char"))
                 f.flush()  # needed to get right file size in stat
-                self._set_saved_state(os.fstat(f.fileno()))
+                self._set_saved_state(
+                    (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+                )
         except (OSError, UnicodeError) as e:
             log.exception(f"saving to '{path}' failed")
             utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
@@ -732,7 +723,6 @@ bers.py>` use this attribute.
 
         self._save_hash = self._get_hash()
         self.path = path
-        self._update_titles()
         self.event_generate("<<AfterSave>>")
         return True
 
@@ -763,7 +753,7 @@ bers.py>` use this attribute.
 
         return self._do_the_save(self.path)
 
-    def save_as(self, path: Optional[pathlib.Path] = None) -> bool:
+    def save_as(self, path: pathlib.Path | None = None) -> bool:
         """Ask the user where to save the file and save it there.
 
         Returns True if the file was saved, and False if the user
@@ -819,10 +809,7 @@ bers.py>` use this attribute.
         else:
             self = cls(manager, state.content, state.path)
 
-        # title depends on _saved_state
-        self._saved_state = state.saved_state
-        self._update_titles()
-
+        self._set_saved_state(state.saved_state)  # TODO: does this make any sense?
         self.textwidget.mark_set("insert", state.cursor_pos)
         self.textwidget.see("insert linestart")
         return self
