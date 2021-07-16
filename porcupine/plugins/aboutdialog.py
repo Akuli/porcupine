@@ -19,7 +19,7 @@ else:
     from typing import Match
 
 from porcupine import __version__ as porcupine_version
-from porcupine import get_main_window, images, menubar, plugins, textutils, utils
+from porcupine import get_main_window, images, menubar, plugins, textutils
 
 _BORING_TEXT = """
 Porcupine is a simple but powerful and configurable text editor written in \
