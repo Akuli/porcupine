@@ -248,6 +248,7 @@ def get_children_recursively(
     for child in parent.winfo_children():
         yield from get_children_recursively(child, include_parent=True)
 
+
 def _handle_letter(match: Match[str]) -> str:
     if match.group(0).isupper():
         return "Shift-" + match.group(0)
