@@ -542,9 +542,8 @@ def setup() -> None:
         label="Focus directory tree", command=partial(focus_treeview, tree)
     )
 
-    string_paths = settings.get("directory_tree_projects", List[str])
-
     # Must reverse because last added project goes first
+    string_paths = settings.get("directory_tree_projects", List[str])
     for path in map(Path, string_paths[:MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
