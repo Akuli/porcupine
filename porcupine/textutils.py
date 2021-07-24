@@ -668,7 +668,7 @@ class MainText(tkinter.Text):
                 # not deleting from start of line, delete previous char instead
                 location = f"{location} - 1 char"
 
-            if self.get(location).isspace():
+            if self.get(location).isspace() and self.get(location) != "\n":
                 self.delete(location)
                 return True
             return False

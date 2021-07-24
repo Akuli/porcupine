@@ -163,6 +163,20 @@ def test_space_in_tabs_file_bug(filetab, tmp_path):
     assert filetab.textwidget.get("1.0", "end - 1 char") == "a"
 
 
+def test_dedent_blank_line_in_tabs_file_bug(filetab):
+    filetab.settings.set("tabs2spaces", False)
+    filetab.textwidget.insert("1.0", "\tfoo\n\n\tbar")
+    filetab.textwidget.tag_add("sel", "1.0", "end - 1 char")
+    if filetab.tk.eval("tk windowingsystem") == "x11":
+        # even though the event keysym says Left, holding down the right
+        # shift and pressing tab also works :D
+        shift_tab = "<ISO_Left_Tab>"
+    else:
+        shift_tab = "<Shift-Tab>"
+    filetab.textwidget.event_generate(shift_tab)
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo\n\nbar"
+
+
 @pytest.fixture
 def check_autoindents(filetab, tmp_path):
     def check(filename, input_commands, output):
