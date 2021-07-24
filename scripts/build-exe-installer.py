@@ -82,11 +82,6 @@ def create_pynsist_cfg():
     deps_from_pypi_wheels = []
     deps_without_pypi_wheels = ["tkinter", "_tkinter"]
     for dependency in get_frozen_requirements_in_a_crazy_way():
-        # TODO: remove hack later, see #550
-        if dependency.startswith("sansio-lsp-client @ git+"):
-            deps_without_pypi_wheels.append("sansio_lsp_client")
-            continue
-
         name, version = dependency.split("==")
         if name.lower() == "porcupine":
             pass
