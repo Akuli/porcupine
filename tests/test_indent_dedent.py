@@ -9,13 +9,13 @@ def foo(
     x,
      y
 """
+_BEFORE_Y = "3.5"
+_AFTER_Y = "3.6"
 _DEDENTED = """\
 def foo(
     x,
     y
 """
-_BEFORE_Y = "3.5"
-_AFTER_Y = "3.6"
 
 
 # issue 65
@@ -161,6 +161,14 @@ def test_space_in_tabs_file_bug(filetab, tmp_path):
     assert filetab.textwidget.get("1.0", "end - 1 char") == " a"
     filetab.textwidget.event_generate("<<Dedent>>")
     assert filetab.textwidget.get("1.0", "end - 1 char") == "a"
+
+
+def test_dedent_blank_line_in_tabs_file_bug(filetab):
+    filetab.settings.set("tabs2spaces", False)
+    filetab.textwidget.insert("1.0", "\tfoo\n\n\tbar")
+    filetab.textwidget.tag_add("sel", "1.0", "end - 1 char")
+    filetab.textwidget.event_generate("<Shift-Tab>")
+    assert filetab.textwidget.get("1.0", "end - 1 char") == "foo\n\nbar"
 
 
 @pytest.fixture
