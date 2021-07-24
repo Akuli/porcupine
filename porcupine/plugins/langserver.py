@@ -398,10 +398,15 @@ class LangServer:
         assert received_bytes
         self.log.debug(f"got {len(received_bytes)} bytes of data")
 
-        for lsp_event in self._lsp_client.recv(received_bytes):
-            try:
+        try:
+            for lsp_event in self._lsp_client.recv(received_bytes):
                 self._handle_lsp_event(lsp_event)
-            except Exception:
+        except Exception as e:
+            # A hack elsewhere in this file causes an event that sansio-lsp-client
+            # doesn't understand. To find it, ctrl+f hack.
+            if isinstance(e, NotImplementedError) and "workspace/didChangeConfiguration" in str(e):
+                self.log.debug(f"got NotImplementedError from hacky code as expected: {e}")
+            else:
                 self.log.exception("error while handling langserver event")
 
         return True
@@ -827,19 +832,5 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     switch_langservers(tab, called_because_path_changed=False)
 
 
-# A hack elsewhere in this file causes an event that sansio-lsp-client doesn't understand.
-# To find it, ctrl+f hack.
-class HackFilter:
-    def filter(self, record: logging.LogRecord) -> bool:
-        # Hide NotImplementedError saying something about didChangeConfiguration
-        return not (
-            record.levelname == "ERROR"
-            and record.exc_info is not None
-            and record.exc_info[0] is NotImplementedError
-            and "workspace/didChangeConfiguration" in str(record.exc_info[1])
-        )
-
-
 def setup() -> None:
-    logging.getLogger("sansio_lsp_client.client").addFilter(HackFilter())  # type: ignore
     get_tab_manager().add_filetab_callback(on_new_filetab)
