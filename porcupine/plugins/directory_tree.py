@@ -517,6 +517,8 @@ def on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc
 
 
 def setup() -> None:
+    settings.add_option("directory_tree_projects", [], List[str])
+
     # TODO: add something for finding a file by typing its name?
     container = ttk.Frame(get_paned_window())
 
@@ -540,7 +542,6 @@ def setup() -> None:
         label="Focus directory tree", command=partial(focus_treeview, tree)
     )
 
-    settings.add_option("directory_tree_projects", [], List[str])
     string_paths = settings.get("directory_tree_projects", List[str])
 
     # Must reverse because last added project goes first
