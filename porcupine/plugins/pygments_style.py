@@ -4,30 +4,28 @@ from __future__ import annotations
 import threading
 import tkinter
 
-from pygments import styles, token  # type: ignore[import]
+from pygments import styles, token
 
 from porcupine import get_main_window, get_tab_manager, menubar, settings, utils
 
 
 def get_colors(style_name: str) -> tuple[str, str]:
     style = styles.get_style_by_name(style_name)
-    bg: str = style.background_color
+    bg = style.background_color
 
     # style_names have a style_for_token() method, but only iterating
     # is documented :( http://pygments.org/docs/formatterdevelopment/
     # i'm using iter() to make sure that dict() really treats
     # the style as an iterable of pairs instead of some other
     # metaprogramming fanciness
-    fg: str | None = None
     style_infos = dict(iter(style))
 
-    for tokentype in [token.String, token.Text]:
-        if style_infos[tokentype]["color"] is not None:
-            fg = "#" + style_infos[tokentype]["color"]
-            break
-
-    if fg is None:
-        # do like textwidget.use_pygments_theme does
+    fg = style_infos[token.String]["color"] or style_infos[token.Text]["color"]
+    if fg:
+        # style_infos doesn't contain leading '#' for whatever reason
+        fg = "#" + fg
+    else:
+        # do like textutils.use_pygments_theme does
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
 
     return (fg, bg)

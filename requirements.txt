@@ -3,7 +3,7 @@ appdirs>=1.4.4
 Pygments==2.7.4
 toposort>=1.5
 colorama>=0.2.5
-git+https://github.com/Akuli/sansio-lsp-client@62205e44162cf734ce345c17322f64f82ceb17d7
+sansio-lsp-client>=0.10.0,<0.11.0
 python-language-server[rope,pyflakes,pycodestyle]>=0.36.2,<1.0.0
 black>=21.5b2
 # typing.Literal is new in python 3.8

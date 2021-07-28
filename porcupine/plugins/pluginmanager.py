@@ -51,7 +51,7 @@ class PluginDialogContent:
     def __init__(self, master: tkinter.Misc) -> None:
         self.content_frame = ttk.Frame(master)
 
-        _cols_width = [120, 150, 180]
+        column_sizes = [120, 150, 180]
 
         # borrowed code from textutils.create_passive_text_widget
         ttk_bg = self.content_frame.tk.eval("ttk::style lookup TLabel.label -background")
@@ -66,7 +66,7 @@ class PluginDialogContent:
 
         left_side = ttk.Frame(panedwindow)
         right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side
-        panedwindow.add(left_side, minsize=sum(_cols_width))  # type: ignore[no-untyped-call]
+        panedwindow.add(left_side, minsize=sum(column_sizes))  # type: ignore[no-untyped-call]
         panedwindow.add(right_side, minsize=250)  # type: ignore[no-untyped-call]
 
         self.treeview = ttk.Treeview(
@@ -89,7 +89,7 @@ class PluginDialogContent:
         self.treeview.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        for index, width in enumerate(_cols_width):
+        for index, width in enumerate(column_sizes):
             self.treeview.column(index, width=width, minwidth=width)
 
         for index, header_title in enumerate(["Name", "Type", "Status"]):
@@ -214,12 +214,10 @@ class PluginDialogContent:
             self._title_label.config(text="")
             self._set_description(f"{len(infos)} plugins selected.")
 
-        self.enable_button.config(
-            state=("normal" if any(info.name in disable_list for info in infos) else "disabled")
-        )
-        self.disable_button.config(
-            state=("normal" if any(info.name not in disable_list for info in infos) else "disabled")
-        )
+        can_enable = any(info.name in disable_list for info in infos)
+        can_disable = any(info.name not in disable_list for info in infos)
+        self.enable_button.config(state=("normal" if can_enable else "disabled"))
+        self.disable_button.config(state=("normal" if can_disable else "disabled"))
 
     def _set_enabled(self, they_become_enabled: bool) -> None:
         infos = self._get_selected_infos()

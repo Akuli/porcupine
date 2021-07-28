@@ -107,6 +107,14 @@ bind Text <$contmand-Button-1> {}
 event delete "<<LineStart>>" <$contmand-a>
 event add "<<SelectAll>>" <$contmand-a>
 
+# Ctrl+A for treeviews
+bind Treeview <$contmand-a> {
+    if {[%W cget -selectmode] == "extended"} {
+        # The treeview supports selecting multiple items
+        %W selection set [%W children {}]
+    }
+}
+
 # Don't select all the way to end (issue #382)
 bind Text <<SelectAll>> {
     %W tag remove sel 1.0 end

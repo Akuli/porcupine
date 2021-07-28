@@ -7,7 +7,7 @@ import weakref
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, overload
 
-from pygments import styles  # type: ignore[import]
+from pygments import styles
 
 from porcupine import settings, utils
 
@@ -668,7 +668,9 @@ class MainText(tkinter.Text):
                 # not deleting from start of line, delete previous char instead
                 location = f"{location} - 1 char"
 
-            if self.get(location).isspace():
+            # Deleting spaces this way is annoying. But that is somewhat
+            # intentional because mixing tabs and spaces is bad.
+            if self.get(location) in {" ", "\t"}:
                 self.delete(location)
                 return True
             return False
