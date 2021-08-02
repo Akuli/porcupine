@@ -310,7 +310,7 @@ def _format_binding(binding: str, menu: bool) -> str:
         binding = binding.replace("-", "+")
 
     # Dashes mess up things earlier
-    binding = binding.replace("doubleclick", "double-click")
+    binding = re.sub(r"(?<=.)doubleclick", "double-click", binding)
     return binding
 
 
