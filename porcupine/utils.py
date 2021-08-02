@@ -259,7 +259,7 @@ _UNICODE_HAT = "⌃"  # NOT same as ascii "^"
 
 
 # This doesn't handle all possible cases, see bind(3tk)
-# And because that will happen anyway, we might as well make a mess with regexes...
+# And because it's far from perfect anyway, we might as well make a mess with regexes...
 def _format_binding(binding: str, menu: bool) -> str:
     mac = porcupine.get_main_window().tk.call("tk", "windowingsystem") == "aqua"
     binding = binding.lstrip("<").rstrip(">")
@@ -297,8 +297,8 @@ def _format_binding(binding: str, menu: bool) -> str:
         # "Command-+" --> "Command+"
         binding = re.sub(r"-(-?)", r"\1", binding)
 
-        # e.g. ⌘-click
-        binding = binding.replace("click", "-click")
+        # e.g. ⌘-doubleclick
+        binding = re.sub(r"(double)?click", (lambda match: "-" + match.group(0)), binding)
 
     else:
         binding = re.sub(r"\bControl\b", "Ctrl", binding)
