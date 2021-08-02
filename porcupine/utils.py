@@ -297,7 +297,7 @@ def _format_binding(binding: str, menu: bool) -> str:
         # "Command-+" --> "Command+"
         binding = re.sub(r"-(-?)", r"\1", binding)
 
-        # e.g. ⌘-click
+        # e.g. ⌘-doubleclick
         binding = re.sub(r"(double)?click", (lambda match: "-" + match.group(0)), binding)
 
     else:
