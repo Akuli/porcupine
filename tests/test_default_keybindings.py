@@ -2,7 +2,6 @@ import sys
 
 import pytest
 
-
 if sys.platform == "darwin":
     contmand_shift_backspace = "<Command-Shift-BackSpace>"
 else:
