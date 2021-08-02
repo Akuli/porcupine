@@ -87,16 +87,16 @@ def test_get_binding():
         assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=True) == "Shift-Alt-Return"
         assert utils.get_binding("<<UtilsTestEvent>>", menu=True) == ""  # not possible to show
 
-        assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=False) == "⌥F"
         assert utils.get_binding("<<Menubar:File/New File>>", menu=False) == "⌘N"
-        assert utils.get_binding("<<Menubar:File/Save As>>", menu=False) == "⇧⌘S"
         assert utils.get_binding("<<Menubar:File/Save>>", menu=False) == "⌘S"
-        assert utils.get_binding("<<Menubar:Run/Run>>", menu=False) == "F5"
+        assert utils.get_binding("<<Menubar:File/Save As>>", menu=False) == "⇧⌘S"
         assert utils.get_binding("<<Menubar:View/Bigger Font>>", menu=False) == "⌘+"
-        assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=False) == "⌘0"
         assert utils.get_binding("<<Menubar:View/Smaller Font>>", menu=False) == "⌘-"
-        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⇧⌥⏎"
+        assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=False) == "⌘0"
+        assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=False) == "⌥F"
+        assert utils.get_binding("<<Menubar:Run/Run>>", menu=False) == "F5"
         assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "double-click"
+        assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⇧⌥⏎"
         assert utils.get_binding("<<UtilsTestEvent>>", menu=False) == "⇧⌥-click"
 
     else:
