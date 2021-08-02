@@ -298,7 +298,7 @@ def _format_binding(binding: str, menu: bool) -> str:
         binding = re.sub(r"-(-?)", r"\1", binding)
 
         # e.g. ⌘-click
-        binding = binding.replace("click", "-click")
+        binding = re.sub(r"(double)?click", (lambda match: "-" + match.group(0)), binding)
 
     else:
         binding = re.sub(r"\bControl\b", "Ctrl", binding)
