@@ -64,10 +64,7 @@ class MiniMap(tkinter.Text):
         self.bind("<Button1-Enter>", self._on_click_and_drag, add=True)
         self.bind("<Button1-Leave>", self._on_click_and_drag, add=True)
 
-        self.bind("<<SettingChanged:font_family>>", self.set_font, add=True)
-        self.bind("<<SettingChanged:font_size>>", self.set_font, add=True)
-        tab.bind("<<TabSettingChanged:indent_size>>", self.set_font, add=True)
-
+        textutils.bind_font_changed(tab, self.set_font)
         self.set_font()
 
         # Make sure that 'sel' tag stays added even when text widget becomes empty
@@ -90,7 +87,7 @@ class MiniMap(tkinter.Text):
         for frame in self._vast.values():
             frame.config(bg=foreground)
 
-    def set_font(self, junk: object = None) -> None:
+    def set_font(self) -> None:
         self.tag_config(
             "sel",
             font=(settings.get("font_family", str), round(settings.get("font_size", int) / 3), ()),
