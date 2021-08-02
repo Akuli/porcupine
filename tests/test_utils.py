@@ -69,6 +69,9 @@ def test_get_children_recursively():
 
 
 def test_get_binding():
+    # Old test case, currently unused
+    get_main_window().tk.eval("event add <<UtilsTestEvent>> <Alt-Shift-Button-1>")
+
     # User-wide keybindings.tcl is not loaded when tests run
     if sys.platform == "darwin":
         # Tk will show these with the proper symbols and stuff when these go to menu
@@ -82,17 +85,19 @@ def test_get_binding():
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=True) == "F5"
         assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=True) == ""  # not possible to show
         assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=True) == "Shift-Alt-Return"
+        assert utils.get_binding("<<UtilsTestEvent>>", menu=True) == ""  # not possible to show
 
-        assert utils.get_binding("<<Menubar:File/New File>>", menu=False) == "⌘N"
-        assert utils.get_binding("<<Menubar:File/Save>>", menu=False) == "⌘S"
-        assert utils.get_binding("<<Menubar:File/Save As>>", menu=False) == "⇧⌘S"
-        assert utils.get_binding("<<Menubar:View/Bigger Font>>", menu=False) == "⌘+"
-        assert utils.get_binding("<<Menubar:View/Smaller Font>>", menu=False) == "⌘-"
-        assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=False) == "⌘0"
         assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=False) == "⌥F"
+        assert utils.get_binding("<<Menubar:File/New File>>", menu=False) == "⌘N"
+        assert utils.get_binding("<<Menubar:File/Save As>>", menu=False) == "⇧⌘S"
+        assert utils.get_binding("<<Menubar:File/Save>>", menu=False) == "⌘S"
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=False) == "F5"
-        assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "⇧⌥-click"
+        assert utils.get_binding("<<Menubar:View/Bigger Font>>", menu=False) == "⌘+"
+        assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=False) == "⌘0"
+        assert utils.get_binding("<<Menubar:View/Smaller Font>>", menu=False) == "⌘-"
         assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⇧⌥⏎"
+        assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "double-click"
+        assert utils.get_binding("<<UtilsTestEvent>>", menu=False) == "⇧⌥-click"
 
     else:
         # menu option has no effect
@@ -107,8 +112,9 @@ def test_get_binding():
             )
             assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=boolean) == "Alt+F"
             assert utils.get_binding("<<Menubar:Run/Run>>", menu=boolean) == "F5"
-            assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=boolean) == "Shift+Alt+click"
+            assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=boolean) == "double-click"
             assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=boolean) == "Shift+Alt+Enter"
+            assert utils.get_binding("<<UtilsTestEvent>>", menu=boolean) == "Shift+Alt+click"
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")

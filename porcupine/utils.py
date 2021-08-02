@@ -255,8 +255,12 @@ def _handle_letter(match: Match[str]) -> str:
     return match.group(0).upper()
 
 
+_UNICODE_HAT = "⌃"  # NOT same as ascii "^"
+
+
+# This doesn't handle all possible cases, see bind(3tk)
+# And because that will happen anyway, we might as well make a mess with regexes...
 def _format_binding(binding: str, menu: bool) -> str:
-    # this doesn't handle all possible cases, see bind(3tk)
     mac = porcupine.get_main_window().tk.call("tk", "windowingsystem") == "aqua"
     binding = binding.lstrip("<").rstrip(">")
 
@@ -264,9 +268,11 @@ def _format_binding(binding: str, menu: bool) -> str:
     if mac and menu and re.search(r"\bButton-1\b", binding):
         return ""
 
+    binding = re.sub(r"\bDouble-Button-1\b", "doubleclick", binding)
     binding = re.sub(r"\bButton-1\b", "click", binding)
     binding = re.sub(r"\b[A-Za-z]\b", _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
     binding = re.sub(r"\bKey-", "", binding)
+
     if mac:
         binding = re.sub(
             r"\bMod1\b", "Command", binding
@@ -284,8 +290,7 @@ def _format_binding(binding: str, menu: bool) -> str:
         # We need to sub backwards, because each sub puts its thing before everything else
         binding = re.sub(r"^(.*)\bCommand-", r"⌘-\1", binding)
         binding = re.sub(r"^(.*)\bAlt-", r"⌥-\1", binding)
-        # look carefully, two different kinds of hats
-        binding = re.sub(r"^(.*)\bControl-", r"⌃-\1", binding)
+        binding = re.sub(r"^(.*)\bControl-", _UNICODE_HAT + r"-\1", binding)
         binding = re.sub(r"^(.*)\bShift-", r"⇧-\1", binding)
 
         # "Command--" --> "Command-"
@@ -293,7 +298,7 @@ def _format_binding(binding: str, menu: bool) -> str:
         binding = re.sub(r"-(-?)", r"\1", binding)
 
         # e.g. ⌘-click
-        return binding.replace("click", "-click")
+        binding = binding.replace("click", "-click")
 
     else:
         binding = re.sub(r"\bControl\b", "Ctrl", binding)
@@ -302,7 +307,11 @@ def _format_binding(binding: str, menu: bool) -> str:
         binding = re.sub(r"\bplus\b", "Plus", binding)
         binding = re.sub(r"\bminus\b", "Minus", binding)
         binding = re.sub(r"\bReturn\b", "Enter", binding)
-        return binding.replace("-", "+")
+        binding = binding.replace("-", "+")
+
+    # Dashes mess up things earlier
+    binding = binding.replace("doubleclick", "double-click")
+    return binding
 
 
 # TODO: document this
