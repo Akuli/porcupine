@@ -259,7 +259,7 @@ _UNICODE_HAT = "⌃"  # NOT same as ascii "^"
 
 
 # This doesn't handle all possible cases, see bind(3tk)
-# And because that will happen anyway, we might as well make a mess with regexes...
+# And because it's far from perfect anyway, we might as well make a mess with regexes...
 def _format_binding(binding: str, menu: bool) -> str:
     mac = porcupine.get_main_window().tk.call("tk", "windowingsystem") == "aqua"
     binding = binding.lstrip("<").rstrip(">")
