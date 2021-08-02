@@ -1,4 +1,4 @@
-import platform
+import sys
 
 import pytest
 
@@ -104,7 +104,7 @@ def test_autoindent(filetab):
 
 
 # FIXME: figure out how to do this on mac
-@pytest.mark.skipif(platform.system() == "Darwin", reason="I don't have a mac")
+@pytest.mark.skipif(sys.platform == "darwin", reason="I don't have a mac")
 def test_shift_enter_and_alt_enter(filetab):
     # See issue #404 (not the HTTP status, lol)
     indent = " " * 4
