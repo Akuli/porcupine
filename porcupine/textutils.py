@@ -622,6 +622,13 @@ def config_tab_displaying(
     textwidget.config(tabs=(indent_size * measure_result, "left"), tabstyle="wordprocessor")
 
 
+# TODO: document this?
+def bind_font_changed(tab: tabs.FileTab, callback: Callable[[], None]) -> None:
+    tab.bind("<<SettingChanged:font_family>>", (lambda event: callback()), add=True)
+    tab.bind("<<SettingChanged:font_size>>", (lambda event: callback()), add=True)
+    tab.bind("<<TabSettingChanged:indent_size>>", (lambda event: callback()), add=True)
+
+
 class MainText(tkinter.Text):
     """Don't use this. It may be changed later."""
 
@@ -631,12 +638,12 @@ class MainText(tkinter.Text):
         track_changes(self)
         use_pygments_theme(self)
 
-        tab.bind("<<TabSettingChanged:indent_size>>", self._on_indent_size_changed, add=True)
-        self._on_indent_size_changed()
+        bind_font_changed(tab, self._on_font_changed)
+        self._on_font_changed()
 
         self.bind("<<Dedent>>", (lambda event: self.dedent("insert")), add=True)
 
-    def _on_indent_size_changed(self, junk: object = None) -> None:
+    def _on_font_changed(self) -> None:
         config_tab_displaying(self, self._tab.settings.get("indent_size", int))
 
     def indent(self, location: str) -> None:
