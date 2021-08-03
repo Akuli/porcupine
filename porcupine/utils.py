@@ -23,14 +23,10 @@ from urllib.request import url2pathname
 
 import dacite
 
-if sys.version_info >= (3, 9):
-    from re import Match
+if sys.version_info >= (3, 8):
     from typing import Literal
-elif sys.version_info >= (3, 8):
-    from typing import Literal, Match
 else:
     from typing_extensions import Literal
-    from typing import Match
 
 import porcupine
 
