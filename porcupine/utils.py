@@ -254,7 +254,6 @@ def _format_binding(binding: str, menu: bool) -> str:
     if mac and menu and any(parts[i : i + 2] == "Button-1".split("-") for i in range(len(parts))):
         return ""
 
-    # <Double-Button-1>  -->  ["double-click"]
     # Must recompute length on every iteration, because length changes
     i = 0
     while i < len(parts):
