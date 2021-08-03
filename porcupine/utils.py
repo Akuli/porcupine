@@ -249,69 +249,84 @@ def get_children_recursively(
         yield from get_children_recursively(child, include_parent=True)
 
 
-def _handle_letter(match: Match[str]) -> str:
-    if match.group(0).isupper():
-        return "Shift-" + match.group(0)
-    return match.group(0).upper()
-
-
-_UNICODE_HAT = "⌃"  # NOT same as ascii "^"
+def _handle_letter(letter: str) -> str:
+    if letter.isupper():
+        return "Shift-" + letter
+    return letter.upper()
 
 
 # This doesn't handle all possible cases, see bind(3tk)
-# And because it's far from perfect anyway, we might as well make a mess with regexes...
 def _format_binding(binding: str, menu: bool) -> str:
-    mac = porcupine.get_main_window().tk.call("tk", "windowingsystem") == "aqua"
-    binding = binding.lstrip("<").rstrip(">")
+    mac = porcupine.get_main_window().tk.eval("tk windowingsystem") == "aqua"
+    parts = binding.lstrip("<").rstrip(">").split("-")
 
     # don't know how to show click in mac menus
-    if mac and menu and re.search(r"\bButton-1\b", binding):
+    if mac and menu and any(parts[i : i + 2] == "Button-1".split("-") for i in range(len(parts))):
         return ""
 
-    binding = re.sub(r"\bDouble-Button-1\b", "doubleclick", binding)
-    binding = re.sub(r"\bButton-1\b", "click", binding)
-    binding = re.sub(r"\b[A-Za-z]\b", _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
-    binding = re.sub(r"\bKey-", "", binding)
+    # <Double-Button-1>  -->  ["double-click"]
+    #
+    # Do not make parts list longer in loop, otherwise initially calculated
+    # range(len(parts)) might be too short
+    for i in range(len(parts)):
+        if parts[i : i + 3] == ["Double", "Button", "1"]:
+            parts[i : i + 3] = ["double-click"]
+        elif parts[i : i + 2] == ["Button", "1"]:
+            parts[i : i + 2] = ["click"]
+
+    parts = [
+        # tk doesn't like e.g. <Control-ö>
+        _handle_letter(part) if re.fullmatch(r"[A-Za-z]", part) else part
+        for part in parts
+    ]
+    if "Key" in parts:
+        parts.remove("Key")
 
     if mac:
-        binding = re.sub(
-            r"\bMod1\b", "Command", binding
-        )  # event_info() returns <Mod1-Key-x> for <Command-x>
-        binding = re.sub(r"\bplus\b", "+", binding)
-        binding = re.sub(r"\bminus\b", "-", binding)  # e.g. "Command-minus" --> "Command--"
+        # event_info() returns <Mod1-Key-x> for <Command-x>
+        parts = [{"Mod1": "Command", "plus": "+", "minus": "-"}.get(part, part) for part in parts]
 
         if menu:
             # Tk will use the proper symbols automagically, and it expects dash-separated
-            return binding
-
-        binding = re.sub(r"\bReturn\b", r"⏎", binding)
+            # Even "Command--" for command and minus key works
+            return "-".join(parts)
 
         # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
-        # We need to sub backwards, because each sub puts its thing before everything else
-        binding = re.sub(r"^(.*)\bCommand-", r"⌘-\1", binding)
-        binding = re.sub(r"^(.*)\bAlt-", r"⌥-\1", binding)
-        binding = re.sub(r"^(.*)\bControl-", _UNICODE_HAT + r"-\1", binding)
-        binding = re.sub(r"^(.*)\bShift-", r"⇧-\1", binding)
+        parts.sort(
+            key=(lambda part: {"Shift": 1, "Control": 2, "Alt": 3, "Command": 4}.get(part, 100))
+        )
 
-        # "Command--" --> "Command-"
-        # "Command-+" --> "Command+"
-        binding = re.sub(r"-(-?)", r"\1", binding)
+        parts = [
+            {
+                "Shift": "⇧",
+                "Control": "⌃",  # NOT same as ascii "^"
+                "Alt": "⌥",
+                "Command": "⌘",
+                "Return": "⏎",
+            }.get(part, part)
+            for part in parts
+        ]
 
-        # e.g. ⌘-doubleclick
-        binding = re.sub(r"(?<=.)(double)?click", (lambda match: "-" + match.group(0)), binding)
+        # e.g. "⌘-double-click"
+        # But not like this:  ["double-click"] --> ["-double-click"]
+        parts[1:] = [
+            {"click": "-click", "double-click": "-double-click"}.get(part, part)
+            for part in parts[1:]
+        ]
+        return "".join(parts)
 
     else:
-        binding = re.sub(r"\bControl\b", "Ctrl", binding)
-        # most fonts don't distinguish O and 0 nicely, mac font does
-        binding = re.sub(r"\b0\b", "Zero", binding)
-        binding = re.sub(r"\bplus\b", "Plus", binding)
-        binding = re.sub(r"\bminus\b", "Minus", binding)
-        binding = re.sub(r"\bReturn\b", "Enter", binding)
-        binding = binding.replace("-", "+")
-
-    # Dashes mess up things earlier
-    binding = binding.replace("doubleclick", "double-click")
-    return binding
+        parts = [
+            {
+                "Control": "Ctrl",
+                "0": "Zero",  # not needed on mac, its font distinguishes 0 and O well
+                "plus": "Plus",
+                "minus": "Minus",
+                "Return": "Enter",
+            }.get(part, part)
+            for part in parts
+        ]
+        return "+".join(parts)
 
 
 # TODO: document this
