@@ -41,7 +41,7 @@ event add "<<Menubar:Edit/Anchors/Jump to previous>>" <Alt-Shift-Up>
 event add "<<Menubar:Edit/Anchors/Jump to next>>" <Alt-Shift-Down>
 
 # urls plugin
-event add "<<Urls:OpenWithMouse>>" <Alt-Shift-Button-1>
+event add "<<Urls:OpenWithMouse>>" <Double-Button-1>
 event add "<<Urls:OpenWithKeyboard>>" <Alt-Shift-Return>
 
 # tab_order plugin
