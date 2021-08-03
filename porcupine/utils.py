@@ -249,12 +249,6 @@ def get_children_recursively(
         yield from get_children_recursively(child, include_parent=True)
 
 
-def _handle_letter(letter: str) -> str:
-    if letter.isupper():
-        return "Shift-" + letter
-    return letter.upper()
-
-
 # This doesn't handle all possible cases, see bind(3tk)
 def _format_binding(binding: str, menu: bool) -> str:
     mac = porcupine.get_main_window().tk.eval("tk windowingsystem") == "aqua"
@@ -265,20 +259,19 @@ def _format_binding(binding: str, menu: bool) -> str:
         return ""
 
     # <Double-Button-1>  -->  ["double-click"]
-    #
-    # Do not make parts list longer in loop, otherwise initially calculated
-    # range(len(parts)) might be too short
-    for i in range(len(parts)):
+    # Must recompute length on every iteration, because length changes
+    i = 0
+    while i < len(parts):
         if parts[i : i + 3] == ["Double", "Button", "1"]:
             parts[i : i + 3] = ["double-click"]
         elif parts[i : i + 2] == ["Button", "1"]:
             parts[i : i + 2] = ["click"]
+        elif re.fullmatch(r"[a-z]", parts[i]):
+            parts[i] = parts[i].upper()
+        elif re.fullmatch(r"[A-Z]", parts[i]):
+            parts.insert(i, "Shift")
+        i += 1
 
-    parts = [
-        # tk doesn't like e.g. <Control-ö>
-        _handle_letter(part) if re.fullmatch(r"[A-Za-z]", part) else part
-        for part in parts
-    ]
     if "Key" in parts:
         parts.remove("Key")
 
