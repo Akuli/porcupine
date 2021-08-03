@@ -270,6 +270,10 @@ def _format_binding(binding: str, menu: bool) -> str:
             parts[i] = parts[i].upper()
         elif re.fullmatch(r"[A-Z]", parts[i]):
             parts.insert(i, "Shift")
+            # Increment beyond the added "Shift" and letter
+            i += 2
+            continue
+
         i += 1
 
     if "Key" in parts:
