@@ -9,7 +9,7 @@ highlighting.
 Most important features:
 - Syntax highlighting with [Pygments][] (supports many programming languages
   and color themes, extensible)
-- Autocompletions
+- Autocompletions when pressing tab
 - Jump to definition with Ctrl+click
 - [Langserver] support
 - [Editorconfig][] support
