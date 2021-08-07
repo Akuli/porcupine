@@ -301,21 +301,21 @@ def _all_words_in_file_completer(tab: tabs.FileTab, event: utils.EventWithData) 
         )
     )
 
+    completions = [
+        Completion(
+            display_text=word,
+            replace_start=word_start,
+            replace_end=request.cursor_pos,
+            replace_text=word,
+            filter_text=word,
+            documentation=word,
+        )
+        for word in words
+    ]
     tab.event_generate(
         "<<AutoCompletionResponse>>",
         data=Response(
-            id=request.id,
-            completions=[
-                Completion(
-                    display_text=word,
-                    replace_start=word_start,
-                    replace_end=request.cursor_pos,
-                    replace_text=word,
-                    filter_text=word,
-                    documentation=word,
-                )
-                for word in words
-            ],
+            id=request.id, completions=completions[:200]  # don't be ridulously slow in huge files
         ),
     )
     return "break"
