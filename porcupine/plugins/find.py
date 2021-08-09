@@ -253,6 +253,9 @@ class Finder(ttk.Frame):
 
         count = 0
         for start_index in self._get_matches_to_highlight(looking4):
+            # Both tags needed:
+            #   - "find_highlight" to display with yellow color in gui
+            #   - "find_match_123" to distinguish matches, even when repeated
             self._textwidget.tag_add(
                 "find_highlight", start_index, f"{start_index} + {len(looking4)} chars"
             )
