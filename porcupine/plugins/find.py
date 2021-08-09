@@ -319,7 +319,6 @@ class Finder(ttk.Frame):
             self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
             return "break"
 
-        # to find bugs, think about what happens when you replace 'asd' with 'asd'
         [tag] = self.get_match_tags("sel.first")
         self._textwidget.tag_remove("find_highlight", f"{tag}.first", f"{tag}.last")
         self._textwidget.mark_set("insert", f"{tag}.first")
