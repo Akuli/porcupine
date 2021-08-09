@@ -48,21 +48,39 @@ class SubprocessStdIO:
     def __init__(self, process: subprocess.Popen[bytes]) -> None:
         self._process = process
 
+        # Reads can obviously block, but flushing can block too, see #635
         if sys.platform == "win32":
             self._read_queue: queue.Queue[bytes] = queue.Queue()
-            self._running = True
-            self._worker_thread = threading.Thread(target=self._stdout_to_read_queue, daemon=True)
-            self._worker_thread.start()
+            self._write_queue: queue.Queue[bytes] = queue.Queue()
+            self._reader_thread = threading.Thread(target=self._stdout_to_read_queue, daemon=True)
+            self._reader_thread.start()
+            threading.Thread(target=self._write_queue_to_stdin, daemon=True).start()
         else:
-            # this works because we don't use .readline()
-            # https://stackoverflow.com/a/1810703
-            assert process.stdout is not None
-            fileno = process.stdout.fileno()
-            old_flags = fcntl.fcntl(fileno, fcntl.F_GETFL)
-            new_flags = old_flags | os.O_NONBLOCK
-            fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
+            for stream in [process.stdin, process.stdout]:
+                # this works because we don't use .readline()
+                # https://stackoverflow.com/a/1810703
+                assert stream is not None
+                fileno = process.stdout.fileno()
+                old_flags = fcntl.fcntl(fileno, fcntl.F_GETFL)
+                new_flags = old_flags | os.O_NONBLOCK
+                fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
 
     if sys.platform == "win32":
+
+        def _write_queue_to_stdin(self) -> None:
+            while self._process.poll() is None:
+                # Why timeout: if process dies and no more to write, stop soon
+                try:
+                    chunk = self._write_queue.get(timeout=5)
+                except queue.Empty:  # timed out
+                    continue
+
+                # Process can exit while waiting, but clean shutdown involves
+                # writing messages before the process exits, so here it should
+                # be still alive
+                assert self._process.stdin is not None
+                self._process.stdin.write(chunk)
+                self._process.stdin.flush()
 
         def _stdout_to_read_queue(self) -> None:
             while True:
@@ -88,7 +106,7 @@ class SubprocessStdIO:
                 except queue.Empty:
                     break
 
-            if self._worker_thread.is_alive() and not buf:
+            if self._reader_thread.is_alive() and not buf:
                 return None
             return bytes(buf)
 
@@ -97,9 +115,12 @@ class SubprocessStdIO:
             return self._process.stdout.read(CHUNK_SIZE)
 
     def write(self, bytez: bytes) -> None:
-        assert self._process.stdin is not None
-        self._process.stdin.write(bytez)
-        self._process.stdin.flush()
+        if sys.platform == "win32":
+            self._write_queue.put(bytez)
+        else:
+            assert self._process.stdin is not None
+            self._process.stdin.write(bytez)
+            self._process.stdin.flush()
 
 
 def error_says_socket_not_connected(error: OSError) -> bool:
@@ -119,10 +140,10 @@ class LocalhostSocketIO:
         #     The written bytes get sent when the socket connects.
         self._send_queue: queue.Queue[bytes | None] = queue.Queue()
 
-        self._worker_thread = threading.Thread(
+        self._reader_thread = threading.Thread(
             target=self._send_queue_to_socket, args=[port, log], daemon=True
         )
-        self._worker_thread.start()
+        self._reader_thread.start()
 
     def _send_queue_to_socket(self, port: int, log: logging.LoggerAdapter) -> None:
         while True:
@@ -167,7 +188,7 @@ class LocalhostSocketIO:
         if not result:
             assert result == b""
             # stop worker thread
-            if self._worker_thread.is_alive():
+            if self._reader_thread.is_alive():
                 self._send_queue.put(None)
         return result
 
