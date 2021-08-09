@@ -1,5 +1,4 @@
 """Find and replace text."""
-# FIXME: finding 'as' or 'asa' from 'asasasasa' is broken
 from __future__ import annotations
 
 import re
@@ -163,43 +162,51 @@ class Finder(ttk.Frame):
         # https://stackoverflow.com/questions/55366795/does-anyone-know-why-my-tkinter-buttons-arent-rendering
         self.update_idletasks()
 
-    def hide(self, junk: object = None) -> None:
+    def get_match_tags(self, index: str | None = None) -> list[str]:
+        return [tag for tag in self._textwidget.tag_names(index) if tag.startswith("find_match_")]
+
+    # Deleting and removing a tag are different concepts.
+    # Deleting means that the whole tag is gone.
+    # Removing means that there are no characters using the tag.
+    def _delete_match_tags(self) -> None:
         self._textwidget.tag_remove("find_highlight", "1.0", "end")
+        for tag in self.get_match_tags():
+            self._textwidget.tag_delete(tag)
+
+    def hide(self, junk: object = None) -> None:
+        self._delete_match_tags()
         self._textwidget.tag_remove("find_highlight_selected", "1.0", "end")
         self.pack_forget()
         self._textwidget.focus_set()
 
-    # tag_ranges returns (start1, end1, start2, end2, ...), and this thing
-    # gives a list of (start, end) pairs
-    def get_match_ranges(self) -> list[tuple[str, str]]:
-        starts_and_ends = list(map(str, self._textwidget.tag_ranges("find_highlight")))
-        assert len(starts_and_ends) % 2 == 0
-        pairs = list(zip(starts_and_ends[0::2], starts_and_ends[1::2]))
-        return pairs
+    # tag_ranges() sucks, i want my text indexes as strings and not stupid _tkinter.Tcl_Obj
+    def _tag_ranges(self, tag: str) -> tuple[str, ...]:
+        return tuple([str(index) for index in self._textwidget.tag_ranges(tag)])
 
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
     def _update_buttons(self, junk: object = None) -> None:
-        matches_something_state = "normal" if self.get_match_ranges() else "disabled"
-
-        # Currently selected match is specified with two tags, "sel" and
-        # "find_highlight_selected". Both have to match.
-        locations = [str(loc) for loc in self._textwidget.tag_ranges("sel")]
-        locations2 = [str(loc) for loc in self._textwidget.tag_ranges("find_highlight_selected")]
-        replace_this_state = (
-            "normal"
-            if (
-                locations == locations2
-                and len(locations) == 2
-                and tuple(locations) in self.get_match_ranges()
-            )
-            else "disabled"
-        )
-
+        matches_something_state = "normal" if self.get_match_tags() else "disabled"
         self.previous_button.config(state=matches_something_state)
         self.next_button.config(state=matches_something_state)
-        self.replace_this_button.config(state=replace_this_state)
         self.replace_all_button.config(state=matches_something_state)
+
+        # To consider a match currently selected, it must have 3 tags, all
+        # with the same start and end:
+        #   - "sel" (text is selected)
+        #   - "find_highlight_selected" (text is orange)
+        #   - "find_match_123" (it is actually a match)
+
+        locations = self._tag_ranges("sel")
+        locations2 = self._tag_ranges("find_highlight_selected")
+        if (
+            locations
+            and (locations == locations2)
+            and any(self._tag_ranges(t) == locations for t in self.get_match_tags("sel.first"))
+        ):
+            self.replace_this_button.config(state="normal")
+        else:
+            self.replace_this_button.config(state="disabled")
 
     def _get_matches_to_highlight(self, looking4: str) -> Iterator[str]:
         # Tkinter's .search() is slow when there are lots of tags from highlight plugin.
@@ -224,8 +231,7 @@ class Finder(ttk.Frame):
                 yield f"{lineno}.{column}"
 
     def highlight_all_matches(self, *junk: object) -> None:
-        # clear previous highlights
-        self._textwidget.tag_remove("find_highlight", "1.0", "end")
+        self._delete_match_tags()
 
         looking4 = self.find_entry.get()  # type: ignore[no-untyped-call]
         if not looking4:  # don't search for empty string
@@ -250,6 +256,9 @@ class Finder(ttk.Frame):
             self._textwidget.tag_add(
                 "find_highlight", start_index, f"{start_index} + {len(looking4)} chars"
             )
+            self._textwidget.tag_add(
+                f"find_match_{count}", start_index, f"{start_index} + {len(looking4)} chars"
+            )
             count += 1
 
         self._update_buttons()
@@ -260,23 +269,23 @@ class Finder(ttk.Frame):
         else:
             self.statuslabel.config(text=f"Found {count} matches.")
 
-    def _select_match(self, match_ranges: list[tuple[str, str]], index: int) -> None:
-        start, end = match_ranges[index]
+    def _select_match(self, match_tags: list[str], index: int) -> None:
+        tag = match_tags[index]
         self._textwidget.tag_remove("sel", "1.0", "end")
         self._textwidget.tag_remove("find_highlight_selected", "1.0", "end")
-        self._textwidget.tag_add("sel", start, end)
-        self._textwidget.tag_add("find_highlight_selected", start, end)
-        self._textwidget.mark_set("insert", start)
-        self._textwidget.see(start)
+        self._textwidget.tag_add("sel", f"{tag}.first", f"{tag}.last")
+        self._textwidget.tag_add("find_highlight_selected", f"{tag}.first", f"{tag}.last")
+        self._textwidget.mark_set("insert", f"{tag}.first")
+        self._textwidget.see("insert")
 
-        self.statuslabel.config(text=f"Match {index + 1}/{len(match_ranges)}")
+        self.statuslabel.config(text=f"Match {index + 1}/{len(match_tags)}")
         self._update_buttons()
 
     def _go_to_next_match(self, junk: object = None) -> None:
-        # If we have no match ranges, then "Next match" button is disabled and
+        # If we have no matches, then "Next match" button is disabled and
         # this was invoked through key binding
-        pairs = self.get_match_ranges()
-        if pairs:
+        tags = self.get_match_tags()
+        if tags:
             # If no matches highlighted yet, can highlight match exactly at cursor
             # Applies only to next match, previous always search before cursor
             some_match_already_highlighted = str(self.replace_this_button["state"]) == "normal"
@@ -285,41 +294,41 @@ class Finder(ttk.Frame):
             # find first pair that starts after the cursor, or cycle back to first
             possible_indexes = (
                 i
-                for i, (start, end) in enumerate(pairs)
-                if self._textwidget.compare(start, operator, "insert")
+                for i, tag in enumerate(tags)
+                if self._textwidget.compare(f"{tag}.first", operator, "insert")
             )
             index = next(possible_indexes, 0)
-            self._select_match(pairs, index)
+            self._select_match(tags, index)
 
     def _go_to_previous_match(self, junk: object = None) -> None:
-        pairs = self.get_match_ranges()
-        if pairs:
+        tags = self.get_match_tags()
+        if tags:
             possible_indexes = (
                 i
-                for i, (start, end) in reversed(list(enumerate(pairs)))
-                if self._textwidget.compare(start, "<", "insert")
+                for i, tag in reversed(list(enumerate(tags)))
+                if self._textwidget.compare(f"{tag}.first", "<", "insert")
             )
-            index = next(possible_indexes, len(pairs) - 1)
-            self._select_match(pairs, index)
+            index = next(possible_indexes, len(tags) - 1)
+            self._select_match(tags, index)
 
     def _replace_this(self, junk: object = None) -> str:
         if str(self.replace_this_button["state"]) == "disabled":
             self.statuslabel.config(text='Click "Previous match" or "Next match" first.')
             return "break"
 
-        # highlighted areas must not be moved after .replace, think about what
-        # happens when you replace 'asd' with 'asd'
-        start, end = self._textwidget.tag_ranges("sel")
-        self._textwidget.tag_remove("find_highlight", start, end)
+        # to find bugs, think about what happens when you replace 'asd' with 'asd'
+        [tag] = self.get_match_tags("sel.first")
+        self._textwidget.tag_remove("find_highlight", f"{tag}.first", f"{tag}.last")
+        self._textwidget.mark_set("insert", f"{tag}.first")
         self._update_buttons()
 
         with textutils.change_batch(self._textwidget):
-            self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+            self._textwidget.replace(f"{tag}.first", f"{tag}.last", self.replace_entry.get())  # type: ignore[no-untyped-call]
+        self._textwidget.tag_delete(tag)
 
-        self._textwidget.mark_set("insert", start)
         self._go_to_next_match()
 
-        left = len(self.get_match_ranges())
+        left = len(self.get_match_tags())
         if left == 0:
             self.statuslabel.config(text="Replaced the last match.")
         elif left == 1:
@@ -329,21 +338,19 @@ class Finder(ttk.Frame):
         return "break"
 
     def _replace_all(self, junk: object = None) -> str:
-        match_ranges = self.get_match_ranges()
+        match_tags = self.get_match_tags()
 
         with textutils.change_batch(self._textwidget):
-            # must do this backwards because replacing may screw up indexes AFTER
-            # the replaced place
-            for start, end in reversed(match_ranges):
-                self._textwidget.replace(start, end, self.replace_entry.get())  # type: ignore[no-untyped-call]
+            for tag in match_tags:
+                self._textwidget.replace(f"{tag}.first", f"{tag}.last", self.replace_entry.get())  # type: ignore[no-untyped-call]
 
-        self._textwidget.tag_remove("find_highlight", "1.0", "end")
+        self._delete_match_tags()
         self._update_buttons()
 
-        if len(match_ranges) == 1:
+        if len(match_tags) == 1:
             self.statuslabel.config(text="Replaced 1 match.")
         else:
-            self.statuslabel.config(text=f"Replaced {len(match_ranges)} matches.")
+            self.statuslabel.config(text=f"Replaced {len(match_tags)} matches.")
         return "break"
 
     def _handle_undo(self, event: object) -> None:
