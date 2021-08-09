@@ -60,7 +60,7 @@ class SubprocessStdIO:
                 # this works because we don't use .readline()
                 # https://stackoverflow.com/a/1810703
                 assert stream is not None
-                fileno = process.stdout.fileno()
+                fileno = stream.fileno()
                 old_flags = fcntl.fcntl(fileno, fcntl.F_GETFL)
                 new_flags = old_flags | os.O_NONBLOCK
                 fcntl.fcntl(fileno, fcntl.F_SETFL, new_flags)
