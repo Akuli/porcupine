@@ -180,8 +180,8 @@ class Finder(ttk.Frame):
         self._textwidget.focus_set()
 
     # tag_ranges() sucks, i want my text indexes as strings and not stupid _tkinter.Tcl_Obj
-    def _tag_ranges(self, tag: str) -> tuple[str, ...]:
-        return tuple([str(index) for index in self._textwidget.tag_ranges(tag)])
+    def _tag_ranges(self, tag: str) -> list[str]:
+        return [str(index) for index in self._textwidget.tag_ranges(tag)]
 
     # must be called when going to another match or replacing becomes possible
     # or impossible, i.e. when find_highlight areas or the selection changes
