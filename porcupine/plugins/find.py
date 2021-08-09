@@ -200,8 +200,8 @@ class Finder(ttk.Frame):
         locations = self._tag_ranges("sel")
         locations2 = self._tag_ranges("find_highlight_selected")
         if (
-            locations
-            and (locations == locations2)
+            len(locations) == 2
+            and locations == locations2
             and any(self._tag_ranges(t) == locations for t in self.get_match_tags("sel.first"))
         ):
             self.replace_this_button.config(state="normal")
