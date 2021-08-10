@@ -64,7 +64,7 @@ def _pack_with_scrollbar(widget: ttk.Treeview | tkinter.Text) -> ttk.Scrollbar:
 
 
 # FIXME: popup tooltips behave very similarly, combine codes
-def _calculate_geometry(textwidget: tkinter.Text) -> str:
+def _calculate_geometry(textwidget: tkinter.Text) -> tuple[int, int, int, int]:
     bbox = textwidget.bbox("insert")
     assert bbox is not None  # cursor must be visible
     (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
@@ -96,19 +96,19 @@ def _calculate_geometry(textwidget: tkinter.Text) -> str:
 
 
 # can't use ttk.Sizegrip, that is only for resizing tkinter.Toplevel or tkinter.Tk
-def _add_resize_handle(placed_widget: tkinter.Frame) -> ttk.Label:
+def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
     between_mouse_and_widget_bottom_right_corner = [0, 0]
 
     # Doing this only in the beginning of resize ensures that if it's off by 1
     # for whatever reason, then it will only ever be off by 1 pixel, rather
     # than off by 1 pixel MORE for each resize event.
-    def begin_resize(event: tkinter.Event) -> None:
+    def begin_resize(event: tkinter.Event[ttk.Label]) -> None:
         between_mouse_and_widget_bottom_right_corner[:] = [
             event.widget.winfo_width() - event.x,
             event.widget.winfo_height() - event.y
         ]
 
-    def do_resize(event: tkinter.Event) -> None:
+    def do_resize(event: tkinter.Event[ttk.Label]) -> None:
         x_offset, y_offset = between_mouse_and_widget_bottom_right_corner
         width = event.x_root - placed_widget.winfo_rootx() + x_offset
         height = event.y_root - placed_widget.winfo_rooty() + y_offset
@@ -122,7 +122,7 @@ def _add_resize_handle(placed_widget: tkinter.Frame) -> ttk.Label:
 
 
 class _Popup:
-    def __init__(self, textwidget) -> None:
+    def __init__(self, textwidget: tkinter.Text) -> None:
         self._completion_list: list[Completion] | None = None
 
         self._textwidget = textwidget
