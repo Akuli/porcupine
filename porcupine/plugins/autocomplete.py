@@ -80,7 +80,6 @@ def _calculate_geometry(textwidget: tkinter.Text) -> tuple[int, int, int, int]:
 
     # don't go off the screen to the right, leave space between popup
     # and right side of window
-    print(width, textwidget_width, cursor_x)
     x = min(textwidget_width - width - 10, cursor_x)
 
     if cursor_y + cursor_height + height < textwidget_height:
@@ -123,11 +122,8 @@ def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
 
 class _Popup:
     def __init__(self, textwidget: tkinter.Text) -> None:
-        self._completion_list: list[Completion] | None = None
-
         self._textwidget = textwidget
-        normal_cursor = self._textwidget['cursor']
-        self._frame = ttk.Frame(textwidget)
+        self._completion_list: list[Completion] | None = None
 
         # from tkinter/ttk.py:
         #
@@ -135,9 +131,10 @@ class _Popup:
         #
         # I'm using Panedwindow here in case the PanedWindow alias is deleted
         # in a future version of python.
-        self._panedwindow = ttk.Panedwindow(self._frame, orient="horizontal")
+        self._panedwindow = ttk.Panedwindow(self._textwidget, orient="horizontal")
         settings.remember_divider_positions(self._panedwindow, "autocomplete_dividers", [200])
-        self._panedwindow.pack(fill="both", expand=True)
+
+        normal_cursor = self._textwidget['cursor']
         self._panedwindow.bind('<Enter>', (lambda event: textwidget.config(cursor='arrow')), add=True)
         self._panedwindow.bind('<Leave>', (lambda event: textwidget.config(cursor=normal_cursor)), add=True)
 
@@ -156,10 +153,10 @@ class _Popup:
         )
         self._right_scrollbar = _pack_with_scrollbar(self._doc_text)
 
-        self._resize_handle = _add_resize_handle(self._frame)
-        self._frame.bind("<Configure>", self._on_resize, add=True)
+        self._resize_handle = _add_resize_handle(self._panedwindow)
+        self._panedwindow.bind("<Configure>", self._on_resize, add=True)
 
-    def _on_resize(self, junk: object) -> None:
+    def _on_resize(self, junk: object = None) -> None:
         # When the separator is dragged all the way to left or the popup is
         # resized to be narrow enough, the right scrollbar is no longer mapped
         # (i.e. visible) but the left scrollbar must get out of the way of the
@@ -219,20 +216,22 @@ class _Popup:
 
         if not already_showing:
             x, y, width, height = _calculate_geometry(self._textwidget)
-            self._frame.place(x=x, y=y, width=width, height=height)
+            self._panedwindow.place(x=x, y=y, width=width, height=height)
+            self._panedwindow.update()  # _on_resize() uses current sizes
+            self._on_resize()
 
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
     def stop_completing(self, *, hide: bool = True) -> Completion | None:
         # putting this here avoids some bugs
         if self.is_showing():
-            settings.set_("autocomplete_popup_width", self._frame.winfo_width())
-            settings.set_("autocomplete_popup_height", self._frame.winfo_height())
+            settings.set_("autocomplete_popup_width", self._panedwindow.winfo_width())
+            settings.set_("autocomplete_popup_height", self._panedwindow.winfo_height())
 
         selected = self._get_selected_completion()
 
         if hide:
-            self._frame.place_forget()
+            self._panedwindow.place_forget()
         self.treeview.delete(*self.treeview.get_children())  # type: ignore[no-untyped-call]
         self._completion_list = None
 
