@@ -756,3 +756,43 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     update_colors()
 
     return text
+
+
+# TODO: document this?
+def place_popup(
+    parent: tkinter.Text,
+    child: tkinter.Widget,
+    *,
+    width: int,
+    height: int | None = None,
+    text_position: str = "insert",
+    wrap: bool = False,
+) -> None:
+    gap = 5  # Debugging tip: try big gap
+
+    bbox = parent.bbox(text_position)
+    assert bbox is not None
+    (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
+
+    # don't go beyond the right edge of textwidget
+    width = min(width, parent.winfo_width() - 2 * gap)
+
+    if wrap:
+        assert isinstance(child, tkinter.Label)
+        child.config(wraplength=width)  # affects winfo_reqheight()
+
+    if height is None:
+        height = child.winfo_reqheight()
+
+    # TODO: figure out why -10 needed near right edge of parent
+    x = min(cursor_x + gap, parent.winfo_width() - gap - width - 10)
+    if cursor_y + cursor_height + gap + height + gap < parent.winfo_height():
+        # child fits below bbox
+        y = cursor_y + cursor_height + gap
+    else:
+        # would go below bottom of text widget, let's put it above instead
+        # TODO: check if fits
+        y = cursor_y - gap - height
+
+    child.place(x=x, y=y, width=width, height=height)
+    child.lift()  # if you want autocomplete, it should show on top of hover popups

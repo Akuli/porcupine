@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import tkinter
 
-from porcupine import get_main_window, get_tab_manager, tabs, utils
+from porcupine import get_main_window, get_tab_manager, tabs, utils, textutils
 
 
 # Data of request is a text widget location. Use event.data_string to access it.
@@ -26,38 +26,21 @@ class HoverManager:
 
     def _show_label(self, message: str) -> None:
         self.hide_label()
-
-        bbox = self._textwidget.bbox(self._location)
-        if bbox is None:
-            # this is called even though the relevant part of text isn't visible? weird
-            return
-
-        bbox_x, bbox_y, bbox_width, bbox_height = bbox
-        gap_size = 8
-
         self._label = tkinter.Label(
             self._textwidget,
             text=message,
-            wraplength=(self._textwidget.winfo_width() - 2 * gap_size),
             justify="left",
             # opposite colors as in the text widget
             bg=self._textwidget["fg"],
             fg=self._textwidget["bg"],
         )
-
-        label_width = self._label.winfo_reqwidth()
-        label_height = self._label.winfo_reqheight()
-
-        # don't go beyond the right edge of textwidget
-        label_x = min(bbox_x, self._textwidget.winfo_width() - gap_size - label_width)
-
-        if bbox_y + bbox_height + gap_size + label_height < self._textwidget.winfo_height():
-            # label goes below bbox
-            label_y = bbox_y + bbox_height + gap_size
-        else:
-            # would go below bottom of text widget, let's put it above instead
-            label_y = bbox_y - gap_size - label_height
-        self._label.place(x=label_x, y=label_y)
+        textutils.place_popup(
+            self._textwidget,
+            self._label,
+            width=min(self._label.winfo_reqwidth(), self._textwidget.winfo_width() // 2),
+            text_position=self._location,
+            wrap=True,
+        )
 
     def _request_hover(self, location: str) -> None:
         if self._location != location:

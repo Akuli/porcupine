@@ -63,37 +63,6 @@ def _pack_with_scrollbar(widget: ttk.Treeview | tkinter.Text) -> ttk.Scrollbar:
     return scrollbar
 
 
-# FIXME: popup tooltips behave very similarly, combine codes
-def _calculate_geometry(textwidget: tkinter.Text) -> tuple[int, int, int, int]:
-    bbox = textwidget.bbox("insert")
-    assert bbox is not None  # cursor must be visible
-    (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
-
-    # leave some space
-    cursor_y -= 5
-    cursor_height += 10
-
-    width = settings.get("autocomplete_popup_width", int)
-    height = settings.get("autocomplete_popup_height", int)
-    textwidget_width = textwidget.winfo_width()
-    textwidget_height = textwidget.winfo_height()
-
-    # don't go off the screen to the right, leave space between popup
-    # and right side of window
-    x = min(textwidget_width - width - 10, cursor_x)
-
-    if cursor_y + cursor_height + height < textwidget_height:
-        # it fits below cursor, put it there
-        y = cursor_y + cursor_height
-    else:
-        # put it above cursor instead. If it doesn't fit there either,
-        # then y is also negative and the user has a tiny screen or a
-        # huge popup size.
-        y = cursor_y - height
-
-    return (x, y, width, height)
-
-
 # can't use ttk.Sizegrip, that is only for resizing tkinter.Toplevel or tkinter.Tk
 def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
     between_mouse_and_widget_bottom_right_corner = [0, 0]
@@ -109,9 +78,12 @@ def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
 
     def do_resize(event: tkinter.Event[ttk.Label]) -> None:
         x_offset, y_offset = between_mouse_and_widget_bottom_right_corner
-        width = event.x_root - placed_widget.winfo_rootx() + x_offset
-        height = event.y_root - placed_widget.winfo_rooty() + y_offset
-        placed_widget.place(width=max(width, 1), height=max(height, 1))
+        width = max(1, event.x_root - placed_widget.winfo_rootx() + x_offset)
+        height = max(1, event.y_root - placed_widget.winfo_rooty() + y_offset)
+        placed_widget.place(width=width, height=height)
+
+        settings.set_("autocomplete_popup_width", width)
+        settings.set_("autocomplete_popup_height", height)
 
     handle = ttk.Label(placed_widget, text="⇲")  # unicode awesomeness
     handle.bind("<Button-1>", begin_resize)
@@ -219,19 +191,18 @@ class _Popup:
             self._doc_text.config(state="disabled")
 
         if not already_showing:
-            x, y, width, height = _calculate_geometry(self._textwidget)
-            self._panedwindow.place(x=x, y=y, width=width, height=height)
+            textutils.place_popup(
+                self._textwidget,
+                self._panedwindow,
+                width=settings.get("autocomplete_popup_width", int),
+                height=settings.get("autocomplete_popup_height", int),
+            )
             self._panedwindow.update()  # _on_resize() uses current sizes
             self._on_resize()
 
     # does nothing if not currently completing
     # returns selected completion dict or None if no completions
     def stop_completing(self, *, hide: bool = True) -> Completion | None:
-        # putting this here avoids some bugs
-        if self.is_showing():
-            settings.set_("autocomplete_popup_width", self._panedwindow.winfo_width())
-            settings.set_("autocomplete_popup_height", self._panedwindow.winfo_height())
-
         selected = self._get_selected_completion()
 
         if hide:
