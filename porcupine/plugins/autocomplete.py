@@ -104,7 +104,7 @@ def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
     def begin_resize(event: tkinter.Event[ttk.Label]) -> None:
         between_mouse_and_widget_bottom_right_corner[:] = [
             event.widget.winfo_width() - event.x,
-            event.widget.winfo_height() - event.y
+            event.widget.winfo_height() - event.y,
         ]
 
     def do_resize(event: tkinter.Event[ttk.Label]) -> None:
@@ -113,10 +113,10 @@ def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
         height = event.y_root - placed_widget.winfo_rooty() + y_offset
         placed_widget.place(width=max(width, 1), height=max(height, 1))
 
-    handle = ttk.Label(placed_widget, text="⇲")      # unicode awesomeness
-    handle.bind('<Button-1>', begin_resize)
-    handle.bind('<Button1-Motion>', do_resize)
-    handle.place(relx=1, rely=1, anchor='se')
+    handle = ttk.Label(placed_widget, text="⇲")  # unicode awesomeness
+    handle.bind("<Button-1>", begin_resize)
+    handle.bind("<Button1-Motion>", do_resize)
+    handle.place(relx=1, rely=1, anchor="se")
     return handle
 
 
@@ -134,9 +134,13 @@ class _Popup:
         self._panedwindow = ttk.Panedwindow(self._textwidget, orient="horizontal")
         settings.remember_divider_positions(self._panedwindow, "autocomplete_dividers", [200])
 
-        normal_cursor = self._textwidget['cursor']
-        self._panedwindow.bind('<Enter>', (lambda event: textwidget.config(cursor='arrow')), add=True)
-        self._panedwindow.bind('<Leave>', (lambda event: textwidget.config(cursor=normal_cursor)), add=True)
+        normal_cursor = self._textwidget["cursor"]
+        self._panedwindow.bind(
+            "<Enter>", (lambda event: textwidget.config(cursor="arrow")), add=True
+        )
+        self._panedwindow.bind(
+            "<Leave>", (lambda event: textwidget.config(cursor=normal_cursor)), add=True
+        )
 
         left_pane = ttk.Frame(self._panedwindow)
         right_pane = ttk.Frame(self._panedwindow)
@@ -196,7 +200,7 @@ class _Popup:
         return self._completion_list[int(the_id)]
 
     def start_completing(
-        self, completion_list: list[Completion], already_showing: bool=True
+        self, completion_list: list[Completion], already_showing: bool = True
     ) -> None:
         if self.is_completing():
             self.stop_completing(hide=False)
@@ -410,9 +414,7 @@ class AutoCompleter:
 
         if self._user_wants_to_see_popup():
             self.unfiltered_completions = response.completions
-            self.popup.start_completing(
-                self._get_filtered_completions(), already_showing=False
-            )
+            self.popup.start_completing(self._get_filtered_completions(), already_showing=False)
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
