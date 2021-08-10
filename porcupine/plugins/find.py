@@ -241,9 +241,7 @@ class Finder(ttk.Frame):
         if self.full_words_var.get() and not re.fullmatch(r"\w|\w.*\w", looking4):
             self._update_buttons()
             self.statuslabel.config(
-                text=(
-                    f'"{looking4}" is not a valid word. Maybe uncheck the "Full words only" checkbox?'
-                )
+                text=f'"{looking4}" is not a valid word. Maybe uncheck "Full words only"?'
             )
             return
 
