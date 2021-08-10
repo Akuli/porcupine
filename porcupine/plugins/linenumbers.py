@@ -61,7 +61,7 @@ class LineNumbers(tkinter.Canvas):
             self.create_text(
                 0,
                 y,
-                text=f" {lineno}",
+                text=f" {lineno:<4}",
                 anchor="nw",
                 font="TkFixedFont",
                 fill=self._text_color,

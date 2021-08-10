@@ -19,9 +19,7 @@ class AnchorManager:
         self.tab_textwidget = tab_textwidget
         self.linenumbers = linenumbers
 
-        self.anchor_symbol = "¶"
-
-        # tkinter have default marks such as "insert", "current", "tkinter::anchor1"
+        # tkinter have default marks such as "insert", "current", "tk::anchor1"
         self.custom_anchor_prefix = "anchor_"
 
         linenumbers.bind("<<Updated>>", self.update_linenumbers, add=True)
@@ -96,9 +94,7 @@ class AnchorManager:
         """
         self.prevent_duplicate_anchors()
 
-        anchor_list = self._get_anchors()
-
-        for anchorpoint in anchor_list:
+        for anchorpoint in self._get_anchors():
             row_tag = "line_" + self.tab_textwidget.index(anchorpoint).split(".")[0]
             try:
                 [row_id] = self.linenumbers.find_withtag(row_tag)
@@ -106,7 +102,7 @@ class AnchorManager:
                 pass
             else:
                 row_text = self.linenumbers.itemcget(row_id, "text")  # type: ignore[no-untyped-call]
-                self.linenumbers.itemconfigure(row_id, text=row_text + " " + self.anchor_symbol)
+                self.linenumbers.itemconfigure(row_id, text=row_text + "¶")
 
     def prevent_duplicate_anchors(self) -> None:
         current_rows = set()
