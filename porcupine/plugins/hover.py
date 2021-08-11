@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import tkinter
 
-from porcupine import get_main_window, get_tab_manager, tabs, utils, textutils
+from porcupine import get_main_window, get_tab_manager, tabs, textutils, utils
 
 
 # Data of request is a text widget location. Use event.data_string to access it.

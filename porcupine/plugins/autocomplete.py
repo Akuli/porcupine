@@ -183,9 +183,7 @@ class _Popup:
             self._doc_text.insert("1.0", "No completions")
             self._doc_text.config(state="disabled")
 
-    def start_completing(
-        self
-    ) -> None:
+    def start_completing(self) -> None:
         textutils.place_popup(
             self._textwidget,
             self._panedwindow,
