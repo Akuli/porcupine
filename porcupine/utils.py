@@ -278,11 +278,6 @@ def _format_binding(binding: str, menu: bool) -> str:
         # event_info() returns <Mod1-Key-x> for <Command-x>
         parts = [{"Mod1": "Command", "plus": "+", "minus": "-"}.get(part, part) for part in parts]
 
-        if menu:
-            # Tk will use the proper symbols automagically, and it expects dash-separated
-            # Even "Command--" for command and minus key works
-            return "-".join(parts)
-
     if mac:
         # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
         sort_order = {"Shift": 1, "Control": 2, "Alt": 3, "Command": 4}
@@ -302,8 +297,13 @@ def _format_binding(binding: str, menu: bool) -> str:
             "minus": "Minus",
             "Return": "Enter",
         }
-
     parts.sort(key=(lambda part: sort_order.get(part, 100)))
+
+    if mac and menu:
+        # Tk will use the proper symbols automagically, and it expects dash-separated
+        # Even "Command--" for command and minus key works
+        return "-".join(parts)
+
     parts = [symbol_mapping.get(part, part) for part in parts]
 
     if mac:
