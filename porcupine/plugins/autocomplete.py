@@ -473,6 +473,7 @@ class AutoCompleter:
                 return
 
             # let the text get inserted before continuing
+            assert self._orig_cursorpos is not None
             self._tab.textwidget.after_idle(self._filter_through_completions)
 
         elif event.char in self._tab.settings.get("autocomplete_chars", List[str]):
