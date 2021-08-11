@@ -791,7 +791,6 @@ def place_popup(
         y = cursor_y + cursor_height + gap
     else:
         # would go below bottom of text widget, let's put it above instead
-        # TODO: check if fits
         y = cursor_y - gap - height
 
     child.place(x=x, y=y, width=width, height=height)
