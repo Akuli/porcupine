@@ -177,6 +177,20 @@ def test_ignore_case_and_full_words_only(filetab_and_finder):
     ]
 
 
+def test_full_words_can_contain_anything(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    finder.full_words_var.set(True)
+    filetab.textwidget.insert("1.0", "foo.bar foo.baz")
+
+    finder.find_entry.insert(0, "foo.")
+    assert finder.statuslabel["text"].startswith('"foo." is not a valid word')
+    assert not get_match_ranges(finder)
+
+    finder.find_entry.insert("end", "bar")  # "foo." + "bar"
+    assert finder.statuslabel["text"] == "Found 1 match."
+    assert get_match_ranges(finder) == [("1.0", "1.7")]
+
+
 def test_basic_statuses_and_previous_and_next_match_buttons(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert("1.0", "asd asd asd\nasd asd")

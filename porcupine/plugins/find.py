@@ -238,18 +238,12 @@ class Finder(ttk.Frame):
             self._update_buttons()
             self.statuslabel.config(text="Type something to find.")
             return
-        if self.full_words_var.get():
-            # check for non-wordy characters
-            match = re.search(r"\W", looking4)
-            if match is not None:
-                self._update_buttons()
-                self.statuslabel.config(
-                    text=(
-                        f'The search string can\'t contain "{match.group(0)}" when "Full words'
-                        ' only" is checked.'
-                    )
-                )
-                return
+        if self.full_words_var.get() and not re.fullmatch(r"\w|\w.*\w", looking4):
+            self._update_buttons()
+            self.statuslabel.config(
+                text=f'"{looking4}" is not a valid word. Maybe uncheck "Full words only"?'
+            )
+            return
 
         count = 0
         for start_index in self._get_matches_to_highlight(looking4):
