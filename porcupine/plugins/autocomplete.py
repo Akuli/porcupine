@@ -546,8 +546,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
     get_main_window().bind("<FocusOut>", on_focus_out, add=True)
 
-    # any mouse button
-    tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
+    tab.textwidget.bind("<Button-1>", (lambda event: completer._reject()), add=True)
 
     tab.bind("<Destroy>", (lambda event: completer.popup.toplevel.destroy()), add=True)
 
