@@ -114,7 +114,8 @@ class ConflictDisplayer:
 
         label.bind("<Enter>", (lambda event: label.config(bg=hover_bg)), add=True)
         label.bind("<Leave>", (lambda event: label.config(bg=bg_color)), add=True)
-        label.bind("<Button-1>", (lambda event: label.config(relief="sunken")), add=True)  # needed on mac
+        # Mac needs separate "<Button-1>" and "<Button1-Enter>" bindings
+        label.bind("<Button-1>", (lambda event: label.config(relief="sunken")), add=True)
         label.bind("<Button1-Enter>", (lambda event: label.config(relief="sunken")), add=True)
         label.bind("<Button1-Leave>", (lambda event: label.config(relief="raised")), add=True)
         label.bind("<ButtonRelease-1>", on_release, add=True)
