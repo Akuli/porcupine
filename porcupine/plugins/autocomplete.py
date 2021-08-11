@@ -533,15 +533,6 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.textwidget.bind("<Down>", completer.popup.on_arrow_key_up_down, add=True)
     completer.popup.treeview.bind("<Button-1>", (lambda event: completer._accept()), add=True)
 
-    # avoid weird corner cases
-    def on_focus_out(event: tkinter.Event[tkinter.Misc]) -> None:
-        if event.widget == get_main_window():
-            # On Windows, <FocusOut> runs before treeview click handler
-            # We must accept when clicked, so reject later
-            tab.after_idle(completer._reject)
-
-    get_main_window().bind("<FocusOut>", on_focus_out, add=True)
-
     # any mouse button
     tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
 
