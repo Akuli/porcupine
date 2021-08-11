@@ -74,7 +74,7 @@ if sys.platform == "darwin":
         ("<<Menubar:Edit/Anchors/Jump to next>>", "⇧⌥Down", "Shift-Alt-Down"),  # sucks but unused
         ("<<Menubar:Edit/Fold>>", "⌥F", "Alt-F"),
         ("<<Menubar:File/New File>>", "⌘N", "Command-N"),
-        ("<<Menubar:File/Save As>>", "⇧⌘S", "Command-Shift-S"),
+        ("<<Menubar:File/Save As>>", "⇧⌘S", "Shift-Command-S"),
         ("<<Menubar:File/Save>>", "⌘S", "Command-S"),
         ("<<Menubar:Run/Run>>", "F5", "F5"),
         ("<<Menubar:View/Bigger Font>>", "⌘+", "Command-+"),
