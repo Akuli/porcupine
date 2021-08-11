@@ -791,8 +791,7 @@ def place_popup(
         y = cursor_y + cursor_height + gap
     else:
         # would go below bottom of text widget, let's put it above instead
-        # TODO: check if fits
         y = cursor_y - gap - height
 
     child.place(x=x, y=y, width=width, height=height)
-    child.lift()  # if you want autocomplete, it should show on top of hover popups
+    child.lift()  # autocomplete shows on top of hover popups
