@@ -152,9 +152,6 @@ class _Popup:
     def is_completing(self) -> bool:
         return self._completion_list is not None
 
-    def is_showing(self) -> bool:
-        return self._panedwindow.winfo_ismapped()
-
     def _select_item(self, item_id: str) -> None:
         self.treeview.selection_set(item_id)  # type: ignore[no-untyped-call]
         self.treeview.see(item_id)  # type: ignore[no-untyped-call]
@@ -171,16 +168,12 @@ class _Popup:
         [the_id] = selected_ids
         return self._completion_list[int(the_id)]
 
-    def start_completing(
-        self, completion_list: list[Completion], already_showing: bool = True
-    ) -> None:
-        if self.is_completing():
-            self.stop_completing(hide=False)
+    def set_completions(self, completion_list: list[Completion]):
+        self.treeview.delete(*self.treeview.get_children())  # type: ignore[no-untyped-call]
 
         self._completion_list = completion_list
-
-        if completion_list:
-            for index, completion in enumerate(completion_list):
+        if self._completion_list:
+            for index, completion in enumerate(self._completion_list):
                 # id=str(index) is used in the rest of this class
                 self.treeview.insert("", "end", id=str(index), text=completion.display_text)
             self._select_item("0")
@@ -190,26 +183,23 @@ class _Popup:
             self._doc_text.insert("1.0", "No completions")
             self._doc_text.config(state="disabled")
 
-        if not already_showing:
-            textutils.place_popup(
-                self._textwidget,
-                self._panedwindow,
-                width=settings.get("autocomplete_popup_width", int),
-                height=settings.get("autocomplete_popup_height", int),
-            )
-            self._panedwindow.update()  # _on_resize() uses current sizes
-            self._on_resize()
+    def start_completing(
+        self
+    ) -> None:
+        textutils.place_popup(
+            self._textwidget,
+            self._panedwindow,
+            width=settings.get("autocomplete_popup_width", int),
+            height=settings.get("autocomplete_popup_height", int),
+        )
+        self._panedwindow.update()  # _on_resize() uses current sizes
+        self._on_resize()
 
     # does nothing if not currently completing
-    # returns selected completion dict or None if no completions
-    def stop_completing(self, *, hide: bool = True) -> Completion | None:
+    def stop_completing(self) -> Completion | None:
         selected = self._get_selected_completion()
-
-        if hide:
-            self._panedwindow.place_forget()
-        self.treeview.delete(*self.treeview.get_children())  # type: ignore[no-untyped-call]
+        self._panedwindow.place_forget()
         self._completion_list = None
-
         return selected
 
     def select_previous(self) -> None:
@@ -227,7 +217,7 @@ class _Popup:
             self._select_item(self.treeview.next(the_id) or self.treeview.get_children()[0])  # type: ignore[no-untyped-call]
 
     def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
-        if not self.is_showing():
+        if not self._panedwindow.winfo_ismapped():
             return None
 
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
@@ -235,7 +225,7 @@ class _Popup:
         return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
-        if not self.is_showing():
+        if not self._panedwindow.winfo_ismapped():
             return None
 
         method = {"Up": self.select_previous, "Down": self.select_next}[event.keysym]
@@ -385,7 +375,8 @@ class AutoCompleter:
 
         if self._user_wants_to_see_popup():
             self.unfiltered_completions = response.completions
-            self.popup.start_completing(self._get_filtered_completions(), already_showing=False)
+            self.popup.set_completions(self._get_filtered_completions())
+            self.popup.start_completing()
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
@@ -497,10 +488,8 @@ class AutoCompleter:
         # has backspaced away a lot and likely doesn't want completions.
         if _text_index_less_than(self._tab.textwidget.index("insert"), self._orig_cursorpos):
             self._reject()
-            return
-
-        self.popup.stop_completing(hide=False)  # TODO: is this needed?
-        self.popup.start_completing(self._get_filtered_completions())
+        else:
+            self.popup.set_completions(self._get_filtered_completions())
 
     def on_enter(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         if self.popup.is_completing():
