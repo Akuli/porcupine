@@ -521,8 +521,9 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.textwidget.bind("<Down>", completer.popup.on_arrow_key_up_down, add=True)
     completer.popup.treeview.bind("<Button-1>", (lambda event: completer._accept()), add=True)
 
-    # any mouse button
+    # Don't know why <Button> does not include <Button-1> in this context
     tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
+    tab.textwidget.bind("<Button-1>", (lambda event: completer._reject()), add=True)
 
     # fallback completer, other completers must be bound before
     utils.bind_with_data(
