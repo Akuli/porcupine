@@ -21,7 +21,7 @@ from functools import partial
 from tkinter import ttk
 from typing import List
 
-from porcupine import get_main_window, get_tab_manager, settings, tabs, textutils, utils
+from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
 # autoindent: it shouldn't indent when pressing enter to choose completion
 # tabs2spaces: all plugins binding tab or shift+tab must bind first
@@ -63,47 +63,39 @@ def _pack_with_scrollbar(widget: ttk.Treeview | tkinter.Text) -> ttk.Scrollbar:
     return scrollbar
 
 
-def _calculate_popup_geometry(textwidget: tkinter.Text) -> str:
-    bbox = textwidget.bbox("insert")
-    assert bbox is not None  # cursor must be visible
-    (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
+# can't use ttk.Sizegrip, that is only for resizing tkinter.Toplevel or tkinter.Tk
+def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
+    between_mouse_and_widget_bottom_right_corner = [0, 0]
 
-    # make coordinates relative to screen
-    cursor_x += textwidget.winfo_rootx()
-    cursor_y += textwidget.winfo_rooty()
+    # Doing this only in the beginning of resize ensures that if it's off by 1
+    # for whatever reason, then it will only ever be off by 1 pixel, rather
+    # than off by 1 pixel MORE for each resize event.
+    def begin_resize(event: tkinter.Event[ttk.Label]) -> None:
+        between_mouse_and_widget_bottom_right_corner[:] = [
+            event.widget.winfo_width() - event.x,
+            event.widget.winfo_height() - event.y,
+        ]
 
-    # leave some space
-    cursor_y -= 5
-    cursor_height += 10
+    def do_resize(event: tkinter.Event[ttk.Label]) -> None:
+        x_offset, y_offset = between_mouse_and_widget_bottom_right_corner
+        width = max(1, event.x_root - placed_widget.winfo_rootx() + x_offset)
+        height = max(1, event.y_root - placed_widget.winfo_rooty() + y_offset)
+        placed_widget.place(width=width, height=height)
 
-    popup_width = settings.get("autocomplete_popup_width", int)
-    popup_height = settings.get("autocomplete_popup_height", int)
-    screen_width = textwidget.winfo_screenwidth()
-    screen_height = textwidget.winfo_screenheight()
+        settings.set_("autocomplete_popup_width", width)
+        settings.set_("autocomplete_popup_height", height)
 
-    # don't go off the screen to the right, leave space between popup
-    # and right side of window
-    x = min(screen_width - popup_width - 10, cursor_x)
-
-    if cursor_y + cursor_height + popup_height < screen_height:
-        # it fits below cursor, put it there
-        y = cursor_y + cursor_height
-    else:
-        # put it above cursor instead. If it doesn't fit there either,
-        # then y is also negative and the user has a tiny screen or a
-        # huge popup size.
-        y = cursor_y - popup_height
-
-    return f"{popup_width}x{popup_height}+{x}+{y}"
+    handle = ttk.Label(placed_widget, text="⇲")  # unicode awesomeness
+    handle.bind("<Button-1>", begin_resize, add=True)
+    handle.bind("<Button1-Motion>", do_resize, add=True)
+    handle.place(relx=1, rely=1, anchor="se")
+    return handle
 
 
 class _Popup:
-    def __init__(self) -> None:
+    def __init__(self, textwidget: tkinter.Text) -> None:
+        self._textwidget = textwidget
         self._completion_list: list[Completion] | None = None
-
-        self.toplevel = tkinter.Toplevel()
-        self.toplevel.withdraw()
-        self.toplevel.overrideredirect(True)
 
         # from tkinter/ttk.py:
         #
@@ -111,9 +103,16 @@ class _Popup:
         #
         # I'm using Panedwindow here in case the PanedWindow alias is deleted
         # in a future version of python.
-        self._panedwindow = ttk.Panedwindow(self.toplevel, orient="horizontal")
+        self._panedwindow = ttk.Panedwindow(self._textwidget, orient="horizontal")
         settings.remember_divider_positions(self._panedwindow, "autocomplete_dividers", [200])
-        self._panedwindow.pack(fill="both", expand=True)
+
+        normal_cursor = self._textwidget["cursor"]
+        self._panedwindow.bind(
+            "<Enter>", (lambda event: textwidget.config(cursor="arrow")), add=True
+        )
+        self._panedwindow.bind(
+            "<Leave>", (lambda event: textwidget.config(cursor=normal_cursor)), add=True
+        )
 
         left_pane = ttk.Frame(self._panedwindow)
         right_pane = ttk.Frame(self._panedwindow)
@@ -130,11 +129,10 @@ class _Popup:
         )
         self._right_scrollbar = _pack_with_scrollbar(self._doc_text)
 
-        self._resize_handle = ttk.Sizegrip(self.toplevel)
-        self._resize_handle.place(relx=1, rely=1, anchor="se")
-        self.toplevel.bind("<Configure>", self._on_anything_resized, add=True)
+        self._resize_handle = _add_resize_handle(self._panedwindow)
+        self._panedwindow.bind("<Configure>", self._on_resize, add=True)
 
-    def _on_anything_resized(self, junk: object) -> None:
+    def _on_resize(self, junk: object = None) -> None:
         # When the separator is dragged all the way to left or the popup is
         # resized to be narrow enough, the right scrollbar is no longer mapped
         # (i.e. visible) but the left scrollbar must get out of the way of the
@@ -154,10 +152,6 @@ class _Popup:
     def is_completing(self) -> bool:
         return self._completion_list is not None
 
-    def is_showing(self) -> bool:
-        # don't know how only one of them could be mapped, checking to be sure
-        return bool(self.toplevel.winfo_ismapped() and self._panedwindow.winfo_ismapped())
-
     def _select_item(self, item_id: str) -> None:
         self.treeview.selection_set(item_id)  # type: ignore[no-untyped-call]
         self.treeview.see(item_id)  # type: ignore[no-untyped-call]
@@ -174,16 +168,12 @@ class _Popup:
         [the_id] = selected_ids
         return self._completion_list[int(the_id)]
 
-    def start_completing(
-        self, completion_list: list[Completion], geometry: str | None = None
-    ) -> None:
-        if self.is_completing():
-            self.stop_completing(withdraw=False)
+    def set_completions(self, completion_list: list[Completion]) -> None:
+        self.treeview.delete(*self.treeview.get_children())  # type: ignore[no-untyped-call]
 
         self._completion_list = completion_list
-
-        if completion_list:
-            for index, completion in enumerate(completion_list):
+        if self._completion_list:
+            for index, completion in enumerate(self._completion_list):
                 # id=str(index) is used in the rest of this class
                 self.treeview.insert("", "end", id=str(index), text=completion.display_text)
             self._select_item("0")
@@ -193,25 +183,21 @@ class _Popup:
             self._doc_text.insert("1.0", "No completions")
             self._doc_text.config(state="disabled")
 
-        if geometry is not None:
-            self.toplevel.geometry(geometry)
-        self.toplevel.deiconify()
+    def start_completing(self) -> None:
+        textutils.place_popup(
+            self._textwidget,
+            self._panedwindow,
+            width=settings.get("autocomplete_popup_width", int),
+            height=settings.get("autocomplete_popup_height", int),
+        )
+        self._panedwindow.update()  # _on_resize() uses current sizes
+        self._on_resize()
 
     # does nothing if not currently completing
-    # returns selected completion dict or None if no completions
-    def stop_completing(self, *, withdraw: bool = True) -> Completion | None:
-        # putting this here avoids some bugs
-        if self.is_showing():
-            settings.set_("autocomplete_popup_width", self.toplevel.winfo_width())
-            settings.set_("autocomplete_popup_height", self.toplevel.winfo_height())
-
+    def stop_completing(self) -> Completion | None:
         selected = self._get_selected_completion()
-
-        if withdraw:
-            self.toplevel.withdraw()
-        self.treeview.delete(*self.treeview.get_children())  # type: ignore[no-untyped-call]
+        self._panedwindow.place_forget()
         self._completion_list = None
-
         return selected
 
     def select_previous(self) -> None:
@@ -229,7 +215,7 @@ class _Popup:
             self._select_item(self.treeview.next(the_id) or self.treeview.get_children()[0])  # type: ignore[no-untyped-call]
 
     def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
-        if not self.is_showing():
+        if not self._panedwindow.winfo_ismapped():
             return None
 
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
@@ -237,7 +223,7 @@ class _Popup:
         return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
-        if not self.is_showing():
+        if not self._panedwindow.winfo_ismapped():
             return None
 
         method = {"Up": self.select_previous, "Down": self.select_next}[event.keysym]
@@ -337,7 +323,7 @@ class AutoCompleter:
         self._orig_cursorpos: str | None = None
         self._id_counter = itertools.count()
         self._waiting_for_response_id: int | None = None
-        self.popup = _Popup()
+        self.popup = _Popup(tab.textwidget)
         utils.bind_with_data(
             tab,
             "<<AutoCompletionResponse>>",
@@ -387,9 +373,8 @@ class AutoCompleter:
 
         if self._user_wants_to_see_popup():
             self.unfiltered_completions = response.completions
-            self.popup.start_completing(
-                self._get_filtered_completions(), _calculate_popup_geometry(self._tab.textwidget)
-            )
+            self.popup.set_completions(self._get_filtered_completions())
+            self.popup.start_completing()
 
     # this doesn't work perfectly. After get<Tab>, getar_u matches
     # getchar_unlocked but getch_u doesn't.
@@ -502,10 +487,8 @@ class AutoCompleter:
         # has backspaced away a lot and likely doesn't want completions.
         if _text_index_less_than(self._tab.textwidget.index("insert"), self._orig_cursorpos):
             self._reject()
-            return
-
-        self.popup.stop_completing(withdraw=False)  # TODO: is this needed?
-        self.popup.start_completing(self._get_filtered_completions())
+        else:
+            self.popup.set_completions(self._get_filtered_completions())
 
     def on_enter(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         if self.popup.is_completing():
@@ -538,19 +521,8 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.textwidget.bind("<Down>", completer.popup.on_arrow_key_up_down, add=True)
     completer.popup.treeview.bind("<Button-1>", (lambda event: completer._accept()), add=True)
 
-    # avoid weird corner cases
-    def on_focus_out(event: tkinter.Event[tkinter.Misc]) -> None:
-        if event.widget == get_main_window():
-            # On Windows, <FocusOut> runs before treeview click handler
-            # We must accept when clicked, so reject later
-            tab.after_idle(completer._reject)
-
-    get_main_window().bind("<FocusOut>", on_focus_out, add=True)
-
     # any mouse button
     tab.textwidget.bind("<Button>", (lambda event: completer._reject()), add=True)
-
-    tab.bind("<Destroy>", (lambda event: completer.popup.toplevel.destroy()), add=True)
 
     # fallback completer, other completers must be bound before
     utils.bind_with_data(
