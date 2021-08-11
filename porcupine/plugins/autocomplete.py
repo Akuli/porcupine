@@ -168,7 +168,7 @@ class _Popup:
         [the_id] = selected_ids
         return self._completion_list[int(the_id)]
 
-    def set_completions(self, completion_list: list[Completion]):
+    def set_completions(self, completion_list: list[Completion]) -> None:
         self.treeview.delete(*self.treeview.get_children())  # type: ignore[no-untyped-call]
 
         self._completion_list = completion_list
