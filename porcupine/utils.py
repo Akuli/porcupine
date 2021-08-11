@@ -283,42 +283,38 @@ def _format_binding(binding: str, menu: bool) -> str:
             # Even "Command--" for command and minus key works
             return "-".join(parts)
 
+    if mac:
         # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
-        parts.sort(
-            key=(lambda part: {"Shift": 1, "Control": 2, "Alt": 3, "Command": 4}.get(part, 100))
-        )
+        sort_order = {"Shift": 1, "Control": 2, "Alt": 3, "Command": 4}
+        symbol_mapping = {
+            "Shift": "⇧",
+            "Control": "⌃",  # NOT same as ascii "^"
+            "Alt": "⌥",
+            "Command": "⌘",
+            "Return": "⏎",
+        }
+    else:
+        sort_order = {"Control": 1, "Alt": 2, "Shift": 3}
+        symbol_mapping = {
+            "Control": "Ctrl",
+            "0": "Zero",  # not needed on mac, its font distinguishes 0 and O well
+            "plus": "Plus",
+            "minus": "Minus",
+            "Return": "Enter",
+        }
 
-        parts = [
-            {
-                "Shift": "⇧",
-                "Control": "⌃",  # NOT same as ascii "^"
-                "Alt": "⌥",
-                "Command": "⌘",
-                "Return": "⏎",
-            }.get(part, part)
-            for part in parts
-        ]
+    parts.sort(key=(lambda part: sort_order.get(part, 100)))
+    parts = [symbol_mapping.get(part, part) for part in parts]
 
+    if mac:
         # e.g. "⌘-double-click"
         # But not like this:  ["double-click"] --> ["-double-click"]
         parts[1:] = [
             {"click": "-click", "double-click": "-double-click"}.get(part, part)
             for part in parts[1:]
         ]
-        return "".join(parts)
 
-    else:
-        parts = [
-            {
-                "Control": "Ctrl",
-                "0": "Zero",  # not needed on mac, its font distinguishes 0 and O well
-                "plus": "Plus",
-                "minus": "Minus",
-                "Return": "Enter",
-            }.get(part, part)
-            for part in parts
-        ]
-        return "+".join(parts)
+    return ("" if mac else "+").join(parts)
 
 
 # TODO: document this

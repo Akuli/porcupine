@@ -82,6 +82,8 @@ def test_get_binding():
         assert utils.get_binding("<<Menubar:View/Smaller Font>>", menu=True) == "Command--"
         assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=True) == "Command-0"
         assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=True) == "Alt-F"
+        assert utils.get_binding("<<Menubar:Edit/Anchors/Add or remove on this line>>", menu=True) == "Shift-Alt-A"
+        assert utils.get_binding("<<Menubar:Edit/Anchors/Jump to next>>", menu=True) == "Shift-Alt-Down"  # TODO: this good?
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=True) == "F5"
         assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=True) == ""  # not possible to show
         assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=True) == "Shift-Alt-Return"
@@ -94,6 +96,8 @@ def test_get_binding():
         assert utils.get_binding("<<Menubar:View/Smaller Font>>", menu=False) == "⌘-"
         assert utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=False) == "⌘0"
         assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=False) == "⌥F"
+        assert utils.get_binding("<<Menubar:Edit/Anchors/Add or remove on this line>>", menu=False) == "⇧⌥A"
+        assert utils.get_binding("<<Menubar:Edit/Anchors/Jump to next>>", menu=False) == "⇧⌥Down"  # currently not used
         assert utils.get_binding("<<Menubar:Run/Run>>", menu=False) == "F5"
         assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=False) == "double-click"
         assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=False) == "⇧⌥⏎"
@@ -111,10 +115,12 @@ def test_get_binding():
                 utils.get_binding("<<Menubar:View/Reset Font Size>>", menu=boolean) == "Ctrl+Zero"
             )
             assert utils.get_binding("<<Menubar:Edit/Fold>>", menu=boolean) == "Alt+F"
+            assert utils.get_binding("<<Menubar:Edit/Anchors/Add or remove on this line>>", menu=True) == "Alt+Shift+A"
+            assert utils.get_binding("<<Menubar:Edit/Anchors/Jump to next>>", menu=True) == "Alt+Shift+Down"  # TODO: this good?
             assert utils.get_binding("<<Menubar:Run/Run>>", menu=boolean) == "F5"
             assert utils.get_binding("<<Urls:OpenWithMouse>>", menu=boolean) == "double-click"
-            assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=boolean) == "Shift+Alt+Enter"
-            assert utils.get_binding("<<UtilsTestEvent>>", menu=boolean) == "Shift+Alt+click"
+            assert utils.get_binding("<<Urls:OpenWithKeyboard>>", menu=boolean) == "Alt+Shift+Enter"
+            assert utils.get_binding("<<UtilsTestEvent>>", menu=boolean) == "Alt+Shift+click"
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
