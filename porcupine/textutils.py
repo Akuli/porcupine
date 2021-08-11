@@ -795,4 +795,4 @@ def place_popup(
         y = cursor_y - gap - height
 
     child.place(x=x, y=y, width=width, height=height)
-    child.lift()  # if you want autocomplete, it should show on top of hover popups
+    child.lift()  # autocomplete shows on top of hover popups
