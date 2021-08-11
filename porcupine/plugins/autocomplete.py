@@ -21,7 +21,7 @@ from functools import partial
 from tkinter import ttk
 from typing import List
 
-from porcupine import get_main_window, get_tab_manager, settings, tabs, textutils, utils
+from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
 # autoindent: it shouldn't indent when pressing enter to choose completion
 # tabs2spaces: all plugins binding tab or shift+tab must bind first
