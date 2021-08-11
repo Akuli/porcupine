@@ -86,8 +86,8 @@ def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
         settings.set_("autocomplete_popup_height", height)
 
     handle = ttk.Label(placed_widget, text="⇲")  # unicode awesomeness
-    handle.bind("<Button-1>", begin_resize)
-    handle.bind("<Button1-Motion>", do_resize)
+    handle.bind("<Button-1>", begin_resize, add=True)
+    handle.bind("<Button1-Motion>", do_resize, add=True)
     handle.place(relx=1, rely=1, anchor="se")
     return handle
 
