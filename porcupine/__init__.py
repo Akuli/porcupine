@@ -11,7 +11,7 @@ import sys
 
 import appdirs  # type: ignore[import]
 
-version_info = (0, 94, 2)  # this is updated with scripts/release.py
+version_info = (0, 94, 3)  # this is updated with scripts/release.py
 __version__ = "%d.%d.%d" % version_info
 __author__ = "Akuli"
 __copyright__ = "Copyright (c) 2017-2021 Akuli"
