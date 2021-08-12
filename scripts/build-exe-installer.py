@@ -55,7 +55,6 @@ with open("build/installer.nsi", "w") as dest:
     with open("scripts/installer.nsi", "r") as source:
         dest.write(source.read())
 
-shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("scripts/launch.pyw", "build/launch.pyw")
 shutil.copy("LICENSE", "build/LICENSE")
 
@@ -80,7 +79,8 @@ zip_object = zipfile.ZipFile(io.BytesIO(response.content))
 zip_object.extractall("build/Python")
 
 
-# TODO: does ico file need to be included in the installer?
+# TODO: ico file need to be included in the installer just because start menu?
+# Or can start menu entry icon refer to exe file?
 print(r"Converting logo to .ico format")
 PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
 
