@@ -176,7 +176,7 @@
 pygments_lexer = "pygments.lexers.TextLexer"
 
 [Python]
-filename_patterns = ["*.py"]
+filename_patterns = ["*.py", "*.pyw"]
 shebang_regex = 'python(\d(\.\d)?)?$'
 pygments_lexer = "pygments.lexers.Python3Lexer"
 tabs2spaces = true

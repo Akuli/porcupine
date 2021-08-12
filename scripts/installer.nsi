@@ -1,10 +1,9 @@
 ; Based on a file that pynsist generated
+; Definition for PRODUCT_VERSION must be added before running this file
 
 !define PRODUCT_NAME "Porcupine"
-!define PRODUCT_VERSION "0.92.123"
 !define BITNESS "64"
 !define ARCH_TAG ".amd64"
-!define INSTALLER_NAME "Porcupine_0.92.123.exe"
 !define PRODUCT_ICON "porcupine-logo.ico"
 
 ; Marker file to tell the uninstaller that it's a user installation
@@ -42,7 +41,7 @@ SetCompressor lzma
 !insertmacro MUI_LANGUAGE "English"
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "${INSTALLER_NAME}"
+OutFile "Porcupine_${PRODUCT_VERSION}.exe"
 ShowInstDetails show
 
 Var cmdLineInstallDir
@@ -68,21 +67,22 @@ Section "!${PRODUCT_NAME}" sec_app
     SetFileAttributes "$INSTDIR\${USER_INSTALL_MARKER}" HIDDEN
 
   ; Install files
-    SetOutPath "$INSTDIR"
-    File "porcupine-logo.ico"
-    File "Porcupine.launch.pyw"
+  SetOutPath "$INSTDIR"
+  File "porcupine-logo.ico"
+  File "launch.pyw"
 
   ; Install directories
-    SetOutPath "$INSTDIR\Python"
-    File /r "Python\*.*"
-    SetOutPath "$INSTDIR\lib"
-    File /r "lib\*.*"
+  SetOutPath "$INSTDIR\Python"
+  File /r "Python\*.*"
+  SetOutPath "$INSTDIR\lib"
+  File /r "lib\*.*"
 
   ; Install shortcuts
   ; The output path becomes the working directory for shortcuts
+  ; TODO: does icon work or needs included?
   SetOutPath "%HOMEDRIVE%\%HOMEPATH%"
-    CreateShortCut "$SMPROGRAMS\Porcupine.lnk" '"$INSTDIR\Python\Porcupine.exe"' \
-      '"$INSTDIR\Porcupine.launch.pyw"'; "$INSTDIR\porcupine-logo.ico"
+  CreateShortCut "$SMPROGRAMS\Porcupine.lnk" '"$INSTDIR\Python\Porcupine.exe"' \
+      '"$INSTDIR\launch.pyw"' "$INSTDIR\porcupine-logo.ico"
   SetOutPath "$INSTDIR"
 
 
@@ -90,21 +90,15 @@ Section "!${PRODUCT_NAME}" sec_app
   DetailPrint "Byte-compiling Python modules..."
   nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR\pkgs"'
   WriteUninstaller $INSTDIR\uninstall.exe
-  ; Add ourselves to Add/remove programs
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
-                   "DisplayName" "${PRODUCT_NAME}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
-                   "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
-                   "InstallLocation" "$INSTDIR"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
-                   "DisplayIcon" "$INSTDIR\${PRODUCT_ICON}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
-                   "DisplayVersion" "${PRODUCT_VERSION}"
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
-                   "NoModify" 1
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
-                   "NoRepair" 1
+
+  DetailPrint "Creating registry keys..."
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"  "DisplayName" "${PRODUCT_NAME}"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "InstallLocation" "$INSTDIR"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\${PRODUCT_ICON}"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayVersion" "${PRODUCT_VERSION}"
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "NoModify" 1
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "NoRepair" 1
 
   ; Check if we need to reboot
   IfRebootFlag 0 noreboot
@@ -121,28 +115,19 @@ Section "Uninstall"
     SetShellVarContext current
     Delete "$INSTDIR\${USER_INSTALL_MARKER}"
 
-  Delete $INSTDIR\uninstall.exe
+  Delete "$INSTDIR\uninstall.exe"
   Delete "$INSTDIR\${PRODUCT_ICON}"
-  RMDir /r "$INSTDIR\pkgs"
-
-  ; Remove ourselves from %PATH%
-
-  ; Uninstall files
   Delete "$INSTDIR\porcupine-logo.ico"
-  Delete "$INSTDIR\Porcupine.launch.pyw"
-
-  ; Uninstall directories
+  Delete "$INSTDIR\launch.pyw"
+  RMDir /r "$INSTDIR\pkgs"
   RMDir /r "$INSTDIR\Python"
   RMDir /r "$INSTDIR\lib"
+  RMDir "$INSTDIR"
 
-  ; Uninstall shortcuts
   Delete "$SMPROGRAMS\Porcupine.lnk"
-  RMDir $INSTDIR
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 SectionEnd
 
-
-; Functions
 
 Function .onMouseOverSection
     ; Find which section the mouse is over, and set the corresponding description.
