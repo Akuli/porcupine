@@ -315,3 +315,10 @@ filename_patterns = ["*.tex"]
 pygments_lexer = "pygments.lexers.TexLexer"
 tabs2spaces = true
 comment_prefix = '%'
+
+["NSIS installer file"]
+filename_patterns = ["*.nsi", "*.nsh"]
+pygments_lexer = "pygments.lexers.NSISLexer"
+tabs2spaces = true
+indent_size = 2
+comment_prefix = '%'

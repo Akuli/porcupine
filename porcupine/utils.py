@@ -34,12 +34,8 @@ log = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
-# nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
-_installed_with_pynsist = (
-    sys.platform == "win32"
-    and Path(sys.executable).parent.name.lower() == "python"
-    and Path(sys.executable).parent.parent.name.lower() == "porcupine"
-)
+# nsis script installs python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python\Porcupine.exe
+_installed_with_pynsist = sys.executable.endswith(r"Porcupine\Python\Porcupine.exe")
 
 
 if sys.platform == "win32":
