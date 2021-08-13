@@ -3,9 +3,6 @@
 !define BITNESS "64"
 !define ARCH_TAG ".amd64"
 
-; Marker file to tell the uninstaller that it's a user installation
-!define USER_INSTALL_MARKER _user_install_marker
-
 SetCompressor lzma
 
 Unicode true
@@ -53,7 +50,7 @@ Section "!Porcupine" sec_app
 
   ; Marker file for per-user install
   StrCmp $MultiUser.InstallMode CurrentUser 0 +3
-    FileOpen $0 "$INSTDIR\${USER_INSTALL_MARKER}" w
+    FileOpen $0 "$INSTDIR\_user_install_marker" w
     FileClose $0
 
   File "launch.pyw"
@@ -90,9 +87,9 @@ SectionEnd
 Section "Uninstall"
   SetRegView 64
   SetShellVarContext all
-  IfFileExists "$INSTDIR\${USER_INSTALL_MARKER}" 0 +3
+  IfFileExists "$INSTDIR\_user_install_marker" 0 +3
     SetShellVarContext current
-    Delete "$INSTDIR\${USER_INSTALL_MARKER}"
+    Delete "$INSTDIR\_user_install_marker"
 
   RMDir /r "$INSTDIR"
 
