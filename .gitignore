@@ -93,6 +93,3 @@ env*/
 # other stuff i have needed to add
 .pytest_cache
 playground.*
-*.exe
-*.res
-*.ico
