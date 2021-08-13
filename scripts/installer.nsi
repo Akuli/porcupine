@@ -1,5 +1,4 @@
 ; Based on a file that pynsist generated
-; Definition for VERSION must be added before running this file
 
 !define BITNESS "64"
 !define ARCH_TAG ".amd64"
