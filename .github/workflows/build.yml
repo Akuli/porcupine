@@ -13,15 +13,13 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements.txt -r requirements-dev.txt
-    - uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x64
-    # Next step copied from https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
+    # https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
     - name: Install NSIS
       run: |
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
+        scoop install mingw
     - run: python scripts/build-exe-installer.py
     - uses: actions/upload-artifact@v2
       with:
