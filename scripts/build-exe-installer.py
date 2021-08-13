@@ -80,9 +80,7 @@ print(url)
 
 response = requests.get(url)
 response.raise_for_status()
-
-zip_object = zipfile.ZipFile(io.BytesIO(response.content))
-zip_object.extractall("build/Python")
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
 
 print("Moving files")
 shutil.move("build/launcher/Porcupine.exe", "build/Python/Porcupine.exe")
