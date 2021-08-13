@@ -37,7 +37,7 @@ ManifestDPIAware true
 !insertmacro MUI_LANGUAGE "English"
 
 Name "Porcupine ${VERSION}"
-OutFile "Porcupine_${VERSION}.exe"
+OutFile "PorcupineSetup_${VERSION}.exe"
 ShowInstDetails show
 
 Var cmdLineInstallDir
