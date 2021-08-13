@@ -117,6 +117,7 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: "3.9"
+    - run: pip install -r requirements.txt -r requirements-dev.txt
     - uses: egor-tensin/setup-mingw@v2
       with:
         platform: x64
