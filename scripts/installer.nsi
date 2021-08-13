@@ -70,6 +70,7 @@ Section "!Porcupine" sec_app
   DetailPrint "Creating shortcut..."
   SetOutPath "%HOMEDRIVE%\%HOMEPATH%"  ; This becomes working directory for shortcut
   CreateShortCut "$SMPROGRAMS\Porcupine.lnk" '"$INSTDIR\Python\Porcupine.exe"' "$INSTDIR\Python\Porcupine.exe"
+  SetOutPath "$INSTDIR"
 
   DetailPrint "Byte-compiling Python modules..."
   nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR\pkgs"'
