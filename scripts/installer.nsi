@@ -9,10 +9,8 @@
 
 SetCompressor lzma
 
-!if "${NSIS_PACKEDVERSION}" >= 0x03000000
-  Unicode true
-  ManifestDPIAware true
-!endif
+Unicode true
+ManifestDPIAware true
 
 !define MULTIUSER_EXECUTIONLEVEL Highest
 !define MULTIUSER_INSTALLMODE_DEFAULT_CURRENTUSER

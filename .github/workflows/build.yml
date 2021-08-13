@@ -2,25 +2,59 @@ on:
   push:
     tags:
       - v*
+  pull_request:   # Build windows exe and docs, but not release anything
 
 jobs:
-  windows_build:
+  windows-build:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.9"
     - run: pip install -r requirements.txt -r requirements-dev.txt
+    - uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
     # Next step copied from https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
     - name: Install NSIS
       run: |
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
+    - run: python scripts/build-exe-installer.py
+    - uses: actions/upload-artifact@v2
+      with:
+        name: windows-exe
+        path: build/Porcupine_*.exe
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: "3.9"
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: python3 -m sphinx ./docs ./build
+    - if: startsWith(github.ref, 'refs/tags/v')
+      uses: JamesIves/github-pages-deploy-action@4.1.3
+      with:
+        branch: gh-pages
+        folder: build
+
+  release:
+    runs-on: ubuntu-latest
+    # https://stackoverflow.com/a/58478262
+    needs: [windows-build, docs]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: windows-build
+    - run: ls
     - id: get_version
       uses: battila7/get-version-action@v2
-    - run: python scripts/build-exe-installer.py ${{ steps.get_version.outputs.version-without-v }}
     - id: create_release
       uses: actions/create-release@v1.0.0
       env:
@@ -33,20 +67,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/nsis/Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
+        asset_path: Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
         asset_name: Porcupine_${{ steps.get_version.outputs.version-without-v }}.exe
         asset_content_type: application/vnd.microsoft.portable-executable
-
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-      with:
-        python-version: "3.9"
-    - run: pip install -r requirements.txt -r requirements-dev.txt
-    - run: python3 -m sphinx ./docs ./build
-    - uses: JamesIves/github-pages-deploy-action@4.1.3
-      with:
-        branch: gh-pages
-        folder: build
