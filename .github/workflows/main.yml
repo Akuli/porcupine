@@ -114,8 +114,10 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: "3.9"
     - uses: egor-tensin/setup-mingw@v2
       with:
         platform: x64
-    - run: gcc.exe asd.c -o asd.exe
-    - run: asd.exe
+    - run: python scripts/build-exe-installer.py

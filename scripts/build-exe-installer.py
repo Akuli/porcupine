@@ -59,8 +59,8 @@ print(r"Converting logo to .ico format")
 PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
 
 print("Compiling launcher exe")
-subprocess.check_call([r"C:\MinGW\bin\windres.exe", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher")
-subprocess.check_call([r"C:\MinGW\bin\gcc.exe", "-municode", "-mwindows", "-o", r"..\Python\Porcupine.exe", "main.c", "resources.res"], cwd="build/launcher")
+subprocess.check_call(["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher")
+subprocess.check_call(["gcc.exe", "-municode", "-mwindows", "-o", r"..\Python\Porcupine.exe", "main.c", "resources.res"], cwd="build/launcher")
 
 print("Installing Porcupine into build/pkgs with pip")
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not
