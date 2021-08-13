@@ -50,20 +50,14 @@ shutil.copy(prefix / "DLLs" / "_tkinter.pyd", "build/pkgs")
 shutil.copy(prefix / "libs" / "_tkinter.lib", "build/pkgs")
 shutil.copytree(tkinter.__path__[0], "build/pkgs/tkinter")
 
-with open("build/installer.nsi", "w") as dest:
-    dest.write('!define PRODUCT_VERSION "%d.%d.%d"\n' % porcupine_version)
-    with open("scripts/installer.nsi", "r") as source:
-        dest.write(source.read())
-
+shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("scripts/launch.pyw", "build/launch.pyw")
 shutil.copy("LICENSE", "build/LICENSE")
-
 
 print("Installing Porcupine with pip into build/pkgs")
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not
 #       generate a warning without it
 subprocess.check_call(["pip", "install", "--use-feature=in-tree-build", "--target=build/pkgs", "."])
-
 
 print("Downloading Python")
 # Uses same url as pynsist
@@ -78,14 +72,12 @@ response.raise_for_status()
 zip_object = zipfile.ZipFile(io.BytesIO(response.content))
 zip_object.extractall("build/Python")
 
-
 # TODO: ico file need to be included in the installer just because start menu?
 # Or can start menu entry icon refer to exe file?
 print(r"Converting logo to .ico format")
 PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
 
-
-print("Customizing executable icon: pythonw.exe --> Porcupine.exe")
+print("Changing executable icon: pythonw.exe --> Porcupine.exe")
 subprocess.check_call(
     [
         r"C:\Program Files (x86)\Resource Hacker\ResourceHacker.exe",
@@ -103,7 +95,6 @@ subprocess.check_call(
     cwd="build/Python",
 )
 
-
 print("Downloading tkdnd")
 subprocess.check_call([sys.executable, os.path.abspath("scripts/download-tkdnd.py")], cwd="build")
 
@@ -114,9 +105,14 @@ root.tk.eval("lappend auto_path build/lib")
 root.tk.eval("package require tkdnd")
 root.destroy()
 
-
 print("Running makensis")
-subprocess.check_call([r"C:\Program Files (x86)\NSIS\makensis.exe", "installer.nsi"], cwd="build")
-
+subprocess.check_call(
+    [
+        r"C:\Program Files (x86)\NSIS\makensis.exe",
+        "/DVERSION=%d.%d.%d" % porcupine_version,
+        "installer.nsi",
+    ],
+    cwd="build",
+)
 
 print("All done")

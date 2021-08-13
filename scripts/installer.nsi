@@ -1,7 +1,6 @@
 ; Based on a file that pynsist generated
-; Definition for PRODUCT_VERSION must be added before running this file
+; Definition for VERSION must be added before running this file
 
-!define PRODUCT_NAME "Porcupine"
 !define BITNESS "64"
 !define ARCH_TAG ".amd64"
 !define PRODUCT_ICON "porcupine-logo.ico"
@@ -40,8 +39,8 @@ SetCompressor lzma
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_LANGUAGE "English"
 
-Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "Porcupine_${PRODUCT_VERSION}.exe"
+Name "Porcupine ${VERSION}"
+OutFile "Porcupine_${VERSION}.exe"
 ShowInstDetails show
 
 Var cmdLineInstallDir
@@ -52,10 +51,10 @@ Section -SETTINGS
 SectionEnd
 
 
-Section "!${PRODUCT_NAME}" sec_app
+Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
-  File ${PRODUCT_ICON}
+  File "porcupine-logo.ico"
   SetOutPath "$INSTDIR\pkgs"
   File /r "pkgs\*.*"
   SetOutPath "$INSTDIR"
@@ -92,13 +91,13 @@ Section "!${PRODUCT_NAME}" sec_app
   WriteUninstaller $INSTDIR\uninstall.exe
 
   DetailPrint "Creating registry keys..."
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"  "DisplayName" "${PRODUCT_NAME}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "InstallLocation" "$INSTDIR"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\${PRODUCT_ICON}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayVersion" "${PRODUCT_VERSION}"
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "NoModify" 1
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "NoRepair" 1
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"  "DisplayName" "Porcupine"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "InstallLocation" "$INSTDIR"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "DisplayIcon" "$INSTDIR\porcupine-logo.ico"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "DisplayVersion" "${VERSION}"
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "NoModify" 1
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "NoRepair" 1
 
   ; Check if we need to reboot
   IfRebootFlag 0 noreboot
@@ -116,7 +115,6 @@ Section "Uninstall"
     Delete "$INSTDIR\${USER_INSTALL_MARKER}"
 
   Delete "$INSTDIR\uninstall.exe"
-  Delete "$INSTDIR\${PRODUCT_ICON}"
   Delete "$INSTDIR\porcupine-logo.ico"
   Delete "$INSTDIR\launch.pyw"
   RMDir /r "$INSTDIR\pkgs"
@@ -125,7 +123,7 @@ Section "Uninstall"
   RMDir "$INSTDIR"
 
   Delete "$SMPROGRAMS\Porcupine.lnk"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"
 SectionEnd
 
 
@@ -135,7 +133,7 @@ Function .onMouseOverSection
     GetDlgItem $R0 $R0 1043 ; description item (must be added to the UI)
 
     StrCmp $0 ${sec_app} "" +2
-      SendMessage $R0 ${WM_SETTEXT} 0 "STR:${PRODUCT_NAME}"
+      SendMessage $R0 ${WM_SETTEXT} 0 "STR:Porcupine"
 
 FunctionEnd
 
