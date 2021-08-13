@@ -1,5 +1,3 @@
-// x86_64-w64-mingw32-gcc -municode -mwindows foo.c
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdnoreturn.h>
