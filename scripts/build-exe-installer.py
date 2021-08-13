@@ -51,10 +51,18 @@ shutil.copy(prefix / "libs" / "_tkinter.lib", "build/pkgs")
 shutil.copytree(tkinter.__path__[0], "build/pkgs/tkinter")
 
 shutil.copy("scripts/installer.nsi", "build/installer.nsi")
-shutil.copy("scripts/launch.pyw", "build/launch.pyw")
 shutil.copy("LICENSE", "build/LICENSE")
+shutil.copytree("launcher", "build/launcher")
 
-print("Installing Porcupine with pip into build/pkgs")
+# TODO: uninstall icon not working
+print(r"Converting logo to .ico format")
+PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
+
+print("Compiling launcher exe")
+subprocess.check_call([r"C:\MinGW\bin\windres.exe", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher")
+subprocess.check_call([r"C:\MinGW\bin\gcc.exe", "-municode", "-mwindows", "-o", r"..\Python\Porcupine.exe", "main.c", "resources.res"], cwd="build/launcher")
+
+print("Installing Porcupine into build/pkgs with pip")
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not
 #       generate a warning without it
 subprocess.check_call(["pip", "install", "--use-feature=in-tree-build", "--target=build/pkgs", "."])
@@ -71,11 +79,6 @@ response.raise_for_status()
 
 zip_object = zipfile.ZipFile(io.BytesIO(response.content))
 zip_object.extractall("build/Python")
-
-# TODO: ico file need to be included in the installer just because start menu?
-# Or can start menu entry icon refer to exe file?
-print(r"Converting logo to .ico format")
-PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
 
 print("Changing executable icon: pythonw.exe --> Porcupine.exe")
 subprocess.check_call(
