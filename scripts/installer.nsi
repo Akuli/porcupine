@@ -57,7 +57,6 @@ Section "!Porcupine" sec_app
     FileOpen $0 "$INSTDIR\${USER_INSTALL_MARKER}" w
     FileClose $0
 
-  ; Install files
   File "launch.pyw"
   SetOutPath "$INSTDIR\pkgs"
   File /r "pkgs\*.*"

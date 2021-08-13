@@ -41,7 +41,7 @@ else:
 # https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
 # We don't use pynsist because it does not allow specifying a custom pythonw.exe.
 # We need a custom pythonw.exe for the icon, lol.
-# Apparently pynsist copies pynsist_pkgs to pkgs, and nsist then installs pkgs
+# pynsist copies pynsist_pkgs to pkgs, and nsist then installs pkgs
 shutil.copytree(prefix / "tcl", "build/lib")
 os.mkdir("build/pkgs")
 for file in list((prefix / "DLLs").glob("tk*.dll")) + list((prefix / "DLLs").glob("tcl*.dll")):
@@ -55,8 +55,8 @@ shutil.copy("LICENSE", "build/LICENSE")
 shutil.copytree("launcher", "build/launcher")
 
 # TODO: uninstall icon not working
-print(r"Converting logo to .ico format")
-PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
+print("Converting logo to .ico format")
+PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
 print("Compiling launcher exe")
 subprocess.check_call(
@@ -80,9 +80,7 @@ print(url)
 
 response = requests.get(url)
 response.raise_for_status()
-
-zip_object = zipfile.ZipFile(io.BytesIO(response.content))
-zip_object.extractall("build/Python")
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
 
 print("Moving files")
 shutil.move("build/launcher/Porcupine.exe", "build/Python/Porcupine.exe")
