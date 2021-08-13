@@ -96,12 +96,7 @@ Section "Uninstall"
     SetShellVarContext current
     Delete "$INSTDIR\${USER_INSTALL_MARKER}"
 
-  Delete "$INSTDIR\uninstall.exe"
-  Delete "$INSTDIR\launch.pyw"
-  RMDir /r "$INSTDIR\pkgs"
-  RMDir /r "$INSTDIR\Python"
-  RMDir /r "$INSTDIR\lib"
-  RMDir "$INSTDIR"
+  RMDir /r "$INSTDIR"
 
   Delete "$SMPROGRAMS\Porcupine.lnk"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"
