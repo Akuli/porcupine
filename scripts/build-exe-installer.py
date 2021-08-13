@@ -55,8 +55,8 @@ shutil.copy("LICENSE", "build/LICENSE")
 shutil.copytree("launcher", "build/launcher")
 
 # TODO: uninstall icon not working
-print(r"Converting logo to .ico format")
-PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
+print("Converting logo to .ico format")
+PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
 print("Compiling launcher exe")
 subprocess.check_call(
