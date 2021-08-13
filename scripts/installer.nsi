@@ -71,8 +71,7 @@ Section "!Porcupine" sec_app
 
   DetailPrint "Creating shortcut..."
   SetOutPath "%HOMEDRIVE%\%HOMEPATH%"  ; This becomes working directory for shortcut
-  CreateShortCut "$SMPROGRAMS\Porcupine.lnk" '"$INSTDIR\Python\Porcupine.exe"' \
-      '"$INSTDIR\launch.pyw"' "$INSTDIR\Python\Porcupine.exe"
+  CreateShortCut "$SMPROGRAMS\Porcupine.lnk" '"$INSTDIR\Python\Porcupine.exe"' "$INSTDIR\Python\Porcupine.exe"
 
   DetailPrint "Byte-compiling Python modules..."
   nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR\pkgs"'
@@ -81,6 +80,7 @@ Section "!Porcupine" sec_app
   WriteUninstaller $INSTDIR\uninstall.exe
 
   DetailPrint "Creating registry keys..."
+  WriteRegStr SHCTX "Software\Classes\Applications\Porcupine.exe\shell\open\command" "" '"$INSTDIR\Python\Porcupine.exe" "%1"'
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"  "DisplayName" "Porcupine"
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "InstallLocation" "$INSTDIR"
@@ -106,6 +106,7 @@ Section "Uninstall"
 
   Delete "$SMPROGRAMS\Porcupine.lnk"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"
+  DeleteRegKey SHCTX "Software\Classes\Applications\Porcupine.exe"
 SectionEnd
 
 
