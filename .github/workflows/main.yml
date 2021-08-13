@@ -109,7 +109,7 @@ jobs:
         python-version: "3.9"
     - run: python3 scripts/bindcheck.py porcupine
     - run: python3 scripts/bindcheck.py more_plugins
-  foo:
+  windows-build:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -127,3 +127,7 @@ jobs:
         scoop bucket add extras
         scoop install nsis
     - run: python scripts/build-exe-installer.py
+    - uses: actions/upload-artifact@v2
+      with:
+        name: windows-exe
+        path: build/Porcupine.exe
