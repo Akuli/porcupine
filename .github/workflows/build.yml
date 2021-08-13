@@ -52,7 +52,6 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: windows-exe
-    - run: ls
     - id: get_version
       uses: battila7/get-version-action@v2
     - id: create_release
