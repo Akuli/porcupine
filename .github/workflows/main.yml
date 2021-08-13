@@ -81,7 +81,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check scripts/*.py scripts/*.pyw docs/*.py porcupine tests more_plugins
+    - run: python3 -m black --check scripts/*.py launcher/launch.pyw docs/*.py porcupine tests more_plugins
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -90,7 +90,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m isort --check scripts/*.py scripts/*.pyw docs/*.py porcupine tests more_plugins
+    - run: python3 -m isort --check scripts/*.py launcher/launch.pyw docs/*.py porcupine tests more_plugins
   pyflakes:
     runs-on: ubuntu-latest
     steps:
@@ -99,7 +99,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m pyflakes scripts/*.py scripts/*.pyw docs/*.py porcupine tests more_plugins
+    - run: python3 -m pyflakes scripts/*.py launcher/launch.pyw docs/*.py porcupine tests more_plugins
   bindcheck:
     runs-on: ubuntu-latest
     steps:
