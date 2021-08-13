@@ -19,7 +19,7 @@ jobs:
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
-        scoop install mingw
+        scoop install gcc
     - run: python scripts/build-exe-installer.py
     - uses: actions/upload-artifact@v2
       with:
