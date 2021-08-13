@@ -109,7 +109,6 @@ jobs:
         python-version: "3.9"
     - run: python3 scripts/bindcheck.py porcupine
     - run: python3 scripts/bindcheck.py more_plugins
-
   foo:
     runs-on: windows-latest
     steps:

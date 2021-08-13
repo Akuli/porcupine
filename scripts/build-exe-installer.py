@@ -1,6 +1,5 @@
 import io
 import os
-import requests
 import shutil
 import struct
 import subprocess
@@ -10,6 +9,7 @@ import zipfile
 from pathlib import Path
 
 import PIL.Image
+import requests
 
 sys.path.append("")  # import from current working directory
 from porcupine import version_info as porcupine_version
@@ -59,12 +59,16 @@ print(r"Converting logo to .ico format")
 PIL.Image.open(r"porcupine\images\logo-200x200.gif").save("build/porcupine-logo.ico")
 
 print("Compiling launcher exe")
-subprocess.check_call(["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher")
-subprocess.check_call(["gcc.exe", "-municode", "-mwindows", "-o", r"..\Python\Porcupine.exe", "main.c", "resources.res"], cwd="build/launcher")
+subprocess.check_call(
+    ["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher"
+)
+subprocess.check_call(
+    ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "resources.res"],
+    cwd="build/launcher",
+)
 
 print("Installing Porcupine into build/pkgs with pip")
-# TODO: delete --use-feature=in-tree-build when pip is new enough to not
-#       generate a warning without it
+# TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
 subprocess.check_call(["pip", "install", "--use-feature=in-tree-build", "--target=build/pkgs", "."])
 
 print("Downloading Python")
@@ -79,24 +83,7 @@ response.raise_for_status()
 
 zip_object = zipfile.ZipFile(io.BytesIO(response.content))
 zip_object.extractall("build/Python")
-
-print("Changing executable icon: pythonw.exe --> Porcupine.exe")
-subprocess.check_call(
-    [
-        r"C:\Program Files (x86)\Resource Hacker\ResourceHacker.exe",
-        "-open",
-        "pythonw.exe",
-        "-save",
-        "Porcupine.exe",
-        "-action",
-        "addoverwrite",
-        "-res",
-        r"..\porcupine-logo.ico",
-        "-mask",
-        "ICONGROUP,MAINICON,",
-    ],
-    cwd="build/Python",
-)
+shutil.move("build/launcher/Porcupine.exe", "build/Python/Porcupine.exe")
 
 print("Downloading tkdnd")
 subprocess.check_call([sys.executable, os.path.abspath("scripts/download-tkdnd.py")], cwd="build")
@@ -110,12 +97,7 @@ root.destroy()
 
 print("Running makensis")
 subprocess.check_call(
-    [
-        r"C:\Program Files (x86)\NSIS\makensis.exe",
-        "/DVERSION=%d.%d.%d" % porcupine_version,
-        "installer.nsi",
-    ],
-    cwd="build",
+    ["makensis.exe", "/DVERSION=%d.%d.%d" % porcupine_version, "installer.nsi"], cwd="build"
 )
 
 print("All done")
