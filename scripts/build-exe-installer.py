@@ -41,7 +41,7 @@ else:
 # https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
 # We don't use pynsist because it does not allow specifying a custom pythonw.exe.
 # We need a custom pythonw.exe for the icon, lol.
-# Apparently pynsist copies pynsist_pkgs to pkgs, and nsist then installs pkgs
+# pynsist copies pynsist_pkgs to pkgs, and nsist then installs pkgs
 shutil.copytree(prefix / "tcl", "build/lib")
 os.mkdir("build/pkgs")
 for file in list((prefix / "DLLs").glob("tk*.dll")) + list((prefix / "DLLs").glob("tcl*.dll")):
