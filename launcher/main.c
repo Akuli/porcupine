@@ -11,7 +11,7 @@
 static noreturn void fatal_error(const wchar_t *msg)
 {
 	// Ideally this would use GetLastError, but FormatMessage seems really complicated
-	MessageBox(NULL, msg, L"Porcupine cannot start", MB_OK | MB_ICONERROR);
+	MessageBoxW(NULL, msg, L"Porcupine cannot start", MB_OK | MB_ICONERROR);
 	exit(1);
 }
 
