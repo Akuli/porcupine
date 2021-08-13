@@ -3,7 +3,6 @@
 
 !define BITNESS "64"
 !define ARCH_TAG ".amd64"
-!define PRODUCT_ICON "porcupine-logo.ico"
 
 ; Marker file to tell the uninstaller that it's a user installation
 !define USER_INSTALL_MARKER _user_install_marker
@@ -54,40 +53,31 @@ SectionEnd
 Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
-  File "porcupine-logo.ico"
-  SetOutPath "$INSTDIR\pkgs"
-  File /r "pkgs\*.*"
-  SetOutPath "$INSTDIR"
 
   ; Marker file for per-user install
   StrCmp $MultiUser.InstallMode CurrentUser 0 +3
     FileOpen $0 "$INSTDIR\${USER_INSTALL_MARKER}" w
     FileClose $0
-    SetFileAttributes "$INSTDIR\${USER_INSTALL_MARKER}" HIDDEN
 
   ; Install files
-  SetOutPath "$INSTDIR"
-  File "porcupine-logo.ico"
   File "launch.pyw"
-
-  ; Install directories
+  SetOutPath "$INSTDIR\pkgs"
+  File /r "pkgs\*.*"
   SetOutPath "$INSTDIR\Python"
   File /r "Python\*.*"
   SetOutPath "$INSTDIR\lib"
   File /r "lib\*.*"
-
-  ; Install shortcuts
-  ; The output path becomes the working directory for shortcuts
-  ; TODO: does icon work or needs included?
-  SetOutPath "%HOMEDRIVE%\%HOMEPATH%"
-  CreateShortCut "$SMPROGRAMS\Porcupine.lnk" '"$INSTDIR\Python\Porcupine.exe"' \
-      '"$INSTDIR\launch.pyw"' "$INSTDIR\porcupine-logo.ico"
   SetOutPath "$INSTDIR"
 
+  DetailPrint "Creating shortcut..."
+  SetOutPath "%HOMEDRIVE%\%HOMEPATH%"  ; This becomes working directory for shortcut
+  CreateShortCut "$SMPROGRAMS\Porcupine.lnk" '"$INSTDIR\Python\Porcupine.exe"' \
+      '"$INSTDIR\launch.pyw"' "$INSTDIR\Python\Porcupine.exe"
 
-  ; Byte-compile Python files.
   DetailPrint "Byte-compiling Python modules..."
   nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR\pkgs"'
+
+  DetailPrint "Creating uninstaller..."
   WriteUninstaller $INSTDIR\uninstall.exe
 
   DetailPrint "Creating registry keys..."
@@ -98,13 +88,6 @@ Section "!Porcupine" sec_app
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "DisplayVersion" "${VERSION}"
   WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "NoModify" 1
   WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "NoRepair" 1
-
-  ; Check if we need to reboot
-  IfRebootFlag 0 noreboot
-    MessageBox MB_YESNO "A reboot is required to finish the installation. Do you wish to reboot now?" \
-                /SD IDNO IDNO noreboot
-      Reboot
-  noreboot:
 SectionEnd
 
 Section "Uninstall"
@@ -115,7 +98,6 @@ Section "Uninstall"
     Delete "$INSTDIR\${USER_INSTALL_MARKER}"
 
   Delete "$INSTDIR\uninstall.exe"
-  Delete "$INSTDIR\porcupine-logo.ico"
   Delete "$INSTDIR\launch.pyw"
   RMDir /r "$INSTDIR\pkgs"
   RMDir /r "$INSTDIR\Python"
