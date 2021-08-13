@@ -7,7 +7,6 @@ import dataclasses
 import functools
 import json
 import logging
-import os
 import re
 import shlex
 import shutil
@@ -35,56 +34,17 @@ _T = TypeVar("_T")
 
 
 # nsis script installs python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python\Porcupine.exe
-_installed_with_pynsist = sys.executable.endswith(r"Porcupine\Python\Porcupine.exe")
-
-
-if sys.platform == "win32":
-    # Casting because mypy thinks stdout and stderr can't be None
-    if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
-        # running in pythonw.exe so there's no console window, print still
-        # works because it checks if sys.stdout is None
-        running_pythonw = True
-    elif (
-        _installed_with_pynsist
-        and sys.stdout is sys.stderr
-        and sys.stdout.name is not None  # not sure if necessary
-        and Path(sys.stdout.name).parent == Path(os.environ["APPDATA"])
-    ):
-        # pynsist generates a script that does this:
-        #
-        #   sys.stdout = sys.stderr = open(blablabla, 'w', **kw)
-        #
-        # where blablabla is a file directly in %APPDATA%... that's dumb and
-        # non-standard imo, and not suitable for porcupine because porcupine
-        # takes care of that itself, so... let's undo what it just did
-        #
-        # TODO: it's possible to write a custom startup script, do that? there
-        #       are docs somewhere
-        sys.stdout.close()
-        os.remove(sys.stdout.name)
-
-        # mypy doesn't know about how std streams can be None
-        # https://github.com/python/mypy/issues/8823
-        sys.stdout = cast(Any, None)
-        sys.stderr = cast(Any, None)
-
-        running_pythonw = True
-    else:
-        # seems like python was started from e.g. a cmd or powershell
-        running_pythonw = False
+# When not installed, there is .../python.exe and .../pythonw.exe
+# TODO: check if all this actually works
+if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
+    running_pythonw = True
+    assert sys.executable.lower().endswith((r"porcupine\python\porcupine.exe", r"\pythonw.exe"))
+    python_executable = Path(sys.executable).parent / "python.exe"
 else:
     running_pythonw = False
+    python_executable = Path(sys.executable)
 
 
-python_executable = Path(sys.executable)
-if running_pythonw and Path(sys.executable).name.lower() == "pythonw.exe":
-    # get rid of the 'w' and hope for the best...
-    _possible_python = Path(sys.executable).with_name("python.exe")
-    if _possible_python.is_file():
-        python_executable = _possible_python
-
-
-quote: Callable[[str], str]
 if sys.platform == "win32":
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string: str) -> str:
