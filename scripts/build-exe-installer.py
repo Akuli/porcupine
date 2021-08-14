@@ -66,6 +66,7 @@ shutil.copytree("launcher", "build/launcher")
 # Also, https://github.com/marketplace/actions/install-mingw is slow.
 print("Downloading zig")
 download_and_extract_zip("https://ziglang.org/download/0.8.0/zig-windows-x86_64-0.8.0.zip", ".")
+print(os.listdir())
 os.rename("zig-windows-x86_64-0.8.0", "zig")
 
 # TODO: uninstall icon not working
