@@ -12,10 +12,16 @@ static noreturn void fatal_error(const wchar_t *msg)
 	exit(1);
 }
 
-typedef int(WINAPI *PyMainProc)(int argc, wchar_t **argv);
+typedef int (WINAPI *PyMainProc)(int argc, wchar_t **argv);
 
-int wmain(int argc, wchar_t **argv)
+// using WinMain because wmain() doesn't work with 'zig cc'
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	int argc;
+	wchar_t **argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+	if (!argv)
+		fatal_error(L"can't get arguments");
+
 	wchar_t *launcherpath = calloc(sizeof(launcherpath[0]), MAX_PATH);
 	if (!launcherpath)
 		fatal_error(L"allocating memory failed");
