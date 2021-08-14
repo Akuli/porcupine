@@ -51,7 +51,7 @@ int wmain(int argc, wchar_t **argv)
 	myargv[0] = argv[0];
 	myargv[1] = launcherpath;
 	for (int i = 0; i < 3; i++)
-		MessageBoxW(NULL, myargv[i] ? myargv[i] : L"NULL", L"argument", MB_OK);
+		MessageBoxW(NULL, myargv[i] ? myargv[i] : "NULL", L"argument", MB_OK);
 
 	// not freeing the resources, will be freed on exit anyway
 	MessageBoxW(NULL, L"calling main", L"main START", MB_OK);
