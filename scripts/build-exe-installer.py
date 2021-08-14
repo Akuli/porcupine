@@ -58,14 +58,23 @@ shutil.copytree("launcher", "build/launcher")
 print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
-print("Compiling launcher exe")
-subprocess.check_call(
-    ["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher"
-)
-subprocess.check_call(
-    ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "resources.res"],
-    cwd="build/launcher",
-)
+# If you can't get a C compiler to work (with windres):
+#   1. Download a Porcupine installer from GitHub and install Porcupine
+#   2. Copy C:\Users\YourName\AppData\Local\Programs\Porcupine\Python\Porcupine.exe
+#      to where you cloned Porcupine
+#   3. Uninstall Porcupine
+if os.path.exists("Porcupine.exe"):
+    print("Porcupine.exe found, no C compiler needed")
+    shutil.copy("Porcupine.exe", "build/")
+else:
+    print("Porcupine.exe was not found, compiling")
+    subprocess.check_call(
+        ["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher"
+    )
+    subprocess.check_call(
+        ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "resources.res"],
+        cwd="build/launcher",
+    )
 
 print("Installing Porcupine into build/pkgs with pip")
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
