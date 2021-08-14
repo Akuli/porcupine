@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdnoreturn.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 #include <windows.h>
 
@@ -47,17 +48,20 @@ int wmain(int argc, wchar_t **argv)
 		fatal_error(L"Can't find Py_Main() in python3.dll");
 
 	MessageBoxW(NULL, L"asd 12", L"asd12", MB_OK);
-	wchar_t **myargv = calloc(sizeof(myargv[0]), 3);  // argv should end with NULL
+	// argv[argc] is NULL
+	wchar_t **myargv = malloc(sizeof(myargv[0]) * (argc+2));
 	myargv[0] = argv[0];
 	myargv[1] = launcherpath;
-	for (int i = 0; i < 3; i++)
-		MessageBoxW(NULL, myargv[i] ? myargv[i] : "NULL", L"argument", MB_OK);
+	memcpy(&myargv[2], &argv[1], sizeof(myargv[0]) * argc);
+
+	for (int i = 0; i < argc+1; i++)
+		MessageBoxW(NULL, argv[i], L"argument", MB_OK);
 
 	// not freeing the resources, will be freed on exit anyway
 	MessageBoxW(NULL, L"calling main", L"main START", MB_OK);
-	int r = Py_Main(2, myargv);
+	int r = Py_Main(argc+1, myargv);
 	wchar_t msg[100];
-	swprintf(msg, 40, L"Py_Main(%d, ...) returned %d", 2, r);
+	swprintf(msg, 40, L"Py_Main(%d, ...) returned %d", argc+1, r);
 	MessageBoxW(NULL, msg, L"main DONE", MB_OK);
 	return r;
 }
