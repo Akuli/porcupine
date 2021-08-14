@@ -17,7 +17,7 @@ typedef int(WINAPI *PyMainProc)(int argc, wchar_t **argv);
 int wmain(int argc, wchar_t **argv)
 {
 	wchar_t exepath[PATH_MAX];
-	if (GetModuleFileNameW(NULL, launcherpath, MAX_PATH-1) <= 0)
+	if (GetModuleFileNameW(NULL, exepath, MAX_PATH-1) <= 0)
 		fatal_error(L"GetModuleFileNameW(NULL, ...) failed");
 
 	// ...\Porcupine\Python\Porcupine.exe --> ...\Porcupine\launch.pyw
