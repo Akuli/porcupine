@@ -74,11 +74,18 @@ print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
 print("Compiling launcher exe")
+subprocess.check_call(["llvm-rc", "resources.rc"], cwd="build/launcher")
 subprocess.check_call(
-    ["llvm-rc", "resources.rc"], cwd="build/launcher"
-)
-subprocess.check_call(
-    ["zig/zig.exe", "cc", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "resources.res"],
+    [
+        "zig/zig.exe",
+        "cc",
+        "-municode",
+        "-mwindows",
+        "-o",
+        "Porcupine.exe",
+        "main.c",
+        "resources.res",
+    ],
     cwd="build/launcher",
 )
 
