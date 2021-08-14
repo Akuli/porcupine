@@ -19,7 +19,11 @@ jobs:
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
-        scoop install gcc
+    # Not using mingw gcc because I can't get it to work locally at all (tried with and
+    # without scoop), and https://github.com/marketplace/actions/install-mingw is slow
+    - uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: "11.0"
     - run: python scripts/build-exe-installer.py
     - uses: actions/upload-artifact@v2
       with:
