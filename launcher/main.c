@@ -28,8 +28,8 @@ int wmain(int argc, wchar_t **argv)
 
 	// ...\Porcupine\Python\Porcupine.exe --> ...\Porcupine\Python\python.exe
 	wchar_t *pypath = wcsdup(exepath);
-	*wcsrchr(launcherpath, L'\\') = L'\0';
-	wcscat(launcherpath, L"\\python.exe");
+	*wcsrchr(pypath, L'\\') = L'\0';
+	wcscat(pypath, L"\\python.exe");
 
 	HMODULE pydll = LoadLibraryW(L"python3.dll");
 	if (!pydll)
