@@ -74,7 +74,7 @@ PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.i
 
 print("Compiling launcher exe")
 subprocess.check_call(
-    ["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher"
+    ["llvm-rc", "resources.rc"], cwd="build/launcher"
 )
 subprocess.check_call(
     ["zig/zig.exe", "cc", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "resources.res"],
