@@ -13,17 +13,15 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements.txt -r requirements-dev.txt
-    # https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
+    - uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+    # Next step copied from https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
     - name: Install NSIS
       run: |
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
-    # Not using mingw gcc because I can't get it to work locally at all (tried with and
-    # without scoop), and https://github.com/marketplace/actions/install-mingw is slow
-    - uses: KyleMayes/install-llvm-action@v1
-      with:
-        version: "11.0"
     - run: python scripts/build-exe-installer.py
     - uses: actions/upload-artifact@v2
       with:

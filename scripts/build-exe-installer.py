@@ -30,13 +30,6 @@ except FileExistsError:
             shutil.rmtree(content)
 
 
-def download_and_extract_zip(url, dest_folder):
-    print(url)
-    response = requests.get(url)
-    response.raise_for_status()
-    zipfile.ZipFile(io.BytesIO(response.content)).extractall(dest_folder)
-
-
 print("Copying files")
 
 if "VIRTUAL_ENV" in os.environ:
@@ -61,31 +54,16 @@ shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("LICENSE", "build/LICENSE")
 shutil.copytree("launcher", "build/launcher")
 
-# zig comes with a working c compiler. It is important that I can get it to work
-# locally AND in github actions, and apparently that is asking too much for mingw.
-# Also, https://github.com/marketplace/actions/install-mingw is slow.
-print("Downloading zig")
-download_and_extract_zip("https://ziglang.org/download/0.8.0/zig-windows-x86_64-0.8.0.zip", ".")
-print(os.listdir())
-os.rename("zig-windows-x86_64-0.8.0", "zig")
-
 # TODO: uninstall icon not working
 print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
 print("Compiling launcher exe")
-subprocess.check_call(["llvm-rc", "resources.rc"], cwd="build/launcher")
 subprocess.check_call(
-    [
-        "zig/zig.exe",
-        "cc",
-        "-municode",
-        "-mwindows",
-        "-o",
-        "Porcupine.exe",
-        "main.c",
-        "resources.res",
-    ],
+    ["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher"
+)
+subprocess.check_call(
+    ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "resources.res"],
     cwd="build/launcher",
 )
 
@@ -97,7 +75,12 @@ print("Downloading Python")
 # Uses same url as pynsist
 version = "%d.%d.%d" % sys.version_info[:3]
 filename = f"python-{version}-embed-amd64.zip"
-download_and_extract_zip(f"https://www.python.org/ftp/python/{version}/{filename}", "build/Python")
+url = f"https://www.python.org/ftp/python/{version}/{filename}"
+print(url)
+
+response = requests.get(url)
+response.raise_for_status()
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
 
 print("Moving files")
 shutil.move("build/launcher/Porcupine.exe", "build/Python/Porcupine.exe")
