@@ -65,7 +65,7 @@ PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.i
 #   3. Uninstall Porcupine
 if os.path.exists("Porcupine.exe"):
     print("Porcupine.exe found, no C compiler needed")
-    shutil.copy("Porcupine.exe", "build/")
+    shutil.copy("Porcupine.exe", "build/launcher/")
 else:
     print("Porcupine.exe was not found, compiling")
     subprocess.check_call(
