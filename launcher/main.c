@@ -42,6 +42,9 @@ int wmain(int argc, wchar_t **argv)
 	myargv[1] = launcherpath;
 	memcpy(&myargv[2], &argv[1], sizeof(myargv[0]) * argc);
 
+	for (int i = 0; i < argc+1; i++)
+		MessageBoxW(NULL, myargv[i], L"my arg", MB_OK);
+
 	// not freeing the resources, will be freed on exit anyway
 	return Py_Main(argc+1, myargv);
 }
