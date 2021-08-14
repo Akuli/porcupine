@@ -34,7 +34,7 @@ def download_and_extract_zip(url, dest_folder):
     print(url)
     response = requests.get(url)
     response.raise_for_status()
-    zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
+    zipfile.ZipFile(io.BytesIO(response.content)).extractall(dest_folder)
 
 
 print("Copying files")
