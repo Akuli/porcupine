@@ -38,7 +38,7 @@ _T = TypeVar("_T")
 # TODO: check if all this actually works
 if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
     running_pythonw = True
-    assert sys.executable.lower().endswith((r"porcupine\python\porcupine.exe", r"\pythonw.exe"))
+    assert sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe"))
     python_executable = Path(sys.executable).parent / "python.exe"
 else:
     running_pythonw = False
