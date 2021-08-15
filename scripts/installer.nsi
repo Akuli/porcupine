@@ -1,8 +1,5 @@
 ; Based on a file that pynsist generated
 
-!define BITNESS "64"
-!define ARCH_TAG ".amd64"
-
 SetCompressor lzma
 
 Unicode true
