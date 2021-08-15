@@ -138,7 +138,8 @@ class PopManager:
             # e.g. queue.py (#31), but good when that's where porcupine is
             # meant to be imported from (#230).
             code = (
-                f"import sys; sys.path[:] = {sys.path};"
+                "import sys;"
+                + f" sys.path[:] = {sys.path};"
                 + " from porcupine.__main__ import main;"
                 + " main()"
             )
