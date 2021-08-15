@@ -108,9 +108,10 @@ else:
     )
 
 print("Installing Porcupine into build/Python with pip")
+# pyls needs pkg_resources which comes with setuptools, don't know why it doesn't install by default
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
 subprocess.check_call(
-    ["pip", "install", "--use-feature=in-tree-build", "--target=build/Python", "."]
+    ["pip", "install", "--use-feature=in-tree-build", "--target=build/Python", ".", "setuptools"]
 )
 
 print("Moving files")
