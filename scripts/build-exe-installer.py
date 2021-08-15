@@ -57,7 +57,7 @@ else:
 # with no arguments to launch Porcupine.
 # I couldn't get python to import from anywhere else than from Python directory, no separate pynsist_pkgs
 shutil.copytree(prefix / "tcl", "build/lib")
-for file in list((prefix / "DLLs").glob("tk*.dll")) + list((prefix / "DLLs").glob("tcl*.dll")):
+for file in [*(prefix / "DLLs").glob("tk*.dll"), *(prefix / "DLLs").glob("tcl*.dll")]:
     shutil.copy(file, "build/Python")
 shutil.copy(prefix / "DLLs" / "_tkinter.pyd", "build/Python")
 shutil.copy(prefix / "libs" / "_tkinter.lib", "build/Python")
@@ -67,6 +67,7 @@ shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("LICENSE", "build/LICENSE")
 shutil.copytree("launcher", "build/launcher")
 
+# I tried to give -D option to preprocessor, didn't work
 metadata_file = Path("build/launcher/metadata.rc")
 print(f"Editing version info into {metadata_file}")
 metadata_file.write_text(
@@ -107,7 +108,7 @@ else:
     )
 
 print("Installing Porcupine into build/Python with pip")
-# pyls needs pkg_resources which comes with setuptools, don't know why it doesn't install by default
+# pyls needs pkg_resources from setuptools, don't know why it doesn't install by default
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
 subprocess.check_call(
     ["pip", "install", "--use-feature=in-tree-build", "--target=build/Python", ".", "setuptools"]
