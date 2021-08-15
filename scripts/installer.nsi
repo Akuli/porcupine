@@ -53,8 +53,6 @@ Section "!Porcupine" sec_app
     FileClose $0
 
   File "launch.pyw"
-  SetOutPath "$INSTDIR\pkgs"
-  File /r "pkgs\*.*"
   SetOutPath "$INSTDIR\Python"
   File /r "Python\*.*"
   SetOutPath "$INSTDIR\lib"
@@ -67,7 +65,7 @@ Section "!Porcupine" sec_app
   SetOutPath "$INSTDIR"
 
   DetailPrint "Byte-compiling Python modules..."
-  nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR\pkgs"'
+  nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR"'
 
   DetailPrint "Creating uninstaller..."
   WriteUninstaller $INSTDIR\uninstall.exe

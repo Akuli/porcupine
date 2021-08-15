@@ -32,6 +32,17 @@ except FileExistsError:
             shutil.rmtree(content)
 
 
+print("Downloading Python")
+# Uses same url as pynsist
+version = "%d.%d.%d" % sys.version_info[:3]
+filename = f"python-{version}-embed-amd64.zip"
+url = f"https://www.python.org/ftp/python/{version}/{filename}"
+print(url)
+
+response = requests.get(url)
+response.raise_for_status()
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
+
 print("Copying files")
 
 if "VIRTUAL_ENV" in os.environ:
@@ -41,16 +52,16 @@ else:
     prefix = Path(sys.prefix)
 
 # https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
-# We don't use pynsist because it does not allow specifying a custom pythonw.exe.
-# We need a custom pythonw.exe for the icon, lol.
-# pynsist copies pynsist_pkgs to pkgs, and nsist then installs pkgs
+# We don't use pynsist because it does not allow specifying a custom executable.
+# We have a custom Porcupine.exe launcher which has the custom icon and can be called
+# with no arguments to launch Porcupine.
+# I couldn't get python to import from anywhere else than from Python directory, no separate pynsist_pkgs
 shutil.copytree(prefix / "tcl", "build/lib")
-os.mkdir("build/pkgs")
 for file in list((prefix / "DLLs").glob("tk*.dll")) + list((prefix / "DLLs").glob("tcl*.dll")):
-    shutil.copy(file, "build/pkgs")
-shutil.copy(prefix / "DLLs" / "_tkinter.pyd", "build/pkgs")
-shutil.copy(prefix / "libs" / "_tkinter.lib", "build/pkgs")
-shutil.copytree(tkinter.__path__[0], "build/pkgs/tkinter")
+    shutil.copy(file, "build/Python")
+shutil.copy(prefix / "DLLs" / "_tkinter.pyd", "build/Python")
+shutil.copy(prefix / "libs" / "_tkinter.lib", "build/Python")
+shutil.copytree(tkinter.__path__[0], "build/Python/tkinter")
 
 shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("LICENSE", "build/LICENSE")
@@ -96,20 +107,9 @@ else:
         cwd="build/launcher",
     )
 
-print("Installing Porcupine into build/pkgs with pip")
+print("Installing Porcupine into build/Python with pip")
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
-subprocess.check_call(["pip", "install", "--use-feature=in-tree-build", "--target=build/pkgs", "."])
-
-print("Downloading Python")
-# Uses same url as pynsist
-version = "%d.%d.%d" % sys.version_info[:3]
-filename = f"python-{version}-embed-amd64.zip"
-url = f"https://www.python.org/ftp/python/{version}/{filename}"
-print(url)
-
-response = requests.get(url)
-response.raise_for_status()
-zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
+subprocess.check_call(["pip", "install", "--use-feature=in-tree-build", "--target=build/Python", "."])
 
 print("Moving files")
 shutil.move("build/launcher/Porcupine.exe", "build/Python/Porcupine.exe")
