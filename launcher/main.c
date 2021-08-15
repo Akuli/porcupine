@@ -23,7 +23,7 @@ int wmain(int argc, wchar_t **argv)
 	if (GetModuleFileNameW(NULL, launcherpath, MAX_PATH-1) <= 0)
 		fatal_error(L"GetModuleFileNameW(NULL, ...) failed");
 
-	// ...\Porcupine\Porcupine\Porcupine.exe --> ...\Porcupine\launch.pyw
+	// ...\Porcupine\Python\Porcupine.exe --> ...\Porcupine\launch.pyw
 	*wcsrchr(launcherpath, L'\\') = L'\0';
 	*wcsrchr(launcherpath, L'\\') = L'\0';
 	wcscat(launcherpath, L"\\launch.pyw");
