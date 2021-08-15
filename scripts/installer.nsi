@@ -12,6 +12,7 @@ ManifestDPIAware true
 !define MULTIUSER_INSTALLMODE_DEFAULT_CURRENTUSER
 !define MULTIUSER_MUI
 !define MULTIUSER_INSTALLMODE_COMMANDLINE
+!define MULTIUSER_INSTALLMODE_INSTDIR "Porcupine"
 !define MULTIUSER_INSTALLMODE_FUNCTION correct_prog_files
 !include MultiUser.nsh
 !include FileFunc.nsh
@@ -131,5 +132,5 @@ Function correct_prog_files
   ; The multiuser machinery doesn't know about the different Program files
   ; folder for 64-bit applications. Override the install dir it set.
   StrCmp $MultiUser.InstallMode AllUsers 0 +2
-    StrCpy $INSTDIR "$PROGRAMFILES64\Porcupine"
+    StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
 FunctionEnd
