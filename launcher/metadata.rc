@@ -7,14 +7,12 @@ BEGIN
   BEGIN
     BLOCK "080904E4"
     BEGIN
-      VALUE "CompanyName", "My Company Name"
-      VALUE "FileDescription", "My excellent application"
-      VALUE "FileVersion", "1.0"
-      VALUE "InternalName", "my_app"
-      VALUE "LegalCopyright", "My Name"
-      VALUE "OriginalFilename", "my_app.exe"
-      VALUE "ProductName", "My App"
-      VALUE "ProductVersion", "1.0"
+      VALUE "ProductName", "Porcupine"
+      VALUE "ProductVersion", PORCUPINE_VERSION
+      VALUE "FileDescription", "Porcupine"
+      VALUE "FileVersion", PORCUPINE_VERSION
+      VALUE "InternalName", "porcupine"
+      VALUE "OriginalFilename", "Porcupine.exe"
     END
   END
   BLOCK "VarFileInfo"

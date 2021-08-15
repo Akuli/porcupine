@@ -12,7 +12,9 @@ import PIL.Image
 import requests
 
 sys.path.append("")  # import from current working directory
-from porcupine import version_info as porcupine_version
+from porcupine import version_info as version_tuple
+
+porcupine_version = "%d.%d.%d" % version_tuple
 
 # needs 64-bit windows, struct.calcsize("P") returns the size of a pointer
 assert sys.platform == "win32"
@@ -72,10 +74,29 @@ else:
         ["windres", "icon.rc", "-O", "coff", "-o", "icon.res"], cwd="build/launcher"
     )
     subprocess.check_call(
-        ["windres", "metadata.rc", "-O", "coff", "-o", "metadata.res"], cwd="build/launcher"
+        [
+            "windres",
+            "metadata.rc",
+            "-O",
+            "coff",
+            "-o",
+            "metadata.res",
+            "--preprocessor-arg",
+            f'-DPORCUPINE_VERSION="{porcupine_version}"',
+        ],
+        cwd="build/launcher",
     )
     subprocess.check_call(
-        ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "icon.res", "metadata.res"],
+        [
+            "gcc.exe",
+            "-municode",
+            "-mwindows",
+            "-o",
+            "Porcupine.exe",
+            "main.c",
+            "icon.res",
+            "metadata.res",
+        ],
         cwd="build/launcher",
     )
 
@@ -128,7 +149,7 @@ root.destroy()
 
 print("Running makensis")
 subprocess.check_call(
-    ["makensis.exe", "/DVERSION=%d.%d.%d" % porcupine_version, "installer.nsi"], cwd="build"
+    ["makensis.exe", f"/DVERSION={porcupine_version}", "installer.nsi"], cwd="build"
 )
 
 print("All done")
