@@ -13,7 +13,6 @@ ManifestDPIAware true
 !define MULTIUSER_MUI
 !define MULTIUSER_INSTALLMODE_COMMANDLINE
 !define MULTIUSER_INSTALLMODE_INSTDIR "Porcupine"
-!define MULTIUSER_INSTALLMODE_FUNCTION correct_prog_files
 !include MultiUser.nsh
 !include FileFunc.nsh
 
@@ -35,8 +34,6 @@ ManifestDPIAware true
 Name "Porcupine ${VERSION}"
 OutFile "PorcupineSetup_${VERSION}.exe"
 ShowInstDetails show
-
-Var cmdLineInstallDir
 
 Section -SETTINGS
   SetOutPath "$INSTDIR"
@@ -98,29 +95,9 @@ Section "Uninstall"
 SectionEnd
 
 Function .onInit
-  ; Multiuser.nsh breaks /D command line parameter. Parse /INSTDIR instead.
-  ; Cribbing from https://nsis-dev.github.io/NSIS-Forums/html/t-299280.html
-  ${GetParameters} $0
-  ClearErrors
-  ${GetOptions} '$0' "/INSTDIR=" $1
-  IfErrors +2  ; Error means flag not found
-    StrCpy $cmdLineInstallDir $1
-  ClearErrors
-
   !insertmacro MULTIUSER_INIT
-
-  ; If cmd line included /INSTDIR, override the install dir set by MultiUser
-  StrCmp $cmdLineInstallDir "" +2
-    StrCpy $INSTDIR $cmdLineInstallDir
 FunctionEnd
 
 Function un.onInit
   !insertmacro MULTIUSER_UNINIT
-FunctionEnd
-
-Function correct_prog_files
-  ; The multiuser machinery doesn't know about the different Program files
-  ; folder for 64-bit applications. Override the install dir it set.
-  StrCmp $MultiUser.InstallMode AllUsers 0 +2
-    StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
 FunctionEnd
