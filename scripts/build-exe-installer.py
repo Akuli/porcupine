@@ -57,7 +57,7 @@ else:
 # with no arguments to launch Porcupine.
 # I couldn't get python to import from anywhere else than from Python directory, no separate pynsist_pkgs
 shutil.copytree(prefix / "tcl", "build/lib")
-for file in list((prefix / "DLLs").glob("tk*.dll")) + list((prefix / "DLLs").glob("tcl*.dll")):
+for file in [*(prefix / "DLLs").glob("tk*.dll"), *(prefix / "DLLs").glob("tcl*.dll")]:
     shutil.copy(file, "build/Python")
 shutil.copy(prefix / "DLLs" / "_tkinter.pyd", "build/Python")
 shutil.copy(prefix / "libs" / "_tkinter.lib", "build/Python")
