@@ -54,11 +54,11 @@ Section "!Porcupine" sec_app
   ; Sanity check, creates error popup with googlable message if e.g. msvcrt missing
   nsExec::Exec '"$INSTDIR\Python\pythonw.exe" -c pass'
 
-  File "porcupine-logo.ico"  ; Needed to get correct icon when uninstalling with control panel
-  File "launch.pyw"
   SetOutPath "$INSTDIR\lib"
   File /r "lib\*.*"
   SetOutPath "$INSTDIR"
+  File "porcupine-logo.ico"  ; Needed to get correct icon when uninstalling with control panel
+  File "launch.pyw"
 
   DetailPrint "Creating shortcut..."
   SetOutPath "%HOMEDRIVE%\%HOMEPATH%"  ; This becomes working directory for shortcut
