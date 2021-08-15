@@ -321,4 +321,4 @@ filename_patterns = ["*.nsi", "*.nsh"]
 pygments_lexer = "pygments.lexers.NSISLexer"
 tabs2spaces = true
 indent_size = 2
-comment_prefix = '%'
+comment_prefix = ';'
