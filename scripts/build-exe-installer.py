@@ -61,7 +61,7 @@ else:
 # I couldn't get python to import from anywhere else than from Python directory,
 # so no separate pynsist_pkgs.
 #
-# When installing, python and python-libs get merged together, but a minimal
+# When installing, python-first and python-second get merged together, but a minimal
 # python is needed to fail setup early if it can't run.
 os.mkdir("build/python-second")
 shutil.copytree(prefix / "tcl", "build/lib")
