@@ -65,7 +65,7 @@ Section "!Porcupine" sec_app
   SetOutPath "$INSTDIR"
 
   DetailPrint "Byte-compiling Python modules..."
-  nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR"'
+  nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR\Python"'
 
   DetailPrint "Creating uninstaller..."
   WriteUninstaller $INSTDIR\uninstall.exe
