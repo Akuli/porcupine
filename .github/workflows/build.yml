@@ -22,7 +22,8 @@ jobs:
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop bucket add extras
         scoop install nsis
-    - run: python scripts/build-exe-installer.py
+    # -u makes print show in real time
+    - run: python -u scripts/build-exe-installer.py
     - uses: actions/upload-artifact@v2
       with:
         name: windows-exe
