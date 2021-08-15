@@ -134,7 +134,7 @@ class PopManager:
         # e.g. queue.py (#31), but good when that's where porcupine is
         # meant to be imported from (#230).
         code = f"import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()"
-        args = [sys.executable, "-c", code]
+        args = [sys.executable, "-c", code]  # FIXME: sys.executable.endswith(r"\Porcupine.exe")
 
         args.append("--without-plugins")
         args.append(

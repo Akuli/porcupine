@@ -7,7 +7,6 @@ import dataclasses
 import functools
 import json
 import logging
-import os
 import re
 import shlex
 import shutil
@@ -18,7 +17,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TextIO, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TextIO, Type, TypeVar
 from urllib.request import url2pathname
 
 import dacite
@@ -34,61 +33,15 @@ log = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
-# nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
-_installed_with_pynsist = (
-    sys.platform == "win32"
-    and Path(sys.executable).parent.name.lower() == "python"
-    and Path(sys.executable).parent.parent.name.lower() == "porcupine"
-)
-
-
-if sys.platform == "win32":
-    # Casting because mypy thinks stdout and stderr can't be None
-    if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
-        # running in pythonw.exe so there's no console window, print still
-        # works because it checks if sys.stdout is None
-        running_pythonw = True
-    elif (
-        _installed_with_pynsist
-        and sys.stdout is sys.stderr
-        and sys.stdout.name is not None  # not sure if necessary
-        and Path(sys.stdout.name).parent == Path(os.environ["APPDATA"])
-    ):
-        # pynsist generates a script that does this:
-        #
-        #   sys.stdout = sys.stderr = open(blablabla, 'w', **kw)
-        #
-        # where blablabla is a file directly in %APPDATA%... that's dumb and
-        # non-standard imo, and not suitable for porcupine because porcupine
-        # takes care of that itself, so... let's undo what it just did
-        #
-        # TODO: it's possible to write a custom startup script, do that? there
-        #       are docs somewhere
-        sys.stdout.close()
-        os.remove(sys.stdout.name)
-
-        # mypy doesn't know about how std streams can be None
-        # https://github.com/python/mypy/issues/8823
-        sys.stdout = cast(Any, None)
-        sys.stderr = cast(Any, None)
-
-        running_pythonw = True
-    else:
-        # seems like python was started from e.g. a cmd or powershell
-        running_pythonw = False
+# nsis install puts Porcupine.exe and python.exe in same place
+if sys.platform == "win32" and sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe")):
+    running_pythonw = True
+    python_executable = Path(sys.executable).parent / "python.exe"
 else:
     running_pythonw = False
+    python_executable = Path(sys.executable)
 
 
-python_executable = Path(sys.executable)
-if running_pythonw and Path(sys.executable).name.lower() == "pythonw.exe":
-    # get rid of the 'w' and hope for the best...
-    _possible_python = Path(sys.executable).with_name("python.exe")
-    if _possible_python.is_file():
-        python_executable = _possible_python
-
-
-quote: Callable[[str], str]
 if sys.platform == "win32":
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string: str) -> str:
