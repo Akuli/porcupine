@@ -67,6 +67,7 @@ shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("LICENSE", "build/LICENSE")
 shutil.copytree("launcher", "build/launcher")
 
+# I tried to give -D option to preprocessor, didn't work
 metadata_file = Path("build/launcher/metadata.rc")
 print(f"Editing version info into {metadata_file}")
 metadata_file.write_text(
