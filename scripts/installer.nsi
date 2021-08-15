@@ -48,13 +48,25 @@ Section "!Porcupine" sec_app
     FileOpen $0 "$INSTDIR\_user_install_marker" w
     FileClose $0
 
-  File "porcupine-logo.ico"  ; Needed to get correct icon when uninstalling with control panel
-  File "launch.pyw"
   SetOutPath "$INSTDIR\Python"
-  File /r "Python\*.*"
+  File /r "python-first\*.*"
+
+  ; creates error popup with googlable message if e.g. msvcrt not installed
+  ; Should fail as early as possible
+  ; https://stackoverflow.com/a/9116125
+  DetailPrint "Running a sanity-check with the extracted Python..."
+  ClearErrors
+  ExecWait '"$INSTDIR\Python\pythonw.exe" -c pass'
+  IfErrors 0 +2
+    Abort
+
+  SetOutPath "$INSTDIR\Python"
+  File /r "python-second\*.*"
   SetOutPath "$INSTDIR\lib"
   File /r "lib\*.*"
   SetOutPath "$INSTDIR"
+  File "porcupine-logo.ico"  ; Needed to get correct icon when uninstalling with control panel
+  File "launch.pyw"
 
   DetailPrint "Creating shortcut..."
   SetOutPath "%HOMEDRIVE%\%HOMEPATH%"  ; This becomes working directory for shortcut
