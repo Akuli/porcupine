@@ -53,6 +53,7 @@ Section "!Porcupine" sec_app
     FileOpen $0 "$INSTDIR\_user_install_marker" w
     FileClose $0
 
+  File "porcupine-logo.ico"  ; Needed to get correct icon when uninstalling with control panel
   File "launch.pyw"
   SetOutPath "$INSTDIR\Python"
   File /r "Python\*.*"
