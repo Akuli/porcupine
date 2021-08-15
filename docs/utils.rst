@@ -18,7 +18,7 @@ Information about Python
     prompt, so you need to check for that when doing things like
     starting a new command prompt from Python. This is also ``True``
     if Porcupine is running as ``Porcupine.exe``, which it is when
-    launched when launched from start menu.
+    launched from start menu.
 
 .. data:: python_executable
 
