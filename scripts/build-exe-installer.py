@@ -73,7 +73,6 @@ metadata_file.write_text(
     metadata_file.read_text().replace("PORCUPINE_VERSION", f'"{porcupine_version}"')
 )
 
-# TODO: uninstall icon not working
 print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
