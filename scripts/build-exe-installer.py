@@ -75,7 +75,16 @@ else:
         ["windres", "metadata.rc", "-O", "coff", "-o", "metadata.res"], cwd="build/launcher"
     )
     subprocess.check_call(
-        ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "icon.res", "metadata.res"],
+        [
+            "gcc.exe",
+            "-municode",
+            "-mwindows",
+            "-o",
+            "Porcupine.exe",
+            "main.c",
+            "icon.res",
+            "metadata.res",
+        ],
         cwd="build/launcher",
     )
 
