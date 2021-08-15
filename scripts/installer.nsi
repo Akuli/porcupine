@@ -97,17 +97,6 @@ Section "Uninstall"
   DeleteRegKey SHCTX "Software\Classes\Applications\Porcupine.exe"
 SectionEnd
 
-
-Function .onMouseOverSection
-    ; Find which section the mouse is over, and set the corresponding description.
-    FindWindow $R0 "#32770" "" $HWNDPARENT
-    GetDlgItem $R0 $R0 1043 ; description item (must be added to the UI)
-
-    StrCmp $0 ${sec_app} "" +2
-      SendMessage $R0 ${WM_SETTEXT} 0 "STR:Porcupine"
-
-FunctionEnd
-
 Function .onInit
   ; Multiuser.nsh breaks /D command line parameter. Parse /INSTDIR instead.
   ; Cribbing from https://nsis-dev.github.io/NSIS-Forums/html/t-299280.html
