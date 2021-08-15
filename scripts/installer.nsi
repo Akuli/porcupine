@@ -83,9 +83,8 @@ SectionEnd
 Section "Uninstall"
   SetRegView 64
   SetShellVarContext all
-  IfFileExists "$INSTDIR\_user_install_marker" 0 +3
+  IfFileExists "$INSTDIR\_user_install_marker" 0 +2
     SetShellVarContext current
-    Delete "$INSTDIR\_user_install_marker"
 
   RMDir /r "$INSTDIR"
 
