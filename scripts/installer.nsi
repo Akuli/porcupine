@@ -49,11 +49,19 @@ Section "!Porcupine" sec_app
     FileClose $0
 
   SetOutPath "$INSTDIR\Python"
-  File /r "Python\*.*"
+  File /r "python-first\*.*"
 
-  ; Sanity check, creates error popup with googlable message if e.g. msvcrt missing
-  nsExec::Exec '"$INSTDIR\Python\pythonw.exe" -c pass'
+  ; creates error popup with googlable message if e.g. msvcrt not installed
+  ; Should fail as early as possible
+  ; https://stackoverflow.com/a/9116125
+  DetailPrint "Running a sanity-check with the extracted Python..."
+  ClearErrors
+  ExecWait '"$INSTDIR\Python\pythonw.exe" -c pass'
+  IfErrors 0 +2
+    Abort
 
+  SetOutPath "$INSTDIR\Python"
+  File /r "python-second\*.*"
   SetOutPath "$INSTDIR\lib"
   File /r "lib\*.*"
   SetOutPath "$INSTDIR"

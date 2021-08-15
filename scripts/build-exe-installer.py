@@ -41,7 +41,7 @@ print(url)
 
 response = requests.get(url)
 response.raise_for_status()
-zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/python-first")
 
 print("Copying files")
 
@@ -52,16 +52,24 @@ else:
     prefix = Path(sys.prefix)
 
 # https://pynsist.readthedocs.io/en/latest/faq.html#packaging-with-tkinter
+#
 # We don't use pynsist because it does not allow specifying a custom executable.
+#
 # We have a custom Porcupine.exe launcher which has the custom icon and can be called
 # with no arguments to launch Porcupine.
-# I couldn't get python to import from anywhere else than from Python directory, no separate pynsist_pkgs
+#
+# I couldn't get python to import from anywhere else than from Python directory,
+# so no separate pynsist_pkgs.
+#
+# When installing, python and python-libs get merged together, but a minimal
+# python is needed to fail setup early if it can't run.
+os.mkdir("build/python-second")
 shutil.copytree(prefix / "tcl", "build/lib")
 for file in [*(prefix / "DLLs").glob("tk*.dll"), *(prefix / "DLLs").glob("tcl*.dll")]:
-    shutil.copy(file, "build/Python")
-shutil.copy(prefix / "DLLs" / "_tkinter.pyd", "build/Python")
-shutil.copy(prefix / "libs" / "_tkinter.lib", "build/Python")
-shutil.copytree(tkinter.__path__[0], "build/Python/tkinter")
+    shutil.copy(file, "build/python-second")
+shutil.copy(prefix / "DLLs" / "_tkinter.pyd", "build/python-second")
+shutil.copy(prefix / "libs" / "_tkinter.lib", "build/python-second")
+shutil.copytree(tkinter.__path__[0], "build/python-second/tkinter")
 
 shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("LICENSE", "build/LICENSE")
@@ -107,15 +115,15 @@ else:
         cwd="build/launcher",
     )
 
-print("Installing Porcupine into build/Python with pip")
+print("Installing Porcupine into build/python-second with pip")
 # pyls needs pkg_resources from setuptools, don't know why it doesn't install by default
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
 subprocess.check_call(
-    ["pip", "install", "--use-feature=in-tree-build", "--target=build/Python", ".", "setuptools"]
+    ["pip", "install", "--use-feature=in-tree-build", "--target=build/python-second", ".", "setuptools"]
 )
 
 print("Moving files")
-shutil.move("build/launcher/Porcupine.exe", "build/Python/Porcupine.exe")
+shutil.move("build/launcher/Porcupine.exe", "build/python-second/Porcupine.exe")
 shutil.move("build/launcher/launch.pyw", "build/launch.pyw")
 
 print("Downloading tkdnd")
