@@ -33,9 +33,7 @@ log = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
-# nsis script installs python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python\Porcupine.exe
-# When not installed, there is .../python.exe and .../pythonw.exe
-# TODO: check if all this actually works
+# nsis install puts Porcupine.exe and python.exe in same place
 if sys.platform == "win32" and sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe")):
     running_pythonw = True
     python_executable = Path(sys.executable).parent / "python.exe"
