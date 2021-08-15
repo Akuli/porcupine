@@ -127,14 +127,18 @@ class PopManager:
 
         settings.save()  # let the new process use up-to-date settings
 
-        # The subprocess must be called so that it has a sane sys.path.
-        # In particular, import or don't import from current working
-        # directory exactly like the porcupine that is currently running.
-        # Importing from current working directory is bad if it contains
-        # e.g. queue.py (#31), but good when that's where porcupine is
-        # meant to be imported from (#230).
-        code = f"import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()"
-        args = [sys.executable, "-c", code]  # FIXME: sys.executable.endswith(r"\Porcupine.exe")
+        if sys.platform == "win32" and sys.executable.endswith(r"\Porcupine.exe"):
+            # Porcupine.exe passes arguments to python with launcher script added to start
+            args = [sys.executable]
+        else:
+            # The subprocess must be called so that it has a sane sys.path.
+            # In particular, import or don't import from current working
+            # directory exactly like the porcupine that is currently running.
+            # Importing from current working directory is bad if it contains
+            # e.g. queue.py (#31), but good when that's where porcupine is
+            # meant to be imported from (#230).
+            code = f"import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()"
+            args = [sys.executable, "-c", code]
 
         args.append("--without-plugins")
         args.append(
