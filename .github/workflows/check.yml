@@ -81,7 +81,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check scripts/*.py launcher/launch.pyw docs/*.py porcupine tests more_plugins
+    - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -90,7 +90,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m isort --check scripts/*.py launcher/launch.pyw docs/*.py porcupine tests more_plugins
+    - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
   pyflakes:
     runs-on: ubuntu-latest
     steps:
@@ -99,7 +99,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m pyflakes scripts/*.py launcher/launch.pyw docs/*.py porcupine tests more_plugins
+    - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
   bindcheck:
     runs-on: ubuntu-latest
     steps:
