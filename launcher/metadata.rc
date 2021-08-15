@@ -6,7 +6,7 @@ PRODUCTVERSION  1,0,0,0
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
-    BLOCK "080904E4"
+    BLOCK "040904E4"
     BEGIN
       VALUE "ProductName", "Porcupine"
       VALUE "ProductVersion", PORCUPINE_VERSION
@@ -18,6 +18,6 @@ BEGIN
   END
   BLOCK "VarFileInfo"
   BEGIN
-    VALUE "Translation", 0x809, 1252
+    VALUE "Translation", 0x409, 1252
   END
 END
