@@ -60,7 +60,7 @@ PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.i
 
 # If you can't get a C compiler to work (with windres):
 #   1. Download a Porcupine installer from GitHub and install Porcupine
-#   2. Copy C:\Users\YourName\AppData\Local\Programs\Porcupine\Porcupine\Porcupine.exe
+#   2. Copy C:\Users\YourName\AppData\Local\Programs\Porcupine\Python\Porcupine.exe
 #      to where you cloned Porcupine
 #   3. Uninstall Porcupine
 if os.path.exists("Porcupine.exe"):
@@ -92,28 +92,10 @@ print(url)
 
 response = requests.get(url)
 response.raise_for_status()
-
-# nsis script installs python like this
-#
-#   C:\Users\Akuli\AppData\Local
-#   `-- Porcupine
-#       |-- lib
-#       |-- pkgs
-#       `-- Porcupine (*)
-#           |-- Porcupine.exe
-#           |-- python.exe
-#           |-- python3.dll
-#           `-- pythonw.exe
-#
-# Porcupine.exe must be in same directory with python3.dll.
-# python3.dll must be in the same directory with python.exe.
-# The name of directory (*) shows up in "Open file" dialog.
-# If Porcupine.exe is not nested in the directory, it shows "Porcupine.exe".
-# This is why there is Porcupine directory containign Python nested inside another Porcupine directory.
-zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Porcupine")
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/Python")
 
 print("Moving files")
-shutil.move("build/launcher/Porcupine.exe", "build/Porcupine/Porcupine.exe")
+shutil.move("build/launcher/Porcupine.exe", "build/Python/Porcupine.exe")
 shutil.move("build/launcher/launch.pyw", "build/launch.pyw")
 
 print("Downloading tkdnd")
