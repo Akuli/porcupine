@@ -56,6 +56,12 @@ shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("LICENSE", "build/LICENSE")
 shutil.copytree("launcher", "build/launcher")
 
+metadata_file = Path("build/launcher/metadata.rc")
+print(f"Editing version info into {metadata_file}")
+metadata_file.write_text(
+    metadata_file.read_text().replace("PORCUPINE_VERSION", f'"{porcupine_version}"')
+)
+
 # TODO: uninstall icon not working
 print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
@@ -74,17 +80,7 @@ else:
         ["windres", "icon.rc", "-O", "coff", "-o", "icon.res"], cwd="build/launcher"
     )
     subprocess.check_call(
-        [
-            "windres",
-            "metadata.rc",
-            "-O",
-            "coff",
-            "-o",
-            "metadata.res",
-            "--preprocessor-arg",
-            f'-DPORCUPINE_VERSION="{porcupine_version}"',
-        ],
-        cwd="build/launcher",
+        ["windres", "metadata.rc", "-O", "coff", "-o", "metadata.res"], cwd="build/launcher"
     )
     subprocess.check_call(
         [

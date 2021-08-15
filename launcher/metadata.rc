@@ -1,5 +1,6 @@
 /* https://stackoverflow.com/a/708382 */
 1 VERSIONINFO
+/* TODO: should change these? */
 FILEVERSION     1,0,0,0
 PRODUCTVERSION  1,0,0,0
 BEGIN
