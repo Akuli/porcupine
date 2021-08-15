@@ -116,7 +116,14 @@ print("Installing Porcupine into build/python-second with pip")
 # pyls needs pkg_resources from setuptools, don't know why it doesn't install by default
 # TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
 subprocess.check_call(
-    ["pip", "install", "--use-feature=in-tree-build", "--target=build/python-second", ".", "setuptools"]
+    [
+        "pip",
+        "install",
+        "--use-feature=in-tree-build",
+        "--target=build/python-second",
+        ".",
+        "setuptools",
+    ]
 )
 
 print("Moving files")
