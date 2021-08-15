@@ -69,10 +69,13 @@ if os.path.exists("Porcupine.exe"):
 else:
     print("Porcupine.exe was not found, compiling")
     subprocess.check_call(
-        ["windres", "resources.rc", "-O", "coff", "-o", "resources.res"], cwd="build/launcher"
+        ["windres", "icon.rc", "-O", "coff", "-o", "icon.res"], cwd="build/launcher"
     )
     subprocess.check_call(
-        ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "resources.res"],
+        ["windres", "metadata.rc", "-O", "coff", "-o", "metadata.res"], cwd="build/launcher"
+    )
+    subprocess.check_call(
+        ["gcc.exe", "-municode", "-mwindows", "-o", "Porcupine.exe", "main.c", "icon.res", "metadata.res"],
         cwd="build/launcher",
     )
 
