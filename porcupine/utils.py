@@ -17,7 +17,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TextIO, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TextIO, Type, TypeVar
 from urllib.request import url2pathname
 
 import dacite
@@ -33,12 +33,10 @@ log = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
-# nsis script installs python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python\Porcupine.exe
 # When not installed, there is .../python.exe and .../pythonw.exe
 # TODO: check if all this actually works
-if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
+if sys.platform == "win32" and sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe")):
     running_pythonw = True
-    assert sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe"))
     python_executable = Path(sys.executable).parent / "python.exe"
 else:
     running_pythonw = False
