@@ -13,8 +13,13 @@ def geometry_is_within_screen(geometry: str) -> bool:
         # Does not specify location, size only
         return True
 
-    width, height, x,  y = map(int, match.groups())
-    return (0 <= x and x+width <= get_main_window().winfo_screenwidth() and 0 <= y and y <= get_main_window().winfo_screenheight())
+    width, height, x, y = map(int, match.groups())
+    return (
+        0 <= x
+        and x + width <= get_main_window().winfo_screenwidth()
+        and 0 <= y
+        and y <= get_main_window().winfo_screenheight()
+    )
 
 
 def save_geometry(event: tkinter.Event[tkinter.Misc]) -> None:
