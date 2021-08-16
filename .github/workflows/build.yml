@@ -12,7 +12,7 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: "3.8"  # last version supporting windows 7
-    - run: pip install $(grep requests requirements.txt)
+    - run: pip install $(grep requests requirements-dev.txt)
     - run: pip install -r requirements.txt
     - uses: egor-tensin/setup-mingw@v2
       with:
