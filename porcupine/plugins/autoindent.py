@@ -4,6 +4,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import re
+import sys
 import tkinter
 from functools import partial
 from typing import Optional
@@ -16,7 +17,10 @@ from porcupine import get_tab_manager, tabs
 setup_before = ["rstrip"]
 
 log = logging.getLogger(__name__)
-ALT_FLAG = 0b1000
+if sys.platform == 'win32':
+    ALT_BIT = 0x20000
+else:
+    ALT_BIT = 0b1000
 
 
 def leading_whitespace(string: str) -> str:
@@ -90,7 +94,7 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
 
 def on_enter_press(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> None:
     assert isinstance(event.state, int)
-    alt_pressed = bool(event.state & ALT_FLAG)
+    alt_pressed = bool(event.state & ALT_BIT)
     tab.textwidget.after_idle(after_enter, tab, alt_pressed)
 
 
