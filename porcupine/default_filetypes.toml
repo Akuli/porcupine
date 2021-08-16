@@ -173,6 +173,7 @@
 #            the whole string will be replaced with null.
 
 ["Plain Text"]
+filename_patterns = ["*.txt"]
 pygments_lexer = "pygments.lexers.TextLexer"
 
 [Python]

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import PIL.Image
 import requests
+import toml
 
 sys.path.append("")  # import from current working directory
 from porcupine import version_info as version_tuple
@@ -140,9 +141,24 @@ root.tk.eval("lappend auto_path build/lib")
 root.tk.eval("package require tkdnd")
 root.destroy()
 
+print("Finding supported file extensions")
+extensions = [
+    pattern.lstrip("*")
+    for filetype in toml.load("porcupine/default_filetypes.toml").values()
+    for pattern in filetype["filename_patterns"]
+    if pattern.startswith("*.") and pattern.count("*") == 1 and "," not in pattern
+]
+print(extensions)
+
 print("Running makensis")
 subprocess.check_call(
-    ["makensis.exe", f"/DVERSION={porcupine_version}", "installer.nsi"], cwd="build"
+    [
+        "makensis.exe",
+        "/DVERSION=" + porcupine_version,
+        "/DEXTENSIONS=" + ",".join(extensions),
+        "installer.nsi",
+    ],
+    cwd="build",
 )
 
 print("All done")

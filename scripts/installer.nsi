@@ -1,5 +1,7 @@
 ; Based on a file that pynsist generated
 
+!include 'LogicLib.nsh'  ; TODO: use this to clean up gotos
+
 SetCompressor lzma
 
 Unicode true
@@ -39,6 +41,29 @@ Section -SETTINGS
 SectionEnd
 
 
+Var extension
+
+!macro BeginExtensionLoop
+  StrCpy $extension ""
+  StrCpy $0 0  ; $0 = index into EXTENSIONS
+  ${Do}
+    StrCpy $1 "${EXTENSIONS}" 1 $0   ; $1 = next char of extension
+
+    ${If} $1 == ","
+    ${OrIf} $1 == ""
+      ; End of extension, run loop body
+!macroend
+!macro EndExtensionLoop
+      StrCpy $extension ""
+    ${Else}
+      StrCpy $extension $extension$1
+    ${EndIf}
+
+    IntOp $0 $0 + 1
+  ${LoopWhile} $1 != ""
+!macroend
+
+
 Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
@@ -57,8 +82,9 @@ Section "!Porcupine" sec_app
   DetailPrint "Running a sanity-check with the extracted Python..."
   ClearErrors
   ExecWait '"$INSTDIR\Python\pythonw.exe" -c pass'
-  IfErrors 0 +2
+  ${If} ${Errors}
     Abort
+  ${EndIf}
 
   SetOutPath "$INSTDIR\Python"
   File /r "python-second\*.*"
@@ -80,7 +106,17 @@ Section "!Porcupine" sec_app
   WriteUninstaller $INSTDIR\uninstall.exe
 
   DetailPrint "Creating registry keys..."
+
+  ; Opening file with no associated program and user says "Choose from list of installed programs"
   WriteRegStr SHCTX "Software\Classes\Applications\Porcupine.exe\shell\open\command" "" '"$INSTDIR\Python\Porcupine.exe" "%1"'
+
+  ; "Open with" menu when right-click known file type (.py for example)
+  WriteRegStr SHCTX "Software\Classes\Porcupine\shell\open\command" "" '"$INSTDIR\Python\Porcupine.exe" "%1"'
+  !insertmacro BeginExtensionLoop
+    WriteRegStr SHCTX "Software\Classes\$extension\OpenWithProgIds" "Porcupine" ""
+  !insertmacro EndExtensionLoop
+
+  ; Uninstalling
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"  "DisplayName" "Porcupine"
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "InstallLocation" "$INSTDIR"
@@ -90,6 +126,7 @@ Section "!Porcupine" sec_app
   WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "NoRepair" 1
 SectionEnd
 
+
 Section "Uninstall"
   SetRegView 64
   SetShellVarContext all
@@ -97,11 +134,17 @@ Section "Uninstall"
     SetShellVarContext current
 
   RMDir /r "$INSTDIR"
-
   Delete "$SMPROGRAMS\Porcupine.lnk"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"
+
+  DetailPrint "Deleting registry keys..."
   DeleteRegKey SHCTX "Software\Classes\Applications\Porcupine.exe"
+  DeleteRegKey SHCTX "Software\Classes\Porcupine"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"
+  !insertmacro BeginExtensionLoop
+    DeleteRegValue SHCTX "Software\Classes\$extension\OpenWithProgIds" "Porcupine"
+  !insertmacro EndExtensionLoop
 SectionEnd
+
 
 Function .onInit
   !insertmacro MULTIUSER_INIT
