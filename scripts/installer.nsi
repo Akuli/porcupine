@@ -52,8 +52,8 @@ Var extension
     ${If} $1 == ","
     ${OrIf} $1 == ""
       ; End of extension, run loop body
-      !macroend
-      !macro EndExtensionLoop
+!macroend
+!macro EndExtensionLoop
       StrCpy $extension ""
     ${Else}
       StrCpy $extension $extension$1
