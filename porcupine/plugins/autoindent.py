@@ -4,7 +4,6 @@ from __future__ import annotations
 import dataclasses
 import logging
 import re
-import sys
 import tkinter
 from functools import partial
 from typing import Optional
