@@ -47,7 +47,7 @@ Var extension
   StrCpy $extension ""
   StrCpy $0 0  ; $0 = start index of extension
   ${Do}
-    StrCpy $1 "${FOO}" 1 $0   ; $1 = next char of extension
+    StrCpy $1 "${EXTENSIONS}" 1 $0   ; $1 = next char of extension
 
     ${If} $1 == ","
     ${OrIf} $1 == ""
