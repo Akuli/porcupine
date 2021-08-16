@@ -45,7 +45,7 @@ Var extension
 
 !macro BeginExtensionLoop
   StrCpy $extension ""
-  StrCpy $0 0  ; $0 = start index of extension
+  StrCpy $0 0  ; $0 = index into EXTENSIONS
   ${Do}
     StrCpy $1 "${EXTENSIONS}" 1 $0   ; $1 = next char of extension
 
