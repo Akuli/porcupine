@@ -110,7 +110,7 @@ Section "Uninstall"
   DetailPrint "Deleting registry keys..."
   DeleteRegKey SHCTX "Software\Classes\Applications\Porcupine.exe"
   DeleteRegKey SHCTX "Software\Classes\Porcupine"
-  DeleteRegValue SHCTX "Software\Classes\.py\OpenWithProgIds\Porcupine"
+  DeleteRegValue SHCTX "Software\Classes\.py\OpenWithProgIds" "Porcupine"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"
 SectionEnd
 
