@@ -16,7 +16,6 @@ from porcupine import get_tab_manager, tabs
 setup_before = ["rstrip"]
 
 log = logging.getLogger(__name__)
-ALT_FLAG = 0b1000
 
 
 def leading_whitespace(string: str) -> str:
@@ -88,9 +87,9 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
         tab.textwidget.dedent("insert")
 
 
-def on_enter_press(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> None:
-    assert isinstance(event.state, int)
-    alt_pressed = bool(event.state & ALT_FLAG)
+def on_enter_press(
+    tab: tabs.FileTab, alt_pressed: bool, event: tkinter.Event[tkinter.Text]
+) -> None:
     tab.textwidget.after_idle(after_enter, tab, alt_pressed)
 
 
@@ -114,7 +113,8 @@ def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> N
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("autoindent_regexes", None, Optional[AutoIndentRegexes])
-    tab.textwidget.bind("<Return>", partial(on_enter_press, tab), add=True)
+    tab.textwidget.bind("<Return>", partial(on_enter_press, tab, False), add=True)
+    tab.textwidget.bind("<Alt-Return>", partial(on_enter_press, tab, True), add=True)
     tab.textwidget.bind("<parenright>", partial(on_closing_brace, tab), add=True)
     tab.textwidget.bind("<bracketright>", partial(on_closing_brace, tab), add=True)
     tab.textwidget.bind("<braceright>", partial(on_closing_brace, tab), add=True)
