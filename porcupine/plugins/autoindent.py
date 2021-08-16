@@ -88,7 +88,6 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
 
 
 def on_enter_press(tab: tabs.FileTab, alt_pressed: bool, event: tkinter.Event[tkinter.Text]) -> None:
-    assert isinstance(event.state, int)
     tab.textwidget.after_idle(after_enter, tab, alt_pressed)
 
 
