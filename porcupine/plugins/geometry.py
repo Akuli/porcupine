@@ -18,7 +18,7 @@ def geometry_is_within_screen(geometry: str) -> bool:
         x >= 0
         and x + width <= get_main_window().winfo_screenwidth()
         and y >= 0
-        and y <= get_main_window().winfo_screenheight()
+        and y + height <= get_main_window().winfo_screenheight()
     )
 
 
