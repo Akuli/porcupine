@@ -52,6 +52,7 @@ Miscellaneous
 .. autofunction:: invert_color
 .. autofunction:: mix_colors
 .. autofunction:: backup_open
+.. autofunction:: find_project_root
 
 .. function:: quote(argument)
 
