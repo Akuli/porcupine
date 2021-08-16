@@ -80,7 +80,15 @@ Section "!Porcupine" sec_app
   WriteUninstaller $INSTDIR\uninstall.exe
 
   DetailPrint "Creating registry keys..."
-  WriteRegStr SHCTX "Software\Classes\Applications\Porcupine.exe\shell\open\command" "" '"$INSTDIR\Python\Porcupine.exe" "%1"'
+
+  ; Opening file with no associated program and user says "Choose from list of installed programs"
+  ;WriteRegStr SHCTX "Software\Classes\Applications\Porcupine.exe\shell\open\command" "" '"$INSTDIR\Python\Porcupine.exe" "%1"'
+
+  ; "Open with" menu when right-clicking .py file
+  WriteRegStr SHCTX "Software\Classes\.py\OpenWithProgIds" "Porcupine" ""
+  WriteRegStr SHCTX "Software\Classes\Porcupine\shell\open\command" "" '"$INSTDIR\Python\Porcupine.exe" "%1"'
+
+  ; Uninstalling
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine"  "DisplayName" "Porcupine"
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\Porcupine" "InstallLocation" "$INSTDIR"
