@@ -1,6 +1,6 @@
 ; Based on a file that pynsist generated
 
-!include 'LogicLib.nsh'  ; TODO: use this to clean up gotos
+!include 'LogicLib.nsh'
 
 SetCompressor lzma
 
@@ -16,13 +16,11 @@ ManifestDPIAware true
 !include MultiUser.nsh
 !include FileFunc.nsh
 
-; Modern UI installer stuff
-!include "MUI2.nsh"
+!include "MUI2.nsh"  ; MUI = Modern UI
 !define MUI_ABORTWARNING
 !define MUI_ICON "porcupine-logo.ico"
 !define MUI_UNICON "porcupine-logo.ico"
 
-; UI pages
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE LICENSE
 !insertmacro MULTIUSER_PAGE_INSTALLMODE
@@ -68,11 +66,6 @@ Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
 
-  ; Marker file for per-user install
-  StrCmp $MultiUser.InstallMode CurrentUser 0 +3
-    FileOpen $0 "$INSTDIR\_user_install_marker" w
-    FileClose $0
-
   SetOutPath "$INSTDIR\Python"
   File /r "python-first\*.*"
 
@@ -92,6 +85,12 @@ Section "!Porcupine" sec_app
   File /r "lib\*.*"
   SetOutPath "$INSTDIR"
   File "launch.pyw"
+
+  ; Marker file for per-user install
+  ${If} $MultiUser.InstallMode == CurrentUser
+    FileOpen $0 "$INSTDIR\_user_install_marker" w
+    FileClose $0
+  ${EndIf}
 
   DetailPrint "Creating shortcut..."
   SetOutPath "%HOMEDRIVE%\%HOMEPATH%"  ; This becomes working directory for shortcut
@@ -129,8 +128,9 @@ SectionEnd
 Section "Uninstall"
   SetRegView 64
   SetShellVarContext all
-  IfFileExists "$INSTDIR\_user_install_marker" 0 +2
+  ${If} ${FileExists} "$INSTDIR\_user_install_marker"
     SetShellVarContext current
+  ${EndIf}
 
   RMDir /r "$INSTDIR"
   Delete "$SMPROGRAMS\Porcupine.lnk"
@@ -156,6 +156,7 @@ FunctionEnd
 Function correct_prog_files
   ; The multiuser machinery doesn't know about the different Program files
   ; folder for 64-bit applications. Override the install dir it set.
-  StrCmp $MultiUser.InstallMode AllUsers 0 +2
+  ${If} $MultiUser.InstallMode == AllUsers
     StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
+  ${EndIf}
 FunctionEnd
