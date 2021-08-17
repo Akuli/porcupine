@@ -69,9 +69,12 @@ Section "!Porcupine" sec_app
   SectionIn RO
 
   ; Marker file for per-user install
-  StrCmp $MultiUser.InstallMode CurrentUser 0 +3
+  DetailPrint "InstallMode:"
+  DetailPrint $MultiUser.InstallMode
+  ${If} $MultiUser.InstallMode == CurrentUser
     FileOpen $0 "$INSTDIR\_user_install_marker" w
     FileClose $0
+  ${EndIf}
 
   SetOutPath "$INSTDIR\Python"
   File /r "python-first\*.*"
@@ -130,8 +133,9 @@ SectionEnd
 Section "Uninstall"
   SetRegView 64
   SetShellVarContext all
-  IfFileExists "$INSTDIR\_user_install_marker" 0 +2
+  ${If} ${FileExists} "$INSTDIR\_user_install_marker"
     SetShellVarContext current
+  ${EndIf}
 
   RMDir /r "$INSTDIR"
   Delete "$SMPROGRAMS\Porcupine.lnk"
@@ -157,6 +161,9 @@ FunctionEnd
 Function correct_prog_files
   ; The multiuser machinery doesn't know about the different Program files
   ; folder for 64-bit applications. Override the install dir it set.
-  StrCmp $MultiUser.InstallMode AllUsers 0 +2
+  DetailPrint "InstallMode 2:"
+  DetailPrint $MultiUser.InstallMode
+  ${If} $MultiUser.InstallMode == AllUsers
     StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
+  ${EndIf}
 FunctionEnd
