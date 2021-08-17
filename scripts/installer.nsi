@@ -88,8 +88,6 @@ Section "!Porcupine" sec_app
   File "launch.pyw"
 
   ; Marker file for per-user install
-  DetailPrint "InstallMode:"
-  DetailPrint $MultiUser.InstallMode
   ${If} $MultiUser.InstallMode == CurrentUser
     FileOpen $0 "$INSTDIR\_user_install_marker" w
     FileClose $0
@@ -159,8 +157,6 @@ FunctionEnd
 Function correct_prog_files
   ; The multiuser machinery doesn't know about the different Program files
   ; folder for 64-bit applications. Override the install dir it set.
-  DetailPrint "InstallMode 2:"
-  DetailPrint $MultiUser.InstallMode
   ${If} $MultiUser.InstallMode == AllUsers
     StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
   ${EndIf}
