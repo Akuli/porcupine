@@ -66,14 +66,6 @@ Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
 
-  ; Marker file for per-user install
-  DetailPrint "InstallMode:"
-  DetailPrint $MultiUser.InstallMode
-  ${If} $MultiUser.InstallMode == CurrentUser
-    FileOpen $0 "$INSTDIR\_user_install_marker" w
-    FileClose $0
-  ${EndIf}
-
   SetOutPath "$INSTDIR\Python"
   File /r "python-first\*.*"
 
@@ -94,6 +86,14 @@ Section "!Porcupine" sec_app
   SetOutPath "$INSTDIR"
   File "porcupine-logo.ico"  ; Needed to get correct icon when uninstalling with control panel
   File "launch.pyw"
+
+  ; Marker file for per-user install
+  DetailPrint "InstallMode:"
+  DetailPrint $MultiUser.InstallMode
+  ${If} $MultiUser.InstallMode == CurrentUser
+    FileOpen $0 "$INSTDIR\_user_install_marker" w
+    FileClose $0
+  ${EndIf}
 
   DetailPrint "Creating shortcut..."
   SetOutPath "%HOMEDRIVE%\%HOMEPATH%"  ; This becomes working directory for shortcut
