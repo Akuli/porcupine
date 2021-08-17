@@ -16,13 +16,11 @@ ManifestDPIAware true
 !include MultiUser.nsh
 !include FileFunc.nsh
 
-; Modern UI installer stuff
-!include "MUI2.nsh"
+!include "MUI2.nsh"  ; MUI = Modern UI
 !define MUI_ABORTWARNING
 !define MUI_ICON "porcupine-logo.ico"
 !define MUI_UNICON "porcupine-logo.ico"
 
-; UI pages
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE LICENSE
 !insertmacro MULTIUSER_PAGE_INSTALLMODE
