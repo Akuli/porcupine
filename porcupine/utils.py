@@ -126,8 +126,27 @@ _LIKELY_PROJECT_ROOT_THINGS = [".editorconfig"] + [
 ]
 
 
-# TODO: document this
 def find_project_root(project_file_path: Path) -> Path:
+    """Given an absolute path to a file, figure out what project it belongs to.
+
+    The concept of a project is explained
+    `in Porcupine wiki <https://github.com/Akuli/porcupine/wiki/Working-with-projects>`_.
+    Currently, the logic for finding the project root is:
+
+    1.  If the file is inside a Git repository, then the Git repository becomes
+        the project root. For example, the file I'm currently editing is
+        ``/home/akuli/porcu/porcupine/utils.py``, and Porcupine has detected
+        ``/home/akuli/porcu`` as its project because I use Git to develop Porcupine.
+    2.  If Git isn't used but there is a readme file or an ``.editorconfig`` file,
+        then the project root is the folder containing the readme or the ``.editorconfig`` file.
+        (Porcupine supports editorconfig files.
+        You can read more about them at `editorconfig.org <https://editorconfig.org/>`_.)
+        So, even if Porcupine didn't use Git, it would still recognize the
+        project correctly, because there is ``/home/akuli/porcu/README.md``.
+        Porcupine recognizes several different capitalizations and file extensions,
+        such as ``README.md``, ``ReadMe.txt`` and ``readme.rst`` for example.
+    3.  If all else fails, the directory containing the file is used.
+    """
     assert project_file_path.is_absolute()
 
     likely_root = None
