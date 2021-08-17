@@ -802,6 +802,11 @@ def switch_langservers(
 
     if old is not new:
         global_log.info(f"Switching langservers: {old} --> {new}")
+        tab.event_generate(
+            "<<SetUnderlines>>",
+            data=underlines.Underlines(id="langserver_diagnostics", underline_list=[]),
+        )
+
         if old is not None:
             old.forget_tab(tab)
         if new is not None:
