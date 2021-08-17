@@ -1,6 +1,6 @@
 ; Based on a file that pynsist generated
 
-!include 'LogicLib.nsh'  ; TODO: use this to clean up gotos
+!include 'LogicLib.nsh'
 
 SetCompressor lzma
 
