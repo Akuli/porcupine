@@ -135,7 +135,7 @@ class TabManager(ttk.Notebook):
         return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
 
     def open_file(self, path: pathlib.Path, select: bool = True) -> FileTab | None:
-        """Open a file for editing.
+        """Add a :class:`FileTab` for editing a file.
 
         If the file can't be opened, this method displays an error to the user
         and returns ``None``.
