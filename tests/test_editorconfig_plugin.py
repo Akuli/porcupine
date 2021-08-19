@@ -158,3 +158,12 @@ def test_bad_values(filetab, caplog):
         ("ERROR", "bad insert_final_newline: 'its late'"),
         ("WARNING", "editorconfig files contain unknown options: bar, foo"),
     ]
+
+
+def test_encoding(tabmanager, tmp_path, mocker):
+    mocker.patch("porcupine.tabs._ask_encoding", return_value=None)
+    (tmp_path / ".editorconfig").write_text("[*.latin1]\ncharset = latin1\n")
+    (tmp_path / "foo.latin1").write_text("mörkö", encoding="latin1")
+    tab = tabmanager.open_file(tmp_path / "foo.latin1")
+    assert tab is not None
+    assert tab.textwidget.get('1.0', 'end').strip() == "mörkö"
