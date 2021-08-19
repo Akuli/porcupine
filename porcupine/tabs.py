@@ -809,9 +809,27 @@ bers.py>` use this attribute.
                 self._set_saved_state(
                     (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
                 )
-        except (OSError, UnicodeError) as e:
+
+        except UnicodeEncodeError as e:
+            bad_character = e.object[e.start : e.start + 1]
+            log.info(
+                f"attempted to save character {bad_character} with encoding {encoding} to {path}",
+                exc_info=True,
+            )
+            # FIXME: make it possible to select a different encoding somewhere
+            messagebox.showerror(
+                "Saving failed",
+                f"'{bad_character}' is not a valid character in the {encoding} encoding. Delete"
+                " it from the file or switch to a different encoding, such as UTF-8.",
+            )
+            return False
+
+        except OSError as e:
             log.exception(f"saving to '{path}' failed")
-            utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
+            messagebox.showerror(
+                "Saving failed",
+                f"{type(e).__name__}: {e}\n\nMake sure that the file is writable and try again.",
+            )
             return False
 
         self._save_hash = self._get_hash()

@@ -160,3 +160,35 @@ def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
     assert mock.call_args[0] == (tmp_path / "foo.py", "utf-8")
     assert tab.settings.get("encoding", str) == "latin-1"
     assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
+
+
+def test_save_encoding_error(tabmanager, tmp_path, mocker):
+    mocker.patch("porcupine.tabs._ask_encoding", return_value="latin-1")
+    mock = mocker.patch("tkinter.messagebox.showerror")
+    (tmp_path / "foo.py").write_text("öää lol", encoding="latin-1")
+    (tmp_path / ".editorconfig").write_text("[*.py]\ncharset = latin1\n")
+
+    tab = tabmanager.open_file(tmp_path / "foo.py")
+    tab.textwidget.insert("1.2", "Ω")
+    assert not tab.save()
+
+    mock.assert_called_once()
+    assert "Saving failed" in str(mock.call_args)
+    assert "Ω" in str(mock.call_args)
+    assert "not a valid character" in str(mock.call_args)
+
+
+def test_read_only_file(tabmanager, tmp_path, mocker, caplog):
+    mock = mocker.patch("tkinter.messagebox.showerror")
+
+    (tmp_path / "foo.py").touch()
+    (tmp_path / "foo.py").chmod(0o400)
+    assert not tabmanager.open_file(tmp_path / "foo.py").save()
+
+    mock.assert_called_once()
+    assert "Saving failed" in str(mock.call_args)
+    assert "Make sure that the file is writable" in str(mock.call_args)
+    assert "foo.py" in str(mock.call_args)
+
+    [log_record] = caplog.records
+    assert log_record.levelname == "ERROR"
