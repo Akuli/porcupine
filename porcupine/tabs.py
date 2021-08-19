@@ -408,7 +408,7 @@ def _import_lexer_class(name: str) -> LexerMeta:
 
 @dataclasses.dataclass
 class ReloadInfo(utils.EventDataclass):
-    was_modified: bool  # FIXME: rename to had_unsaved_changes
+    was_modified: bool
 
 
 def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
