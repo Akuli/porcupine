@@ -34,7 +34,7 @@ class StatusBar(ttk.Frame):
                 self.right_label.config(text=f"{chars} characters on {lines+1} lines selected")
 
     def show_reload_warning(self, event: utils.EventWithData) -> None:
-        if event.data_class(tabs.ReloadInfo).was_modified:
+        if event.data_class(tabs.ReloadInfo).had_unsaved_changes:
             oops = utils.get_binding("<<Undo>>")
             self.left_label.config(
                 foreground="red",
