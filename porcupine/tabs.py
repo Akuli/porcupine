@@ -838,10 +838,8 @@ bers.py>` use this attribute.
 
                 user_wants_utf8 = messagebox.askyesno(
                     "Saving failed",
-                    (
-                        f"'{bad_character}' is not a valid character in the {encoding} encoding. Do"
-                        f" you want to save the file as UTF-8 instead of {encoding}?"
-                    ),
+                    f"'{bad_character}' is not a valid character in the {encoding} encoding. Do"
+                    f" you want to save the file as UTF-8 instead of {encoding}?",
                 )
                 if user_wants_utf8:
                     self.settings.set("encoding", "utf-8")
