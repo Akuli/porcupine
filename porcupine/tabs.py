@@ -845,8 +845,7 @@ bers.py>` use this attribute.
                 )
                 if user_wants_utf8:
                     self.settings.set("encoding", "utf-8")
-                else:
-                    return False
+                    continue
 
             except OSError as e:
                 log.exception(f"saving to '{path}' failed")
@@ -855,7 +854,9 @@ bers.py>` use this attribute.
                     f"{type(e).__name__}: {e}\n\n"
                     + "Make sure that the file is writable and try again.",
                 )
-                return False
+
+            # If we get here, error message was shown
+            return False
 
         self._save_hash = self._get_hash()
         self.path = path
