@@ -401,7 +401,7 @@ def _import_lexer_class(name: str) -> LexerMeta:
 
 @dataclasses.dataclass
 class ReloadInfo(utils.EventDataclass):
-    was_modified: bool
+    had_unsaved_changes: bool
 
 
 def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
@@ -619,12 +619,8 @@ bers.py>` use this attribute.
         self._saved_state = state
         self._update_titles()
 
-    def is_modified(self) -> bool:
-        """Return False if the text has changed since previous save.
-
-        This is set to False automagically when the content is modified.
-        Use :meth:`mark_saved` to set this to True.
-        """
+    def has_unsaved_changes(self) -> bool:
+        """Return True if the text has changed since previous save."""
         stat_result, char_count, save_hash = self._saved_state
         # Don't call _get_hash() if not necessary
         return self._get_char_count() != char_count or self._get_hash() != save_hash
@@ -691,7 +687,7 @@ bers.py>` use this attribute.
             new_lines.popleft()
             start_line += 1
 
-        modified_before = self.is_modified()
+        was_unsaved = self.has_unsaved_changes()
 
         with textutils.change_batch(self.textwidget):
             self.textwidget.replace(
@@ -703,7 +699,7 @@ bers.py>` use this attribute.
         self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
 
         # TODO: document this
-        self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
+        self.event_generate("<<Reloaded>>", data=ReloadInfo(had_unsaved_changes=was_unsaved))
         return True
 
     def other_program_changed_file(self) -> bool:
@@ -777,13 +773,13 @@ bers.py>` use this attribute.
         else:
             titles = _short_ways_to_display_path(self.path)
 
-        if self.is_modified():
+        if self.has_unsaved_changes():
             titles = [f"*{title}*" for title in titles]
 
         self.title_choices = titles
 
     def can_be_closed(self) -> bool:  # override
-        if not self.is_modified():
+        if not self.has_unsaved_changes():
             return True
 
         if self.path is None:
@@ -885,7 +881,7 @@ bers.py>` use this attribute.
         # e.g. "New File" tabs are saved even though the .path is None
         if (
             self.path is not None
-            and not self.is_modified()
+            and not self.has_unsaved_changes()
             and not self.other_program_changed_file()
         ):
             # this is really saved

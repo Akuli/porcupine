@@ -65,7 +65,7 @@ def test_not_modified(filetab, tmp_path):
     filetab.path = tmp_path / "foo.txt"
     filetab.path.write_text(merge_conflict_string)
     assert filetab.reload()
-    assert not filetab.is_modified()
+    assert not filetab.has_unsaved_changes()
 
 
 def check_use_button(textwidget, button_number):

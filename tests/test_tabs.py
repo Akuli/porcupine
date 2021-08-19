@@ -95,7 +95,7 @@ def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
 
 
 def test_new_file_doesnt_show_up_as_modified(filetab):
-    assert not filetab.is_modified()
+    assert not filetab.has_unsaved_changes()
 
 
 def test_other_program_changed_file(filetab, tmp_path):
