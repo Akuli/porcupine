@@ -417,7 +417,7 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     var = tkinter.StringVar()
     entry = ttk.Entry(big_frame, textvariable=var)
     entry.pack(pady=50)
-    entry.insert(0, "utf-8")  # type: ignore[no-untyped-call]
+    entry.insert(0, encoding_that_didnt_work)  # type: ignore[no-untyped-call]
 
     button_frame = ttk.Frame(big_frame)
     button_frame.pack(fill="x", pady=10)
