@@ -628,7 +628,7 @@ bers.py>` use this attribute.
         # Don't call _get_hash() if not necessary
         return self._get_char_count() != char_count or self._get_hash() != save_hash
 
-    def reload(self, *, undoable=True) -> bool:
+    def reload(self, *, undoable: bool = True) -> bool:
         """Read the contents of the file from disk.
 
         This method returns ``True``, and if reading the file fails, the error
