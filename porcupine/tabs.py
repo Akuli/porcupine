@@ -406,6 +406,7 @@ class ReloadInfo(utils.EventDataclass):
 
 def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
     label_width = 400
+
     dialog = tkinter.Toplevel()
     if _state.get_main_window().winfo_viewable():
         dialog.transient(_state.get_main_window())
