@@ -446,8 +446,8 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     var.trace_add("write", validate_encoding)
 
     entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
-    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)# type: ignore[no-untyped-call]
-    entry.select_range(0, 'end')
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.select_range(0, "end")
     entry.focus()
 
     dialog.wait_window()

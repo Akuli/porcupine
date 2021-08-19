@@ -5,7 +5,6 @@ import pathlib
 import re
 import sys
 import tkinter
-import traceback
 import webbrowser
 from functools import partial
 from string import ascii_lowercase
