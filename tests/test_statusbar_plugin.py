@@ -8,14 +8,14 @@ def test_reload_warning(filetab, tmp_path):
     filetab.save()
 
     filetab.path.write_text("hello")
-    filetab.reload()
+    assert filetab.reload()
     filetab.update()
     assert statusbar.left_label["text"].endswith("lol.py")
     assert statusbar.left_label["foreground"] == ""
 
     filetab.textwidget.insert("1.0", "asdf")
     filetab.path.write_text("foo")
-    filetab.reload()
+    assert filetab.reload()
     filetab.update()
     # Ctrl+Z or Command+Z
     assert "Press " in statusbar.left_label["text"]

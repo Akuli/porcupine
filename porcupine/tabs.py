@@ -1,6 +1,7 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
+import codecs
 import collections
 import dataclasses
 import hashlib
@@ -357,10 +358,12 @@ restarting Porcupine.
         return None
 
     @classmethod
-    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
+    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT | None:
         """
         Create a new tab from the return value of :meth:`get_state`.
         Be sure to override this if you override :meth:`get_state`.
+        Can return ``None`` to indicate that the tab can't be loaded,
+        but in that case, you should also let the user know about it.
         """
         raise NotImplementedError("from_state() wasn't overrided but get_state() was overrided")
 
@@ -384,6 +387,51 @@ def _import_lexer_class(name: str) -> LexerMeta:
 @dataclasses.dataclass
 class ReloadInfo(utils.EventDataclass):
     was_modified: bool
+
+
+# TODO: focus entry by default, bindings for Return and Escape
+def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
+    dialog = tkinter.Toplevel()
+    big_frame = ttk.Frame(dialog)
+    big_frame.pack(fill="both", expand=True)
+    ttk.Label(
+        big_frame,
+        text=f'The content of "{path}" is not valid utf-8. Choose an encoding to use instead:',
+        wraplength=400,
+    ).pack(padx=10, pady=10)
+
+    var = tkinter.StringVar()
+    entry = ttk.Entry(big_frame, textvariable=var)
+    entry.pack(pady=50)
+    entry.insert(0, "utf-8")  # type: ignore[no-untyped-call]
+
+    button_frame = ttk.Frame(big_frame)
+    button_frame.pack(fill="x", pady=10)
+
+    selected_encoding = None
+
+    def select_encoding() -> None:
+        nonlocal selected_encoding
+        selected_encoding = entry.get()  # type: ignore[no-untyped-call]
+        dialog.destroy()
+
+    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side="left", expand=True)
+    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
+    ok_button.pack(side="right", expand=True)
+
+    def validate_encoding(*junk: object) -> None:
+        encoding = entry.get()  # type: ignore[no-untyped-call]
+        try:
+            codecs.lookup(encoding)
+        except LookupError:
+            ok_button.config(state="disabled")
+        else:
+            ok_button.config(state="normal")
+
+    var.trace_add("write", validate_encoding)
+
+    dialog.wait_window()
+    return selected_encoding
 
 
 class FileTab(Tab):
@@ -521,17 +569,20 @@ bers.py>` use this attribute.
         self._update_titles()
 
     @classmethod
-    def open_file(cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path) -> _FileTabT:
+    def open_file(
+        cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path
+    ) -> _FileTabT | None:
         """Read a file and return a new FileTab object.
 
         Use this constructor if you want to open an existing file from a
         path and let the user edit it.
 
-        :exc:`UnicodeError` or :exc:`OSError` is raised if reading the
-        file fails.
+        If reading the file fails, an error is shown to the user, and this
+        method returns ``None``.
         """
         tab = cls(manager, path=path)
-        tab.reload()
+        if not tab.reload():
+            return None
         tab.textwidget.mark_set("insert", "1.0")
         tab.textwidget.edit_reset()
         return tab
@@ -558,15 +609,38 @@ bers.py>` use this attribute.
         # Don't call _get_hash() if not necessary
         return self._get_char_count() != char_count or self._get_hash() != save_hash
 
-    def reload(self) -> None:
+    def reload(self) -> bool:
         """Read the contents of the file from disk.
+
+        This method returns ``True``, and if reading the file fails, the error
+        is shown to the user and ``False`` is returned.
 
         .. seealso:: :meth:`open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
-        with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
-            stat_result = os.fstat(f.fileno())
-            content = f.read()
+
+        while True:
+            try:
+                with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
+                    stat_result = os.fstat(f.fileno())
+                    content = f.read()
+
+            except OSError as e:
+                # TODO: dialog should probably give an option to close the tab
+                log.exception(f"opening '{self.path}' failed")
+                utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
+                return False
+
+            except UnicodeDecodeError:
+                user_selected_encoding = _ask_encoding(
+                    self.path, self.settings.get("encoding", str)
+                )
+                if user_selected_encoding is None:
+                    return False
+                self.settings.set("encoding", user_selected_encoding)
+                continue
+
+            break
 
         if isinstance(f.newlines, tuple):
             # TODO: show a message box to user?
@@ -608,6 +682,7 @@ bers.py>` use this attribute.
 
         # TODO: document this
         self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
+        return True
 
     def other_program_changed_file(self) -> bool:
         """Check whether some other program has changed the file.
@@ -799,13 +874,15 @@ bers.py>` use this attribute.
         return _FileTabState(self.path, content, self._saved_state, self.textwidget.index("insert"))
 
     @classmethod
-    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
+    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT | None:
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
         if state.content is None:
             # nothing has changed since saving, read from the saved file
             assert state.path is not None
             self = cls.open_file(manager, state.path)
+            if self is None:
+                return None
         else:
             self = cls(manager, state.content, state.path)
 

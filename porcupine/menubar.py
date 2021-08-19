@@ -126,6 +126,12 @@ def get_menu(path: str | None) -> tkinter.Menu:
     return menu
 
 
+def _open_config_file(path: pathlib.Path) -> None:
+    tab = tabs.FileTab.open_file(get_tab_manager(), path)
+    if tab is not None:
+        get_tab_manager().add_tab(tab)
+
+
 def add_config_file_button(path: pathlib.Path) -> None:
     """
     Add a button to *Settings/Config Files* that opens a file in Porcupine when
@@ -133,9 +139,7 @@ def add_config_file_button(path: pathlib.Path) -> None:
     """
     get_menu("Settings/Config Files").add_command(
         label=path.name,
-        command=(
-            lambda: get_tab_manager().add_tab(tabs.FileTab.open_file(get_tab_manager(), path))
-        ),
+        command=partial(_open_config_file, path)
     )
 
 
@@ -333,14 +337,9 @@ def _fill_menus_with_default_stuff() -> None:
         # paths is "" or tuple
         paths = filedialog.askopenfilenames(**filedialog_kwargs)  # type: ignore[no-untyped-call]
         for path in map(pathlib.Path, paths):
-            try:
-                tab = tabs.FileTab.open_file(get_tab_manager(), path)
-            except (UnicodeError, OSError) as e:
-                log.exception(f"opening '{path}' failed")
-                utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
-                continue
-
-            get_tab_manager().add_tab(tab)
+            tab = tabs.FileTab.open_file(get_tab_manager(), path)
+            if tab is not None:
+                get_tab_manager().add_tab(tab)
 
     def save_file(save_as: bool) -> None:
         tab = get_tab_manager().select()
