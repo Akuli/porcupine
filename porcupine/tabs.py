@@ -832,8 +832,7 @@ bers.py>` use this attribute.
             except UnicodeEncodeError as e:
                 bad_character = e.object[e.start : e.start + 1]
                 log.info(
-                    f"attempted to save character {bad_character} with encoding {encoding} to"
-                    f" {path}",
+                    f"save to '{path}' failed, non-{encoding} character '{bad_character}'",
                     exc_info=True,
                 )
 
