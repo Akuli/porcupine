@@ -573,7 +573,7 @@ bers.py>` use this attribute.
 
         if content:
             self.textwidget.insert("1.0", content)
-            self.textwidget.edit_reset()  # reset undo/redo
+            self.textwidget.edit_reset()  # can't undo initial insertion
         self._set_saved_state((None, self._get_char_count(), self._get_hash()))
 
         self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
@@ -898,14 +898,12 @@ bers.py>` use this attribute.
     ) -> _FileTabT | None:
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
+        tab = cls(manager, content=(state.content or ""), path=state.path)
         if state.content is None:
-            # nothing has changed since saving, read from the saved file
-            assert state.path is not None
-            tab = cls.from_path(manager, state.path)
-            if tab is None:
+            # no unsaved changes, read from the saved file
+            if not tab.reload():
                 return None
-        else:
-            tab = cls(manager, state.content, state.path)
+            tab.textwidget.edit_reset()
 
         tab._set_saved_state(state.saved_state)  # TODO: does this make any sense?
         tab.textwidget.mark_set("insert", state.cursor_pos)
