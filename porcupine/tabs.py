@@ -389,7 +389,6 @@ class ReloadInfo(utils.EventDataclass):
     was_modified: bool
 
 
-# TODO: focus entry by default, bindings for Return and Escape
 def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
     dialog = tkinter.Toplevel()
     big_frame = ttk.Frame(dialog)
@@ -415,7 +414,8 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
         selected_encoding = entry.get()  # type: ignore[no-untyped-call]
         dialog.destroy()
 
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side="left", expand=True)
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
+    cancel_button.pack(side="left", expand=True)
     ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
     ok_button.pack(side="right", expand=True)
 
@@ -429,6 +429,11 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
             ok_button.config(state="normal")
 
     var.trace_add("write", validate_encoding)
+
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
+    entry.select_range(0, 'end')
+    entry.focus()
 
     dialog.wait_window()
     return selected_encoding

@@ -10,6 +10,9 @@ log = logging.getLogger(__name__)
 # https://fileinfo.com/extension/pkl
 STATE_FILE = pathlib.Path(dirs.user_cache_dir) / "restart_state.pkl"
 
+# If loading a file fails, a dialog is created and it should be themed as user wants
+setup_after = ["ttk_themes"]
+
 
 def save_states(junk: object) -> None:
     file_contents = []
