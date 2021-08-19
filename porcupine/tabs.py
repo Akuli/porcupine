@@ -134,6 +134,20 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
 
+    def add_file_tab(self, path: pathlib.Path, select: bool = True) -> FileTab | None:
+        """Open a file for editing.
+
+        If the file can't be opened, this method displays an error to the user
+        and returns ``None``.
+
+        .. seealso:: :meth:`FileTab.from_path`
+        """
+        tab = FileTab.from_path(self, path)
+        if tab is None:
+            return None
+        self.add_tab(tab, select)
+        return tab
+
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
         """Append a :class:`.Tab` to this tab manager.
 
@@ -430,8 +444,8 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
 
     var.trace_add("write", validate_encoding)
 
-    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
-    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)# type: ignore[no-untyped-call]
     entry.select_range(0, 'end')
     entry.focus()
 
@@ -447,7 +461,7 @@ class FileTab(Tab):
     pressed. Otherwise this becomes a "New File" tab.
 
     If you want to open a new tab for editing an existing file,
-    use :meth:`open_file`.
+    use :meth:`TabManager.add_file_tab`.
 
     .. virtualevent:: PathChanged
 
@@ -574,7 +588,7 @@ bers.py>` use this attribute.
         self._update_titles()
 
     @classmethod
-    def open_file(
+    def from_path(
         cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path
     ) -> _FileTabT | None:
         """Read a file and return a new FileTab object.
@@ -620,7 +634,7 @@ bers.py>` use this attribute.
         This method returns ``True``, and if reading the file fails, the error
         is shown to the user and ``False`` is returned.
 
-        .. seealso:: :meth:`open_file`, :meth:`other_program_changed_file`
+        .. seealso:: :meth:`TabManager.add_file_tab`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
 
@@ -887,13 +901,13 @@ bers.py>` use this attribute.
         if state.content is None:
             # nothing has changed since saving, read from the saved file
             assert state.path is not None
-            self = cls.open_file(manager, state.path)
-            if self is None:
+            tab = cls.from_path(manager, state.path)
+            if tab is None:
                 return None
         else:
-            self = cls(manager, state.content, state.path)
+            tab = cls(manager, state.content, state.path)
 
-        self._set_saved_state(state.saved_state)  # TODO: does this make any sense?
-        self.textwidget.mark_set("insert", state.cursor_pos)
-        self.textwidget.see("insert linestart")
-        return self
+        tab._set_saved_state(state.saved_state)  # TODO: does this make any sense?
+        tab.textwidget.mark_set("insert", state.cursor_pos)
+        tab.textwidget.see("insert linestart")
+        return tab

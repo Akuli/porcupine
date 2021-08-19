@@ -3,7 +3,7 @@ import logging
 import pathlib
 import tkinter
 
-from porcupine import get_main_window, get_tab_manager, tabs
+from porcupine import get_main_window, get_tab_manager
 
 log = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 def handle_drop(paths_from_tcl: str) -> None:
     for path in map(pathlib.Path, get_main_window().tk.splitlist(paths_from_tcl)):
         if path.is_file():
-            tab = tabs.FileTab.open_file(get_tab_manager(), path)
+            tab = get_tab_manager().add_file_tab(path)
             if tab is not None:
                 get_tab_manager().add_tab(tab)
         else:
