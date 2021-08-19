@@ -139,12 +139,13 @@ class TabManager(ttk.Notebook):
 
         If the file can't be opened, this method displays an error to the user
         and returns ``None``.
-
-        .. seealso:: :meth:`FileTab.from_path`
         """
-        tab = FileTab.from_path(self, path)
-        if tab is None:
+        tab = FileTab(self, path=path)
+        if not tab.reload():
             return None
+        tab.textwidget.edit_reset()  # can't undo initial load from file
+
+        tab.textwidget.mark_set("insert", "1.0")
         self.add_tab(tab, select)
         return tab
 
@@ -586,25 +587,6 @@ bers.py>` use this attribute.
         self.textwidget.bind("<<ContentChanged>>", self._update_titles, add=True)
         self.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
-
-    @classmethod
-    def from_path(
-        cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path
-    ) -> _FileTabT | None:
-        """Read a file and return a new FileTab object.
-
-        Use this constructor if you want to open an existing file from a
-        path and let the user edit it.
-
-        If reading the file fails, an error is shown to the user, and this
-        method returns ``None``.
-        """
-        tab = cls(manager, path=path)
-        if not tab.reload():
-            return None
-        tab.textwidget.mark_set("insert", "1.0")
-        tab.textwidget.edit_reset()
-        return tab
 
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
