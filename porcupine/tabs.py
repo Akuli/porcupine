@@ -377,7 +377,7 @@ restarting Porcupine.
         """Create a new tab from the return value of :meth:`get_state`.
 
         Be sure to override this if you override :meth:`get_state`.
-        Can return ``None`` to indicate that the tab can't be loaded,
+        You can return ``None`` to indicate that the tab can't be loaded,
         but in that case, you should also let the user know about it.
         """
         raise NotImplementedError("from_state() wasn't overrided but get_state() was overrided")
