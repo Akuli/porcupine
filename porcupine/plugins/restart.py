@@ -10,6 +10,9 @@ log = logging.getLogger(__name__)
 # https://fileinfo.com/extension/pkl
 STATE_FILE = pathlib.Path(dirs.user_cache_dir) / "restart_state.pkl"
 
+# If loading a file fails, a dialog is created and it should be themed as user wants
+setup_after = ["ttk_themes"]
+
 
 def save_states(junk: object) -> None:
     file_contents = []
@@ -42,10 +45,6 @@ def setup() -> None:
             tab_type, tab_state = state_dict
             state_dict = {"tab_type": tab_type, "tab_state": tab_state, "selected": True}
 
-        try:
-            tab = state_dict["tab_type"].from_state(get_tab_manager(), state_dict["tab_state"])
-        except FileNotFoundError:
-            log.debug(f"file has been deleted, can't reopen tab: {state_dict}", exc_info=True)
-            continue
-
-        get_tab_manager().add_tab(tab, select=state_dict["selected"])
+        tab = state_dict["tab_type"].from_state(get_tab_manager(), state_dict["tab_state"])
+        if tab is not None:
+            get_tab_manager().add_tab(tab, select=state_dict["selected"])

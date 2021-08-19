@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from porcupine import get_paned_window, tabs, utils
+from porcupine import get_paned_window, utils
 from porcupine.plugins import directory_tree as plugin_module
 from porcupine.plugins.directory_tree import (
     DirectoryTree,
@@ -64,16 +64,14 @@ def test_deleting_project(tree, tmp_path, tabmanager, monkeypatch):
     (tmp_path / "b").mkdir(parents=True)
     (tmp_path / "a" / "README").touch()
     (tmp_path / "b" / "README").touch()
-    a_tab = tabs.FileTab.open_file(tabmanager, tmp_path / "a" / "README")
-    b_tab = tabs.FileTab.open_file(tabmanager, tmp_path / "b" / "README")
 
-    tabmanager.add_tab(a_tab)
+    a_tab = tabmanager.open_file(tmp_path / "a" / "README")
     assert get_project_names() == ["a"]
+
     tabmanager.close_tab(a_tab)
     shutil.rmtree(tmp_path / "a")
-    tabmanager.add_tab(b_tab)
+    tabmanager.open_file(tmp_path / "b" / "README")
     assert get_project_names() == ["b"]
-    tabmanager.close_tab(b_tab)
 
 
 def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
@@ -86,18 +84,15 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     (tmp_path / "a" / "README").touch()
     (tmp_path / "b" / "README").touch()
     (tmp_path / "c" / "README").touch()
-    a_tab = tabs.FileTab.open_file(tabmanager, tmp_path / "a" / "README")
-    b_tab = tabs.FileTab.open_file(tabmanager, tmp_path / "b" / "README")
-    c_tab = tabs.FileTab.open_file(tabmanager, tmp_path / "c" / "README")
     monkeypatch.setattr(plugin_module, "MAX_PROJECTS", 2)
 
     assert get_project_names() == []
 
-    tabmanager.add_tab(a_tab)
+    a_tab = tabmanager.open_file(tmp_path / "a" / "README")
     assert get_project_names() == ["a"]
-    tabmanager.add_tab(b_tab)
+    b_tab = tabmanager.open_file(tmp_path / "b" / "README")
     assert get_project_names() == ["b", "a"]
-    tabmanager.add_tab(c_tab)
+    c_tab = tabmanager.open_file(tmp_path / "c" / "README")
     assert get_project_names() == ["c", "b", "a"]
 
     tabmanager.close_tab(b_tab)
@@ -176,12 +171,9 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_poo
     (tmp_path / "b" / "file1").touch()
     (tmp_path / "b" / "file2").touch()
 
-    a_readme = tabs.FileTab.open_file(tabmanager, tmp_path / "a" / "README")
-    b_file1 = tabs.FileTab.open_file(tabmanager, tmp_path / "b" / "file1")
-    b_file2 = tabs.FileTab.open_file(tabmanager, tmp_path / "b" / "file2")
-    tabmanager.add_tab(a_readme)
-    tabmanager.add_tab(b_file1)
-    tabmanager.add_tab(b_file2)
+    a_readme = tabmanager.open_file(tmp_path / "a" / "README")
+    b_file1 = tabmanager.open_file(tmp_path / "b" / "file1")
+    b_file2 = tabmanager.open_file(tmp_path / "b" / "file2")
     tree.update()
 
     tabmanager.select(a_readme)

@@ -1,6 +1,7 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
+import codecs
 import collections
 import dataclasses
 import hashlib
@@ -132,6 +133,21 @@ class TabManager(ttk.Notebook):
         # tkinter has a bug that makes the original tabs() return widget name
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
+
+    def open_file(self, path: pathlib.Path) -> FileTab | None:
+        """Add a :class:`FileTab` for editing a file and select it.
+
+        If the file can't be opened, this method displays an error to the user
+        and returns ``None``.
+        """
+        tab = FileTab(self, path=path)
+        if not tab.reload(undoable=False):
+            tab.destroy()
+            return None
+
+        tab.textwidget.mark_set("insert", "1.0")
+        self.add_tab(tab)
+        return tab
 
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
         """Append a :class:`.Tab` to this tab manager.
@@ -357,10 +373,12 @@ restarting Porcupine.
         return None
 
     @classmethod
-    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
-        """
-        Create a new tab from the return value of :meth:`get_state`.
+    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT | None:
+        """Create a new tab from the return value of :meth:`get_state`.
+
         Be sure to override this if you override :meth:`get_state`.
+        You can return ``None`` to indicate that the tab can't be loaded,
+        but in that case, you should also let the user know about it.
         """
         raise NotImplementedError("from_state() wasn't overrided but get_state() was overrided")
 
@@ -386,6 +404,73 @@ class ReloadInfo(utils.EventDataclass):
     was_modified: bool
 
 
+def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
+    label_width = 400
+
+    dialog = tkinter.Toplevel()
+    if _state.get_main_window().winfo_viewable():
+        dialog.transient(_state.get_main_window())
+    dialog.resizable(False, False)
+
+    big_frame = ttk.Frame(dialog)
+    big_frame.pack(fill="both", expand=True)
+    ttk.Label(
+        big_frame,
+        text=(
+            f'The content of "{path}" is not valid {encoding_that_didnt_work}. Choose an encoding'
+            " to use instead:"
+        ),
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
+
+    var = tkinter.StringVar()
+    entry = ttk.Entry(big_frame, textvariable=var)
+    entry.pack(pady=50)
+    entry.insert(0, encoding_that_didnt_work)  # type: ignore[no-untyped-call]
+
+    ttk.Label(
+        big_frame,
+        text=(
+            "You can create a project-specific .editorconfig file to change the encoding"
+            " permanently."
+        ),
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
+    button_frame = ttk.Frame(big_frame)
+    button_frame.pack(fill="x", pady=10)
+
+    selected_encoding = None
+
+    def select_encoding() -> None:
+        nonlocal selected_encoding
+        selected_encoding = entry.get()  # type: ignore[no-untyped-call]
+        dialog.destroy()
+
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
+    cancel_button.pack(side="left", expand=True)
+    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
+    ok_button.pack(side="right", expand=True)
+
+    def validate_encoding(*junk: object) -> None:
+        encoding = entry.get()  # type: ignore[no-untyped-call]
+        try:
+            codecs.lookup(encoding)
+        except LookupError:
+            ok_button.config(state="disabled")
+        else:
+            ok_button.config(state="normal")
+
+    var.trace_add("write", validate_encoding)
+
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.select_range(0, "end")
+    entry.focus()
+
+    dialog.wait_window()
+    return selected_encoding
+
+
 class FileTab(Tab):
     """A subclass of :class:`.Tab` that represents an opened file.
 
@@ -394,7 +479,7 @@ class FileTab(Tab):
     pressed. Otherwise this becomes a "New File" tab.
 
     If you want to open a new tab for editing an existing file,
-    use :meth:`open_file`.
+    use :meth:`TabManager.open_file`.
 
     .. virtualevent:: PathChanged
 
@@ -499,14 +584,16 @@ bers.py>` use this attribute.
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
-        self.textwidget = textutils.MainText(
+        #
+        # I don't know why this needs a type annotation for self.textwidget
+        self.textwidget: textutils.MainText = textutils.MainText(
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
         self.textwidget.pack(side="left", fill="both", expand=True)
 
         if content:
             self.textwidget.insert("1.0", content)
-            self.textwidget.edit_reset()  # reset undo/redo
+            self.textwidget.edit_reset()  # can't undo initial insertion
         self._set_saved_state((None, self._get_char_count(), self._get_hash()))
 
         self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
@@ -519,22 +606,6 @@ bers.py>` use this attribute.
         self.textwidget.bind("<<ContentChanged>>", self._update_titles, add=True)
         self.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
-
-    @classmethod
-    def open_file(cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path) -> _FileTabT:
-        """Read a file and return a new FileTab object.
-
-        Use this constructor if you want to open an existing file from a
-        path and let the user edit it.
-
-        :exc:`UnicodeError` or :exc:`OSError` is raised if reading the
-        file fails.
-        """
-        tab = cls(manager, path=path)
-        tab.reload()
-        tab.textwidget.mark_set("insert", "1.0")
-        tab.textwidget.edit_reset()
-        return tab
 
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
@@ -558,15 +629,38 @@ bers.py>` use this attribute.
         # Don't call _get_hash() if not necessary
         return self._get_char_count() != char_count or self._get_hash() != save_hash
 
-    def reload(self) -> None:
+    def reload(self, *, undoable: bool = True) -> bool:
         """Read the contents of the file from disk.
 
-        .. seealso:: :meth:`open_file`, :meth:`other_program_changed_file`
+        This method returns ``True`` on success, and if reading the file fails, the error
+        is shown to the user and ``False`` is returned.
+
+        If ``undoable=False`` is given, the reload cannot be undone with Ctrl+Z.
+
+        .. seealso:: :meth:`TabManager.open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
-        with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
-            stat_result = os.fstat(f.fileno())
-            content = f.read()
+
+        while True:
+            try:
+                with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
+                    stat_result = os.fstat(f.fileno())
+                    content = f.read()
+                break
+
+            except OSError as e:
+                # TODO: try again button?
+                log.exception(f"opening '{self.path}' failed")
+                utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
+                return False
+
+            except UnicodeDecodeError:
+                user_selected_encoding = _ask_encoding(
+                    self.path, self.settings.get("encoding", str)
+                )
+                if user_selected_encoding is None:
+                    return False
+                self.settings.set("encoding", user_selected_encoding)
 
         if isinstance(f.newlines, tuple):
             # TODO: show a message box to user?
@@ -603,11 +697,14 @@ bers.py>` use this attribute.
             self.textwidget.replace(
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
             )
+        if not undoable:
+            self.textwidget.edit_reset()
 
         self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
 
         # TODO: document this
         self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
+        return True
 
     def other_program_changed_file(self) -> bool:
         """Check whether some other program has changed the file.
@@ -799,17 +896,19 @@ bers.py>` use this attribute.
         return _FileTabState(self.path, content, self._saved_state, self.textwidget.index("insert"))
 
     @classmethod
-    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
+    def from_state(
+        cls: Type[_FileTabT], manager: TabManager, state: _FileTabState
+    ) -> _FileTabT | None:
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
+        tab = cls(manager, content=(state.content or ""), path=state.path)
         if state.content is None:
-            # nothing has changed since saving, read from the saved file
-            assert state.path is not None
-            self = cls.open_file(manager, state.path)
-        else:
-            self = cls(manager, state.content, state.path)
+            # no unsaved changes, read from the saved file
+            if not tab.reload(undoable=False):
+                tab.destroy()
+                return None
 
-        self._set_saved_state(state.saved_state)  # TODO: does this make any sense?
-        self.textwidget.mark_set("insert", state.cursor_pos)
-        self.textwidget.see("insert linestart")
-        return self
+        tab._set_saved_state(state.saved_state)  # TODO: does this make any sense?
+        tab.textwidget.mark_set("insert", state.cursor_pos)
+        tab.textwidget.see("insert linestart")
+        return tab

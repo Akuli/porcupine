@@ -8,9 +8,9 @@ def reload_if_necessary(tab: tabs.FileTab, junk: object) -> None:
     if tab.other_program_changed_file():
         cursor_pos = tab.textwidget.index("insert")
         scroll_fraction = tab.textwidget.yview()[0]  # type: ignore[no-untyped-call]
-        tab.reload()  # TODO: error handling?
-        tab.textwidget.mark_set("insert", cursor_pos)
-        tab.textwidget.yview_moveto(scroll_fraction)  # type: ignore[no-untyped-call]
+        if tab.reload():
+            tab.textwidget.mark_set("insert", cursor_pos)
+            tab.textwidget.yview_moveto(scroll_fraction)  # type: ignore[no-untyped-call]
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:

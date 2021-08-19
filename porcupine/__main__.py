@@ -150,10 +150,9 @@ def main() -> None:
             #   ^D
             #   bla bla
             #   ^D
-            tab = tabs.FileTab(tabmanager, content=sys.stdin.read())
+            tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
         else:
-            tab = tabs.FileTab.open_file(tabmanager, pathlib.Path(path_string))
-        tabmanager.add_tab(tab)
+            tabmanager.open_file(pathlib.Path(path_string))
 
     get_main_window().deiconify()
     try:
