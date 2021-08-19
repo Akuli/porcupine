@@ -146,6 +146,7 @@ class TabManager(ttk.Notebook):
         existing_tab = self.add_tab(tab)
         if existing_tab != tab:
             # tab is destroyed
+            assert isinstance(existing_tab, FileTab)
             return existing_tab
 
         if not tab.reload(undoable=False):
@@ -656,21 +657,24 @@ bers.py>` use this attribute.
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()
-                break
+                    break
 
             except OSError as e:
                 # TODO: try again button?
                 log.exception(f"opening '{self.path}' failed")
                 utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
-                return False
 
             except UnicodeDecodeError:
                 user_selected_encoding = _ask_encoding(
                     self.path, self.settings.get("encoding", str)
                 )
-                if user_selected_encoding is None:
-                    return False
-                self.settings.set("encoding", user_selected_encoding)
+                if user_selected_encoding is not None:
+                    self.settings.set("encoding", user_selected_encoding)
+                    continue  # try again
+
+            # Error message shown, can continue editing
+            self.textwidget.config(state="normal")
+            return False
 
         if isinstance(f.newlines, tuple):
             # TODO: show a message box to user?
