@@ -742,7 +742,7 @@ bers.py>` use this attribute.
             self._set_saved_state((actual_stat, save_char_count, save_hash))
             return False
 
-        except (OSError, UnicodeError):
+        except OSError:
             log.exception(
                 f"error when figuring out if '{self.path}' needs reloading, assuming it does"
             )
