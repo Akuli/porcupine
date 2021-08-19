@@ -166,4 +166,4 @@ def test_encoding(tabmanager, tmp_path, mocker):
     (tmp_path / "foo.latin1").write_text("mörkö", encoding="latin1")
     tab = tabmanager.open_file(tmp_path / "foo.latin1")
     assert tab is not None
-    assert tab.textwidget.get('1.0', 'end').strip() == "mörkö"
+    assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
