@@ -625,6 +625,7 @@ bers.py>` use this attribute.
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()
+                break
 
             except OSError as e:
                 # TODO: dialog should probably give an option to close the tab
@@ -639,9 +640,6 @@ bers.py>` use this attribute.
                 if user_selected_encoding is None:
                     return False
                 self.settings.set("encoding", user_selected_encoding)
-                continue
-
-            break
 
         if isinstance(f.newlines, tuple):
             # TODO: show a message box to user?
