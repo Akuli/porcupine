@@ -415,7 +415,10 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     big_frame.pack(fill="both", expand=True)
     ttk.Label(
         big_frame,
-        text=f'The content of "{path}" is not valid utf-8. Choose an encoding to use instead:',
+        text=(
+            f'The content of "{path}" is not valid {encoding_that_didnt_work}. Choose an encoding'
+            " to use instead:"
+        ),
         wraplength=label_width,
     ).pack(fill="x", padx=10, pady=10)
 
