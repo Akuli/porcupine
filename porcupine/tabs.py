@@ -142,6 +142,7 @@ class TabManager(ttk.Notebook):
         """
         tab = FileTab(self, path=path)
         if not tab.reload():
+            tab.destroy()
             return None
         tab.textwidget.edit_reset()  # can't undo initial load from file
 
@@ -884,6 +885,7 @@ bers.py>` use this attribute.
         if state.content is None:
             # no unsaved changes, read from the saved file
             if not tab.reload():
+                tab.destroy()
                 return None
             tab.textwidget.edit_reset()
 
