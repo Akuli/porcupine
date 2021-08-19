@@ -5,7 +5,7 @@ def trigger_reload(tab):
 
 def test_reload_basic(tabmanager, tmp_path):
     (tmp_path / "foo.py").write_text("hello")
-    tab = tabmanager.add_file_tab(tmp_path / "foo.py")
+    tab = tabmanager.open_file(tmp_path / "foo.py")
     assert tab.textwidget.get("1.0", "end - 1 char") == "hello"
 
     (tmp_path / "foo.py").write_text("lol")
@@ -19,7 +19,7 @@ def test_reload_basic(tabmanager, tmp_path):
 
 def test_many_lines(tabmanager, tmp_path):
     (tmp_path / "foo.py").write_text("lol\nhello\nlol")
-    tab = tabmanager.add_file_tab(tmp_path / "foo.py")
+    tab = tabmanager.open_file(tmp_path / "foo.py")
 
     (tmp_path / "foo.py").write_text("hello")
     trigger_reload(tab)
@@ -33,8 +33,8 @@ def test_many_lines(tabmanager, tmp_path):
 def test_tab_switch_triggers_reload(tabmanager, tmp_path):
     (tmp_path / "a.py").write_text("hello")
     (tmp_path / "b.py").write_text("world")
-    tab_a = tabmanager.add_file_tab(tmp_path / "a.py")
-    tabmanager.add_file_tab(tmp_path / "b.py")
+    tab_a = tabmanager.open_file(tmp_path / "a.py")
+    tabmanager.open_file(tmp_path / "b.py")
 
     (tmp_path / "a.py").write_text("new text")
     tabmanager.select(tab_a)

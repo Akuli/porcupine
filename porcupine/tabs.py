@@ -134,7 +134,7 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
 
-    def add_file_tab(self, path: pathlib.Path, select: bool = True) -> FileTab | None:
+    def open_file(self, path: pathlib.Path, select: bool = True) -> FileTab | None:
         """Open a file for editing.
 
         If the file can't be opened, this method displays an error to the user
@@ -462,7 +462,7 @@ class FileTab(Tab):
     pressed. Otherwise this becomes a "New File" tab.
 
     If you want to open a new tab for editing an existing file,
-    use :meth:`TabManager.add_file_tab`.
+    use :meth:`TabManager.open_file`.
 
     .. virtualevent:: PathChanged
 
@@ -616,7 +616,7 @@ bers.py>` use this attribute.
         This method returns ``True``, and if reading the file fails, the error
         is shown to the user and ``False`` is returned.
 
-        .. seealso:: :meth:`TabManager.add_file_tab`, :meth:`other_program_changed_file`
+        .. seealso:: :meth:`TabManager.open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
 

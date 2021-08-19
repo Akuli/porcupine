@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 def handle_drop(paths_from_tcl: str) -> None:
     for path in map(pathlib.Path, get_main_window().tk.splitlist(paths_from_tcl)):
         if path.is_file():
-            tab = get_tab_manager().add_file_tab(path)
+            tab = get_tab_manager().open_file(path)
             if tab is not None:
                 get_tab_manager().add_tab(tab)
         else:

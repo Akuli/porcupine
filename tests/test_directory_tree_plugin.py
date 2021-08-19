@@ -65,12 +65,12 @@ def test_deleting_project(tree, tmp_path, tabmanager, monkeypatch):
     (tmp_path / "a" / "README").touch()
     (tmp_path / "b" / "README").touch()
 
-    a_tab = tabmanager.add_file_tab(tmp_path / "a" / "README")
+    a_tab = tabmanager.open_file(tmp_path / "a" / "README")
     assert get_project_names() == ["a"]
 
     tabmanager.close_tab(a_tab)
     shutil.rmtree(tmp_path / "a")
-    tabmanager.add_file_tab(tmp_path / "b" / "README")
+    tabmanager.open_file(tmp_path / "b" / "README")
     assert get_project_names() == ["b"]
 
 
@@ -88,11 +88,11 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
 
     assert get_project_names() == []
 
-    a_tab = tabmanager.add_file_tab(tmp_path / "a" / "README")
+    a_tab = tabmanager.open_file(tmp_path / "a" / "README")
     assert get_project_names() == ["a"]
-    b_tab = tabmanager.add_file_tab(tmp_path / "b" / "README")
+    b_tab = tabmanager.open_file(tmp_path / "b" / "README")
     assert get_project_names() == ["b", "a"]
-    c_tab = tabmanager.add_file_tab(tmp_path / "c" / "README")
+    c_tab = tabmanager.open_file(tmp_path / "c" / "README")
     assert get_project_names() == ["c", "b", "a"]
 
     tabmanager.close_tab(b_tab)
@@ -171,9 +171,9 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_poo
     (tmp_path / "b" / "file1").touch()
     (tmp_path / "b" / "file2").touch()
 
-    a_readme = tabmanager.add_file_tab(tmp_path / "a" / "README")
-    b_file1 = tabmanager.add_file_tab(tmp_path / "b" / "file1")
-    b_file2 = tabmanager.add_file_tab(tmp_path / "b" / "file2")
+    a_readme = tabmanager.open_file(tmp_path / "a" / "README")
+    b_file1 = tabmanager.open_file(tmp_path / "b" / "file1")
+    b_file2 = tabmanager.open_file(tmp_path / "b" / "file2")
     tree.update()
 
     tabmanager.select(a_readme)

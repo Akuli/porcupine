@@ -132,7 +132,7 @@ def add_config_file_button(path: pathlib.Path) -> None:
     it's clicked.
     """
     get_menu("Settings/Config Files").add_command(
-        label=path.name, command=(lambda: get_tab_manager().add_file_tab(path))
+        label=path.name, command=(lambda: get_tab_manager().open_file(path))
     )
 
 
@@ -330,7 +330,7 @@ def _fill_menus_with_default_stuff() -> None:
         # paths is "" or tuple
         paths = filedialog.askopenfilenames(**filedialog_kwargs)  # type: ignore[no-untyped-call]
         for path in map(pathlib.Path, paths):
-            get_tab_manager().add_file_tab(path)
+            get_tab_manager().open_file(path)
 
     def save_file(save_as: bool) -> None:
         tab = get_tab_manager().select()

@@ -47,7 +47,7 @@ def show_location_range(loc_range: LocationRange) -> None:
         get_tab_manager().select(tab)
     else:
         log.info(f"{path} not opened yet, opening now")
-        tab_if_any = get_tab_manager().add_file_tab(path)
+        tab_if_any = get_tab_manager().open_file(path)
         if tab_if_any is None:
             return
         tab = tab_if_any  # mypy is ass
