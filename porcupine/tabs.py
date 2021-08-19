@@ -141,10 +141,9 @@ class TabManager(ttk.Notebook):
         and returns ``None``.
         """
         tab = FileTab(self, path=path)
-        if not tab.reload():
+        if not tab.reload(undoable=False):
             tab.destroy()
             return None
-        tab.textwidget.edit_reset()  # can't undo initial load from file
 
         tab.textwidget.mark_set("insert", "1.0")
         self.add_tab(tab)
@@ -613,11 +612,13 @@ bers.py>` use this attribute.
         # Don't call _get_hash() if not necessary
         return self._get_char_count() != char_count or self._get_hash() != save_hash
 
-    def reload(self) -> bool:
+    def reload(self, *, undoable=True) -> bool:
         """Read the contents of the file from disk.
 
         This method returns ``True``, and if reading the file fails, the error
         is shown to the user and ``False`` is returned.
+
+        If ``undoable=False`` is given, the reload cannot be undone with Ctrl+Z.
 
         .. seealso:: :meth:`TabManager.open_file`, :meth:`other_program_changed_file`
         """
@@ -679,6 +680,8 @@ bers.py>` use this attribute.
             self.textwidget.replace(
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
             )
+        if not undoable:
+            self.textwidget.edit_reset()
 
         self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
 
@@ -884,10 +887,9 @@ bers.py>` use this attribute.
         tab = cls(manager, content=(state.content or ""), path=state.path)
         if state.content is None:
             # no unsaved changes, read from the saved file
-            if not tab.reload():
+            if not tab.reload(undoable=False):
                 tab.destroy()
                 return None
-            tab.textwidget.edit_reset()
 
         tab._set_saved_state(state.saved_state)  # TODO: does this make any sense?
         tab.textwidget.mark_set("insert", state.cursor_pos)
