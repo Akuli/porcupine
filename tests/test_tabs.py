@@ -63,6 +63,29 @@ def test_same_filename_different_subdirs(tabmanager, tmp_path):
     tabmanager.close_tab(tab3)
 
 
+def test_groupby_bug(tabmanager, tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    (tmp_path / "a" / "foo.py").touch()
+    (tmp_path / "b" / "foo.py").touch()
+    (tmp_path / "asdf.py").touch()
+
+    tab1 = tabs.FileTab.open_file(tabmanager, tmp_path / "a" / "foo.py")
+    tab2 = tabs.FileTab.open_file(tabmanager, tmp_path / "asdf.py")
+    tab3 = tabs.FileTab.open_file(tabmanager, tmp_path / "b" / "foo.py")
+    tabmanager.add_tab(tab1)
+    tabmanager.add_tab(tab2)
+    tabmanager.add_tab(tab3)
+
+    assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "a/foo.py"
+    assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "asdf.py"
+    assert tabmanager.tab(tab3, "text").replace(os.sep, "/") == "b/foo.py"
+
+    tabmanager.close_tab(tab1)
+    tabmanager.close_tab(tab2)
+    tabmanager.close_tab(tab3)
+
+
 def test_same_filename_inside_and_outside_subdir(tabmanager, tmp_path):
     foo, dir_slash_foo = create_files(["foo.py", "dir/foo.py"], tmp_path)
 

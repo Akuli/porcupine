@@ -25,6 +25,12 @@ _T = TypeVar("_T")
 
 
 def _find_duplicates(items: list[_T], key: Callable[[_T], str]) -> Iterable[list[_T]]:
+    # itertools.groupby finds items only when next to each other
+    #    >>> list(next(itertools.groupby('aba', (lambda x: x)))[1])
+    #    ['a']
+    #    >>> list(next(itertools.groupby('aab', (lambda x: x)))[1])
+    #    ['a', 'a']
+    items = sorted(items, key=key)
     for key_return_value, similar_items_iter in itertools.groupby(items, key=key):
         similar_items = list(similar_items_iter)
         if len(similar_items) >= 2:
