@@ -150,7 +150,7 @@ class TabManager(ttk.Notebook):
             return existing_tab
 
         if not tab.reload(undoable=False):
-            self.close_tab(tab)  # destroys the tab
+            self.close_tab(tab)
             return None
 
         tab.textwidget.mark_set("insert", "1.0")
