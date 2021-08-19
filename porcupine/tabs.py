@@ -134,8 +134,8 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
 
-    def open_file(self, path: pathlib.Path, select: bool = True) -> FileTab | None:
-        """Add a :class:`FileTab` for editing a file.
+    def open_file(self, path: pathlib.Path) -> FileTab | None:
+        """Add a :class:`FileTab` for editing a file and select it.
 
         If the file can't be opened, this method displays an error to the user
         and returns ``None``.
@@ -146,7 +146,7 @@ class TabManager(ttk.Notebook):
         tab.textwidget.edit_reset()  # can't undo initial load from file
 
         tab.textwidget.mark_set("insert", "1.0")
-        self.add_tab(tab, select)
+        self.add_tab(tab)
         return tab
 
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
