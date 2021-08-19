@@ -610,10 +610,19 @@ bers.py>` use this attribute.
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
 
-    def _get_hash(self, string: str | None = None) -> str:
-        if string is None:
-            string = self.textwidget.get("1.0", "end - 1 char")
-        return hashlib.md5(string.encode("utf-8")).hexdigest()
+    def _get_hash(self, content: bytes | None = None) -> str:
+        if content is None:
+            # This is not the right place to handle encoding errors. If it
+            # contains characters that the encoding doesn't support, it should
+            # error when user tries to save the file, not when this method gets
+            # called for some unintuitive reason.
+            newline = self.settings.get("line_ending", settings.LineEnding).value.encode("ascii")
+            content = (
+                self.textwidget.get("1.0", "end - 1 char")
+                .encode(self.settings.get("encoding", str), errors="replace")
+                .replace(b"\n", newline)
+            )
+        return hashlib.md5(content).hexdigest()
 
     def _set_saved_state(self, state: tuple[os.stat_result | None, int, str]) -> None:
         self._saved_state = state
@@ -724,7 +733,7 @@ bers.py>` use this attribute.
                 return True
 
             log.info(f"reading {self.path} to figure out if reload is needed")
-            with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
+            with self.path.open("rb") as f:
                 actual_hash = self._get_hash(f.read())
             if actual_hash != save_hash:
                 return True
