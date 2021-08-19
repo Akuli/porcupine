@@ -632,7 +632,7 @@ bers.py>` use this attribute.
     def reload(self, *, undoable: bool = True) -> bool:
         """Read the contents of the file from disk.
 
-        This method returns ``True``, and if reading the file fails, the error
+        This method returns ``True`` on success, and if reading the file fails, the error
         is shown to the user and ``False`` is returned.
 
         If ``undoable=False`` is given, the reload cannot be undone with Ctrl+Z.
