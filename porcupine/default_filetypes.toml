@@ -5,7 +5,7 @@
 #
 #    https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language
 #
-# Available options (plugins may add more):
+# Most commonly used options (plugins may add more):
 #
 #    filename_patterns
 #        List of strings with * used as wildcard, such as "*.py" to match files
@@ -29,9 +29,6 @@
 #
 #        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
 #        matches the shebang '#!/bin/foo --bar --baz'.
-#
-#    encoding (default: "utf-8")
-#        Name of encoding to be used with these files.
 #
 #    pygments_lexer (default: "pygments.lexers.TextLexer")
 #        Name of a Pygments lexer class that will be used for syntax
@@ -72,10 +69,6 @@
 #        making comments like the comment that you are currently reading, this
 #        is set to '#' in the [TOML] section. This is also used to strip
 #        comments from lines of code before using autoindent_regexes.
-#
-#    line_ending
-#        One of "CR", "LF" or "CRLF" (aka \r, \n and \r\n). To change the
-#        default line ending, go to Porcupine Settings in the Edit menu.
 #
 #    trim_trailing_whitespace
 #        Set this to false to prevent removing whitespace from ends of the lines
