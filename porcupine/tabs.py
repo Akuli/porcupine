@@ -657,7 +657,7 @@ bers.py>` use this attribute.
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()
-                    break
+                break
 
             except OSError as e:
                 # TODO: try again button?
