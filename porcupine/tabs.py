@@ -405,20 +405,33 @@ class ReloadInfo(utils.EventDataclass):
 
 
 def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
+    label_width = 400
     dialog = tkinter.Toplevel()
+    if _state.get_main_window().winfo_viewable():
+        dialog.transient(_state.get_main_window())
+    dialog.resizable(False, False)
+
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill="both", expand=True)
     ttk.Label(
         big_frame,
         text=f'The content of "{path}" is not valid utf-8. Choose an encoding to use instead:',
-        wraplength=400,
-    ).pack(padx=10, pady=10)
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
 
     var = tkinter.StringVar()
     entry = ttk.Entry(big_frame, textvariable=var)
     entry.pack(pady=50)
     entry.insert(0, encoding_that_didnt_work)  # type: ignore[no-untyped-call]
 
+    ttk.Label(
+        big_frame,
+        text=(
+            "You can create a project-specific .editorconfig file to change the encoding"
+            " permanently."
+        ),
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
     button_frame = ttk.Frame(big_frame)
     button_frame.pack(fill="x", pady=10)
 
