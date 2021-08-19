@@ -874,7 +874,9 @@ bers.py>` use this attribute.
         return _FileTabState(self.path, content, self._saved_state, self.textwidget.index("insert"))
 
     @classmethod
-    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT | None:
+    def from_state(
+        cls: Type[_FileTabT], manager: TabManager, state: _FileTabState
+    ) -> _FileTabT | None:
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
         if state.content is None:

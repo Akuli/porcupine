@@ -138,8 +138,7 @@ def add_config_file_button(path: pathlib.Path) -> None:
     it's clicked.
     """
     get_menu("Settings/Config Files").add_command(
-        label=path.name,
-        command=partial(_open_config_file, path)
+        label=path.name, command=partial(_open_config_file, path)
     )
 
 
