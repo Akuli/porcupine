@@ -649,7 +649,7 @@ bers.py>` use this attribute.
                 break
 
             except OSError as e:
-                # TODO: dialog should probably give an option to close the tab
+                # TODO: try again button?
                 log.exception(f"opening '{self.path}' failed")
                 utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
                 return False
