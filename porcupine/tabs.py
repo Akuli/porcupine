@@ -814,19 +814,46 @@ bers.py>` use this attribute.
     def _do_the_save(self, path: pathlib.Path) -> bool:
         self.event_generate("<<BeforeSave>>")
 
-        encoding = self.settings.get("encoding", str)
-        line_ending = self.settings.get("line_ending", settings.LineEnding)
+        while True:
+            encoding = self.settings.get("encoding", str)
+            line_ending = self.settings.get("line_ending", settings.LineEnding)
 
-        try:
-            with utils.backup_open(path, "w", encoding=encoding, newline=line_ending.value) as f:
-                f.write(self.textwidget.get("1.0", "end - 1 char"))
-                f.flush()  # needed to get right file size in stat
-                self._set_saved_state(
-                    (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+            try:
+                with utils.backup_open(
+                    path, "w", encoding=encoding, newline=line_ending.value
+                ) as f:
+                    f.write(self.textwidget.get("1.0", "end - 1 char"))
+                    f.flush()  # needed to get right file size in stat
+                    self._set_saved_state(
+                        (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+                    )
+                break
+
+            except UnicodeEncodeError as e:
+                bad_character = e.object[e.start : e.start + 1]
+                log.info(
+                    f"save to '{path}' failed, non-{encoding} character '{bad_character}'",
+                    exc_info=True,
                 )
-        except (OSError, UnicodeError) as e:
-            log.exception(f"saving to '{path}' failed")
-            utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
+
+                user_wants_utf8 = messagebox.askyesno(
+                    "Saving failed",
+                    f"'{bad_character}' is not a valid character in the {encoding} encoding. Do"
+                    f" you want to save the file as UTF-8 instead of {encoding}?",
+                )
+                if user_wants_utf8:
+                    self.settings.set("encoding", "utf-8")
+                    continue
+
+            except OSError as e:
+                log.exception(f"saving to '{path}' failed")
+                messagebox.showerror(
+                    "Saving failed",
+                    f"{type(e).__name__}: {e}\n\n"
+                    + "Make sure that the file is writable and try again.",
+                )
+
+            # If we get here, error message was shown
             return False
 
         self._save_hash = self._get_hash()
