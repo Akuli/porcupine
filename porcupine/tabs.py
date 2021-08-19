@@ -140,13 +140,19 @@ class TabManager(ttk.Notebook):
         If the file can't be opened, this method displays an error to the user
         and returns ``None``.
         """
+        # Add tab before loading content, so that editorconfig plugin gets a
+        # chance to set the encoding into tab.settings
         tab = FileTab(self, path=path)
+        existing_tab = self.add_tab(tab)
+        if existing_tab != tab:
+            # tab is destroyed
+            return existing_tab
+
         if not tab.reload(undoable=False):
-            tab.destroy()
+            self.close_tab(tab)  # destroys the tab
             return None
 
         tab.textwidget.mark_set("insert", "1.0")
-        self.add_tab(tab)
         return tab
 
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
@@ -401,7 +407,7 @@ def _import_lexer_class(name: str) -> LexerMeta:
 
 @dataclasses.dataclass
 class ReloadInfo(utils.EventDataclass):
-    was_modified: bool
+    was_modified: bool  # FIXME: rename to had_unsaved_changes
 
 
 def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
@@ -641,6 +647,10 @@ bers.py>` use this attribute.
         """
         assert self.path is not None
 
+        # Disable text widget so user can't type into it during load
+        assert self.textwidget["state"] == "normal"
+        self.textwidget.config(state="disabled")
+
         while True:
             try:
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
@@ -693,6 +703,7 @@ bers.py>` use this attribute.
 
         modified_before = self.is_modified()
 
+        self.textwidget.config(state="normal")
         with textutils.change_batch(self.textwidget):
             self.textwidget.replace(
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
