@@ -163,19 +163,28 @@ def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
 
 
 def test_save_encoding_error(tabmanager, tmp_path, mocker):
-    mocker.patch("porcupine.tabs._ask_encoding", return_value="latin-1")
-    mock = mocker.patch("tkinter.messagebox.showerror")
+    wanna_utf8 = mocker.patch("tkinter.messagebox.askyesno")
     (tmp_path / "foo.py").write_text("öää lol", encoding="latin-1")
     (tmp_path / ".editorconfig").write_text("[*.py]\ncharset = latin1\n")
 
     tab = tabmanager.open_file(tmp_path / "foo.py")
+    assert not tab.has_unsaved_changes()
     tab.textwidget.insert("1.2", "Ω")
-    assert not tab.save()
+    assert tab.has_unsaved_changes()
 
-    mock.assert_called_once()
-    assert "Saving failed" in str(mock.call_args)
-    assert "Ω" in str(mock.call_args)
-    assert "not a valid character" in str(mock.call_args)
+    wanna_utf8.return_value = False
+    assert not tab.save()
+    assert tab.has_unsaved_changes()
+    assert tab.settings.get("encoding", str) == "latin1"
+
+    wanna_utf8.return_value = True
+    assert tab.save()
+    assert not tab.has_unsaved_changes()
+    assert tab.settings.get("encoding", str) == "utf-8"
+
+    assert "Saving failed" in str(wanna_utf8.call_args)
+    assert "Ω" in str(wanna_utf8.call_args)
+    assert "not a valid character" in str(wanna_utf8.call_args)
 
 
 def test_read_only_file(tabmanager, tmp_path, mocker, caplog):
