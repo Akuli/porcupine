@@ -51,7 +51,6 @@ def show_location_range(loc_range: LocationRange) -> None:
         if tab_if_any is None:
             return
         tab = tab_if_any  # mypy is ass
-        get_tab_manager().add_tab(tab)
 
     tab.textwidget.tag_remove("sel", "1.0", "end")
     tab.textwidget.tag_add("sel", loc_range.start, loc_range.end)
