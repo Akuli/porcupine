@@ -620,7 +620,7 @@ bers.py>` use this attribute.
         self._update_titles()
 
     def has_unsaved_changes(self) -> bool:
-        """Return True if the text has changed since previous save."""
+        """Return True if the text in the editor has changed since the previous save."""
         stat_result, char_count, save_hash = self._saved_state
         # Don't call _get_hash() if not necessary
         return self._get_char_count() != char_count or self._get_hash() != save_hash
