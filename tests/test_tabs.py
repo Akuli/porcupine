@@ -33,18 +33,14 @@ def create_files(relative_paths, relative_to):
 def test_same_filename_different_subdirs(tabmanager, tmp_path):
     create_files([f"dir{n}/foo.py" for n in (1, 2, 3, 4)], tmp_path)
 
-    tab1 = tabs.FileTab.open_file(tabmanager, tmp_path / "dir1" / "foo.py")
-    tab2 = tabs.FileTab.open_file(tabmanager, tmp_path / "dir2" / "foo.py")
-    tab3 = tabs.FileTab.open_file(tabmanager, tmp_path / "dir3" / "foo.py")
-
-    tabmanager.add_tab(tab1)
+    tab1 = tabmanager.add_file_tab(tmp_path / "dir1" / "foo.py")
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "foo.py"
 
-    tabmanager.add_tab(tab2)
+    tab2 = tabmanager.add_file_tab(tmp_path / "dir2" / "foo.py")
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "dir1/foo.py"
     assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "dir2/foo.py"
 
-    tabmanager.add_tab(tab3)
+    tab3 = tabmanager.add_file_tab(tmp_path / "dir3" / "foo.py")
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "dir1/foo.py"
     assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "dir2/foo.py"
     assert tabmanager.tab(tab3, "text").replace(os.sep, "/") == "dir3/foo.py"
@@ -60,7 +56,6 @@ def test_same_filename_different_subdirs(tabmanager, tmp_path):
     tabmanager.close_tab(tab1)
     tabmanager.close_tab(tab2)
     assert tabmanager.tab(tab3, "text").replace(os.sep, "/") == "foo.py"
-    tabmanager.close_tab(tab3)
 
 
 def test_groupby_bug(tabmanager, tmp_path):
@@ -70,33 +65,22 @@ def test_groupby_bug(tabmanager, tmp_path):
     (tmp_path / "b" / "foo.py").touch()
     (tmp_path / "asdf.py").touch()
 
-    tab1 = tabs.FileTab.open_file(tabmanager, tmp_path / "a" / "foo.py")
-    tab2 = tabs.FileTab.open_file(tabmanager, tmp_path / "asdf.py")
-    tab3 = tabs.FileTab.open_file(tabmanager, tmp_path / "b" / "foo.py")
-    tabmanager.add_tab(tab1)
-    tabmanager.add_tab(tab2)
-    tabmanager.add_tab(tab3)
+    tab1 = tabmanager.add_file_tab(tmp_path / "a" / "foo.py")
+    tab2 = tabmanager.add_file_tab(tmp_path / "asdf.py")
+    tab3 = tabmanager.add_file_tab(tmp_path / "b" / "foo.py")
 
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "a/foo.py"
     assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "asdf.py"
     assert tabmanager.tab(tab3, "text").replace(os.sep, "/") == "b/foo.py"
 
-    tabmanager.close_tab(tab1)
-    tabmanager.close_tab(tab2)
-    tabmanager.close_tab(tab3)
-
 
 def test_same_filename_inside_and_outside_subdir(tabmanager, tmp_path):
     foo, dir_slash_foo = create_files(["foo.py", "dir/foo.py"], tmp_path)
 
-    tab1 = tabs.FileTab.open_file(tabmanager, foo)
-    tab2 = tabs.FileTab.open_file(tabmanager, dir_slash_foo)
-    tabmanager.add_tab(tab1)
-    tabmanager.add_tab(tab2)
+    tab1 = tabmanager.add_file_tab(foo)
+    tab2 = tabmanager.add_file_tab(dir_slash_foo)
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "foo.py"
     assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "dir/foo.py"
-    tabmanager.close_tab(tab1)
-    tabmanager.close_tab(tab2)
 
 
 def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
@@ -104,14 +88,10 @@ def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
         ["lol/dir1/foo/bar/baz.py", "lol/dir2/foo/bar/baz.py"], tmp_path
     )
 
-    tab1 = tabs.FileTab.open_file(tabmanager, dir1_baz)
-    tab2 = tabs.FileTab.open_file(tabmanager, dir2_baz)
-    tabmanager.add_tab(tab1)
-    tabmanager.add_tab(tab2)
+    tab1 = tabmanager.add_file_tab(dir1_baz)
+    tab2 = tabmanager.add_file_tab(dir2_baz)
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "dir1/.../baz.py"
     assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "dir2/.../baz.py"
-    tabmanager.close_tab(tab1)
-    tabmanager.close_tab(tab2)
 
 
 def test_new_file_doesnt_show_up_as_modified(filetab):
@@ -157,19 +137,15 @@ def test_save_as_title_bug(filetab, tmp_path, tabmanager):
 
 def test_initial_cursor_pos(tabmanager, tmp_path):
     (tmp_path / "foo.py").write_text("hello")
-    tab = tabs.FileTab.open_file(tabmanager, tmp_path / "foo.py")
-    try:
-        assert tab.textwidget.index("insert") == "1.0"
-    finally:
-        tab.destroy()
+    tab = tabmanager.add_file_tab(tmp_path / "foo.py")
+    assert tab.textwidget.index("insert") == "1.0"
 
 
 def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
     mock = mocker.patch("porcupine.tabs._ask_encoding")
     (tmp_path / "foo.py").write_text("asdf")
-    tab = tabs.FileTab.open_file(tabmanager, tmp_path / "foo.py")
+    tab = tabmanager.add_file_tab(tmp_path / "foo.py")
     assert tab is not None
-    tabmanager.add_tab(tab)
 
     (tmp_path / "foo.py").write_text("mörkö", encoding="latin-1")
 
