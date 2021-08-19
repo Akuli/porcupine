@@ -25,10 +25,10 @@ _T = TypeVar("_T")
 
 
 def _find_duplicates(items: list[_T], key: Callable[[_T], str]) -> Iterable[list[_T]]:
-    for key_return_value, similar_items_iter in itertools.groupby(items, key=key):
-        similar_items = list(similar_items_iter)
-        if len(similar_items) >= 2:
-            yield similar_items
+    items_by_key: dict[str, list[_T]] = {}
+    for item in items:
+        items_by_key.setdefault(key(item), []).append(item)
+    return [itemlist for itemlist in items_by_key.values() if len(itemlist) >= 2]
 
 
 def _short_ways_to_display_path(path: pathlib.Path) -> list[str]:
