@@ -171,6 +171,7 @@ def test_save_encoding_error(tabmanager, tmp_path, mocker):
     assert not tab.has_unsaved_changes()
     tab.textwidget.insert("1.2", "Ω")
     assert tab.has_unsaved_changes()
+    assert tab.settings.get("encoding", str) == "latin1"
 
     wanna_utf8.return_value = False
     assert not tab.save()
@@ -191,7 +192,7 @@ def test_read_only_file(tabmanager, tmp_path, mocker, caplog):
     mock = mocker.patch("tkinter.messagebox.showerror")
 
     (tmp_path / "foo.py").touch()
-    (tmp_path / "foo.py").chmod(0o400)
+    (tmp_path / "foo.py").chmod(0o400)  # No idea why this work on windows but ci is green
     assert not tabmanager.open_file(tmp_path / "foo.py").save()
 
     mock.assert_called_once()
