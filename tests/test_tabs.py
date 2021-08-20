@@ -207,3 +207,14 @@ def test_read_only_file(tabmanager, tmp_path, mocker, caplog):
 
     [log_record] = caplog.records
     assert log_record.levelname == "ERROR"
+
+
+def test_encoding_remembered(tabmanager, tmp_path):
+    tab = tabs.FileTab(tabmanager)
+    tab.settings.set("encoding", "latin-1")
+    state = tab.get_state()
+    tab.destroy()
+
+    tab2 = tabs.FileTab.from_state(tabmanager, state)
+    assert tab2.settings.get("encoding", str) == "latin-1"
+    tab2.destroy()
