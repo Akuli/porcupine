@@ -505,7 +505,8 @@ def errordialog(title: str, message: str, monospace_text: str | None = None) -> 
                               traceback.format_exc())
     """
     window = tkinter.Toplevel()
-    window.transient(porcupine.get_main_window())
+    if porcupine.get_main_window().winfo_viewable():
+        window.transient(porcupine.get_main_window())
 
     # there's nothing but this frame in the window because ttk widgets
     # may use a different background color than the window
