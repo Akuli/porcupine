@@ -1,6 +1,6 @@
 import os
 
-from porcupine import tabs
+from porcupine import settings, tabs
 
 
 def test_filetab_path_gets_resolved(tmp_path, tabmanager):
@@ -120,6 +120,14 @@ def test_other_program_changed_file(filetab, tmp_path):
 
     (tmp_path / "foo.py").write_text("lol\n")
     assert not filetab.other_program_changed_file()
+
+
+def test_changing_newline_mode_affects_unsaved_changes(tabmanager, tmp_path):
+    (tmp_path / "foo.py").write_bytes(b"lol\n")
+    tab = tabmanager.open_file(tmp_path / "foo.py")
+    assert not tab.has_unsaved_changes()
+    tab.settings.set("line_ending", settings.LineEnding.CRLF)
+    assert tab.has_unsaved_changes()
 
 
 def test_save_as(filetab, tmp_path):
