@@ -22,16 +22,10 @@ def test_filetab_path_gets_resolved(tmp_path, tabmanager):
     assert ".." not in tab.path.parts
 
 
-def create_files(relative_paths, relative_to):
-    paths = [relative_to / relative for relative in relative_paths]
-    for path in paths:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.touch()
-    return paths
-
-
 def test_same_filename_different_subdirs(tabmanager, tmp_path):
-    create_files([f"dir{n}/foo.py" for n in (1, 2, 3, 4)], tmp_path)
+    for n in (1, 2, 3, 4):
+        (tmp_path / f"dir{n}").mkdir()
+        (tmp_path / f"dir{n}" / "foo.py").touch()
 
     tab1 = tabmanager.open_file(tmp_path / "dir1" / "foo.py")
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "foo.py"
@@ -75,21 +69,24 @@ def test_groupby_bug(tabmanager, tmp_path):
 
 
 def test_same_filename_inside_and_outside_subdir(tabmanager, tmp_path):
-    foo, dir_slash_foo = create_files(["foo.py", "dir/foo.py"], tmp_path)
+    (tmp_path / "dir").mkdir()
+    (tmp_path / "dir" / "foo.py").touch()
+    (tmp_path / "foo.py").touch()
 
-    tab1 = tabmanager.open_file(foo)
-    tab2 = tabmanager.open_file(dir_slash_foo)
+    tab1 = tabmanager.open_file(tmp_path / "foo.py")
+    tab2 = tabmanager.open_file(tmp_path / "dir" / "foo.py")
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "foo.py"
     assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "dir/foo.py"
 
 
 def test_paths_differ_somewhere_in_middle(tabmanager, tmp_path):
-    dir1_baz, dir2_baz = create_files(
-        ["lol/dir1/foo/bar/baz.py", "lol/dir2/foo/bar/baz.py"], tmp_path
-    )
+    paths = [tmp_path / "lol/dir1/foo/bar/baz.py", tmp_path / "lol/dir2/foo/bar/baz.py"]
+    for path in paths:
+        path.parent.mkdir(parents=True)
+        path.touch()
 
-    tab1 = tabmanager.open_file(dir1_baz)
-    tab2 = tabmanager.open_file(dir2_baz)
+    tab1 = tabmanager.open_file(paths[0])
+    tab2 = tabmanager.open_file(paths[1])
     assert tabmanager.tab(tab1, "text").replace(os.sep, "/") == "dir1/.../baz.py"
     assert tabmanager.tab(tab2, "text").replace(os.sep, "/") == "dir2/.../baz.py"
 
