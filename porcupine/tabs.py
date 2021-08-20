@@ -140,13 +140,20 @@ class TabManager(ttk.Notebook):
         If the file can't be opened, this method displays an error to the user
         and returns ``None``.
         """
+        # Add tab before loading content, so that editorconfig plugin gets a
+        # chance to set the encoding into tab.settings
         tab = FileTab(self, path=path)
+        existing_tab = self.add_tab(tab)
+        if existing_tab != tab:
+            # tab is destroyed
+            assert isinstance(existing_tab, FileTab)
+            return existing_tab
+
         if not tab.reload(undoable=False):
-            tab.destroy()
+            self.close_tab(tab)
             return None
 
         tab.textwidget.mark_set("insert", "1.0")
-        self.add_tab(tab)
         return tab
 
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
@@ -646,6 +653,10 @@ bers.py>` use this attribute.
         """
         assert self.path is not None
 
+        # Disable text widget so user can't type into it during load
+        assert self.textwidget["state"] == "normal"
+        self.textwidget.config(state="disabled")
+
         while True:
             try:
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
@@ -657,15 +668,18 @@ bers.py>` use this attribute.
                 # TODO: try again button?
                 log.exception(f"opening '{self.path}' failed")
                 utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
-                return False
 
             except UnicodeDecodeError:
                 user_selected_encoding = _ask_encoding(
                     self.path, self.settings.get("encoding", str)
                 )
-                if user_selected_encoding is None:
-                    return False
-                self.settings.set("encoding", user_selected_encoding)
+                if user_selected_encoding is not None:
+                    self.settings.set("encoding", user_selected_encoding)
+                    continue  # try again
+
+            # Error message shown, can continue editing
+            self.textwidget.config(state="normal")
+            return False
 
         if isinstance(f.newlines, tuple):
             # TODO: show a message box to user?
@@ -698,6 +712,7 @@ bers.py>` use this attribute.
 
         was_unsaved = self.has_unsaved_changes()
 
+        self.textwidget.config(state="normal")
         with textutils.change_batch(self.textwidget):
             self.textwidget.replace(
                 f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
@@ -808,19 +823,46 @@ bers.py>` use this attribute.
     def _do_the_save(self, path: pathlib.Path) -> bool:
         self.event_generate("<<BeforeSave>>")
 
-        encoding = self.settings.get("encoding", str)
-        line_ending = self.settings.get("line_ending", settings.LineEnding)
+        while True:
+            encoding = self.settings.get("encoding", str)
+            line_ending = self.settings.get("line_ending", settings.LineEnding)
 
-        try:
-            with utils.backup_open(path, "w", encoding=encoding, newline=line_ending.value) as f:
-                f.write(self.textwidget.get("1.0", "end - 1 char"))
-                f.flush()  # needed to get right file size in stat
-                self._set_saved_state(
-                    (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+            try:
+                with utils.backup_open(
+                    path, "w", encoding=encoding, newline=line_ending.value
+                ) as f:
+                    f.write(self.textwidget.get("1.0", "end - 1 char"))
+                    f.flush()  # needed to get right file size in stat
+                    self._set_saved_state(
+                        (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+                    )
+                break
+
+            except UnicodeEncodeError as e:
+                bad_character = e.object[e.start : e.start + 1]
+                log.info(
+                    f"save to '{path}' failed, non-{encoding} character '{bad_character}'",
+                    exc_info=True,
                 )
-        except (OSError, UnicodeError) as e:
-            log.exception(f"saving to '{path}' failed")
-            utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
+
+                user_wants_utf8 = messagebox.askyesno(
+                    "Saving failed",
+                    f"'{bad_character}' is not a valid character in the {encoding} encoding. Do"
+                    f" you want to save the file as UTF-8 instead of {encoding}?",
+                )
+                if user_wants_utf8:
+                    self.settings.set("encoding", "utf-8")
+                    continue
+
+            except OSError as e:
+                log.exception(f"saving to '{path}' failed")
+                messagebox.showerror(
+                    "Saving failed",
+                    f"{type(e).__name__}: {e}\n\n"
+                    + "Make sure that the file is writable and try again.",
+                )
+
+            # If we get here, error message was shown
             return False
 
         self._save_hash = self._get_hash()
