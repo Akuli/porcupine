@@ -95,7 +95,7 @@ class _Option:
 @dataclasses.dataclass
 class _UnknownOption:
     value: Any
-    converter_called: bool
+    call_converter: bool
 
 
 def get_json_path() -> pathlib.Path:
@@ -192,27 +192,34 @@ class Settings:
             # shouldn't cause add_option() and the rest of a plugin's setup()
             # to fail.
             try:
-                if unknown.converter_called:
-                    self.set(option_name, unknown.value)
-                else:
+                if unknown.call_converter:
                     self.set(option_name, converter(unknown.value))
+                else:
+                    self.set(option_name, unknown.value)
             except Exception:
                 # can be an error from converter
                 _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
 
     def set(
-        self, option_name: str, value: object, *, from_config: bool = False, already_converted=False
+        self,
+        option_name: str,
+        value: object,
+        *,
+        from_config: bool = False,
+        call_converter: bool | None = None,
     ) -> None:
         """Set the value of an opiton.
 
         Set ``from_config=True`` if the value comes from a configuration
         file (see :func:`add_option`). That does two things:
 
-            * The converter given to :func:`add_option` will be used, unless
-              ``already_converted=True`` is given.
+            * The converter given to :func:`add_option` will be used.
             * If the option hasn't been added with :func:`add_option` yet, then
               the value won't be set immediatelly, but instead it gets set
               later when the option is added.
+
+        You can specify ``call_converter`` to force the converter to be or
+        to not be called.
 
         This function is not named ``set`` to avoid conflicting with the
         built-in :class:`set` class.
@@ -220,17 +227,15 @@ class Settings:
         # ...even though this method isn't named 'set_'. But the docstring is
         # used in settings.rst to document a global "function".
 
-        if already_converted and not from_config:
-            raise RuntimeError("already_converted=True can't be used without from_config=True")
+        if call_converter is None:
+            call_converter = from_config
 
         if option_name not in self._options and from_config:
-            self._unknown_options[option_name] = _UnknownOption(
-                value, converter_called=already_converted
-            )
+            self._unknown_options[option_name] = _UnknownOption(value, call_converter)
             return
 
         option = self._options[option_name]
-        if from_config and not already_converted:
+        if call_converter:
             value = option.converter(value)
         value = _type_check(option.type, value)
 
@@ -318,8 +323,8 @@ class Settings:
         print(f"{len(self._unknown_options)} unknown options (add_option not called)")
         for name, unknown in self._unknown_options.items():
             string = f"  {name} = {unknown.value!r}"
-            if unknown.converter_called:
-                string += " (converter function already called)"
+            if not unknown.call_converter:
+                string += " (converter function will not be called)"
             print(string)
         print()
 
@@ -328,7 +333,7 @@ class Settings:
         result = self._unknown_options.copy()
         result.update(
             {
-                name: _UnknownOption(option.value, converter_called=True)
+                name: _UnknownOption(option.value, call_converter=False)
                 for name, option in self._options.items()
             }
         )
@@ -336,9 +341,7 @@ class Settings:
 
     def set_state(self, state: dict[str, _UnknownOption]) -> None:
         for name, unknown in state.items():
-            self.set(
-                name, unknown.value, from_config=True, already_converted=unknown.converter_called
-            )
+            self.set(name, unknown.value, from_config=True, call_converter=unknown.call_converter)
 
 
 _global_settings = Settings(None, "<<SettingChanged:{}>>")
