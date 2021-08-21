@@ -43,23 +43,20 @@ class LongLineMarker:
         font = tkfont.Font(name=self.tab.textwidget["font"], exists=True)
         marker_x = font.measure(" " * max_line_length)
 
+        # Placing, scrolling etc are relative to what's inside these paddings
         padding_on_each_side = (
             self.tab.textwidget["padx"]
             + self.tab.textwidget["borderwidth"]
             + self.tab.textwidget["highlightthickness"]
         )
         inner_area_width = self.tab.textwidget.winfo_width() - 2 * padding_on_each_side
+        inner_area_height = self.tab.textwidget.winfo_height() - 2 * padding_on_each_side
 
         scroll_start, scroll_end = self.tab.textwidget.xview()  # type: ignore[no-untyped-call]
         relative_scroll_start = scroll_start / (scroll_end - scroll_start)
         scroll_x = relative_scroll_start * inner_area_width
 
-        self.frame.place(
-            # I tried x=0 with big paddings, went to the inner side of padding
-            x=(marker_x - scroll_x),
-            y=0,
-            height=self.tab.textwidget.winfo_height(),
-        )
+        self.frame.place(x=(marker_x - scroll_x), y=0, height=inner_area_height)
 
     def on_style_changed(self, junk: object = None) -> None:
         style = styles.get_style_by_name(settings.get("pygments_style", str))
