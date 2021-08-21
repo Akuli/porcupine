@@ -296,32 +296,6 @@ class Settings:
             print(f"  {name} = {value!r}")
         print()
 
-    def get_values_to_save(self) -> dict[str, Any]:
-        """Returns the current setting values that differ from defaults.
-
-        If a setting is currently set to the default value, it is not included
-        in the result. This way changing the default value will affect
-        Porcupine users who never touched the setting but have settings saved
-        by an older version of Porcupine.
-
-        Each item of the returned dict can be passed to :meth:`set` with
-        ``from_config=True``.
-        """
-        result = self._unknown_options.copy()
-        result.update({name: self.get(name, object) for name in self._options.keys()})
-
-        # don't store anything that doesn't differ from defaults
-        for name, option in self._options.items():
-            if name in result and result[name] == option.default:
-                del result[name]
-
-        # Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
-        for key in result.keys():
-            if isinstance(result[key], enum.Enum):
-                result[key] = result[key].name
-
-        return result
-
 
 _global_settings = Settings(None, "<<SettingChanged:{}>>")
 add_option = _global_settings.add_option
@@ -345,14 +319,35 @@ def reset_all() -> None:
         reset(name)
 
 
+def _value_to_save(obj: object) -> object:
+    # Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
+    if isinstance(obj, enum.Enum):
+        return obj.name
+    return obj
+
+
 def save() -> None:
     """Save the settings to the config file.
 
     Note that :func:`porcupine.run` always calls this before it returns,
     so usually you don't need to worry about calling this yourself.
     """
+    currently_known_defaults = {
+        name: opt.default for name, opt in _global_settings._options.items()
+    }
+
+    writing: dict[str, Any] = _global_settings._unknown_options.copy()
+
+    # don't wipe unknown stuff from config file
+    writing.update({name: get(name, object) for name in currently_known_defaults.keys()})
+
+    # don't store anything that doesn't differ from defaults
+    for name, default in currently_known_defaults.items():
+        if name in writing and writing[name] == default:
+            del writing[name]
+
     with get_json_path().open("w", encoding="utf-8") as file:
-        json.dump(_global_settings.get_values_to_save(), file)
+        json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
 
 
 def _load_from_file() -> None:
