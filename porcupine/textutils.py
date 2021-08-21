@@ -765,8 +765,6 @@ def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
     this function excludes all padding.
     The size returned by this function is good for scrolling calculations and
     for ``.place()``ing other widgets inside the text widget.
-
-    Scrolling and ``.place()`` use this size, for example.
     """
     x_padding_on_each_side = text["padx"] + text["borderwidth"] + text["highlightthickness"]
     y_padding_on_each_side = text["pady"] + text["borderwidth"] + text["highlightthickness"]
