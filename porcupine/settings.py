@@ -198,7 +198,7 @@ class Settings:
                     self.set(option_name, converter(unknown.value))
             except Exception:
                 # can be an error from converter
-                _log.exception(f"setting {option_name!r} to {value!r} failed")
+                _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
 
     def set(
         self, option_name: str, value: object, *, from_config: bool = False, already_converted=False
