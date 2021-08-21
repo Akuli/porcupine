@@ -170,6 +170,31 @@ def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
     assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
 
 
+def test_file_deleted(tabmanager, tmp_path, mocker, caplog):
+    mock = mocker.patch("tkinter.messagebox.askretrycancel", return_value=False)
+    (tmp_path / "foo.py").write_text("blah")
+    tab = tabmanager.open_file(tmp_path / "foo.py")
+    assert tab.reload()
+    assert mock.call_count == 0
+
+    (tmp_path / "foo.py").unlink()
+    assert not tab.reload()
+    assert mock.call_count == 1
+
+    # When attempting reload again, do not spam user with more dialogs
+    assert not tab.reload()
+    assert mock.call_count == 1
+
+    # But let the user know if it works and then stops working again
+    (tmp_path / "foo.py").write_text("blah blah")
+    assert tab.reload()
+    assert mock.call_count == 1
+
+    (tmp_path / "foo.py").unlink()
+    assert not tab.reload()
+    assert mock.call_count == 2
+
+
 def test_save_encoding_error(tabmanager, tmp_path, mocker):
     wanna_utf8 = mocker.patch("tkinter.messagebox.askyesno")
     (tmp_path / "foo.py").write_text("öää lol", encoding="latin-1")

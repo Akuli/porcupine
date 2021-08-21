@@ -479,6 +479,40 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     return selected_encoding
 
 
+# Runs in O(n) time where n = max(old_content.count('\n'), new_content.count('\n'))
+def _find_changed_part(old_content: str, new_content: str) -> tuple[str, str, str]:
+    old_lines = collections.deque(old_content.splitlines(keepends=True))
+    new_lines = collections.deque(new_content.splitlines(keepends=True))
+    start_line = 1
+    start_column = 0
+    if old_lines and not old_lines[-1].endswith("\n"):
+        # "foo\nbar" --> ["foo\n", "bar"] --> line 2, column 3
+        end_line = len(old_lines)
+        end_column = len(old_lines[-1])
+    else:
+        # "foo\nbar\n" --> ["foo\n", "bar\n"] --> line 3, column 0
+        # "" --> [] --> line 1, column 0
+        end_line = len(old_lines) + 1
+        end_column = 0
+
+    while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
+        popped = old_lines.pop()
+        popped2 = new_lines.pop()
+        assert popped == popped2
+        if popped.endswith("\n"):
+            assert end_column == 0
+            end_line -= 1
+        else:
+            end_column = 0
+
+    while old_lines and new_lines and old_lines[0] == new_lines[0]:
+        old_lines.popleft()
+        new_lines.popleft()
+        start_line += 1
+
+    return (f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines))
+
+
 class FileTab(Tab):
     """A subclass of :class:`.Tab` that represents an opened file.
 
@@ -615,6 +649,8 @@ bers.py>` use this attribute.
         self.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
 
+        self._previous_reload_failed = False
+
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
 
@@ -666,9 +702,18 @@ bers.py>` use this attribute.
                 break
 
             except OSError as e:
-                # TODO: try again button?
-                log.exception(f"opening '{self.path}' failed")
-                utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
+                if self._previous_reload_failed:
+                    # Do not spam user with errors (not terminal either)
+                    log.info(f"opening '{self.path}' failed", exc_info=True)
+                else:
+                    log.exception(f"opening '{self.path}' failed")
+                    wanna_retry = messagebox.askretrycancel(
+                        "Opening failed",
+                        f"{type(e).__name__}: {e}\n\n"
+                        + "Make sure that the file exists and try again.",
+                    )
+                    if wanna_retry:
+                        continue
 
             except UnicodeDecodeError:
                 user_selected_encoding = _ask_encoding(
@@ -678,8 +723,10 @@ bers.py>` use this attribute.
                     self.settings.set("encoding", user_selected_encoding)
                     continue  # try again
 
-            # Error message shown, can continue editing
+            # Error message shown if needed, let user continue editing
             self.textwidget.config(state="normal")
+            self._previous_reload_failed = True
+            self._set_saved_state((None, -1, "dummy hash"))  # Do not consider file saved
             return False
 
         if isinstance(f.newlines, tuple):
@@ -689,35 +736,15 @@ bers.py>` use this attribute.
             assert isinstance(f.newlines, str)
             self.settings.set("line_ending", settings.LineEnding(f.newlines))
 
-        # Find changed part in O(n) time where n = max(len(old_lines), len(new_lines))
-        old_lines = collections.deque(
-            self.textwidget.get("1.0", "end - 1 char").splitlines(keepends=True)
-        )
-        new_lines = collections.deque(content.splitlines(keepends=True))
-        start_line = 1
-        start_column = 0
-        end_line, end_column = map(int, self.textwidget.index("end - 1 char").split("."))
-        while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
-            popped = old_lines.pop()
-            popped2 = new_lines.pop()
-            assert popped == popped2
-            if popped.endswith("\n"):
-                assert end_column == 0
-                end_line -= 1
-            else:
-                end_column = 0
-        while old_lines and new_lines and old_lines[0] == new_lines[0]:
-            old_lines.popleft()
-            new_lines.popleft()
-            start_line += 1
-
         was_unsaved = self.has_unsaved_changes()
 
+        start, end, changed_part_content = _find_changed_part(
+            self.textwidget.get("1.0", "end - 1 char"), content
+        )
         self.textwidget.config(state="normal")
         with textutils.change_batch(self.textwidget):
-            self.textwidget.replace(
-                f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
-            )
+            self.textwidget.replace(start, end, changed_part_content)
+
         if not undoable:
             self.textwidget.edit_reset()
 
@@ -725,6 +752,7 @@ bers.py>` use this attribute.
 
         # TODO: document this
         self.event_generate("<<Reloaded>>", data=ReloadInfo(had_unsaved_changes=was_unsaved))
+        self._previous_reload_failed = False
         return True
 
     def other_program_changed_file(self) -> bool:
@@ -759,22 +787,25 @@ bers.py>` use this attribute.
             return False
 
         except OSError:
-            log.exception(
-                f"error when figuring out if '{self.path}' needs reloading, assuming it does"
+            # File unreadable, already errors elsewhere, do not spam console with warning
+            log.info(
+                f"error when figuring out if '{self.path}' needs reloading, assuming it does",
+                exc_info=True,
             )
+
+            # Why return True on error:
+            #   - Other program did change something, by making it unreadable
+            #   - Indicates that something isn't saved
             return True
 
     def equivalent(self, other: Tab) -> bool:  # override
         # this used to have hasattr(other, "path") instead of isinstance
-        # but it screws up if a plugin defines something different with
-        # a path attribute, for example, a debugger plugin might have
-        # tabs that represent files and they might need to be opened at
-        # the same time as FileTabs are
+        # but it not work if a plugin defines custom tab with path attribute
         return (
             isinstance(other, FileTab)
             and self.path is not None
             and other.path is not None
-            and self.path.samefile(other.path)
+            and self.path == other.path  # works even if files don't exist
         )
 
     @property
@@ -888,7 +919,7 @@ bers.py>` use this attribute.
         if self.path is None:
             return self.save_as()
 
-        if self.other_program_changed_file():
+        if self.other_program_changed_file() and not self._previous_reload_failed:
             user_is_sure = messagebox.askyesno(
                 "File changed",
                 f"Another program has changed {self.path.name}. Are you sure you want to save it?",
