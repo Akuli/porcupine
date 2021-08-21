@@ -760,7 +760,7 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
 
 def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
     """Return the width and height of the text widget.
-    
+
     Unlike ``text.winfo_width()`` and ``text.winfo_height()``,
     this function excludes all padding.
     The size returned by this function is good for scrolling calculations and
