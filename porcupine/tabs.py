@@ -712,7 +712,7 @@ bers.py>` use this attribute.
                         f"{type(e).__name__}: {e}\n\n"
                         + "Make sure that the file exists and try again.",
                     )
-                    if response == "retry":
+                    if wanna_retry:
                         continue
 
             except UnicodeDecodeError:
