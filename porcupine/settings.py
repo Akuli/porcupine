@@ -157,7 +157,7 @@ class Settings:
                 converter=import_lexer_class)
 
         By default, the converter returns its argument unchanged.
-        Avoid using a lambda function as the converter,
+        Do not use a lambda function as the converter,
         because the settings must be picklable.
 
         If an option with the same name exists already, an error is raised by
