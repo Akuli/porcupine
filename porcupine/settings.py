@@ -380,19 +380,16 @@ def save() -> None:
     Note that :func:`porcupine.run` always calls this before it returns,
     so usually you don't need to worry about calling this yourself.
     """
-    currently_known_defaults = {
-        name: opt.default for name, opt in _global_settings._options.items()
-    }
-
-    writing: dict[str, Any] = {
+    writing: dict[str, object] = {
         name: unknown.value for name, unknown in _global_settings._unknown_options.items()
     }
-    writing.update({name: get(name, object) for name in currently_known_defaults.keys()})
-
-    # don't store anything that doesn't differ from defaults
-    for name, default in currently_known_defaults.items():
-        if name in writing and writing[name] == default:
-            del writing[name]
+    writing.update(
+        {
+            name: get(name, object)
+            for name, option in _global_settings._options.items()
+            if get(name, object) != option.default
+        }
+    )
 
     with get_json_path().open("w", encoding="utf-8") as file:
         json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
