@@ -331,12 +331,10 @@ class Settings:
     # TODO: document state methods?
     def get_state(self) -> dict[str, _UnknownOption]:
         result = self._unknown_options.copy()
-        result.update(
-            {
-                name: _UnknownOption(option.value, call_converter=False)
-                for name, option in self._options.items()
-            }
-        )
+        for name, option in self._options.items():
+            value = self.get(name, object)
+            if value != option.default:
+                result[name] = _UnknownOption(value, call_converter=False)
         return result
 
     def set_state(self, state: dict[str, _UnknownOption]) -> None:
@@ -380,16 +378,14 @@ def save() -> None:
     Note that :func:`porcupine.run` always calls this before it returns,
     so usually you don't need to worry about calling this yourself.
     """
-    writing: dict[str, object] = {
-        name: unknown.value for name, unknown in _global_settings._unknown_options.items()
-    }
-    for name, option in _global_settings._options.items():
-        value = get(name, object)
-        if value != option.default:
-            writing[name] = value
-
     with get_json_path().open("w", encoding="utf-8") as file:
-        json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
+        json.dump(
+            {
+                name: _value_to_save(unknown_obj.value)
+                for name, unknown_obj in _global_settings.get_state()
+            },
+            file,
+        )
 
 
 def _load_from_file() -> None:
