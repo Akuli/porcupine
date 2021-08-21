@@ -98,12 +98,12 @@ class _UnknownOption:
     converter_called: bool
 
 
-def get_json_path() -> pathlib.Path:
-    return pathlib.Path(dirs.user_config_dir) / "settings.json"
-
-
 def _default_converter(value: Any) -> Any:
     return value
+
+
+def get_json_path() -> pathlib.Path:
+    return pathlib.Path(dirs.user_config_dir) / "settings.json"
 
 
 class Settings:
