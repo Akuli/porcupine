@@ -383,13 +383,10 @@ def save() -> None:
     writing: dict[str, object] = {
         name: unknown.value for name, unknown in _global_settings._unknown_options.items()
     }
-    writing.update(
-        {
-            name: get(name, object)
-            for name, option in _global_settings._options.items()
-            if get(name, object) != option.default
-        }
-    )
+    for name, option in _global_settings._options.items():
+        value = get(name, object)
+        if value != option.default:
+            writing[name] = value
 
     with get_json_path().open("w", encoding="utf-8") as file:
         json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
