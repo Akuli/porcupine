@@ -1,4 +1,7 @@
 import os
+import sys
+
+import pytest
 
 from porcupine import settings, tabs
 
@@ -193,11 +196,15 @@ def test_save_encoding_error(tabmanager, tmp_path, mocker):
     assert "not a valid character" in str(wanna_utf8.call_args)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="don't know how permissions work on windows")
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true", reason="causes weird langserver errors"
+)
 def test_read_only_file(tabmanager, tmp_path, mocker, caplog):
     mock = mocker.patch("tkinter.messagebox.showerror")
 
     (tmp_path / "foo.py").touch()
-    (tmp_path / "foo.py").chmod(0o400)  # No idea why this work on windows but ci is green
+    (tmp_path / "foo.py").chmod(0o400)
     assert not tabmanager.open_file(tmp_path / "foo.py").save()
 
     mock.assert_called_once()
