@@ -711,7 +711,6 @@ bers.py>` use this attribute.
                         "Opening failed",
                         f"{type(e).__name__}: {e}\n\n"
                         + "Make sure that the file exists and try again.",
-                        type="retrycancel",
                     )
                     if response == "retry":
                         continue
