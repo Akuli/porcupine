@@ -382,7 +382,7 @@ def save() -> None:
         json.dump(
             {
                 name: _value_to_save(unknown_obj.value)
-                for name, unknown_obj in _global_settings.get_state()
+                for name, unknown_obj in _global_settings.get_state().items()
             },
             file,
         )
