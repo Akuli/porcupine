@@ -395,6 +395,7 @@ class _FileTabState(NamedTuple):
     content: str | None
     saved_state: tuple[os.stat_result | None, int, str]
     cursor_pos: str
+    settings_state: dict[str, Any]
 
 
 def _import_lexer_class(name: str) -> LexerMeta:
@@ -940,7 +941,13 @@ bers.py>` use this attribute.
         else:
             content = self.textwidget.get("1.0", "end - 1 char")
 
-        return _FileTabState(self.path, content, self._saved_state, self.textwidget.index("insert"))
+        return _FileTabState(
+            self.path,
+            content,
+            self._saved_state,
+            self.textwidget.index("insert"),
+            self.settings.get_state(),
+        )
 
     @classmethod
     def from_state(
@@ -949,6 +956,7 @@ bers.py>` use this attribute.
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
         tab = cls(manager, content=(state.content or ""), path=state.path)
+        tab.settings.set_state(state.settings_state)
         if state.content is None:
             # no unsaved changes, read from the saved file
             if not tab.reload(undoable=False):
