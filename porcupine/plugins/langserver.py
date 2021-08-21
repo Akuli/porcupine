@@ -49,7 +49,7 @@ class SubprocessStdIO:
         self._process = process
 
         # Reads can obviously block, but flushing can block too, see #635
-        # Nonblock flags don't help with writing, it just raises error if it would block
+        # Nonblock flags don't help with writing, it raises error if it would block
         self._write_queue: queue.Queue[bytes] = queue.Queue()
         threading.Thread(target=self._write_queue_to_stdin, daemon=True).start()
 
