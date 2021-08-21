@@ -800,7 +800,7 @@ bers.py>` use this attribute.
 
     def equivalent(self, other: Tab) -> bool:  # override
         # this used to have hasattr(other, "path") instead of isinstance
-        # but it screws up if a plugin defines custom tab with path attribute
+        # but it not work if a plugin defines custom tab with path attribute
         return (
             isinstance(other, FileTab)
             and self.path is not None
