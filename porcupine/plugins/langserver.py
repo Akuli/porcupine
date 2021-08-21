@@ -82,6 +82,7 @@ class SubprocessStdIO:
             self._process.stdin.flush()
 
     if sys.platform == "win32":
+
         def _stdout_to_read_queue(self) -> None:
             while True:
                 # for whatever reason, nothing works unless i go ONE BYTE at a
