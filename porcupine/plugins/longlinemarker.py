@@ -24,6 +24,7 @@ class LongLineMarker:
         self.frame = tkinter.Frame(filetab.textwidget, width=1)
 
     def setup(self) -> None:
+        # xscrollcommand runs when the text widget resizes
         utils.add_scroll_command(self.tab.textwidget, "xscrollcommand", self.do_update)
         self.tab.bind("<<TabSettingChanged:max_line_length>>", self.do_update, add=True)
         self.tab.bind("<<SettingChanged:font_family>>", self.do_update, add=True)
