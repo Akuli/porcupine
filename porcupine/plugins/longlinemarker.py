@@ -7,7 +7,7 @@ import tkinter.font as tkfont
 
 from pygments import styles, token
 
-from porcupine import get_tab_manager, settings, tabs, utils
+from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -41,23 +41,16 @@ class LongLineMarker:
             self.frame.place_forget()
             return
 
-        font = tkfont.Font(name=self.tab.textwidget["font"], exists=True)
-        marker_x = font.measure(" " * max_line_length)
+        width, height = textutils.textwidget_size(self.tab.textwidget)
 
-        # Placing, scrolling etc are relative to what's inside these paddings
-        common_padding = (
-            self.tab.textwidget["borderwidth"] + self.tab.textwidget["highlightthickness"]
-        )
-        x_padding_on_each_side = self.tab.textwidget["padx"] + common_padding
-        y_padding_on_each_side = self.tab.textwidget["pady"] + common_padding
-        inner_area_width = self.tab.textwidget.winfo_width() - 2 * x_padding_on_each_side
-        inner_area_height = self.tab.textwidget.winfo_height() - 2 * y_padding_on_each_side
+        font = tkfont.Font(name=self.tab.textwidget["font"], exists=True)
+        font_x = font.measure(" " * max_line_length)
 
         scroll_start, scroll_end = self.tab.textwidget.xview()  # type: ignore[no-untyped-call]
         relative_scroll_start = scroll_start / (scroll_end - scroll_start)
-        scroll_x = relative_scroll_start * inner_area_width
+        scroll_x = relative_scroll_start * width
 
-        self.frame.place(x=(marker_x - scroll_x), y=0, height=inner_area_height)
+        self.frame.place(x=(font_x - scroll_x), y=0, height=height)
 
     def on_style_changed(self, junk: object = None) -> None:
         style = styles.get_style_by_name(settings.get("pygments_style", str))

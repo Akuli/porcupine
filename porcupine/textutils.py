@@ -758,6 +758,22 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     return text
 
 
+def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
+    """Return the width and height of the text widget.
+
+    Unlike ``text.winfo_width()`` and ``text.winfo_height()``,
+    this function excludes all padding.
+    The size returned by this function is good for scrolling calculations and
+    for ``.place()``ing other widgets inside the text widget.
+    """
+    x_padding_on_each_side = text["padx"] + text["borderwidth"] + text["highlightthickness"]
+    y_padding_on_each_side = text["pady"] + text["borderwidth"] + text["highlightthickness"]
+    return (
+        text.winfo_width() - 2 * x_padding_on_each_side,
+        text.winfo_height() - 2 * y_padding_on_each_side,
+    )
+
+
 # TODO: document this?
 def place_popup(
     parent: tkinter.Text,
@@ -767,15 +783,19 @@ def place_popup(
     height: int | None = None,
     text_position: str = "insert",
     wrap: bool = False,
-) -> None:
+) -> bool:
     gap = 5  # Debugging tip: try big gap
 
     bbox = parent.bbox(text_position)
-    assert bbox is not None
+    if bbox is None:
+        # happens quite rarely, just do not place a popup in this case
+        return False
     (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
 
+    parent_width, parent_height = textwidget_size(parent)
+
     # don't go beyond the right edge of textwidget
-    width = min(width, parent.winfo_width() - 2 * gap)
+    width = min(width, parent_width - 2 * gap)
 
     if wrap:
         assert isinstance(child, tkinter.Label)
@@ -784,9 +804,8 @@ def place_popup(
     if height is None:
         height = child.winfo_reqheight()
 
-    # TODO: figure out why -10 needed near right edge of parent
-    x = min(cursor_x + gap, parent.winfo_width() - gap - width - 10)
-    if cursor_y + cursor_height + gap + height + gap < parent.winfo_height():
+    x = min(cursor_x + gap, parent_width - gap - width)
+    if cursor_y + cursor_height + gap + height + gap < parent_height:
         # child fits below bbox
         y = cursor_y + cursor_height + gap
     else:
@@ -795,3 +814,4 @@ def place_popup(
 
     child.place(x=x, y=y, width=width, height=height)
     child.lift()  # autocomplete shows on top of hover popups
+    return True
