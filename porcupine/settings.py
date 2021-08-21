@@ -92,8 +92,14 @@ class _Option:
         self.converter = converter
 
 
-def get_json_path() -> pathlib.Path:
-    return pathlib.Path(dirs.user_config_dir) / "settings.json"
+@dataclasses.dataclass
+class _UnknownOption:
+    value: Any
+    call_converter: bool
+
+
+def _default_converter(value: Any) -> Any:
+    return value
 
 
 class Settings:
@@ -104,7 +110,7 @@ class Settings:
         assert change_event_format.endswith(">>")
 
         self._options: dict[str, _Option] = {}
-        self._unknown_options: dict[str, Any] = {}
+        self._unknown_options: dict[str, _UnknownOption] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
 
@@ -114,7 +120,7 @@ class Settings:
         default: Any,
         type_: Any | None = None,
         *,
-        converter: Callable[[Any], Any] = (lambda x: x),
+        converter: Callable[[Any], Any] = _default_converter,
         exist_ok: bool = False,
     ) -> None:
         """Add a custom option.
@@ -147,6 +153,8 @@ class Settings:
                 converter=import_lexer_class)
 
         By default, the converter returns its argument unchanged.
+        Do not use a lambda function as the converter,
+        because the settings must be picklable.
 
         If an option with the same name exists already, an error is raised by
         default, but if ``exist_ok=True`` is given, then adding the same
@@ -171,7 +179,7 @@ class Settings:
         self._options[option_name] = option
 
         try:
-            value = self._unknown_options.pop(option_name)
+            unknown = self._unknown_options.pop(option_name)
         except KeyError:
             pass  # nothing relevant in config file, use default
         else:
@@ -180,12 +188,22 @@ class Settings:
             # shouldn't cause add_option() and the rest of a plugin's setup()
             # to fail.
             try:
-                self.set(option_name, converter(value))
+                if unknown.call_converter:
+                    self.set(option_name, converter(unknown.value))
+                else:
+                    self.set(option_name, unknown.value)
             except Exception:
                 # can be an error from converter
-                _log.exception(f"setting {option_name!r} to {value!r} failed")
+                _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
 
-    def set(self, option_name: str, value: object, *, from_config: bool = False) -> None:
+    def set(
+        self,
+        option_name: str,
+        value: object,
+        *,
+        from_config: bool = False,
+        call_converter: bool | None = None,
+    ) -> None:
         """Set the value of an opiton.
 
         Set ``from_config=True`` if the value comes from a configuration
@@ -196,17 +214,24 @@ class Settings:
               the value won't be set immediatelly, but instead it gets set
               later when the option is added.
 
+        You can specify ``call_converter`` to force the converter to be or
+        to not be called.
+
         This function is not named ``set`` to avoid conflicting with the
         built-in :class:`set` class.
         """
         # ...even though this method isn't named 'set_'. But the docstring is
         # used in settings.rst to document a global "function".
+
+        if call_converter is None:
+            call_converter = from_config
+
         if option_name not in self._options and from_config:
-            self._unknown_options[option_name] = value
+            self._unknown_options[option_name] = _UnknownOption(value, call_converter)
             return
 
         option = self._options[option_name]
-        if from_config:
+        if call_converter:
             value = option.converter(value)
         value = _type_check(option.type, value)
 
@@ -292,9 +317,25 @@ class Settings:
         print()
 
         print(f"{len(self._unknown_options)} unknown options (add_option not called)")
-        for name, value in self._unknown_options.items():
-            print(f"  {name} = {value!r}")
+        for name, unknown in self._unknown_options.items():
+            string = f"  {name} = {unknown.value!r}"
+            if not unknown.call_converter:
+                string += " (converter function will not be called)"
+            print(string)
         print()
+
+    # TODO: document state methods?
+    def get_state(self) -> dict[str, _UnknownOption]:
+        result = self._unknown_options.copy()
+        for name, option in self._options.items():
+            value = self.get(name, object)
+            if value != option.default:
+                result[name] = _UnknownOption(value, call_converter=False)
+        return result
+
+    def set_state(self, state: dict[str, _UnknownOption]) -> None:
+        for name, unknown in state.items():
+            self.set(name, unknown.value, from_config=True, call_converter=unknown.call_converter)
 
 
 _global_settings = Settings(None, "<<SettingChanged:{}>>")
@@ -319,11 +360,16 @@ def reset_all() -> None:
         reset(name)
 
 
+# Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
+# TODO: this is a hack
 def _value_to_save(obj: object) -> object:
-    # Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
     if isinstance(obj, enum.Enum):
         return obj.name
     return obj
+
+
+def get_json_path() -> pathlib.Path:
+    return pathlib.Path(dirs.user_config_dir) / "settings.json"
 
 
 def save() -> None:
@@ -332,22 +378,14 @@ def save() -> None:
     Note that :func:`porcupine.run` always calls this before it returns,
     so usually you don't need to worry about calling this yourself.
     """
-    currently_known_defaults = {
-        name: opt.default for name, opt in _global_settings._options.items()
-    }
-
-    writing: dict[str, Any] = _global_settings._unknown_options.copy()
-
-    # don't wipe unknown stuff from config file
-    writing.update({name: get(name, object) for name in currently_known_defaults.keys()})
-
-    # don't store anything that doesn't differ from defaults
-    for name, default in currently_known_defaults.items():
-        if name in writing and writing[name] == default:
-            del writing[name]
-
     with get_json_path().open("w", encoding="utf-8") as file:
-        json.dump({name: _value_to_save(value) for name, value in writing.items()}, file)
+        json.dump(
+            {
+                name: _value_to_save(unknown_obj.value)
+                for name, unknown_obj in _global_settings.get_state().items()
+            },
+            file,
+        )
 
 
 def _load_from_file() -> None:
