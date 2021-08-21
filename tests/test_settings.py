@@ -1,6 +1,5 @@
 import dataclasses
 import json
-import sys
 import tkinter
 from tkinter import ttk
 from tkinter.font import Font
