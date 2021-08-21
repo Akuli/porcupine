@@ -479,6 +479,33 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     return selected_encoding
 
 
+# Runs in O(n) time where n = max(old_content.count('\n'), new_content.count('\n'))
+def _find_changed_part(old_content: str, new_content: str) -> tuple[str, str, str]:
+    old_lines = collections.deque(old_content.splitlines(keepends=True))
+    new_lines = collections.deque(new_content.splitlines(keepends=True))
+    start_line = 1
+    start_column = 0
+    end_line = old_content.count("\n") + 1
+    end_column = len(old_content.rsplit("\n", maxsplit=1)[-1])
+
+    while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
+        popped = old_lines.pop()
+        popped2 = new_lines.pop()
+        assert popped == popped2
+        if popped.endswith("\n"):
+            assert end_column == 0
+            end_line -= 1
+        else:
+            end_column = 0
+
+    while old_lines and new_lines and old_lines[0] == new_lines[0]:
+        old_lines.popleft()
+        new_lines.popleft()
+        start_line += 1
+
+    return (f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines))
+
+
 class FileTab(Tab):
     """A subclass of :class:`.Tab` that represents an opened file.
 
@@ -695,35 +722,15 @@ bers.py>` use this attribute.
             assert isinstance(f.newlines, str)
             self.settings.set("line_ending", settings.LineEnding(f.newlines))
 
-        # Find changed part in O(n) time where n = max(len(old_lines), len(new_lines))
-        old_lines = collections.deque(
-            self.textwidget.get("1.0", "end - 1 char").splitlines(keepends=True)
-        )
-        new_lines = collections.deque(content.splitlines(keepends=True))
-        start_line = 1
-        start_column = 0
-        end_line, end_column = map(int, self.textwidget.index("end - 1 char").split("."))
-        while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
-            popped = old_lines.pop()
-            popped2 = new_lines.pop()
-            assert popped == popped2
-            if popped.endswith("\n"):
-                assert end_column == 0
-                end_line -= 1
-            else:
-                end_column = 0
-        while old_lines and new_lines and old_lines[0] == new_lines[0]:
-            old_lines.popleft()
-            new_lines.popleft()
-            start_line += 1
-
         was_unsaved = self.has_unsaved_changes()
 
+        start, end, changed_part_content = _find_changed_part(
+            self.textwidget.get("1.0", "end - 1 char"), content
+        )
         self.textwidget.config(state="normal")
         with textutils.change_batch(self.textwidget):
-            self.textwidget.replace(
-                f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
-            )
+            self.textwidget.replace(start, end, changed_part_content)
+
         if not undoable:
             self.textwidget.edit_reset()
 
