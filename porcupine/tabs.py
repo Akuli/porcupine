@@ -707,7 +707,7 @@ bers.py>` use this attribute.
                     log.info(f"opening '{self.path}' failed", exc_info=True)
                 else:
                     log.exception(f"opening '{self.path}' failed")
-                    response = messagebox.showerror(
+                    wanna_retry = messagebox.askretrycancel(
                         "Opening failed",
                         f"{type(e).__name__}: {e}\n\n"
                         + "Make sure that the file exists and try again.",
