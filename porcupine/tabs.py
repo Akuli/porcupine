@@ -642,6 +642,8 @@ bers.py>` use this attribute.
         self.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
 
+        self._previous_reload_failed = False
+
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
 
@@ -693,15 +695,19 @@ bers.py>` use this attribute.
                 break
 
             except OSError as e:
-                log.exception(f"opening '{self.path}' failed")
-                response = messagebox.showerror(
-                    "Opening failed",
-                    f"{type(e).__name__}: {e}\n\n"
-                    + "Make sure that the file is readable and try again.",
-                    type="retrycancel",
-                )
-                if response == "retry":
-                    continue
+                if self._previous_reload_failed:
+                    # Do not spam user with errors (not terminal either)
+                    log.info(f"opening '{self.path}' failed", exc_info=True)
+                else:
+                    log.exception(f"opening '{self.path}' failed")
+                    response = messagebox.showerror(
+                        "Opening failed",
+                        f"{type(e).__name__}: {e}\n\n"
+                        + "Make sure that the file exists and try again.",
+                        type="retrycancel",
+                    )
+                    if response == "retry":
+                        continue
 
             except UnicodeDecodeError:
                 user_selected_encoding = _ask_encoding(
@@ -711,8 +717,10 @@ bers.py>` use this attribute.
                     self.settings.set("encoding", user_selected_encoding)
                     continue  # try again
 
-            # Error message shown, can continue editing
+            # Error message shown if needed, let user continue editing
             self.textwidget.config(state="normal")
+            self._previous_reload_failed = True
+            self._set_saved_state((None, -1, "dummy hash"))  # Not saved, no matter what
             return False
 
         if isinstance(f.newlines, tuple):
@@ -738,6 +746,7 @@ bers.py>` use this attribute.
 
         # TODO: document this
         self.event_generate("<<Reloaded>>", data=ReloadInfo(had_unsaved_changes=was_unsaved))
+        self._previous_reload_failed = False
         return True
 
     def other_program_changed_file(self) -> bool:
@@ -772,9 +781,14 @@ bers.py>` use this attribute.
             return False
 
         except OSError:
-            log.exception(
-                f"error when figuring out if '{self.path}' needs reloading, assuming it does"
+            # File unreadable, already errors elsewhere, do not spam console with warning
+            log.info(
+                f"error when figuring out if '{self.path}' needs reloading, assuming it does", exc_info=True
             )
+
+            # Why return True on error:
+            #   - Other program did change something, by making it unreadable
+            #   - Indicates that something isn't saved
             return True
 
     def equivalent(self, other: Tab) -> bool:  # override
@@ -898,7 +912,7 @@ bers.py>` use this attribute.
         if self.path is None:
             return self.save_as()
 
-        if self.other_program_changed_file():
+        if self.other_program_changed_file() and not self._previous_reload_failed:
             user_is_sure = messagebox.askyesno(
                 "File changed",
                 f"Another program has changed {self.path.name}. Are you sure you want to save it?",
