@@ -666,9 +666,15 @@ bers.py>` use this attribute.
                 break
 
             except OSError as e:
-                # TODO: try again button?
                 log.exception(f"opening '{self.path}' failed")
-                utils.errordialog(type(e).__name__, "Opening failed!", traceback.format_exc())
+                response = messagebox.showerror(
+                    "Opening failed",
+                    f"{type(e).__name__}: {e}\n\n"
+                    + "Make sure that the file is readable and try again.",
+                    type="retrycancel",
+                )
+                if response == "retry":
+                    continue
 
             except UnicodeDecodeError:
                 user_selected_encoding = _ask_encoding(
