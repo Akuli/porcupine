@@ -102,10 +102,6 @@ def _default_converter(value: Any) -> Any:
     return value
 
 
-def get_json_path() -> pathlib.Path:
-    return pathlib.Path(dirs.user_config_dir) / "settings.json"
-
-
 class Settings:
     def __init__(self, change_event_widget: tkinter.Misc | None, change_event_format: str):
         # '<<Foo:{}>>'
@@ -370,6 +366,10 @@ def _value_to_save(obj: object) -> object:
     if isinstance(obj, enum.Enum):
         return obj.name
     return obj
+
+
+def get_json_path() -> pathlib.Path:
+    return pathlib.Path(dirs.user_config_dir) / "settings.json"
 
 
 def save() -> None:
