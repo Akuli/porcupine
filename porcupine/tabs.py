@@ -485,8 +485,15 @@ def _find_changed_part(old_content: str, new_content: str) -> tuple[str, str, st
     new_lines = collections.deque(new_content.splitlines(keepends=True))
     start_line = 1
     start_column = 0
-    end_line = old_content.count("\n") + 1
-    end_column = len(old_content.rsplit("\n", maxsplit=1)[-1])
+    if old_lines and not old_lines[-1].endswith("\n"):
+        # "foo\nbar" --> ["foo\n", "bar"] --> line 2, column 3
+        end_line = len(old_lines)
+        end_column = len(old_lines[-1])
+    else:
+        # "foo\nbar\n" --> ["foo\n", "bar\n"] --> line 3, column 0
+        # "" --> [] --> line 1, column 0
+        end_line = len(old_lines) + 1
+        end_column = 0
 
     while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
         popped = old_lines.pop()
