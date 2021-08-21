@@ -726,7 +726,7 @@ bers.py>` use this attribute.
             # Error message shown if needed, let user continue editing
             self.textwidget.config(state="normal")
             self._previous_reload_failed = True
-            self._set_saved_state((None, -1, "dummy hash"))  # Not saved, no matter what
+            self._set_saved_state((None, -1, "dummy hash"))  # Do not consider file saved
             return False
 
         if isinstance(f.newlines, tuple):
