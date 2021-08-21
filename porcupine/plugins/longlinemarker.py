@@ -22,15 +22,14 @@ class LongLineMarker:
         # this must not be a ttk frame because the background color
         # comes from the pygments style, not from the ttk theme
         self.frame = tkinter.Frame(filetab.textwidget, width=1)
-        self._width = self._height = 1  # on_configure() will run soon
 
     def setup(self) -> None:
+        # xscrollcommand runs when the text widget resizes
         utils.add_scroll_command(self.tab.textwidget, "xscrollcommand", self.do_update)
         self.tab.bind("<<TabSettingChanged:max_line_length>>", self.do_update, add=True)
         self.tab.bind("<<SettingChanged:font_family>>", self.do_update, add=True)
         self.tab.bind("<<SettingChanged:font_size>>", self.do_update, add=True)
         self.tab.bind("<<SettingChanged:pygments_style>>", self.on_style_changed, add=True)
-        self.tab.textwidget.bind("<Configure>", self.on_configure, add=True)
 
         self.do_update()
         self.on_style_changed()
@@ -45,13 +44,20 @@ class LongLineMarker:
         font = tkfont.Font(name=self.tab.textwidget["font"], exists=True)
         marker_x = font.measure(" " * max_line_length)
 
-        # these are relative to the length of the longest line in the text widget
+        # Placing, scrolling etc are relative to what's inside these paddings
+        common_padding = (
+            self.tab.textwidget["borderwidth"] + self.tab.textwidget["highlightthickness"]
+        )
+        x_padding_on_each_side = self.tab.textwidget["padx"] + common_padding
+        y_padding_on_each_side = self.tab.textwidget["pady"] + common_padding
+        inner_area_width = self.tab.textwidget.winfo_width() - 2 * x_padding_on_each_side
+        inner_area_height = self.tab.textwidget.winfo_height() - 2 * y_padding_on_each_side
+
         scroll_start, scroll_end = self.tab.textwidget.xview()  # type: ignore[no-untyped-call]
-
-        # we want relative to visible area width
         relative_scroll_start = scroll_start / (scroll_end - scroll_start)
+        scroll_x = relative_scroll_start * inner_area_width
 
-        self.frame.place(relx=(marker_x / self._width - relative_scroll_start), height=self._height)
+        self.frame.place(x=(marker_x - scroll_x), y=0, height=inner_area_height)
 
     def on_style_changed(self, junk: object = None) -> None:
         style = styles.get_style_by_name(settings.get("pygments_style", str))
@@ -67,18 +73,6 @@ class LongLineMarker:
 
         # stupid fallback
         self.frame.config(bg="red")
-
-    def on_configure(self, event: tkinter.Event[tkinter.Misc]) -> None:
-        # this way to calculate it is weird but seems to work
-        bbox = self.tab.textwidget.bbox("@0,0")
-        assert bbox is not None
-        x, y, width, height = bbox
-        weird_x_padding = 2 * x
-        weird_y_padding = weird_x_padding  # don't know better way, bbox y may be off screen
-
-        self._width = event.width - weird_x_padding
-        self._height = event.height - weird_y_padding
-        self.do_update()
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
