@@ -184,14 +184,14 @@ class _Popup:
             self._doc_text.config(state="disabled")
 
     def start_completing(self) -> None:
-        textutils.place_popup(
+        if textutils.place_popup(
             self._textwidget,
             self._panedwindow,
             width=settings.get("autocomplete_popup_width", int),
             height=settings.get("autocomplete_popup_height", int),
-        )
-        self._panedwindow.update()  # _on_resize() uses current sizes
-        self._on_resize()
+        ):
+            self._panedwindow.update()  # _on_resize() uses current sizes
+            self._on_resize()
 
     # does nothing if not currently completing
     def stop_completing(self) -> Completion | None:

@@ -780,11 +780,13 @@ def place_popup(
     height: int | None = None,
     text_position: str = "insert",
     wrap: bool = False,
-) -> None:
+) -> bool:
     gap = 5  # Debugging tip: try big gap
 
     bbox = parent.bbox(text_position)
-    assert bbox is not None
+    if bbox is None:
+        # happens quite rarely, just do not place a popup in this case
+        return False
     (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
 
     parent_width, parent_height = textwidget_size(parent)
@@ -809,3 +811,4 @@ def place_popup(
 
     child.place(x=x, y=y, width=width, height=height)
     child.lift()  # autocomplete shows on top of hover popups
+    return True
