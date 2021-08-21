@@ -98,12 +98,12 @@ class _UnknownOption:
     call_converter: bool
 
 
-def get_json_path() -> pathlib.Path:
-    return pathlib.Path(dirs.user_config_dir) / "settings.json"
-
-
 def _default_converter(value: Any) -> Any:
     return value
+
+
+def get_json_path() -> pathlib.Path:
+    return pathlib.Path(dirs.user_config_dir) / "settings.json"
 
 
 class Settings:
@@ -157,7 +157,7 @@ class Settings:
                 converter=import_lexer_class)
 
         By default, the converter returns its argument unchanged.
-        Avoid using a lambda function as the converter,
+        Do not use a lambda function as the converter,
         because the settings must be picklable.
 
         If an option with the same name exists already, an error is raised by

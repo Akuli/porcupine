@@ -956,7 +956,7 @@ bers.py>` use this attribute.
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
         tab = cls(manager, content=(state.content or ""), path=state.path)
-        tab.settings.set_state(state.settings_state)
+        tab.settings.set_state(state.settings_state)  # must be before reload()
         if state.content is None:
             # no unsaved changes, read from the saved file
             if not tab.reload(undoable=False):
