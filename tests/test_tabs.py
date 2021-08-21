@@ -171,7 +171,7 @@ def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
 
 
 def test_file_deleted(tabmanager, tmp_path, mocker, caplog):
-    mock = mocker.patch("tkinter.messagebox.showerror", return_value='cancel')
+    mock = mocker.patch("tkinter.messagebox.showerror", return_value="cancel")
     (tmp_path / "foo.py").write_text("blah")
     tab = tabmanager.open_file(tmp_path / "foo.py")
     assert tab.reload()

@@ -783,7 +783,8 @@ bers.py>` use this attribute.
         except OSError:
             # File unreadable, already errors elsewhere, do not spam console with warning
             log.info(
-                f"error when figuring out if '{self.path}' needs reloading, assuming it does", exc_info=True
+                f"error when figuring out if '{self.path}' needs reloading, assuming it does",
+                exc_info=True,
             )
 
             # Why return True on error:
