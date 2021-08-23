@@ -64,8 +64,8 @@ def test_find_merge_conflicts(filetab):
 def test_not_modified(filetab, tmp_path):
     filetab.path = tmp_path / "foo.txt"
     filetab.path.write_text(merge_conflict_string)
-    filetab.reload()
-    assert not filetab.is_modified()
+    assert filetab.reload()
+    assert not filetab.has_unsaved_changes()
 
 
 def check_use_button(textwidget, button_number):
@@ -73,7 +73,14 @@ def check_use_button(textwidget, button_number):
     textwidget.insert("1.0", merge_conflict_string)
     displayer = ConflictDisplayer(textwidget, *find_merge_conflicts(textwidget)[0])
     textwidget.insert("2.0", "lol\nwat\n")
-    {1: displayer.part1_button, 2: displayer.part2_button}[button_number].invoke()
+
+    if button_number == 1:
+        displayer.use_part1()
+    elif button_number == 2:
+        displayer.use_part2()
+    else:
+        raise ValueError(button_number)
+
     textwidget.update()
     return textwidget.get("1.0", "end - 1 char")
 

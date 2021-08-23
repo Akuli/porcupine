@@ -1,0 +1,23 @@
+/* https://stackoverflow.com/a/708382 */
+1 VERSIONINFO
+/* TODO: should change these? */
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "ProductName", "Porcupine"
+      VALUE "ProductVersion", PORCUPINE_VERSION
+      VALUE "FileDescription", "Porcupine"
+      VALUE "FileVersion", PORCUPINE_VERSION
+      VALUE "InternalName", "porcupine"
+      VALUE "OriginalFilename", "Porcupine.exe"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END

@@ -41,7 +41,7 @@ event add "<<Menubar:Edit/Anchors/Jump to previous>>" <Alt-Shift-Up>
 event add "<<Menubar:Edit/Anchors/Jump to next>>" <Alt-Shift-Down>
 
 # urls plugin
-event add "<<Urls:OpenWithMouse>>" <Alt-Shift-Button-1>
+event add "<<Urls:OpenWithMouse>>" <Double-Button-1>
 event add "<<Urls:OpenWithKeyboard>>" <Alt-Shift-Return>
 
 # tab_order plugin
@@ -131,13 +131,11 @@ bind Text <$contmand-Delete> {
 
 bind Text <BackSpace> {
     try {%W delete sel.first sel.last} on error {} {
-        if {[%W index insert] != 1.0} {
-            set beforecursor [%W get {insert linestart} insert]
-            if {[bind %W <<Dedent>>] != "" && $beforecursor != "" && [string is space $beforecursor]} {
-                event generate %W <<Dedent>>
-            } else {
-                %W delete {insert - 1 char}
-            }
+        set beforecursor [%W get {insert linestart} insert]
+        if {[bind %W <<Dedent>>] != "" && $beforecursor != "" && [string is space $beforecursor]} {
+            event generate %W <<Dedent>>
+        } else {
+            %W delete {insert - 1 char} insert
         }
     }
 }
@@ -163,7 +161,7 @@ bind Text <Shift-$contmand-Delete> {
 bind Text <Shift-$contmand-BackSpace> {
     try {%W delete sel.first sel.last} on error {} {
         if {[%W index insert] == [%W index {insert linestart}]} {
-            %W delete {insert - 1 char}
+            %W delete {insert - 1 char} insert
         } else {
             %W delete {insert linestart} insert
         }

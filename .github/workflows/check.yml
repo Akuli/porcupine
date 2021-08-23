@@ -24,6 +24,7 @@ jobs:
         time mypy --platform darwin --python-version 3.8 porcupine more_plugins docs/extensions.py
         time mypy --platform darwin --python-version 3.9 porcupine more_plugins docs/extensions.py
   pytest-windows:
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9"]
@@ -39,6 +40,7 @@ jobs:
     - run: python scripts/download-tkdnd.py
     - run: python -m pytest -vvvv --durations=10
   pytest-linux:
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9"]
@@ -55,6 +57,7 @@ jobs:
       with:
         run: python3 -m pytest -vvvv --durations=10
   pytest-macos:
+    timeout-minutes: 10
     # https://github.com/actions/setup-python/issues/58
     # Brew-installed python 3.8 and 3.9 seem to already be there, so it's not slow
     # but starting today, 3.9 has no tkinter lol?
@@ -81,7 +84,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check scripts/*.py docs/*.py porcupine tests more_plugins
+    - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -90,7 +93,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m isort --check scripts/*.py docs/*.py porcupine tests more_plugins
+    - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
   pyflakes:
     runs-on: ubuntu-latest
     steps:
@@ -99,7 +102,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m pyflakes scripts/*.py docs/*.py porcupine tests more_plugins
+    - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
   bindcheck:
     runs-on: ubuntu-latest
     steps:

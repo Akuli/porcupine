@@ -185,9 +185,10 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
 
     start = time.perf_counter()
     try:
+        log.debug(f"calling porcupine.plugins.{info.name}.setup()")
         info.module.setup()
     except Exception:
-        logger.exception(f"{info.name}.setup() doesn't work")
+        log.exception(f"{info.name}.setup() doesn't work")
         info.status = Status.SETUP_FAILED
         info.error = traceback.format_exc()
     else:

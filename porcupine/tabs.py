@@ -1,6 +1,7 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
+import codecs
 import collections
 import dataclasses
 import hashlib
@@ -25,10 +26,10 @@ _T = TypeVar("_T")
 
 
 def _find_duplicates(items: list[_T], key: Callable[[_T], str]) -> Iterable[list[_T]]:
-    for key_return_value, similar_items_iter in itertools.groupby(items, key=key):
-        similar_items = list(similar_items_iter)
-        if len(similar_items) >= 2:
-            yield similar_items
+    items_by_key: dict[str, list[_T]] = {}
+    for item in items:
+        items_by_key.setdefault(key(item), []).append(item)
+    return [itemlist for itemlist in items_by_key.values() if len(itemlist) >= 2]
 
 
 def _short_ways_to_display_path(path: pathlib.Path) -> list[str]:
@@ -132,6 +133,28 @@ class TabManager(ttk.Notebook):
         # tkinter has a bug that makes the original tabs() return widget name
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
+
+    def open_file(self, path: pathlib.Path) -> FileTab | None:
+        """Add a :class:`FileTab` for editing a file and select it.
+
+        If the file can't be opened, this method displays an error to the user
+        and returns ``None``.
+        """
+        # Add tab before loading content, so that editorconfig plugin gets a
+        # chance to set the encoding into tab.settings
+        tab = FileTab(self, path=path)
+        existing_tab = self.add_tab(tab)
+        if existing_tab != tab:
+            # tab is destroyed
+            assert isinstance(existing_tab, FileTab)
+            return existing_tab
+
+        if not tab.reload(undoable=False):
+            self.close_tab(tab)
+            return None
+
+        tab.textwidget.mark_set("insert", "1.0")
+        return tab
 
     def add_tab(self, tab: Tab, select: bool = True) -> Tab:
         """Append a :class:`.Tab` to this tab manager.
@@ -357,10 +380,12 @@ restarting Porcupine.
         return None
 
     @classmethod
-    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT:
-        """
-        Create a new tab from the return value of :meth:`get_state`.
+    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT | None:
+        """Create a new tab from the return value of :meth:`get_state`.
+
         Be sure to override this if you override :meth:`get_state`.
+        You can return ``None`` to indicate that the tab can't be loaded,
+        but in that case, you should also let the user know about it.
         """
         raise NotImplementedError("from_state() wasn't overrided but get_state() was overrided")
 
@@ -370,6 +395,7 @@ class _FileTabState(NamedTuple):
     content: str | None
     saved_state: tuple[os.stat_result | None, int, str]
     cursor_pos: str
+    settings_state: dict[str, Any]
 
 
 def _import_lexer_class(name: str) -> LexerMeta:
@@ -383,7 +409,108 @@ def _import_lexer_class(name: str) -> LexerMeta:
 
 @dataclasses.dataclass
 class ReloadInfo(utils.EventDataclass):
-    was_modified: bool
+    had_unsaved_changes: bool
+
+
+def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
+    label_width = 400
+
+    dialog = tkinter.Toplevel()
+    if _state.get_main_window().winfo_viewable():
+        dialog.transient(_state.get_main_window())
+    dialog.resizable(False, False)
+
+    big_frame = ttk.Frame(dialog)
+    big_frame.pack(fill="both", expand=True)
+    ttk.Label(
+        big_frame,
+        text=(
+            f'The content of "{path}" is not valid {encoding_that_didnt_work}. Choose an encoding'
+            " to use instead:"
+        ),
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
+
+    var = tkinter.StringVar()
+    entry = ttk.Entry(big_frame, textvariable=var)
+    entry.pack(pady=50)
+    entry.insert(0, encoding_that_didnt_work)  # type: ignore[no-untyped-call]
+
+    ttk.Label(
+        big_frame,
+        text=(
+            "You can create a project-specific .editorconfig file to change the encoding"
+            " permanently."
+        ),
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
+    button_frame = ttk.Frame(big_frame)
+    button_frame.pack(fill="x", pady=10)
+
+    selected_encoding = None
+
+    def select_encoding() -> None:
+        nonlocal selected_encoding
+        selected_encoding = entry.get()  # type: ignore[no-untyped-call]
+        dialog.destroy()
+
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
+    cancel_button.pack(side="left", expand=True)
+    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
+    ok_button.pack(side="right", expand=True)
+
+    def validate_encoding(*junk: object) -> None:
+        encoding = entry.get()  # type: ignore[no-untyped-call]
+        try:
+            codecs.lookup(encoding)
+        except LookupError:
+            ok_button.config(state="disabled")
+        else:
+            ok_button.config(state="normal")
+
+    var.trace_add("write", validate_encoding)
+
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.select_range(0, "end")
+    entry.focus()
+
+    dialog.wait_window()
+    return selected_encoding
+
+
+# Runs in O(n) time where n = max(old_content.count('\n'), new_content.count('\n'))
+def _find_changed_part(old_content: str, new_content: str) -> tuple[str, str, str]:
+    old_lines = collections.deque(old_content.splitlines(keepends=True))
+    new_lines = collections.deque(new_content.splitlines(keepends=True))
+    start_line = 1
+    start_column = 0
+    if old_lines and not old_lines[-1].endswith("\n"):
+        # "foo\nbar" --> ["foo\n", "bar"] --> line 2, column 3
+        end_line = len(old_lines)
+        end_column = len(old_lines[-1])
+    else:
+        # "foo\nbar\n" --> ["foo\n", "bar\n"] --> line 3, column 0
+        # "" --> [] --> line 1, column 0
+        end_line = len(old_lines) + 1
+        end_column = 0
+
+    while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
+        popped = old_lines.pop()
+        popped2 = new_lines.pop()
+        assert popped == popped2
+        if popped.endswith("\n"):
+            assert end_column == 0
+            end_line -= 1
+        else:
+            end_column = 0
+
+    while old_lines and new_lines and old_lines[0] == new_lines[0]:
+        old_lines.popleft()
+        new_lines.popleft()
+        start_line += 1
+
+    return (f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines))
 
 
 class FileTab(Tab):
@@ -394,7 +521,7 @@ class FileTab(Tab):
     pressed. Otherwise this becomes a "New File" tab.
 
     If you want to open a new tab for editing an existing file,
-    use :meth:`open_file`.
+    use :meth:`TabManager.open_file`.
 
     .. virtualevent:: PathChanged
 
@@ -454,13 +581,19 @@ class FileTab(Tab):
             * :func:`porcupine.textutils.use_pygments_theme`
             * :func:`porcupine.textutils.track_changes`
 
+    .. attribute:: panedwindow
+        :type: porcupine.utils.PanedWindow
+
+        This widget contains the :attr:`textwidget`.
+        Its purpose is to allow plugins like :source:`minimap <porcupine/plugins/minimap.py>`
+        to add other resizable widgets next to the :attr:`textwidget`.
+
     .. attribute:: scrollbar
         :type: tkinter.ttk.Scrollbar
 
         This is the scrollbar next to :attr:`.textwidget`.
 
-        Things like :source:`the line number plugin <porcupine/plugins/linenum\
-bers.py>` use this attribute.
+        Things like :source:`the line number plugin <porcupine/plugins/linenumbers.py>` use this attribute.
 
     .. attribute:: path
         :type: pathlib.Path | None
@@ -497,16 +630,22 @@ bers.py>` use this attribute.
             converter=settings.LineEnding.__getitem__,
         )
 
+        # I don't know why this needs a type annotation for self.panedwindow
+        self.panedwindow: utils.PanedWindow = utils.PanedWindow(self, orient="horizontal")
+        self.panedwindow.pack(side="left", fill="both", expand=True)
+
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
-        self.textwidget = textutils.MainText(
+        #
+        # I don't know why this needs a type annotation for self.textwidget
+        self.textwidget: textutils.MainText = textutils.MainText(
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
-        self.textwidget.pack(side="left", fill="both", expand=True)
+        self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
 
         if content:
             self.textwidget.insert("1.0", content)
-            self.textwidget.edit_reset()  # reset undo/redo
+            self.textwidget.edit_reset()  # can't undo initial insertion
         self._set_saved_state((None, self._get_char_count(), self._get_hash()))
 
         self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
@@ -520,53 +659,85 @@ bers.py>` use this attribute.
         self.bind("<<PathChanged>>", self._update_titles, add=True)
         self._update_titles()
 
-    @classmethod
-    def open_file(cls: Type[_FileTabT], manager: TabManager, path: pathlib.Path) -> _FileTabT:
-        """Read a file and return a new FileTab object.
-
-        Use this constructor if you want to open an existing file from a
-        path and let the user edit it.
-
-        :exc:`UnicodeError` or :exc:`OSError` is raised if reading the
-        file fails.
-        """
-        tab = cls(manager, path=path)
-        tab.reload()
-        tab.textwidget.mark_set("insert", "1.0")
-        tab.textwidget.edit_reset()
-        return tab
+        self._previous_reload_failed = False
 
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
 
-    def _get_hash(self, string: str | None = None) -> str:
-        if string is None:
-            string = self.textwidget.get("1.0", "end - 1 char")
-        return hashlib.md5(string.encode("utf-8")).hexdigest()
+    def _get_hash(self, content: bytes | None = None) -> str:
+        if content is None:
+            # This is not the right place to handle encoding errors. If it
+            # contains characters that the encoding doesn't support, it should
+            # error when user tries to save the file, not when this method gets
+            # called for some unintuitive reason.
+            newline = self.settings.get("line_ending", settings.LineEnding).value.encode("ascii")
+            content = (
+                self.textwidget.get("1.0", "end - 1 char")
+                .encode(self.settings.get("encoding", str), errors="replace")
+                .replace(b"\n", newline)
+            )
+        return hashlib.md5(content).hexdigest()
 
     def _set_saved_state(self, state: tuple[os.stat_result | None, int, str]) -> None:
         self._saved_state = state
         self._update_titles()
 
-    def is_modified(self) -> bool:
-        """Return False if the text has changed since previous save.
-
-        This is set to False automagically when the content is modified.
-        Use :meth:`mark_saved` to set this to True.
-        """
+    def has_unsaved_changes(self) -> bool:
+        """Return True if the text in the editor has changed since the previous save."""
         stat_result, char_count, save_hash = self._saved_state
         # Don't call _get_hash() if not necessary
         return self._get_char_count() != char_count or self._get_hash() != save_hash
 
-    def reload(self) -> None:
+    def reload(self, *, undoable: bool = True) -> bool:
         """Read the contents of the file from disk.
 
-        .. seealso:: :meth:`open_file`, :meth:`other_program_changed_file`
+        This method returns ``True`` on success, and if reading the file fails, the error
+        is shown to the user and ``False`` is returned.
+
+        If ``undoable=False`` is given, the reload cannot be undone with Ctrl+Z.
+
+        .. seealso:: :meth:`TabManager.open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
-        with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
-            stat_result = os.fstat(f.fileno())
-            content = f.read()
+
+        # Disable text widget so user can't type into it during load
+        assert self.textwidget["state"] == "normal"
+        self.textwidget.config(state="disabled")
+
+        while True:
+            try:
+                with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
+                    stat_result = os.fstat(f.fileno())
+                    content = f.read()
+                break
+
+            except OSError as e:
+                if self._previous_reload_failed:
+                    # Do not spam user with errors (not terminal either)
+                    log.info(f"opening '{self.path}' failed", exc_info=True)
+                else:
+                    log.exception(f"opening '{self.path}' failed")
+                    wanna_retry = messagebox.askretrycancel(
+                        "Opening failed",
+                        f"{type(e).__name__}: {e}\n\n"
+                        + "Make sure that the file exists and try again.",
+                    )
+                    if wanna_retry:
+                        continue
+
+            except UnicodeDecodeError:
+                user_selected_encoding = _ask_encoding(
+                    self.path, self.settings.get("encoding", str)
+                )
+                if user_selected_encoding is not None:
+                    self.settings.set("encoding", user_selected_encoding)
+                    continue  # try again
+
+            # Error message shown if needed, let user continue editing
+            self.textwidget.config(state="normal")
+            self._previous_reload_failed = True
+            self._set_saved_state((None, -1, "dummy hash"))  # Do not consider file saved
+            return False
 
         if isinstance(f.newlines, tuple):
             # TODO: show a message box to user?
@@ -575,39 +746,24 @@ bers.py>` use this attribute.
             assert isinstance(f.newlines, str)
             self.settings.set("line_ending", settings.LineEnding(f.newlines))
 
-        # Find changed part in O(n) time where n = max(len(old_lines), len(new_lines))
-        old_lines = collections.deque(
-            self.textwidget.get("1.0", "end - 1 char").splitlines(keepends=True)
+        was_unsaved = self.has_unsaved_changes()
+
+        start, end, changed_part_content = _find_changed_part(
+            self.textwidget.get("1.0", "end - 1 char"), content
         )
-        new_lines = collections.deque(content.splitlines(keepends=True))
-        start_line = 1
-        start_column = 0
-        end_line, end_column = map(int, self.textwidget.index("end - 1 char").split("."))
-        while old_lines and new_lines and old_lines[-1] == new_lines[-1]:
-            popped = old_lines.pop()
-            popped2 = new_lines.pop()
-            assert popped == popped2
-            if popped.endswith("\n"):
-                assert end_column == 0
-                end_line -= 1
-            else:
-                end_column = 0
-        while old_lines and new_lines and old_lines[0] == new_lines[0]:
-            old_lines.popleft()
-            new_lines.popleft()
-            start_line += 1
-
-        modified_before = self.is_modified()
-
+        self.textwidget.config(state="normal")
         with textutils.change_batch(self.textwidget):
-            self.textwidget.replace(
-                f"{start_line}.{start_column}", f"{end_line}.{end_column}", "".join(new_lines)
-            )
+            self.textwidget.replace(start, end, changed_part_content)
+
+        if not undoable:
+            self.textwidget.edit_reset()
 
         self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
 
         # TODO: document this
-        self.event_generate("<<Reloaded>>", data=ReloadInfo(was_modified=modified_before))
+        self.event_generate("<<Reloaded>>", data=ReloadInfo(had_unsaved_changes=was_unsaved))
+        self._previous_reload_failed = False
+        return True
 
     def other_program_changed_file(self) -> bool:
         """Check whether some other program has changed the file.
@@ -631,7 +787,7 @@ bers.py>` use this attribute.
                 return True
 
             log.info(f"reading {self.path} to figure out if reload is needed")
-            with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
+            with self.path.open("rb") as f:
                 actual_hash = self._get_hash(f.read())
             if actual_hash != save_hash:
                 return True
@@ -640,23 +796,26 @@ bers.py>` use this attribute.
             self._set_saved_state((actual_stat, save_char_count, save_hash))
             return False
 
-        except (OSError, UnicodeError):
-            log.exception(
-                f"error when figuring out if '{self.path}' needs reloading, assuming it does"
+        except OSError:
+            # File unreadable, already errors elsewhere, do not spam console with warning
+            log.info(
+                f"error when figuring out if '{self.path}' needs reloading, assuming it does",
+                exc_info=True,
             )
+
+            # Why return True on error:
+            #   - Other program did change something, by making it unreadable
+            #   - Indicates that something isn't saved
             return True
 
     def equivalent(self, other: Tab) -> bool:  # override
         # this used to have hasattr(other, "path") instead of isinstance
-        # but it screws up if a plugin defines something different with
-        # a path attribute, for example, a debugger plugin might have
-        # tabs that represent files and they might need to be opened at
-        # the same time as FileTabs are
+        # but it not work if a plugin defines custom tab with path attribute
         return (
             isinstance(other, FileTab)
             and self.path is not None
             and other.path is not None
-            and self.path.samefile(other.path)
+            and self.path == other.path  # works even if files don't exist
         )
 
     @property
@@ -680,13 +839,13 @@ bers.py>` use this attribute.
         else:
             titles = _short_ways_to_display_path(self.path)
 
-        if self.is_modified():
+        if self.has_unsaved_changes():
             titles = [f"*{title}*" for title in titles]
 
         self.title_choices = titles
 
     def can_be_closed(self) -> bool:  # override
-        if not self.is_modified():
+        if not self.has_unsaved_changes():
             return True
 
         if self.path is None:
@@ -706,19 +865,46 @@ bers.py>` use this attribute.
     def _do_the_save(self, path: pathlib.Path) -> bool:
         self.event_generate("<<BeforeSave>>")
 
-        encoding = self.settings.get("encoding", str)
-        line_ending = self.settings.get("line_ending", settings.LineEnding)
+        while True:
+            encoding = self.settings.get("encoding", str)
+            line_ending = self.settings.get("line_ending", settings.LineEnding)
 
-        try:
-            with utils.backup_open(path, "w", encoding=encoding, newline=line_ending.value) as f:
-                f.write(self.textwidget.get("1.0", "end - 1 char"))
-                f.flush()  # needed to get right file size in stat
-                self._set_saved_state(
-                    (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+            try:
+                with utils.backup_open(
+                    path, "w", encoding=encoding, newline=line_ending.value
+                ) as f:
+                    f.write(self.textwidget.get("1.0", "end - 1 char"))
+                    f.flush()  # needed to get right file size in stat
+                    self._set_saved_state(
+                        (os.fstat(f.fileno()), self._get_char_count(), self._get_hash())
+                    )
+                break
+
+            except UnicodeEncodeError as e:
+                bad_character = e.object[e.start : e.start + 1]
+                log.info(
+                    f"save to '{path}' failed, non-{encoding} character '{bad_character}'",
+                    exc_info=True,
                 )
-        except (OSError, UnicodeError) as e:
-            log.exception(f"saving to '{path}' failed")
-            utils.errordialog(type(e).__name__, "Saving failed!", traceback.format_exc())
+
+                user_wants_utf8 = messagebox.askyesno(
+                    "Saving failed",
+                    f"'{bad_character}' is not a valid character in the {encoding} encoding. Do"
+                    f" you want to save the file as UTF-8 instead of {encoding}?",
+                )
+                if user_wants_utf8:
+                    self.settings.set("encoding", "utf-8")
+                    continue
+
+            except OSError as e:
+                log.exception(f"saving to '{path}' failed")
+                messagebox.showerror(
+                    "Saving failed",
+                    f"{type(e).__name__}: {e}\n\n"
+                    + "Make sure that the file is writable and try again.",
+                )
+
+            # If we get here, error message was shown
             return False
 
         self._save_hash = self._get_hash()
@@ -743,7 +929,7 @@ bers.py>` use this attribute.
         if self.path is None:
             return self.save_as()
 
-        if self.other_program_changed_file():
+        if self.other_program_changed_file() and not self._previous_reload_failed:
             user_is_sure = messagebox.askyesno(
                 "File changed",
                 f"Another program has changed {self.path.name}. Are you sure you want to save it?",
@@ -788,7 +974,7 @@ bers.py>` use this attribute.
         # e.g. "New File" tabs are saved even though the .path is None
         if (
             self.path is not None
-            and not self.is_modified()
+            and not self.has_unsaved_changes()
             and not self.other_program_changed_file()
         ):
             # this is really saved
@@ -796,20 +982,29 @@ bers.py>` use this attribute.
         else:
             content = self.textwidget.get("1.0", "end - 1 char")
 
-        return _FileTabState(self.path, content, self._saved_state, self.textwidget.index("insert"))
+        return _FileTabState(
+            self.path,
+            content,
+            self._saved_state,
+            self.textwidget.index("insert"),
+            self.settings.get_state(),
+        )
 
     @classmethod
-    def from_state(cls: Type[_FileTabT], manager: TabManager, state: _FileTabState) -> _FileTabT:
+    def from_state(
+        cls: Type[_FileTabT], manager: TabManager, state: _FileTabState
+    ) -> _FileTabT | None:
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
+        tab = cls(manager, content=(state.content or ""), path=state.path)
+        tab.settings.set_state(state.settings_state)  # must be before reload()
         if state.content is None:
-            # nothing has changed since saving, read from the saved file
-            assert state.path is not None
-            self = cls.open_file(manager, state.path)
-        else:
-            self = cls(manager, state.content, state.path)
+            # no unsaved changes, read from the saved file
+            if not tab.reload(undoable=False):
+                tab.destroy()
+                return None
 
-        self._set_saved_state(state.saved_state)  # TODO: does this make any sense?
-        self.textwidget.mark_set("insert", state.cursor_pos)
-        self.textwidget.see("insert linestart")
-        return self
+        tab._set_saved_state(state.saved_state)  # TODO: does this make any sense?
+        tab.textwidget.mark_set("insert", state.cursor_pos)
+        tab.textwidget.see("insert linestart")
+        return tab

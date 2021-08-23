@@ -8,7 +8,6 @@ import pickle
 import subprocess
 import sys
 import tempfile
-import threading
 import tkinter
 from typing import Any
 
@@ -127,14 +126,23 @@ class PopManager:
 
         settings.save()  # let the new process use up-to-date settings
 
-        # The subprocess must be called so that it has a sane sys.path.
-        # In particular, import or don't import from current working
-        # directory exactly like the porcupine that is currently running.
-        # Importing from current working directory is bad if it contains
-        # e.g. queue.py (#31), but good when that's where porcupine is
-        # meant to be imported from (#230).
-        code = f"import sys; sys.path[:] = {sys.path}; from porcupine.__main__ import main; main()"
-        args = [sys.executable, "-c", code]
+        if sys.platform == "win32" and sys.executable.endswith(r"\Porcupine.exe"):
+            # Porcupine.exe passes arguments to python with launcher script added to start
+            args = [sys.executable]
+        else:
+            # The subprocess must be called so that it has a sane sys.path.
+            # In particular, import or don't import from current working
+            # directory exactly like the porcupine that is currently running.
+            # Importing from current working directory is bad if it contains
+            # e.g. queue.py (#31), but good when that's where porcupine is
+            # meant to be imported from (#230).
+            code = (
+                "import sys;"
+                + f" sys.path[:] = {sys.path};"
+                + " from porcupine.__main__ import main;"
+                + " main()"
+            )
+            args = [sys.executable, "-c", code]
 
         args.append("--without-plugins")
         args.append(
@@ -163,9 +171,6 @@ class PopManager:
         log.debug(f"started subprocess with PID {process.pid}")
         get_tab_manager().close_tab(tab)
 
-        # don't exit python until the subprocess exits, also log stuff
-        threading.Thread(target=self._waiting_thread, args=[process]).start()
-
     def pop_next_to_current_window(self) -> None:
         tab = get_tab_manager().select()
         assert tab is not None
@@ -181,13 +186,6 @@ class PopManager:
         else:
             geometry = f"{half_screen_width}x{screen_height}+{half_screen_width}+0"
         self.pop(tab, state, geometry)
-
-    def _waiting_thread(self, process: subprocess.Popen[bytes]) -> None:
-        status = process.wait()
-        if status == 0:
-            log.debug(f"subprocess with PID {process.pid} exited successfully")
-        else:
-            log.warning(f"subprocess with PID {process.pid} exited with status {status}")
 
 
 def open_tab_from_state_file() -> None:

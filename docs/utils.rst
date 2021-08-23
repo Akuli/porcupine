@@ -16,7 +16,9 @@ Information about Python
 
     The ``pythonw.exe`` program runs Python scripts without a command
     prompt, so you need to check for that when doing things like
-    starting a new command prompt from Python.
+    starting a new command prompt from Python. This is also ``True``
+    if Porcupine is running as ``Porcupine.exe``, which it is when
+    launched from start menu.
 
 .. data:: python_executable
 
@@ -36,12 +38,12 @@ Events with Data
 Other Tkinter Utilities
 -----------------------
 
-See :mod:`porcupine.textutils` for ``tkinter.Text`` specific things.
+.. seealso:: :mod:`porcupine.textutils` contains ``tkinter.Text`` specific things.
 
 .. autofunction:: bind_tab_key
 .. autofunction:: add_scroll_command
 .. autofunction:: run_in_thread
-.. autofunction:: errordialog
+.. autoclass:: PanedWindow
 
 
 Miscellaneous
@@ -50,6 +52,8 @@ Miscellaneous
 .. autofunction:: invert_color
 .. autofunction:: mix_colors
 .. autofunction:: backup_open
+.. autofunction:: find_project_root
+.. autofunction:: copy_type
 
 .. function:: quote(argument)
 

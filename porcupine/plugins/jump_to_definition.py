@@ -47,8 +47,10 @@ def show_location_range(loc_range: LocationRange) -> None:
         get_tab_manager().select(tab)
     else:
         log.info(f"{path} not opened yet, opening now")
-        tab = tabs.FileTab.open_file(get_tab_manager(), path)
-        get_tab_manager().add_tab(tab, select=True)
+        tab_if_any = get_tab_manager().open_file(path)
+        if tab_if_any is None:
+            return
+        tab = tab_if_any  # mypy is ass
 
     tab.textwidget.tag_remove("sel", "1.0", "end")
     tab.textwidget.tag_add("sel", loc_range.start, loc_range.end)

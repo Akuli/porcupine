@@ -177,6 +177,20 @@ def test_ignore_case_and_full_words_only(filetab_and_finder):
     ]
 
 
+def test_full_words_can_contain_anything(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    finder.full_words_var.set(True)
+    filetab.textwidget.insert("1.0", "foo.bar foo.baz")
+
+    finder.find_entry.insert(0, "foo.")
+    assert finder.statuslabel["text"].startswith('"foo." is not a valid word')
+    assert not get_match_ranges(finder)
+
+    finder.find_entry.insert("end", "bar")  # "foo." + "bar"
+    assert finder.statuslabel["text"] == "Found 1 match."
+    assert get_match_ranges(finder) == [("1.0", "1.7")]
+
+
 def test_basic_statuses_and_previous_and_next_match_buttons(filetab_and_finder):
     filetab, finder = filetab_and_finder
     filetab.textwidget.insert("1.0", "asd asd asd\nasd asd")
@@ -230,6 +244,13 @@ def test_basic_statuses_and_previous_and_next_match_buttons(filetab_and_finder):
         assert get_selected() == selecteds[index]
 
 
+def get_match_ranges(finder):
+    return [
+        (finder._textwidget.index(f"{tag}.first"), finder._textwidget.index(f"{tag}.last"))
+        for tag in finder.get_match_tags()
+    ]
+
+
 def test_replace(filetab_and_finder):
     # replacing 'asd' with 'asda' tests corner cases well because:
     #   - 'asda' contains 'asd', so must avoid infinite loops
@@ -242,35 +263,36 @@ def test_replace(filetab_and_finder):
 
     finder.highlight_all_matches()
     assert str(finder.replace_this_button["state"]) == "disabled"
-    assert finder.get_match_ranges() == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
+    assert get_match_ranges(finder) == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
 
     click_disabled_button(finder.replace_this_button)
     assert finder.statuslabel["text"] == 'Click "Previous match" or "Next match" first.'
 
     finder.next_button.invoke()
     assert str(finder.replace_this_button["state"]) == "normal"
-    assert finder.get_match_ranges() == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
+    assert get_match_ranges(finder) == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
 
     finder.replace_this_button.invoke()
     assert str(finder.replace_this_button["state"]) == "normal"
     assert finder.statuslabel["text"] == "Replaced a match. There are 2 more matches."
-    assert finder.get_match_ranges() == [("1.5", "1.8"), ("1.9", "1.12")]
+    assert get_match_ranges(finder) == [("1.5", "1.8"), ("1.9", "1.12")]
 
     finder.replace_this_button.invoke()
     assert str(finder.replace_this_button["state"]) == "normal"
     assert finder.statuslabel["text"] == "Replaced a match. There is 1 more match."
-    assert finder.get_match_ranges() == [("1.10", "1.13")]
+    assert get_match_ranges(finder) == [("1.10", "1.13")]
 
     assert str(finder.previous_button["state"]) == "normal"
     assert str(finder.next_button["state"]) == "normal"
 
     finder.replace_this_button.invoke()
+    filetab.update()
     assert str(finder.replace_this_button["state"]) == "disabled"
     assert str(finder.previous_button["state"]) == "disabled"
     assert str(finder.next_button["state"]) == "disabled"
     assert str(finder.replace_all_button["state"]) == "disabled"
     assert finder.statuslabel["text"] == "Replaced the last match."
-    assert finder.get_match_ranges() == []
+    assert get_match_ranges(finder) == []
 
 
 # if this passes with no code to specially handle this, the replacing code
@@ -283,21 +305,22 @@ def test_replace_asd_with_asd(filetab_and_finder):
 
     finder.highlight_all_matches()
     assert str(finder.replace_this_button["state"]) == "disabled"
-    assert finder.get_match_ranges() == [("1.0", "1.3"), ("1.4", "1.7")]
+    assert get_match_ranges(finder) == [("1.0", "1.3"), ("1.4", "1.7")]
 
     finder.next_button.invoke()
     assert str(finder.replace_this_button["state"]) == "normal"
-    assert finder.get_match_ranges() == [("1.0", "1.3"), ("1.4", "1.7")]
+    assert get_match_ranges(finder) == [("1.0", "1.3"), ("1.4", "1.7")]
 
     finder.replace_this_button.invoke()
     assert str(finder.replace_this_button["state"]) == "normal"
     assert finder.statuslabel["text"] == "Replaced a match. There is 1 more match."
-    assert finder.get_match_ranges() == [("1.4", "1.7")]
+    assert get_match_ranges(finder) == [("1.4", "1.7")]
 
     finder.replace_this_button.invoke()
+    filetab.update()
     assert str(finder.replace_this_button["state"]) == "disabled"
     assert finder.statuslabel["text"] == "Replaced the last match."
-    assert finder.get_match_ranges() == []
+    assert get_match_ranges(finder) == []
 
 
 def test_replace_all(filetab_and_finder):
@@ -308,16 +331,16 @@ def test_replace_all(filetab_and_finder):
 
     finder.highlight_all_matches()
     assert str(finder.replace_this_button["state"]) == "disabled"
-    assert finder.get_match_ranges() == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
+    assert get_match_ranges(finder) == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
 
     finder.next_button.invoke()
     assert str(finder.replace_this_button["state"]) == "normal"
-    assert finder.get_match_ranges() == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
+    assert get_match_ranges(finder) == [("1.0", "1.3"), ("1.4", "1.7"), ("1.8", "1.11")]
 
     finder.replace_this_button.invoke()
     assert str(finder.replace_this_button["state"]) == "normal"
     assert finder.statuslabel["text"] == "Replaced a match. There are 2 more matches."
-    assert finder.get_match_ranges() == [("1.5", "1.8"), ("1.9", "1.12")]
+    assert get_match_ranges(finder) == [("1.5", "1.8"), ("1.9", "1.12")]
 
     finder.replace_all_button.invoke()
     assert str(finder.replace_this_button["state"]) == "disabled"
@@ -325,7 +348,7 @@ def test_replace_all(filetab_and_finder):
     assert str(finder.next_button["state"]) == "disabled"
     assert str(finder.replace_all_button["state"]) == "disabled"
     assert finder.statuslabel["text"] == "Replaced 2 matches."
-    assert finder.get_match_ranges() == []
+    assert get_match_ranges(finder) == []
     assert filetab.textwidget.get("1.0", "end - 1 char") == "asda asda asda"
 
     filetab.textwidget.delete("1.3", "end")
@@ -438,3 +461,11 @@ def test_replace_this_greyed_out(filetab_and_finder):
 
     finder.replace_entry.insert("end", "baz")
     assert str(finder.replace_this_button["state"]) == "disabled"
+
+
+def test_find_r_from_rr(filetab_and_finder):
+    filetab, finder = filetab_and_finder
+    filetab.textwidget.insert("end", "rr")
+    finder.show()
+    finder.find_entry.insert("end", "r")
+    assert get_match_ranges(finder) == [("1.0", "1.1"), ("1.1", "1.2")]

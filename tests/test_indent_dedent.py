@@ -1,8 +1,6 @@
-import platform
+import sys
 
 import pytest
-
-from porcupine.plugins.autoindent import ALT_FLAG
 
 _FUNNY = """\
 def foo(
@@ -104,7 +102,7 @@ def test_autoindent(filetab):
 
 
 # FIXME: figure out how to do this on mac
-@pytest.mark.skipif(platform.system() == "Darwin", reason="I don't have a mac")
+@pytest.mark.skipif(sys.platform == "darwin", reason="I don't have a mac")
 def test_shift_enter_and_alt_enter(filetab):
     # See issue #404 (not the HTTP status, lol)
     indent = " " * 4
@@ -114,8 +112,7 @@ def test_shift_enter_and_alt_enter(filetab):
     assert filetab.textwidget.get("1.0", "end - 1 char").endswith(f"\n{indent}{indent}")
 
     filetab.textwidget.delete("1.0 lineend", "end")
-    # Unfortunately event_generate('<Alt-Return>') doesn't work, need to trust that ALT_FLAG is correct
-    filetab.textwidget.event_generate("<Return>", state=ALT_FLAG)
+    filetab.textwidget.event_generate("<Alt-Return>")
     filetab.update()
     assert filetab.textwidget.get("1.0", "end - 1 char").endswith(f"\n{indent}")
 

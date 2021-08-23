@@ -7,7 +7,7 @@ import pathlib
 import subprocess
 import sys
 
-sys.path.append("")
+sys.path.append("")  # import from current working directory
 from porcupine import version_info as old_info
 
 TAG_FORMAT = "v%d.%d.%d"
@@ -28,6 +28,9 @@ def main():
     )
     args = parser.parse_args()
 
+    with open("CHANGELOG.md") as changelog:
+        assert "## UNRELEASED\n" in changelog.readlines()
+
     if args.what_to_bump == "major":
         new_info = (old_info[0] + 1, 0, 0)
     elif args.what_to_bump == "minor":
@@ -46,7 +49,8 @@ def main():
 
     replace_in_file(pathlib.Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
     replace_in_file(pathlib.Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
-    subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md"])
+    replace_in_file(pathlib.Path("CHANGELOG.md"), "UNRELEASED", TAG_FORMAT % new_info)
+    subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
     subprocess.check_call(["git", "push", "origin", "master"])

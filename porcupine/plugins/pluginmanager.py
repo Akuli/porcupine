@@ -10,7 +10,7 @@ from functools import partial
 from tkinter import messagebox, ttk
 from typing import List
 
-from porcupine import get_main_window, menubar, pluginloader, settings, textutils
+from porcupine import get_main_window, menubar, pluginloader, settings, textutils, utils
 
 log = logging.getLogger(__name__)
 
@@ -51,18 +51,12 @@ class PluginDialogContent:
     def __init__(self, master: tkinter.Misc) -> None:
         self.content_frame = ttk.Frame(master)
 
-        column_sizes = [120, 150, 180]
-
-        # borrowed code from textutils.create_passive_text_widget
-        ttk_bg = self.content_frame.tk.eval("ttk::style lookup TLabel.label -background")
-        if not ttk_bg:
-            ttk_bg = "white"
-
-        panedwindow = tkinter.PanedWindow(self.content_frame, orient="horizontal", bg=ttk_bg)
+        panedwindow = utils.PanedWindow(self.content_frame, orient="horizontal")
         panedwindow.pack(side="top", fill="both", expand=True)
-
         self._plz_restart_label = ttk.Label(self.content_frame)
         self._plz_restart_label.pack(side="bottom", fill="x")
+
+        column_sizes = [120, 150, 180]
 
         left_side = ttk.Frame(panedwindow)
         right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side

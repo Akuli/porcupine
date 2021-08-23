@@ -125,7 +125,7 @@ def _run_in_x11_like_terminal(
         else:
             terminal = str(terminal_path)
     else:
-        log.debug(f"using $TERMINAL, it's set to {terminal!r}")
+        log.debug(f"using $TERMINAL or fallback 'x-terminal-emulator', got {terminal!r}")
 
     if shutil.which(terminal) is None:
         messagebox.showerror(

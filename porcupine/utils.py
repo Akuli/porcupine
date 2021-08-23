@@ -7,7 +7,6 @@ import dataclasses
 import functools
 import json
 import logging
-import os
 import re
 import shlex
 import shutil
@@ -17,20 +16,15 @@ import threading
 import tkinter
 import traceback
 from pathlib import Path
-from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TextIO, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Type, TypeVar
 from urllib.request import url2pathname
 
 import dacite
 
-if sys.version_info >= (3, 9):
-    from re import Match
+if sys.version_info >= (3, 8):
     from typing import Literal
-elif sys.version_info >= (3, 8):
-    from typing import Literal, Match
 else:
     from typing_extensions import Literal
-    from typing import Match
 
 import porcupine
 
@@ -38,61 +32,15 @@ log = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
-# nsis installs a python to e.g. C:\Users\Akuli\AppData\Local\Porcupine\Python
-_installed_with_pynsist = (
-    sys.platform == "win32"
-    and Path(sys.executable).parent.name.lower() == "python"
-    and Path(sys.executable).parent.parent.name.lower() == "porcupine"
-)
-
-
-if sys.platform == "win32":
-    # Casting because mypy thinks stdout and stderr can't be None
-    if cast(Any, sys).stdout is None and cast(Any, sys).stderr is None:
-        # running in pythonw.exe so there's no console window, print still
-        # works because it checks if sys.stdout is None
-        running_pythonw = True
-    elif (
-        _installed_with_pynsist
-        and sys.stdout is sys.stderr
-        and sys.stdout.name is not None  # not sure if necessary
-        and Path(sys.stdout.name).parent == Path(os.environ["APPDATA"])
-    ):
-        # pynsist generates a script that does this:
-        #
-        #   sys.stdout = sys.stderr = open(blablabla, 'w', **kw)
-        #
-        # where blablabla is a file directly in %APPDATA%... that's dumb and
-        # non-standard imo, and not suitable for porcupine because porcupine
-        # takes care of that itself, so... let's undo what it just did
-        #
-        # TODO: it's possible to write a custom startup script, do that? there
-        #       are docs somewhere
-        sys.stdout.close()
-        os.remove(sys.stdout.name)
-
-        # mypy doesn't know about how std streams can be None
-        # https://github.com/python/mypy/issues/8823
-        sys.stdout = cast(Any, None)
-        sys.stderr = cast(Any, None)
-
-        running_pythonw = True
-    else:
-        # seems like python was started from e.g. a cmd or powershell
-        running_pythonw = False
+# nsis install puts Porcupine.exe and python.exe in same place
+if sys.platform == "win32" and sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe")):
+    running_pythonw = True
+    python_executable = Path(sys.executable).parent / "python.exe"
 else:
     running_pythonw = False
+    python_executable = Path(sys.executable)
 
 
-python_executable = Path(sys.executable)
-if running_pythonw and Path(sys.executable).name.lower() == "pythonw.exe":
-    # get rid of the 'w' and hope for the best...
-    _possible_python = Path(sys.executable).with_name("python.exe")
-    if _possible_python.is_file():
-        python_executable = _possible_python
-
-
-quote: Callable[[str], str]
 if sys.platform == "win32":
     # this is mostly copy/pasted from subprocess.list2cmdline
     def quote(string: str) -> str:
@@ -133,6 +81,28 @@ if sys.platform == "win32":
 
 else:
     quote = shlex.quote
+
+
+# https://github.com/python/typing/issues/769
+def copy_type(f: _T) -> Callable[[Any], _T]:
+    """A decorator to tell mypy that one function or method has the same type as another.
+
+    Example::
+
+        from typing import Any
+        from porcupine.utils import copy_type
+
+        def foo(x: int) -> None:
+            print(x)
+
+        @copy_type(foo)
+        def bar(*args: Any, **kwargs: Any) -> Any:
+            foo(*args, **kwargs)
+
+        bar(1)      # ok
+        bar("lol")  # mypy error
+    """
+    return lambda x: x
 
 
 # TODO: document this?
@@ -177,8 +147,27 @@ _LIKELY_PROJECT_ROOT_THINGS = [".editorconfig"] + [
 ]
 
 
-# TODO: document this
 def find_project_root(project_file_path: Path) -> Path:
+    """Given an absolute path to a file, figure out what project it belongs to.
+
+    The concept of a project is explained
+    `in Porcupine wiki <https://github.com/Akuli/porcupine/wiki/Working-with-projects>`_.
+    Currently, the logic for finding the project root is:
+
+    1.  If the file is inside a Git repository, then the Git repository becomes
+        the project root. For example, the file I'm currently editing is
+        ``/home/akuli/porcu/porcupine/utils.py``, and Porcupine has detected
+        ``/home/akuli/porcu`` as its project because I use Git to develop Porcupine.
+    2.  If Git isn't used but there is a readme file or an ``.editorconfig`` file,
+        then the project root is the folder containing the readme or the ``.editorconfig`` file.
+        (Porcupine supports editorconfig files.
+        You can read more about them at `editorconfig.org <https://editorconfig.org/>`_.)
+        So, even if Porcupine didn't use Git, it would still recognize the
+        project correctly, because there is ``/home/akuli/porcu/README.md``.
+        Porcupine recognizes several different capitalizations and file extensions,
+        such as ``README.md``, ``ReadMe.txt`` and ``readme.rst`` for example.
+    3.  If all else fails, the directory containing the file is used.
+    """
     assert project_file_path.is_absolute()
 
     likely_root = None
@@ -191,6 +180,26 @@ def find_project_root(project_file_path: Path) -> Path:
             likely_root = path
 
     return likely_root or project_file_path.parent
+
+
+class PanedWindow(tkinter.PanedWindow):
+    """Like :class:`tkinter.PanedWindow`, but uses Ttk colors.
+
+    Do not waste your time with ``ttk.Panedwindow``. It lacks options to
+    control the sizes of the panes.
+    """
+
+    @copy_type(tkinter.PanedWindow.__init__)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # even non-ttk widgets can handle <<ThemeChanged>>
+        self.bind("<<ThemeChanged>>", self._update_colors, add=True)
+        self._update_colors()
+
+    def _update_colors(self, junk_event: object = None) -> None:
+        ttk_bg = self.tk.eval("ttk::style lookup TLabel.label -background")
+        assert ttk_bg
+        self["bg"] = ttk_bg
 
 
 # i know, i shouldn't do math with rgb colors, but this is good enough
@@ -249,60 +258,76 @@ def get_children_recursively(
         yield from get_children_recursively(child, include_parent=True)
 
 
-def _handle_letter(match: Match[str]) -> str:
-    if match.group(0).isupper():
-        return "Shift-" + match.group(0)
-    return match.group(0).upper()
-
-
+# This doesn't handle all possible cases, see bind(3tk)
 def _format_binding(binding: str, menu: bool) -> str:
-    # this doesn't handle all possible cases, see bind(3tk)
-    mac = porcupine.get_main_window().tk.call("tk", "windowingsystem") == "aqua"
-    binding = binding.lstrip("<").rstrip(">")
+    mac = porcupine.get_main_window().tk.eval("tk windowingsystem") == "aqua"
+    parts = binding.lstrip("<").rstrip(">").split("-")
 
     # don't know how to show click in mac menus
-    if mac and menu and re.search(r"\bButton-1\b", binding):
+    if mac and menu and any(parts[i : i + 2] == "Button-1".split("-") for i in range(len(parts))):
         return ""
 
-    binding = re.sub(r"\bButton-1\b", "click", binding)
-    binding = re.sub(r"\b[A-Za-z]\b", _handle_letter, binding)  # tk doesn't like e.g. <Control-ö>
-    binding = re.sub(r"\bKey-", "", binding)
+    # Must recompute length on every iteration, because length changes
+    i = 0
+    while i < len(parts):
+        if parts[i : i + 3] == ["Double", "Button", "1"]:
+            parts[i : i + 3] = ["double-click"]
+        elif parts[i : i + 2] == ["Button", "1"]:
+            parts[i : i + 2] = ["click"]
+        elif re.fullmatch(r"[a-z]", parts[i]):
+            parts[i] = parts[i].upper()
+        elif re.fullmatch(r"[A-Z]", parts[i]):
+            parts.insert(i, "Shift")
+            # Increment beyond the added "Shift" and letter
+            i += 2
+            continue
+
+        i += 1
+
+    if "Key" in parts:
+        parts.remove("Key")
+
     if mac:
-        binding = re.sub(
-            r"\bMod1\b", "Command", binding
-        )  # event_info() returns <Mod1-Key-x> for <Command-x>
-        binding = re.sub(r"\bplus\b", "+", binding)
-        binding = re.sub(r"\bminus\b", "-", binding)  # e.g. "Command-minus" --> "Command--"
+        # event_info() returns <Mod1-Key-x> for <Command-x>
+        parts = [{"Mod1": "Command", "plus": "+", "minus": "-"}.get(part, part) for part in parts]
 
-        if menu:
-            # Tk will use the proper symbols automagically, and it expects dash-separated
-            return binding
-
-        binding = re.sub(r"\bReturn\b", r"⏎", binding)
-
+    if mac:
         # <ThePhilgrim> I think it's like from left to right... so it would be shift -> ctrl -> alt -> cmd
-        # We need to sub backwards, because each sub puts its thing before everything else
-        binding = re.sub(r"^(.*)\bCommand-", r"⌘-\1", binding)
-        binding = re.sub(r"^(.*)\bAlt-", r"⌥-\1", binding)
-        # look carefully, two different kinds of hats
-        binding = re.sub(r"^(.*)\bControl-", r"⌃-\1", binding)
-        binding = re.sub(r"^(.*)\bShift-", r"⇧-\1", binding)
-
-        # "Command--" --> "Command-"
-        # "Command-+" --> "Command+"
-        binding = re.sub(r"-(-?)", r"\1", binding)
-
-        # e.g. ⌘-click
-        return binding.replace("click", "-click")
-
+        sort_order = {"Shift": 1, "Control": 2, "Alt": 3, "Command": 4}
+        symbol_mapping = {
+            "Shift": "⇧",
+            "Control": "⌃",  # NOT same as ascii "^"
+            "Alt": "⌥",
+            "Command": "⌘",
+            "Return": "⏎",
+        }
     else:
-        binding = re.sub(r"\bControl\b", "Ctrl", binding)
-        # most fonts don't distinguish O and 0 nicely, mac font does
-        binding = re.sub(r"\b0\b", "Zero", binding)
-        binding = re.sub(r"\bplus\b", "Plus", binding)
-        binding = re.sub(r"\bminus\b", "Minus", binding)
-        binding = re.sub(r"\bReturn\b", "Enter", binding)
-        return binding.replace("-", "+")
+        sort_order = {"Control": 1, "Alt": 2, "Shift": 3}
+        symbol_mapping = {
+            "Control": "Ctrl",
+            "0": "Zero",  # not needed on mac, its font distinguishes 0 and O well
+            "plus": "Plus",
+            "minus": "Minus",
+            "Return": "Enter",
+        }
+    parts.sort(key=(lambda part: sort_order.get(part, 100)))
+
+    if mac and menu:
+        # Tk will use the proper symbols automagically, and it expects dash-separated
+        # Even "Command--" for command and minus key works
+        return "-".join(parts)
+
+    parts = [symbol_mapping.get(part, part) for part in parts]
+
+    if mac:
+        # e.g. "⌘-double-click"
+        # But not like this:  ["double-click"] --> ["-double-click"]
+        parts[1:] = [
+            {"click": "-click", "double-click": "-double-click"}.get(part, part)
+            for part in parts[1:]
+        ]
+
+    return ("" if mac else "+").join(parts)
 
 
 # TODO: document this
@@ -505,54 +530,6 @@ def bind_tab_key(
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
 
 
-def errordialog(title: str, message: str, monospace_text: str | None = None) -> None:
-    """This is a lot like ``tkinter.messagebox.showerror``.
-
-    This function can be called with or without creating a root window
-    first. If *monospace_text* is not None, it will be displayed below
-    the message in a ``tkinter.Text`` widget.
-
-    Example::
-
-        try:
-            do something
-        except SomeError:
-            utils.errordialog("Oh no", "Doing something failed!",
-                              traceback.format_exc())
-    """
-    window = tkinter.Toplevel()
-    window.transient(porcupine.get_main_window())
-
-    # there's nothing but this frame in the window because ttk widgets
-    # may use a different background color than the window
-    big_frame = ttk.Frame(window)
-    big_frame.pack(fill="both", expand=True)
-
-    label = ttk.Label(big_frame, text=message)
-
-    if monospace_text is None:
-        label.pack(fill="both", expand=True)
-        geometry = "250x150"
-    else:
-        label.pack(anchor="center")
-        # there's no ttk.Text 0_o this looks very different from
-        # everything else and it sucks :(
-        text = tkinter.Text(big_frame, width=1, height=1)
-        text.pack(fill="both", expand=True)
-        text.insert("1.0", monospace_text)
-        text.config(state="disabled")
-        geometry = "400x300"
-
-    button = ttk.Button(big_frame, text="OK", command=window.destroy)
-    button.pack(pady=10)
-    button.focus()
-    button.bind("<Return>", (lambda event: button.invoke()), add=True)  # type: ignore[no-untyped-call]
-
-    window.title(title)
-    window.geometry(geometry)
-    window.wait_window()
-
-
 def run_in_thread(
     blocking_function: Callable[[], _T],
     done_callback: Callable[[bool, str | _T], None],
@@ -608,9 +585,9 @@ def run_in_thread(
     root.after_idle(check)
 
 
-# how to type hint context manager: https://stackoverflow.com/a/49736916
+@copy_type(open)
 @contextlib.contextmanager
-def backup_open(path: Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
+def backup_open(file: Any, *args: Any, **kwargs: Any) -> Any:
     """Like :func:`open`, but uses a backup file if needed.
 
     This is useless with modes like ``'r'`` because they don't modify
@@ -626,6 +603,7 @@ def backup_open(path: Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
 
     This automatically restores from the backup on failure.
     """
+    path = Path(file)
     if path.exists():
         # there's something to back up
         #

@@ -144,9 +144,9 @@ class DPaste(Paste):
 
 
 class SuccessDialog(tkinter.Toplevel):
-    def __init__(self, url: str, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-        self.url = url
+    def __init__(self, url: str):
+        super().__init__()
+        self.url = url  # accessed in tests
 
         content = ttk.Frame(self)
         content.pack(fill="both", expand=True)
@@ -212,6 +212,41 @@ def make_please_wait_window(paste: Paste) -> tkinter.Toplevel:
     return window
 
 
+def errordialog(title: str, message: str, monospace_text: str | None = None) -> None:
+    window = tkinter.Toplevel()
+    if get_main_window().winfo_viewable():
+        window.transient(get_main_window())
+
+    # there's nothing but this frame in the window because ttk widgets
+    # may use a different background color than the window
+    big_frame = ttk.Frame(window)
+    big_frame.pack(fill="both", expand=True)
+
+    label = ttk.Label(big_frame, text=message)
+
+    if monospace_text is None:
+        label.pack(fill="both", expand=True)
+        geometry = "250x150"
+    else:
+        label.pack(anchor="center")
+        # there's no ttk.Text 0_o this looks very different from
+        # everything else and it sucks :(
+        text = tkinter.Text(big_frame, width=1, height=1)
+        text.pack(fill="both", expand=True)
+        text.insert("1.0", monospace_text)
+        text.config(state="disabled")
+        geometry = "400x300"
+
+    button = ttk.Button(big_frame, text="OK", command=window.destroy)
+    button.pack(pady=10)
+    button.focus()
+    button.bind("<Return>", (lambda event: button.invoke()), add=True)  # type: ignore[no-untyped-call]
+
+    window.title(title)
+    window.geometry(geometry)
+    window.wait_window()
+
+
 def pasting_done_callback(
     paste: Paste, please_wait_window: tkinter.Toplevel, success: bool, result: str
 ) -> None:
@@ -237,7 +272,7 @@ def pasting_done_callback(
     else:
         # result is the traceback as a string
         log.error(f"pasting failed\n{result}")
-        utils.errordialog(
+        errordialog(
             "Pasting Failed",
             (
                 "Check your internet connection and try again.\n\n"

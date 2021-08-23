@@ -622,21 +622,28 @@ def config_tab_displaying(
     textwidget.config(tabs=(indent_size * measure_result, "left"), tabstyle="wordprocessor")
 
 
+# TODO: document this?
+def bind_font_changed(tab: tabs.FileTab, callback: Callable[[], None]) -> None:
+    tab.bind("<<SettingChanged:font_family>>", (lambda event: callback()), add=True)
+    tab.bind("<<SettingChanged:font_size>>", (lambda event: callback()), add=True)
+    tab.bind("<<TabSettingChanged:indent_size>>", (lambda event: callback()), add=True)
+
+
 class MainText(tkinter.Text):
     """Don't use this. It may be changed later."""
 
     def __init__(self, tab: tabs.FileTab, **kwargs: Any) -> None:
-        super().__init__(tab, **kwargs)
+        super().__init__(tab.panedwindow, **kwargs)
         self._tab = tab
         track_changes(self)
         use_pygments_theme(self)
 
-        tab.bind("<<TabSettingChanged:indent_size>>", self._on_indent_size_changed, add=True)
-        self._on_indent_size_changed()
+        bind_font_changed(tab, self._on_font_changed)
+        self._on_font_changed()
 
         self.bind("<<Dedent>>", (lambda event: self.dedent("insert")), add=True)
 
-    def _on_indent_size_changed(self, junk: object = None) -> None:
+    def _on_font_changed(self) -> None:
         config_tab_displaying(self, self._tab.settings.get("indent_size", int))
 
     def indent(self, location: str) -> None:
@@ -749,3 +756,68 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     update_colors()
 
     return text
+
+
+# TODO: document this?
+def get_padding(text: tkinter.Text) -> tuple[int, int]:
+    x_padding_on_each_side = text["padx"] + text["borderwidth"] + text["highlightthickness"]
+    y_padding_on_each_side = text["pady"] + text["borderwidth"] + text["highlightthickness"]
+    return (x_padding_on_each_side, y_padding_on_each_side)
+
+
+def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
+    """Return the width and height of the text widget.
+
+    Unlike ``text.winfo_width()`` and ``text.winfo_height()``,
+    this function excludes all padding.
+    The size returned by this function is good for scrolling calculations and
+    for adding other widgets inside the text widget with ``.place()``.
+    """
+    x_padding_on_each_side, y_padding_on_each_side = get_padding(text)
+    return (
+        text.winfo_width() - 2 * x_padding_on_each_side,
+        text.winfo_height() - 2 * y_padding_on_each_side,
+    )
+
+
+# TODO: document this?
+def place_popup(
+    parent: tkinter.Text,
+    child: tkinter.Widget,
+    *,
+    width: int,
+    height: int | None = None,
+    text_position: str = "insert",
+    wrap: bool = False,
+) -> bool:
+    gap = 5  # Debugging tip: try big gap
+
+    bbox = parent.bbox(text_position)
+    if bbox is None:
+        # happens quite rarely, just do not place a popup in this case
+        return False
+    (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
+
+    parent_width, parent_height = textwidget_size(parent)
+
+    # don't go beyond the right edge of textwidget
+    width = min(width, parent_width - 2 * gap)
+
+    if wrap:
+        assert isinstance(child, tkinter.Label)
+        child.config(wraplength=width)  # affects winfo_reqheight()
+
+    if height is None:
+        height = child.winfo_reqheight()
+
+    x = min(cursor_x + gap, parent_width - gap - width)
+    if cursor_y + cursor_height + gap + height + gap < parent_height:
+        # child fits below bbox
+        y = cursor_y + cursor_height + gap
+    else:
+        # would go below bottom of text widget, let's put it above instead
+        y = cursor_y - gap - height
+
+    child.place(x=x, y=y, width=width, height=height)
+    child.lift()  # autocomplete shows on top of hover popups
+    return True
