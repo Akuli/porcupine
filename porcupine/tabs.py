@@ -623,7 +623,7 @@ class FileTab(Tab):
             converter=settings.LineEnding.__getitem__,
         )
 
-        self.panedwindow = tkinter.PanedWindow(self, orient='horizontal')
+        self.panedwindow = utils.PanedWindow(self, orient='horizontal')
         self.panedwindow.pack(side='left', fill='both', expand=True)
 
         # we need to set width and height to 1 to make sure it's never too

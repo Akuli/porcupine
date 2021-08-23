@@ -44,6 +44,7 @@ See :mod:`porcupine.textutils` for ``tkinter.Text`` specific things.
 .. autofunction:: add_scroll_command
 .. autofunction:: run_in_thread
 .. autofunction:: errordialog
+.. autoclass:: PanedWindow
 
 
 Miscellaneous
