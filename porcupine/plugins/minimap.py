@@ -183,9 +183,9 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     minimap = MiniMap(tab.panedwindow, tab)
 
     minimap.bind("<Map>", minimap.set_width_from_settings, add=True)
-    # TODO: really need after_idle?
     tab.panedwindow.bind(
         "<ButtonRelease-1>",
+        # after_idle needed for accuracy if you move mouse really fast
         (lambda e: minimap.after_idle(minimap.save_width_to_settings)),
         add=True,
     )
