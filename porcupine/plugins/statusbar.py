@@ -143,9 +143,8 @@ class StatusBar(ttk.Frame):
             self.path_label.config(foreground="red", text=text)
 
     def clear_reload_warning(self, junk: object) -> None:
-        if self.path_label["foreground"]:
-            self.path_label.config(foreground="")
-            self.update_labels()
+        self.path_label.config(foreground="")
+        self.update_labels()
 
     def _choose_encoding(self) -> None:
         new_encoding = utils.ask_encoding(
