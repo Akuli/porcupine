@@ -34,7 +34,7 @@ Windows improvements:
     but it takes a few more clicks.
 - Porcupine now shows up as `Porcupine.exe` in the task manager.
     It previously showed up as `pythonw.exe`.
-    Let me know if your antivirus program warns you about `Porcupine.exe`
+    Let me know if your antivirus program dislikes `Porcupine.exe`
     (it is not malware, but sometimes Windows Defender likes to
     complain about executables it hasn't seen before).
 - Porcupine installer now displays an error message if Microsoft Visual C++ Redistributable is not installed.
