@@ -161,6 +161,12 @@ def find_project_root(project_file_path: Path) -> Path:
     return likely_root or project_file_path.parent
 
 
+# https://github.com/python/typing/issues/769
+# TODO: document this?
+def copy_type(f: _T) -> Callable[[Any], _T]:
+    return lambda x: x
+
+
 class PanedWindow(tkinter.PanedWindow):
     """Like :class:`tkinter.PanedWindow`, but uses Ttk colors.
 
@@ -168,6 +174,7 @@ class PanedWindow(tkinter.PanedWindow):
     control the sizes of the panes.
     """
 
+    @copy_type(tkinter.PanedWindow.__init__)
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # even non-ttk widgets can handle <<ThemeChanged>>
@@ -177,7 +184,7 @@ class PanedWindow(tkinter.PanedWindow):
     def _update_colors(self, junk_event: object = None) -> None:
         ttk_bg = self.tk.eval("ttk::style lookup TLabel.label -background")
         assert ttk_bg
-        self['bg'] = ttk_bg
+        self["bg"] = ttk_bg
 
 
 # i know, i shouldn't do math with rgb colors, but this is good enough
@@ -612,9 +619,9 @@ def run_in_thread(
     root.after_idle(check)
 
 
-# how to type hint context manager: https://stackoverflow.com/a/49736916
+@copy_type(open)
 @contextlib.contextmanager
-def backup_open(path: Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
+def backup_open(file: Any, *args: Any, **kwargs: Any) -> Any:
     """Like :func:`open`, but uses a backup file if needed.
 
     This is useless with modes like ``'r'`` because they don't modify
@@ -630,6 +637,7 @@ def backup_open(path: Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
 
     This automatically restores from the backup on failure.
     """
+    path = Path(file)
     if path.exists():
         # there's something to back up
         #

@@ -172,21 +172,26 @@ class MiniMap(tkinter.Text):
         self._tab.textwidget.see(self.index(f"@0,{event.y}"))
         return "break"
 
-    def set_width_from_settings(self, junk=None):
+    def set_width_from_settings(self, junk: object = None) -> None:
         self._tab.panedwindow.paneconfigure(self, width=settings.get("minimap_width", int))
 
-    def save_width_to_settings(self, junk=None):
+    def save_width_to_settings(self) -> None:
         settings.set_("minimap_width", self.winfo_width())
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     minimap = MiniMap(tab.panedwindow, tab)
 
-    minimap.bind('<Map>', minimap.set_width_from_settings, add=True)
-    tab.panedwindow.bind('<ButtonRelease-1>', (lambda e: minimap.after_idle(minimap.save_width_to_settings)), add=True)
+    minimap.bind("<Map>", minimap.set_width_from_settings, add=True)
+    # TODO: really need after_idle?
+    tab.panedwindow.bind(
+        "<ButtonRelease-1>",
+        (lambda e: minimap.after_idle(minimap.save_width_to_settings)),
+        add=True,
+    )
 
     textutils.use_pygments_theme(minimap, minimap.set_colors)
-    tab.panedwindow.add(minimap, stretch='never')
+    tab.panedwindow.add(minimap, stretch="never")  # type: ignore[no-untyped-call]
 
 
 def setup() -> None:

@@ -623,8 +623,9 @@ class FileTab(Tab):
             converter=settings.LineEnding.__getitem__,
         )
 
-        self.panedwindow = utils.PanedWindow(self, orient='horizontal')
-        self.panedwindow.pack(side='left', fill='both', expand=True)
+        # I don't know why this needs a type annotation for self.panedwindow
+        self.panedwindow: utils.PanedWindow = utils.PanedWindow(self, orient="horizontal")
+        self.panedwindow.pack(side="left", fill="both", expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
@@ -634,7 +635,7 @@ class FileTab(Tab):
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
         self.textwidget.pack(side="left", fill="both", expand=True)
-        self.panedwindow.add(self.textwidget, stretch='always')
+        self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
 
         if content:
             self.textwidget.insert("1.0", content)
