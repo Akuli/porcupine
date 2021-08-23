@@ -29,7 +29,6 @@ class MiniMap(tkinter.Text):
         super().__init__(master)
         textutils.create_peer_widget(tab.textwidget, self)
         self.config(
-            width=12,
             exportselection=False,
             takefocus=False,
             yscrollcommand=self._update_lines,
@@ -173,12 +172,23 @@ class MiniMap(tkinter.Text):
         self._tab.textwidget.see(self.index(f"@0,{event.y}"))
         return "break"
 
+    def set_width_from_settings(self, junk=None):
+        self._tab.panedwindow.paneconfigure(self, width=settings.get("minimap_width", int))
+
+    def save_width_to_settings(self, junk=None):
+        settings.set_("minimap_width", self.winfo_width())
+
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    minimap = MiniMap(tab.right_frame, tab)
+    minimap = MiniMap(tab.panedwindow, tab)
+
+    minimap.bind('<Map>', minimap.set_width_from_settings, add=True)
+    tab.panedwindow.bind('<ButtonRelease-1>', (lambda e: minimap.after_idle(minimap.save_width_to_settings)), add=True)
+
     textutils.use_pygments_theme(minimap, minimap.set_colors)
-    minimap.pack(fill="y", expand=True)
+    tab.panedwindow.add(minimap, stretch='never')
 
 
 def setup() -> None:
+    settings.add_option("minimap_width", 100)
     get_tab_manager().add_filetab_callback(on_new_filetab)

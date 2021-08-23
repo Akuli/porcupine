@@ -633,7 +633,7 @@ class MainText(tkinter.Text):
     """Don't use this. It may be changed later."""
 
     def __init__(self, tab: tabs.FileTab, **kwargs: Any) -> None:
-        super().__init__(tab, **kwargs)
+        super().__init__(tab.panedwindow, **kwargs)
         self._tab = tab
         track_changes(self)
         use_pygments_theme(self)

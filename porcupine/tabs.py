@@ -586,8 +586,7 @@ class FileTab(Tab):
 
         This is the scrollbar next to :attr:`.textwidget`.
 
-        Things like :source:`the line number plugin <porcupine/plugins/linenum\
-bers.py>` use this attribute.
+        Things like :source:`the line number plugin <porcupine/plugins/linenumbers.py>` use this attribute.
 
     .. attribute:: path
         :type: pathlib.Path | None
@@ -624,6 +623,9 @@ bers.py>` use this attribute.
             converter=settings.LineEnding.__getitem__,
         )
 
+        self.panedwindow = tkinter.PanedWindow(self, orient='horizontal')
+        self.panedwindow.pack(side='left', fill='both', expand=True)
+
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         #
@@ -632,6 +634,7 @@ bers.py>` use this attribute.
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
         self.textwidget.pack(side="left", fill="both", expand=True)
+        self.panedwindow.add(self.textwidget, stretch='always')
 
         if content:
             self.textwidget.insert("1.0", content)
