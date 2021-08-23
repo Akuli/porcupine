@@ -148,7 +148,7 @@ class StatusBar(ttk.Frame):
 
     def _choose_encoding(self) -> None:
         new_encoding = utils.ask_encoding(
-            "Choose the encoding:", self._tab.settings.get("encoding", str)
+            "Choose an encoding:", self._tab.settings.get("encoding", str)
         )
         if new_encoding is not None:
             self._tab.settings.set("encoding", new_encoding)
