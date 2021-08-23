@@ -8,7 +8,7 @@ and other details that don't affect using Porcupine.
     You can also resize it by dragging with the mouse.
 - Changing the filetype now deletes yellow and red underlines from the file being edited.
     If you somehow open a C file as if it was a Python file,
-    it is probably full of complaints about invalid Python syntax.
+    it is probably full of complaints about invalid Python syntax,
     and you want them to go away gone when you choose C from the Filetypes menu.
 - Better error handling for opening and saving files:
     - If you open a file written with the Latin-1 encoding without telling Porcupine that it is Latin-1,
