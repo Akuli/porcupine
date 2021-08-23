@@ -22,7 +22,7 @@ def setup() -> None:
 
     var = tkinter.StringVar()
     for name in sorted(style.get_themes()):
-        menubar.get_menu("Ttk Themes").add_radiobutton(label=name, value=name, variable=var)
+        menubar.get_menu("UI Themes").add_radiobutton(label=name, value=name, variable=var)
 
     # Connect style and var
     var.trace_add("write", lambda *junk: style.set_theme(var.get()))

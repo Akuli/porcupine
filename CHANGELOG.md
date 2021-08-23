@@ -25,7 +25,7 @@ and other details that don't affect using Porcupine.
         until the tab with the non-existing file was closed.
         This was a bug, not a feature.
     - Many other improvements that you are unlikely to come across when using Porcupine normally.
-- Several smaller bug fixes.
+- Several smaller improvements.
 
 
 ## 0.95.0

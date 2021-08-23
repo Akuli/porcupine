@@ -1,4 +1,4 @@
-"""Display a "Color Styles" menu."""
+"""Display a "Syntax Colors" menu."""
 from __future__ import annotations
 
 import threading
@@ -65,7 +65,7 @@ def setup() -> None:
 
         for style_name in style_names:
             fg, bg = get_colors(style_name)
-            menubar.get_menu("Color Styles").add_radiobutton(
+            menubar.get_menu("Syntax Colors").add_radiobutton(
                 label=style_name,
                 value=style_name,
                 variable=var,
