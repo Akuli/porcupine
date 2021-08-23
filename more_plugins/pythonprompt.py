@@ -13,9 +13,9 @@ import sys
 import threading
 import tkinter
 from tkinter import ttk
-from typing import Any, Callable
+from typing import Callable
 
-from porcupine import get_tab_manager, menubar, tabs, textutils, utils
+from porcupine import get_tab_manager, menubar, tabs, textutils
 
 
 def _tupleindex(index: str) -> tuple[int, int]:
