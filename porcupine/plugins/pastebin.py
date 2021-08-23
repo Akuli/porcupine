@@ -144,8 +144,8 @@ class DPaste(Paste):
 
 
 class SuccessDialog(tkinter.Toplevel):
-    def __init__(self, url: str, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(self, url: str):
+        super().__init__()
         self.url = url
 
         content = ttk.Frame(self)
