@@ -29,7 +29,7 @@ class MiniMap(tkinter.Text):
         super().__init__(master)
         textutils.create_peer_widget(tab.textwidget, self)
         self.config(
-            width=25,
+            width=12,
             exportselection=False,
             takefocus=False,
             yscrollcommand=self._update_lines,
