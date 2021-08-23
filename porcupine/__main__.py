@@ -2,6 +2,7 @@ import argparse
 import logging
 import pathlib
 import sys
+import threading
 
 # imports spread across multiple lines to keep sane line lengths and make it greppable
 from porcupine import __version__ as porcupine_version
@@ -158,6 +159,13 @@ def main() -> None:
     try:
         get_main_window().mainloop()
     finally:
+        print("Threads running while Porcupine exits:")
+        for thread in threading.enumerate():
+            if getattr(thread.run, "__self__", None) is thread:
+                print(thread.name, thread._target, thread._args, thread._kwargs)
+            else:
+                # run method overrided
+                print(thread.name, thread.run)
         settings.save()
     log.info("exiting Porcupine successfully")
 
