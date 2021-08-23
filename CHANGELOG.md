@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## UNRELEASED
+## v0.96.0
 
 - The minimap (the thing that shows your code on the side with small font)
     is no longer ridiculously wide.
