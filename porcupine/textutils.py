@@ -633,7 +633,7 @@ class MainText(tkinter.Text):
     """Don't use this. It may be changed later."""
 
     def __init__(self, tab: tabs.FileTab, **kwargs: Any) -> None:
-        super().__init__(tab, **kwargs)
+        super().__init__(tab.panedwindow, **kwargs)
         self._tab = tab
         track_changes(self)
         use_pygments_theme(self)
@@ -758,6 +758,13 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     return text
 
 
+# TODO: document this?
+def get_padding(text: tkinter.Text) -> tuple[int, int]:
+    x_padding_on_each_side = text["padx"] + text["borderwidth"] + text["highlightthickness"]
+    y_padding_on_each_side = text["pady"] + text["borderwidth"] + text["highlightthickness"]
+    return (x_padding_on_each_side, y_padding_on_each_side)
+
+
 def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
     """Return the width and height of the text widget.
 
@@ -766,8 +773,7 @@ def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
     The size returned by this function is good for scrolling calculations and
     for adding other widgets inside the text widget with ``.place()``.
     """
-    x_padding_on_each_side = text["padx"] + text["borderwidth"] + text["highlightthickness"]
-    y_padding_on_each_side = text["pady"] + text["borderwidth"] + text["highlightthickness"]
+    x_padding_on_each_side, y_padding_on_each_side = get_padding(text)
     return (
         text.winfo_width() - 2 * x_padding_on_each_side,
         text.winfo_height() - 2 * y_padding_on_each_side,

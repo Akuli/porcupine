@@ -182,6 +182,26 @@ def find_project_root(project_file_path: Path) -> Path:
     return likely_root or project_file_path.parent
 
 
+class PanedWindow(tkinter.PanedWindow):
+    """Like :class:`tkinter.PanedWindow`, but uses Ttk colors.
+
+    Do not waste your time with ``ttk.Panedwindow``. It lacks options to
+    control the sizes of the panes.
+    """
+
+    @copy_type(tkinter.PanedWindow.__init__)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # even non-ttk widgets can handle <<ThemeChanged>>
+        self.bind("<<ThemeChanged>>", self._update_colors, add=True)
+        self._update_colors()
+
+    def _update_colors(self, junk_event: object = None) -> None:
+        ttk_bg = self.tk.eval("ttk::style lookup TLabel.label -background")
+        assert ttk_bg
+        self["bg"] = ttk_bg
+
+
 # i know, i shouldn't do math with rgb colors, but this is good enough
 def invert_color(color: str, *, black_or_white: bool = False) -> str:
     """Return a color with opposite red, green and blue values.

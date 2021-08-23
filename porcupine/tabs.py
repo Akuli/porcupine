@@ -581,13 +581,19 @@ class FileTab(Tab):
             * :func:`porcupine.textutils.use_pygments_theme`
             * :func:`porcupine.textutils.track_changes`
 
+    .. attribute:: panedwindow
+        :type: porcupine.utils.PanedWindow
+
+        This widget contains the :attr:`textwidget`.
+        Its purpose is to allow plugins like :source:`minimap <porcupine/plugins/minimap.py>`
+        to add other resizable widgets next to the :attr:`textwidget`.
+
     .. attribute:: scrollbar
         :type: tkinter.ttk.Scrollbar
 
         This is the scrollbar next to :attr:`.textwidget`.
 
-        Things like :source:`the line number plugin <porcupine/plugins/linenum\
-bers.py>` use this attribute.
+        Things like :source:`the line number plugin <porcupine/plugins/linenumbers.py>` use this attribute.
 
     .. attribute:: path
         :type: pathlib.Path | None
@@ -624,6 +630,10 @@ bers.py>` use this attribute.
             converter=settings.LineEnding.__getitem__,
         )
 
+        # I don't know why this needs a type annotation for self.panedwindow
+        self.panedwindow: utils.PanedWindow = utils.PanedWindow(self, orient="horizontal")
+        self.panedwindow.pack(side="left", fill="both", expand=True)
+
         # we need to set width and height to 1 to make sure it's never too
         # large for seeing other widgets
         #
@@ -631,7 +641,7 @@ bers.py>` use this attribute.
         self.textwidget: textutils.MainText = textutils.MainText(
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
-        self.textwidget.pack(side="left", fill="both", expand=True)
+        self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
 
         if content:
             self.textwidget.insert("1.0", content)
