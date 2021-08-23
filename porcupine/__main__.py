@@ -159,14 +159,19 @@ def main() -> None:
     try:
         get_main_window().mainloop()
     finally:
-        print("Threads running while Porcupine exits:")
-        for thread in threading.enumerate():
-            if getattr(thread.run, "__self__", None) is thread:
-                print(thread.name, thread._target, thread._args, thread._kwargs)
-            else:
-                # run method overrided
-                print(thread.name, thread.run)
         settings.save()
+
+        non_daemon_threads = [
+            t for t in threading.enumerate() if t != threading.current_thread() and not t.daemon
+        ]
+        if non_daemon_threads:
+            print("Non-daemon threads running while Porcupine exits:")
+            for thread in non_daemon_threads:
+                if getattr(thread.run, "__self__", None) is thread:
+                    print(thread.name, thread._target, thread._args, thread._kwargs)
+                else:
+                    # run method overrided
+                    print(thread.name, thread.run)
     log.info("exiting Porcupine successfully")
 
 
