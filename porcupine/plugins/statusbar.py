@@ -58,17 +58,20 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         (
             "CRLF",
             "CRLF line endings (Windows)",
-            "Newline characters will be saved to the file as two bytes, CR (\\r) and LF (\\n)."
-            " This is Porcupine's default line ending on Windows,"
+            "Each newline will be saved to the file as two bytes,"
+            " CR (\\r) followed by LF (\\n)."
+            " CRLF is Porcupine's default line ending on Windows,"
             " and the only line ending supported by many Windows programs."
-            " Committing files to Git with this line ending is usually considered bad style,"
-            " so if you choose this option and your project uses Git,"
-            " make sure to configure Git so that it commits the files with LF line endings.",
+            "\n\nCommitting files to Git with CRLF is usually considered bad style."
+            " If you use CRLF in projects that use Git,"
+            " make sure to configure Git to convert the line endings"
+            " so that your CRLF line endings appear as LF line endings"
+            " for other people working on the project."
         ),
         (
             "CR",
             "CR line endings (???)",
-            "I don't know when you would want to use this option,"
+            "I don't know when this option could be useful,"
             " but it is provided in case you have some use case that I didn't think of.",
         ),
     ]
