@@ -1,6 +1,6 @@
 """Handy utility functions."""
 from __future__ import annotations
-
+import codecs
 import collections
 import contextlib
 import dataclasses
@@ -14,6 +14,7 @@ import subprocess
 import sys
 import threading
 import tkinter
+from tkinter import ttk
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Type, TypeVar
@@ -528,6 +529,71 @@ def bind_tab_key(
 
     widget.bind("<Tab>", functools.partial(callback, False), **bind_kwargs)  # bindcheck: ignore
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
+
+
+# TODO: document this?
+def ask_encoding(text: str, old_encoding: str) -> str | None:
+    label_width = 400
+
+    dialog = tkinter.Toplevel()
+    if porcupine.get_main_window().winfo_viewable():
+        dialog.transient(porcupine.get_main_window())
+    dialog.resizable(False, False)
+
+    big_frame = ttk.Frame(dialog)
+    big_frame.pack(fill="both", expand=True)
+    ttk.Label(
+        big_frame,
+        text=text,
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
+
+    var = tkinter.StringVar()
+    entry = ttk.Entry(big_frame, textvariable=var)
+    entry.pack(pady=50)
+    entry.insert(0, old_encoding)  # type: ignore[no-untyped-call]
+
+    ttk.Label(
+        big_frame,
+        text=(
+            "You can create a project-specific .editorconfig file to change the encoding"
+            " permanently."
+        ),
+        wraplength=label_width,
+    ).pack(fill="x", padx=10, pady=10)
+    button_frame = ttk.Frame(big_frame)
+    button_frame.pack(fill="x", pady=10)
+
+    selected_encoding = None
+
+    def select_encoding() -> None:
+        nonlocal selected_encoding
+        selected_encoding = entry.get()  # type: ignore[no-untyped-call]
+        dialog.destroy()
+
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
+    cancel_button.pack(side="left", expand=True)
+    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
+    ok_button.pack(side="right", expand=True)
+
+    def validate_encoding(*junk: object) -> None:
+        encoding = entry.get()  # type: ignore[no-untyped-call]
+        try:
+            codecs.lookup(encoding)
+        except LookupError:
+            ok_button.config(state="disabled")
+        else:
+            ok_button.config(state="normal")
+
+    var.trace_add("write", validate_encoding)
+
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    entry.select_range(0, "end")
+    entry.focus()
+
+    dialog.wait_window()
+    return selected_encoding
 
 
 def run_in_thread(
