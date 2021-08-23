@@ -170,7 +170,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     statusbar.pack(side="bottom", fill="x")
 
     utils.bind_with_data(tab, "<<Reloaded>>", statusbar.show_reload_warning, add=True)
-    tab.textwidget.bind("<<ContentChanged>>", statusbar.clear_reload_warning, add=True)
+    tab.bind("<<AfterSave>>", statusbar.clear_reload_warning, add=True)
 
     tab.bind("<<PathChanged>>", statusbar.update_labels, add=True)
     tab.bind("<<TabSettingChanged:encoding>>", statusbar.update_labels, add=True)
@@ -183,11 +183,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 def update_button_style(junk_event: object = None) -> None:
     # https://tkdocs.com/tutorial/styles.html
     # tkinter's style stuff sucks
-    get_tab_manager().tk.eval(
-        """
-    ttk::style configure Statusbar.TButton -padding 0 -anchor center
-    """
-    )
+    get_tab_manager().tk.eval("ttk::style configure Statusbar.TButton -padding 0 -anchor center")
 
 
 def setup() -> None:
