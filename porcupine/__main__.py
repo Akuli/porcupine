@@ -2,6 +2,7 @@ import argparse
 import logging
 import pathlib
 import sys
+import threading
 
 # imports spread across multiple lines to keep sane line lengths and make it greppable
 from porcupine import __version__ as porcupine_version
@@ -159,6 +160,18 @@ def main() -> None:
         get_main_window().mainloop()
     finally:
         settings.save()
+
+        non_daemon_threads = [
+            t for t in threading.enumerate() if t != threading.current_thread() and not t.daemon
+        ]
+        if non_daemon_threads:
+            print("Non-daemon threads running while Porcupine exits:", flush=True)
+            for thread in non_daemon_threads:
+                if getattr(thread.run, "__self__", None) is thread:
+                    print(thread.name, thread._target, thread._args, thread._kwargs, flush=True)  # type: ignore
+                else:
+                    # run method overrided
+                    print(thread.name, thread.run, flush=True)
     log.info("exiting Porcupine successfully")
 
 
