@@ -161,7 +161,7 @@ def test_bad_values(filetab, caplog):
 
 
 def test_encoding(tabmanager, tmp_path, mocker):
-    mock = mocker.patch("porcupine.tabs._ask_encoding")
+    mock = mocker.patch("porcupine.utils.ask_encoding")
     (tmp_path / ".editorconfig").write_text("[*.latin1]\ncharset = latin1\n")
     (tmp_path / "foo.latin1").write_text("mörkö", encoding="latin1")
     tab = tabmanager.open_file(tmp_path / "foo.latin1")
