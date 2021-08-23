@@ -31,7 +31,7 @@ Windows improvements:
     This works not only for Python files, but for all file types that are defined in
     [default_filetypes.toml](https://github.com/Akuli/porcupine/blob/v0.95.0/porcupine/default_filetypes.toml).
     You can open other files in Porcupine by right-clicking them too,
-    but it is a few more clicks to do so.
+    but it takes a few more clicks.
 - Porcupine now shows up as `Porcupine.exe` in the task manager.
     It previously showed up as `pythonw.exe`.
     Let me know if your antivirus program warns you about `Porcupine.exe`
