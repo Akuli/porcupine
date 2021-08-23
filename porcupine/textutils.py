@@ -758,6 +758,13 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     return text
 
 
+# TODO: document this?
+def get_padding(text: tkinter.Text) -> tuple[int, int]:
+    x_padding_on_each_side = text["padx"] + text["borderwidth"] + text["highlightthickness"]
+    y_padding_on_each_side = text["pady"] + text["borderwidth"] + text["highlightthickness"]
+    return (x_padding_on_each_side, y_padding_on_each_side)
+
+
 def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
     """Return the width and height of the text widget.
 
@@ -766,8 +773,7 @@ def textwidget_size(text: tkinter.Text) -> tuple[int, int]:
     The size returned by this function is good for scrolling calculations and
     for ``.place()``ing other widgets inside the text widget.
     """
-    x_padding_on_each_side = text["padx"] + text["borderwidth"] + text["highlightthickness"]
-    y_padding_on_each_side = text["pady"] + text["borderwidth"] + text["highlightthickness"]
+    x_padding_on_each_side, y_padding_on_each_side = get_padding(text)
     return (
         text.winfo_width() - 2 * x_padding_on_each_side,
         text.winfo_height() - 2 * y_padding_on_each_side,

@@ -118,13 +118,8 @@ class MiniMap(tkinter.Text):
             # no part of text file being edited is visible
             hide = set(self._vast.keys())
 
-        # To make this look perfect, we need some weird off-by-ones here. I
-        # don't know why, but using LINE_THICKNESS here is not right. To see
-        # this, think about (or TIAS) what this code does if you use
-        # LINE_THICKNESS instead of +1, and LINE_THICKNESS is set to a huge
-        # value such as 15.
-        x_offset = self["borderwidth"] + self["padx"] + 1
-        y_offset = self["borderwidth"] + self["pady"] + 1
+        minimap_width, minimap_height = textutils.textwidget_size(self)
+        minimap_x_padding, minimap_y_padding = textutils.get_padding(self)
 
         if self._tab.textwidget.yview() == (0.0, 1.0):  # type: ignore[no-untyped-call]
             # whole file content on screen at once, show screen size instead of file content size
@@ -135,7 +130,7 @@ class MiniMap(tkinter.Text):
             how_tall_are_lines_on_minimap: int = self._tab.tk.call(
                 "font", "metrics", self.tag_cget("sel", "font"), "-linespace"
             )
-            editor_height: int = self._tab.textwidget.winfo_height()
+            editor_height = textutils.textwidget_size(self._tab.textwidget)[1]
             how_many_lines_fit_on_editor = editor_height / how_tall_are_lines_on_editor
 
             vast_top = 0
@@ -147,23 +142,26 @@ class MiniMap(tkinter.Text):
                 hide.add("top")
             else:
                 x, y, w, h = start_bbox
-                vast_top = y - y_offset
+                x -= minimap_x_padding
+                y -= minimap_y_padding
+                vast_top = y
 
             if end_bbox is None:
-                vast_bottom = self.winfo_height()
+                vast_bottom = minimap_height
                 hide.add("bottom")
             else:
                 x, y, w, h = end_bbox
-                vast_bottom = y - y_offset + h
+                x -= minimap_x_padding
+                y -= minimap_y_padding
+                vast_bottom = y+h
 
         vast_height = vast_bottom - vast_top
-        width = self.winfo_width() - 2 * x_offset
 
         coords = {
-            "top": (0, vast_top, width, LINE_THICKNESS),
+            "top": (0, vast_top, minimap_width, LINE_THICKNESS),
             "left": (0, vast_top, LINE_THICKNESS, vast_height),
-            "bottom": (0, vast_bottom - LINE_THICKNESS, width, LINE_THICKNESS),
-            "right": (width - LINE_THICKNESS, vast_top, LINE_THICKNESS, vast_height),
+            "bottom": (0, vast_bottom - LINE_THICKNESS, minimap_width, LINE_THICKNESS),
+            "right": (minimap_width - LINE_THICKNESS, vast_top, LINE_THICKNESS, vast_height),
         }
 
         for name, widget in self._vast.items():
