@@ -168,7 +168,7 @@ def main() -> None:
             print("Non-daemon threads running while Porcupine exits:")
             for thread in non_daemon_threads:
                 if getattr(thread.run, "__self__", None) is thread:
-                    print(thread.name, thread._target, thread._args, thread._kwargs)  # type: ignore
+                    print(thread.name, thread._target, thread._args, thread._kwargs, flush=True)  # type: ignore
                 else:
                     # run method overrided
                     print(thread.name, thread.run, flush=True)
