@@ -146,7 +146,7 @@ class DPaste(Paste):
 class SuccessDialog(tkinter.Toplevel):
     def __init__(self, url: str):
         super().__init__()
-        self.url = url
+        self._url = url
 
         content = ttk.Frame(self)
         content.pack(fill="both", expand=True)
@@ -178,12 +178,12 @@ class SuccessDialog(tkinter.Toplevel):
             self._entry.focus()
 
     def open_in_browser(self) -> None:
-        webbrowser.open(self.url)
+        webbrowser.open(self._url)
         self.destroy()
 
     def copy_to_clipboard(self) -> None:
         self.clipboard_clear()
-        self.clipboard_append(self.url)
+        self.clipboard_append(self._url)
 
 
 def make_please_wait_window(paste: Paste) -> tkinter.Toplevel:
