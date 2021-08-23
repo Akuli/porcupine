@@ -65,6 +65,9 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         label.pack(fill="x", padx=(50, 10), pady=(0, 10))
         _connect_label_to_radiobutton(label, radio)
 
+        if line_ending_name == old_line_ending.name:
+            radio.focus()
+
     ttk.Label(
         big_frame,
         text=(
