@@ -53,6 +53,7 @@ Miscellaneous
 .. autofunction:: mix_colors
 .. autofunction:: backup_open
 .. autofunction:: find_project_root
+.. autofunction:: copy_type
 
 .. function:: quote(argument)
 
