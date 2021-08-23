@@ -8,7 +8,6 @@ import pickle
 import subprocess
 import sys
 import tempfile
-import threading
 import tkinter
 from typing import Any
 
