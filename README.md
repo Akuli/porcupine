@@ -101,7 +101,7 @@ and autocompletions with a few lines of configuration file editing.
 See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
 
 ### Help! Porcupine doesn't work.
-Please [update Porcupine](https://github.com/Akuli/porcupine/wiki/Installing-and-Running-Porcupine#updating-porcupine).
+Please install the latest version.
 If it still doesn't work, [let me know by creating an issue on
 GitHub](http://github.com/Akuli/porcupine/issues/new).
 
@@ -116,7 +116,7 @@ Originally, Porcupine was named "Akuli's Editor".
 
 ### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
 Maybe it can, see [the more_plugins directory](more_plugins/). If you don't
-find what you are looking for you can write your own plugin, or alternatively,
+find what you are looking for, you can write your own plugin, or alternatively,
 you can [create an issue on GitHub](https://github.com/Akuli/porcupine/issues/new)
 and hope that I feel like writing the plugin for you.
 
@@ -143,6 +143,7 @@ Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
 If you want to do something to Porcupine, that's awesome!
 I have tried to make contributing easy:
+- Some issues are labeled as "good first issue".
 - If you don't understand what I meant in an issue, please ask me to clarify it.
     I have written most issues so that I understand what I wrote,
     and if you are new to Porcupine, you likely need a longer explanation to understand what the problem is.
@@ -180,13 +181,13 @@ This should run Porcupine. If you change some of Porcupine's
 code in the `porcupine` directory and you run `python3 -m porcupine` again, your changes
 should be visible right away.
 
+If you are using Windows, you need to use `py` instead of `python3` and
+`env\Scripts\activate.bat` instead of `source env/bin/activate`.
+
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct
 place and running `source env/bin/activate` again. You can run `deactivate` to undo
 the `source env/bin/activate`.
-
-If you are using Windows, you need to use `py` instead of `python3` and
-`env\Scripts\activate.bat` instead of `source env/bin/activate`.
 
 Here is a list of the commands I use when developing Porcupine:
 - Git commands. I'll assume that you know how to use Git and GitHub.
@@ -203,8 +204,7 @@ Here is a list of the commands I use when developing Porcupine:
 - Code formatting tools: `black porcupine/` and `isort porcupine/`
 - To see a report of test coverage, add `--cov=porcupine` to the above pytest
   command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
-  browser to view it. If you don't have anything else to do, you can write more
-  tests and try to improve the coverage :D
+  browser to view it.
 - `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
   Open `docs/build/index.html` in your favorite browser to view it.
 - Linter commands run automatically on pull request or push. Usually I don't run
@@ -214,7 +214,8 @@ I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.
 - `python3 scripts/release.py major_or_minor_or_patch` increments the version number and
   runs all the commands needed for doing a new Porcupine release. Run it from
-  inside a virtualenv with master branch checked out in git. The argument
+  inside a virtualenv with master branch checked out in git,
+  and with an entry named `UNRELEASED` in `CHANGELOG.md`. The argument
   works like this:
     - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
