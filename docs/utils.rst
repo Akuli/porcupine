@@ -38,7 +38,7 @@ Events with Data
 Other Tkinter Utilities
 -----------------------
 
-See :mod:`porcupine.textutils` for ``tkinter.Text`` specific things.
+.. seealso:: :mod:`porcupine.textutils` contains ``tkinter.Text`` specific things.
 
 .. autofunction:: bind_tab_key
 .. autofunction:: add_scroll_command
