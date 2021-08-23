@@ -93,8 +93,8 @@ class StatusBar(ttk.Frame):
 
         # packing order chosen so that if the path is long, everything else
         # disappears before path truncates
-        self._path_label = ttk.Label(self._top_frame)
-        self._path_label.pack(side="left")
+        self.path_label = ttk.Label(self._top_frame)
+        self.path_label.pack(side="left")
         self._line_ending_button = ttk.Button(
             self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=4
         )
@@ -104,14 +104,14 @@ class StatusBar(ttk.Frame):
         )
         self._encoding_button.pack(side="right", padx=2)
 
-        self._selection_label = ttk.Label(
+        self.selection_label = ttk.Label(
             self, text="Non-ASCII character: U+D6 LATIN CAPITAL LETTER O WITH DIAERESIS"
         )
-        self._selection_label.pack(side="left")
+        self.selection_label.pack(side="left")
 
     def update_labels(self, junk: object = None) -> None:
-        if not self._path_label["foreground"]:  # reload warning not going on
-            self._path_label.config(text=str(self._tab.path or "File not saved yet"))
+        if not self.path_label["foreground"]:  # reload warning not going on
+            self.path_label.config(text=str(self._tab.path or "File not saved yet"))
 
         try:
             # For line count, if the cursor is in beginning of line, don't count that as another line.
@@ -120,7 +120,7 @@ class StatusBar(ttk.Frame):
         except tkinter.TclError:
             # no text selected
             line, column = self._tab.textwidget.index("insert").split(".")
-            self._selection_label.config(text=f"Line {line}, column {column}")
+            self.selection_label.config(text=f"Line {line}, column {column}")
         else:
             if chars == 1:
                 char = self._tab.textwidget.get("sel.first")
@@ -134,7 +134,7 @@ class StatusBar(ttk.Frame):
                 text = f"{chars} characters selected"
             else:
                 text = f"{chars} characters on {lines+1} lines selected"
-            self._selection_label.config(text=text)
+            self.selection_label.config(text=text)
 
         self._encoding_button.config(text=self._tab.settings.get("encoding", str))
         self._line_ending_button.config(
@@ -145,11 +145,11 @@ class StatusBar(ttk.Frame):
         if event.data_class(tabs.ReloadInfo).had_unsaved_changes:
             oops = utils.get_binding("<<Undo>>")
             text = f"File was reloaded with unsaved changes. Press {oops} to get your changes back."
-            self._path_label.config(foreground="red", text=text)
+            self.path_label.config(foreground="red", text=text)
 
     def clear_reload_warning(self, junk: object) -> None:
-        if self._path_label["foreground"]:
-            self._path_label.config(foreground="")
+        if self.path_label["foreground"]:
+            self.path_label.config(foreground="")
             self.update_labels()
 
     def _choose_encoding(self) -> None:
