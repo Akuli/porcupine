@@ -7,6 +7,8 @@ and other details that don't affect using Porcupine.
 - The minimap (the thing that shows your code on the side with small font)
     is no longer ridiculously wide.
     You can also resize it by dragging with the mouse.
+    If you previously disabled it because it was too wide,
+    you can re-enable it in the plugin manager.
 - The long line marker can no longer move to the wrong place in unpredictable ways.
 - Changing the filetype now deletes yellow and red underlines from the file being edited.
     If you somehow open a C file as if it was a Python file,
