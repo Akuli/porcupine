@@ -4,6 +4,7 @@ from __future__ import annotations
 import codecs
 import collections
 import dataclasses
+import encodings
 import hashlib
 import importlib
 import itertools
@@ -12,7 +13,6 @@ import os
 import pathlib
 import tkinter
 import traceback
-import encodings
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
@@ -641,7 +641,9 @@ class FileTab(Tab):
         )
 
         # I don't know why this needs a type annotation for self.panedwindow
-        self.panedwindow: utils.PanedWindow = utils.PanedWindow(self, orient="horizontal", borderwidth=0)
+        self.panedwindow: utils.PanedWindow = utils.PanedWindow(
+            self, orient="horizontal", borderwidth=0
+        )
         self.panedwindow.pack(side="left", fill="both", expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
@@ -649,7 +651,15 @@ class FileTab(Tab):
         #
         # I don't know why this needs a type annotation for self.textwidget
         self.textwidget: textutils.MainText = textutils.MainText(
-            self, width=1, height=1, wrap="none", undo=True, padx=3, borderwidth=0, relief="solid", highlightthickness=0
+            self,
+            width=1,
+            height=1,
+            wrap="none",
+            undo=True,
+            padx=3,
+            borderwidth=0,
+            relief="solid",
+            highlightthickness=0,
         )
         self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
 
