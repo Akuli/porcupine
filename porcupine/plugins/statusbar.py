@@ -152,7 +152,6 @@ class StatusBar(ttk.Frame):
         )
         if new_encoding is not None:
             self._tab.settings.set("encoding", new_encoding)
-            self.update_labels()
 
     def _choose_line_ending(self) -> None:
         old_value = self._tab.settings.get("line_ending", settings.LineEnding)
