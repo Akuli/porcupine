@@ -15,6 +15,7 @@ and other details that don't affect using Porcupine.
         let's say a file using Latin-1 but Porcupine thinks it's UTF-8 (default),
         Porcupine will now ask you which encoding the file uses,
         and mentions using [.editorconfig files](https://editorconfig.org/) to change it permanently.
+        There is also error handling for encoding errors when saving files.
     - Porcupine now shows an error message if a file is deleted while it is open in Porcupine.
         Previously it would prevent you from opening more files, with no visible error messages,
         until the tab with the non-existing file was closed.
