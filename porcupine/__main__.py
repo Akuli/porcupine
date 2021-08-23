@@ -171,7 +171,7 @@ def main() -> None:
                     print(thread.name, thread._target, thread._args, thread._kwargs)  # type: ignore
                 else:
                     # run method overrided
-                    print(thread.name, thread.run)
+                    print(thread.name, thread.run, flush=True)
     log.info("exiting Porcupine successfully")
 
 
