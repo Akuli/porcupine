@@ -32,7 +32,7 @@ class MiniMap(tkinter.Text):
             width=25,
             exportselection=False,
             takefocus=False,
-            yscrollcommand=self._update_vast,
+            yscrollcommand=self._update_lines,
             wrap="none",
             cursor="arrow",
         )
@@ -45,9 +45,8 @@ class MiniMap(tkinter.Text):
         # To indicate the area visible in tab.textwidget, we can't use a tag,
         # because tag configuration is the same for both widgets (except for
         # one tag that we are already abusing). Instead, we put a bunch of
-        # frames on top of the text widget to make up a border. I call this
-        # "vast" for "visible area showing thingies".
-        self._vast = {
+        # frames on top of the text widget to make up a border.
+        self._lines = {
             "top": tkinter.Frame(self),
             "left": tkinter.Frame(self),
             "bottom": tkinter.Frame(self),
@@ -84,7 +83,7 @@ class MiniMap(tkinter.Text):
         )
 
         self._tab.textwidget.config(highlightcolor=foreground)
-        for frame in self._vast.values():
+        for frame in self._lines.values():
             frame.config(bg=foreground)
 
     def set_font(self) -> None:
@@ -93,19 +92,19 @@ class MiniMap(tkinter.Text):
             font=(settings.get("font_family", str), round(settings.get("font_size", int) / 3), ()),
         )
         textutils.config_tab_displaying(self, self._tab.settings.get("indent_size", int), tag="sel")
-        self._update_vast()
+        self._update_lines()
 
     def _scroll_callback(self) -> None:
         first_visible_index = self._tab.textwidget.index("@0,0 linestart")
         last_visible_index = self._tab.textwidget.index("@0,10000000 linestart")
         self.see(first_visible_index)
         self.see(last_visible_index)
-        self._update_vast()
+        self._update_lines()
 
     def _update_sel_tag(self, junk: object = None) -> None:
         self.tag_add("sel", "1.0", "end")
 
-    def _update_vast(self, *junk: object) -> None:
+    def _update_lines(self, *junk: object) -> None:
         if not self.tag_cget("sel", "font"):
             # view was created just a moment ago, set_font() hasn't ran yet
             return
@@ -116,7 +115,7 @@ class MiniMap(tkinter.Text):
         hide = set()
         if start_bbox is None and end_bbox is None:
             # no part of text file being edited is visible
-            hide = set(self._vast.keys())
+            hide = set(self._lines.keys())
 
         minimap_width, minimap_height = textutils.textwidget_size(self)
         minimap_x_padding, minimap_y_padding = textutils.get_padding(self)
@@ -133,43 +132,39 @@ class MiniMap(tkinter.Text):
             editor_height = textutils.textwidget_size(self._tab.textwidget)[1]
             how_many_lines_fit_on_editor = editor_height / how_tall_are_lines_on_editor
 
-            vast_top = 0
-            vast_bottom = int(how_many_lines_fit_on_editor * how_tall_are_lines_on_minimap)
+            rect_top = 0
+            rect_bottom = int(how_many_lines_fit_on_editor * how_tall_are_lines_on_minimap)
 
         else:
             if start_bbox is None:
-                vast_top = 0
+                rect_top = 0
                 hide.add("top")
             else:
                 x, y, w, h = start_bbox
-                x -= minimap_x_padding
-                y -= minimap_y_padding
-                vast_top = y
+                rect_top = y - minimap_y_padding
 
             if end_bbox is None:
-                vast_bottom = minimap_height
+                rect_bottom = minimap_height
                 hide.add("bottom")
             else:
                 x, y, w, h = end_bbox
-                x -= minimap_x_padding
-                y -= minimap_y_padding
-                vast_bottom = y+h
+                rect_bottom = (y - minimap_y_padding) + h
 
-        vast_height = vast_bottom - vast_top
+        rect_height = rect_bottom - rect_top
 
         coords = {
-            "top": (0, vast_top, minimap_width, LINE_THICKNESS),
-            "left": (0, vast_top, LINE_THICKNESS, vast_height),
-            "bottom": (0, vast_bottom - LINE_THICKNESS, minimap_width, LINE_THICKNESS),
-            "right": (minimap_width - LINE_THICKNESS, vast_top, LINE_THICKNESS, vast_height),
+            "top": (0, rect_top, minimap_width, LINE_THICKNESS),
+            "left": (0, rect_top, LINE_THICKNESS, rect_height),
+            "bottom": (0, rect_bottom - LINE_THICKNESS, minimap_width, LINE_THICKNESS),
+            "right": (minimap_width - LINE_THICKNESS, rect_top, LINE_THICKNESS, rect_height),
         }
 
-        for name, widget in self._vast.items():
+        for name, widget in self._lines.items():
             if name in hide:
                 widget.place_forget()
             else:
                 x, y, w, h = coords[name]
-                self._vast[name].place(x=x, y=y, width=w, height=h)
+                self._lines[name].place(x=x, y=y, width=w, height=h)
 
         # TODO: figure out when exactly this is needed, remove unnecessary calls?
         self._update_sel_tag()
