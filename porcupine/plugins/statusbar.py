@@ -10,22 +10,6 @@ from porcupine import get_main_window, get_tab_manager, settings, tabs, utils
 from porcupine.textutils import count
 
 
-# ttk.Button contains too much padding
-class SmallButton(ttk.Label):
-    def __init__(self, parent: tkinter.Misc, on_click: Callable[[], None], **kwargs: Any):
-        super().__init__(parent, relief="raised", **kwargs)
-        self._on_click = on_click
-        self.bind("<Button-1>", self._on_press, add=True)
-        self.bind("<ButtonRelease-1>", self._on_release, add=True)
-
-    def _on_press(self, junk_event: object) -> None:
-        self["relief"] = "sunken"
-
-    def _on_release(self, junk_event: object) -> None:
-        self["relief"] = "raised"
-        self._on_click()
-
-
 # Must be in a function because lambdas and local variables are ... inconvenient
 def _connect_label_to_radiobutton(label: ttk.Label, radio: ttk.Radiobutton) -> None:
     label.bind("<Enter>", lambda e: radio.event_generate("<Enter>"), add=True)
@@ -66,7 +50,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
             " If you use CRLF in projects that use Git,"
             " make sure to configure Git to convert the line endings"
             " so that your CRLF line endings appear as LF line endings"
-            " for other people working on the project."
+            " for other people working on the project.",
         ),
         (
             "CR",
@@ -111,11 +95,13 @@ class StatusBar(ttk.Frame):
         # disappears before path truncates
         self._path_label = ttk.Label(self._top_frame)
         self._path_label.pack(side="left")
-        self._line_ending_button = SmallButton(
-            self._top_frame, self._choose_line_ending, width=4, anchor="center"
+        self._line_ending_button = ttk.Button(
+            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=4
         )
         self._line_ending_button.pack(side="right", padx=2)
-        self._encoding_button = SmallButton(self._top_frame, self._choose_encoding)
+        self._encoding_button = ttk.Button(
+            self._top_frame, command=self._choose_encoding, style="Statusbar.TButton", width=6
+        )
         self._encoding_button.pack(side="right", padx=2)
 
         self._selection_label = ttk.Label(
@@ -124,7 +110,8 @@ class StatusBar(ttk.Frame):
         self._selection_label.pack(side="left")
 
     def update_labels(self, junk: object = None) -> None:
-        self._path_label.config(text=str(self._tab.path or "File not saved yet"))
+        if not self._path_label["foreground"]:  # reload warning not going on
+            self._path_label.config(text=str(self._tab.path or "File not saved yet"))
 
         try:
             # For line count, if the cursor is in beginning of line, don't count that as another line.
@@ -193,5 +180,18 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     statusbar.update_labels()
 
 
+def update_button_style(junk_event: object = None) -> None:
+    # https://tkdocs.com/tutorial/styles.html
+    # tkinter's style stuff sucks
+    get_tab_manager().tk.eval(
+        """
+    ttk::style configure Statusbar.TButton -padding 0 -anchor center
+    """
+    )
+
+
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
+
+    get_tab_manager().bind("<<ThemeChanged>>", update_button_style, add=True)
+    update_button_style()
