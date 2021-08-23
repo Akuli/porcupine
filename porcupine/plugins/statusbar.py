@@ -1,4 +1,6 @@
 """Display a status bar in each file tab."""
+from __future__ import annotations
+
 import tkinter
 import unicodedata
 from tkinter import ttk
@@ -16,10 +18,10 @@ class SmallButton(ttk.Label):
         self.bind("<Button-1>", self._on_press, add=True)
         self.bind("<ButtonRelease-1>", self._on_release, add=True)
 
-    def _on_press(self, event):
+    def _on_press(self, junk_event: object) -> None:
         self["relief"] = "sunken"
 
-    def _on_release(self, event):
+    def _on_release(self, junk_event: object) -> None:
         self["relief"] = "raised"
         self._on_click()
 
@@ -28,7 +30,7 @@ class SmallButton(ttk.Label):
 def _connect_label_to_radiobutton(label: ttk.Label, radio: ttk.Radiobutton) -> None:
     label.bind("<Enter>", lambda e: radio.event_generate("<Enter>"), add=True)
     label.bind("<Leave>", lambda e: radio.event_generate("<Leave>"), add=True)
-    label.bind("<Button-1>", lambda e: radio.invoke(), add=True)
+    label.bind("<Button-1>", lambda e: radio.invoke(), add=True)  # type: ignore[no-untyped-call]
 
 
 def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding:
@@ -73,9 +75,9 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
 
     for line_ending_name, short_text, long_text in options:
         radio = ttk.Radiobutton(big_frame, variable=var, value=line_ending_name, text=short_text)
-        radio.pack(fill="x", padx=[10, 0], pady=[10, 0])
+        radio.pack(fill="x", padx=(10, 0), pady=(10, 0))
         label = ttk.Label(big_frame, wraplength=450, text=long_text)
-        label.pack(fill="x", padx=[50, 10], pady=[0, 10])
+        label.pack(fill="x", padx=(50, 10), pady=(0, 10))
         _connect_label_to_radiobutton(label, radio)
 
     ttk.Label(
@@ -106,7 +108,9 @@ class StatusBar(ttk.Frame):
         # disappears before path truncates
         self._path_label = ttk.Label(self._top_frame)
         self._path_label.pack(side="left")
-        self._line_ending_button = SmallButton(self._top_frame, self._choose_line_ending, width=4, anchor='center')
+        self._line_ending_button = SmallButton(
+            self._top_frame, self._choose_line_ending, width=4, anchor="center"
+        )
         self._line_ending_button.pack(side="right", padx=2)
         self._encoding_button = SmallButton(self._top_frame, self._choose_encoding)
         self._encoding_button.pack(side="right", padx=2)
@@ -156,21 +160,19 @@ class StatusBar(ttk.Frame):
     def clear_reload_warning(self, junk: object) -> None:
         if self._path_label["foreground"]:
             self._path_label.config(foreground="")
-            self._update_labels()
+            self.update_labels()
 
-    def _choose_encoding(self):
+    def _choose_encoding(self) -> None:
         new_encoding = utils.ask_encoding(
             "Choose the encoding:", self._tab.settings.get("encoding", str)
         )
         if new_encoding is not None:
             self._tab.settings.set("encoding", new_encoding)
-            self._update_labels()
+            self.update_labels()
 
-    def _choose_line_ending(self):
+    def _choose_line_ending(self) -> None:
         old_value = self._tab.settings.get("line_ending", settings.LineEnding)
-        self._tab.settings.set(
-            "line_ending", ask_line_ending(old_value)
-        )
+        self._tab.settings.set("line_ending", ask_line_ending(old_value))
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
