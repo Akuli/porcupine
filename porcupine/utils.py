@@ -182,12 +182,6 @@ def find_project_root(project_file_path: Path) -> Path:
     return likely_root or project_file_path.parent
 
 
-# https://github.com/python/typing/issues/769
-# TODO: document this?
-def copy_type(f: _T) -> Callable[[Any], _T]:
-    return lambda x: x
-
-
 class PanedWindow(tkinter.PanedWindow):
     """Like :class:`tkinter.PanedWindow`, but uses Ttk colors.
 
