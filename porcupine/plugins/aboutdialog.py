@@ -11,7 +11,6 @@ import sys
 import tkinter
 import webbrowser
 from tkinter import ttk
-from typing import Any
 
 if sys.version_info >= (3, 9):
     from re import Match
@@ -21,7 +20,7 @@ else:
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils
 
-_BORING_TEXT = """
+BORING_TEXT = """
 Porcupine is a simple but powerful and configurable text editor written in \
 Python using the notorious tkinter GUI library. It started as a \
 proof-of-concept of a somewhat good editor written in tkinter, but nowadays \
@@ -50,9 +49,9 @@ def show_huge_logo(junk: object = None) -> None:
     webbrowser.open((images.images_dir / "logo.gif").as_uri())
 
 
-class _AboutDialogContent(ttk.Frame):
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+class AboutDialogContent(ttk.Frame):
+    def __init__(self, dialog: tkinter.Toplevel) -> None:
+        super().__init__(dialog)
 
         # TODO: calculate height automagically, instead of hard-coding
         self._textwidget = textutils.create_passive_text_widget(self, width=60, height=25)
@@ -73,7 +72,7 @@ class _AboutDialogContent(ttk.Frame):
         self._link_tag_names = map("link-{}".format, itertools.count())
 
         self._textwidget.config(state="normal")
-        for text_chunk in _BORING_TEXT.strip().split("\n\n"):
+        for text_chunk in BORING_TEXT.strip().split("\n\n"):
             self._add_minimal_markdown(text_chunk)
             self._textwidget.insert("end", "\n\n")
         self._add_directory_link(
@@ -136,7 +135,7 @@ class _AboutDialogContent(ttk.Frame):
 
 def show_about_dialog() -> None:
     dialog = tkinter.Toplevel()
-    content = _AboutDialogContent(dialog)
+    content = AboutDialogContent(dialog)
     content.pack(fill="both", expand=True)
 
     content.update()  # make sure that the winfo stuff works
