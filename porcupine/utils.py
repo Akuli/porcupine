@@ -86,7 +86,7 @@ else:
 
 # https://github.com/python/typing/issues/769
 def copy_type(f: _T) -> Callable[[Any], _T]:
-    """A decorator to tell mypy that one function or class has the same type as another.
+    """A decorator to tell mypy that one function or method has the same type as another.
 
     Example::
 
