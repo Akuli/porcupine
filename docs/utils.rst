@@ -43,7 +43,6 @@ See :mod:`porcupine.textutils` for ``tkinter.Text`` specific things.
 .. autofunction:: bind_tab_key
 .. autofunction:: add_scroll_command
 .. autofunction:: run_in_thread
-.. autofunction:: errordialog
 
 
 Miscellaneous

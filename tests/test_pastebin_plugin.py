@@ -153,14 +153,14 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
 
 def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, dont_run_in_thread):
     monkeypatch.setattr(pastebin_module, "DPASTE_URL", "ThisIsNotValidUrlStart://wat")
-    mocker.patch("porcupine.utils.errordialog")
+    mock = mocker.patch("porcupine.plugins.pastebin.errordialog")
 
     tabmanager.select(filetab)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
     get_main_window().update()
 
-    utils.errordialog.assert_called_once()
-    args, kwargs = utils.errordialog.call_args
+    mock.assert_called_once()
+    args, kwargs = mock.call_args
     assert args == (
         "Pasting Failed",
         "Check your internet connection and try again.\n\nHere's the full error message:",
