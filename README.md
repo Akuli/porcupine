@@ -91,6 +91,10 @@ See [below](#developing-porcupine).
 
 ## FAQ
 
+### What's new in the latest Porcupine release?
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ### Does Porcupine support programming language X?
 You will likely get syntax highlighting without any configuring
 and autocompletions with a few lines of configuration file editing.
