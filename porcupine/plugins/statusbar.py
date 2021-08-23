@@ -104,9 +104,7 @@ class StatusBar(ttk.Frame):
         )
         self._encoding_button.pack(side="right", padx=2)
 
-        self.selection_label = ttk.Label(
-            self, text="Non-ASCII character: U+D6 LATIN CAPITAL LETTER O WITH DIAERESIS"
-        )
+        self.selection_label = ttk.Label(self)
         self.selection_label.pack(side="left")
 
     def update_labels(self, junk: object = None) -> None:
@@ -148,17 +146,15 @@ class StatusBar(ttk.Frame):
             self.path_label.config(foreground="red", text=text)
 
     def clear_reload_warning(self, junk: object) -> None:
-        if self.path_label["foreground"]:
-            self.path_label.config(foreground="")
-            self.update_labels()
+        self.path_label.config(foreground="")
+        self.update_labels()
 
     def _choose_encoding(self) -> None:
         new_encoding = utils.ask_encoding(
-            "Choose the encoding:", self._tab.settings.get("encoding", str)
+            "Choose an encoding:", self._tab.settings.get("encoding", str)
         )
         if new_encoding is not None:
             self._tab.settings.set("encoding", new_encoding)
-            self.update_labels()
 
     def _choose_line_ending(self) -> None:
         old_value = self._tab.settings.get("line_ending", settings.LineEnding)
