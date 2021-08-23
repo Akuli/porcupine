@@ -84,6 +84,28 @@ else:
     quote = shlex.quote
 
 
+# https://github.com/python/typing/issues/769
+def copy_type(f: _T) -> Callable[[Any], _T]:
+    """A decorator to tell mypy that one function or class has the same type as another.
+
+    Example::
+
+        from typing import Any
+        from porcupine.utils import copy_type
+
+        def foo(x: int) -> None:
+            print(x)
+
+        @copy_type(foo)
+        def bar(*args: Any, **kwargs: Any) -> Any:
+            foo(*args, **kwargs)
+
+        bar(1)      # ok
+        bar("lol")  # mypy error
+    """
+    return lambda x: x
+
+
 # TODO: document this?
 def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
     parts = shlex.split(command, posix=(sys.platform != "win32"))
@@ -593,9 +615,9 @@ def run_in_thread(
     root.after_idle(check)
 
 
-# how to type hint context manager: https://stackoverflow.com/a/49736916
+@copy_type(open)
 @contextlib.contextmanager
-def backup_open(path: Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
+def backup_open(file: Any, *args: Any, **kwargs: Any) -> Any:
     """Like :func:`open`, but uses a backup file if needed.
 
     This is useless with modes like ``'r'`` because they don't modify
@@ -611,6 +633,7 @@ def backup_open(path: Path, *args: Any, **kwargs: Any) -> Iterator[TextIO]:
 
     This automatically restores from the backup on failure.
     """
+    path = Path(file)
     if path.exists():
         # there's something to back up
         #
