@@ -39,7 +39,7 @@ Windows improvements:
     complain about executables it hasn't seen before).
 - Porcupine installer now displays an error message if Microsoft Visual C++ Redistributable is not installed.
     Porcupine has never worked without it, but previously it would install silently.
-    If you see the error message, search the error message with Google to fix the problem.
+    If you see the error message, search it with Google.
 - Automatic indentation now works on Windows.
     For example, if you type `def foo():` into a Python file and press Enter,
     the next line will be indented.
