@@ -101,9 +101,7 @@ class StatusBar(ttk.Frame):
         )
         self._encoding_button.pack(side="right", padx=2)
 
-        self.selection_label = ttk.Label(
-            self, text="Non-ASCII character: U+D6 LATIN CAPITAL LETTER O WITH DIAERESIS"
-        )
+        self.selection_label = ttk.Label(self)
         self.selection_label.pack(side="left")
 
     def update_labels(self, junk: object = None) -> None:
