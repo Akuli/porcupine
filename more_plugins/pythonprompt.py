@@ -13,7 +13,7 @@ import sys
 import threading
 import tkinter
 from tkinter import ttk
-from typing import Any, Callable
+from typing import Callable
 
 from porcupine import get_tab_manager, menubar, tabs, textutils
 
@@ -141,8 +141,8 @@ class PythonPrompt:
 
 
 class PromptTab(tabs.Tab):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, tabmanager: tabs.TabManager) -> None:
+        super().__init__(tabmanager)
         self.title_choices = ["Interactive Prompt"]
 
         self.textwidget = tkinter.Text(self, width=1, height=1)

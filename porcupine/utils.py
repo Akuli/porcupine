@@ -83,6 +83,28 @@ else:
     quote = shlex.quote
 
 
+# https://github.com/python/typing/issues/769
+def copy_type(f: _T) -> Callable[[Any], _T]:
+    """A decorator to tell mypy that one function or method has the same type as another.
+
+    Example::
+
+        from typing import Any
+        from porcupine.utils import copy_type
+
+        def foo(x: int) -> None:
+            print(x)
+
+        @copy_type(foo)
+        def bar(*args: Any, **kwargs: Any) -> Any:
+            foo(*args, **kwargs)
+
+        bar(1)      # ok
+        bar("lol")  # mypy error
+    """
+    return lambda x: x
+
+
 # TODO: document this?
 def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
     parts = shlex.split(command, posix=(sys.platform != "win32"))
