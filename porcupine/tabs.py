@@ -12,6 +12,7 @@ import os
 import pathlib
 import tkinter
 import traceback
+import encodings
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
@@ -413,6 +414,16 @@ class ReloadInfo(utils.EventDataclass):
 
 
 def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
+    list_of_encodings = [x.replace("_", "-") for x in set(encodings.aliases.aliases.values())]
+
+    # must do this, because in list_of_encodings there are encodings, that codecs don't know
+    # but probably this isn't the appropriate place to do it
+    for encoding in list_of_encodings:
+        try:
+            codecs.lookup(encoding)
+        except LookupError:
+            list_of_encodings.remove(encoding)
+
     label_width = 400
 
     dialog = tkinter.Toplevel()
@@ -432,9 +443,9 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     ).pack(fill="x", padx=10, pady=10)
 
     var = tkinter.StringVar()
-    entry = ttk.Entry(big_frame, textvariable=var)
-    entry.pack(pady=50)
-    entry.insert(0, encoding_that_didnt_work)  # type: ignore[no-untyped-call]
+    combobox = ttk.Combobox(big_frame, values=sorted(list_of_encodings), textvariable=var)
+    combobox.pack(pady=40)
+    combobox.set(encoding_that_didnt_work)  # type: ignore[no-untyped-call]
 
     ttk.Label(
         big_frame,
@@ -451,7 +462,7 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
 
     def select_encoding() -> None:
         nonlocal selected_encoding
-        selected_encoding = entry.get()  # type: ignore[no-untyped-call]
+        selected_encoding = combobox.get()  # type: ignore[no-untyped-call]
         dialog.destroy()
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
@@ -460,7 +471,7 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     ok_button.pack(side="right", expand=True)
 
     def validate_encoding(*junk: object) -> None:
-        encoding = entry.get()  # type: ignore[no-untyped-call]
+        encoding = combobox.get()  # type: ignore[no-untyped-call]
         try:
             codecs.lookup(encoding)
         except LookupError:
@@ -469,11 +480,10 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
             ok_button.config(state="normal")
 
     var.trace_add("write", validate_encoding)
-
-    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
-    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
-    entry.select_range(0, "end")
-    entry.focus()
+    combobox.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    combobox.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    combobox.select_range(0, "end")
+    combobox.focus()
 
     dialog.wait_window()
     return selected_encoding
@@ -631,7 +641,7 @@ class FileTab(Tab):
         )
 
         # I don't know why this needs a type annotation for self.panedwindow
-        self.panedwindow: utils.PanedWindow = utils.PanedWindow(self, orient="horizontal")
+        self.panedwindow: utils.PanedWindow = utils.PanedWindow(self, orient="horizontal", borderwidth=0)
         self.panedwindow.pack(side="left", fill="both", expand=True)
 
         # we need to set width and height to 1 to make sure it's never too
@@ -639,7 +649,7 @@ class FileTab(Tab):
         #
         # I don't know why this needs a type annotation for self.textwidget
         self.textwidget: textutils.MainText = textutils.MainText(
-            self, width=1, height=1, wrap="none", undo=True, padx=3
+            self, width=1, height=1, wrap="none", undo=True, padx=3, borderwidth=0, relief="solid", highlightthickness=0
         )
         self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
 
