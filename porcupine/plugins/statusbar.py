@@ -4,7 +4,6 @@ from __future__ import annotations
 import tkinter
 import unicodedata
 from tkinter import ttk
-from typing import Any, Callable
 
 from porcupine import get_main_window, get_tab_manager, settings, tabs, utils
 from porcupine.textutils import count

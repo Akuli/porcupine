@@ -1,5 +1,6 @@
 """Handy utility functions."""
 from __future__ import annotations
+
 import codecs
 import collections
 import contextlib
@@ -14,9 +15,9 @@ import subprocess
 import sys
 import threading
 import tkinter
-from tkinter import ttk
 import traceback
 from pathlib import Path
+from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Type, TypeVar
 from urllib.request import url2pathname
 
@@ -542,11 +543,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
 
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill="both", expand=True)
-    ttk.Label(
-        big_frame,
-        text=text,
-        wraplength=label_width,
-    ).pack(fill="x", padx=10, pady=10)
+    ttk.Label(big_frame, text=text, wraplength=label_width).pack(fill="x", padx=10, pady=10)
 
     var = tkinter.StringVar()
     entry = ttk.Entry(big_frame, textvariable=var)

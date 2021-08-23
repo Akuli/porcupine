@@ -662,7 +662,8 @@ class FileTab(Tab):
             except UnicodeDecodeError:
                 bad_encoding = self.settings.get("encoding", str)
                 user_selected_encoding = utils.ask_encoding(
-                    f'The content of "{self.path}" is not valid {bad_encoding}. Choose an encoding to use instead:',
+                    f'The content of "{self.path}" is not valid {bad_encoding}. Choose an encoding'
+                    " to use instead:",
                     bad_encoding,
                 )
                 if user_selected_encoding is not None:

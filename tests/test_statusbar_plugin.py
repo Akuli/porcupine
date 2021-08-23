@@ -42,7 +42,10 @@ def test_selection(filetab):
     assert statusbar.selection_label["text"] == "Line 1, column 2"
 
     select(filetab, "1.2", "1.3")
-    assert statusbar.selection_label["text"] == "Unicode character U+F6: LATIN SMALL LETTER O WITH DIAERESIS"
+    assert (
+        statusbar.selection_label["text"]
+        == "Unicode character U+F6: LATIN SMALL LETTER O WITH DIAERESIS"
+    )
 
     select(filetab, "1.3", "1.4")
     assert statusbar.selection_label["text"] == "ASCII character 97 (hex 61)"
