@@ -11,7 +11,8 @@ and other details that don't affect using Porcupine.
     it is probably full of complaints about invalid Python syntax,
     and you want them to go away gone when you choose C from the Filetypes menu.
 - Better error handling for opening and saving files:
-    - If you open a file written with the Latin-1 encoding without telling Porcupine that it is Latin-1,
+    - If you open a file written with the wrong encoding,
+        let's say a file using Latin-1 but Porcupine thinks it's UTF-8 (default),
         Porcupine will now ask you which encoding the file uses,
         and mentions using [.editorconfig files](https://editorconfig.org/) to configure the encoding.
     - Porcupine now shows an error message if a file is deleted while it is open in Porcupine.
