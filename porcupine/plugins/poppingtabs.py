@@ -172,9 +172,6 @@ class PopManager:
         log.debug(f"started subprocess with PID {process.pid}")
         get_tab_manager().close_tab(tab)
 
-        # don't exit python until the subprocess exits, also log stuff
-        threading.Thread(target=self._waiting_thread, args=[process]).start()
-
     def pop_next_to_current_window(self) -> None:
         tab = get_tab_manager().select()
         assert tab is not None
@@ -190,13 +187,6 @@ class PopManager:
         else:
             geometry = f"{half_screen_width}x{screen_height}+{half_screen_width}+0"
         self.pop(tab, state, geometry)
-
-    def _waiting_thread(self, process: subprocess.Popen[bytes]) -> None:
-        status = process.wait()
-        if status == 0:
-            log.debug(f"subprocess with PID {process.pid} exited successfully")
-        else:
-            log.warning(f"subprocess with PID {process.pid} exited with status {status}")
 
 
 def open_tab_from_state_file() -> None:
