@@ -581,6 +581,13 @@ class FileTab(Tab):
             * :func:`porcupine.textutils.use_pygments_theme`
             * :func:`porcupine.textutils.track_changes`
 
+    .. attribute:: panedwindow
+        :type: porcupine.utils.PanedWindow
+
+        This widget contains the :attr:`textwidget`.
+        Its purpose is to allow plugins like :source:`minimap <porcupine/plugins/minimap.py>`
+        to add other resizable widgets next to the :attr:`textwidget`.
+
     .. attribute:: scrollbar
         :type: tkinter.ttk.Scrollbar
 
@@ -634,7 +641,6 @@ class FileTab(Tab):
         self.textwidget: textutils.MainText = textutils.MainText(
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
-        self.textwidget.pack(side="left", fill="both", expand=True)
         self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
 
         if content:
