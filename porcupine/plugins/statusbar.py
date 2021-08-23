@@ -70,7 +70,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         big_frame,
         text=(
             "Consider setting the line ending in a project-specific .editorconfig file"
-            " if your project uses unusual choice of line endings."
+            " if your project uses an unusual choice of line endings."
         ),
     )
 
