@@ -27,8 +27,6 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         fill="x", padx=5, pady=5
     )
 
-    var = tkinter.StringVar(value=old_line_ending.name)
-
     options: list[tuple[str, str, str]] = [
         (
             "LF",
@@ -59,6 +57,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         ),
     ]
 
+    var = tkinter.StringVar(value=old_line_ending.name)
     for line_ending_name, short_text, long_text in options:
         radio = ttk.Radiobutton(big_frame, variable=var, value=line_ending_name, text=short_text)
         radio.pack(fill="x", padx=(10, 0), pady=(10, 0))
