@@ -563,7 +563,9 @@ class FileTab(Tab):
         )
 
         # I don't know why this needs a type annotation for self.panedwindow
-        self.panedwindow: utils.PanedWindow = utils.PanedWindow(self, orient="horizontal")
+        self.panedwindow: utils.PanedWindow = utils.PanedWindow(
+            self, orient="horizontal", borderwidth=0
+        )
         self.panedwindow.pack(side="left", fill="both", expand=True)
 
         # we need to set width and height to 1 to make sure it's never too

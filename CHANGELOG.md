@@ -28,7 +28,7 @@ and other details that don't affect using Porcupine.
 - Several smaller improvements.
 
 
-## 0.95.0
+## v0.95.0
 
 Windows improvements:
 - Automatic indentation now works on Windows.
@@ -53,7 +53,7 @@ Other fixes:
 - Porcupine can no longer start off-screen if your screen size changes.
 
 
-## 0.94.3 and older
+## v0.94.3 and older
 
 No change log, but you can browse the Git commit history.
 Let me know if you need help with that.

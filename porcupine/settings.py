@@ -369,6 +369,7 @@ def save() -> None:
                 for name, unknown_obj in _global_settings.get_state().items()
             },
             file,
+            indent=4,
         )
 
 
