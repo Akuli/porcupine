@@ -411,6 +411,7 @@ def _import_lexer_class(name: str) -> LexerMeta:
 class ReloadInfo(utils.EventDataclass):
     had_unsaved_changes: bool
 
+
 # list of encodings supported by python 3.7
 list_of_encodings = [
     "ascii",
@@ -742,15 +743,7 @@ class FileTab(Tab):
         #
         # I don't know why this needs a type annotation for self.textwidget
         self.textwidget: textutils.MainText = textutils.MainText(
-            self,
-            width=1,
-            height=1,
-            wrap="none",
-            undo=True,
-            padx=3,
-            borderwidth=0,
-            relief="solid",
-            highlightthickness=0,
+            self, width=1, height=1, wrap="none", undo=True, padx=3
         )
         self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
 
