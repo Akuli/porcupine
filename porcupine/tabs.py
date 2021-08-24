@@ -419,6 +419,7 @@ def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | No
     if _state.get_main_window().winfo_viewable():
         dialog.transient(_state.get_main_window())
     dialog.resizable(False, False)
+    dialog.title("Choose an encoding")
 
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill="both", expand=True)
