@@ -412,7 +412,7 @@ class ReloadInfo(utils.EventDataclass):
     had_unsaved_changes: bool
 
 
-# list of encodings supported by python 3.7
+# list of encodings supported by python 3.7 https://stackoverflow.com/a/25584253
 list_of_encodings = [
     "ascii",
     "big5",
