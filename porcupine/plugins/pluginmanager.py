@@ -254,6 +254,7 @@ def show_dialog() -> None:
 
 def create_dialog() -> tuple[tkinter.Toplevel, PluginDialogContent]:
     dialog = tkinter.Toplevel()
+    dialog.title("Porcupine Plugin Manager")
     content = PluginDialogContent(dialog)
     content.content_frame.pack(fill="both", expand=True)
     dialog.transient(get_main_window())
