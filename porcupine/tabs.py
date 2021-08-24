@@ -1,7 +1,6 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
-import codecs
 import collections
 import dataclasses
 import hashlib
@@ -412,176 +411,6 @@ class ReloadInfo(utils.EventDataclass):
     had_unsaved_changes: bool
 
 
-# list of encodings supported by python 3.7 https://stackoverflow.com/a/25584253
-list_of_encodings = [
-    "ascii",
-    "big5",
-    "big5hkscs",
-    "cp037",
-    "cp273",
-    "cp424",
-    "cp437",
-    "cp500",
-    "cp720",
-    "cp737",
-    "cp775",
-    "cp850",
-    "cp852",
-    "cp855",
-    "cp856",
-    "cp857",
-    "cp858",
-    "cp860",
-    "cp861",
-    "cp862",
-    "cp863",
-    "cp864",
-    "cp865",
-    "cp866",
-    "cp869",
-    "cp874",
-    "cp875",
-    "cp932",
-    "cp949",
-    "cp950",
-    "cp1006",
-    "cp1026",
-    "cp1125",
-    "cp1140",
-    "cp1250",
-    "cp1251",
-    "cp1252",
-    "cp1253",
-    "cp1254",
-    "cp1255",
-    "cp1256",
-    "cp1257",
-    "cp1258",
-    "cp65001",
-    "euc-jp",
-    "euc-jis-2004",
-    "euc-jisx0213",
-    "euc-kr",
-    "gb2312",
-    "gbk",
-    "gb18030",
-    "hz",
-    "iso2022-jp",
-    "iso2022-jp-1",
-    "iso2022-jp-2",
-    "iso2022-jp-2004",
-    "iso2022-jp-3",
-    "iso2022-jp-ext",
-    "iso2022-kr",
-    "latin-1",
-    "iso8859-2",
-    "iso8859-3",
-    "iso8859-4",
-    "iso8859-5",
-    "iso8859-6",
-    "iso8859-7",
-    "iso8859-8",
-    "iso8859-9",
-    "iso8859-10",
-    "iso8859-11",
-    "iso8859-13",
-    "iso8859-14",
-    "iso8859-15",
-    "iso8859-16",
-    "johab",
-    "koi8-r",
-    "koi8-t",
-    "koi8-u",
-    "kz1048",
-    "mac-cyrillic",
-    "mac-greek",
-    "mac-iceland",
-    "mac-latin2",
-    "mac-roman",
-    "mac-turkish",
-    "ptcp154",
-    "shift-jis",
-    "shift-jis-2004",
-    "shift-jisx0213",
-    "utf-32",
-    "utf-32-be",
-    "utf-32-le",
-    "utf-16",
-    "utf-16-be",
-    "utf-16-le",
-    "utf-7",
-    "utf-8",
-    "utf-8-sig",
-]
-
-
-def _ask_encoding(path: pathlib.Path, encoding_that_didnt_work: str) -> str | None:
-    label_width = 400
-
-    dialog = tkinter.Toplevel()
-    if _state.get_main_window().winfo_viewable():
-        dialog.transient(_state.get_main_window())
-    dialog.resizable(False, False)
-    dialog.title("Choose an encoding")
-
-    big_frame = ttk.Frame(dialog)
-    big_frame.pack(fill="both", expand=True)
-    ttk.Label(
-        big_frame,
-        text=(
-            f'The content of "{path}" is not valid {encoding_that_didnt_work}. Choose an encoding'
-            " to use instead:"
-        ),
-        wraplength=label_width,
-    ).pack(fill="x", padx=10, pady=10)
-
-    var = tkinter.StringVar()
-    combobox = ttk.Combobox(big_frame, values=list_of_encodings, textvariable=var)
-    combobox.pack(pady=40)
-    combobox.set(encoding_that_didnt_work)  # type: ignore[no-untyped-call]
-
-    ttk.Label(
-        big_frame,
-        text=(
-            "You can create a project-specific .editorconfig file to change the encoding"
-            " permanently."
-        ),
-        wraplength=label_width,
-    ).pack(fill="x", padx=10, pady=10)
-    button_frame = ttk.Frame(big_frame)
-    button_frame.pack(fill="x", pady=10)
-
-    selected_encoding = None
-
-    def select_encoding() -> None:
-        nonlocal selected_encoding
-        selected_encoding = combobox.get()  # type: ignore[no-untyped-call]
-        dialog.destroy()
-
-    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
-    cancel_button.pack(side="left", expand=True)
-    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
-    ok_button.pack(side="right", expand=True)
-
-    def validate_encoding(*junk: object) -> None:
-        encoding = combobox.get()  # type: ignore[no-untyped-call]
-        try:
-            codecs.lookup(encoding)
-        except LookupError:
-            ok_button.config(state="disabled")
-        else:
-            ok_button.config(state="normal")
-
-    var.trace_add("write", validate_encoding)
-    combobox.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
-    combobox.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
-    combobox.select_range(0, "end")
-    combobox.focus()
-
-    dialog.wait_window()
-    return selected_encoding
-
-
 # Runs in O(n) time where n = max(old_content.count('\n'), new_content.count('\n'))
 def _find_changed_part(old_content: str, new_content: str) -> tuple[str, str, str]:
     old_lines = collections.deque(old_content.splitlines(keepends=True))
@@ -762,6 +591,8 @@ class FileTab(Tab):
 
         self.textwidget.bind("<<ContentChanged>>", self._update_titles, add=True)
         self.bind("<<PathChanged>>", self._update_titles, add=True)
+        self.bind("<<TabSettingChanged:encoding>>", self._update_titles, add=True)
+        self.bind("<<TabSettingChanged:line_ending>>", self._update_titles, add=True)
         self._update_titles()
 
         self._previous_reload_failed = False
@@ -831,8 +662,11 @@ class FileTab(Tab):
                         continue
 
             except UnicodeDecodeError:
-                user_selected_encoding = _ask_encoding(
-                    self.path, self.settings.get("encoding", str)
+                bad_encoding = self.settings.get("encoding", str)
+                user_selected_encoding = utils.ask_encoding(
+                    f'The content of "{self.path}" is not valid {bad_encoding}. Choose an encoding'
+                    " to use instead:",
+                    bad_encoding,
                 )
                 if user_selected_encoding is not None:
                     self.settings.set("encoding", user_selected_encoding)

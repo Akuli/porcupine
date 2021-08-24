@@ -150,7 +150,7 @@ def test_initial_cursor_pos(tabmanager, tmp_path):
 
 
 def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
-    mock = mocker.patch("porcupine.tabs._ask_encoding")
+    mock = mocker.patch("porcupine.utils.ask_encoding")
     (tmp_path / "foo.py").write_text("asdf")
     tab = tabmanager.open_file(tmp_path / "foo.py")
     assert tab is not None
@@ -160,12 +160,12 @@ def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
     mock.return_value = None  # user clicks cancel
     assert not tab.reload()
     mock.assert_called_once()
-    assert mock.call_args[0] == (tmp_path / "foo.py", "utf-8")
+    assert 'foo.py" is not valid utf-8. Choose an encoding' in str(mock.call_args[0])
     assert tab.settings.get("encoding", str) == "utf-8"
 
     mock.return_value = "latin-1"  # user types the correct encoding and clicks ok
     assert tab.reload()
-    assert mock.call_args[0] == (tmp_path / "foo.py", "utf-8")
+    assert 'foo.py" is not valid utf-8. Choose an encoding' in str(mock.call_args[0])
     assert tab.settings.get("encoding", str) == "latin-1"
     assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
 
