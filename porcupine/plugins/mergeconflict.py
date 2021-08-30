@@ -89,6 +89,7 @@ class ConflictDisplayer:
     ) -> tkinter.Label:
         # Want custom colors. Usually non-ttk widget works for it, but not on mac.
         label = tkinter.Label(
+            self.textwidget,
             text=text,
             relief="raised",
             padx=15,
