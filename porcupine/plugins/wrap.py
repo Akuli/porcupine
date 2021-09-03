@@ -28,7 +28,7 @@ def settings_to_var(var: tkinter.BooleanVar, junk: object = None) -> None:
             return
         var.set(value)
     else:
-        var.set(False)
+        var.set(False)  # menu item will be disabled
 
 
 def settings_to_textwidget(tab: tabs.FileTab, junk: object = None) -> None:
