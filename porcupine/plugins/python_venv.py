@@ -109,7 +109,7 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
             tree.tk.call(tree, "tag", "add", "venv", [venv_id])
 
 
-def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]):
+def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
     tree: dirtree.DirectoryTree = event.widget
     [item] = tree.selection()
     path = dirtree.get_path(item)
@@ -136,4 +136,4 @@ def setup() -> None:
         if isinstance(widget, dirtree.DirectoryTree):
             widget.tag_configure("venv", image=images.get("venv"))
             utils.bind_with_data(widget, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
-            utils.bind_with_data(widget, "<<PopulateContextMenu>>", _populate_menu, add=True)
+            widget.bind("<<PopulateContextMenu>>", _populate_menu, add=True)

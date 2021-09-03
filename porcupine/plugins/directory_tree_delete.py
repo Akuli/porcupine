@@ -3,11 +3,12 @@ from __future__ import annotations
 import logging
 import shutil
 import sys
+import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 
-from send2trash import send2trash
+from send2trash import send2trash  # type: ignore
 
 from porcupine import get_paned_window, get_tab_manager, tabs, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_path
@@ -81,7 +82,7 @@ def delete(path: Path) -> None:
         )
 
 
-def populate_menu(event) -> None:
+def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree: DirectoryTree = event.widget
     [item] = tree.selection()
     path = get_path(item)
@@ -95,4 +96,4 @@ def populate_menu(event) -> None:
 def setup() -> None:
     for widget in utils.get_children_recursively(get_paned_window()):
         if isinstance(widget, DirectoryTree):
-            utils.bind_with_data(widget, "<<PopulateContextMenu>>", populate_menu, add=True)
+            widget.bind("<<PopulateContextMenu>>", populate_menu, add=True)

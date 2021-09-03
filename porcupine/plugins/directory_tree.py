@@ -143,7 +143,7 @@ class DirectoryTree(ttk.Treeview):
         self._last_click_item: str | None = None
 
         self._project_num_counter = 0
-        self.contextmenu: tkinter.Menu | None = None
+        self.contextmenu = tkinter.Menu(tearoff=False)
 
     def set_the_selection_correctly(self, id: str) -> None:
         self.selection_set(id)  # type: ignore[no-untyped-call]
@@ -472,21 +472,19 @@ class DirectoryTree(ttk.Treeview):
         return None
 
     # TODO: invoking context menu from keyboard
-    def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str:
+    def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
 
         item: str = self.identify_row(event.y)  # type: ignore[no-untyped-call]
         self.set_the_selection_correctly(item)
 
-        if self.contextmenu is None:
-            self.contextmenu = tkinter.Menu(tearoff=False)
-
         self.contextmenu.delete(0, "end")
         self.event_generate("<<PopulateContextMenu>>")
-        if self.contextmenu.index("end") is not None:
+        if self.contextmenu.index("end") is not None:  # type: ignore[no-untyped-call]
             # Menu is not empty
             self.contextmenu.tk_popup(event.x_root, event.y_root)
             return "break"
+        return None
 
 
 def select_current_file(tree: DirectoryTree, event: object) -> None:
