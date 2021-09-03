@@ -234,14 +234,18 @@ def setup() -> None:
         "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    menubar.add_config_file_button(pathlib.Path(dirs.user_config_dir) / "filetypes.toml")
     set_filedialog_kwargs()
 
     for name, filetype in filetypes.items():
-        safe_name = name.replace("/", "\N{division slash}")  # lol
+        escaped_name = name.replace("/", "//")  # doesn't work in all corner cases
         menubar.add_filetab_command(
-            f"Filetypes/{safe_name}", partial(apply_filetype_to_tab, filetype)
+            f"Filetypes/{escaped_name}", partial(apply_filetype_to_tab, filetype)
         )
+
+    path = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
+    menubar.get_menu("Filetypes").add_separator()
+    menubar.add_config_file_button(path, menu="Filetypes", text="Edit filetypes.toml")
+    menubar.add_config_file_button(path)  # goes to "Settings/Config Files"
 
     new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None
     for filetype in new_file_filetypes:
