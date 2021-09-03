@@ -41,7 +41,7 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> int | None:
     return last_lineno
 
 
-def update_line_numbers(tab: tabs.FileTab):
+def update_line_numbers(tab: tabs.FileTab) -> None:
     for child in tab.left_frame.winfo_children():
         if isinstance(child, LineNumbers):
             child.do_update()
