@@ -9,7 +9,14 @@ from pathlib import Path
 from porcupine import get_paned_window, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_path
 
-setup_after = ["directory_tree", "directory_tree_delete"]
+setup_after = [
+    "directory_tree",
+    # Setting up after all other plugins that fill menu, so that git
+    # functionality will appear last in the menu
+    "directory_tree_delete",
+    "python_venv",
+]
+
 log = logging.getLogger(__name__)
 
 if sys.platform == "win32":
