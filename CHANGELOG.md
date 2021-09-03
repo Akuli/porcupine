@@ -14,7 +14,7 @@ New features:
     This can be useful if you want to distinguish `“` and `"`, for example.
 
 Bug fixes:
-- When Porcupine detects a file that has merge conflict,
+- When Porcupine detects a file that has a Git merge conflict,
     it creates "Use this" and "Edit manually" buttons to help resolve it.
     They no longer show up weirdly on top of tooltips and autocompletion popups.
 - The *Wrap long lines* setting (in View menu) is now preserved
