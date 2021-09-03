@@ -6,7 +6,7 @@ and other details that don't affect using Porcupine.
 
 New features:
 - Alt+Shift+C+E sets anchors to every yellow or red underline.
-    This is useful for stepping through all errors in the file, fixing them one by one.
+    This is useful for stepping through all errors in a file and fixing them one by one.
     See *Anchors* in the *Edit* menu.
 - You can now run `isort` from the *Tools/Python* menu.
 - The status bar has new buttons for choosing the line ending and encoding.
