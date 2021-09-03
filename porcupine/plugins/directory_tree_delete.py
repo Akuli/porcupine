@@ -77,7 +77,7 @@ def delete(path: Path) -> None:
     except Exception as e:
         log.exception(f"can't delete {path}")
         messagebox.showerror(
-            f"Deleting failed", f"Deleting {path} failed:\n\n{type(e).__name__}: {e}"
+            "Deleting failed", f"Deleting {path} failed:\n\n{type(e).__name__}: {e}"
         )
 
 
