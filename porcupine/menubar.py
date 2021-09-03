@@ -102,7 +102,7 @@ def _split_parent(string: str) -> tuple[str, str]:
     return (_join(parent_parts), child)
 
 
-def get_menu(path: str | None) -> tkinter.Menu:
+def get_menu(path: str) -> tkinter.Menu:
     """
     Find a menu widget, creating menus as necessary.
 
@@ -110,11 +110,8 @@ def get_menu(path: str | None) -> tkinter.Menu:
     *Python* from a menu named *Tools*. The *Tools* menu is created if it
     doesn't already exist.
 
-    If *path* is ``None`` or the empty string, then the menubar itself is returned.
+    If *path* is the empty string, then the menubar itself is returned.
     """
-    # TODO: delete this in new minor release
-    if path is None:
-        path = ""
 
     main_window = get_main_window()
     main_menu: tkinter.Menu = main_window.nametowidget(main_window["menu"])
@@ -178,7 +175,7 @@ def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkin
 
 def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
-    for path, menu, index in _walk_menu_contents(get_menu(None)):
+    for path, menu, index in _walk_menu_contents(get_menu("")):
         event_name = f"<<Menubar:{path}>>"
 
         # show keyboard shortcuts in menus
@@ -200,7 +197,7 @@ def _update_shortcuts_for_opening_submenus() -> None:
             if match is not None:
                 used_letters.add(match.group(1))
 
-    menu = get_menu(None)
+    menu = get_menu("")
     for submenu_index in range(menu.index("end") + 1):  # type: ignore[no-untyped-call]
         for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):  # type: ignore[no-untyped-call]
             if letter in ascii_lowercase and letter not in used_letters:

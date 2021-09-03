@@ -2,6 +2,34 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## UNRELEASED
+
+New features:
+- Alt+Shift+C+E sets anchors to every yellow or red underline.
+    This is useful for stepping through all errors in a file and fixing them one by one.
+    See *Anchors* in the *Edit* menu.
+- You can now run `isort` from the *Tools/Python* menu.
+- The status bar has new buttons for choosing the line ending and encoding.
+    Also, if you select a single character, it displays information about that character.
+    This can be useful if you want to distinguish `“` and `"`, for example.
+
+Bug fixes:
+- When Porcupine detects a file that has a Git merge conflict,
+    it creates "Use this" and "Edit manually" buttons to help resolve it.
+    They no longer show up weirdly on top of tooltips and autocompletion popups.
+- The *Wrap long lines* setting (in View menu) is now preserved
+    when restarting Porcupine or dragging a tab out of Porcupine.
+- Line numbers now update when unfolding, even in very short files.
+    Speaking of folding, the fold plugin is currently not very easy to use,
+    and I am planning to improve it ([#410](https://github.com/Akuli/porcupine/issues/410)).
+
+Other improvements:
+- The encoding choosing dialog now contains a dropdown for encodings.
+    You can still enter the name of an encoding yourself if you want.
+- Porcupine's `settings.json` file is now more human-readable than before.
+    It used to be one long line of JSON, but it is now on multiple lines.
+
+
 ## v0.96.0
 
 - The minimap (the thing that shows your code on the side with small font)
