@@ -483,8 +483,10 @@ class DirectoryTree(ttk.Treeview):
 
         self.contextmenu.delete(0, "end")
         self.event_generate("<<PopulateContextMenu>>")
-        self.contextmenu.tk_popup(event.x_root, event.y_root)
-        return "break"
+        if self.contextmenu.index("end") is not None:
+            # Menu is not empty
+            self.contextmenu.tk_popup(event.x_root, event.y_root)
+            return "break"
 
 
 def select_current_file(tree: DirectoryTree, event: object) -> None:
