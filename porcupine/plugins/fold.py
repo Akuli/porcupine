@@ -47,7 +47,7 @@ def update_line_numbers(tab: tabs.FileTab):
             child.do_update()
 
 
-def unfold(tab: tabs.FileTab, tag: str) -> None:
+def on_button_destroyed(tab: tabs.FileTab, tag: str) -> None:
     tab.textwidget.tag_delete(tag)
     update_line_numbers(tab)
 
@@ -82,7 +82,7 @@ def fold(tab: tabs.FileTab) -> None:
     tab.textwidget.tag_config(tag, elide=True)
     tab.textwidget.tag_add(tag, f"{lineno + 1}.0", f"{end + 1}.0")
 
-    dots.bind("<Destroy>", lambda event: unfold(tab, tag), add=True)
+    dots.bind("<Destroy>", lambda event: on_button_destroyed(tab, tag), add=True)
     dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)
     tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)  # type: ignore[no-untyped-call]
     update_line_numbers(tab)
