@@ -102,7 +102,7 @@ def _split_parent(string: str) -> tuple[str, str]:
     return (_join(parent_parts), child)
 
 
-def get_menu(path: str | None) -> tkinter.Menu:
+def get_menu(path: str) -> tkinter.Menu:
     """
     Find a menu widget, creating menus as necessary.
 
@@ -110,11 +110,8 @@ def get_menu(path: str | None) -> tkinter.Menu:
     *Python* from a menu named *Tools*. The *Tools* menu is created if it
     doesn't already exist.
 
-    If *path* is ``None`` or the empty string, then the menubar itself is returned.
+    If *path* is the empty string, then the menubar itself is returned.
     """
-    # TODO: delete this in new minor release
-    if path is None:
-        path = ""
 
     main_window = get_main_window()
     main_menu: tkinter.Menu = main_window.nametowidget(main_window["menu"])
