@@ -547,7 +547,7 @@ class LangServer:
             tab.event_generate(
                 "<<SetUnderlines>>",
                 data=underlines.Underlines(
-                    id="langserver_diagnostics",
+                    id="diagnostics",
                     underline_list=[
                         underlines.Underline(
                             start=_position_lsp2tk(diagnostic.range.start),
@@ -799,7 +799,7 @@ def switch_langservers(
         global_log.info(f"Switching langservers: {old} --> {new}")
         tab.event_generate(
             "<<SetUnderlines>>",
-            data=underlines.Underlines(id="langserver_diagnostics", underline_list=[]),
+            data=underlines.Underlines(id="diagnostics", underline_list=[]),
         )
 
         if old is not None:

@@ -86,6 +86,22 @@ def _find_item(menu: tkinter.Menu, label: str) -> int | None:
     return None
 
 
+# "//" means literal backslash, lol
+def _join(parts: list[str]) -> str:
+    return "/".join(part.replace("/", "//") for part in parts)
+
+
+def _split(string: str) -> list[str]:
+    if not string:
+        return []
+    return [part.replace("//", "/") for part in re.split(r"(?<!/)/(?!/)", string)]
+
+
+def _split_parent(string: str) -> tuple[str, str]:
+    *parent_parts, child = _split(string)
+    return (_join(parent_parts), child)
+
+
 def get_menu(path: str | None) -> tkinter.Menu:
     """
     Find a menu widget, creating menus as necessary.
@@ -94,15 +110,17 @@ def get_menu(path: str | None) -> tkinter.Menu:
     *Python* from a menu named *Tools*. The *Tools* menu is created if it
     doesn't already exist.
 
-    If *path* is ``None``, then the menubar itself is returned.
+    If *path* is ``None`` or the empty string, then the menubar itself is returned.
     """
+    # TODO: delete this in new minor release
+    if path is None:
+        path = ""
+
     main_window = get_main_window()
     main_menu: tkinter.Menu = main_window.nametowidget(main_window["menu"])
-    if path is None:
-        return main_menu
 
     menu = main_menu
-    for label in path.split("/"):
+    for label in _split(path):
         submenu_index = _find_item(menu, label)
         if submenu_index is None:
             # Need to pass the menu as an explicit argument to tkinter.Menu.
@@ -136,22 +154,19 @@ def add_config_file_button(path: pathlib.Path) -> None:
 
 
 def _walk_menu_contents(
-    menu: tkinter.Menu | None = None, path_prefix: str = ""
+    menu: tkinter.Menu, path_prefix: list[str] = []
 ) -> Iterator[tuple[str, tkinter.Menu, int]]:
-
-    if menu is None:
-        menu = get_menu(None)
 
     last_index = menu.index("end")  # type: ignore[no-untyped-call]
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
             if menu.type(index) == "cascade":  # type: ignore[no-untyped-call]
                 submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, "menu"))  # type: ignore[no-untyped-call]
-                new_prefix = path_prefix + menu.entrycget(index, "label") + "/"  # type: ignore[no-untyped-call]
+                new_prefix = path_prefix + [menu.entrycget(index, "label")]  # type: ignore[no-untyped-call]
                 yield from _walk_menu_contents(submenu, new_prefix)
             elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:  # type: ignore[no-untyped-call]
-                path = path_prefix + menu.entrycget(index, "label")  # type: ignore[no-untyped-call]
-                yield (path, menu, index)
+                path = path_prefix + [menu.entrycget(index, "label")]  # type: ignore[no-untyped-call]
+                yield (_join(path), menu, index)
 
 
 def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]) -> str:
@@ -161,7 +176,7 @@ def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkin
 
 def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
-    for path, menu, index in _walk_menu_contents():
+    for path, menu, index in _walk_menu_contents(get_menu(None)):
         event_name = f"<<Menubar:{path}>>"
 
         # show keyboard shortcuts in menus
@@ -246,8 +261,9 @@ def set_enabled_based_on_tab(
 
     def update_enabledness(*junk: object) -> None:
         tab = get_tab_manager().select()
-        menu = get_menu(path.rsplit("/", 1)[0] if "/" in path else None)
-        index = _find_item(menu, path.split("/")[-1])
+        parent, child = _split_parent(path)
+        menu = get_menu(parent)
+        index = _find_item(menu, child)
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
         menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
@@ -310,7 +326,7 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], Any] | None = 
     else:
         command = lambda: func(_get_filetab())  # type: ignore
 
-    menu_path, item_text = path.rsplit("/", maxsplit=1)
+    menu_path, item_text = _split_parent(path)
     get_menu(menu_path).add_command(label=item_text, command=command)
 
 
