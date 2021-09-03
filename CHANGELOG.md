@@ -19,6 +19,9 @@ Bug fixes:
     They no longer show up weirdly on top of tooltips and autocompletion popups.
 - The *Wrap long lines* setting (in View menu) is now preserved
     when restarting Porcupine or dragging a tab out of Porcupine.
+- Line numbers now update when unfolding.
+    Speaking of folding, the fold plugin is currently not very easy to use,
+    and I am planning to rewrite it ([#410](https://github.com/Akuli/porcupine/issues/410)).
 
 Other improvements:
 - Encode choosing dialog now contains a dropdown for encodings.
