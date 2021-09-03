@@ -21,7 +21,7 @@ Bug fixes:
     when restarting Porcupine or dragging a tab out of Porcupine.
 - Line numbers now update when unfolding, even in very short files.
     Speaking of folding, the fold plugin is currently not very easy to use,
-    and I am planning to rewrite it ([#410](https://github.com/Akuli/porcupine/issues/410)).
+    and I am planning to improve it ([#410](https://github.com/Akuli/porcupine/issues/410)).
 
 Other improvements:
 - Encoding choosing dialog now contains a dropdown for encodings.
