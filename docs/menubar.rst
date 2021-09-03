@@ -25,8 +25,10 @@ any :source:`plugin that Porcupine comes with <porcupine/plugins>` for example u
 .. autofunction:: add_config_file_button
 .. autofunction:: update_keyboard_shortcuts
 
-Menu labels must be ASCII only, because they are used in virtual events.
-Let me know if this limitation bothers you.
+.. note::
 
-Slashes can be escaped by doubling them. For example, ``"Foobar/Send//Receive"``
-means an entry *Send/Receive* inside a menu named *Foobar*.
+    Menu labels must be ASCII only, because they are used in virtual events.
+    Let me know if this limitation bothers you.
+
+    Slashes can be escaped by doubling them. For example, ``"Foobar/Send//Receive"``
+    means an entry *Send/Receive* inside a menu named *Foobar*.
