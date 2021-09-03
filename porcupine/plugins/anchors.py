@@ -34,7 +34,7 @@ class AnchorManager:
     def _get_line_number(self, index: str) -> int:
         return int(self.tab_textwidget.index(index).split(".")[0])
 
-    def clean_and_get_anchors(self) -> dict[int, str]:
+    def clean_duplicates_and_get_anchor_dict(self) -> dict[int, str]:
         anchors = {}
 
         for mark in self._get_anchor_marks():
@@ -49,14 +49,12 @@ class AnchorManager:
 
     def add_anchor(self, lineno: int) -> str:
         mark = self.custom_anchor_prefix + str(time.time())
-        self.tab_textwidget.mark_set(
-            mark, f"{lineno}.0"
-        )
+        self.tab_textwidget.mark_set(mark, f"{lineno}.0")
         return mark
 
     # See underlines.py and langserver.py
     def add_from_underlines(self, junk_event: object) -> None:
-        anchors = self.clean_and_get_anchors()
+        anchors = self.clean_duplicates_and_get_anchor_dict()
         for start in self.tab_textwidget.tag_ranges("underline:diagnostics")[::2]:
             lineno = self._get_line_number(str(start))
             if lineno not in anchors:
@@ -64,7 +62,7 @@ class AnchorManager:
         self.linenumbers.do_update()
 
     def toggle(self, event: tkinter.Event[tabs.FileTab]) -> None:
-        anchors = self.clean_and_get_anchors()
+        anchors = self.clean_duplicates_and_get_anchor_dict()
         cursor_lineno = self._get_line_number("insert")
         if cursor_lineno in anchors:
             self.tab_textwidget.mark_unset(anchors[cursor_lineno])
@@ -74,15 +72,15 @@ class AnchorManager:
 
     def jump_to_next(self, event: tkinter.Event[tabs.FileTab]) -> str:
         cursor_row = self._get_line_number("insert")
-        anchors = self.clean_and_get_anchors()
+        anchor_rows = self.clean_duplicates_and_get_anchor_dict().keys()
 
-        rows_after_cursor = [n for n in anchors if n > cursor_row]
+        rows_after_cursor = [n for n in anchor_rows if n > cursor_row]
         if rows_after_cursor:
             next_anchor_row = min(rows_after_cursor)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif len(anchors) >= 2 and settings.get("anchors_cycle", bool):
-            next_anchor_row = min(anchors)
+        elif len(anchor_rows) >= 2 and settings.get("anchors_cycle", bool):
+            next_anchor_row = min(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
 
@@ -90,15 +88,15 @@ class AnchorManager:
 
     def jump_to_previous(self, event: tkinter.Event[tabs.FileTab]) -> str:
         cursor_row = self._get_line_number("insert")
-        anchors = self.clean_and_get_anchors()
+        anchor_rows = self.clean_duplicates_and_get_anchor_dict().keys()
 
-        rows_before_cursor = [n for n in anchors if n < cursor_row]
+        rows_before_cursor = [n for n in anchor_rows if n < cursor_row]
         if rows_before_cursor:
             previous_anchor_row = max(rows_before_cursor)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif len(anchors) >= 2 and settings.get("anchors_cycle", bool):
-            previous_anchor_row = max(anchors)
+        elif len(anchor_rows) >= 2 and settings.get("anchors_cycle", bool):
+            previous_anchor_row = max(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
 
@@ -109,7 +107,7 @@ class AnchorManager:
         Re-draws the anchor points every time the linenumber instance updates
         (scroll, insertion/deletion of text)
         """
-        self.clean_and_get_anchors()
+        self.clean_duplicates_and_get_anchor_dict()
 
         for mark in self._get_anchor_marks():
             row_tag = "line_" + self.tab_textwidget.index(mark).split(".")[0]
