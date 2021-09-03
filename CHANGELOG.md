@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## UNRELEASED
+## v0.97.0
 
 New features:
 - Alt+Shift+C+E sets anchors to every yellow or red underline.
