@@ -6,11 +6,11 @@ from functools import partial
 
 from porcupine import get_tab_manager, menubar, tabs
 
-
 # unfortunately wrap info be synced between 3 places:
 #   - tab settings
 #   - tkinter.BooleanVar which is used by the menu bar
 #   - textwidget's config
+
 
 def var_to_settings(var: tkinter.BooleanVar, *junk: object) -> None:
     tab = get_tab_manager().select()
@@ -48,5 +48,7 @@ def setup() -> None:
     var.trace_add("write", partial(var_to_settings, var))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(settings_to_var, var), add=True)
     menubar.get_menu("View").add_checkbutton(label="Wrap Long Lines", variable=var)
-    menubar.set_enabled_based_on_tab("View/Wrap Long Lines", (lambda tab: isinstance(tab, tabs.FileTab)))
+    menubar.set_enabled_based_on_tab(
+        "View/Wrap Long Lines", (lambda tab: isinstance(tab, tabs.FileTab))
+    )
     get_tab_manager().add_filetab_callback(partial(on_new_filetab, var))
