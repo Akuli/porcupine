@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import subprocess
 import logging
+import subprocess
 import sys
+import tkinter
 from functools import partial
 from pathlib import Path
 
@@ -25,15 +26,15 @@ else:
     trash_name = "trash"
 
 
-def git(*command: str | Path):
+def git(*command: str | Path) -> None:
     log.info(f"running git command: {command}")
     try:
-        subprocess.check_call(["git"] + list(command), **utils.subprocess_kwargs)
+        subprocess.check_call(list(("git",) + command), **utils.subprocess_kwargs)
     except (OSError, subprocess.CalledProcessError):
         log.exception(f"git command failed: {command}")
 
 
-def populate_menu(event) -> None:
+def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree: DirectoryTree = event.widget
     [item] = tree.selection()
     path = get_path(item)
@@ -43,7 +44,8 @@ def populate_menu(event) -> None:
         ["git", "status"], cwd=project_root, stdout=subprocess.DEVNULL, **utils.subprocess_kwargs
     )
     if run_result.returncode == 0:
-        if tree.contextmenu.index("end") is not None:  # not empty
+        if tree.contextmenu.index("end") is not None:  # type: ignore[no-untyped-call]
+            # menu not empty
             tree.contextmenu.add_separator()
 
         # Some git commands are different than what label shows, for compatibility with older git versions
@@ -61,4 +63,4 @@ def populate_menu(event) -> None:
 def setup() -> None:
     for widget in utils.get_children_recursively(get_paned_window()):
         if isinstance(widget, DirectoryTree):
-            utils.bind_with_data(widget, "<<PopulateContextMenu>>", populate_menu, add=True)
+            widget.bind("<<PopulateContextMenu>>", populate_menu, add=True)
