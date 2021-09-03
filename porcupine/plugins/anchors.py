@@ -108,7 +108,7 @@ class AnchorManager:
         (scroll, insertion/deletion of text)
         """
         anchors = self.clean_duplicates_and_get_anchor_dict()
-        for lineno, mark in anchors.items():
+        for lineno in anchors.keys():
             try:
                 [row_id] = self.linenumbers.find_withtag(f"line_{lineno}")
             except ValueError:  # if line with anchor isn't visible.
