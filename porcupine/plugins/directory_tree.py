@@ -43,6 +43,7 @@ log = logging.getLogger(__name__)
 MAX_PROJECTS = 5
 
 
+# TODO: move to directory_tree_git.py
 def run_git_status(project_root: Path) -> dict[Path, str]:
     try:
         start = time.perf_counter()
