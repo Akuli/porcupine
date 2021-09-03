@@ -11,7 +11,7 @@ import sys
 import tkinter
 from functools import partial
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict, cast
 
 import porcupine.plugins.directory_tree as dirtree
 from porcupine import get_paned_window, images, settings, utils
@@ -109,25 +109,25 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
             tree.tk.call(tree, "tag", "add", "venv", [venv_id])
 
 
-def _on_treeview_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str:
-    tree = event.widget
-    tree.tk.call("focus", tree)
-
-    item: str = tree.identify_row(event.y)  # type: ignore[no-untyped-call]
-    tree.set_the_selection_correctly(item)
+def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]):
+    tree: dirtree.DirectoryTree = event.widget
+    [item] = tree.selection()
+    if not item.startswith("dir:"):
+        # file or project
+        return
 
     path = dirtree.get_path(item)
     project_root = dirtree.get_path(tree.find_project_id(item))
-    if is_venv(path) and get_venv(project_root) != path:
-        menu = tkinter.Menu(tearoff=False)
-        menu.add_command(
-            label="Use this Python venv",
-            # No need to refresh when clicked, somehow already refreshes 4 times (lol)
-            command=partial(set_venv, project_root, path),
-        )
-        menu.tk_popup(event.x_root, event.y_root)
-        menu.bind("<Unmap>", (lambda event: menu.after_idle(menu.destroy)), add=True)
-    return "break"
+    is_used_var = tkinter.BooleanVar(value=(get_venv(project_root) == path))
+    cast(Any, tree.contextmenu).garbage_collection_is_lol = is_used_var
+
+    tree.contextmenu.add_checkbutton(
+        label="Use this Python venv",
+        variable=is_used_var,
+        state=("normal" if is_venv(path) else "disabled"),
+        # No need to refresh when clicked, somehow already refreshes 4 times (lol)
+        command=partial(set_venv, project_root, path),
+    )
 
 
 def setup() -> None:
@@ -137,6 +137,4 @@ def setup() -> None:
         if isinstance(widget, dirtree.DirectoryTree):
             widget.tag_configure("venv", image=images.get("venv"))
             utils.bind_with_data(widget, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
-            widget.bind(
-                "<Button-3>", _on_treeview_right_click, add=True
-            )  # TODO: mac right click = button 2?
+            utils.bind_with_data(widget, "<<PopulateContextMenu>>", _populate_menu, add=True)

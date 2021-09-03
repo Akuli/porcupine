@@ -143,6 +143,7 @@ class DirectoryTree(ttk.Treeview):
         self._last_click_item: str | None = None
 
         self._project_num_counter = 0
+        self.contextmenu: tkinter.Menu | None = None
 
     def set_the_selection_correctly(self, id: str) -> None:
         self.selection_set(id)  # type: ignore[no-untyped-call]
@@ -470,6 +471,23 @@ class DirectoryTree(ttk.Treeview):
             return result
         return None
 
+    # TODO: invoking context menu from keyboard
+    def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str:
+        self.tk.call("focus", self)
+
+        item: str = self.identify_row(event.y)  # type: ignore[no-untyped-call]
+        self.set_the_selection_correctly(item)
+
+        if self.contextmenu is None:
+            self.contextmenu = tkinter.Menu(tearoff=False)
+        self.contextmenu.unpost()  # TODO: this working? this needed?
+
+        self.contextmenu.delete(0, "end")
+        self.event_generate("<<PopulateContextMenu>>")
+
+        self.contextmenu.tk_popup(event.x_root, event.y_root)
+        return "break"
+
 
 def select_current_file(tree: DirectoryTree, event: object) -> None:
     tab = get_tab_manager().select()
@@ -546,3 +564,6 @@ def setup() -> None:
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh()
+
+    # TODO: mac right click = button 2?
+    tree.bind("<Button-3>", tree._on_right_click, add=True)
