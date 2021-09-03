@@ -65,9 +65,9 @@ def delete(path: Path) -> None:
     else:
         message = f"Do you want to permanently delete {path.name}?"
 
-    if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
-        return
     if not close_tabs(find_tabs_by_parent_path(path)):
+        return
+    if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
         return
 
     try:
