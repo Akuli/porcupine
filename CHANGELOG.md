@@ -23,7 +23,7 @@ Bug fixes:
     Speaking of folding, the fold plugin is currently not very easy to use,
     and I am planning to improve it ([#410](https://github.com/Akuli/porcupine/issues/410)).
 
-There are also some other improvements that you are less likely to encounter.
+There are also other small improvements.
 
 
 ## v0.96.0
