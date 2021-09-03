@@ -24,7 +24,7 @@ Bug fixes:
     and I am planning to improve it ([#410](https://github.com/Akuli/porcupine/issues/410)).
 
 Other improvements:
-- Encoding choosing dialog now contains a dropdown for encodings.
+- The encoding choosing dialog now contains a dropdown for encodings.
     You can still enter the name of an encoding yourself if you want.
 - Porcupine's `settings.json` file is now more human-readable than before.
     It used to be one long line of JSON, but it is now on multiple lines.
