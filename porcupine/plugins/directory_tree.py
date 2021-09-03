@@ -480,11 +480,9 @@ class DirectoryTree(ttk.Treeview):
 
         if self.contextmenu is None:
             self.contextmenu = tkinter.Menu(tearoff=False)
-        self.contextmenu.unpost()  # TODO: this working? this needed?
 
         self.contextmenu.delete(0, "end")
         self.event_generate("<<PopulateContextMenu>>")
-
         self.contextmenu.tk_popup(event.x_root, event.y_root)
         return "break"
 

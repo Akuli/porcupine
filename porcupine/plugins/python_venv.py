@@ -112,12 +112,11 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
 def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]):
     tree: dirtree.DirectoryTree = event.widget
     [item] = tree.selection()
-    if not item.startswith("dir:"):
-        # file or project
-        return
-
     path = dirtree.get_path(item)
     project_root = dirtree.get_path(tree.find_project_id(item))
+    if path == project_root or not path.is_dir():
+        return
+
     is_used_var = tkinter.BooleanVar(value=(get_venv(project_root) == path))
     cast(Any, tree.contextmenu).garbage_collection_is_lol = is_used_var
 
