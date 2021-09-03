@@ -107,12 +107,10 @@ class AnchorManager:
         Re-draws the anchor points every time the linenumber instance updates
         (scroll, insertion/deletion of text)
         """
-        self.clean_duplicates_and_get_anchor_dict()
-
-        for mark in self._get_anchor_marks():
-            row_tag = "line_" + self.tab_textwidget.index(mark).split(".")[0]
+        anchors = self.clean_duplicates_and_get_anchor_dict()
+        for lineno, mark in anchors.items():
             try:
-                [row_id] = self.linenumbers.find_withtag(row_tag)
+                [row_id] = self.linenumbers.find_withtag(f"line_{lineno}")
             except ValueError:  # if line with anchor isn't visible.
                 pass
             else:
