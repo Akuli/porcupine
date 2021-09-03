@@ -23,7 +23,7 @@ def run_tool(tool: str, code: str, path: Path | None) -> str:
     python = python_venv.find_python(None if path is None else utils.find_project_root(path))
     if python is None:
         messagebox.showerror(
-            "Can't find a Python installation", "You need to install Python to run black."
+            "Can't find a Python installation", f"You need to install Python to run {tool}."
         )
         return code
 
