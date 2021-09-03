@@ -173,7 +173,7 @@ def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkin
 
 def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
-    for path, menu, index in _walk_menu_contents(get_menu(None)):
+    for path, menu, index in _walk_menu_contents(get_menu("")):
         event_name = f"<<Menubar:{path}>>"
 
         # show keyboard shortcuts in menus
@@ -195,7 +195,7 @@ def _update_shortcuts_for_opening_submenus() -> None:
             if match is not None:
                 used_letters.add(match.group(1))
 
-    menu = get_menu(None)
+    menu = get_menu("")
     for submenu_index in range(menu.index("end") + 1):  # type: ignore[no-untyped-call]
         for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):  # type: ignore[no-untyped-call]
             if letter in ascii_lowercase and letter not in used_letters:
