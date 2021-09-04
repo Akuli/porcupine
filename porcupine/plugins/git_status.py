@@ -1,14 +1,14 @@
 """Color items in the directory tree based on their git status."""
 from __future__ import annotations
 
-import os
 import logging
+import os
 import subprocess
 import sys
 import time
+from concurrent.futures import Future, ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Any, Iterator
 
 from porcupine import get_paned_window, utils

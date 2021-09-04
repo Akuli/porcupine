@@ -220,9 +220,7 @@ class DirectoryTree(ttk.Treeview):
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
 
-    def refresh(
-        self, junk: object = None
-    ) -> None:
+    def refresh(self, junk: object = None) -> None:
         log.debug("refreshing begins")
         self._hide_old_projects()
         self.event_generate("<<RefreshBegins>>")

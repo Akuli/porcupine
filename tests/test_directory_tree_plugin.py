@@ -4,10 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from porcupine import get_paned_window, utils
 from porcupine.plugins import directory_tree as plugin_module
 from porcupine.plugins.directory_tree import (
-    DirectoryTree,
     _path_to_root_inclusive,
     _stringify_path,
     focus_treeview,

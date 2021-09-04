@@ -1,10 +1,12 @@
-import subprocess
-from pathlib import Path
-from functools import partial
 import shutil
-from porcupine.plugins.git_status import _git_pool
+import subprocess
 from concurrent.futures import Future
+from functools import partial
+from pathlib import Path
+
 import pytest
+
+from porcupine.plugins.git_status import _git_pool
 
 
 @pytest.fixture
