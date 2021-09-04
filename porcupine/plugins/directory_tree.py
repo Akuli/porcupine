@@ -238,6 +238,7 @@ class DirectoryTree(ttk.Treeview):
     # The following two methods call each other recursively.
 
     def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
+        print("UTAC", child_id)
         self.event_generate("<<UpdateItemTags>>", data=child_id)
 
         child_path = get_path(child_id)
@@ -245,6 +246,7 @@ class DirectoryTree(ttk.Treeview):
             self._open_and_refresh_directory(child_path, child_id)
 
     def _open_and_refresh_directory(self, dir_path: Path, dir_id: str) -> None:
+        print("OARD", dir_id)
         if self.contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
 

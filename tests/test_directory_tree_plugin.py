@@ -1,8 +1,5 @@
 import shutil
-import subprocess
 import sys
-from concurrent.futures import Future
-from functools import partial
 from pathlib import Path
 
 import pytest
@@ -11,7 +8,6 @@ from porcupine import get_paned_window, utils
 from porcupine.plugins import directory_tree as plugin_module
 from porcupine.plugins.directory_tree import (
     DirectoryTree,
-    _git_pool,
     _path_to_root_inclusive,
     _stringify_path,
     focus_treeview,
@@ -29,16 +25,6 @@ def tree():
     for child in tree.get_children(""):
         tree.delete(child)
     yield tree
-
-
-@pytest.fixture
-def disable_thread_pool(monkeypatch):
-    def fake_submit(func):
-        fut = Future()
-        fut.set_result(func())
-        return fut
-
-    monkeypatch.setattr(_git_pool, "submit", fake_submit)
 
 
 def test_adding_nested_projects(tree, tmp_path):
@@ -103,59 +89,6 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     assert get_project_names() == ["c", "a"]
 
 
-@pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_added_and_modified_content(tree, tmp_path, monkeypatch, disable_thread_pool):
-    monkeypatch.chdir(tmp_path)
-
-    subprocess.check_call(["git", "init", "--quiet"], stdout=subprocess.DEVNULL)
-    tree.add_project(tmp_path)
-
-    Path("a").write_text("a")
-    Path("b").write_text("b")
-    subprocess.check_call(["git", "add", "a", "b"])
-    Path("b").write_text("lol")
-    [project_id] = tree.get_children()
-
-    tree.refresh()
-    assert set(tree.item(project_id, "tags")) == {"git_modified"}
-
-    subprocess.check_call(["git", "add", "a", "b"])
-    tree.refresh()
-    assert set(tree.item(project_id, "tags")) == {"git_added"}
-
-
-@pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_merge_conflict(tree, tmp_path, monkeypatch, disable_thread_pool):
-    monkeypatch.chdir(tmp_path)
-
-    # Resulting output of 'git log --graph --oneline --all':
-    #
-    #    * 84dca05 (HEAD -> b) b
-    #    | * 9dbd837 (master) a
-    #    |/
-    #    * e16c2a7 initial
-    run = partial(subprocess.run, stdout=subprocess.DEVNULL, shell=True, check=True)
-    run("git init --quiet")
-    run("git config user.name foo")  # not --global, will stay inside repo
-    run("git config user.email foo@bar.baz")
-    Path("file").write_text("initial")
-    run("git add file")
-    run("git commit -m initial")
-    Path("file").write_text("a")
-    run("git add file")
-    run("git commit -m a")
-    run("git checkout --quiet -b b HEAD~")  # can't use HEAD^ because ^ is special in windows
-    Path("file").write_text("b")
-    run("git add file")
-    run("git commit -m b")
-    run("git merge master", check=False)  # Git returns status 1 when merge conflict occurs
-
-    tree.add_project(tmp_path)
-    [project_id] = tree.get_children()
-    tree.refresh()
-    assert set(tree.item(project_id, "tags")) == {"git_mergeconflict"}
-
-
 def open_as_if_user_clicked(tree, item):
     tree.selection_set(item)
     tree.item(item, open=True)
@@ -163,7 +96,8 @@ def open_as_if_user_clicked(tree, item):
     tree.update()
 
 
-def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_pool):
+# disable_thread_pool
+def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
     (tmp_path / "a").mkdir(parents=True)
     (tmp_path / "b").mkdir(parents=True)
     (tmp_path / "a" / "README").touch()
@@ -193,6 +127,7 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_poo
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b" / "file2"
 
+    print("============00aaaaaaaaaaaaaaaaaa")
     b_file2.save_as(tmp_path / "b" / "file3")
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b" / "file3"
@@ -202,7 +137,8 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager, disable_thread_poo
     tabmanager.close_tab(b_file2)
 
 
-def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path, disable_thread_pool):
+# disable_thread_pool
+def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path):
     (tmp_path / "README").touch()
     (tmp_path / "hello.py").touch()
     tree.add_project(tmp_path, refresh=False)
@@ -210,7 +146,8 @@ def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path, disab
     assert tree.selection()
 
 
-def test_all_files_deleted(tree, tmp_path, tabmanager, disable_thread_pool):
+# disable_thread_pool
+def test_all_files_deleted(tree, tmp_path, tabmanager):
     (tmp_path / "README").touch()
     (tmp_path / "hello.py").touch()
     tree.add_project(tmp_path)
@@ -229,7 +166,8 @@ def test_all_files_deleted(tree, tmp_path, tabmanager, disable_thread_pool):
     assert tree.contains_dummy(project_id)
 
 
-def test_nested_projects(tree, tmp_path, tabmanager, disable_thread_pool):
+# disable_thread_pool
+def test_nested_projects(tree, tmp_path, tabmanager):
     (tmp_path / "README").touch()
     (tmp_path / "subdir").mkdir()
     (tmp_path / "subdir" / "README").touch()
