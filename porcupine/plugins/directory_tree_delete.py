@@ -8,7 +8,7 @@ from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 
-from send2trash import send2trash  # type: ignore
+from send2trash import send2trash
 
 from porcupine import get_paned_window, get_tab_manager, tabs, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_path
