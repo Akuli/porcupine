@@ -483,8 +483,7 @@ class DirectoryTree(ttk.Treeview):
         if self.contextmenu.index("end") is not None:  # type: ignore[no-untyped-call]
             # Menu is not empty
             self.contextmenu.tk_popup(event.x_root, event.y_root)
-            return "break"
-        return None
+        return "break"
 
 
 def select_current_file(tree: DirectoryTree, event: object) -> None:
