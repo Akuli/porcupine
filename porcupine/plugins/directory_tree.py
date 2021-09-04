@@ -44,45 +44,45 @@ MAX_PROJECTS = 5
 
 
 # TODO: move to git.py
-def run_git_status(project_root: Path) -> dict[Path, str]:
-    try:
-        start = time.perf_counter()
-        run_result = subprocess.run(
-            ["git", "status", "--ignored", "--porcelain"],
-            cwd=project_root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,  # for logging error message
-            encoding=sys.getfilesystemencoding(),
-            **utils.subprocess_kwargs,
-        )
-        log.debug(f"git ran in {round((time.perf_counter() - start)*1000)}ms")
-
-        if run_result.returncode != 0:
-            # likely not a git repo because missing ".git" dir
-            log.debug(f"git failed in {project_root}: {run_result}")
-            return {}
-
-    except (OSError, UnicodeError):
-        log.warning("can't run git", exc_info=True)
-        return {}
-
-    # Show .git as ignored, even though it actually isn't
-    result = {project_root / ".git": "git_ignored"}
-    for line in run_result.stdout.splitlines():
-        path = project_root / line[3:]
-        if line[1] == "M":
-            result[path] = "git_modified"
-        elif line[1] == " ":
-            result[path] = "git_added"
-        elif line[:2] == "??":
-            result[path] = "git_untracked"
-        elif line[:2] == "!!":
-            result[path] = "git_ignored"
-        elif line[:2] in {"AA", "UU"}:
-            result[path] = "git_mergeconflict"
-        else:
-            log.warning(f"unknown git status line: {repr(line)}")
-    return result
+#def run_git_status(project_root: Path) -> dict[Path, str]:
+#    try:
+#        start = time.perf_counter()
+#        run_result = subprocess.run(
+#            ["git", "status", "--ignored", "--porcelain"],
+#            cwd=project_root,
+#            stdout=subprocess.PIPE,
+#            stderr=subprocess.PIPE,  # for logging error message
+#            encoding=sys.getfilesystemencoding(),
+#            **utils.subprocess_kwargs,
+#        )
+#        log.debug(f"git ran in {round((time.perf_counter() - start)*1000)}ms")
+#
+#        if run_result.returncode != 0:
+#            # likely not a git repo because missing ".git" dir
+#            log.debug(f"git failed in {project_root}: {run_result}")
+#            return {}
+#
+#    except (OSError, UnicodeError):
+#        log.warning("can't run git", exc_info=True)
+#        return {}
+#
+#    # Show .git as ignored, even though it actually isn't
+#    result = {project_root / ".git": "git_ignored"}
+#    for line in run_result.stdout.splitlines():
+#        path = project_root / line[3:]
+#        if line[1] == "M":
+#            result[path] = "git_modified"
+#        elif line[1] == " ":
+#            result[path] = "git_added"
+#        elif line[:2] == "??":
+#            result[path] = "git_untracked"
+#        elif line[:2] == "!!":
+#            result[path] = "git_ignored"
+#        elif line[:2] in {"AA", "UU"}:
+#            result[path] = "git_mergeconflict"
+#        else:
+#            log.warning(f"unknown git status line: {repr(line)}")
+#    return result
 
 
 # Each git subprocess uses one cpu core
@@ -134,11 +134,11 @@ class DirectoryTree(ttk.Treeview):
         self.bind("<Button-1>", self._on_click, add=True)
 
         self.bind("<<TreeviewOpen>>", self.open_file_or_dir, add=True)
-        self.bind("<<TreeviewSelect>>", self._update_selection_color, add=True)
+#        self.bind("<<TreeviewSelect>>", self._update_selection_color, add=True)
         self.bind("<<ThemeChanged>>", self._config_tags, add=True)
         self.column("#0", minwidth=500)  # allow scrolling sideways
         self._config_tags()
-        self.git_statuses: dict[Path, dict[Path, str]] = {}
+        #self.git_statuses: dict[Path, dict[Path, str]] = {}
 
         self._last_click_time = 0  # Very long time since previous click, no double click
         self._last_click_item: str | None = None
@@ -194,29 +194,29 @@ class DirectoryTree(ttk.Treeview):
             orange = "#e66300"
 
         self.tag_configure("dummy", foreground=gray)
-        self.tag_configure("git_mergeconflict", foreground=orange)
-        self.tag_configure("git_modified", foreground="red")
-        self.tag_configure("git_added", foreground=green)
-        self.tag_configure("git_untracked", foreground="red4")
-        self.tag_configure("git_ignored", foreground=gray)
+#        self.tag_configure("git_mergeconflict", foreground=orange)
+#        self.tag_configure("git_modified", foreground="red")
+#        self.tag_configure("git_added", foreground=green)
+#        self.tag_configure("git_untracked", foreground="red4")
+#        self.tag_configure("git_ignored", foreground=gray)
 
-    def _update_selection_color(self, event: object = None) -> None:
-        try:
-            [selected_id] = self.selection()
-        except ValueError:  # nothing selected
-            git_tags = []
-        else:
-            git_tags = [tag for tag in self.item(selected_id, "tags") if tag.startswith("git_")]
-
-        if git_tags:
-            [tag] = git_tags
-            color = self.tag_configure(tag, "foreground")
-            self.tk.call(
-                "ttk::style", "map", "DirectoryTree.Treeview", "-foreground", ["selected", color]
-            )
-        else:
-            # use default colors
-            self.tk.eval("ttk::style map DirectoryTree.Treeview -foreground {}")
+#    def _update_selection_color(self, event: object = None) -> None:
+#        try:
+#            [selected_id] = self.selection()
+#        except ValueError:  # nothing selected
+#            git_tags = []
+#        else:
+#            git_tags = [tag for tag in self.item(selected_id, "tags") if tag.startswith("git_")]
+#
+#        if git_tags:
+#            [tag] = git_tags
+#            color = self.tag_configure(tag, "foreground")
+#            self.tk.call(
+#                "ttk::style", "map", "DirectoryTree.Treeview", "-foreground", ["selected", color]
+#            )
+#        else:
+#            # use default colors
+#            self.tk.eval("ttk::style map DirectoryTree.Treeview -foreground {}")
 
     # This allows projects to be nested. Here's why that's a good thing:
     # Consider two projects, blah/blah/outer and blah/blah/outer/blah/inner.
@@ -309,30 +309,30 @@ class DirectoryTree(ttk.Treeview):
         start_time = time.time()
         self._hide_old_projects()
         project_ids = self.get_children("")
-        git_futures = {
-            path: _git_pool.submit(partial(run_git_status, path))
-            for path in map(get_path, project_ids)
-        }
-
-        def check_if_done() -> None:
-            if not all(future.done() for future in git_futures.values()):
-                self.after(25, check_if_done)
-                return
-
-            if set(self.get_children()) == set(project_ids):
-                self.git_statuses = {path: future.result() for path, future in git_futures.items()}
-                for project_id in self.get_children(""):
-                    self._update_tags_and_content(get_path(project_id), project_id)
-                self._update_selection_color()
-                log.info(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
-            else:
-                log.info(
-                    "projects added/removed while refreshing, assuming another fresh is coming soon"
-                )
-
-            done_callback()
-
-        check_if_done()
+#        git_futures = {
+#            path: _git_pool.submit(partial(run_git_status, path))
+#            for path in map(get_path, project_ids)
+#        }
+#
+#        def check_if_done() -> None:
+#            if not all(future.done() for future in git_futures.values()):
+#                self.after(25, check_if_done)
+#                return
+#
+#            if set(self.get_children()) == set(project_ids):
+#                self.git_statuses = {path: future.result() for path, future in git_futures.items()}
+        for project_id in self.get_children(""):
+            self._update_tags_and_content(get_path(project_id), project_id)
+#        self._update_selection_color()
+#                log.info(f"refreshing done in {round((time.time()-start_time)*1000)}ms")
+#            else:
+#                log.info(
+#                    "projects added/removed while refreshing, assuming another fresh is coming soon"
+#                )
+#
+#            done_callback()
+#
+#        check_if_done()
 
     def find_project_id(self, item_id: str) -> str:
         # Does not work for dummy items, because they don't use type:num:path scheme
@@ -344,34 +344,34 @@ class DirectoryTree(ttk.Treeview):
 
     def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
         child_path = get_path(child_id)
-        path_to_status = self.git_statuses[project_root]
-
-        for path in _path_to_root_inclusive(child_path, project_root):
-            try:
-                status: str | None = path_to_status[path]
-                break
-            except KeyError:
-                continue
-        else:
-            # Handle directories containing files with different statuses
-            substatuses = {
-                s
-                for p, s in path_to_status.items()
-                if s in {"git_added", "git_modified", "git_mergeconflict"}
-                and child_path in p.parents
-            }
-
-            if "git_mergeconflict" in substatuses:
-                status = "git_mergeconflict"
-            elif "git_modified" in substatuses:
-                status = "git_modified"
-            elif "git_added" in substatuses:
-                status = "git_added"
-            else:
-                assert not substatuses
-                status = None
-
-        self.item(child_id, tags=([] if status is None else status))
+#        path_to_status = self.git_statuses[project_root]
+#
+#        for path in _path_to_root_inclusive(child_path, project_root):
+#            try:
+#                status: str | None = path_to_status[path]
+#                break
+#            except KeyError:
+#                continue
+#        else:
+#            # Handle directories containing files with different statuses
+#            substatuses = {
+#                s
+#                for p, s in path_to_status.items()
+#                if s in {"git_added", "git_modified", "git_mergeconflict"}
+#                and child_path in p.parents
+#            }
+#
+#            if "git_mergeconflict" in substatuses:
+#                status = "git_mergeconflict"
+#            elif "git_modified" in substatuses:
+#                status = "git_modified"
+#            elif "git_added" in substatuses:
+#                status = "git_added"
+#            else:
+#                assert not substatuses
+#                status = None
+#
+#        self.item(child_id, tags=([] if status is None else status))
         if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
             self._open_and_refresh_directory(child_path, child_id)
 
@@ -421,18 +421,19 @@ class DirectoryTree(ttk.Treeview):
         )
 
     def _sorting_key(self, item_id: str) -> Any:
-        [git_tag] = [t for t in self.item(item_id, "tags") if t.startswith("git_")] or [None]
-        return (
-            [
-                "git_added",
-                "git_modified",
-                "git_mergeconflict",
-                None,
-                "git_untracked",
-                "git_ignored",
-            ].index(git_tag),
-            item_id,  # "dir" before "file", sort each by path
-        )
+        return item_id
+#        [git_tag] = [t for t in self.item(item_id, "tags") if t.startswith("git_")] or [None]
+#        return (
+#            [
+#                "git_added",
+#                "git_modified",
+#                "git_mergeconflict",
+#                None,
+#                "git_untracked",
+#                "git_ignored",
+#            ].index(git_tag),
+#            item_id,  # "dir" before "file", sort each by path
+#        )
 
     def open_file_or_dir(self, event: object = None) -> None:
         try:
