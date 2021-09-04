@@ -1,5 +1,4 @@
 """Color items in the directory tree based on their git status."""
-# TODO: split into two plugins, git_colors and git_right_click
 from __future__ import annotations
 
 import os
@@ -135,6 +134,8 @@ class ProjectColorer:
                     status = None
 
             # TODO: allow other plugins to create tags too
+            # Ideally without making two tcl calls.
+            # If I remember correctly this code is a bit perf critical
             self.tree.item(item_id, tags=([] if status is None else status))
             if item_id in selection:
                 update_tree_selection_color(self.tree)
@@ -147,11 +148,10 @@ class ProjectColorer:
 
 
 # not project-specific
-class DirectoryTreeColorer:
+class TreeColorer:
     def __init__(self, tree: DirectoryTree):
         self.tree = tree
-        # TODO: dict with project_id as key
-        self.project_specific_colorers: list[ProjectColorer] = []
+        self.project_specific_colorers: dict[str, ProjectColorer] = {}
 
     def config_color_tags(self, junk: object = None) -> None:
         fg = self.tree.tk.eval("ttk::style lookup Treeview -foreground")
@@ -173,26 +173,19 @@ class DirectoryTreeColorer:
         self.tree.tag_configure("git_ignored", foreground=gray)
 
     def start_status_coloring_for_all_projects(self, junk_event: object) -> None:
-        print("refresh detected ")
+        old_project_ids = set(self.project_specific_colorers.keys())
         new_project_ids = set(self.tree.get_children())
-        for colorer in self.project_specific_colorers.copy():
-            if colorer.project_id in new_project_ids:
-                new_project_ids.remove(colorer.project_id)
-            else:
-                print("old colorer", colorer.project_id)
-                self.project_specific_colorers.remove(colorer)
+        for removed in old_project_ids - new_project_ids:
+            del self.project_specific_colorers[removed]
+        for added in new_project_ids - old_project_ids:
+            self.project_specific_colorers[added] = ProjectColorer(self.tree, added)
 
-        for project_id in new_project_ids:
-            print("new colorer", project_id)
-            self.project_specific_colorers.append(ProjectColorer(self.tree, project_id))
-
-        for colorer in self.project_specific_colorers:
+        for colorer in self.project_specific_colorers.values():
             colorer.start_running_git_status()
 
-    def update_git_tags_for_item(self, item_id: str):
+    def update_git_tags_for_item(self, item_id: str) -> None:
         project_id = self.tree.find_project_id(item_id)
-        [colorer] = [c for c in self.project_specific_colorers if c.project_id == project_id]
-        colorer.update_colors_now_or_later(item_id)
+        self.project_specific_colorers[project_id].update_colors_now_or_later(item_id)
 
 
 # There's no way to say "when this item is selected, show a green selection".
@@ -236,10 +229,9 @@ def sorting_key(tree: DirectoryTree, item_id: str) -> Any:
 def setup() -> None:
     for tree in utils.get_children_recursively(get_paned_window()):
         if isinstance(tree, DirectoryTree):
-            print("found dir tree")
             tree.config(style="DirectoryTreeGitStatus.Treeview")
 
-            main_colorer = DirectoryTreeColorer(tree)
+            main_colorer = TreeColorer(tree)
             tree.bind(
                 "<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True
             )
