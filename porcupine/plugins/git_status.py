@@ -135,7 +135,7 @@ class ProjectColorer:
 
             # TODO: allow other plugins to create tags too
             # Ideally without making two tcl calls.
-            # If I remember correctly this code is a bit perf critical
+            # If I remember correctly this code was perf critical, maybe isn't anymore after #734
             self.tree.item(item_id, tags=([] if status is None else status))
             if item_id in selection:
                 update_tree_selection_color(self.tree)
