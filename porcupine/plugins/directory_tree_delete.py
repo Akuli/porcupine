@@ -51,7 +51,7 @@ def trash(path: Path) -> None:
         log.exception(f"can't trash {path}")
         messagebox.showerror(
             f"Moving to {trash_name} failed",
-            f"Moving {path} to {trash_name} failed:\n\n{type(e).__name__}: {e}",
+            f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
         )
     else:
         messagebox.showinfo(
