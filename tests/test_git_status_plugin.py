@@ -68,6 +68,3 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, disable_thread_pool):
     [project_id] = tree.get_children()
     tree.refresh()
     assert set(tree.item(project_id, "tags")) == {"git_mergeconflict"}
-
-
-
