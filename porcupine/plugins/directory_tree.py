@@ -145,14 +145,14 @@ class DirectoryTree(ttk.Treeview):
         self._project_num_counter = 0
 
     def set_the_selection_correctly(self, id: str) -> None:
-        self.selection_set(id)  # type: ignore[no-untyped-call]
+        self.selection_set(id)
         self.focus(id)
 
     def _on_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
 
         # Man page says identify_row is "obsolescent" but tkinter doesn't have the new thing yet
-        item = self.identify_row(event.y)  # type: ignore[no-untyped-call]
+        item = self.identify_row(event.y)
         if item is None:
             return None
 
@@ -165,7 +165,7 @@ class DirectoryTree(ttk.Treeview):
             if double_click:
                 self.open_file_or_dir()
         else:
-            little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"  # type: ignore[no-untyped-call]
+            little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"
             if double_click or little_arrow_clicked:
                 self.item(item, open=(not self.item(item, "open")))
                 if self.item(item, "open"):
@@ -227,7 +227,7 @@ class DirectoryTree(ttk.Treeview):
         for existing_id in self.get_children():
             if get_path(existing_id) == root_path:
                 # Move project first to avoid hiding it soon
-                self.move(existing_id, "", 0)  # type: ignore[no-untyped-call]
+                self.move(existing_id, "", 0)
                 return
 
         self._project_num_counter += 1
@@ -267,12 +267,12 @@ class DirectoryTree(ttk.Treeview):
                 break
 
         self.set_the_selection_correctly(file_id)
-        self.see(file_id)  # type: ignore[no-untyped-call]
+        self.see(file_id)
 
     def _insert_dummy(self, parent: str, *, text: str = "", clear: bool = False) -> None:
         assert parent
         if clear:
-            self.delete(*self.get_children(parent))  # type: ignore[no-untyped-call]
+            self.delete(*self.get_children(parent))
         else:
             assert not self.get_children(parent)
 
@@ -285,7 +285,7 @@ class DirectoryTree(ttk.Treeview):
     def _hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(""):
             if not get_path(project_id).is_dir():
-                self.delete(project_id)  # type: ignore[no-untyped-call]
+                self.delete(project_id)
 
         # To avoid getting rid of existing projects when not necessary, we do
         # shortening after deleting non-existent projects
@@ -296,7 +296,7 @@ class DirectoryTree(ttk.Treeview):
                 and get_path(project_id) in tab.path.parents
                 for tab in get_tab_manager().tabs()
             ):
-                self.delete(project_id)  # type: ignore[no-untyped-call]
+                self.delete(project_id)
 
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
@@ -376,7 +376,7 @@ class DirectoryTree(ttk.Treeview):
 
     def _open_and_refresh_directory(self, dir_path: Path, dir_id: str) -> None:
         if self.contains_dummy(dir_id):
-            self.delete(self.get_children(dir_id)[0])  # type: ignore[no-untyped-call]
+            self.delete(self.get_children(dir_id)[0])
 
         project_ids = self.get_children("")
         if dir_id not in project_ids and dir_path in map(get_path, project_ids):
@@ -391,7 +391,7 @@ class DirectoryTree(ttk.Treeview):
 
         # TODO: handle changing directory to file
         for path in list(path2id.keys() - new_paths):
-            self.delete(path2id.pop(path))  # type: ignore[no-untyped-call]
+            self.delete(path2id.pop(path))
         for path in list(new_paths - path2id.keys()):
             project_num = dir_id.split(":", maxsplit=2)[1]
             if path.is_dir():
@@ -411,7 +411,7 @@ class DirectoryTree(ttk.Treeview):
             self._update_tags_and_content(project_root, child_id)
 
         for index, child_id in enumerate(sorted(self.get_children(dir_id), key=self._sorting_key)):
-            self.move(child_id, dir_id, index)  # type: ignore[no-untyped-call]
+            self.move(child_id, dir_id, index)
 
         # When binding to this event, make sure you delete all tags you created on previous update.
         # Even though refersh() deletes tags, this method by itself doesn't.
@@ -466,7 +466,7 @@ class DirectoryTree(ttk.Treeview):
         else:
             result = f"file:{project_num}:{path}"
 
-        if self.exists(result):  # type: ignore[no-untyped-call]
+        if self.exists(result):
             return result
         return None
 
@@ -531,7 +531,7 @@ def setup() -> None:
     scrollbar.config(command=tree.yview)
 
     # Insert directory tree before tab manager
-    get_paned_window().insert(get_tab_manager(), container)  # type: ignore[no-untyped-call]
+    get_paned_window().insert(get_tab_manager(), container)
 
     get_tab_manager().add_filetab_callback(partial(on_new_filetab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(select_current_file, tree), add=True)

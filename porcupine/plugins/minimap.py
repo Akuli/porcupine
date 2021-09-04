@@ -119,7 +119,7 @@ class MiniMap(tkinter.Text):
         minimap_width, minimap_height = textutils.textwidget_size(self)
         minimap_x_padding, minimap_y_padding = textutils.get_padding(self)
 
-        if self._tab.textwidget.yview() == (0.0, 1.0):  # type: ignore[no-untyped-call]
+        if self._tab.textwidget.yview() == (0.0, 1.0):
             # whole file content on screen at once, show screen size instead of file content size
             # this does not take in account wrap plugin
             how_tall_are_lines_on_editor: int = self._tab.tk.call(
@@ -191,7 +191,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     )
 
     textutils.use_pygments_theme(minimap, minimap.set_colors)
-    tab.panedwindow.add(minimap, stretch="never")  # type: ignore[no-untyped-call]
+    tab.panedwindow.add(minimap, stretch="never")
 
 
 def setup() -> None:

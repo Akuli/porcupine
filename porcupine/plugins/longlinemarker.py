@@ -46,7 +46,7 @@ class LongLineMarker:
         font = tkfont.Font(name=self.tab.textwidget["font"], exists=True)
         font_x = font.measure(" " * max_line_length)
 
-        scroll_start, scroll_end = self.tab.textwidget.xview()  # type: ignore[no-untyped-call]
+        scroll_start, scroll_end = self.tab.textwidget.xview()
         relative_scroll_start = scroll_start / (scroll_end - scroll_start)
         scroll_x = relative_scroll_start * width
 
