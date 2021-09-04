@@ -16,7 +16,7 @@ import appdirs
 import pytest
 
 import porcupine
-from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs, utils, get_paned_window
+from porcupine import dirs, get_main_window, get_paned_window, get_tab_manager, plugins, tabs, utils
 from porcupine.__main__ import main
 from porcupine.plugins.directory_tree import DirectoryTree
 
