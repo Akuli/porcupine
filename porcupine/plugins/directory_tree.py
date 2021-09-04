@@ -221,7 +221,7 @@ class DirectoryTree(ttk.Treeview):
         settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
 
     def refresh(
-        self, junk: object = None, *, done_callback: Callable[[], None] = (lambda: None)
+        self, junk: object = None
     ) -> None:
         log.debug("refreshing begins")
         self._hide_old_projects()
@@ -344,7 +344,8 @@ def on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     def path_callback(junk: object = None) -> None:
         if tab.path is not None:
             tree.add_project(utils.find_project_root(tab.path))
-            tree.refresh(done_callback=partial(tree.select_file, tab.path))
+            tree.refresh()
+            tree.select_file(tab.path)
 
     path_callback()
 

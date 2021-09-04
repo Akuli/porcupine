@@ -96,7 +96,6 @@ def open_as_if_user_clicked(tree, item):
     tree.update()
 
 
-# disable_thread_pool
 def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
     (tmp_path / "a").mkdir(parents=True)
     (tmp_path / "b").mkdir(parents=True)
@@ -127,7 +126,6 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b" / "file2"
 
-    print("============00aaaaaaaaaaaaaaaaaa")
     b_file2.save_as(tmp_path / "b" / "file3")
     tree.update()
     assert get_path(tree.selection()[0]) == tmp_path / "b" / "file3"
@@ -137,7 +135,6 @@ def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
     tabmanager.close_tab(b_file2)
 
 
-# disable_thread_pool
 def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path):
     (tmp_path / "README").touch()
     (tmp_path / "hello.py").touch()
@@ -146,7 +143,6 @@ def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path):
     assert tree.selection()
 
 
-# disable_thread_pool
 def test_all_files_deleted(tree, tmp_path, tabmanager):
     (tmp_path / "README").touch()
     (tmp_path / "hello.py").touch()
@@ -166,7 +162,6 @@ def test_all_files_deleted(tree, tmp_path, tabmanager):
     assert tree.contains_dummy(project_id)
 
 
-# disable_thread_pool
 def test_nested_projects(tree, tmp_path, tabmanager):
     (tmp_path / "README").touch()
     (tmp_path / "subdir").mkdir()
