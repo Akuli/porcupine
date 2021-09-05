@@ -652,7 +652,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     var = tkinter.StringVar()
     combobox = ttk.Combobox(big_frame, values=_list_of_encodings, textvariable=var)
     combobox.pack(pady=40)
-    combobox.set(old_encoding)  # type: ignore[no-untyped-call]
+    combobox.set(old_encoding)
 
     ttk.Label(
         big_frame,
@@ -669,7 +669,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
 
     def select_encoding() -> None:
         nonlocal selected_encoding
-        selected_encoding = combobox.get()  # type: ignore[no-untyped-call]
+        selected_encoding = combobox.get()
         dialog.destroy()
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
@@ -678,7 +678,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     ok_button.pack(side="right", expand=True)
 
     def validate_encoding(*junk: object) -> None:
-        encoding = combobox.get()  # type: ignore[no-untyped-call]
+        encoding = combobox.get()
         try:
             codecs.lookup(encoding)
         except LookupError:
@@ -687,8 +687,8 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
             ok_button.config(state="normal")
 
     var.trace_add("write", validate_encoding)
-    combobox.bind("<Return>", (lambda event: ok_button.invoke()), add=True)  # type: ignore[no-untyped-call]
-    combobox.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)  # type: ignore[no-untyped-call]
+    combobox.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
+    combobox.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
     combobox.select_range(0, "end")
     combobox.focus()
 

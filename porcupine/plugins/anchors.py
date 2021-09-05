@@ -114,7 +114,7 @@ class AnchorManager:
             except ValueError:  # if line with anchor isn't visible.
                 pass
             else:
-                row_text = self.linenumbers.itemcget(row_id, "text")  # type: ignore[no-untyped-call]
+                row_text = self.linenumbers.itemcget(row_id, "text")
                 self.linenumbers.itemconfigure(row_id, text=row_text + "¶")
 
     def clear(self, junk_event: object) -> None:
