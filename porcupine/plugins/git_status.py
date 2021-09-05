@@ -141,7 +141,9 @@ class ProjectColorer:
 
             if old_tags != new_tags:
                 self.tree.item(item_id, tags=list(new_tags))
-                self.sorting_queue.add(self.tree.parent(item_id))
+                parent = self.tree.parent(item_id)
+                if parent:  # don't try to sort the projects lol
+                    self.sorting_queue.add(parent)
 
             if item_id in selection:
                 update_tree_selection_color(self.tree)
