@@ -149,8 +149,7 @@ class TreeColorer:
         bg = self.tree.tk.eval("ttk::style lookup Treeview -background")
         gray = utils.mix_colors(fg, bg, 0.5)
 
-        if sum(self.tree.winfo_rgb(fg)) > 3 * 0x7FFF:
-            # bright foreground color
+        if utils.is_bright(fg):
             green = "#00ff00"
             orange = "#ff6e00"
         else:

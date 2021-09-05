@@ -18,7 +18,7 @@ else:
     from typing import Match
 
 from porcupine import __version__ as porcupine_version
-from porcupine import get_main_window, images, menubar, plugins, textutils
+from porcupine import get_main_window, images, menubar, plugins, textutils, utils
 
 BORING_TEXT = """
 Porcupine is a simple but powerful and configurable text editor written in \
@@ -57,11 +57,9 @@ class AboutDialogContent(ttk.Frame):
         self._textwidget = textutils.create_passive_text_widget(self, width=60, height=25)
         self._textwidget.pack(fill="both", expand=True, padx=5, pady=5)
 
-        if sum(self.winfo_rgb(self._textwidget["bg"])) / 3 > 0x7FFF:
-            # Bright background
+        if utils.is_bright(self._textwidget["bg"]):
             link_color = "blue"
         else:
-            # Dark background
             link_color = "DarkOrange1"
 
         # http://effbot.org/zone/tkinter-text-hyperlink.htm
