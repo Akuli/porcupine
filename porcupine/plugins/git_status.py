@@ -72,7 +72,7 @@ class ProjectColorer:
         self.project_id = project_id
         self.project_path = get_path(project_id)
         self.git_status_future: Future[dict[Path, str]] | None = None
-        self.coloring_queue: set[str] = []
+        self.coloring_queue: set[str] = set()
 
     def start_running_git_status(self) -> None:
         future = _git_pool.submit(partial(run_git_status, self.project_path))
@@ -102,6 +102,7 @@ class ProjectColorer:
             item_id = self.coloring_queue.pop()
             item_path = get_path(item_id)
 
+            status: str | None
             parent_statuses = [
                 status
                 for path, status in path_to_status.items()

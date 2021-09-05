@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from porcupine.plugins import directory_tree as plugin_module
-from porcupine.plugins.directory_tree import _stringify_path, _focus_treeview, get_path
+from porcupine.plugins.directory_tree import _focus_treeview, _stringify_path, get_path
 
 
 def test_adding_nested_projects(tree, tmp_path):
