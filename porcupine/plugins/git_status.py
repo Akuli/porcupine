@@ -72,7 +72,7 @@ class ProjectColorer:
         self.project_id = project_id
         self.project_path = get_path(project_id)
         self.git_status_future: Future[dict[Path, str]] | None = None
-        self.coloring_queue: list[str] = []
+        self.coloring_queue: set[str] = []
 
     def start_running_git_status(self) -> None:
         future = _git_pool.submit(partial(run_git_status, self.project_path))
@@ -136,7 +136,7 @@ class ProjectColorer:
                 update_tree_selection_color(self.tree)
 
     def color_now_or_later(self, item_id: str) -> None:
-        self.coloring_queue.append(item_id)
+        self.coloring_queue.add(item_id)
         assert self.git_status_future is not None
         if self.git_status_future.done():
             self._handle_queue()
