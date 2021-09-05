@@ -8,13 +8,7 @@ import tkinter
 from porcupine import utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
 
-setup_after = [
-    "directory_tree",
-    # Setting up after all other plugins that fill menu, so that git
-    # functionality will appear last in the menu
-    "directory_tree_delete",
-    "python_venv",
-]
+setup_after = ["directory_tree"]
 
 log = logging.getLogger(__name__)
 

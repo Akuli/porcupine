@@ -13,7 +13,8 @@ from send2trash import send2trash
 from porcupine import get_paned_window, get_tab_manager, tabs, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_path
 
-setup_after = ["directory_tree"]
+# Must be after something else to fill menu, otherwise too easy to click trash (first menu item)
+setup_after = ["directory_tree", "git_right_click.py"]
 log = logging.getLogger(__name__)
 
 if sys.platform == "win32":
