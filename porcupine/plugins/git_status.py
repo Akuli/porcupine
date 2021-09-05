@@ -80,12 +80,16 @@ class ProjectColorer:
 
         # Handle queue contents when it has completed
         def check() -> None:
-            if future.done():
-                self._handle_queue()
-            else:
-                self.tree.after(25, check)
+            if self.git_status_future is not None:
+                if future.done():
+                    self._handle_queue()
+                else:
+                    self.tree.after(25, check)
 
         check()
+
+    def stop(self) -> None:
+        self.git_status_future = None
 
     def _handle_queue(self) -> None:
         # process should be done, result available immediately
@@ -163,14 +167,13 @@ class TreeColorer:
         self.tree.tag_configure("git_ignored", foreground=gray)
 
     def start_status_coloring_for_all_projects(self, junk_event: object) -> None:
-        old_project_ids = set(self.project_specific_colorers.keys())
-        new_project_ids = set(self.tree.get_children())
-        for removed in old_project_ids - new_project_ids:
-            del self.project_specific_colorers[removed]
-        for added in new_project_ids - old_project_ids:
-            self.project_specific_colorers[added] = ProjectColorer(self.tree, added)
-
         for colorer in self.project_specific_colorers.values():
+            colorer.stop()
+        self.project_specific_colorers.clear()
+
+        for project_id in self.tree.get_children():
+            colorer = ProjectColorer(self.tree, project_id)
+            self.project_specific_colorers[project_id] = colorer
             colorer.start_running_git_status()
 
     def color_item(self, item_id: str) -> None:
