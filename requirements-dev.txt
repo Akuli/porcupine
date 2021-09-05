@@ -13,3 +13,4 @@ mypy==0.910
 types-Pygments==2.9.0
 types-toml==0.1.3
 types-docutils==0.1.7
+types-Send2Trash==1.8.0
