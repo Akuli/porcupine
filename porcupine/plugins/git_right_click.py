@@ -45,8 +45,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         ["git", "status"], cwd=project_root, stdout=subprocess.DEVNULL, **utils.subprocess_kwargs
     )
     if run_result.returncode == 0:
-        if tree.contextmenu.index("end") is not None:  # type: ignore[no-untyped-call]
-            # menu not empty
+        if tree.contextmenu.index("end") is not None:  # menu not empty
             tree.contextmenu.add_separator()
 
         # Some git commands are different than what label shows, for compatibility with older git versions
