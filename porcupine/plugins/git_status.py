@@ -19,7 +19,7 @@ setup_after = ["directory_tree"]
 log = logging.getLogger(__name__)
 
 # Each git subprocess uses one cpu core
-_git_pool = ThreadPoolExecutor(max_workers=os.cpu_count())
+git_pool = ThreadPoolExecutor(max_workers=os.cpu_count())
 
 
 def run_git_status(project_root: Path) -> dict[Path, str]:
@@ -75,7 +75,7 @@ class ProjectColorer:
         self.coloring_queue: set[str] = set()
 
     def start_running_git_status(self) -> None:
-        future = _git_pool.submit(partial(run_git_status, self.project_path))
+        future = git_pool.submit(partial(run_git_status, self.project_path))
         self.git_status_future = future
 
         # Handle queue contents when it has completed
