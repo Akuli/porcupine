@@ -134,7 +134,7 @@ class ProjectColorer:
                     assert not substatuses
                     status = None
 
-            old_tags = set(self.tree.item(item_id, 'tags'))
+            old_tags = set(self.tree.item(item_id, "tags"))
             new_tags = {tag for tag in old_tags if not tag.startswith("git_")}
             if status is not None:
                 new_tags.add(status)
