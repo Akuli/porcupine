@@ -14,7 +14,7 @@ from porcupine import get_paned_window, get_tab_manager, tabs, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_path
 
 # Must be after something else to fill menu, otherwise too easy to click trash (first menu item)
-setup_after = ["directory_tree", "git_right_click.py"]
+setup_after = ["directory_tree", "git_right_click"]
 log = logging.getLogger(__name__)
 
 if sys.platform == "win32":
@@ -90,6 +90,8 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     project_root = get_path(tree.find_project_id(item))
 
     if path != project_root:
+        if tree.contextmenu.index("end") is not None:  # menu not empty
+            tree.contextmenu.add_separator()
         tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
         tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
 
