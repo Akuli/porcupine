@@ -131,7 +131,7 @@ class ProjectColorer:
             if item_id in selection:
                 update_tree_selection_color(self.tree)
 
-    def update_colors_now_or_later(self, item_id: str) -> None:
+    def color_now_or_later(self, item_id: str) -> None:
         self.coloring_queue.append(item_id)
         assert self.git_status_future is not None
         if self.git_status_future.done():
@@ -173,9 +173,9 @@ class TreeColorer:
         for colorer in self.project_specific_colorers.values():
             colorer.start_running_git_status()
 
-    def update_git_tags_for_item(self, item_id: str) -> None:
+    def color_item(self, item_id: str) -> None:
         project_id = self.tree.find_project_id(item_id)
-        self.project_specific_colorers[project_id].update_colors_now_or_later(item_id)
+        self.project_specific_colorers[project_id].color_now_or_later(item_id)
 
 
 # There's no way to say "when this item is selected, show a green selection".
@@ -228,7 +228,7 @@ def setup() -> None:
             utils.bind_with_data(
                 tree,
                 "<<UpdateItemTags>>",
-                lambda e: main_colorer.update_git_tags_for_item(e.data_string),
+                lambda event: main_colorer.color_item(event.data_string),
                 add=True,
             )
 
