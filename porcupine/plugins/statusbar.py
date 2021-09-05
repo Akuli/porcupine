@@ -13,7 +13,7 @@ from porcupine.textutils import count
 def _connect_label_to_radiobutton(label: ttk.Label, radio: ttk.Radiobutton) -> None:
     label.bind("<Enter>", lambda e: radio.event_generate("<Enter>"), add=True)
     label.bind("<Leave>", lambda e: radio.event_generate("<Leave>"), add=True)
-    label.bind("<Button-1>", lambda e: radio.invoke(), add=True)  # type: ignore[no-untyped-call]
+    label.bind("<Button-1>", lambda e: radio.invoke(), add=True)
 
 
 def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding:

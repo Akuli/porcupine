@@ -121,7 +121,7 @@ class ConflictDisplayer:
         label.bind("<ButtonRelease-1>", on_release, add=True)
         label.bind("<Destroy>", on_destroy, add=True)
 
-        self.textwidget.window_create(f"{lineno}.0 lineend", window=label)  # type: ignore[no-untyped-call]
+        self.textwidget.window_create(f"{lineno}.0 lineend", window=label)
         return label
 
     # may get called multiple times

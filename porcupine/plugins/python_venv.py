@@ -113,7 +113,7 @@ def _on_treeview_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str
     tree = event.widget
     tree.tk.call("focus", tree)
 
-    item: str = tree.identify_row(event.y)  # type: ignore[no-untyped-call]
+    item: str = tree.identify_row(event.y)
     tree.set_the_selection_correctly(item)
 
     path = dirtree.get_path(item)

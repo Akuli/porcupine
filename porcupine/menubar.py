@@ -75,12 +75,12 @@ _MENU_ITEM_TYPES_WITH_LABEL = {"command", "checkbutton", "radiobutton", "cascade
 
 
 def _find_item(menu: tkinter.Menu, label: str) -> int | None:
-    last_index = menu.index("end")  # type: ignore[no-untyped-call]
+    last_index = menu.index("end")
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
             if (
-                menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL  # type: ignore[no-untyped-call]
-                and menu.entrycget(index, "label") == label  # type: ignore[no-untyped-call]
+                menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL
+                and menu.entrycget(index, "label") == label
             ):
                 return index
     return None
@@ -124,10 +124,10 @@ def get_menu(path: str) -> tkinter.Menu:
             # Otherwise add_cascade() below tries to allocate a crazy amount of
             # memory and freezes everything when running tests (don't know why)
             submenu = tkinter.Menu(menu, tearoff=False)
-            if menu == main_menu and menu.index("end") is not None:  # type: ignore[no-untyped-call]
+            if menu == main_menu and menu.index("end") is not None:
                 # adding something to non-empty main menu, don't add all the
                 # way to end so that "Help" menu stays at very end
-                last_index = menu.index("end")  # type: ignore[no-untyped-call]
+                last_index = menu.index("end")
                 assert last_index is not None
                 menu.insert_cascade(last_index, label=label, menu=submenu)
             else:
@@ -135,7 +135,7 @@ def get_menu(path: str) -> tkinter.Menu:
             menu = submenu
 
         else:
-            menu = menu.nametowidget(menu.entrycget(submenu_index, "menu"))  # type: ignore[no-untyped-call]
+            menu = menu.nametowidget(menu.entrycget(submenu_index, "menu"))
 
     return menu
 
@@ -156,20 +156,20 @@ def _walk_menu_contents(
     menu: tkinter.Menu, path_prefix: list[str] = []
 ) -> Iterator[tuple[str, tkinter.Menu, int]]:
 
-    last_index = menu.index("end")  # type: ignore[no-untyped-call]
+    last_index = menu.index("end")
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
-            if menu.type(index) == "cascade":  # type: ignore[no-untyped-call]
-                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, "menu"))  # type: ignore[no-untyped-call]
-                new_prefix = path_prefix + [menu.entrycget(index, "label")]  # type: ignore[no-untyped-call]
+            if menu.type(index) == "cascade":
+                submenu: tkinter.Menu = menu.nametowidget(menu.entrycget(index, "menu"))
+                new_prefix = path_prefix + [menu.entrycget(index, "label")]
                 yield from _walk_menu_contents(submenu, new_prefix)
-            elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:  # type: ignore[no-untyped-call]
-                path = path_prefix + [menu.entrycget(index, "label")]  # type: ignore[no-untyped-call]
+            elif menu.type(index) in _MENU_ITEM_TYPES_WITH_LABEL:
+                path = path_prefix + [menu.entrycget(index, "label")]
                 yield (_join(path), menu, index)
 
 
 def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]) -> str:
-    menu.invoke(index)  # type: ignore[no-untyped-call]
+    menu.invoke(index)
     return "break"
 
 
@@ -198,8 +198,8 @@ def _update_shortcuts_for_opening_submenus() -> None:
                 used_letters.add(match.group(1))
 
     menu = get_menu("")
-    for submenu_index in range(menu.index("end") + 1):  # type: ignore[no-untyped-call]
-        for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):  # type: ignore[no-untyped-call]
+    for submenu_index in range(menu.index("end") + 1):
+        for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):
             if letter in ascii_lowercase and letter not in used_letters:
                 menu.entryconfig(submenu_index, underline=letter_index)
                 used_letters.add(letter)
@@ -342,7 +342,7 @@ def _fill_menus_with_default_stuff() -> None:
 
     def open_files() -> None:
         # paths is "" or tuple
-        paths = filedialog.askopenfilenames(**filedialog_kwargs)  # type: ignore[no-untyped-call]
+        paths = filedialog.askopenfilenames(**filedialog_kwargs)
         for path in map(pathlib.Path, paths):
             get_tab_manager().open_file(path)
 

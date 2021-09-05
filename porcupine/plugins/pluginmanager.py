@@ -60,8 +60,8 @@ class PluginDialogContent:
 
         left_side = ttk.Frame(panedwindow)
         right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side
-        panedwindow.add(left_side, minsize=sum(column_sizes))  # type: ignore[no-untyped-call]
-        panedwindow.add(right_side, minsize=250)  # type: ignore[no-untyped-call]
+        panedwindow.add(left_side, minsize=sum(column_sizes))
+        panedwindow.add(right_side, minsize=250)
 
         self.treeview = ttk.Treeview(
             left_side, show="headings", columns=("name", "type", "status"), selectmode="extended"
@@ -74,9 +74,9 @@ class PluginDialogContent:
         self._search_var = tkinter.StringVar()
         search_entry = ttk.Entry(left_side, textvariable=self._search_var)
         search_entry.bind(
-            "<FocusIn>", (lambda event: search_entry.selection_range(0, "end")), add=True  # type: ignore[no-untyped-call]
+            "<FocusIn>", (lambda event: search_entry.selection_range(0, "end")), add=True
         )
-        search_entry.insert(0, "Filter by name, type or status...")  # type: ignore[no-untyped-call]
+        search_entry.insert(0, "Filter by name, type or status...")
         self._search_var.trace_add("write", self._search)
 
         search_entry.pack(side="bottom", fill="x")
@@ -138,10 +138,10 @@ class PluginDialogContent:
                 re.search(search_regex, v, flags=re.IGNORECASE)
                 for v in self.treeview.item(name, "values")
             ):
-                self.treeview.move(name, "", index)  # type: ignore[no-untyped-call]
+                self.treeview.move(name, "", index)
                 index += 1
             else:
-                self.treeview.detach(name)  # type: ignore[no-untyped-call]
+                self.treeview.detach(name)
 
     def _update_row(self, info: pluginloader.PluginInfo) -> None:
         if info.came_with_porcupine:
