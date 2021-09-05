@@ -228,11 +228,12 @@ class DirectoryTree(ttk.Treeview):
     def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
         self.event_generate("<<UpdateItemTags>>", data=child_id)
 
-        child_path = get_path(child_id)
         if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
-            self._open_and_refresh_directory(child_path, child_id)
+            self._open_and_refresh_directory(child_id)
 
-    def _open_and_refresh_directory(self, dir_path: Path, dir_id: str) -> None:
+    def _open_and_refresh_directory(self, dir_id: str) -> None:
+        dir_path = get_path(dir_id)
+
         if self.contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])
 
@@ -292,7 +293,7 @@ class DirectoryTree(ttk.Treeview):
         if selected_id.startswith("file:"):
             get_tab_manager().open_file(get_path(selected_id))
         elif selected_id.startswith(("dir:", "project:")):  # not dummy item
-            self._open_and_refresh_directory(get_path(selected_id), selected_id)
+            self._open_and_refresh_directory(selected_id)
 
             tab = get_tab_manager().select()
             if (
