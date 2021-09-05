@@ -204,6 +204,12 @@ class PanedWindow(tkinter.PanedWindow):
         self["bg"] = ttk_bg
 
 
+# TODO: document this?
+def is_bright(color: str) -> bool:
+    widget = porcupine.get_main_window()  # any widget would do
+    return sum(widget.winfo_rgb(color)) / 3 > 0x7FFF
+
+
 # i know, i shouldn't do math with rgb colors, but this is good enough
 def invert_color(color: str, *, black_or_white: bool = False) -> str:
     """Return a color with opposite red, green and blue values.
@@ -216,20 +222,18 @@ def invert_color(color: str, *, black_or_white: bool = False) -> str:
     string. The return value is always a ``'#rrggbb`` string (also compatible
     with Tk).
 
-    If ``black_or_white=True`` is set, then the result is always ``'#000000'``
-    (black) or ``'#ffffff'`` (white), depending on whether the color is bright
+    If ``black_or_white=True`` is set, then the result is always ``"#000000"``
+    (black) or ``"#ffffff"`` (white), depending on whether the color is bright
     or dark.
     """
-    # tkinter uses 16-bit colors for some reason, so gotta convert them
-    # to 8-bit (with >> 8)
-    widget = porcupine.get_main_window()  # any widget would do
-    r, g, b = (value >> 8 for value in widget.winfo_rgb(color))
-
     if black_or_white:
-        average = (r + g + b) / 3
-        return "#ffffff" if average < 0x80 else "#000000"
-    else:
-        return "#%02x%02x%02x" % (0xFF - r, 0xFF - g, 0xFF - b)
+        return "#000000" if is_bright(color) else "#ffffff"
+
+    widget = porcupine.get_main_window()  # any widget would do
+
+    # tkinter uses 16-bit colors, convert them to 8-bit
+    r, g, b = (value >> 8 for value in widget.winfo_rgb(color))
+    return "#%02x%02x%02x" % (0xFF - r, 0xFF - g, 0xFF - b)
 
 
 def mix_colors(color1: str, color2: str, color1_amount: float) -> str:

@@ -18,6 +18,7 @@ import pytest
 import porcupine
 from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
+from porcupine.plugins.directory_tree import get_directory_tree
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
@@ -114,6 +115,15 @@ def filetab(porcusession, tabmanager):
     tab = tabs.FileTab(tabmanager)
     tabmanager.add_tab(tab)
     return tab
+
+
+# TODO: consider longer name
+@pytest.fixture
+def tree():
+    tree = get_directory_tree()
+    for child in tree.get_children(""):
+        tree.delete(child)
+    return tree
 
 
 @pytest.fixture(scope="function", autouse=True)

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, cast
 
 import porcupine.plugins.directory_tree as dirtree
-from porcupine import get_paned_window, images, settings, utils
+from porcupine import images, settings, utils
 
 log = logging.getLogger(__name__)
 setup_after = ["directory_tree"]
@@ -135,8 +135,12 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
 def setup() -> None:
     settings.add_option("python_venvs", {}, Dict[str, str])  # paths as strings, for json
 
-    for widget in utils.get_children_recursively(get_paned_window()):
-        if isinstance(widget, dirtree.DirectoryTree):
-            widget.tag_configure("venv", image=images.get("venv"))
-            utils.bind_with_data(widget, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
-            widget.bind("<<PopulateContextMenu>>", _populate_menu, add=True)
+    try:
+        tree = dirtree.get_directory_tree()
+    except RuntimeError:
+        # directory tree plugin disabled
+        pass
+    else:
+        tree.tag_configure("venv", image=images.get("venv"))
+        utils.bind_with_data(tree, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
+        tree.bind("<<PopulateContextMenu>>", _populate_menu, add=True)
