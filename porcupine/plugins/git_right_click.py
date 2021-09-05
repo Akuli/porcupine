@@ -3,13 +3,12 @@ from __future__ import annotations
 
 import logging
 import subprocess
-import sys
 import tkinter
 from functools import partial
 from pathlib import Path
 
-from porcupine import get_paned_window, utils
-from porcupine.plugins.directory_tree import DirectoryTree, get_path
+from porcupine import utils
+from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
 
 setup_after = [
     "directory_tree",
@@ -20,11 +19,6 @@ setup_after = [
 ]
 
 log = logging.getLogger(__name__)
-
-if sys.platform == "win32":
-    trash_name = "recycle bin"
-else:
-    trash_name = "trash"
 
 
 def run_git(*command: str | Path) -> None:
@@ -61,6 +55,4 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
 
 
 def setup() -> None:
-    for tree in utils.get_children_recursively(get_paned_window()):
-        if isinstance(tree, DirectoryTree):
-            tree.bind("<<PopulateContextMenu>>", populate_menu, add=True)
+    get_directory_tree().bind("<<PopulateContextMenu>>", populate_menu, add=True)
