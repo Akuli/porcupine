@@ -9,7 +9,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from porcupine import get_paned_window, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_path
@@ -66,16 +66,6 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
     return result
 
 
-# TODO: copy/pasted from directory_tree plugin
-def _path_to_root_inclusive(path: Path, root: Path) -> Iterator[Path]:
-    assert path == root or root in path.parents
-    while True:
-        yield path
-        if path == root:
-            break
-        path = path.parent
-
-
 class ProjectColorer:
     def __init__(self, tree: DirectoryTree, project_id: str):
         self.tree = tree
@@ -108,13 +98,16 @@ class ProjectColorer:
             item_id = self.coloring_queue.pop()
             item_path = get_path(item_id)
 
-            for path in _path_to_root_inclusive(item_path, self.project_path):
+            status = None
+            path = item_path
+            while path != self.project_path:
                 try:
-                    status: str | None = path_to_status[path]
+                    status = path_to_status[path]
                     break
                 except KeyError:
-                    continue
-            else:
+                    path = path.parent
+
+            if status is None:
                 # Handle directories containing files with different statuses
                 substatuses = {
                     s
