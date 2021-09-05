@@ -114,16 +114,19 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
     [item] = tree.selection()
     path = dirtree.get_path(item)
     project_root = dirtree.get_path(tree.find_project_id(item))
-    if path == project_root or not path.is_dir():
+    if not is_venv(path):
         return
 
-    is_used_var = tkinter.BooleanVar(value=(get_venv(project_root) == path))
-    cast(Any, tree.contextmenu).garbage_collection_is_lol = is_used_var
+    is_used = get_venv(project_root) == path
+
+    # There doesn't seem to be any way to make it appear checked without creating variable
+    var = tkinter.BooleanVar(value=is_used)
+    cast(Any, tree.contextmenu).garbage_collection_is_lol = var
 
     tree.contextmenu.add_checkbutton(
         label="Use this Python venv",
-        variable=is_used_var,
-        state=("normal" if is_venv(path) else "disabled"),
+        variable=var,
+        state=("disabled" if is_used else "normal"),
         # No need to refresh when clicked, somehow already refreshes 4 times (lol)
         command=partial(set_venv, project_root, path),
     )
