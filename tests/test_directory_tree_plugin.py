@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from porcupine.plugins import directory_tree as plugin_module
-from porcupine.plugins.directory_tree import _stringify_path, focus_treeview, get_path
+from porcupine.plugins.directory_tree import _stringify_path, _focus_treeview, get_path
 
 
 def test_adding_nested_projects(tree, tmp_path):
@@ -51,7 +51,7 @@ def test_autoclose(tree, tmp_path, tabmanager, monkeypatch):
     (tmp_path / "a" / "README").touch()
     (tmp_path / "b" / "README").touch()
     (tmp_path / "c" / "README").touch()
-    monkeypatch.setattr(plugin_module, "MAX_PROJECTS", 2)
+    monkeypatch.setattr(plugin_module, "_MAX_PROJECTS", 2)
 
     assert get_project_names() == []
 
@@ -120,7 +120,7 @@ def test_focusing_treeview_with_keyboard_updates_selection(tree, tmp_path):
     (tmp_path / "README").touch()
     (tmp_path / "hello.py").touch()
     tree.add_project(tmp_path, refresh=False)
-    focus_treeview(tree)
+    _focus_treeview(tree)
     assert tree.selection()
 
 

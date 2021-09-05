@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 #   - If you have more than this many files open, each from a different
 #     project, there will be one project for each file in the directory tree
 #     and this number is exceeded.
-MAX_PROJECTS = 5
+_MAX_PROJECTS = 5
 
 
 # For perf reasons, we want to avoid unnecessary Tcl calls when
@@ -199,7 +199,7 @@ class DirectoryTree(ttk.Treeview):
         # To avoid getting rid of existing projects when not necessary, we do
         # shortening after deleting non-existent projects
         for project_id in reversed(self.get_children("")):
-            if len(self.get_children("")) > MAX_PROJECTS and not any(
+            if len(self.get_children("")) > _MAX_PROJECTS and not any(
                 isinstance(tab, tabs.FileTab)
                 and tab.path is not None
                 and get_path(project_id) in tab.path.parents
@@ -320,13 +320,13 @@ class DirectoryTree(ttk.Treeview):
         return None
 
 
-def select_current_file(tree: DirectoryTree, event: object) -> None:
+def _select_current_file(tree: DirectoryTree, event: object) -> None:
     tab = get_tab_manager().select()
     if isinstance(tab, tabs.FileTab) and tab.path is not None:
         tree.select_file(tab.path)
 
 
-def on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
+def _on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     def path_callback(junk: object = None) -> None:
         if tab.path is not None:
             tree.add_project(utils.find_project_root(tab.path))
@@ -340,7 +340,7 @@ def on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     tab.bind("<Destroy>", tree._hide_old_projects, add=True)
 
 
-def focus_treeview(tree: DirectoryTree) -> None:
+def _focus_treeview(tree: DirectoryTree) -> None:
     if tree.get_children() and not tree.focus():
         tree.set_the_selection_correctly(tree.get_children()[0])
 
@@ -359,7 +359,7 @@ def focus_treeview(tree: DirectoryTree) -> None:
 # focus. If that ever becomes a problem, it can be fixed with a debouncer. At
 # the time of writing this, Porcupine contains debouncer code used for
 # something else. That can be found with grep.
-def on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc]) -> None:
+def _on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc]) -> None:
     if event.widget is get_main_window() or event.widget is tree:
         tree.refresh()
 
@@ -375,7 +375,7 @@ def setup() -> None:
     scrollbar.pack(side="right", fill="y")
     tree = DirectoryTree(container)
     tree.pack(side="left", fill="both", expand=True)
-    get_main_window().bind("<FocusIn>", partial(on_any_widget_focused, tree), add=True)
+    get_main_window().bind("<FocusIn>", partial(_on_any_widget_focused, tree), add=True)
 
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
@@ -383,16 +383,16 @@ def setup() -> None:
     # Insert directory tree before tab manager
     get_paned_window().insert(get_tab_manager(), container)
 
-    get_tab_manager().add_filetab_callback(partial(on_new_filetab, tree))
-    get_tab_manager().bind("<<NotebookTabChanged>>", partial(select_current_file, tree), add=True)
+    get_tab_manager().add_filetab_callback(partial(_on_new_filetab, tree))
+    get_tab_manager().bind("<<NotebookTabChanged>>", partial(_select_current_file, tree), add=True)
 
     menubar.get_menu("View").add_command(
-        label="Focus directory tree", command=partial(focus_treeview, tree)
+        label="Focus directory tree", command=partial(_focus_treeview, tree)
     )
 
     # Must reverse because last added project goes first
     string_paths = settings.get("directory_tree_projects", List[str])
-    for path in map(Path, string_paths[:MAX_PROJECTS][::-1]):
+    for path in map(Path, string_paths[:_MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh()
