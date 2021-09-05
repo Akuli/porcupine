@@ -22,15 +22,19 @@ assert sys.platform == "win32"
 assert 8 * struct.calcsize("P") == 64
 
 
+def delete(path):
+    if path.is_file():
+        path.unlink()
+    else:
+        shutil.rmtree(path)
+
+
 try:
     os.mkdir("build")
 except FileExistsError:
     print("Found existing build directory, deleting contents")
-    for content in list(Path("build").glob("*")):
-        if content.is_file():
-            content.unlink()
-        else:
-            shutil.rmtree(content)
+    for path in list(Path("build").glob("*")):
+        delete(path)
 
 
 print("Downloading Python")
@@ -114,18 +118,21 @@ else:
     )
 
 print("Installing Porcupine into build/python-second with pip")
-# pyls needs pkg_resources from setuptools, don't know why it doesn't install by default
-# TODO: delete --use-feature=in-tree-build when pip is new enough to not make warning without it
 subprocess.check_call(
     [
         "pip",
         "install",
-        "--use-feature=in-tree-build",
+        "--use-feature=in-tree-build",  # TODO: delete once pip new enough to not show warning without this
         "--target=build/python-second",
         ".",
-        "setuptools",
+        "setuptools",  # pyls needs pkg_resources from setuptools, don't know why need explicitly
     ]
 )
+
+print("Deleting __pycache__ directories")
+for path in list(Path("build/python-second").rglob("__pycache__")):
+    print(path)
+    delete(path)
 
 print("Moving files")
 shutil.move("build/launcher/Porcupine.exe", "build/python-second/Porcupine.exe")
