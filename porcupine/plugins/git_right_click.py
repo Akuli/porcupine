@@ -29,7 +29,10 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
 
     try:
         subprocess.check_call(
-            ["git", "status"], cwd=project_root, stdout=subprocess.DEVNULL, **utils.subprocess_kwargs
+            ["git", "status"],
+            cwd=project_root,
+            stdout=subprocess.DEVNULL,
+            **utils.subprocess_kwargs,
         )
     except (OSError, subprocess.CalledProcessError):
         return
