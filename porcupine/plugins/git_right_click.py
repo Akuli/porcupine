@@ -27,25 +27,28 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     path = get_path(item)
     project_root = get_path(tree.find_project_id(item))
 
-    run_result = subprocess.run(
-        ["git", "status"], cwd=project_root, stdout=subprocess.DEVNULL, **utils.subprocess_kwargs
-    )
-    if run_result.returncode == 0:
-        if tree.contextmenu.index("end") is not None:  # menu not empty
-            tree.contextmenu.add_separator()
+    try:
+        subprocess.check_call(
+            ["git", "status"], cwd=project_root, stdout=subprocess.DEVNULL, **utils.subprocess_kwargs
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return
 
-        # Some git commands are different than what label shows, for compatibility with older git versions
-        tree.contextmenu.add_command(
-            label="git add", command=(lambda: run(["git", "add", "--", str(path)]))
-        )
-        tree.contextmenu.add_command(
-            label="git restore --staged (undo git add)",
-            command=(lambda: run(["git", "reset", "HEAD", "--", str(path)])),
-        )
-        tree.contextmenu.add_command(
-            label="git restore (discard non-added changes)",
-            command=(lambda: run(["git", "checkout", "--", str(path)])),
-        )
+    if tree.contextmenu.index("end") is not None:  # menu not empty
+        tree.contextmenu.add_separator()
+
+    # Some git commands are different than what label shows, for compatibility with older git versions
+    tree.contextmenu.add_command(
+        label="git add", command=(lambda: run(["git", "add", "--", str(path)]))
+    )
+    tree.contextmenu.add_command(
+        label="git restore --staged (undo git add)",
+        command=(lambda: run(["git", "reset", "HEAD", "--", str(path)])),
+    )
+    tree.contextmenu.add_command(
+        label="git restore (discard non-added changes)",
+        command=(lambda: run(["git", "checkout", "--", str(path)])),
+    )
 
 
 def setup() -> None:
