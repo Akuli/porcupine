@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from porcupine.plugins.git_status import _git_pool
+from porcupine.plugins.git_status import git_pool
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def disable_thread_pool(monkeypatch):
         fut.set_result(func())
         return fut
 
-    monkeypatch.setattr(_git_pool, "submit", fake_submit)
+    monkeypatch.setattr(git_pool, "submit", fake_submit)
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
