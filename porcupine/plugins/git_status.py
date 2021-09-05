@@ -98,16 +98,14 @@ class ProjectColorer:
             item_id = self.coloring_queue.pop()
             item_path = get_path(item_id)
 
-            status = None
-            path = item_path
-            while path != self.project_path:
-                try:
-                    status = path_to_status[path]
-                    break
-                except KeyError:
-                    path = path.parent
-
-            if status is None:
+            parent_statuses = [
+                status
+                for path, status in path_to_status.items()
+                if path == item_path or path in item_path.parents
+            ]
+            if parent_statuses:
+                [status] = parent_statuses
+            else:
                 # Handle directories containing files with different statuses
                 substatuses = {
                     s
