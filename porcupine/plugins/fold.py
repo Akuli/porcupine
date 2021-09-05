@@ -80,7 +80,7 @@ def fold(tab: tabs.FileTab) -> None:
     dots.bind("<Destroy>", lambda event: tab.textwidget.tag_delete(tag), add=True)
     dots.bind("<Destroy>", lambda event: update_line_numbers(tab), add=True)
     dots.bind("<Button-1>", lambda event: tab.textwidget.delete(dots), add=True)
-    tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)  # type: ignore[no-untyped-call]
+    tab.textwidget.window_create(f"{lineno}.0 lineend", window=dots)
     update_line_numbers(tab)
 
 

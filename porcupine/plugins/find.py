@@ -42,8 +42,8 @@ class Finder(ttk.Frame):
         #
         # note that column 2 is used just for spacing, the separator helps
         # distinguish this from e.g. status bar below this
-        self.grid_columnconfigure(2, minsize=30)  # type: ignore[no-untyped-call]
-        self.grid_columnconfigure(3, weight=1)  # type: ignore[no-untyped-call]
+        self.grid_columnconfigure(2, minsize=30)
+        self.grid_columnconfigure(3, weight=1)
 
         self.full_words_var = tkinter.BooleanVar()
         self.ignore_case_var = tkinter.BooleanVar()
@@ -151,7 +151,7 @@ class Finder(ttk.Frame):
         if selected_text is not None and "\n" not in selected_text:
             # Selected text is usable, search for that
             self.find_entry.delete(0, "end")
-            self.find_entry.insert(0, selected_text)  # type: ignore[no-untyped-call]
+            self.find_entry.insert(0, selected_text)
 
         self.find_entry.select_range(0, "end")
         self.find_entry.focus_set()
@@ -233,7 +233,7 @@ class Finder(ttk.Frame):
     def highlight_all_matches(self, *junk: object) -> None:
         self._delete_match_tags()
 
-        looking4 = self.find_entry.get()  # type: ignore[no-untyped-call]
+        looking4 = self.find_entry.get()
         if not looking4:  # don't search for empty string
             self._update_buttons()
             self.statuslabel.config(text="Type something to find.")
@@ -319,7 +319,7 @@ class Finder(ttk.Frame):
         self._update_buttons()
 
         with textutils.change_batch(self._textwidget):
-            self._textwidget.replace(f"{tag}.first", f"{tag}.last", self.replace_entry.get())  # type: ignore[no-untyped-call]
+            self._textwidget.replace(f"{tag}.first", f"{tag}.last", self.replace_entry.get())
         self._textwidget.tag_delete(tag)
 
         self._go_to_next_match()
@@ -338,7 +338,7 @@ class Finder(ttk.Frame):
 
         with textutils.change_batch(self._textwidget):
             for tag in match_tags:
-                self._textwidget.replace(f"{tag}.first", f"{tag}.last", self.replace_entry.get())  # type: ignore[no-untyped-call]
+                self._textwidget.replace(f"{tag}.first", f"{tag}.last", self.replace_entry.get())
 
         self._delete_match_tags()
         self._update_buttons()

@@ -462,8 +462,8 @@ def _create_dialog_content() -> ttk.Frame:
     )
     ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side="right", padx=3, pady=3)
 
-    content.grid_columnconfigure(0, weight=1)  # type: ignore[no-untyped-call]
-    content.grid_columnconfigure(1, weight=1)  # type: ignore[no-untyped-call]
+    content.grid_columnconfigure(0, weight=1)
+    content.grid_columnconfigure(1, weight=1)
     return content
 
 
@@ -715,7 +715,7 @@ def remember_divider_positions(
 
     def settings2panedwindow(junk: object = None) -> None:
         value = get(option_name, List[int])
-        pane_count = len(panedwindow.panes())  # type: ignore[no-untyped-call]
+        pane_count = len(panedwindow.panes())
 
         if len(value) == pane_count - 1:
             _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
@@ -736,7 +736,7 @@ def remember_divider_positions(
             )
 
     def panedwindow2settings(junk: object) -> None:
-        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])  # type: ignore[no-untyped-call]
+        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
 
     # don't know why after_idle is needed, but it is
     panedwindow.bind(

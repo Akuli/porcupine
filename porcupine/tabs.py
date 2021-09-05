@@ -131,7 +131,7 @@ class TabManager(ttk.Notebook):
         """
         # tkinter has a bug that makes the original tabs() return widget name
         # strings instead of widget objects
-        return tuple(self.nametowidget(tab) for tab in super().tabs())  # type: ignore[no-untyped-call]
+        return tuple(self.nametowidget(tab) for tab in super().tabs())
 
     def open_file(self, path: pathlib.Path) -> FileTab | None:
         """Add a :class:`FileTab` for editing a file and select it.
@@ -177,7 +177,7 @@ class TabManager(ttk.Notebook):
                 tab.destroy()
                 return existing_tab
 
-        self.add(tab)  # type: ignore[no-untyped-call]
+        self.add(tab)
         self._update_tab_titles()
         if select:
             self.select(tab)
@@ -200,7 +200,7 @@ class TabManager(ttk.Notebook):
 
         .. seealso:: The :meth:`.Tab.can_be_closed` method.
         """
-        self.forget(tab)  # type: ignore[no-untyped-call]
+        self.forget(tab)
         tab.destroy()
         self._update_tab_titles()
 
@@ -575,7 +575,7 @@ class FileTab(Tab):
         self.textwidget: textutils.MainText = textutils.MainText(
             self, width=1, height=1, wrap="none", undo=True, padx=3
         )
-        self.panedwindow.add(self.textwidget, stretch="always")  # type: ignore[no-untyped-call]
+        self.panedwindow.add(self.textwidget, stretch="always")
 
         if content:
             self.textwidget.insert("1.0", content)
@@ -886,7 +886,7 @@ class FileTab(Tab):
         asking the user.
         """
         if path is None:
-            path_string = filedialog.asksaveasfilename(**_state.filedialog_kwargs)  # type: ignore[no-untyped-call]
+            path_string = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
             if not path_string:  # it may be '' because tkinter
                 return False
             path = pathlib.Path(path_string)
