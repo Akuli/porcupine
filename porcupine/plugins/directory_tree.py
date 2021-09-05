@@ -12,7 +12,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Any, Callable, Iterator, List
+from typing import Any, Callable, List
 
 from porcupine import (
     get_main_window,
@@ -50,15 +50,6 @@ MAX_PROJECTS = 5
 def get_path(item_id: str) -> Path:
     item_type, project_number, path = item_id.split(":", maxsplit=2)
     return Path(path)
-
-
-def _path_to_root_inclusive(path: Path, root: Path) -> Iterator[Path]:
-    assert path == root or root in path.parents
-    while True:
-        yield path
-        if path == root:
-            break
-        path = path.parent
 
 
 @dataclasses.dataclass
@@ -170,14 +161,13 @@ class DirectoryTree(ttk.Treeview):
 
         # When opening ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
         project_id = max(matching_projects, key=(lambda id: len(str(get_path(id)))))
-
-        path_to_root = list(_path_to_root_inclusive(path, get_path(project_id)))
-        root_to_path = path_to_root[::-1]
-        root_to_path_excluding_root = root_to_path[1:]
+        project_root_path = get_path(project_id)
 
         # Find the visible sub-item representing the file
         file_id = project_id
-        for subpath in root_to_path_excluding_root:
+        subpath = project_root_path
+        for part in path.relative_to(project_root_path).parts:
+            subpath /= part
             if self.item(file_id, "open"):
                 file_id = self.get_id_from_path(subpath, project_id)
                 assert file_id is not None

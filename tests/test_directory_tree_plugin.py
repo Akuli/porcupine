@@ -5,12 +5,7 @@ from pathlib import Path
 import pytest
 
 from porcupine.plugins import directory_tree as plugin_module
-from porcupine.plugins.directory_tree import (
-    _path_to_root_inclusive,
-    _stringify_path,
-    focus_treeview,
-    get_path,
-)
+from porcupine.plugins.directory_tree import _stringify_path, focus_treeview, get_path
 
 
 def test_adding_nested_projects(tree, tmp_path):
@@ -176,15 +171,6 @@ def test_nested_projects(tree, tmp_path, tabmanager):
     open_as_if_user_clicked(tree, subdir_id)
     tree.select_file(tmp_path / "subdir" / "README")
     assert get_path(tree.selection()[0]) == tmp_path / "subdir" / "README"
-
-
-def test_path_to_root_inclusive():
-    assert list(_path_to_root_inclusive(Path("foo/bar/baz"), Path("foo"))) == [
-        Path("foo/bar/baz"),
-        Path("foo/bar"),
-        Path("foo"),
-    ]
-    assert list(_path_to_root_inclusive(Path("foo"), Path("foo"))) == [Path("foo")]
 
 
 def test_home_folder_displaying():
