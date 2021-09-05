@@ -396,3 +396,12 @@ def setup() -> None:
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh()
+
+
+# Used in other plugins
+def get_directory_tree() -> DirectoryTree:
+    for possible_container in get_paned_window().winfo_children():
+        for possible_directory_tree in possible_container.winfo_children():
+            if isinstance(possible_directory_tree, DirectoryTree):
+                return possible_directory_tree
+    raise RuntimeError("directory tree not found")

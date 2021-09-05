@@ -11,8 +11,8 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-from porcupine import get_paned_window, utils
-from porcupine.plugins.directory_tree import DirectoryTree, get_path
+from porcupine import utils
+from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
 
 setup_after = ["directory_tree"]
 
@@ -220,24 +220,21 @@ def sorting_key(tree: DirectoryTree, item_id: str) -> Any:
 
 
 def setup() -> None:
-    for tree in utils.get_children_recursively(get_paned_window()):
-        if isinstance(tree, DirectoryTree):
-            tree.config(style="DirectoryTreeGitStatus.Treeview")
+    tree = get_directory_tree()
+    tree.config(style="DirectoryTreeGitStatus.Treeview")
 
-            main_colorer = TreeColorer(tree)
-            tree.bind(
-                "<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True
-            )
-            utils.bind_with_data(
-                tree,
-                "<<UpdateItemTags>>",
-                lambda event: main_colorer.color_item(event.data_string),
-                add=True,
-            )
+    main_colorer = TreeColorer(tree)
+    tree.bind("<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True)
+    utils.bind_with_data(
+        tree,
+        "<<UpdateItemTags>>",
+        lambda event: main_colorer.color_item(event.data_string),
+        add=True,
+    )
 
-            tree.sorting_keys.insert(0, partial(sorting_key, tree))
+    tree.sorting_keys.insert(0, partial(sorting_key, tree))
 
-            tree.bind("<<TreeviewSelect>>", partial(update_tree_selection_color, tree), add=True)
-            update_tree_selection_color(tree)
-            tree.bind("<<ThemeChanged>>", main_colorer.config_color_tags, add=True)
-            main_colorer.config_color_tags()
+    tree.bind("<<TreeviewSelect>>", partial(update_tree_selection_color, tree), add=True)
+    update_tree_selection_color(tree)
+    tree.bind("<<ThemeChanged>>", main_colorer.config_color_tags, add=True)
+    main_colorer.config_color_tags()

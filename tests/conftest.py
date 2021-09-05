@@ -16,9 +16,9 @@ import appdirs
 import pytest
 
 import porcupine
-from porcupine import dirs, get_main_window, get_paned_window, get_tab_manager, plugins, tabs, utils
+from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
-from porcupine.plugins.directory_tree import DirectoryTree
+from porcupine.plugins.directory_tree import get_directory_tree
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
@@ -120,14 +120,10 @@ def filetab(porcusession, tabmanager):
 # TODO: consider longer name
 @pytest.fixture
 def tree():
-    [tree] = [
-        w
-        for w in utils.get_children_recursively(get_paned_window())
-        if isinstance(w, DirectoryTree)
-    ]
+    tree = get_directory_tree()
     for child in tree.get_children(""):
         tree.delete(child)
-    yield tree
+    return tree
 
 
 @pytest.fixture(scope="function", autouse=True)

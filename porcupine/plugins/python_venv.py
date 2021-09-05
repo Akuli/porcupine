@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict
 
 import porcupine.plugins.directory_tree as dirtree
-from porcupine import get_paned_window, images, settings, utils
+from porcupine import images, settings, utils
 
 log = logging.getLogger(__name__)
 setup_after = ["directory_tree"]
@@ -133,10 +133,14 @@ def _on_treeview_right_click(event: tkinter.Event[dirtree.DirectoryTree]) -> str
 def setup() -> None:
     settings.add_option("python_venvs", {}, Dict[str, str])  # paths as strings, for json
 
-    for widget in utils.get_children_recursively(get_paned_window()):
-        if isinstance(widget, dirtree.DirectoryTree):
-            widget.tag_configure("venv", image=images.get("venv"))
-            utils.bind_with_data(widget, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
-            widget.bind(
-                "<Button-3>", _on_treeview_right_click, add=True
-            )  # TODO: mac right click = button 2?
+    try:
+        tree = dirtree.get_directory_tree()
+    except RuntimeError:
+        # directory tree plugin disabled
+        pass
+    else:
+        tree.tag_configure("venv", image=images.get("venv"))
+        utils.bind_with_data(tree, "<<FolderRefreshed>>", _on_folder_refreshed, add=True)
+        tree.bind(
+            "<Button-3>", _on_treeview_right_click, add=True
+        )  # TODO: mac right click = button 2?
