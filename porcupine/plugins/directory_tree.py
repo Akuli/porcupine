@@ -278,6 +278,7 @@ class DirectoryTree(ttk.Treeview):
         )
 
     def sort_folder_contents(self, dir_id: str) -> None:
+        assert dir_id
         for index, child_id in enumerate(
             sorted(
                 self.get_children(dir_id),
