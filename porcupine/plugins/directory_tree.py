@@ -268,7 +268,15 @@ class DirectoryTree(ttk.Treeview):
         project_root = get_path(project_id)
         for child_path, child_id in path2id.items():
             self._update_tags_and_content(project_root, child_id)
+        self.sort_folder_contents(dir_id)
 
+        # When binding to this event, make sure you delete all tags you created on previous update.
+        # Even though refersh() deletes tags, this method by itself doesn't.
+        self.event_generate(
+            "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
+        )
+
+    def sort_folder_contents(self, dir_id: str) -> None:
         for index, child_id in enumerate(
             sorted(
                 self.get_children(dir_id),
@@ -276,12 +284,6 @@ class DirectoryTree(ttk.Treeview):
             )
         ):
             self.move(child_id, dir_id, index)
-
-        # When binding to this event, make sure you delete all tags you created on previous update.
-        # Even though refersh() deletes tags, this method by itself doesn't.
-        self.event_generate(
-            "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
-        )
 
     def open_file_or_dir(self, event: object = None) -> None:
         try:

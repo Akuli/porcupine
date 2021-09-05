@@ -26,6 +26,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
     try:
         start = time.perf_counter()
         run_result = subprocess.run(
+            # For debugging: ["bash", "-c", "sleep 1 && git status --ignored --porcelain"],
             ["git", "status", "--ignored", "--porcelain"],
             cwd=project_root,
             stdout=subprocess.PIPE,
@@ -72,17 +73,20 @@ class ProjectColorer:
         self.project_id = project_id
         self.project_path = get_path(project_id)
         self.git_status_future: Future[dict[Path, str]] | None = None
+
+        # Items may need resorting once git tags have changed
         self.coloring_queue: set[str] = set()
+        self.sorting_queue: set[str] = set()
 
     def start_running_git_status(self) -> None:
-        future = git_pool.submit(partial(run_git_status, self.project_path))
-        self.git_status_future = future
+        self.git_status_future = git_pool.submit(partial(run_git_status, self.project_path))
 
         # Handle queue contents when it has completed
         def check() -> None:
             if self.git_status_future is not None:
-                if future.done():
-                    self._handle_queue()
+                if self.git_status_future.done():
+                    self._handle_coloring_queue()
+                    self._handle_sorting_queue()
                 else:
                     self.tree.after(25, check)
 
@@ -91,7 +95,7 @@ class ProjectColorer:
     def stop(self) -> None:
         self.git_status_future = None
 
-    def _handle_queue(self) -> None:
+    def _handle_coloring_queue(self) -> None:
         # process should be done, result available immediately
         assert self.git_status_future is not None
         path_to_status = self.git_status_future.result(timeout=0)
@@ -129,18 +133,27 @@ class ProjectColorer:
                     assert not substatuses
                     status = None
 
-            # TODO: allow other plugins to create tags too
-            # Ideally without making two tcl calls.
-            # If I remember correctly this code was perf critical, maybe isn't anymore after #734
-            self.tree.item(item_id, tags=([] if status is None else status))
+            old_tags = set(self.tree.item(item_id, 'tags'))
+            new_tags = {tag for tag in old_tags if not tag.startswith("git_")}
+            if status is not None:
+                new_tags.add(status)
+
+            if old_tags != new_tags:
+                self.tree.item(item_id, tags=list(new_tags))
+                self.sorting_queue.add(self.tree.parent(item_id))
+
             if item_id in selection:
                 update_tree_selection_color(self.tree)
+
+    def _handle_sorting_queue(self) -> None:
+        while self.sorting_queue:
+            self.tree.sort_folder_contents(self.sorting_queue.pop())
 
     def color_now_or_later(self, item_id: str) -> None:
         self.coloring_queue.add(item_id)
         assert self.git_status_future is not None
         if self.git_status_future.done():
-            self._handle_queue()
+            self._handle_coloring_queue()
 
 
 # not project-specific
