@@ -86,7 +86,9 @@ def delete(path: Path) -> None:
 def rename(old_path: Path) -> None:
     # TODO: checkbox to tell git about the change, checked by default
 
-    new_name = tkinter.simpledialog.askstring('Rename file', f'Enter a new name for {old_path.name}:', initialvalue=old_path.name)
+    new_name = tkinter.simpledialog.askstring(
+        "Rename file", f"Enter a new name for {old_path.name}:", initialvalue=old_path.name
+    )
     if new_name is None or new_name == old_path.name:
         return
 
@@ -108,6 +110,7 @@ def rename(old_path: Path) -> None:
         return
 
     for tab in find_tabs_by_parent_path(old_path):
+        assert tab.path is not None
         tab.path = new_path / tab.path.relative_to(old_path)
 
 
