@@ -120,13 +120,14 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     path = get_path(item)
     project_root = get_path(tree.find_project_id(item))
 
+    # Doing something to an entire project is more difficult than you would think.
+    # For example, if the project is renamed, venv locations don't update.
+    # TODO: update venv locations when the venv is renamed
     if path != project_root:
+        if path.is_dir():
+            tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
         tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
         tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
-
-    # TODO: does renaming project_root really work? langservers should be restarted etc
-    if path.is_dir():
-        tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
 
 
 def setup() -> None:
