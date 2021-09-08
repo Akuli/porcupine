@@ -1,3 +1,4 @@
+"""File manager operations (delete, trash, rename, ...) when right-clicking directory tree."""
 from __future__ import annotations
 
 import logging
@@ -10,8 +11,8 @@ from tkinter import messagebox
 
 from send2trash import send2trash
 
-from porcupine import get_paned_window, get_tab_manager, tabs, utils
-from porcupine.plugins.directory_tree import DirectoryTree, get_path
+from porcupine import get_tab_manager, tabs
+from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
 
 setup_after = ["directory_tree"]
 log = logging.getLogger(__name__)
@@ -82,6 +83,34 @@ def delete(path: Path) -> None:
         )
 
 
+def rename(old_path: Path) -> None:
+    # TODO: checkbox to tell git about the change, checked by default
+
+    new_name = tkinter.simpledialog.askstring('Rename file', f'Enter a new name for {old_path.name}:', initialvalue=old_path.name)
+    if new_name is None or new_name == old_path.name:
+        return
+
+    # TODO: would be nice to disable ok button instead
+    try:
+        new_path = old_path.with_name(new_name)  # can raise ValueError("Invalid name '/adf'")
+        if new_path.exists():
+            raise ValueError(f"There is already a file named {new_name}")
+    except ValueError as e:
+        # str(e) is e.g. "Invalid name '/adf'"
+        messagebox.showerror("Cannot rename", str(e) + ".")
+        return
+
+    try:
+        old_path.rename(new_path)
+    except OSError as e:
+        log.exception(f"renaming failed: {old_path} --> {new_path}")
+        messagebox.showerror("Renaming failed", str(e) + ".")
+        return
+
+    for tab in find_tabs_by_parent_path(old_path):
+        tab.path = new_path / tab.path.relative_to(old_path)
+
+
 def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree: DirectoryTree = event.widget
     [item] = tree.selection()
@@ -92,8 +121,10 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
         tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
 
+    # TODO: does renaming project_root really work? langservers should be restarted etc
+    if path.is_dir():
+        tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
+
 
 def setup() -> None:
-    for widget in utils.get_children_recursively(get_paned_window()):
-        if isinstance(widget, DirectoryTree):
-            widget.bind("<<PopulateContextMenu>>", populate_menu, add=True)
+    get_directory_tree().bind("<<PopulateContextMenu>>", populate_menu, add=True)
