@@ -124,8 +124,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
     if path != project_root:
-        if path.is_dir():
-            tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
+        tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
         tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
         tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
 
