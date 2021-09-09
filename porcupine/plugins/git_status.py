@@ -192,9 +192,9 @@ class TreeColorer:
             colorer.coloring_queue.add(project_id)
             colorer.start_running_git_status()
 
-    def color_child_items(self, parent_id: str) -> None:
-        project_id = self.tree.find_project_id(parent_id)
-        self.project_specific_colorers[project_id].color_children_now_or_later(parent_id)
+    def color_child_items(self, event: utils.EventWithData) -> None:
+        info = event.data_class(FolderRefreshed)
+        self.project_specific_colorers[info.project_id].color_children_now_or_later(info.folder_id)
 
 
 # There's no way to say "when this item is selected, show a green selection".
@@ -243,8 +243,7 @@ def setup() -> None:
     tree.bind("<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True)
     utils.bind_with_data(
         tree,
-        "<<FolderRefreshed>>",
-        lambda event: main_colorer.color_child_items(event.data_class(FolderRefreshed).folder_id),
+        "<<FolderRefreshed>>", main_colorer.color_child_items,
         add=True,
     )
 
