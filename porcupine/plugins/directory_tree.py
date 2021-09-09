@@ -163,7 +163,7 @@ class DirectoryTree(ttk.Treeview):
         if not matching_projects:
             return None
 
-        # When opening ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
+        # For ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
         return max(matching_projects, key=(lambda id: len(str(get_path(id)))))
 
     def select_file(self, path: Path) -> None:
