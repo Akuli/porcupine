@@ -244,7 +244,7 @@ def setup() -> None:
 
     path = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
-    menubar.add_config_file_button(path, menu="Filetypes", text="Edit filetypes.toml")
+    menubar.add_config_file_button(path, menu="Filetypes")
     menubar.add_config_file_button(path)  # goes to "Settings/Config Files"
 
     new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None
