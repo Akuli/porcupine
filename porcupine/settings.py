@@ -284,6 +284,7 @@ class Settings:
             foo = settings.get('something', str)
             reveal_type(foo)  # str
 
+            from pathlib import Path
             shitty_bar = settings.get('something', Optional[Path])
             reveal_type(shitty_bar)  # Any
 
