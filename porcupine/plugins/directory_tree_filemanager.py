@@ -172,14 +172,17 @@ def rename(old_path: Path) -> None:
 
 def open_in_file_manager(path: Path) -> None:
     windowingsystem = get_main_window().tk.call("tk", "windowingsystem")
+
+    # Using Popen to make sure it won't freeze gui
+    # No freezing without it on windows and linux, but just to be sure
     if windowingsystem == "win32":
-        # not check_call, explorer.exe exits with status 1 on success (lol)
-        subprocess.call(["explorer.exe", str(path)])
+        # Refactoring note: explorer.exe exits with status 1 on success (lol)
+        subprocess.Popen(["explorer.exe", str(path)])
     elif windowingsystem == "x11":
-        subprocess.check_call(["xdg-open", str(path)])
+        subprocess.Popen(["xdg-open", str(path)])
     else:
         # not tested :(
-        subprocess.check_call(["open", str(path)])
+        subprocess.Popen(["open", str(path)])
 
 
 def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
