@@ -1,6 +1,6 @@
-import pathlib
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -30,17 +30,17 @@ def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     subprocess.run(["git", "config", "user.name", "foo"])
     subprocess.run(["git", "config", "user.email", "foo@example.com"])
 
-    pathlib.Path("foo.txt").write_text(file_content)
+    Path("foo.txt").write_text(file_content)
     subprocess.run(["git", "add", "foo.txt"])
     subprocess.run(["git", "commit", "-m", "create foo.txt"])
     subprocess.run(["git", "checkout", "-b", "other_branch"])
-    pathlib.Path("foo.txt").write_text(file_content.replace("hello", "hello world"))
+    Path("foo.txt").write_text(file_content.replace("hello", "hello world"))
     subprocess.run(["git", "commit", "--all", "-m", "hello there"])
     subprocess.run(["git", "checkout", "master"])
-    pathlib.Path("foo.txt").write_text(file_content.replace("hello", "hello there"))
+    Path("foo.txt").write_text(file_content.replace("hello", "hello there"))
     subprocess.run(["git", "commit", "--all", "-m", "hello my friend"])
     subprocess.run(["git", "merge", "other_branch"])
-    assert pathlib.Path("foo.txt").read_text() == merge_conflict_string
+    assert Path("foo.txt").read_text() == merge_conflict_string
     capfd.readouterr()  # hide unnecessary prints from git
 
 

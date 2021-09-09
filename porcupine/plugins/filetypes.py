@@ -4,9 +4,9 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import logging
-import pathlib
 import re
 from functools import partial
+from pathlib import Path
 from typing import Any, Dict
 
 import toml
@@ -34,8 +34,8 @@ def is_list_of_strings(obj: object) -> bool:
 
 def load_filetypes() -> None:
     # user_path can't be global var because tests monkeypatch
-    user_path = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
-    defaults_path = pathlib.Path(__file__).absolute().parent.parent / "default_filetypes.toml"
+    user_path = Path(dirs.user_config_dir) / "filetypes.toml"
+    defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
     filetypes.update(toml.load(defaults_path))
 
@@ -113,7 +113,7 @@ def get_filetype_from_matches(
     return list(matches.values())[-1]
 
 
-def guess_filetype_from_path(filepath: pathlib.Path) -> FileType | None:
+def guess_filetype_from_path(filepath: Path) -> FileType | None:
     assert filepath.is_absolute()
     return get_filetype_from_matches(
         {
@@ -140,7 +140,7 @@ def guess_filetype_from_shebang(content_start: str) -> FileType | None:
 
 
 # TODO: take content as argument
-def guess_filetype(filepath: pathlib.Path) -> FileType:
+def guess_filetype(filepath: Path) -> FileType:
     filetype = guess_filetype_from_path(filepath)
     if filetype is not None:
         return filetype
@@ -242,7 +242,7 @@ def setup() -> None:
             f"Filetypes/{escaped_name}", partial(apply_filetype_to_tab, filetype)
         )
 
-    path = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
+    path = Path(dirs.user_config_dir) / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
     menubar.add_config_file_button(path, menu="Filetypes", text="Edit filetypes.toml")
     menubar.add_config_file_button(path)  # goes to "Settings/Config Files"

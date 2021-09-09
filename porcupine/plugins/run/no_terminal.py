@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 import queue
 import subprocess
 import threading
 import tkinter
+from pathlib import Path
 from typing import Callable, Tuple, Union
 
 from porcupine import get_tab_manager, images, utils
@@ -29,7 +29,7 @@ class NoTerminalRunner:
         self._queue_clearer()
 
     def _runner_thread(
-        self, workingdir: pathlib.Path, command: list[str], succeeded_callback: Callable[[], None]
+        self, workingdir: Path, command: list[str], succeeded_callback: Callable[[], None]
     ) -> None:
         process: subprocess.Popen[bytes] | None = None
 
@@ -66,7 +66,7 @@ class NoTerminalRunner:
             emit_message(("error", f"The process failed with status {process.returncode}."))
 
     def run_command(
-        self, workingdir: pathlib.Path, command: list[str], succeeded_callback: Callable[[], None]
+        self, workingdir: Path, command: list[str], succeeded_callback: Callable[[], None]
     ) -> None:
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
@@ -115,9 +115,7 @@ _no_terminal_runners: dict[str, NoTerminalRunner] = {}
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(
-    workingdir: pathlib.Path,
-    command: list[str],
-    succeeded_callback: Callable[[], None] = (lambda: None),
+    workingdir: Path, command: list[str], succeeded_callback: Callable[[], None] = (lambda: None)
 ) -> None:
 
     tab = get_tab_manager().select()

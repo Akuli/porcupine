@@ -1,7 +1,7 @@
 """Open a file in Porcupine when it's dragged and dropped from file manager."""
 import logging
-import pathlib
 import tkinter
+from pathlib import Path
 
 from porcupine import get_main_window, get_tab_manager
 
@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 def handle_drop(paths_from_tcl: str) -> None:
-    for path in map(pathlib.Path, get_main_window().tk.splitlist(paths_from_tcl)):
+    for path in map(Path, get_main_window().tk.splitlist(paths_from_tcl)):
         if path.is_file():
             get_tab_manager().open_file(path)
         else:

@@ -3,9 +3,9 @@
 
 import argparse
 import os
-import pathlib
 import subprocess
 import sys
+from pathlib import Path
 
 sys.path.append("")  # import from current working directory
 from porcupine import version_info as old_info
@@ -47,9 +47,9 @@ def main():
 
     print(f"Version changes: {TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
 
-    replace_in_file(pathlib.Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
-    replace_in_file(pathlib.Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
-    replace_in_file(pathlib.Path("CHANGELOG.md"), "UNRELEASED", TAG_FORMAT % new_info)
+    replace_in_file(Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
+    replace_in_file(Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
+    replace_in_file(Path("CHANGELOG.md"), "UNRELEASED", TAG_FORMAT % new_info)
     subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])

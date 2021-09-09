@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import pathlib
+from pathlib import Path
 from typing import Any
 
 import docutils.nodes
@@ -12,7 +12,7 @@ from sphinx.domains.python import PyObject, PyXRefRole
 from sphinx.util.nodes import split_explicit_title
 
 GITHUB_URL = "https://github.com/Akuli/porcupine/tree/master/"
-PROJECT_ROOT = pathlib.Path(__file__).absolute().parent.parent
+PROJECT_ROOT = Path(__file__).absolute().parent.parent
 
 
 # this is mostly copy/pasted from cpython's Doc/tools/extensions/pyspecific.py

@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import dataclasses
 import os
-import pathlib
 import sys
 from functools import partial
+from pathlib import Path
 from typing import Callable
 
 if sys.version_info >= (3, 8):
@@ -53,8 +53,8 @@ def get_command(
     template = getattr(commands, which_command)
     assert template.strip(), (commands, which_command)
 
-    exts = "".join(pathlib.Path(basename).suffixes)
-    no_ext = pathlib.Path(basename).stem
+    exts = "".join(Path(basename).suffixes)
+    no_ext = Path(basename).stem
     return utils.format_command(
         template,
         {

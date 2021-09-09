@@ -4,12 +4,12 @@ from __future__ import annotations
 import functools
 import itertools
 import os
-import pathlib
 import re
 import subprocess
 import sys
 import tkinter
 import webbrowser
+from pathlib import Path
 from tkinter import ttk
 
 if sys.version_info >= (3, 9):
@@ -74,9 +74,9 @@ class AboutDialogContent(ttk.Frame):
             self._add_minimal_markdown(text_chunk)
             self._textwidget.insert("end", "\n\n")
         self._add_directory_link(
-            "Porcupine is installed to", pathlib.Path(__file__).absolute().parent.parent.parent
+            "Porcupine is installed to", Path(__file__).absolute().parent.parent.parent
         )
-        self._add_directory_link("You can install plugins to", pathlib.Path(plugins.__path__[0]))
+        self._add_directory_link("You can install plugins to", Path(plugins.__path__[0]))
         self._textwidget.config(state="disabled")
 
         label = ttk.Label(self, image=images.get("logo-200x200"), cursor="hand2")
@@ -105,7 +105,7 @@ class AboutDialogContent(ttk.Frame):
                 )
                 self._textwidget.insert("end", text, ["link", tag])
 
-    def _add_directory_link(self, description: str, path: pathlib.Path) -> None:
+    def _add_directory_link(self, description: str, path: Path) -> None:
         tag = next(self._link_tag_names)
         self._textwidget.insert("end", description + " ")
         self._textwidget.insert("end", str(path), ["link", tag])
@@ -121,7 +121,7 @@ class AboutDialogContent(ttk.Frame):
     def _open_link(self, href: str, junk_event: tkinter.Event[tkinter.Misc]) -> None:
         webbrowser.open(href)
 
-    def _open_directory(self, path: pathlib.Path, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+    def _open_directory(self, path: Path, junk_event: tkinter.Event[tkinter.Misc]) -> None:
         assert path.is_dir()
         if sys.platform == "win32":
             os.startfile(path)

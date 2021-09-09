@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import contextlib
-import pathlib
 import queue
 import threading
 from multiprocessing import connection
+from pathlib import Path
 from typing import Any, Iterator
 
 from porcupine import dirs
 
-_ADDRESS_FILE = pathlib.Path(dirs.user_cache_dir) / "ipc_address.txt"
+_ADDRESS_FILE = Path(dirs.user_cache_dir) / "ipc_address.txt"
 
 
 # the addresses contain random junk so they are very unlikely to
