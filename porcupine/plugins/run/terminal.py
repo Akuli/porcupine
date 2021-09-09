@@ -10,7 +10,6 @@ import sys
 import tempfile
 from pathlib import Path
 from tkinter import messagebox
-from typing import Union
 
 from porcupine import get_main_window, utils
 
