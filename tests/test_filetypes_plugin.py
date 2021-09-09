@@ -1,6 +1,6 @@
 import logging
-import pathlib
 import sys
+from pathlib import Path
 from tkinter import filedialog
 
 import pytest
@@ -12,8 +12,8 @@ from porcupine.plugins import filetypes
 @pytest.fixture
 def custom_filetypes():
     # We don't overwrite the user's file because porcupine.dirs is monkeypatched
-    assert not dirs.user_config_dir.startswith(str(pathlib.Path.home()))
-    user_filetypes = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
+    assert not dirs.user_config_dir.startswith(str(Path.home()))
+    user_filetypes = Path(dirs.user_config_dir) / "filetypes.toml"
 
     user_filetypes.write_text(
         """

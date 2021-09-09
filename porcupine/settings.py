@@ -7,10 +7,10 @@ import enum
 import json
 import logging
 import os
-import pathlib
 import sys
 import time
 import tkinter.font
+from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, Callable, List, Type, TypeVar, overload
 
@@ -71,7 +71,7 @@ class LineEnding(enum.Enum):
 
 
 def _type_check(type_: object, obj: object) -> object:
-    # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
+    # dacite tricks needed for validating e.g. objects of type Optional[Path]
     @dataclasses.dataclass
     class ValueContainer:
         __annotations__ = {"value": type_}
@@ -260,7 +260,7 @@ class Settings:
     # https://stackoverflow.com/q/61471700
     # fmt: off
     @overload
-    def get(self, option_name: str, type_: Type[pathlib.Path]) -> pathlib.Path: ...
+    def get(self, option_name: str, type_: Type[Path]) -> Path: ...
     @overload
     def get(self, option_name: str, type_: Type[LineEnding]) -> LineEnding: ...
     @overload
@@ -284,14 +284,15 @@ class Settings:
             foo = settings.get('something', str)
             reveal_type(foo)  # str
 
-            shitty_bar = settings.get('something', Optional[pathlib.Path])
+            from pathlib import Path
+            shitty_bar = settings.get('something', Optional[Path])
             reveal_type(shitty_bar)  # Any
 
         Use a type annotation to work around this (and make sure to write the
         same type two times)::
 
-            good_bar: pathlib.Path | None = settings.get('something', Optional[pathlib.Path])
-            reveal_type(good_bar)  # Optional[pathlib.Path]
+            good_bar: Path | None = settings.get('something', Optional[Path])
+            reveal_type(good_bar)  # Optional[Path]
 
         Before Python 3.10, you can't use the new ``|`` syntax as an argument to ``settings.get()``,
         even though it otherwise works with ``from __future__ import annotations``.
@@ -352,8 +353,8 @@ def _value_to_save(obj: object) -> object:
     return obj
 
 
-def get_json_path() -> pathlib.Path:
-    return pathlib.Path(dirs.user_config_dir) / "settings.json"
+def get_json_path() -> Path:
+    return Path(dirs.user_config_dir) / "settings.json"
 
 
 def save() -> None:
@@ -778,7 +779,7 @@ def _is_monospace(font_family: str) -> bool:
 
 
 def _get_monospace_font_families() -> list[str]:
-    cache_path = pathlib.Path(dirs.user_cache_dir) / "font_cache.json"
+    cache_path = Path(dirs.user_cache_dir) / "font_cache.json"
     all_families = sorted(set(tkinter.font.families()))
 
     # This is surprisingly slow when there are lots of fonts. Let's cache.

@@ -2,11 +2,11 @@
 """Check for common bind-related errors. See docs/plugin-intro for explanation."""
 
 import ast
-import pathlib
 import sys
+from pathlib import Path
 
 program_name, code_dir = sys.argv
-paths = list(pathlib.Path(code_dir).rglob("*.py"))
+paths = list(Path(code_dir).rglob("*.py"))
 
 
 def is_method_call(node, names):

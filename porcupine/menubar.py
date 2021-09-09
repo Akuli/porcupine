@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 import re
 import sys
 import tkinter
 import webbrowser
 from functools import partial
+from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
 from typing import Any, Callable, Iterator
@@ -140,7 +140,7 @@ def get_menu(path: str) -> tkinter.Menu:
     return menu
 
 
-def add_config_file_button(path: pathlib.Path, *, menu: str = "Settings/Config Files") -> None:
+def add_config_file_button(path: Path, *, menu: str = "Settings/Config Files") -> None:
     """
     Add a button to *Settings/Config Files* (or some other menu)
     that opens a file in Porcupine when it's clicked.
@@ -341,7 +341,7 @@ def _fill_menus_with_default_stuff() -> None:
     def open_files() -> None:
         # paths is "" or tuple
         paths = filedialog.askopenfilenames(**filedialog_kwargs)
-        for path in map(pathlib.Path, paths):
+        for path in map(Path, paths):
             get_tab_manager().open_file(path)
 
     def save_file(save_as: bool) -> None:

@@ -8,9 +8,9 @@ import importlib
 import itertools
 import logging
 import os
-import pathlib
 import tkinter
 import traceback
+from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
@@ -31,7 +31,7 @@ def _find_duplicates(items: list[_T], key: Callable[[_T], str]) -> Iterable[list
     return [itemlist for itemlist in items_by_key.values() if len(itemlist) >= 2]
 
 
-def _short_ways_to_display_path(path: pathlib.Path) -> list[str]:
+def _short_ways_to_display_path(path: Path) -> list[str]:
     parts = str(path).split(os.sep)
     return [parts[-1], parts[-2] + os.sep + parts[-1]] + [
         first_part + os.sep + "..." + os.sep + parts[-1] for first_part in parts[:-2]
@@ -133,7 +133,7 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())
 
-    def open_file(self, path: pathlib.Path) -> FileTab | None:
+    def open_file(self, path: Path) -> FileTab | None:
         """Add a :class:`FileTab` for editing a file and select it.
 
         If the file can't be opened, this method displays an error to the user
@@ -390,7 +390,7 @@ restarting Porcupine.
 
 
 class _FileTabState(NamedTuple):
-    path: pathlib.Path | None
+    path: Path | None
     content: str | None
     saved_state: tuple[os.stat_result | None, int, str]
     cursor_pos: str
@@ -538,9 +538,7 @@ class FileTab(Tab):
         .. seealso:: The :virtevt:`PathChanged` virtual event.
     """
 
-    def __init__(
-        self, manager: TabManager, content: str = "", path: pathlib.Path | None = None
-    ) -> None:
+    def __init__(self, manager: TabManager, content: str = "", path: Path | None = None) -> None:
         super().__init__(manager)
 
         if path is None:
@@ -758,11 +756,11 @@ class FileTab(Tab):
         )
 
     @property
-    def path(self) -> pathlib.Path | None:
+    def path(self) -> Path | None:
         return self._path
 
     @path.setter
-    def path(self, new_path: pathlib.Path | None) -> None:
+    def path(self, new_path: Path | None) -> None:
         if new_path is not None:
             new_path = new_path.resolve()
 
@@ -801,7 +799,7 @@ class FileTab(Tab):
         # no was clicked, can be closed
         return True
 
-    def _do_the_save(self, path: pathlib.Path) -> bool:
+    def _do_the_save(self, path: Path) -> bool:
         self.event_generate("<<BeforeSave>>")
 
         while True:
@@ -878,7 +876,7 @@ class FileTab(Tab):
 
         return self._do_the_save(self.path)
 
-    def save_as(self, path: pathlib.Path | None = None) -> bool:
+    def save_as(self, path: Path | None = None) -> bool:
         """Ask the user where to save the file and save it there.
 
         Returns True if the file was saved, and False if the user
@@ -889,7 +887,7 @@ class FileTab(Tab):
             path_string = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
             if not path_string:  # it may be '' because tkinter
                 return False
-            path = pathlib.Path(path_string)
+            path = Path(path_string)
 
         # see equivalent()
         if any(

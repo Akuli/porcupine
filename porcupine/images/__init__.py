@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import atexit
-import pathlib
 import tkinter
+from pathlib import Path
 
 # __path__[0] is the directory where this __init__.py is
 __path__: list[str]
-images_dir = pathlib.Path(__path__[0]).absolute()
+images_dir = Path(__path__[0]).absolute()
 
 
 # tkinter images destroy themselves on __del__. here's how cpython exits:

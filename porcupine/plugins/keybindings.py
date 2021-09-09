@@ -1,15 +1,15 @@
 """Run keybindings.tcl and default_keybindings.tcl when Porcupine starts."""
 
-import pathlib
 import tkinter
+from pathlib import Path
 
 from porcupine import dirs, get_main_window, menubar
 
 
 def setup() -> None:
-    porcupine_dir = pathlib.Path(__file__).absolute().parent.parent
+    porcupine_dir = Path(__file__).absolute().parent.parent
     default_path = porcupine_dir / "default_keybindings.tcl"
-    user_path = pathlib.Path(dirs.user_config_dir) / "keybindings.tcl"
+    user_path = Path(dirs.user_config_dir) / "keybindings.tcl"
     menubar.add_config_file_button(user_path)
 
     try:
