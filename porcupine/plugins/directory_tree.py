@@ -150,18 +150,30 @@ class DirectoryTree(ttk.Treeview):
         if refresh:
             self.refresh()
 
-    def select_file(self, path: Path) -> None:
+    def find_project_id(self, item_id: str) -> str:
+        # Does not work for dummy items, because they don't use type:num:path scheme
+        num = item_id.split(":", maxsplit=2)[1]
+        [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
+        return result
+
+    def _find_project_id_by_path(self, path: Path) -> str | None:
         matching_projects = [
             project_id for project_id in self.get_children() if get_path(project_id) in path.parents
         ]
         if not matching_projects:
+            return None
+
+        # When opening ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
+        return max(matching_projects, key=(lambda id: len(str(get_path(id)))))
+
+    def select_file(self, path: Path) -> None:
+        project_id = self._find_project_id_by_path(path)
+        if project_id is None:
             # Happens when tab changes because a file was just opened. This
             # will be called soon once the project has been added.
             log.info(f"can't select '{path}' because there are no projects containing it")
             return
 
-        # When opening ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
-        project_id = max(matching_projects, key=(lambda id: len(str(get_path(id)))))
         project_root_path = get_path(project_id)
 
         # Find the visible sub-item representing the file
@@ -170,8 +182,9 @@ class DirectoryTree(ttk.Treeview):
         for part in path.relative_to(project_root_path).parts:
             subpath /= part
             if self.item(file_id, "open"):
-                file_id = self.get_id_from_path(subpath, project_id)
-                assert file_id is not None
+                mypy_sucks = self.get_id_from_path(subpath, project_id)
+                assert mypy_sucks is not None
+                file_id = mypy_sucks
             else:
                 # ...or a closed folder that contains the file
                 break
@@ -192,6 +205,15 @@ class DirectoryTree(ttk.Treeview):
         children = self.get_children(parent)
         return len(children) == 1 and self.tag_has("dummy", children[0])
 
+    def project_has_opened_tabs(self, project_id: str) -> bool:
+        assert project_id.startswith("project:")
+        return any(
+            isinstance(tab, tabs.FileTab)
+            and tab.path is not None
+            and self._find_project_id_by_path(tab.path) == project_id
+            for tab in get_tab_manager().tabs()
+        )
+
     def _hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(""):
             if not get_path(project_id).is_dir():
@@ -200,14 +222,14 @@ class DirectoryTree(ttk.Treeview):
         # To avoid getting rid of existing projects when not necessary, we do
         # shortening after deleting non-existent projects
         for project_id in reversed(self.get_children("")):
-            if len(self.get_children("")) > _MAX_PROJECTS and not any(
-                isinstance(tab, tabs.FileTab)
-                and tab.path is not None
-                and get_path(project_id) in tab.path.parents
-                for tab in get_tab_manager().tabs()
+            if len(self.get_children("")) > _MAX_PROJECTS and not self.project_has_opened_tabs(
+                project_id
             ):
                 self.delete(project_id)
 
+        self.save_project_list()
+
+    def save_project_list(self) -> None:
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
 
@@ -217,12 +239,6 @@ class DirectoryTree(ttk.Treeview):
         self.event_generate("<<RefreshBegins>>")
         for project_id in self.get_children():
             self._update_tags_and_content(get_path(project_id), project_id)
-
-    def find_project_id(self, item_id: str) -> str:
-        # Does not work for dummy items, because they don't use type:num:path scheme
-        num = item_id.split(":", maxsplit=2)[1]
-        [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
-        return result
 
     # The following two methods call each other recursively.
 
