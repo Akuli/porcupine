@@ -1,4 +1,4 @@
-"""File manager operations (delete, trash, rename, ...) when right-clicking directory tree."""
+"""File manager operations (delete, rename etc) when right-clicking directory tree."""
 from __future__ import annotations
 
 import logging
@@ -7,11 +7,11 @@ import sys
 import tkinter
 from functools import partial
 from pathlib import Path
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 
 from send2trash import send2trash
 
-from porcupine import get_tab_manager, tabs
+from porcupine import get_main_window, get_tab_manager, tabs
 from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
 
 setup_after = ["directory_tree"]
@@ -83,23 +83,70 @@ def delete(path: Path) -> None:
         )
 
 
+def _ask_name_for_renaming(old_path: Path) -> str | None:
+    label_width = 400
+
+    dialog = tkinter.Toplevel()
+    dialog.transient(get_main_window())
+    dialog.resizable(False, False)
+    dialog.title("Rename")
+
+    big_frame = ttk.Frame(dialog)
+    big_frame.pack(fill="both", expand=True)
+    ttk.Label(
+        big_frame, text=f"Enter a new name for {old_path.name}:", wraplength=label_width
+    ).pack(fill="x", padx=10, pady=10)
+
+    var = tkinter.StringVar()
+    entry = ttk.Entry(big_frame, textvariable=var)
+    entry.pack(pady=40)
+    entry.insert(0, old_path.name)
+
+    # TODO: git mv checkbox or radio buttons
+
+    button_frame = ttk.Frame(big_frame)
+    button_frame.pack(fill="x", pady=10)
+
+    new_path = None
+
+    def select_name() -> None:
+        nonlocal new_path
+        new_path = old_path.with_name(entry.get())
+        dialog.destroy()
+
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
+    cancel_button.pack(side="left", expand=True)
+    ok_button = ttk.Button(button_frame, text="OK", command=select_name, state="disabled")
+    ok_button.pack(side="right", expand=True)
+
+    def validate_name(*junk: object) -> None:
+        name = entry.get()
+        try:
+            possible_new_path = old_path.with_name(name)
+        except ValueError:
+            ok_button.config(state="disabled")
+            return
+
+        if possible_new_path.exists():
+            ok_button.config(state="disabled")
+        else:
+            ok_button.config(state="normal")
+
+    var.trace_add("write", validate_name)
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
+    entry.select_range(0, "end")
+    entry.focus()
+
+    dialog.wait_window()
+    return new_path
+
+
 def rename(old_path: Path) -> None:
     # TODO: checkbox to tell git about the change, checked by default
 
-    new_name = tkinter.simpledialog.askstring(
-        "Rename file", f"Enter a new name for {old_path.name}:", initialvalue=old_path.name
-    )
-    if new_name is None or new_name == old_path.name:
-        return
-
-    # TODO: would be nice to disable ok button instead
-    try:
-        new_path = old_path.with_name(new_name)  # can raise ValueError("Invalid name '/adf'")
-        if new_path.exists():
-            raise ValueError(f"There is already a file named {new_name}")
-    except ValueError as e:
-        # str(e) is e.g. "Invalid name '/adf'"
-        messagebox.showerror("Cannot rename", str(e) + ".")
+    new_path = _ask_name_for_renaming(old_path)
+    if new_path is None:
         return
 
     try:
