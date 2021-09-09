@@ -173,7 +173,8 @@ def rename(old_path: Path) -> None:
 def open_in_file_manager(path: Path) -> None:
     windowingsystem = get_main_window().tk.call("tk", "windowingsystem")
     if windowingsystem == "win32":
-        subprocess.check_call(["explorer.exe", str(path)])
+        # not check_call, explorer.exe exits with status 1 on success (lol)
+        subprocess.call(["explorer.exe", str(path)])
     elif windowingsystem == "x11":
         subprocess.check_call(["xdg-open", str(path)])
     else:
