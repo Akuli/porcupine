@@ -21,7 +21,7 @@ def add_hide_option(event: tkinter.Event[DirectoryTree]) -> None:
     tree.contextmenu.add_command(
         label="Hide this project",
         command=on_click,
-        state="disabled" if tree.project_has_opened_tabs(project_id) else "normal",
+        state="disabled" if tree.project_has_open_filetabs(project_id) else "normal",
     )
 
 

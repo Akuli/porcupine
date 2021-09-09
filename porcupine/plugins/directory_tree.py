@@ -205,7 +205,7 @@ class DirectoryTree(ttk.Treeview):
         children = self.get_children(parent)
         return len(children) == 1 and self.tag_has("dummy", children[0])
 
-    def project_has_opened_tabs(self, project_id: str) -> bool:
+    def project_has_open_filetabs(self, project_id: str) -> bool:
         assert project_id.startswith("project:")
         return any(
             isinstance(tab, tabs.FileTab)
@@ -222,7 +222,7 @@ class DirectoryTree(ttk.Treeview):
         # To avoid getting rid of existing projects when not necessary, we do
         # shortening after deleting non-existent projects
         for project_id in reversed(self.get_children("")):
-            if len(self.get_children("")) > _MAX_PROJECTS and not self.project_has_opened_tabs(
+            if len(self.get_children("")) > _MAX_PROJECTS and not self.project_has_open_filetabs(
                 project_id
             ):
                 self.delete(project_id)
