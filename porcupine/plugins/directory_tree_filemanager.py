@@ -77,7 +77,7 @@ def delete(path: Path) -> None:
             shutil.rmtree(path)
         else:
             path.unlink()
-    except Exception as e:
+    except OSError as e:
         log.exception(f"can't delete {path}")
         messagebox.showerror(
             "Deleting failed", f"Deleting {path} failed:\n\n{type(e).__name__}: {e}"
