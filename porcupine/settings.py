@@ -130,7 +130,7 @@ class Settings:
         calling :func:`set_` with a value that isn't a string or
         calling :func:`get` with the type set to something else than ``str``
         is an error. You can also provide a custom type with the *type*
-        argument, e.g. ``add_option('foo', None, Optional[Path])``.
+        argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
 
         If you are adding a global option (see :class:`Settings` for non-global
         options), use only JSON-safe types. Let me know if this limitation is
@@ -284,6 +284,7 @@ class Settings:
             foo = settings.get('something', str)
             reveal_type(foo)  # str
 
+            from pathlib import Path
             shitty_bar = settings.get('something', Optional[Path])
             reveal_type(shitty_bar)  # Any
 

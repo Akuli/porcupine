@@ -528,7 +528,7 @@ class FileTab(Tab):
         Things like :source:`the line number plugin <porcupine/plugins/linenumbers.py>` use this attribute.
 
     .. attribute:: path
-        :type: Path | None
+        :type: pathlib.Path | None
 
         The path where this file is currently saved.
 
