@@ -13,6 +13,7 @@ Most important features:
 - Jump to definition with Ctrl+click
 - [Langserver] support
 - [Editorconfig][] support
+- Git support
 - Compiling files inside the editor window
 - Running files in a separate terminal or command prompt window
 - Automatic indenting and trailing whitespace stripping when Enter is pressed

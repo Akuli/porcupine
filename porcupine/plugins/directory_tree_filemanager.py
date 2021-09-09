@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import shutil
+import subprocess
 import sys
 import tkinter
 from functools import partial
@@ -11,7 +12,7 @@ from tkinter import messagebox, ttk
 
 from send2trash import send2trash
 
-from porcupine import get_main_window, get_tab_manager, tabs
+from porcupine import get_main_window, get_tab_manager, tabs, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
 
 setup_after = ["directory_tree"]
@@ -83,7 +84,7 @@ def delete(path: Path) -> None:
         )
 
 
-def _ask_name_for_renaming(old_path: Path) -> str | None:
+def _ask_name_for_renaming(old_path: Path) -> Path | None:
     label_width = 400
 
     dialog = tkinter.Toplevel()
@@ -101,8 +102,6 @@ def _ask_name_for_renaming(old_path: Path) -> str | None:
     entry = ttk.Entry(big_frame, textvariable=var)
     entry.pack(pady=40)
     entry.insert(0, old_path.name)
-
-    # TODO: git mv checkbox or radio buttons
 
     button_frame = ttk.Frame(big_frame)
     button_frame.pack(fill="x", pady=10)
@@ -143,18 +142,28 @@ def _ask_name_for_renaming(old_path: Path) -> str | None:
 
 
 def rename(old_path: Path) -> None:
-    # TODO: checkbox to tell git about the change, checked by default
-
     new_path = _ask_name_for_renaming(old_path)
     if new_path is None:
         return
 
     try:
-        old_path.rename(new_path)
-    except OSError as e:
-        log.exception(f"renaming failed: {old_path} --> {new_path}")
-        messagebox.showerror("Renaming failed", str(e) + ".")
-        return
+        subprocess.check_call(
+            ["git", "mv", "--", old_path.name, new_path.name],
+            cwd=old_path.parent,
+            **utils.subprocess_kwargs,
+        )
+    except (OSError, subprocess.CalledProcessError) as e:
+        # Happens when:
+        #   - git not installed
+        #   - project doesn't use git
+        #   - old_path is not 'git add'ed
+        log.info("'git mv' failed, moving without git", exc_info=True)
+        try:
+            old_path.rename(new_path)
+        except OSError:
+            log.exception(f"renaming failed: {old_path} --> {new_path}")
+            messagebox.showerror("Renaming failed", str(e))
+            return
 
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
