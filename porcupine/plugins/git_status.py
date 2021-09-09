@@ -79,7 +79,7 @@ class ProjectColorer:
         self.project_id = project_id
         self.project_path = get_path(project_id)
         self.git_status_future: Future[dict[Path, str]] | None = None
-        self.coloring_queue: set[str] = set()
+        self.queue: set[str] = set()
 
     def start_running_git_status(self) -> None:
         self.git_status_future = git_pool.submit(partial(run_git_status, self.project_path))
@@ -88,7 +88,7 @@ class ProjectColorer:
         def check() -> None:
             if self.git_status_future is not None:
                 if self.git_status_future.done():
-                    self._handle_coloring_queue()
+                    self._handle_queue()
                 else:
                     self.tree.after(25, check)
 
@@ -138,9 +138,9 @@ class ProjectColorer:
             update_tree_selection_color(self.tree)
         return True
 
-    def _handle_coloring_queue(self) -> None:
-        while self.coloring_queue:
-            dir_id = self.coloring_queue.pop()
+    def _handle_queue(self) -> None:
+        while self.queue:
+            dir_id = self.queue.pop()
 
             if not self.tree.contains_dummy(dir_id):
                 tags_changed = False
@@ -154,10 +154,10 @@ class ProjectColorer:
                 self._set_tag(dir_id, self._choose_tag(get_path(dir_id)))
 
     def color_children_now_or_later(self, parent_id: str) -> None:
-        self.coloring_queue.add(parent_id)
+        self.queue.add(parent_id)
         assert self.git_status_future is not None
         if self.git_status_future.done():
-            self._handle_coloring_queue()
+            self._handle_queue()
 
 
 # not project-specific
@@ -192,7 +192,7 @@ class TreeColorer:
         for project_id in self.tree.get_children():
             colorer = ProjectColorer(self.tree, project_id)
             self.project_specific_colorers[project_id] = colorer
-            colorer.coloring_queue.add(project_id)
+            colorer.queue.add(project_id)
             colorer.start_running_git_status()
 
     def color_child_items(self, event: utils.EventWithData) -> None:
