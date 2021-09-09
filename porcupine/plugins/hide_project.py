@@ -9,7 +9,7 @@ setup_after = ["directory_tree"]
 
 
 def add_hide_option(event: tkinter.Event[DirectoryTree]) -> None:
-    tree: DirectoryTree = event.widget
+    tree = event.widget
     [project_id] = tree.selection()
     if not project_id.startswith("project:"):
         return

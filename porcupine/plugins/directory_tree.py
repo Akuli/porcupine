@@ -205,6 +205,7 @@ class DirectoryTree(ttk.Treeview):
         children = self.get_children(parent)
         return len(children) == 1 and self.tag_has("dummy", children[0])
 
+    # TODO: it's not great how only the directory tree knows this
     def project_has_open_filetabs(self, project_id: str) -> bool:
         assert project_id.startswith("project:")
         return any(
