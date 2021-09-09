@@ -227,8 +227,6 @@ class DirectoryTree(ttk.Treeview):
     # The following two methods call each other recursively.
 
     def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
-        self.event_generate("<<UpdateItemTags>>", data=child_id)
-
         if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
             self._open_and_refresh_directory(child_id)
 
@@ -243,11 +241,8 @@ class DirectoryTree(ttk.Treeview):
             self._insert_dummy(dir_id, text="(open as a separate project)", clear=True)
             return
 
-        path2id = {get_path(id): id for id in self.get_children(dir_id)}
         new_paths = set(dir_path.iterdir())
-        if not new_paths:
-            self._insert_dummy(dir_id, text="(empty)", clear=True)
-            return
+        path2id = {get_path(id): id for id in self.get_children(dir_id)}
 
         # TODO: handle changing directory to file
         for path in list(path2id.keys() - new_paths):
@@ -262,8 +257,7 @@ class DirectoryTree(ttk.Treeview):
             self.insert(dir_id, "end", item_id, text=path.name, open=False)
             path2id[path] = item_id
             if path.is_dir():
-                assert dir_path is not None
-                self._insert_dummy(path2id[path])
+                self._insert_dummy(item_id)
 
         project_id = self.find_project_id(dir_id)
         project_root = get_path(project_id)
@@ -271,8 +265,10 @@ class DirectoryTree(ttk.Treeview):
             self._update_tags_and_content(project_root, child_id)
         self.sort_folder_contents(dir_id)
 
-        # When binding to this event, make sure you delete all tags you created on previous update.
-        # Even though refersh() deletes tags, this method by itself doesn't.
+        if not self.get_children(dir_id):
+            self._insert_dummy(dir_id, text="(empty)")
+
+        # When binding, delete tags from previous call
         self.event_generate(
             "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
         )
