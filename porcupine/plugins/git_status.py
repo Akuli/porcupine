@@ -12,7 +12,12 @@ from pathlib import Path
 from typing import Any
 
 from porcupine import utils
-from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path, FolderRefreshed
+from porcupine.plugins.directory_tree import (
+    DirectoryTree,
+    FolderRefreshed,
+    get_directory_tree,
+    get_path,
+)
 
 setup_after = ["directory_tree"]
 
@@ -106,8 +111,7 @@ class ProjectColorer:
         substatuses = {
             s
             for p, s in path_to_status.items()
-            if s in {"git_added", "git_modified", "git_mergeconflict"}
-            and item_path in p.parents
+            if s in {"git_added", "git_modified", "git_mergeconflict"} and item_path in p.parents
         }
 
         if "git_mergeconflict" in substatuses:
@@ -241,11 +245,7 @@ def setup() -> None:
 
     main_colorer = TreeColorer(tree)
     tree.bind("<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True)
-    utils.bind_with_data(
-        tree,
-        "<<FolderRefreshed>>", main_colorer.color_child_items,
-        add=True,
-    )
+    utils.bind_with_data(tree, "<<FolderRefreshed>>", main_colorer.color_child_items, add=True)
 
     tree.sorting_keys.insert(0, partial(sorting_key, tree))
 
