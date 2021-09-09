@@ -22,8 +22,6 @@ if sys.platform == "win32":
 else:
     run_script = _this_dir / "bash_run.sh"
 
-CommandArgument = Union[str, Path]
-
 
 # getting this to work in powershell turned out to be hard :(
 def _run_in_windows_cmd(blue_message: str, workingdir: Path, command: list[str]) -> None:
