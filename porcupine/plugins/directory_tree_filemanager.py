@@ -170,6 +170,17 @@ def rename(old_path: Path) -> None:
         tab.path = new_path / tab.path.relative_to(old_path)
 
 
+def open_in_file_manager(path: Path) -> None:
+    windowingsystem = get_main_window().tk.call("tk", "windowingsystem")
+    if windowingsystem == "win32":
+        subprocess.check_call(["explorer.exe", str(path)])
+    elif windowingsystem == "x11":
+        subprocess.check_call(["xdg-open", str(path)])
+    else:
+        # not tested :(
+        subprocess.check_call(["open", str(path)])
+
+
 def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree: DirectoryTree = event.widget
     [item] = tree.selection()
@@ -183,6 +194,11 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
         tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
         tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
+
+    if path.is_dir():
+        tree.contextmenu.add_command(
+            label="Open in file manager", command=partial(open_in_file_manager, path)
+        )
 
 
 def setup() -> None:
