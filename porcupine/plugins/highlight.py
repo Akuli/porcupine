@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterator
 
 from pygments import styles, token
 from pygments.lexer import Lexer, LexerMeta, RegexLexer
+from pygments.lexers import MarkdownLexer
 
 from porcupine import get_tab_manager, settings, tabs, textutils, utils
 
@@ -96,9 +97,14 @@ class Highlighter:
         return True
 
     def _detect_root_state(self, generator: Any, end_location: str) -> bool:
+        assert self._lexer is not None
+
+        # below code buggy for markdown
+        if isinstance(self._lexer, MarkdownLexer):
+            return False
+
         # Only for subclasses of RegexLexer that don't override get_tokens_unprocessed
         # TODO: support ExtendedRegexLexer's context thing
-        assert self._lexer is not None
         if type(self._lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
             # Use local variables inside the generator (ugly hack)
             local_vars = generator.gi_frame.f_locals
