@@ -152,7 +152,7 @@ def rename(old_path: Path) -> None:
             cwd=old_path.parent,
             **utils.subprocess_kwargs,
         )
-    except (OSError, subprocess.CalledProcessError) as e:
+    except (OSError, subprocess.CalledProcessError):
         # Happens when:
         #   - git not installed
         #   - project doesn't use git
@@ -160,7 +160,7 @@ def rename(old_path: Path) -> None:
         log.info("'git mv' failed, moving without git", exc_info=True)
         try:
             old_path.rename(new_path)
-        except OSError:
+        except OSError as e:
             log.exception(f"renaming failed: {old_path} --> {new_path}")
             messagebox.showerror("Renaming failed", str(e))
             return
