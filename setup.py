@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import os
 import re
 import sys
 import tkinter
+from typing import Any, Iterator
 
 from setuptools import find_packages, setup
 
@@ -9,14 +12,14 @@ assert sys.version_info >= (3, 7), "Porcupine requires Python 3.7 or newer"
 assert tkinter.TkVersion >= 8.6, "Porcupine requires Tk 8.6 or newer"
 
 
-def get_requirements():
+def get_requirements() -> Iterator[str]:
     with open("requirements.txt", "r") as file:
         for line in map(str.strip, file):
             if (not line.startswith("#")) and line:
                 yield line
 
 
-def find_metadata():
+def find_metadata() -> dict[Any, Any]:
     with open(os.path.join("porcupine", "__init__.py")) as file:
         content = file.read()
 
@@ -26,10 +29,11 @@ def find_metadata():
     assert result.keys() == {"author", "copyright", "license"}, result
 
     # version is defined like this: __version__ = '%d.%d.%d' % version_info
-    version_info = re.search(
+    match = re.search(
         r"^version_info = \((\d+), (\d+), (\d+)\)", content, re.MULTILINE
-    ).groups()
-    result["version"] = "%s.%s.%s" % version_info
+    )
+    assert match is not None
+    result["version"] = "%s.%s.%s" % tuple(match.groups())
 
     return result
 
