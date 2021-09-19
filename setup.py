@@ -29,9 +29,7 @@ def find_metadata() -> dict[Any, Any]:
     assert result.keys() == {"author", "copyright", "license"}, result
 
     # version is defined like this: __version__ = '%d.%d.%d' % version_info
-    match = re.search(
-        r"^version_info = \((\d+), (\d+), (\d+)\)", content, re.MULTILINE
-    )
+    match = re.search(r"^version_info = \((\d+), (\d+), (\d+)\)", content, re.MULTILINE)
     assert match is not None
     result["version"] = "%s.%s.%s" % tuple(match.groups())
 
