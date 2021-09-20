@@ -15,7 +15,7 @@ import time
 import traceback
 from typing import Any, Iterable, List, Sequence
 
-import toposort  # type: ignore[import]
+import toposort
 
 from porcupine import get_main_window, settings
 from porcupine.plugins import __path__ as plugin_paths

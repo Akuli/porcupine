@@ -9,7 +9,7 @@ plugin API documentation:
 
 import sys
 
-import appdirs  # type: ignore[import]
+import appdirs
 
 version_info = (0, 97, 0)  # this is updated with scripts/release.py
 __version__ = "%d.%d.%d" % version_info

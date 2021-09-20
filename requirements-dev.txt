@@ -17,3 +17,5 @@ types-Send2Trash==1.8.0
 types-setuptools==57.4.0
 types-ttkthemes==3.2.0
 types-colorama==0.4.3
+types-appdirs==1.4.0
+types-toposort==1.6.0
