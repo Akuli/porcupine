@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 
-import colorama  # type: ignore[import]
+import colorama
 
 colorama.init()
 
