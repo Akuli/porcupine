@@ -12,7 +12,7 @@ from porcupine import get_main_window, menubar, settings
 
 # TODO: modernize this code a bit, so that it actually matches ttkthemes docs
 def setup() -> None:
-    style = ttkthemes.ThemedStyle(None)
+    style = ttkthemes.ThemedStyle()
 
     if get_main_window().tk.call("tk", "windowingsystem") == "x11":
         # Default theme sucks on linux
