@@ -83,9 +83,9 @@ event add "<<JumpToDefinition>>" <$contmand-ButtonRelease-1>
 event add "<<JumpToDefinition>>" <$contmand-Return>
 
 # filemanager plugin
+event add "<<FileManager:Rename>>" <F2>
 event add "<<FileManager:Trash>>" <Delete>
 event add "<<FileManager:Delete>>" <Shift-Delete>
-event add "<<FileManager:Rename>>" <F2>
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T

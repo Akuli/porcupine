@@ -36,60 +36,7 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
     ]
 
 
-def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
-    if not all(tab.can_be_closed() for tab in tabs_to_close):
-        return False
-
-    for tab in tabs_to_close:
-        get_tab_manager().close_tab(tab)
-    return True
-
-
-def trash(path: Path) -> None:
-    if path.is_dir():
-        message = f"Do you want to move {path.name} and everything inside it to {trash_name}?"
-    else:
-        message = f"Do you want to move {path.name} to {trash_name}?"
-
-    if not messagebox.askyesno(f"Move {path.name} to {trash_name}", message, icon="warning"):
-        return
-    if not close_tabs(find_tabs_by_parent_path(path)):
-        return
-
-    try:
-        send2trash(path)
-    except Exception as e:
-        log.exception(f"can't trash {path}")
-        messagebox.showerror(
-            f"Moving to {trash_name} failed",
-            f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
-        )
-
-
-def delete(path: Path) -> None:
-    if path.is_dir():
-        message = f"Do you want to permanently delete {path.name} and everything inside it?"
-    else:
-        message = f"Do you want to permanently delete {path.name}?"
-
-    if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
-        return
-    if not close_tabs(find_tabs_by_parent_path(path)):
-        return
-
-    try:
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-    except OSError as e:
-        log.exception(f"can't delete {path}")
-        messagebox.showerror(
-            "Deleting failed", f"Deleting {path} failed.\n\n{type(e).__name__}: {e}"
-        )
-
-
-def _ask_name_for_renaming(old_path: Path) -> Path | None:
+def ask_name_for_renaming(old_path: Path) -> Path | None:
     label_width = 400
 
     dialog = tkinter.Toplevel()
@@ -147,7 +94,7 @@ def _ask_name_for_renaming(old_path: Path) -> Path | None:
 
 
 def rename(old_path: Path) -> None:
-    new_path = _ask_name_for_renaming(old_path)
+    new_path = ask_name_for_renaming(old_path)
     if new_path is None:
         return
 
@@ -173,6 +120,59 @@ def rename(old_path: Path) -> None:
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
         tab.path = new_path / tab.path.relative_to(old_path)
+
+
+def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
+    if not all(tab.can_be_closed() for tab in tabs_to_close):
+        return False
+
+    for tab in tabs_to_close:
+        get_tab_manager().close_tab(tab)
+    return True
+
+
+def trash(path: Path) -> None:
+    if path.is_dir():
+        message = f"Do you want to move {path.name} and everything inside it to {trash_name}?"
+    else:
+        message = f"Do you want to move {path.name} to {trash_name}?"
+
+    if not messagebox.askyesno(f"Move {path.name} to {trash_name}", message, icon="warning"):
+        return
+    if not close_tabs(find_tabs_by_parent_path(path)):
+        return
+
+    try:
+        send2trash(path)
+    except Exception as e:
+        log.exception(f"can't trash {path}")
+        messagebox.showerror(
+            f"Moving to {trash_name} failed",
+            f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
+        )
+
+
+def delete(path: Path) -> None:
+    if path.is_dir():
+        message = f"Do you want to permanently delete {path.name} and everything inside it?"
+    else:
+        message = f"Do you want to permanently delete {path.name}?"
+
+    if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
+        return
+    if not close_tabs(find_tabs_by_parent_path(path)):
+        return
+
+    try:
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+    except OSError as e:
+        log.exception(f"can't delete {path}")
+        messagebox.showerror(
+            "Deleting failed", f"Deleting {path} failed.\n\n{type(e).__name__}: {e}"
+        )
 
 
 def open_in_file_manager(path: Path) -> None:
