@@ -84,6 +84,7 @@ event add "<<JumpToDefinition>>" <$contmand-Return>
 
 # filemanager plugin
 event add "<<FileManager:Trash>>" <Delete>
+event add "<<FileManager:Delete>>" <Shift-Delete>
 event add "<<FileManager:Rename>>" <F2>
 
 # more_plugins/terminal.py
