@@ -1,6 +1,7 @@
 """File manager operations (delete, rename etc) when right-clicking directory tree."""
 from __future__ import annotations
 
+import dataclasses
 import logging
 import shutil
 import subprocess
@@ -190,54 +191,56 @@ def open_in_file_manager(path: Path) -> None:
     subprocess.Popen([opener_command, str(path)], **utils.subprocess_kwargs)
 
 
-def get_usable_path(tree: DirectoryTree) -> Path | None:
+def get_selected_path(tree: DirectoryTree) -> Path | None:
     try:
         [item] = tree.selection()
     except ValueError:
         # nothing selected
         return None
+    return get_path(item)
 
-    path = get_path(item)
-    project_root = get_path(tree.find_project_id(item))
 
+def is_NOT_project_root(path: Path) -> bool:
+    return path not in map(get_path, get_directory_tree().get_children())
+
+
+@dataclasses.dataclass
+class Command:
+    name: str
+    virtual_event: str | None
+    condition: Callable[[Path], bool]
+    callback: Callable[[Path], None]
+
+    def run(self, event: tkinter.Event[DirectoryTree]) -> None:
+        path = get_selected_path(event.widget)
+        if path is not None and self.condition(path):
+            self.callback(path)
+
+
+commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
-    if path == project_root:
-        return None
-    return path
+    Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
+    Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
+    Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
+    Command("Open in file manager", None, (lambda p: p.is_dir()), open_in_file_manager),
+]
 
 
 def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree = event.widget
-    path = get_usable_path(tree)
+    path = get_selected_path(tree)
     if path is not None:
-        tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
-        tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
-        tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
-
-    if path.is_dir():
-        tree.contextmenu.add_command(
-            label="Open in file manager", command=partial(open_in_file_manager, path)
-        )
-
-
-def add_key_binding(tree: DirectoryTree, event_name: str, callback: Callable[[Path], None]) -> None:
-    def actual_callback(event: tkinter.Event[DirectoryTree]) -> str | None:
-        path = get_usable_path(tree)
-        if path is None:
-            return None
-
-        callback(path)
-        tree.focus(tree.selection()[0])
-        return 'break'
-
-    tree.bind(event_name, actual_callback, add=True)
+        for command in commands:
+            if command.condition(path):
+                tree.contextmenu.add_command(label=command.name, command=partial(command.callback, path))
 
 
 def setup() -> None:
     tree = get_directory_tree()
     tree.bind("<<PopulateContextMenu>>", populate_menu, add=True)
-    add_key_binding(tree, "<<FileManager:Trash>>", trash)
-    add_key_binding(tree, "<<FileManager:Delete>>", delete)
-    add_key_binding(tree, "<<FileManager:Rename>>", rename)  # FIXME: focus newly named item
+
+    for command in commands:
+        if command.virtual_event is not None:
+            tree.bind(command.virtual_event, command.run, add=True)
