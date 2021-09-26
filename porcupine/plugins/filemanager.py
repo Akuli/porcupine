@@ -9,6 +9,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
+from typing import Callable
 
 from send2trash import send2trash
 
@@ -189,16 +190,28 @@ def open_in_file_manager(path: Path) -> None:
     subprocess.Popen([opener_command, str(path)], **utils.subprocess_kwargs)
 
 
-def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
-    tree: DirectoryTree = event.widget
-    [item] = tree.selection()
+def get_usable_path(tree: DirectoryTree) -> Path | None:
+    try:
+        [item] = tree.selection()
+    except ValueError:
+        # nothing selected
+        return None
+
     path = get_path(item)
     project_root = get_path(tree.find_project_id(item))
 
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
-    if path != project_root:
+    if path == project_root:
+        return None
+    return path
+
+
+def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
+    tree = event.widget
+    path = get_usable_path(tree)
+    if path is not None:
         tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
         tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
         tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
@@ -209,5 +222,22 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         )
 
 
+def add_key_binding(tree: DirectoryTree, event_name: str, callback: Callable[[Path], None]) -> None:
+    def actual_callback(event: tkinter.Event[DirectoryTree]) -> str | None:
+        path = get_usable_path(tree)
+        if path is None:
+            return None
+
+        callback(path)
+        tree.focus(tree.selection()[0])
+        return 'break'
+
+    tree.bind(event_name, actual_callback, add=True)
+
+
 def setup() -> None:
-    get_directory_tree().bind("<<PopulateContextMenu>>", populate_menu, add=True)
+    tree = get_directory_tree()
+    tree.bind("<<PopulateContextMenu>>", populate_menu, add=True)
+    add_key_binding(tree, "<<FileManager:Trash>>", trash)
+    add_key_binding(tree, "<<FileManager:Delete>>", delete)
+    add_key_binding(tree, "<<FileManager:Rename>>", rename)  # FIXME: focus newly named item
