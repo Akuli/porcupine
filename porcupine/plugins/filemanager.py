@@ -234,7 +234,9 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     if path is not None:
         for command in commands:
             if command.condition(path):
-                tree.contextmenu.add_command(label=command.name, command=partial(command.callback, path))
+                tree.contextmenu.add_command(
+                    label=command.name, command=partial(command.callback, path)
+                )
 
 
 def setup() -> None:
