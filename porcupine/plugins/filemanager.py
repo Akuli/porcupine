@@ -44,6 +44,13 @@ def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
 
 
 def trash(path: Path) -> None:
+    if path.is_dir():
+        message = f"Do you want to move {path.name} and everything inside it to {trash_name}?"
+    else:
+        message = f"Do you want to move {path.name} to {trash_name}?"
+
+    if not messagebox.askyesno(f"Move {path.name} to {trash_name}", message, icon="warning"):
+        return
     if not close_tabs(find_tabs_by_parent_path(path)):
         return
 
@@ -55,10 +62,6 @@ def trash(path: Path) -> None:
             f"Moving to {trash_name} failed",
             f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
         )
-    else:
-        messagebox.showinfo(
-            f"Moving to {trash_name} succeeded", f"{path.name} was moved to {trash_name}."
-        )
 
 
 def delete(path: Path) -> None:
@@ -67,9 +70,9 @@ def delete(path: Path) -> None:
     else:
         message = f"Do you want to permanently delete {path.name}?"
 
-    if not close_tabs(find_tabs_by_parent_path(path)):
-        return
     if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
+        return
+    if not close_tabs(find_tabs_by_parent_path(path)):
         return
 
     try:
@@ -80,7 +83,7 @@ def delete(path: Path) -> None:
     except OSError as e:
         log.exception(f"can't delete {path}")
         messagebox.showerror(
-            "Deleting failed", f"Deleting {path} failed:\n\n{type(e).__name__}: {e}"
+            "Deleting failed", f"Deleting {path} failed.\n\n{type(e).__name__}: {e}"
         )
 
 
