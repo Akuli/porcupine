@@ -101,10 +101,6 @@ event add "<<PythonPrompt:Copy>>" <$contmand-C>
 event add "<<PythonPrompt:Clear>>" <$contmand-L>
 event add "<<PythonPrompt:SendEOF>>" <$contmand-d> <$contmand-D>
 
-# more_plugins/tetris.py
-event add "<<Tetris:NewGame>>" <F2>
-event add "<<Tetris:Pause>>" <p> <P>
-
 
 # Text widgets have confusing control-click behaviour by default. Disabling it
 # here makes control-click same as just click.

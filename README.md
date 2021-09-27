@@ -136,9 +136,6 @@ Because Porcupine is better.
 ### Is Porcupine based on IDLE?
 Of course not. IDLE is an awful mess that you should stay far away from.
 
-### Can I play tetris with Porcupine?
-Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
-
 ### Is Porcupine a toy project or is it meant to be a serious editor?
 Porcupine is meant to be a serious editor, in fact you might regret even touching it.
 https://www.youtube.com/watch?v=Y3iUoFkDKjU
