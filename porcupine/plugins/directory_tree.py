@@ -455,7 +455,7 @@ def setup() -> None:
     # TODO: invoking context menu from keyboard
     tree.bind("<Button-3>", tree._on_right_click, add=True)
 
-    tree.bind("<Key>", partial(tree._cycle_through_items), add=True)
+    tree.bind("<Key>", tree._cycle_through_items, add=True)
 
 
 # Used in other plugins
