@@ -50,14 +50,14 @@ Open a terminal and run these commands:
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
-    python3 -m porcupine
+    porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
 you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
 To run porcupine later, you need to activate the virtualenv before running it:
 
     source porcupine-venv/bin/activate
-    python3 -m porcupine
+    porcu
 
 You can uninstall Porcupine by deleting `porcupine-venv`.
 
@@ -71,14 +71,14 @@ Then run these commands:
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
-    python3 -m porcupine
+    porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
 you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
 To run porcupine later, you need to activate the virtualenv before running it:
 
     source porcupine-venv/bin/activate
-    python3 -m porcupine
+    porcu
 
 You can uninstall Porcupine by deleting `porcupine-venv`.
 
