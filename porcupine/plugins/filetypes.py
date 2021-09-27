@@ -55,7 +55,7 @@ def load_filetypes() -> None:
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
 """
             )
-    except (OSError, UnicodeError, tomli.TomlDecodeError):
+    except (OSError, UnicodeError, tomli.TOMLDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
 
     # tomli.load can take multiple file names, but it doesn't merge the configs
