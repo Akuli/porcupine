@@ -1,6 +1,7 @@
 """File manager operations (delete, rename etc) when right-clicking directory tree."""
 from __future__ import annotations
 
+import dataclasses
 import logging
 import shutil
 import subprocess
@@ -9,6 +10,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
+from typing import Callable
 
 from send2trash import send2trash
 
@@ -34,57 +36,7 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
     ]
 
 
-def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
-    if not all(tab.can_be_closed() for tab in tabs_to_close):
-        return False
-
-    for tab in tabs_to_close:
-        get_tab_manager().close_tab(tab)
-    return True
-
-
-def trash(path: Path) -> None:
-    if not close_tabs(find_tabs_by_parent_path(path)):
-        return
-
-    try:
-        send2trash(path)
-    except Exception as e:
-        log.exception(f"can't trash {path}")
-        messagebox.showerror(
-            f"Moving to {trash_name} failed",
-            f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
-        )
-    else:
-        messagebox.showinfo(
-            f"Moving to {trash_name} succeeded", f"{path.name} was moved to {trash_name}."
-        )
-
-
-def delete(path: Path) -> None:
-    if path.is_dir():
-        message = f"Do you want to permanently delete {path.name} and everything inside it?"
-    else:
-        message = f"Do you want to permanently delete {path.name}?"
-
-    if not close_tabs(find_tabs_by_parent_path(path)):
-        return
-    if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
-        return
-
-    try:
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-    except OSError as e:
-        log.exception(f"can't delete {path}")
-        messagebox.showerror(
-            "Deleting failed", f"Deleting {path} failed:\n\n{type(e).__name__}: {e}"
-        )
-
-
-def _ask_name_for_renaming(old_path: Path) -> Path | None:
+def ask_name_for_renaming(old_path: Path) -> Path | None:
     label_width = 400
 
     dialog = tkinter.Toplevel()
@@ -142,7 +94,7 @@ def _ask_name_for_renaming(old_path: Path) -> Path | None:
 
 
 def rename(old_path: Path) -> None:
-    new_path = _ask_name_for_renaming(old_path)
+    new_path = ask_name_for_renaming(old_path)
     if new_path is None:
         return
 
@@ -170,6 +122,59 @@ def rename(old_path: Path) -> None:
         tab.path = new_path / tab.path.relative_to(old_path)
 
 
+def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
+    if not all(tab.can_be_closed() for tab in tabs_to_close):
+        return False
+
+    for tab in tabs_to_close:
+        get_tab_manager().close_tab(tab)
+    return True
+
+
+def trash(path: Path) -> None:
+    if path.is_dir():
+        message = f"Do you want to move {path.name} and everything inside it to {trash_name}?"
+    else:
+        message = f"Do you want to move {path.name} to {trash_name}?"
+
+    if not messagebox.askyesno(f"Move {path.name} to {trash_name}", message, icon="warning"):
+        return
+    if not close_tabs(find_tabs_by_parent_path(path)):
+        return
+
+    try:
+        send2trash(path)
+    except Exception as e:
+        log.exception(f"can't trash {path}")
+        messagebox.showerror(
+            f"Moving to {trash_name} failed",
+            f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
+        )
+
+
+def delete(path: Path) -> None:
+    if path.is_dir():
+        message = f"Do you want to permanently delete {path.name} and everything inside it?"
+    else:
+        message = f"Do you want to permanently delete {path.name}?"
+
+    if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
+        return
+    if not close_tabs(find_tabs_by_parent_path(path)):
+        return
+
+    try:
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+    except OSError as e:
+        log.exception(f"can't delete {path}")
+        messagebox.showerror(
+            "Deleting failed", f"Deleting {path} failed.\n\n{type(e).__name__}: {e}"
+        )
+
+
 def open_in_file_manager(path: Path) -> None:
     windowingsystem = get_main_window().tk.call("tk", "windowingsystem")
     if windowingsystem == "win32":
@@ -186,25 +191,58 @@ def open_in_file_manager(path: Path) -> None:
     subprocess.Popen([opener_command, str(path)], **utils.subprocess_kwargs)
 
 
-def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
-    tree: DirectoryTree = event.widget
-    [item] = tree.selection()
-    path = get_path(item)
-    project_root = get_path(tree.find_project_id(item))
+def get_selected_path(tree: DirectoryTree) -> Path | None:
+    try:
+        [item] = tree.selection()
+    except ValueError:
+        # nothing selected
+        return None
+    return get_path(item)
 
+
+@dataclasses.dataclass
+class Command:
+    name: str
+    virtual_event_name: str | None
+    condition: Callable[[Path], bool]
+    callback: Callable[[Path], None]
+
+    def run(self, event: tkinter.Event[DirectoryTree]) -> None:
+        path = get_selected_path(event.widget)
+        if path is not None and self.condition(path):
+            self.callback(path)
+
+
+def is_NOT_project_root(path: Path) -> bool:
+    return path not in map(get_path, get_directory_tree().get_children())
+
+
+commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
-    if path != project_root:
-        tree.contextmenu.add_command(label="Rename", command=partial(rename, path))
-        tree.contextmenu.add_command(label=f"Move to {trash_name}", command=partial(trash, path))
-        tree.contextmenu.add_command(label="Delete", command=partial(delete, path))
+    Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
+    Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
+    Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
+    Command("Open in file manager", None, (lambda p: p.is_dir()), open_in_file_manager),
+]
 
-    if path.is_dir():
-        tree.contextmenu.add_command(
-            label="Open in file manager", command=partial(open_in_file_manager, path)
-        )
+
+def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
+    tree = event.widget
+    path = get_selected_path(tree)
+    if path is not None:
+        for command in commands:
+            if command.condition(path):
+                tree.contextmenu.add_command(
+                    label=command.name, command=partial(command.callback, path)
+                )
 
 
 def setup() -> None:
-    get_directory_tree().bind("<<PopulateContextMenu>>", populate_menu, add=True)
+    tree = get_directory_tree()
+    tree.bind("<<PopulateContextMenu>>", populate_menu, add=True)
+
+    for command in commands:
+        if command.virtual_event_name is not None:
+            tree.bind(command.virtual_event_name, command.run, add=True)
