@@ -177,3 +177,33 @@ def test_home_folder_displaying():
     assert _stringify_path(Path.home()) == "~"
     assert _stringify_path(Path.home() / "lol") in ["~/lol", r"~\lol"]
     assert "~" not in _stringify_path(Path.home().parent / "asdfggg")
+
+
+def test_cycling_through_items(tree, tmp_path, tabmanager):
+    (tmp_path / "README").touch()
+    (tmp_path / "foo.txt").touch()
+    (tmp_path / "bar.txt").touch()
+    (tmp_path / "baz.txt").touch()
+
+    tree.add_project(tmp_path)
+    [project_id] = [id for id in tree.get_children("") if get_path(id) == tmp_path]
+    open_as_if_user_clicked(tree, project_id)
+    open_as_if_user_clicked(tree, tree.get_children(project_id)[0])
+
+    tree.update()
+    tree.focus_force()
+
+    tree.event_generate("f")
+    assert get_path(tree.selection()[0]) == tmp_path / "foo.txt"
+    tree.event_generate("b")
+    assert get_path(tree.selection()[0]) == tmp_path / "bar.txt"
+    tree.event_generate("b")
+    assert get_path(tree.selection()[0]) == tmp_path / "baz.txt"
+    tree.event_generate("b")
+    assert get_path(tree.selection()[0]) == tmp_path / "bar.txt"
+    tree.event_generate("R")
+    assert get_path(tree.selection()[0]) == tmp_path / "README"
+    tree.event_generate("R")
+    assert get_path(tree.selection()[0]) == tmp_path / "README"
+    tree.event_generate("x")
+    assert get_path(tree.selection()[0]) == tmp_path / "README"

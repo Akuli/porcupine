@@ -339,7 +339,31 @@ class DirectoryTree(ttk.Treeview):
             return result
         return None
 
-    # TODO: invoking context menu from keyboard
+    def _cycle_through_items(self, event: tkinter.Event[DirectoryTree]) -> None:
+        if len(event.char) != 1:
+            return
+
+        try:
+            [item] = self.selection()
+        except ValueError:  # nothing selected
+            return
+
+        children = [
+            c
+            for c in self.get_children(self.parent(item))
+            if self.item(c, "text").startswith(event.char)
+        ]
+        if not children:
+            return
+
+        try:
+            index = (children.index(item) + 1) % len(children)
+        except ValueError:
+            index = 0
+
+        self.set_the_selection_correctly(children[index])
+        self.see(children[index])
+
     def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
 
@@ -432,7 +456,10 @@ def setup() -> None:
     tree.refresh()
 
     # TODO: mac right click = button 2?
+    # TODO: invoking context menu from keyboard
     tree.bind("<Button-3>", tree._on_right_click, add=True)
+
+    tree.bind("<Key>", tree._cycle_through_items, add=True)
 
 
 # Used in other plugins
