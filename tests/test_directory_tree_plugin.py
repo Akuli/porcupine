@@ -205,3 +205,5 @@ def test_cycling_through_items(tree, tmp_path, tabmanager):
     assert get_path(tree.selection()[0]) == tmp_path / "README"
     tree.event_generate("R")
     assert get_path(tree.selection()[0]) == tmp_path / "README"
+    tree.event_generate("x")
+    assert get_path(tree.selection()[0]) == tmp_path / "README"
