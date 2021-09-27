@@ -37,12 +37,12 @@ def load_filetypes() -> None:
     user_path = Path(dirs.user_config_dir) / "filetypes.toml"
     defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
-    with defaults_path.open(encoding='utf-8') as defaults_file:
+    with defaults_path.open('rb') as defaults_file:
         filetypes.update(tomli.load(defaults_file))
 
     user_filetypes: dict[str, FileType] = {}
     try:
-        with user_path.open(encoding='utf-8') as user_file:
+        with user_path.open('rb') as user_file:
             user_filetypes = tomli.load(user_file)
     except FileNotFoundError:
         log.info(f"'{user_path}' not found, creating")
