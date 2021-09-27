@@ -756,7 +756,6 @@ def _is_monospace(font_family: str) -> bool:
     tcl_interpreter = get_dialog_content().tk
 
     # https://core.tcl-lang.org/tk/info/3767882e06
-    
     if "emoji" in font_family.lower():
         return False
 
