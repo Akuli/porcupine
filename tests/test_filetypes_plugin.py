@@ -23,8 +23,6 @@ filename_patterns = ["mako-templates/*.html"]
 pygments_lexer = 'pygments.lexers.MakoHtmlLexer'
 
 ["C++".langserver]
-command = "clangd"
-language_id = "cpp"
 settings = {clangd = {arguments = ["-std=c++17"]}}
 """
     )
