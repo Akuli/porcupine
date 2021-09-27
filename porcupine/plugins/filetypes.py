@@ -9,7 +9,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict
 
-import toml
+import tomli
 from pygments import lexers
 from pygments.util import ClassNotFound
 
@@ -37,11 +37,13 @@ def load_filetypes() -> None:
     user_path = Path(dirs.user_config_dir) / "filetypes.toml"
     defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
-    filetypes.update(toml.load(defaults_path))
+    with defaults_path.open("rb") as defaults_file:
+        filetypes.update(tomli.load(defaults_file))
 
     user_filetypes: dict[str, FileType] = {}
     try:
-        user_filetypes = dict(toml.load(user_path))
+        with user_path.open("rb") as user_file:
+            user_filetypes = tomli.load(user_file)
     except FileNotFoundError:
         log.info(f"'{user_path}' not found, creating")
         with user_path.open("x") as file:  # error if exists
@@ -53,10 +55,9 @@ def load_filetypes() -> None:
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
 """
             )
-    except (OSError, UnicodeError, toml.TomlDecodeError):
+    except (OSError, UnicodeError, tomli.TOMLDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
 
-    # toml.load can take multiple file names, but it doesn't merge the configs
     for name, updates in user_filetypes.items():
         filetypes.setdefault(name, {}).update(updates)
 

@@ -9,6 +9,6 @@ black>=21.5b2
 # typing.Literal is new in python 3.8
 typing_extensions
 dacite>=1.5.1,<2.0.0
-toml
+tomli==1.2.1
 ttkthemes>=3.0.0
 send2trash>=1.8.0,<2.0.0

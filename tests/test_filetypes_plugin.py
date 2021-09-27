@@ -1,4 +1,6 @@
 import logging
+import pickle
+import shutil
 import sys
 from pathlib import Path
 from tkinter import filedialog
@@ -17,9 +19,14 @@ def custom_filetypes():
 
     user_filetypes.write_text(
         """
-['Mako template']
+["Mako template"]
 filename_patterns = ["mako-templates/*.html"]
 pygments_lexer = 'pygments.lexers.MakoHtmlLexer'
+
+["C++".langserver]
+command = "clangd"
+language_id = "cpp"
+settings = {clangd = {arguments = ["-std=c++17"]}}
 """
     )
     filetypes.load_filetypes()
@@ -90,3 +97,10 @@ def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
     for filetype_name, patterns in filedialog_kwargs["filetypes"]:
         for pattern in patterns:
             assert "/" not in pattern
+
+
+@pytest.mark.skipif(shutil.which("clangd") is None, reason="example config uses clangd")
+def test_cplusplus_toml_bug(tmp_path, tabmanager, custom_filetypes):
+    (tmp_path / "foo.cpp").touch()
+    tab = tabmanager.open_file(tmp_path / "foo.cpp")
+    pickle.dumps(tab.get_state())  # should not raise an error
