@@ -325,6 +325,7 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], Any] | None = 
 
     menu_path, item_text = _split_parent(path)
     get_menu(menu_path).add_command(label=item_text, command=command)
+    set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
 
 
 # TODO: pluginify?
