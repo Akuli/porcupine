@@ -356,7 +356,9 @@ class DirectoryTree(ttk.Treeview):
             index = (children.index(item) + 1) % len(children)
         except ValueError:
             index = 0
+
         self.set_the_selection_correctly(children[index])
+        self.see(children[index])
 
     def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
