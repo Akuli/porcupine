@@ -47,11 +47,19 @@ Open a terminal and run these commands:
     sudo apt install python3-tk python3-pip
     sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
     python3 -m pip install --user --upgrade pip wheel
+    python3 -m venv porcupine-venv
+    source porcupine-venv/bin/activate
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
-    python3 -m porcupine
+    porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
 you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
+To run porcupine later, you need to activate the virtualenv before running it:
+
+    source porcupine-venv/bin/activate
+    porcu
+
+You can uninstall Porcupine by deleting `porcupine-venv`.
 
 ### Other Linux distributions
 
@@ -60,11 +68,19 @@ If you want drag and drop support, also install tkdnd for the Tcl interpreter th
 Then run these commands:
 
     python3 -m pip install --user --upgrade pip wheel
+    python3 -m venv porcupine-venv
+    source porcupine-venv/bin/activate
     python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
-    python3 -m porcupine
+    porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
 you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
+To run porcupine later, you need to activate the virtualenv before running it:
+
+    source porcupine-venv/bin/activate
+    porcu
+
+You can uninstall Porcupine by deleting `porcupine-venv`.
 
 ### Mac OSX
 
