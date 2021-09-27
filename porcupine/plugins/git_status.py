@@ -124,7 +124,7 @@ class ProjectColorer:
         # process should be done, result available immediately
         assert self._git_status_future is not None
         path_to_status = self._git_status_future.result(timeout=0)
-        return path_to_status.get(item_path)
+        return path_to_status.get(item_path, None)
 
     def _set_tag(self, item_id: str, git_tag: str | None) -> bool:
         old_tags = set(self.tree.item(item_id, "tags"))
