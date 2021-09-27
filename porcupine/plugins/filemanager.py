@@ -200,14 +200,10 @@ def get_selected_path(tree: DirectoryTree) -> Path | None:
     return get_path(item)
 
 
-def is_NOT_project_root(path: Path) -> bool:
-    return path not in map(get_path, get_directory_tree().get_children())
-
-
 @dataclasses.dataclass
 class Command:
     name: str
-    virtual_event: str | None
+    virtual_event_name: str | None
     condition: Callable[[Path], bool]
     callback: Callable[[Path], None]
 
@@ -215,6 +211,10 @@ class Command:
         path = get_selected_path(event.widget)
         if path is not None and self.condition(path):
             self.callback(path)
+
+
+def is_NOT_project_root(path: Path) -> bool:
+    return path not in map(get_path, get_directory_tree().get_children())
 
 
 commands = [
@@ -244,5 +244,5 @@ def setup() -> None:
     tree.bind("<<PopulateContextMenu>>", populate_menu, add=True)
 
     for command in commands:
-        if command.virtual_event is not None:
-            tree.bind(command.virtual_event, command.run, add=True)
+        if command.virtual_event_name is not None:
+            tree.bind(command.virtual_event_name, command.run, add=True)
