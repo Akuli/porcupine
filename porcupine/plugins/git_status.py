@@ -50,7 +50,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
             log.debug(f"git status failed in {project_root}: {run_result}")
             return {}
 
-    except (OSError, UnicodeError):
+    except (OSError, UnicodeError, subprocess.TimeoutExpired):
         log.warning("can't run git", exc_info=True)
         return {}
 
