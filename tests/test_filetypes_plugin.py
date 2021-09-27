@@ -1,5 +1,6 @@
 import logging
 import pickle
+import shutil
 import sys
 from pathlib import Path
 from tkinter import filedialog
@@ -98,6 +99,7 @@ def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
             assert "/" not in pattern
 
 
+@pytest.mark.skipif(shutil.which("clangd") is None, reason="example config uses clangd")
 def test_cplusplus_toml_bug(tmp_path, tabmanager, custom_filetypes):
     (tmp_path / "foo.cpp").touch()
     tab = tabmanager.open_file(tmp_path / "foo.cpp")
