@@ -1,4 +1,4 @@
-"""Toggles between the ❚ and | cursor state of the textwidgets."""
+"""Adds a setting to show the cursor as a block instead of a thin line."""
 from __future__ import annotations
 
 from porcupine import get_tab_manager, settings, tabs
