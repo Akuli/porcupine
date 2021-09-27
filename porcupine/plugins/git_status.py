@@ -78,6 +78,8 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
         if status in {"git_added", "git_modified", "git_mergeconflict"}:
             for folder in path.parents:
                 folder_to_content_statuses.setdefault(folder, set()).add(status)
+                if folder == project_root:
+                    break
 
     assert not (folder_to_content_statuses.keys() & result.keys())
 
