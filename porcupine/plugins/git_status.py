@@ -70,6 +70,29 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
             result[path] = "git_mergeconflict"
         else:
             log.warning(f"unknown git status line: {repr(line)}")
+
+    # When a folder contains files with different statuses, decide status of folder
+    # There can be lots of statuses, not good to loop through them in gui thread
+    folder_to_content_statuses: dict[Path, set[str]] = {}
+    for path, status in result.items():
+        if status in {"git_added", "git_modified", "git_mergeconflict"}:
+            for folder in path.parents:
+                folder_to_content_statuses.setdefault(folder, set()).add(status)
+                if folder == project_root:
+                    break
+
+    assert not (folder_to_content_statuses.keys() & result.keys())
+
+    for folder, content_statuses in folder_to_content_statuses.items():
+        if "git_mergeconflict" in content_statuses:
+            result[folder] = "git_mergeconflict"
+        elif "git_modified" in content_statuses:
+            result[folder] = "git_modified"
+        elif "git_added" in content_statuses:
+            result[folder] = "git_added"
+        else:
+            raise RuntimeError("this shouldn't happen")
+
     return result
 
 
@@ -78,16 +101,16 @@ class ProjectColorer:
         self.tree = tree
         self.project_id = project_id
         self.project_path = get_path(project_id)
-        self.git_status_future: Future[dict[Path, str]] | None = None
         self.queue: set[str] = set()
+        self._git_status_future: Future[dict[Path, str]] | None = None
 
     def start_running_git_status(self) -> None:
-        self.git_status_future = git_pool.submit(partial(run_git_status, self.project_path))
+        self._git_status_future = git_pool.submit(partial(run_git_status, self.project_path))
 
         # Handle queue contents when it has completed
         def check() -> None:
-            if self.git_status_future is not None:
-                if self.git_status_future.done():
+            if self._git_status_future is not None:
+                if self._git_status_future.done():
                     self._handle_queue()
                 else:
                     self.tree.after(25, check)
@@ -95,34 +118,13 @@ class ProjectColorer:
         check()
 
     def stop(self) -> None:
-        self.git_status_future = None
+        self._git_status_future = None
 
     def _choose_tag(self, item_path: Path) -> str | None:
         # process should be done, result available immediately
-        assert self.git_status_future is not None
-        path_to_status = self.git_status_future.result(timeout=0)
-
-        for path, status in path_to_status.items():
-            # use status of a folder also for its contents
-            if path == item_path or path in item_path.parents:
-                return status
-
-        # Handle directories containing files with different statuses
-        substatuses = {
-            s
-            for p, s in path_to_status.items()
-            if s in {"git_added", "git_modified", "git_mergeconflict"} and item_path in p.parents
-        }
-
-        if "git_mergeconflict" in substatuses:
-            return "git_mergeconflict"
-        if "git_modified" in substatuses:
-            return "git_modified"
-        if "git_added" in substatuses:
-            return "git_added"
-
-        assert not substatuses
-        return None
+        assert self._git_status_future is not None
+        path_to_status = self._git_status_future.result(timeout=0)
+        return path_to_status.get(item_path, None)
 
     def _set_tag(self, item_id: str, git_tag: str | None) -> bool:
         old_tags = set(self.tree.item(item_id, "tags"))
@@ -155,8 +157,8 @@ class ProjectColorer:
 
     def color_children_now_or_later(self, parent_id: str) -> None:
         self.queue.add(parent_id)
-        assert self.git_status_future is not None
-        if self.git_status_future.done():
+        assert self._git_status_future is not None
+        if self._git_status_future.done():
             self._handle_queue()
 
 
