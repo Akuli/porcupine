@@ -348,7 +348,11 @@ class DirectoryTree(ttk.Treeview):
         except ValueError:  # nothing selected
             return
 
-        children = [c for c in self.get_children(self.parent(item)) if self.item(c, 'text').startswith(event.char)]
+        children = [
+            c
+            for c in self.get_children(self.parent(item))
+            if self.item(c, "text").startswith(event.char)
+        ]
         if not children:
             return
 
