@@ -177,9 +177,12 @@ tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
 commands = {run = "{python} {file}"}
-langserver = {command = "{porcupine_python} -m pyls", language_id = "python"}
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
+
+[Python.langserver]
+command = "{porcupine_python} -m pyls"
+language_id = "python"
 
 [Python.langserver.settings.pyls.plugins.jedi]
 environment = "{python_venv}"
@@ -198,7 +201,6 @@ autoindent_regexes = {indent = '.*:'}
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
 commands = {compile = "cc {file} -Wall -Wextra -std=c99 -o {exe}", run = "{exe}"}
-langserver = {command = "clangd", language_id = "c"}
 comment_prefix = '//'
 # Press shift+enter instead of enter to avoid indent after 'case foo:'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
@@ -208,9 +210,16 @@ autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case
 filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
 pygments_lexer = "pygments.lexers.CppLexer"
 commands = {compile = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}", run = "{exe}"}
-langserver = {command = "clangd", language_id = "cpp"}
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+[C.langserver]
+command = "clangd"
+language_id = "c"
+
+["C++".langserver]
+command = "clangd"
+language_id = "cpp"
 
 [Java]
 filename_patterns = ["*.java"]
