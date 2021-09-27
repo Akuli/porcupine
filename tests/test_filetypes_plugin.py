@@ -1,10 +1,10 @@
 import logging
+import pickle
 import sys
 from pathlib import Path
 from tkinter import filedialog
 
 import pytest
-import pickle
 
 from porcupine import dirs, filedialog_kwargs, get_main_window
 from porcupine.plugins import filetypes
