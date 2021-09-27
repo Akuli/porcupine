@@ -16,7 +16,6 @@ Installing these plugins is easy:
 | ----------------- | --------------------------------------------------------- | ----- |
 | pythonprompt.py   | Simple `>>>` prompt tab.                                  |       |
 | terminal.py       | Run a terminal inside Porcupine as a tab.                 | 1.    |
-| tetris.py         | Fun tetris game.                                          |       |
 
 Notes:
 
