@@ -4,14 +4,16 @@ and other details that don't affect using Porcupine.
 
 ## v0.98.0
 
-New features (all in the directory tree):
-- The directory tree now acts as more of a file manager than before.
-    You can right-click files and folders to e.g. rename or delete them.
-- You can now type a character to navigate.
-    For example, pressing the `a` key cycles through all files in the selected directory
-    whose name starts with `a`.
-- Right-clicking a project now offers you an option to hide it from the directory tree.
-    It will appear again when you open a file inside the project.
+New features:
+- From now on, the relevant parts of this changelog should appear on the releases page on GitHub.
+- Several new features in the directory tree:
+    - The directory tree now acts as more of a file manager than before.
+        You can right-click files and folders to e.g. rename or delete them.
+    - You can now type a character to navigate.
+        For example, pressing the `a` key cycles through all files in the selected directory
+        whose name starts with `a`.
+    - Right-clicking a project now offers you an option to hide it from the directory tree.
+        It will appear again when you open a file inside the project.
 
 Bug fixes:
 - Syntax highlighting now works in code blocks of Markdown files.
@@ -29,7 +31,6 @@ Bug fixes:
     regardless of what is configured in `filetypes.toml`.
 
 Other changes:
-- From now on, the relevant parts of this changelog should appear on the releases page on GitHub.
 - The Windows installer is slightly smaller than before, 19.2MB instead of 22.7MB.
 - The tetris plugin was deleted.
     It was never included by default,
