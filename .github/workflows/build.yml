@@ -55,6 +55,8 @@ jobs:
         name: windows-exe
     - id: get_version
       uses: battila7/get-version-action@v2
+    - run: |
+        sed -n "/^## ${{ steps.get_version.outputs.version }}/,/^## /p" CHANGELOG.md | grep -v '^## ' | tee changelog_part.md
     - id: create_release
       uses: actions/create-release@v1.0.0
       env:
@@ -62,6 +64,7 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: ${{ github.ref }}
+        body_path: changelog_part.md
     - uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
