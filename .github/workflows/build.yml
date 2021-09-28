@@ -50,6 +50,8 @@ jobs:
     needs: [windows-build, docs]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+    # checking needed to get changelog
+    - uses: actions/checkout@v2
     - uses: actions/download-artifact@v2
       with:
         name: windows-exe
