@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     # https://stackoverflow.com/a/58478262
     needs: [windows-build, docs, changelog]
-    if: startsWith(github.ref, 'refs/tags/v')
+#    if: startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/download-artifact@v2
       with:
@@ -68,21 +68,22 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: changelog
-    - id: get_version
-      uses: battila7/get-version-action@v2
-    - id: create_release
-      uses: actions/create-release@v1.0.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
-        body_path: changelog_part.md
-    - uses: actions/upload-release-asset@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
-        asset_name: PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
-        asset_content_type: application/vnd.microsoft.portable-executable
+    - run: ls
+#    - id: get_version
+#      uses: battila7/get-version-action@v2
+#    - id: create_release
+#      uses: actions/create-release@v1.0.0
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        tag_name: ${{ github.ref }}
+#        release_name: ${{ github.ref }}
+#        body_path: changelog_part.md
+#    - uses: actions/upload-release-asset@v1.0.1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }}
+#        asset_path: PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
+#        asset_name: PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
+#        asset_content_type: application/vnd.microsoft.portable-executable
