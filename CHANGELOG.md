@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## UNRELEASED
+## v0.98.0
 
 New features (all in the directory tree):
 - The directory tree now acts as more of a file manager than before.
