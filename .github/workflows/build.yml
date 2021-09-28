@@ -44,21 +44,31 @@ jobs:
         branch: gh-pages
         folder: build
 
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: |
+        sed -n "/^## ${{ steps.get_version.outputs.version }}/,/^## /p" CHANGELOG.md | grep -v '^## ' | tee changelog_part.md
+    - uses: actions/upload-artifact@v2
+      with:
+        name: changelog
+        path: changelog_part.md
+
   release:
     runs-on: ubuntu-latest
     # https://stackoverflow.com/a/58478262
-    needs: [windows-build, docs]
+    needs: [windows-build, docs, changelog]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-    # checking needed to get changelog
-    - uses: actions/checkout@v2
     - uses: actions/download-artifact@v2
       with:
         name: windows-exe
+    - uses: actions/download-artifact@v2
+      with:
+        name: changelog
     - id: get_version
       uses: battila7/get-version-action@v2
-    - run: |
-        sed -n "/^## ${{ steps.get_version.outputs.version }}/,/^## /p" CHANGELOG.md | grep -v '^## ' | tee changelog_part.md
     - id: create_release
       uses: actions/create-release@v1.0.0
       env:
