@@ -49,7 +49,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - run: |
-        sed -n "/^## ${{ steps.get_version.outputs.version }}/,/^## /p" CHANGELOG.md | grep -v '^## ' | tee changelog_part.md
+        # https://stackoverflow.com/a/20943815
+        awk '/^## / { p++ } (p==1 && q++) { print }' CHANGELOG.md | tee changelog_part.md
     - uses: actions/upload-artifact@v2
       with:
         name: changelog
