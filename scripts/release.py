@@ -28,9 +28,6 @@ def main():
     )
     args = parser.parse_args()
 
-    with open("CHANGELOG.md") as changelog:
-        assert "## UNRELEASED\n" in changelog.readlines()
-
     if args.what_to_bump == "major":
         new_info = (old_info[0] + 1, 0, 0)
     elif args.what_to_bump == "minor":
@@ -43,13 +40,15 @@ def main():
     status = subprocess.check_output(["git", "status"])
     assert status.startswith(b"On branch master\n")
     assert b"Changes not staged for commit:" not in status
+
     assert "VIRTUAL_ENV" in os.environ
+    with open("CHANGELOG.md") as changelog:
+        assert changelog.read().split("\n\n\n")[1].startswith(f"## {TAG_FORMAT % new_info}")
 
     print(f"Version changes: {TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
 
     replace_in_file(Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
     replace_in_file(Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
-    replace_in_file(Path("CHANGELOG.md"), "UNRELEASED", TAG_FORMAT % new_info)
     subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])

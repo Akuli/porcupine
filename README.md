@@ -233,8 +233,7 @@ Instead, ask me to run them if you need to.
 - `python3 scripts/release.py major_or_minor_or_patch` increments the version number and
   runs all the commands needed for doing a new Porcupine release. Run it from
   inside a virtualenv with master branch checked out in git,
-  and with an entry named `UNRELEASED` in `CHANGELOG.md`. The argument
-  works like this:
+  and with `CHANGELOG.md` updated. The argument works like this:
     - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)

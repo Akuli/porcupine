@@ -2,6 +2,51 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## v0.98.0
+
+New features:
+- From now on, the relevant parts of this changelog should appear on the releases page on GitHub.
+- Several new features in the directory tree:
+    - The directory tree now acts as more of a file manager than before.
+        You can right-click files and folders to e.g. rename or delete them.
+    - You can now type a character to navigate.
+        For example, pressing the `a` key cycles through all files in the selected directory
+        whose name starts with `a`.
+    - Right-clicking a project now offers you an option to hide it from the directory tree.
+        It will appear again when you open a file inside the project.
+
+Bug fixes:
+- Syntax highlighting now works in code blocks of Markdown files.
+    Previously they would sometimes display weirdly depending on scrolling.
+    Thank you [rdbende](https://github.com/rdbende) for reporting this.
+- Porcupine no longer segfaults on systems with the Noto Color Emoji font installed,
+    regardless of what version of Tcl/Tk it uses.
+    Thank you Tuomas for fixing this.
+- Some menu items, such as most items in the *Edit* menu,
+    are now grayed out when there are no open tabs
+    or the currently selected tab is not a regular tab for editing text files.
+    Previously they would appear clickable,
+    but clicking them would do nothing visible and cause an error to be logged.
+- Remembering the opened tabs when restarting now works
+    regardless of what is configured in `filetypes.toml`.
+
+Other changes:
+- The Windows installer is slightly smaller than before, 19.2MB instead of 22.7MB.
+- The tetris plugin was deleted.
+    It was never included by default,
+    and it will likely continue to work for a few releases
+    if you installed it manually from `more_plugins/`.
+    Use [Arrinao's tetris project](https://github.com/Arrinao/tetris)
+    if you want to play tetris.
+- Porcupine now uses a different library for parsing `filetypes.toml` and `default_filetypes.toml`.
+    If you have customized your `filetypes.toml` and you get errors when starting Porcupine,
+    you may need to switch to slightly different syntax.
+    See `default_filetypes.toml` for examples of what works
+    (there is a link to it in your user-specific `filetypes.toml`).
+
+There are also other small improvements.
+
+
 ## v0.97.0
 
 New features:
