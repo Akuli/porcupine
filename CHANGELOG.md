@@ -34,7 +34,7 @@ Other changes:
 - The tetris plugin was deleted.
     It was never included by default,
     and it will likely continue to work for a few releases
-    if you installed manually from `more_plugins/`.
+    if you installed it manually from `more_plugins/`.
     Use [Arrinao's tetris project](https://github.com/Arrinao/tetris)
     if you want to play tetris.
 - Porcupine now uses a different library for parsing `filetypes.toml` and `default_filetypes.toml`.
