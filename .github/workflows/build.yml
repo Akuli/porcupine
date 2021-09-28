@@ -49,6 +49,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - run: |
+        # Extract second "## blah" separated part, excluding the "## blah" lines
         # https://stackoverflow.com/a/20943815
         awk '/^## / { part++ } (part == 1 && line++ != 0) { print }' CHANGELOG.md | tee changelog_part.md
     - uses: actions/upload-artifact@v2
