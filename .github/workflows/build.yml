@@ -72,7 +72,7 @@ jobs:
     - id: get_version
       uses: battila7/get-version-action@v2
     - id: create_release
-      uses: actions/create-release@v1.0.0
+      uses: actions/create-release@v1.1.4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
