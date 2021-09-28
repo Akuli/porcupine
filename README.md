@@ -49,7 +49,7 @@ Open a terminal and run these commands:
     python3 -m pip install --user --upgrade pip wheel
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.98.0.zip
     porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
@@ -70,7 +70,7 @@ Then run these commands:
     python3 -m pip install --user --upgrade pip wheel
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.98.0.zip
     porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
