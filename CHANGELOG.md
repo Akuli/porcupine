@@ -4,7 +4,7 @@ and other details that don't affect using Porcupine.
 
 ## v0.98.1
 
-The relevant part of CHANGELOG.md should now actually show up on the releases page. I manually added it to the releases page for v0.98.0.
+The relevant part of CHANGELOG.md should now actually show up on the releases page. I manually added it to the releases page for v0.98.0. You can read all changelogs [here](https://github.com/Akuli/porcupine/blob/master/CHANGELOG.md).
 
 
 ## v0.98.0
