@@ -15,7 +15,7 @@ New features (all in the directory tree):
 
 Bug fixes:
 - Syntax highlighting now works in code blocks of Markdown files.
-    Previously it would sometimes display weirdly depending on scrolling.
+    Previously they would sometimes display weirdly depending on scrolling.
     Thank you [rdbende](https://github.com/rdbende) for reporting this.
 - Porcupine no longer segfaults on systems with the Noto Color Emoji font installed,
     regardless of what version of Tcl/Tk it uses.
