@@ -43,7 +43,7 @@ def main():
 
     assert "VIRTUAL_ENV" in os.environ
     with open("CHANGELOG.md") as changelog:
-        assert changelog.read().split("\n\n")[0].startswith(f"## {TAG_FORMAT % new_info}")
+        assert changelog.read().split("\n\n\n")[1].startswith(f"## {TAG_FORMAT % new_info}")
 
     print(f"Version changes: {TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
 
