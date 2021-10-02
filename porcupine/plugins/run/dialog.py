@@ -1,11 +1,24 @@
 from __future__ import annotations
+
 import sys
 import tkinter
-from typing import Callable
-from porcupine import utils, get_main_window
-from tkinter import ttk
-
+from dataclasses import dataclass
 from pathlib import Path
+from tkinter import ttk
+from typing import Callable
+
+from porcupine import get_main_window, utils
+
+from . import history
+
+
+@dataclass
+class CommandSpec:
+    command_format: str
+    command: str
+    cwd_format: str
+    cwd: Path
+    external_terminal: bool
 
 
 class FormattingEntryAndLabels:
@@ -59,17 +72,10 @@ class FormattingEntryAndLabels:
             self._validated_callback()
 
 
-def _validate_folder(string_path: str) -> str | None:
-    if Path(string_path).is_dir():
-        return None
-    if Path(string_path).exists():
-        return "not a folder"
-    return "doesn't exist"
-
-
 class CommandAsker:
     def __init__(self, path: Path):
         self.window = tkinter.Toplevel()
+        self._suggestions = history.get()
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -113,6 +119,8 @@ class CommandAsker:
             value_validator=(lambda d: Path(d).is_dir()),
             validated_callback=self.update_run_button,
         )
+
+        self.command.entry.bind('<Key>', self._autocomplete, add=True)
 
         sub_text = "\n".join("{%s} = %s" % pair for pair in unquoted_substitutions.items())
         ttk.Label(content_frame, text=f"Substitutions:\n{sub_text}\n").pack(fill="x")
@@ -161,6 +169,26 @@ class CommandAsker:
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
 
+    def _autocomplete(self, event):
+        if len(event.char) != 1:
+            return None
+
+        text_to_keep = event.widget.get()
+        if event.widget.selection_present():
+            if event.widget.index('sel.last') != event.widget.index('end'):
+                return None
+            text_to_keep = text_to_keep[:event.widget.index("sel.first")]
+
+        for item in self._suggestions:
+            if item["command_format"].startswith(text_to_keep + event.char):
+                event.widget.delete(0, "end")
+                event.widget.insert(0, item["command_format"])
+                event.widget.icursor(len(text_to_keep) + 1)
+                event.widget.selection_range("insert", "end")
+                return "break"
+
+        return None
+
     def update_run_button(self) -> None:
         if self.command.value is not None and self.cwd.value is not None:
             self.run_button.config(state="normal")
@@ -172,7 +200,7 @@ class CommandAsker:
         self.window.destroy()
 
 
-def ask_command(path: Path) -> tuple[str, Path, bool] | None:
+def ask_command(path: Path) -> CommandSpec | None:
     asker = CommandAsker(path)
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
@@ -181,5 +209,11 @@ def ask_command(path: Path) -> tuple[str, Path, bool] | None:
     if asker.run_clicked:
         assert asker.command.value is not None
         assert asker.cwd.value is not None
-        return (asker.command.value, Path(asker.cwd.value), asker.terminal_var.get())
+        return CommandSpec(
+            command_format=asker.command.format_var.get(),
+            command=asker.command.value,
+            cwd_format=asker.cwd.format_var.get(),
+            cwd=Path(asker.cwd.value),
+            external_terminal=asker.terminal_var.get(),
+        )
     return None
