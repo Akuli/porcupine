@@ -1,14 +1,23 @@
 from __future__ import annotations
-
+from dataclasses import dataclass
 import time
-from typing import TYPE_CHECKING, Any, List
+import sys
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from typing_extensions import TypedDict
 
-from porcupine import settings
+from porcupine import settings, tabs
 
 if TYPE_CHECKING:
     from .dialog import CommandSpec
+
+
+@dataclass
+class ExampleCommand:
+    command: str
+    windows_command: Optional[str] = None
+    working_directory: str = "{folder_path}"
+    external_terminal: bool = True
 
 
 class HistoryItem(TypedDict):
@@ -53,5 +62,20 @@ def add(spec: CommandSpec) -> None:
     )
 
 
-def get() -> list[HistoryItem]:
-    return settings.get("run_history", List[Any])
+def get(tab: tabs.FileTab) -> list[HistoryItem]:
+    result: list[HistoryItem] = settings.get("run_history", List[Any]).copy()
+    for example in tab.settings.get("example_commands", List[ExampleCommand]):
+        if sys.platform == "win32" and example.windows_command is not None:
+            command = example.windows_command
+        else:
+            command = example.command
+
+        if command not in (item["command_format"] for item in result):
+            result.append({
+                "command_format": command,
+                "cwd_format": example.working_directory,
+                "external_terminal": example.external_terminal,
+                "last_use": 0,
+                "use_count": 0,
+            })
+    return result

@@ -7,7 +7,7 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Callable
 
-from porcupine import get_main_window, utils
+from porcupine import get_main_window, utils, tabs
 
 from . import history
 
@@ -72,9 +72,9 @@ class FormattingEntryAndLabels:
 
 
 class CommandAsker:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, suggestions: list[history.HistoryItem]):
         self.window = tkinter.Toplevel()
-        self._suggestions = history.get()
+        self._suggestions = suggestions
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -173,7 +173,6 @@ class CommandAsker:
         self.command.entry.selection_range("insert", "end")
         self.cwd.format_var.set(item["cwd_format"])
         self.terminal_var.set(item["external_terminal"])
-        return "break"
 
     def _autocomplete(self, event: tkinter.Event[tkinter.Entry]) -> str | None:
         if len(event.char) != 1:
@@ -203,8 +202,9 @@ class CommandAsker:
         self.window.destroy()
 
 
-def ask_command(path: Path) -> CommandSpec | None:
-    asker = CommandAsker(path)
+def ask_command(tab: tabs.FileTab) -> CommandSpec | None:
+    assert tab.path is not None
+    asker = CommandAsker(tab.path, history.get(tab))
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
     asker.window.wait_window()
