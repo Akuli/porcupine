@@ -3,8 +3,10 @@
 # Use Command on mac, Control on other systems
 if {[tk windowingsystem] == "aqua"} {
     set contmand Command
+    event add "<<RightClick>>" <Button-2>
 } else {
     set contmand Control
+    event add "<<RightClick>>" <Button-3>
 }
 
 event add "<<Menubar:File/New File>>" <$contmand-n>
@@ -76,12 +78,6 @@ event add "<<Menubar:View/Pop Tab>>" <$contmand-P>
 
 # directory tree plugin (don't use <Alt-t>, see #425)
 event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
-# macOS uses button 2 for right click
-if {[tk windowingsystem] == "aqua"} {
-    event add "<<RightClick>>" <Button-2>
-} else {
-    event add "<<RightClick>>" <Button-3>
-}
 
 # filemanager plugin
 event add "<<FileManager:Rename>>" <F2>
