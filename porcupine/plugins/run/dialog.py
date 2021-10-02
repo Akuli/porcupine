@@ -7,7 +7,7 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Callable
 
-from porcupine import get_main_window, utils, tabs
+from porcupine import get_main_window, tabs, utils
 
 from . import history
 
@@ -160,7 +160,7 @@ class CommandAsker:
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
         if self._suggestions:
-            self.command.entry.bind('<Key>', self._autocomplete, add=True)
+            self.command.entry.bind("<Key>", self._autocomplete, add=True)
             self._select_command_autocompletion(self._suggestions[0], prefix="")
 
         self.command.entry.selection_range(0, "end")
@@ -180,9 +180,9 @@ class CommandAsker:
 
         text_to_keep = self.command.entry.get()
         if self.command.entry.selection_present():
-            if self.command.entry.index('sel.last') != self.command.entry.index('end'):
+            if self.command.entry.index("sel.last") != self.command.entry.index("end"):
                 return None
-            text_to_keep = text_to_keep[:self.command.entry.index("sel.first")]
+            text_to_keep = text_to_keep[: self.command.entry.index("sel.first")]
 
         for item in self._suggestions:
             if item["command_format"].startswith(text_to_keep + event.char):

@@ -1,7 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass
-import time
+
 import sys
+import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from typing_extensions import TypedDict
@@ -71,11 +72,13 @@ def get(tab: tabs.FileTab) -> list[HistoryItem]:
             command = example.command
 
         if command not in (item["command_format"] for item in result):
-            result.append({
-                "command_format": command,
-                "cwd_format": example.working_directory,
-                "external_terminal": example.external_terminal,
-                "last_use": 0,
-                "use_count": 0,
-            })
+            result.append(
+                {
+                    "command_format": command,
+                    "cwd_format": example.working_directory,
+                    "external_terminal": example.external_terminal,
+                    "last_use": 0,
+                    "use_count": 0,
+                }
+            )
     return result

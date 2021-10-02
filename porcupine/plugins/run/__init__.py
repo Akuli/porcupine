@@ -4,7 +4,7 @@ from __future__ import annotations
 from tkinter import messagebox
 from typing import Any, List
 
-from porcupine import menubar, settings, tabs, get_tab_manager
+from porcupine import get_tab_manager, menubar, settings, tabs
 
 from . import dialog, history, no_terminal, terminal
 
