@@ -169,7 +169,7 @@ class CommandAsker:
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
 
-    def _autocomplete(self, event):
+    def _autocomplete(self, event: tkinter.Event[tkinter.Entry]) -> str | None:
         if len(event.char) != 1:
             return None
 

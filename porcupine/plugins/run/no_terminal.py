@@ -7,7 +7,6 @@ import subprocess
 import threading
 import tkinter
 from pathlib import Path
-from typing import Callable, Tuple, Union
 
 from porcupine import get_tab_manager, images, utils
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, List
+
+import time
+from typing import TYPE_CHECKING, Any, List
 
 from typing_extensions import TypedDict
 
@@ -19,7 +20,7 @@ class HistoryItem(TypedDict):
 
 
 def add(spec: CommandSpec) -> None:
-    history: list[HistoryItem] = settings.get("run_history", List[dict])
+    history: list[HistoryItem] = settings.get("run_history", List[Any])
 
     old_use_count = 0
     for item in history:
@@ -35,6 +36,7 @@ def add(spec: CommandSpec) -> None:
             "cwd_format": spec.cwd_format,
             "external_terminal": spec.external_terminal,
             "use_count": old_use_count + 1,
+            "last_use": time.time(),
         },
     )
 
@@ -52,8 +54,4 @@ def add(spec: CommandSpec) -> None:
 
 
 def get() -> list[HistoryItem]:
-    return settings.get("run_history", List[dict])
-
-
-def setup():
-    settings.add_option("run_history", [], type_=List[dict])
+    return settings.get("run_history", List[Any])

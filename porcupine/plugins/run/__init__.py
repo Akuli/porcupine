@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from tkinter import messagebox
+from typing import Any, List
 
-from porcupine import menubar, tabs
+from porcupine import menubar, settings, tabs
 
 from . import dialog, history, no_terminal, terminal
 
@@ -27,5 +28,5 @@ def ask_and_run_command(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    history.setup()
+    settings.add_option("run_history", [], type_=List[Any])
     menubar.add_filetab_command("Run/Run command", ask_and_run_command)
