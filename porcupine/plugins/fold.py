@@ -42,9 +42,12 @@ def find_indented_block(tab: tabs.FileTab, lineno: int) -> int | None:
 
 
 def update_line_numbers(tab: tabs.FileTab) -> None:
-    for child in tab.left_frame.winfo_children():
-        if isinstance(child, LineNumbers):
-            child.do_update()
+    try:
+        linenumbers: LineNumbers = tab.left_frame.nametowidget("linenumbers")
+    except KeyError:
+        pass  # linenumbers plugin disabled
+    else:
+        linenumbers.do_update()
 
 
 def fold(tab: tabs.FileTab) -> None:
