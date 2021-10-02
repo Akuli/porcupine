@@ -18,9 +18,9 @@ def ask_and_run_command(tab: tabs.FileTab) -> None:
     if command_info is not None:
         command, cwd, external_terminal = command_info
         if external_terminal:
-            no_terminal.run_command(command, cwd)
-        else:
             terminal.run_command(command, cwd)
+        else:
+            no_terminal.run_command(command, cwd)
 
 
 def setup() -> None:
