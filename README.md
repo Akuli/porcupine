@@ -238,5 +238,5 @@ Instead, ask me to run them if you need to.
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
-  Docs and Windows exe are built automatically after running the install script
+  Docs and Windows exe are built automatically after running the release script
   (see `.github/workflows/on-release.yml`), but `porcupine.wiki` may need manual updating.
