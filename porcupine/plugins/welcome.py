@@ -16,7 +16,7 @@ def get_message() -> str:
 To get started, create a new file by pressing {utils.get_binding('<<Menubar:File/New File>>')}
 or open an existing file by pressing {utils.get_binding('<<Menubar:File/Open>>')}.
 You can save the file with {utils.get_binding('<<Menubar:File/Save>>')}
-and then run it by pressing {utils.get_binding('<<Menubar:Run/Run>>')}.
+and then run it by pressing {utils.get_binding('<<Menubar:Run/Run Command>>')}.
 
 See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.

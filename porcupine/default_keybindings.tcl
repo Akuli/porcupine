@@ -18,10 +18,7 @@ event add "<<Menubar:View/Smaller Font>>" <$contmand-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
 # run plugin
-event add "<<Menubar:Run/Compile>>" <F4>
-event add "<<Menubar:Run/Run>>" <F5>
-event add "<<Menubar:Run/Compile and Run>>" <F6>
-event add "<<Menubar:Run/Lint>>" <F7>
+event add "<<Menubar:Run/Run command>>" <F4>
 
 # gotoline plugin
 event add "<<Menubar:Edit/Go to Line>>" <$contmand-l>

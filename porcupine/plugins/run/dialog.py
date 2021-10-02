@@ -2,7 +2,7 @@ from __future__ import annotations
 import sys
 import tkinter
 from typing import Callable
-from porcupine import utils
+from porcupine import utils, get_main_window
 from tkinter import ttk
 
 from pathlib import Path
@@ -38,25 +38,25 @@ class FormattingEntryAndLabels:
         self._value_validator = value_validator
         self._validated_callback = validated_callback
         self.format_var.trace_add("write", self._validate)
+        self.value: str | None = None
         self._validate()
 
     def _validate(self, *junk_from_var_trace: object) -> None:
         try:
             value = self.format_var.get().format(**self._substitutions)
         except (ValueError, KeyError, IndexError):
-            self.is_valid = False
+            self.value = None
             self.label.config(text="Substitution error", font="")
         else:
-            self.is_valid = self._value_validator(value)
             self.label.config(text=value, font="TkFixedFont")
+            if self._value_validator(value):
+                self.value = value
+            else:
+                self.value = None
 
         # _validated_callback might not work if called from __init__
         if junk_from_var_trace:
             self._validated_callback()
-
-    def get_formatted_value(self) -> str:
-        assert self.is_valid
-        return self.label["text"]
 
 
 def _validate_folder(string_path: str) -> str | None:
@@ -89,7 +89,9 @@ class CommandAsker:
             "project_name": project_path.name,
             "project_path": str(project_path),
         }
-        quoted_substitutions = {name: utils.quote(value) for name, value in unquoted_substitutions.items()}
+        quoted_substitutions = {
+            name: utils.quote(value) for name, value in unquoted_substitutions.items()
+        }
 
         entry_area = ttk.Frame(content_frame)
         entry_area.pack(fill="x")
@@ -160,23 +162,24 @@ class CommandAsker:
         self.command.entry.focus_set()
 
     def update_run_button(self) -> None:
-        if self.command.is_valid and self.cwd.is_valid:
+        if self.command.value is not None and self.cwd.value is not None:
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
 
-    def on_run_clicked(self):
+    def on_run_clicked(self) -> None:
         self.run_clicked = True
         self.window.destroy()
 
 
-asker = CommandAsker(Path(__file__))
-asker.window.title("Run command")
-# asker.window.transient(get_main_window())
-tkinter._default_root.withdraw()
-asker.window.wait_window()
-if asker.run_clicked:
-    print(asker.command.get_formatted_value())
-    print(asker.cwd.get_formatted_value())
-else:
-    print("cancel")
+def ask_command(path: Path) -> tuple[str, Path, bool] | None:
+    asker = CommandAsker(path)
+    asker.window.title("Run command")
+    asker.window.transient(get_main_window())
+    asker.window.wait_window()
+
+    if asker.run_clicked:
+        assert asker.command.value is not None
+        assert asker.cwd.value is not None
+        return (asker.command.value, Path(asker.cwd.value), asker.terminal_var.get())
+    return None
