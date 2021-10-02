@@ -68,7 +68,13 @@ def _stringify_path(path: Path) -> str:
 
 class DirectoryTree(ttk.Treeview):
     def __init__(self, master: tkinter.Misc) -> None:
-        super().__init__(master, selectmode="browse", show="tree", style="DirectoryTree.Treeview")
+        super().__init__(
+            master,
+            selectmode="browse",
+            show="tree",
+            name="directory_tree",
+            style="DirectoryTree.Treeview",
+        )
 
         # Needs after_idle because selection hasn't updated when binding runs
         self.bind("<Button-1>", self._on_click, add=True)
@@ -426,7 +432,7 @@ def setup() -> None:
     settings.add_option("directory_tree_projects", [], List[str])
 
     # TODO: add something for finding a file by typing its name?
-    container = ttk.Frame(get_paned_window())
+    container = ttk.Frame(get_paned_window(), name="directory_tree_container")
 
     # Packing order matters. The widget packed first is always visible.
     scrollbar = ttk.Scrollbar(container)
@@ -464,8 +470,4 @@ def setup() -> None:
 
 # Used in other plugins
 def get_directory_tree() -> DirectoryTree:
-    for possible_container in get_paned_window().winfo_children():
-        for possible_directory_tree in possible_container.winfo_children():
-            if isinstance(possible_directory_tree, DirectoryTree):
-                return possible_directory_tree
-    raise RuntimeError("directory tree not found")
+    return get_paned_window().nametowidget("directory_tree_container.directory_tree")
