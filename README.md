@@ -40,6 +40,10 @@ it shows up as an empty window.
 
 ## Installing Porcupine
 
+### Development Install
+
+See [below](#developing-porcupine).
+
 ### Debian-based Linux distributions (e.g. Ubuntu, Mint)
 
 Open a terminal and run these commands:
@@ -101,10 +105,6 @@ you will likely get a warning similar to this one:
 
 You should still be able to run the installer by clicking "More info".
 When installed, you will find Porcupine from the start menu.
-
-### Development Install
-
-See [below](#developing-porcupine).
 
 ## FAQ
 
