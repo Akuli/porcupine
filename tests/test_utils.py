@@ -4,7 +4,6 @@ import subprocess
 import sys
 import typing
 from pathlib import Path
-from tkinter import ttk
 
 import pytest
 

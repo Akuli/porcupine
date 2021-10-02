@@ -18,7 +18,7 @@ import dacite
 from pygments import styles
 
 import porcupine
-from porcupine import dirs, images, utils
+from porcupine import dirs, images
 
 _log = logging.getLogger(__name__)
 
