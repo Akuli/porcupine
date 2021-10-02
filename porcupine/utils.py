@@ -255,15 +255,6 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
     return "#%02x%02x%02x" % (r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
 
 
-def get_children_recursively(
-    parent: tkinter.Misc, *, include_parent: bool = False
-) -> Iterator[tkinter.Misc]:
-    if include_parent:
-        yield parent
-    for child in parent.winfo_children():
-        yield from get_children_recursively(child, include_parent=True)
-
-
 # This doesn't handle all possible cases, see bind(3tk)
 def _format_binding(binding: str, menu: bool) -> str:
     mac = porcupine.get_main_window().tk.eval("tk windowingsystem") == "aqua"

@@ -48,26 +48,6 @@ def test_bind_with_data_class():
     assert foo.num == 123
 
 
-def test_get_children_recursively():
-    parent = ttk.Frame()
-    try:
-        child1 = ttk.Button(parent)
-        child2 = ttk.Frame(parent)
-        child2a = ttk.Progressbar(child2)
-        child2b = ttk.Sizegrip(child2)
-
-        assert list(utils.get_children_recursively(parent)) == [child1, child2, child2a, child2b]
-        assert list(utils.get_children_recursively(parent, include_parent=True)) == [
-            parent,
-            child1,
-            child2,
-            child2a,
-            child2b,
-        ]
-    finally:
-        parent.destroy()
-
-
 if sys.platform == "darwin":
     binding_test_cases = [
         ("<<Menubar:Edit/Anchors/Add or remove on this line>>", "⇧⌥A", "Shift-Alt-A"),
