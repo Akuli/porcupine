@@ -463,7 +463,7 @@ def setup() -> None:
 
     # TODO: mac right click = button 2?
     # TODO: invoking context menu from keyboard
-    tree.bind("<Button-3>", tree._on_right_click, add=True)
+    tree.bind("<<RightClick>>", tree._on_right_click, add=True)
 
     tree.bind("<Key>", tree._cycle_through_items, add=True)
 
