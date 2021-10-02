@@ -15,8 +15,7 @@ def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:
 
 class LineNumbers(tkinter.Canvas):
     def __init__(self, parent: tkinter.Misc, textwidget_of_tab: tkinter.Text) -> None:
-        super().__init__(parent, highlightthickness=0)
-        self._update_width()
+        super().__init__(parent, highlightthickness=0, name="linenumbers")
 
         self._textwidget = textwidget_of_tab
         textutils.use_pygments_theme(self, self._set_colors)
@@ -31,6 +30,7 @@ class LineNumbers(tkinter.Canvas):
 
         self.bind("<<SettingChanged:font_family>>", self._update_width, add=True)
         self.bind("<<SettingChanged:font_size>>", self._update_width, add=True)
+        self._update_width()
 
         self._clicked_place: str | None = None
         self.bind("<Button-1>", self._on_click, add=True)
@@ -105,9 +105,8 @@ class LineNumbers(tkinter.Canvas):
         self._textwidget.tag_add("sel", start, end)
 
 
+# Accessing LineNumbers instance from other plugins:  tab.left_frame.nametowidget('linenumbers')
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    # Use tab.left_frame.winfo_children() and isinstance to access
-    # the LineNumbers instance from another plugin
     LineNumbers(tab.left_frame, tab.textwidget).pack(side="left", fill="y")
 
 

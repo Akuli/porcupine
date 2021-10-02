@@ -124,10 +124,7 @@ class AnchorManager:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    [linenumbers] = [
-        child for child in tab.left_frame.winfo_children() if isinstance(child, LineNumbers)
-    ]
-    manager = AnchorManager(tab.textwidget, linenumbers)
+    manager = AnchorManager(tab.textwidget, tab.left_frame.nametowidget("linenumbers"))
     # fmt: off
     tab.bind("<<FiletabCommand:Edit/Anchors/Add or remove on this line>>", manager.toggle, add=True)
     tab.bind("<<FiletabCommand:Edit/Anchors/Jump to previous>>", manager.jump_to_previous, add=True)
