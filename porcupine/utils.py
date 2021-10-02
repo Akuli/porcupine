@@ -18,7 +18,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar
 from urllib.request import url2pathname
 
 import dacite
@@ -253,15 +253,6 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
         for value1, value2 in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
     )
     return "#%02x%02x%02x" % (r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
-
-
-def get_children_recursively(
-    parent: tkinter.Misc, *, include_parent: bool = False
-) -> Iterator[tkinter.Misc]:
-    if include_parent:
-        yield parent
-    for child in parent.winfo_children():
-        yield from get_children_recursively(child, include_parent=True)
 
 
 # This doesn't handle all possible cases, see bind(3tk)

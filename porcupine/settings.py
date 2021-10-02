@@ -12,13 +12,13 @@ import time
 import tkinter.font
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, List, Type, TypeVar, overload
+from typing import Any, Callable, Iterator, List, Type, TypeVar, overload
 
 import dacite
 from pygments import styles
 
 import porcupine
-from porcupine import dirs, images, utils
+from porcupine import dirs, images
 
 _log = logging.getLogger(__name__)
 
@@ -100,6 +100,13 @@ class _UnknownOption:
 
 def _default_converter(value: Any) -> Any:
     return value
+
+
+# includes the parent
+def _get_children_recursively(parent: tkinter.Misc) -> Iterator[tkinter.Misc]:
+    yield parent
+    for child in parent.winfo_children():
+        yield from _get_children_recursively(child)
 
 
 class Settings:
@@ -251,7 +258,7 @@ class Settings:
                 if option_name != "disabled_plugins":
                     raise e
             else:
-                for widget in utils.get_children_recursively(main_window, include_parent=True):
+                for widget in _get_children_recursively(main_window):
                     widget.event_generate(event_name)
         else:
             self._change_event_widget.event_generate(event_name)
