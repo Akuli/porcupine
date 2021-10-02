@@ -26,7 +26,6 @@ class FormattingEntryAndLabels:
         self,
         entry_area: ttk.Frame,
         text: str,
-        default_format: str,
         substitutions: dict[str, str],
         value_validator: Callable[[str], bool],
         validated_callback: Callable[[], None],
@@ -34,7 +33,7 @@ class FormattingEntryAndLabels:
         grid_y = entry_area.grid_size()[1]
         ttk.Label(entry_area, text=text).grid(row=grid_y, column=0, sticky="w")
 
-        self.format_var = tkinter.StringVar(value=default_format)
+        self.format_var = tkinter.StringVar()
         self.entry = ttk.Entry(entry_area, font="TkFixedFont", textvariable=self.format_var)
         self.entry.grid(row=grid_y, column=1, sticky="we")
         self.entry.selection_range(0, "end")
@@ -106,7 +105,6 @@ class CommandAsker:
         self.command = FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
-            default_format="python3 {file_name}",
             substitutions=quoted_substitutions,
             value_validator=(lambda command: bool(command.strip())),
             validated_callback=self.update_run_button,
@@ -114,13 +112,10 @@ class CommandAsker:
         self.cwd = FormattingEntryAndLabels(
             entry_area,
             text="In this directory:",
-            default_format="{folder_path}",
             substitutions=unquoted_substitutions,
             value_validator=(lambda d: Path(d).is_dir()),
             validated_callback=self.update_run_button,
         )
-
-        self.command.entry.bind('<Key>', self._autocomplete, add=True)
 
         sub_text = "\n".join("{%s} = %s" % pair for pair in unquoted_substitutions.items())
         ttk.Label(content_frame, text=f"Substitutions:\n{sub_text}\n").pack(fill="x")
@@ -160,31 +155,39 @@ class CommandAsker:
         self.run_button.pack(side="left", fill="x", expand=True)
         self.run_clicked = False
 
-        entries = [e for e in entry_area.winfo_children() if isinstance(e, ttk.Entry)]
-        assert entries
-        for entry in entries:
+        for entry in [self.command.entry, self.cwd.entry]:
             entry.bind("<Return>", (lambda e: self.run_button.invoke()), add=True)
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
+        if self._suggestions:
+            self.command.entry.bind('<Key>', self._autocomplete, add=True)
+            self._select_command_autocompletion(self._suggestions[0], prefix="")
+
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
+
+    def _select_command_autocompletion(self, item: history.HistoryItem, prefix: str) -> None:
+        assert item["command_format"].startswith(prefix)
+        self.command.format_var.set(item["command_format"])
+        self.command.entry.icursor(len(prefix))
+        self.command.entry.selection_range("insert", "end")
+        self.cwd.format_var.set(item["cwd_format"])
+        self.terminal_var.set(item["external_terminal"])
+        return "break"
 
     def _autocomplete(self, event: tkinter.Event[tkinter.Entry]) -> str | None:
         if len(event.char) != 1:
             return None
 
-        text_to_keep = event.widget.get()
-        if event.widget.selection_present():
-            if event.widget.index('sel.last') != event.widget.index('end'):
+        text_to_keep = self.command.entry.get()
+        if self.command.entry.selection_present():
+            if self.command.entry.index('sel.last') != self.command.entry.index('end'):
                 return None
-            text_to_keep = text_to_keep[:event.widget.index("sel.first")]
+            text_to_keep = text_to_keep[:self.command.entry.index("sel.first")]
 
         for item in self._suggestions:
             if item["command_format"].startswith(text_to_keep + event.char):
-                event.widget.delete(0, "end")
-                event.widget.insert(0, item["command_format"])
-                event.widget.icursor(len(text_to_keep) + 1)
-                event.widget.selection_range("insert", "end")
+                self._select_command_autocompletion(item, text_to_keep + event.char)
                 return "break"
 
         return None
