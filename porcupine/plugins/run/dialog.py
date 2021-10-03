@@ -2,34 +2,32 @@ from __future__ import annotations
 
 import sys
 import tkinter
-from dataclasses import dataclass
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable
+from typing import Callable, Generic, TypeVar
 
-from porcupine import get_main_window, tabs, utils
+from porcupine import get_main_window, tabs
 
 from . import history
 
-
-@dataclass
-class CommandSpec:
-    command_format: str
-    command: str
-    cwd_format: str
-    cwd: Path
-    external_terminal: bool
+T = TypeVar("T")
 
 
-class FormattingEntryAndLabels:
+class FormattingEntryAndLabels(Generic[T]):
     def __init__(
         self,
         entry_area: ttk.Frame,
         text: str,
         substitutions: dict[str, str],
-        value_validator: Callable[[str], bool],
+        formatter: Callable[[str, dict[str, str]], T],
+        value_validator: Callable[[T], bool],
         validated_callback: Callable[[], None],
     ):
+        self._substitutions = substitutions
+        self._value_validator = value_validator
+        self._validated_callback = validated_callback
+        self._formatter = formatter
+
         grid_y = entry_area.grid_size()[1]
         ttk.Label(entry_area, text=text).grid(row=grid_y, column=0, sticky="w")
 
@@ -46,21 +44,18 @@ class FormattingEntryAndLabels:
         grid_y += 1
         ttk.Label(entry_area).grid(row=grid_y)
 
-        self._substitutions = substitutions
-        self._value_validator = value_validator
-        self._validated_callback = validated_callback
         self.format_var.trace_add("write", self._validate)
-        self.value: str | None = None
+        self.value: T | None = None
         self._validate()
 
     def _validate(self, *junk_from_var_trace: object) -> None:
         try:
-            value = self.format_var.get().format(**self._substitutions)
+            value = self._formatter(self.format_var.get(), self._substitutions)
         except (ValueError, KeyError, IndexError):
             self.value = None
             self.label.config(text="Substitution error", font="")
         else:
-            self.label.config(text=value, font="TkFixedFont")
+            self.label.config(text=str(value), font="TkFixedFont")
             if self._value_validator(value):
                 self.value = value
             else:
@@ -72,7 +67,7 @@ class FormattingEntryAndLabels:
 
 
 class CommandAsker:
-    def __init__(self, path: Path, suggestions: list[history.HistoryItem]):
+    def __init__(self, file_path: Path, project_path: Path, suggestions: list[history.Command]):
         self.window = tkinter.Toplevel()
         self._suggestions = suggestions
 
@@ -84,40 +79,29 @@ class CommandAsker:
         content_frame = ttk.Frame(self.window, borderwidth=10)
         content_frame.pack(fill="both", expand=True)
 
-        project_path = utils.find_project_root(path)
-        unquoted_substitutions = {
-            "file_stem": path.stem,
-            "file_name": path.name,
-            "file_path": str(path),
-            "folder_name": path.parent.name,
-            "folder_path": str(path.parent),
-            "project_name": project_path.name,
-            "project_path": str(project_path),
-        }
-        quoted_substitutions = {
-            name: utils.quote(value) for name, value in unquoted_substitutions.items()
-        }
-
         entry_area = ttk.Frame(content_frame)
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        self.command = FormattingEntryAndLabels(
+        substitutions = history.get_substitutions(file_path, project_path)
+        self.command: FormattingEntryAndLabels[str] = FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
-            substitutions=quoted_substitutions,
+            substitutions=substitutions,
+            formatter=history.format_command,
             value_validator=(lambda command: bool(command.strip())),
             validated_callback=self.update_run_button,
         )
-        self.cwd = FormattingEntryAndLabels(
+        self.cwd: FormattingEntryAndLabels[Path] = FormattingEntryAndLabels(
             entry_area,
             text="In this directory:",
-            substitutions=unquoted_substitutions,
-            value_validator=(lambda d: Path(d).is_dir()),
+            substitutions=substitutions,
+            formatter=history.format_cwd,
+            value_validator=(lambda path: path.is_dir()),
             validated_callback=self.update_run_button,
         )
 
-        sub_text = "\n".join("{%s} = %s" % pair for pair in unquoted_substitutions.items())
+        sub_text = "\n".join("{%s} = %s" % pair for pair in substitutions.items())
         ttk.Label(content_frame, text=f"Substitutions:\n{sub_text}\n").pack(fill="x")
 
         # TODO: remember value with settings
@@ -166,13 +150,13 @@ class CommandAsker:
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
 
-    def _select_command_autocompletion(self, item: history.HistoryItem, prefix: str) -> None:
-        assert item["command_format"].startswith(prefix)
-        self.command.format_var.set(item["command_format"])
+    def _select_command_autocompletion(self, command: history.Command, prefix: str) -> None:
+        assert command["command_format"].startswith(prefix)
+        self.command.format_var.set(command["command_format"])
         self.command.entry.icursor(len(prefix))
         self.command.entry.selection_range("insert", "end")
-        self.cwd.format_var.set(item["cwd_format"])
-        self.terminal_var.set(item["external_terminal"])
+        self.cwd.format_var.set(command["cwd_format"])
+        self.terminal_var.set(command["external_terminal"])
 
     def _autocomplete(self, event: tkinter.Event[tkinter.Entry]) -> str | None:
         if len(event.char) != 1:
@@ -202,9 +186,11 @@ class CommandAsker:
         self.window.destroy()
 
 
-def ask_command(tab: tabs.FileTab) -> CommandSpec | None:
+def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None:
     assert tab.path is not None
-    asker = CommandAsker(tab.path, history.get(tab))
+    asker = CommandAsker(
+        tab.path, project_path, [item["command"] for item in history.get(tab, project_path)]
+    )
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
     asker.window.wait_window()
@@ -212,11 +198,11 @@ def ask_command(tab: tabs.FileTab) -> CommandSpec | None:
     if asker.run_clicked:
         assert asker.command.value is not None
         assert asker.cwd.value is not None
-        return CommandSpec(
-            command_format=asker.command.format_var.get(),
-            command=asker.command.value,
-            cwd_format=asker.cwd.format_var.get(),
-            cwd=Path(asker.cwd.value),
-            external_terminal=asker.terminal_var.get(),
-        )
+        return {
+            "command_format": asker.command.format_var.get(),
+            "command": asker.command.value,
+            "cwd_format": asker.cwd.format_var.get(),
+            "cwd": str(asker.cwd.value),
+            "external_terminal": asker.terminal_var.get(),
+        }
     return None

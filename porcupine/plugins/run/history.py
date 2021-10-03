@@ -3,14 +3,15 @@ from __future__ import annotations
 import sys
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Optional
+from pathlib import Path
+from typing import Any, List, Optional
 
-from typing_extensions import TypedDict
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
 
-from porcupine import settings, tabs
-
-if TYPE_CHECKING:
-    from .dialog import CommandSpec
+from porcupine import settings, tabs, utils
 
 
 @dataclass
@@ -21,33 +22,55 @@ class ExampleCommand:
     external_terminal: bool = True
 
 
-class HistoryItem(TypedDict):
+# dict because must be json safe
+class Command(TypedDict):
     command_format: str
+    command: str
     cwd_format: str
+    cwd: str  # not pathlib.Path because must be json safe
     external_terminal: bool
-    last_use: float  # time.time() value, not datetime because json safe
+
+
+class HistoryItem(TypedDict):
+    command: Command
+    last_use: float
     use_count: int
 
 
-def add(spec: CommandSpec) -> None:
+def get_substitutions(file_path: Path, project_path: Path) -> dict[str, str]:
+    return {
+        "file_stem": file_path.stem,
+        "file_name": file_path.name,
+        "file_path": str(file_path),
+        "folder_name": file_path.parent.name,
+        "folder_path": str(file_path.parent),
+        "project_name": project_path.name,
+        "project_path": str(project_path),
+    }
+
+
+def format_cwd(cwd_format: str, substitutions: dict[str, str]) -> Path:
+    return Path(cwd_format.format(**substitutions))
+
+
+def format_command(command_format: str, substitutions: dict[str, str]) -> str:
+    return command_format.format(
+        **{name: utils.quote(value) for name, value in substitutions.items()}
+    )
+
+
+def add(command: Command) -> None:
     history: list[HistoryItem] = settings.get("run_history", List[Any])
 
     old_use_count = 0
     for item in history:
-        if item["command_format"] == spec.command_format:
+        if item["command"]["command_format"] == command["command_format"]:
             old_use_count = item["use_count"]
             history.remove(item)
             break
 
     history.insert(
-        0,
-        {
-            "command_format": spec.command_format,
-            "cwd_format": spec.cwd_format,
-            "external_terminal": spec.external_terminal,
-            "use_count": old_use_count + 1,
-            "last_use": time.time(),
-        },
+        0, {"command": command.copy(), "last_use": time.time(), "use_count": old_use_count + 1}
     )
 
     settings.set_(
@@ -63,7 +86,9 @@ def add(spec: CommandSpec) -> None:
     )
 
 
-def get(tab: tabs.FileTab) -> list[HistoryItem]:
+def get(tab: tabs.FileTab, project_path: Path) -> list[HistoryItem]:
+    assert tab.path is not None
+
     result: list[HistoryItem] = settings.get("run_history", List[Any]).copy()
     for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
@@ -71,12 +96,17 @@ def get(tab: tabs.FileTab) -> list[HistoryItem]:
         else:
             command = example.command
 
-        if command not in (item["command_format"] for item in result):
+        if command not in (item["command"]["command_format"] for item in result):
+            substitutions = get_substitutions(tab.path, project_path)
             result.append(
                 {
-                    "command_format": command,
-                    "cwd_format": example.working_directory,
-                    "external_terminal": example.external_terminal,
+                    "command": {
+                        "command_format": command,
+                        "command": format_command(command, substitutions),
+                        "cwd_format": example.working_directory,
+                        "cwd": str(format_cwd(example.working_directory, substitutions)),
+                        "external_terminal": example.external_terminal,
+                    },
                     "last_use": 0,
                     "use_count": 0,
                 }

@@ -19,6 +19,7 @@ event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
 # run plugin
 event add "<<Menubar:Run/Run command>>" <F4>
+event add "<<Menubar:Run/Repeat previous command>>" <F5>
 
 # gotoline plugin
 event add "<<Menubar:Edit/Go to Line>>" <$contmand-l>
