@@ -461,6 +461,7 @@ def setup() -> None:
             tree.add_project(path, refresh=False)
     tree.refresh()
 
+    # TODO: invoking context menu from keyboard
     tree.bind("<<RightClick>>", tree._on_right_click, add=True)
 
     tree.bind("<Key>", tree._cycle_through_items, add=True)
