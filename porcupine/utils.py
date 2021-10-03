@@ -667,7 +667,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
         selected_encoding = combobox.get()
         dialog.destroy()
 
-    btn_pack_cfg = {"expand": True, "fill": "both", "padx": 10}
+    btn_pack_cfg = {"expand": True, "fill": "x", "padx": 10}
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
     cancel_button.pack(side="left", **btn_pack_cfg)
