@@ -3,14 +3,39 @@ from __future__ import annotations
 
 import logging
 import queue
+import re
 import subprocess
 import threading
 import tkinter
 from pathlib import Path
+from typing import Iterator
 
 from porcupine import get_tab_manager, images, utils
 
 log = logging.getLogger(__name__)
+
+
+filename_regex_parts = [
+    # c compiler output
+    # playground.c:4:9: warning: ...
+    r'^([^:]+):([0-9]+)(?=:)'
+]
+filename_regex = '|'.join(r'(?:' + part + r')' for part in filename_regex_parts)
+
+
+def parse_paths(cwd: Path, text: str) -> Iterator[tuple[str, Path, int] | str]:
+    previous_end = 0
+    for match in re.finditer(filename_regex, text):
+        filename, lineno = (value for value in match.groups() if value is not None)
+        path = cwd / filename  # doesn't use cwd if filename is absolute
+        if not path.is_file():
+            continue
+
+        yield text[previous_end:match.start()]
+        yield (match.group(0), path, int(lineno))
+        previous_end = match.end()
+
+    yield text[previous_end:]
 
 
 class NoTerminalRunner:
@@ -20,10 +45,42 @@ class NoTerminalRunner:
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
         self.textwidget.tag_config("error", foreground="red")
+        self.textwidget.tag_config("link", underline=True)
+        self.textwidget.tag_bind("link", "<Enter>", self._enter_link)
+        self.textwidget.tag_bind("link", "<Leave>", self._leave_link)
+        self.textwidget.tag_bind("link", "<Button-1>", self._open_link)
 
         self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
-        self._queue_clearer()
+        self._queue_handler()
+
+        self._links: dict[str, tuple[str, int]] = {}
+        self._cwd: Path | None = None
+
+    # TODO: much links code copy/pasted from aboutdialog plugin
+    def _enter_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+        self.textwidget.config(cursor="hand2")
+
+    def _leave_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+        self.textwidget.config(cursor="")
+
+    def _open_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+        for tag in self.textwidget.tag_names("current"):
+            if tag.startswith("link-"):
+                path, lineno = self._links[tag]
+                tab = get_tab_manager().open_file(path)
+                tab.textwidget.mark_set("insert", f"{lineno}.0")
+                tab.textwidget.see("insert")
+                tab.textwidget.tag_remove("sel", "1.0", "end")
+                tab.textwidget.tag_add("sel", "insert", "insert lineend")
+                break
+
+    def run_command(self, cwd: Path, command: str) -> None:
+        self._cwd = cwd
+
+        # this is a daemon thread because i don't care what the fuck
+        # happens to it when python exits
+        threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
 
     def _runner_thread(self, cwd: Path, command: str) -> None:
         process: subprocess.Popen[bytes] | None = None
@@ -64,12 +121,7 @@ class NoTerminalRunner:
         else:
             emit_message(("error", f"The process failed with status {process.returncode}."))
 
-    def run_command(self, cwd: Path, command: str) -> None:
-        # this is a daemon thread because i don't care what the fuck
-        # happens to it when python exits
-        threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
-
-    def _queue_clearer(self) -> None:
+    def _queue_handler(self) -> None:
         messages: list[tuple[str, str]] = []
         while True:
             try:
@@ -83,11 +135,22 @@ class NoTerminalRunner:
                 if tag == "clear":
                     assert not text
                     self.textwidget.delete("1.0", "end")
+                    for tag in self._links.keys():
+                        self.textwidget.tag_delete(tag)
+                    self._links.clear()
                 else:
-                    self.textwidget.insert("end", text, tag)
+                    assert self._cwd is not None
+                    for part in parse_paths(self._cwd, text):
+                        if isinstance(part, str):
+                            self.textwidget.insert("end", part, [tag])
+                        else:
+                            text, path, lineno = part
+                            link_specific_tag = f"link-{len(self._links)}"
+                            self._links[link_specific_tag] = (path, lineno)
+                            self.textwidget.insert("end", text, [tag, "link", link_specific_tag])
             self.textwidget.config(state="disabled")
 
-        self.textwidget.after(100, self._queue_clearer)
+        self.textwidget.after(100, self._queue_handler)
 
     def destroy(self, junk: object = None) -> None:
         self.textwidget.destroy()
