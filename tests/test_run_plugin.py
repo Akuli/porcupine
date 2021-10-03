@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 import time
@@ -5,7 +6,7 @@ from typing import Any, List
 
 import pytest
 
-from porcupine import get_main_window
+from porcupine import get_main_window, utils
 from porcupine.plugins.run import no_terminal, settings, terminal
 
 
@@ -40,6 +41,9 @@ def fake_runner(tmp_path, monkeypatch):
     monkeypatch.setattr("porcupine.plugins.run.terminal.run_script", path)
 
 
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true", reason="no external terminal on github actions"
+)
 def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner, isolated_history):
     filetab.textwidget.insert("end", "open('file').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
@@ -59,9 +63,9 @@ def test_output_in_porcupine_window(filetab, tmp_path):
     filetab.textwidget.insert("end", "import asdf")
     filetab.save_as(tmp_path / "main.py")
 
-    no_terminal.run_command(f"{sys.executable} main.py", tmp_path)
+    no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
     output_textwidget = filetab.bottom_frame.nametowidget("run_output")
-    tkinter_sleep(0.5)
+    tkinter_sleep(1)
     assert "No such file or directory" in output_textwidget.get("1.0", "end")
     assert "The process failed with status 1." in output_textwidget.get("1.0", "end")
 
