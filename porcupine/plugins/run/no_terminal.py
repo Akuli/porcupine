@@ -135,8 +135,6 @@ class NoTerminalRunner:
                 if tag == "clear":
                     assert not text
                     self.textwidget.delete("1.0", "end")
-                    for tag in self._links.keys():
-                        self.textwidget.tag_delete(tag)
                     self._links.clear()
                 else:
                     assert self._cwd is not None
