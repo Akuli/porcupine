@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import os.path
 import shutil
 import subprocess
 import sys
@@ -24,6 +25,8 @@ if sys.platform == "win32":
     trash_name = "recycle bin"
 else:
     trash_name = "trash"
+
+copy_path = ""
 
 
 def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
@@ -120,6 +123,24 @@ def rename(old_path: Path) -> None:
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
         tab.path = new_path / tab.path.relative_to(old_path)
+
+
+def paste(new_path: Path) -> None:
+    global copy_path
+    new_file_path = os.path.join(new_path, os.path.basename(copy_path))
+
+    if os.path.exists(new_file_path):
+        log.error("already exists - copy aborted")
+        return
+
+    with open(new_file_path, mode='a'):
+        pass
+    shutil.copy(copy_path, new_file_path)
+
+
+def copy(old_path: Path) -> None:
+    global copy_path
+    copy_path = old_path
 
 
 def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
@@ -221,6 +242,8 @@ commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
+    Command("Copy", None, is_NOT_project_root, copy),
+    Command("Paste", None, (lambda p: p.is_dir() and copy_path != ''), paste),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
