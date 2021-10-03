@@ -54,7 +54,7 @@ class NoTerminalRunner:
         self._running_process: subprocess.Popen[bytes] | None = None
         self._queue_handler()
 
-        self._links: dict[str, tuple[str, int]] = {}
+        self._links: dict[str, tuple[Path, int]] = {}
         self._cwd: Path | None = None
 
     # TODO: much links code copy/pasted from aboutdialog plugin
@@ -69,10 +69,11 @@ class NoTerminalRunner:
             if tag.startswith("link-"):
                 path, lineno = self._links[tag]
                 tab = get_tab_manager().open_file(path)
-                tab.textwidget.mark_set("insert", f"{lineno}.0")
-                tab.textwidget.see("insert")
-                tab.textwidget.tag_remove("sel", "1.0", "end")
-                tab.textwidget.tag_add("sel", "insert", "insert lineend")
+                if tab is not None:
+                    tab.textwidget.mark_set("insert", f"{lineno}.0")
+                    tab.textwidget.see("insert")
+                    tab.textwidget.tag_remove("sel", "1.0", "end")
+                    tab.textwidget.tag_add("sel", "insert", "insert lineend")
                 break
 
     def run_command(self, cwd: Path, command: str) -> None:
