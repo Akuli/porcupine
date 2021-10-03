@@ -7,13 +7,10 @@ import subprocess
 import threading
 import tkinter
 from pathlib import Path
-from typing import Callable, Tuple, Union
 
 from porcupine import get_tab_manager, images, utils
 
 log = logging.getLogger(__name__)
-
-QueueMessage = Tuple[str, Union[str, Callable[[], None]]]
 
 
 class NoTerminalRunner:
@@ -24,27 +21,30 @@ class NoTerminalRunner:
         self.textwidget.tag_config("output")  # use default colors
         self.textwidget.tag_config("error", foreground="red")
 
-        self._output_queue: queue.Queue[QueueMessage] = queue.Queue()
+        self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
         self._queue_clearer()
 
-    def _runner_thread(
-        self, workingdir: Path, command: list[str], succeeded_callback: Callable[[], None]
-    ) -> None:
+    def _runner_thread(self, cwd: Path, command: str) -> None:
         process: subprocess.Popen[bytes] | None = None
 
-        def emit_message(msg: QueueMessage) -> None:
+        def emit_message(msg: tuple[str, str]) -> None:
             if process is not None and self._running_process is not process:
                 # another _run_command() is already running
                 return
             self._output_queue.put(msg)
 
         emit_message(("clear", ""))
-        emit_message(("info", " ".join(map(utils.quote, command)) + "\n"))
+        emit_message(("info", command + "\n"))
 
         try:
             process = self._running_process = subprocess.Popen(
-                command, cwd=workingdir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+                command,
+                cwd=cwd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                **utils.subprocess_kwargs,
             )
         except OSError as e:
             emit_message(("error", f"{type(e).__name__}: {e}\n"))
@@ -61,21 +61,16 @@ class NoTerminalRunner:
             # can't do succeeded_callback() here because this is running
             # in a thread and succeeded_callback() does tkinter stuff
             emit_message(("info", "The process completed successfully."))
-            emit_message(("run", succeeded_callback))
         else:
             emit_message(("error", f"The process failed with status {process.returncode}."))
 
-    def run_command(
-        self, workingdir: Path, command: list[str], succeeded_callback: Callable[[], None]
-    ) -> None:
+    def run_command(self, cwd: Path, command: str) -> None:
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
-        threading.Thread(
-            target=self._runner_thread, args=[workingdir, command, succeeded_callback], daemon=True
-        ).start()
+        threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
 
     def _queue_clearer(self) -> None:
-        messages: list[QueueMessage] = []
+        messages: list[tuple[str, str]] = []
         while True:
             try:
                 messages.append(self._output_queue.get(block=False))
@@ -84,16 +79,11 @@ class NoTerminalRunner:
 
         if messages:
             self.textwidget.config(state="normal")
-            for msg in messages:
-                if msg[0] == "clear":
-                    assert not msg[1]
+            for tag, text in messages:
+                if tag == "clear":
+                    assert not text
                     self.textwidget.delete("1.0", "end")
-                elif msg[0] == "run":
-                    assert not isinstance(msg[1], str)
-                    msg[1]()
                 else:
-                    tag, text = msg
-                    assert isinstance(text, str)
                     self.textwidget.insert("end", text, tag)
             self.textwidget.config(state="disabled")
 
@@ -114,9 +104,7 @@ _no_terminal_runners: dict[str, NoTerminalRunner] = {}
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
-def run_command(
-    workingdir: Path, command: list[str], succeeded_callback: Callable[[], None] = (lambda: None)
-) -> None:
+def run_command(command: str, cwd: Path) -> None:
 
     tab = get_tab_manager().select()
     assert tab is not None
@@ -139,4 +127,4 @@ def run_command(
         closebutton.place(relx=1, rely=0, anchor="ne")
 
     runner.textwidget.pack(side="top", fill="x")
-    runner.run_command(workingdir, command, succeeded_callback)
+    runner.run_command(cwd, command)
