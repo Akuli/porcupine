@@ -14,7 +14,7 @@ from porcupine.plugins import filetypes
 @pytest.fixture
 def custom_filetypes():
     # We don't overwrite the user's file because porcupine.dirs is monkeypatched
-    assert not dirs.user_config_dir.startswith(str(Path.home()))
+    assert "\\Temp\\" in dirs.user_config_dir or not dirs.user_config_dir.startswith(str(Path.home()))
     user_filetypes = Path(dirs.user_config_dir) / "filetypes.toml"
 
     user_filetypes.write_text(
