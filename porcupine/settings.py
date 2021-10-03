@@ -639,7 +639,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
     checkbutton. Let me know if you need it.
     """
     checkbutton = ttk.Checkbutton(get_dialog_content(), **checkbutton_kwargs)
-    checkbutton.grid(column=0, columnspan=2, sticky="w")
+    checkbutton.grid(column=0, columnspan=2, sticky="w", pady=2)
 
     var = tkinter.BooleanVar()
 
