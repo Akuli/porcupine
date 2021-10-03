@@ -21,8 +21,8 @@ try:
 except KeyError:
     pass
 
-prog, blue_message, directory, command = sys.argv
-print(colorama.Fore.BLUE + blue_message + colorama.Fore.RESET)
+prog, directory, command = sys.argv
+print(colorama.Fore.BLUE + command + colorama.Fore.RESET)
 try:
     returncode: int | None = subprocess.call(command, cwd=directory, env=new_env, shell=True)
 except KeyboardInterrupt:
