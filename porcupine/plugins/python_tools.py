@@ -27,6 +27,8 @@ def run_tool(tool: str, code: str, path: Path | None) -> str:
         )
         return code
 
+    fail_str = f"Running {tool} failed"
+
     try:
         # run in subprocess just to make sure that it can't crash porcupine
         # set cwd so that black/isort finds its config in pyproject.toml
@@ -41,16 +43,14 @@ def run_tool(tool: str, code: str, path: Path | None) -> str:
             input=code.encode("utf-8"),
         )
         return result.stdout.decode("utf-8")
-    except subprocess.CalledProcessError:
-        messagebox.showerror(
-            f"Running {tool} failed",
-            # can't use black's emojis in tkinter :(
-            "Oh no!\nFailed to reformat current file.\n\n"
-            "Probably there is a syntax error in your file.",
+    except subprocess.CalledProcessError as e:
+        tkinter_safe_string = "".join(
+            char for char in e.stderr.decode("utf-8") if ord(char) <= 0xFFFF
         )
+        messagebox.showerror(fail_str, f"{fail_str}.\n\n{tkinter_safe_string}")
     except Exception:
         log.exception(f"running {tool} failed")
-        messagebox.showerror(f"Running {tool} failed", traceback.format_exc())
+        messagebox.showerror(fail_str, traceback.format_exc())
 
     return code
 
