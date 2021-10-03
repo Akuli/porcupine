@@ -465,9 +465,9 @@ def _create_dialog_content() -> ttk.Frame:
     buttonframe = ttk.Frame(big_frame, padding=5)
     buttonframe.pack(fill="x")
 
-    ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all, width=15).pack(
-        side="left"
-    )
+    ttk.Button(
+        buttonframe, text="Reset all settings", command=confirm_and_reset_all, width=15
+    ).pack(side="left")
     ttk.Button(buttonframe, text="OK", command=dialog.withdraw, width=10).pack(side="right")
 
     content.grid_columnconfigure(0, weight=1)

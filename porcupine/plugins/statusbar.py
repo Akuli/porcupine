@@ -77,7 +77,9 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         ),
     )
 
-    ttk.Button(big_frame, text="OK", command=top.destroy, width=15).pack(side="right", padx=10, pady=10)
+    ttk.Button(big_frame, text="OK", command=top.destroy, width=15).pack(
+        side="right", padx=10, pady=10
+    )
     top.bind("<Escape>", (lambda e: top.destroy()), add=True)
 
     top.wait_window()
