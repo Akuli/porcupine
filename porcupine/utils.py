@@ -667,10 +667,12 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
         selected_encoding = combobox.get()
         dialog.destroy()
 
-    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
-    cancel_button.pack(side="left", expand=True)
-    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
-    ok_button.pack(side="right", expand=True)
+    btn_pack_cfg = {"expand": True, "fill": "both", "padx": 10}
+
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
+    cancel_button.pack(side="left", **btn_pack_cfg)
+    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding, width=1)
+    ok_button.pack(side="right", **btn_pack_cfg)
 
     def validate_encoding(*junk: object) -> None:
         encoding = combobox.get()
