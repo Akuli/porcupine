@@ -58,8 +58,8 @@ class PluginDialogContent:
 
         column_sizes = (120, 150, 180)
 
-        left_side = ttk.Frame(panedwindow, padding=10)
-        right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side
+        left_side = ttk.Frame(panedwindow, padding=5)
+        right_side = ttk.Frame(panedwindow, padding=5, width=10000)  # to shrink left_side
         panedwindow.add(left_side, minsize=sum(column_sizes))
         panedwindow.add(right_side, minsize=300)
 
@@ -78,7 +78,7 @@ class PluginDialogContent:
         )
         self._search_var.trace_add("write", self._search)
 
-        search_entry.pack(side="bottom", fill="x", pady=(10, 0))
+        search_entry.pack(side="bottom", fill="x", pady=(5, 0))
         self.treeview.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
@@ -101,7 +101,6 @@ class PluginDialogContent:
         self.enable_button = ttk.Button(
             button_frame, text="Enable", command=partial(self._set_enabled, True), state="disabled"
         )
-        # here was an expand=True, but fill wasn't, it looks better with fill
         self.enable_button.pack(side="left", expand=True, fill="x", padx=(0, 5))
 
         self.disable_button = ttk.Button(
