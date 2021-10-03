@@ -56,7 +56,7 @@ class PluginDialogContent:
         self._plz_restart_label = ttk.Label(self.content_frame)
         self._plz_restart_label.pack(side="bottom", fill="x")
 
-        column_sizes = [120, 150, 180]
+        column_sizes = (120, 150, 180)
 
         left_side = ttk.Frame(panedwindow, padding=10)
         right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side
@@ -71,12 +71,11 @@ class PluginDialogContent:
         scrollbar = ttk.Scrollbar(left_side, command=self.treeview.yview)
         self.treeview.config(yscrollcommand=scrollbar.set)
 
-        self._search_var = tkinter.StringVar()
+        self._search_var = tkinter.StringVar(value="Filter by name, type or status...")
         search_entry = ttk.Entry(left_side, textvariable=self._search_var)
         search_entry.bind(
             "<FocusIn>", (lambda event: search_entry.selection_range(0, "end")), add=True
         )
-        search_entry.insert(0, "Filter by name, type or status...")
         self._search_var.trace_add("write", self._search)
 
         search_entry.pack(side="bottom", fill="x", pady=(10, 0))
