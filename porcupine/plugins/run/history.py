@@ -2,19 +2,15 @@ from __future__ import annotations
 
 import sys
 import time
-from dataclasses import dataclass
+import dataclasses
 from pathlib import Path
 from typing import Any, List, Optional
 
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
-
 from porcupine import settings, tabs, utils
+import dacite  # TODO: settings should do this automagically, but doesn't
 
 
-@dataclass
+@dataclasses.dataclass
 class ExampleCommand:
     command: str
     windows_command: Optional[str] = None
@@ -22,8 +18,8 @@ class ExampleCommand:
     external_terminal: bool = True
 
 
-# dict because must be json safe
-class Command(TypedDict):
+@dataclasses.dataclass
+class Command:
     command_format: str
     command: str
     cwd_format: str
@@ -31,7 +27,8 @@ class Command(TypedDict):
     external_terminal: bool
 
 
-class HistoryItem(TypedDict):
+@dataclasses.dataclass
+class HistoryItem:
     command: Command
     last_use: float
     use_count: int
@@ -60,28 +57,29 @@ def format_command(command_format: str, substitutions: dict[str, str]) -> str:
 
 
 def add(command: Command) -> None:
-    history: list[HistoryItem] = settings.get("run_history", List[Any])
+    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any])
+    history = [dacite.from_dict(HistoryItem, raw_item) for raw_item in raw_history]
 
     old_use_count = 0
     for item in history:
-        if item["command"]["command_format"] == command["command_format"]:
-            old_use_count = item["use_count"]
+        if item.command.command_format == command.command_format:
+            old_use_count = item.use_count
             history.remove(item)
             break
 
     history.insert(
-        0, {"command": command.copy(), "last_use": time.time(), "use_count": old_use_count + 1}
+        0, HistoryItem(command=command, last_use=time.time(), use_count=old_use_count + 1)
     )
 
     settings.set_(
         "run_history",
         [
-            item
+            dataclasses.asdict(item)
             for index, item in enumerate(history)
             # Delete everything after first 50 commands if used only once
             # Delete everything after first 100 commands if used once or twice
             # etc
-            if item["use_count"] > index / 50
+            if item.use_count > index / 50
         ],
     )
 
@@ -89,26 +87,28 @@ def add(command: Command) -> None:
 def get(tab: tabs.FileTab, project_path: Path) -> list[HistoryItem]:
     assert tab.path is not None
 
-    result: list[HistoryItem] = settings.get("run_history", List[Any]).copy()
+    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any]).copy()
+    history = [dacite.from_dict(HistoryItem, raw_item) for raw_item in raw_history]
+
     for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
             command = example.windows_command
         else:
             command = example.command
 
-        if command not in (item["command"]["command_format"] for item in result):
+        if command not in (item.command.command_format for item in history):
             substitutions = get_substitutions(tab.path, project_path)
-            result.append(
-                {
-                    "command": {
-                        "command_format": command,
-                        "command": format_command(command, substitutions),
-                        "cwd_format": example.working_directory,
-                        "cwd": str(format_cwd(example.working_directory, substitutions)),
-                        "external_terminal": example.external_terminal,
-                    },
-                    "last_use": 0,
-                    "use_count": 0,
-                }
+            history.append(
+                HistoryItem(
+                    command=Command(
+                        command_format=command,
+                        command=format_command(command, substitutions),
+                        cwd_format=example.working_directory,
+                        cwd=str(format_cwd(example.working_directory, substitutions)),
+                        external_terminal=example.external_terminal,
+                    ),
+                    last_use=0,
+                    use_count=0,
+                )
             )
-    return result
+    return history

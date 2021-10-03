@@ -13,10 +13,10 @@ from . import dialog, history, no_terminal, terminal
 def run(command: history.Command) -> None:
     history.add(command)
     # FIXME: python_venv plugin integration goes everywhere
-    if command["external_terminal"]:
-        terminal.run_command(command["command"], Path(command["cwd"]))
+    if command.external_terminal:
+        terminal.run_command(command.command, Path(command.cwd))
     else:
-        no_terminal.run_command(command["command"], Path(command["cwd"]))
+        no_terminal.run_command(command.command, Path(command.cwd))
 
 
 def ask_and_run_command(tab: tabs.FileTab) -> None:
@@ -36,7 +36,7 @@ def repeat_command(tab: tabs.FileTab) -> None:
 
     previous_commands = history.get(tab, utils.find_project_root(tab.path))
     if previous_commands:
-        run(previous_commands[0]["command"])
+        run(previous_commands[0].command)
     else:
         choose = utils.get_binding("<<Menubar:Run/Run command>>")
         repeat = utils.get_binding("<<Menubar:Run/Repeat previous command>>")

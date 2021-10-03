@@ -153,12 +153,12 @@ class CommandAsker:
         self.command.entry.focus_set()
 
     def _select_command_autocompletion(self, command: history.Command, prefix: str) -> None:
-        assert command["command_format"].startswith(prefix)
-        self.command.format_var.set(command["command_format"])
+        assert command.command_format.startswith(prefix)
+        self.command.format_var.set(command.command_format)
         self.command.entry.icursor(len(prefix))
         self.command.entry.selection_range("insert", "end")
-        self.cwd.format_var.set(command["cwd_format"])
-        self.terminal_var.set(command["external_terminal"])
+        self.cwd.format_var.set(command.cwd_format)
+        self.terminal_var.set(command.external_terminal)
 
     def _autocomplete(self, event: tkinter.Event[tkinter.Entry]) -> str | None:
         if len(event.char) != 1 or not event.char.isprintable():
@@ -171,7 +171,7 @@ class CommandAsker:
             text_to_keep = text_to_keep[: self.command.entry.index("sel.first")]
 
         for item in self._suggestions:
-            if item["command_format"].startswith(text_to_keep + event.char):
+            if item.command_format.startswith(text_to_keep + event.char):
                 self._select_command_autocompletion(item, text_to_keep + event.char)
                 return "break"
 
@@ -191,7 +191,7 @@ class CommandAsker:
 def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None:
     assert tab.path is not None
     asker = CommandAsker(
-        tab.path, project_path, [item["command"] for item in history.get(tab, project_path)]
+        tab.path, project_path, [item.command for item in history.get(tab, project_path)]
     )
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
@@ -200,11 +200,11 @@ def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None
     if asker.run_clicked:
         assert asker.command.value is not None
         assert asker.cwd.value is not None
-        return {
-            "command_format": asker.command.format_var.get(),
-            "command": asker.command.value,
-            "cwd_format": asker.cwd.format_var.get(),
-            "cwd": str(asker.cwd.value),
-            "external_terminal": asker.terminal_var.get(),
-        }
+        return history.Command(
+            command_format=asker.command.format_var.get(),
+            command=asker.command.value,
+            cwd_format=asker.cwd.format_var.get(),
+            cwd=str(asker.cwd.value),
+            external_terminal=asker.terminal_var.get(),
+        )
     return None
