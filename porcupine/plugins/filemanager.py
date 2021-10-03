@@ -140,7 +140,7 @@ def paste(new_path: Path) -> None:
 
 def copy(old_path: Path) -> None:
     global copy_path
-    copy_path = old_path
+    copy_path = str(old_path)
 
 
 def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
