@@ -267,6 +267,7 @@ working_directory = "{project_path}"
 external_terminal = false
 
 # TODO: Windows batch files and powershell files
+# override pygments_lexer if you want to
 # shebang_regex is partly copy/pasted from nano's default config
 [Shell]
 filename_patterns = ["*.sh"]
