@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import sys
 import tkinter
 from tkinter import ttk
 from tkinter.font import Font
@@ -161,6 +162,29 @@ def test_dataclass():
 
     assert settings_obj.get("foo", Foo) == Foo(123, "hello")
     assert settings_obj.get("bar", Foo) == Foo(456, "hi")
+
+
+def test_debug_dump(capsys):
+    settings_obj = settings.Settings(None, "<<Foo:{}>>")
+    settings_obj.add_option("foo", None, Optional[str])
+    settings_obj.set("bar", ["a", "b", "c"], from_config=True)
+    settings_obj.debug_dump()
+
+    output, errors = capsys.readouterr()
+    assert not errors
+    if sys.version_info < (3, 9):
+        output = output.replace("typing.Union[str, NoneType]", "typing.Optional[str]")
+    assert (
+        output
+        == """\
+1 known options (add_option called)
+  foo = None    (type: typing.Optional[str])
+
+1 unknown options (add_option not called)
+  bar = ['a', 'b', 'c']
+
+"""
+    )
 
 
 def test_font_family_chooser():
