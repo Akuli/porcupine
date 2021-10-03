@@ -16,7 +16,7 @@ def get_message() -> str:
 To get started, create a new file by pressing {utils.get_binding('<<Menubar:File/New File>>')}
 or open an existing file by pressing {utils.get_binding('<<Menubar:File/Open>>')}.
 You can save the file with {utils.get_binding('<<Menubar:File/Save>>')}
-and then run it by pressing {utils.get_binding('<<Menubar:Run/Run>>')}.
+and then run it by pressing {utils.get_binding('<<Menubar:Run/Repeat previous command>>')}.
 
 See the menus at the top of the editor for other things you can do and
 their keyboard shortcuts.
@@ -32,7 +32,7 @@ BORDER_SIZE = 30  # pixels
 # this is a class just to avoid globals (lol)
 class WelcomeMessageDisplayer:
     def __init__(self) -> None:
-        self._frame = ttk.Frame(get_tab_manager())
+        self._frame = ttk.Frame(get_tab_manager(), name="welcome_frame")
 
         # pad only on left side so the image goes as far right as possible
         top = ttk.Frame(self._frame)
@@ -45,7 +45,9 @@ class WelcomeMessageDisplayer:
         self.title_label = ttk.Label(centerer, text="Welcome to Porcupine!", font=("", 25, "bold"))
         self.title_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.message_label = ttk.Label(self._frame, text=get_message(), font=("", 15, ""))
+        self.message_label = ttk.Label(
+            self._frame, text=get_message(), font=("", 15, ""), name="message"
+        )
         self.message_label.pack(pady=BORDER_SIZE)
 
         self._on_tab_closed()

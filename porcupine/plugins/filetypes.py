@@ -79,8 +79,8 @@ def load_filetypes() -> None:
         filetype.setdefault("filename_patterns", [])
         filetype.setdefault("shebang_regex", r"this regex matches nothing^")
 
-        # if no langserver configured, then don't leave langserver from
-        # previous filetype around when switching filetype
+        # if not configured, don't let previous filetype leave a mess behind
+        filetype.setdefault("example_commands", [])
         filetype.setdefault("langserver", None)
 
 
