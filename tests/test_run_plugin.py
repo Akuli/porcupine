@@ -10,15 +10,8 @@ from porcupine import get_main_window, utils
 from porcupine.plugins.run import no_terminal, settings, terminal
 
 
-def copy_file_with_modification(source, destination, old_string, new_string):
-    content = source.read_text()
-    assert content.count(old_string) == 1
-    assert not destination.exists()
-    destination.write_text(content.replace(old_string, new_string))
-
-
 @pytest.fixture
-def isolated_history():
+def isolated_history(autouse=True):
     assert not settings.get("run_history", List[Any])
     yield
     settings.set_("run_history", [])
@@ -44,7 +37,7 @@ def fake_runner(tmp_path, monkeypatch):
 @pytest.mark.skipif(
     os.environ.get("GITHUB_ACTIONS") == "true", reason="no external terminal on github actions"
 )
-def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner, isolated_history):
+def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner):
     filetab.textwidget.insert("end", "open('file', 'w').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
     get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
@@ -70,7 +63,7 @@ def test_output_in_porcupine_window(filetab, tmp_path):
     assert "The process failed with status 1." in output_textwidget.get("1.0", "end")
 
 
-def test_no_previous_command_error(filetab, tmp_path, mocker, isolated_history):
+def test_no_previous_command_error(filetab, tmp_path, mocker):
     filetab.save_as(tmp_path / "foo.txt")
     mock = mocker.patch("tkinter.messagebox.showerror")
     get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
