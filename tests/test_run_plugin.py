@@ -35,12 +35,11 @@ def fake_runner(tmp_path, monkeypatch):
     old_content = path.read_text()
     assert old_content.count(input_statement) == 1
     path.write_text(old_content.replace(input_statement, ""))
-    return path
+
+    monkeypatch.setattr("porcupine.plugins.run.terminal.run_script", path)
 
 
 def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner, isolated_history):
-    monkeypatch.setattr("porcupine.plugins.run.terminal.run_script", fake_runner)
-
     filetab.textwidget.insert(
         "end",
         r"""
@@ -50,7 +49,7 @@ Path('file').write_text('hello')
     )
     filetab.save_as(tmp_path / "hello.py")
     get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
-    time.sleep(1.5)
+    time.sleep(0.5)
     assert (tmp_path / "file").read_text() == "hello"
 
 
