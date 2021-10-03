@@ -395,6 +395,7 @@ def save() -> None:
             file,
             indent=4,
         )
+        file.write("\n")
 
 
 def _load_from_file() -> None:
