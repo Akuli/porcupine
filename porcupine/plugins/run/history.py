@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import dataclasses
 import sys
 import time
-import dataclasses
 from pathlib import Path
 from typing import Any, List, Optional
 
-from porcupine import settings, tabs, utils
 import dacite  # TODO: settings should do this automagically, but doesn't
+
+from porcupine import settings, tabs, utils
 
 
 @dataclasses.dataclass
