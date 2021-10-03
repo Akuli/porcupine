@@ -43,8 +43,8 @@ def get_docstring(module_name: str) -> str:
     return "(no description available)"
 
 
-DIALOG_WIDTH = 800
-DIALOG_HEIGHT = 300
+DIALOG_WIDTH = 850
+DIALOG_HEIGHT = 350
 
 
 class PluginDialogContent:
@@ -58,10 +58,10 @@ class PluginDialogContent:
 
         column_sizes = [120, 150, 180]
 
-        left_side = ttk.Frame(panedwindow)
+        left_side = ttk.Frame(panedwindow, padding=10)
         right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side
         panedwindow.add(left_side, minsize=sum(column_sizes))
-        panedwindow.add(right_side, minsize=250)
+        panedwindow.add(right_side, minsize=300)
 
         self.treeview = ttk.Treeview(
             left_side, show="headings", columns=("name", "type", "status"), selectmode="extended"
@@ -79,7 +79,7 @@ class PluginDialogContent:
         search_entry.insert(0, "Filter by name, type or status...")
         self._search_var.trace_add("write", self._search)
 
-        search_entry.pack(side="bottom", fill="x")
+        search_entry.pack(side="bottom", fill="x", pady=(10, 0))
         self.treeview.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
