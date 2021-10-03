@@ -1,7 +1,6 @@
 """Compile, run and lint files."""
 from __future__ import annotations
 
-from tkinter import messagebox
 from typing import Any, List
 
 from porcupine import get_tab_manager, menubar, settings, tabs
@@ -10,12 +9,9 @@ from . import dialog, history, no_terminal, terminal
 
 
 def ask_and_run_command(tab: tabs.FileTab) -> None:
-    if tab.path is None:
-        # TODO: this isn't great, maybe just make substitutions not available?
-        messagebox.showerror(
-            "File not saved", "You need to save the file before you can run commands."
-        )
+    if not tab.save():
         return
+    assert tab.path is not None
 
     # FIXME: python_venv plugin integration goes everywhere
     info = dialog.ask_command(tab)
