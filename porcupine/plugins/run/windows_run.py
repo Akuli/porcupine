@@ -4,22 +4,12 @@
 # This should always run in the same python that Porcupine uses.
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 
 import colorama
 
 colorama.init()
-
-# When installed from the exe installer, python finds its modules with
-# PYTHONPATH. We don't want to pass it on to the user's command, because it
-# should run with the user's own Python, not Porcupine's python.
-new_env = dict(os.environ)
-try:
-    del new_env["PYTHONPATH"]
-except KeyError:
-    pass
 
 prog, directory, command = sys.argv
 print(colorama.Fore.BLUE + command + colorama.Fore.RESET)
