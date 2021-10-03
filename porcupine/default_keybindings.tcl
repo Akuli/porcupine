@@ -4,9 +4,11 @@
 if {[tk windowingsystem] == "aqua"} {
     set contmand Command
     event add "<<RightClick>>" <Button-2>
+    event add "<<WheelClick>>" <Button-3>
 } else {
     set contmand Control
     event add "<<RightClick>>" <Button-3>
+    event add "<<WheelClick>>" <Button-2>
 }
 
 event add "<<Menubar:File/New File>>" <$contmand-n>
@@ -59,13 +61,6 @@ for {set i 1} {$i <= 9} {incr i} {
 
 # tab_closing plugin
 event add "<<TabClosing:XButtonClickClose>>" <Button-1>
-if {[tk windowingsystem] == "aqua"} {
-    # Wheel click on mac is Button-3
-    event add "<<TabClosing:HeaderClickClose>>" <Button-3>
-} else {
-     # Wheel-click is Button-2
-    event add "<<TabClosing:HeaderClickClose>>" <Button-2>
-}
 
 # sort plugin
 event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
