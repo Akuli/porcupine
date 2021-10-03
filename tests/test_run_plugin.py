@@ -1,11 +1,12 @@
-import pytest
 import shutil
 import sys
 import time
-from typing import List, Any
+from typing import Any, List
+
+import pytest
 
 from porcupine import get_main_window
-from porcupine.plugins.run import settings, terminal
+from porcupine.plugins.run import no_terminal, settings, terminal
 
 
 def copy_file_with_modification(source, destination, old_string, new_string):
@@ -40,17 +41,29 @@ def fake_runner(tmp_path, monkeypatch):
 
 
 def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner, isolated_history):
-    filetab.textwidget.insert(
-        "end",
-        r"""
-from pathlib import Path
-Path('file').write_text('hello')
-""",
-    )
+    filetab.textwidget.insert("end", "open('file').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
     get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
     time.sleep(0.5)
     assert (tmp_path / "file").read_text() == "hello"
+
+
+def tkinter_sleep(delay):
+    end = time.time() + delay
+    while time.time() < end:
+        get_main_window().update()
+
+
+def test_output_in_porcupine_window(filetab, tmp_path):
+    (tmp_path / "asdf.py").write_text("open('this does not exist')")
+    filetab.textwidget.insert("end", "import asdf")
+    filetab.save_as(tmp_path / "main.py")
+
+    no_terminal.run_command(f"{sys.executable} main.py", tmp_path)
+    output_textwidget = filetab.bottom_frame.nametowidget("run_output")
+    tkinter_sleep(0.5)
+    assert "No such file or directory" in output_textwidget.get("1.0", "end")
+    assert "The process failed with status 1." in output_textwidget.get("1.0", "end")
 
 
 def test_no_previous_command_error(filetab, tmp_path, mocker, isolated_history):
