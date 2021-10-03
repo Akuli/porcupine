@@ -64,7 +64,7 @@ event add "<<TabClosing:XButtonClickClose>>" <Button-1>
 # no wheel click on mac (afaik)
 if {[tk windowingsystem] != "aqua"} {
     # Wheel-click is Button-2
-    event add "<<TabClosing:ShowMenu>>" <Button-3>
+    event add "<<TabClosing:HeaderClickClose>>" <Button-2>
 }
 
 # sort plugin
