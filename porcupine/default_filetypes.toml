@@ -86,50 +86,23 @@
 #        List of one-character strings. The autocompletion popup triggers
 #        automatically when one of these characters is entered.
 #
-#    commands
-#        Mapping with the following strings as keys and commands as values:
+#    example_commands
+#        List with information about a command to show in the "Run Command"
+#        dialog (F4 by default). Each list item must have the following keys:
 #
-#            compile
-#                This command will be ran without a separate terminal window.
-#                Leave this unset if the files don't need to be compiled.
+#            command
+#                Content of the "Run this command" text entry.
 #
-#            run
-#                This command will be ran in a separate terminal window.
+#            windows_command (default: same as command)
+#                If this is specified and porcupine is running on Windows, it is
+#                used instead of "command".
 #
-#            lint
-#                This command is not related to compiling and running. It will
-#                be ran without a separate terminal window.
+#            working_directory (default: "{folder_path}")
+#                Content of the "In this directory" text entry.
 #
-#        These substitutions are performed to the commands before they are ran:
-#
-#            {file}
-#                File being edited, e.g. "hello world.tar.gz"
-#
-#            {no_ext}
-#                Like {file}, but without the last file extenion, e.g.
-#                "hello world.tar".
-#
-#            {no_exts}
-#                Like {file}, but with no file extensions, e.g. "hello world".
-#
-#            {python}
-#                Path to a Python executable suitable for running the user's
-#                programs. The Python executable may be inside a virtualenv.
-#
-#            {exe}
-#                Same as {no_ext}.exe on Windows and ./{no_ext} on other
-#                platforms.
-#
-#        Redirections with e.g. > or | don't work. The command is split into an
-#        argument list before substituting in the filenames, so spaces in
-#        filenames don't cause issues. For example, if {file} is
-#        "hello world.txt", then specifying this...
-#
-#            tar cf {no_ext}.tar {file}
-#
-#        ...results in running a properly quoted command like this one:
-#
-#            tar cf "hello world.tar" "hello world.txt"
+#            external_terminal (default: true)
+#                Boolean: true to use a terminal or command prompt, false to run
+#                within the same Porcupine window.
 #
 #    langserver
 #        A mapping with these keys and values in it:
@@ -176,9 +149,16 @@ pygments_lexer = "pygments.lexers.Python3Lexer"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
-commands = {run = "{python} {file}"}
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
+
+[[Python.example_commands]]
+command = "python3 {file_name}"
+windows_command = "py {file_name}"
+[[Python.example_commands]]
+command = "python3 -m {project_name}"
+windows_command = "py -m {project_name}"
+working_directory = "{project_path}"
 
 [Python.langserver]
 command = "{porcupine_python} -m pyls"
@@ -200,7 +180,6 @@ autoindent_regexes = {indent = '.*:'}
 [C]
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
-commands = {compile = "cc {file} -Wall -Wextra -std=c99 -o {exe}", run = "{exe}"}
 comment_prefix = '//'
 # Press shift+enter instead of enter to avoid indent after 'case foo:'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
@@ -209,14 +188,28 @@ autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case
 # Override this in your own filetypes.toml if you use .h for C++ headers
 filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
 pygments_lexer = "pygments.lexers.CppLexer"
-commands = {compile = "c++ {file} -Wall -Wextra --std=c++17 -o {exe}", run = "{exe}"}
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+[[C.example_commands]]
+command = "gcc {file_name} -Wall -Wextra -std=c99 -o {file_stem}"
+windows_command = "gcc {file_name} -Wall -Wextra -std=c99 -o {file_stem}.exe"
+external_terminal = false
+[["C++".example_commands]]
+command = "g++ {file_name} -Wall -Wextra -std=c++17 -o {file_stem}"
+windows_command = "g++ {file_name} -Wall -Wextra -std=c++17 -o {file_stem}.exe"
+external_terminal = false
+
+[[C.example_commands]]
+command = "./{file_stem}"
+windows_command = "{file_stem}.exe"
+[["C++".example_commands]]
+command = "./{file_stem}"
+windows_command = "{file_stem}.exe"
 
 [C.langserver]
 command = "clangd"
 language_id = "c"
-
 ["C++".langserver]
 command = "clangd"
 language_id = "cpp"
@@ -224,49 +217,70 @@ language_id = "cpp"
 [Java]
 filename_patterns = ["*.java"]
 pygments_lexer = "pygments.lexers.JavaLexer"
-commands = {compile = "javac {file}", run = "java {no_ext}"}
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+[[Java.example_commands]]
+command = "javac {file_name}"
+external_terminal = false
+[[Java.example_commands]]
+command = "java {file_stem}"
 
 [JavaScript]
 filename_patterns = ["*.js"]
 pygments_lexer = "pygments.lexers.JavascriptLexer"
 tabs2spaces = true
 indent_size = 2
-commands = {run = "node {file}"}
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+# TODO: node typically ends up in path from ~/.bashrc
+[[JavaScript.example_commands]]
+command = "node {file_name}"
+external_terminal = false  # useful for webdev?
 
 [TypeScript]
 filename_patterns = ["*.ts"]
 pygments_lexer = "pygments.lexers.TypeScriptLexer"
 tabs2spaces = true
 indent_size = 2
-commands = {compile = "tsc {file}", run = "node {no_ext}.js"}
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+[[TypeScript.example_commands]]
+command = "tsc {file_name}"
+external_terminal = false
+[[TypeScript.example_commands]]
+command = "node {file_stem}.js"
+external_terminal = false  # useful for webdev?
 
 [Makefile]
 filename_patterns = ["Makefile", "makefile", "Makefile.*", "makefile.*"]
 pygments_lexer = "pygments.lexers.MakefileLexer"
 # make doesn't work with spaces
 tabs2spaces = false
-commands = {run = "make"}
 comment_prefix = '#'
 
+[[Makefile.example_commands]]
+command = "make"
+working_directory = "{project_path}"
+external_terminal = false
+
 # TODO: Windows batch files and powershell files
-#
-# i'm not trying to discriminate anyone with pygments_lexer and
-# commands, override them in your user-specific config you want to
-#
+# override pygments_lexer if you want to
 # shebang_regex is partly copy/pasted from nano's default config
 [Shell]
 filename_patterns = ["*.sh"]
 shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
-commands = {run = "bash {file}"}
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|exit)( .+)?|break|continue|;;', indent = '[^()]+\)|.*\b(then|do|else|in)'}
+
+[[Shell.example_commands]]
+command = "./{file_name}"
+[[Shell.example_commands]]
+command = "shellcheck {file_name}"
+external_terminal = false
 
 # tcl man pages and many people on wiki.tcl.tk indent with 3 spaces
 [Tcl]
@@ -274,8 +288,10 @@ filename_patterns = ["*.tcl"]
 shebang_regex = '(wi|tcl)sh$'
 pygments_lexer = "pygments.lexers.TclLexer"
 tabs2spaces = true
-commands = {run = "tclsh {file}"}
 comment_prefix = '#'
+
+[[Tcl.example_commands]]
+command = "tclsh {file_name}"
 
 # TODO: autoindents for many more languages
 
