@@ -38,9 +38,8 @@ class NoTerminalRunner:
         emit_message(("clear", ""))
         emit_message(("info", command + "\n"))
 
-        # same as passing -u option to python (#802)
         env = dict(os.environ)
-        env["PYTHONUNBUFFERED"] = "1"
+        env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
 
         try:
             process = self._running_process = subprocess.Popen(
