@@ -10,8 +10,8 @@ from porcupine import get_main_window, utils
 from porcupine.plugins.run import no_terminal, settings, terminal
 
 
-@pytest.fixture
-def isolated_history(autouse=True):
+@pytest.fixture(autouse=True)
+def isolated_history():
     assert not settings.get("run_history", List[Any])
     yield
     settings.set_("run_history", [])
