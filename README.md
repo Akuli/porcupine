@@ -40,6 +40,10 @@ it shows up as an empty window.
 
 ## Installing Porcupine
 
+### Development Install
+
+See [below](#developing-porcupine).
+
 ### Debian-based Linux distributions (e.g. Ubuntu, Mint)
 
 Open a terminal and run these commands:
@@ -101,10 +105,6 @@ you will likely get a warning similar to this one:
 
 You should still be able to run the installer by clicking "More info".
 When installed, you will find Porcupine from the start menu.
-
-### Development Install
-
-See [below](#developing-porcupine).
 
 ## FAQ
 
@@ -238,5 +238,5 @@ Instead, ask me to run them if you need to.
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
-  Docs and Windows exe are built automatically after running the install script
+  Docs and Windows exe are built automatically after running the release script
   (see `.github/workflows/on-release.yml`), but `porcupine.wiki` may need manual updating.

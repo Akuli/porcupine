@@ -410,7 +410,7 @@ def init_enough_for_using_disabled_plugins_list() -> None:
 
 
 def _init_global_gui_settings() -> None:
-    add_option("pygments_style", "default", converter=_check_pygments_style)
+    add_option("pygments_style", "stata-dark", converter=_check_pygments_style)
     add_option("default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     fixedfont = tkinter.font.Font(name="TkFixedFont", exists=True)
