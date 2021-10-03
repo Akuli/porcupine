@@ -36,7 +36,7 @@ def repeat_command(tab: tabs.FileTab) -> None:
 
     previous_commands = history.get(tab, utils.find_project_root(tab.path))
     if previous_commands:
-        run(previous_commands[0].command)
+        run(previous_commands[0])
     else:
         choose = utils.get_binding("<<Menubar:Run/Run command>>")
         repeat = utils.get_binding("<<Menubar:Run/Repeat previous command>>")

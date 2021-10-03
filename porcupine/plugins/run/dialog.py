@@ -190,9 +190,7 @@ class CommandAsker:
 
 def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None:
     assert tab.path is not None
-    asker = CommandAsker(
-        tab.path, project_path, [item.command for item in history.get(tab, project_path)]
-    )
+    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path))
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
     asker.window.wait_window()

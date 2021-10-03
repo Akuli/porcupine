@@ -85,31 +85,27 @@ def add(command: Command) -> None:
     )
 
 
-def get(tab: tabs.FileTab, project_path: Path) -> list[HistoryItem]:
+def get(tab: tabs.FileTab, project_path: Path) -> list[Command]:
     assert tab.path is not None
 
     raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any]).copy()
-    history = [dacite.from_dict(HistoryItem, raw_item) for raw_item in raw_history]
+    commands = [dacite.from_dict(HistoryItem, raw_item).command for raw_item in raw_history]
 
     for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
-            command = example.windows_command
+            command_format = example.windows_command
         else:
-            command = example.command
+            command_format = example.command
 
-        if command not in (item.command.command_format for item in history):
+        if command_format not in (item.command_format for item in commands):
             substitutions = get_substitutions(tab.path, project_path)
-            history.append(
-                HistoryItem(
-                    command=Command(
-                        command_format=command,
-                        command=format_command(command, substitutions),
-                        cwd_format=example.working_directory,
-                        cwd=str(format_cwd(example.working_directory, substitutions)),
-                        external_terminal=example.external_terminal,
-                    ),
-                    last_use=0,
-                    use_count=0,
+            commands.append(
+                Command(
+                    command_format=command_format,
+                    command=format_command(command_format, substitutions),
+                    cwd_format=example.working_directory,
+                    cwd=str(format_cwd(example.working_directory, substitutions)),
+                    external_terminal=example.external_terminal,
                 )
             )
-    return history
+    return commands
