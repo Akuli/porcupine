@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 import time
@@ -40,6 +41,9 @@ def fake_runner(tmp_path, monkeypatch):
     monkeypatch.setattr("porcupine.plugins.run.terminal.run_script", path)
 
 
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true", reason="no external terminal on github actions"
+)
 def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner, isolated_history):
     filetab.textwidget.insert("end", "open('file', 'w').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
