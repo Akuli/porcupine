@@ -59,9 +59,11 @@ for {set i 1} {$i <= 9} {incr i} {
 
 # tab_closing plugin
 event add "<<TabClosing:XButtonClickClose>>" <Button-1>
-# no wheel click on mac (afaik)
-if {[tk windowingsystem] != "aqua"} {
-    # Wheel-click is Button-2
+if {[tk windowingsystem] == "aqua"} {
+    # Wheel click on mac is Button-3
+    event add "<<TabClosing:HeaderClickClose>>" <Button-3>
+} else {
+     # Wheel-click is Button-2
     event add "<<TabClosing:HeaderClickClose>>" <Button-2>
 }
 
