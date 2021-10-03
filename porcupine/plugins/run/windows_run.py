@@ -14,7 +14,7 @@ colorama.init()
 prog, directory, command = sys.argv
 print(colorama.Fore.BLUE + command + colorama.Fore.RESET)
 try:
-    returncode: int | None = subprocess.call(command, cwd=directory, env=new_env, shell=True)
+    returncode: int | None = subprocess.call(command, cwd=directory, shell=True)
 except KeyboardInterrupt:
     # the subprocess should have already printed any traceback or
     # whatever it might want to print
