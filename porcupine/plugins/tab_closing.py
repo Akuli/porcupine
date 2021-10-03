@@ -68,5 +68,5 @@ def setup() -> None:
         lambda tab: get_tab_manager().tab(tab, image=images.get("closebutton"), compound="right")
     )
     tabmanager.bind("<<TabClosing:XButtonClickClose>>", on_x_clicked, add=True)
-    tabmanager.bind("<<TabClosing:ShowMenu>>", show_menu, add=True)
+    tabmanager.bind("<<RightClick>>", show_menu, add=True)
     tabmanager.bind("<<TabClosing:HeaderClickClose>>", on_header_clicked, add=True)
