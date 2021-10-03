@@ -144,7 +144,9 @@ class CommandAsker:
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
         if self._suggestions:
+            # Run _autocomplete when pressing a key without alt
             self.command.entry.bind("<Key>", self._autocomplete, add=True)
+            self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
             self._select_command_autocompletion(self._suggestions[0], prefix="")
 
         self.command.entry.selection_range(0, "end")
@@ -159,7 +161,7 @@ class CommandAsker:
         self.terminal_var.set(command["external_terminal"])
 
     def _autocomplete(self, event: tkinter.Event[tkinter.Entry]) -> str | None:
-        if len(event.char) != 1:
+        if len(event.char) != 1 or not event.char.isprintable():
             return None
 
         text_to_keep = self.command.entry.get()
