@@ -20,6 +20,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
     top = tkinter.Toplevel()
     top.resizable(False, False)
     top.transient(get_main_window())
+    top.title("Choose a line ending")
 
     big_frame = ttk.Frame(top)
     big_frame.pack(fill="both", expand=True)
@@ -76,7 +77,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         ),
     )
 
-    ttk.Button(big_frame, text="OK", command=top.destroy).pack(side="right", padx=10, pady=10)
+    ttk.Button(big_frame, text="OK", command=top.destroy, width=15).pack(side="right", padx=10, pady=10)
     top.bind("<Escape>", (lambda e: top.destroy()), add=True)
 
     top.wait_window()
