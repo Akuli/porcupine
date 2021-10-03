@@ -36,13 +36,23 @@ def run_tool(tool: str, code: str, path: Path | None) -> str:
             [str(python), "-m", tool, "-"],
             check=True,
             stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             cwd=(Path.home() if path is None else path.parent),
             input=code.encode("utf-8"),
         )
         return result.stdout.decode("utf-8")
     except Exception:
         log.exception(f"running {tool} failed")
-        messagebox.showerror(f"Running {tool} failed", traceback.format_exc())
+        if tool == "black":
+            messagebox.showerror(
+                f"Running {tool} failed",
+                # can't black's use emojis in tkinter :(
+                "Oh no!\nFailed to reformat current file.\n\n"
+                "Probably there is a syntax error in your file.",
+            )
+        else:
+            # idk, if this could happen
+            messagebox.showerror(f"Running {tool} failed", traceback.format_exc())
         return code
 
 
