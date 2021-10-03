@@ -478,13 +478,13 @@ def _create_dialog_content() -> ttk.Frame:
     content = ttk.Frame(big_frame)
     content.pack(fill="both", expand=True, padx=5, pady=5)
     ttk.Separator(big_frame).pack(fill="x")
-    buttonframe = ttk.Frame(big_frame)
+    buttonframe = ttk.Frame(big_frame, padding=5)
     buttonframe.pack(fill="x")
 
-    ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all).pack(
-        side="right", padx=3, pady=3
-    )
-    ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side="right", padx=3, pady=3)
+    ttk.Button(
+        buttonframe, text="Reset all settings", command=confirm_and_reset_all, width=15
+    ).pack(side="left")
+    ttk.Button(buttonframe, text="OK", command=dialog.withdraw, width=10).pack(side="right")
 
     content.grid_columnconfigure(0, weight=1)
     content.grid_columnconfigure(1, weight=1)
@@ -513,7 +513,7 @@ def get_dialog_content() -> ttk.Frame:
     Use grid with the returned widget. Its columns are configured like this::
 
         ,-----------------------------------------------------------.
-        | Porcupine Settings                                        |
+        | Porcupine Settings                      |  _  |  O  |  X  |
         |-----------------------------------------------------------|
         |                           :                           :   |
         |                           :                           :col|
@@ -533,10 +533,10 @@ def get_dialog_content() -> ttk.Frame:
         |                           :                           :   |
         |                           :                           :   |
         |                           :                           :   |
-        | ========================================================= |
-        |                                   ,---------. ,---------. |
-        |                                   |   OK    | |  Reset  | |
-        |                                   `---------' `---------' |
+        |===========================================================|
+        |  ,---------.                                 ,---------.  |
+        |  |  Reset  |                                 |   OK    |  |
+        |  `---------'                                 `---------'  |
         `-----------------------------------------------------------'
 
     Column 0 typically contains labels such as "Font Family:", and column 1
@@ -607,7 +607,7 @@ def _grid_widgets(
 ) -> None:
     label = ttk.Label(chooser.master, text=label_text)
     label.grid(column=0, sticky="w")
-    chooser.grid(row=label.grid_info()["row"], column=1, sticky="we")
+    chooser.grid(row=label.grid_info()["row"], column=1, sticky="we", pady=5)
     if triangle is not None:
         triangle.grid(row=label.grid_info()["row"], column=2)
 
@@ -655,7 +655,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
     checkbutton. Let me know if you need it.
     """
     checkbutton = ttk.Checkbutton(get_dialog_content(), **checkbutton_kwargs)
-    checkbutton.grid(column=0, columnspan=2, sticky="w")
+    checkbutton.grid(column=0, columnspan=2, sticky="w", pady=2)
 
     var = tkinter.BooleanVar()
 

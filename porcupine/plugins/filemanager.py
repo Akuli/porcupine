@@ -44,19 +44,19 @@ def ask_name_for_renaming(old_path: Path) -> Path | None:
     dialog.resizable(False, False)
     dialog.title("Rename")
 
-    big_frame = ttk.Frame(dialog)
+    big_frame = ttk.Frame(dialog, padding=10)
     big_frame.pack(fill="both", expand=True)
     ttk.Label(
         big_frame, text=f"Enter a new name for {old_path.name}:", wraplength=label_width
-    ).pack(fill="x", padx=10, pady=10)
+    ).pack(fill="x")
 
     var = tkinter.StringVar()
     entry = ttk.Entry(big_frame, textvariable=var)
-    entry.pack(pady=40)
+    entry.pack(pady=40, fill="x")
     entry.insert(0, old_path.name)
 
     button_frame = ttk.Frame(big_frame)
-    button_frame.pack(fill="x", pady=10)
+    button_frame.pack(fill="x", pady=(10, 0))
 
     new_path = None
 
@@ -65,10 +65,10 @@ def ask_name_for_renaming(old_path: Path) -> Path | None:
         new_path = old_path.with_name(entry.get())
         dialog.destroy()
 
-    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
-    cancel_button.pack(side="left", expand=True)
-    ok_button = ttk.Button(button_frame, text="OK", command=select_name, state="disabled")
-    ok_button.pack(side="right", expand=True)
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
+    cancel_button.pack(side="left", expand=True, fill="x", padx=(0, 5))
+    ok_button = ttk.Button(button_frame, text="OK", command=select_name, state="disabled", width=1)
+    ok_button.pack(side="right", expand=True, fill="x", padx=(5, 0))
 
     def validate_name(*junk: object) -> None:
         name = entry.get()
