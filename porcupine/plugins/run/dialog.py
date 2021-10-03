@@ -37,7 +37,9 @@ class FormattingEntryAndLabels(Generic[T]):
         self.entry.selection_range(0, "end")
 
         grid_y += 1
-        self._command_display = textutils.create_passive_text_widget(entry_area, width=1, height=2, wrap='char', cursor='arrow')
+        self._command_display = textutils.create_passive_text_widget(
+            entry_area, width=1, height=2, wrap="char", cursor="arrow"
+        )
         self._command_display.grid(row=grid_y, column=1, sticky="we")
 
         self.format_var.trace_add("write", self._validate)
