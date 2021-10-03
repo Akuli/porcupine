@@ -40,8 +40,8 @@ def repeat_command(tab: tabs.FileTab) -> None:
     else:
         messagebox.showerror(
             "No commands to repeat",
-            f"Please press {utils.get_binding('<<Run/Run command>>')} to choose a command to run."
-            f" You can then repeat it with {utils.get_binding('<<Run/Repeat previous command>>')}.",
+            f"Please press {utils.get_binding('<<Menubar:Run/Run command>>')} to choose a command to run."
+            f" You can then repeat it with {utils.get_binding('<<Menubar:Run/Repeat previous command>>')}.",
         )
 
 
