@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-import os.path
 import shutil
 import subprocess
 import sys
@@ -26,7 +25,7 @@ if sys.platform == "win32":
 else:
     trash_name = "trash"
 
-copy_path = ""
+copy_path: Path | None = None
 
 
 def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
@@ -39,23 +38,34 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
     ]
 
 
-def ask_name_for_renaming(old_path: Path) -> Path | None:
+def ask_name_for_renaming(old_path: Path, is_paste=False) -> Path | None:
     label_width = 400
 
     dialog = tkinter.Toplevel()
     dialog.transient(get_main_window())
     dialog.resizable(False, False)
-    dialog.title("Rename")
 
     big_frame = ttk.Frame(dialog, padding=10)
     big_frame.pack(fill="both", expand=True)
-    ttk.Label(
-        big_frame, text=f"Enter a new name for {old_path.name}:", wraplength=label_width
-    ).pack(fill="x")
 
+    if is_paste:
+        dialog.title("File conflict")
+        ttk.Label(
+            big_frame, text=f"{old_path.parent.name} already has a file named {old_path.name}."
+                            f"\nDo you want to overwrite it?",
+            wraplength=label_width
+        ).pack(fill="x")
+    else:
+        dialog.title("Rename")
+        ttk.Label(
+            big_frame, text=f"Enter a new name for {old_path.name}:", wraplength=label_width
+        ).pack(fill="x")
+
+    entry_frame = ttk.Frame(big_frame)
+    entry_frame.pack(fill="x")
     var = tkinter.StringVar()
-    entry = ttk.Entry(big_frame, textvariable=var)
-    entry.pack(pady=40, fill="x")
+    entry = ttk.Entry(entry_frame, textvariable=var)
+    entry.pack(pady=40, side=tkinter.BOTTOM, fill="x")
     entry.insert(0, old_path.name)
 
     button_frame = ttk.Frame(big_frame)
@@ -73,6 +83,24 @@ def ask_name_for_renaming(old_path: Path) -> Path | None:
     ok_button = ttk.Button(button_frame, text="OK", command=select_name, state="disabled", width=1)
     ok_button.pack(side="right", expand=True, fill="x", padx=(5, 0))
 
+    def overwriting() -> None:
+        entry.config(state="disabled")
+        ok_button.config(state="enabled")
+
+    def renaming() -> None:
+        entry.config(state="enabled")
+        validate_name()
+
+    choice = tkinter.IntVar(value=1)
+
+    if is_paste:
+        r1 = ttk.Radiobutton(entry_frame, text="Overwrite", variable=choice, value=0, command=overwriting)
+        r2 = ttk.Radiobutton(entry_frame, text="Change name of destination", variable=choice, value=1,
+                             command=renaming)
+        r1.pack(pady=(40, 0), fill="x")
+        r1.invoke()
+        r2.pack(fill="x")
+
     def validate_name(*junk: object) -> None:
         name = entry.get()
         try:
@@ -81,7 +109,7 @@ def ask_name_for_renaming(old_path: Path) -> Path | None:
             ok_button.config(state="disabled")
             return
 
-        if possible_new_path.exists():
+        if choice.get() == 1 and possible_new_path.exists():
             ok_button.config(state="disabled")
         else:
             ok_button.config(state="normal")
@@ -93,6 +121,10 @@ def ask_name_for_renaming(old_path: Path) -> Path | None:
     entry.focus()
 
     dialog.wait_window()
+
+    if choice.get() == 0:
+        new_path = old_path
+
     return new_path
 
 
@@ -126,21 +158,28 @@ def rename(old_path: Path) -> None:
 
 
 def paste(new_path: Path) -> None:
-    global copy_path
-    new_file_path = os.path.join(new_path, os.path.basename(copy_path))
+    assert copy_path is not None
+    new_file_path = new_path / copy_path.name
 
-    if os.path.exists(new_file_path):
-        log.error("already exists - copy aborted")
-        return
+    if new_file_path.exists():
+        if new_file_path.parent == copy_path.parent:  # copying file in the same dir (sequential number copy)
+            path_number = 0
+            path_stem = new_file_path.stem
+            path_suffix = new_file_path.suffix
+            while new_file_path.exists():
+                path_number += 1
+                new_file_path = new_file_path.with_name(path_stem + f" ({path_number})" + path_suffix)
+        else:
+            new_file_path = ask_name_for_renaming(new_file_path, is_paste=True)  # rename-overwrite file conflict
 
-    with open(new_file_path, mode='a'):
-        pass
-    shutil.copy(copy_path, new_file_path)
+    if new_file_path is not None:
+        new_file_path.touch()
+        shutil.copy(copy_path, new_file_path)
 
 
 def copy(old_path: Path) -> None:
     global copy_path
-    copy_path = str(old_path)
+    copy_path = old_path
 
 
 def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
@@ -242,8 +281,8 @@ commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
-    Command("Copy", None, is_NOT_project_root, copy),
-    Command("Paste", None, (lambda p: p.is_dir() and copy_path != ''), paste),
+    Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
+    Command("Paste here", "<<Paste>>", (lambda p: p.is_dir() and copy_path is not None), paste),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
