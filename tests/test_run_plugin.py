@@ -52,6 +52,16 @@ def tkinter_sleep(delay):
 
 
 def test_output_in_porcupine_window(filetab, tmp_path):
+    filetab.textwidget.insert("end", "print(12345)")
+    filetab.save_as(tmp_path / "lol.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
+    output_textwidget = filetab.bottom_frame.nametowidget("run_output")
+    tkinter_sleep(1)
+
+    assert "12345" in output_textwidget.get("1.0", "end")
+
+
+def test_python_error_message(filetab, tmp_path):
     (tmp_path / "asdf.py").write_text("open('this does not exist')")
     filetab.textwidget.insert("end", "import asdf")
     filetab.save_as(tmp_path / "main.py")
@@ -59,6 +69,7 @@ def test_output_in_porcupine_window(filetab, tmp_path):
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
     output_textwidget = filetab.bottom_frame.nametowidget("run_output")
     tkinter_sleep(1)
+
     assert "No such file or directory" in output_textwidget.get("1.0", "end")
     assert "The process failed with status 1." in output_textwidget.get("1.0", "end")
 
