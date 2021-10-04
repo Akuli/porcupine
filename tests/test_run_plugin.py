@@ -51,6 +51,10 @@ def tkinter_sleep(delay):
         get_main_window().update()
 
 
+def get_output(filetab):
+    return filetab.bottom_frame.nametowidget("run_output").get("1.0", "end - 1 char")
+
+
 def test_output_in_porcupine_window(filetab, tmp_path):
     filetab.textwidget.insert("end", "print(12345)")
     filetab.save_as(tmp_path / "lol.py")
@@ -67,11 +71,22 @@ def test_python_error_message(filetab, tmp_path):
     filetab.save_as(tmp_path / "main.py")
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
-    output_textwidget = filetab.bottom_frame.nametowidget("run_output")
     tkinter_sleep(1)
+    assert "No such file or directory" in get_output(filetab)
+    assert "The process failed with status 1." in get_output(filetab)
 
-    assert "No such file or directory" in output_textwidget.get("1.0", "end")
-    assert "The process failed with status 1." in output_textwidget.get("1.0", "end")
+
+def test_python_unbuffered(filetab, tmp_path):
+    (tmp_path / "sleeper.py").write_text(
+        """
+import time
+print("This should show up immediately")
+time.sleep(2)
+"""
+    )
+    no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
+    tkinter_sleep(1)
+    assert "This should show up immediately" in get_output(filetab)
 
 
 def test_no_previous_command_error(filetab, tmp_path, mocker):
