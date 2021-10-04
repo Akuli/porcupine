@@ -67,12 +67,14 @@ def test_output_in_porcupine_window(filetab, tmp_path):
 
 
 def test_python_unbuffered(filetab, tmp_path):
-    (tmp_path / "sleeper.py").write_text("""
+    (tmp_path / "sleeper.py").write_text(
+        """
 import time
 print("This should show up immediately")
 time.sleep(2)
-""")
-    no_terminal.run_command(f'{utils.quote(sys.executable)} sleeper.py', tmp_path)
+"""
+    )
+    no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     tkinter_sleep(1)
     assert "This should show up immediately" in get_output(filetab)
 
