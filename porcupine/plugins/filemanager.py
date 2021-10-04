@@ -171,6 +171,7 @@ def paste_here(new_path: Path) -> None:
 
     if new_file_path is not None and not copy_path == new_file_path:
         shutil.copy(copy_path, new_file_path)
+        get_directory_tree().refresh()
 
 
 def copy(old_path: Path) -> None:
