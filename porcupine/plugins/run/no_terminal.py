@@ -53,12 +53,11 @@ class NoTerminalRunner:
         self.textwidget.tag_bind("link", "<Leave>", self._leave_link)
         self.textwidget.tag_bind("link", "<Button-1>", self._open_link)
 
-        self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
+        self._output_queue: queue.Queue[tuple[Path, str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
         self._queue_handler()
 
         self._links: dict[str, tuple[Path, int]] = {}
-        self._cwd: Path | None = None
 
     # TODO: much links code copy/pasted from aboutdialog plugin
     def _enter_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
@@ -80,8 +79,6 @@ class NoTerminalRunner:
                 break
 
     def run_command(self, cwd: Path, command: str) -> None:
-        self._cwd = cwd
-
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
         threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
@@ -93,7 +90,7 @@ class NoTerminalRunner:
             if process is not None and self._running_process is not process:
                 # another _run_command() is already running
                 return
-            self._output_queue.put(msg)
+            self._output_queue.put((cwd,) + msg)
 
         emit_message(("clear", ""))
         emit_message(("info", command + "\n"))
@@ -130,7 +127,7 @@ class NoTerminalRunner:
             emit_message(("error", f"The process failed with status {process.returncode}."))
 
     def _queue_handler(self) -> None:
-        messages: list[tuple[str, str]] = []
+        messages: list[tuple[Path, str, str]] = []
         while True:
             try:
                 messages.append(self._output_queue.get(block=False))
@@ -139,14 +136,13 @@ class NoTerminalRunner:
 
         if messages:
             self.textwidget.config(state="normal")
-            for tag, text in messages:
+            for cwd, tag, text in messages:
                 if tag == "clear":
                     assert not text
                     self.textwidget.delete("1.0", "end")
                     self._links.clear()
                 else:
-                    assert self._cwd is not None
-                    for part in parse_paths(self._cwd, text):
+                    for part in parse_paths(cwd, text):
                         if isinstance(part, str):
                             self.textwidget.insert("end", part, [tag])
                         else:
