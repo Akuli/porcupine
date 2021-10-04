@@ -107,7 +107,7 @@ class CommandAsker:
 
         sub_text = "\n".join("\t•  {%s} = %s" % pair for pair in substitutions.items())
         sub_textbox = textutils.create_passive_text_widget(
-            content_frame, height=len(substitutions) + 2, tabs=10
+            content_frame, width=1, height=len(substitutions) + 2, tabs=10
         )
         sub_textbox.pack(fill="x")
         sub_textbox.config(state="normal")
