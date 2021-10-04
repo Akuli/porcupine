@@ -205,6 +205,10 @@ def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None
     asker = CommandAsker(tab.path, project_path, history.get(tab, project_path))
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
+
+    # you probably don't wanna resize it in y, it's safe to do it here,
+    # as the content is already packed
+    asker.window.resizable(True, False)
     asker.window.wait_window()
 
     if asker.run_clicked:
