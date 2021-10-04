@@ -74,7 +74,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path):
     filetab.save_as(tmp_path / "main.py")
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
-    tkinter_sleep(1)
+    tkinter_sleep(2)
     assert "No such file or directory" in get_output(filetab)
     assert "The process failed with status 1." in get_output(filetab)
 
