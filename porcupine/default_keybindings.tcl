@@ -3,8 +3,10 @@
 # Use Command on mac, Control on other systems
 if {[tk windowingsystem] == "aqua"} {
     set contmand Command
+    event add "<<RightClick>>" <Button-2>
 } else {
     set contmand Control
+    event add "<<RightClick>>" <Button-3>
 }
 
 event add "<<Menubar:File/New File>>" <$contmand-n>
@@ -57,12 +59,9 @@ for {set i 1} {$i <= 9} {incr i} {
 
 # tab_closing plugin
 event add "<<TabClosing:XButtonClickClose>>" <Button-1>
-if {[tk windowingsystem] == "aqua"} {
-    # right-click is Button-2, no wheel-click (afaik)
-    event add "<<TabClosing:ShowMenu>>" <Button-2>
-} else {
-    # right-click is Button-3, wheel-click is Button-2
-    event add "<<TabClosing:ShowMenu>>" <Button-3>
+# no wheel click on mac (afaik)
+if {[tk windowingsystem] != "aqua"} {
+    # Wheel-click is Button-2
     event add "<<TabClosing:HeaderClickClose>>" <Button-2>
 }
 

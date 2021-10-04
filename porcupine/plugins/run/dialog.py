@@ -6,7 +6,7 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Callable, Generic, TypeVar
 
-from porcupine import get_main_window, tabs
+from porcupine import get_main_window, tabs, textutils
 
 from . import history
 
@@ -37,12 +37,10 @@ class FormattingEntryAndLabels(Generic[T]):
         self.entry.selection_range(0, "end")
 
         grid_y += 1
-        self.label = ttk.Label(entry_area)
-        self.label.grid(row=grid_y, column=1, sticky="we")
-
-        # spacer
-        grid_y += 1
-        ttk.Label(entry_area).grid(row=grid_y)
+        self._command_display = textutils.create_passive_text_widget(
+            entry_area, width=1, height=2, wrap="char", cursor="arrow"
+        )
+        self._command_display.grid(row=grid_y, column=1, sticky="we")
 
         self.format_var.trace_add("write", self._validate)
         self.value: T | None = None
@@ -53,13 +51,19 @@ class FormattingEntryAndLabels(Generic[T]):
             value = self._formatter(self.format_var.get(), self._substitutions)
         except (ValueError, KeyError, IndexError):
             self.value = None
-            self.label.config(text="Substitution error", font="")
+            self._command_display.config(state="normal", font="TkDefaultFont")
+            self._command_display.delete("1.0", "end")
+            self._command_display.insert("1.0", "Substitution error")
+            self._command_display.config(state="disabled")
         else:
-            self.label.config(text=str(value), font="TkFixedFont")
             if self._value_validator(value):
                 self.value = value
             else:
                 self.value = None
+            self._command_display.config(state="normal", font="TkFixedFont")
+            self._command_display.delete("1.0", "end")
+            self._command_display.insert("1.0", str(value))
+            self._command_display.config(state="disabled")
 
         # _validated_callback might not work if called from __init__
         if junk_from_var_trace:
