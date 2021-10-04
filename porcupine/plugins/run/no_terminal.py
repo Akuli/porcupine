@@ -19,9 +19,11 @@ log = logging.getLogger(__name__)
 filename_regex_parts = [
     # c compiler output
     # playground.c:4:9: warning: ...
-    r'^([^:]+):([0-9]+)(?=:)'
+    r"^([^:]+):([0-9]+)(?=:)",
+    # python error
+    r'File "([^"]+)", line ([0-9]+)',
 ]
-filename_regex = '|'.join(r'(?:' + part + r')' for part in filename_regex_parts)
+filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
 def parse_paths(cwd: Path, text: str) -> Iterator[tuple[str, Path, int] | str]:
@@ -32,7 +34,7 @@ def parse_paths(cwd: Path, text: str) -> Iterator[tuple[str, Path, int] | str]:
         if not path.is_file():
             continue
 
-        yield text[previous_end:match.start()]
+        yield text[previous_end : match.start()]
         yield (match.group(0), path, int(lineno))
         previous_end = match.end()
 
