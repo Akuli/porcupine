@@ -220,9 +220,13 @@ def errordialog(title: str, message: str, monospace_text: str | None = None) -> 
     if get_main_window().winfo_viewable():
         window.transient(get_main_window())
 
+    def copy_exc_to_clipboard() -> None:
+        window.clipboard_clear()
+        window.clipboard_append(monospace_text)
+
     # there's nothing but this frame in the window because ttk widgets
     # may use a different background color than the window
-    big_frame = ttk.Frame(window)
+    big_frame = ttk.Frame(window, padding=10)
     big_frame.pack(fill="both", expand=True)
 
     label = ttk.Label(big_frame, text=message)
@@ -231,17 +235,22 @@ def errordialog(title: str, message: str, monospace_text: str | None = None) -> 
         label.pack(fill="both", expand=True)
         geometry = "250x150"
     else:
-        label.pack(anchor="center")
+        label.pack(anchor="w")
         # there's no ttk.Text 0_o this looks very different from
         # everything else and it sucks :(
-        text = tkinter.Text(big_frame, width=1, height=1)
-        text.pack(fill="both", expand=True)
+        text = tkinter.Text(big_frame, width=1, height=1, padx=5, pady=5)
+        text.pack(fill="both", expand=True, pady=20)
         text.insert("1.0", monospace_text)
         text.config(state="disabled")
-        geometry = "400x300"
 
-    button = ttk.Button(big_frame, text="OK", command=window.destroy)
-    button.pack(pady=10)
+        # idk, why this button could be useful, but makes the window look professional
+        ttk.Button(
+            big_frame, text="Copy to clipboard", command=copy_exc_to_clipboard, width=15
+        ).pack(side="left")
+        geometry = "450x350"
+
+    button = ttk.Button(big_frame, text="OK", command=window.destroy, width=15)
+    button.pack(side="right")
     button.focus()
     button.bind("<Return>", (lambda event: button.invoke()), add=True)
 
