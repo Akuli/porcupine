@@ -38,7 +38,7 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
     ]
 
 
-def ask_name_for_renaming(old_path: Path, is_paste=False) -> Path | None:
+def ask_name_for_renaming(old_path: Path, is_paste: bool = False) -> Path | None:
     label_width = 400
 
     dialog = tkinter.Toplevel()
@@ -48,23 +48,23 @@ def ask_name_for_renaming(old_path: Path, is_paste=False) -> Path | None:
     big_frame = ttk.Frame(dialog, padding=10)
     big_frame.pack(fill="both", expand=True)
 
-    if is_paste and old_path.parent != copy_path.parent:
-        dialog.title("File conflict")
-        ttk.Label(
-            big_frame, text=f"{old_path.parent} already has a file named {old_path.name}."
-                            f"\nDo you want to overwrite it?",
-            wraplength=label_width
-        ).pack(fill="x")
-    else:
-        dialog.title("Rename")
-        ttk.Label(
-            big_frame, text=f"Enter a new name for {old_path.name}:", wraplength=label_width
-        ).pack(fill="x")
+    dialog_title = "Rename"
+    dialog_phrase = f"Enter a new name for {old_path.name}:"
+
+    if is_paste:
+        dialog_title = "File conflict"
+        if old_path.parent == copy_path.parent:
+            dialog_phrase = f"{old_path.parent} already has a file named {old_path.name}.\nChange the name of the copy."
+        else:
+            dialog_phrase = f"{old_path.parent} already has a file named {old_path.name}.\nDo you want to overwrite it?"
+
+    dialog.title(dialog_title)
+    ttk.Label(big_frame, text=dialog_phrase, wraplength=label_width).pack(fill="x")
 
     entry_frame = ttk.Frame(big_frame)
     entry_frame.pack(fill="x")
-    var = tkinter.StringVar()
-    entry = ttk.Entry(entry_frame, textvariable=var)
+    file_name_var = tkinter.StringVar()
+    entry = ttk.Entry(entry_frame, textvariable=file_name_var)
     entry.pack(pady=40, side=tkinter.BOTTOM, fill="x")
     entry.insert(0, old_path.name)
 
@@ -76,10 +76,10 @@ def ask_name_for_renaming(old_path: Path, is_paste=False) -> Path | None:
 
     def select_name() -> None:
         nonlocal new_path
-        if not overwrite_var.get():
-            new_path = old_path.with_name(entry.get())
-        else:
+        if overwrite_var.get():
             new_path = old_path
+        else:
+            new_path = old_path.with_name(entry.get())
         dialog.destroy()
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
@@ -87,23 +87,22 @@ def ask_name_for_renaming(old_path: Path, is_paste=False) -> Path | None:
     ok_button = ttk.Button(button_frame, text="OK", command=select_name, state="disabled", width=1)
     ok_button.pack(side="right", expand=True, fill="x", padx=(5, 0))
 
-    def overwriting() -> None:
-        entry.config(state="disabled")
-        ok_button.config(state="enabled")
-
-    def renaming() -> None:
-        entry.config(state="enabled")
-        validate_name()
-
     if is_paste and copy_path.parent != old_path.parent:
-        r1 = ttk.Radiobutton(entry_frame, text="Overwrite", variable=overwrite_var, value=True, command=overwriting)
-        r2 = ttk.Radiobutton(entry_frame, text="Change name of destination", variable=overwrite_var, value=False,
-                             command=renaming)
+        r1 = ttk.Radiobutton(entry_frame, text="Overwrite", variable=overwrite_var, value=True)
+        r2 = ttk.Radiobutton(entry_frame, text="Change name of destination", variable=overwrite_var, value=False)
         r1.pack(pady=(40, 0), fill="x")
         r1.invoke()
         r2.pack(fill="x")
+        ok_button.config(state="normal")
+        entry.config(state="disabled")
 
-    def validate_name(*junk: object) -> None:
+    def update_dialog_state(*junk: object) -> None:
+        if overwrite_var.get():
+            ok_button.config(state="normal")
+            entry.config(state="disabled")
+            return
+
+        entry.config(state="normal")
         name = entry.get()
         try:
             possible_new_path = old_path.with_name(name)
@@ -116,7 +115,8 @@ def ask_name_for_renaming(old_path: Path, is_paste=False) -> Path | None:
         else:
             ok_button.config(state="normal")
 
-    var.trace_add("write", validate_name)
+    overwrite_var.trace_add("write", update_dialog_state)
+    file_name_var.trace_add("write", update_dialog_state)
     entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
     entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
     entry.select_range(0, "end")
@@ -158,20 +158,26 @@ def rename(old_path: Path) -> None:
 
 
 def paste(new_path: Path) -> None:
-    assert copy_path is not None
     paste_here(new_path.parent)
 
 
 def paste_here(new_path: Path) -> None:
     assert copy_path is not None
+    assert new_path.is_dir()
+
     new_file_path = new_path / copy_path.name
 
     if new_file_path.exists():
         new_file_path = ask_name_for_renaming(new_file_path, is_paste=True)  # rename-overwrite file conflict
+        if new_file_path is None:
+            return
 
-    if new_file_path is not None and not copy_path == new_file_path:
+    if copy_path != new_file_path:
         shutil.copy(copy_path, new_file_path)
         get_directory_tree().refresh()
+        if copy_path.name == new_file_path.name:  # if overwrite and file is open refresh page
+            close_tabs(find_tabs_by_parent_path(new_file_path))
+            get_tab_manager().open_file(new_file_path)
 
 
 def copy(old_path: Path) -> None:
