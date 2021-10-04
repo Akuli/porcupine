@@ -51,19 +51,42 @@ def tkinter_sleep(delay):
         get_main_window().update()
 
 
+def get_output_widget(filetab):
+    return filetab.bottom_frame.nametowidget("run_output")
+
+
 def get_output(filetab):
-    return filetab.bottom_frame.nametowidget("run_output").get("1.0", "end - 1 char")
+    return get_output_widget(filetab).get("1.0", "end - 1 char")
 
 
 def test_output_in_porcupine_window(filetab, tmp_path):
-    (tmp_path / "asdf.py").write_text("open('this does not exist')")
+    filetab.textwidget.insert("end", "print(12345)")
+    filetab.save_as(tmp_path / "lol.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
+    tkinter_sleep(1)
+
+    assert "12345" in get_output(filetab)
+
+
+def test_python_error_message(filetab, tabmanager, tmp_path):
+    (tmp_path / "asdf.py").write_text("print(1)\nopen('this does not exist')\nprint(2)\n")
     filetab.textwidget.insert("end", "import asdf")
     filetab.save_as(tmp_path / "main.py")
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
-    tkinter_sleep(1)
+    tkinter_sleep(2)
     assert "No such file or directory" in get_output(filetab)
     assert "The process failed with status 1." in get_output(filetab)
+
+    # click the last link
+    textwidget = get_output_widget(filetab)
+    textwidget.mark_set("current", "link.last - 1 char")
+    no_terminal._no_terminal_runners[str(filetab)]._open_link(None)
+
+    selected_tab = tabmanager.select()
+    assert selected_tab != filetab
+    assert selected_tab.path == tmp_path / "asdf.py"
+    assert selected_tab.textwidget.get("sel.first", "sel.last") == "open('this does not exist')"
 
 
 def test_python_unbuffered(filetab, tmp_path):
