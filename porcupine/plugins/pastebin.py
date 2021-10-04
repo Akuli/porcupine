@@ -220,10 +220,6 @@ def errordialog(title: str, message: str, monospace_text: str | None = None) -> 
     if get_main_window().winfo_viewable():
         window.transient(get_main_window())
 
-    def copy_exc_to_clipboard() -> None:
-        window.clipboard_clear()
-        window.clipboard_append(monospace_text)
-
     # there's nothing but this frame in the window because ttk widgets
     # may use a different background color than the window
     big_frame = ttk.Frame(window, padding=10)
@@ -242,6 +238,10 @@ def errordialog(title: str, message: str, monospace_text: str | None = None) -> 
         text.pack(fill="both", expand=True, pady=20)
         text.insert("1.0", monospace_text)
         text.config(state="disabled")
+
+        def copy_exc_to_clipboard() -> None:
+            window.clipboard_clear()
+            window.clipboard_append(monospace_text)
 
         # idk, why this button could be useful, but makes the window look professional
         ttk.Button(
