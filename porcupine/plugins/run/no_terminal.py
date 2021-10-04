@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import queue
 import subprocess
 import threading
@@ -37,6 +38,9 @@ class NoTerminalRunner:
         emit_message(("clear", ""))
         emit_message(("info", command + "\n"))
 
+        env = dict(os.environ)
+        env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
+
         try:
             process = self._running_process = subprocess.Popen(
                 command,
@@ -44,6 +48,7 @@ class NoTerminalRunner:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True,
+                env=env,
                 **utils.subprocess_kwargs,
             )
         except OSError as e:
