@@ -105,13 +105,15 @@ class CommandAsker:
             validated_callback=self.update_run_button,
         )
 
-        sub_text = "\n".join("\t•  {%s} = %s" % pair for pair in substitutions.items())
+        sub_text = "\n".join("{%s} = %s" % pair for pair in substitutions.items())
         sub_textbox = textutils.create_passive_text_widget(
-            content_frame, width=1, height=len(substitutions) + 2, tabs=10
+            content_frame, height=len(substitutions) + 2
         )
         sub_textbox.pack(fill="x")
         sub_textbox.config(state="normal")
         sub_textbox.insert("1.0", f"Substitutions:\n{sub_text}\n")
+        sub_textbox.tag_configure("indent", lmargin1=15)
+        sub_textbox.tag_add("indent", "2.0", "end")
         sub_textbox.config(state="disabled")
 
         # TODO: remember value with settings
