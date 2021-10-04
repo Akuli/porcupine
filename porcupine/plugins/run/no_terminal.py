@@ -26,19 +26,19 @@ filename_regex_parts = [
 filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
-def parse_paths(cwd: Path, text: str) -> Iterator[tuple[str, Path, int] | str]:
+def parse_paths(cwd: Path, line: str) -> Iterator[tuple[str, Path, int] | str]:
     previous_end = 0
-    for match in re.finditer(filename_regex, text):
+    for match in re.finditer(filename_regex, line):
         filename, lineno = (value for value in match.groups() if value is not None)
         path = cwd / filename  # doesn't use cwd if filename is absolute
         if not path.is_file():
             continue
 
-        yield text[previous_end : match.start()]
+        yield line[previous_end : match.start()]
         yield (match.group(0), path, int(lineno))
         previous_end = match.end()
 
-    yield text[previous_end:]
+    yield line[previous_end:]
 
 
 class NoTerminalRunner:
@@ -136,13 +136,13 @@ class NoTerminalRunner:
 
         if messages:
             self.textwidget.config(state="normal")
-            for cwd, tag, text in messages:
+            for cwd, tag, output_line in messages:
                 if tag == "clear":
-                    assert not text
+                    assert not output_line
                     self.textwidget.delete("1.0", "end")
                     self._links.clear()
                 else:
-                    for part in parse_paths(cwd, text):
+                    for part in parse_paths(cwd, output_line):
                         if isinstance(part, str):
                             self.textwidget.insert("end", part, [tag])
                         else:
