@@ -125,8 +125,8 @@ class NoTerminalRunner:
             for tag, output_line in messages:
                 if tag == "clear":
                     assert not output_line
-                    self._link_manager.delete_all_links()
                     self.textwidget.delete("1.0", "end")
+                    self._link_manager.delete_all_links()  # prevent memory leak
                 else:
                     self._link_manager.append_text(output_line, [tag])
             self.textwidget.config(state="disabled")
