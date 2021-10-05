@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import functools
-import itertools
 import os
 import re
 import subprocess
@@ -20,7 +19,10 @@ else:
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils
 
-BORING_TEXT = """
+_install_path = Path(__file__).absolute().parent.parent.parent
+_plugin_path = Path(plugins.__path__[0])
+
+BORING_TEXT = f"""
 Porcupine is a simple but powerful and configurable text editor written in \
 Python using the notorious tkinter GUI library. It started as a \
 proof-of-concept of a somewhat good editor written in tkinter, but nowadays \
@@ -38,6 +40,9 @@ Links:
 Porcupine is available under the MIT license. It means that you can do \
 pretty much anything you want with it as long as you distribute the \
 LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
+
+Porcupine is installed to [{_install_path}]({_install_path}).
+You can install plugins to [{_plugin_path}]({_plugin_path}).
 """
 
 
@@ -61,67 +66,27 @@ class AboutDialogContent(ttk.Frame):
             link_color = "blue"
         else:
             link_color = "DarkOrange1"
-
-        # http://effbot.org/zone/tkinter-text-hyperlink.htm
-        # that tutorial is almost as old as i am, but it's still usable
         self._textwidget.tag_config("link", foreground=link_color, underline=True)
-        self._textwidget.tag_bind("link", "<Enter>", self._enter_link)
-        self._textwidget.tag_bind("link", "<Leave>", self._leave_link)
-        self._link_tag_names = map("link-{}".format, itertools.count())
 
         self._textwidget.config(state="normal")
-        for text_chunk in BORING_TEXT.strip().split("\n\n"):
-            self._add_minimal_markdown(text_chunk)
-            self._textwidget.insert("end", "\n\n")
-        self._add_directory_link(
-            "Porcupine is installed to", Path(__file__).absolute().parent.parent.parent
-        )
-        self._add_directory_link("You can install plugins to", Path(plugins.__path__[0]))
+        textutils.LinkManager(
+            self._textwidget,
+            r"\[(.+?)\]\((.+?)\)",
+            get_text=(lambda m: m.group(1)),
+            on_click=(lambda m: self._open_link(m.group(2))),
+        ).append_text(BORING_TEXT.strip() + "\n\n")
         self._textwidget.config(state="disabled")
 
         label = ttk.Label(self, image=images.get("logo-200x200"), cursor="hand2")
         label.pack(anchor="e")
         label.bind("<Button-1>", show_huge_logo, add=True)
 
-    def _add_minimal_markdown(self, text: str) -> None:
-        parts: list[str | Match[str]] = []
+    def _open_link(self, url_or_path: str) -> None:
+        if url_or_path.startswith('https://'):
+            webbrowser.open(url_or_path)
+            return
 
-        previous_end = 0
-        for link in re.finditer(r"\[(.+?)\]\((.+?)\)", text):
-            parts.append(text[previous_end : link.start()])
-            parts.append(link)
-            previous_end = link.end()
-        parts.append(text[previous_end:])
-
-        for part in parts:
-            if isinstance(part, str):
-                self._textwidget.insert("end", part)
-            else:
-                # a link
-                text, href = part.groups()
-                tag = next(self._link_tag_names)
-                self._textwidget.tag_bind(  # bindcheck: ignore
-                    tag, "<Button-1>", functools.partial(self._open_link, href)
-                )
-                self._textwidget.insert("end", text, ["link", tag])
-
-    def _add_directory_link(self, description: str, path: Path) -> None:
-        tag = next(self._link_tag_names)
-        self._textwidget.insert("end", description + " ")
-        self._textwidget.insert("end", str(path), ["link", tag])
-        self._textwidget.tag_bind(tag, "<Button-1>", functools.partial(self._open_directory, path))
-        self._textwidget.insert("end", ".\n")
-
-    def _enter_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
-        self._textwidget.config(cursor="hand2")
-
-    def _leave_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
-        self._textwidget.config(cursor="")
-
-    def _open_link(self, href: str, junk_event: tkinter.Event[tkinter.Misc]) -> None:
-        webbrowser.open(href)
-
-    def _open_directory(self, path: Path, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+        path = Path(url_or_path)
         assert path.is_dir()
         if sys.platform == "win32":
             os.startfile(path)
