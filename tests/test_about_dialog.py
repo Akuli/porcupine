@@ -17,6 +17,7 @@ def test_it_doesnt_crash(monkeypatch):
 
     monkeypatch.setattr("tkinter.Toplevel.wait_window", fake_wait_window)
 
+    get_main_window().update()
     get_main_window().event_generate("<<Menubar:Help/About Porcupine>>")
     assert called == 1
 
