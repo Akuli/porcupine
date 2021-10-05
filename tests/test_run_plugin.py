@@ -41,7 +41,7 @@ def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner):
     filetab.textwidget.insert("end", "open('file', 'w').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
     get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
-    time.sleep(1)
+    time.sleep(3)
     assert (tmp_path / "file").read_text() == "hello"
 
 
@@ -63,7 +63,7 @@ def test_output_in_porcupine_window(filetab, tmp_path):
     filetab.textwidget.insert("end", "print(12345)")
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
-    tkinter_sleep(1)
+    tkinter_sleep(3)
 
     assert "12345" in get_output(filetab)
 
@@ -74,7 +74,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path):
     filetab.save_as(tmp_path / "main.py")
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
-    tkinter_sleep(2)
+    tkinter_sleep(3)
     assert "No such file or directory" in get_output(filetab)
     assert "The process failed with status 1." in get_output(filetab)
 
