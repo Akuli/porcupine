@@ -111,7 +111,7 @@ class CommandAsker:
         sub_textbox = textutils.create_passive_text_widget(
             content_frame, height=len(substitutions), width=1
         )
-        sub_textbox.pack(fill="x", padx=15, pady=(0, 20))
+        sub_textbox.pack(fill="x", padx=(15, 0), pady=(0, 20))
         sub_textbox.config(state="normal")
         sub_textbox.insert("1.0", sub_text)
         sub_textbox.config(state="disabled")
