@@ -707,7 +707,7 @@ class MainText(tkinter.Text):
 
 
 def create_passive_text_widget(
-    parent: tkinter.Widget, is_focusable: bool = False, **kwargs: Any
+    parent: tkinter.Misc, is_focusable: bool = False, **kwargs: Any
 ) -> tkinter.Text:
     # TODO: document `is_focusable` kwarg
     """Create a text widget that is meant to be used for displaying text, not for editing.
