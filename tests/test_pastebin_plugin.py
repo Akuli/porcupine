@@ -153,20 +153,14 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
 
 def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, dont_run_in_thread):
     monkeypatch.setattr(pastebin_module, "DPASTE_URL", "ThisIsNotValidUrlStart://wat")
-    mock = mocker.patch("porcupine.plugins.pastebin.errordialog")
+    mocker.patch("tkinter.messagebox.showerror")
 
     tabmanager.select(filetab)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
-    get_main_window().update()
 
-    mock.assert_called_once()
-    args, kwargs = mock.call_args
-    assert args == (
-        "Pasting Failed",
-        "Check your internet connection and try again.\n\nHere's the full error message:",
+    tkinter.messagebox.showerror.assert_called_once_with(
+        "Pasting failed", "Check your internet connection or try a different pastebin."
     )
-    assert "ThisIsNotValidUrlStart".lower() in kwargs["monospace_text"]
-    assert "ThisIsNotValidUrlStart".lower() in caplog.records[-1].message
 
 
 def test_invalid_return(filetab, monkeypatch, tabmanager, mocker, caplog):
