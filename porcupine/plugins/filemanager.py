@@ -33,12 +33,14 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
         tab
         for tab in get_tab_manager().tabs()
         if isinstance(tab, tabs.FileTab)
-           and tab.path is not None
-           and (path == tab.path or path in tab.path.parents)
+        and tab.path is not None
+        and (path == tab.path or path in tab.path.parents)
     ]
 
 
-def ask_file_name(old_path: Path, is_paste: bool = False, show_overwriting_option: bool = False) -> Path | None:
+def ask_file_name(
+    old_path: Path, is_paste: bool = False, show_overwriting_option: bool = False
+) -> Path | None:
     label_width = 400
 
     dialog = tkinter.Toplevel()
@@ -54,9 +56,15 @@ def ask_file_name(old_path: Path, is_paste: bool = False, show_overwriting_optio
     if is_paste:
         dialog_title = "File conflict"
         if show_overwriting_option:
-            dialog_phrase = f"{old_path.parent} already has a file named {old_path.name}.\nDo you want to overwrite it?"
+            dialog_phrase = (
+                f"{old_path.parent} already has a file named {old_path.name}.\nDo you want to"
+                " overwrite it?"
+            )
         else:
-            dialog_phrase = f"{old_path.parent} already has a file named {old_path.name}.\nChange the name of the copy."
+            dialog_phrase = (
+                f"{old_path.parent} already has a file named {old_path.name}.\nChange the name of"
+                " the copy."
+            )
 
     dialog.title(dialog_title)
     ttk.Label(big_frame, text=dialog_phrase, wraplength=label_width).pack(fill="x")
@@ -89,7 +97,12 @@ def ask_file_name(old_path: Path, is_paste: bool = False, show_overwriting_optio
 
     if is_paste and show_overwriting_option:
         r1 = ttk.Radiobutton(entry_frame, text="Overwrite", variable=overwrite_var, value=True)
-        r2 = ttk.Radiobutton(entry_frame, text="Change name of destination", variable=overwrite_var, value=False)
+        r2 = ttk.Radiobutton(
+            entry_frame,
+            text="Change name of destination",
+            variable=overwrite_var,
+            value=False,
+        )
         r1.pack(pady=(40, 0), fill="x")
         r1.invoke()
         r2.pack(fill="x")
@@ -161,26 +174,26 @@ def paste(new_path: Path) -> None:
 
 
 def paste_here(new_path: Path) -> None:
-    assert copy_path is not None and copy_path.is_file()
+    assert is_copy_path_valid()
     assert new_path.is_dir()
 
     new_file_path = new_path / copy_path.name
 
     if new_file_path.exists():
-        show_overwriting_option = True
-        if new_file_path.parent == copy_path.parent:
-            show_overwriting_option = False
-        path = ask_file_name(new_file_path, is_paste=True, show_overwriting_option=show_overwriting_option)
+        path = ask_file_name(
+            new_file_path,
+            is_paste=True,
+            show_overwriting_option=(new_file_path.parent != copy_path.parent),
+        )
         if path is None:
             return
         new_file_path = path
 
-    if copy_path != new_file_path:
-        shutil.copy(copy_path, new_file_path)
-        get_directory_tree().refresh()
-        if copy_path == new_file_path:  # if overwrite and file is open refresh page
-            close_tabs(find_tabs_by_parent_path(new_file_path))
-            get_tab_manager().open_file(new_file_path)
+        if copy_path == new_file_path:  # user pressed X or cancel on conflict dialog
+            return
+
+    shutil.copy(copy_path, new_file_path)
+    get_directory_tree().refresh()
 
 
 def copy(old_path: Path) -> None:
@@ -279,12 +292,20 @@ class Command:
             self.callback(path)
 
 
+def is_copy_path_valid() -> bool:
+    return copy_path is not None and copy_path.is_file()
+
+
 def is_NOT_project_root(path: Path) -> bool:
     return path not in map(get_path, get_directory_tree().get_children())
 
 
 def can_paste(path: Path) -> bool:
-    return is_NOT_project_root(path) and copy_path is not None and copy_path.is_file()
+    return is_NOT_project_root(path) and is_copy_path_valid()
+
+
+def can_paste_here(path: Path) -> bool:
+    return path.is_dir() and is_copy_path_valid()
 
 
 commands = [
@@ -293,7 +314,7 @@ commands = [
     # TODO: update venv locations when the venv is renamed
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
-    Command("Paste here", None, (lambda p: p.is_dir() and copy_path is not None and copy_path.is_file()), paste_here),
+    Command("Paste here", None, can_paste_here, paste_here),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
