@@ -15,7 +15,7 @@ def test_it_doesnt_crash(monkeypatch, monkeypatch_dirs):
         self.destroy()  # can't do this with mock objects
 
     monkeypatch.setattr("tkinter.Toplevel.wait_window", fake_wait_window)
-    aboutdialog.show_about_dialog()
+    get_main_window().event_generate("<<Menubar:Help/About Porcupine>>")
     assert called == 1
 
 
