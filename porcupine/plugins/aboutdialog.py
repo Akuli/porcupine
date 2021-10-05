@@ -45,9 +45,11 @@ def get_link_opener(match: re.Match[str]) -> Callable[[], object]:
 
     path = Path(match.group(1))
     assert path.is_dir()
-    if sys.platform == "win32":
+
+    # str() needed because mypy is awesome
+    if str(sys.platform) == "win32":
         return lambda: os.startfile(path)
-    if sys.platform == "darwin":
+    if str(sys.platform) == "darwin":
         return lambda: subprocess.Popen(["open", path])
     return lambda: subprocess.Popen(["xdg-open", path])
 

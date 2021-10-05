@@ -27,7 +27,7 @@ filename_regex_parts = [
 filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
-def open_file_with_line_number(self, path: Path, lineno: int) -> None:
+def open_file_with_line_number(path: Path, lineno: int) -> None:
     tab = get_tab_manager().open_file(path)
     if tab is not None:
         tab.textwidget.mark_set("insert", f"{lineno}.0")
