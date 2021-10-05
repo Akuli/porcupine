@@ -745,6 +745,15 @@ class FileTab(Tab):
             #   - Indicates that something isn't saved
             return True
 
+    # TODO: document this
+    def reload_if_necessary(self) -> None:
+        if self.other_program_changed_file():
+            cursor_pos = self.textwidget.index("insert")
+            scroll_fraction = self.textwidget.yview()[0]
+            if self.reload():
+                self.textwidget.mark_set("insert", cursor_pos)
+                self.textwidget.yview_moveto(scroll_fraction)
+
     def equivalent(self, other: Tab) -> bool:  # override
         # this used to have hasattr(other, "path") instead of isinstance
         # but it not work if a plugin defines custom tab with path attribute

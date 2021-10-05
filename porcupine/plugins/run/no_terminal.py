@@ -12,7 +12,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable
 
-from porcupine import get_tab_manager, images, textutils, utils
+from porcupine import get_tab_manager, images, tabs, textutils, utils
 
 log = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class NoTerminalRunner:
                 return
             self._output_queue.put(msg)
 
-        emit_message(("clear", ""))
+        emit_message(("start", ""))
         emit_message(("info", command + "\n"))
 
         env = dict(os.environ)
@@ -112,6 +112,7 @@ class NoTerminalRunner:
             emit_message(("info", "The process completed successfully."))
         else:
             emit_message(("error", f"The process failed with status {process.returncode}."))
+        emit_message(("end", ""))
 
     def _queue_handler(self) -> None:
         messages: list[tuple[str, str]] = []
@@ -124,10 +125,14 @@ class NoTerminalRunner:
         if messages:
             self.textwidget.config(state="normal")
             for tag, output_line in messages:
-                if tag == "clear":
+                if tag == "start":
                     assert not output_line
                     self.textwidget.delete("1.0", "end")
                     self._link_manager.delete_all_links()  # prevent memory leak
+                elif tag == "end":
+                    tab = get_tab_manager().select()
+                    if isinstance(tab, tabs.FileTab):
+                        tab.reload_if_necessary()
                 else:
                     self._link_manager.append_text(output_line, [tag])
             self.textwidget.config(state="disabled")
@@ -150,7 +155,6 @@ _no_terminal_runners: dict[str, NoTerminalRunner] = {}
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
-
     tab = get_tab_manager().select()
     assert tab is not None
 

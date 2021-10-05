@@ -102,6 +102,14 @@ time.sleep(5)
     assert "This should show up immediately" in get_output(filetab)
 
 
+def test_changing_current_file(filetab, tmp_path):
+    filetab.textwidget.insert('end', 'with open("foo.py", "w") as f: f.write("lol")')
+    filetab.save_as(tmp_path / "foo.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} foo.py", tmp_path)
+    tkinter_sleep(3)
+    assert filetab.textwidget.get("1.0", "end").strip() == "lol"
+
+
 def test_no_previous_command_error(filetab, tmp_path, mocker):
     filetab.save_as(tmp_path / "foo.txt")
     mock = mocker.patch("tkinter.messagebox.showerror")

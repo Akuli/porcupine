@@ -1,23 +1,12 @@
 """Reload file from disk automatically."""
-from functools import partial
-
+# TODO: this plugin is a bit weird right now, maybe shouldn't be a plugin?
 from porcupine import get_tab_manager, tabs
 
 
-def reload_if_necessary(tab: tabs.FileTab, junk: object) -> None:
-    if tab.other_program_changed_file():
-        cursor_pos = tab.textwidget.index("insert")
-        scroll_fraction = tab.textwidget.yview()[0]
-        if tab.reload():
-            tab.textwidget.mark_set("insert", cursor_pos)
-            tab.textwidget.yview_moveto(scroll_fraction)
-
-
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    callback = partial(reload_if_necessary, tab)
-    tab.bind("<<TabSelected>>", callback, add=True)
-    tab.textwidget.bind("<FocusIn>", callback, add=True)
-    tab.textwidget.bind("<Button-1>", callback, add=True)
+    tab.bind("<<TabSelected>>", (lambda e: tab.reload_if_necessary()), add=True)
+    tab.textwidget.bind("<FocusIn>", (lambda e: tab.reload_if_necessary()), add=True)
+    tab.textwidget.bind("<Button-1>", (lambda e: tab.reload_if_necessary()), add=True)
 
 
 def setup() -> None:
