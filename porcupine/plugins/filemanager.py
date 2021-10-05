@@ -98,10 +98,7 @@ def ask_file_name(
     if is_paste and show_overwriting_option:
         r1 = ttk.Radiobutton(entry_frame, text="Overwrite", variable=overwrite_var, value=True)
         r2 = ttk.Radiobutton(
-            entry_frame,
-            text="Change name of destination",
-            variable=overwrite_var,
-            value=False,
+            entry_frame, text="Change name of destination", variable=overwrite_var, value=False
         )
         r1.pack(pady=(40, 0), fill="x")
         r1.invoke()
