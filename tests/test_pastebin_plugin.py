@@ -152,10 +152,11 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
 
 
 def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, dont_run_in_thread):
+    monkeypatch.setattr(pastebin_module, "DPASTE_URL", "ThisIsNotValidUrlStart://wat")
     mocker.patch("tkinter.messagebox.showerror")
 
-    get_main_window().tk.call("tk", "busy", "hold", get_main_window())
-    pastebin_module.pasting_done_callback(pastebin_module.DPaste(), tkinter.Toplevel(), False, "")
+    tabmanager.select(filetab)
+    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
 
     tkinter.messagebox.showerror.assert_called_once_with(
         "Pasting failed", "Check your internet connection or try a different pastebin."
