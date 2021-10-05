@@ -33,7 +33,7 @@ class FormattingEntryAndLabels(Generic[T]):
 
         self.format_var = tkinter.StringVar()
         self.entry = ttk.Entry(entry_area, font="TkFixedFont", textvariable=self.format_var)
-        self.entry.grid(row=grid_y, column=1, sticky="we")
+        self.entry.grid(row=grid_y, column=1, sticky="we", padx=(5, 0))
         self.entry.selection_range(0, "end")
 
         grid_y += 1
@@ -105,8 +105,16 @@ class CommandAsker:
             validated_callback=self.update_run_button,
         )
 
+        ttk.Label(content_frame, text="Substitutions:").pack(anchor="w")
+
         sub_text = "\n".join("{%s} = %s" % pair for pair in substitutions.items())
-        ttk.Label(content_frame, text=f"Substitutions:\n{sub_text}\n").pack(fill="x")
+        sub_textbox = textutils.create_passive_text_widget(
+            content_frame, height=len(substitutions), width=1, wrap="none"
+        )
+        sub_textbox.pack(fill="x", padx=(15, 0), pady=(0, 20))
+        sub_textbox.config(state="normal")
+        sub_textbox.insert("1.0", sub_text)
+        sub_textbox.config(state="disabled")
 
         porcupine_text = (
             "Display the output inside the Porcupine window (does not support keyboard input)"
@@ -135,10 +143,12 @@ class CommandAsker:
 
         button_frame = ttk.Frame(content_frame)
         button_frame.pack(fill="x")
-        cancel_button = ttk.Button(button_frame, text="Cancel", command=self.window.destroy)
-        cancel_button.pack(side="left", fill="x", expand=True)
-        self.run_button = ttk.Button(button_frame, text="Run", command=self.on_run_clicked)
-        self.run_button.pack(side="left", fill="x", expand=True)
+        cancel_button = ttk.Button(
+            button_frame, text="Cancel", command=self.window.destroy, width=1
+        )
+        cancel_button.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.run_button = ttk.Button(button_frame, text="Run", command=self.on_run_clicked, width=1)
+        self.run_button.pack(side="left", fill="x", expand=True, padx=(5, 0))
         self.run_clicked = False
 
         for entry in [self.command.entry, self.cwd.entry]:
@@ -195,6 +205,10 @@ def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None
     asker = CommandAsker(tab.path, project_path, history.get(tab, project_path))
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
+
+    # you probably don't wanna resize it in y, it's safe to do it here,
+    # as the content is already packed
+    asker.window.resizable(True, False)
     asker.window.wait_window()
 
     if asker.run_clicked:
