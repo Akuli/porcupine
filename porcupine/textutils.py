@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import re
 import tkinter
 import weakref
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Sequence, overload
 
 from pygments import styles
 
@@ -540,6 +541,64 @@ def create_peer_widget(
     change_tracker = _change_trackers.get(original_text_widget)
     if change_tracker is not None:
         change_tracker.setup(the_widget_that_becomes_a_peer)
+
+
+# http://effbot.org/zone/tkinter-text-hyperlink.htm (use archive.org if needed)
+# that tutorial is almost as old as i am, but it's still usable
+# TODO: document this?
+class LinkManager:
+    def __init__(
+        self,
+        textwidget: tkinter.Text,
+        link_regex: str,
+        get_click_callback: Callable[[re.Match[str]], Callable[[], object] | None],
+        *,
+        get_text: Callable[[re.Match[str]], str] = (lambda m: m.group(0)),
+    ) -> None:
+        self._textwidget = textwidget
+        self._link_regex = link_regex
+        self._get_text = get_text
+        self._get_click_callback = get_click_callback
+
+        self._callbacks: dict[str, Callable[[], object]] = {}
+        textwidget.tag_bind("link", "<Enter>", self._enter_link)
+        textwidget.tag_bind("link", "<Leave>", self._leave_link)
+        textwidget.tag_bind("link", "<Button-1>", self._open_link)
+
+    def _enter_link(self, event: tkinter.Event[tkinter.Text]) -> None:
+        self._textwidget.config(cursor="hand2")
+
+    def _leave_link(self, event: tkinter.Event[tkinter.Text]) -> None:
+        self._textwidget.config(cursor="")
+
+    def _open_link(self, event: tkinter.Event[tkinter.Text]) -> None:
+        for tag in self._textwidget.tag_names("current"):
+            if tag.startswith("link-"):
+                self._callbacks[tag]()
+                break
+
+    def append_text(self, text: str, tags: Sequence[str] = ()) -> None:
+        previous_end = 0
+        for match in re.finditer(self._link_regex, text):
+            callback = self._get_click_callback(match)
+            if callback is None:
+                continue
+
+            self._textwidget.insert("end", text[previous_end : match.start()], list(tags))
+            link_specific_tag = f"link-{len(self._callbacks)}"
+            self._callbacks[link_specific_tag] = callback
+            self._textwidget.insert(
+                "end", self._get_text(match), list(tags) + ["link", link_specific_tag]
+            )
+
+            previous_end = match.end()
+
+        self._textwidget.insert("end", text[previous_end:], list(tags))
+
+    def delete_all_links(self) -> None:
+        for tag in self._callbacks.keys():
+            self._textwidget.tag_delete(tag)
+        self._callbacks.clear()
 
 
 # fmt: off

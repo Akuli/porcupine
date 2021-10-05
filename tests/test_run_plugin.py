@@ -81,7 +81,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path):
     # click the last link
     textwidget = get_output_widget(filetab)
     textwidget.mark_set("current", "link.last - 1 char")
-    no_terminal._no_terminal_runners[str(filetab)]._open_link(None)
+    no_terminal._no_terminal_runners[str(filetab)]._link_manager._open_link(None)
 
     selected_tab = tabmanager.select()
     assert selected_tab != filetab
@@ -94,11 +94,11 @@ def test_python_unbuffered(filetab, tmp_path):
         """
 import time
 print("This should show up immediately")
-time.sleep(2)
+time.sleep(5)
 """
     )
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
-    tkinter_sleep(1)
+    tkinter_sleep(3)
     assert "This should show up immediately" in get_output(filetab)
 
 
