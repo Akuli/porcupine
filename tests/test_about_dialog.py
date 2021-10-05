@@ -3,6 +3,7 @@
 
 from urllib.request import url2pathname
 
+from porcupine import get_main_window
 from porcupine.plugins import aboutdialog
 
 
