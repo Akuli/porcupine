@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable
 
 from porcupine import get_tab_manager, images, tabs, textutils, utils
+from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +40,9 @@ def open_file_with_line_number(path: Path, lineno: int) -> None:
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
-        self.textwidget = tkinter.Text(master, height=12, state="disabled", name="run_output")
+        self.textwidget = create_passive_text_widget(
+            master, font="TkFixedFont", height=12, is_focusable=True, name="run_output"
+        )
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
         self.textwidget.tag_config("error", foreground="red")
