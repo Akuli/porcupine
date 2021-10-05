@@ -1,7 +1,6 @@
 """Display the "About Porcupine" button in the "Help" menu."""
 from __future__ import annotations
 
-import functools
 import os
 import re
 import subprocess
@@ -10,11 +9,7 @@ import tkinter
 import webbrowser
 from pathlib import Path
 from tkinter import ttk
-
-if sys.version_info >= (3, 9):
-    from re import Match
-else:
-    from typing import Match
+from typing import Callable
 
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils
@@ -62,38 +57,37 @@ class AboutDialogContent(ttk.Frame):
         self._textwidget = textutils.create_passive_text_widget(self, width=60, height=25)
         self._textwidget.pack(fill="both", expand=True, padx=5, pady=5)
 
+        self._textwidget.config(state="normal")
+        textutils.LinkManager(
+            self._textwidget,
+            r"\[(.+?)\]\((.+?)\)",
+            get_text=(lambda m: m.group(1)),
+            get_click_callback=self._get_link_opener,
+        ).append_text(BORING_TEXT.strip() + "\n\n")
+        self._textwidget.config(state="disabled")
+
         if utils.is_bright(self._textwidget["bg"]):
             link_color = "blue"
         else:
             link_color = "DarkOrange1"
         self._textwidget.tag_config("link", foreground=link_color, underline=True)
 
-        self._textwidget.config(state="normal")
-        textutils.LinkManager(
-            self._textwidget,
-            r"\[(.+?)\]\((.+?)\)",
-            get_text=(lambda m: m.group(1)),
-            on_click=(lambda m: self._open_link(m.group(2))),
-        ).append_text(BORING_TEXT.strip() + "\n\n")
-        self._textwidget.config(state="disabled")
-
         label = ttk.Label(self, image=images.get("logo-200x200"), cursor="hand2")
         label.pack(anchor="e")
         label.bind("<Button-1>", show_huge_logo, add=True)
 
-    def _open_link(self, url_or_path: str) -> None:
-        if url_or_path.startswith('https://'):
-            webbrowser.open(url_or_path)
-            return
+    def _get_link_opener(self, match: re.Match[str]) -> Callable[[], object]:
+        url_or_path = match.group(2)
+        if url_or_path.startswith("https://"):
+            return lambda: webbrowser.open(url_or_path)
 
         path = Path(url_or_path)
         assert path.is_dir()
         if sys.platform == "win32":
-            os.startfile(path)
-        elif sys.platform == "darwin":
-            subprocess.Popen(["open", path])
-        else:
-            subprocess.Popen(["xdg-open", path])
+            return lambda: os.startfile(path)
+        if sys.platform == "darwin":
+            return lambda: subprocess.Popen(["open", path])
+        return lambda: subprocess.Popen(["xdg-open", path])
 
 
 def show_about_dialog() -> None:

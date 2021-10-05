@@ -1,7 +1,8 @@
 from __future__ import annotations
-import re
+
 import contextlib
 import dataclasses
+import re
 import tkinter
 import weakref
 from functools import partial
@@ -546,20 +547,19 @@ def create_peer_widget(
 # that tutorial is almost as old as i am, but it's still usable
 # TODO: document this?
 class LinkManager:
-
     def __init__(
         self,
         textwidget: tkinter.Text,
         link_regex: str,
         get_text: Callable[[re.Match[str]], str],
-        on_click: Callable[[re.Match[str]], None],
+        get_click_callback: Callable[[re.Match[str]], Callable[[], object] | None],
     ) -> None:
         self._textwidget = textwidget
         self._link_regex = link_regex
         self._get_text = get_text
-        self._on_click = on_click
+        self._get_click_callback = get_click_callback
 
-        self._matches: dict[str, re.Match[str]] = {}
+        self._callbacks: dict[str, Callable[[], object]] = {}
         textwidget.tag_bind("link", "<Enter>", self._enter_link)
         textwidget.tag_bind("link", "<Leave>", self._leave_link)
         textwidget.tag_bind("link", "<Button-1>", self._open_link)
@@ -573,25 +573,31 @@ class LinkManager:
     def _open_link(self, event: tkinter.Event[tkinter.Text]) -> None:
         for tag in self._textwidget.tag_names("current"):
             if tag.startswith("link-"):
-                self._on_click(self._matches[tag])
+                self._callbacks[tag]()
                 break
 
     def append_text(self, text: str, tags: Sequence[str] = ()) -> None:
         previous_end = 0
         for match in re.finditer(self._link_regex, text):
-            self._textwidget.insert("end", text[previous_end : match.start()], list(tags))
-            previous_end = match.end()
+            callback = self._get_click_callback(match)
+            if callback is None:
+                continue
 
-            link_specific_tag = f"link-{len(self._matches)}"
-            self._matches[link_specific_tag] = match
-            self._textwidget.insert("end", self._get_text(match), list(tags) + ["link", link_specific_tag])
+            self._textwidget.insert("end", text[previous_end : match.start()], list(tags))
+            link_specific_tag = f"link-{len(self._callbacks)}"
+            self._callbacks[link_specific_tag] = callback
+            self._textwidget.insert(
+                "end", self._get_text(match), list(tags) + ["link", link_specific_tag]
+            )
+
+            previous_end = match.end()
 
         self._textwidget.insert("end", text[previous_end:], list(tags))
 
     def delete_all_links(self) -> None:
-        for tag in self._matches.keys():
+        for tag in self._callbacks.keys():
             self._textwidget.tag_delete(tag)
-        self._matches.clear()
+        self._callbacks.clear()
 
 
 # fmt: off
