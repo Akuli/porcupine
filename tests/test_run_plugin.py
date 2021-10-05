@@ -103,7 +103,7 @@ time.sleep(5)
 
 
 def test_changing_current_file(filetab, tmp_path):
-    filetab.textwidget.insert('end', 'with open("foo.py", "w") as f: f.write("lol")')
+    filetab.textwidget.insert("end", 'with open("foo.py", "w") as f: f.write("lol")')
     filetab.save_as(tmp_path / "foo.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} foo.py", tmp_path)
     tkinter_sleep(3)
