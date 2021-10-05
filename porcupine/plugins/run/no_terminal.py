@@ -27,6 +27,15 @@ filename_regex_parts = [
 filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
+def open_file_with_line_number(self, path: Path, lineno: int) -> None:
+    tab = get_tab_manager().open_file(path)
+    if tab is not None:
+        tab.textwidget.mark_set("insert", f"{lineno}.0")
+        tab.textwidget.see("insert")
+        tab.textwidget.tag_remove("sel", "1.0", "end")
+        tab.textwidget.tag_add("sel", "insert", "insert lineend")
+
+
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
@@ -52,15 +61,7 @@ class NoTerminalRunner:
         path = self._cwd / filename  # doesn't use cwd if filename is absolute
         if not path.is_file():
             return None
-        return partial(self._open_link, path, int(lineno))
-
-    def _open_link(self, path: Path, lineno: int) -> None:
-        tab = get_tab_manager().open_file(path)
-        if tab is not None:
-            tab.textwidget.mark_set("insert", f"{lineno}.0")
-            tab.textwidget.see("insert")
-            tab.textwidget.tag_remove("sel", "1.0", "end")
-            tab.textwidget.tag_add("sel", "insert", "insert lineend")
+        return partial(open_file_with_line_number, path, int(lineno))
 
     def run_command(self, cwd: Path, command: str) -> None:
         self._cwd = cwd
