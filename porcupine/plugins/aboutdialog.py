@@ -44,7 +44,7 @@ def get_link_opener(match: re.Match[str]) -> Callable[[], object]:
         return lambda: webbrowser.open(url)
 
     path = Path(match.group(1))
-    assert path.is_dir()
+    assert path.is_dir(), path
 
     # early returns don't work https://github.com/python/mypy/issues/10773
     if sys.platform == "win32":
