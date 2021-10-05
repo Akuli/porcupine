@@ -108,14 +108,12 @@ class CommandAsker:
         sub_text = "\n".join("{%s} = %s" % pair for pair in substitutions.items())
         ttk.Label(content_frame, text=f"Substitutions:\n{sub_text}\n").pack(fill="x")
 
-        # TODO: remember value with settings
-        self.terminal_var = tkinter.BooleanVar()
-
         porcupine_text = (
             "Display the output inside the Porcupine window (does not support keyboard input)"
         )
         external_text = f"Use an external {terminal_name} window"
 
+        self.terminal_var = tkinter.BooleanVar()
         ttk.Radiobutton(
             content_frame,
             variable=self.terminal_var,

@@ -8,8 +8,9 @@ import re
 import subprocess
 import threading
 import tkinter
+from functools import partial
 from pathlib import Path
-from typing import Iterator
+from typing import Callable
 
 from porcupine import get_tab_manager, images, utils
 from porcupine.textutils import create_passive_text_widget
@@ -27,19 +28,13 @@ filename_regex_parts = [
 filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
-def parse_paths(cwd: Path, line: str) -> Iterator[tuple[str, Path, int] | str]:
-    previous_end = 0
-    for match in re.finditer(filename_regex, line):
-        filename, lineno = (value for value in match.groups() if value is not None)
-        path = cwd / filename  # doesn't use cwd if filename is absolute
-        if not path.is_file():
-            continue
-
-        yield line[previous_end : match.start()]
-        yield (match.group(0), path, int(lineno))
-        previous_end = match.end()
-
-    yield line[previous_end:]
+def open_file_with_line_number(path: Path, lineno: int) -> None:
+    tab = get_tab_manager().open_file(path)
+    if tab is not None:
+        tab.textwidget.mark_set("insert", f"{lineno}.0")
+        tab.textwidget.see("insert")
+        tab.textwidget.tag_remove("sel", "1.0", "end")
+        tab.textwidget.tag_add("sel", "insert", "insert lineend")
 
 
 class NoTerminalRunner:
@@ -49,37 +44,29 @@ class NoTerminalRunner:
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
         self.textwidget.tag_config("error", foreground="red")
-        self.textwidget.tag_config("link", underline=True)
-        self.textwidget.tag_bind("link", "<Enter>", self._enter_link)
-        self.textwidget.tag_bind("link", "<Leave>", self._leave_link)
-        self.textwidget.tag_bind("link", "<Button-1>", self._open_link)
 
-        self._output_queue: queue.Queue[tuple[Path, str, str]] = queue.Queue()
+        self._cwd: Path | None = None  # can't pass data to callbacks when adding link
+        self._link_manager = textutils.LinkManager(
+            self.textwidget, filename_regex, self._get_link_opener
+        )
+        self.textwidget.tag_config("link", underline=True)
+
+        self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
         self._queue_handler()
 
-        self._links: dict[str, tuple[Path, int]] = {}
+    def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
+        assert self._cwd is not None
 
-    # TODO: much links code copy/pasted from aboutdialog plugin
-    def _enter_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
-        self.textwidget.config(cursor="hand2")
-
-    def _leave_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
-        self.textwidget.config(cursor="")
-
-    def _open_link(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
-        for tag in self.textwidget.tag_names("current"):
-            if tag.startswith("link-"):
-                path, lineno = self._links[tag]
-                tab = get_tab_manager().open_file(path)
-                if tab is not None:
-                    tab.textwidget.mark_set("insert", f"{lineno}.0")
-                    tab.textwidget.see("insert")
-                    tab.textwidget.tag_remove("sel", "1.0", "end")
-                    tab.textwidget.tag_add("sel", "insert", "insert lineend")
-                break
+        filename, lineno = (value for value in match.groups() if value is not None)
+        path = self._cwd / filename  # doesn't use cwd if filename is absolute
+        if not path.is_file():
+            return None
+        return partial(open_file_with_line_number, path, int(lineno))
 
     def run_command(self, cwd: Path, command: str) -> None:
+        self._cwd = cwd
+
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
         threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
@@ -91,7 +78,7 @@ class NoTerminalRunner:
             if process is not None and self._running_process is not process:
                 # another _run_command() is already running
                 return
-            self._output_queue.put((cwd,) + msg)
+            self._output_queue.put(msg)
 
         emit_message(("clear", ""))
         emit_message(("info", command + "\n"))
@@ -128,7 +115,7 @@ class NoTerminalRunner:
             emit_message(("error", f"The process failed with status {process.returncode}."))
 
     def _queue_handler(self) -> None:
-        messages: list[tuple[Path, str, str]] = []
+        messages: list[tuple[str, str]] = []
         while True:
             try:
                 messages.append(self._output_queue.get(block=False))
@@ -137,20 +124,13 @@ class NoTerminalRunner:
 
         if messages:
             self.textwidget.config(state="normal")
-            for cwd, tag, output_line in messages:
+            for tag, output_line in messages:
                 if tag == "clear":
                     assert not output_line
                     self.textwidget.delete("1.0", "end")
-                    self._links.clear()
+                    self._link_manager.delete_all_links()  # prevent memory leak
                 else:
-                    for part in parse_paths(cwd, output_line):
-                        if isinstance(part, str):
-                            self.textwidget.insert("end", part, [tag])
-                        else:
-                            text, path, lineno = part
-                            link_specific_tag = f"link-{len(self._links)}"
-                            self._links[link_specific_tag] = (path, lineno)
-                            self.textwidget.insert("end", text, [tag, "link", link_specific_tag])
+                    self._link_manager.append_text(output_line, [tag])
             self.textwidget.config(state="disabled")
 
         self.textwidget.after(100, self._queue_handler)
