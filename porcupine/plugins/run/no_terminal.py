@@ -45,7 +45,9 @@ def parse_paths(cwd: Path, line: str) -> Iterator[tuple[str, Path, int] | str]:
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
-        self.textwidget = create_passive_text_widget(master, height=12, name="run_output")
+        self.textwidget = create_passive_text_widget(
+            master, height=12, name="run_output", is_focusable=True
+        )
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
         self.textwidget.tag_config("error", foreground="red")

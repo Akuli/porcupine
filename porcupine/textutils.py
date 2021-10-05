@@ -706,7 +706,10 @@ class MainText(tkinter.Text):
         return start != end
 
 
-def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter.Text:
+def create_passive_text_widget(
+    parent: tkinter.Widget, is_focusable: bool = False, **kwargs: Any
+) -> tkinter.Text:
+    # TODO: document `is_focusable` kwarg
     """Create a text widget that is meant to be used for displaying text, not for editing.
 
     The returned text widget is disabled by default (``state='disabled'``),
@@ -731,8 +734,6 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     kwargs.setdefault("relief", "flat")
     kwargs.setdefault("wrap", "word")
     kwargs.setdefault("state", "disabled")
-    kwargs.setdefault("takefocus", True)
-    kwargs.setdefault("highlightthickness", 0)
     text = tkinter.Text(parent, **kwargs)
 
     def update_colors(junk: object = None) -> None:
@@ -752,10 +753,13 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
 
         text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
 
+    if is_focusable:
+        text.config(takefocus=True)
+        text.bind("<ButtonPress-1>", lambda *junk: text.focus(), add=True)
+
     # even non-ttk widgets can handle <<ThemeChanged>>
     # TODO: make sure that this works
     text.bind("<<ThemeChanged>>", update_colors, add=True)
-    text.bind("<ButtonPress-1>", lambda *junk: text.focus(), add=True)
     update_colors()
 
     return text
