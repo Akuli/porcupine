@@ -171,8 +171,7 @@ def paste(new_path: Path) -> None:
 
 
 def paste_here(new_path: Path) -> None:
-    assert is_copy_path_valid()
-    assert new_path.is_dir()
+    assert copy_path is not None
 
     new_file_path = new_path / copy_path.name
 
