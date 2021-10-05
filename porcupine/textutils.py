@@ -551,8 +551,9 @@ class LinkManager:
         self,
         textwidget: tkinter.Text,
         link_regex: str,
-        get_text: Callable[[re.Match[str]], str],
         get_click_callback: Callable[[re.Match[str]], Callable[[], object] | None],
+        *,
+        get_text: Callable[[re.Match[str]], str] = (lambda m: m.group(0)),
     ) -> None:
         self._textwidget = textwidget
         self._link_regex = link_regex

@@ -61,8 +61,8 @@ class AboutDialogContent(ttk.Frame):
         textutils.LinkManager(
             self._textwidget,
             r"\[(.+?)\]\((.+?)\)",
+            self._get_link_opener,
             get_text=(lambda m: m.group(1)),
-            get_click_callback=self._get_link_opener,
         ).append_text(BORING_TEXT.strip() + "\n\n")
         self._textwidget.config(state="disabled")
 

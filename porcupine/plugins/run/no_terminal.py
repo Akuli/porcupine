@@ -37,10 +37,7 @@ class NoTerminalRunner:
 
         self._cwd: Path | None = None  # can't pass data to callbacks when adding link
         self._link_manager = textutils.LinkManager(
-            self.textwidget,
-            filename_regex,
-            get_text=(lambda m: m.group(0)),
-            get_click_callback=self._get_link_opener,
+            self.textwidget, filename_regex, self._get_link_opener
         )
         self.textwidget.tag_config("link", underline=True)
 
