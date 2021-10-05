@@ -14,29 +14,6 @@ from typing import Callable
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils
 
-BORING_TEXT = f"""
-Porcupine is a simple but powerful and configurable text editor written in \
-Python using the notorious tkinter GUI library. It started as a \
-proof-of-concept of a somewhat good editor written in tkinter, but nowadays \
-it's a tool I use at work every day.
-
-I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. See \
-[the contributor \
-page](https://github.com/Akuli/porcupine/graphs/contributors) for details.
-
-Links:
-\N{bullet} [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki)
-\N{bullet} [Porcupine on GitHub](https://github.com/Akuli/porcupine)
-\N{bullet} [Plugin API documentation for Python programmers](https://akuli.github.io/porcupine/)
-
-Porcupine is available under the MIT license. It means that you can do \
-pretty much anything you want with it as long as you distribute the \
-LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
-
-Porcupine is installed to [{Path(__file__).absolute().parent.parent.parent}]().
-You can install plugins to [{plugins.__path__[0]}]().
-"""
-
 
 def get_link_opener(match: re.Match[str]) -> Callable[[], object]:
     url = match.group(2)
@@ -75,7 +52,30 @@ def show_about_dialog() -> None:
     textwidget.config(state="normal")
     textutils.LinkManager(
         textwidget, r"\[(.+?)\]\((.*?)\)", get_link_opener, get_text=(lambda m: m.group(1))
-    ).append_text(BORING_TEXT.strip() + "\n\n")
+    ).append_text(
+        f"""\
+Porcupine is a simple but powerful and configurable text editor written in \
+Python using the notorious tkinter GUI library. It started as a \
+proof-of-concept of a somewhat good editor written in tkinter, but nowadays \
+it's a tool I use at work every day.
+
+I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. See \
+[the contributor \
+page](https://github.com/Akuli/porcupine/graphs/contributors) for details.
+
+Links:
+\N{bullet} [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki)
+\N{bullet} [Porcupine on GitHub](https://github.com/Akuli/porcupine)
+\N{bullet} [Plugin API documentation for Python programmers](https://akuli.github.io/porcupine/)
+
+Porcupine is available under the MIT license. It means that you can do \
+pretty much anything you want with it as long as you distribute the \
+LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
+
+Porcupine is installed to [{Path(__file__).absolute().parent.parent.parent}]().
+You can install plugins to [{plugins.__path__[0]}]().
+"""
+    )
     textwidget.config(state="disabled")
 
     if utils.is_bright(textwidget["bg"]):
