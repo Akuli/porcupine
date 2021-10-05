@@ -6,7 +6,7 @@ from urllib.request import url2pathname
 from porcupine.plugins import aboutdialog
 
 
-def test_it_doesnt_crash(monkeypatch):
+def test_it_doesnt_crash(monkeypatch, monkeypatch_dirs):
     called = 0
 
     def fake_wait_window(self):
