@@ -69,4 +69,4 @@ def setup() -> None:
     )
     tabmanager.bind("<<TabClosing:XButtonClickClose>>", on_x_clicked, add=True)
     tabmanager.bind("<<RightClick>>", show_menu, add=True)
-    tabmanager.bind("<<TabClosing:HeaderClickClose>>", on_header_clicked, add=True)
+    tabmanager.bind("<<WheelClick>>", on_header_clicked, add=True)
