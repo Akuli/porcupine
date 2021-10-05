@@ -74,10 +74,7 @@ def show_about_dialog() -> None:
 
     textwidget.config(state="normal")
     textutils.LinkManager(
-        textwidget,
-        r"\[(.+?)\]\((.*?)\)",
-        get_link_opener,
-        get_text=(lambda m: m.group(1)),
+        textwidget, r"\[(.+?)\]\((.*?)\)", get_link_opener, get_text=(lambda m: m.group(1))
     ).append_text(BORING_TEXT.strip() + "\n\n")
     textwidget.config(state="disabled")
 
