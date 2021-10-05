@@ -46,12 +46,13 @@ def get_link_opener(match: re.Match[str]) -> Callable[[], object]:
     path = Path(match.group(1))
     assert path.is_dir()
 
-    # str() needed because mypy is awesome
-    if str(sys.platform) == "win32":
+    # early returns don't work https://github.com/python/mypy/issues/10773
+    if sys.platform == "win32":
         return lambda: os.startfile(path)
-    if str(sys.platform) == "darwin":
+    elif sys.platform == "darwin":
         return lambda: subprocess.Popen(["open", path])
-    return lambda: subprocess.Popen(["xdg-open", path])
+    else:
+        return lambda: subprocess.Popen(["xdg-open", path])
 
 
 def show_huge_logo(junk: object = None) -> None:
