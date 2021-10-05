@@ -746,6 +746,7 @@ class FileTab(Tab):
             return True
 
     # TODO: document this
+    # TODO: should cursor and scrolling stuff be a part of reload()?
     def reload_if_necessary(self) -> None:
         if self.other_program_changed_file():
             cursor_pos = self.textwidget.index("insert")
