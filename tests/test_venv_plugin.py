@@ -24,9 +24,14 @@ def test_venv_setting(tmp_path):
         assert python_venv.get_venv(tmp_path) == tmp_path / env
 
 
-def test_venv_becomes_invalid(tmp_path):
+def test_venv_becomes_invalid(tmp_path, caplog):
     subprocess.run([sys.executable, "-m", "venv", "env"], cwd=tmp_path, check=True)
     assert python_venv.get_venv(tmp_path) == tmp_path / "env"
 
     shutil.rmtree(tmp_path / "env")
-    assert python_venv.get_venv(tmp_path) is None
+
+    # Make sure it warns about the venv only once
+    for lel in range(100):
+        assert python_venv.get_venv(tmp_path) is None
+    assert len(caplog.records) == 1
+    assert caplog.records[0].message.startswith("Python venv is no longer valid")
