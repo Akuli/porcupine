@@ -60,12 +60,13 @@ def get_output(filetab):
 
 
 def test_output_in_porcupine_window(filetab, tmp_path):
-    filetab.textwidget.insert("end", "print(12345)")
+    filetab.textwidget.insert("end", r"print('12345\N{pile of poo}')")
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
     tkinter_sleep(3)
 
-    assert "12345" in get_output(filetab)
+    # poop emoji not valid character in tk
+    assert "\n12345\n" in get_output(filetab)
 
 
 def test_python_error_message(filetab, tabmanager, tmp_path):

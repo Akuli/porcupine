@@ -335,6 +335,11 @@ def get_binding(virtual_event: str, *, menu: bool = False) -> str:
     return _format_binding(bindings[0], menu) if bindings else ""
 
 
+# TODO: document this
+def tkinter_safe_string(string: str) -> str:
+    return "".join(char for char in string if ord(char) <= 0xFFFF)
+
+
 class EventDataclass:
     """
     Inherit from this class when creating a dataclass for
