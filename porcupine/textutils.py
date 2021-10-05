@@ -731,6 +731,8 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     kwargs.setdefault("relief", "flat")
     kwargs.setdefault("wrap", "word")
     kwargs.setdefault("state", "disabled")
+    kwargs.setdefault("takefocus", True)
+    kwargs.setdefault("highlightthickness", 0)
     text = tkinter.Text(parent, **kwargs)
 
     def update_colors(junk: object = None) -> None:
@@ -753,6 +755,7 @@ def create_passive_text_widget(parent: tkinter.Widget, **kwargs: Any) -> tkinter
     # even non-ttk widgets can handle <<ThemeChanged>>
     # TODO: make sure that this works
     text.bind("<<ThemeChanged>>", update_colors, add=True)
+    text.bind("<ButtonPress-1>", lambda *junk: text.focus(), add=True)
     update_colors()
 
     return text
