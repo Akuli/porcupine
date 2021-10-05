@@ -94,11 +94,11 @@ def test_python_unbuffered(filetab, tmp_path):
         """
 import time
 print("This should show up immediately")
-time.sleep(2)
+time.sleep(5)
 """
     )
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
-    tkinter_sleep(1)
+    tkinter_sleep(3)
     assert "This should show up immediately" in get_output(filetab)
 
 
