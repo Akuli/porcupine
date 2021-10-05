@@ -81,7 +81,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path):
     # click the last link
     textwidget = get_output_widget(filetab)
     textwidget.mark_set("current", "link.last - 1 char")
-    no_terminal._no_terminal_runners[str(filetab)]._open_link(None)
+    no_terminal._no_terminal_runners[str(filetab)]._link_manager._open_link(None)
 
     selected_tab = tabmanager.select()
     assert selected_tab != filetab
