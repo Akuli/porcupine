@@ -14,9 +14,6 @@ from typing import Callable
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils
 
-_install_path = Path(__file__).absolute().parent.parent.parent
-_plugin_path = Path(plugins.__path__[0])
-
 BORING_TEXT = f"""
 Porcupine is a simple but powerful and configurable text editor written in \
 Python using the notorious tkinter GUI library. It started as a \
@@ -36,17 +33,17 @@ Porcupine is available under the MIT license. It means that you can do \
 pretty much anything you want with it as long as you distribute the \
 LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
 
-Porcupine is installed to [{_install_path}]({_install_path}).
-You can install plugins to [{_plugin_path}]({_plugin_path}).
+Porcupine is installed to [{Path(__file__).absolute().parent.parent.parent}]().
+You can install plugins to [{plugins.__path__[0]}]().
 """
 
 
 def get_link_opener(match: re.Match[str]) -> Callable[[], object]:
-    url_or_path = match.group(2)
-    if url_or_path.startswith("https://"):
-        return lambda: webbrowser.open(url_or_path)
+    url = match.group(2)
+    if url:
+        return lambda: webbrowser.open(url)
 
-    path = Path(url_or_path)
+    path = Path(match.group(1))
     assert path.is_dir()
     if sys.platform == "win32":
         return lambda: os.startfile(path)
@@ -75,7 +72,7 @@ def show_about_dialog() -> None:
     textwidget.config(state="normal")
     textutils.LinkManager(
         textwidget,
-        r"\[(.+?)\]\((.+?)\)",
+        r"\[(.+?)\]\((.*?)\)",
         get_link_opener,
         get_text=(lambda m: m.group(1)),
     ).append_text(BORING_TEXT.strip() + "\n\n")
