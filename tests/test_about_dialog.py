@@ -3,7 +3,6 @@
 
 from urllib.request import url2pathname
 
-from porcupine import get_main_window
 from porcupine.plugins import aboutdialog
 
 
@@ -16,9 +15,7 @@ def test_it_doesnt_crash(monkeypatch):
         self.destroy()  # can't do this with mock objects
 
     monkeypatch.setattr("tkinter.Toplevel.wait_window", fake_wait_window)
-
-    get_main_window().update()
-    get_main_window().event_generate("<<Menubar:Help/About Porcupine>>")
+    aboutdialog.show_about_dialog()
     assert called == 1
 
 
