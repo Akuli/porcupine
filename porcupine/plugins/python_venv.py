@@ -42,6 +42,14 @@ def _find_venv(project_root: Path) -> Path | None:
     return None
 
 
+def set_venv(project_root: Path, venv: Path) -> None:
+    assert is_venv(venv), venv
+    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
+    custom_paths[str(project_root)] = str(venv)
+    settings.set_("python_venvs", custom_paths)  # custom_paths is copy
+    log.info(f"venv of {project_root} set to {venv}")
+
+
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
     custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
@@ -50,24 +58,17 @@ def get_venv(project_root: Path) -> Path | None:
         from_settings = Path(custom_paths[str(project_root)])
         if is_venv(from_settings):
             return from_settings
+
         log.warning(f"Python venv is no longer valid: {from_settings}")
+        del custom_paths[str(project_root)]
+        settings.set_("python_venvs", custom_paths)  # custom_paths is copy
 
     result = _find_venv(project_root)
     if result is None:
         log.info(f"No venv found in {project_root}")
     else:
-        log.info(f"Using {result} as venv of {project_root}")
-        custom_paths[str(project_root)] = str(result)  # Do not switch venv unless user wants
-        settings.set_("python_venvs", custom_paths)  # custom_paths is copy
+        set_venv(project_root, result)
     return result
-
-
-def set_venv(project_root: Path, venv: Path) -> None:
-    assert is_venv(venv), venv
-    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
-    custom_paths[str(project_root)] = str(venv)
-    settings.set_("python_venvs", custom_paths)  # custom_paths is copy
-    log.info(f"venv of {project_root} set to {venv}")
 
 
 # This doesn't use Porcupine's python, unless py or python3 points to it
