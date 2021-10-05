@@ -133,6 +133,9 @@ class NoTerminalRunner:
                     self.textwidget.delete("1.0", "end")
                     self._link_manager.delete_all_links()  # prevent memory leak
                 elif tag == "end":
+                    assert not output_line
+
+                    # It gets refreshed when switching tabs, so refreshing current tab is enough
                     tab = get_tab_manager().select()
                     if isinstance(tab, tabs.FileTab):
                         tab.reload_if_necessary()
