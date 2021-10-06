@@ -26,7 +26,6 @@ def run(command: history.Command, project_root: Path) -> None:
             activate = utils.quote(str(venv / "bin" / "activate"))
             command_string = f". {activate}\n{command.command}"
 
-    # FIXME: python_venv plugin integration goes everywhere
     if command.external_terminal:
         terminal.run_command(command_string, Path(command.cwd))
     else:
