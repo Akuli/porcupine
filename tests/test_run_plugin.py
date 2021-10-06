@@ -66,11 +66,16 @@ def test_output_in_porcupine_window(filetab, tmp_path):
 print("123")
 print("örkki")
 
-# print errors if you try to print the poo character on windows
 import sys
-if sys.platform == "win32":
-    sys.stdout.buffer.write("\N{pile of poo}".encode("utf-8"))
-else:
+
+# Test error handling for badly printed bytes
+# All bytes that are invalid utf-8 AND invalid cp1252: 81, 8D, 8F, 90, 9D
+sys.stderr.write(b'\x81')
+print()
+
+# unicodes beyond U+FFFF are not supported by tk
+# can't test this on windows because cp1252 doesn't go beyond U+FFFF
+if sys.platform != "win32":
     print("\N{pile of poo}")
 """,
     )
@@ -78,8 +83,12 @@ else:
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
     tkinter_sleep(3)
 
-    # tk doesn't support characters beyond U+FFFF, such as poop emoji
-    assert "\n123\nörkki\n\N{replacement character}\n" in get_output(filetab)
+    assert "123" in get_output(filetab)
+    assert "örkki" in get_output(filetab)
+    if sys.platform == "win32":
+        assert get_output(filetab).count("\N{replacement character}") == 1
+    else:
+        assert get_output(filetab).count("\N{replacement character}") == 2
 
 
 def test_python_error_message(filetab, tabmanager, tmp_path):
