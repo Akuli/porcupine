@@ -70,7 +70,7 @@ import sys
 
 # Test error handling for badly printed bytes
 # All bytes that are invalid utf-8 AND invalid cp1252: 81, 8D, 8F, 90, 9D
-sys.stderr.write(b'\x81')
+sys.stderr.buffer.write(b'\x81')
 print()
 
 # unicodes beyond U+FFFF are not supported by tk
