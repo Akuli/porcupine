@@ -126,7 +126,7 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
 
     def on_change(*junk: object) -> None:
         set_venv(project_root, path if var.get() else None)
-        tree.refresh()  # needed only on windows
+        tree.refresh()  # needed on windows
 
     var = tkinter.BooleanVar(value=(get_venv(project_root) == path))
     var.trace_add("write", on_change)
