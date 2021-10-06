@@ -35,7 +35,6 @@ def open_file_with_line_number(path: Path, lineno: int) -> None:
         tab.textwidget.see("insert")
         tab.textwidget.tag_remove("sel", "1.0", "end")
         tab.textwidget.tag_add("sel", "insert", "insert lineend")
-        tab.textwidget.focus()
 
 
 class NoTerminalRunner:
