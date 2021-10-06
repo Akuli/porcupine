@@ -60,13 +60,22 @@ def get_output(filetab):
 
 
 def test_output_in_porcupine_window(filetab, tmp_path):
-    filetab.textwidget.insert("end", r"print('örkki 123')")
+    filetab.textwidget.insert("end", r"""
+print("123")
+print("örkki")
+
+# print errors if you try to print the poo character on windows
+if sys.platform == "win32":
+    sys.stdout.buffer.write("\N{pile of poo}".encode("utf-8"))
+else:
+    print("\N{pile of poo}")
+""")
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
     tkinter_sleep(3)
 
     # tk doesn't support characters beyond U+FFFF, such as poop emoji
-    assert "\nörkki 123\n" in get_output(filetab)
+    assert "\n123\nörkki\n\N{replacement character}\n" in get_output(filetab)
 
 
 def test_python_error_message(filetab, tabmanager, tmp_path):

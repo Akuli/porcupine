@@ -44,7 +44,10 @@ def run_tool(tool: str, code: str, path: Path | None) -> str:
         )
         return result.stdout.decode("utf-8")
     except subprocess.CalledProcessError as e:
-        messagebox.showerror(fail_str, utils.tkinter_safe_string(e.stderr.decode("utf-8")))
+        messagebox.showerror(
+            fail_str,
+            utils.tkinter_safe_string(e.stderr.decode("utf-8"), hide_unsupported_chars=True),
+        )
     except Exception:
         log.exception(f"running {tool} failed")
         messagebox.showerror(fail_str, traceback.format_exc())

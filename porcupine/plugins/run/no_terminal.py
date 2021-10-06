@@ -107,7 +107,7 @@ class NoTerminalRunner:
         for line_bytes in process.stdout:
             # TODO: is utf-8 the correct choice on all platforms?
             line = line_bytes.decode("utf-8", errors="replace").replace(os.linesep, "\n")
-            emit_message(("output", utils.tkinter_safe_string(line, hide_unsupported_chars=True)))
+            emit_message(("output", utils.tkinter_safe_string(line)))
         process.communicate()  # make sure process.returncode is set
 
         if process.returncode == 0:
