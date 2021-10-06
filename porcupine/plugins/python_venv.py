@@ -9,7 +9,6 @@ import logging
 import shutil
 import sys
 import tkinter
-from functools import partial
 from pathlib import Path
 from typing import Any, Dict, cast
 
@@ -42,10 +41,10 @@ def _find_venv(project_root: Path) -> Path | None:
     return None
 
 
-def set_venv(project_root: Path, venv: Path) -> None:
+def set_venv(project_root: Path, venv: Path | None) -> None:
     assert is_venv(venv), venv
     custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
-    custom_paths[str(project_root)] = str(venv)
+    custom_paths[str(project_root)] = None if venv is None else str(venv)
     settings.set_("python_venvs", custom_paths)  # custom_paths is copy
     log.info(f"venv of {project_root} set to {venv}")
 
@@ -55,6 +54,11 @@ def get_venv(project_root: Path) -> Path | None:
     custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
 
     if str(project_root) in custom_paths:
+        path_string = custom_paths[str(project_root)]
+        if path_string is None:
+            log.info(f"user has unselected venv for {project_root}")
+            return None
+
         from_settings = Path(custom_paths[str(project_root)])
         if is_venv(from_settings):
             return from_settings
@@ -118,19 +122,15 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
     if not is_venv(path):
         return
 
-    is_used = get_venv(project_root) == path
+    def on_change(*junk: object) -> None:
+        set_venv(project_root, path if var.get() else None)
+        tree.refresh()  # needed only on windows
 
-    # There doesn't seem to be any way to make it appear checked without creating variable
-    var = tkinter.BooleanVar(value=is_used)
+    var = tkinter.BooleanVar(value=(get_venv(project_root) == path))
+    var.trace_add("write", on_change)
     cast(Any, tree.contextmenu).garbage_collection_is_lol = var
 
-    tree.contextmenu.add_checkbutton(
-        label="Use this Python venv",
-        variable=var,
-        state=("disabled" if is_used else "normal"),
-        # No need to refresh when clicked, somehow already refreshes 4 times (lol)
-        command=partial(set_venv, project_root, path),
-    )
+    tree.contextmenu.add_checkbutton(label="Use this Python venv", variable=var)
 
 
 def setup() -> None:
