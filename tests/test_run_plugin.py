@@ -67,8 +67,8 @@ print("123")
 print("örkki")
 
 # print errors if you try to print the poo character on windows
+import sys
 if sys.platform == "win32":
-    import sys
     sys.stdout.buffer.write("\N{pile of poo}".encode("utf-8"))
 else:
     print("\N{pile of poo}")
