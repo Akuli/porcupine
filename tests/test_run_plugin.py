@@ -60,7 +60,9 @@ def get_output(filetab):
 
 
 def test_output_in_porcupine_window(filetab, tmp_path):
-    filetab.textwidget.insert("end", r"""
+    filetab.textwidget.insert(
+        "end",
+        r"""
 print("123")
 print("örkki")
 
@@ -70,7 +72,8 @@ if sys.platform == "win32":
     sys.stdout.buffer.write("\N{pile of poo}".encode("utf-8"))
 else:
     print("\N{pile of poo}")
-""")
+""",
+    )
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
     tkinter_sleep(3)
