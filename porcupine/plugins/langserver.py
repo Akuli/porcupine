@@ -842,7 +842,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
                 langserver.forget_tab(tab)
 
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", content_changed, add=True)
-    utils.bind_with_data(tab.textwidget, "<<JumpToDefinition>>", request_jump2def, add=True)
+    utils.bind_with_data(tab.textwidget, "<<JumpToDefinitionRequest>>", request_jump2def, add=True)
     utils.bind_with_data(tab.textwidget, "<<HoverRequest>>", request_hover, add=True)
     utils.bind_with_data(tab, "<<AutoCompletionRequest>>", request_completions, add=True)
     tab.bind("<Destroy>", on_destroy, add=True)
