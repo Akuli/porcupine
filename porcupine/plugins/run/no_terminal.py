@@ -6,6 +6,7 @@ import os
 import queue
 import re
 import subprocess
+import sys
 import threading
 import tkinter
 from functools import partial
@@ -104,10 +105,9 @@ class NoTerminalRunner:
             return
 
         assert process.stdout is not None
-        for line_bytes in process.stdout:
-            # TODO: is utf-8 the correct choice on all platforms?
-            line = line_bytes.decode("utf-8", errors="replace").replace(os.linesep, "\n")
-            emit_message(("output", utils.tkinter_safe_string(line)))
+        for bytez in process.stdout:
+            line = bytez.decode(sys.getdefaultencoding(), errors="replace")
+            emit_message(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
         process.communicate()  # make sure process.returncode is set
 
         if process.returncode == 0:
