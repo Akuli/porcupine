@@ -60,6 +60,7 @@ def get_output(filetab):
 
 
 def test_output_in_porcupine_window(filetab, tmp_path):
+    assert sys.stdout.encoding == 'lol'
     filetab.textwidget.insert("end", r"print('12345\N{pile of poo}')")
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
