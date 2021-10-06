@@ -105,9 +105,9 @@ class NoTerminalRunner:
 
         assert process.stdout is not None
         for line_bytes in process.stdout:
-            line = line_bytes.decode("utf-8", errors="replace").replace(os.linesep, "\n")
             # TODO: is utf-8 the correct choice on all platforms?
-            emit_message(("output", utils.tkinter_safe_string(line)))
+            line = line_bytes.decode("utf-8", errors="replace").replace(os.linesep, "\n")
+            emit_message(("output", utils.tkinter_safe_string(line, hide_unsupported_chars=True)))
         process.communicate()  # make sure process.returncode is set
 
         if process.returncode == 0:

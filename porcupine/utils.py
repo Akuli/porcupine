@@ -336,8 +336,13 @@ def get_binding(virtual_event: str, *, menu: bool = False) -> str:
 
 
 # TODO: document this
-def tkinter_safe_string(string: str) -> str:
-    return "".join(char for char in string if ord(char) <= 0xFFFF)
+def tkinter_safe_string(string: str, *, hide_unsupported_chars: bool = False) -> str:
+    if hide_unsupported_chars:
+        replace_with = ""
+    else:
+        replace_with = "\N{replacement character}"
+
+    return "".join(replace_with if ord(char) > 0xFFFF else char for char in string)
 
 
 class EventDataclass:

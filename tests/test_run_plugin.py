@@ -60,18 +60,13 @@ def get_output(filetab):
 
 
 def test_output_in_porcupine_window(filetab, tmp_path):
-    # Tk doesn't support characters beyond U+FFFF, such as the poop emoji.
-    # Apparently you can't print them on windows either, since all characters here
-    # are between U+0000 ... U+FFFF: https://en.wikipedia.org/wiki/Windows-1252
-    if sys.platform == "win32":
-        filetab.textwidget.insert("end", r"print('12345')")
-    else:
-        filetab.textwidget.insert("end", r"print('12345\N{pile of poo}')")
-
+    filetab.textwidget.insert("end", r"print('örkki 123')")
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
     tkinter_sleep(3)
-    assert "\n12345\n" in get_output(filetab)
+
+    # tk doesn't support characters beyond U+FFFF, such as poop emoji
+    assert "\nörkki 123\n" in get_output(filetab)
 
 
 def test_python_error_message(filetab, tabmanager, tmp_path):
