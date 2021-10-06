@@ -21,7 +21,8 @@ def run(command: history.Command, project_root: Path) -> None:
     else:
         if sys.platform == "win32":
             activate = utils.quote(str(venv / "Scripts" / "activate"))
-            command_string = f"{activate}\n{command.command}"
+            # https://stackoverflow.com/a/8055390
+            command_string = f"{activate} & {command.command}"
         else:
             activate = utils.quote(str(venv / "bin" / "activate"))
             command_string = f". {activate}\n{command.command}"
