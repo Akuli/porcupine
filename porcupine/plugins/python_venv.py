@@ -10,7 +10,7 @@ import shutil
 import sys
 import tkinter
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, Dict, Optional, cast
 
 import porcupine.plugins.directory_tree as dirtree
 from porcupine import images, settings, utils
@@ -42,8 +42,10 @@ def _find_venv(project_root: Path) -> Path | None:
 
 
 def set_venv(project_root: Path, venv: Path | None) -> None:
-    assert is_venv(venv), venv
-    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
+    if venv is not None:
+        assert is_venv(venv), venv
+
+    custom_paths: dict[str, str | None] = settings.get("python_venvs", Dict[str, Optional[str]])
     custom_paths[str(project_root)] = None if venv is None else str(venv)
     settings.set_("python_venvs", custom_paths)  # custom_paths is copy
     log.info(f"venv of {project_root} set to {venv}")
@@ -51,7 +53,7 @@ def set_venv(project_root: Path, venv: Path | None) -> None:
 
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
-    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
+    custom_paths: dict[str, str | None] = settings.get("python_venvs", Dict[str, Optional[str]])
 
     if str(project_root) in custom_paths:
         path_string = custom_paths[str(project_root)]
@@ -59,7 +61,7 @@ def get_venv(project_root: Path) -> Path | None:
             log.info(f"user has unselected venv for {project_root}")
             return None
 
-        from_settings = Path(custom_paths[str(project_root)])
+        from_settings = Path(path_string)
         if is_venv(from_settings):
             return from_settings
 
@@ -134,7 +136,7 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
 
 
 def setup() -> None:
-    settings.add_option("python_venvs", {}, Dict[str, str])  # paths as strings, for json
+    settings.add_option("python_venvs", {}, Dict[str, Optional[str]])  # paths as strings, for json
 
     try:
         tree = dirtree.get_directory_tree()
