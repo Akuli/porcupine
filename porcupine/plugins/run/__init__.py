@@ -1,22 +1,36 @@
 """Compile, run and lint files."""
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from tkinter import messagebox
 from typing import Any, List
 
 from porcupine import get_tab_manager, menubar, settings, tabs, utils
+from porcupine.plugins import python_venv
 
 from . import dialog, history, no_terminal, terminal
 
 
-def run(command: history.Command) -> None:
+def run(command: history.Command, project_root: Path) -> None:
     history.add(command)
-    # FIXME: python_venv plugin integration goes everywhere
-    if command.external_terminal:
-        terminal.run_command(command.command, Path(command.cwd))
+
+    venv = python_venv.get_venv(project_root)
+    if venv is None:
+        command_string = command.command
     else:
-        no_terminal.run_command(command.command, Path(command.cwd))
+        if sys.platform == "win32":
+            activate = utils.quote(str(venv / "Scripts" / "activate"))
+            # https://stackoverflow.com/a/8055390
+            command_string = f"{activate} & {command.command}"
+        else:
+            activate = utils.quote(str(venv / "bin" / "activate"))
+            command_string = f". {activate}\n{command.command}"
+
+    if command.external_terminal:
+        terminal.run_command(command_string, Path(command.cwd))
+    else:
+        no_terminal.run_command(command_string, Path(command.cwd))
 
 
 def ask_and_run_command(tab: tabs.FileTab) -> None:
@@ -24,9 +38,10 @@ def ask_and_run_command(tab: tabs.FileTab) -> None:
         return
     assert tab.path is not None
 
-    info = dialog.ask_command(tab, utils.find_project_root(tab.path))
+    project_root = utils.find_project_root(tab.path)
+    info = dialog.ask_command(tab, project_root)
     if info is not None:
-        run(info)
+        run(info, project_root)
 
 
 def repeat_command(tab: tabs.FileTab) -> None:
@@ -34,9 +49,10 @@ def repeat_command(tab: tabs.FileTab) -> None:
         return
     assert tab.path is not None
 
-    previous_commands = history.get(tab, utils.find_project_root(tab.path))
+    project_root = utils.find_project_root(tab.path)
+    previous_commands = history.get(tab, project_root)
     if previous_commands:
-        run(previous_commands[0])
+        run(previous_commands[0], project_root)
     else:
         choose = utils.get_binding("<<Menubar:Run/Run command>>")
         repeat = utils.get_binding("<<Menubar:Run/Repeat previous command>>")

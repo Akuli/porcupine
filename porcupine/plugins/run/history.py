@@ -29,7 +29,7 @@ class Command:
 
 
 @dataclasses.dataclass
-class HistoryItem:
+class _HistoryItem:
     command: Command
     last_use: float
     use_count: int
@@ -59,7 +59,7 @@ def format_command(command_format: str, substitutions: dict[str, str]) -> str:
 
 def add(command: Command) -> None:
     raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any])
-    history = [dacite.from_dict(HistoryItem, raw_item) for raw_item in raw_history]
+    history = [dacite.from_dict(_HistoryItem, raw_item) for raw_item in raw_history]
 
     old_use_count = 0
     for item in history:
@@ -69,7 +69,7 @@ def add(command: Command) -> None:
             break
 
     history.insert(
-        0, HistoryItem(command=command, last_use=time.time(), use_count=old_use_count + 1)
+        0, _HistoryItem(command=command, last_use=time.time(), use_count=old_use_count + 1)
     )
 
     settings.set_(
@@ -89,7 +89,7 @@ def get(tab: tabs.FileTab, project_path: Path) -> list[Command]:
     assert tab.path is not None
 
     raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any]).copy()
-    commands = [dacite.from_dict(HistoryItem, raw_item).command for raw_item in raw_history]
+    commands = [dacite.from_dict(_HistoryItem, raw_item).command for raw_item in raw_history]
 
     for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
