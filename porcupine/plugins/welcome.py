@@ -26,46 +26,50 @@ their keyboard shortcuts.
     return re.sub(r"(.)\n(.)", r"\1 \2", result.strip())
 
 
-BORDER_SIZE = 30  # pixels
+MARGIN = 30  # pixels
 
 
 # this is a class just to avoid globals (lol)
 class WelcomeMessageDisplayer:
     def __init__(self) -> None:
-        self._frame = ttk.Frame(get_tab_manager(), name="welcome_frame")
+        self.big_frame = ttk.Frame(
+            get_tab_manager(),
+            name="welcome_frame",
+            padding=(*(MARGIN,) * 2, 0, 0),  # readability counts XD
+        )
+        self.big_frame.columnconfigure(0, weight=1)
 
-        # pad only on left side so the image goes as far right as possible
-        top = ttk.Frame(self._frame)
-        top.pack(fill="x", padx=(BORDER_SIZE, 0))
-        ttk.Label(top, image=images.get("logo-200x200")).pack(side="right")
+        self.welcome_label = ttk.Label(
+            self.big_frame, text="Welcome to Porcupine!", font=("", 25, "bold")
+        )
+        self.welcome_label.grid(row=0, column=0)
 
-        # TODO: better way to center the label in its space?
-        centerer = ttk.Frame(top)
-        centerer.pack(fill="both", expand=True)
-        self.title_label = ttk.Label(centerer, text="Welcome to Porcupine!", font=("", 25, "bold"))
-        self.title_label.place(relx=0.5, rely=0.5, anchor="center")
+        ttk.Label(self.big_frame, image=images.get("logo-200x200")).grid(row=0, column=1)
 
         self.message_label = ttk.Label(
-            self._frame, text=get_message(), font=("", 15, ""), name="message"
+            self.big_frame, text=get_message(), font=("", 15, ""), name="message"
         )
-        self.message_label.pack(pady=BORDER_SIZE)
+        self.message_label.grid(row=1, column=0, sticky="we", columnspan=2, pady=MARGIN)
+
+        print(self.welcome_label.grid_info())
+        print(self.message_label.grid_info())
 
         self._on_tab_closed()
 
     def update_wraplen(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # images.get('logo-200x200').width() is always 200, but hard-coding is bad
-        self.title_label.config(
-            wraplength=(event.width - images.get("logo-200x200").width() - BORDER_SIZE)
+        self.welcome_label.config(
+            wraplength=(event.width - images.get("logo-200x200").width() - MARGIN)
         )
-        self.message_label.config(wraplength=(event.width - 2 * BORDER_SIZE))
+        self.message_label.config(wraplength=(event.width - 2 * MARGIN))
 
     def on_new_tab(self, tab: tabs.Tab) -> None:
-        self._frame.pack_forget()
+        self.big_frame.pack_forget()
         tab.bind("<Destroy>", self._on_tab_closed, add=True)
 
     def _on_tab_closed(self, junk: object = None) -> None:
         if not get_tab_manager().tabs():
-            self._frame.pack(fill="both", expand=True)
+            self.big_frame.pack(fill="both", expand=True)
 
 
 def setup() -> None:
