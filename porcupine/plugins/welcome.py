@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 import tkinter
 from tkinter import ttk
+from typing import Tuple, cast
 
 from porcupine import get_tab_manager, images, tabs, utils
 
@@ -35,7 +36,9 @@ class WelcomeMessageDisplayer:
         self.big_frame = ttk.Frame(
             get_tab_manager(),
             name="welcome_frame",
-            padding=(*(MARGIN,) * 2, 0, 0),  # readability counts XD
+            padding=cast(
+                Tuple[float, float, float, float], (*(MARGIN,) * 2, 0, 0)  # readability counts XD
+            ),
         )
         self.big_frame.columnconfigure(0, weight=1)
 
