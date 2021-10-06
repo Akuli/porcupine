@@ -16,15 +16,15 @@ def run(command: history.Command, project_root: Path) -> None:
     history.add(command)
 
     venv = python_venv.get_venv(project_root)
-    if venv is not None:
+    if venv is None:
+        command_string = command.command
+    else:
         if sys.platform == "win32":
             activate = utils.quote(str(venv / "Scripts" / "activate"))
             command_string = f"{activate}\n{command.command}"
         else:
             activate = utils.quote(str(venv / "bin" / "activate"))
             command_string = f". {activate}\n{command.command}"
-    else:
-        command_string = command.command
 
     # FIXME: python_venv plugin integration goes everywhere
     if command.external_terminal:
