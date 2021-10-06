@@ -51,7 +51,7 @@ foo()
     filetab.textwidget.mark_set("insert", "end - 1 char - 1 line + 2 chars")
 
     intense_super_update()
-    filetab.textwidget.event_generate("<<JumpToDefinition>>")
+    filetab.textwidget.event_generate("<<JumpToDefinitionRequest>>")
     wait_until(lambda: bool(filetab.textwidget.tag_ranges("sel")))
 
     assert filetab.textwidget.get("sel.first", "sel.last") == "foo"
@@ -82,7 +82,7 @@ foo()
 
     mock = mocker.patch("tkinter.Menu")
     intense_super_update()
-    filetab.textwidget.event_generate("<<JumpToDefinition>>")
+    filetab.textwidget.event_generate("<<JumpToDefinitionRequest>>")
     wait_until(lambda: mock.call_args is not None)
 
     # It should add two menu items pointing at 2 different lines

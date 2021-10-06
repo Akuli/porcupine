@@ -78,8 +78,8 @@ event add "<<FileManager:Delete>>" <Shift-Delete>
 
 # jump_to_definition plugin
 # cursor moves between button press and release, don't bind to press
-event add "<<JumpToDefinition>>" <$contmand-ButtonRelease-1>
-event add "<<JumpToDefinition>>" <$contmand-Return>
+event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
+event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
