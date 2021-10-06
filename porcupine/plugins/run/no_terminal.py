@@ -1,12 +1,12 @@
 """Run commands within the Porcupine window."""
 from __future__ import annotations
 
+import locale
 import logging
 import os
 import queue
 import re
 import subprocess
-import sys
 import threading
 import tkinter
 from functools import partial
@@ -106,7 +106,7 @@ class NoTerminalRunner:
 
         assert process.stdout is not None
         for bytez in process.stdout:
-            line = bytez.decode(sys.getdefaultencoding(), errors="replace")
+            line = bytez.decode(locale.getpreferredencoding(), errors="replace")
             emit_message(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
         process.communicate()  # make sure process.returncode is set
 
