@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import sys
-from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 from typing import Any, List
 
-from porcupine import get_tab_manager, menubar, settings, tabs, utils, get_main_window
+from porcupine import get_main_window, get_tab_manager, menubar, settings, tabs, utils
 from porcupine.plugins import python_venv
 
 from . import dialog, history, no_terminal, terminal
