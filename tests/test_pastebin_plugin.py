@@ -11,8 +11,8 @@ import pytest
 import requests
 from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 
-from porcupine.plugins.pastebin import Termbin, DPaste, SuccessDialog
 from porcupine import get_main_window, utils
+from porcupine.plugins.pastebin import DPaste, SuccessDialog, Termbin
 
 
 # utils.run_in_thread() can make tests fragile
