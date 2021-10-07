@@ -108,7 +108,7 @@ def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[Command]:
     # This way you can by default press F5 to run first example, F6 to run
     # second, etc, but all examples will show up in autocompletions.
     assert key_id >= 1
-    examples = examples[key_id - 1:] + examples[:key_id - 1]
+    examples = examples[key_id - 1 :] + examples[: key_id - 1]
 
     for example in examples:
         if sys.platform == "win32" and example.windows_command is not None:

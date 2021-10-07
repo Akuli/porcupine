@@ -6,7 +6,7 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Callable, Generic, TypeVar
 
-from porcupine import get_main_window, tabs, textutils
+from porcupine import get_main_window, tabs, textutils, utils
 
 from . import history
 
@@ -71,7 +71,9 @@ class FormattingEntryAndLabels(Generic[T]):
 
 
 class CommandAsker:
-    def __init__(self, file_path: Path, project_path: Path, suggestions: list[history.Command]):
+    def __init__(
+        self, file_path: Path, project_path: Path, suggestions: list[history.Command], key_id: int
+    ):
         self.window = tkinter.Toplevel()
         self._suggestions = suggestions
 
@@ -139,7 +141,22 @@ class CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        ttk.Label(content_frame).pack()  # spacer
+        bindings = [
+            utils.get_binding("<<Menubar:Run/Repeat previous command>>"),
+            utils.get_binding("<<Run:Repeat2>>"),
+            utils.get_binding("<<Run:Repeat3>>"),
+            utils.get_binding("<<Run:Repeat4>>"),
+        ]
+        if key_id == 1:
+            hint = (
+                f"You can later press {bindings[0]} to conveniently repeat the command.\nTo run"
+                f" different commands conveniently, you can use {bindings[1]}, {bindings[2]} and"
+                f" {bindings[3]} similarly."
+            )
+        else:
+            assert 1 <= key_id <= len(bindings)
+            hint = f"You can later press {bindings[key_id - 1]} to conveniently repeat the command."
+        ttk.Label(content_frame, text=f"\n{hint}\n").pack(anchor="w")
 
         button_frame = ttk.Frame(content_frame)
         button_frame.pack(fill="x")
@@ -202,7 +219,7 @@ class CommandAsker:
 
 def ask_command(tab: tabs.FileTab, project_path: Path, key_id: int) -> history.Command | None:
     assert tab.path is not None
-    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path, key_id))
+    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path, key_id), key_id)
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
