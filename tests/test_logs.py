@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 import threading
-import types
 from datetime import datetime
 
 import pytest
@@ -34,11 +33,13 @@ def test_race_conditions():
     assert timed_out == [True] * len(timed_out)
 
 
-def test_remove_old_logs(monkeypatch, caplog):
+def test_remove_old_logs(monkeypatch, caplog, mocker):
     long_time_ago = datetime(year=1987, month=6, day=5, hour=4, minute=3, second=2)
 
     with monkeypatch.context() as monkey:
-        monkey.setattr(_logs, "datetime", types.SimpleNamespace(now=(lambda: long_time_ago)))
+        mock = mocker.Mock()
+        mock.now.return_value = long_time_ago
+        monkey.setattr("porcupine._logs.datetime", mock)
 
         _logs._open_log_file().close()
         _logs._open_log_file().close()
@@ -56,12 +57,12 @@ def test_remove_old_logs(monkeypatch, caplog):
 
 
 def test_log_path_printed(mocker):
-    mocker.patch("porcupine._logs.print")
-    _logs.print.side_effect = ZeroDivisionError  # to make it stop when it prints
+    mock = mocker.patch("porcupine._logs.print")
+    mock.side_effect = ZeroDivisionError  # to make it stop when it prints
     with pytest.raises(ZeroDivisionError):
         _logs.setup(None)
 
-    _logs.print.assert_called_once()
-    printed = _logs.print.call_args[0][0]
+    mock.assert_called_once()
+    [printed] = mock.call_args[0]
     assert printed.startswith("log file: ")
     assert os.path.isfile(printed[len("log file: ") :])

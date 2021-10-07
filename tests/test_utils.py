@@ -107,7 +107,7 @@ def test_project_root(tmp_path):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
 
 
-def test_format_command(monkeypatch):
+def test_format_command():
     assert utils.format_command("{foo} --help", {"foo": "bar baz"}) == ["bar baz", "--help"]
 
     if sys.platform == "win32":

@@ -5,15 +5,14 @@ import threading
 import time
 import tkinter
 import traceback
-import types
 from http.client import RemoteDisconnected
 
 import pytest
 import requests
 from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 
-import porcupine.plugins.pastebin as pastebin_module
 from porcupine import get_main_window, utils
+from porcupine.plugins.pastebin import DPaste, SuccessDialog, Termbin
 
 
 # utils.run_in_thread() can make tests fragile
@@ -44,7 +43,9 @@ def test_dpaste_syntax_choices():
         assert syntax_choice == get_lexer_by_name(syntax_choice).aliases[0]
 
 
-def check_pastebin(paste_class):
+@pytest.mark.pastebin_test
+@pytest.mark.parametrize("paste_class", [DPaste, Termbin])
+def test_pastebin(paste_class):
     some_code = "import foo as bar\nprint('baz')"
 
     for lexer in [TextLexer, PythonLexer]:
@@ -62,20 +63,10 @@ def check_pastebin(paste_class):
             assert response.text.strip() == some_code.strip()
 
 
-@pytest.mark.pastebin_test
-def test_termbin():
-    check_pastebin(pastebin_module.Termbin)
-
-
-@pytest.mark.pastebin_test
-def test_dpaste():
-    check_pastebin(pastebin_module.DPaste)
-
-
 @pytest.mark.pastebin_test  # TODO: switch to localhost HTTPS server?
 def test_dpaste_canceling(monkeypatch):
-    monkeypatch.setattr(pastebin_module, "DPASTE_URL", "https://httpbin.org/delay/3")
-    paste = pastebin_module.DPaste()
+    monkeypatch.setattr("porcupine.plugins.pastebin.DPASTE_URL", "https://httpbin.org/delay/3")
+    paste = DPaste()
     got_error = False
 
     def thread_target():
@@ -96,29 +87,31 @@ def test_dpaste_canceling(monkeypatch):
     assert got_error
 
 
-def test_success_dialog(monkeypatch):
-    dialog = pastebin_module.SuccessDialog("http://example.com/poop")
+def test_success_dialog(mocker):
+    dialog = SuccessDialog("http://example.com/poop")
 
     dialog.clipboard_append("this junk should be gone soon")
     dialog.copy_to_clipboard()
     assert dialog.clipboard_get() == "http://example.com/poop"
 
     # make sure that webbrowser.open is called
-    opened = []
-    monkeypatch.setattr(pastebin_module, "webbrowser", types.SimpleNamespace(open=opened.append))
+    mock = mocker.patch("porcupine.plugins.pastebin.webbrowser")
     assert dialog.winfo_exists()
     dialog.open_in_browser()
     assert not dialog.winfo_exists()
-    assert opened == ["http://example.com/poop"]
+    mock.open.assert_called_once_with("http://example.com/poop")
 
     dialog.destroy()
 
 
 def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, dont_run_in_thread):
     with socket.socket() as termbin:
+        termbin.settimeout(5)
         termbin.bind(("localhost", 0))
         termbin.listen(1)
-        monkeypatch.setattr(pastebin_module, "TERMBIN_HOST_AND_PORT", termbin.getsockname())
+        monkeypatch.setattr(
+            "porcupine.plugins.pastebin.TERMBIN_HOST_AND_PORT", termbin.getsockname()
+        )
 
         thread_done = False
         fake_wait_window_done = False
@@ -152,7 +145,7 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
 
 
 def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, dont_run_in_thread):
-    monkeypatch.setattr(pastebin_module, "DPASTE_URL", "ThisIsNotValidUrlStart://wat")
+    monkeypatch.setattr("porcupine.plugins.pastebin.DPASTE_URL", "ThisIsNotValidUrlStart://wat")
     mocker.patch("tkinter.messagebox.showerror")
 
     tabmanager.select(filetab)
@@ -163,9 +156,9 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, 
     )
 
 
-def test_invalid_return(filetab, monkeypatch, tabmanager, mocker, caplog):
+def test_invalid_return(filetab, tabmanager, mocker, caplog):
     mocker.patch("tkinter.messagebox.showerror")
-    monkeypatch.setattr(pastebin_module.DPaste, "run", (lambda *args: "lol"))
+    mocker.patch("porcupine.plugins.pastebin.DPaste.run").return_value = "lol"
 
     tabmanager.select(filetab)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
