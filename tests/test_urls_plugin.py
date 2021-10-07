@@ -1,9 +1,8 @@
-import pytest
-
 import tkinter
 
-from porcupine.plugins.urls import find_urls
+import pytest
 
+from porcupine.plugins.urls import find_urls
 
 simple_urls = [
     "https://github.com/Akuli/porcupine/",
