@@ -98,19 +98,7 @@ def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[Command]:
     typed_history = [dacite.from_dict(_HistoryItem, raw_item).command for raw_item in raw_history]
     commands = [command for command in typed_history if command.key_id == key_id]
 
-    examples = tab.settings.get("example_commands", List[ExampleCommand])
-
-    # key_id = 1: first example command goes first
-    # key_id = 2: second example command goes first, first example goes last
-    # key_id = 3: third example command goes first
-    # key_id = 4: fourth example command goes first
-    #
-    # This way you can by default press F5 to run first example, F6 to run
-    # second, etc, but all examples will show up in autocompletions.
-    assert key_id >= 1
-    examples = examples[key_id - 1 :] + examples[: key_id - 1]
-
-    for example in examples:
+    for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
             command_format = example.windows_command
         else:
