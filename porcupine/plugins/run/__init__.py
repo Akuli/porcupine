@@ -62,11 +62,11 @@ def repeat_command(key_id: int) -> None:
     if previous_commands:
         run(previous_commands[0], project_root)
     else:
-        choose = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")
-        repeat = utils.get_binding(f"<<Run:Repeat{key_id}>>")
+        ask = utils.get_binding(ASK_EVENTS[key_id - 1])
+        repeat = utils.get_binding(REPEAT_EVENTS[key_id - 1])
         messagebox.showerror(
             "No commands to repeat",
-            f"Please press {choose} to choose a command to run. You can then repeat it with"
+            f"Please press {ask} to choose a command to run. You can then repeat it with"
             f" {repeat}.",
         )
 
