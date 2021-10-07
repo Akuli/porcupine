@@ -11,7 +11,7 @@ import pytest
 import requests
 from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 
-import porcupine.plugins.pastebin as pastebin_module
+from porcupine.plugins.pastebin import Termbin, DPaste, SuccessDialog
 from porcupine import get_main_window, utils
 
 
@@ -44,7 +44,7 @@ def test_dpaste_syntax_choices():
 
 
 @pytest.mark.pastebin_test
-@pytest.mark.parametrize("paste_class", [pastebin_module.Termbin, pastebin_module.DPaste])
+@pytest.mark.parametrize("paste_class", [DPaste, Termbin])
 def test_pastebins(paste_class):
     some_code = "import foo as bar\nprint('baz')"
 
@@ -66,7 +66,7 @@ def test_pastebins(paste_class):
 @pytest.mark.pastebin_test  # TODO: switch to localhost HTTPS server?
 def test_dpaste_canceling(monkeypatch):
     monkeypatch.setattr("porcupine.plugins.pastebin.DPASTE_URL", "https://httpbin.org/delay/3")
-    paste = pastebin_module.DPaste()
+    paste = DPaste()
     got_error = False
 
     def thread_target():
@@ -88,7 +88,7 @@ def test_dpaste_canceling(monkeypatch):
 
 
 def test_success_dialog(mocker):
-    dialog = pastebin_module.SuccessDialog("http://example.com/poop")
+    dialog = SuccessDialog("http://example.com/poop")
 
     dialog.clipboard_append("this junk should be gone soon")
     dialog.copy_to_clipboard()
@@ -109,7 +109,7 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
         termbin.settimeout(5)
         termbin.bind(("localhost", 0))
         termbin.listen(1)
-        monkeypatch.setattr(pastebin_module, "TERMBIN_HOST_AND_PORT", termbin.getsockname())
+        monkeypatch.setattr("porcupine.plugins.pastebin.TERMBIN_HOST_AND_PORT", termbin.getsockname())
 
         thread_done = False
         fake_wait_window_done = False
