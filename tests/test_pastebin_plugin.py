@@ -106,6 +106,7 @@ def test_success_dialog(mocker):
 
 def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, dont_run_in_thread):
     with socket.socket() as termbin:
+        termbin.settimeout(5)
         termbin.bind(("localhost", 0))
         termbin.listen(1)
         monkeypatch.setattr(pastebin_module, "TERMBIN_HOST_AND_PORT", termbin.getsockname())
