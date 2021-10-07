@@ -36,8 +36,8 @@ def _run_in_windows_cmd(command: str, cwd: Path) -> None:
     subprocess.Popen(real_command)
 
 
-def _run_in_osx_terminal_app(command: str, cwd: Path) -> None:
-    log.debug("using OSX terminal.app")
+def _run_in_macos_terminal_app(command: str, cwd: Path) -> None:
+    log.debug("using MacOS terminal.app")
     assert shutil.which("bash") is not None
 
     with tempfile.NamedTemporaryFile("w", delete=False, prefix="porcupine-run-") as file:
@@ -130,6 +130,6 @@ def run_command(command: str, cwd: Path) -> None:
     if windowingsystem == "win32":
         _run_in_windows_cmd(command, cwd)
     elif windowingsystem == "aqua" and not os.environ.get("TERMINAL", ""):
-        _run_in_osx_terminal_app(command, cwd)
+        _run_in_macos_terminal_app(command, cwd)
     else:
         _run_in_x11_like_terminal(command, cwd)
