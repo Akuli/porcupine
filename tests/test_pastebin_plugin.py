@@ -43,7 +43,9 @@ def test_dpaste_syntax_choices():
         assert syntax_choice == get_lexer_by_name(syntax_choice).aliases[0]
 
 
-def check_pastebin(paste_class):
+@pytest.mark.pastebin_test
+@pytest.mark.parametrize("paste_class", [pastebin_module.Termbin, pastebin_module.DPaste])
+def test_pastebins(paste_class):
     some_code = "import foo as bar\nprint('baz')"
 
     for lexer in [TextLexer, PythonLexer]:
@@ -59,16 +61,6 @@ def check_pastebin(paste_class):
         else:
             # raw url
             assert response.text.strip() == some_code.strip()
-
-
-@pytest.mark.pastebin_test
-def test_termbin():
-    check_pastebin(pastebin_module.Termbin)
-
-
-@pytest.mark.pastebin_test
-def test_dpaste():
-    check_pastebin(pastebin_module.DPaste)
 
 
 @pytest.mark.pastebin_test  # TODO: switch to localhost HTTPS server?
