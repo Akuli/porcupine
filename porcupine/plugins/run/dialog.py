@@ -143,16 +143,16 @@ class CommandAsker:
 
         key_frame = ttk.Frame(content_frame)
         key_frame.pack(fill="x", pady=20)
-        self._key_bindings = [
+        self.key_bindings = [
             utils.get_binding("<<Menubar:Run/Repeat previous command>>"),
             utils.get_binding("<<Run:Repeat2>>"),
             utils.get_binding("<<Run:Repeat3>>"),
             utils.get_binding("<<Run:Repeat4>>"),
         ]
-        self.key_var = tkinter.StringVar(value=self._key_bindings[initial_key_id - 1])
+        self.key_var = tkinter.StringVar(value=self.key_bindings[initial_key_id - 1])
         self.key_var.trace_add('write', self.update_run_button)
         ttk.Label(key_frame, text="This command can be repeated by pressing the following key:").pack(side="left")
-        ttk.Combobox(key_frame, textvariable=self.key_var, values=self._key_bindings, width=3).pack(side="left")
+        ttk.Combobox(key_frame, textvariable=self.key_var, values=self.key_bindings, width=3).pack(side="left")
 
         button_frame = ttk.Frame(content_frame)
         button_frame.pack(fill="x")
@@ -203,7 +203,7 @@ class CommandAsker:
         return None
 
     def update_run_button(self, *junk: object) -> None:
-        if self.command.value is not None and self.cwd.value is not None and self.key_var.get() in self._key_bindings:
+        if self.command.value is not None and self.cwd.value is not None and self.key_var.get() in self.key_bindings:
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
@@ -233,6 +233,6 @@ def ask_command(tab: tabs.FileTab, project_path: Path, initial_key_id: int) -> h
             cwd_format=asker.cwd.format_var.get(),
             cwd=str(asker.cwd.value),
             external_terminal=asker.terminal_var.get(),
-            key_id=asker._key_bindings.index(asker.key_var.get()) + 1,
+            key_id=asker.key_bindings.index(asker.key_var.get()) + 1,
         )
     return None
