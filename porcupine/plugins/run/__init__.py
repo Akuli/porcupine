@@ -39,7 +39,7 @@ def run(command: history.Command, project_root: Path) -> None:
         no_terminal.run_command(command_string, Path(command.cwd))
 
 
-def ask_and_run_command(initial_key_id: int) -> None:
+def ask_and_run_command(initial_key_id: int, junk: object) -> None:
     tab = get_tab_manager().select()
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
@@ -51,7 +51,7 @@ def ask_and_run_command(initial_key_id: int) -> None:
         run(info, project_root)
 
 
-def repeat_command(key_id: int) -> None:
+def repeat_command(key_id: int, junk: object) -> None:
     tab = get_tab_manager().select()
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
@@ -82,8 +82,10 @@ def setup() -> None:
     for key_id, (ask_event, repeat_event) in enumerate(zip(ASK_EVENTS, REPEAT_EVENTS), start=1):
         if key_id == 1:
             # Shows in menubar
-            menubar.add_filetab_command(ask_event, partial(ask_and_run_command, 1))
-            menubar.add_filetab_command(repeat_event, partial(repeat_command, 1))
+            assert ask_event == "<<Menubar:Run/Run command>>"
+            assert repeat_event == "<<Menubar:Run/Repeat previous command>>"
+            menubar.add_filetab_command("Run/Run command", partial(ask_and_run_command, 1))
+            menubar.add_filetab_command("Run/Repeat previous command", partial(repeat_command, 1))
         else:
             # Events do not show in menubar
             get_main_window().bind(
