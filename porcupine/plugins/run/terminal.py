@@ -38,18 +38,8 @@ def _run_in_windows_cmd(command: str, cwd: Path) -> None:
 
 def _run_in_osx_terminal_app(command: str, cwd: Path) -> None:
     log.debug("using OSX terminal.app")
+    assert shutil.which("bash") is not None
 
-    bash = shutil.which("bash")
-    assert bash is not None
-
-    # passing arguments is not easy, these things are wrong with this:
-    #  - i needed to cheat and use stackoverflow because i don't
-    #    have a mac :( http://stackoverflow.com/a/989357
-    #  - new OSX versions keep the terminal open by
-    #    default but older versions don't, so people using old
-    #    OSX versions need to change their terminal settings
-    # big thanks to go|dfish for testing an older version of this code!
-    # this exact code is NOT TESTED :/
     with tempfile.NamedTemporaryFile("w", delete=False, prefix="porcupine-run-") as file:
         print("#!/usr/bin/env bash", file=file)
         print("rm", shlex.quote(file.name), file=file)  # runs even if command is interrupted
