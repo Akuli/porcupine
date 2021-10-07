@@ -66,8 +66,7 @@ def repeat_command(key_id: int, junk: object) -> None:
         repeat = utils.get_binding(REPEAT_EVENTS[key_id - 1])
         messagebox.showerror(
             "No commands to repeat",
-            f"Please press {ask} to choose a command to run. You can then repeat it with"
-            f" {repeat}.",
+            f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
         )
 
 
