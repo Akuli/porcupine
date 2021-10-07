@@ -109,7 +109,9 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
         termbin.settimeout(5)
         termbin.bind(("localhost", 0))
         termbin.listen(1)
-        monkeypatch.setattr("porcupine.plugins.pastebin.TERMBIN_HOST_AND_PORT", termbin.getsockname())
+        monkeypatch.setattr(
+            "porcupine.plugins.pastebin.TERMBIN_HOST_AND_PORT", termbin.getsockname()
+        )
 
         thread_done = False
         fake_wait_window_done = False
