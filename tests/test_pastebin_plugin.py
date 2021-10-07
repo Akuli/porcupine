@@ -5,7 +5,6 @@ import threading
 import time
 import tkinter
 import traceback
-import types
 from http.client import RemoteDisconnected
 
 import pytest
@@ -74,7 +73,7 @@ def test_dpaste():
 
 @pytest.mark.pastebin_test  # TODO: switch to localhost HTTPS server?
 def test_dpaste_canceling(monkeypatch):
-    monkeypatch.setattr(pastebin_module, "DPASTE_URL", "https://httpbin.org/delay/3")
+    monkeypatch.setattr("porcupine.plugins.pastebin.DPASTE_URL", "https://httpbin.org/delay/3")
     paste = pastebin_module.DPaste()
     got_error = False
 
@@ -96,7 +95,7 @@ def test_dpaste_canceling(monkeypatch):
     assert got_error
 
 
-def test_success_dialog(monkeypatch):
+def test_success_dialog(mocker):
     dialog = pastebin_module.SuccessDialog("http://example.com/poop")
 
     dialog.clipboard_append("this junk should be gone soon")
@@ -104,12 +103,11 @@ def test_success_dialog(monkeypatch):
     assert dialog.clipboard_get() == "http://example.com/poop"
 
     # make sure that webbrowser.open is called
-    opened = []
-    monkeypatch.setattr(pastebin_module, "webbrowser", types.SimpleNamespace(open=opened.append))
+    mock = mocker.patch("porcupine.plugins.pastebin.webbrowser")
     assert dialog.winfo_exists()
     dialog.open_in_browser()
     assert not dialog.winfo_exists()
-    assert opened == ["http://example.com/poop"]
+    mock.open.assert_called_once_with("http://example.com/poop")
 
     dialog.destroy()
 
@@ -152,7 +150,7 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
 
 
 def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, dont_run_in_thread):
-    monkeypatch.setattr(pastebin_module, "DPASTE_URL", "ThisIsNotValidUrlStart://wat")
+    monkeypatch.setattr("porcupine.plugins.pastebin.DPASTE_URL", "ThisIsNotValidUrlStart://wat")
     mocker.patch("tkinter.messagebox.showerror")
 
     tabmanager.select(filetab)
@@ -163,9 +161,9 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, 
     )
 
 
-def test_invalid_return(filetab, monkeypatch, tabmanager, mocker, caplog):
+def test_invalid_return(filetab, tabmanager, mocker, caplog):
     mocker.patch("tkinter.messagebox.showerror")
-    monkeypatch.setattr(pastebin_module.DPaste, "run", (lambda *args: "lol"))
+    mocker.patch("porcupine.plugins.pastebin.DPaste.run").return_value = "lol"
 
     tabmanager.select(filetab)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
