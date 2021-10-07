@@ -86,7 +86,7 @@ def setup() -> None:
             menubar.add_filetab_command("Run/Run command", partial(ask_and_run_command, 1))
             menubar.add_filetab_command("Run/Repeat previous command", partial(repeat_command, 1))
         else:
-            # Events do not show in menubar
+            # Does not show in menubar
             get_main_window().bind(
                 f"<<Run:AskAndRun{key_id}>>", partial(ask_and_run_command, key_id), add=True
             )
