@@ -1,31 +1,43 @@
+import pytest
+
 import tkinter
 
-from porcupine import get_main_window
 from porcupine.plugins.urls import find_urls
 
 
-def test_find_urls():
-    text = tkinter.Text(get_main_window())
-    urls = [
-        "https://github.com/Akuli/porcupine/",
-        "http://example.com/",
-        "http://example.com/comma,stuff",
-        "http://127.0.0.1:12345/foo.html",
-    ]
-    test_cases = """\
+simple_urls = [
+    "https://github.com/Akuli/porcupine/",
+    "http://example.com/",
+    "http://example.com/comma,stuff",
+    "http://127.0.0.1:12345/foo.html",
+]
+parenthesized_urls = [
+    "https://en.wikipedia.org/wiki/Whitespace_(programming_language)",
+    "https://example.com/foo(bar)baz",
+]
+
+simple_text = """\
           URL
+      bla URL
+      bla URL bla
           URL bla bla
-"See also URL"
+      Bla URL.
+ Bla bla  URL.
+ Bla bla  URL, foo and bar.
+     bla "URL" bla
+     bla 'URL' bla
+         `URL`
+         <URL>
+    `foo <URL>`_           RST link
          'URL bla'
+"See also URL"
+"""
+parenthesized_text = """\
          (URL)
          (URL )     often used with tools that don't understand parenthesized urls
          {URL}      might occur in Tcl code, for example
-         <URL>
         ("URL")bla
         "(URL)" :)
-         `URL`
- Bla bla  URL.
- Bla bla  URL, foo and bar.
  Bla bla (URL) bla.
  Bla bla (URL).
  Bla bla (URL.)
@@ -35,36 +47,25 @@ def test_find_urls():
    [Link](URL), foo and bar
    [Link](URL).
    [Link](URL).</small>    mixed markdown and HTML
-    `foo <URL>`_           RST link
-""".splitlines()
-
-    for url in urls:
-        for line in test_cases:
-            text.delete("1.0", "end")
-            text.insert("1.0", line.replace("URL", url))
-
-            [(start, end)] = find_urls(text, "1.0", "end")
-            assert text.index(start) == "1.10"
-            assert text.index(end) == f"1.{10 + len(url)}"
+"""
 
 
-# urls with parentheses in them don't need to work in all cases, just very basic support wanted
-def test_url_containing_parens():
-    for url in [
-        "https://en.wikipedia.org/wiki/Whitespace_(programming_language)",
-        "https://example.com/foo(bar)baz",
-    ]:
-        text = tkinter.Text(get_main_window())
-        text.insert(
-            "1.0",
-            f"""\
- bla {url}
- bla {url} bla
- Bla {url}.
-bla "{url}" bla
-bla '{url}' bla
-""",
-        )
-        assert [
-            (text.index(start), text.index(end)) for start, end in find_urls(text, "1.0", "end")
-        ] == [(f"{lineno}.5", f"{lineno}.{5 + len(url)}") for lineno in range(1, 6)]
+def check(url, line):
+    textwidget = tkinter.Text()
+    textwidget.insert("1.0", line.replace("URL", url))
+    [(start, end)] = find_urls(textwidget, "1.0", "end")
+    assert textwidget.index(start) == "1.10"
+    assert textwidget.index(end) == f"1.{10 + len(url)}"
+    textwidget.destroy()
+
+
+@pytest.mark.parametrize("url", simple_urls)
+@pytest.mark.parametrize("line", (simple_text + parenthesized_text).splitlines())
+def test_find_urls_with_simple_urls(url, line):
+    check(url, line)
+
+
+@pytest.mark.parametrize("url", simple_urls + parenthesized_urls)
+@pytest.mark.parametrize("line", simple_text.splitlines())
+def test_find_urls_with_parenthesized_urls(url, line):
+    check(url, line)
