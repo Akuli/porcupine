@@ -31,12 +31,12 @@ simple_text = """\
     `foo <URL>`_           RST link
          'URL bla'
 "See also URL"
+        ("URL")bla
+         {URL}      might occur in Tcl code, for example
 """
 parenthesized_text = """\
          (URL)
          (URL )     often used with tools that don't understand parenthesized urls
-         {URL}      might occur in Tcl code, for example
-        ("URL")bla
         "(URL)" :)
  Bla bla (URL) bla.
  Bla bla (URL).
@@ -68,4 +68,11 @@ def test_find_urls_with_simple_urls(url, line):
 @pytest.mark.parametrize("url", simple_urls + parenthesized_urls)
 @pytest.mark.parametrize("line", simple_text.splitlines())
 def test_find_urls_with_parenthesized_urls(url, line):
+    check(url, line)
+
+
+@pytest.mark.parametrize("url", parenthesized_urls)
+@pytest.mark.parametrize("line", parenthesized_text.splitlines())
+@pytest.mark.xfail(strict=True)
+def test_parenthesized_urls_in_parenthesized_text(url, line):
     check(url, line)
