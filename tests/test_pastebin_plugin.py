@@ -45,7 +45,7 @@ def test_dpaste_syntax_choices():
 
 @pytest.mark.pastebin_test
 @pytest.mark.parametrize("paste_class", [DPaste, Termbin])
-def test_pastebins(paste_class):
+def test_pastebin(paste_class):
     some_code = "import foo as bar\nprint('baz')"
 
     for lexer in [TextLexer, PythonLexer]:
