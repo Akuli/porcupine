@@ -72,7 +72,7 @@ class FormattingEntryAndLabels(Generic[T]):
 
 class CommandAsker:
     def __init__(
-        self, file_path: Path, project_path: Path, suggestions: list[history.Command], key_id: int
+        self, file_path: Path, project_path: Path, suggestions: list[history.Command], initial_key_id: int
     ):
         self.window = tkinter.Toplevel()
         self._suggestions = suggestions
@@ -141,22 +141,18 @@ class CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        bindings = [
+        key_frame = ttk.Frame(content_frame)
+        key_frame.pack(fill="x", pady=20)
+        self._key_bindings = [
             utils.get_binding("<<Menubar:Run/Repeat previous command>>"),
             utils.get_binding("<<Run:Repeat2>>"),
             utils.get_binding("<<Run:Repeat3>>"),
             utils.get_binding("<<Run:Repeat4>>"),
         ]
-        if key_id == 1:
-            hint = (
-                f"You can later press {bindings[0]} to conveniently repeat the command.\nTo run"
-                f" different commands conveniently, you can use {bindings[1]}, {bindings[2]} and"
-                f" {bindings[3]} similarly."
-            )
-        else:
-            assert 1 <= key_id <= len(bindings)
-            hint = f"You can later press {bindings[key_id - 1]} to conveniently repeat the command."
-        ttk.Label(content_frame, text=f"\n{hint}\n").pack(anchor="w")
+        self.key_var = tkinter.StringVar(value=self._key_bindings[initial_key_id - 1])
+        self.key_var.trace_add('write', self.update_run_button)
+        ttk.Label(key_frame, text="This command can be repeated by pressing the following key:").pack(side="left")
+        ttk.Combobox(key_frame, textvariable=self.key_var, values=self._key_bindings, width=3).pack(side="left")
 
         button_frame = ttk.Frame(content_frame)
         button_frame.pack(fill="x")
@@ -206,8 +202,8 @@ class CommandAsker:
 
         return None
 
-    def update_run_button(self) -> None:
-        if self.command.value is not None and self.cwd.value is not None:
+    def update_run_button(self, *junk: object) -> None:
+        if self.command.value is not None and self.cwd.value is not None and self.key_var.get() in self._key_bindings:
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
@@ -217,9 +213,9 @@ class CommandAsker:
         self.window.destroy()
 
 
-def ask_command(tab: tabs.FileTab, project_path: Path, key_id: int) -> history.Command | None:
+def ask_command(tab: tabs.FileTab, project_path: Path, initial_key_id: int) -> history.Command | None:
     assert tab.path is not None
-    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path, key_id), key_id)
+    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path, initial_key_id), initial_key_id)
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
@@ -237,6 +233,6 @@ def ask_command(tab: tabs.FileTab, project_path: Path, key_id: int) -> history.C
             cwd_format=asker.cwd.format_var.get(),
             cwd=str(asker.cwd.value),
             external_terminal=asker.terminal_var.get(),
-            key_id=key_id,
+            key_id=asker._key_bindings.index(asker.key_var.get()) + 1,
         )
     return None

@@ -1,6 +1,7 @@
 """Compile, run and lint files."""
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 from tkinter import messagebox
@@ -11,8 +12,11 @@ from porcupine.plugins import python_venv
 
 from . import dialog, history, no_terminal, terminal
 
+log = logging.getLogger(__name__)
+
 
 def run(command: history.Command, project_root: Path) -> None:
+    log.info(f"Running {command} in {project_root}")
     history.add(command)
 
     venv = python_venv.get_venv(project_root)
@@ -33,14 +37,14 @@ def run(command: history.Command, project_root: Path) -> None:
         no_terminal.run_command(command_string, Path(command.cwd))
 
 
-def ask_and_run_command(key_id: int) -> None:
+def ask_and_run_command(initial_key_id: int) -> None:
     tab = get_tab_manager().select()
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
     assert tab.path is not None
 
     project_root = utils.find_project_root(tab.path)
-    info = dialog.ask_command(tab, project_root, key_id)
+    info = dialog.ask_command(tab, project_root, initial_key_id)
     if info is not None:
         run(info, project_root)
 

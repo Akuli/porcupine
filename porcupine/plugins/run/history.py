@@ -64,7 +64,7 @@ def add(command: Command) -> None:
 
     old_use_count = 0
     for item in history:
-        if item.command.command_format == command.command_format:
+        if item.command.command_format == command.command_format and item.command.key_id == command.key_id:
             old_use_count = item.use_count
             history.remove(item)
             break
