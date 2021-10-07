@@ -55,7 +55,7 @@ if sys.platform == "darwin":
         ("<<Menubar:File/New File>>", "⌘N", "Command-N"),
         ("<<Menubar:File/Save As>>", "⇧⌘S", "Shift-Command-S"),
         ("<<Menubar:File/Save>>", "⌘S", "Command-S"),
-        ("<<Menubar:Run/Run command>>", "F4", "F4"),
+        ("<<Menubar:Run/Repeat previous command>>", "F5", "F5"),
         ("<<Menubar:View/Bigger Font>>", "⌘+", "Command-+"),
         ("<<Menubar:View/Reset Font Size>>", "⌘0", "Command-0"),
         ("<<Menubar:View/Smaller Font>>", "⌘-", "Command--"),
