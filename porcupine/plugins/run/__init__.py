@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import sys
+from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 from typing import Any, List
 
-from porcupine import get_tab_manager, menubar, settings, tabs, utils
+from porcupine import get_tab_manager, menubar, settings, tabs, utils, get_main_window
 from porcupine.plugins import python_venv
 
 from . import dialog, history, no_terminal, terminal
@@ -33,29 +34,31 @@ def run(command: history.Command, project_root: Path) -> None:
         no_terminal.run_command(command_string, Path(command.cwd))
 
 
-def ask_and_run_command(tab: tabs.FileTab) -> None:
-    if not tab.save():
+def ask_and_run_command(key_id: int) -> None:
+    tab = get_tab_manager().select()
+    if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
     assert tab.path is not None
 
     project_root = utils.find_project_root(tab.path)
-    info = dialog.ask_command(tab, project_root)
+    info = dialog.ask_command(tab, project_root, key_id)
     if info is not None:
         run(info, project_root)
 
 
-def repeat_command(tab: tabs.FileTab) -> None:
-    if not tab.save():
+def repeat_command(key_id: int) -> None:
+    tab = get_tab_manager().select()
+    if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
     assert tab.path is not None
 
     project_root = utils.find_project_root(tab.path)
-    previous_commands = history.get(tab, project_root)
+    previous_commands = history.get(tab, project_root, key_id)
     if previous_commands:
         run(previous_commands[0], project_root)
     else:
-        choose = utils.get_binding("<<Menubar:Run/Run command>>")
-        repeat = utils.get_binding("<<Menubar:Run/Repeat previous command>>")
+        choose = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")
+        repeat = utils.get_binding(f"<<Run:Repeat{key_id}>>")
         messagebox.showerror(
             "No commands to repeat",
             f"Please press {choose} to choose a command to run. You can then repeat it with"
@@ -70,5 +73,12 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     settings.add_option("run_history", [], type_=List[Any])
-    menubar.add_filetab_command("Run/Run command", ask_and_run_command)
-    menubar.add_filetab_command("Run/Repeat previous command", repeat_command)
+
+    menubar.add_filetab_command("Run/Run command", (lambda tab: ask_and_run_command(1)))
+    menubar.add_filetab_command("Run/Repeat previous command", (lambda tab: repeat_command(1)))
+    get_main_window().bind("<<Run:AskAndRun2>>", lambda e: ask_and_run_command(2), add=True)
+    get_main_window().bind("<<Run:AskAndRun3>>", lambda e: ask_and_run_command(3), add=True)
+    get_main_window().bind("<<Run:AskAndRun4>>", lambda e: ask_and_run_command(4), add=True)
+    get_main_window().bind("<<Run:Repeat2>>", lambda e: repeat_command(2), add=True)
+    get_main_window().bind("<<Run:Repeat3>>", lambda e: repeat_command(3), add=True)
+    get_main_window().bind("<<Run:Repeat4>>", lambda e: repeat_command(4), add=True)

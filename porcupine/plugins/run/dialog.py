@@ -200,9 +200,9 @@ class CommandAsker:
         self.window.destroy()
 
 
-def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None:
+def ask_command(tab: tabs.FileTab, project_path: Path, key_id: int) -> history.Command | None:
     assert tab.path is not None
-    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path))
+    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path, key_id))
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
@@ -220,5 +220,6 @@ def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None
             cwd_format=asker.cwd.format_var.get(),
             cwd=str(asker.cwd.value),
             external_terminal=asker.terminal_var.get(),
+            key_id=key_id,
         )
     return None

@@ -26,6 +26,7 @@ class Command:
     cwd_format: str
     cwd: str  # not pathlib.Path because must be json safe
     external_terminal: bool
+    key_id: int = 1  # 1 = F5, 2 = F6, 3 = F7, 4 = F8
 
 
 @dataclasses.dataclass
@@ -85,13 +86,31 @@ def add(command: Command) -> None:
     )
 
 
-def get(tab: tabs.FileTab, project_path: Path) -> list[Command]:
+def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[Command]:
     assert tab.path is not None
 
     raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any]).copy()
-    commands = [dacite.from_dict(_HistoryItem, raw_item).command for raw_item in raw_history]
 
-    for example in tab.settings.get("example_commands", List[ExampleCommand]):
+    # backwards compat for between porcupine 0.98.2 and 0.99.0 (no released versions)
+    for item in raw_history:
+        item.setdefault("key_id", 1)
+
+    typed_history = [dacite.from_dict(_HistoryItem, raw_item).command for raw_item in raw_history]
+    commands = [command for command in typed_history if command.key_id == key_id]
+
+    examples = tab.settings.get("example_commands", List[ExampleCommand])
+
+    # key_id = 1: first example command goes first
+    # key_id = 2: second example command goes first, first example goes last
+    # key_id = 3: third example command goes first
+    # key_id = 4: fourth example command goes first
+    #
+    # This way you can by default press F5 to run first example, F6 to run
+    # second, etc, but all examples will show up in autocompletions.
+    assert key_id >= 1
+    examples = examples[key_id - 1:] + examples[:key_id - 1]
+
+    for example in examples:
         if sys.platform == "win32" and example.windows_command is not None:
             command_format = example.windows_command
         else:
@@ -106,6 +125,8 @@ def get(tab: tabs.FileTab, project_path: Path) -> list[Command]:
                     cwd_format=example.working_directory,
                     cwd=str(format_cwd(example.working_directory, substitutions)),
                     external_terminal=example.external_terminal,
+                    key_id=key_id,
                 )
             )
+
     return commands
