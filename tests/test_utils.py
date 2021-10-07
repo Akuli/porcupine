@@ -72,7 +72,7 @@ else:
         ("<<Menubar:File/New File>>", "Ctrl+N", "Ctrl+N"),
         ("<<Menubar:File/Save As>>", "Ctrl+Shift+S", "Ctrl+Shift+S"),
         ("<<Menubar:File/Save>>", "Ctrl+S", "Ctrl+S"),
-        ("<<Menubar:Run/Run command>>", "F4", "F4"),
+        ("<<Menubar:Run/Repeat previous command>>", "F5", "F5"),
         ("<<Menubar:View/Bigger Font>>", "Ctrl+Plus", "Ctrl+Plus"),
         ("<<Menubar:View/Reset Font Size>>", "Ctrl+Zero", "Ctrl+Zero"),
         ("<<Menubar:View/Smaller Font>>", "Ctrl+Minus", "Ctrl+Minus"),
