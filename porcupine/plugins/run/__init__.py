@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 from typing import Any, List
@@ -11,6 +12,7 @@ from porcupine import get_main_window, get_tab_manager, menubar, settings, tabs,
 from porcupine.plugins import python_venv
 
 from . import dialog, history, no_terminal, terminal
+from .dialog import ASK_EVENTS, REPEAT_EVENTS
 
 log = logging.getLogger(__name__)
 
@@ -77,11 +79,16 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     settings.add_option("run_history", [], type_=List[Any])
 
-    menubar.add_filetab_command("Run/Run command", (lambda tab: ask_and_run_command(1)))
-    menubar.add_filetab_command("Run/Repeat previous command", (lambda tab: repeat_command(1)))
-    get_main_window().bind("<<Run:AskAndRun2>>", lambda e: ask_and_run_command(2), add=True)
-    get_main_window().bind("<<Run:AskAndRun3>>", lambda e: ask_and_run_command(3), add=True)
-    get_main_window().bind("<<Run:AskAndRun4>>", lambda e: ask_and_run_command(4), add=True)
-    get_main_window().bind("<<Run:Repeat2>>", lambda e: repeat_command(2), add=True)
-    get_main_window().bind("<<Run:Repeat3>>", lambda e: repeat_command(3), add=True)
-    get_main_window().bind("<<Run:Repeat4>>", lambda e: repeat_command(4), add=True)
+    for key_id, (ask_event, repeat_event) in enumerate(zip(ASK_EVENTS, REPEAT_EVENTS), start=1):
+        if key_id == 1:
+            # Shows in menubar
+            menubar.add_filetab_command(ask_event, partial(ask_and_run_command, 1))
+            menubar.add_filetab_command(repeat_event, partial(repeat_command, 1))
+        else:
+            # Events do not show in menubar
+            get_main_window().bind(
+                f"<<Run:AskAndRun{key_id}>>", partial(ask_and_run_command, key_id), add=True
+            )
+            get_main_window().bind(
+                f"<<Run:Repeat{key_id}>>", partial(repeat_command, key_id), add=True
+            )

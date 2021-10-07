@@ -13,7 +13,7 @@ from . import history
 T = TypeVar("T")
 
 
-class FormattingEntryAndLabels(Generic[T]):
+class _FormattingEntryAndLabels(Generic[T]):
     def __init__(
         self,
         entry_area: ttk.Frame,
@@ -70,9 +70,28 @@ class FormattingEntryAndLabels(Generic[T]):
             self._validated_callback()
 
 
-class CommandAsker:
+# TODO: these are in a weird place
+ASK_EVENTS = [
+    "<<Menubar:Run/Run command>>",
+    "<<Run:AskAndRun2>>",
+    "<<Run:AskAndRun3>>",
+    "<<Run:AskAndRun4>>",
+]
+REPEAT_EVENTS = [
+    "<<Menubar:Run/Repeat previous command>>",
+    "<<Run:Repeat2>>",
+    "<<Run:Repeat3>>",
+    "<<Run:Repeat4>>",
+]
+
+
+class _CommandAsker:
     def __init__(
-        self, file_path: Path, project_path: Path, suggestions: list[history.Command], initial_key_id: int
+        self,
+        file_path: Path,
+        project_path: Path,
+        suggestions: list[history.Command],
+        initial_key_id: int,
     ):
         self.window = tkinter.Toplevel()
         self._suggestions = suggestions
@@ -90,7 +109,7 @@ class CommandAsker:
         entry_area.grid_columnconfigure(1, weight=1)
 
         substitutions = history.get_substitutions(file_path, project_path)
-        self.command: FormattingEntryAndLabels[str] = FormattingEntryAndLabels(
+        self.command: _FormattingEntryAndLabels[str] = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
             substitutions=substitutions,
@@ -98,7 +117,7 @@ class CommandAsker:
             value_validator=(lambda command: bool(command.strip())),
             validated_callback=self.update_run_button,
         )
-        self.cwd: FormattingEntryAndLabels[Path] = FormattingEntryAndLabels(
+        self.cwd: _FormattingEntryAndLabels[Path] = _FormattingEntryAndLabels(
             entry_area,
             text="In this directory:",
             substitutions=substitutions,
@@ -141,18 +160,17 @@ class CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        key_frame = ttk.Frame(content_frame)
-        key_frame.pack(fill="x", pady=20)
-        self.key_bindings = [
-            utils.get_binding("<<Menubar:Run/Repeat previous command>>"),
-            utils.get_binding("<<Run:Repeat2>>"),
-            utils.get_binding("<<Run:Repeat3>>"),
-            utils.get_binding("<<Run:Repeat4>>"),
-        ]
-        self.key_var = tkinter.StringVar(value=self.key_bindings[initial_key_id - 1])
-        self.key_var.trace_add('write', self.update_run_button)
-        ttk.Label(key_frame, text="This command can be repeated by pressing the following key:").pack(side="left")
-        ttk.Combobox(key_frame, textvariable=self.key_var, values=self.key_bindings, width=3).pack(side="left")
+        repeat_frame = ttk.Frame(content_frame)
+        repeat_frame.pack(fill="x", pady=20)
+        self.repeat_bindings = list(map(utils.get_binding, REPEAT_EVENTS))
+        self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id - 1])
+        self.repeat_var.trace_add("write", self.update_run_button)
+        ttk.Label(
+            repeat_frame, text="This command can be repeated by pressing the following key:"
+        ).pack(side="left")
+        ttk.Combobox(
+            repeat_frame, textvariable=self.repeat_var, values=self.repeat_bindings, width=3
+        ).pack(side="left")
 
         button_frame = ttk.Frame(content_frame)
         button_frame.pack(fill="x")
@@ -203,7 +221,11 @@ class CommandAsker:
         return None
 
     def update_run_button(self, *junk: object) -> None:
-        if self.command.value is not None and self.cwd.value is not None and self.key_var.get() in self.key_bindings:
+        if (
+            self.command.value is not None
+            and self.cwd.value is not None
+            and self.repeat_var.get() in self.repeat_bindings
+        ):
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
@@ -213,9 +235,13 @@ class CommandAsker:
         self.window.destroy()
 
 
-def ask_command(tab: tabs.FileTab, project_path: Path, initial_key_id: int) -> history.Command | None:
+def ask_command(
+    tab: tabs.FileTab, project_path: Path, initial_key_id: int
+) -> history.Command | None:
     assert tab.path is not None
-    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path, initial_key_id), initial_key_id)
+    asker = _CommandAsker(
+        tab.path, project_path, history.get(tab, project_path, initial_key_id), initial_key_id
+    )
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
@@ -233,6 +259,6 @@ def ask_command(tab: tabs.FileTab, project_path: Path, initial_key_id: int) -> h
             cwd_format=asker.cwd.format_var.get(),
             cwd=str(asker.cwd.value),
             external_terminal=asker.terminal_var.get(),
-            key_id=asker.key_bindings.index(asker.key_var.get()) + 1,
+            key_id=asker.repeat_bindings.index(asker.repeat_var.get()) + 1,
         )
     return None
