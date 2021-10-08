@@ -9,9 +9,9 @@ from porcupine.plugins.langserver import langservers
 
 def langserver_started(filetab):
     return lambda: any(
-            filetab in ls.tabs_opened and ls._lsp_client.state == ClientState.NORMAL
-            for ls in langservers.values()
-        )
+        filetab in ls.tabs_opened and ls._lsp_client.state == ClientState.NORMAL
+        for ls in langservers.values()
+    )
 
 
 # Don't know why this is sometimes needed
