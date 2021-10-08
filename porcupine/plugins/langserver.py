@@ -28,7 +28,8 @@ if sys.platform != "win32":
 import sansio_lsp_client as lsp
 
 from porcupine import get_tab_manager, tabs, textutils, utils
-from porcupine.plugins import autocomplete, hover, jump_to_definition, python_venv, underlines
+from porcupine.plugins import autocomplete, hover, jump_to_definition, python_venv
+from porcupine.plugins.underlines import Underline, Underlines
 
 global_log = logging.getLogger(__name__)
 
@@ -544,31 +545,25 @@ class LangServer:
                 return
             [tab] = matching_tabs
 
-            tab.event_generate(
-                "<<SetUnderlines>>",
-                data=underlines.Underlines(
-                    id="diagnostics",
-                    underline_list=[
-                        underlines.Underline(
-                            start=_position_lsp2tk(diagnostic.range.start),
-                            end=_position_lsp2tk(diagnostic.range.end),
-                            message=_get_diagnostic_string(diagnostic),
-                            # TODO: there are plenty of other severities than ERROR and WARNING
-                            color=(
-                                "red"
-                                if diagnostic.severity == lsp.DiagnosticSeverity.ERROR
-                                else "orange"
-                            ),
-                        )
-                        for diagnostic in sorted(
-                            lsp_event.diagnostics,
-                            # error red underlines should be shown over orange warning underlines
-                            key=(lambda diagn: diagn.severity or lsp.DiagnosticSeverity.WARNING),
-                            reverse=True,
-                        )
-                    ],
-                ),
-            )
+            errors = []
+            warnings = []
+            for diagnostic in lsp_event.diagnostics:
+                # TODO: there are plenty of other severities than ERROR and WARNING
+                is_error = diagnostic.severity == lsp.DiagnosticSeverity.ERROR
+                underline = Underline(
+                    start=_position_lsp2tk(diagnostic.range.start),
+                    end=_position_lsp2tk(diagnostic.range.end),
+                    message=_get_diagnostic_string(diagnostic),
+                    color=("red" if is_error else "orange"),
+                )
+                if is_error:
+                    errors.append(underline)
+                else:
+                    warnings.append(underline)
+
+            # red error underlines should be shown over orange warning underlines
+            tab.event_generate("<<SetUnderlines>>", data=Underlines("warnings", warnings))
+            tab.event_generate("<<SetUnderlines>>", data=Underlines("errors", errors))
             return
 
         if isinstance(lsp_event, lsp.Definition):
@@ -797,9 +792,8 @@ def switch_langservers(
 
     if old is not new:
         global_log.info(f"Switching langservers: {old} --> {new}")
-        tab.event_generate(
-            "<<SetUnderlines>>", data=underlines.Underlines(id="diagnostics", underline_list=[])
-        )
+        tab.event_generate("<<SetUnderlines>>", data=Underlines("warnings", []))
+        tab.event_generate("<<SetUnderlines>>", data=Underlines("errors", []))
 
         if old is not None:
             old.forget_tab(tab)

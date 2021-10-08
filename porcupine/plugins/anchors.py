@@ -53,13 +53,19 @@ class AnchorManager:
         return mark
 
     # See underlines.py and langserver.py
-    def add_from_underlines(self, junk_event: object) -> None:
+    def _add_from_underlines(self, underline_kind: str) -> None:
         anchors = self.clean_duplicates_and_get_anchor_dict()
-        for start in self.tab_textwidget.tag_ranges("underline:diagnostics")[::2]:
+        for start in self.tab_textwidget.tag_ranges(f"underline:{underline_kind}")[::2]:
             lineno = self._get_line_number(str(start))
             if lineno not in anchors:
                 anchors[lineno] = self.add_anchor(lineno)
         self.linenumbers.do_update()
+
+    def add_warnings(self, junk_event: object) -> None:
+        self._add_from_underlines("warnings")
+
+    def add_errors(self, junk_event: object) -> None:
+        self._add_from_underlines("errors")
 
     def toggle(self, event: tkinter.Event[tabs.FileTab]) -> None:
         anchors = self.clean_duplicates_and_get_anchor_dict()
@@ -130,7 +136,8 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.bind("<<FiletabCommand:Edit/Anchors/Jump to previous>>", manager.jump_to_previous, add=True)
     tab.bind("<<FiletabCommand:Edit/Anchors/Jump to next>>", manager.jump_to_next, add=True)
     tab.bind("<<FiletabCommand:Edit/Anchors/Clear>>", manager.clear, add=True)
-    tab.bind("<<FiletabCommand:Edit/Anchors/Add to error//warning lines>>", manager.add_from_underlines, add=True)
+    tab.bind("<<FiletabCommand:Edit/Anchors/Add to error lines>>", manager.add_errors, add=True)
+    tab.bind("<<FiletabCommand:Edit/Anchors/Add to warning lines>>", manager.add_warnings, add=True)
     # fmt: on
 
 
@@ -145,7 +152,8 @@ def setup() -> None:
     menubar.add_filetab_command("Edit/Anchors/Jump to previous")
     menubar.add_filetab_command("Edit/Anchors/Jump to next")
     menubar.add_filetab_command("Edit/Anchors/Clear")
-    menubar.add_filetab_command("Edit/Anchors/Add to error//warning lines")
+    menubar.add_filetab_command("Edit/Anchors/Add to error lines")
+    menubar.add_filetab_command("Edit/Anchors/Add to warning lines")
 
     # Disable accessing submenu, makes gui look nicer
     menubar.set_enabled_based_on_tab("Edit/Anchors", lambda tab: isinstance(tab, tabs.FileTab))

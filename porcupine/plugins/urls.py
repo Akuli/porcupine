@@ -7,7 +7,7 @@ from functools import partial
 from typing import Iterable
 
 from porcupine import get_tab_manager, tabs, utils
-from porcupine.plugins import underlines
+from porcupine.plugins.underlines import Underline, Underlines
 
 
 def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[tuple[str, str]]:
@@ -55,10 +55,10 @@ def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
 
     tab.event_generate(
         "<<SetUnderlines>>",
-        data=underlines.Underlines(
-            id="urls",
-            underline_list=[
-                underlines.Underline(start, end, f"{shortcut1} or {shortcut2} to open")
+        data=Underlines(
+            "urls",
+            [
+                Underline(start, end, f"{shortcut1} or {shortcut2} to open")
                 for start, end in find_urls(tab.textwidget, view_start, view_end)
             ],
         ),
