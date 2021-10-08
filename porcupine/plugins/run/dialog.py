@@ -8,7 +8,7 @@ from typing import Callable, Generic, TypeVar
 
 from porcupine import get_main_window, tabs, textutils, utils
 
-from . import history
+from . import common, history
 
 T = TypeVar("T")
 
@@ -73,15 +73,15 @@ class _FormattingEntryAndLabels(Generic[T]):
 # TODO: these are in a weird place
 ASK_EVENTS = [
     "<<Menubar:Run/Run command>>",
+    "<<Run:AskAndRun1>>",
     "<<Run:AskAndRun2>>",
     "<<Run:AskAndRun3>>",
-    "<<Run:AskAndRun4>>",
 ]
 REPEAT_EVENTS = [
     "<<Menubar:Run/Repeat previous command>>",
+    "<<Run:Repeat1>>",
     "<<Run:Repeat2>>",
     "<<Run:Repeat3>>",
-    "<<Run:Repeat4>>",
 ]
 
 
@@ -90,7 +90,7 @@ class _CommandAsker:
         self,
         file_path: Path,
         project_path: Path,
-        suggestions: list[history.Command],
+        suggestions: list[common.Command],
         initial_key_id: int,
     ):
         self.window = tkinter.Toplevel()
@@ -108,12 +108,12 @@ class _CommandAsker:
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        substitutions = history.get_substitutions(file_path, project_path)
+        substitutions = common.get_substitutions(file_path, project_path)
         self.command: _FormattingEntryAndLabels[str] = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
             substitutions=substitutions,
-            formatter=history.format_command,
+            formatter=common.format_command,
             value_validator=(lambda command: bool(command.strip())),
             validated_callback=self.update_run_button,
         )
@@ -121,7 +121,7 @@ class _CommandAsker:
             entry_area,
             text="In this directory:",
             substitutions=substitutions,
-            formatter=history.format_cwd,
+            formatter=common.format_cwd,
             value_validator=(lambda path: path.is_dir()),
             validated_callback=self.update_run_button,
         )
@@ -163,7 +163,7 @@ class _CommandAsker:
         repeat_frame = ttk.Frame(content_frame)
         repeat_frame.pack(fill="x", pady=20)
         self.repeat_bindings = list(map(utils.get_binding, REPEAT_EVENTS))
-        self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id - 1])
+        self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id])
         self.repeat_var.trace_add("write", self.update_run_button)
         ttk.Label(
             repeat_frame, text="This command can be repeated by pressing the following key:"
@@ -195,7 +195,7 @@ class _CommandAsker:
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
 
-    def _select_command_autocompletion(self, command: history.Command, prefix: str) -> None:
+    def _select_command_autocompletion(self, command: common.Command, prefix: str) -> None:
         assert command.command_format.startswith(prefix)
         self.command.format_var.set(command.command_format)
         self.command.entry.icursor(len(prefix))
@@ -237,7 +237,7 @@ class _CommandAsker:
 
 def ask_command(
     tab: tabs.FileTab, project_path: Path, initial_key_id: int
-) -> history.Command | None:
+) -> common.Command | None:
     assert tab.path is not None
     asker = _CommandAsker(
         tab.path, project_path, history.get(tab, project_path, initial_key_id), initial_key_id
@@ -253,12 +253,12 @@ def ask_command(
     if asker.run_clicked:
         assert asker.command.value is not None
         assert asker.cwd.value is not None
-        return history.Command(
+        return common.Command(
             command_format=asker.command.format_var.get(),
             command=asker.command.value,
             cwd_format=asker.cwd.format_var.get(),
             cwd=str(asker.cwd.value),
             external_terminal=asker.terminal_var.get(),
-            key_id=asker.repeat_bindings.index(asker.repeat_var.get()) + 1,
+            key_id=asker.repeat_bindings.index(asker.repeat_var.get()),
         )
     return None

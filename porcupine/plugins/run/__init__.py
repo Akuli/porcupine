@@ -11,13 +11,13 @@ from typing import Any, List
 from porcupine import get_main_window, get_tab_manager, menubar, settings, tabs, utils
 from porcupine.plugins import python_venv
 
-from . import dialog, history, no_terminal, terminal
+from . import common, dialog, history, no_terminal, terminal
 from .dialog import ASK_EVENTS, REPEAT_EVENTS
 
 log = logging.getLogger(__name__)
 
 
-def run(command: history.Command, project_root: Path) -> None:
+def run(command: common.Command, project_root: Path) -> None:
     log.info(f"Running {command} in {project_root}")
     history.add(command)
 
@@ -62,8 +62,8 @@ def repeat_command(key_id: int, junk: object) -> None:
     if previous_commands:
         run(previous_commands[0], project_root)
     else:
-        ask = utils.get_binding(ASK_EVENTS[key_id - 1])
-        repeat = utils.get_binding(REPEAT_EVENTS[key_id - 1])
+        ask = utils.get_binding(ASK_EVENTS[key_id])
+        repeat = utils.get_binding(REPEAT_EVENTS[key_id])
         messagebox.showerror(
             "No commands to repeat",
             f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
@@ -78,18 +78,17 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     settings.add_option("run_history", [], type_=List[Any])
 
-    for key_id, (ask_event, repeat_event) in enumerate(zip(ASK_EVENTS, REPEAT_EVENTS), start=1):
-        if key_id == 1:
+    for key_id, (ask_event, repeat_event) in enumerate(zip(ASK_EVENTS, REPEAT_EVENTS)):
+        ask = partial(ask_and_run_command, key_id)
+        repeat = partial(repeat_command, key_id)
+
+        if key_id == 0:
             # Shows in menubar
             assert ask_event == "<<Menubar:Run/Run command>>"
             assert repeat_event == "<<Menubar:Run/Repeat previous command>>"
-            menubar.add_filetab_command("Run/Run command", partial(ask_and_run_command, 1))
-            menubar.add_filetab_command("Run/Repeat previous command", partial(repeat_command, 1))
+            menubar.add_filetab_command("Run/Run command", ask)
+            menubar.add_filetab_command("Run/Repeat previous command", repeat)
         else:
             # Does not show in menubar
-            get_main_window().bind(
-                f"<<Run:AskAndRun{key_id}>>", partial(ask_and_run_command, key_id), add=True
-            )
-            get_main_window().bind(
-                f"<<Run:Repeat{key_id}>>", partial(repeat_command, key_id), add=True
-            )
+            get_main_window().bind(ask_event, ask, add=True)
+            get_main_window().bind(repeat_event, repeat, add=True)
