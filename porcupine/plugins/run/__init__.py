@@ -75,15 +75,14 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     settings.add_option("run_history", [], type_=List[Any])
 
-    menu = menubar.get_menu("Run")
-    menu.add_command(
-        label="Run command",
-        command=(lambda: get_main_window().event_generate("<<Run:AskAndRun0>>")),
+    menubar.add_filetab_command(
+        "Run/Run command",
+        (lambda tab: get_main_window().event_generate("<<Run:AskAndRun0>>")),
         accelerator=utils.get_binding("<<Run:AskAndRun0>>", menu=True),
     )
-    menu.add_command(
-        label="Repeat previous command",
-        command=(lambda: get_main_window().event_generate("<<Run:Repeat0>>")),
+    menubar.add_filetab_command(
+        "Run/Repeat previous command",
+        (lambda tab: get_main_window().event_generate("<<Run:Repeat0>>")),
         accelerator=utils.get_binding("<<Run:Repeat0>>", menu=True),
     )
 
