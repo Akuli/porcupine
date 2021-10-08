@@ -60,8 +60,6 @@ class _Underliner:
             self.textwidget.tag_add(tag, underline.start, underline.end)
             self.textwidget.tag_add(less_specific_tag, underline.start, underline.end)
 
-        # FIXME: update what hover plugin is showing (broke in #585)
-
     def handle_hover_request(self, event: utils.EventWithData) -> str | None:
         # Reversing to prefer topmost tags (i.e. tags added last)
         for tag in reversed(self.textwidget.tag_names(event.data_string)):
