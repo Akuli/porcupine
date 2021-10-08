@@ -92,11 +92,9 @@ class DirectoryTree(ttk.Treeview):
 
         def ordered_repr(item_id: str) -> tuple[bool, str, str]:
             split_item_id = item_id.split(":", maxsplit=2)
-            item_type = split_item_id[0]  # can be 'dir' or 'file' or 'project'
+            item_type = split_item_id[0]  # 'dir' or 'file'
             item_path = split_item_id[2]
-            item_is_dotted = (
-                Path(item_path).name[0] == "."
-            )  # False < True => dot items will be showed after normal items
+            item_is_dotted = Path(item_path).name[0] == "."  # False < True => dot items last
             return item_is_dotted, item_type, item_path
 
         self.sorting_keys: list[Callable[[str], Any]] = [ordered_repr]
