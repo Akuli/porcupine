@@ -22,11 +22,11 @@ event add "<<Menubar:View/Smaller Font>>" <$contmand-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
 # run plugin
-event add "<<Menubar:Run/Run command>>" <Shift-F5>
-event add "<<Menubar:Run/Repeat previous command>>" <F5>
+event add "<<Run:AskAndRun0>>" <Shift-F5>
 event add "<<Run:AskAndRun1>>" <Shift-F6>
 event add "<<Run:AskAndRun2>>" <Shift-F7>
 event add "<<Run:AskAndRun3>>" <Shift-F8>
+event add "<<Run:Repeat0>>" <F5>
 event add "<<Run:Repeat1>>" <F6>
 event add "<<Run:Repeat2>>" <F7>
 event add "<<Run:Repeat3>>" <F8>

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox
@@ -12,7 +13,6 @@ from porcupine import get_main_window, get_tab_manager, menubar, settings, tabs,
 from porcupine.plugins import python_venv
 
 from . import common, dialog, history, no_terminal, terminal
-from .dialog import ASK_EVENTS, REPEAT_EVENTS
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def run(command: common.Command, project_root: Path) -> None:
         no_terminal.run_command(command_string, Path(command.cwd))
 
 
-def ask_and_run_command(initial_key_id: int, junk: object) -> None:
+def ask_and_run_command(initial_key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
     tab = get_tab_manager().select()
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
@@ -51,7 +51,7 @@ def ask_and_run_command(initial_key_id: int, junk: object) -> None:
         run(info, project_root)
 
 
-def repeat_command(key_id: int, junk: object) -> None:
+def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
     tab = get_tab_manager().select()
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
@@ -62,8 +62,8 @@ def repeat_command(key_id: int, junk: object) -> None:
     if previous_commands:
         run(previous_commands[0], project_root)
     else:
-        ask = utils.get_binding(ASK_EVENTS[key_id])
-        repeat = utils.get_binding(REPEAT_EVENTS[key_id])
+        ask = utils.get_binding(common.ASK_EVENTS[key_id])
+        repeat = utils.get_binding(common.REPEAT_EVENTS[key_id])
         messagebox.showerror(
             "No commands to repeat",
             f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
@@ -78,17 +78,18 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     settings.add_option("run_history", [], type_=List[Any])
 
-    for key_id, (ask_event, repeat_event) in enumerate(zip(ASK_EVENTS, REPEAT_EVENTS)):
-        ask = partial(ask_and_run_command, key_id)
-        repeat = partial(repeat_command, key_id)
+    menu = menubar.get_menu("Run")
+    menu.add_command(
+        label="Run command",
+        command=(lambda: get_main_window().event_generate("<<Run:AskAndRun0>>")),
+        accelerator=utils.get_binding("<<Run:AskAndRun0>>", menu=True),
+    )
+    menu.add_command(
+        label="Repeat previous command",
+        command=(lambda: get_main_window().event_generate("<<Run:Repeat0>>")),
+        accelerator=utils.get_binding("<<Run:Repeat0>>", menu=True),
+    )
 
-        if key_id == 0:
-            # Shows in menubar
-            assert ask_event == "<<Menubar:Run/Run command>>"
-            assert repeat_event == "<<Menubar:Run/Repeat previous command>>"
-            menubar.add_filetab_command("Run/Run command", ask)
-            menubar.add_filetab_command("Run/Repeat previous command", repeat)
-        else:
-            # Does not show in menubar
-            get_main_window().bind(ask_event, ask, add=True)
-            get_main_window().bind(repeat_event, repeat, add=True)
+    for key_id, (ask_event, repeat_event) in enumerate(zip(common.ASK_EVENTS, common.REPEAT_EVENTS)):
+        get_main_window().bind(ask_event, partial(ask_and_run_command, key_id), add=True)
+        get_main_window().bind(repeat_event, partial(repeat_command, key_id), add=True)

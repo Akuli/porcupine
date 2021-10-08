@@ -39,14 +39,14 @@ def format_command(command_format: str, substitutions: dict[str, str]) -> str:
 
 
 ASK_EVENTS = [
-    "<<Menubar:Run/Run command>>",
+    "<<Run:AskAndRun0>>",
+    "<<Run:AskAndRun1>>",
     "<<Run:AskAndRun2>>",
     "<<Run:AskAndRun3>>",
-    "<<Run:AskAndRun4>>",
 ]
 REPEAT_EVENTS = [
-    "<<Menubar:Run/Repeat previous command>>",
+    "<<Run:Repeat0>>",
+    "<<Run:Repeat1>>",
     "<<Run:Repeat2>>",
     "<<Run:Repeat3>>",
-    "<<Run:Repeat4>>",
 ]

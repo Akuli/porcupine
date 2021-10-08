@@ -174,6 +174,10 @@ def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkin
 def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
     for path, menu, index in _walk_menu_contents(get_menu("")):
+        if menu.entrycget(index, "accelerator"):
+            # Already done, or menu item uses some custom stuff e.g. run plugin
+            continue
+
         event_name = f"<<Menubar:{path}>>"
 
         # show keyboard shortcuts in menus

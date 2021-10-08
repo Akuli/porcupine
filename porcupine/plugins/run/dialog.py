@@ -70,21 +70,6 @@ class _FormattingEntryAndLabels(Generic[T]):
             self._validated_callback()
 
 
-# TODO: these are in a weird place
-ASK_EVENTS = [
-    "<<Menubar:Run/Run command>>",
-    "<<Run:AskAndRun1>>",
-    "<<Run:AskAndRun2>>",
-    "<<Run:AskAndRun3>>",
-]
-REPEAT_EVENTS = [
-    "<<Menubar:Run/Repeat previous command>>",
-    "<<Run:Repeat1>>",
-    "<<Run:Repeat2>>",
-    "<<Run:Repeat3>>",
-]
-
-
 class _CommandAsker:
     def __init__(
         self,
@@ -162,7 +147,7 @@ class _CommandAsker:
 
         repeat_frame = ttk.Frame(content_frame)
         repeat_frame.pack(fill="x", pady=10)
-        self.repeat_bindings = list(map(utils.get_binding, REPEAT_EVENTS))
+        self.repeat_bindings = list(map(utils.get_binding, common.REPEAT_EVENTS))
         self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id])
         self.repeat_var.trace_add("write", self.update_run_button)
         ttk.Label(
