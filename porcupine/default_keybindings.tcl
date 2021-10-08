@@ -22,6 +22,8 @@ event add "<<Menubar:View/Smaller Font>>" <$contmand-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
 # run plugin
+# Many separate events because if you bind many keys to the same virtual
+# event, it is hard to figure out what key was pressed to trigger it
 event add "<<Run:AskAndRun0>>" <Shift-F5>
 event add "<<Run:AskAndRun1>>" <Shift-F6>
 event add "<<Run:AskAndRun2>>" <Shift-F7>
