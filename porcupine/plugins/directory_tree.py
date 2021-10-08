@@ -93,12 +93,12 @@ class DirectoryTree(ttk.Treeview):
         # "lambda x: ordered_repr(x)" sorting key puts dirs before files, normal files/dirs before dotfiles/dirs
         # and sorts by path case-sensitive
         def ordered_repr(item_id: str):
-            split_item_id = item_id.split(':', maxsplit=2)
+            split_item_id = item_id.split(":", maxsplit=2)
             item_type = split_item_id[0]  # can be 'dir' or 'file' or 'project'
             item_project_n = split_item_id[1]
             item_path = Path(split_item_id[2])
-            item_is_dotted = False  # False < True => hidden items will be showed after not hidden items
-            if item_path.name[0] == '.':
+            item_is_dotted = False  # False < True => dot items will be showed after normal items
+            if item_path.name[0] == ".":
                 item_is_dotted = True
             return item_type, item_project_n, item_is_dotted, item_path
 
