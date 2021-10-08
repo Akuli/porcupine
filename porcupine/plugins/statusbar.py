@@ -99,7 +99,7 @@ class StatusBar(ttk.Frame):
         self.path_label = ttk.Label(self._top_frame)
         self.path_label.pack(side="left")
         self._line_ending_button = ttk.Button(
-            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=4
+            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=6
         )
         self._line_ending_button.pack(side="right", padx=2)
         self._encoding_button = ttk.Button(
