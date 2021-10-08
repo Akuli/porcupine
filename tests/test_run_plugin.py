@@ -128,7 +128,7 @@ time.sleep(5)
 def test_no_previous_command_error(filetab, tmp_path, mocker):
     filetab.save_as(tmp_path / "foo.txt")
     mock = mocker.patch("tkinter.messagebox.showerror")
-    get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
+    get_main_window().event_generate("<<Run:Repeat0>>")
 
     mock.assert_called_once()
     if filetab.tk.eval("tk windowingsystem") == "aqua":
