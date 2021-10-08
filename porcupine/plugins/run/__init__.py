@@ -62,8 +62,8 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
     if previous_commands:
         run(previous_commands[0], project_root)
     else:
-        ask = utils.get_binding(common.ASK_EVENTS[key_id])
-        repeat = utils.get_binding(common.REPEAT_EVENTS[key_id])
+        ask = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")
+        repeat = utils.get_binding(f"<<Run:Repeat{key_id}>>")
         messagebox.showerror(
             "No commands to repeat",
             f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
@@ -90,6 +90,8 @@ def setup() -> None:
         accelerator=utils.get_binding("<<Run:Repeat0>>", menu=True),
     )
 
-    for key_id, (ask_event, repeat_event) in enumerate(zip(common.ASK_EVENTS, common.REPEAT_EVENTS)):
-        get_main_window().bind(ask_event, partial(ask_and_run_command, key_id), add=True)
-        get_main_window().bind(repeat_event, partial(repeat_command, key_id), add=True)
+    for key_id in range(4):
+        get_main_window().bind(
+            f"<<Run:AskAndRun{key_id}>>", partial(ask_and_run_command, key_id), add=True
+        )
+        get_main_window().bind(f"<<Run:Repeat{key_id}>>", partial(repeat_command, key_id), add=True)

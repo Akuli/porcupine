@@ -145,11 +145,12 @@ class _CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        repeat_frame = ttk.Frame(content_frame)
-        repeat_frame.pack(fill="x", pady=10)
-        self.repeat_bindings = list(map(utils.get_binding, common.REPEAT_EVENTS))
+        self.repeat_bindings = [utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)]
         self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id])
         self.repeat_var.trace_add("write", self.update_run_button)
+
+        repeat_frame = ttk.Frame(content_frame)
+        repeat_frame.pack(fill="x", pady=10)
         ttk.Label(
             repeat_frame, text="This command can be repeated by pressing the following key:"
         ).pack(side="left")

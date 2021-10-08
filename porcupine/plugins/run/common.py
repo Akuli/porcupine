@@ -36,17 +36,3 @@ def format_command(command_format: str, substitutions: dict[str, str]) -> str:
     return command_format.format(
         **{name: utils.quote(value) for name, value in substitutions.items()}
     )
-
-
-ASK_EVENTS = [
-    "<<Run:AskAndRun0>>",
-    "<<Run:AskAndRun1>>",
-    "<<Run:AskAndRun2>>",
-    "<<Run:AskAndRun3>>",
-]
-REPEAT_EVENTS = [
-    "<<Run:Repeat0>>",
-    "<<Run:Repeat1>>",
-    "<<Run:Repeat2>>",
-    "<<Run:Repeat3>>",
-]
