@@ -203,7 +203,8 @@ def paste_here(new_path: Path) -> None:
         except OSError as e:
             log.exception(f"can't delete {memorized_file_path}")
             messagebox.showerror(
-                "Deleting failed", f"Deleting {memorized_file_path} failed.\n\n{type(e).__name__}: {e}"
+                "Deleting failed",
+                f"Deleting {memorized_file_path} failed.\n\n{type(e).__name__}: {e}",
             )
         memorized_file_path = None
         memorized_file_path_status = None
@@ -340,7 +341,9 @@ def can_paste_here(path: Path) -> bool:
     if not is_memorized_file_path_valid():
         return False
     # no cut and paste in same dir
-    is_copy_or_paste_in_diff_dir = memorized_file_path_status == STATUS_COPY or not is_memorized_file_in_dir(path)
+    is_copy_or_paste_in_diff_dir = (
+        memorized_file_path_status == STATUS_COPY or not is_memorized_file_in_dir(path)
+    )
     return path.is_dir() and is_copy_or_paste_in_diff_dir
 
 
