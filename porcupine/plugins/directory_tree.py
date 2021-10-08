@@ -90,19 +90,16 @@ class DirectoryTree(ttk.Treeview):
         self._project_num_counter = 0
         self.contextmenu = tkinter.Menu(tearoff=False)
 
-        # "lambda x: ordered_repr(x)" sorting key puts dirs before files, normal files/dirs before dotfiles/dirs
-        # and sorts by path case-sensitive
-        def ordered_repr(item_id: str) -> tuple[str, str, bool, Path]:
+        def ordered_repr(item_id: str) -> tuple[bool, str, str]:
             split_item_id = item_id.split(":", maxsplit=2)
             item_type = split_item_id[0]  # can be 'dir' or 'file' or 'project'
-            item_project_n = split_item_id[1]
-            item_path = Path(split_item_id[2])
-            item_is_dotted = False  # False < True => dot items will be showed after normal items
-            if item_path.name[0] == ".":
-                item_is_dotted = True
-            return item_type, item_project_n, item_is_dotted, item_path
+            item_path = split_item_id[2]
+            item_is_dotted = (
+                Path(item_path).name[0] == "."
+            )  # False < True => dot items will be showed after normal items
+            return item_is_dotted, item_type, item_path
 
-        self.sorting_keys: list[Callable[[str], Any]] = [lambda item_id: ordered_repr(item_id)]
+        self.sorting_keys: list[Callable[[str], Any]] = [ordered_repr]
 
     def set_the_selection_correctly(self, id: str) -> None:
         self.selection_set(id)
