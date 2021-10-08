@@ -62,13 +62,7 @@ def add(command: common.Command) -> None:
 def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[common.Command]:
     assert tab.path is not None
 
-    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any]).copy()
-
-    # backwards compat for between porcupine 0.98.2 and 0.99.0 (no released versions)
-    for item in raw_history:
-        if item.get("key_id", -1) not in range(4):
-            item["key_id"] = 0
-
+    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any])
     typed_history = [dacite.from_dict(_HistoryItem, raw_item).command for raw_item in raw_history]
     commands = [command for command in typed_history if command.key_id == key_id]
 
