@@ -330,7 +330,8 @@ def is_memorized_file_path_valid() -> bool:
 
 # checks if directory is parent of memorized file
 def is_memorized_file_in_dir(directory: Path) -> bool:
-    return directory == memorized_file_path.parent
+    assert memorized_file_path is not None
+    return is_memorized_file_path_valid() and directory == memorized_file_path.parent
 
 
 def can_paste(path: Path) -> bool:
