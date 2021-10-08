@@ -154,6 +154,7 @@ _no_terminal_runners: dict[str, NoTerminalRunner] = {}
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
+    log.info(f"Running {command} in {cwd}")
 
     tab = get_tab_manager().select()
     assert tab is not None
