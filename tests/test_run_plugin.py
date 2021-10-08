@@ -44,12 +44,6 @@ def test_external_terminal(filetab, tmp_path, fake_runner, isolated_history, wai
     wait_until(lambda: (tmp_path / "file").exists() and (tmp_path / "file").read_text() == "hello")
 
 
-def tkinter_sleep(delay):
-    end = time.time() + delay
-    while time.time() < end:
-        get_main_window().update()
-
-
 def get_output_widget(filetab):
     return filetab.bottom_frame.nametowidget("run_output")
 
