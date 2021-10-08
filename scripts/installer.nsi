@@ -1,6 +1,7 @@
 ; Based on a file that pynsist generated
 
 !include 'LogicLib.nsh'
+!include 'x64.nsh'
 
 SetCompressor lzma
 
