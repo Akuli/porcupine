@@ -161,7 +161,7 @@ class _CommandAsker:
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
         repeat_frame = ttk.Frame(content_frame)
-        repeat_frame.pack(fill="x", pady=20)
+        repeat_frame.pack(fill="x", pady=10)
         self.repeat_bindings = list(map(utils.get_binding, REPEAT_EVENTS))
         self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id])
         self.repeat_var.trace_add("write", self.update_run_button)
