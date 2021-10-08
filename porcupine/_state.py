@@ -20,7 +20,7 @@ filedialog_kwargs: dict[str, Any] = {}
 
 
 def _log_tkinter_error(
-    exc: Type[BaseException], val: BaseException, tb: types.TracebackType
+    exc: Type[BaseException], val: BaseException, tb: types.TracebackType | None
 ) -> Any:
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
 

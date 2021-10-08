@@ -23,7 +23,7 @@ def test_adding_nested_projects(tree, tmp_path):
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="rmtree can magically fail on windows")
-def test_deleting_project(tree, tmp_path, tabmanager, monkeypatch):
+def test_deleting_project(tree, tmp_path, tabmanager):
     def get_project_names():
         return [get_path(project).name for project in tree.get_children()]
 
@@ -77,7 +77,7 @@ def open_as_if_user_clicked(tree, item):
     tree.update()
 
 
-def test_select_file(tree, monkeypatch, tmp_path, tabmanager):
+def test_select_file(tree, tmp_path, tabmanager):
     (tmp_path / "a").mkdir(parents=True)
     (tmp_path / "b").mkdir(parents=True)
     (tmp_path / "a" / "README").touch()

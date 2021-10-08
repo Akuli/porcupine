@@ -37,7 +37,7 @@ def fake_runner(tmp_path, monkeypatch):
 @pytest.mark.skipif(
     os.environ.get("GITHUB_ACTIONS") == "true", reason="no external terminal on github actions"
 )
-def test_external_terminal(filetab, tmp_path, monkeypatch, fake_runner):
+def test_external_terminal(filetab, tmp_path, fake_runner):
     filetab.textwidget.insert("end", "open('file', 'w').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
     get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
