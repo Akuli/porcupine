@@ -464,7 +464,7 @@ class LangServer:
 
         # rest of these need the langserver to be active
         if not self._is_in_langservers():
-            self.log.warning(f"ignoring event because langserver is shutting down: {lsp_event}")
+            self.log.info(f"ignoring event because langserver is shutting down: {lsp_event}")
             return
 
         if isinstance(lsp_event, lsp.Initialized):
