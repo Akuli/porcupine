@@ -25,10 +25,8 @@ if sys.platform == "win32":
 else:
     trash_name = "trash"
 
-STATUS_CUT = "CUT"
-STATUS_COPY = "COPY"
-memorized_file_path: Path | None = None
-memorized_file_path_status: str | None = None
+# the bool is True for cut, False for copy
+paste_state: tuple[bool, Path] | None = None
 
 
 def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
@@ -174,59 +172,41 @@ def paste(new_path: Path) -> None:
 
 
 def paste_here(new_path: Path) -> None:
-    global memorized_file_path
-    global memorized_file_path_status
-    assert memorized_file_path is not None
+    global paste_state
+    assert paste_state is not None
 
-    new_file_path = new_path / memorized_file_path.name
+    new_file_path = new_path / paste_state[1].name
 
     if new_file_path.exists():
         path = ask_file_name(
             new_file_path,
             is_paste=True,
-            show_overwriting_option=(not is_memorized_file_in_dir(new_file_path.parent)),
+            show_overwriting_option=(not is_file_to_paste_in_dir(new_file_path.parent)),
         )
         if path is None:
             return
         new_file_path = path
 
-        if memorized_file_path == new_file_path:  # user pressed X or cancel on conflict dialog
+        if paste_state[1] == new_file_path:  # user pressed X or cancel on conflict dialog
             return
 
-    shutil.copy(memorized_file_path, new_file_path)
-
-    if memorized_file_path_status == STATUS_CUT:  # delete file
-        if not close_tabs(find_tabs_by_parent_path(memorized_file_path)):
-            return
-        try:
-            memorized_file_path.unlink()
-        except OSError as e:
-            log.exception(f"can't delete {memorized_file_path}")
-            messagebox.showerror(
-                "Deleting failed",
-                f"Deleting {memorized_file_path} failed.\n\n{type(e).__name__}: {e}",
-            )
-        memorized_file_path = None
-        memorized_file_path_status = None
+    if paste_state[0]:  # delete file
+        shutil.move(paste_state[1], new_file_path)
+        paste_state = None
+    else:
+        shutil.copy(paste_state[1], new_file_path)
 
     get_directory_tree().refresh()
 
 
-def memorize_path(path: Path) -> None:
-    global memorized_file_path
-    memorized_file_path = path
-
-
 def copy(old_path: Path) -> None:
-    global memorized_file_path_status
-    memorize_path(old_path)
-    memorized_file_path_status = STATUS_COPY
+    global paste_state
+    paste_state = False, old_path
 
 
 def cut(old_path: Path) -> None:
-    global memorized_file_path_status
-    memorize_path(old_path)
-    memorized_file_path_status = STATUS_CUT
+    global paste_state
+    paste_state = True, old_path
 
 
 def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
@@ -324,14 +304,14 @@ def is_NOT_project_root(path: Path) -> bool:
     return path not in map(get_path, get_directory_tree().get_children())
 
 
-def is_memorized_file_path_valid() -> bool:
-    return memorized_file_path is not None and memorized_file_path.is_file()
+def is_paste_state_valid() -> bool:
+    return paste_state is not None and paste_state[1].is_file()
 
 
-# checks if directory is parent of memorized file
-def is_memorized_file_in_dir(directory: Path) -> bool:
-    assert memorized_file_path is not None
-    return is_memorized_file_path_valid() and directory == memorized_file_path.parent
+# checks if directory is parent of file to paste
+def is_file_to_paste_in_dir(directory: Path) -> bool:
+    assert paste_state is not None
+    return is_paste_state_valid() and directory == paste_state[1].parent
 
 
 def can_paste(path: Path) -> bool:
@@ -339,12 +319,10 @@ def can_paste(path: Path) -> bool:
 
 
 def can_paste_here(path: Path) -> bool:
-    if not is_memorized_file_path_valid():
+    if not is_paste_state_valid():
         return False
     # no cut and paste in same dir
-    is_copy_or_paste_in_diff_dir = (
-        memorized_file_path_status == STATUS_COPY or not is_memorized_file_in_dir(path)
-    )
+    is_copy_or_paste_in_diff_dir = not paste_state[0] or not is_file_to_paste_in_dir(path)
     return path.is_dir() and is_copy_or_paste_in_diff_dir
 
 
