@@ -1,7 +1,6 @@
 """Compile, run and lint files."""
 from __future__ import annotations
 
-import logging
 import sys
 import tkinter
 from functools import partial
