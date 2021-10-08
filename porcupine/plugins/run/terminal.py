@@ -134,6 +134,7 @@ def _run_in_x11_like_terminal(command: str, cwd: Path) -> None:
 # something but it doesn't really matter, this way the user can install a
 # terminal while porcupine is running without restarting porcupine
 def run_command(command: str, cwd: Path) -> None:
+    log.info(f"Running {command} in {cwd}")
     widget = get_main_window()  # any tkinter widget works
     windowingsystem = widget.tk.call("tk", "windowingsystem")
 

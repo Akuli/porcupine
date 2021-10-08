@@ -14,11 +14,8 @@ from porcupine.plugins import python_venv
 
 from . import common, dialog, history, no_terminal, terminal
 
-log = logging.getLogger(__name__)
-
 
 def run(command: common.Command, project_root: Path) -> None:
-    log.info(f"Running {command} in {project_root}")
     history.add(command)
 
     venv = python_venv.get_venv(project_root)
