@@ -25,7 +25,10 @@ if sys.platform == "win32":
 else:
     trash_name = "trash"
 
-copy_path: Path | None = None
+STATUS_CUT = "CUT"
+STATUS_COPY = "COPY"
+memorized_file_path: Path | None = None
+memorized_file_path_status: str | None = None
 
 
 def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
@@ -171,30 +174,58 @@ def paste(new_path: Path) -> None:
 
 
 def paste_here(new_path: Path) -> None:
-    assert copy_path is not None
+    global memorized_file_path
+    global memorized_file_path_status
+    assert memorized_file_path is not None
 
-    new_file_path = new_path / copy_path.name
+    new_file_path = new_path / memorized_file_path.name
 
     if new_file_path.exists():
         path = ask_file_name(
             new_file_path,
             is_paste=True,
-            show_overwriting_option=(new_file_path.parent != copy_path.parent),
+            show_overwriting_option=(not is_memorized_file_in_dir(new_file_path.parent)),
         )
         if path is None:
             return
         new_file_path = path
 
-        if copy_path == new_file_path:  # user pressed X or cancel on conflict dialog
+        if memorized_file_path == new_file_path:  # user pressed X or cancel on conflict dialog
             return
 
-    shutil.copy(copy_path, new_file_path)
+    shutil.copy(memorized_file_path, new_file_path)
+
+    if memorized_file_path_status == STATUS_CUT:  # delete file
+        if not close_tabs(find_tabs_by_parent_path(memorized_file_path)):
+            return
+        try:
+            memorized_file_path.unlink()
+        except OSError as e:
+            log.exception(f"can't delete {memorized_file_path}")
+            messagebox.showerror(
+                "Deleting failed", f"Deleting {memorized_file_path} failed.\n\n{type(e).__name__}: {e}"
+            )
+        memorized_file_path = None
+        memorized_file_path_status = None
+
     get_directory_tree().refresh()
 
 
+def memorize_path(path: Path) -> None:
+    global memorized_file_path
+    memorized_file_path = path
+
+
 def copy(old_path: Path) -> None:
-    global copy_path
-    copy_path = old_path
+    global memorized_file_path_status
+    memorize_path(old_path)
+    memorized_file_path_status = STATUS_COPY
+
+
+def cut(old_path: Path) -> None:
+    global memorized_file_path_status
+    memorize_path(old_path)
+    memorized_file_path_status = STATUS_CUT
 
 
 def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
@@ -288,20 +319,29 @@ class Command:
             self.callback(path)
 
 
-def is_copy_path_valid() -> bool:
-    return copy_path is not None and copy_path.is_file()
-
-
 def is_NOT_project_root(path: Path) -> bool:
     return path not in map(get_path, get_directory_tree().get_children())
 
 
+def is_memorized_file_path_valid() -> bool:
+    return memorized_file_path is not None and memorized_file_path.is_file()
+
+
+# checks if directory is parent of memorized file
+def is_memorized_file_in_dir(directory: Path) -> bool:
+    return directory == memorized_file_path.parent
+
+
 def can_paste(path: Path) -> bool:
-    return is_NOT_project_root(path) and is_copy_path_valid()
+    return is_NOT_project_root(path) and can_paste_here(path.parent)
 
 
 def can_paste_here(path: Path) -> bool:
-    return path.is_dir() and is_copy_path_valid()
+    if not is_memorized_file_path_valid():
+        return False
+    # no cut and paste in same dir
+    is_copy_or_paste_in_diff_dir = memorized_file_path_status == STATUS_COPY or not is_memorized_file_in_dir(path)
+    return path.is_dir() and is_copy_or_paste_in_diff_dir
 
 
 commands = [
@@ -309,6 +349,7 @@ commands = [
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
+    Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Paste", "<<Paste>>", can_paste, paste),
     Command("Paste here", None, can_paste_here, paste_here),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
