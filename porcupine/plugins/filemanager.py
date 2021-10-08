@@ -191,7 +191,7 @@ def paste_here(new_path: Path) -> None:
             return
 
     if paste_state[0]:  # delete file
-        shutil.move(paste_state[1], new_file_path)
+        shutil.move(str(paste_state[1]), new_file_path)
         paste_state = None
     else:
         shutil.copy(paste_state[1], new_file_path)
@@ -321,6 +321,7 @@ def can_paste(path: Path) -> bool:
 def can_paste_here(path: Path) -> bool:
     if not is_paste_state_valid():
         return False
+    assert paste_state is not None
     # no cut and paste in same dir
     is_copy_or_paste_in_diff_dir = not paste_state[0] or not is_file_to_paste_in_dir(path)
     return path.is_dir() and is_copy_or_paste_in_diff_dir
