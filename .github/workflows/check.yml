@@ -117,3 +117,4 @@ jobs:
         python-version: "3.10"
     - run: python3 scripts/bindcheck.py porcupine
     - run: python3 scripts/bindcheck.py more_plugins
+    - run: python3 scripts/bindcheck.py tests
