@@ -16,11 +16,6 @@ def reload_if_necessary(tab: tabs.FileTab) -> None:
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.bind("<<FileSystemChanged>>", (lambda e: reload_if_necessary(tab)), add=True)
-    tab.bind(
-        "<<AfterSave>>",
-        (lambda e: get_tab_manager().event_generate("<<FileSystemChanged>>")),
-        add=True,
-    )
 
 
 def setup() -> None:
