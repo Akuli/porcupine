@@ -7,11 +7,12 @@ import shutil
 import subprocess
 import sys
 import tkinter
+from collections import namedtuple
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Callable
-from collections import namedtuple
+
 from send2trash import send2trash
 
 from porcupine import get_main_window, get_tab_manager, tabs, utils
