@@ -119,6 +119,13 @@ time.sleep(5)
     assert end - start < 3
 
 
+def test_changing_current_file(filetab, tmp_path, wait_until):
+    filetab.textwidget.insert("end", 'with open("foo.py", "w") as f: f.write("lol")')
+    filetab.save_as(tmp_path / "foo.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} foo.py", tmp_path)
+    wait_until(lambda: filetab.textwidget.get("1.0", "end").strip() == "lol")
+
+
 def test_no_previous_command_error(filetab, tmp_path, mocker):
     filetab.save_as(tmp_path / "foo.txt")
     mock = mocker.patch("tkinter.messagebox.showerror")
