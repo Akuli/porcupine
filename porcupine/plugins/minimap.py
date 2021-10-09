@@ -1,6 +1,7 @@
 """Display the contents of the file being edited with small font on the side."""
 from __future__ import annotations
 
+import sys
 import tkinter
 
 from porcupine import get_tab_manager, settings, tabs, textutils, utils
@@ -67,7 +68,10 @@ class MiniMap(tkinter.Text):
         # Make sure that 'sel' tag stays added even when text widget becomes empty
         tab.textwidget.bind("<<ContentChanged>>", self._update_sel_tag, add=True)
 
-        self._scroll_callback()
+        # don't know why after_idle doesn't work. Adding a timeout causes
+        # issues with tests.
+        if "pytest" not in sys.modules:
+            self.after(50, self._scroll_callback)
 
     def set_colors(self, foreground: str, background: str) -> None:
         self.config(
