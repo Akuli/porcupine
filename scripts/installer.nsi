@@ -80,6 +80,7 @@ Section "!Porcupine" sec_app
     Abort
   ${EndIf}
 
+  RMDir /r "$INSTDIR\Python"  ; see #328
   SetOutPath "$INSTDIR\Python"
   File /r "python-second\*.*"
   SetOutPath "$INSTDIR\lib"
