@@ -391,6 +391,7 @@ def _select_current_file(tree: DirectoryTree, event: object) -> None:
 def _on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     def path_callback(junk: object = None) -> None:
         if tab.path is not None:
+            # directory tree should already contain the path
             tree.add_project(utils.find_project_root(tab.path))
             tree.select_file(tab.path)
 
