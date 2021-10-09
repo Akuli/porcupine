@@ -6,7 +6,7 @@ from typing import Any, List
 
 import pytest
 
-from porcupine import get_main_window, utils, get_tab_manager
+from porcupine import get_main_window, get_tab_manager, utils
 from porcupine.plugins.run import no_terminal, settings, terminal
 
 
@@ -105,7 +105,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
 def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
     filetab.textwidget.insert("end", "print(1 + 'lol')")
     filetab.save_as(tmp_path / "lel.py")
-    no_terminal.run_command(f'{utils.quote(sys.executable)} -m mypy lel.py', tmp_path)
+    no_terminal.run_command(f"{utils.quote(sys.executable)} -m mypy lel.py", tmp_path)
 
     wait_until(lambda: "The process failed with status 1." in get_output(filetab))
     assert click_last_link(filetab) == "print(1 + 'lol')"
@@ -117,7 +117,7 @@ def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     filetab.save_as(tmp_path / "foo" / "foo.py")
 
     shutil.copy("scripts/bindcheck.py", tmp_path)
-    no_terminal.run_command(f'{utils.quote(sys.executable)} bindcheck.py foo', tmp_path)
+    no_terminal.run_command(f"{utils.quote(sys.executable)} bindcheck.py foo", tmp_path)
 
     wait_until(lambda: "The process failed with status 1." in get_output(filetab))
     assert click_last_link(filetab) == "asdf.bind('<Foo>', print)"
