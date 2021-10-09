@@ -67,9 +67,6 @@ def linkcode_resolve(domain, info):
         lines, first_lineno = inspect.getsourcelines(objekt)
     except (AttributeError, TypeError):
         return None
-    except Exception as e:
-        print("linkcode_resolve error:", info, repr(objekt), repr(e))
-        raise e
 
     if project_root not in path.parents or project_root not in path.parents:
         return None
