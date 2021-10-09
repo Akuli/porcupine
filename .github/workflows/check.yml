@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: "3.10"
     - run: pip install -r requirements.txt -r requirements-dev.txt
@@ -36,7 +36,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - run: pip install -r requirements.txt -r requirements-dev.txt
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     # Make sure that it doesn't crash with Noto Color Emoji
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: "3.10"
     - run: pip install -r requirements-dev.txt
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: "3.10"
     - run: pip install -r requirements-dev.txt
@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: "3.10"
     - run: pip install -r requirements-dev.txt
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: "3.10"
     - run: python3 scripts/bindcheck.py porcupine
