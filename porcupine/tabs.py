@@ -293,7 +293,8 @@ class Tab(ttk.Frame):
 
     .. virtualevent:: FileSystemChanged
 
-        Just like :virtevt:`~Tab.FileSystemChanged`, except:
+        Just like the :virtevt:`~Tab.FileSystemChanged` event of
+        :class:`TabManager`, except:
 
             * It is available on each tab, not on the tab manager.
             * It doesn't run when the tab isn't selected.
