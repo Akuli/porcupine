@@ -67,6 +67,7 @@ Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
 
+  RMDir /r "$INSTDIR\Python"  ; see #328
   SetOutPath "$INSTDIR\Python"
   File /r "python-first\*.*"
 
@@ -80,7 +81,6 @@ Section "!Porcupine" sec_app
     Abort
   ${EndIf}
 
-  RMDir /r "$INSTDIR\Python"  ; see #328
   SetOutPath "$INSTDIR\Python"
   File /r "python-second\*.*"
   SetOutPath "$INSTDIR\lib"
