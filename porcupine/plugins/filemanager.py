@@ -275,12 +275,12 @@ def open_in_file_manager(path: Path) -> None:
     elif windowingsystem == "x11":
         opener_command = "xdg-open"
     else:
-        # not tested :(
         opener_command = "open"
 
     # Using Popen to make sure it won't freeze gui
     # No freezing without it on windows and linux, but just to be sure
-    subprocess.Popen([opener_command, str(path)], **utils.subprocess_kwargs)
+    # DO NOT add **utils.subprocess_kwargs, otherwise does nothing on windows
+    subprocess.Popen([opener_command, str(path)])
 
 
 def get_selected_path(tree: DirectoryTree) -> Path | None:
