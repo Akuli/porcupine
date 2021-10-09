@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 filename_regex_parts = [
     # c compiler output
     # playground.c:4:9: warning: ...
-    r"^([^:]+):([0-9]+)(?=:)",
+    r"\b([^:]+):([0-9]+)(?=:)",
     # python error
     r'File "([^"]+)", line ([0-9]+)',
 ]

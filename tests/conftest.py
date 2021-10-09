@@ -162,9 +162,7 @@ def run_porcupine():
 
 @pytest.fixture
 def wait_until():
-    def actually_wait_until(condition):
-        timeout = 5
-
+    def actually_wait_until(condition, *, timeout=5):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             get_main_window().update()
