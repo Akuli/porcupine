@@ -13,7 +13,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable
 
-from porcupine import get_tab_manager, images, tabs, textutils, utils
+from porcupine import get_tab_manager, images, textutils, utils
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
