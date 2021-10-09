@@ -68,7 +68,8 @@ def ask_file_name(
             )
         else:
             dialog_phrase = (
-                f"{old_path.parent} already has a file named {old_path.name}.\nChoose a name that isn't in use."
+                f"{old_path.parent} already has a file named {old_path.name}.\nChoose a name that"
+                " isn't in use."
             )
 
     dialog.title(dialog_title)
