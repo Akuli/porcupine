@@ -61,13 +61,12 @@ jobs:
         run: python3 -m pytest -vvvv --durations=10
   pytest-macos:
     timeout-minutes: 10
-    # https://github.com/actions/setup-python/issues/58
-    # Brew-installed python 3.8 and 3.9 seem to already be there, so it's not slow
-    # but starting today, 3.9 has no tkinter lol?
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.8"]
+        # tk version in python 3.7 is too old
+        # brew doesn't have python 3.10 yet
+        python-version: ["3.8", "3.9"]
     env:
       # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
       TCLLIBPATH: ./lib
@@ -75,6 +74,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - run: brew install python@${{ matrix.python-version }}
+    # https://stackoverflow.com/a/66919851
+    - if: matrix.python-version == '3.9'
+      run: brew install python-tk@${{ matrix.python-version }}
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
