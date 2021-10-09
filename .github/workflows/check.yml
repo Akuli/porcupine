@@ -72,7 +72,8 @@ jobs:
       PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
     - uses: actions/checkout@v2
-    - run: brew install python@${{ matrix.python-version }}
+    # https://stackoverflow.com/a/41224268
+    - run: brew install python@${{ matrix.python-version }} --with-tcl-tk
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
