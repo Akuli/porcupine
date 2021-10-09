@@ -10,7 +10,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Callable
+from typing import Callable, NamedTuple
 
 from send2trash import send2trash
 
@@ -25,7 +25,13 @@ if sys.platform == "win32":
 else:
     trash_name = "trash"
 
-copy_path: Path | None = None
+
+class PasteState(NamedTuple):
+    is_cut: bool
+    path: Path
+
+
+paste_state: PasteState | None = None
 
 
 def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
@@ -62,8 +68,8 @@ def ask_file_name(
             )
         else:
             dialog_phrase = (
-                f"{old_path.parent} already has a file named {old_path.name}.\nChange the name of"
-                " the copy."
+                f"{old_path.parent} already has a file named {old_path.name}.\nChoose a name that"
+                " isn't in use."
             )
 
     dialog.title(dialog_title)
@@ -171,30 +177,41 @@ def paste(new_path: Path) -> None:
 
 
 def paste_here(new_path: Path) -> None:
-    assert copy_path is not None
+    global paste_state
+    assert paste_state is not None
 
-    new_file_path = new_path / copy_path.name
+    new_file_path = new_path / paste_state.path.name
 
     if new_file_path.exists():
         path = ask_file_name(
             new_file_path,
             is_paste=True,
-            show_overwriting_option=(new_file_path.parent != copy_path.parent),
+            show_overwriting_option=(paste_state.path.parent != new_file_path.parent),
         )
         if path is None:
             return
         new_file_path = path
 
-        if copy_path == new_file_path:  # user pressed X or cancel on conflict dialog
+        if paste_state.path == new_file_path:  # user pressed X or cancel on conflict dialog
             return
 
-    shutil.copy(copy_path, new_file_path)
+    if paste_state.is_cut:
+        shutil.move(str(paste_state.path), str(new_file_path))
+        paste_state = None
+    else:
+        shutil.copy(paste_state.path, new_file_path)
+
     get_directory_tree().refresh()
 
 
 def copy(old_path: Path) -> None:
-    global copy_path
-    copy_path = old_path
+    global paste_state
+    paste_state = PasteState(False, old_path)
+
+
+def cut(old_path: Path) -> None:
+    global paste_state
+    paste_state = PasteState(True, old_path)
 
 
 def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
@@ -288,26 +305,27 @@ class Command:
             self.callback(path)
 
 
-def is_copy_path_valid() -> bool:
-    return copy_path is not None and copy_path.is_file()
-
-
 def is_NOT_project_root(path: Path) -> bool:
     return path not in map(get_path, get_directory_tree().get_children())
 
 
+def is_paste_state_valid() -> bool:
+    return paste_state is not None and paste_state.path.is_file()
+
+
 def can_paste(path: Path) -> bool:
-    return is_NOT_project_root(path) and is_copy_path_valid()
+    return is_NOT_project_root(path) and can_paste_here(path.parent)
 
 
 def can_paste_here(path: Path) -> bool:
-    return path.is_dir() and is_copy_path_valid()
+    return is_paste_state_valid() and path.is_dir()
 
 
 commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
+    Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
     Command("Paste here", None, can_paste_here, paste_here),
