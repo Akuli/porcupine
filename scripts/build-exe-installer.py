@@ -45,7 +45,6 @@ print(url)
 response = requests.get(url)
 response.raise_for_status()
 zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/python-first")
-print(os.listdir("build/python-first"))
 
 print("Copying files")
 
