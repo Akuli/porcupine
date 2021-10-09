@@ -7,11 +7,10 @@ import shutil
 import subprocess
 import sys
 import tkinter
-from collections import namedtuple
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Callable
+from typing import Callable, NamedTuple
 
 from send2trash import send2trash
 
@@ -26,8 +25,12 @@ if sys.platform == "win32":
 else:
     trash_name = "trash"
 
-# the bool is True for cut, False for copy
-PasteState = namedtuple("PasteState", "is_cut path")
+
+class PasteState(NamedTuple):
+    is_cut: bool
+    path: Path
+
+
 paste_state: PasteState | None = None
 
 
@@ -65,8 +68,7 @@ def ask_file_name(
             )
         else:
             dialog_phrase = (
-                f"{old_path.parent} already has a file named {old_path.name}.\nChange the name of"
-                " the copy."
+                f"{old_path.parent} already has a file named {old_path.name}.\nChoose a name that isn't in use."
             )
 
     dialog.title(dialog_title)
@@ -322,8 +324,8 @@ commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
-    Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
+    Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
     Command("Paste here", None, can_paste_here, paste_here),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
