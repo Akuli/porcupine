@@ -11,23 +11,26 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: |
         time mypy --platform linux --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform linux --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform linux --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform linux --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform win32 --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform win32 --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform win32 --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform win32 --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform darwin --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform darwin --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
         time mypy --platform darwin --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform darwin --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
   pytest-windows:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     env:
       TCLLIBPATH: lib
     runs-on: windows-latest
@@ -43,7 +46,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -82,7 +85,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - run: pip install -r requirements-dev.txt
     - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
   isort:
@@ -91,7 +94,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - run: pip install -r requirements-dev.txt
     - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
   pyflakes:
@@ -100,7 +103,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - run: pip install -r requirements-dev.txt
     - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
   bindcheck:
@@ -109,6 +112,6 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - run: python3 scripts/bindcheck.py porcupine
     - run: python3 scripts/bindcheck.py more_plugins
