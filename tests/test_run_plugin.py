@@ -6,7 +6,7 @@ from typing import Any, List
 
 import pytest
 
-from porcupine import get_main_window, utils
+from porcupine import get_main_window, utils, get_tab_manager
 from porcupine.plugins.run import no_terminal, settings, terminal
 
 
@@ -84,24 +84,43 @@ if sys.platform != "win32":
         assert get_output(filetab).count("\N{replacement character}") == 2
 
 
+def click_last_link(filetab):
+    textwidget = get_output_widget(filetab)
+    textwidget.mark_set("current", "link.last - 1 char")
+    no_terminal._no_terminal_runners[str(filetab)]._link_manager._open_link(None)
+    return get_tab_manager().select().textwidget.get("sel.first", "sel.last")
+
+
 def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
     (tmp_path / "asdf.py").write_text("print(1)\nopen('this does not exist')\nprint(2)\n")
     filetab.textwidget.insert("end", "import asdf")
     filetab.save_as(tmp_path / "main.py")
-
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
+
     wait_until(lambda: "The process failed with status 1." in get_output(filetab))
     assert "No such file or directory" in get_output(filetab)
+    assert click_last_link(filetab) == "open('this does not exist')"
 
-    # click the last link
-    textwidget = get_output_widget(filetab)
-    textwidget.mark_set("current", "link.last - 1 char")
-    no_terminal._no_terminal_runners[str(filetab)]._link_manager._open_link(None)
 
-    selected_tab = tabmanager.select()
-    assert selected_tab != filetab
-    assert selected_tab.path == tmp_path / "asdf.py"
-    assert selected_tab.textwidget.get("sel.first", "sel.last") == "open('this does not exist')"
+def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
+    filetab.textwidget.insert("end", "print(1 + 'lol')")
+    filetab.save_as(tmp_path / "lel.py")
+    no_terminal.run_command(f'{utils.quote(sys.executable)} -m mypy lel.py', tmp_path)
+
+    wait_until(lambda: "The process failed with status 1." in get_output(filetab))
+    assert click_last_link(filetab) == "print(1 + 'lol')"
+
+
+def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
+    filetab.textwidget.insert("end", "asdf.bind('<Foo>', print)")
+    (tmp_path / "foo").mkdir()
+    filetab.save_as(tmp_path / "foo" / "foo.py")
+
+    shutil.copy("scripts/bindcheck.py", tmp_path)
+    no_terminal.run_command(f'{utils.quote(sys.executable)} bindcheck.py foo', tmp_path)
+
+    wait_until(lambda: "The process failed with status 1." in get_output(filetab))
+    assert click_last_link(filetab) == "asdf.bind('<Foo>', print)"
 
 
 def test_python_unbuffered(filetab, tmp_path, wait_until):
