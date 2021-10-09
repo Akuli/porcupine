@@ -57,6 +57,17 @@ class TabManager(ttk.Notebook):
 
         .. seealso:: :meth:`select`
 
+    .. virtualevent:: FileSystemChanged
+
+        Runs when a file has been saved, a command finishes running, the
+        Porcupine window is focused, or there's some other reason why files on
+        the disk have likely changed.
+
+        This event is in the tab manager and not in the main window (see
+        :func:`porcupine.get_main_window`), because bindings of the main window
+        also get notified for the events of all child widgets, and there is
+        also a tab-specific :virtevt:`~Tab.FileSystemChanged` event.
+
     .. method:: add(child, **kw)
     .. method:: enable_traversal()
     .. method:: forget(tab_id)
@@ -73,15 +84,22 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.bind("<<NotebookTabChanged>>", self._notify_selected_tab, add=True)
+        self.bind("<<NotebookTabChanged>>", self._on_tab_selected, add=True)
+        self.bind("<<FileSystemChanged>>", self._on_fs_changed, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: list[tuple[Callable[[Tab], Any], str]] = []
 
-    def _notify_selected_tab(self, event: tkinter.Event[tkinter.Misc]) -> None:
+    def _on_tab_selected(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
         tab = self.select()
         if tab is not None:
             tab.event_generate("<<TabSelected>>")
+            tab.event_generate("<<FileSystemChanged>>")
+
+    def _on_fs_changed(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+        tab = self.select()
+        if tab is not None:
+            tab.event_generate("<<FileSystemChanged>>")
 
     def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
@@ -267,6 +285,11 @@ class Tab(ttk.Frame):
         selected. Unlike :virtevt:`~TabManager.NotebookTabSelected`, this event
         is bound on the tab and not the tab manager, and hence is automatically
         unbound when the tab is destroyed.
+
+    .. virtualevent:: FileSystemChanged
+
+        Just like :virtevt:`~Tab.FileSystemChanged`, but the event available on
+        each tab runs only when the tab is selected.
 
     .. attribute:: title_choices
 
@@ -745,16 +768,6 @@ class FileTab(Tab):
             #   - Other program did change something, by making it unreadable
             #   - Indicates that something isn't saved
             return True
-
-    # TODO: document this
-    # TODO: should cursor and scrolling stuff be a part of reload()?
-    def reload_if_necessary(self) -> None:
-        if self.other_program_changed_file():
-            cursor_pos = self.textwidget.index("insert")
-            scroll_fraction = self.textwidget.yview()[0]
-            if self.reload():
-                self.textwidget.mark_set("insert", cursor_pos)
-                self.textwidget.yview_moveto(scroll_fraction)
 
     def equivalent(self, other: Tab) -> bool:  # override
         # this used to have hasattr(other, "path") instead of isinstance

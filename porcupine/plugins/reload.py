@@ -1,13 +1,35 @@
 """Reload file from disk automatically."""
-# TODO: this plugin is a bit weird right now, maybe shouldn't be a plugin?
-from porcupine import get_tab_manager, tabs
+from __future__ import annotations
+
+import tkinter
+
+from porcupine import get_main_window, get_tab_manager, tabs
+
+
+# TODO: should cursor and scrolling stuff be a part of reload()?
+def reload_if_necessary(tab: tabs.FileTab) -> None:
+    if tab.other_program_changed_file():
+        cursor_pos = tab.textwidget.index("insert")
+        scroll_fraction = tab.textwidget.yview()[0]
+        if tab.reload():
+            tab.textwidget.mark_set("insert", cursor_pos)
+            tab.textwidget.yview_moveto(scroll_fraction)
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<TabSelected>>", (lambda e: tab.reload_if_necessary()), add=True)
-    tab.textwidget.bind("<FocusIn>", (lambda e: tab.reload_if_necessary()), add=True)
-    tab.textwidget.bind("<Button-1>", (lambda e: tab.reload_if_necessary()), add=True)
+    tab.bind("<<FileSystemChanged>>", (lambda e: reload_if_necessary(tab)), add=True)
+    tab.bind(
+        "<<AfterSave>>",
+        (lambda e: get_tab_manager().event_generate("<<FileSystemChanged>>")),
+        add=True,
+    )
+
+
+def handle_main_window_focus(event: tkinter.Event[tkinter.Misc]) -> None:
+    if event.widget is get_main_window():
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
+    get_main_window().bind("<FocusIn>", handle_main_window_focus, add=True)
