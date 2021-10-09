@@ -107,7 +107,7 @@ class _CommandAsker:
             text="In this directory:",
             substitutions=substitutions,
             formatter=common.format_cwd,
-            value_validator=(lambda path: path.is_dir()),
+            value_validator=(lambda path: path.is_absolute() and path.is_dir()),
             validated_callback=self.update_run_button,
         )
 
@@ -173,10 +173,13 @@ class _CommandAsker:
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
         if self._suggestions:
+            self._select_command_autocompletion(self._suggestions[0], prefix="")
+
             # Run _autocomplete when pressing a key without alt
             self.command.entry.bind("<Key>", self._autocomplete, add=True)
             self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
-            self._select_command_autocompletion(self._suggestions[0], prefix="")
+        else:
+            self.cwd.format_var.set("{folder_path}")
 
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
