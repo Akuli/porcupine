@@ -68,7 +68,7 @@ def linkcode_resolve(domain, info):
     except (AttributeError, TypeError):
         return None
 
-    if project_root not in path.parents or project_root not in path.parents:
+    if project_root not in path.parents:
         return None
 
     assert path.is_file()
