@@ -185,8 +185,8 @@ def test_peer_cursor_moved(text_and_events):
 
     text_move_events = []
     peer_move_events = []
-    text.bind("<<CursorMoved>>", text_move_events.append, add=True)
-    peer.bind("<<CursorMoved>>", peer_move_events.append, add=True)
+    text.bind("<<CursorMoved>>", text_move_events.append)
+    peer.bind("<<CursorMoved>>", peer_move_events.append)
 
     text.mark_set("insert", "end")
     assert not peer_move_events
