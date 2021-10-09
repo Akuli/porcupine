@@ -73,7 +73,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     # https://stackoverflow.com/a/66919851
-    - run: brew install python@${{ matrix.python-version }} python-tk@${{ matrix.python-version }}
+    - run: brew install python@${{ matrix.python-version }}
+    - if: matrix.python-version == '3.9'
+      run: brew install python-tk@${{ matrix.python-version }}
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
