@@ -625,9 +625,7 @@ class FileTab(Tab):
         self.bind("<<TabSettingChanged:encoding>>", self._update_titles, add=True)
         self.bind("<<TabSettingChanged:line_ending>>", self._update_titles, add=True)
         self.bind(
-            "<<AfterSave>>",
-            (lambda e: manager.event_generate("<<FileSystemChanged>>")),
-            add=True,
+            "<<AfterSave>>", (lambda e: manager.event_generate("<<FileSystemChanged>>")), add=True
         )
         self._update_titles()
 

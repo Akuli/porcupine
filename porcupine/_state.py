@@ -1,8 +1,8 @@
 """The main window and tab manager globals are here."""
 from __future__ import annotations
 
-import os
 import logging
+import os
 import tkinter
 import types
 from tkinter import ttk
