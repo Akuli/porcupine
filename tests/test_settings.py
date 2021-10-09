@@ -2,6 +2,7 @@ import dataclasses
 import json
 import sys
 import tkinter
+from pathlib import Path
 from tkinter import ttk
 from tkinter.font import Font
 from typing import List, Optional
@@ -10,6 +11,18 @@ import dacite
 import pytest
 
 from porcupine import settings
+
+
+@pytest.fixture(autouse=True)
+def restore_default_settings():
+    yield
+
+    # We don't clear the user's settings, porcupine.dirs is monkeypatched
+    if sys.platform == "win32":
+        assert "Temp" in settings.get_json_path().parts
+    else:
+        assert Path.home() not in settings.get_json_path().parents
+    settings.reset_all()
 
 
 # Could replace some of this with non-global setting objects, but I don't feel
