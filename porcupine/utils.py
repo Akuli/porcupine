@@ -335,6 +335,16 @@ def get_binding(virtual_event: str, *, menu: bool = False) -> str:
     return _format_binding(bindings[0], menu) if bindings else ""
 
 
+# TODO: document this
+def tkinter_safe_string(string: str, *, hide_unsupported_chars: bool = False) -> str:
+    if hide_unsupported_chars:
+        replace_with = ""
+    else:
+        replace_with = "\N{replacement character}"
+
+    return "".join(replace_with if ord(char) > 0xFFFF else char for char in string)
+
+
 class EventDataclass:
     """
     Inherit from this class when creating a dataclass for

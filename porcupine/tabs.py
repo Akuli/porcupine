@@ -146,6 +146,7 @@ class TabManager(ttk.Notebook):
         if existing_tab != tab:
             # tab is destroyed
             assert isinstance(existing_tab, FileTab)
+            existing_tab.textwidget.focus()
             return existing_tab
 
         if not tab.reload(undoable=False):

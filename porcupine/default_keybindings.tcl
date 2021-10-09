@@ -22,8 +22,16 @@ event add "<<Menubar:View/Smaller Font>>" <$contmand-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
 # run plugin
-event add "<<Menubar:Run/Run command>>" <F4>
-event add "<<Menubar:Run/Repeat previous command>>" <F5>
+# Many separate events because if you bind many keys to the same virtual
+# event, it is hard to figure out what key was pressed to trigger it
+event add "<<Run:AskAndRun0>>" <Shift-F5>
+event add "<<Run:AskAndRun1>>" <Shift-F6>
+event add "<<Run:AskAndRun2>>" <Shift-F7>
+event add "<<Run:AskAndRun3>>" <Shift-F8>
+event add "<<Run:Repeat0>>" <F5>
+event add "<<Run:Repeat1>>" <F6>
+event add "<<Run:Repeat2>>" <F7>
+event add "<<Run:Repeat3>>" <F8>
 
 # gotoline plugin
 event add "<<Menubar:Edit/Go to Line>>" <$contmand-l>
@@ -78,8 +86,8 @@ event add "<<FileManager:Delete>>" <Shift-Delete>
 
 # jump_to_definition plugin
 # cursor moves between button press and release, don't bind to press
-event add "<<JumpToDefinition>>" <$contmand-ButtonRelease-1>
-event add "<<JumpToDefinition>>" <$contmand-Return>
+event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
+event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T

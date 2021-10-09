@@ -55,7 +55,6 @@ if sys.platform == "darwin":
         ("<<Menubar:File/New File>>", "⌘N", "Command-N"),
         ("<<Menubar:File/Save As>>", "⇧⌘S", "Shift-Command-S"),
         ("<<Menubar:File/Save>>", "⌘S", "Command-S"),
-        ("<<Menubar:Run/Run command>>", "F4", "F4"),
         ("<<Menubar:View/Bigger Font>>", "⌘+", "Command-+"),
         ("<<Menubar:View/Reset Font Size>>", "⌘0", "Command-0"),
         ("<<Menubar:View/Smaller Font>>", "⌘-", "Command--"),
@@ -72,7 +71,6 @@ else:
         ("<<Menubar:File/New File>>", "Ctrl+N", "Ctrl+N"),
         ("<<Menubar:File/Save As>>", "Ctrl+Shift+S", "Ctrl+Shift+S"),
         ("<<Menubar:File/Save>>", "Ctrl+S", "Ctrl+S"),
-        ("<<Menubar:Run/Run command>>", "F4", "F4"),
         ("<<Menubar:View/Bigger Font>>", "Ctrl+Plus", "Ctrl+Plus"),
         ("<<Menubar:View/Reset Font Size>>", "Ctrl+Zero", "Ctrl+Zero"),
         ("<<Menubar:View/Smaller Font>>", "Ctrl+Minus", "Ctrl+Minus"),
@@ -107,7 +105,7 @@ def test_project_root(tmp_path):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
 
 
-def test_format_command(monkeypatch):
+def test_format_command():
     assert utils.format_command("{foo} --help", {"foo": "bar baz"}) == ["bar baz", "--help"]
 
     if sys.platform == "win32":

@@ -1,6 +1,7 @@
 ; Based on a file that pynsist generated
 
 !include 'LogicLib.nsh'
+!include 'x64.nsh'
 
 SetCompressor lzma
 
@@ -147,6 +148,12 @@ SectionEnd
 
 Function .onInit
   !insertmacro MULTIUSER_INIT
+  ${IfNot} ${RunningX64}
+    MessageBox MB_ICONSTOP|MB_OK "\
+The Porcupine installer doesn't support 32-bit Windows. \
+Please create an issue on GitHub if you need a 32-bit Porcupine installer."
+    Quit
+  ${EndIf}
 FunctionEnd
 
 Function un.onInit

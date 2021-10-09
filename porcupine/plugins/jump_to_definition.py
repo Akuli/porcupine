@@ -11,7 +11,7 @@ from functools import partial
 from pathlib import Path
 from typing import List
 
-from porcupine import get_tab_manager, tabs, utils
+from porcupine import get_tab_manager, menubar, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -109,5 +109,10 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     utils.bind_with_data(tab, "<<JumpToDefinitionResponse>>", receive_jump, add=True)
 
 
+def generate_jump_request(tab: tabs.FileTab) -> None:
+    tab.textwidget.event_generate("<<JumpToDefinitionRequest>>")
+
+
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
+    menubar.add_filetab_command("Edit/Jump to definition", generate_jump_request)

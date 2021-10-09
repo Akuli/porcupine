@@ -1,6 +1,7 @@
 """Run commands within the Porcupine window."""
 from __future__ import annotations
 
+import locale
 import logging
 import os
 import queue
@@ -104,9 +105,9 @@ class NoTerminalRunner:
             return
 
         assert process.stdout is not None
-        for line in process.stdout:
-            # TODO: is utf-8 the correct choice on all platforms?
-            emit_message(("output", line.decode("utf-8", errors="replace")))
+        for bytez in process.stdout:
+            line = bytez.decode(locale.getpreferredencoding(), errors="replace")
+            emit_message(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
         process.communicate()  # make sure process.returncode is set
 
         if process.returncode == 0:
@@ -161,6 +162,8 @@ _no_terminal_runners: dict[str, NoTerminalRunner] = {}
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
+    log.info(f"Running {command} in {cwd}")
+
     tab = get_tab_manager().select()
     assert tab is not None
 

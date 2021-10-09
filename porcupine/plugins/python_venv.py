@@ -9,9 +9,8 @@ import logging
 import shutil
 import sys
 import tkinter
-from functools import partial
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, Dict, Optional, cast
 
 import porcupine.plugins.directory_tree as dirtree
 from porcupine import images, settings, utils
@@ -42,32 +41,40 @@ def _find_venv(project_root: Path) -> Path | None:
     return None
 
 
+def set_venv(project_root: Path, venv: Path | None) -> None:
+    if venv is not None:
+        assert is_venv(venv), venv
+
+    custom_paths: dict[str, str | None] = settings.get("python_venvs", Dict[str, Optional[str]])
+    custom_paths[str(project_root)] = None if venv is None else str(venv)
+    settings.set_("python_venvs", custom_paths)  # custom_paths is copy
+    log.info(f"venv of {project_root} set to {venv}")
+
+
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
-    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
+    custom_paths: dict[str, str | None] = settings.get("python_venvs", Dict[str, Optional[str]])
 
     if str(project_root) in custom_paths:
-        from_settings = Path(custom_paths[str(project_root)])
+        path_string = custom_paths[str(project_root)]
+        if path_string is None:
+            log.info(f"user has unselected venv for {project_root}")
+            return None
+
+        from_settings = Path(path_string)
         if is_venv(from_settings):
             return from_settings
+
         log.warning(f"Python venv is no longer valid: {from_settings}")
+        del custom_paths[str(project_root)]
+        settings.set_("python_venvs", custom_paths)  # custom_paths is copy
 
     result = _find_venv(project_root)
     if result is None:
         log.info(f"No venv found in {project_root}")
     else:
-        log.info(f"Using {result} as venv of {project_root}")
-        custom_paths[str(project_root)] = str(result)  # Do not switch venv unless user wants
-        settings.set_("python_venvs", custom_paths)  # custom_paths is copy
+        set_venv(project_root, result)
     return result
-
-
-def set_venv(project_root: Path, venv: Path) -> None:
-    assert is_venv(venv), venv
-    custom_paths: dict[str, str] = settings.get("python_venvs", Dict[str, str])
-    custom_paths[str(project_root)] = str(venv)
-    settings.set_("python_venvs", custom_paths)  # custom_paths is copy
-    log.info(f"venv of {project_root} set to {venv}")
 
 
 # This doesn't use Porcupine's python, unless py or python3 points to it
@@ -117,23 +124,19 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
     if not is_venv(path):
         return
 
-    is_used = get_venv(project_root) == path
+    def on_change(*junk: object) -> None:
+        set_venv(project_root, path if var.get() else None)
+        tree.refresh()  # needed on windows
 
-    # There doesn't seem to be any way to make it appear checked without creating variable
-    var = tkinter.BooleanVar(value=is_used)
+    var = tkinter.BooleanVar(value=(get_venv(project_root) == path))
+    var.trace_add("write", on_change)
     cast(Any, tree.contextmenu).garbage_collection_is_lol = var
 
-    tree.contextmenu.add_checkbutton(
-        label="Use this Python venv",
-        variable=var,
-        state=("disabled" if is_used else "normal"),
-        # No need to refresh when clicked, somehow already refreshes 4 times (lol)
-        command=partial(set_venv, project_root, path),
-    )
+    tree.contextmenu.add_checkbutton(label="Use this Python venv", variable=var)
 
 
 def setup() -> None:
-    settings.add_option("python_venvs", {}, Dict[str, str])  # paths as strings, for json
+    settings.add_option("python_venvs", {}, Dict[str, Optional[str]])  # paths as strings, for json
 
     try:
         tree = dirtree.get_directory_tree()
