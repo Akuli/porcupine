@@ -103,7 +103,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
 
 
 def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
-    filetab.textwidget.insert("end", "print(1 + 'lol')")
+    filetab.textwidget.insert("end", "print(1 + 2)\nprint(1 + 'lol')\n")
     filetab.save_as(tmp_path / "lel.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} -m mypy lel.py", tmp_path)
 
