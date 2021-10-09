@@ -1,6 +1,4 @@
-def trigger_reload(tab):
-    tab.textwidget.event_generate("<Button-1>")
-    tab.update()
+from porcupine import get_tab_manager
 
 
 def test_reload_basic(tabmanager, tmp_path):
@@ -9,7 +7,7 @@ def test_reload_basic(tabmanager, tmp_path):
     assert tab.textwidget.get("1.0", "end - 1 char") == "hello"
 
     (tmp_path / "foo.py").write_text("lol")
-    trigger_reload(tab)
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
     assert tab.textwidget.get("1.0", "end - 1 char") == "lol"
 
     # It should be possible to undo a reload
@@ -22,11 +20,11 @@ def test_many_lines(tabmanager, tmp_path):
     tab = tabmanager.open_file(tmp_path / "foo.py")
 
     (tmp_path / "foo.py").write_text("hello")
-    trigger_reload(tab)
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
     assert tab.textwidget.get("1.0", "end - 1 char") == "hello"
 
     (tmp_path / "foo.py").write_text("hello\nhello\nhello")
-    trigger_reload(tab)
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
     assert tab.textwidget.get("1.0", "end - 1 char") == "hello\nhello\nhello"
 
 
