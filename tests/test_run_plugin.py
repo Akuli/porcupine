@@ -37,18 +37,11 @@ def fake_runner(tmp_path, monkeypatch):
 @pytest.mark.skipif(
     os.environ.get("GITHUB_ACTIONS") == "true", reason="no external terminal on github actions"
 )
-def test_external_terminal(filetab, tmp_path, fake_runner):
+def test_external_terminal(filetab, tmp_path, fake_runner, isolated_history, wait_until):
     filetab.textwidget.insert("end", "open('file', 'w').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
-    get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
-    time.sleep(3)
-    assert (tmp_path / "file").read_text() == "hello"
-
-
-def tkinter_sleep(delay):
-    end = time.time() + delay
-    while time.time() < end:
-        get_main_window().update()
+    get_main_window().event_generate("<<Run:Repeat0>>")
+    wait_until(lambda: (tmp_path / "file").exists() and (tmp_path / "file").read_text() == "hello")
 
 
 def get_output_widget(filetab):
@@ -59,7 +52,7 @@ def get_output(filetab):
     return get_output_widget(filetab).get("1.0", "end - 1 char")
 
 
-def test_output_in_porcupine_window(filetab, tmp_path):
+def test_output_in_porcupine_window(filetab, tmp_path, wait_until):
     filetab.textwidget.insert(
         "end",
         r"""
@@ -81,7 +74,7 @@ if sys.platform != "win32":
     )
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
-    tkinter_sleep(3)
+    wait_until(lambda: "The process completed successfully." in get_output(filetab))
 
     assert "123" in get_output(filetab)
     assert "örkki" in get_output(filetab)
@@ -91,15 +84,14 @@ if sys.platform != "win32":
         assert get_output(filetab).count("\N{replacement character}") == 2
 
 
-def test_python_error_message(filetab, tabmanager, tmp_path):
+def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
     (tmp_path / "asdf.py").write_text("print(1)\nopen('this does not exist')\nprint(2)\n")
     filetab.textwidget.insert("end", "import asdf")
     filetab.save_as(tmp_path / "main.py")
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
-    tkinter_sleep(3)
+    wait_until(lambda: "The process failed with status 1." in get_output(filetab))
     assert "No such file or directory" in get_output(filetab)
-    assert "The process failed with status 1." in get_output(filetab)
 
     # click the last link
     textwidget = get_output_widget(filetab)
@@ -112,7 +104,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path):
     assert selected_tab.textwidget.get("sel.first", "sel.last") == "open('this does not exist')"
 
 
-def test_python_unbuffered(filetab, tmp_path):
+def test_python_unbuffered(filetab, tmp_path, wait_until):
     (tmp_path / "sleeper.py").write_text(
         """
 import time
@@ -120,9 +112,11 @@ print("This should show up immediately")
 time.sleep(5)
 """
     )
+    start = time.monotonic()
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
-    tkinter_sleep(3)
-    assert "This should show up immediately" in get_output(filetab)
+    wait_until(lambda: "This should show up immediately" in get_output(filetab))
+    end = time.monotonic()
+    assert end - start < 3
 
 
 def test_no_previous_command_error(filetab, tmp_path, mocker):
