@@ -140,7 +140,7 @@ Section "Uninstall"
   Delete "$INSTDIR\_user_install_marker"
   Delete "$INSTDIR\launch.pyw"
   Delete "$INSTDIR\uninstall.exe"
-  RMDir "$INSTDIR"  ; no /r
+  RMDir "$INSTDIR"  ; no /r, removed only if empty
 
   Delete "$SMPROGRAMS\Porcupine.lnk"
 
