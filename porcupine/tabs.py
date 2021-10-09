@@ -86,9 +86,14 @@ class TabManager(ttk.Notebook):
         super().__init__(*args, **kwargs)
         self.bind("<<NotebookTabChanged>>", self._on_tab_selected, add=True)
         self.bind("<<FileSystemChanged>>", self._on_fs_changed, add=True)
+        _state.get_main_window().bind("<FocusIn>", self._handle_main_window_focus, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: list[tuple[Callable[[Tab], Any], str]] = []
+
+    def _handle_main_window_focus(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        if event.widget is _state.get_main_window():
+            self.event_generate("<<FileSystemChanged>>")
 
     def _on_tab_selected(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
         tab = self.select()

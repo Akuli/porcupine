@@ -1,9 +1,7 @@
 """Reload file from disk automatically."""
 from __future__ import annotations
 
-import tkinter
-
-from porcupine import get_main_window, get_tab_manager, tabs
+from porcupine import get_tab_manager, tabs
 
 
 # TODO: should cursor and scrolling stuff be a part of reload()?
@@ -25,11 +23,5 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     )
 
 
-def handle_main_window_focus(event: tkinter.Event[tkinter.Misc]) -> None:
-    if event.widget is get_main_window():
-        get_tab_manager().event_generate("<<FileSystemChanged>>")
-
-
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
-    get_main_window().bind("<FocusIn>", handle_main_window_focus, add=True)
