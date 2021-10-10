@@ -44,12 +44,8 @@ def test_external_terminal(filetab, tmp_path, fake_runner, wait_until):
     wait_until(lambda: (tmp_path / "file").exists() and (tmp_path / "file").read_text() == "hello")
 
 
-def get_output_widget(filetab):
-    return filetab.bottom_frame.nametowidget("run_output")
-
-
-def get_output(filetab):
-    return get_output_widget(filetab).get("1.0", "end - 1 char")
+def get_output():
+    return no_terminal.runner.textwidget.get("1.0", "end - 1 char")
 
 
 def test_output_in_porcupine_window(filetab, tmp_path, wait_until):
@@ -74,20 +70,20 @@ if sys.platform != "win32":
     )
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
-    wait_until(lambda: "The process completed successfully." in get_output(filetab))
+    wait_until(lambda: "The process completed successfully." in get_output())
 
-    assert "123" in get_output(filetab)
-    assert "örkki" in get_output(filetab)
+    assert "123" in get_output()
+    assert "örkki" in get_output()
     if sys.platform == "win32":
-        assert get_output(filetab).count("\N{replacement character}") == 1
+        assert get_output().count("\N{replacement character}") == 1
     else:
-        assert get_output(filetab).count("\N{replacement character}") == 2
+        assert get_output().count("\N{replacement character}") == 2
 
 
 def click_last_link(filetab):
-    textwidget = get_output_widget(filetab)
+    textwidget = no_terminal.runner.textwidget
     textwidget.mark_set("current", "link.last - 1 char")
-    no_terminal._no_terminal_runners[str(filetab)]._link_manager._open_link(None)
+    no_terminal.runner._link_manager._open_link(None)
     return get_tab_manager().select().textwidget.get("sel.first", "sel.last")
 
 
@@ -97,8 +93,8 @@ def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
     filetab.save_as(tmp_path / "main.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
 
-    wait_until(lambda: "The process failed with status 1." in get_output(filetab))
-    assert "No such file or directory" in get_output(filetab)
+    wait_until(lambda: "The process failed with status 1." in get_output())
+    assert "No such file or directory" in get_output()
     assert click_last_link(filetab) == "open('this does not exist')"
 
 
@@ -108,7 +104,7 @@ def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
     no_terminal.run_command(f"{utils.quote(sys.executable)} -m mypy lel.py", tmp_path)
 
     # long timeout, mypy can be slow
-    wait_until((lambda: "The process failed with status 1." in get_output(filetab)), timeout=15)
+    wait_until((lambda: "The process failed with status 1." in get_output()), timeout=15)
     assert click_last_link(filetab) == "print(1 + 'lol')"
 
 
@@ -120,7 +116,7 @@ def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     shutil.copy("scripts/bindcheck.py", tmp_path)
     no_terminal.run_command(f"{utils.quote(sys.executable)} bindcheck.py foo", tmp_path)
 
-    wait_until(lambda: "The process failed with status 1." in get_output(filetab))
+    wait_until(lambda: "The process failed with status 1." in get_output())
     assert click_last_link(filetab) == "asdf.bind('<Foo>', print)"
 
 
@@ -134,7 +130,7 @@ time.sleep(5)
     )
     start = time.monotonic()
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
-    wait_until(lambda: "This should show up immediately" in get_output(filetab))
+    wait_until(lambda: "This should show up immediately" in get_output())
     end = time.monotonic()
     assert end - start < 3
 
