@@ -4,19 +4,18 @@ import sys
 import threading
 from pathlib import Path
 
-if sys.version_info >= (3, 8):
+if sys.version_info >= (3, 9):
     sys.exit(0)
 
 os.chdir(Path(__file__).absolute().parent.parent)
 
 old = """
-    while t:
-        t.join()
+    tlock = _main_thread._tstate_lock
 """
 new = """
-    while t:
-        print("JOINING:", t, t._target, t.run)
-        t.join()
+    for x in enumerate():
+        print("JOINING:", x, x._target, x.run)
+    tlock = _main_thread._tstate_lock
 """
 
 print(threading.__file__, "--> threading.py")

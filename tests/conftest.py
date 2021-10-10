@@ -23,7 +23,7 @@ from porcupine.__main__ import main
 from porcupine.plugins.directory_tree import get_directory_tree
 
 
-if sys.version_info >= (3, 8):
+if sys.version_info >= (3, 9):
     @threading._threading_atexits.append
     def lol():
         for t in threading.enumerate():
