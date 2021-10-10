@@ -14,7 +14,7 @@ old = """
 new = """
     if "pytest" in __import__("sys").modules:
         for x in enumerate():
-            print("JOINING:", x, x._target, x.run)
+            print("JOINING:", x, x._target, x.run, flush=True)
     tlock = _main_thread._tstate_lock
 """
 
