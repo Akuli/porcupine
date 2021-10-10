@@ -12,8 +12,9 @@ old = """
     tlock = _main_thread._tstate_lock
 """
 new = """
-    for x in enumerate():
-        print("JOINING:", x, x._target, x.run)
+    if "pytest" in __import__("sys").modules:
+        for x in enumerate():
+            print("JOINING:", x, x._target, x.run)
     tlock = _main_thread._tstate_lock
 """
 
