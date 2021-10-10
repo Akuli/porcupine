@@ -57,6 +57,17 @@ class TabManager(ttk.Notebook):
 
         .. seealso:: :meth:`select`
 
+    .. virtualevent:: FileSystemChanged
+
+        Runs when a file has been saved, a command finishes running, the
+        Porcupine window is focused, or there's some other reason why files on
+        the disk have likely changed.
+
+        This event is in the tab manager and not in the main window (see
+        :func:`porcupine.get_main_window`), because bindings of the main window
+        also get notified for the events of all child widgets, and there is
+        also a tab-specific :virtevt:`~Tab.FileSystemChanged` event.
+
     .. method:: add(child, **kw)
     .. method:: enable_traversal()
     .. method:: forget(tab_id)
@@ -73,15 +84,27 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.bind("<<NotebookTabChanged>>", self._notify_selected_tab, add=True)
+        self.bind("<<NotebookTabChanged>>", self._on_tab_selected, add=True)
+        self.bind("<<FileSystemChanged>>", self._on_fs_changed, add=True)
+        _state.get_main_window().bind("<FocusIn>", self._handle_main_window_focus, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: list[tuple[Callable[[Tab], Any], str]] = []
 
-    def _notify_selected_tab(self, event: tkinter.Event[tkinter.Misc]) -> None:
+    def _handle_main_window_focus(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        if event.widget is _state.get_main_window():
+            self.event_generate("<<FileSystemChanged>>")
+
+    def _on_tab_selected(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
         tab = self.select()
         if tab is not None:
             tab.event_generate("<<TabSelected>>")
+            tab.event_generate("<<FileSystemChanged>>")
+
+    def _on_fs_changed(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+        tab = self.select()
+        if tab is not None:
+            tab.event_generate("<<FileSystemChanged>>")
 
     def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
@@ -146,6 +169,7 @@ class TabManager(ttk.Notebook):
         if existing_tab != tab:
             # tab is destroyed
             assert isinstance(existing_tab, FileTab)
+            existing_tab.textwidget.focus()
             return existing_tab
 
         if not tab.reload(undoable=False):
@@ -266,6 +290,15 @@ class Tab(ttk.Frame):
         selected. Unlike :virtevt:`~TabManager.NotebookTabSelected`, this event
         is bound on the tab and not the tab manager, and hence is automatically
         unbound when the tab is destroyed.
+
+    .. virtualevent:: FileSystemChanged
+
+        Just like the :virtevt:`~Tab.FileSystemChanged` event of
+        :class:`TabManager`, except:
+
+            * It is available on each tab, not on the tab manager.
+            * It doesn't run when the tab isn't selected.
+            * It runs for the newly selected tab when a tab is selected.
 
     .. attribute:: title_choices
 
@@ -591,6 +624,9 @@ class FileTab(Tab):
         self.bind("<<PathChanged>>", self._update_titles, add=True)
         self.bind("<<TabSettingChanged:encoding>>", self._update_titles, add=True)
         self.bind("<<TabSettingChanged:line_ending>>", self._update_titles, add=True)
+        self.bind(
+            "<<AfterSave>>", (lambda e: manager.event_generate("<<FileSystemChanged>>")), add=True
+        )
         self._update_titles()
 
         self._previous_reload_failed = False

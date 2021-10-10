@@ -8,7 +8,9 @@ from typing import Any, List, Optional
 
 import dacite  # TODO: settings should do this automagically, but doesn't
 
-from porcupine import settings, tabs, utils
+from porcupine import settings, tabs
+
+from . import common
 
 
 @dataclasses.dataclass
@@ -20,56 +22,28 @@ class ExampleCommand:
 
 
 @dataclasses.dataclass
-class Command:
-    command_format: str
-    command: str
-    cwd_format: str
-    cwd: str  # not pathlib.Path because must be json safe
-    external_terminal: bool
-
-
-@dataclasses.dataclass
-class HistoryItem:
-    command: Command
+class _HistoryItem:
+    command: common.Command
     last_use: float
     use_count: int
 
 
-def get_substitutions(file_path: Path, project_path: Path) -> dict[str, str]:
-    return {
-        "file_stem": file_path.stem,
-        "file_name": file_path.name,
-        "file_path": str(file_path),
-        "folder_name": file_path.parent.name,
-        "folder_path": str(file_path.parent),
-        "project_name": project_path.name,
-        "project_path": str(project_path),
-    }
-
-
-def format_cwd(cwd_format: str, substitutions: dict[str, str]) -> Path:
-    return Path(cwd_format.format(**substitutions))
-
-
-def format_command(command_format: str, substitutions: dict[str, str]) -> str:
-    return command_format.format(
-        **{name: utils.quote(value) for name, value in substitutions.items()}
-    )
-
-
-def add(command: Command) -> None:
+def add(command: common.Command) -> None:
     raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any])
-    history = [dacite.from_dict(HistoryItem, raw_item) for raw_item in raw_history]
+    history = [dacite.from_dict(_HistoryItem, raw_item) for raw_item in raw_history]
 
     old_use_count = 0
     for item in history:
-        if item.command.command_format == command.command_format:
+        if (
+            item.command.command_format == command.command_format
+            and item.command.key_id == command.key_id
+        ):
             old_use_count = item.use_count
             history.remove(item)
             break
 
     history.insert(
-        0, HistoryItem(command=command, last_use=time.time(), use_count=old_use_count + 1)
+        0, _HistoryItem(command=command, last_use=time.time(), use_count=old_use_count + 1)
     )
 
     settings.set_(
@@ -85,11 +59,12 @@ def add(command: Command) -> None:
     )
 
 
-def get(tab: tabs.FileTab, project_path: Path) -> list[Command]:
+def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[common.Command]:
     assert tab.path is not None
 
-    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any]).copy()
-    commands = [dacite.from_dict(HistoryItem, raw_item).command for raw_item in raw_history]
+    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any])
+    typed_history = [dacite.from_dict(_HistoryItem, raw_item).command for raw_item in raw_history]
+    commands = [command for command in typed_history if command.key_id == key_id]
 
     for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
@@ -98,14 +73,16 @@ def get(tab: tabs.FileTab, project_path: Path) -> list[Command]:
             command_format = example.command
 
         if command_format not in (item.command_format for item in commands):
-            substitutions = get_substitutions(tab.path, project_path)
+            substitutions = common.get_substitutions(tab.path, project_path)
             commands.append(
-                Command(
+                common.Command(
                     command_format=command_format,
-                    command=format_command(command_format, substitutions),
+                    command=common.format_command(command_format, substitutions),
                     cwd_format=example.working_directory,
-                    cwd=str(format_cwd(example.working_directory, substitutions)),
+                    cwd=str(common.format_cwd(example.working_directory, substitutions)),
                     external_terminal=example.external_terminal,
+                    key_id=key_id,
                 )
             )
+
     return commands

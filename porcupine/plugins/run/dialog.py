@@ -6,14 +6,14 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Callable, Generic, TypeVar
 
-from porcupine import get_main_window, tabs, textutils
+from porcupine import get_main_window, tabs, textutils, utils
 
-from . import history
+from . import common, history
 
 T = TypeVar("T")
 
 
-class FormattingEntryAndLabels(Generic[T]):
+class _FormattingEntryAndLabels(Generic[T]):
     def __init__(
         self,
         entry_area: ttk.Frame,
@@ -70,8 +70,14 @@ class FormattingEntryAndLabels(Generic[T]):
             self._validated_callback()
 
 
-class CommandAsker:
-    def __init__(self, file_path: Path, project_path: Path, suggestions: list[history.Command]):
+class _CommandAsker:
+    def __init__(
+        self,
+        file_path: Path,
+        project_path: Path,
+        suggestions: list[common.Command],
+        initial_key_id: int,
+    ):
         self.window = tkinter.Toplevel()
         self._suggestions = suggestions
 
@@ -87,21 +93,21 @@ class CommandAsker:
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        substitutions = history.get_substitutions(file_path, project_path)
-        self.command: FormattingEntryAndLabels[str] = FormattingEntryAndLabels(
+        substitutions = common.get_substitutions(file_path, project_path)
+        self.command: _FormattingEntryAndLabels[str] = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
             substitutions=substitutions,
-            formatter=history.format_command,
+            formatter=common.format_command,
             value_validator=(lambda command: bool(command.strip())),
             validated_callback=self.update_run_button,
         )
-        self.cwd: FormattingEntryAndLabels[Path] = FormattingEntryAndLabels(
+        self.cwd: _FormattingEntryAndLabels[Path] = _FormattingEntryAndLabels(
             entry_area,
             text="In this directory:",
             substitutions=substitutions,
-            formatter=history.format_cwd,
-            value_validator=(lambda path: path.is_dir()),
+            formatter=common.format_cwd,
+            value_validator=(lambda path: path.is_absolute() and path.is_dir()),
             validated_callback=self.update_run_button,
         )
 
@@ -139,7 +145,18 @@ class CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        ttk.Label(content_frame).pack()  # spacer
+        self.repeat_bindings = [utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)]
+        self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id])
+        self.repeat_var.trace_add("write", self.update_run_button)
+
+        repeat_frame = ttk.Frame(content_frame)
+        repeat_frame.pack(fill="x", pady=10)
+        ttk.Label(
+            repeat_frame, text="This command can be repeated by pressing the following key:"
+        ).pack(side="left")
+        ttk.Combobox(
+            repeat_frame, textvariable=self.repeat_var, values=self.repeat_bindings, width=3
+        ).pack(side="left")
 
         button_frame = ttk.Frame(content_frame)
         button_frame.pack(fill="x")
@@ -156,15 +173,18 @@ class CommandAsker:
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
         if self._suggestions:
+            self._select_command_autocompletion(self._suggestions[0], prefix="")
+
             # Run _autocomplete when pressing a key without alt
             self.command.entry.bind("<Key>", self._autocomplete, add=True)
             self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
-            self._select_command_autocompletion(self._suggestions[0], prefix="")
+        else:
+            self.cwd.format_var.set("{folder_path}")
 
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
 
-    def _select_command_autocompletion(self, command: history.Command, prefix: str) -> None:
+    def _select_command_autocompletion(self, command: common.Command, prefix: str) -> None:
         assert command.command_format.startswith(prefix)
         self.command.format_var.set(command.command_format)
         self.command.entry.icursor(len(prefix))
@@ -189,8 +209,12 @@ class CommandAsker:
 
         return None
 
-    def update_run_button(self) -> None:
-        if self.command.value is not None and self.cwd.value is not None:
+    def update_run_button(self, *junk: object) -> None:
+        if (
+            self.command.value is not None
+            and self.cwd.value is not None
+            and self.repeat_var.get() in self.repeat_bindings
+        ):
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
@@ -200,9 +224,13 @@ class CommandAsker:
         self.window.destroy()
 
 
-def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None:
+def ask_command(
+    tab: tabs.FileTab, project_path: Path, initial_key_id: int
+) -> common.Command | None:
     assert tab.path is not None
-    asker = CommandAsker(tab.path, project_path, history.get(tab, project_path))
+    asker = _CommandAsker(
+        tab.path, project_path, history.get(tab, project_path, initial_key_id), initial_key_id
+    )
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
@@ -214,11 +242,12 @@ def ask_command(tab: tabs.FileTab, project_path: Path) -> history.Command | None
     if asker.run_clicked:
         assert asker.command.value is not None
         assert asker.cwd.value is not None
-        return history.Command(
+        return common.Command(
             command_format=asker.command.format_var.get(),
             command=asker.command.value,
             cwd_format=asker.cwd.format_var.get(),
             cwd=str(asker.cwd.value),
             external_terminal=asker.terminal_var.get(),
+            key_id=asker.repeat_bindings.index(asker.repeat_var.get()),
         )
     return None

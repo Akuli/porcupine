@@ -1,5 +1,9 @@
+import importlib
+import inspect
 import os
+import subprocess
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(".."))
 import porcupine
@@ -8,7 +12,7 @@ sys.path.insert(0, os.path.abspath("."))
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
-    "sphinx.ext.viewcode",
+    "sphinx.ext.linkcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.autodoc",
     "extensions",  # my extensions.py
@@ -46,3 +50,29 @@ html_theme = "alabaster"
 html_static_path = ["_static"]
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+
+
+def linkcode_resolve(domain, info):
+    if domain != "py" or not info["module"] or not info["module"].startswith("porcupine."):
+        return None
+
+    project_root = Path(__file__).absolute().parent.parent
+
+    assert info.keys() == {"module", "fullname"}
+    try:
+        objekt = importlib.import_module(info["module"])
+        for part in info["fullname"].split("."):
+            objekt = getattr(objekt, part)
+        path = Path(inspect.getsourcefile(objekt))
+        lines, first_lineno = inspect.getsourcelines(objekt)
+    except (AttributeError, TypeError):
+        return None
+
+    if project_root not in path.parents:
+        return None
+
+    assert path.is_file()
+    last_lineno = first_lineno + len(lines) - 1
+    path_string = path.relative_to(project_root).as_posix()
+    commit = subprocess.check_output("git rev-parse HEAD", shell=True).strip().decode("ascii")
+    return f"https://github.com/Akuli/porcupine/blob/{commit}/{path_string}#L{first_lineno}-L{last_lineno}"

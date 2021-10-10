@@ -563,7 +563,7 @@ class LinkManager:
         self._callbacks: dict[str, Callable[[], object]] = {}
         textwidget.tag_bind("link", "<Enter>", self._enter_link)
         textwidget.tag_bind("link", "<Leave>", self._leave_link)
-        textwidget.tag_bind("link", "<Button-1>", self._open_link)
+        textwidget.tag_bind("link", "<ButtonRelease-1>", self._open_link)
 
     def _enter_link(self, event: tkinter.Event[tkinter.Text]) -> None:
         self._textwidget.config(cursor="hand2")

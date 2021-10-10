@@ -14,15 +14,7 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Any, Callable, List
 
-from porcupine import (
-    get_main_window,
-    get_paned_window,
-    get_tab_manager,
-    menubar,
-    settings,
-    tabs,
-    utils,
-)
+from porcupine import get_paned_window, get_tab_manager, menubar, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -90,8 +82,14 @@ class DirectoryTree(ttk.Treeview):
         self._project_num_counter = 0
         self.contextmenu = tkinter.Menu(tearoff=False)
 
-        # "lambda x: x" sorting key puts dirs before files, and sorts by path case-sensitive
-        self.sorting_keys: list[Callable[[str], Any]] = [lambda item_id: item_id]
+        def ordered_repr(item_id: str) -> tuple[bool, str, str]:
+            split_item_id = item_id.split(":", maxsplit=2)
+            item_type = split_item_id[0]  # 'dir' or 'file'
+            item_path = split_item_id[2]
+            item_is_dotted = Path(item_path).name[0] == "."  # False < True => dot items last
+            return item_is_dotted, item_type, item_path
+
+        self.sorting_keys: list[Callable[[str], Any]] = [ordered_repr]
 
     def set_the_selection_correctly(self, id: str) -> None:
         self.selection_set(id)
@@ -393,8 +391,8 @@ def _select_current_file(tree: DirectoryTree, event: object) -> None:
 def _on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     def path_callback(junk: object = None) -> None:
         if tab.path is not None:
+            # directory tree should already contain the path
             tree.add_project(utils.find_project_root(tab.path))
-            tree.refresh()
             tree.select_file(tab.path)
 
     path_callback()
@@ -416,36 +414,22 @@ def _focus_treeview(tree: DirectoryTree) -> None:
     tree.tk.call("focus", tree)
 
 
-# There's no way to bind so you get only main window's events.
-#
-# When the treeview is focused inside the Porcupine window but the Porcupine
-# window itself is not focused, this refreshes twice when the window gets
-# focus. If that ever becomes a problem, it can be fixed with a debouncer. At
-# the time of writing this, Porcupine contains debouncer code used for
-# something else. That can be found with grep.
-def _on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc]) -> None:
-    if event.widget is get_main_window() or event.widget is tree:
-        tree.refresh()
-
-
 def setup() -> None:
     settings.add_option("directory_tree_projects", [], List[str])
 
-    # TODO: add something for finding a file by typing its name?
     container = ttk.Frame(get_paned_window(), name="directory_tree_container")
+    get_paned_window().add(container, before=get_tab_manager())
+    settings.remember_pane_size(get_paned_window(), container, "directory_tree_width", 200)
 
     # Packing order matters. The widget packed first is always visible.
     scrollbar = ttk.Scrollbar(container)
     scrollbar.pack(side="right", fill="y")
     tree = DirectoryTree(container)
     tree.pack(side="left", fill="both", expand=True)
-    get_main_window().bind("<FocusIn>", partial(_on_any_widget_focused, tree), add=True)
+    get_tab_manager().bind("<<FileSystemChanged>>", tree.refresh, add=True)
 
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
-
-    # Insert directory tree before tab manager
-    get_paned_window().insert(get_tab_manager(), container)
 
     get_tab_manager().add_filetab_callback(partial(_on_new_filetab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(_select_current_file, tree), add=True)
