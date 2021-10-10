@@ -1,7 +1,11 @@
 # "Temporary" hack to debug #379
 import os
+import sys
 import threading
 from pathlib import Path
+
+if sys.version_info >= (3, 8):
+    sys.exit(0)
 
 os.chdir(Path(__file__).absolute().parent.parent)
 

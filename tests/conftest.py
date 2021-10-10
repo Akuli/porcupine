@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import tkinter
 
@@ -20,6 +21,14 @@ import porcupine
 from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
 from porcupine.plugins.directory_tree import get_directory_tree
+
+
+if sys.version_info >= (3, 8):
+    @threading._threading_atexits.append
+    def lol():
+        for t in threading.enumerate():
+            if t != threading.main_thread():
+                print("JOINING:", t, t._target, t.run)
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
