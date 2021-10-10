@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import tkinter
 
 import appdirs
@@ -157,3 +158,16 @@ def run_porcupine():
         return run_result.stdout
 
     return actually_run_porcupine
+
+
+@pytest.fixture
+def wait_until():
+    def actually_wait_until(condition, *, timeout=5):
+        end = time.monotonic() + timeout
+        while time.monotonic() < end:
+            get_main_window().update()
+            if condition():
+                return
+        raise RuntimeError("timed out waiting")
+
+    return actually_wait_until

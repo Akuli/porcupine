@@ -6,7 +6,7 @@ from typing import Any, List
 
 import pytest
 
-from porcupine import get_main_window, utils
+from porcupine import get_main_window, get_tab_manager, utils
 from porcupine.plugins.run import no_terminal, settings, terminal
 
 
@@ -37,18 +37,11 @@ def fake_runner(tmp_path, monkeypatch):
 @pytest.mark.skipif(
     os.environ.get("GITHUB_ACTIONS") == "true", reason="no external terminal on github actions"
 )
-def test_external_terminal(filetab, tmp_path, fake_runner):
+def test_external_terminal(filetab, tmp_path, fake_runner, isolated_history, wait_until):
     filetab.textwidget.insert("end", "open('file', 'w').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
-    get_main_window().event_generate("<<Menubar:Run/Repeat previous command>>")
-    time.sleep(3)
-    assert (tmp_path / "file").read_text() == "hello"
-
-
-def tkinter_sleep(delay):
-    end = time.time() + delay
-    while time.time() < end:
-        get_main_window().update()
+    get_main_window().event_generate("<<Run:Repeat0>>")
+    wait_until(lambda: (tmp_path / "file").exists() and (tmp_path / "file").read_text() == "hello")
 
 
 def get_output_widget(filetab):
@@ -59,7 +52,7 @@ def get_output(filetab):
     return get_output_widget(filetab).get("1.0", "end - 1 char")
 
 
-def test_output_in_porcupine_window(filetab, tmp_path):
+def test_output_in_porcupine_window(filetab, tmp_path, wait_until):
     filetab.textwidget.insert(
         "end",
         r"""
@@ -81,7 +74,7 @@ if sys.platform != "win32":
     )
     filetab.save_as(tmp_path / "lol.py")
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
-    tkinter_sleep(3)
+    wait_until(lambda: "The process completed successfully." in get_output(filetab))
 
     assert "123" in get_output(filetab)
     assert "örkki" in get_output(filetab)
@@ -91,28 +84,47 @@ if sys.platform != "win32":
         assert get_output(filetab).count("\N{replacement character}") == 2
 
 
-def test_python_error_message(filetab, tabmanager, tmp_path):
-    (tmp_path / "asdf.py").write_text("print(1)\nopen('this does not exist')\nprint(2)\n")
-    filetab.textwidget.insert("end", "import asdf")
-    filetab.save_as(tmp_path / "main.py")
-
-    no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
-    tkinter_sleep(3)
-    assert "No such file or directory" in get_output(filetab)
-    assert "The process failed with status 1." in get_output(filetab)
-
-    # click the last link
+def click_last_link(filetab):
     textwidget = get_output_widget(filetab)
     textwidget.mark_set("current", "link.last - 1 char")
     no_terminal._no_terminal_runners[str(filetab)]._link_manager._open_link(None)
-
-    selected_tab = tabmanager.select()
-    assert selected_tab != filetab
-    assert selected_tab.path == tmp_path / "asdf.py"
-    assert selected_tab.textwidget.get("sel.first", "sel.last") == "open('this does not exist')"
+    return get_tab_manager().select().textwidget.get("sel.first", "sel.last")
 
 
-def test_python_unbuffered(filetab, tmp_path):
+def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
+    (tmp_path / "asdf.py").write_text("print(1)\nopen('this does not exist')\nprint(2)\n")
+    filetab.textwidget.insert("end", "import asdf")
+    filetab.save_as(tmp_path / "main.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} main.py", tmp_path)
+
+    wait_until(lambda: "The process failed with status 1." in get_output(filetab))
+    assert "No such file or directory" in get_output(filetab)
+    assert click_last_link(filetab) == "open('this does not exist')"
+
+
+def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
+    filetab.textwidget.insert("end", "print(1 + 2)\nprint(1 + 'lol')\n")
+    filetab.save_as(tmp_path / "lel.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} -m mypy lel.py", tmp_path)
+
+    # long timeout, mypy can be slow
+    wait_until((lambda: "The process failed with status 1." in get_output(filetab)), timeout=15)
+    assert click_last_link(filetab) == "print(1 + 'lol')"
+
+
+def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
+    filetab.textwidget.insert("end", "asdf.bind('<Foo>', print)")
+    (tmp_path / "foo").mkdir()
+    filetab.save_as(tmp_path / "foo" / "foo.py")
+
+    shutil.copy("scripts/bindcheck.py", tmp_path)
+    no_terminal.run_command(f"{utils.quote(sys.executable)} bindcheck.py foo", tmp_path)
+
+    wait_until(lambda: "The process failed with status 1." in get_output(filetab))
+    assert click_last_link(filetab) == "asdf.bind('<Foo>', print)"
+
+
+def test_python_unbuffered(filetab, tmp_path, wait_until):
     (tmp_path / "sleeper.py").write_text(
         """
 import time
@@ -120,9 +132,18 @@ print("This should show up immediately")
 time.sleep(5)
 """
     )
+    start = time.monotonic()
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
-    tkinter_sleep(3)
-    assert "This should show up immediately" in get_output(filetab)
+    wait_until(lambda: "This should show up immediately" in get_output(filetab))
+    end = time.monotonic()
+    assert end - start < 3
+
+
+def test_changing_current_file(filetab, tmp_path, wait_until):
+    filetab.textwidget.insert("end", 'with open("foo.py", "w") as f: f.write("lol")')
+    filetab.save_as(tmp_path / "foo.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} foo.py", tmp_path)
+    wait_until(lambda: filetab.textwidget.get("1.0", "end").strip() == "lol")
 
 
 def test_no_previous_command_error(filetab, tmp_path, mocker):

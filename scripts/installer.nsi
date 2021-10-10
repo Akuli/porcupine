@@ -67,6 +67,7 @@ Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
 
+  RMDir /r "$INSTDIR\Python"  ; see #328
   SetOutPath "$INSTDIR\Python"
   File /r "python-first\*.*"
 
@@ -102,7 +103,7 @@ Section "!Porcupine" sec_app
   nsExec::ExecToLog '"$INSTDIR\Python\python" -m compileall -q "$INSTDIR\Python"'
 
   DetailPrint "Creating uninstaller..."
-  WriteUninstaller $INSTDIR\uninstall.exe
+  WriteUninstaller "$INSTDIR\uninstall.exe"
 
   DetailPrint "Creating registry keys..."
 
@@ -133,7 +134,14 @@ Section "Uninstall"
     SetShellVarContext current
   ${EndIf}
 
-  RMDir /r "$INSTDIR"
+  ; Deleting the whole $INSTDIR is not safe https://nsis.sourceforge.io/Reference/RMDir
+  RMDir /r "$INSTDIR\lib"
+  RMDir /r "$INSTDIR\Python"
+  Delete "$INSTDIR\_user_install_marker"
+  Delete "$INSTDIR\launch.pyw"
+  Delete "$INSTDIR\uninstall.exe"
+  RMDir "$INSTDIR"  ; no /r, removed only if empty
+
   Delete "$SMPROGRAMS\Porcupine.lnk"
 
   DetailPrint "Deleting registry keys..."

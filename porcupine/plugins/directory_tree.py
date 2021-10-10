@@ -14,15 +14,7 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Any, Callable, List
 
-from porcupine import (
-    get_main_window,
-    get_paned_window,
-    get_tab_manager,
-    menubar,
-    settings,
-    tabs,
-    utils,
-)
+from porcupine import get_paned_window, get_tab_manager, menubar, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -399,8 +391,8 @@ def _select_current_file(tree: DirectoryTree, event: object) -> None:
 def _on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     def path_callback(junk: object = None) -> None:
         if tab.path is not None:
+            # directory tree should already contain the path
             tree.add_project(utils.find_project_root(tab.path))
-            tree.refresh()
             tree.select_file(tab.path)
 
     path_callback()
@@ -422,18 +414,6 @@ def _focus_treeview(tree: DirectoryTree) -> None:
     tree.tk.call("focus", tree)
 
 
-# There's no way to bind so you get only main window's events.
-#
-# When the treeview is focused inside the Porcupine window but the Porcupine
-# window itself is not focused, this refreshes twice when the window gets
-# focus. If that ever becomes a problem, it can be fixed with a debouncer. At
-# the time of writing this, Porcupine contains debouncer code used for
-# something else. That can be found with grep.
-def _on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc]) -> None:
-    if event.widget is get_main_window() or event.widget is tree:
-        tree.refresh()
-
-
 def setup() -> None:
     settings.add_option("directory_tree_projects", [], List[str])
 
@@ -445,7 +425,7 @@ def setup() -> None:
     scrollbar.pack(side="right", fill="y")
     tree = DirectoryTree(container)
     tree.pack(side="left", fill="both", expand=True)
-    get_main_window().bind("<FocusIn>", partial(_on_any_widget_focused, tree), add=True)
+    get_tab_manager().bind("<<FileSystemChanged>>", tree.refresh, add=True)
 
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
