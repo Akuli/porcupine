@@ -139,6 +139,19 @@ class TabManager(ttk.Notebook):
         If the file can't be opened, this method displays an error to the user
         and returns ``None``.
         """
+
+        # Check if the file is bigger than 1MB,
+        # so the user is notified in time that the program will freeze
+        if path.stat().st_size > 1_000_000 and not messagebox.askyesno(
+            "Open big file",
+            "Uhh, this file is huge!\nAre you sure you want to open it? ",
+            detail=(
+                "This file is larger than 1MB. If you open it, Porcupine may be unusably slow or"
+                " require an huge amount of RAM."
+            ),
+        ):
+            return None
+
         # Add tab before loading content, so that editorconfig plugin gets a
         # chance to set the encoding into tab.settings
         tab = FileTab(self, path=path)
@@ -633,15 +646,6 @@ class FileTab(Tab):
         .. seealso:: :meth:`TabManager.open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
-        if self.path.stat().st_size > 1_000_000 and not messagebox.askyesno(
-            "Open big file",
-            "Uhh, this file is huge!\nAre you sure you want to open it? ",
-            detail=(
-                "This file is larger than 1MB. If you open it, Porcupine may slow down or crash"
-                " completely. Open it only if you have enough RAM for it."
-            ),
-        ):
-            return False
 
         # Disable text widget so user can't type into it during load
         assert self.textwidget["state"] == "normal"
