@@ -144,7 +144,7 @@ class NoTerminalRunner:
 
         self.textwidget.after(100, self._queue_handler)
 
-    def kill_process(self):
+    def kill_process(self) -> None:
         # saving to local var avoids race condition
         # TODO: still possible for two threads to kill
         process = self._running_process
@@ -167,6 +167,7 @@ def run_command(command: str, cwd: Path) -> None:
 
         def on_close(event: tkinter.Event[tkinter.Misc]) -> None:
             global runner
+            assert runner is not None
             runner.textwidget.destroy()
             runner.kill_process()
             runner = None
