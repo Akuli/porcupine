@@ -27,8 +27,7 @@ if sys.version_info >= (3, 9):
     @threading._threading_atexits.append
     def lol():
         for t in threading.enumerate():
-            if t != threading.main_thread():
-                print("JOINING:", t, t._target, t.run)
+            print("JOINING:", t, t._target, t.run)
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
