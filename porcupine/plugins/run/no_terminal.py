@@ -1,6 +1,7 @@
 """Run commands within the Porcupine window."""
 from __future__ import annotations
 
+import atexit
 import locale
 import logging
 import os
@@ -13,7 +14,13 @@ from functools import partial
 from pathlib import Path
 from typing import Callable
 
+<<<<<<< HEAD
 from porcupine import get_tab_manager, get_vertical_panedwindow, images, settings, textutils, utils
+=======
+import psutil
+
+from porcupine import get_tab_manager, get_vertical_panedwindow, images, textutils, utils, settings
+>>>>>>> 1d0c410e... process killing fixes
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -142,15 +149,41 @@ class NoTerminalRunner:
 
         self.textwidget.after(100, self._queue_handler)
 
-    def kill_process(self) -> None:
-        # saving to local var avoids race condition
-        # TODO: still possible for two threads to kill
-        process = self._running_process
-        if process is not None:
-            process.kill()
+    # This method has a couple race conditions but works well enough in practice
+    def kill_process(self):
+        if self._running_process is not None:
+            shell = self._running_process
+            self._running_process = None
+
+            try:
+                # is the shell alive?
+                shell.wait(timeout=0)
+            except subprocess.TimeoutExpired:
+                # yes, it is alive
+                #
+                # If we kill the shell, its child processes will keep running,
+                # but they will reparent to pid 1 so we can no longer get a
+                # list of them.
+                try:
+                    children = psutil.Process(shell.pid).children()
+                except psutil.NoSuchProcess:
+                    # Would run if shell dies after asking if it's alive.
+                    # Don't know if this ever runs in practice, but there's
+                    # similar code in langserver plugin and it runs sometimes.
+                    return
+                shell.kill()
+                for child in children:
+                    child.kill()
+                self._running_process = None
 
 
 runner: NoTerminalRunner | None = None
+
+
+@atexit.register
+def _kill_process_when_quitting_porcupine():
+    if runner is not None:
+        runner.kill_process()
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
