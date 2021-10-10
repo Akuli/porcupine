@@ -7,11 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from porcupine.plugins.git_status import git_pool
+# shitty debugging attempt for #379
+if os.environ.get("GITHUB_ACTIONS") == "true":
+    pytestmark = pytest.mark.skip
+else:
+    from porcupine.plugins.git_status import git_pool
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get("GITHUB_ACTIONS") == "true", reason="shitty debugging attempt for #379"
-)
 
 
 @pytest.fixture
