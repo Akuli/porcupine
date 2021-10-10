@@ -2,12 +2,11 @@
 import os
 import sys
 import threading
-from pathlib import Path
 
 if sys.version_info >= (3, 9):
     sys.exit(0)
 
-os.chdir(Path(__file__).absolute().parent.parent)
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 old = """
     tlock = _main_thread._tstate_lock
@@ -19,6 +18,6 @@ new = """
 """
 
 print(threading.__file__, "--> threading.py")
-content = Path(threading.__file__).read_text()
+content = open(threading.__file__).read()
 assert content.count(old) == 1, content.count(old)
-Path("threading.py").write_text(content.replace(old, new))
+open("threading.py", "w").write(content.replace(old, new))
