@@ -13,7 +13,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable
 
-from porcupine import get_tab_manager, images, textutils, utils, get_vertical_panedwindow
+from porcupine import get_tab_manager, get_vertical_panedwindow, images, textutils, utils
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -162,7 +162,7 @@ def run_command(command: str, cwd: Path) -> None:
     log.info(f"Running {command} in {cwd}")
     if runner is None:
         runner = NoTerminalRunner(get_vertical_panedwindow())
-        get_vertical_panedwindow().add(runner.textwidget, after=get_tab_manager(), stretch='never')
+        get_vertical_panedwindow().add(runner.textwidget, after=get_tab_manager(), stretch="never")
 
         def on_close(event: tkinter.Event[tkinter.Misc]) -> None:
             global runner

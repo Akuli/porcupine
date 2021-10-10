@@ -14,7 +14,15 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Any, Callable, List
 
-from porcupine import get_horizontal_panedwindow, get_vertical_panedwindow, get_tab_manager, menubar, settings, tabs, utils
+from porcupine import (
+    get_horizontal_panedwindow,
+    get_tab_manager,
+    get_vertical_panedwindow,
+    menubar,
+    settings,
+    tabs,
+    utils,
+)
 
 log = logging.getLogger(__name__)
 
@@ -419,7 +427,9 @@ def setup() -> None:
 
     container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")
     get_horizontal_panedwindow().add(container, before=get_vertical_panedwindow())
-    settings.remember_pane_size(get_horizontal_panedwindow(), container, "directory_tree_width", 200)
+    settings.remember_pane_size(
+        get_horizontal_panedwindow(), container, "directory_tree_width", 200
+    )
 
     # Packing order matters. The widget packed first is always visible.
     scrollbar = ttk.Scrollbar(container)

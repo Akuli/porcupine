@@ -19,7 +19,8 @@ class _State:
     horizontal_panedwindow: utils.PanedWindow
     vertical_panedwindow: utils.PanedWindow
     tab_manager: tabs.TabManager
-    parsed_args: Any    # not None
+    parsed_args: Any  # not None
+
 
 # global state makes some things a lot easier (I'm sorry)
 _global_state: _State | None = None
@@ -58,7 +59,7 @@ def init(args: Any) -> None:
     horizontal_pw.add(vertical_pw)
 
     tab_manager = tabs.TabManager(vertical_pw)
-    vertical_pw.add(tab_manager, stretch='always')
+    vertical_pw.add(tab_manager, stretch="always")
 
     _global_state = _State(
         root=root,
