@@ -2,25 +2,25 @@
 from __future__ import annotations
 
 import logging
+import os
 import tkinter
 import types
-from tkinter import ttk
 from typing import Any, Type
 
-from porcupine import settings, tabs
+from porcupine import tabs, utils
 
 log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier (I'm sorry)
 _root: tkinter.Tk | None = None
-_paned_window: ttk.Panedwindow | None = None
+_paned_window: utils.PanedWindow | None = None
 _tab_manager: tabs.TabManager | None = None
 _parsed_args: Any | None = None  # Any | None means you have to check if its None
 filedialog_kwargs: dict[str, Any] = {}
 
 
 def _log_tkinter_error(
-    exc: Type[BaseException], val: BaseException, tb: types.TracebackType
+    exc: Type[BaseException], val: BaseException, tb: types.TracebackType | None
 ) -> Any:
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
 
@@ -42,15 +42,12 @@ def init(args: Any) -> None:
     log.debug("Tcl/Tk version: " + _root.tk.eval("info patchlevel"))
 
     _root.protocol("WM_DELETE_WINDOW", quit)
-    _root.report_callback_exception = _log_tkinter_error
 
-    _paned_window = ttk.Panedwindow(_root, orient="horizontal")
-    settings.remember_divider_positions(_paned_window, "main_panedwindow_dividers", [250])
-    _root.bind(
-        "<<PluginsLoaded>>",
-        lambda event: get_paned_window().event_generate("<<DividersFromSettings>>"),
-        add=True,
-    )
+    # Don't set up custom error handler while testing https://stackoverflow.com/a/58866220
+    if "PYTEST_CURRENT_TEST" not in os.environ:
+        _root.report_callback_exception = _log_tkinter_error
+
+    _paned_window = utils.PanedWindow(_root, orient="horizontal")
     _paned_window.pack(fill="both", expand=True)
 
     _tab_manager = tabs.TabManager(_paned_window)
@@ -80,7 +77,7 @@ def get_parsed_args() -> Any:
     return _parsed_args
 
 
-def get_paned_window() -> ttk.Panedwindow:
+def get_paned_window() -> utils.PanedWindow:
     if _paned_window is None:
         raise RuntimeError("Porcupine is not running")
     return _paned_window

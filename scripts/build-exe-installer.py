@@ -13,9 +13,7 @@ import requests
 import toml
 
 sys.path.append("")  # import from current working directory
-from porcupine import version_info as version_tuple
-
-porcupine_version = "%d.%d.%d" % version_tuple
+from porcupine import __version__ as porcupine_version
 
 # needs 64-bit windows, struct.calcsize("P") returns the size of a pointer
 assert sys.platform == "win32"
@@ -157,10 +155,12 @@ extensions = [
 ]
 print(extensions)
 
-print("Running makensis")
+# makensis is not in PATH when nsis is installed without scoop
+makensis = shutil.which("makensis") or r"C:\Program Files (x86)\NSIS\makensis.exe"
+print(f"Running {makensis}")
 subprocess.check_call(
     [
-        "makensis.exe",
+        makensis,
         "/DVERSION=" + porcupine_version,
         "/DEXTENSIONS=" + ",".join(extensions),
         "installer.nsi",

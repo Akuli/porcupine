@@ -1,6 +1,7 @@
 """Run commands within the Porcupine window."""
 from __future__ import annotations
 
+import locale
 import logging
 import os
 import queue
@@ -21,7 +22,7 @@ log = logging.getLogger(__name__)
 filename_regex_parts = [
     # c compiler output
     # playground.c:4:9: warning: ...
-    r"^([^:]+):([0-9]+)(?=:)",
+    r"\b([^:]+):([0-9]+)(?=:)",
     # python error
     r'File "([^"]+)", line ([0-9]+)',
 ]
@@ -82,7 +83,7 @@ class NoTerminalRunner:
                 return
             self._output_queue.put(msg)
 
-        emit_message(("clear", ""))
+        emit_message(("start", ""))
         emit_message(("info", command + "\n"))
 
         env = dict(os.environ)
@@ -104,9 +105,9 @@ class NoTerminalRunner:
             return
 
         assert process.stdout is not None
-        for line in process.stdout:
-            # TODO: is utf-8 the correct choice on all platforms?
-            emit_message(("output", line.decode("utf-8", errors="replace")))
+        for bytez in process.stdout:
+            line = bytez.decode(locale.getpreferredencoding(), errors="replace")
+            emit_message(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
         process.communicate()  # make sure process.returncode is set
 
         if process.returncode == 0:
@@ -115,6 +116,7 @@ class NoTerminalRunner:
             emit_message(("info", "The process completed successfully."))
         else:
             emit_message(("error", f"The process failed with status {process.returncode}."))
+        emit_message(("end", ""))
 
     def _queue_handler(self) -> None:
         messages: list[tuple[str, str]] = []
@@ -127,10 +129,13 @@ class NoTerminalRunner:
         if messages:
             self.textwidget.config(state="normal")
             for tag, output_line in messages:
-                if tag == "clear":
+                if tag == "start":
                     assert not output_line
                     self.textwidget.delete("1.0", "end")
                     self._link_manager.delete_all_links()  # prevent memory leak
+                elif tag == "end":
+                    assert not output_line
+                    get_tab_manager().event_generate("<<FileSystemChanged>>")
                 else:
                     self._link_manager.append_text(output_line, [tag])
             self.textwidget.config(state="disabled")
@@ -153,6 +158,7 @@ _no_terminal_runners: dict[str, NoTerminalRunner] = {}
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
+    log.info(f"Running {command} in {cwd}")
 
     tab = get_tab_manager().select()
     assert tab is not None

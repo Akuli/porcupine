@@ -199,8 +199,13 @@ This should run Porcupine. If you change some of Porcupine's
 code in the `porcupine` directory and you run `python3 -m porcupine` again, your changes
 should be visible right away.
 
-If you are using Windows, you need to use `py` instead of `python3` and
-`env\Scripts\activate.bat` instead of `source env/bin/activate`.
+Windows-specific notes:
+- You need to use `py` instead of `python3` when creating the venv,
+    and `env\Scripts\activate` instead of `source env/bin/activate` to activate it.
+- If creating the venv fails with an error message like `Error: [Errno 13] Permission denied: ...\\python.exe`,
+    try creating the venv into a different folder.
+    It is created into whatever folder you are currently `cd`'d to
+    (i.e. the folder that shows up on the command prompt before the `>`).
 
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct

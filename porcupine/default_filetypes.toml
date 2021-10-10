@@ -88,7 +88,8 @@
 #
 #    example_commands
 #        List with information about a command to show in the "Run Command"
-#        dialog (F4 by default). Each list item must have the following keys:
+#        dialog (Shift+{F5,F6,F7,F8} by default). Each list item must have the
+#        following keys:
 #
 #            command
 #                Content of the "Run this command" text entry.

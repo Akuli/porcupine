@@ -10,7 +10,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Callable
+from typing import Callable, NamedTuple
 
 from send2trash import send2trash
 
@@ -26,6 +26,14 @@ else:
     trash_name = "trash"
 
 
+class PasteState(NamedTuple):
+    is_cut: bool
+    path: Path
+
+
+paste_state: PasteState | None = None
+
+
 def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
     return [
         tab
@@ -36,33 +44,56 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
     ]
 
 
-def ask_name_for_renaming(old_path: Path) -> Path | None:
+def ask_file_name(
+    old_path: Path, is_paste: bool = False, show_overwriting_option: bool = False
+) -> Path | None:
     label_width = 400
 
     dialog = tkinter.Toplevel()
     dialog.transient(get_main_window())
     dialog.resizable(False, False)
-    dialog.title("Rename")
 
     big_frame = ttk.Frame(dialog, padding=10)
     big_frame.pack(fill="both", expand=True)
-    ttk.Label(
-        big_frame, text=f"Enter a new name for {old_path.name}:", wraplength=label_width
-    ).pack(fill="x")
 
-    var = tkinter.StringVar()
-    entry = ttk.Entry(big_frame, textvariable=var)
-    entry.pack(pady=40, fill="x")
+    dialog_title = "Rename"
+    dialog_phrase = f"Enter a new name for {old_path.name}:"
+
+    if is_paste:
+        dialog_title = "File conflict"
+        if show_overwriting_option:
+            dialog_phrase = (
+                f"{old_path.parent} already has a file named {old_path.name}.\nDo you want to"
+                " overwrite it?"
+            )
+        else:
+            dialog_phrase = (
+                f"{old_path.parent} already has a file named {old_path.name}.\nChoose a name that"
+                " isn't in use."
+            )
+
+    dialog.title(dialog_title)
+    ttk.Label(big_frame, text=dialog_phrase, wraplength=label_width).pack(fill="x")
+
+    entry_frame = ttk.Frame(big_frame)
+    entry_frame.pack(fill="x")
+    file_name_var = tkinter.StringVar()
+    entry = ttk.Entry(entry_frame, textvariable=file_name_var)
+    entry.pack(pady=40, side=tkinter.BOTTOM, fill="x")
     entry.insert(0, old_path.name)
 
     button_frame = ttk.Frame(big_frame)
     button_frame.pack(fill="x", pady=(10, 0))
 
     new_path = None
+    overwrite_var = tkinter.BooleanVar(value=False)
 
     def select_name() -> None:
         nonlocal new_path
-        new_path = old_path.with_name(entry.get())
+        if overwrite_var.get():
+            new_path = old_path
+        else:
+            new_path = old_path.with_name(entry.get())
         dialog.destroy()
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
@@ -70,7 +101,24 @@ def ask_name_for_renaming(old_path: Path) -> Path | None:
     ok_button = ttk.Button(button_frame, text="OK", command=select_name, state="disabled", width=1)
     ok_button.pack(side="right", expand=True, fill="x", padx=(5, 0))
 
-    def validate_name(*junk: object) -> None:
+    if is_paste and show_overwriting_option:
+        r1 = ttk.Radiobutton(entry_frame, text="Overwrite", variable=overwrite_var, value=True)
+        r2 = ttk.Radiobutton(
+            entry_frame, text="Change name of destination", variable=overwrite_var, value=False
+        )
+        r1.pack(pady=(40, 0), fill="x")
+        r1.invoke()
+        r2.pack(fill="x")
+        ok_button.config(state="normal")
+        entry.config(state="disabled")
+
+    def update_dialog_state(*junk: object) -> None:
+        if overwrite_var.get():
+            ok_button.config(state="normal")
+            entry.config(state="disabled")
+            return
+
+        entry.config(state="normal")
         name = entry.get()
         try:
             possible_new_path = old_path.with_name(name)
@@ -83,18 +131,20 @@ def ask_name_for_renaming(old_path: Path) -> Path | None:
         else:
             ok_button.config(state="normal")
 
-    var.trace_add("write", validate_name)
+    overwrite_var.trace_add("write", update_dialog_state)
+    file_name_var.trace_add("write", update_dialog_state)
     entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
     entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
     entry.select_range(0, "end")
     entry.focus()
 
     dialog.wait_window()
+
     return new_path
 
 
 def rename(old_path: Path) -> None:
-    new_path = ask_name_for_renaming(old_path)
+    new_path = ask_file_name(old_path)
     if new_path is None:
         return
 
@@ -120,6 +170,48 @@ def rename(old_path: Path) -> None:
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
         tab.path = new_path / tab.path.relative_to(old_path)
+
+
+def paste(new_path: Path) -> None:
+    paste_here(new_path.parent)
+
+
+def paste_here(new_path: Path) -> None:
+    global paste_state
+    assert paste_state is not None
+
+    new_file_path = new_path / paste_state.path.name
+
+    if new_file_path.exists():
+        path = ask_file_name(
+            new_file_path,
+            is_paste=True,
+            show_overwriting_option=(paste_state.path.parent != new_file_path.parent),
+        )
+        if path is None:
+            return
+        new_file_path = path
+
+        if paste_state.path == new_file_path:  # user pressed X or cancel on conflict dialog
+            return
+
+    if paste_state.is_cut:
+        shutil.move(str(paste_state.path), str(new_file_path))
+        paste_state = None
+    else:
+        shutil.copy(paste_state.path, new_file_path)
+
+    get_directory_tree().refresh()
+
+
+def copy(old_path: Path) -> None:
+    global paste_state
+    paste_state = PasteState(False, old_path)
+
+
+def cut(old_path: Path) -> None:
+    global paste_state
+    paste_state = PasteState(True, old_path)
 
 
 def close_tabs(tabs_to_close: list[tabs.FileTab]) -> bool:
@@ -183,12 +275,12 @@ def open_in_file_manager(path: Path) -> None:
     elif windowingsystem == "x11":
         opener_command = "xdg-open"
     else:
-        # not tested :(
         opener_command = "open"
 
     # Using Popen to make sure it won't freeze gui
     # No freezing without it on windows and linux, but just to be sure
-    subprocess.Popen([opener_command, str(path)], **utils.subprocess_kwargs)
+    # DO NOT add **utils.subprocess_kwargs, otherwise does nothing on windows
+    subprocess.Popen([opener_command, str(path)])
 
 
 def get_selected_path(tree: DirectoryTree) -> Path | None:
@@ -217,10 +309,26 @@ def is_NOT_project_root(path: Path) -> bool:
     return path not in map(get_path, get_directory_tree().get_children())
 
 
+def is_paste_state_valid() -> bool:
+    return paste_state is not None and paste_state.path.is_file()
+
+
+def can_paste(path: Path) -> bool:
+    return is_NOT_project_root(path) and can_paste_here(path.parent)
+
+
+def can_paste_here(path: Path) -> bool:
+    return is_paste_state_valid() and path.is_dir()
+
+
 commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
+    Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
+    Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
+    Command("Paste", "<<Paste>>", can_paste, paste),
+    Command("Paste here", None, can_paste_here, paste_here),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
