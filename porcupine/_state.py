@@ -12,8 +12,10 @@ from porcupine import tabs, utils
 log = logging.getLogger(__name__)
 
 # global state makes some things a lot easier (I'm sorry)
+# TODO: clean up the mess
 _root: tkinter.Tk | None = None
-_paned_window: utils.PanedWindow | None = None
+_horizontal_panedwindow: utils.PanedWindow | None = None
+_vertical_panedwindow: utils.PanedWindow | None = None
 _tab_manager: tabs.TabManager | None = None
 _parsed_args: Any | None = None  # Any | None means you have to check if its None
 filedialog_kwargs: dict[str, Any] = {}
@@ -27,12 +29,18 @@ def _log_tkinter_error(
 
 # undocumented on purpose, don't use in plugins
 def init(args: Any) -> None:
+    assert args is not None
+
     global _root
     global _tab_manager
     global _parsed_args
-    global _paned_window
-    assert _root is None and _tab_manager is None and _parsed_args is None and _paned_window is None
-    assert args is not None
+    global _horizontal_panedwindow
+    global _vertical_panedwindow
+    assert _root is None
+    assert _tab_manager is None
+    assert _parsed_args is None
+    assert _horizontal_panedwindow is None
+    assert _vertical_panedwindow is None
 
     log.debug("init() starts")
     _parsed_args = args
@@ -47,11 +55,14 @@ def init(args: Any) -> None:
     if "PYTEST_CURRENT_TEST" not in os.environ:
         _root.report_callback_exception = _log_tkinter_error
 
-    _paned_window = utils.PanedWindow(_root, orient="horizontal")
-    _paned_window.pack(fill="both", expand=True)
+    _horizontal_panedwindow = utils.PanedWindow(_root, orient="horizontal")
+    _horizontal_panedwindow.pack(fill="both", expand=True)
 
-    _tab_manager = tabs.TabManager(_paned_window)
-    _paned_window.add(_tab_manager)
+    _vertical_panedwindow = utils.PanedWindow(_horizontal_panedwindow, orient="vertical")
+    _horizontal_panedwindow.add(_vertical_panedwindow)
+
+    _tab_manager = tabs.TabManager(_vertical_panedwindow)
+    _vertical_panedwindow.add(_tab_manager)
 
     log.debug("init() done")
 
@@ -77,10 +88,16 @@ def get_parsed_args() -> Any:
     return _parsed_args
 
 
-def get_paned_window() -> utils.PanedWindow:
-    if _paned_window is None:
+def get_horizontal_panedwindow() -> utils.PanedWindow:
+    if _horizontal_panedwindow is None:
         raise RuntimeError("Porcupine is not running")
-    return _paned_window
+    return _horizontal_panedwindow
+
+
+def get_vertical_panedwindow() -> utils.PanedWindow:
+    if _vertical_panedwindow is None:
+        raise RuntimeError("Porcupine is not running")
+    return _vertical_panedwindow
 
 
 def quit() -> None:
