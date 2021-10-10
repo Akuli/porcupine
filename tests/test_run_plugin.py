@@ -129,14 +129,14 @@ def test_python_unbuffered(filetab, tmp_path, wait_until):
         """
 import time
 print("This should show up immediately")
-time.sleep(5)
+time.sleep(10)
 """
     )
     start = time.monotonic()
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output(filetab))
     end = time.monotonic()
-    assert end - start < 3
+    assert end - start < 5
 
 
 def test_changing_current_file(filetab, tmp_path, wait_until):
