@@ -7,7 +7,7 @@ from typing import Any, List
 import pytest
 
 from porcupine import get_main_window, get_tab_manager, utils
-from porcupine.plugins.run import no_terminal, settings, terminal
+from porcupine.plugins.run import dialog, no_terminal, settings, terminal
 
 
 @pytest.fixture(autouse=True)
@@ -37,7 +37,7 @@ def fake_runner(tmp_path, monkeypatch):
 @pytest.mark.skipif(
     os.environ.get("GITHUB_ACTIONS") == "true", reason="no external terminal on github actions"
 )
-def test_external_terminal(filetab, tmp_path, fake_runner, isolated_history, wait_until):
+def test_external_terminal(filetab, tmp_path, fake_runner, wait_until):
     filetab.textwidget.insert("end", "open('file', 'w').write('hello')")
     filetab.save_as(tmp_path / "hello.py")
     get_main_window().event_generate("<<Run:Repeat0>>")
@@ -157,3 +157,28 @@ def test_no_previous_command_error(filetab, tmp_path, mocker):
     else:
         assert "press Shift+F5 to choose a command" in str(mock.call_args)
     assert "then repeat it with F5" in str(mock.call_args)
+
+
+def test_cwd_entry(filetab, tmp_path):
+    (tmp_path / "subdir").mkdir()
+    filetab.save_as(tmp_path / "foo.txt")
+    asker = dialog._CommandAsker(
+        file_path=(tmp_path / "foo.txt"), project_path=tmp_path, suggestions=[], initial_key_id=1
+    )
+    asker.command.format_var.set("echo lol")
+
+    assert asker.cwd.format_var.get() == "{folder_path}"
+    assert asker.cwd.value == tmp_path
+    assert str(asker.run_button["state"]) == "normal"
+
+    for path in ["", ".", "..", "../..", tmp_path.name, "subdir", str(tmp_path / "foo.txt")]:
+        asker.cwd.format_var.set(path)
+        assert asker.cwd.value is None
+        assert str(asker.run_button["state"]) == "disabled"
+
+    for path in [tmp_path.parent, tmp_path, tmp_path / "subdir"]:
+        asker.cwd.format_var.set(str(path))
+        assert asker.cwd.value == path
+        assert str(asker.run_button["state"]) == "normal"
+
+    asker.window.destroy()
