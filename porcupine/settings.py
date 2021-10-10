@@ -732,7 +732,9 @@ def add_label(text: str) -> ttk.Label:
 
 
 # TODO: document this
-def remember_pane_size(panedwindow: utils.PanedWindow, pane: tkinter.Misc, option_name: str, default_size: int) -> None:
+def remember_pane_size(
+    panedwindow: utils.PanedWindow, pane: tkinter.Misc, option_name: str, default_size: int
+) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
     add_option(option_name, default_size, int, exist_ok=True)
 
@@ -748,7 +750,9 @@ def remember_pane_size(panedwindow: utils.PanedWindow, pane: tkinter.Misc, optio
     pane.bind("<Map>", settings_to_gui, add=True)
 
     # after_idle helps with accuracy if you move mouse really fast
-    panedwindow.bind("<ButtonRelease-1>", (lambda e: panedwindow.after_idle(gui_to_settings)), add=True)
+    panedwindow.bind(
+        "<ButtonRelease-1>", (lambda e: panedwindow.after_idle(gui_to_settings)), add=True
+    )
 
 
 def _is_monospace(font_family: str) -> bool:
