@@ -5,12 +5,12 @@ import tkinter
 from pathlib import Path
 from tkinter import ttk
 from tkinter.font import Font
-from typing import List, Optional
+from typing import Optional
 
 import dacite
 import pytest
 
-from porcupine import settings
+from porcupine import settings, utils
 
 
 @pytest.fixture(autouse=True)
@@ -214,17 +214,27 @@ def toplevel():
     toplevel.destroy()
 
 
-def test_remember_panedwindow_positions(toplevel):
-    pw = ttk.PanedWindow(toplevel, orient="horizontal")
-    settings.remember_divider_positions(pw, "pw_dividers", [123])
+def create_paned_window(toplevel):
+    pw = utils.PanedWindow(toplevel, orient="horizontal")
     pw.pack(fill="both", expand=True)
+    left = ttk.Label(pw, text="aaaaaaaaaaa")
+    right = ttk.Label(pw, text="aaaaaaaaaaa")
+    pw.add(left)
+    pw.add(right)
+    settings.remember_pane_size(pw, left, "a_width", 123)
+    return (pw, left)
 
-    pw.add(ttk.Label(pw, text="aaaaaaaaaaa"))
-    pw.add(ttk.Label(pw, text="bbbbbbbbbbb"))
 
+def test_remember_panedwindow_positions(toplevel):
+    pw, left = create_paned_window(toplevel)
     pw.update()
-    assert pw.sashpos(0) == 123
+    assert left.winfo_width() == 123
 
-    pw.sashpos(0, 456)
+    pw.sash_place(0, 44, 0)
     pw.event_generate("<ButtonRelease-1>")  # happens after user drags pane
-    assert settings.get("pw_dividers", List[int]) == [456]
+
+    pw2, left2 = create_paned_window(toplevel)
+    pw.update()
+
+    # it is off-by-one on my computer, that's fine
+    assert abs(left2.winfo_width() - 44) < 5
