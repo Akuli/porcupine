@@ -82,7 +82,7 @@ jobs:
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
-    - run: python scripts/threading_hack.py
+    - run: $PYTHON scripts/threading_hack.py
     - run: $PYTHON -m pytest -vvvv --durations=10
   black:
     runs-on: ubuntu-latest
