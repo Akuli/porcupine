@@ -14,7 +14,6 @@ else:
     from porcupine.plugins.git_status import git_pool
 
 
-
 @pytest.fixture
 def disable_thread_pool(monkeypatch):
     def fake_submit(func):
