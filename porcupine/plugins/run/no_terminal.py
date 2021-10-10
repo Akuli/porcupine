@@ -75,8 +75,6 @@ class NoTerminalRunner:
         threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
 
     def _runner_thread(self, cwd: Path, command: str) -> None:
-        self.kill_process()
-
         process: subprocess.Popen[bytes] | None = None
 
         def emit_message(msg: tuple[str, str]) -> None:
