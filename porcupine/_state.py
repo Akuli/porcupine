@@ -58,7 +58,7 @@ def init(args: Any) -> None:
     horizontal_pw.add(vertical_pw)
 
     tab_manager = tabs.TabManager(vertical_pw)
-    vertical_pw.add(tab_manager)
+    vertical_pw.add(tab_manager, stretch='always')
 
     _global_state = _State(
         root=root,

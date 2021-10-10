@@ -13,7 +13,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable
 
-from porcupine import get_tab_manager, images, textutils, utils
+from porcupine import get_tab_manager, images, textutils, utils, get_vertical_panedwindow
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -75,6 +75,8 @@ class NoTerminalRunner:
         threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
 
     def _runner_thread(self, cwd: Path, command: str) -> None:
+        self.kill_process()
+
         process: subprocess.Popen[bytes] | None = None
 
         def emit_message(msg: tuple[str, str]) -> None:
@@ -142,37 +144,31 @@ class NoTerminalRunner:
 
         self.textwidget.after(100, self._queue_handler)
 
-    def destroy(self, junk: object = None) -> None:
-        self.textwidget.destroy()
-
-        # Saving self._running_process to local var avoids race condition and
-        # makes mypy happy.
+    def kill_process(self):
+        # saving to local var avoids race condition and makes mypy happy
+        # TODO: still possible for two threads to kill
         process = self._running_process
         if process is not None:
             process.kill()
+            self._running_process = None
 
 
-# keys are tkinter widget paths from str(tab), they identify tabs uniquely
-_no_terminal_runners: dict[str, NoTerminalRunner] = {}
+runner: NoTerminalRunner | None = None
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
+    global runner
     log.info(f"Running {command} in {cwd}")
+    if runner is None:
+        runner = NoTerminalRunner(get_vertical_panedwindow())
+        get_vertical_panedwindow().add(runner.textwidget, after=get_tab_manager(), stretch='never')
 
-    tab = get_tab_manager().select()
-    assert tab is not None
-
-    try:
-        runner = _no_terminal_runners[str(tab)]
-    except KeyError:
-        runner = NoTerminalRunner(tab.bottom_frame)
-        _no_terminal_runners[str(tab)] = runner
-
-        # TODO: can this also be ran when tab is closed?
         def on_close(event: tkinter.Event[tkinter.Misc]) -> None:
-            runner.destroy()
-            del _no_terminal_runners[str(tab)]
+            global runner
+            runner.textwidget.destroy()
+            runner.kill_process()
+            runner = None
 
         closebutton = tkinter.Label(
             runner.textwidget, image=images.get("closebutton"), cursor="hand2"
@@ -180,5 +176,4 @@ def run_command(command: str, cwd: Path) -> None:
         closebutton.bind("<Button-1>", on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor="ne")
 
-    runner.textwidget.pack(side="top", fill="x")
     runner.run_command(cwd, command)
