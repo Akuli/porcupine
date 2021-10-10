@@ -148,7 +148,6 @@ class NoTerminalRunner:
         process = self._running_process
         if process is not None:
             process.kill()
-            self._running_process = None
 
 
 runner: NoTerminalRunner | None = None
