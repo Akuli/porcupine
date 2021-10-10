@@ -156,13 +156,12 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, 
     )
 
 
-def test_invalid_return(filetab, tabmanager, mocker, caplog):
+def test_invalid_return(filetab, tabmanager, mocker, caplog, dont_run_in_thread):
     mocker.patch("tkinter.messagebox.showerror")
     mocker.patch("porcupine.plugins.pastebin.DPaste.run").return_value = "lol"
 
     tabmanager.select(filetab)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
-    get_main_window().update()
 
     tkinter.messagebox.showerror.assert_called_once_with(
         "Pasting failed", "Instead of a valid URL, dpaste.com returned 'lol'."
