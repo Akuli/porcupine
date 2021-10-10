@@ -97,14 +97,7 @@ class _Popup:
         self._textwidget = textwidget
         self._completion_list: list[Completion] | None = None
 
-        # from tkinter/ttk.py:
-        #
-        #   PanedWindow = Panedwindow # tkinter name compatibility
-        #
-        # I'm using Panedwindow here in case the PanedWindow alias is deleted
-        # in a future version of python.
-        self._panedwindow = ttk.Panedwindow(self._textwidget, orient="horizontal")
-        settings.remember_divider_positions(self._panedwindow, "autocomplete_dividers", [200])
+        self._panedwindow = utils.PanedWindow(self._textwidget, orient="horizontal")
 
         normal_cursor = self._textwidget["cursor"]
         self._panedwindow.bind(
@@ -118,6 +111,7 @@ class _Popup:
         right_pane = ttk.Frame(self._panedwindow)
         self._panedwindow.add(left_pane)
         self._panedwindow.add(right_pane)
+        settings.remember_pane_size(self._panedwindow, left_pane, "autocomplete_popup_divider", 200)
 
         self.treeview = ttk.Treeview(left_pane, show="tree", selectmode="browse")
         self.treeview.bind("<Motion>", self._on_mouse_move, add=True)

@@ -18,7 +18,7 @@ import dacite
 from pygments import styles
 
 import porcupine
-from porcupine import dirs, images
+from porcupine import dirs, images, utils
 
 _log = logging.getLogger(__name__)
 
@@ -732,43 +732,27 @@ def add_label(text: str) -> ttk.Label:
 
 
 # TODO: document this
-def remember_divider_positions(
-    panedwindow: ttk.Panedwindow, option_name: str, defaults: list[int]
+def remember_pane_size(
+    panedwindow: utils.PanedWindow, pane: tkinter.Misc, option_name: str, default_size: int
 ) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
-    add_option(option_name, defaults, List[int], exist_ok=True)
+    add_option(option_name, default_size, int, exist_ok=True)
 
-    def settings2panedwindow(junk: object = None) -> None:
-        value = get(option_name, List[int])
-        pane_count = len(panedwindow.panes())
+    assert panedwindow["orient"] == "horizontal"  # TODO
 
-        if len(value) == pane_count - 1:
-            _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
-            # Prevent funny bug with invisible panes becoming huge
-            #
-            # TODO: figure out how to handle panes other than first pane
-            #       (need to know width of the dragging handle?)
-            if value and value[0] == 0:
-                value[0] = 1
+    def settings_to_gui(junk: object = None) -> None:
+        panedwindow.paneconfig(pane, width=get(option_name, int))
 
-            for index, pos in enumerate(value):
-                panedwindow.sashpos(index, pos)
-        else:
-            # number of panes can change if e.g. a plugin is enabled/disabled
-            _log.info(
-                f"{option_name} is set to {value}, of length {len(value)}, "
-                f"but there are {pane_count} panes"
-            )
+    def gui_to_settings() -> None:
+        set_(option_name, pane.winfo_width())
 
-    def panedwindow2settings(junk: object) -> None:
-        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
+    settings_to_gui()
+    pane.bind("<Map>", settings_to_gui, add=True)
 
-    # don't know why after_idle is needed, but it is
+    # after_idle helps with accuracy if you move mouse really fast
     panedwindow.bind(
-        "<Map>", (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True
+        "<ButtonRelease-1>", (lambda e: panedwindow.after_idle(gui_to_settings)), add=True
     )
-    panedwindow.bind("<<DividersFromSettings>>", settings2panedwindow, add=True)
-    panedwindow.bind("<ButtonRelease-1>", panedwindow2settings, add=True)
 
 
 def _is_monospace(font_family: str) -> bool:
