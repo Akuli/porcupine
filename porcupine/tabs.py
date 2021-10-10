@@ -141,15 +141,6 @@ class TabManager(ttk.Notebook):
         """
         # Add tab before loading content, so that editorconfig plugin gets a
         # chance to set the encoding into tab.settings
-        if path.stat().st_size > 512_000_000 and not messagebox.askyesno(
-            "File is huge",
-            "Uhh, this file is insanely huge!\nAre you sure you want to open it? ",
-            detail=(
-                "This file is larger than 512MB. If you open it Porcupine may slow down or crash"
-                " completely. Open it only if you have enough RAM for it."
-            ),
-        ):
-            return None
         tab = FileTab(self, path=path)
         existing_tab = self.add_tab(tab)
         if existing_tab != tab:
@@ -642,6 +633,15 @@ class FileTab(Tab):
         .. seealso:: :meth:`TabManager.open_file`, :meth:`other_program_changed_file`
         """
         assert self.path is not None
+        if self.path.stat().st_size > 1_000_000 and not messagebox.askyesno(
+            "Open big file",
+            "Uhh, this file is huge!\nAre you sure you want to open it? ",
+            detail=(
+                "This file is larger than 1MB. If you open it, Porcupine may slow down or crash"
+                " completely. Open it only if you have enough RAM for it."
+            ),
+        ):
+            return False
 
         # Disable text widget so user can't type into it during load
         assert self.textwidget["state"] == "normal"
