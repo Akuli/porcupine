@@ -5,7 +5,6 @@ import logging
 import os
 import tkinter
 import types
-from tkinter import ttk
 from typing import Any, Type
 
 from porcupine import tabs, utils
