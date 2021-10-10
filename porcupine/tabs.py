@@ -653,8 +653,8 @@ class FileTab(Tab):
                     log.exception(f"opening '{self.path}' failed")
                     wanna_retry = messagebox.askretrycancel(
                         "Opening failed",
-                        f"{type(e).__name__}: {e}\n\n"
-                        + "Make sure that the file exists and try again.",
+                        f"{type(e).__name__}: {e}"
+                        detail="Make sure that the file exists and try again.",
                     )
                     if wanna_retry:
                         continue
@@ -837,8 +837,8 @@ class FileTab(Tab):
                 log.exception(f"saving to '{path}' failed")
                 messagebox.showerror(
                     "Saving failed",
-                    f"{type(e).__name__}: {e}\n\n"
-                    + "Make sure that the file is writable and try again.",
+                    f"{type(e).__name__}: {e}"
+                    detail="Make sure that the file is writable and try again.",
                 )
 
             # If we get here, error message was shown
