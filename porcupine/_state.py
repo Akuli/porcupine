@@ -101,7 +101,6 @@ def get_vertical_panedwindow() -> utils.PanedWindow:
     return _get_state().vertical_panedwindow
 
 
-# TODO: is this function really needed, get_main_window().destroy() not enough?
 def quit() -> None:
     """
     Calling this function is equivalent to clicking the X button in the
@@ -119,7 +118,7 @@ def quit() -> None:
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    get_main_window().event_generate("<<PorcupineQuit>>")
+    get_main_window().event_generate("<<PorcupineQuit>>")  # TODO: still needed?
     for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)
     get_main_window().destroy()
