@@ -145,7 +145,7 @@ class NoTerminalRunner:
         self.textwidget.after(100, self._queue_handler)
 
     def kill_process(self):
-        # saving to local var avoids race condition and makes mypy happy
+        # saving to local var avoids race condition
         # TODO: still possible for two threads to kill
         process = self._running_process
         if process is not None:
