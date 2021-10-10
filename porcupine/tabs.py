@@ -141,6 +141,15 @@ class TabManager(ttk.Notebook):
         """
         # Add tab before loading content, so that editorconfig plugin gets a
         # chance to set the encoding into tab.settings
+        if path.stat().st_size > 512_000_000 and not messagebox.askyesno(
+            "File is huge",
+            "Uhh, this file is insanely huge!\nAre you sure you want to open it? ",
+            detail=(
+                "This file is larger than 512MB. If you open it Porcupine may slow down or crash"
+                " completely. Open it only if you have enough RAM for it."
+            ),
+        ):
+            return None
         tab = FileTab(self, path=path)
         existing_tab = self.add_tab(tab)
         if existing_tab != tab:
