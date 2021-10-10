@@ -42,7 +42,7 @@ class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
         self.textwidget = create_passive_text_widget(
-            master, font="TkFixedFont", height=12, is_focusable=True, name="run_output"
+            master, font="TkFixedFont", is_focusable=True, name="run_output"
         )
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
