@@ -136,7 +136,7 @@ time.sleep(10)
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output(filetab))
     end = time.monotonic()
-    assert end - start < 5
+    assert end - start < 8
 
 
 def test_changing_current_file(filetab, tmp_path, wait_until):
