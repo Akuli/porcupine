@@ -173,12 +173,11 @@ def rename(old_path: Path) -> None:
 
 
 def paste(new_path: Path) -> None:
-    paste_here(new_path.parent)
-
-
-def paste_here(new_path: Path) -> None:
     global paste_state
     assert paste_state is not None
+
+    if not new_path.is_dir():
+        new_path = new_path.parent
 
     new_file_path = new_path / paste_state.path.name
 
@@ -197,6 +196,9 @@ def paste_here(new_path: Path) -> None:
 
     if paste_state.is_cut:
         shutil.move(str(paste_state.path), str(new_file_path))
+        for tab in find_tabs_by_parent_path(paste_state.path):
+            assert tab.path is not None
+            tab.path = new_file_path
         paste_state = None
     else:
         shutil.copy(paste_state.path, new_file_path)
@@ -309,16 +311,8 @@ def is_NOT_project_root(path: Path) -> bool:
     return path not in map(get_path, get_directory_tree().get_children())
 
 
-def is_paste_state_valid() -> bool:
-    return paste_state is not None and paste_state.path.is_file()
-
-
 def can_paste(path: Path) -> bool:
-    return is_NOT_project_root(path) and can_paste_here(path.parent)
-
-
-def can_paste_here(path: Path) -> bool:
-    return is_paste_state_valid() and path.is_dir()
+    return paste_state is not None and paste_state.path.is_file()
 
 
 commands = [
@@ -328,7 +322,6 @@ commands = [
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
-    Command("Paste here", None, can_paste_here, paste_here),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
