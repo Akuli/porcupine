@@ -151,30 +151,31 @@ class NoTerminalRunner:
 
     # This method has a couple race conditions but works well enough in practice
     def kill_process(self):
-        if self._running_process is not None:
-            shell = self._running_process
-            self._running_process = None
+        if self._running_process is None:
+            return
+        shell = self._running_process
+        self._running_process = None
 
+        try:
+            # is the shell alive?
+            shell.wait(timeout=0)
+        except subprocess.TimeoutExpired:
+            # yes, it is alive
+            #
+            # If we kill the shell, its child processes will keep running,
+            # but they will reparent to pid 1 so we can no longer get a
+            # list of them.
             try:
-                # is the shell alive?
-                shell.wait(timeout=0)
-            except subprocess.TimeoutExpired:
-                # yes, it is alive
-                #
-                # If we kill the shell, its child processes will keep running,
-                # but they will reparent to pid 1 so we can no longer get a
-                # list of them.
-                try:
-                    children = psutil.Process(shell.pid).children()
-                except psutil.NoSuchProcess:
-                    # Would run if shell dies after asking if it's alive.
-                    # Don't know if this ever runs in practice, but there's
-                    # similar code in langserver plugin and it runs sometimes.
-                    return
-                shell.kill()
-                for child in children:
-                    child.kill()
-                self._running_process = None
+                children = psutil.Process(shell.pid).children()
+            except psutil.NoSuchProcess:
+                # Would run if shell dies after asking if it's alive.
+                # Don't know if this ever runs in practice, but there's
+                # similar code in langserver plugin and it runs sometimes.
+                return
+            shell.kill()
+            for child in children:
+                child.kill()
+            self._running_process = None
 
 
 runner: NoTerminalRunner | None = None
