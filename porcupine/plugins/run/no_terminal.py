@@ -125,10 +125,11 @@ class Executor:
                 else:
                     self._textwidget.insert("end", text, [tag])
                     # Add links to full lines
-                    for lineno_offset in range(text.count("\n")):
-                        line_start = f"end - 1 char - {lineno_offset + 1} lines"
-                        line_end = f"end - 1 char - {lineno_offset} lines"
-                        self._link_manager.add_links(line_start, line_end)
+                    linked_line_count = text.count("\n")
+                    self._link_manager.add_links(
+                        start=f"end - 1 char linestart - {linked_line_count} lines",
+                        end="end - 1 char linestart",
+                    )
 
             self._textwidget.config(state="disabled")
 
