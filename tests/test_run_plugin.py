@@ -2,13 +2,12 @@ import os
 import shutil
 import sys
 import time
-from tkinter import ttk
 from typing import Any, List
 
 import pytest
 
 from porcupine import get_main_window, get_tab_manager, utils
-from porcupine.plugins.run import dialog, history, no_terminal, settings, terminal
+from porcupine.plugins.run import dialog, no_terminal, settings, terminal
 
 
 @pytest.fixture(autouse=True)
@@ -49,7 +48,7 @@ def get_output():
     return no_terminal.runner.textwidget.get("1.0", "end - 1 char")
 
 
-def test_unicodes(filetab, tmp_path, wait_until):
+def test_output_in_porcupine_window(filetab, tmp_path, wait_until):
     filetab.textwidget.insert(
         "end",
         r"""
@@ -79,38 +78,6 @@ if sys.platform != "win32":
         assert get_output().count("\N{replacement character}") == 1
     else:
         assert get_output().count("\N{replacement character}") == 2
-
-
-def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_until):
-    (tmp_path / "a.py").write_text("print('aaa')")
-    (tmp_path / "b.py").write_text("print('bbb')")
-    a = tabmanager.open_file(tmp_path / "a.py")
-    b = tabmanager.open_file(tmp_path / "b.py")
-
-    def fake_wait_window(toplevel):
-        # click run button (lol)
-        widgets = [toplevel]
-        while True:
-            w = widgets.pop()
-            if isinstance(w, ttk.Button) and w["text"] == "Run":
-                w.invoke()
-                break
-            widgets.extend(w.winfo_children())
-
-        toplevel.destroy()
-
-    suggestions = history.get(a, tmp_path, 0)
-    suggestions[0].external_terminal = False
-    mocker.patch("porcupine.plugins.run.history.get").return_value = suggestions
-    monkeypatch.setattr("tkinter.Toplevel.wait_window", fake_wait_window)
-
-    tabmanager.select(a)
-    get_main_window().event_generate("<<Run:AskAndRun0>>")
-    wait_until(lambda: "aaa" in get_output())
-
-    tabmanager.select(b)
-    get_main_window().event_generate("<<Run:Repeat0>>")
-    wait_until(lambda: "bbb" in get_output())
 
 
 def click_last_link(filetab):
