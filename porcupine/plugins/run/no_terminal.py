@@ -154,12 +154,7 @@ class NoTerminalRunner:
         shell = self._running_process
         self._running_process = None
 
-        try:
-            # is the shell alive?
-            shell.wait(timeout=0)
-        except subprocess.TimeoutExpired:
-            # yes, it is alive
-            #
+        if shell.poll() is None:  # if shell still alive
             # If we kill the shell, its child processes will keep running,
             # but they will reparent to pid 1 so we can no longer get a
             # list of them.
