@@ -55,7 +55,7 @@ class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
         self.textwidget = create_passive_text_widget(
-            master, font="TkFixedFont", is_focusable=True, name="run_output"
+            master, font="TkFixedFont", is_focusable=True, name="run_output", wrap="char"
         )
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
@@ -86,13 +86,23 @@ class NoTerminalRunner:
     def run_command(self, cwd: Path, command: str) -> None:
         self._cwd = cwd
 
+        env = dict(os.environ)
+        env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
+
+        self.textwidget.update()
+        width, height = textutils.textwidget_size(self.textwidget)
+
+        font = tkinter.font.Font(name="TkFixedFont", exists=True)
+        env["COLUMNS"] = str(width // font.measure("a"))
+        env["LINES"] = str(height // font.metrics("linespace"))
+
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
         threading.Thread(
-            target=self._runner_thread, args=[cwd, command, self.run_id], daemon=True
+            target=self._runner_thread, args=[cwd, command, env, self.run_id], daemon=True
         ).start()
 
-    def _runner_thread(self, cwd: Path, command: str, run_id: int) -> None:
+    def _runner_thread(self, cwd: Path, command: str, env: dict[str, str], run_id: int) -> None:
         process: subprocess.Popen[bytes] | None = None
 
         def emit_message(msg: tuple[str, str]) -> None:
@@ -100,9 +110,6 @@ class NoTerminalRunner:
                 self._output_queue.put(msg)
 
         emit_message(("info", command + "\n"))
-
-        env = dict(os.environ)
-        env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
 
         try:
             process = subprocess.Popen(
