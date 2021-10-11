@@ -94,9 +94,12 @@ class Executor:
             return
 
         assert self._shell_process.stdout is not None
-        for bytez in self._shell_process.stdout:
-            line = bytez.decode(locale.getpreferredencoding(), errors="replace")
-            self._queue.put(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
+        while True:
+            bytez = self._shell_process.stdout.read1()  # type: ignore
+            if not bytez:
+                break
+            text = bytez.decode(locale.getpreferredencoding(), errors="replace")
+            self._queue.put(("output", utils.tkinter_safe_string(text).replace(os.linesep, "\n")))
 
         status = self._shell_process.wait()
         if status == 0:
@@ -115,12 +118,19 @@ class Executor:
 
         if messages:
             self._textwidget.config(state="normal")
-            for tag, output_line in messages:
+            for tag, text in messages:
                 if tag == "end":
-                    assert not output_line
+                    assert not text
                     get_tab_manager().event_generate("<<FileSystemChanged>>")
                 else:
-                    self._link_manager.append_text(output_line, [tag])
+                    self._textwidget.insert("end", text, [tag])
+                    # Add links to full lines
+                    linked_line_count = text.count("\n")
+                    self._link_manager.add_links(
+                        start=f"end - 1 char linestart - {linked_line_count} lines",
+                        end="end - 1 char linestart",
+                    )
+
             self._textwidget.config(state="disabled")
 
         self._timeout_id = self._textwidget.after(100, self._queue_handler)
