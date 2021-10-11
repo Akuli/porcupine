@@ -51,6 +51,114 @@ def open_file_with_line_number(path: Path, lineno: int) -> None:
         tab.textwidget.tag_add("sel", "insert", "insert lineend")
 
 
+class Executor:
+
+    def __init__(self, cwd: Path, textwidget: tkinter.Text, link_manager: textutils.LinkManager):
+        self.cwd = cwd
+        self._textwidget = textwidget
+        self._link_manager = link_manager
+
+        self.killed = False
+        self._shell_process: subprocess.Popen[bytes] | None = None
+        self._queue: queue.Queue[tuple[str, str]] = queue.Queue()
+        self._timeout_id: str | None = None
+
+    def run(self, command: str, )->None:
+        threading.Thread(target=self._thread_target, args=[command], daemon=True).start()
+        self._queue_handler()
+
+    def _thread_target(self, command: str) -> None:
+        self._queue.put(("info", command + "\n"))
+
+        env = dict(os.environ)
+        env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
+        try:
+            self._shell_process = subprocess.Popen(
+                command,
+                cwd=self.cwd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                env=env,
+                **utils.subprocess_kwargs,
+            )
+        except OSError as e:
+            self._queue.put(("error", f"{type(e).__name__}: {e}\n"))
+            log.debug("here's full traceback", exc_info=True)
+            return
+
+        assert self._shell_process.stdout is not None
+        for bytez in self._shell_process.stdout:
+            line = bytez.decode(locale.getpreferredencoding(), errors="replace")
+            self._queue.put(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
+        self._shell_process.communicate()  # make sure self._shell_process.returncode is set
+
+        if self._shell_process.returncode == 0:
+            # can't do succeeded_callback() here because this is running
+            # in a thread and succeeded_callback() does tkinter stuff
+            self._queue.put(("info", "The process completed successfully."))
+        else:
+            self._queue.put(("error", f"The process failed with status {self._shell_process.returncode}."))
+        self._queue.put(("end", ""))
+
+    def _queue_handler(self) -> None:
+        if self.killed:
+            return
+
+        messages: list[tuple[str, str]] = []
+        while True:
+            try:
+                messages.append(self._queue.get(block=False))
+            except queue.Empty:
+                break
+
+        if messages:
+            self._textwidget.config(state="normal")
+            for tag, output_line in messages:
+                if tag == "end":
+                    assert not output_line
+                    get_tab_manager().event_generate("<<FileSystemChanged>>")
+                else:
+                    self._link_manager.append_text(output_line, [tag])
+            self._textwidget.config(state="disabled")
+
+        self._timeout_id = self._textwidget.after(100, self._queue_handler)
+
+    def stop(self, *, quitting: bool = False) -> None:
+        if self._timeout_id is not None:
+            self._textwidget.after_cancel(self._timeout_id)
+            self._timeout_id = None
+
+        if self._shell_process is None:
+            return
+
+        if self._shell_process.poll() is None:  # if shell still alive
+            # On non-windows we can stop the shell so that it can't spawn more children
+            # On windows there is a race condition
+            if sys.platform != "win32":
+                self._shell_process.send_signal(signal.SIGSTOP)
+
+            # If we kill the shell, its child processes will keep running,
+            # but they will reparent to pid 1 so we can no longer get a
+            # list of them.
+            try:
+                children = psutil.Process(self._shell_process.pid).children()
+            except psutil.NoSuchProcess:
+                # Would run if shell dies after asking if it's alive.
+                # Don't know if this ever runs in practice, but there's
+                # similar code in langserver plugin and it runs sometimes.
+                return
+            self._shell_process.kill()  # Do not create more children
+            for child in children:
+                try:
+                    child.kill()
+                except psutil.NoSuchProcess:  # child already died
+                    pass
+
+        if not quitting:
+            get_tab_manager().event_generate("<<FileSystemChanged>>")
+
+
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
@@ -60,141 +168,38 @@ class NoTerminalRunner:
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
         self.textwidget.tag_config("error", foreground="red")
-        self.textwidget.bind("<Destroy>", (lambda e: self.kill_process()), add=True)
+        self.textwidget.bind("<Destroy>", self._stop_executor, add=True)
 
-        self._cwd: Path | None = None  # can't pass data to callbacks when adding link
         self._link_manager = textutils.LinkManager(
             self.textwidget, filename_regex, self._get_link_opener
         )
         self.textwidget.tag_config("link", underline=True)
+        self.executor: Executor | None = None
 
-        self._output_queue: queue.Queue[tuple[int, str, str]] = queue.Queue()
-        self._running_process: subprocess.Popen[bytes] | None = None
-        self._running_process_lock = threading.RLock()
-        self.run_id = 0
-        self._queue_handler()
+    def _stop_executor(self, junk_event: object) -> None:
+        if self.executor is not None:
+            self.executor.stop(quitting=True)
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
-        assert self._cwd is not None
+        assert self.executor is not None
 
         filename, lineno = (value for value in match.groups() if value is not None)
-        path = self._cwd / filename  # doesn't use cwd if filename is absolute
+        path = self.executor.cwd / filename  # doesn't use cwd if filename is absolute
         if not path.is_file():
             return None
         return partial(open_file_with_line_number, path, int(lineno))
 
     def run_command(self, cwd: Path, command: str) -> None:
-        self._cwd = cwd
+        if self.executor is not None:
+            self.executor.stop()
 
-        with self._running_process_lock:
-            threading.Thread(
-                name=f"run-no-terminal-{self.run_id}",
-                target=self._runner_thread,
-                args=[cwd, command, self.run_id],
-            ).start()
-
-    def _runner_thread(self, cwd: Path, command: str, run_id: int) -> None:
-        with self._running_process_lock:
-            process: subprocess.Popen[bytes] | None = None
-
-            def emit_message(msg: tuple[str, str]) -> None:
-                self._output_queue.put((run_id,) + msg)
-
-            emit_message(("info", command + "\n"))
-
-            env = dict(os.environ)
-            env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
-
-            try:
-                process = subprocess.Popen(
-                    command,
-                    cwd=cwd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    shell=True,
-                    env=env,
-                    **utils.subprocess_kwargs,
-                )
-            except OSError as e:
-                emit_message(("error", f"{type(e).__name__}: {e}\n"))
-                log.debug("here's full traceback", exc_info=True)
-                return
-
-            assert self._running_process is None  # TODO: can this fail?
-            self._running_process = process
-
-        assert process.stdout is not None
-        for bytez in process.stdout:
-            line = bytez.decode(locale.getpreferredencoding(), errors="replace")
-            emit_message(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
-        process.communicate()  # make sure process.returncode is set
-
-        if process.returncode == 0:
-            # can't do succeeded_callback() here because this is running
-            # in a thread and succeeded_callback() does tkinter stuff
-            emit_message(("info", "The process completed successfully."))
-        else:
-            emit_message(("error", f"The process failed with status {process.returncode}."))
-        emit_message(("end", ""))
-
-    def _queue_handler(self) -> None:
-        messages: list[tuple[int, str, str]] = []
-        while True:
-            try:
-                messages.append(self._output_queue.get(block=False))
-            except queue.Empty:
-                break
-
-        if messages:
-            self.textwidget.config(state="normal")
-            for run_id, tag, output_line in messages:
-                if run_id != self.run_id:
-                    continue
-                if tag == "end":
-                    assert not output_line
-                    get_tab_manager().event_generate("<<FileSystemChanged>>")
-                else:
-                    self._link_manager.append_text(output_line, [tag])
-            self.textwidget.config(state="disabled")
-
-        self.textwidget.after(100, self._queue_handler)
-
-    def clear(self) -> None:
         self.textwidget.config(state="normal")
         self.textwidget.delete("1.0", "end")
         self.textwidget.config(state="disabled")
         self._link_manager.delete_all_links()  # prevent memory leak
 
-    # This method has a couple race conditions but works well enough in practice
-    def kill_process(self) -> None:
-        with self._running_process_lock:
-            if self._running_process is None:
-                return
-            shell = self._running_process
-            self._running_process = None
-
-        if shell.poll() is None:  # if shell still alive
-            # On non-windows we can stop the shell so that it can't spawn more children
-            # On windows there is a race condition
-            if sys.platform != "win32":
-                shell.send_signal(signal.SIGSTOP)
-
-            # If we kill the shell, its child processes will keep running,
-            # but they will reparent to pid 1 so we can no longer get a
-            # list of them.
-            try:
-                children = psutil.Process(shell.pid).children()
-            except psutil.NoSuchProcess:
-                # Would run if shell dies after asking if it's alive.
-                # Don't know if this ever runs in practice, but there's
-                # similar code in langserver plugin and it runs sometimes.
-                return
-            shell.kill()  # Do not create more children
-            for child in children:
-                try:
-                    child.kill()
-                except psutil.NoSuchProcess:  # child already died
-                    pass
+        self.executor = Executor(cwd, self.textwidget, self._link_manager)
+        self.executor.run(command)
 
 
 runner: NoTerminalRunner | None = None
@@ -202,6 +207,7 @@ runner: NoTerminalRunner | None = None
 
 def setup() -> None:
     global runner
+    assert runner is None
     runner = NoTerminalRunner(get_vertical_panedwindow())
     get_vertical_panedwindow().add(
         runner.textwidget, after=get_tab_manager(), stretch="never", hide=True
@@ -227,7 +233,4 @@ def run_command(command: str, cwd: Path) -> None:
     log.info(f"Running {command} in {cwd}")
     assert runner is not None
     get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=False)
-    runner.run_id += 1
-    runner.clear()
-    runner.kill_process()
     runner.run_command(cwd, command)
