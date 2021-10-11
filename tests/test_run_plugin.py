@@ -97,8 +97,6 @@ def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_
                 break
             widgets.extend(w.winfo_children())
 
-        toplevel.destroy()
-
     suggestions = history.get(a, tmp_path, 0)
     suggestions[0].external_terminal = False
     mocker.patch("porcupine.plugins.run.history.get").return_value = suggestions
