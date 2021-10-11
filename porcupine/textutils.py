@@ -6,7 +6,7 @@ import re
 import tkinter
 import weakref
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Sequence, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, overload
 
 from pygments import styles
 
