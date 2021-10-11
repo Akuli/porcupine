@@ -83,7 +83,6 @@ class NoTerminalRunner:
                 return
             self._output_queue.put(msg)
 
-        emit_message(("start", ""))
         emit_message(("info", command + "\n"))
 
         env = dict(os.environ)
@@ -129,11 +128,7 @@ class NoTerminalRunner:
         if messages:
             self.textwidget.config(state="normal")
             for tag, output_line in messages:
-                if tag == "start":
-                    assert not output_line
-                    self.textwidget.delete("1.0", "end")
-                    self._link_manager.delete_all_links()  # prevent memory leak
-                elif tag == "end":
+                if tag == "end":
                     assert not output_line
                     get_tab_manager().event_generate("<<FileSystemChanged>>")
                 else:
@@ -148,6 +143,11 @@ class NoTerminalRunner:
         process = self._running_process
         if process is not None:
             process.kill()
+
+    def clear(self) -> None:
+        self.kill_process()
+        self._running_process = None
+        self.textwidget.delete("1.0", "end")
 
 
 runner: NoTerminalRunner | None = None
@@ -177,5 +177,5 @@ def run_command(command: str, cwd: Path) -> None:
         closebutton.bind("<Button-1>", on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor="ne")
 
-    runner.textwidget.delete("1.0", "end")
+    runner.clear()
     runner.run_command(cwd, command)

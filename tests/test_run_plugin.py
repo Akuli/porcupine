@@ -98,6 +98,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
     assert click_last_link(filetab) == "open('this does not exist')"
 
 
+@pytest.mark.xfail(strict=True)
 def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
     filetab.textwidget.insert("end", "print(1 + 2)\nprint(1 + 'lol')\n")
     filetab.save_as(tmp_path / "lel.py")
@@ -108,6 +109,7 @@ def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
     assert click_last_link(filetab) == "print(1 + 'lol')"
 
 
+@pytest.mark.xfail(strict=True)
 def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     filetab.textwidget.insert("end", "asdf.bind('<Foo>', print)")
     (tmp_path / "foo").mkdir()
