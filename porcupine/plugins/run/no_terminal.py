@@ -180,7 +180,7 @@ runner: NoTerminalRunner | None = None
 
 
 @atexit.register
-def _kill_process_when_quitting_porcupine():
+def _kill_process_when_quitting_porcupine() -> None:
     if runner is not None:
         runner.kill_process()
 
