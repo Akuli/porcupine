@@ -84,7 +84,7 @@ class NoTerminalRunner:
         width, height = textutils.textwidget_size(self.textwidget)
 
         font = tkinter.font.Font(name="TkFixedFont", exists=True)
-        env["COLUMNS"] = str(width // font.measure('a'))
+        env["COLUMNS"] = str(width // font.measure("a"))
         env["LINES"] = str(height // font.metrics("linespace"))
 
         # this is a daemon thread because i don't care what the fuck
