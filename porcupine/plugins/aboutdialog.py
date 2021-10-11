@@ -50,9 +50,8 @@ def show_about_dialog() -> None:
     textwidget.pack(fill="both", expand=True, padx=5, pady=5)
 
     textwidget.config(state="normal")
-    textutils.LinkManager(
-        textwidget, r"\[(.+?)\]\((.*?)\)", get_link_opener, get_text=(lambda m: m.group(1))
-    ).append_text(
+    textwidget.insert(
+        "end",
         f"""\
 Porcupine is a simple but powerful and configurable text editor written in \
 Python using the notorious tkinter GUI library. It started as a \
@@ -74,8 +73,20 @@ LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/maste
 
 Porcupine is installed to [{Path(__file__).absolute().parent.parent.parent}]().
 You can install plugins to [{plugins.__path__[0]}]().
-"""
+""",
     )
+
+    regex = r"\[(.+?)\]\((.*?)\)"
+    manager = textutils.LinkManager(textwidget, regex, get_link_opener)
+    manager.add_links("1.0", "end")
+
+    ranges = textwidget.tag_ranges("link")
+    for start, end in reversed(list(zip(ranges[0::2], ranges[1::2]))):
+        match = re.fullmatch(regex, textwidget.get(start, end))
+        assert match
+        print(start, end, match.group(1))
+        textwidget.replace(start, end, match.group(1), textwidget.tag_names(start))
+
     textwidget.config(state="disabled")
 
     if utils.is_bright(textwidget["bg"]):

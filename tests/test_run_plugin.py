@@ -135,6 +135,21 @@ time.sleep(10)
     assert end - start < 8
 
 
+def test_not_line_buffered(filetab, tmp_path, wait_until):
+    (tmp_path / "sleeper.py").write_text(
+        """
+import time
+print("This should show up immediately", end="", flush=True)
+time.sleep(10)
+"""
+    )
+    start = time.monotonic()
+    no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
+    wait_until(lambda: "This should show up immediately" in get_output())
+    end = time.monotonic()
+    assert end - start < 8
+
+
 def test_changing_current_file(filetab, tmp_path, wait_until):
     filetab.textwidget.insert("end", 'with open("foo.py", "w") as f: f.write("lol")')
     filetab.save_as(tmp_path / "foo.py")

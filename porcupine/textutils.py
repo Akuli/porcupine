@@ -552,12 +552,9 @@ class LinkManager:
         textwidget: tkinter.Text,
         link_regex: str,
         get_click_callback: Callable[[re.Match[str]], Callable[[], object] | None],
-        *,
-        get_text: Callable[[re.Match[str]], str] = (lambda m: m.group(0)),
     ) -> None:
         self._textwidget = textwidget
         self._link_regex = link_regex
-        self._get_text = get_text
         self._get_click_callback = get_click_callback
 
         self._callbacks: dict[str, Callable[[], object]] = {}
@@ -577,23 +574,21 @@ class LinkManager:
                 self._callbacks[tag]()
                 break
 
-    def append_text(self, text: str, tags: Sequence[str] = ()) -> None:
-        previous_end = 0
-        for match in re.finditer(self._link_regex, text):
+    # Do this to whole lines, parts of lines might not work
+    def add_links(self, start: str, end: str) -> None:
+        for match in re.finditer(self._link_regex, self._textwidget.get(start, end)):
             callback = self._get_click_callback(match)
             if callback is None:
                 continue
 
-            self._textwidget.insert("end", text[previous_end : match.start()], list(tags))
             link_specific_tag = f"link-{len(self._callbacks)}"
             self._callbacks[link_specific_tag] = callback
-            self._textwidget.insert(
-                "end", self._get_text(match), list(tags) + ["link", link_specific_tag]
-            )
 
-            previous_end = match.end()
+            tag_start = f"{start} + {match.start()} chars"
+            tag_end = f"{start} + {match.end()} chars"
 
-        self._textwidget.insert("end", text[previous_end:], list(tags))
+            self._textwidget.tag_add("link", tag_start, tag_end)
+            self._textwidget.tag_add(link_specific_tag, tag_start, tag_end)
 
     def delete_all_links(self) -> None:
         for tag in self._callbacks.keys():
