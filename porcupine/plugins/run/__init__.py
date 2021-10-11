@@ -1,6 +1,7 @@
 """Compile, run and lint files."""
 from __future__ import annotations
 
+import copy
 import sys
 import tkinter
 from functools import partial
@@ -55,15 +56,20 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
 
     project_root = utils.find_project_root(tab.path)
     previous_commands = history.get(tab, project_root, key_id)
-    if previous_commands:
-        run(previous_commands[0], project_root)
-    else:
+    if not previous_commands:
         ask = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")
         repeat = utils.get_binding(f"<<Run:Repeat{key_id}>>")
         messagebox.showerror(
             "No commands to repeat",
             f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
         )
+        return
+
+    substitutions = common.get_substitutions(tab.path, project_root)
+    command = copy.copy(previous_commands[0])
+    command.command = common.format_command(command.command_format, substitutions)
+    command.cwd = str(common.format_cwd(command.cwd_format, substitutions))
+    run(command, project_root)
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
