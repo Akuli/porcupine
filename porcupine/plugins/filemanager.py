@@ -195,9 +195,10 @@ def paste(new_path: Path) -> None:
             return
 
     if paste_state.is_cut:
-        if not close_tabs(find_tabs_by_parent_path(paste_state.path)):
-            return
         shutil.move(str(paste_state.path), str(new_file_path))
+        for tab in find_tabs_by_parent_path(paste_state.path):
+            assert tab.path is not None
+            tab.path = new_file_path
         paste_state = None
     else:
         shutil.copy(paste_state.path, new_file_path)
