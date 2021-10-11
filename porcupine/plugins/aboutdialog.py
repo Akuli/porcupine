@@ -83,7 +83,6 @@ You can install plugins to [{plugins.__path__[0]}]().
     for start, end in reversed(list(zip(ranges[0::2], ranges[1::2]))):
         match = re.fullmatch(regex, textwidget.get(start, end))
         assert match
-        print(start, end, match.group(1))
         textwidget.replace(start, end, match.group(1), textwidget.tag_names(start))
 
     textwidget.config(state="disabled")
