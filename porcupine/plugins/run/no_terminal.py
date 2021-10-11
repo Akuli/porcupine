@@ -1,17 +1,22 @@
 """Run commands within the Porcupine window."""
 from __future__ import annotations
 
+import atexit
 import locale
 import logging
 import os
 import queue
 import re
+import signal
 import subprocess
+import sys
 import threading
 import tkinter
 from functools import partial
 from pathlib import Path
 from typing import Callable
+
+import psutil
 
 from porcupine import get_tab_manager, get_vertical_panedwindow, images, settings, textutils, utils
 from porcupine.textutils import create_passive_text_widget
@@ -56,6 +61,8 @@ class NoTerminalRunner:
 
         self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
+        self._running_process_lock = threading.Lock()
+        self.run_id = 0
         self._queue_handler()
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
@@ -72,25 +79,24 @@ class NoTerminalRunner:
 
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
-        threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
+        threading.Thread(
+            target=self._runner_thread, args=[cwd, command, self.run_id], daemon=True
+        ).start()
 
-    def _runner_thread(self, cwd: Path, command: str) -> None:
+    def _runner_thread(self, cwd: Path, command: str, run_id: int) -> None:
         process: subprocess.Popen[bytes] | None = None
 
         def emit_message(msg: tuple[str, str]) -> None:
-            if process is not None and self._running_process is not process:
-                # another _run_command() is already running
-                return
-            self._output_queue.put(msg)
+            if self.run_id == run_id:
+                self._output_queue.put(msg)
 
-        emit_message(("start", ""))
         emit_message(("info", command + "\n"))
 
         env = dict(os.environ)
         env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
 
         try:
-            process = self._running_process = subprocess.Popen(
+            process = subprocess.Popen(
                 command,
                 cwd=cwd,
                 stdout=subprocess.PIPE,
@@ -103,6 +109,10 @@ class NoTerminalRunner:
             emit_message(("error", f"{type(e).__name__}: {e}\n"))
             log.debug("here's full traceback", exc_info=True)
             return
+
+        with self._running_process_lock:
+            assert self._running_process is None  # TODO: can this fail?
+            self._running_process = process
 
         assert process.stdout is not None
         for bytez in process.stdout:
@@ -129,11 +139,7 @@ class NoTerminalRunner:
         if messages:
             self.textwidget.config(state="normal")
             for tag, output_line in messages:
-                if tag == "start":
-                    assert not output_line
-                    self.textwidget.delete("1.0", "end")
-                    self._link_manager.delete_all_links()  # prevent memory leak
-                elif tag == "end":
+                if tag == "end":
                     assert not output_line
                     get_tab_manager().event_generate("<<FileSystemChanged>>")
                 else:
@@ -142,15 +148,51 @@ class NoTerminalRunner:
 
         self.textwidget.after(100, self._queue_handler)
 
+    def clear(self) -> None:
+        self.textwidget.config(state="normal")
+        self.textwidget.delete("1.0", "end")
+        self.textwidget.config(state="disabled")
+        self._link_manager.delete_all_links()  # prevent memory leak
+
+    # This method has a couple race conditions but works well enough in practice
     def kill_process(self) -> None:
-        # saving to local var avoids race condition
-        # TODO: still possible for two threads to kill
-        process = self._running_process
-        if process is not None:
-            process.kill()
+        with self._running_process_lock:
+            if self._running_process is None:
+                return
+            shell = self._running_process
+            self._running_process = None
+
+        if shell.poll() is None:  # if shell still alive
+            # On non-windows we can stop the shell so that it can't spawn more children
+            # On windows there is a race condition
+            if sys.platform != "win32":
+                shell.send_signal(signal.SIGSTOP)
+
+            # If we kill the shell, its child processes will keep running,
+            # but they will reparent to pid 1 so we can no longer get a
+            # list of them.
+            try:
+                children = psutil.Process(shell.pid).children()
+            except psutil.NoSuchProcess:
+                # Would run if shell dies after asking if it's alive.
+                # Don't know if this ever runs in practice, but there's
+                # similar code in langserver plugin and it runs sometimes.
+                return
+            shell.kill()  # Do not create more children
+            for child in children:
+                try:
+                    child.kill()
+                except psutil.NoSuchProcess:  # child already died
+                    pass
 
 
 runner: NoTerminalRunner | None = None
+
+
+@atexit.register
+def _kill_process_when_quitting_porcupine() -> None:
+    if runner is not None:
+        runner.kill_process()
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
@@ -177,5 +219,7 @@ def run_command(command: str, cwd: Path) -> None:
         closebutton.bind("<Button-1>", on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor="ne")
 
-    runner.textwidget.delete("1.0", "end")
+    runner.run_id += 1
+    runner.kill_process()
+    runner.clear()
     runner.run_command(cwd, command)
