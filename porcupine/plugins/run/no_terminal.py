@@ -58,7 +58,6 @@ class Executor:
         self._textwidget = textwidget
         self._link_manager = link_manager
 
-        self.killed = False
         self._shell_process: subprocess.Popen[bytes] | None = None
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._timeout_id: str | None = None
@@ -102,9 +101,6 @@ class Executor:
         self._queue.put(("end", ""))
 
     def _queue_handler(self) -> None:
-        if self.killed:
-            return
-
         messages: list[tuple[str, str]] = []
         while True:
             try:
