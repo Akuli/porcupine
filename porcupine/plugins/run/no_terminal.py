@@ -7,7 +7,9 @@ import logging
 import os
 import queue
 import re
+import signal
 import subprocess
+import sys
 import threading
 import tkinter
 from functools import partial
@@ -59,6 +61,7 @@ class NoTerminalRunner:
 
         self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
+        self._running_process_lock = threading.Lock()
         self.run_id = 0
         self._queue_handler()
 
@@ -93,7 +96,7 @@ class NoTerminalRunner:
         env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
 
         try:
-            process = self._running_process = subprocess.Popen(
+            process = subprocess.Popen(
                 command,
                 cwd=cwd,
                 stdout=subprocess.PIPE,
@@ -106,6 +109,10 @@ class NoTerminalRunner:
             emit_message(("error", f"{type(e).__name__}: {e}\n"))
             log.debug("here's full traceback", exc_info=True)
             return
+
+        with self._running_process_lock:
+            assert self._running_process is None  # TODO: can this fail?
+            self._running_process = process
 
         assert process.stdout is not None
         for bytez in process.stdout:
@@ -149,12 +156,18 @@ class NoTerminalRunner:
 
     # This method has a couple race conditions but works well enough in practice
     def kill_process(self) -> None:
-        if self._running_process is None:
-            return
-        shell = self._running_process
-        self._running_process = None
+        with self._running_process_lock:
+            if self._running_process is None:
+                return
+            shell = self._running_process
+            self._running_process = None
 
         if shell.poll() is None:  # if shell still alive
+            # On non-windows we can stop the shell so that it can't spawn more children
+            # On windows there is a race condition
+            if sys.platform != "win32":
+                shell.send_signal(signal.SIGSTOP)
+
             # If we kill the shell, its child processes will keep running,
             # but they will reparent to pid 1 so we can no longer get a
             # list of them.
@@ -167,8 +180,10 @@ class NoTerminalRunner:
                 return
             shell.kill()  # Do not create more children
             for child in children:
-                child.kill()
-            self._running_process = None
+                try:
+                    child.kill()
+                except psutil.NoSuchProcess:  # child already died
+                    pass
 
 
 runner: NoTerminalRunner | None = None
