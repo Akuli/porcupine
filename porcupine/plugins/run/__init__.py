@@ -90,3 +90,5 @@ def setup() -> None:
             f"<<Run:AskAndRun{key_id}>>", partial(ask_and_run_command, key_id), add=True
         )
         get_main_window().bind(f"<<Run:Repeat{key_id}>>", partial(repeat_command, key_id), add=True)
+
+    no_terminal.setup()

@@ -1,7 +1,6 @@
 """Run commands within the Porcupine window."""
 from __future__ import annotations
 
-import atexit
 import locale
 import logging
 import os
@@ -14,11 +13,20 @@ import threading
 import tkinter
 from functools import partial
 from pathlib import Path
+from tkinter import ttk
 from typing import Callable
 
 import psutil
 
-from porcupine import get_tab_manager, get_vertical_panedwindow, images, settings, textutils, utils
+from porcupine import (
+    get_tab_manager,
+    get_vertical_panedwindow,
+    images,
+    menubar,
+    settings,
+    textutils,
+    utils,
+)
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -52,6 +60,7 @@ class NoTerminalRunner:
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
         self.textwidget.tag_config("error", foreground="red")
+        self.textwidget.bind("<Destroy>", (lambda e: self.kill_process()), add=True)
 
         self._cwd: Path | None = None  # can't pass data to callbacks when adding link
         self._link_manager = textutils.LinkManager(
@@ -189,36 +198,33 @@ class NoTerminalRunner:
 runner: NoTerminalRunner | None = None
 
 
-@atexit.register
-def _kill_process_when_quitting_porcupine() -> None:
-    if runner is not None:
-        runner.kill_process()
+def setup() -> None:
+    global runner
+    runner = NoTerminalRunner(get_vertical_panedwindow())
+    get_vertical_panedwindow().add(
+        runner.textwidget, after=get_tab_manager(), stretch="never", hide=True
+    )
+    settings.remember_pane_size(
+        get_vertical_panedwindow(), runner.textwidget, "run_command_output_height", 200
+    )
+
+    def toggle_visible(junk_event: object = None) -> None:
+        assert runner is not None
+        is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
+        get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
+
+    closebutton = ttk.Label(runner.textwidget, image=images.get("closebutton"), cursor="hand2")
+    closebutton.place(relx=1, rely=0, anchor="ne")
+    closebutton.bind("<Button-1>", toggle_visible, add=True)
+
+    menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
-    global runner
     log.info(f"Running {command} in {cwd}")
-    if runner is None:
-        runner = NoTerminalRunner(get_vertical_panedwindow())
-        get_vertical_panedwindow().add(runner.textwidget, after=get_tab_manager(), stretch="never")
-        settings.remember_pane_size(
-            get_vertical_panedwindow(), runner.textwidget, "run_command_output_height", 200
-        )
-
-        def on_close(event: tkinter.Event[tkinter.Misc]) -> None:
-            global runner
-            assert runner is not None
-            runner.textwidget.destroy()
-            runner.kill_process()
-            runner = None
-
-        closebutton = tkinter.Label(
-            runner.textwidget, image=images.get("closebutton"), cursor="hand2"
-        )
-        closebutton.bind("<Button-1>", on_close, add=True)
-        closebutton.place(relx=1, rely=0, anchor="ne")
-
+    assert runner is not None
+    get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=False)
     runner.run_id += 1
     runner.kill_process()
     runner.clear()
