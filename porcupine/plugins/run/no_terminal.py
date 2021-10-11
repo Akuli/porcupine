@@ -177,4 +177,5 @@ def run_command(command: str, cwd: Path) -> None:
         closebutton.bind("<Button-1>", on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor="ne")
 
+    runner.textwidget.delete("1.0", "end")
     runner.run_command(cwd, command)
