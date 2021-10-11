@@ -68,9 +68,9 @@ class NoTerminalRunner:
         )
         self.textwidget.tag_config("link", underline=True)
 
-        self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
+        self._output_queue: queue.Queue[tuple[int, str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
-        self._running_process_lock = threading.Lock()
+        self._running_process_lock = threading.RLock()
         self.run_id = 0
         self._queue_handler()
 
@@ -86,40 +86,38 @@ class NoTerminalRunner:
     def run_command(self, cwd: Path, command: str) -> None:
         self._cwd = cwd
 
-        # this is a daemon thread because i don't care what the fuck
-        # happens to it when python exits
-        threading.Thread(
-            target=self._runner_thread, args=[cwd, command, self.run_id], daemon=True
-        ).start()
+        with self._running_process_lock:
+            threading.Thread(
+                name=f"run-no-terminal-{self.run_id}", target=self._runner_thread, args=[cwd, command, self.run_id]
+            ).start()
 
     def _runner_thread(self, cwd: Path, command: str, run_id: int) -> None:
-        process: subprocess.Popen[bytes] | None = None
-
-        def emit_message(msg: tuple[str, str]) -> None:
-            if self.run_id == run_id:
-                self._output_queue.put(msg)
-
-        emit_message(("info", command + "\n"))
-
-        env = dict(os.environ)
-        env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
-
-        try:
-            process = subprocess.Popen(
-                command,
-                cwd=cwd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                shell=True,
-                env=env,
-                **utils.subprocess_kwargs,
-            )
-        except OSError as e:
-            emit_message(("error", f"{type(e).__name__}: {e}\n"))
-            log.debug("here's full traceback", exc_info=True)
-            return
-
         with self._running_process_lock:
+            process: subprocess.Popen[bytes] | None = None
+
+            def emit_message(msg: tuple[str, str]) -> None:
+                self._output_queue.put((run_id,) + msg)
+
+            emit_message(("info", command + "\n"))
+
+            env = dict(os.environ)
+            env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
+
+            try:
+                process = subprocess.Popen(
+                    command,
+                    cwd=cwd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    shell=True,
+                    env=env,
+                    **utils.subprocess_kwargs,
+                )
+            except OSError as e:
+                emit_message(("error", f"{type(e).__name__}: {e}\n"))
+                log.debug("here's full traceback", exc_info=True)
+                return
+
             assert self._running_process is None  # TODO: can this fail?
             self._running_process = process
 
@@ -138,7 +136,7 @@ class NoTerminalRunner:
         emit_message(("end", ""))
 
     def _queue_handler(self) -> None:
-        messages: list[tuple[str, str]] = []
+        messages: list[tuple[int, str, str]] = []
         while True:
             try:
                 messages.append(self._output_queue.get(block=False))
@@ -147,7 +145,9 @@ class NoTerminalRunner:
 
         if messages:
             self.textwidget.config(state="normal")
-            for tag, output_line in messages:
+            for run_id, tag, output_line in messages:
+                if run_id != self.run_id:
+                    continue
                 if tag == "end":
                     assert not output_line
                     get_tab_manager().event_generate("<<FileSystemChanged>>")
@@ -226,6 +226,6 @@ def run_command(command: str, cwd: Path) -> None:
     assert runner is not None
     get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=False)
     runner.run_id += 1
-    runner.kill_process()
     runner.clear()
+    runner.kill_process()
     runner.run_command(cwd, command)
