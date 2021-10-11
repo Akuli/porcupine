@@ -77,8 +77,7 @@ You can install plugins to [{plugins.__path__[0]}]().
     )
 
     regex = r"\[(.+?)\]\((.*?)\)"
-    manager = textutils.LinkManager(textwidget, regex, get_link_opener)
-    manager.add_links("1.0", "end")
+    textutils.LinkManager(textwidget, regex, get_link_opener).add_links("1.0", "end")
 
     ranges = textwidget.tag_ranges("link")
     for start, end in reversed(list(zip(ranges[0::2], ranges[1::2]))):
