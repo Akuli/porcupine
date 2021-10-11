@@ -62,14 +62,22 @@ class Executor:
         self._timeout_id: str | None = None
 
     def run(self, command: str) -> None:
-        threading.Thread(target=self._thread_target, args=[command], daemon=True).start()
-        self._queue_handler()
-
-    def _thread_target(self, command: str) -> None:
-        self._queue.put(("info", command + "\n"))
-
         env = dict(os.environ)
         env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
+
+        self._textwidget.update()
+        width, height = textutils.textwidget_size(self._textwidget)
+
+        font = tkinter.font.Font(name="TkFixedFont", exists=True)
+        env["COLUMNS"] = str(width // font.measure("a"))
+        env["LINES"] = str(height // font.metrics("linespace"))
+
+        threading.Thread(target=self._thread_target, args=[command, env], daemon=True).start()
+        self._queue_handler()
+
+    def _thread_target(self, command: str, env: dict[str, str]) -> None:
+        self._queue.put(("info", command + "\n"))
+
         try:
             self._shell_process = subprocess.Popen(
                 command,
@@ -156,7 +164,7 @@ class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
         self.textwidget = create_passive_text_widget(
-            master, font="TkFixedFont", is_focusable=True, name="run_output"
+            master, font="TkFixedFont", is_focusable=True, name="run_output", wrap="char"
         )
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
