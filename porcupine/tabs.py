@@ -140,17 +140,20 @@ class TabManager(ttk.Notebook):
         and returns ``None``.
         """
 
-        # Check if the file is bigger than 1MB,
-        # so the user is notified in time that the program will freeze
-        if path.stat().st_size > 1_000_000 and not messagebox.askyesno(
-            "Open big file",
-            "Uhh, this file is huge!\nAre you sure you want to open it? ",
-            detail=(
-                "This file is larger than 1MB. If you open it, Porcupine may be unusably slow or"
-                " require an huge amount of RAM."
-            ),
-        ):
-            return None
+        try:
+            # Check if the file is bigger than 1MB,
+            # so the user is notified in time that the program will freeze
+            if path.stat().st_size > 1_000_000 and not messagebox.askyesno(
+                "Open big file",
+                "Uhh, this file is huge!\nAre you sure you want to open it? ",
+                detail=(
+                    "This file is larger than 1MB. If you open it, Porcupine may be unusably slow"
+                    " or require an huge amount of RAM."
+                ),
+            ):
+                return None
+        except OSError:
+            pass  # no problem, reload() will handle the error
 
         # Add tab before loading content, so that editorconfig plugin gets a
         # chance to set the encoding into tab.settings
