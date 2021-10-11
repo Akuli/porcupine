@@ -586,7 +586,6 @@ class LinkManager:
 
             tag_start = f"{start} + {match.start()} chars"
             tag_end = f"{start} + {match.end()} chars"
-
             self._textwidget.tag_add("link", tag_start, tag_end)
             self._textwidget.tag_add(link_specific_tag, tag_start, tag_end)
 
