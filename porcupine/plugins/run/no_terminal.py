@@ -94,8 +94,6 @@ class Executor:
         self._shell_process.communicate()  # make sure self._shell_process.returncode is set
 
         if self._shell_process.returncode == 0:
-            # can't do succeeded_callback() here because this is running
-            # in a thread and succeeded_callback() does tkinter stuff
             self._queue.put(("info", "The process completed successfully."))
         else:
             self._queue.put(("error", f"The process failed with status {self._shell_process.returncode}."))
