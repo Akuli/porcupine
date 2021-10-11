@@ -90,12 +90,12 @@ class Executor:
         for bytez in self._shell_process.stdout:
             line = bytez.decode(locale.getpreferredencoding(), errors="replace")
             self._queue.put(("output", utils.tkinter_safe_string(line).replace(os.linesep, "\n")))
-        self._shell_process.communicate()  # make sure self._shell_process.returncode is set
 
-        if self._shell_process.returncode == 0:
+        status = self._shell_process.wait()
+        if status == 0:
             self._queue.put(("info", "The process completed successfully."))
         else:
-            self._queue.put(("error", f"The process failed with status {self._shell_process.returncode}."))
+            self._queue.put(("error", f"The process failed with status {status}."))
         self._queue.put(("end", ""))
 
     def _queue_handler(self) -> None:
