@@ -19,3 +19,4 @@ types-ttkthemes==3.2.1
 types-colorama==0.4.3
 types-appdirs==1.4.0
 types-toposort==1.6.0
+types-psutil==5.8.12
