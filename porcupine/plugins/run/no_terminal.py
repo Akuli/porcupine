@@ -229,5 +229,4 @@ def run_command(command: str, cwd: Path) -> None:
     runner.run_id += 1
     runner.kill_process()
     runner.clear()
-    runner.textwidget.update()
     runner.run_command(cwd, command)
