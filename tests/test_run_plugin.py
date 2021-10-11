@@ -210,3 +210,15 @@ while True:
     no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
     wait_until(lambda: "Hello" in get_output())
     assert not size_is_changing(tmp_path / "out.txt")
+
+
+def test_smashing_f5(tmp_path, wait_until):
+    (tmp_path / "hello.py").write_text("print('Hello')")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
+    no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
+    no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+
+    first_line, rest = get_output().split("\n", 1)
+    assert first_line.endswith("hello.py")
+    assert rest == "Hello\nThe process completed successfully."
