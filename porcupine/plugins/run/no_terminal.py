@@ -16,7 +16,7 @@ from typing import Callable
 
 import psutil
 
-from porcupine import get_tab_manager, get_vertical_panedwindow, images, textutils, utils, settings
+from porcupine import get_tab_manager, get_vertical_panedwindow, images, settings, textutils, utils
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -76,7 +76,9 @@ class NoTerminalRunner:
 
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
-        threading.Thread(target=self._runner_thread, args=[cwd, command, self.run_id], daemon=True).start()
+        threading.Thread(
+            target=self._runner_thread, args=[cwd, command, self.run_id], daemon=True
+        ).start()
 
     def _runner_thread(self, cwd: Path, command: str, run_id: int) -> None:
         process: subprocess.Popen[bytes] | None = None

@@ -185,20 +185,22 @@ SMALL_TIME = 0.1
 
 def size_is_changing(path):
     old_size = path.stat().st_size
-    time.sleep(2*SMALL_TIME)
+    time.sleep(2 * SMALL_TIME)
     new_size = path.stat().st_size
     return old_size != new_size
 
 
 def test_previous_process_dies(tmp_path, wait_until):
     (tmp_path / "hello.py").write_text("print('Hello')")
-    (tmp_path / "killed.py").write_text(fr"""
+    (tmp_path / "killed.py").write_text(
+        fr"""
 import time
 while True:
     with open("out.txt", "a") as file:
         file.write("Still alive\n")
     time.sleep({SMALL_TIME})
-""")
+"""
+    )
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} killed.py", tmp_path)
     wait_until(lambda: (tmp_path / "out.txt").exists())
