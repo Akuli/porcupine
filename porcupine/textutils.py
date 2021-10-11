@@ -574,7 +574,7 @@ class LinkManager:
                 self._callbacks[tag]()
                 break
 
-    # Do this to whole lines, parts of lines might not work
+    # If you add text in parts, make sure that each link is within one part
     def add_links(self, start: str, end: str) -> None:
         for match in re.finditer(self._link_regex, self._textwidget.get(start, end)):
             callback = self._get_click_callback(match)
