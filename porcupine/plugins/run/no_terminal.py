@@ -52,7 +52,6 @@ def open_file_with_line_number(path: Path, lineno: int) -> None:
 
 
 class Executor:
-
     def __init__(self, cwd: Path, textwidget: tkinter.Text, link_manager: textutils.LinkManager):
         self.cwd = cwd
         self._textwidget = textwidget
@@ -62,7 +61,7 @@ class Executor:
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._timeout_id: str | None = None
 
-    def run(self, command: str, )->None:
+    def run(self, command: str) -> None:
         threading.Thread(target=self._thread_target, args=[command], daemon=True).start()
         self._queue_handler()
 
