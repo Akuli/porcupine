@@ -14,13 +14,9 @@ from functools import partial
 from pathlib import Path
 from typing import Callable
 
-<<<<<<< HEAD
-from porcupine import get_tab_manager, get_vertical_panedwindow, images, settings, textutils, utils
-=======
 import psutil
 
 from porcupine import get_tab_manager, get_vertical_panedwindow, images, textutils, utils, settings
->>>>>>> 1d0c410e... process killing fixes
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -63,6 +59,7 @@ class NoTerminalRunner:
 
         self._output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._running_process: subprocess.Popen[bytes] | None = None
+        self.run_id = 0
         self._queue_handler()
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
@@ -79,18 +76,15 @@ class NoTerminalRunner:
 
         # this is a daemon thread because i don't care what the fuck
         # happens to it when python exits
-        threading.Thread(target=self._runner_thread, args=[cwd, command], daemon=True).start()
+        threading.Thread(target=self._runner_thread, args=[cwd, command, self.run_id], daemon=True).start()
 
-    def _runner_thread(self, cwd: Path, command: str) -> None:
+    def _runner_thread(self, cwd: Path, command: str, run_id: int) -> None:
         process: subprocess.Popen[bytes] | None = None
 
         def emit_message(msg: tuple[str, str]) -> None:
-            if process is not None and self._running_process is not process:
-                # another _run_command() is already running
-                return
-            self._output_queue.put(msg)
+            if self.run_id == run_id:
+                self._output_queue.put(msg)
 
-        emit_message(("start", ""))
         emit_message(("info", command + "\n"))
 
         env = dict(os.environ)
@@ -136,11 +130,7 @@ class NoTerminalRunner:
         if messages:
             self.textwidget.config(state="normal")
             for tag, output_line in messages:
-                if tag == "start":
-                    assert not output_line
-                    self.textwidget.delete("1.0", "end")
-                    self._link_manager.delete_all_links()  # prevent memory leak
-                elif tag == "end":
+                if tag == "end":
                     assert not output_line
                     get_tab_manager().event_generate("<<FileSystemChanged>>")
                 else:
@@ -149,8 +139,14 @@ class NoTerminalRunner:
 
         self.textwidget.after(100, self._queue_handler)
 
+    def clear(self) -> None:
+        self.textwidget.config(state="normal")
+        self.textwidget.delete("1.0", "end")
+        self.textwidget.config(state="disabled")
+        self._link_manager.delete_all_links()  # prevent memory leak
+
     # This method has a couple race conditions but works well enough in practice
-    def kill_process(self):
+    def kill_process(self) -> None:
         if self._running_process is None:
             return
         shell = self._running_process
@@ -211,5 +207,7 @@ def run_command(command: str, cwd: Path) -> None:
         closebutton.bind("<Button-1>", on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor="ne")
 
-    runner.textwidget.delete("1.0", "end")
+    runner.run_id += 1
+    runner.kill_process()
+    runner.clear()
     runner.run_command(cwd, command)
