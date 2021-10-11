@@ -381,10 +381,7 @@ class LangServer:
                 f"because {what_closed} has closed for some reason"
             )
 
-            # Kill if not already dead
-            try:
-                self._process.wait(timeout=0)
-            except subprocess.TimeoutExpired:
+            if self._process.poll() is None:  # process still alive
                 try:
                     self._process.kill()
                 except ProcessLookupError:
