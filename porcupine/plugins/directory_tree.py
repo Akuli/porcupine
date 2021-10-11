@@ -417,8 +417,9 @@ def _focus_treeview(tree: DirectoryTree) -> None:
 def setup() -> None:
     settings.add_option("directory_tree_projects", [], List[str])
 
-    # TODO: add something for finding a file by typing its name?
     container = ttk.Frame(get_paned_window(), name="directory_tree_container")
+    get_paned_window().add(container, before=get_tab_manager())
+    settings.remember_pane_size(get_paned_window(), container, "directory_tree_width", 200)
 
     # Packing order matters. The widget packed first is always visible.
     scrollbar = ttk.Scrollbar(container)
@@ -429,9 +430,6 @@ def setup() -> None:
 
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
-
-    # Insert directory tree before tab manager
-    get_paned_window().insert(get_tab_manager(), container)
 
     get_tab_manager().add_filetab_callback(partial(_on_new_filetab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(_select_current_file, tree), add=True)
