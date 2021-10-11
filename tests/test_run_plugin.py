@@ -196,10 +196,8 @@ def test_no_previous_command_error(filetab, tmp_path, mocker):
     get_main_window().event_generate("<<Run:Repeat0>>")
 
     mock.assert_called_once()
-    if filetab.tk.eval("tk windowingsystem") == "aqua":
-        assert "press ⇧F5 to choose a command" in str(mock.call_args)
-    else:
-        assert "press Shift+F5 to choose a command" in str(mock.call_args)
+    shift_f5 = "⇧F5" if filetab.tk.eval("tk windowingsystem") == "aqua" else "Shift+F5"
+    assert f"press {shift_f5} to choose a command" in str(mock.call_args)
     assert "then repeat it with F5" in str(mock.call_args)
 
 
