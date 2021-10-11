@@ -26,9 +26,11 @@ else:
 # Must be after creating dirs
 from porcupine import _state
 
+# TODO: document get_*_panedwindow
 get_main_window = _state.get_main_window
 get_parsed_args = _state.get_parsed_args
-get_paned_window = _state.get_paned_window  # TODO: document this
+get_horizontal_panedwindow = _state.get_horizontal_panedwindow
+get_vertical_panedwindow = _state.get_vertical_panedwindow
 get_tab_manager = _state.get_tab_manager
 filedialog_kwargs = _state.filedialog_kwargs
 quit = _state.quit

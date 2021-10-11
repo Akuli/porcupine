@@ -14,7 +14,15 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Any, Callable, List
 
-from porcupine import get_paned_window, get_tab_manager, menubar, settings, tabs, utils
+from porcupine import (
+    get_horizontal_panedwindow,
+    get_tab_manager,
+    get_vertical_panedwindow,
+    menubar,
+    settings,
+    tabs,
+    utils,
+)
 
 log = logging.getLogger(__name__)
 
@@ -417,9 +425,11 @@ def _focus_treeview(tree: DirectoryTree) -> None:
 def setup() -> None:
     settings.add_option("directory_tree_projects", [], List[str])
 
-    container = ttk.Frame(get_paned_window(), name="directory_tree_container")
-    get_paned_window().add(container, before=get_tab_manager())
-    settings.remember_pane_size(get_paned_window(), container, "directory_tree_width", 200)
+    container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")
+    get_horizontal_panedwindow().add(container, before=get_vertical_panedwindow())
+    settings.remember_pane_size(
+        get_horizontal_panedwindow(), container, "directory_tree_width", 200
+    )
 
     # Packing order matters. The widget packed first is always visible.
     scrollbar = ttk.Scrollbar(container)
@@ -453,4 +463,4 @@ def setup() -> None:
 
 # Used in other plugins
 def get_directory_tree() -> DirectoryTree:
-    return get_paned_window().nametowidget("directory_tree_container.directory_tree")
+    return get_horizontal_panedwindow().nametowidget("directory_tree_container.directory_tree")

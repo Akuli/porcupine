@@ -738,13 +738,17 @@ def remember_pane_size(
     # exist_ok=True to allow e.g. calling this once for each tab
     add_option(option_name, default_size, int, exist_ok=True)
 
-    assert panedwindow["orient"] == "horizontal"  # TODO
-
     def settings_to_gui(junk: object = None) -> None:
-        panedwindow.paneconfig(pane, width=get(option_name, int))
+        if panedwindow["orient"] == "horizontal":
+            panedwindow.paneconfig(pane, width=get(option_name, int))
+        else:
+            panedwindow.paneconfig(pane, height=get(option_name, int))
 
     def gui_to_settings() -> None:
-        set_(option_name, pane.winfo_width())
+        if panedwindow["orient"] == "horizontal":
+            set_(option_name, pane.winfo_width())
+        else:
+            set_(option_name, pane.winfo_height())
 
     settings_to_gui()
     pane.bind("<Map>", settings_to_gui, add=True)

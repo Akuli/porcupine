@@ -13,7 +13,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable
 
-from porcupine import get_tab_manager, images, textutils, utils
+from porcupine import get_tab_manager, get_vertical_panedwindow, images, settings, textutils, utils
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         # TODO: better coloring that follows the pygments theme
         self.textwidget = create_passive_text_widget(
-            master, font="TkFixedFont", height=12, is_focusable=True, name="run_output"
+            master, font="TkFixedFont", is_focusable=True, name="run_output"
         )
         self.textwidget.tag_config("info", foreground="blue")
         self.textwidget.tag_config("output")  # use default colors
@@ -142,37 +142,34 @@ class NoTerminalRunner:
 
         self.textwidget.after(100, self._queue_handler)
 
-    def destroy(self, junk: object = None) -> None:
-        self.textwidget.destroy()
-
-        # Saving self._running_process to local var avoids race condition and
-        # makes mypy happy.
+    def kill_process(self) -> None:
+        # saving to local var avoids race condition
+        # TODO: still possible for two threads to kill
         process = self._running_process
         if process is not None:
             process.kill()
 
 
-# keys are tkinter widget paths from str(tab), they identify tabs uniquely
-_no_terminal_runners: dict[str, NoTerminalRunner] = {}
+runner: NoTerminalRunner | None = None
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
+    global runner
     log.info(f"Running {command} in {cwd}")
+    if runner is None:
+        runner = NoTerminalRunner(get_vertical_panedwindow())
+        get_vertical_panedwindow().add(runner.textwidget, after=get_tab_manager(), stretch="never")
+        settings.remember_pane_size(
+            get_vertical_panedwindow(), runner.textwidget, "run_command_output_height", 200
+        )
 
-    tab = get_tab_manager().select()
-    assert tab is not None
-
-    try:
-        runner = _no_terminal_runners[str(tab)]
-    except KeyError:
-        runner = NoTerminalRunner(tab.bottom_frame)
-        _no_terminal_runners[str(tab)] = runner
-
-        # TODO: can this also be ran when tab is closed?
         def on_close(event: tkinter.Event[tkinter.Misc]) -> None:
-            runner.destroy()
-            del _no_terminal_runners[str(tab)]
+            global runner
+            assert runner is not None
+            runner.textwidget.destroy()
+            runner.kill_process()
+            runner = None
 
         closebutton = tkinter.Label(
             runner.textwidget, image=images.get("closebutton"), cursor="hand2"
@@ -180,5 +177,5 @@ def run_command(command: str, cwd: Path) -> None:
         closebutton.bind("<Button-1>", on_close, add=True)
         closebutton.place(relx=1, rely=0, anchor="ne")
 
-    runner.textwidget.pack(side="top", fill="x")
+    runner.textwidget.delete("1.0", "end")
     runner.run_command(cwd, command)
