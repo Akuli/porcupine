@@ -88,7 +88,9 @@ class NoTerminalRunner:
 
         with self._running_process_lock:
             threading.Thread(
-                name=f"run-no-terminal-{self.run_id}", target=self._runner_thread, args=[cwd, command, self.run_id]
+                name=f"run-no-terminal-{self.run_id}",
+                target=self._runner_thread,
+                args=[cwd, command, self.run_id],
             ).start()
 
     def _runner_thread(self, cwd: Path, command: str, run_id: int) -> None:
