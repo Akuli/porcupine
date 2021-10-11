@@ -170,7 +170,7 @@ class NoTerminalRunner:
                 # Don't know if this ever runs in practice, but there's
                 # similar code in langserver plugin and it runs sometimes.
                 return
-            shell.kill()
+            shell.kill()  # Do not create more children
             for child in children:
                 child.kill()
             self._running_process = None
