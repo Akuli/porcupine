@@ -141,8 +141,6 @@ class TabManager(ttk.Notebook):
         """
 
         try:
-            # Check if the file is bigger than 1MB,
-            # so the user is notified in time that the program will freeze
             if path.stat().st_size > 1_000_000 and not messagebox.askyesno(
                 "Open big file",
                 "Uhh, this file is huge!\nAre you sure you want to open it? ",
