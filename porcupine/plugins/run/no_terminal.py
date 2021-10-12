@@ -143,28 +143,29 @@ class Executor:
         if self._shell_process is None:
             return
 
-        if self._shell_process.poll() is None:  # if shell still alive
+        try:
             # On non-windows we can stop the shell so that it can't spawn more children
             # On windows there is a race condition
             if sys.platform != "win32":
                 self._shell_process.send_signal(signal.SIGSTOP)
 
-            # If we kill the shell, its child processes will keep running,
-            # but they will reparent to pid 1 so we can no longer get a
-            # list of them.
-            try:
-                children = psutil.Process(self._shell_process.pid).children()
-            except psutil.NoSuchProcess:
-                # Would run if shell dies after asking if it's alive.
-                # Don't know if this ever runs in practice, but there's
-                # similar code in langserver plugin and it runs sometimes.
-                return
-            self._shell_process.kill()  # Do not create more children
-            for child in children:
-                try:
-                    child.kill()
-                except psutil.NoSuchProcess:  # child already died
-                    pass
+            # If we kill the shell, its child processes will keep running.
+            # But they will reparent to pid 1 so can no longer list them
+            children = psutil.Process(self._shell_process.pid).children()
+            if self._shell_process.poll() is None:
+                # shell still alive, the pid wasn't reused
+                self._shell_process.kill()
+                for child in children:
+                    try:
+                        child.kill()
+                    except psutil.NoSuchProcess:
+                        # Child already dead, but we need to kill other children
+                        pass
+
+        # shell can die at any time
+        # self._shell_process.send_signal and kill silently do nothing if shell dead
+        except psutil.NoSuchProcess:
+            pass
 
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
