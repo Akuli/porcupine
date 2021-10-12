@@ -163,8 +163,8 @@ class Executor:
                         pass
 
         # shell can die at any time
-        # self._shell_process.send_signal and kill silently do nothing if shell dead
-        except psutil.NoSuchProcess:
+        # non-psutil errors happen in langserver plugin, not sure if needed here
+        except (psutil.NoSuchProcess, ProcessLookupError):
             pass
 
         if not quitting:
