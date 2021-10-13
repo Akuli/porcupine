@@ -576,7 +576,8 @@ class LinkManager:
 
     # If you add text in parts, make sure that each link is within one part
     def add_links(self, start: str, end: str) -> None:
-        for match in re.finditer(self._link_regex, self._textwidget.get(start, end)):
+        text = self._textwidget.get(start, end)
+        for match in re.finditer(self._link_regex, text, flags=re.MULTILINE):
             callback = self._get_click_callback(match)
             if callback is None:
                 continue
