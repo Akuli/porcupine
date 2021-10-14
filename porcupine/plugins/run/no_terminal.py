@@ -61,11 +61,13 @@ class Executor:
         self._shell_process: subprocess.Popen[bytes] | None = None
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self._timeout_id: str | None = None
+        self.started = False
 
     def run(self, command: str) -> None:
         env = dict(os.environ)
         env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
 
+        # Update needed to get width and height, but causes key bindings to execute
         self._textwidget.update()
         width, height = textutils.textwidget_size(self._textwidget)
 
@@ -75,6 +77,7 @@ class Executor:
 
         threading.Thread(target=self._thread_target, args=[command, env], daemon=True).start()
         self._queue_handler()
+        self.started = True
 
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
         self._queue.put(("info", command + "\n"))
@@ -204,6 +207,11 @@ class NoTerminalRunner:
 
     def run_command(self, cwd: Path, command: str) -> None:
         if self.executor is not None:
+            # This prevents a bug where smashing F5 runs in parallel
+            if not self.executor.started:
+                print("Never gonna give you up")
+                return
+
             self.executor.stop()
 
         self.textwidget.config(state="normal")
