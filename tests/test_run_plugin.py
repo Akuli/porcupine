@@ -157,6 +157,10 @@ def test_grep_n_output(tabmanager, tmp_path, wait_until):
     (tmp_path / ".github" / "asdf").write_text("foo")
     (tmp_path / "lol").write_text("bar")
 
+    import subprocess
+
+    subprocess.run("grep -n -r foo", cwd=tmp_path, shell=True)
+
     no_terminal.run_command("grep -n -r foo", tmp_path)
     wait_until(lambda: "The process completed successfully." in get_output())
     assert click_last_link() == "foo"
