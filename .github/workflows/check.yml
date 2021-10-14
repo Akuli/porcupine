@@ -11,6 +11,5 @@ jobs:
     steps:
     - run: echo lol > foo
     - run: echo wat > bar
-    - run: grep --help
-    - run: grep -r -n lol .
-    - run: grep -r -n wat .
+    - run: grep -r -n lol
+    - run: grep -r -n wat
