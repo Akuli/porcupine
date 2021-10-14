@@ -43,9 +43,8 @@ class Highlighter:
 
         self.textwidget.bind("<<SettingChanged:font_family>>", self._font_changed, add=True)
         self.textwidget.bind("<<SettingChanged:font_size>>", self._font_changed, add=True)
-        self.textwidget.bind("<<SettingChanged:pygments_style>>", self._style_changed, add=True)
         self._font_changed()
-        self._style_changed()
+        textutils.use_pygments_theme(self.textwidget, fonts=self._fonts)
 
     def _font_changed(self, junk: object = None) -> None:
         font_updates = dict(Font(name="TkFixedFont", exists=True).actual())
@@ -56,27 +55,6 @@ class Highlighter:
             # fonts don't have an update() method
             for key, value in font_updates.items():
                 font[key] = value
-
-    def _style_changed(self, junk: object = None) -> None:
-        # http://pygments.org/docs/formatterdevelopment/#styles
-        # all styles seem to yield all token types when iterated over,
-        # so we should always end up with the same tags configured
-        style = styles.get_style_by_name(settings.get("pygments_style", str))
-        for tokentype, infodict in style:
-            # this doesn't use underline and border
-            # i don't like random underlines in my code and i don't know
-            # how to implement the border with tkinter
-            self.textwidget.tag_config(
-                str(tokentype),
-                font=self._fonts[(infodict["bold"], infodict["italic"])],
-                # empty string resets foreground
-                foreground=("" if infodict["color"] is None else "#" + infodict["color"]),
-                background=("" if infodict["bgcolor"] is None else "#" + infodict["bgcolor"]),
-            )
-
-            # make sure that the selection tag takes precedence over our
-            # token tag
-            self.textwidget.tag_lower(str(tokentype), "sel")
 
     # yields marks backwards, from end to start
     def _get_root_marks(self, start: str = "1.0", end: str = "end") -> Iterator[str]:

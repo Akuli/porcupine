@@ -762,7 +762,7 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
     # Not done when creating button, because can slow down porcupine startup
     def fill_menubutton(junk_event: object) -> None:
         menu.delete(0, 'end')
-        for index, style_name in enumerate(styles.get_all_styles()):
+        for index, style_name in enumerate(sorted(styles.get_all_styles())):
             fg, bg = _get_colors(style_name)
             menu.add_radiobutton(
                 label=style_name,

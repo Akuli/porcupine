@@ -596,14 +596,32 @@ class LinkManager:
         self._callbacks.clear()
 
 
+# TODO: move to settings.py?
+# FIXME: update docstring
+
 # fmt: off
 @overload
-def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None: ...
+def use_pygments_theme(
+    widget: tkinter.Misc,
+    callback: Callable[[str, str], None],
+    *,
+    setting_name: str = ...,
+) -> None: ...
 @overload
-def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...
+def use_pygments_theme(
+    widget: tkinter.Text,
+    callback: None = ...,
+    *,
+    setting_name: str,
+    fonts: dict[tuple[bool, bool], tkinter.Font] = ...,
+) -> None: ...
 # fmt: on
 def use_pygments_theme(
-    widget: tkinter.Misc, callback: Callable[[str, str], None] | None = None
+    widget: tkinter.Misc,
+    callback: Callable[[str, str], None] | None = None,
+    setting_name: str = "pygments_style",
+    *,
+    fonts: dict[tuple[bool, bool], tkinter.Font] = {},
 ) -> None:
     """
     Configure *widget* to use the colors of the Pygments theme whenever the
@@ -622,7 +640,8 @@ def use_pygments_theme(
     """
 
     def on_style_changed(junk: object = None) -> None:
-        style = styles.get_style_by_name(settings.get("pygments_style", str))
+        style = styles.get_style_by_name(settings.get(setting_name, str))
+
         bg = style.background_color
 
         # yes, style.default_style can be '#rrggbb', '' or nonexistent
@@ -635,8 +654,26 @@ def use_pygments_theme(
         #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
         #    '#222222', '', '', '', '???', '']
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
+
         if callback is None:
             assert isinstance(widget, tkinter.Text)
+
+            # http://pygments.org/docs/formatterdevelopment/#styles
+            # all styles seem to yield all token types when iterated over,
+            # so we should always end up with the same tags configured
+            for tokentype, info in style:
+                # info["underline"] and info["border"] intentionally unused
+                widget.tag_config(
+                    str(tokentype),
+                    # empty string resets color in tags
+                    foreground="" if info["color"] is None else "#" + info["color"],
+                    background="" if info["bgcolor"] is None else "#" + info["bgcolor"],
+                )
+                font_key = (info["bold"], info["italic"])
+                if font_key in fonts:
+                    widget.tag_config(str(tokentype), font=fonts[font_key])
+                widget.tag_lower(str(tokentype), "sel")
+
             widget.config(
                 foreground=fg,
                 background=bg,
@@ -644,10 +681,11 @@ def use_pygments_theme(
                 selectforeground=bg,
                 selectbackground=fg,
             )
+
         else:
             callback(fg, bg)
 
-    widget.bind("<<SettingChanged:pygments_style>>", on_style_changed, add=True)
+    widget.bind(f"<<SettingChanged:{setting_name}>>", on_style_changed, add=True)
     on_style_changed()
 
 
@@ -690,7 +728,6 @@ class MainText(tkinter.Text):
         super().__init__(tab.panedwindow, **kwargs)
         self._tab = tab
         track_changes(self)
-        use_pygments_theme(self)
 
         bind_font_changed(tab, self._on_font_changed)
         self._on_font_changed()
@@ -761,7 +798,7 @@ class MainText(tkinter.Text):
 
 
 def create_passive_text_widget(
-    parent: tkinter.Misc, is_focusable: bool = False, **kwargs: Any
+    parent: tkinter.Misc, is_focusable: bool = False, set_colors: bool = True, **kwargs: Any
 ) -> tkinter.Text:
     # TODO: document `is_focusable` kwarg
     """Create a text widget that is meant to be used for displaying text, not for editing.
@@ -790,31 +827,32 @@ def create_passive_text_widget(
     kwargs.setdefault("state", "disabled")
     text = tkinter.Text(parent, **kwargs)
 
-    def update_colors(junk: object = None) -> None:
-        # tkinter's ttk::style api sucks so let's not use it
-        ttk_fg = text.tk.eval("ttk::style lookup TLabel.label -foreground")
-        ttk_bg = text.tk.eval("ttk::style lookup TLabel.label -background")
+    if set_colors:
+        def update_colors(junk: object = None) -> None:
+            # tkinter's ttk::style api sucks so let's not use it
+            ttk_fg = text.tk.eval("ttk::style lookup TLabel.label -foreground")
+            ttk_bg = text.tk.eval("ttk::style lookup TLabel.label -background")
 
-        if not ttk_fg and not ttk_bg:
-            # stupid ttk theme, it deserves this
-            ttk_fg = "black"
-            ttk_bg = "white"
-        elif not ttk_bg:
-            # this happens with e.g. elegance theme (more_plugins/ttkthemes.py)
-            ttk_bg = utils.invert_color(ttk_fg, black_or_white=True)
-        elif not ttk_fg:
-            ttk_fg = utils.invert_color(ttk_bg, black_or_white=True)
+            if not ttk_fg and not ttk_bg:
+                # stupid ttk theme, it deserves this
+                ttk_fg = "black"
+                ttk_bg = "white"
+            elif not ttk_bg:
+                # this happens with e.g. elegance theme (more_plugins/ttkthemes.py)
+                ttk_bg = utils.invert_color(ttk_fg, black_or_white=True)
+            elif not ttk_fg:
+                ttk_fg = utils.invert_color(ttk_bg, black_or_white=True)
 
-        text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
+            text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
+
+        # even non-ttk widgets can handle <<ThemeChanged>>
+        # TODO: make sure that this works
+        text.bind("<<ThemeChanged>>", update_colors, add=True)
+        update_colors()
 
     if is_focusable:
         text.config(takefocus=True)
         text.bind("<ButtonPress-1>", lambda *junk: text.focus(), add=True)
-
-    # even non-ttk widgets can handle <<ThemeChanged>>
-    # TODO: make sure that this works
-    text.bind("<<ThemeChanged>>", update_colors, add=True)
-    update_colors()
 
     return text
 
