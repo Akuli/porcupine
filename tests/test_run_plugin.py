@@ -167,15 +167,19 @@ def test_grep_n_output(tabmanager, tmp_path, wait_until):
 
 
 def test_pyright_output(tabmanager, tmp_path, wait_until):
-    (tmp_path / "_curses.pyi").write_text("""\
+    (tmp_path / "_curses.pyi").write_text(
+        """\
 import sys
 from typing import IO, Any, BinaryIO, NamedTuple, Tuple
-""")
-    (tmp_path / "fake_pyright.py").write_text("""
+"""
+    )
+    (tmp_path / "fake_pyright.py").write_text(
+        """
 import os
 print(f"{os.getcwd()}/_curses.pyi")
 print(f"  {os.getcwd()}/_curses.pyi:2:51 - error: blah blah")
-""")
+"""
+    )
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} fake_pyright.py", tmp_path)
     wait_until(lambda: "The process completed successfully." in get_output())
