@@ -37,7 +37,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,  # for logging error message
             encoding=sys.getfilesystemencoding(),
-            timeout=2,  # huge lol
+            timeout=15,  # Must be huge to avoid unnecessary killing #885
             **utils.subprocess_kwargs,
         )
         log.debug(
