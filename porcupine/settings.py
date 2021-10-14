@@ -15,7 +15,7 @@ from tkinter import messagebox, ttk
 from typing import Any, Callable, Iterator, List, Type, TypeVar, overload
 
 import dacite
-from pygments import styles
+from pygments import styles, token
 
 import porcupine
 from porcupine import dirs, images, utils
@@ -565,7 +565,7 @@ _StrOrInt = TypeVar("_StrOrInt", str, int)
 
 
 def _create_validation_triangle(
-    widget: ttk.Entry,
+    widget: ttk.Entry | tkinter.Menubutton,
     option_name: str,
     type_: Type[_StrOrInt],
     callback: Callable[[_StrOrInt], bool],
@@ -716,6 +716,71 @@ def add_spinbox(option_name: str, text: str, **spinbox_kwargs: Any) -> tkinter.t
     return spinbox
 
 
+def _get_colors(style_name: str) -> tuple[str, str]:
+    style = styles.get_style_by_name(style_name)
+    bg = style.background_color
+
+    # style_names have a style_for_token() method, but only iterating
+    # is documented :( http://pygments.org/docs/formatterdevelopment/
+    # i'm using iter() to make sure that dict() really treats
+    # the style as an iterable of pairs instead of some other
+    # metaprogramming fanciness
+    style_infos = dict(iter(style))
+
+    fg = style_infos[token.String]["color"] or style_infos[token.Text]["color"]
+    if fg:
+        # style_infos doesn't contain leading '#' for whatever reason
+        fg = "#" + fg
+    else:
+        # do like textutils.use_pygments_theme does
+        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
+
+    return (fg, bg)
+
+
+# TODO: document this?
+def add_pygments_style_button(option_name: str, text: str) -> None:
+    var = tkinter.StringVar()
+
+    # ttk.Menubutton doesn't have custom colors
+    menubutton = tkinter.Menubutton(get_dialog_content(), textvariable=var)
+    menu = tkinter.Menu(menubutton, tearoff=False)
+    menubutton.config(menu=menu)
+
+    def var_to_settings(*junk: object) -> None:
+        set_(option_name, var.get())
+
+    def settings_to_var_and_colors(junk: object = None) -> None:
+        style = get(option_name, object)
+        var.set(style)
+        fg, bg = _get_colors(style)
+        menubutton.config(foreground=fg, background=bg)
+
+    menubutton.bind(f"<<SettingChanged:{option_name}>>", settings_to_var_and_colors, add=True)
+    var.trace_add("write", var_to_settings)
+
+    # Not done when creating button, because can slow down porcupine startup
+    def fill_menubutton(junk_event: object) -> None:
+        menu.delete(0, 'end')
+        for index, style_name in enumerate(styles.get_all_styles()):
+            fg, bg = _get_colors(style_name)
+            menu.add_radiobutton(
+                label=style_name,
+                value=style_name,
+                variable=var,
+                foreground=fg,
+                background=bg,
+                # swapped colors
+                activeforeground=bg,
+                activebackground=fg,
+                columnbreak=(index != 0 and index % 20 == 0)
+            )
+        settings_to_var_and_colors()
+
+    menubutton.bind('<Map>', fill_menubutton, add=True)
+    _grid_widgets(text, menubutton, None)
+
+
 def add_label(text: str) -> ttk.Label:
     """Add text to the setting dialog.
 
@@ -838,6 +903,7 @@ def _fill_dialog_content_with_defaults() -> None:
     add_combobox(
         "default_line_ending", "Default line ending:", values=[ending.name for ending in LineEnding]
     )
+    add_pygments_style_button("pygments_style", "Pygments style for editing:")
 
 
 # undocumented on purpose, don't use in plugins
