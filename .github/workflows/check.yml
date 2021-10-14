@@ -5,11 +5,119 @@ on:
   pull_request:
 
 jobs:
-  temporary-asdf:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.9"  # can be 3.10 once mypy is updated and no longer really slow on 3.10
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: |
+        time mypy --platform linux --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform linux --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform linux --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform linux --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform win32 --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform win32 --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform win32 --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform win32 --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform darwin --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform darwin --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform darwin --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform darwin --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
+  pytest-windows:
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    env:
+      TCLLIBPATH: lib
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: python scripts/download-tkdnd.py
+    - run: del porcupine\plugins\git_status.py
+    - run: python -m pytest -vvvv --durations=10
+  pytest-linux:
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    # Make sure that it doesn't crash with Noto Color Emoji
+    - run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: rm -v porcupine/plugins/git_status.py
+    - uses: GabrielBB/xvfb-action@v1.4
+      with:
+        run: python3 -m pytest -vvvv --durations=10
+  pytest-macos:
     timeout-minutes: 10
     runs-on: macos-latest
+    strategy:
+      matrix:
+        # tk version in python 3.7 is too old
+        # brew doesn't have python 3.10 yet
+        python-version: ["3.8", "3.9"]
+    env:
+      # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
+      TCLLIBPATH: ./lib
+      PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
-    - run: echo lol > foo
-    - run: echo wat > bar
-    - run: grep -r -n lol
-    - run: grep -r -n wat
+    - uses: actions/checkout@v2
+    - run: brew install python@${{ matrix.python-version }}
+    # https://stackoverflow.com/a/66919851
+    - if: matrix.python-version == '3.9'
+      run: brew install python-tk@${{ matrix.python-version }}
+    - run: $PYTHON --version
+    - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
+    - run: $PYTHON scripts/download-tkdnd.py
+    - run: rm -v porcupine/plugins/git_status.py
+    - run: $PYTHON -m pytest -vvvv --durations=10
+  black:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
+  pyflakes:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
+  bindcheck:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: python3 scripts/bindcheck.py porcupine
+    - run: python3 scripts/bindcheck.py more_plugins
+    - run: python3 scripts/bindcheck.py tests
