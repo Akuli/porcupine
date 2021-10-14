@@ -14,6 +14,9 @@ from porcupine.plugins import python_venv
 
 from . import common, dialog, history, no_terminal, terminal
 
+# affects order of buttons in setting dialog, want pygments buttons together
+setup_before = ["filetypes"]
+
 
 def run(command: common.Command, project_root: Path) -> None:
     history.add(command)

@@ -219,6 +219,9 @@ runner: NoTerminalRunner | None = None
 
 
 def setup() -> None:
+    settings.add_option("run_output_pygments_style", default="inkpot")
+    settings.add_pygments_style_button("run_output_pygments_style", "Pygments style for output of commands:")
+
     global runner
     assert runner is None
     runner = NoTerminalRunner(get_vertical_panedwindow())
