@@ -111,7 +111,7 @@ def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_
     wait_until(lambda: "bbb" in get_output())
 
 
-def click_last_link(filetab):
+def click_last_link():
     textwidget = no_terminal.runner.textwidget
     textwidget.mark_set("current", "link.last - 1 char")
     no_terminal.runner._link_manager._open_link(None)
@@ -126,7 +126,7 @@ def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
 
     wait_until(lambda: "The process failed with status 1." in get_output())
     assert "No such file or directory" in get_output()
-    assert click_last_link(filetab) == "open('this does not exist')"
+    assert click_last_link() == "open('this does not exist')"
 
 
 def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
@@ -136,7 +136,7 @@ def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
 
     # long timeout, mypy can be slow
     wait_until((lambda: "The process failed with status 1." in get_output()), timeout=15)
-    assert click_last_link(filetab) == "print(1 + 'lol')"
+    assert click_last_link() == "print(1 + 'lol')"
 
 
 def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
@@ -148,10 +148,45 @@ def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     no_terminal.run_command(f"{utils.quote(sys.executable)} bindcheck.py foo", tmp_path)
 
     wait_until(lambda: "The process failed with status 1." in get_output())
-    assert click_last_link(filetab) == "asdf.bind('<Foo>', print)"
+    assert click_last_link() == "asdf.bind('<Foo>', print)"
 
 
-def test_python_unbuffered(filetab, tmp_path, wait_until):
+@pytest.mark.skipif(shutil.which("grep") is None, reason="uses grep")
+def test_grep_n_output(tabmanager, tmp_path, wait_until):
+    (tmp_path / ".github").mkdir()
+    (tmp_path / ".github" / "asdf").write_text("foo")
+    (tmp_path / "lol").write_text("bar")
+
+    no_terminal.run_command("grep -n -r foo .", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    assert click_last_link() == "foo"
+
+    no_terminal.run_command("grep -n -r bar .", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    assert click_last_link() == "bar"
+
+
+def test_pyright_output(tabmanager, tmp_path, wait_until):
+    (tmp_path / "_curses.pyi").write_text(
+        """\
+import sys
+from typing import IO, Any, BinaryIO, NamedTuple, Tuple
+"""
+    )
+    (tmp_path / "fake_pyright.py").write_text(
+        """
+import os
+print(f"{os.getcwd()}/_curses.pyi")
+print(f"  {os.getcwd()}/_curses.pyi:2:51 - error: blah blah")
+"""
+    )
+
+    no_terminal.run_command(f"{utils.quote(sys.executable)} fake_pyright.py", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    assert click_last_link() == "from typing import IO, Any, BinaryIO, NamedTuple, Tuple"
+
+
+def test_python_unbuffered(tmp_path, wait_until):
     (tmp_path / "sleeper.py").write_text(
         """
 import time
@@ -166,7 +201,7 @@ time.sleep(10)
     assert end - start < 8
 
 
-def test_not_line_buffered(filetab, tmp_path, wait_until):
+def test_not_line_buffered(tmp_path, wait_until):
     (tmp_path / "sleeper.py").write_text(
         """
 import time
