@@ -641,10 +641,9 @@ def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_
                 # empty string resets color in tags
                 foreground=("" if info["color"] is None else "#" + info["color"]),
                 background=("" if info["bgcolor"] is None else "#" + info["bgcolor"]),
+                # important to always set font, to reset when switching themes
+                font=fonts.get((info["bold"], info["italic"]), ""),
             )
-            font_key = (info["bold"], info["italic"])
-            if font_key in fonts:
-                textwidget.tag_config(str(tokentype), font=fonts[font_key])
             textwidget.tag_lower(str(tokentype), "sel")
 
     settings.use_pygments_fg_and_bg(textwidget, on_theme_changed, option_name=option_name)
