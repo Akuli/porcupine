@@ -645,6 +645,8 @@ def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_
             font_key = (info["bold"], info["italic"])
             if font_key in fonts:
                 textwidget.tag_config(str(tokentype), font=fonts[font_key])
+            else:
+                textwidget.tag_config(str(tokentype), font="")
             textwidget.tag_lower(str(tokentype), "sel")
 
     settings.use_pygments_fg_and_bg(textwidget, on_theme_changed, option_name=option_name)
