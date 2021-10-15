@@ -1,4 +1,6 @@
 The images come from these places:
 - closebutton.gif:   https://github.com/Akuli/porcupine/issues/11#issuecomment-325196837
 - triangle.gif:      https://cdn.pixabay.com/photo/2012/04/14/15/13/danger-34250_960_720.png
-- logo.gif:          I drew it myself, as you may have guessed
+- logo.gif:          I drew this myself, as you may have guessed
+- venv.png:          I drew this myself
+- stop.png:          Edited from https://openmoji.org/library/#search=stop&emoji=1F6D1

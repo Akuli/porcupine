@@ -76,7 +76,7 @@ class Executor:
         env["LINES"] = str(height // font.metrics("linespace"))
 
         threading.Thread(target=self._thread_target, args=[command, env], daemon=True).start()
-        self._queue_handler()
+        self._flush_queue_repeatedly()
         self.started = True
 
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
@@ -112,7 +112,7 @@ class Executor:
             self._queue.put(("error", f"The process failed with status {status}."))
         self._queue.put(("end", ""))
 
-    def _queue_handler(self) -> None:
+    def _flush_queue(self) -> None:
         messages: list[tuple[str, str]] = []
         while True:
             try:
@@ -143,7 +143,9 @@ class Executor:
 
             self._textwidget.config(state="disabled")
 
-        self._timeout_id = self._textwidget.after(100, self._queue_handler)
+    def _flush_queue_repeatedly(self) -> None:
+        self._flush_queue()
+        self._timeout_id = self._textwidget.after(100, self._flush_queue_repeatedly)
 
     def stop(self, *, quitting: bool = False) -> None:
         if self._timeout_id is not None:
@@ -177,6 +179,11 @@ class Executor:
         except (psutil.NoSuchProcess, ProcessLookupError):
             pass
 
+        else:
+            if not quitting:
+                self._queue.put(("error", "Killed."))
+                self._flush_queue()
+
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
@@ -191,7 +198,7 @@ class NoTerminalRunner:
             font="TkFixedFont",
             wrap="char",
         )
-        self.textwidget.bind("<Destroy>", self._stop_executor, add=True)
+        self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
         textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
@@ -200,9 +207,27 @@ class NoTerminalRunner:
         self.textwidget.tag_config("link", underline=True)
         self.executor: Executor | None = None
 
-    def _stop_executor(self, junk_event: object) -> None:
+        button_frame = tkinter.Frame(self.textwidget)
+        button_frame.place(relx=1, rely=0, anchor="ne")
+        settings.use_pygments_fg_and_bg(
+            button_frame,
+            (lambda fg, bg: button_frame.config(bg=bg)),
+            option_name="run_output_pygments_style",
+        )
+
+        self.stop_button = ttk.Label(button_frame, image=images.get("stop"))
+        self.stop_button.pack(side="left", padx=1)
+        self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"))
+        self.hide_button.pack(side="left", padx=1)
+
+        old_cursor = self.textwidget["cursor"]
+        for button in [self.hide_button, self.stop_button]:
+            button.bind("<Enter>", (lambda e: self.textwidget.config(cursor="hand2")), add=True)
+            button.bind("<Leave>", (lambda e: self.textwidget.config(cursor=old_cursor)), add=True)
+
+    def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
-            self.executor.stop(quitting=True)
+            self.executor.stop(quitting=quitting)
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
@@ -249,16 +274,15 @@ def setup() -> None:
         get_vertical_panedwindow(), runner.textwidget, "run_command_output_height", 200
     )
 
-    def toggle_visible(junk_event: object = None) -> None:
+    def toggle_visible(junk_event: object = ...) -> None:
         assert runner is not None
         is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
         get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
 
-    closebutton = ttk.Label(runner.textwidget, image=images.get("closebutton"), cursor="hand2")
-    closebutton.place(relx=1, rely=0, anchor="ne")
-    closebutton.bind("<Button-1>", toggle_visible, add=True)
-
+    runner.hide_button.bind("<Button-1>", toggle_visible, add=True)
+    runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
+    menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
