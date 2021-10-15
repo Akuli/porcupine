@@ -5,8 +5,6 @@ import pytest
 
 from porcupine.plugins.directory_tree import get_directory_tree, get_path
 
-# TODO: need more tests
-
 
 def add_project_and_select_file(file_path) -> None:
     tree = get_directory_tree()
