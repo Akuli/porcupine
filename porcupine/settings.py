@@ -839,7 +839,7 @@ def use_pygments_fg_and_bg(
 
     def on_style_changed(junk: object = None) -> None:
         style = styles.get_style_by_name(get(option_name, str))
-        # Similar to _get_colors() but not exactly same
+        # Similar to _get_colors() but doesn't use the color of strings
         bg = style.background_color
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
         callback(fg, bg)
