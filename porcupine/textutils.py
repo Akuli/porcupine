@@ -601,8 +601,8 @@ class LinkManager:
 def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_style") -> None:
     fonts = {
         # (bold, italic)
-        (False, True): Font(slant="italic"),
         (True, False): Font(weight="bold"),
+        (False, True): Font(slant="italic"),
         (True, True): Font(weight="bold", slant="italic"),
     }
 
