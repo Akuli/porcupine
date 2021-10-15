@@ -751,9 +751,9 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
         set_(option_name, var.get())
 
     def settings_to_var_and_colors(junk: object = None) -> None:
-        style = get(option_name, object)
-        var.set(style)
-        fg, bg = _get_colors(style)
+        style_name = get(option_name, object)
+        var.set(style_name)
+        fg, bg = _get_colors(style_name)
         menubutton.config(foreground=fg, background=bg)
 
     menubutton.bind(f"<<SettingChanged:{option_name}>>", settings_to_var_and_colors, add=True)
