@@ -28,33 +28,10 @@ root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 
 
 class Highlighter:
-    def __init__(self, text: tkinter.Text) -> None:
-        self.textwidget = text
+    def __init__(self, textwidget: tkinter.Text) -> None:
+        self.textwidget = textwidget
         self._lexer: Lexer | None = None
-
-        # the tags use fonts from here
-        self._fonts: dict[tuple[bool, bool], Font] = {}
-        for bold in (True, False):
-            for italic in (True, False):
-                # the fonts will be updated later, see below
-                self._fonts[(bold, italic)] = Font(
-                    weight=("bold" if bold else "normal"), slant=("italic" if italic else "roman")
-                )
-
-        self.textwidget.bind("<<SettingChanged:font_family>>", self._font_changed, add=True)
-        self.textwidget.bind("<<SettingChanged:font_size>>", self._font_changed, add=True)
-        self._font_changed()
-        textutils.use_pygments_theme(self.textwidget, fonts=self._fonts)
-
-    def _font_changed(self, junk: object = None) -> None:
-        font_updates = dict(Font(name="TkFixedFont", exists=True).actual())
-        del font_updates["weight"]  # ignore boldness
-        del font_updates["slant"]  # ignore italicness
-
-        for (bold, italic), font in self._fonts.items():
-            # fonts don't have an update() method
-            for key, value in font_updates.items():
-                font[key] = value
+        textutils.use_pygments_tags(self.textwidget)
 
     # yields marks backwards, from end to start
     def _get_root_marks(self, start: str = "1.0", end: str = "end") -> Iterator[str]:

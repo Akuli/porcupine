@@ -6,6 +6,7 @@ import re
 import tkinter
 import weakref
 from functools import partial
+from tkinter.font import Font
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List, overload
 
 from pygments import styles
@@ -596,97 +597,61 @@ class LinkManager:
         self._callbacks.clear()
 
 
-# TODO: move to settings.py?
-# FIXME: update docstring
-
-# fmt: off
-@overload
-def use_pygments_theme(
-    widget: tkinter.Misc,
-    callback: Callable[[str, str], None],
+# TODO: document this or move to plugin
+def use_pygments_tags(
+    textwidget: tkinter.Text,
     *,
-    setting_name: str = ...,
-) -> None: ...
-@overload
-def use_pygments_theme(
-    widget: tkinter.Text,
-    callback: None = ...,
-    *,
-    setting_name: str,
-    fonts: dict[tuple[bool, bool], tkinter.Font] = ...,
-) -> None: ...
-# fmt: on
-def use_pygments_theme(
-    widget: tkinter.Misc,
-    callback: Callable[[str, str], None] | None = None,
     setting_name: str = "pygments_style",
-    *,
-    fonts: dict[tuple[bool, bool], tkinter.Font] = {},
 ) -> None:
-    """
-    Configure *widget* to use the colors of the Pygments theme whenever the
-    currently selected theme changes (see :mod:`porcupine.settings`).
-    Porcupine does that automatically for the ``textwidget`` of each
-    :class:`~porcupine.tabs.FileTab`.
+    fonts = {
+        # (bold, italic)
+        (False, True): Font(slant="italic"),
+        (True, False): Font(weight="bold"),
+        (True, True): Font(weight="bold", slant="italic"),
+    }
 
-    If you don't specify a *callback*, then ``widget`` must be a :class:`tkinter.Text` widget.
-    If you specify a callback, then it will be called like
-    ``callback(foreground_color, background_color)``, and the type of the widget doesn't matter.
+    def on_font_changed(junk: object = None) -> None:
+        assert textwidget["font"] == "TkFixedFont"
 
-    .. seealso::
-        This function is used in :source:`porcupine/plugins/linenumbers.py`.
-        Syntax highlighting is implemented in
-        :source:`porcupine/plugins/highlight.py`.
-    """
+        font_updates = Font(name="TkFixedFont", exists=True).actual()
+        for (bold, italic), font in fonts.items():
+            # fonts don't have an update() method
+            for key, value in font_updates.items():
+                if key not in ("weight", "slant"):
+                    font[key] = value
 
-    def on_style_changed(junk: object = None) -> None:
+    textwidget.bind("<<SettingChanged:font_family>>", on_font_changed, add=True)
+    textwidget.bind("<<SettingChanged:font_size>>", on_font_changed, add=True)
+    on_font_changed()
+
+    def on_theme_changed(fg: str, bg: str) -> None:
+        textwidget.config(
+            foreground=fg,
+            background=bg,
+            insertbackground=fg,  # cursor color
+            selectforeground=bg,
+            selectbackground=fg,
+        )
+
         style = styles.get_style_by_name(settings.get(setting_name, str))
 
-        bg = style.background_color
-
-        # yes, style.default_style can be '#rrggbb', '' or nonexistent
-        # this is undocumented
-        #
-        #   >>> from pygments.styles import *
-        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
-        #   ...  for name in get_all_styles()]
-        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
-        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
-        #    '#222222', '', '', '', '???', '']
-        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
-
-        if callback is None:
-            assert isinstance(widget, tkinter.Text)
-
-            # http://pygments.org/docs/formatterdevelopment/#styles
-            # all styles seem to yield all token types when iterated over,
-            # so we should always end up with the same tags configured
-            for tokentype, info in style:
-                # info["underline"] and info["border"] intentionally unused
-                widget.tag_config(
-                    str(tokentype),
-                    # empty string resets color in tags
-                    foreground="" if info["color"] is None else "#" + info["color"],
-                    background="" if info["bgcolor"] is None else "#" + info["bgcolor"],
-                )
-                font_key = (info["bold"], info["italic"])
-                if font_key in fonts:
-                    widget.tag_config(str(tokentype), font=fonts[font_key])
-                widget.tag_lower(str(tokentype), "sel")
-
-            widget.config(
-                foreground=fg,
-                background=bg,
-                insertbackground=fg,  # cursor color
-                selectforeground=bg,
-                selectbackground=fg,
+        # http://pygments.org/docs/formatterdevelopment/#styles
+        # all styles seem to yield all token types when iterated over,
+        # so we should always end up with the same tags configured
+        for tokentype, info in style:
+            # info["underline"] and info["border"] intentionally unused
+            textwidget.tag_config(
+                str(tokentype),
+                # empty string resets color in tags
+                foreground=("" if info["color"] is None else "#" + info["color"]),
+                background=("" if info["bgcolor"] is None else "#" + info["bgcolor"]),
             )
+            font_key = (info["bold"], info["italic"])
+            if font_key in fonts:
+                textwidget.tag_config(str(tokentype), font=fonts[font_key])
+            textwidget.tag_lower(str(tokentype), "sel")
 
-        else:
-            callback(fg, bg)
-
-    widget.bind(f"<<SettingChanged:{setting_name}>>", on_style_changed, add=True)
-    on_style_changed()
+    settings.use_pygments_fg_and_bg(textwidget, on_theme_changed, setting_name=setting_name)
 
 
 def config_tab_displaying(

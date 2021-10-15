@@ -9,7 +9,8 @@ import logging
 import os
 import sys
 import time
-import tkinter.font
+import tkinter
+from tkinter.font import Font
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Iterator, List, Type, TypeVar, overload
@@ -822,6 +823,38 @@ def remember_pane_size(
     panedwindow.bind(
         "<ButtonRelease-1>", (lambda e: panedwindow.after_idle(gui_to_settings)), add=True
     )
+
+
+def use_pygments_fg_and_bg(
+    widget: tkinter.Misc,
+    callback: Callable[[str, str], None],
+    *,
+    setting_name: str = "pygments_style",
+) -> None:
+    """Run a callback whenever the pygments theme changes.
+
+    The callback no longer runs once ``widget`` has been destroyed. It is
+    called with the foreground and background color of the pygments theme as
+    arguments.
+    """
+
+    def on_style_changed(junk: object = None) -> None:
+        style = styles.get_style_by_name(get(setting_name, str))
+        bg = style.background_color
+        # yes, style.default_style can be '#rrggbb', '' or nonexistent
+        # this is undocumented
+        #
+        #   >>> from pygments.styles import *
+        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
+        #   ...  for name in get_all_styles()]
+        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
+        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
+        #    '#222222', '', '', '', '???', '']
+        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
+        callback(fg, bg)
+
+    widget.bind(f"<<SettingChanged:{setting_name}>>", on_style_changed, add=True)
+    on_style_changed()
 
 
 def _is_monospace(font_family: str) -> bool:

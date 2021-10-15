@@ -184,7 +184,7 @@ class NoTerminalRunner:
             master, is_focusable=True, set_colors=False, name="run_output", font="TkFixedFont", wrap="char"
         )
         self.textwidget.bind("<Destroy>", self._stop_executor, add=True)
-        textutils.use_pygments_theme(self.textwidget, setting_name="run_output_pygments_style")
+        textutils.use_pygments_tags(self.textwidget, setting_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
             self.textwidget, filename_regex, self._get_link_opener
