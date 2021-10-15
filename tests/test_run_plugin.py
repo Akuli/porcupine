@@ -135,7 +135,7 @@ def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
     no_terminal.run_command(f"{utils.quote(sys.executable)} -m mypy lel.py", tmp_path)
 
     # long timeout, mypy can be slow
-    wait_until((lambda: "The process failed with status 1." in get_output()), timeout=15)
+    wait_until((lambda: "The process failed with status 1." in get_output()), timeout=60)
     assert click_last_link() == "print(1 + 'lol')"
 
 
