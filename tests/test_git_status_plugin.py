@@ -1,12 +1,13 @@
 import os
 import shutil
 import subprocess
-from porcupine import get_tab_manager
 from concurrent.futures import Future
 from functools import partial
 from pathlib import Path
 
 import pytest
+
+from porcupine import get_tab_manager
 
 # shitty debugging attempt for #379
 if os.environ.get("GITHUB_ACTIONS") == "true":
