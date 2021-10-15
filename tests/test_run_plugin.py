@@ -135,7 +135,7 @@ def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
     no_terminal.run_command(f"{utils.quote(sys.executable)} -m mypy lel.py", tmp_path)
 
     # long timeout, mypy can be slow
-    wait_until((lambda: "The process failed with status 1." in get_output()), timeout=15)
+    wait_until((lambda: "The process failed with status 1." in get_output()), timeout=60)
     assert click_last_link() == "print(1 + 'lol')"
 
 
@@ -291,13 +291,21 @@ while True:
     assert not size_is_changing(tmp_path / "out.txt")
 
 
-def test_smashing_f5(tmp_path, wait_until):
+@pytest.mark.parametrize("use_after_idle", [True, False])
+def test_smashing_f5(tmp_path, wait_until, use_after_idle):
     (tmp_path / "hello.py").write_text("print('Hello')")
-    no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
-    no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
-    no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
-    wait_until(lambda: "The process completed successfully." in get_output())
 
+    run = lambda: no_terminal.run_command(f"{utils.quote(sys.executable)} hello.py", tmp_path)
+    if use_after_idle:
+        get_main_window().after_idle(run)
+        get_main_window().after_idle(run)
+        get_main_window().after_idle(run)
+    else:
+        run()
+        run()
+        run()
+
+    wait_until(lambda: "The process completed successfully." in get_output())
     first_line, rest = get_output().split("\n", 1)
     assert first_line.endswith("hello.py")
     assert rest == "Hello\nThe process completed successfully."
