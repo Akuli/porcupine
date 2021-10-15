@@ -722,7 +722,6 @@ def _get_colors(style_name: str) -> tuple[str, str]:
 
     fg = style.style_for_token(token.String)["color"] or style.style_for_token(token.Text)["color"]
     if fg:
-        # style dicts doesn't contain leading '#' for whatever reason
         fg = "#" + fg
     else:
         # yes, style.default_style can be '#rrggbb', '' or nonexistent
