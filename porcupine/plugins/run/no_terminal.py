@@ -76,7 +76,7 @@ class Executor:
         env["LINES"] = str(height // font.metrics("linespace"))
 
         threading.Thread(target=self._thread_target, args=[command, env], daemon=True).start()
-        self._queue_handler()
+        self._flush_queue_repeatedly()
         self.started = True
 
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
@@ -112,7 +112,7 @@ class Executor:
             self._queue.put(("error", f"The process failed with status {status}."))
         self._queue.put(("end", ""))
 
-    def _queue_handler(self) -> None:
+    def _flush_queue(self) -> None:
         messages: list[tuple[str, str]] = []
         while True:
             try:
@@ -143,12 +143,18 @@ class Executor:
 
             self._textwidget.config(state="disabled")
 
-        self._timeout_id = self._textwidget.after(100, self._queue_handler)
+
+    def _flush_queue_repeatedly(self) -> None:
+        self._flush_queue()
+        self._timeout_id = self._textwidget.after(100, self._flush_queue_repeatedly)
 
     def stop(self, *, quitting: bool = False) -> None:
         if self._timeout_id is not None:
             self._textwidget.after_cancel(self._timeout_id)
             self._timeout_id = None
+            if not quitting:
+                self._queue.put(("error", "Killed."))
+                self._flush_queue()
 
         if self._shell_process is None:
             return
@@ -178,7 +184,6 @@ class Executor:
             pass
 
         if not quitting:
-            self._textwidget.insert("end", "Killed.", ["Token.Name.Exception"])
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
@@ -205,18 +210,17 @@ class NoTerminalRunner:
         button_frame.place(relx=1, rely=0, anchor="ne")
         self.hide_button = ttk.Button(button_frame, text="Hide output")
         self.hide_button.pack(side="left")
-        stop_button = ttk.Button(button_frame, text="Stop", command=self._stop_executor)
-        stop_button.pack(side="left")
+        self.stop_button = ttk.Button(button_frame, text="Stop", command=self._stop_executor)
+        self.stop_button.pack(side="left")
 
         normal_cursor = self.textwidget["cursor"]
-        for button in [self.hide_button, stop_button]:
+        for button in [self.hide_button, self.stop_button]:
             button.bind("<Enter>", (lambda e: self.textwidget.config(cursor="hand2")))
             button.bind("<Leave>", (lambda e: self.textwidget.config(cursor=normal_cursor)))
 
     def _stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
             self.executor.stop(quitting=quitting)
-            self._textwidget.insert("end", "Killed.", [tag])
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
