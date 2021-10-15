@@ -198,7 +198,7 @@ class NoTerminalRunner:
             font="TkFixedFont",
             wrap="char",
         )
-        self.textwidget.bind("<Destroy>", (lambda e: self.stop_executor(quitting=True)), add=True)
+        self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
         textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
@@ -225,7 +225,7 @@ class NoTerminalRunner:
             button.bind("<Enter>", (lambda e: self.textwidget.config(cursor="hand2")))
             button.bind("<Leave>", (lambda e: self.textwidget.config(cursor=normal_cursor)))
 
-    def stop_executor(self, *, quitting: bool = False) -> None:
+    def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
             self.executor.stop(quitting=quitting)
 
@@ -274,14 +274,13 @@ def setup() -> None:
         get_vertical_panedwindow(), runner.textwidget, "run_command_output_height", 200
     )
 
-    def toggle_visible() -> None:
+    def toggle_visible(junk_event: object = ...) -> None:
         assert runner is not None
         is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
         get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
 
-    r = runner  # because mypy is awesome
-    runner.hide_button.bind("<Button-1>", (lambda e: toggle_visible()), add=True)
-    runner.stop_button.bind("<Button-1>", (lambda e: r.stop_executor()), add=True)
+    runner.hide_button.bind("<Button-1>", toggle_visible, add=True)
+    runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
     menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
