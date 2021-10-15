@@ -206,12 +206,14 @@ class NoTerminalRunner:
         self.textwidget.tag_config("link", underline=True)
         self.executor: Executor | None = None
 
-        button_frame = ttk.Frame(self.textwidget)
+        button_frame = tkinter.Frame(self.textwidget)
         button_frame.place(relx=1, rely=0, anchor="ne")
-        self.hide_button = ttk.Button(button_frame, text="Hide output")
-        self.hide_button.pack(side="left")
-        self.stop_button = ttk.Button(button_frame, text="Stop", command=self._stop_executor)
-        self.stop_button.pack(side="left")
+        settings.use_pygments_fg_and_bg(button_frame, (lambda fg, bg: button_frame.config(bg=bg)))
+        self.stop_button = ttk.Label(button_frame, image=images.get("stop"))
+        self.stop_button.pack(side="left", padx=1)
+        self.stop_button.bind("<Button-1>", self._stop_executor, add=True)
+        self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"))
+        self.hide_button.pack(side="left", padx=1)
 
         normal_cursor = self.textwidget["cursor"]
         for button in [self.hide_button, self.stop_button]:
@@ -271,7 +273,7 @@ def setup() -> None:
         is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
         get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
 
-    runner.hide_button.config(command=toggle_visible)
+    runner.hide_button.bind("<Button-1>", (lambda e: toggle_visible()), add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
 
 
