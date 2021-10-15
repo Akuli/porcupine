@@ -180,14 +180,14 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
         tab.path = new_path / tab.path.relative_to(old_path)
-    get_tab_manager().event_generate("<<FileSystemChanged>>")
     return True
 
 
 def rename(old_path: Path) -> None:
     new_path = ask_file_name(old_path)
-    if new_path is not None:
-        move_with_git_or_otherwise(old_path, new_path)
+    if new_path is None:
+        if move_with_git_or_otherwise(old_path, new_path):
+            get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def paste(new_path: Path) -> None:
@@ -209,16 +209,20 @@ def paste(new_path: Path) -> None:
             return
         new_file_path = path
 
+        # TODO: what does this check do? is it really necessary?
         if paste_state.path == new_file_path:  # user pressed X or cancel on conflict dialog
             return
 
     if paste_state.is_cut:
-        if move_with_git_or_otherwise(paste_state.path, new_file_path):
-            paste_state = None
+        if not move_with_git_or_otherwise(paste_state.path, new_file_path):
+            return
+        paste_state = None
     else:
         # TODO: error handling
         shutil.copy(paste_state.path, new_file_path)
-        get_tab_manager().event_generate("<<FileSystemChanged>>")
+
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
+    get_directory_tree().select_file(new_file_path)
 
 
 def copy(old_path: Path) -> None:
