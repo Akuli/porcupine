@@ -742,7 +742,7 @@ def _get_colors(style_name: str) -> tuple[str, str]:
 def add_pygments_style_button(option_name: str, text: str) -> None:
     var = tkinter.StringVar()
 
-    # ttk.Menubutton doesn't have custom colors
+    # not using ttk.Menubutton because i want custom colors
     menubutton = tkinter.Menubutton(get_dialog_content(), textvariable=var)
     menu = tkinter.Menu(menubutton, tearoff=False)
     menubutton.config(menu=menu)
