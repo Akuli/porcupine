@@ -7,7 +7,7 @@ import re
 import tkinter
 from functools import partial
 
-from porcupine import get_tab_manager, tabs, textutils, utils, settings
+from porcupine import get_tab_manager, settings, tabs, utils
 
 OPEN_TO_CLOSE = {"{": "}", "[": "]", "(": ")"}
 CLOSE_TO_OPEN = {close: open_ for open_, close in OPEN_TO_CLOSE.items()}

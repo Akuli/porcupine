@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import tkinter.font
 
-from porcupine import get_tab_manager, tabs, textutils, utils, settings
+from porcupine import get_tab_manager, settings, tabs, utils
 
 
 def line_is_elided(textwidget: tkinter.Text, lineno: int) -> bool:

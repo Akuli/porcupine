@@ -5,14 +5,13 @@ import itertools
 import logging
 import time
 import tkinter
-from tkinter.font import Font
 from typing import Any, Callable, Iterator
 
-from pygments import styles, token
+from pygments import token
 from pygments.lexer import Lexer, LexerMeta, RegexLexer
 from pygments.lexers import MarkdownLexer
 
-from porcupine import get_tab_manager, settings, tabs, textutils, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:

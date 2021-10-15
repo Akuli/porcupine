@@ -7,7 +7,7 @@ import tkinter
 import weakref
 from functools import partial
 from tkinter.font import Font
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List
 
 from pygments import styles
 
@@ -598,11 +598,7 @@ class LinkManager:
 
 
 # TODO: document this or move to plugin
-def use_pygments_tags(
-    textwidget: tkinter.Text,
-    *,
-    setting_name: str = "pygments_style",
-) -> None:
+def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_style") -> None:
     fonts = {
         # (bold, italic)
         (False, True): Font(slant="italic"),
@@ -633,7 +629,7 @@ def use_pygments_tags(
             selectbackground=fg,
         )
 
-        style = styles.get_style_by_name(settings.get(setting_name, str))
+        style = styles.get_style_by_name(settings.get(option_name, str))
 
         # http://pygments.org/docs/formatterdevelopment/#styles
         # all styles seem to yield all token types when iterated over,
@@ -651,7 +647,7 @@ def use_pygments_tags(
                 textwidget.tag_config(str(tokentype), font=fonts[font_key])
             textwidget.tag_lower(str(tokentype), "sel")
 
-    settings.use_pygments_fg_and_bg(textwidget, on_theme_changed, setting_name=setting_name)
+    settings.use_pygments_fg_and_bg(textwidget, on_theme_changed, option_name=option_name)
 
 
 def config_tab_displaying(
@@ -793,6 +789,7 @@ def create_passive_text_widget(
     text = tkinter.Text(parent, **kwargs)
 
     if set_colors:
+
         def update_colors(junk: object = None) -> None:
             # tkinter's ttk::style api sucks so let's not use it
             ttk_fg = text.tk.eval("ttk::style lookup TLabel.label -foreground")

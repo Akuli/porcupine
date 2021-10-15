@@ -10,7 +10,6 @@ import os
 import sys
 import time
 import tkinter
-from tkinter.font import Font
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Iterator, List, Type, TypeVar, overload
@@ -721,19 +720,20 @@ def _get_colors(style_name: str) -> tuple[str, str]:
     style = styles.get_style_by_name(style_name)
     bg = style.background_color
 
-    # style_names have a style_for_token() method, but only iterating
-    # is documented :( http://pygments.org/docs/formatterdevelopment/
-    # i'm using iter() to make sure that dict() really treats
-    # the style as an iterable of pairs instead of some other
-    # metaprogramming fanciness
-    style_infos = dict(iter(style))
-
-    fg = style_infos[token.String]["color"] or style_infos[token.Text]["color"]
+    fg = style.style_for_token(token.String)["color"] or style.style_for_token(token.Text)["color"]
     if fg:
-        # style_infos doesn't contain leading '#' for whatever reason
+        # style dicts doesn't contain leading '#' for whatever reason
         fg = "#" + fg
     else:
-        # do like textutils.use_pygments_theme does
+        # yes, style.default_style can be '#rrggbb', '' or nonexistent
+        # this is undocumented
+        #
+        #   >>> from pygments.styles import *
+        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
+        #   ...  for name in get_all_styles()]
+        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
+        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
+        #    '#222222', '', '', '', '???', '']
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
 
     return (fg, bg)
@@ -762,7 +762,7 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
 
     # Not done when creating button, because can slow down porcupine startup
     def fill_menubutton(junk_event: object) -> None:
-        menu.delete(0, 'end')
+        menu.delete(0, "end")
         for index, style_name in enumerate(sorted(styles.get_all_styles())):
             fg, bg = _get_colors(style_name)
             menu.add_radiobutton(
@@ -774,11 +774,11 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
                 # swapped colors
                 activeforeground=bg,
                 activebackground=fg,
-                columnbreak=(index != 0 and index % 20 == 0)
+                columnbreak=(index != 0 and index % 20 == 0),
             )
         settings_to_var_and_colors()
 
-    menubutton.bind('<Map>', fill_menubutton, add=True)
+    menubutton.bind("<Map>", fill_menubutton, add=True)
     _grid_widgets(text, menubutton, None)
 
 
@@ -829,7 +829,7 @@ def use_pygments_fg_and_bg(
     widget: tkinter.Misc,
     callback: Callable[[str, str], None],
     *,
-    setting_name: str = "pygments_style",
+    option_name: str = "pygments_style",
 ) -> None:
     """Run a callback whenever the pygments theme changes.
 
@@ -839,21 +839,13 @@ def use_pygments_fg_and_bg(
     """
 
     def on_style_changed(junk: object = None) -> None:
-        style = styles.get_style_by_name(get(setting_name, str))
+        style = styles.get_style_by_name(get(option_name, str))
+        # Similar to _get_colors() but not exactly same
         bg = style.background_color
-        # yes, style.default_style can be '#rrggbb', '' or nonexistent
-        # this is undocumented
-        #
-        #   >>> from pygments.styles import *
-        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
-        #   ...  for name in get_all_styles()]
-        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
-        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
-        #    '#222222', '', '', '', '???', '']
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
         callback(fg, bg)
 
-    widget.bind(f"<<SettingChanged:{setting_name}>>", on_style_changed, add=True)
+    widget.bind(f"<<SettingChanged:{option_name}>>", on_style_changed, add=True)
     on_style_changed()
 
 
