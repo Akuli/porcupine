@@ -209,7 +209,11 @@ class NoTerminalRunner:
 
         button_frame = tkinter.Frame(self.textwidget)
         button_frame.place(relx=1, rely=0, anchor="ne")
-        settings.use_pygments_fg_and_bg(button_frame, (lambda fg, bg: button_frame.config(bg=bg)))
+        settings.use_pygments_fg_and_bg(
+            button_frame,
+            (lambda fg, bg: button_frame.config(bg=bg)),
+            option_name="run_output_pygments_style",
+        )
 
         self.stop_button = ttk.Label(button_frame, image=images.get("stop"))
         self.stop_button.pack(side="left", padx=1)
@@ -279,7 +283,7 @@ def setup() -> None:
     runner.hide_button.bind("<Button-1>", (lambda e: toggle_visible()), add=True)
     runner.stop_button.bind("<Button-1>", (lambda e: r.stop_executor()), add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
-    menubar.get_menu("Run").add_command(label="Kill command", command=runner.stop_executor)
+    menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
