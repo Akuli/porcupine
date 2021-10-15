@@ -151,14 +151,6 @@ class Executor:
         if self._timeout_id is not None:
             self._textwidget.after_cancel(self._timeout_id)
             self._timeout_id = None
-            if (
-                self._shell_process is not None
-                and self._shell_process.poll() is None
-                and not quitting
-            ):
-                # It's still running
-                self._queue.put(("error", "Killed."))
-                self._flush_queue()
 
         if self._shell_process is None:
             return
@@ -186,6 +178,11 @@ class Executor:
         # non-psutil errors happen in langserver plugin, not sure if needed here
         except (psutil.NoSuchProcess, ProcessLookupError):
             pass
+
+        else:
+            if not quitting:
+                self._queue.put(("error", "Killed."))
+                self._flush_queue()
 
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
