@@ -44,6 +44,11 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
     ]
 
 
+def show_error(title: str, message: str, error: Exception) -> None:
+    log.exception(message)
+    messagebox.showerror(title, message, detail=f"{type(error).__name__}: {error}")
+
+
 def ask_file_name(
     old_path: Path, is_paste: bool = False, show_overwriting_option: bool = False
 ) -> Path | None:
@@ -173,12 +178,7 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
     try:
         shutil.move(str(old_path), str(new_path))
     except OSError as e:
-        log.exception(f"moving failed: {old_path} --> {new_path}")
-        messagebox.showerror(
-            "Moving failed",
-            f"Cannot move {old_path} to {new_path}.",
-            detail=f"{type(e).__name__}: {str(e)}",
-        )
+        show_error("Moving failed", f"Cannot move {old_path} to {new_path}.", e)
         return False
 
     for tab in find_tabs_by_parent_path(old_path):
@@ -225,12 +225,7 @@ def paste(new_path: Path) -> None:
         try:
             shutil.copy(paste_state.path, new_file_path)
         except OSError as e:
-            log.exception(f"copying failed: {paste_state.path} --> {new_file_path}")
-            messagebox.showerror(
-                "Copying failed",
-                f"Cannot copy {paste_state.path} to {new_file_path}.",
-                detail=f"{type(e).__name__}: {str(e)}",
-            )
+            show_error("Copying failed", f"Cannot copy {paste_state.path} to {new_file_path}.", e)
             return
 
     get_tab_manager().event_generate("<<FileSystemChanged>>")
@@ -270,12 +265,7 @@ def trash(path: Path) -> None:
     try:
         send2trash(path)
     except Exception as e:  # can be send2trash's own error, idk if maybe OSError
-        log.exception(f"can't trash {path}")
-        messagebox.showerror(
-            f"Can't move to {trash_name}",
-            f"Moving {path} to {trash_name} failed.",
-            detail=f"{type(e).__name__}: {e}",
-        )
+        show_error(f"Can't move to {trash_name}", f"Moving {path} to {trash_name} failed.", e)
         return
 
     get_tab_manager().event_generate("<<FileSystemChanged>>")
@@ -298,10 +288,7 @@ def delete(path: Path) -> None:
         else:
             path.unlink()
     except OSError as e:
-        log.exception(f"can't delete {path}")
-        messagebox.showerror(
-            "Deleting failed", f"Deleting {path} failed.", detail=f"{type(e).__name__}: {e}"
-        )
+        show_error("Deleting failed", f"Deleting {path} failed.", e)
         return
 
     get_tab_manager().event_generate("<<FileSystemChanged>>")
