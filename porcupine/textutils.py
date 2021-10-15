@@ -808,7 +808,6 @@ def create_passive_text_widget(
             text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
 
         # even non-ttk widgets can handle <<ThemeChanged>>
-        # TODO: make sure that this works
         text.bind("<<ThemeChanged>>", update_colors, add=True)
         update_colors()
 
