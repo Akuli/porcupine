@@ -213,10 +213,6 @@ def paste(new_path: Path) -> None:
             return
         new_file_path = path
 
-        # TODO: what does this check do? is it really necessary?
-        if paste_state.path == new_file_path:  # user pressed X or cancel on conflict dialog
-            return
-
     if paste_state.is_cut:
         if not move_with_git_or_otherwise(paste_state.path, new_file_path):
             return
