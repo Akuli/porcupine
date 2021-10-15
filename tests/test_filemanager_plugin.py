@@ -1,4 +1,5 @@
 import pytest
+
 from porcupine.plugins.directory_tree import get_path
 
 # TODO: need more tests
