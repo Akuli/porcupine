@@ -317,3 +317,11 @@ def test_stop_button(tmp_path, wait_until):
     wait_until(lambda: "started" in get_output())
     no_terminal.runner.stop_button.event_generate("<Button-1>")
     wait_until(lambda: "started\nKilled.")
+
+
+def test_stop_button_pressed_after_finished(tmp_path, wait_until):
+    no_terminal.run_command(f"{utils.quote(sys.executable)} -c pass", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+
+    no_terminal.runner.stop_button.event_generate("<Button-1>")
+    assert "Killed" not in get_output()

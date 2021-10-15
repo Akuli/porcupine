@@ -826,7 +826,7 @@ def remember_pane_size(
 
 def use_pygments_fg_and_bg(
     widget: tkinter.Misc,
-    callback: Callable[[str, str], None],
+    callback: Callable[[str, str], object],
     *,
     option_name: str = "pygments_style",
 ) -> None:

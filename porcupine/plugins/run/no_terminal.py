@@ -143,7 +143,6 @@ class Executor:
 
             self._textwidget.config(state="disabled")
 
-
     def _flush_queue_repeatedly(self) -> None:
         self._flush_queue()
         self._timeout_id = self._textwidget.after(100, self._flush_queue_repeatedly)
@@ -152,7 +151,12 @@ class Executor:
         if self._timeout_id is not None:
             self._textwidget.after_cancel(self._timeout_id)
             self._timeout_id = None
-            if not quitting:
+            if (
+                self._shell_process is not None
+                and self._shell_process.poll() is None
+                and not quitting
+            ):
+                # It's still running
                 self._queue.put(("error", "Killed."))
                 self._flush_queue()
 
@@ -273,8 +277,9 @@ def setup() -> None:
         is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
         get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
 
+    r = runner  # because mypy is awesome
     runner.hide_button.bind("<Button-1>", (lambda e: toggle_visible()), add=True)
-    runner.stop_button.bind("<Button-1>", (lambda e: runner.stop_executor()), add=True)
+    runner.stop_button.bind("<Button-1>", (lambda e: r.stop_executor()), add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
     menubar.get_menu("Run").add_command(label="Kill command", command=runner.stop_executor)
 
