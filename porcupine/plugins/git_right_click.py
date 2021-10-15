@@ -8,7 +8,7 @@ import tkinter
 from porcupine import utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
 
-setup_after = ["directory_tree"]
+setup_after = ["directory_tree", "filemanager"]
 
 log = logging.getLogger(__name__)
 
