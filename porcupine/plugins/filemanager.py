@@ -185,7 +185,7 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
 
 def rename(old_path: Path) -> None:
     new_path = ask_file_name(old_path)
-    if new_path is None:
+    if new_path is not None:
         if move_with_git_or_otherwise(old_path, new_path):
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
