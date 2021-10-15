@@ -170,6 +170,7 @@ def rename(old_path: Path) -> None:
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
         tab.path = new_path / tab.path.relative_to(old_path)
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def paste(new_path: Path) -> None:
@@ -244,6 +245,9 @@ def trash(path: Path) -> None:
             f"Moving to {trash_name} failed",
             f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
         )
+        return
+
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def delete(path: Path) -> None:
@@ -267,6 +271,9 @@ def delete(path: Path) -> None:
         messagebox.showerror(
             "Deleting failed", f"Deleting {path} failed.\n\n{type(e).__name__}: {e}"
         )
+        return
+
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def open_in_file_manager(path: Path) -> None:
