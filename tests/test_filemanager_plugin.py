@@ -6,9 +6,9 @@ import pytest
 from porcupine.plugins.directory_tree import get_directory_tree, get_path
 
 
-def add_project_and_select_file(file_path) -> None:
+def add_project_and_select_file(file_path, project=None) -> None:
     tree = get_directory_tree()
-    tree.add_project(file_path.parent)
+    tree.add_project(project or file_path.parent)
 
     while True:
         tree.update()
@@ -138,3 +138,20 @@ def test_trashing_error(tree, tmp_path, mocker, check_error):
             f"Moving {tmp_path / 'foo'} to trash failed.",
             "RuntimeError: lol",
         )
+
+
+def test_copy_overwriting_opened_file(tabmanager, tree, tmp_path, mocker):
+    mocker.patch("porcupine.plugins.filemanager.ask_file_name").return_value = tmp_path / "foo.txt"
+
+    (tmp_path / "foo.txt").write_text("old foo")
+    (tmp_path / "subfolder").mkdir()
+    (tmp_path / "subfolder" / "foo.txt").write_text("new foo")
+
+    tab = tabmanager.open_file(tmp_path / "foo.txt")
+
+    add_project_and_select_file(tmp_path / "subfolder" / "foo.txt", project=tmp_path)
+    tree.event_generate("<<Copy>>")
+    add_project_and_select_file(tmp_path / "foo.txt", project=tmp_path)
+    tree.event_generate("<<Paste>>")
+
+    assert tab.textwidget.get("1.0", "end").strip() == "new foo"
