@@ -166,7 +166,6 @@ def move_with_git_or_otherwise(old: Path, new: Path) -> bool:
         except (OSError, subprocess.CalledProcessError):
             # Happens when:
             #   - git not installed
-            #   - project doesn't use git
             #   - old_path is not 'git add'ed
             pass
 
@@ -177,20 +176,18 @@ def move_with_git_or_otherwise(old: Path, new: Path) -> bool:
         log.exception(f"moving failed: {old} --> {new}")
         messagebox.showerror("Moving failed", str(e))
         return False
+
+    for tab in find_tabs_by_parent_path(old):
+        assert tab.path is not None
+        tab.path = new_path / tab.path.relative_to(old)
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
     return True
 
 
 def rename(old_path: Path) -> None:
     new_path = ask_file_name(old_path)
-    if new_path is None:
-        return
-    if not move_with_git_or_otherwise(old_path, new_path):
-        return
-
-    for tab in find_tabs_by_parent_path(old_path):
-        assert tab.path is not None
-        tab.path = new_path / tab.path.relative_to(old_path)
-    get_tab_manager().event_generate("<<FileSystemChanged>>")
+    if new_path is not None:
+        move_with_git_or_otherwise(old_path, new_path)
 
 
 def paste(new_path: Path) -> None:
@@ -216,17 +213,12 @@ def paste(new_path: Path) -> None:
             return
 
     if paste_state.is_cut:
-        if not move_with_git_or_otherwise(paste_state.path, new_file_path):
-            return
-        for tab in find_tabs_by_parent_path(paste_state.path):
-            assert tab.path is not None
-            tab.path = new_file_path
-        paste_state = None
+        if move_with_git_or_otherwise(paste_state.path, new_file_path):
+            paste_state = None
     else:
         # TODO: error handling
         shutil.copy(paste_state.path, new_file_path)
-
-    get_tab_manager().event_generate("<<FileSystemChanged>>")
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def copy(old_path: Path) -> None:
