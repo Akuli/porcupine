@@ -45,7 +45,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         label="git add", command=(lambda: run(["git", "add", "--", str(path)]))
     )
     tree.contextmenu.add_command(
-        label="git restore --staged (undo git add)",
+        label="git restore --staged (undo add)",
         command=(lambda: run(["git", "reset", "HEAD", "--", str(path)])),
     )
     tree.contextmenu.add_command(
