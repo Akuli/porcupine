@@ -23,6 +23,7 @@ event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
 # run plugin
 event add "<<Menubar:Run/Show//hide output>>" <F4>
+event add "<<Menubar:Run/Kill command>>" <Shift-F4>
 # Many separate events because if you bind many keys to the same virtual
 # event, it is hard to figure out what key was pressed to trigger it
 event add "<<Run:AskAndRun0>>" <Shift-F5>

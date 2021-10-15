@@ -197,7 +197,7 @@ class NoTerminalRunner:
             font="TkFixedFont",
             wrap="char",
         )
-        self.textwidget.bind("<Destroy>", partial(self._stop_executor, quitting=True), add=True)
+        self.textwidget.bind("<Destroy>", (lambda e: self.stop_executor(quitting=True)), add=True)
         textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
@@ -209,9 +209,9 @@ class NoTerminalRunner:
         button_frame = tkinter.Frame(self.textwidget)
         button_frame.place(relx=1, rely=0, anchor="ne")
         settings.use_pygments_fg_and_bg(button_frame, (lambda fg, bg: button_frame.config(bg=bg)))
+
         self.stop_button = ttk.Label(button_frame, image=images.get("stop"))
         self.stop_button.pack(side="left", padx=1)
-        self.stop_button.bind("<Button-1>", self._stop_executor, add=True)
         self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"))
         self.hide_button.pack(side="left", padx=1)
 
@@ -220,7 +220,7 @@ class NoTerminalRunner:
             button.bind("<Enter>", (lambda e: self.textwidget.config(cursor="hand2")))
             button.bind("<Leave>", (lambda e: self.textwidget.config(cursor=normal_cursor)))
 
-    def _stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
+    def stop_executor(self, *, quitting: bool = False) -> None:
         if self.executor is not None:
             self.executor.stop(quitting=quitting)
 
@@ -274,7 +274,9 @@ def setup() -> None:
         get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
 
     runner.hide_button.bind("<Button-1>", (lambda e: toggle_visible()), add=True)
+    runner.stop_button.bind("<Button-1>", (lambda e: runner.stop_executor()), add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
+    menubar.get_menu("Run").add_command(label="Kill command", command=runner.stop_executor)
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
