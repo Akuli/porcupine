@@ -610,7 +610,7 @@ def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_
         assert textwidget["font"] == "TkFixedFont"
 
         font_updates = Font(name="TkFixedFont", exists=True).actual()
-        for (bold, italic), font in fonts.items():
+        for font in fonts.values():
             # fonts don't have an update() method
             for key, value in font_updates.items():
                 if key not in ("weight", "slant"):
