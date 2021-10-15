@@ -168,13 +168,14 @@ def move_with_git_or_otherwise(old: Path, new: Path) -> bool:
             #   - git not installed
             #   - project doesn't use git
             #   - old_path is not 'git add'ed
-            log.info(f"'git mv' failed ({old} --> {new}), moving without git", exc_info=True)
+            pass
 
+    log.info(f"moving without git ({old} --> {new})")
     try:
         shutil.move(str(old), str(new))
     except OSError as e:
-        log.exception(f"renaming failed: {old} --> {new}")
-        messagebox.showerror("Renaming failed", str(e))
+        log.exception(f"moving failed: {old} --> {new}")
+        messagebox.showerror("Moving failed", str(e))
         return False
     return True
 
