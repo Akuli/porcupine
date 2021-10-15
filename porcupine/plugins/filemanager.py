@@ -143,34 +143,51 @@ def ask_file_name(
     return new_path
 
 
-def rename(old_path: Path) -> None:
-    new_path = ask_file_name(old_path)
-    if new_path is None:
-        return
+# Not necessarily same concept as Porcupine's project root
+def find_git_root(path: Path) -> Path | None:
+    for parent in path.parents:
+        if (parent / ".git").is_dir():
+            return parent
+    return None
 
-    try:
-        subprocess.check_call(
-            ["git", "mv", "--", old_path.name, new_path.name],
-            cwd=old_path.parent,
-            **utils.subprocess_kwargs,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        # Happens when:
-        #   - git not installed
-        #   - project doesn't use git
-        #   - old_path is not 'git add'ed
-        log.info("'git mv' failed, moving without git", exc_info=True)
+
+def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
+    old_git = find_git_root(old_path)
+    new_git = find_git_root(new_path)
+    if old_git is not None and new_git is not None and old_git == new_git:
+        log.info(f"attemting 'git mv' ({old_path} --> {new_path})")
         try:
-            old_path.rename(new_path)
-        except OSError as e:
-            log.exception(f"renaming failed: {old_path} --> {new_path}")
-            messagebox.showerror("Renaming failed", str(e))
-            return
+            subprocess.check_call(
+                ["git", "mv", "--", str(old_path), str(new_path)],
+                cwd=old_path.parent,
+                **utils.subprocess_kwargs,
+            )
+            return True
+        except (OSError, subprocess.CalledProcessError):
+            # Happens when:
+            #   - git not installed
+            #   - old_path is not 'git add'ed
+            pass
+
+    log.info(f"moving without git ({old_path} --> {new_path})")
+    try:
+        shutil.move(str(old_path), str(new_path))
+    except OSError as e:
+        log.exception(f"moving failed: {old_path} --> {new_path}")
+        messagebox.showerror("Moving failed", str(e))
+        return False
 
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
         tab.path = new_path / tab.path.relative_to(old_path)
     get_tab_manager().event_generate("<<FileSystemChanged>>")
+    return True
+
+
+def rename(old_path: Path) -> None:
+    new_path = ask_file_name(old_path)
+    if new_path is not None:
+        move_with_git_or_otherwise(old_path, new_path)
 
 
 def paste(new_path: Path) -> None:
@@ -196,15 +213,12 @@ def paste(new_path: Path) -> None:
             return
 
     if paste_state.is_cut:
-        shutil.move(str(paste_state.path), str(new_file_path))
-        for tab in find_tabs_by_parent_path(paste_state.path):
-            assert tab.path is not None
-            tab.path = new_file_path
-        paste_state = None
+        if move_with_git_or_otherwise(paste_state.path, new_file_path):
+            paste_state = None
     else:
+        # TODO: error handling
         shutil.copy(paste_state.path, new_file_path)
-
-    get_tab_manager().event_generate("<<FileSystemChanged>>")
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def copy(old_path: Path) -> None:
