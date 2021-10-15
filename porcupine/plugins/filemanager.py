@@ -300,7 +300,7 @@ def delete(path: Path) -> None:
     except OSError as e:
         log.exception(f"can't delete {path}")
         messagebox.showerror(
-            "Deleting failed", f"Deleting {path} failed.\n\n{type(e).__name__}: {e}"
+            "Deleting failed", f"Deleting {path} failed.", detail=f"{type(e).__name__}: {e}"
         )
         return
 

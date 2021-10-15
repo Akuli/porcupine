@@ -1,5 +1,5 @@
-import sys
 import logging
+import sys
 
 import pytest
 
@@ -8,8 +8,10 @@ from porcupine.plugins.directory_tree import get_directory_tree, get_path
 # TODO: need more tests
 
 
-def open_folders_and_select_file(file_path) -> None:
+def add_project_and_select_file(file_path) -> None:
     tree = get_directory_tree()
+    tree.add_project(file_path.parent)
+
     while True:
         tree.update()
         tree.select_file(file_path)
@@ -25,8 +27,7 @@ def test_cutpasting_or_copypasting_to_same_dir(tree, tmp_path, mocker, event):
     ask_file_name.return_value = tmp_path / "bar"
 
     (tmp_path / "foo").write_text("hello")
-    tree.add_project(tmp_path)
-    open_folders_and_select_file(tmp_path / "foo")
+    add_project_and_select_file(tmp_path / "foo")
 
     tree.event_generate(event)
     tree.event_generate("<<Paste>>")
@@ -44,7 +45,7 @@ def test_cutpasting_or_copypasting_to_same_dir(tree, tmp_path, mocker, event):
 
 
 @pytest.mark.parametrize("event", ["<<Cut>>", "<<Copy>>"])
-def test_cutpasting_and_copypasting_error(tree, tmp_path, mocker, event, caplog):
+def test_cutpasting_and_copypasting_error(tree, tmp_path, mocker, caplog, event):
     if event == "<<Copy>>":
         shutil_mock = mocker.patch("porcupine.plugins.filemanager.shutil").copy
         copy_or_move = "copy"
@@ -60,9 +61,7 @@ def test_cutpasting_and_copypasting_error(tree, tmp_path, mocker, event, caplog)
     showerror = mocker.patch("tkinter.messagebox.showerror")
 
     (tmp_path / "foo").write_text("hello")
-    tree.add_project(tmp_path)
-
-    open_folders_and_select_file(tmp_path / "foo")
+    add_project_and_select_file(tmp_path / "foo")
     tree.event_generate(event)
     tree.event_generate("<<Paste>>")
 
@@ -80,7 +79,36 @@ def test_cutpasting_and_copypasting_error(tree, tmp_path, mocker, event, caplog)
     ]
 
 
-def test_trashing(tree, tmp_path, mocker, caplog):
+def test_delete_error(tree, tmp_path, mocker, caplog):
+    rmtree = mocker.patch("porcupine.plugins.filemanager.shutil").rmtree
+    showerror = mocker.patch("tkinter.messagebox.showerror")
+    askyesno = mocker.patch("tkinter.messagebox.askyesno")
+
+    rmtree.side_effect = PermissionError("[Errno 13] Permission denied: '/dev/xyz'")
+    askyesno.return_value = True
+
+    (tmp_path / "foo").mkdir()
+    (tmp_path / "foo" / "bar").write_text("hello")
+    add_project_and_select_file(tmp_path / "foo")
+    tree.event_generate("<<FileManager:Delete>>")
+
+    rmtree.assert_called_once_with(tmp_path / "foo")
+    askyesno.assert_called_once_with(
+        "Delete foo",
+        "Do you want to permanently delete foo and everything inside it?",
+        icon="warning",
+    )
+    showerror.assert_called_once_with(
+        "Deleting failed",
+        f"Deleting {tmp_path / 'foo'} failed.",
+        detail="PermissionError: [Errno 13] Permission denied: '/dev/xyz'",
+    )
+    assert caplog.record_tuples == [
+        ("porcupine.plugins.filemanager", logging.ERROR, f"can't delete {tmp_path / 'foo'}")
+    ]
+
+
+def test_trashing_error(tree, tmp_path, mocker, caplog):
     send2trash = mocker.patch("porcupine.plugins.filemanager.send2trash")
     showerror = mocker.patch("tkinter.messagebox.showerror")
     askyesno = mocker.patch("tkinter.messagebox.askyesno")
@@ -89,32 +117,28 @@ def test_trashing(tree, tmp_path, mocker, caplog):
     askyesno.return_value = True
 
     (tmp_path / "foo").write_text("hello")
-    tree.add_project(tmp_path)
-    open_folders_and_select_file(tmp_path / "foo")
+    add_project_and_select_file(tmp_path / "foo")
     tree.event_generate("<<FileManager:Trash>>")
 
     send2trash.assert_called_once_with(tmp_path / "foo")
     if sys.platform == "win32":
-        askyesno.assert_called_once_with("Move foo to recycle bin", "Do you want to move foo to recycle bin?", icon="warning")
+        askyesno.assert_called_once_with(
+            "Move foo to recycle bin", "Do you want to move foo to recycle bin?", icon="warning"
+        )
         showerror.assert_called_once_with(
             "Can't move to recycle bin",
             f"Moving {tmp_path / 'foo'} to recycle bin failed.",
             detail="RuntimeError: lol",
         )
     else:
-        askyesno.assert_called_once_with("Move foo to trash", "Do you want to move foo to trash?", icon="warning")
+        askyesno.assert_called_once_with(
+            "Move foo to trash", "Do you want to move foo to trash?", icon="warning"
+        )
         showerror.assert_called_once_with(
             "Can't move to trash",
             f"Moving {tmp_path / 'foo'} to trash failed.",
             detail="RuntimeError: lol",
         )
     assert caplog.record_tuples == [
-        (
-            "porcupine.plugins.filemanager",
-            logging.ERROR,
-            f"can't trash {tmp_path / 'foo'}",
-        )
+        ("porcupine.plugins.filemanager", logging.ERROR, f"can't trash {tmp_path / 'foo'}")
     ]
-
-
-# TODO: delete
