@@ -214,12 +214,14 @@ def paste(new_path: Path) -> None:
             return
 
     if paste_state.is_cut:
-        shutil.move(str(paste_state.path), str(new_file_path))
+        if not move_with_git_or_otherwise(paste_state.path, new_file_path):
+            return
         for tab in find_tabs_by_parent_path(paste_state.path):
             assert tab.path is not None
             tab.path = new_file_path
         paste_state = None
     else:
+        # TODO: error handling
         shutil.copy(paste_state.path, new_file_path)
 
     get_directory_tree().refresh()
