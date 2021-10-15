@@ -143,29 +143,48 @@ def ask_file_name(
     return new_path
 
 
+# Not necessarily same concept as Porcupine's project root
+def find_git_root(path: Path) -> Path | None:
+    for parent in path.parents:
+        if (parent / ".git").is_dir():
+            return parent
+    return None
+
+
+def move_with_git_or_otherwise(old: Path, new: Path) -> bool:
+    old_git = find_git_root(old)
+    new_git = find_git_root(new)
+    if old_git is not None and new_git is not None and old_git == new_git:
+        log.info(f"attemting 'git mv' ({old} --> {new})")
+        try:
+            subprocess.check_call(
+                ["git", "mv", "--", str(old), str(new)],
+                cwd=old.parent,
+                **utils.subprocess_kwargs,
+            )
+            return True
+        except (OSError, subprocess.CalledProcessError):
+            # Happens when:
+            #   - git not installed
+            #   - project doesn't use git
+            #   - old_path is not 'git add'ed
+            log.info(f"'git mv' failed ({old} --> {new}), moving without git", exc_info=True)
+
+    try:
+        shutil.move(str(old), str(new))
+    except OSError as e:
+        log.exception(f"renaming failed: {old} --> {new}")
+        messagebox.showerror("Renaming failed", str(e))
+        return False
+    return True
+
+
 def rename(old_path: Path) -> None:
     new_path = ask_file_name(old_path)
     if new_path is None:
         return
-
-    try:
-        subprocess.check_call(
-            ["git", "mv", "--", old_path.name, new_path.name],
-            cwd=old_path.parent,
-            **utils.subprocess_kwargs,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        # Happens when:
-        #   - git not installed
-        #   - project doesn't use git
-        #   - old_path is not 'git add'ed
-        log.info("'git mv' failed, moving without git", exc_info=True)
-        try:
-            old_path.rename(new_path)
-        except OSError as e:
-            log.exception(f"renaming failed: {old_path} --> {new_path}")
-            messagebox.showerror("Renaming failed", str(e))
-            return
+    if not move_with_git_or_otherwise(old_path, new_path):
+        return
 
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
