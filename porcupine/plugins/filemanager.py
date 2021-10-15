@@ -203,7 +203,7 @@ def paste(new_path: Path) -> None:
     else:
         shutil.copy(paste_state.path, new_file_path)
 
-    get_directory_tree().refresh()
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def copy(old_path: Path) -> None:
