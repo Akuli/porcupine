@@ -209,7 +209,6 @@ class NoTerminalRunner:
         if self.executor is not None:
             # This prevents a bug where smashing F5 runs in parallel
             if not self.executor.started:
-                print("Never gonna give you up")
                 return
 
             self.executor.stop()
