@@ -175,7 +175,7 @@ class MiniMap(tkinter.Text):
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     minimap = MiniMap(tab.panedwindow, tab)
-    textutils.use_pygments_theme(minimap, minimap.set_colors)
+    settings.use_pygments_fg_and_bg(minimap, minimap.set_colors)
     tab.panedwindow.add(minimap, stretch="never")
     settings.remember_pane_size(tab.panedwindow, minimap, "minimap_width", 100)
 

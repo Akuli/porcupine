@@ -122,11 +122,17 @@ class Executor:
 
         if messages:
             self._textwidget.config(state="normal")
-            for tag, text in messages:
-                if tag == "end":
+            for message_type, text in messages:
+                if message_type == "end":
                     assert not text
                     get_tab_manager().event_generate("<<FileSystemChanged>>")
                 else:
+                    tag = {
+                        "info": "Token.Keyword",
+                        "output": "Token.Text",
+                        "error": "Token.Name.Exception",
+                    }[message_type]
+
                     self._textwidget.insert("end", text, [tag])
                     # Add links to full lines
                     linked_line_count = text.count("\n")
@@ -177,14 +183,16 @@ class Executor:
 
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
-        # TODO: better coloring that follows the pygments theme
         self.textwidget = create_passive_text_widget(
-            master, font="TkFixedFont", is_focusable=True, name="run_output", wrap="char"
+            master,
+            is_focusable=True,
+            set_colors=False,
+            name="run_output",
+            font="TkFixedFont",
+            wrap="char",
         )
-        self.textwidget.tag_config("info", foreground="blue")
-        self.textwidget.tag_config("output")  # use default colors
-        self.textwidget.tag_config("error", foreground="red")
         self.textwidget.bind("<Destroy>", self._stop_executor, add=True)
+        textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
             self.textwidget, filename_regex, self._get_link_opener
@@ -226,6 +234,11 @@ runner: NoTerminalRunner | None = None
 
 
 def setup() -> None:
+    settings.add_option("run_output_pygments_style", default="inkpot")
+    settings.add_pygments_style_button(
+        "run_output_pygments_style", "Pygments style for output of commands:"
+    )
+
     global runner
     assert runner is None
     runner = NoTerminalRunner(get_vertical_panedwindow())

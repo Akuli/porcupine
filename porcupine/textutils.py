@@ -6,7 +6,8 @@ import re
 import tkinter
 import weakref
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, overload
+from tkinter.font import Font
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List
 
 from pygments import styles
 
@@ -596,59 +597,57 @@ class LinkManager:
         self._callbacks.clear()
 
 
-# fmt: off
-@overload
-def use_pygments_theme(widget: tkinter.Misc, callback: Callable[[str, str], None]) -> None: ...
-@overload
-def use_pygments_theme(widget: tkinter.Text, callback: None = ...) -> None: ...
-# fmt: on
-def use_pygments_theme(
-    widget: tkinter.Misc, callback: Callable[[str, str], None] | None = None
-) -> None:
-    """
-    Configure *widget* to use the colors of the Pygments theme whenever the
-    currently selected theme changes (see :mod:`porcupine.settings`).
-    Porcupine does that automatically for the ``textwidget`` of each
-    :class:`~porcupine.tabs.FileTab`.
+# TODO: document this or move to plugin
+def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_style") -> None:
+    fonts = {
+        # (bold, italic)
+        (True, False): Font(weight="bold"),
+        (False, True): Font(slant="italic"),
+        (True, True): Font(weight="bold", slant="italic"),
+    }
 
-    If you don't specify a *callback*, then ``widget`` must be a :class:`tkinter.Text` widget.
-    If you specify a callback, then it will be called like
-    ``callback(foreground_color, background_color)``, and the type of the widget doesn't matter.
+    def on_font_changed(junk: object = None) -> None:
+        assert textwidget["font"] == "TkFixedFont"
 
-    .. seealso::
-        This function is used in :source:`porcupine/plugins/linenumbers.py`.
-        Syntax highlighting is implemented in
-        :source:`porcupine/plugins/highlight.py`.
-    """
+        font_updates = Font(name="TkFixedFont", exists=True).actual()
+        for font in fonts.values():
+            # fonts don't have an update() method
+            for key, value in font_updates.items():
+                if key not in ("weight", "slant"):
+                    font[key] = value
 
-    def on_style_changed(junk: object = None) -> None:
-        style = styles.get_style_by_name(settings.get("pygments_style", str))
-        bg = style.background_color
+    textwidget.bind("<<SettingChanged:font_family>>", on_font_changed, add=True)
+    textwidget.bind("<<SettingChanged:font_size>>", on_font_changed, add=True)
+    on_font_changed()
 
-        # yes, style.default_style can be '#rrggbb', '' or nonexistent
-        # this is undocumented
-        #
-        #   >>> from pygments.styles import *
-        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
-        #   ...  for name in get_all_styles()]
-        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
-        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
-        #    '#222222', '', '', '', '???', '']
-        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
-        if callback is None:
-            assert isinstance(widget, tkinter.Text)
-            widget.config(
-                foreground=fg,
-                background=bg,
-                insertbackground=fg,  # cursor color
-                selectforeground=bg,
-                selectbackground=fg,
+    def on_theme_changed(fg: str, bg: str) -> None:
+        textwidget.config(
+            foreground=fg,
+            background=bg,
+            insertbackground=fg,  # cursor color
+            selectforeground=bg,
+            selectbackground=fg,
+        )
+
+        style = styles.get_style_by_name(settings.get(option_name, str))
+
+        # http://pygments.org/docs/formatterdevelopment/#styles
+        # all styles seem to yield all token types when iterated over,
+        # so we should always end up with the same tags configured
+        for tokentype, info in style:
+            # info["underline"] and info["border"] intentionally unused
+            textwidget.tag_config(
+                str(tokentype),
+                # empty string resets color in tags
+                foreground=("" if info["color"] is None else "#" + info["color"]),
+                background=("" if info["bgcolor"] is None else "#" + info["bgcolor"]),
             )
-        else:
-            callback(fg, bg)
+            font_key = (info["bold"], info["italic"])
+            if font_key in fonts:
+                textwidget.tag_config(str(tokentype), font=fonts[font_key])
+            textwidget.tag_lower(str(tokentype), "sel")
 
-    widget.bind("<<SettingChanged:pygments_style>>", on_style_changed, add=True)
-    on_style_changed()
+    settings.use_pygments_fg_and_bg(textwidget, on_theme_changed, option_name=option_name)
 
 
 def config_tab_displaying(
@@ -690,7 +689,6 @@ class MainText(tkinter.Text):
         super().__init__(tab.panedwindow, **kwargs)
         self._tab = tab
         track_changes(self)
-        use_pygments_theme(self)
 
         bind_font_changed(tab, self._on_font_changed)
         self._on_font_changed()
@@ -761,7 +759,7 @@ class MainText(tkinter.Text):
 
 
 def create_passive_text_widget(
-    parent: tkinter.Misc, is_focusable: bool = False, **kwargs: Any
+    parent: tkinter.Misc, *, is_focusable: bool = False, set_colors: bool = True, **kwargs: Any
 ) -> tkinter.Text:
     # TODO: document `is_focusable` kwarg
     """Create a text widget that is meant to be used for displaying text, not for editing.
@@ -790,31 +788,32 @@ def create_passive_text_widget(
     kwargs.setdefault("state", "disabled")
     text = tkinter.Text(parent, **kwargs)
 
-    def update_colors(junk: object = None) -> None:
-        # tkinter's ttk::style api sucks so let's not use it
-        ttk_fg = text.tk.eval("ttk::style lookup TLabel.label -foreground")
-        ttk_bg = text.tk.eval("ttk::style lookup TLabel.label -background")
+    if set_colors:
 
-        if not ttk_fg and not ttk_bg:
-            # stupid ttk theme, it deserves this
-            ttk_fg = "black"
-            ttk_bg = "white"
-        elif not ttk_bg:
-            # this happens with e.g. elegance theme (more_plugins/ttkthemes.py)
-            ttk_bg = utils.invert_color(ttk_fg, black_or_white=True)
-        elif not ttk_fg:
-            ttk_fg = utils.invert_color(ttk_bg, black_or_white=True)
+        def update_colors(junk: object = None) -> None:
+            # tkinter's ttk::style api sucks so let's not use it
+            ttk_fg = text.tk.eval("ttk::style lookup TLabel.label -foreground")
+            ttk_bg = text.tk.eval("ttk::style lookup TLabel.label -background")
 
-        text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
+            if not ttk_fg and not ttk_bg:
+                # stupid ttk theme, it deserves this
+                ttk_fg = "black"
+                ttk_bg = "white"
+            elif not ttk_bg:
+                # this happens with e.g. elegance theme
+                ttk_bg = utils.invert_color(ttk_fg, black_or_white=True)
+            elif not ttk_fg:
+                ttk_fg = utils.invert_color(ttk_bg, black_or_white=True)
+
+            text.config(foreground=ttk_fg, background=ttk_bg, highlightbackground=ttk_bg)
+
+        # even non-ttk widgets can handle <<ThemeChanged>>
+        text.bind("<<ThemeChanged>>", update_colors, add=True)
+        update_colors()
 
     if is_focusable:
         text.config(takefocus=True)
         text.bind("<ButtonPress-1>", lambda *junk: text.focus(), add=True)
-
-    # even non-ttk widgets can handle <<ThemeChanged>>
-    # TODO: make sure that this works
-    text.bind("<<ThemeChanged>>", update_colors, add=True)
-    update_colors()
 
     return text
 

@@ -7,7 +7,7 @@ import re
 import tkinter
 from functools import partial
 
-from porcupine import get_tab_manager, tabs, textutils, utils
+from porcupine import get_tab_manager, settings, tabs, utils
 
 OPEN_TO_CLOSE = {"{": "}", "[": "]", "(": ")"}
 CLOSE_TO_OPEN = {close: open_ for open_, close in OPEN_TO_CLOSE.items()}
@@ -72,7 +72,7 @@ def on_pygments_theme_changed(text: tkinter.Text, fg: str, bg: str) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    textutils.use_pygments_theme(tab, partial(on_pygments_theme_changed, tab.textwidget))
+    settings.use_pygments_fg_and_bg(tab, partial(on_pygments_theme_changed, tab.textwidget))
     tab.textwidget.bind("<<CursorMoved>>", on_cursor_moved, add=True)
 
 

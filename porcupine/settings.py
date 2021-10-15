@@ -9,13 +9,13 @@ import logging
 import os
 import sys
 import time
-import tkinter.font
+import tkinter
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Iterator, List, Type, TypeVar, overload
 
 import dacite
-from pygments import styles
+from pygments import styles, token
 
 import porcupine
 from porcupine import dirs, images, utils
@@ -466,7 +466,7 @@ def _create_dialog_content() -> ttk.Frame:
     dialog.title("Porcupine Settings")
     dialog.protocol("WM_DELETE_WINDOW", dialog.withdraw)
     dialog.bind("<Escape>", (lambda event: dialog.withdraw()), add=True)
-    dialog.geometry("500x350")
+    dialog.geometry("600x350")
 
     def confirm_and_reset_all() -> None:
         if messagebox.askyesno(
@@ -716,6 +716,71 @@ def add_spinbox(option_name: str, text: str, **spinbox_kwargs: Any) -> tkinter.t
     return spinbox
 
 
+def _get_colors(style_name: str) -> tuple[str, str]:
+    style = styles.get_style_by_name(style_name)
+    bg = style.background_color
+
+    fg = style.style_for_token(token.String)["color"] or style.style_for_token(token.Text)["color"]
+    if fg:
+        fg = "#" + fg
+    else:
+        # yes, style.default_style can be '#rrggbb', '' or nonexistent
+        # this is undocumented
+        #
+        #   >>> from pygments.styles import *
+        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
+        #   ...  for name in get_all_styles()]
+        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
+        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
+        #    '#222222', '', '', '', '???', '']
+        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
+
+    return (fg, bg)
+
+
+# TODO: document this?
+def add_pygments_style_button(option_name: str, text: str) -> None:
+    var = tkinter.StringVar()
+
+    # not using ttk.Menubutton because i want custom colors
+    menubutton = tkinter.Menubutton(get_dialog_content(), textvariable=var)
+    menu = tkinter.Menu(menubutton, tearoff=False)
+    menubutton.config(menu=menu)
+
+    def var_to_settings(*junk: object) -> None:
+        set_(option_name, var.get())
+
+    def settings_to_var_and_colors(junk: object = None) -> None:
+        style_name = get(option_name, object)
+        var.set(style_name)
+        fg, bg = _get_colors(style_name)
+        menubutton.config(foreground=fg, background=bg)
+
+    menubutton.bind(f"<<SettingChanged:{option_name}>>", settings_to_var_and_colors, add=True)
+    var.trace_add("write", var_to_settings)
+
+    # Not done when creating button, because can slow down porcupine startup
+    def fill_menubutton(junk_event: object) -> None:
+        menu.delete(0, "end")
+        for index, style_name in enumerate(sorted(styles.get_all_styles())):
+            fg, bg = _get_colors(style_name)
+            menu.add_radiobutton(
+                label=style_name,
+                value=style_name,
+                variable=var,
+                foreground=fg,
+                background=bg,
+                # swapped colors
+                activeforeground=bg,
+                activebackground=fg,
+                columnbreak=(index != 0 and index % 20 == 0),
+            )
+        settings_to_var_and_colors()
+
+    menubutton.bind("<Map>", fill_menubutton, add=True)
+    _grid_widgets(text, menubutton, None)
+
+
 def add_label(text: str) -> ttk.Label:
     """Add text to the setting dialog.
 
@@ -757,6 +822,30 @@ def remember_pane_size(
     panedwindow.bind(
         "<ButtonRelease-1>", (lambda e: panedwindow.after_idle(gui_to_settings)), add=True
     )
+
+
+def use_pygments_fg_and_bg(
+    widget: tkinter.Misc,
+    callback: Callable[[str, str], None],
+    *,
+    option_name: str = "pygments_style",
+) -> None:
+    """Run a callback whenever the pygments theme changes.
+
+    The callback no longer runs once ``widget`` has been destroyed. It is
+    called with the foreground and background color of the pygments theme as
+    arguments.
+    """
+
+    def on_style_changed(junk: object = None) -> None:
+        style = styles.get_style_by_name(get(option_name, str))
+        # Similar to _get_colors() but doesn't use the color of strings
+        bg = style.background_color
+        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
+        callback(fg, bg)
+
+    widget.bind(f"<<SettingChanged:{option_name}>>", on_style_changed, add=True)
+    on_style_changed()
 
 
 def _is_monospace(font_family: str) -> bool:
@@ -838,6 +927,7 @@ def _fill_dialog_content_with_defaults() -> None:
     add_combobox(
         "default_line_ending", "Default line ending:", values=[ending.name for ending in LineEnding]
     )
+    add_pygments_style_button("pygments_style", "Pygments style for editing:")
 
 
 # undocumented on purpose, don't use in plugins

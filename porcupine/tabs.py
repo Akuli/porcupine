@@ -554,11 +554,9 @@ class FileTab(Tab):
 
         The central text widget of the tab.
 
-        When a new :class:`FileTab` is created, these functions will be called
-        for the text widget:
-
-            * :func:`porcupine.textutils.use_pygments_theme`
-            * :func:`porcupine.textutils.track_changes`
+        When a new :class:`FileTab` is created,
+        :func:`porcupine.textutils.track_changes` is automatically called for
+        the text widget.
 
     .. attribute:: panedwindow
         :type: porcupine.utils.PanedWindow
