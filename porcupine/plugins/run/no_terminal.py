@@ -239,6 +239,7 @@ class NoTerminalRunner:
             # This prevents a bug where smashing F5 runs in parallel
             if not self.executor.started:
                 return
+
             self.executor.stop()
 
         self.textwidget.config(state="normal")
