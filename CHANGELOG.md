@@ -4,30 +4,30 @@ and other details that don't affect using Porcupine.
 
 ## v0.99.0
 
-I'm excited about this release. It has lots of awesome improvements, and many people have contributed to it. Thanks to all contributors!
+I'm excited about this release. It has lots of awesome improvements, and several people have contributed to it. Thanks to all contributors!
 
 New features:
 - The run plugin has been rewritten. If you previously used it only for running Python code in a terminal by pressing F5, that will still work, although it can do a lot more. Press Shift+F5 to get started. My favorite feature is running commands so that their output ends up in the Porcupine window, and things like `File "foo.py", line 52` become clickable links.
 - Files in the directory tree can now be cut/pasted and copy/pasted by right-clicking them or with Ctrl+C and Ctrl+V. Thank you [nicolafan](https://github.com/nicolafan).
 - The right-click menu of the directory tree now contains `git add` and a couple other Git operations.
-- There is now a new button "Jump to definition" in the *Edit* menu. For example, if you have a method call like `foo.bar()` in a Python program and you put the cursor on top of `bar`, this will take you to the line of code that looks like `def bar(self, ...`. The functionality itself isn't new, but it is now in the menubar, so it's easier to discover.
+- There is a new button "Jump to definition" in the *Edit* menu. For example, if you have a method call like `foo.bar()` in a Python program and you put the cursor on top of `bar`, this will take you to the line of code that looks like `def bar(self, ...`. The functionality itself isn't new, but it is now in the menubar, so it's easier to discover.
 
 Bug fixes:
 - Right-clicking and middle-clicking now works on MacOS. Thank you [1anakin20](https://github.com/1anakin20) for fixing this.
 - The Windows installer now shows a very clear error message if you try to run it on a 32-bit Windows. Previously it would extract some files and then fail without a good error message. Thank you [Mannuel25](https://github.com/Mannuel25) for noticing this.
 - Porcupine no longer kills `git status` if it runs for more than 2 seconds. This hopefully fixes errors where Git complains about a lock file (issue [#885](https://github.com/Akuli/porcupine/issues/885)). Porcupine needs to run `git status` internally to figure out how to color files in the directory tree, e.g. green for `git add`ed.
-- When uninstalling, Porcupine no longer deletes the whole directory chosen when installing it with the Windows installer. This means that the uninstaller will behave sanely even if you accidentally install Porcupine directly into `C:\Program Files` as opposed to e.g. `C:\Program Files\Porcupine`. You don't have to worry about this if you didn't choose a custom directory when installing Porcupine.
-- The "Open in file manager" menu option now works on windows. It appears when you right-click a folder in the directory tree
+- When uninstalling on Windows, Porcupine no longer deletes the whole directory chosen when installing it with the Windows installer. This means that the uninstaller will behave sanely even if you accidentally install Porcupine directly into `C:\Program Files` as opposed to e.g. `C:\Program Files\Porcupine`. You don't have to worry about this if you didn't choose a custom directory when installing Porcupine.
+- The "Open in file manager" menu option now works on windows. It appears when you right-click a folder in the directory tree.
 
 Other improvements:
-- Porcupine now uses a dark theme by default, although you won't noticed it if you have chosen a custom theme. To change the theme, there is a new button in the *Porcupine Settings* dialog (in *Edit* menu), and the old *Syntax Colors* menu has been removed.
-- Small UI details have been improved. For example, many buttons are now wider than before, so it's easier to click them. Thank you [rdbende](https://github.com/rdbende).
-- Several smaller improvements and fixes.
-- You can now uncheck Python virtualenvs after right-clicking in the directory tree. This means that you can choose to not use a virtualenv even if the project has one. This is useful if something isn't working, and you suspect there might be something wrong with the virtualenv.
-- On windows, Python virtualenvs now shows up as selected immediately after selecting them in the directory tree.
+- Porcupine now uses a dark theme by default, although you won't notice it if you have chosen a custom theme. To change the theme, there is a new button in the *Porcupine Settings* dialog (in *Edit* menu), and the old *Syntax Colors* menu has been removed.
+- Many small UI details have been improved. For example, many buttons are now wider than before, so it's easier to click them. Thank you [rdbende](https://github.com/rdbende).
+- You can now uncheck Python virtualenvs after right-clicking them in the directory tree. This means that you can choose to not use a virtualenv even if the project has one. This is useful if something isn't working, and you suspect there might be something wrong with the virtualenv.
+- On windows, Python virtualenvs now show up as selected immediately after selecting them in the directory tree.
 - Files whose name starts with a dot are now grouped after other files in the directory tree. Previously they were first, which is annoying, as these files are by convention hidden and usually you want to ignore them. Thank you [nicolafan](https://github.com/nicolafan) for fixing this.
-- Porcupine no longer comes with `pycodestyle`, so you shouldn't see as much yellow underlines in Python code. Nowadays most Python projects use `black` or have their own style guide, so `pycodestyle`'s style doesn't make sense.
+- Porcupine no longer comes with `pycodestyle`, so you shouldn't see as much yellow underlines when editing Python files. Nowadays most Python projects use `black` or have their own style guide, so enforcing `pycodestyle`'s coding style doesn't make sense.
 - You now get a warning if you try to open a huge file. Previously Porcupine would open it without checking the size, and in the worst possible case, freeze the whole computer. Thank you [rdbende](https://github.com/rdbende) for fixing this.
+- A few smaller improvements and fixes that I don't expect most users to notice.
 
 
 ## v0.98.2
