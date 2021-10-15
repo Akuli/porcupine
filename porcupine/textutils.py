@@ -838,7 +838,7 @@ def create_passive_text_widget(
                 ttk_fg = "black"
                 ttk_bg = "white"
             elif not ttk_bg:
-                # this happens with e.g. elegance theme (more_plugins/ttkthemes.py)
+                # this happens with e.g. elegance theme
                 ttk_bg = utils.invert_color(ttk_fg, black_or_white=True)
             elif not ttk_fg:
                 ttk_fg = utils.invert_color(ttk_bg, black_or_white=True)
