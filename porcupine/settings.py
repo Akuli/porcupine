@@ -565,7 +565,7 @@ _StrOrInt = TypeVar("_StrOrInt", str, int)
 
 
 def _create_validation_triangle(
-    widget: ttk.Entry | tkinter.Menubutton,
+    widget: ttk.Entry,
     option_name: str,
     type_: Type[_StrOrInt],
     callback: Callable[[_StrOrInt], bool],
