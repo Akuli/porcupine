@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# usage: ./bash_run.sh [--dont-wait] MESSAGE DIRECTORY COMMAND ARGUMENT ...
+# usage: ./bash_run.sh [--dont-wait] DIRECTORY COMMAND
 # echo MESSAGE in blue, run COMMAND with ARGUMENTS in DIRECTORY and
 # optionally do a "press enter to continue" thingy
 #
@@ -13,11 +13,9 @@ else
     wait=yes
 fi
 
-echo -e "\x1b[34m$1\x1b[39m"
-cd "$2"
-command="$3"
-shift 3
-"$command" "$@"
+echo -e "\x1b[34m$2\x1b[39m"
+cd "$1"
+eval "$2"
 returncode=$?
 
 echo ""

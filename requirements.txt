@@ -4,11 +4,12 @@ Pygments==2.7.4
 toposort>=1.5
 colorama>=0.2.5
 sansio-lsp-client>=0.10.0,<0.11.0
-python-language-server[rope,pyflakes,pycodestyle]>=0.36.2,<1.0.0
+python-language-server[rope,pyflakes]>=0.36.2,<1.0.0
 black>=21.5b2
 # typing.Literal is new in python 3.8
 typing_extensions
 dacite>=1.5.1,<2.0.0
-toml
+tomli==1.2.1
 ttkthemes>=3.0.0
 send2trash>=1.8.0,<2.0.0
+psutil>=5.8.0,<6.0.0

@@ -15,9 +15,9 @@ from tkinter import ttk
 from typing import Any, Callable, List
 
 from porcupine import (
-    get_main_window,
-    get_paned_window,
+    get_horizontal_panedwindow,
     get_tab_manager,
+    get_vertical_panedwindow,
     menubar,
     settings,
     tabs,
@@ -68,7 +68,13 @@ def _stringify_path(path: Path) -> str:
 
 class DirectoryTree(ttk.Treeview):
     def __init__(self, master: tkinter.Misc) -> None:
-        super().__init__(master, selectmode="browse", show="tree", style="DirectoryTree.Treeview")
+        super().__init__(
+            master,
+            selectmode="browse",
+            show="tree",
+            name="directory_tree",
+            style="DirectoryTree.Treeview",
+        )
 
         # Needs after_idle because selection hasn't updated when binding runs
         self.bind("<Button-1>", self._on_click, add=True)
@@ -84,8 +90,14 @@ class DirectoryTree(ttk.Treeview):
         self._project_num_counter = 0
         self.contextmenu = tkinter.Menu(tearoff=False)
 
-        # "lambda x: x" sorting key puts dirs before files, and sorts by path case-sensitive
-        self.sorting_keys: list[Callable[[str], Any]] = [lambda item_id: item_id]
+        def ordered_repr(item_id: str) -> tuple[bool, str, str]:
+            split_item_id = item_id.split(":", maxsplit=2)
+            item_type = split_item_id[0]  # 'dir' or 'file'
+            item_path = split_item_id[2]
+            item_is_dotted = Path(item_path).name[0] == "."  # False < True => dot items last
+            return item_is_dotted, item_type, item_path
+
+        self.sorting_keys: list[Callable[[str], Any]] = [ordered_repr]
 
     def set_the_selection_correctly(self, id: str) -> None:
         self.selection_set(id)
@@ -150,18 +162,30 @@ class DirectoryTree(ttk.Treeview):
         if refresh:
             self.refresh()
 
-    def select_file(self, path: Path) -> None:
+    def find_project_id(self, item_id: str) -> str:
+        # Does not work for dummy items, because they don't use type:num:path scheme
+        num = item_id.split(":", maxsplit=2)[1]
+        [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
+        return result
+
+    def _find_project_id_by_path(self, path: Path) -> str | None:
         matching_projects = [
             project_id for project_id in self.get_children() if get_path(project_id) in path.parents
         ]
         if not matching_projects:
+            return None
+
+        # For ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
+        return max(matching_projects, key=(lambda id: len(str(get_path(id)))))
+
+    def select_file(self, path: Path) -> None:
+        project_id = self._find_project_id_by_path(path)
+        if project_id is None:
             # Happens when tab changes because a file was just opened. This
             # will be called soon once the project has been added.
             log.info(f"can't select '{path}' because there are no projects containing it")
             return
 
-        # When opening ~/foo/bar/lol.py, use ~/foo/bar instead of ~/foo
-        project_id = max(matching_projects, key=(lambda id: len(str(get_path(id)))))
         project_root_path = get_path(project_id)
 
         # Find the visible sub-item representing the file
@@ -170,8 +194,9 @@ class DirectoryTree(ttk.Treeview):
         for part in path.relative_to(project_root_path).parts:
             subpath /= part
             if self.item(file_id, "open"):
-                file_id = self.get_id_from_path(subpath, project_id)
-                assert file_id is not None
+                mypy_sucks = self.get_id_from_path(subpath, project_id)
+                assert mypy_sucks is not None
+                file_id = mypy_sucks
             else:
                 # ...or a closed folder that contains the file
                 break
@@ -192,6 +217,16 @@ class DirectoryTree(ttk.Treeview):
         children = self.get_children(parent)
         return len(children) == 1 and self.tag_has("dummy", children[0])
 
+    # TODO: it's not great how only the directory tree knows this
+    def project_has_open_filetabs(self, project_id: str) -> bool:
+        assert project_id.startswith("project:")
+        return any(
+            isinstance(tab, tabs.FileTab)
+            and tab.path is not None
+            and self._find_project_id_by_path(tab.path) == project_id
+            for tab in get_tab_manager().tabs()
+        )
+
     def _hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(""):
             if not get_path(project_id).is_dir():
@@ -200,14 +235,14 @@ class DirectoryTree(ttk.Treeview):
         # To avoid getting rid of existing projects when not necessary, we do
         # shortening after deleting non-existent projects
         for project_id in reversed(self.get_children("")):
-            if len(self.get_children("")) > _MAX_PROJECTS and not any(
-                isinstance(tab, tabs.FileTab)
-                and tab.path is not None
-                and get_path(project_id) in tab.path.parents
-                for tab in get_tab_manager().tabs()
+            if len(self.get_children("")) > _MAX_PROJECTS and not self.project_has_open_filetabs(
+                project_id
             ):
                 self.delete(project_id)
 
+        self.save_project_list()
+
+    def save_project_list(self) -> None:
         # Settings is a weird place for this, but easier than e.g. using a cache file.
         settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
 
@@ -218,17 +253,9 @@ class DirectoryTree(ttk.Treeview):
         for project_id in self.get_children():
             self._update_tags_and_content(get_path(project_id), project_id)
 
-    def find_project_id(self, item_id: str) -> str:
-        # Does not work for dummy items, because they don't use type:num:path scheme
-        num = item_id.split(":", maxsplit=2)[1]
-        [result] = [id for id in self.get_children("") if id.startswith(f"project:{num}:")]
-        return result
-
     # The following two methods call each other recursively.
 
     def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
-        self.event_generate("<<UpdateItemTags>>", data=child_id)
-
         if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
             self._open_and_refresh_directory(child_id)
 
@@ -243,11 +270,8 @@ class DirectoryTree(ttk.Treeview):
             self._insert_dummy(dir_id, text="(open as a separate project)", clear=True)
             return
 
-        path2id = {get_path(id): id for id in self.get_children(dir_id)}
         new_paths = set(dir_path.iterdir())
-        if not new_paths:
-            self._insert_dummy(dir_id, text="(empty)", clear=True)
-            return
+        path2id = {get_path(id): id for id in self.get_children(dir_id)}
 
         # TODO: handle changing directory to file
         for path in list(path2id.keys() - new_paths):
@@ -262,8 +286,7 @@ class DirectoryTree(ttk.Treeview):
             self.insert(dir_id, "end", item_id, text=path.name, open=False)
             path2id[path] = item_id
             if path.is_dir():
-                assert dir_path is not None
-                self._insert_dummy(path2id[path])
+                self._insert_dummy(item_id)
 
         project_id = self.find_project_id(dir_id)
         project_root = get_path(project_id)
@@ -271,8 +294,10 @@ class DirectoryTree(ttk.Treeview):
             self._update_tags_and_content(project_root, child_id)
         self.sort_folder_contents(dir_id)
 
-        # When binding to this event, make sure you delete all tags you created on previous update.
-        # Even though refersh() deletes tags, this method by itself doesn't.
+        if not self.get_children(dir_id):
+            self._insert_dummy(dir_id, text="(empty)")
+
+        # When binding, delete tags from previous call
         self.event_generate(
             "<<FolderRefreshed>>", data=FolderRefreshed(project_id=project_id, folder_id=dir_id)
         )
@@ -326,7 +351,31 @@ class DirectoryTree(ttk.Treeview):
             return result
         return None
 
-    # TODO: invoking context menu from keyboard
+    def _cycle_through_items(self, event: tkinter.Event[DirectoryTree]) -> None:
+        if len(event.char) != 1:
+            return
+
+        try:
+            [item] = self.selection()
+        except ValueError:  # nothing selected
+            return
+
+        children = [
+            c
+            for c in self.get_children(self.parent(item))
+            if self.item(c, "text").startswith(event.char)
+        ]
+        if not children:
+            return
+
+        try:
+            index = (children.index(item) + 1) % len(children)
+        except ValueError:
+            index = 0
+
+        self.set_the_selection_correctly(children[index])
+        self.see(children[index])
+
     def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
 
@@ -350,8 +399,8 @@ def _select_current_file(tree: DirectoryTree, event: object) -> None:
 def _on_new_filetab(tree: DirectoryTree, tab: tabs.FileTab) -> None:
     def path_callback(junk: object = None) -> None:
         if tab.path is not None:
+            # directory tree should already contain the path
             tree.add_project(utils.find_project_root(tab.path))
-            tree.refresh()
             tree.select_file(tab.path)
 
     path_callback()
@@ -373,36 +422,24 @@ def _focus_treeview(tree: DirectoryTree) -> None:
     tree.tk.call("focus", tree)
 
 
-# There's no way to bind so you get only main window's events.
-#
-# When the treeview is focused inside the Porcupine window but the Porcupine
-# window itself is not focused, this refreshes twice when the window gets
-# focus. If that ever becomes a problem, it can be fixed with a debouncer. At
-# the time of writing this, Porcupine contains debouncer code used for
-# something else. That can be found with grep.
-def _on_any_widget_focused(tree: DirectoryTree, event: tkinter.Event[tkinter.Misc]) -> None:
-    if event.widget is get_main_window() or event.widget is tree:
-        tree.refresh()
-
-
 def setup() -> None:
     settings.add_option("directory_tree_projects", [], List[str])
 
-    # TODO: add something for finding a file by typing its name?
-    container = ttk.Frame(get_paned_window())
+    container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")
+    get_horizontal_panedwindow().add(container, before=get_vertical_panedwindow())
+    settings.remember_pane_size(
+        get_horizontal_panedwindow(), container, "directory_tree_width", 200
+    )
 
     # Packing order matters. The widget packed first is always visible.
     scrollbar = ttk.Scrollbar(container)
     scrollbar.pack(side="right", fill="y")
     tree = DirectoryTree(container)
     tree.pack(side="left", fill="both", expand=True)
-    get_main_window().bind("<FocusIn>", partial(_on_any_widget_focused, tree), add=True)
+    get_tab_manager().bind("<<FileSystemChanged>>", tree.refresh, add=True)
 
     tree.config(yscrollcommand=scrollbar.set)
     scrollbar.config(command=tree.yview)
-
-    # Insert directory tree before tab manager
-    get_paned_window().insert(get_tab_manager(), container)
 
     get_tab_manager().add_filetab_callback(partial(_on_new_filetab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(_select_current_file, tree), add=True)
@@ -418,14 +455,12 @@ def setup() -> None:
             tree.add_project(path, refresh=False)
     tree.refresh()
 
-    # TODO: mac right click = button 2?
-    tree.bind("<Button-3>", tree._on_right_click, add=True)
+    # TODO: invoking context menu from keyboard
+    tree.bind("<<RightClick>>", tree._on_right_click, add=True)
+
+    tree.bind("<Key>", tree._cycle_through_items, add=True)
 
 
 # Used in other plugins
 def get_directory_tree() -> DirectoryTree:
-    for possible_container in get_paned_window().winfo_children():
-        for possible_directory_tree in possible_container.winfo_children():
-            if isinstance(possible_directory_tree, DirectoryTree):
-                return possible_directory_tree
-    raise RuntimeError("directory tree not found")
+    return get_horizontal_panedwindow().nametowidget("directory_tree_container.directory_tree")

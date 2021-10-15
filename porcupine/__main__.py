@@ -1,8 +1,8 @@
 import argparse
 import logging
-import pathlib
 import sys
 import threading
+from pathlib import Path
 
 # imports spread across multiple lines to keep sane line lengths and make it greppable
 from porcupine import __version__ as porcupine_version
@@ -93,9 +93,9 @@ def main() -> None:
 
     args_parsed_in_first_step, junk = parser.parse_known_args()
 
-    pathlib.Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
-    (pathlib.Path(dirs.user_config_dir) / "plugins").mkdir(parents=True, exist_ok=True)
-    pathlib.Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
+    Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
+    (Path(dirs.user_config_dir) / "plugins").mkdir(parents=True, exist_ok=True)
+    Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
     _logs.setup(args_parsed_in_first_step.verbose_logger)
 
     settings.init_enough_for_using_disabled_plugins_list()
@@ -153,7 +153,7 @@ def main() -> None:
             #   ^D
             tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
         else:
-            tabmanager.open_file(pathlib.Path(path_string))
+            tabmanager.open_file(Path(path_string))
 
     get_main_window().deiconify()
     try:

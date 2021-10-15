@@ -1,14 +1,28 @@
 import dataclasses
 import json
+import sys
 import tkinter
+from pathlib import Path
 from tkinter import ttk
 from tkinter.font import Font
-from typing import List, Optional
+from typing import Optional
 
 import dacite
 import pytest
 
-from porcupine import settings
+from porcupine import settings, utils
+
+
+@pytest.fixture(autouse=True)
+def restore_default_settings():
+    yield
+
+    # We don't clear the user's settings, porcupine.dirs is monkeypatched
+    if sys.platform == "win32":
+        assert "Temp" in settings.get_json_path().parts
+    else:
+        assert Path.home() not in settings.get_json_path().parents
+    settings.reset_all()
 
 
 # Could replace some of this with non-global setting objects, but I don't feel
@@ -163,6 +177,29 @@ def test_dataclass():
     assert settings_obj.get("bar", Foo) == Foo(456, "hi")
 
 
+def test_debug_dump(capsys):
+    settings_obj = settings.Settings(None, "<<Foo:{}>>")
+    settings_obj.add_option("foo", None, Optional[str])
+    settings_obj.set("bar", ["a", "b", "c"], from_config=True)
+    settings_obj.debug_dump()
+
+    output, errors = capsys.readouterr()
+    assert not errors
+    if sys.version_info < (3, 9):
+        output = output.replace("typing.Union[str, NoneType]", "typing.Optional[str]")
+    assert (
+        output
+        == """\
+1 known options (add_option called)
+  foo = None    (type: typing.Optional[str])
+
+1 unknown options (add_option not called)
+  bar = ['a', 'b', 'c']
+
+"""
+    )
+
+
 def test_font_family_chooser():
     families = settings._get_monospace_font_families()
     assert len(families) == len(set(families)), "duplicates"
@@ -177,17 +214,27 @@ def toplevel():
     toplevel.destroy()
 
 
-def test_remember_panedwindow_positions(toplevel):
-    pw = ttk.PanedWindow(toplevel, orient="horizontal")
-    settings.remember_divider_positions(pw, "pw_dividers", [123])
+def create_paned_window(toplevel):
+    pw = utils.PanedWindow(toplevel, orient="horizontal")
     pw.pack(fill="both", expand=True)
+    left = ttk.Label(pw, text="aaaaaaaaaaa")
+    right = ttk.Label(pw, text="aaaaaaaaaaa")
+    pw.add(left)
+    pw.add(right)
+    settings.remember_pane_size(pw, left, "a_width", 123)
+    return (pw, left)
 
-    pw.add(ttk.Label(pw, text="aaaaaaaaaaa"))
-    pw.add(ttk.Label(pw, text="bbbbbbbbbbb"))
 
+def test_remember_panedwindow_positions(toplevel):
+    pw, left = create_paned_window(toplevel)
     pw.update()
-    assert pw.sashpos(0) == 123
+    assert left.winfo_width() == 123
 
-    pw.sashpos(0, 456)
+    pw.sash_place(0, 44, 0)
     pw.event_generate("<ButtonRelease-1>")  # happens after user drags pane
-    assert settings.get("pw_dividers", List[int]) == [456]
+
+    pw2, left2 = create_paned_window(toplevel)
+    pw.update()
+
+    # it is off-by-one on my computer, that's fine
+    assert abs(left2.winfo_width() - 44) < 5

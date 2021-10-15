@@ -1,5 +1,5 @@
 import logging
-import pathlib
+from pathlib import Path
 
 from porcupine import settings
 from porcupine.plugins.editorconfig import apply_config, get_config, glob_match
@@ -51,7 +51,7 @@ def test_glob():
             assert not glob_match("foo{-2..14}.py", f"foo{n}.py")
 
 
-TEST_DATA_DIR = pathlib.Path(__file__).absolute().parent / "editorconfig_test_data"
+TEST_DATA_DIR = Path(__file__).absolute().parent / "editorconfig_test_data"
 
 
 def test_funny_files():

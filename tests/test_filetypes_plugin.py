@@ -1,6 +1,8 @@
 import logging
-import pathlib
+import pickle
+import shutil
 import sys
+from pathlib import Path
 from tkinter import filedialog
 
 import pytest
@@ -12,14 +14,22 @@ from porcupine.plugins import filetypes
 @pytest.fixture
 def custom_filetypes():
     # We don't overwrite the user's file because porcupine.dirs is monkeypatched
-    assert not dirs.user_config_dir.startswith(str(pathlib.Path.home()))
-    user_filetypes = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
+    if sys.platform == "win32":
+        assert "\\Temp\\" in dirs.user_config_dir
+    else:
+        assert not dirs.user_config_dir.startswith(str(Path.home()))
 
+    user_filetypes = Path(dirs.user_config_dir) / "filetypes.toml"
     user_filetypes.write_text(
         """
-['Mako template']
+["Mako template"]
 filename_patterns = ["mako-templates/*.html"]
 pygments_lexer = 'pygments.lexers.MakoHtmlLexer'
+
+["C++".langserver]
+command = "clangd"
+language_id = "cpp"
+settings = {clangd = {arguments = ["-std=c++17"]}}
 """
     )
     filetypes.load_filetypes()
@@ -90,3 +100,10 @@ def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
     for filetype_name, patterns in filedialog_kwargs["filetypes"]:
         for pattern in patterns:
             assert "/" not in pattern
+
+
+@pytest.mark.skipif(shutil.which("clangd") is None, reason="example config uses clangd")
+def test_cplusplus_toml_bug(tmp_path, tabmanager, custom_filetypes):
+    (tmp_path / "foo.cpp").touch()
+    tab = tabmanager.open_file(tmp_path / "foo.cpp")
+    pickle.dumps(tab.get_state())  # should not raise an error

@@ -5,13 +5,13 @@ import itertools
 import logging
 import time
 import tkinter
-from tkinter.font import Font
 from typing import Any, Callable, Iterator
 
-from pygments import styles, token
+from pygments import token
 from pygments.lexer import Lexer, LexerMeta, RegexLexer
+from pygments.lexers import MarkdownLexer
 
-from porcupine import get_tab_manager, settings, tabs, textutils, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
@@ -27,55 +27,10 @@ root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 
 
 class Highlighter:
-    def __init__(self, text: tkinter.Text) -> None:
-        self.textwidget = text
+    def __init__(self, textwidget: tkinter.Text) -> None:
+        self.textwidget = textwidget
         self._lexer: Lexer | None = None
-
-        # the tags use fonts from here
-        self._fonts: dict[tuple[bool, bool], Font] = {}
-        for bold in (True, False):
-            for italic in (True, False):
-                # the fonts will be updated later, see below
-                self._fonts[(bold, italic)] = Font(
-                    weight=("bold" if bold else "normal"), slant=("italic" if italic else "roman")
-                )
-
-        self.textwidget.bind("<<SettingChanged:font_family>>", self._font_changed, add=True)
-        self.textwidget.bind("<<SettingChanged:font_size>>", self._font_changed, add=True)
-        self.textwidget.bind("<<SettingChanged:pygments_style>>", self._style_changed, add=True)
-        self._font_changed()
-        self._style_changed()
-
-    def _font_changed(self, junk: object = None) -> None:
-        font_updates = dict(Font(name="TkFixedFont", exists=True).actual())
-        del font_updates["weight"]  # ignore boldness
-        del font_updates["slant"]  # ignore italicness
-
-        for (bold, italic), font in self._fonts.items():
-            # fonts don't have an update() method
-            for key, value in font_updates.items():
-                font[key] = value
-
-    def _style_changed(self, junk: object = None) -> None:
-        # http://pygments.org/docs/formatterdevelopment/#styles
-        # all styles seem to yield all token types when iterated over,
-        # so we should always end up with the same tags configured
-        style = styles.get_style_by_name(settings.get("pygments_style", str))
-        for tokentype, infodict in style:
-            # this doesn't use underline and border
-            # i don't like random underlines in my code and i don't know
-            # how to implement the border with tkinter
-            self.textwidget.tag_config(
-                str(tokentype),
-                font=self._fonts[(infodict["bold"], infodict["italic"])],
-                # empty string resets foreground
-                foreground=("" if infodict["color"] is None else "#" + infodict["color"]),
-                background=("" if infodict["bgcolor"] is None else "#" + infodict["bgcolor"]),
-            )
-
-            # make sure that the selection tag takes precedence over our
-            # token tag
-            self.textwidget.tag_lower(str(tokentype), "sel")
+        textutils.use_pygments_tags(self.textwidget)
 
     # yields marks backwards, from end to start
     def _get_root_marks(self, start: str = "1.0", end: str = "end") -> Iterator[str]:
@@ -96,9 +51,14 @@ class Highlighter:
         return True
 
     def _detect_root_state(self, generator: Any, end_location: str) -> bool:
+        assert self._lexer is not None
+
+        # below code buggy for markdown
+        if isinstance(self._lexer, MarkdownLexer):
+            return False
+
         # Only for subclasses of RegexLexer that don't override get_tokens_unprocessed
         # TODO: support ExtendedRegexLexer's context thing
-        assert self._lexer is not None
         if type(self._lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
             # Use local variables inside the generator (ugly hack)
             local_vars = generator.gi_frame.f_locals

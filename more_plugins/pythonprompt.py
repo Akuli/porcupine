@@ -147,7 +147,7 @@ class PromptTab(tabs.Tab):
 
         self.textwidget = tkinter.Text(self, width=1, height=1)
         self.textwidget.pack(side="left", fill="both", expand=True)
-        textutils.use_pygments_theme(self.textwidget)
+        textutils.use_pygments_tags(self.textwidget)
         self.prompt = PythonPrompt(self.textwidget, (lambda: self.master.close_tab(self)))
 
         self.scrollbar = ttk.Scrollbar(self)

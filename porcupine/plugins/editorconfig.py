@@ -9,9 +9,9 @@ from __future__ import annotations
 import configparser
 import dataclasses
 import logging
-import pathlib
 import re
 from functools import partial
+from pathlib import Path
 
 from porcupine import get_tab_manager, settings, tabs
 
@@ -30,14 +30,14 @@ _DEFAULT_SECTION_NAME = "this section is not used for anything but can't be disa
 
 @dataclasses.dataclass
 class Section:
-    glob_relative_to: pathlib.Path
+    glob_relative_to: Path
     path_glob: str
     config: dict[str, str]
 
 
 # Sections later in resulting list override earlier sections: "EditorConfig
 # files are read top to bottom and the most recent rules found take precedence."
-def parse_file(path: pathlib.Path) -> tuple[list[Section], bool]:
+def parse_file(path: Path) -> tuple[list[Section], bool]:
     log.debug(f"parsing {path}")
 
     # "EditorConfig files should be UTF-8 encoded, with either CRLF or LF line
@@ -180,7 +180,7 @@ def glob_match(glob: str, string: str) -> bool:
     return all(integer in ranke for integer, ranke in zip(integers, ranges))
 
 
-def get_config(path: pathlib.Path) -> dict[str, str]:
+def get_config(path: Path) -> dict[str, str]:
     assert path.is_absolute()
 
     # last items in this list is considered the most important

@@ -16,6 +16,7 @@ Use these functions for setting and getting values of options:
 
 .. autofunction:: set_
 .. autofunction:: get
+.. autofunction:: debug_dump
 
 .. |br| raw:: html
 
@@ -136,15 +137,18 @@ If you want your binding to work as long as Porcupine is running,
 use the bind method of :func:`porcupine.get_tab_manager`.
 
 .. note::
-    Don't use :func:`porcupine.get_main_window` for binding to ``<<SettingChanged:foo>>``.
-    The main window is a :class:`tkinter.Tk` or :class:`tkinter.Toplevel` widget,
+    Do not use :func:`porcupine.get_main_window` for binding to ``<<SettingChanged:foo>>``.
+    The main window is a :class:`tkinter.Tk` widget,
     so it gets notified of its child widgets' events too.
+    (The same applies to :class:`tkinter.Toplevel`.)
     For example, let's say that  there are 100 widgets currently being shown in the main window,
     and you unwisely use the main window's ``bind()`` to bind ``<<SettingChanged:foo>>``.
     When the ``foo`` setting changes, your bind callback runs
     100 times with ``event.widget`` set to something else than the main window, and
     once with ``event.widget`` set to the main window.
     This can cause annoying slowness.
+
+.. autofunction:: use_pygments_fg_and_bg
 
 
 Misc functions
@@ -179,7 +183,8 @@ Non-global Settings
     .. method:: set(option_name, value)
     .. method:: get(option_name, tybe)
     .. method:: add_option(option_name, default)
+    .. method:: debug_dump()
 
         These methods are just like the
-        :func:`set_`, :func:`get` and :func:`add_option` functions,
+        :func:`set_`, :func:`get`, :func:`add_option` and :func:`debug_dump` functions,
         but they do things with the :class:`Settings` instance, not with the global settings.

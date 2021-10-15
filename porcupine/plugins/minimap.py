@@ -172,28 +172,13 @@ class MiniMap(tkinter.Text):
         self._tab.textwidget.see(self.index(f"@0,{event.y}"))
         return "break"
 
-    def set_width_from_settings(self, junk: object = None) -> None:
-        self._tab.panedwindow.paneconfigure(self, width=settings.get("minimap_width", int))
-
-    def save_width_to_settings(self) -> None:
-        settings.set_("minimap_width", self.winfo_width())
-
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     minimap = MiniMap(tab.panedwindow, tab)
-
-    minimap.bind("<Map>", minimap.set_width_from_settings, add=True)
-    tab.panedwindow.bind(
-        "<ButtonRelease-1>",
-        # after_idle needed for accuracy if you move mouse really fast
-        (lambda e: minimap.after_idle(minimap.save_width_to_settings)),
-        add=True,
-    )
-
-    textutils.use_pygments_theme(minimap, minimap.set_colors)
+    settings.use_pygments_fg_and_bg(minimap, minimap.set_colors)
     tab.panedwindow.add(minimap, stretch="never")
+    settings.remember_pane_size(tab.panedwindow, minimap, "minimap_width", 100)
 
 
 def setup() -> None:
-    settings.add_option("minimap_width", 100)
     get_tab_manager().add_filetab_callback(on_new_filetab)

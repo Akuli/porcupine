@@ -43,8 +43,8 @@ def get_docstring(module_name: str) -> str:
     return "(no description available)"
 
 
-DIALOG_WIDTH = 800
-DIALOG_HEIGHT = 300
+DIALOG_WIDTH = 850
+DIALOG_HEIGHT = 350
 
 
 class PluginDialogContent:
@@ -56,12 +56,12 @@ class PluginDialogContent:
         self._plz_restart_label = ttk.Label(self.content_frame)
         self._plz_restart_label.pack(side="bottom", fill="x")
 
-        column_sizes = [120, 150, 180]
+        column_sizes = (120, 150, 180)
 
-        left_side = ttk.Frame(panedwindow)
-        right_side = ttk.Frame(panedwindow, padding=10, width=10000)  # to shrink left_side
+        left_side = ttk.Frame(panedwindow, padding=5)
+        right_side = ttk.Frame(panedwindow, padding=5, width=10000)  # to shrink left_side
         panedwindow.add(left_side, minsize=sum(column_sizes))
-        panedwindow.add(right_side, minsize=250)
+        panedwindow.add(right_side, minsize=300)
 
         self.treeview = ttk.Treeview(
             left_side, show="headings", columns=("name", "type", "status"), selectmode="extended"
@@ -71,15 +71,14 @@ class PluginDialogContent:
         scrollbar = ttk.Scrollbar(left_side, command=self.treeview.yview)
         self.treeview.config(yscrollcommand=scrollbar.set)
 
-        self._search_var = tkinter.StringVar()
+        self._search_var = tkinter.StringVar(value="Filter by name, type or status...")
         search_entry = ttk.Entry(left_side, textvariable=self._search_var)
         search_entry.bind(
             "<FocusIn>", (lambda event: search_entry.selection_range(0, "end")), add=True
         )
-        search_entry.insert(0, "Filter by name, type or status...")
         self._search_var.trace_add("write", self._search)
 
-        search_entry.pack(side="bottom", fill="x")
+        search_entry.pack(side="bottom", fill="x", pady=(5, 0))
         self.treeview.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
@@ -102,7 +101,6 @@ class PluginDialogContent:
         self.enable_button = ttk.Button(
             button_frame, text="Enable", command=partial(self._set_enabled, True), state="disabled"
         )
-        # here was an expand=True, but fill wasn't, it looks better with fill
         self.enable_button.pack(side="left", expand=True, fill="x", padx=(0, 5))
 
         self.disable_button = ttk.Button(

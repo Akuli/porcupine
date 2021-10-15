@@ -8,9 +8,9 @@ import importlib
 import itertools
 import logging
 import os
-import pathlib
 import tkinter
 import traceback
+from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
@@ -31,7 +31,7 @@ def _find_duplicates(items: list[_T], key: Callable[[_T], str]) -> Iterable[list
     return [itemlist for itemlist in items_by_key.values() if len(itemlist) >= 2]
 
 
-def _short_ways_to_display_path(path: pathlib.Path) -> list[str]:
+def _short_ways_to_display_path(path: Path) -> list[str]:
     parts = str(path).split(os.sep)
     return [parts[-1], parts[-2] + os.sep + parts[-1]] + [
         first_part + os.sep + "..." + os.sep + parts[-1] for first_part in parts[:-2]
@@ -57,6 +57,17 @@ class TabManager(ttk.Notebook):
 
         .. seealso:: :meth:`select`
 
+    .. virtualevent:: FileSystemChanged
+
+        Runs when a file has been saved, a command finishes running, the
+        Porcupine window is focused, or there's some other reason why files on
+        the disk have likely changed.
+
+        This event is in the tab manager and not in the main window (see
+        :func:`porcupine.get_main_window`), because bindings of the main window
+        also get notified for the events of all child widgets, and there is
+        also a tab-specific :virtevt:`~Tab.FileSystemChanged` event.
+
     .. method:: add(child, **kw)
     .. method:: enable_traversal()
     .. method:: forget(tab_id)
@@ -73,15 +84,27 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.bind("<<NotebookTabChanged>>", self._notify_selected_tab, add=True)
+        self.bind("<<NotebookTabChanged>>", self._on_tab_selected, add=True)
+        self.bind("<<FileSystemChanged>>", self._on_fs_changed, add=True)
+        self.winfo_toplevel().bind("<FocusIn>", self._handle_main_window_focus, add=True)
 
         # the string is call stack for adding callback
         self._tab_callbacks: list[tuple[Callable[[Tab], Any], str]] = []
 
-    def _notify_selected_tab(self, event: tkinter.Event[tkinter.Misc]) -> None:
+    def _handle_main_window_focus(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        if event.widget is self.winfo_toplevel():
+            self.event_generate("<<FileSystemChanged>>")
+
+    def _on_tab_selected(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
         tab = self.select()
         if tab is not None:
             tab.event_generate("<<TabSelected>>")
+            tab.event_generate("<<FileSystemChanged>>")
+
+    def _on_fs_changed(self, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+        tab = self.select()
+        if tab is not None:
+            tab.event_generate("<<FileSystemChanged>>")
 
     def _update_tab_titles(self) -> None:
         titlelists = [list(tab.title_choices) for tab in self.tabs()]
@@ -133,12 +156,26 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())
 
-    def open_file(self, path: pathlib.Path) -> FileTab | None:
+    def open_file(self, path: Path) -> FileTab | None:
         """Add a :class:`FileTab` for editing a file and select it.
 
         If the file can't be opened, this method displays an error to the user
         and returns ``None``.
         """
+
+        try:
+            if path.stat().st_size > 1_000_000 and not messagebox.askyesno(
+                "Open big file",
+                "Uhh, this file is huge!\nAre you sure you want to open it? ",
+                detail=(
+                    "This file is larger than 1MB. If you open it, Porcupine may be unusably slow"
+                    " or require an huge amount of RAM."
+                ),
+            ):
+                return None
+        except OSError:
+            pass  # no problem, reload() will handle the error
+
         # Add tab before loading content, so that editorconfig plugin gets a
         # chance to set the encoding into tab.settings
         tab = FileTab(self, path=path)
@@ -146,6 +183,7 @@ class TabManager(ttk.Notebook):
         if existing_tab != tab:
             # tab is destroyed
             assert isinstance(existing_tab, FileTab)
+            existing_tab.textwidget.focus()
             return existing_tab
 
         if not tab.reload(undoable=False):
@@ -266,6 +304,15 @@ class Tab(ttk.Frame):
         selected. Unlike :virtevt:`~TabManager.NotebookTabSelected`, this event
         is bound on the tab and not the tab manager, and hence is automatically
         unbound when the tab is destroyed.
+
+    .. virtualevent:: FileSystemChanged
+
+        Just like the :virtevt:`~Tab.FileSystemChanged` event of
+        :class:`TabManager`, except:
+
+            * It is available on each tab, not on the tab manager.
+            * It doesn't run when the tab isn't selected.
+            * It runs for the newly selected tab when a tab is selected.
 
     .. attribute:: title_choices
 
@@ -390,7 +437,7 @@ restarting Porcupine.
 
 
 class _FileTabState(NamedTuple):
-    path: pathlib.Path | None
+    path: Path | None
     content: str | None
     saved_state: tuple[os.stat_result | None, int, str]
     cursor_pos: str
@@ -507,11 +554,9 @@ class FileTab(Tab):
 
         The central text widget of the tab.
 
-        When a new :class:`FileTab` is created, these functions will be called
-        for the text widget:
-
-            * :func:`porcupine.textutils.use_pygments_theme`
-            * :func:`porcupine.textutils.track_changes`
+        When a new :class:`FileTab` is created,
+        :func:`porcupine.textutils.track_changes` is automatically called for
+        the text widget.
 
     .. attribute:: panedwindow
         :type: porcupine.utils.PanedWindow
@@ -538,9 +583,7 @@ class FileTab(Tab):
         .. seealso:: The :virtevt:`PathChanged` virtual event.
     """
 
-    def __init__(
-        self, manager: TabManager, content: str = "", path: pathlib.Path | None = None
-    ) -> None:
+    def __init__(self, manager: TabManager, content: str = "", path: Path | None = None) -> None:
         super().__init__(manager)
 
         if path is None:
@@ -593,6 +636,9 @@ class FileTab(Tab):
         self.bind("<<PathChanged>>", self._update_titles, add=True)
         self.bind("<<TabSettingChanged:encoding>>", self._update_titles, add=True)
         self.bind("<<TabSettingChanged:line_ending>>", self._update_titles, add=True)
+        self.bind(
+            "<<AfterSave>>", (lambda e: manager.event_generate("<<FileSystemChanged>>")), add=True
+        )
         self._update_titles()
 
         self._previous_reload_failed = False
@@ -655,8 +701,8 @@ class FileTab(Tab):
                     log.exception(f"opening '{self.path}' failed")
                     wanna_retry = messagebox.askretrycancel(
                         "Opening failed",
-                        f"{type(e).__name__}: {e}\n\n"
-                        + "Make sure that the file exists and try again.",
+                        f"{type(e).__name__}: {e}",
+                        detail="Make sure that the file exists and try again.",
                     )
                     if wanna_retry:
                         continue
@@ -758,11 +804,11 @@ class FileTab(Tab):
         )
 
     @property
-    def path(self) -> pathlib.Path | None:
+    def path(self) -> Path | None:
         return self._path
 
     @path.setter
-    def path(self, new_path: pathlib.Path | None) -> None:
+    def path(self, new_path: Path | None) -> None:
         if new_path is not None:
             new_path = new_path.resolve()
 
@@ -801,7 +847,7 @@ class FileTab(Tab):
         # no was clicked, can be closed
         return True
 
-    def _do_the_save(self, path: pathlib.Path) -> bool:
+    def _do_the_save(self, path: Path) -> bool:
         self.event_generate("<<BeforeSave>>")
 
         while True:
@@ -839,8 +885,8 @@ class FileTab(Tab):
                 log.exception(f"saving to '{path}' failed")
                 messagebox.showerror(
                     "Saving failed",
-                    f"{type(e).__name__}: {e}\n\n"
-                    + "Make sure that the file is writable and try again.",
+                    f"{type(e).__name__}: {e}",
+                    detail="Make sure that the file is writable and try again.",
                 )
 
             # If we get here, error message was shown
@@ -878,7 +924,7 @@ class FileTab(Tab):
 
         return self._do_the_save(self.path)
 
-    def save_as(self, path: pathlib.Path | None = None) -> bool:
+    def save_as(self, path: Path | None = None) -> bool:
         """Ask the user where to save the file and save it there.
 
         Returns True if the file was saved, and False if the user
@@ -889,7 +935,7 @@ class FileTab(Tab):
             path_string = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
             if not path_string:  # it may be '' because tkinter
                 return False
-            path = pathlib.Path(path_string)
+            path = Path(path_string)
 
         # see equivalent()
         if any(

@@ -1,9 +1,5 @@
 # More plugins!
 
-Porcupine is by default a minimal editor that gets the job done, but
-it's by no means *limited* to being a minimal editor. If you want to
-play tetris in Porcupine you're in the right place!
-
 Installing these plugins is easy:
 
 1. Figure out where to put the plugins by opening *About Porcupine* from the *Help* menu.
@@ -16,7 +12,6 @@ Installing these plugins is easy:
 | ----------------- | --------------------------------------------------------- | ----- |
 | pythonprompt.py   | Simple `>>>` prompt tab.                                  |       |
 | terminal.py       | Run a terminal inside Porcupine as a tab.                 | 1.    |
-| tetris.py         | Fun tetris game.                                          |       |
 
 Notes:
 

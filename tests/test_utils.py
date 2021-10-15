@@ -4,7 +4,6 @@ import subprocess
 import sys
 import typing
 from pathlib import Path
-from tkinter import ttk
 
 import pytest
 
@@ -48,26 +47,6 @@ def test_bind_with_data_class():
     assert foo.num == 123
 
 
-def test_get_children_recursively():
-    parent = ttk.Frame()
-    try:
-        child1 = ttk.Button(parent)
-        child2 = ttk.Frame(parent)
-        child2a = ttk.Progressbar(child2)
-        child2b = ttk.Sizegrip(child2)
-
-        assert list(utils.get_children_recursively(parent)) == [child1, child2, child2a, child2b]
-        assert list(utils.get_children_recursively(parent, include_parent=True)) == [
-            parent,
-            child1,
-            child2,
-            child2a,
-            child2b,
-        ]
-    finally:
-        parent.destroy()
-
-
 if sys.platform == "darwin":
     binding_test_cases = [
         ("<<Menubar:Edit/Anchors/Add or remove on this line>>", "⇧⌥A", "Shift-Alt-A"),
@@ -76,7 +55,6 @@ if sys.platform == "darwin":
         ("<<Menubar:File/New File>>", "⌘N", "Command-N"),
         ("<<Menubar:File/Save As>>", "⇧⌘S", "Shift-Command-S"),
         ("<<Menubar:File/Save>>", "⌘S", "Command-S"),
-        ("<<Menubar:Run/Run>>", "F5", "F5"),
         ("<<Menubar:View/Bigger Font>>", "⌘+", "Command-+"),
         ("<<Menubar:View/Reset Font Size>>", "⌘0", "Command-0"),
         ("<<Menubar:View/Smaller Font>>", "⌘-", "Command--"),
@@ -93,7 +71,6 @@ else:
         ("<<Menubar:File/New File>>", "Ctrl+N", "Ctrl+N"),
         ("<<Menubar:File/Save As>>", "Ctrl+Shift+S", "Ctrl+Shift+S"),
         ("<<Menubar:File/Save>>", "Ctrl+S", "Ctrl+S"),
-        ("<<Menubar:Run/Run>>", "F5", "F5"),
         ("<<Menubar:View/Bigger Font>>", "Ctrl+Plus", "Ctrl+Plus"),
         ("<<Menubar:View/Reset Font Size>>", "Ctrl+Zero", "Ctrl+Zero"),
         ("<<Menubar:View/Smaller Font>>", "Ctrl+Minus", "Ctrl+Minus"),
@@ -128,7 +105,7 @@ def test_project_root(tmp_path):
     assert utils.find_project_root(tmp_path / "foo" / "baz.py") == tmp_path
 
 
-def test_format_command(monkeypatch):
+def test_format_command():
     assert utils.format_command("{foo} --help", {"foo": "bar baz"}) == ["bar baz", "--help"]
 
     if sys.platform == "win32":

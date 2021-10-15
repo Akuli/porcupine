@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 import re
 import sys
 import tkinter
 import webbrowser
 from functools import partial
+from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
 from typing import Any, Callable, Iterator
@@ -140,15 +140,13 @@ def get_menu(path: str) -> tkinter.Menu:
     return menu
 
 
-def add_config_file_button(
-    path: pathlib.Path, *, menu: str = "Settings/Config Files", text: str | None = None
-) -> None:
+def add_config_file_button(path: Path, *, menu: str = "Settings/Config Files") -> None:
     """
     Add a button to *Settings/Config Files* (or some other menu)
     that opens a file in Porcupine when it's clicked.
     """
     get_menu(menu).add_command(
-        label=(text or path.name), command=(lambda: get_tab_manager().open_file(path))
+        label=f"Edit {path.name}", command=(lambda: get_tab_manager().open_file(path))
     )
 
 
@@ -176,6 +174,10 @@ def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkin
 def _update_keyboard_shortcuts_inside_submenus() -> None:
     main_window = get_main_window()
     for path, menu, index in _walk_menu_contents(get_menu("")):
+        if menu.entrycget(index, "accelerator"):
+            # Already done, or menu item uses some custom stuff e.g. run plugin
+            continue
+
         event_name = f"<<Menubar:{path}>>"
 
         # show keyboard shortcuts in menus
@@ -278,7 +280,9 @@ def _get_filetab() -> tabs.FileTab:
     return tab
 
 
-def add_filetab_command(path: str, func: Callable[[tabs.FileTab], Any] | None = None) -> None:
+def add_filetab_command(
+    path: str, func: Callable[[tabs.FileTab], object] | None = None, **kwargs: Any
+) -> None:
     """
     This is a convenience function that does several things:
 
@@ -319,6 +323,9 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], Any] | None = 
         def setup() -> None:
             get_tab_manager().add_filetab_callback(on_new_filetab)
             menubar.add_filetab_command("Edit/Do something")
+
+    You usually don't need to provide any keyword arguments in ``**kwargs``,
+    but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
     """
     if func is None:
         command = lambda: _get_filetab().event_generate(f"<<FiletabCommand:{path}>>")
@@ -326,7 +333,8 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], Any] | None = 
         command = lambda: func(_get_filetab())  # type: ignore
 
     menu_path, item_text = _split_parent(path)
-    get_menu(menu_path).add_command(label=item_text, command=command)
+    get_menu(menu_path).add_command(label=item_text, command=command, **kwargs)
+    set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
 
 
 # TODO: pluginify?
@@ -343,7 +351,7 @@ def _fill_menus_with_default_stuff() -> None:
     def open_files() -> None:
         # paths is "" or tuple
         paths = filedialog.askopenfilenames(**filedialog_kwargs)
-        for path in map(pathlib.Path, paths):
+        for path in map(Path, paths):
             get_tab_manager().open_file(path)
 
     def save_file(save_as: bool) -> None:

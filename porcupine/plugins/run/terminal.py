@@ -3,71 +3,53 @@ from __future__ import annotations
 
 import logging
 import os
-import pathlib
 import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 from tkinter import messagebox
-from typing import Union
 
 from porcupine import get_main_window, utils
 
 log = logging.getLogger(__name__)
 
-_this_dir = pathlib.Path(__file__).absolute().parent
+_this_dir = Path(__file__).absolute().parent
 if sys.platform == "win32":
     run_script = _this_dir / "windows_run.py"
 else:
     run_script = _this_dir / "bash_run.sh"
 
-CommandArgument = Union[str, pathlib.Path]
-
 
 # getting this to work in powershell turned out to be hard :(
-def _run_in_windows_cmd(blue_message: str, workingdir: pathlib.Path, command: list[str]) -> None:
+def _run_in_windows_cmd(command: str, cwd: Path) -> None:
     log.debug("using Windows command prompt")
 
-    command = [
-        str(utils.python_executable),
-        str(run_script),
-        blue_message,
-        str(workingdir),
-    ] + command
-
+    real_command = [str(utils.python_executable), str(run_script), str(cwd), command]
     if not utils.running_pythonw:
         # windows wants to run python in the same terminal that
         # Porcupine was started from, this is the only way to open a
         # new command prompt i found and it works :) we need cmd
         # because start is built in to cmd (lol)
-        command = ["cmd", "/c", "start"] + command
-    subprocess.Popen(command)
+        real_command = ["cmd", "/c", "start"] + real_command
+    subprocess.Popen(real_command)
 
 
-def _run_in_osx_terminal_app(
-    blue_message: str, workingdir: pathlib.Path, command: list[str]
-) -> None:
-    log.debug("using OSX terminal.app")
+def _run_in_macos_terminal_app(command: str, cwd: Path) -> None:
+    log.debug("using MacOS terminal.app")
+    assert shutil.which("bash") is not None
 
-    bash = shutil.which("bash")
-    assert bash is not None
-
-    # passing arguments is not easy, these things are wrong with this:
-    #  - i needed to cheat and use stackoverflow because i don't
-    #    have a mac :( http://stackoverflow.com/a/989357
-    #  - new OSX versions keep the terminal open by
-    #    default but older versions don't, so people using old
-    #    OSX versions need to change their terminal settings
-    # big thanks to go|dfish for testing an older version of this code!
-    # this exact code is NOT TESTED :/
-    real_command = [str(run_script), "--dont-wait", blue_message, str(workingdir)] + list(
-        map(str, command)
-    )
     with tempfile.NamedTemporaryFile("w", delete=False, prefix="porcupine-run-") as file:
         print("#!/usr/bin/env bash", file=file)
-        print("rm", shlex.quote(file.name), file=file)  # see below
-        print(" ".join(map(shlex.quote, real_command)), file=file)
+        print("rm", shlex.quote(file.name), file=file)  # runs even if command is interrupted
+        print(
+            shlex.quote(str(run_script)),
+            "--dont-wait",
+            shlex.quote(str(cwd)),
+            shlex.quote(command),
+            file=file,
+        )
 
     os.chmod(file.name, 0o755)
     subprocess.Popen(["open", "-a", "Terminal.app", file.name])
@@ -77,9 +59,7 @@ def _run_in_osx_terminal_app(
     # it's removed even if the command is interrupted
 
 
-def _run_in_x11_like_terminal(
-    blue_message: str, workingdir: pathlib.Path, command: list[str]
-) -> None:
+def _run_in_x11_like_terminal(command: str, cwd: Path) -> None:
     terminal: str = os.environ.get("TERMINAL", "x-terminal-emulator")
 
     # to config what x-terminal-emulator is:
@@ -109,7 +89,7 @@ def _run_in_x11_like_terminal(
                 )
                 return
 
-        terminal_path = pathlib.Path(terminal_or_none)
+        terminal_path = Path(terminal_or_none)
         log.info(f"found a terminal: {terminal_path}")
 
         terminal_path = terminal_path.resolve()
@@ -135,7 +115,7 @@ def _run_in_x11_like_terminal(
         )
         return
 
-    real_command = [str(run_script), blue_message, str(workingdir)]
+    real_command = [str(run_script), str(cwd), command]
     real_command.extend(map(str, command))
     subprocess.Popen([terminal, "-e", " ".join(map(shlex.quote, real_command))])
 
@@ -143,15 +123,14 @@ def _run_in_x11_like_terminal(
 # this figures out which terminal to use every time the user wants to run
 # something but it doesn't really matter, this way the user can install a
 # terminal while porcupine is running without restarting porcupine
-def run_command(workingdir: pathlib.Path, command: list[str]) -> None:
-    blue_message = " ".join(map(utils.quote, command))
-
+def run_command(command: str, cwd: Path) -> None:
+    log.info(f"Running {command} in {cwd}")
     widget = get_main_window()  # any tkinter widget works
     windowingsystem = widget.tk.call("tk", "windowingsystem")
 
     if windowingsystem == "win32":
-        _run_in_windows_cmd(blue_message, workingdir, command)
+        _run_in_windows_cmd(command, cwd)
     elif windowingsystem == "aqua" and not os.environ.get("TERMINAL", ""):
-        _run_in_osx_terminal_app(blue_message, workingdir, command)
+        _run_in_macos_terminal_app(command, cwd)
     else:
-        _run_in_x11_like_terminal(blue_message, workingdir, command)
+        _run_in_x11_like_terminal(command, cwd)

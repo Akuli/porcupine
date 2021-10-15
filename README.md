@@ -13,6 +13,7 @@ Most important features:
 - Jump to definition with Ctrl+click
 - [Langserver] support
 - [Editorconfig][] support
+- Git support
 - Compiling files inside the editor window
 - Running files in a separate terminal or command prompt window
 - Automatic indenting and trailing whitespace stripping when Enter is pressed
@@ -39,6 +40,10 @@ it shows up as an empty window.
 
 ## Installing Porcupine
 
+### Development Install
+
+See [below](#developing-porcupine).
+
 ### Debian-based Linux distributions (e.g. Ubuntu, Mint)
 
 Open a terminal and run these commands:
@@ -46,11 +51,19 @@ Open a terminal and run these commands:
     sudo apt install python3-tk python3-pip
     sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
-    python3 -m porcupine
+    python3 -m venv porcupine-venv
+    source porcupine-venv/bin/activate
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.98.2.zip
+    porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
 you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
+To run porcupine later, you need to activate the virtualenv before running it:
+
+    source porcupine-venv/bin/activate
+    porcu
+
+You can uninstall Porcupine by deleting `porcupine-venv`.
 
 ### Other Linux distributions
 
@@ -59,11 +72,19 @@ If you want drag and drop support, also install tkdnd for the Tcl interpreter th
 Then run these commands:
 
     python3 -m pip install --user --upgrade pip wheel
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.97.0.zip
-    python3 -m porcupine
+    python3 -m venv porcupine-venv
+    source porcupine-venv/bin/activate
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.98.2.zip
+    porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
 you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
+To run porcupine later, you need to activate the virtualenv before running it:
+
+    source porcupine-venv/bin/activate
+    porcu
+
+You can uninstall Porcupine by deleting `porcupine-venv`.
 
 ### Mac OSX
 
@@ -84,10 +105,6 @@ you will likely get a warning similar to this one:
 
 You should still be able to run the installer by clicking "More info".
 When installed, you will find Porcupine from the start menu.
-
-### Development Install
-
-See [below](#developing-porcupine).
 
 ## FAQ
 
@@ -134,9 +151,6 @@ Because Porcupine is better.
 
 ### Is Porcupine based on IDLE?
 Of course not. IDLE is an awful mess that you should stay far away from.
-
-### Can I play tetris with Porcupine?
-Of course, just install the tetris plugin. See [more_plugins](more_plugins/).
 
 ### Is Porcupine a toy project or is it meant to be a serious editor?
 Porcupine is meant to be a serious editor, in fact you might regret even touching it.
@@ -185,8 +199,13 @@ This should run Porcupine. If you change some of Porcupine's
 code in the `porcupine` directory and you run `python3 -m porcupine` again, your changes
 should be visible right away.
 
-If you are using Windows, you need to use `py` instead of `python3` and
-`env\Scripts\activate.bat` instead of `source env/bin/activate`.
+Windows-specific notes:
+- You need to use `py` instead of `python3` when creating the venv,
+    and `env\Scripts\activate` instead of `source env/bin/activate` to activate it.
+- If creating the venv fails with an error message like `Error: [Errno 13] Permission denied: ...\\python.exe`,
+    try creating the venv into a different folder.
+    It is created into whatever folder you are currently `cd`'d to
+    (i.e. the folder that shows up on the command prompt before the `>`).
 
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct
@@ -219,11 +238,10 @@ Instead, ask me to run them if you need to.
 - `python3 scripts/release.py major_or_minor_or_patch` increments the version number and
   runs all the commands needed for doing a new Porcupine release. Run it from
   inside a virtualenv with master branch checked out in git,
-  and with an entry named `UNRELEASED` in `CHANGELOG.md`. The argument
-  works like this:
+  and with `CHANGELOG.md` updated. The argument works like this:
     - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
-  Docs and Windows exe are built automatically after running the install script
+  Docs and Windows exe are built automatically after running the release script
   (see `.github/workflows/on-release.yml`), but `porcupine.wiki` may need manual updating.

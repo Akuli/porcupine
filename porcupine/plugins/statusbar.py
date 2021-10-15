@@ -20,6 +20,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
     top = tkinter.Toplevel()
     top.resizable(False, False)
     top.transient(get_main_window())
+    top.title("Choose a line ending")
 
     big_frame = ttk.Frame(top)
     big_frame.pack(fill="both", expand=True)
@@ -76,7 +77,9 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
         ),
     )
 
-    ttk.Button(big_frame, text="OK", command=top.destroy).pack(side="right", padx=10, pady=10)
+    ttk.Button(big_frame, text="OK", command=top.destroy, width=15).pack(
+        side="right", padx=10, pady=10
+    )
     top.bind("<Escape>", (lambda e: top.destroy()), add=True)
 
     top.wait_window()
@@ -96,7 +99,7 @@ class StatusBar(ttk.Frame):
         self.path_label = ttk.Label(self._top_frame)
         self.path_label.pack(side="left")
         self._line_ending_button = ttk.Button(
-            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=4
+            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=6
         )
         self._line_ending_button.pack(side="right", padx=2)
         self._encoding_button = ttk.Button(

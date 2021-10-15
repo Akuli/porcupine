@@ -3,8 +3,12 @@
 # Use Command on mac, Control on other systems
 if {[tk windowingsystem] == "aqua"} {
     set contmand Command
+    event add "<<RightClick>>" <Button-2>
+    event add "<<WheelClick>>" <Button-3>
 } else {
     set contmand Control
+    event add "<<RightClick>>" <Button-3>
+    event add "<<WheelClick>>" <Button-2>
 }
 
 event add "<<Menubar:File/New File>>" <$contmand-n>
@@ -18,10 +22,17 @@ event add "<<Menubar:View/Smaller Font>>" <$contmand-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
 
 # run plugin
-event add "<<Menubar:Run/Compile>>" <F4>
-event add "<<Menubar:Run/Run>>" <F5>
-event add "<<Menubar:Run/Compile and Run>>" <F6>
-event add "<<Menubar:Run/Lint>>" <F7>
+event add "<<Menubar:Run/Show//hide output>>" <F4>
+# Many separate events because if you bind many keys to the same virtual
+# event, it is hard to figure out what key was pressed to trigger it
+event add "<<Run:AskAndRun0>>" <Shift-F5>
+event add "<<Run:AskAndRun1>>" <Shift-F6>
+event add "<<Run:AskAndRun2>>" <Shift-F7>
+event add "<<Run:AskAndRun3>>" <Shift-F8>
+event add "<<Run:Repeat0>>" <F5>
+event add "<<Run:Repeat1>>" <F6>
+event add "<<Run:Repeat2>>" <F7>
+event add "<<Run:Repeat3>>" <F8>
 
 # gotoline plugin
 event add "<<Menubar:Edit/Go to Line>>" <$contmand-l>
@@ -59,14 +70,6 @@ for {set i 1} {$i <= 9} {incr i} {
 
 # tab_closing plugin
 event add "<<TabClosing:XButtonClickClose>>" <Button-1>
-if {[tk windowingsystem] == "aqua"} {
-    # right-click is Button-2, no wheel-click (afaik)
-    event add "<<TabClosing:ShowMenu>>" <Button-2>
-} else {
-    # right-click is Button-3, wheel-click is Button-2
-    event add "<<TabClosing:ShowMenu>>" <Button-3>
-    event add "<<TabClosing:HeaderClickClose>>" <Button-2>
-}
 
 # sort plugin
 event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
@@ -77,10 +80,15 @@ event add "<<Menubar:View/Pop Tab>>" <$contmand-P>
 # directory tree plugin (don't use <Alt-t>, see #425)
 event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
 
+# filemanager plugin
+event add "<<FileManager:Rename>>" <F2>
+event add "<<FileManager:Trash>>" <Delete>
+event add "<<FileManager:Delete>>" <Shift-Delete>
+
 # jump_to_definition plugin
 # cursor moves between button press and release, don't bind to press
-event add "<<JumpToDefinition>>" <$contmand-ButtonRelease-1>
-event add "<<JumpToDefinition>>" <$contmand-Return>  ;# FIXME doesnt work
+event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
+event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
@@ -95,10 +103,6 @@ event add "<<PythonPrompt:Copy>>" <$contmand-C>
 #event add "<<PythonPrompt:Clear>>" <$contmand-l>
 event add "<<PythonPrompt:Clear>>" <$contmand-L>
 event add "<<PythonPrompt:SendEOF>>" <$contmand-d> <$contmand-D>
-
-# more_plugins/tetris.py
-event add "<<Tetris:NewGame>>" <F2>
-event add "<<Tetris:Pause>>" <p> <P>
 
 
 # Text widgets have confusing control-click behaviour by default. Disabling it

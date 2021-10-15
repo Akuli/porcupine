@@ -7,15 +7,15 @@ import enum
 import json
 import logging
 import os
-import pathlib
 import sys
 import time
-import tkinter.font
+import tkinter
+from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, List, Type, TypeVar, overload
+from typing import Any, Callable, Iterator, List, Type, TypeVar, overload
 
 import dacite
-from pygments import styles
+from pygments import styles, token
 
 import porcupine
 from porcupine import dirs, images, utils
@@ -71,7 +71,7 @@ class LineEnding(enum.Enum):
 
 
 def _type_check(type_: object, obj: object) -> object:
-    # dacite tricks needed for validating e.g. objects of type Optional[pathlib.Path]
+    # dacite tricks needed for validating e.g. objects of type Optional[Path]
     @dataclasses.dataclass
     class ValueContainer:
         __annotations__ = {"value": type_}
@@ -100,6 +100,13 @@ class _UnknownOption:
 
 def _default_converter(value: Any) -> Any:
     return value
+
+
+# includes the parent
+def _get_children_recursively(parent: tkinter.Misc) -> Iterator[tkinter.Misc]:
+    yield parent
+    for child in parent.winfo_children():
+        yield from _get_children_recursively(child)
 
 
 class Settings:
@@ -251,7 +258,7 @@ class Settings:
                 if option_name != "disabled_plugins":
                     raise e
             else:
-                for widget in utils.get_children_recursively(main_window, include_parent=True):
+                for widget in _get_children_recursively(main_window):
                     widget.event_generate(event_name)
         else:
             self._change_event_widget.event_generate(event_name)
@@ -260,7 +267,7 @@ class Settings:
     # https://stackoverflow.com/q/61471700
     # fmt: off
     @overload
-    def get(self, option_name: str, type_: Type[pathlib.Path]) -> pathlib.Path: ...
+    def get(self, option_name: str, type_: Type[Path]) -> Path: ...
     @overload
     def get(self, option_name: str, type_: Type[LineEnding]) -> LineEnding: ...
     @overload
@@ -284,14 +291,15 @@ class Settings:
             foo = settings.get('something', str)
             reveal_type(foo)  # str
 
-            shitty_bar = settings.get('something', Optional[pathlib.Path])
+            from pathlib import Path
+            shitty_bar = settings.get('something', Optional[Path])
             reveal_type(shitty_bar)  # Any
 
         Use a type annotation to work around this (and make sure to write the
         same type two times)::
 
-            good_bar: pathlib.Path | None = settings.get('something', Optional[pathlib.Path])
-            reveal_type(good_bar)  # Optional[pathlib.Path]
+            good_bar: Path | None = settings.get('something', Optional[Path])
+            reveal_type(good_bar)  # Optional[Path]
 
         Before Python 3.10, you can't use the new ``|`` syntax as an argument to ``settings.get()``,
         even though it otherwise works with ``from __future__ import annotations``.
@@ -308,6 +316,21 @@ class Settings:
         result = self._options[option_name].value
         result = _type_check(type_, result)
         return copy.deepcopy(result)  # mutating wouldn't trigger change events
+
+    def debug_dump(self) -> None:
+        """Print all settings and their values. This is useful for debugging."""
+        print(f"{len(self._options)} known options (add_option called)")
+        for name, option in self._options.items():
+            print(f"  {name} = {option.value!r}    (type: {option.type!r})")
+        print()
+
+        print(f"{len(self._unknown_options)} unknown options (add_option not called)")
+        for name, unknown in self._unknown_options.items():
+            string = f"  {name} = {unknown.value!r}"
+            if not unknown.call_converter:
+                string += " (converter function will not be called)"
+            print(string)
+        print()
 
     # TODO: document state methods?
     def get_state(self) -> dict[str, _UnknownOption]:
@@ -327,6 +350,7 @@ _global_settings = Settings(None, "<<SettingChanged:{}>>")
 add_option = _global_settings.add_option
 set_ = _global_settings.set
 get = _global_settings.get
+debug_dump = _global_settings.debug_dump
 
 
 def reset(option_name: str) -> None:
@@ -352,8 +376,8 @@ def _value_to_save(obj: object) -> object:
     return obj
 
 
-def get_json_path() -> pathlib.Path:
-    return pathlib.Path(dirs.user_config_dir) / "settings.json"
+def get_json_path() -> Path:
+    return Path(dirs.user_config_dir) / "settings.json"
 
 
 def save() -> None:
@@ -371,6 +395,7 @@ def save() -> None:
             file,
             indent=4,
         )
+        file.write("\n")
 
 
 def _load_from_file() -> None:
@@ -402,7 +427,7 @@ def init_enough_for_using_disabled_plugins_list() -> None:
 
 
 def _init_global_gui_settings() -> None:
-    add_option("pygments_style", "default", converter=_check_pygments_style)
+    add_option("pygments_style", "stata-dark", converter=_check_pygments_style)
     add_option("default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     fixedfont = tkinter.font.Font(name="TkFixedFont", exists=True)
@@ -441,7 +466,7 @@ def _create_dialog_content() -> ttk.Frame:
     dialog.title("Porcupine Settings")
     dialog.protocol("WM_DELETE_WINDOW", dialog.withdraw)
     dialog.bind("<Escape>", (lambda event: dialog.withdraw()), add=True)
-    dialog.geometry("500x350")
+    dialog.geometry("600x350")
 
     def confirm_and_reset_all() -> None:
         if messagebox.askyesno(
@@ -454,13 +479,13 @@ def _create_dialog_content() -> ttk.Frame:
     content = ttk.Frame(big_frame)
     content.pack(fill="both", expand=True, padx=5, pady=5)
     ttk.Separator(big_frame).pack(fill="x")
-    buttonframe = ttk.Frame(big_frame)
+    buttonframe = ttk.Frame(big_frame, padding=5)
     buttonframe.pack(fill="x")
 
-    ttk.Button(buttonframe, text="Reset all settings", command=confirm_and_reset_all).pack(
-        side="right", padx=3, pady=3
-    )
-    ttk.Button(buttonframe, text="OK", command=dialog.withdraw).pack(side="right", padx=3, pady=3)
+    ttk.Button(
+        buttonframe, text="Reset all settings", command=confirm_and_reset_all, width=15
+    ).pack(side="left")
+    ttk.Button(buttonframe, text="OK", command=dialog.withdraw, width=10).pack(side="right")
 
     content.grid_columnconfigure(0, weight=1)
     content.grid_columnconfigure(1, weight=1)
@@ -489,7 +514,7 @@ def get_dialog_content() -> ttk.Frame:
     Use grid with the returned widget. Its columns are configured like this::
 
         ,-----------------------------------------------------------.
-        | Porcupine Settings                                        |
+        | Porcupine Settings                      |  _  |  O  |  X  |
         |-----------------------------------------------------------|
         |                           :                           :   |
         |                           :                           :col|
@@ -509,10 +534,10 @@ def get_dialog_content() -> ttk.Frame:
         |                           :                           :   |
         |                           :                           :   |
         |                           :                           :   |
-        | ========================================================= |
-        |                                   ,---------. ,---------. |
-        |                                   |   OK    | |  Reset  | |
-        |                                   `---------' `---------' |
+        |===========================================================|
+        |  ,---------.                                 ,---------.  |
+        |  |  Reset  |                                 |   OK    |  |
+        |  `---------'                                 `---------'  |
         `-----------------------------------------------------------'
 
     Column 0 typically contains labels such as "Font Family:", and column 1
@@ -583,7 +608,7 @@ def _grid_widgets(
 ) -> None:
     label = ttk.Label(chooser.master, text=label_text)
     label.grid(column=0, sticky="w")
-    chooser.grid(row=label.grid_info()["row"], column=1, sticky="we")
+    chooser.grid(row=label.grid_info()["row"], column=1, sticky="we", pady=5)
     if triangle is not None:
         triangle.grid(row=label.grid_info()["row"], column=2)
 
@@ -631,7 +656,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
     checkbutton. Let me know if you need it.
     """
     checkbutton = ttk.Checkbutton(get_dialog_content(), **checkbutton_kwargs)
-    checkbutton.grid(column=0, columnspan=2, sticky="w")
+    checkbutton.grid(column=0, columnspan=2, sticky="w", pady=2)
 
     var = tkinter.BooleanVar()
 
@@ -691,6 +716,71 @@ def add_spinbox(option_name: str, text: str, **spinbox_kwargs: Any) -> tkinter.t
     return spinbox
 
 
+def _get_colors(style_name: str) -> tuple[str, str]:
+    style = styles.get_style_by_name(style_name)
+    bg = style.background_color
+
+    fg = style.style_for_token(token.String)["color"] or style.style_for_token(token.Text)["color"]
+    if fg:
+        fg = "#" + fg
+    else:
+        # yes, style.default_style can be '#rrggbb', '' or nonexistent
+        # this is undocumented
+        #
+        #   >>> from pygments.styles import *
+        #   >>> [getattr(get_style_by_name(name), 'default_style', '???')
+        #   ...  for name in get_all_styles()]
+        #   ['', '', '', '', '', '', '???', '???', '', '', '', '',
+        #    '???', '???', '', '#cccccc', '', '', '???', '', '', '', '',
+        #    '#222222', '', '', '', '???', '']
+        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
+
+    return (fg, bg)
+
+
+# TODO: document this?
+def add_pygments_style_button(option_name: str, text: str) -> None:
+    var = tkinter.StringVar()
+
+    # not using ttk.Menubutton because i want custom colors
+    menubutton = tkinter.Menubutton(get_dialog_content(), textvariable=var)
+    menu = tkinter.Menu(menubutton, tearoff=False)
+    menubutton.config(menu=menu)
+
+    def var_to_settings(*junk: object) -> None:
+        set_(option_name, var.get())
+
+    def settings_to_var_and_colors(junk: object = None) -> None:
+        style_name = get(option_name, object)
+        var.set(style_name)
+        fg, bg = _get_colors(style_name)
+        menubutton.config(foreground=fg, background=bg)
+
+    menubutton.bind(f"<<SettingChanged:{option_name}>>", settings_to_var_and_colors, add=True)
+    var.trace_add("write", var_to_settings)
+
+    # Not done when creating button, because can slow down porcupine startup
+    def fill_menubutton(junk_event: object) -> None:
+        menu.delete(0, "end")
+        for index, style_name in enumerate(sorted(styles.get_all_styles())):
+            fg, bg = _get_colors(style_name)
+            menu.add_radiobutton(
+                label=style_name,
+                value=style_name,
+                variable=var,
+                foreground=fg,
+                background=bg,
+                # swapped colors
+                activeforeground=bg,
+                activebackground=fg,
+                columnbreak=(index != 0 and index % 20 == 0),
+            )
+        settings_to_var_and_colors()
+
+    menubutton.bind("<Map>", fill_menubutton, add=True)
+    _grid_widgets(text, menubutton, None)
+
+
 def add_label(text: str) -> ttk.Label:
     """Add text to the setting dialog.
 
@@ -707,43 +797,55 @@ def add_label(text: str) -> ttk.Label:
 
 
 # TODO: document this
-def remember_divider_positions(
-    panedwindow: ttk.Panedwindow, option_name: str, defaults: list[int]
+def remember_pane_size(
+    panedwindow: utils.PanedWindow, pane: tkinter.Misc, option_name: str, default_size: int
 ) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
-    add_option(option_name, defaults, List[int], exist_ok=True)
+    add_option(option_name, default_size, int, exist_ok=True)
 
-    def settings2panedwindow(junk: object = None) -> None:
-        value = get(option_name, List[int])
-        pane_count = len(panedwindow.panes())
-
-        if len(value) == pane_count - 1:
-            _log.info(f"setting panedwindow widths from {option_name} setting: {value}")
-            # Prevent funny bug with invisible panes becoming huge
-            #
-            # TODO: figure out how to handle panes other than first pane
-            #       (need to know width of the dragging handle?)
-            if value and value[0] == 0:
-                value[0] = 1
-
-            for index, pos in enumerate(value):
-                panedwindow.sashpos(index, pos)
+    def settings_to_gui(junk: object = None) -> None:
+        if panedwindow["orient"] == "horizontal":
+            panedwindow.paneconfig(pane, width=get(option_name, int))
         else:
-            # number of panes can change if e.g. a plugin is enabled/disabled
-            _log.info(
-                f"{option_name} is set to {value}, of length {len(value)}, "
-                f"but there are {pane_count} panes"
-            )
+            panedwindow.paneconfig(pane, height=get(option_name, int))
 
-    def panedwindow2settings(junk: object) -> None:
-        set_(option_name, [panedwindow.sashpos(i) for i in range(len(panedwindow.panes()) - 1)])
+    def gui_to_settings() -> None:
+        if panedwindow["orient"] == "horizontal":
+            set_(option_name, pane.winfo_width())
+        else:
+            set_(option_name, pane.winfo_height())
 
-    # don't know why after_idle is needed, but it is
+    settings_to_gui()
+    pane.bind("<Map>", settings_to_gui, add=True)
+
+    # after_idle helps with accuracy if you move mouse really fast
     panedwindow.bind(
-        "<Map>", (lambda event: panedwindow.after_idle(settings2panedwindow)), add=True
+        "<ButtonRelease-1>", (lambda e: panedwindow.after_idle(gui_to_settings)), add=True
     )
-    panedwindow.bind("<<DividersFromSettings>>", settings2panedwindow, add=True)
-    panedwindow.bind("<ButtonRelease-1>", panedwindow2settings, add=True)
+
+
+def use_pygments_fg_and_bg(
+    widget: tkinter.Misc,
+    callback: Callable[[str, str], None],
+    *,
+    option_name: str = "pygments_style",
+) -> None:
+    """Run a callback whenever the pygments theme changes.
+
+    The callback no longer runs once ``widget`` has been destroyed. It is
+    called with the foreground and background color of the pygments theme as
+    arguments.
+    """
+
+    def on_style_changed(junk: object = None) -> None:
+        style = styles.get_style_by_name(get(option_name, str))
+        # Similar to _get_colors() but doesn't use the color of strings
+        bg = style.background_color
+        fg = getattr(style, "default_style", "") or utils.invert_color(bg)
+        callback(fg, bg)
+
+    widget.bind(f"<<SettingChanged:{option_name}>>", on_style_changed, add=True)
+    on_style_changed()
 
 
 def _is_monospace(font_family: str) -> bool:
@@ -755,8 +857,7 @@ def _is_monospace(font_family: str) -> bool:
     tcl_interpreter = get_dialog_content().tk
 
     # https://core.tcl-lang.org/tk/info/3767882e06
-    version = tuple(map(int, tcl_interpreter.eval("info patchlevel").split(".")))
-    if version < (8, 6, 11) and "emoji" in font_family.lower():
+    if "emoji" in font_family.lower():
         return False
 
     # Let's first ask Tcl whether the font is fixed. This is fastest but
@@ -778,7 +879,7 @@ def _is_monospace(font_family: str) -> bool:
 
 
 def _get_monospace_font_families() -> list[str]:
-    cache_path = pathlib.Path(dirs.user_cache_dir) / "font_cache.json"
+    cache_path = Path(dirs.user_cache_dir) / "font_cache.json"
     all_families = sorted(set(tkinter.font.families()))
 
     # This is surprisingly slow when there are lots of fonts. Let's cache.
@@ -826,6 +927,7 @@ def _fill_dialog_content_with_defaults() -> None:
     add_combobox(
         "default_line_ending", "Default line ending:", values=[ending.name for ending in LineEnding]
     )
+    add_pygments_style_button("pygments_style", "Pygments style for editing:")
 
 
 # undocumented on purpose, don't use in plugins

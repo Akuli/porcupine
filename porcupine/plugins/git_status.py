@@ -12,7 +12,12 @@ from pathlib import Path
 from typing import Any
 
 from porcupine import utils
-from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
+from porcupine.plugins.directory_tree import (
+    DirectoryTree,
+    FolderRefreshed,
+    get_directory_tree,
+    get_path,
+)
 
 setup_after = ["directory_tree"]
 
@@ -32,7 +37,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,  # for logging error message
             encoding=sys.getfilesystemencoding(),
-            timeout=2,  # huge lol
+            timeout=15,  # Must be huge to avoid unnecessary killing #885
             **utils.subprocess_kwargs,
         )
         log.debug(
@@ -45,7 +50,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
             log.debug(f"git status failed in {project_root}: {run_result}")
             return {}
 
-    except (OSError, UnicodeError):
+    except (OSError, UnicodeError, subprocess.TimeoutExpired):
         log.warning("can't run git", exc_info=True)
         return {}
 
@@ -65,6 +70,29 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
             result[path] = "git_mergeconflict"
         else:
             log.warning(f"unknown git status line: {repr(line)}")
+
+    # When a folder contains files with different statuses, decide status of folder
+    # There can be lots of statuses, not good to loop through them in gui thread
+    folder_to_content_statuses: dict[Path, set[str]] = {}
+    for path, status in result.items():
+        if status in {"git_added", "git_modified", "git_mergeconflict"}:
+            for folder in path.parents:
+                folder_to_content_statuses.setdefault(folder, set()).add(status)
+                if folder == project_root:
+                    break
+
+    assert not (folder_to_content_statuses.keys() & result.keys())
+
+    for folder, content_statuses in folder_to_content_statuses.items():
+        if "git_mergeconflict" in content_statuses:
+            result[folder] = "git_mergeconflict"
+        elif "git_modified" in content_statuses:
+            result[folder] = "git_modified"
+        elif "git_added" in content_statuses:
+            result[folder] = "git_added"
+        else:
+            raise RuntimeError("this shouldn't happen")
+
     return result
 
 
@@ -73,90 +101,65 @@ class ProjectColorer:
         self.tree = tree
         self.project_id = project_id
         self.project_path = get_path(project_id)
-        self.git_status_future: Future[dict[Path, str]] | None = None
-
-        # Items may need resorting once git tags have changed
-        self.coloring_queue: set[str] = set()
-        self.sorting_queue: set[str] = set()
+        self.queue: set[str] = set()
+        self._git_status_future: Future[dict[Path, str]] | None = None
 
     def start_running_git_status(self) -> None:
-        self.git_status_future = git_pool.submit(partial(run_git_status, self.project_path))
+        self._git_status_future = git_pool.submit(partial(run_git_status, self.project_path))
 
         # Handle queue contents when it has completed
         def check() -> None:
-            if self.git_status_future is not None:
-                if self.git_status_future.done():
-                    self._handle_coloring_queue()
-                    self._handle_sorting_queue()
+            if self._git_status_future is not None:
+                if self._git_status_future.done():
+                    self._handle_queue()
                 else:
                     self.tree.after(25, check)
 
         check()
 
     def stop(self) -> None:
-        self.git_status_future = None
+        self._git_status_future = None
 
-    def _handle_coloring_queue(self) -> None:
+    def _choose_tag(self, item_path: Path) -> str | None:
         # process should be done, result available immediately
-        assert self.git_status_future is not None
-        path_to_status = self.git_status_future.result(timeout=0)
+        assert self._git_status_future is not None
+        path_to_status = self._git_status_future.result(timeout=0)
+        return path_to_status.get(item_path, None)
 
-        selection = self.tree.selection()
+    def _set_tag(self, item_id: str, git_tag: str | None) -> bool:
+        old_tags = set(self.tree.item(item_id, "tags"))
+        new_tags = {tag for tag in old_tags if not tag.startswith("git_")}
+        if git_tag is not None:
+            new_tags.add(git_tag)
 
-        while self.coloring_queue:
-            item_id = self.coloring_queue.pop()
-            item_path = get_path(item_id)
+        if old_tags == new_tags:
+            return False
 
-            status: str | None
-            parent_statuses = [
-                status
-                for path, status in path_to_status.items()
-                if path == item_path or path in item_path.parents
-            ]
-            if parent_statuses:
-                [status] = parent_statuses
-            else:
-                # Handle directories containing files with different statuses
-                substatuses = {
-                    s
-                    for p, s in path_to_status.items()
-                    if s in {"git_added", "git_modified", "git_mergeconflict"}
-                    and item_path in p.parents
-                }
+        self.tree.item(item_id, tags=list(new_tags))
+        if item_id in self.tree.selection():
+            update_tree_selection_color(self.tree)
+        return True
 
-                if "git_mergeconflict" in substatuses:
-                    status = "git_mergeconflict"
-                elif "git_modified" in substatuses:
-                    status = "git_modified"
-                elif "git_added" in substatuses:
-                    status = "git_added"
-                else:
-                    assert not substatuses
-                    status = None
+    def _handle_queue(self) -> None:
+        while self.queue:
+            dir_id = self.queue.pop()
 
-            old_tags = set(self.tree.item(item_id, "tags"))
-            new_tags = {tag for tag in old_tags if not tag.startswith("git_")}
-            if status is not None:
-                new_tags.add(status)
+            if not self.tree.contains_dummy(dir_id):
+                tags_changed = False
+                for item_id in self.tree.get_children(dir_id):
+                    if self._set_tag(item_id, self._choose_tag(get_path(item_id))):
+                        tags_changed = True
+                if tags_changed:
+                    self.tree.sort_folder_contents(dir_id)
 
-            if old_tags != new_tags:
-                self.tree.item(item_id, tags=list(new_tags))
-                parent = self.tree.parent(item_id)
-                if parent:  # don't try to sort the projects lol
-                    self.sorting_queue.add(parent)
+            if dir_id.startswith("project:"):
+                self._set_tag(dir_id, self._choose_tag(get_path(dir_id)))
 
-            if item_id in selection:
-                update_tree_selection_color(self.tree)
-
-    def _handle_sorting_queue(self) -> None:
-        while self.sorting_queue:
-            self.tree.sort_folder_contents(self.sorting_queue.pop())
-
-    def color_now_or_later(self, item_id: str) -> None:
-        self.coloring_queue.add(item_id)
-        assert self.git_status_future is not None
-        if self.git_status_future.done():
-            self._handle_coloring_queue()
+    def color_children_now_or_later(self, parent_id: str) -> None:
+        self.queue.add(parent_id)
+        assert self._git_status_future is not None
+        if self._git_status_future.done():
+            self._handle_queue()
 
 
 # not project-specific
@@ -191,11 +194,12 @@ class TreeColorer:
         for project_id in self.tree.get_children():
             colorer = ProjectColorer(self.tree, project_id)
             self.project_specific_colorers[project_id] = colorer
+            colorer.queue.add(project_id)
             colorer.start_running_git_status()
 
-    def color_item(self, item_id: str) -> None:
-        project_id = self.tree.find_project_id(item_id)
-        self.project_specific_colorers[project_id].color_now_or_later(item_id)
+    def color_child_items(self, event: utils.EventWithData) -> None:
+        info = event.data_class(FolderRefreshed)
+        self.project_specific_colorers[info.project_id].color_children_now_or_later(info.folder_id)
 
 
 # There's no way to say "when this item is selected, show a green selection".
@@ -242,12 +246,7 @@ def setup() -> None:
 
     main_colorer = TreeColorer(tree)
     tree.bind("<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True)
-    utils.bind_with_data(
-        tree,
-        "<<UpdateItemTags>>",
-        lambda event: main_colorer.color_item(event.data_string),
-        add=True,
-    )
+    utils.bind_with_data(tree, "<<FolderRefreshed>>", main_colorer.color_child_items, add=True)
 
     tree.sorting_keys.insert(0, partial(sorting_key, tree))
 

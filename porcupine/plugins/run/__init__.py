@@ -1,115 +1,103 @@
 """Compile, run and lint files."""
 from __future__ import annotations
 
-import dataclasses
-import os
-import pathlib
+import copy
 import sys
+import tkinter
 from functools import partial
-from typing import Callable
+from pathlib import Path
+from tkinter import messagebox
+from typing import Any, List
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
-from porcupine import get_tab_manager, menubar, tabs, utils
+from porcupine import get_main_window, get_tab_manager, menubar, settings, tabs, utils
 from porcupine.plugins import python_venv
 
-from . import no_terminal, terminal
+from . import common, dialog, history, no_terminal, terminal
+
+# affects order of buttons in setting dialog, want pygments buttons together
+setup_before = ["filetypes"]
 
 
-@dataclasses.dataclass
-class CommandsConfig:
-    compile: str = ""
-    run: str = ""
-    lint: str = ""
+def run(command: common.Command, project_root: Path) -> None:
+    history.add(command)
+
+    venv = python_venv.get_venv(project_root)
+    if venv is None:
+        command_string = command.command
+    else:
+        if sys.platform == "win32":
+            activate = utils.quote(str(venv / "Scripts" / "activate"))
+            # https://stackoverflow.com/a/8055390
+            command_string = f"{activate} & {command.command}"
+        else:
+            activate = utils.quote(str(venv / "bin" / "activate"))
+            command_string = f". {activate}\n{command.command}"
+
+    if command.external_terminal:
+        terminal.run_command(command_string, Path(command.cwd))
+    else:
+        no_terminal.run_command(command_string, Path(command.cwd))
 
 
-def has_command(
-    which_command: Literal["compile", "run", "compilerun", "lint"], tab: tabs.Tab | None
-) -> bool:
-    if not isinstance(tab, tabs.FileTab):
-        return False
+def ask_and_run_command(initial_key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+    tab = get_tab_manager().select()
+    if not isinstance(tab, tabs.FileTab) or not tab.save():
+        return
+    assert tab.path is not None
 
-    try:
-        config = tab.settings.get("commands", CommandsConfig)
-    except KeyError:
-        # Happens when opening new tab, option will be added and will be called again soon
-        return False
-
-    if which_command == "compilerun":
-        return bool(config.compile) and bool(config.run)
-    return bool(getattr(config, which_command))
+    project_root = utils.find_project_root(tab.path)
+    info = dialog.ask_command(tab, project_root, initial_key_id)
+    if info is not None:
+        run(info, project_root)
 
 
-def get_command(
-    tab: tabs.FileTab, which_command: Literal["compile", "run", "lint"], basename: str
-) -> list[str]:
-    assert os.sep not in basename, f"{basename!r} is not a basename"
+def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
+    tab = get_tab_manager().select()
+    if not isinstance(tab, tabs.FileTab) or not tab.save():
+        return
+    assert tab.path is not None
 
-    commands = tab.settings.get("commands", CommandsConfig)
-    assert isinstance(commands, CommandsConfig)
-    template = getattr(commands, which_command)
-    assert template.strip(), (commands, which_command)
-
-    exts = "".join(pathlib.Path(basename).suffixes)
-    no_ext = pathlib.Path(basename).stem
-    return utils.format_command(
-        template,
-        {
-            "file": basename,
-            "no_ext": no_ext,
-            "no_exts": basename[: -len(exts)] if exts else basename,
-            "python": python_venv.find_python(
-                None if tab.path is None else utils.find_project_root(tab.path)
-            ),
-            "exe": f"{no_ext}.exe" if sys.platform == "win32" else f"./{no_ext}",
-        },
-    )
-
-
-def do_something(
-    something: Literal["compile", "run", "compilerun", "lint"], tab: tabs.FileTab
-) -> None:
-    tab.save()
-    if tab.path is None:
-        # user cancelled a save as dialog
+    project_root = utils.find_project_root(tab.path)
+    previous_commands = history.get(tab, project_root, key_id)
+    if not previous_commands:
+        ask = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")
+        repeat = utils.get_binding(f"<<Run:Repeat{key_id}>>")
+        messagebox.showerror(
+            "No commands to repeat",
+            f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
+        )
         return
 
-    workingdir = tab.path.parent
-    basename = tab.path.name
-
-    if something == "run":
-        terminal.run_command(workingdir, get_command(tab, "run", basename))
-    elif something == "compilerun":
-        compile_command = get_command(tab, "compile", basename)
-        run_command = get_command(tab, "run", basename)
-        no_terminal.run_command(
-            workingdir, compile_command, partial(terminal.run_command, workingdir, run_command)
-        )
-    else:
-        no_terminal.run_command(workingdir, get_command(tab, something, basename))
+    substitutions = common.get_substitutions(tab.path, project_root)
+    command = copy.copy(previous_commands[0])
+    command.command = common.format_command(command.command_format, substitutions)
+    command.cwd = str(common.format_cwd(command.cwd_format, substitutions))
+    run(command, project_root)
 
 
-def on_new_filetab(call_when_commands_change: list[Callable[..., None]], tab: tabs.FileTab) -> None:
-    tab.settings.add_option("commands", CommandsConfig())
-    for func in call_when_commands_change:
-        tab.bind("<<TabSettingChanged:commands>>", func, add=True)
-        func()
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("example_commands", [], type_=List[history.ExampleCommand])
 
 
 def setup() -> None:
-    call_when_commands_change: list[Callable[..., None]] = []
-    get_tab_manager().add_filetab_callback(partial(on_new_filetab, call_when_commands_change))
+    get_tab_manager().add_filetab_callback(on_new_filetab)
+    settings.add_option("run_history", [], type_=List[Any])
 
-    for name, command in [
-        ("Compile", "compile"),
-        ("Run", "run"),
-        ("Compile and Run", "compilerun"),
-        ("Lint", "lint"),
-    ]:
-        menubar.add_filetab_command(f"Run/{name}", partial(do_something, command))
-        call_when_commands_change.append(
-            menubar.set_enabled_based_on_tab(f"Run/{name}", partial(has_command, command))
+    menubar.add_filetab_command(
+        "Run/Run command",
+        (lambda tab: get_main_window().event_generate("<<Run:AskAndRun0>>")),
+        accelerator=utils.get_binding("<<Run:AskAndRun0>>", menu=True),
+    )
+    menubar.add_filetab_command(
+        "Run/Repeat previous command",
+        (lambda tab: get_main_window().event_generate("<<Run:Repeat0>>")),
+        accelerator=utils.get_binding("<<Run:Repeat0>>", menu=True),
+    )
+
+    for key_id in range(4):
+        get_main_window().bind(
+            f"<<Run:AskAndRun{key_id}>>", partial(ask_and_run_command, key_id), add=True
         )
+        get_main_window().bind(f"<<Run:Repeat{key_id}>>", partial(repeat_command, key_id), add=True)
+
+    no_terminal.setup()

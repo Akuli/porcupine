@@ -1,89 +1,104 @@
 """The main window and tab manager globals are here."""
 from __future__ import annotations
 
+import dataclasses
 import logging
+import os
 import tkinter
 import types
-from tkinter import ttk
 from typing import Any, Type
 
-from porcupine import settings, tabs
+from porcupine import tabs, utils
 
 log = logging.getLogger(__name__)
 
+
+@dataclasses.dataclass
+class _State:
+    root: tkinter.Tk
+    horizontal_panedwindow: utils.PanedWindow
+    vertical_panedwindow: utils.PanedWindow
+    tab_manager: tabs.TabManager
+    parsed_args: Any  # not None
+
+
 # global state makes some things a lot easier (I'm sorry)
-_root: tkinter.Tk | None = None
-_paned_window: ttk.Panedwindow | None = None
-_tab_manager: tabs.TabManager | None = None
-_parsed_args: Any | None = None  # Any | None means you have to check if its None
+_global_state: _State | None = None
 filedialog_kwargs: dict[str, Any] = {}
 
 
 def _log_tkinter_error(
-    exc: Type[BaseException], val: BaseException, tb: types.TracebackType
+    exc: Type[BaseException], val: BaseException, tb: types.TracebackType | None
 ) -> Any:
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
 
 
 # undocumented on purpose, don't use in plugins
 def init(args: Any) -> None:
-    global _root
-    global _tab_manager
-    global _parsed_args
-    global _paned_window
-    assert _root is None and _tab_manager is None and _parsed_args is None and _paned_window is None
     assert args is not None
 
+    global _global_state
+    assert _global_state is None
+
     log.debug("init() starts")
-    _parsed_args = args
 
-    _root = tkinter.Tk(className="Porcupine")  # class name shows up in my alt+tab list
+    root = tkinter.Tk(className="Porcupine")  # class name shows up in my alt+tab list
     log.debug("root window created")
-    log.debug("Tcl/Tk version: " + _root.tk.eval("info patchlevel"))
+    log.debug("Tcl/Tk version: " + root.tk.eval("info patchlevel"))
 
-    _root.protocol("WM_DELETE_WINDOW", quit)
-    _root.report_callback_exception = _log_tkinter_error
+    root.protocol("WM_DELETE_WINDOW", quit)
 
-    _paned_window = ttk.Panedwindow(_root, orient="horizontal")
-    settings.remember_divider_positions(_paned_window, "main_panedwindow_dividers", [250])
-    _root.bind(
-        "<<PluginsLoaded>>",
-        lambda event: get_paned_window().event_generate("<<DividersFromSettings>>"),
-        add=True,
+    # Don't set up custom error handler while testing https://stackoverflow.com/a/58866220
+    if "PYTEST_CURRENT_TEST" not in os.environ:
+        root.report_callback_exception = _log_tkinter_error
+
+    horizontal_pw = utils.PanedWindow(root, orient="horizontal")
+    horizontal_pw.pack(fill="both", expand=True)
+
+    vertical_pw = utils.PanedWindow(horizontal_pw, orient="vertical")
+    horizontal_pw.add(vertical_pw)
+
+    tab_manager = tabs.TabManager(vertical_pw)
+    vertical_pw.add(tab_manager, stretch="always")
+
+    _global_state = _State(
+        root=root,
+        horizontal_panedwindow=horizontal_pw,
+        vertical_panedwindow=vertical_pw,
+        tab_manager=tab_manager,
+        parsed_args=args,
     )
-    _paned_window.pack(fill="both", expand=True)
-
-    _tab_manager = tabs.TabManager(_paned_window)
-    _paned_window.add(_tab_manager)
-
     log.debug("init() done")
+
+
+def _get_state() -> _State:
+    if _global_state is None:
+        raise RuntimeError("Porcupine is not running")
+    return _global_state
 
 
 def get_main_window() -> tkinter.Tk:
     """Return the tkinter root window that Porcupine is using."""
-    if _root is None:
-        raise RuntimeError("Porcupine is not running")
-    return _root
+    return _get_state().root
 
 
 def get_tab_manager() -> tabs.TabManager:
     """Return the :class:`porcupine.tabs.TabManager` widget in the main window."""
-    if _tab_manager is None:
-        raise RuntimeError("Porcupine is not running")
-    return _tab_manager
+    return _get_state().tab_manager
 
 
 # TODO: document available attributes
 def get_parsed_args() -> Any:
     """Return Porcupine's arguments as returned by :func:`argparse.parse_args`."""
-    assert _parsed_args is not None
-    return _parsed_args
+    return _get_state().parsed_args
 
 
-def get_paned_window() -> ttk.Panedwindow:
-    if _paned_window is None:
-        raise RuntimeError("Porcupine is not running")
-    return _paned_window
+def get_horizontal_panedwindow() -> utils.PanedWindow:
+    return _get_state().horizontal_panedwindow
+
+
+def get_vertical_panedwindow() -> utils.PanedWindow:
+    return _get_state().vertical_panedwindow
 
 
 def quit() -> None:
@@ -97,16 +112,13 @@ def quit() -> None:
     with :meth:`~porcupine.tabs.TabManager.close_tab` and widgets are
     destroyed.
     """
-    assert _tab_manager is not None
-    assert _root is not None
-
-    for tab in _tab_manager.tabs():
+    for tab in get_tab_manager().tabs():
         if not tab.can_be_closed():
             return
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
 
-    _root.event_generate("<<PorcupineQuit>>")
-    for tab in _tab_manager.tabs():
-        _tab_manager.close_tab(tab)
-    _root.destroy()
+    get_main_window().event_generate("<<PorcupineQuit>>")  # TODO: still needed?
+    for tab in get_tab_manager().tabs():
+        get_tab_manager().close_tab(tab)
+    get_main_window().destroy()

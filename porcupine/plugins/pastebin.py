@@ -148,14 +148,15 @@ class SuccessDialog(tkinter.Toplevel):
         super().__init__()
         self.url = url  # accessed in tests
 
-        content = ttk.Frame(self)
+        content = ttk.Frame(self, padding=10)
         content.pack(fill="both", expand=True)
+        content.columnconfigure(0, weight=1)
 
         label = ttk.Label(content, text="Here's your link:")
-        label.place(relx=0.5, rely=0.15, anchor="center")
+        label.grid(row=0, column=0)
 
-        self._entry = ttk.Entry(self, justify="center")
-        self._entry.place(relx=0.5, rely=0.4, anchor="center", relwidth=1)
+        self._entry = ttk.Entry(content, justify="center")
+        self._entry.grid(row=1, column=0, sticky="we", pady=(10, 30))
         self._entry.insert(0, url)
         self._entry.config(state="readonly")  # must be after the insert
         self.bind("<FocusIn>", self._select_all, add=True)
@@ -166,10 +167,12 @@ class SuccessDialog(tkinter.Toplevel):
             ("Copy to clipboard", self.copy_to_clipboard),
             ("Close this dialog", self.destroy),
         ]
-        buttonframe = ttk.Frame(self)
-        buttonframe.place(relx=0.5, rely=0.8, anchor="center", relwidth=1)
-        for text, callback in button_info:
-            ttk.Button(buttonframe, text=text, command=callback).pack(side="left", expand=True)
+        buttonframe = ttk.Frame(content)
+        buttonframe.grid(row=2, column=0, sticky="we")
+        for (text, callback), padx in zip(button_info, [(0, 5), (5, 5), (5, 0)]):
+            ttk.Button(buttonframe, text=text, command=callback).pack(
+                side="left", expand=True, fill="x", padx=padx
+            )
 
     def _select_all(self, event: tkinter.Event[tkinter.Misc] | None = None) -> None:
         # toplevels annoyingly get notified of child events
@@ -212,41 +215,6 @@ def make_please_wait_window(paste: Paste) -> tkinter.Toplevel:
     return window
 
 
-def errordialog(title: str, message: str, monospace_text: str | None = None) -> None:
-    window = tkinter.Toplevel()
-    if get_main_window().winfo_viewable():
-        window.transient(get_main_window())
-
-    # there's nothing but this frame in the window because ttk widgets
-    # may use a different background color than the window
-    big_frame = ttk.Frame(window)
-    big_frame.pack(fill="both", expand=True)
-
-    label = ttk.Label(big_frame, text=message)
-
-    if monospace_text is None:
-        label.pack(fill="both", expand=True)
-        geometry = "250x150"
-    else:
-        label.pack(anchor="center")
-        # there's no ttk.Text 0_o this looks very different from
-        # everything else and it sucks :(
-        text = tkinter.Text(big_frame, width=1, height=1)
-        text.pack(fill="both", expand=True)
-        text.insert("1.0", monospace_text)
-        text.config(state="disabled")
-        geometry = "400x300"
-
-    button = ttk.Button(big_frame, text="OK", command=window.destroy)
-    button.pack(pady=10)
-    button.focus()
-    button.bind("<Return>", (lambda event: button.invoke()), add=True)
-
-    window.title(title)
-    window.geometry(geometry)
-    window.wait_window()
-
-
 def pasting_done_callback(
     paste: Paste, please_wait_window: tkinter.Toplevel, success: bool, result: str
 ) -> None:
@@ -258,7 +226,7 @@ def pasting_done_callback(
             log.info("pasting succeeded")
             dialog = SuccessDialog(url=result)
             dialog.title("Pasting Succeeded")
-            dialog.geometry("450x150")
+            dialog.resizable(False, False)
             dialog.transient(get_main_window())
             dialog.wait_window()
         else:
@@ -272,13 +240,8 @@ def pasting_done_callback(
     else:
         # result is the traceback as a string
         log.error(f"pasting failed\n{result}")
-        errordialog(
-            "Pasting Failed",
-            (
-                "Check your internet connection and try again.\n\n"
-                + "Here's the full error message:"
-            ),
-            monospace_text=result,
+        messagebox.showerror(
+            "Pasting failed", "Check your internet connection or try a different pastebin."
         )
 
 

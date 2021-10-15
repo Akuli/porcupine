@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import itertools
 import tkinter
-from typing import Any, Callable, cast
+from typing import Callable
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers
@@ -167,18 +167,18 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     update_displayers(tab, displayers)
     tab.bind("<<Reloaded>>", (lambda event: update_displayers(tab, displayers)), add=True)
 
-    for child in tab.left_frame.winfo_children():
-        if isinstance(child, LineNumbers):
-            tab.textwidget.bind(
-                "<Enter>",
-                (
-                    # This runs after clicking "Use this" button, mouse <Enter>s text widget
-                    # Don't know why this needs a small timeout instead of after_idle
-                    # https://github.com/python/mypy/issues/9658
-                    lambda event: tab.after(50, cast(Any, child).do_update)
-                ),
-                add=True,
-            )
+    try:
+        linenumbers: LineNumbers = tab.left_frame.nametowidget("linenumbers")
+    except KeyError:
+        pass  # linenumbers plugin disabled
+    else:
+        tab.textwidget.bind(
+            "<Enter>",
+            # This runs after clicking "Use this" button, mouse <Enter>s text widget
+            # Don't know why this needs a small timeout instead of after_idle
+            (lambda event: tab.after(50, linenumbers.do_update)),
+            add=True,
+        )
 
 
 def setup() -> None:

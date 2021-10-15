@@ -4,12 +4,12 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import logging
-import pathlib
 import re
 from functools import partial
+from pathlib import Path
 from typing import Any, Dict
 
-import toml
+import tomli
 from pygments import lexers
 from pygments.util import ClassNotFound
 
@@ -34,14 +34,16 @@ def is_list_of_strings(obj: object) -> bool:
 
 def load_filetypes() -> None:
     # user_path can't be global var because tests monkeypatch
-    user_path = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
-    defaults_path = pathlib.Path(__file__).absolute().parent.parent / "default_filetypes.toml"
+    user_path = Path(dirs.user_config_dir) / "filetypes.toml"
+    defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
-    filetypes.update(toml.load(defaults_path))
+    with defaults_path.open("rb") as defaults_file:
+        filetypes.update(tomli.load(defaults_file))
 
     user_filetypes: dict[str, FileType] = {}
     try:
-        user_filetypes = dict(toml.load(user_path))
+        with user_path.open("rb") as user_file:
+            user_filetypes = tomli.load(user_file)
     except FileNotFoundError:
         log.info(f"'{user_path}' not found, creating")
         with user_path.open("x") as file:  # error if exists
@@ -53,10 +55,9 @@ def load_filetypes() -> None:
 #    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
 """
             )
-    except (OSError, UnicodeError, toml.TomlDecodeError):
+    except (OSError, UnicodeError, tomli.TOMLDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
 
-    # toml.load can take multiple file names, but it doesn't merge the configs
     for name, updates in user_filetypes.items():
         filetypes.setdefault(name, {}).update(updates)
 
@@ -78,8 +79,8 @@ def load_filetypes() -> None:
         filetype.setdefault("filename_patterns", [])
         filetype.setdefault("shebang_regex", r"this regex matches nothing^")
 
-        # if no langserver configured, then don't leave langserver from
-        # previous filetype around when switching filetype
+        # if not configured, don't let previous filetype leave a mess behind
+        filetype.setdefault("example_commands", [])
         filetype.setdefault("langserver", None)
 
 
@@ -113,7 +114,7 @@ def get_filetype_from_matches(
     return list(matches.values())[-1]
 
 
-def guess_filetype_from_path(filepath: pathlib.Path) -> FileType | None:
+def guess_filetype_from_path(filepath: Path) -> FileType | None:
     assert filepath.is_absolute()
     return get_filetype_from_matches(
         {
@@ -140,7 +141,7 @@ def guess_filetype_from_shebang(content_start: str) -> FileType | None:
 
 
 # TODO: take content as argument
-def guess_filetype(filepath: pathlib.Path) -> FileType:
+def guess_filetype(filepath: Path) -> FileType:
     filetype = guess_filetype_from_path(filepath)
     if filetype is not None:
         return filetype
@@ -242,9 +243,9 @@ def setup() -> None:
             f"Filetypes/{escaped_name}", partial(apply_filetype_to_tab, filetype)
         )
 
-    path = pathlib.Path(dirs.user_config_dir) / "filetypes.toml"
+    path = Path(dirs.user_config_dir) / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
-    menubar.add_config_file_button(path, menu="Filetypes", text="Edit filetypes.toml")
+    menubar.add_config_file_button(path, menu="Filetypes")
     menubar.add_config_file_button(path)  # goes to "Settings/Config Files"
 
     new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None

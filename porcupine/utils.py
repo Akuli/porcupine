@@ -18,7 +18,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar
 from urllib.request import url2pathname
 
 import dacite
@@ -255,15 +255,6 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
     return "#%02x%02x%02x" % (r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
 
 
-def get_children_recursively(
-    parent: tkinter.Misc, *, include_parent: bool = False
-) -> Iterator[tkinter.Misc]:
-    if include_parent:
-        yield parent
-    for child in parent.winfo_children():
-        yield from get_children_recursively(child, include_parent=True)
-
-
 # This doesn't handle all possible cases, see bind(3tk)
 def _format_binding(binding: str, menu: bool) -> str:
     mac = porcupine.get_main_window().tk.eval("tk windowingsystem") == "aqua"
@@ -342,6 +333,16 @@ def get_binding(virtual_event: str, *, menu: bool = False) -> str:
     if not bindings and not menu:
         log.warning(f"no bindings configured for {virtual_event}")
     return _format_binding(bindings[0], menu) if bindings else ""
+
+
+# TODO: document this
+def tkinter_safe_string(string: str, *, hide_unsupported_chars: bool = False) -> str:
+    if hide_unsupported_chars:
+        replace_with = ""
+    else:
+        replace_with = "\N{replacement character}"
+
+    return "".join(replace_with if ord(char) > 0xFFFF else char for char in string)
 
 
 class EventDataclass:
@@ -676,10 +677,10 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
         selected_encoding = combobox.get()
         dialog.destroy()
 
-    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy)
-    cancel_button.pack(side="left", expand=True)
-    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding)
-    ok_button.pack(side="right", expand=True)
+    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
+    cancel_button.pack(side="left", expand=True, fill="x", padx=10)
+    ok_button = ttk.Button(button_frame, text="OK", command=select_encoding, width=1)
+    ok_button.pack(side="right", expand=True, fill="x", padx=10)
 
     def validate_encoding(*junk: object) -> None:
         encoding = combobox.get()

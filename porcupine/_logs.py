@@ -3,12 +3,12 @@ from __future__ import annotations
 import itertools
 import logging
 import os
-import pathlib
 import shlex
 import subprocess
 import sys
 import threading
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, TextIO, cast
 
 import porcupine
@@ -22,7 +22,7 @@ LOG_MAX_AGE_DAYS = 7
 
 
 def _remove_old_logs() -> None:
-    for path in pathlib.Path(dirs.user_log_dir).glob("*.txt"):
+    for path in Path(dirs.user_log_dir).glob("*.txt"):
         # support '<log dir>/<first_part>_<number>.txt' and '<log dir>/<firstpart>.txt'
         first_part = path.stem.split("_")[0]
         try:
@@ -56,7 +56,7 @@ def _open_log_file() -> TextIO:
     )
     for filename in filenames:
         try:
-            return (pathlib.Path(dirs.user_log_dir) / filename).open("x", encoding="utf-8")
+            return (Path(dirs.user_log_dir) / filename).open("x", encoding="utf-8")
         except FileExistsError:
             continue
     assert False  # makes mypy happy
