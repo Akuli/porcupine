@@ -151,15 +151,15 @@ def find_git_root(path: Path) -> Path | None:
     return None
 
 
-def move_with_git_or_otherwise(old: Path, new: Path) -> bool:
-    old_git = find_git_root(old)
-    new_git = find_git_root(new)
+def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
+    old_git = find_git_root(old_path)
+    new_git = find_git_root(new_path)
     if old_git is not None and new_git is not None and old_git == new_git:
-        log.info(f"attemting 'git mv' ({old} --> {new})")
+        log.info(f"attemting 'git mv' ({old_path} --> {new_path})")
         try:
             subprocess.check_call(
-                ["git", "mv", "--", str(old), str(new)],
-                cwd=old.parent,
+                ["git", "mv", "--", str(old_path), str(new_path)],
+                cwd=old_path.parent,
                 **utils.subprocess_kwargs,
             )
             return True
@@ -169,17 +169,17 @@ def move_with_git_or_otherwise(old: Path, new: Path) -> bool:
             #   - old_path is not 'git add'ed
             pass
 
-    log.info(f"moving without git ({old} --> {new})")
+    log.info(f"moving without git ({old_path} --> {new_path})")
     try:
-        shutil.move(str(old), str(new))
+        shutil.move(str(old_path), str(new_path))
     except OSError as e:
-        log.exception(f"moving failed: {old} --> {new}")
+        log.exception(f"moving failed: {old_path} --> {new_path}")
         messagebox.showerror("Moving failed", str(e))
         return False
 
-    for tab in find_tabs_by_parent_path(old):
+    for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
-        tab.path = new_path / tab.path.relative_to(old)
+        tab.path = new_path / tab.path.relative_to(old_path)
     get_tab_manager().event_generate("<<FileSystemChanged>>")
     return True
 
