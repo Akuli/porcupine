@@ -1,33 +1,120 @@
+import sys
+import logging
+
 import pytest
 
-from porcupine.plugins.directory_tree import get_path
+from porcupine.plugins.directory_tree import get_directory_tree, get_path
 
 # TODO: need more tests
 
 
+def open_folders_and_select_file(file_path) -> None:
+    tree = get_directory_tree()
+    while True:
+        tree.update()
+        tree.select_file(file_path)
+        if get_path(tree.selection()[0]) == file_path:
+            return
+        tree.item(tree.selection()[0], open=True)
+        tree.event_generate("<<TreeviewOpen>>")
+
+
 @pytest.mark.parametrize("event", ["<<Cut>>", "<<Copy>>"])
 def test_cutpasting_or_copypasting_to_same_dir(tree, tmp_path, mocker, event):
-    mock = mocker.patch("porcupine.plugins.filemanager.ask_file_name")
-    mock.return_value = tmp_path / "b"
+    ask_file_name = mocker.patch("porcupine.plugins.filemanager.ask_file_name")
+    ask_file_name.return_value = tmp_path / "bar"
 
-    (tmp_path / "a").write_text("hello")
+    (tmp_path / "foo").write_text("hello")
     tree.add_project(tmp_path)
+    open_folders_and_select_file(tmp_path / "foo")
 
-    # Simulate user opening selected item
-    tree.selection_set(tree.get_children()[0])
-    tree.item(tree.get_children()[0], open=True)
-    tree.event_generate("<<TreeviewOpen>>")
-    tree.update()
-
-    tree.select_file(tmp_path / "a")
     tree.event_generate(event)
     tree.event_generate("<<Paste>>")
-    mock.assert_called_once_with(tmp_path / "a", is_paste=True, show_overwriting_option=False)
+    ask_file_name.assert_called_once_with(
+        tmp_path / "foo", is_paste=True, show_overwriting_option=False
+    )
 
     if event == "<<Copy>>":
-        assert (tmp_path / "a").read_text() == "hello"
+        assert (tmp_path / "foo").read_text() == "hello"
     else:
-        assert not (tmp_path / "a").exists()
+        assert not (tmp_path / "foo").exists()
 
-    assert (tmp_path / "b").read_text() == "hello"
-    assert get_path(tree.selection()[0]) == tmp_path / "b"
+    assert (tmp_path / "bar").read_text() == "hello"
+    assert get_path(tree.selection()[0]) == tmp_path / "bar"
+
+
+@pytest.mark.parametrize("event", ["<<Cut>>", "<<Copy>>"])
+def test_cutpasting_and_copypasting_error(tree, tmp_path, mocker, event, caplog):
+    if event == "<<Copy>>":
+        shutil_mock = mocker.patch("porcupine.plugins.filemanager.shutil").copy
+        copy_or_move = "copy"
+        copying_or_moving = "copying"
+    else:
+        shutil_mock = mocker.patch("porcupine.plugins.filemanager.shutil").move
+        copy_or_move = "move"
+        copying_or_moving = "moving"
+
+    shutil_mock.side_effect = PermissionError("[Errno 13] Permission denied: '/dev/xyz'")
+
+    mocker.patch("porcupine.plugins.filemanager.ask_file_name").return_value = tmp_path / "bar"
+    showerror = mocker.patch("tkinter.messagebox.showerror")
+
+    (tmp_path / "foo").write_text("hello")
+    tree.add_project(tmp_path)
+
+    open_folders_and_select_file(tmp_path / "foo")
+    tree.event_generate(event)
+    tree.event_generate("<<Paste>>")
+
+    showerror.assert_called_once_with(
+        copying_or_moving.capitalize() + " failed",
+        f"Cannot {copy_or_move} {tmp_path / 'foo'} to {tmp_path / 'bar'}.",
+        detail="PermissionError: [Errno 13] Permission denied: '/dev/xyz'",
+    )
+    assert caplog.record_tuples == [
+        (
+            "porcupine.plugins.filemanager",
+            logging.ERROR,
+            f"{copying_or_moving} failed: {tmp_path / 'foo'} --> {tmp_path / 'bar'}",
+        )
+    ]
+
+
+def test_trashing(tree, tmp_path, mocker, caplog):
+    send2trash = mocker.patch("porcupine.plugins.filemanager.send2trash")
+    showerror = mocker.patch("tkinter.messagebox.showerror")
+    askyesno = mocker.patch("tkinter.messagebox.askyesno")
+
+    send2trash.side_effect = RuntimeError("lol")
+    askyesno.return_value = True
+
+    (tmp_path / "foo").write_text("hello")
+    tree.add_project(tmp_path)
+    open_folders_and_select_file(tmp_path / "foo")
+    tree.event_generate("<<FileManager:Trash>>")
+
+    send2trash.assert_called_once_with(tmp_path / "foo")
+    if sys.platform == "win32":
+        askyesno.assert_called_once_with("Move foo to recycle bin", "Do you want to move foo to recycle bin?", icon="warning")
+        showerror.assert_called_once_with(
+            "Can't move to recycle bin",
+            f"Moving {tmp_path / 'foo'} to recycle bin failed.",
+            detail="RuntimeError: lol",
+        )
+    else:
+        askyesno.assert_called_once_with("Move foo to trash", "Do you want to move foo to trash?", icon="warning")
+        showerror.assert_called_once_with(
+            "Can't move to trash",
+            f"Moving {tmp_path / 'foo'} to trash failed.",
+            detail="RuntimeError: lol",
+        )
+    assert caplog.record_tuples == [
+        (
+            "porcupine.plugins.filemanager",
+            logging.ERROR,
+            f"can't trash {tmp_path / 'foo'}",
+        )
+    ]
+
+
+# TODO: delete

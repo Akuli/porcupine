@@ -174,7 +174,11 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
         shutil.move(str(old_path), str(new_path))
     except OSError as e:
         log.exception(f"moving failed: {old_path} --> {new_path}")
-        messagebox.showerror("Moving failed", str(e))
+        messagebox.showerror(
+            "Moving failed",
+            f"Cannot move {old_path} to {new_path}.",
+            detail=f"{type(e).__name__}: {str(e)}",
+        )
         return False
 
     for tab in find_tabs_by_parent_path(old_path):
@@ -218,8 +222,16 @@ def paste(new_path: Path) -> None:
             return
         paste_state = None
     else:
-        # TODO: error handling
-        shutil.copy(paste_state.path, new_file_path)
+        try:
+            shutil.copy(paste_state.path, new_file_path)
+        except OSError as e:
+            log.exception(f"copying failed: {paste_state.path} --> {new_file_path}")
+            messagebox.showerror(
+                "Copying failed",
+                f"Cannot copy {paste_state.path} to {new_file_path}.",
+                detail=f"{type(e).__name__}: {str(e)}",
+            )
+            return
 
     get_tab_manager().event_generate("<<FileSystemChanged>>")
     get_directory_tree().select_file(new_file_path)
@@ -257,11 +269,12 @@ def trash(path: Path) -> None:
 
     try:
         send2trash(path)
-    except Exception as e:
+    except Exception as e:  # can be send2trash's own error, idk if maybe OSError
         log.exception(f"can't trash {path}")
         messagebox.showerror(
-            f"Moving to {trash_name} failed",
-            f"Moving {path} to {trash_name} failed.\n\n{type(e).__name__}: {e}",
+            f"Can't move to {trash_name}",
+            f"Moving {path} to {trash_name} failed.",
+            detail=f"{type(e).__name__}: {e}",
         )
         return
 
