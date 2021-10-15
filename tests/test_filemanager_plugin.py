@@ -1,9 +1,11 @@
+import pytest
 from porcupine.plugins.directory_tree import get_path
 
 # TODO: need more tests
 
 
-def test_copying_to_same_dir(tree, tmp_path, mocker):
+@pytest.mark.parametrize("event", ["<<Cut>>", "<<Copy>>"])
+def test_cutpasting_or_copypasting_to_same_dir(tree, tmp_path, mocker, event):
     mock = mocker.patch("porcupine.plugins.filemanager.ask_file_name")
     mock.return_value = tmp_path / "b"
 
@@ -17,10 +19,14 @@ def test_copying_to_same_dir(tree, tmp_path, mocker):
     tree.update()
 
     tree.select_file(tmp_path / "a")
-    tree.event_generate("<<Copy>>")
+    tree.event_generate(event)
     tree.event_generate("<<Paste>>")
+    mock.assert_called_once_with(tmp_path / "a", is_paste=True, show_overwriting_option=False)
 
-    assert (tmp_path / "a").read_text() == "hello"
+    if event == "<<Copy>>":
+        assert (tmp_path / "a").read_text() == "hello"
+    else:
+        assert not (tmp_path / "a").exists()
+
     assert (tmp_path / "b").read_text() == "hello"
     assert get_path(tree.selection()[0]) == tmp_path / "b"
-    mock.assert_called_once_with(tmp_path / "a", is_paste=True, show_overwriting_option=False)
