@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from porcupine import get_tab_manager
 from concurrent.futures import Future
 from functools import partial
 from pathlib import Path
@@ -37,11 +38,11 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch, disable_thread_
     Path("b").write_text("lol")
     [project_id] = tree.get_children()
 
-    tree.refresh()
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
     assert set(tree.item(project_id, "tags")) == {"git_modified"}
 
     subprocess.check_call(["git", "add", "a", "b"])
-    tree.refresh()
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
     assert set(tree.item(project_id, "tags")) == {"git_added"}
 
 
@@ -73,5 +74,4 @@ def test_merge_conflict(tree, tmp_path, monkeypatch, disable_thread_pool):
 
     tree.add_project(tmp_path)
     [project_id] = tree.get_children()
-    tree.refresh()
     assert set(tree.item(project_id, "tags")) == {"git_mergeconflict"}

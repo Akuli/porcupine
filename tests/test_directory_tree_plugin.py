@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from porcupine import get_tab_manager
 from porcupine.plugins import directory_tree as plugin_module
 from porcupine.plugins.directory_tree import _focus_treeview, _stringify_path, get_path
 
@@ -139,7 +140,7 @@ def test_all_files_deleted(tree, tmp_path, tabmanager):
 
     (tmp_path / "README").unlink()
     (tmp_path / "hello.py").unlink()
-    tree.refresh()
+    get_tab_manager().event_generate("<<FileSystemChanged>>")
     assert tree.contains_dummy(project_id)
 
 
