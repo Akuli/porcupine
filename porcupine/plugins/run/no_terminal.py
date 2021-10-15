@@ -220,10 +220,10 @@ class NoTerminalRunner:
         self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"))
         self.hide_button.pack(side="left", padx=1)
 
-        normal_cursor = self.textwidget["cursor"]
+        old_cursor = self.textwidget["cursor"]
         for button in [self.hide_button, self.stop_button]:
-            button.bind("<Enter>", (lambda e: self.textwidget.config(cursor="hand2")))
-            button.bind("<Leave>", (lambda e: self.textwidget.config(cursor=normal_cursor)))
+            button.bind("<Enter>", (lambda e: self.textwidget.config(cursor="hand2")), add=True)
+            button.bind("<Leave>", (lambda e: self.textwidget.config(cursor=old_cursor)), add=True)
 
     def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
