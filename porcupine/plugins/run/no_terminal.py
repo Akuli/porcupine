@@ -178,6 +178,7 @@ class Executor:
             pass
 
         if not quitting:
+            self._textwidget.insert("end", "Killed.", ["Token.Name.Exception"])
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
@@ -191,7 +192,7 @@ class NoTerminalRunner:
             font="TkFixedFont",
             wrap="char",
         )
-        self.textwidget.bind("<Destroy>", self._stop_executor, add=True)
+        self.textwidget.bind("<Destroy>", partial(self._stop_executor, quitting=True), add=True)
         textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
@@ -200,9 +201,22 @@ class NoTerminalRunner:
         self.textwidget.tag_config("link", underline=True)
         self.executor: Executor | None = None
 
-    def _stop_executor(self, junk_event: object) -> None:
+        button_frame = ttk.Frame(self.textwidget)
+        button_frame.place(relx=1, rely=0, anchor="ne")
+        self.hide_button = ttk.Button(button_frame, text="Hide output")
+        self.hide_button.pack(side="left")
+        stop_button = ttk.Button(button_frame, text="Stop", command=self._stop_executor)
+        stop_button.pack(side="left")
+
+        normal_cursor = self.textwidget["cursor"]
+        for button in [self.hide_button, stop_button]:
+            button.bind("<Enter>", (lambda e: self.textwidget.config(cursor="hand2")))
+            button.bind("<Leave>", (lambda e: self.textwidget.config(cursor=normal_cursor)))
+
+    def _stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
-            self.executor.stop(quitting=True)
+            self.executor.stop(quitting=quitting)
+            self._textwidget.insert("end", "Killed.", [tag])
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
@@ -218,7 +232,6 @@ class NoTerminalRunner:
             # This prevents a bug where smashing F5 runs in parallel
             if not self.executor.started:
                 return
-
             self.executor.stop()
 
         self.textwidget.config(state="normal")
@@ -249,15 +262,12 @@ def setup() -> None:
         get_vertical_panedwindow(), runner.textwidget, "run_command_output_height", 200
     )
 
-    def toggle_visible(junk_event: object = None) -> None:
+    def toggle_visible() -> None:
         assert runner is not None
         is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
         get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
 
-    closebutton = ttk.Label(runner.textwidget, image=images.get("closebutton"), cursor="hand2")
-    closebutton.place(relx=1, rely=0, anchor="ne")
-    closebutton.bind("<Button-1>", toggle_visible, add=True)
-
+    runner.hide_button.config(command=toggle_visible)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
 
 
