@@ -42,8 +42,7 @@ class Finder(ttk.Frame):
         #
         # note that column 2 is used just for spacing, the separator helps
         # distinguish this from e.g. status bar below this
-        self.grid_columnconfigure(2, minsize=30)
-        self.grid_columnconfigure(3, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
         self.full_words_var = tkinter.BooleanVar()
         self.ignore_case_var = tkinter.BooleanVar()
@@ -80,10 +79,10 @@ class Finder(ttk.Frame):
             buttonframe, text="Replace all", underline=len("Replace "), command=self._replace_all
         )
 
-        self.previous_button.pack(side="left")
-        self.next_button.pack(side="left")
-        self.replace_this_button.pack(side="left")
-        self.replace_all_button.pack(side="left")
+        self.previous_button.pack(side="left", padx=(0, 5))
+        self.next_button.pack(side="left", padx=(0, 5))
+        self.replace_this_button.pack(side="left", padx=(0, 5))
+        self.replace_all_button.pack(side="left", padx=(0, 5))
         self._update_buttons()
 
         self.full_words_var.trace_add("write", self.highlight_all_matches)
@@ -91,9 +90,9 @@ class Finder(ttk.Frame):
 
         ttk.Checkbutton(
             self, text="Full words only", underline=0, variable=self.full_words_var
-        ).grid(row=0, column=3, sticky="w")
+        ).grid(row=0, column=2, sticky="w")
         ttk.Checkbutton(self, text="Ignore case", underline=0, variable=self.ignore_case_var).grid(
-            row=1, column=3, sticky="w"
+            row=1, column=2, sticky="w"
         )
 
         self.statuslabel = ttk.Label(self)
@@ -102,7 +101,7 @@ class Finder(ttk.Frame):
         ttk.Separator(self, orient="horizontal").grid(row=4, column=0, columnspan=4, sticky="we")
 
         closebutton = ttk.Label(self, cursor="hand2")
-        closebutton.place(relx=1, rely=0, anchor="ne")
+        closebutton.grid(row=0, column=3, sticky="ne")
         closebutton.bind("<Button-1>", self.hide, add=True)
 
         closebutton.config(image=images.get("closebutton"))
@@ -133,7 +132,7 @@ class Finder(ttk.Frame):
         entry.bind("<Alt-a>", self._replace_all, add=True)
         entry.bind("<Alt-f>", partial(self._toggle_var, self.full_words_var), add=True)
         entry.bind("<Alt-i>", partial(self._toggle_var, self.ignore_case_var), add=True)
-        entry.grid(row=row, column=1, sticky="we")
+        entry.grid(row=row, column=1, sticky="we", padx=(5, 10))
         return entry
 
     def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> str:
