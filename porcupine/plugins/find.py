@@ -27,21 +27,20 @@ class Finder(ttk.Frame):
         self._textwidget = textwidget
 
         # grid layout:
-        #         column 0        column 1     column 2        column 3
-        #     ,---------------------------------------------------------------.
-        # row0|     Find:     | text entry    |       | [x] Full words only   |
-        #     |---------------|---------------|-------|-----------------------|
-        # row1| Replace with: | text entry    |       | [x] Ignore case       |
-        #     |---------------------------------------------------------------|
-        # row2| button frame, this thing contains a bunch of buttons          |
-        #     |---------------------------------------------------------------|
-        # row3| status label with useful-ish text                             |
-        #     |---------------------------------------------------------------|
-        # row4| separator                                                     |
-        #     `---------------------------------------------------------------'
+        #           column 0         column 1           column 2       column 3
+        #       ,------------------------------------------------------------.
+        # row 0 | Find:         |   text entry   | [x] Full words only |  X  |
+        #       |---------------|----------------|---------------------------|
+        # row 1 | Replace with: |   text entry   | [x] Ignore case           |
+        #       |------------------------------------------------------------|
+        # row 2 | button frame, this thing contains a bunch of buttons       |
+        #       |------------------------------------------------------------|
+        # row 3 | status label with useful-ish text                          |
+        #       |------------------------------------------------------------|
+        # row  4| separator                                                  |
+        #       `------------------------------------------------------------'
         #
-        # note that column 2 is used just for spacing, the separator helps
-        # distinguish this from e.g. status bar below this
+        # the separator helps distinguish this from e.g. status bar below this
         self.grid_columnconfigure(1, weight=1)
 
         self.full_words_var = tkinter.BooleanVar()
