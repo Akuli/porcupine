@@ -30,9 +30,9 @@ class HoverManager:
             self._textwidget,
             text=message,
             justify="left",
-            # opposite colors as in the text widget
-            bg=self._textwidget["fg"],
-            fg=self._textwidget["bg"],
+            # some hack to get a fitting popup bg
+            bg=utils.mix_colors(self._textwidget["bg"], self._textwidget["fg"], 0.8),
+            fg=self._textwidget["fg"],
         )
         textutils.place_popup(
             self._textwidget,
