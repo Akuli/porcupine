@@ -15,9 +15,9 @@ New features:
 Bug fixes:
 - Right-clicking and middle-clicking now works on MacOS. Thank you [1anakin20](https://github.com/1anakin20) for fixing this.
 - The Windows installer now shows a very clear error message if you try to run it on a 32-bit Windows. Previously it would extract some files and then fail without a good error message. Thank you [Mannuel25](https://github.com/Mannuel25) for noticing this.
-- Porcupine no longer kills `git status` if it runs for more than 2 seconds. This hopefully prevents errors where Git complains about a lock file (issue [#885](https://github.com/Akuli/porcupine/issues/885)). Porcupine runs `git status` internally to figure out how to color files in the directory tree, e.g. green for `git add`ed.
-- When uninstalling on Windows, Porcupine no longer deletes the whole directory chosen when installing it with the Windows installer. This means that the uninstaller will behave sanely even if you accidentally install Porcupine directly into `C:\Program Files` as opposed to e.g. `C:\Program Files\Porcupine`. You don't have to worry about this if you didn't choose a custom directory when installing Porcupine.
 - When right-clicking a folder in the directory tree, one of the menu items is "Open in file manager". It now works on Windows.
+- When uninstalling on Windows, Porcupine no longer deletes the whole directory chosen when installing it with the Windows installer. This means that the uninstaller will behave sanely even if you accidentally install Porcupine directly into `C:\Program Files` as opposed to e.g. `C:\Program Files\Porcupine`. You don't have to worry about this if you didn't choose a custom directory when installing Porcupine.
+- Porcupine no longer kills `git status` if it runs for more than 2 seconds. This hopefully prevents errors where Git complains about a lock file (issue [#885](https://github.com/Akuli/porcupine/issues/885)). Porcupine runs `git status` internally to figure out how to color files in the directory tree, e.g. green for `git add`ed.
 
 Other improvements:
 - Porcupine now uses a dark theme by default, although you won't notice it if you have chosen a custom theme. To change the theme, there is a new button in the *Porcupine Settings* dialog (in *Edit* menu), and the old *Syntax Colors* menu has been removed.
