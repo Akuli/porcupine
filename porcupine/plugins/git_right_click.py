@@ -14,10 +14,10 @@ setup_after = ["directory_tree", "filemanager"]
 log = logging.getLogger(__name__)
 
 
-def run(command: list[str], path: Path) -> None:
+def run(command: list[str], cwd: Path) -> None:
     log.info(f"running command: {command}")
     try:
-        subprocess.check_call(command, cwd=path, **utils.subprocess_kwargs)
+        subprocess.check_call(command, cwd=cwd, **utils.subprocess_kwargs)
     except (OSError, subprocess.CalledProcessError):
         log.exception(f"git command failed: {command}")
     get_tab_manager().event_generate("<<FileSystemChanged>>")
