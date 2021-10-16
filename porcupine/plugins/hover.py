@@ -32,9 +32,7 @@ class HoverManager:
             justify="left",
             # some hack to get a fitting popup bg
             bg=utils.mix_colors(
-                self._textwidget["bg"],
-                utils.invert_color(self._textwidget["bg"]),
-                0.8
+                self._textwidget["bg"], utils.invert_color(self._textwidget["bg"]), 0.8
             ),
             fg=self._textwidget["fg"],
         )
