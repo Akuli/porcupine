@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import subprocess
 import tkinter
+from pathlib import Path
 
 from porcupine import get_tab_manager, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
@@ -13,10 +14,10 @@ setup_after = ["directory_tree", "filemanager"]
 log = logging.getLogger(__name__)
 
 
-def run(command: list[str]) -> None:
+def run(command: list[str], path: Path) -> None:
     log.info(f"running command: {command}")
     try:
-        subprocess.check_call(command, **utils.subprocess_kwargs)
+        subprocess.check_call(command, cwd=path, **utils.subprocess_kwargs)
     except (OSError, subprocess.CalledProcessError):
         log.exception(f"git command failed: {command}")
     get_tab_manager().event_generate("<<FileSystemChanged>>")
@@ -45,7 +46,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     # Relies on git_status plugin
     tree.contextmenu.add_command(
         label="git add",
-        command=(lambda: run(["git", "add", "--", str(path)])),
+        command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
         state=("normal" if tree.tag_has("git_modified", item) else "disabled"),
     )
     tree.contextmenu.add_command(
