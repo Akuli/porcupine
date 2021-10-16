@@ -27,22 +27,23 @@ class Finder(ttk.Frame):
         self._textwidget = textwidget
 
         # grid layout:
-        #
-        #            column 0          column 1         column 2      column 3         column 4
-        #       ,---------------------------------------------------------------------------------------.
-        # row 0 | Find:         |     text entry     | Prev match | Next match  | [x] Full words only   |
-        #       |---------------------------------------------------------------------------------------|
-        # row 1 | Replace with: |     text entry     | Replace    | Replace all | [x] Ignore case       |
-        #       |---------------------------------------------------------------------------------------|
-        # row 2 | status label with useful-ish text                                                     |
-        #       |---------------------------------------------------------------------------------------|
-        # row 3 |                                       separator                                       |
-        #       `---------------------------------------------------------------------------------------'
+        #         column 0        column 1     column 2        column 3
+        #     ,---------------------------------------------------------------.
+        # row0|     Find:     | text entry    |       | [x] Full words only   |
+        #     |---------------|---------------|-------|-----------------------|
+        # row1| Replace with: | text entry    |       | [x] Ignore case       |
+        #     |---------------------------------------------------------------|
+        # row2| button frame, this thing contains a bunch of buttons          |
+        #     |---------------------------------------------------------------|
+        # row3| status label with useful-ish text                             |
+        #     |---------------------------------------------------------------|
+        # row4| separator                                                     |
+        #     `---------------------------------------------------------------'
         #
         # note that column 2 is used just for spacing, the separator helps
         # distinguish this from e.g. status bar below this
-
-        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, minsize=30)
+        self.grid_columnconfigure(3, weight=1)
 
         self.full_words_var = tkinter.BooleanVar()
         self.ignore_case_var = tkinter.BooleanVar()
@@ -60,21 +61,29 @@ class Finder(ttk.Frame):
         self.find_entry.bind("<Shift-Return>", self._go_to_previous_match, add=True)
         self.find_entry.bind("<Return>", self._go_to_next_match, add=True)
 
+        buttonframe = ttk.Frame(self)
+        buttonframe.grid(row=2, column=0, columnspan=4, sticky="we")
+
         self.previous_button = ttk.Button(
-            self, text="Prev match", command=self._go_to_previous_match
+            buttonframe, text="Previous match", command=self._go_to_previous_match
         )
-        self.next_button = ttk.Button(self, text="Next match", command=self._go_to_next_match)
+        self.next_button = ttk.Button(
+            buttonframe, text="Next match", command=self._go_to_next_match
+        )
         self.replace_this_button = ttk.Button(
-            self, text="Replace this", underline=len("Replace "), command=self._replace_this
+            buttonframe,
+            text="Replace this match",
+            underline=len("Replace "),
+            command=self._replace_this,
         )
         self.replace_all_button = ttk.Button(
-            self, text="Replace all", underline=len("Replace "), command=self._replace_all
+            buttonframe, text="Replace all", underline=len("Replace "), command=self._replace_all
         )
 
-        self.previous_button.grid(row=0, column=2, sticky="we", padx=(0, 5), pady=(0, 5))
-        self.next_button.grid(row=0, column=3, sticky="we", padx=(0, 5), pady=(0, 5))
-        self.replace_this_button.grid(row=1, column=2, sticky="we", padx=(0, 5), pady=(0, 5))
-        self.replace_all_button.grid(row=1, column=3, sticky="we", padx=(0, 5), pady=(0, 5))
+        self.previous_button.pack(side="left")
+        self.next_button.pack(side="left")
+        self.replace_this_button.pack(side="left")
+        self.replace_all_button.pack(side="left")
         self._update_buttons()
 
         self.full_words_var.trace_add("write", self.highlight_all_matches)
@@ -82,20 +91,18 @@ class Finder(ttk.Frame):
 
         ttk.Checkbutton(
             self, text="Full words only", underline=0, variable=self.full_words_var
-        ).grid(row=0, column=4, sticky="we", padx=(0, 5), pady=(0, 5))
+        ).grid(row=0, column=3, sticky="w")
         ttk.Checkbutton(self, text="Ignore case", underline=0, variable=self.ignore_case_var).grid(
-            row=1, column=4, sticky="we", padx=(0, 5), pady=(0, 5)
+            row=1, column=3, sticky="w"
         )
 
         self.statuslabel = ttk.Label(self)
-        self.statuslabel.grid(row=3, column=0, columnspan=2, sticky="we")
+        self.statuslabel.grid(row=3, column=0, columnspan=4, sticky="we")
 
-        ttk.Separator(self, orient="horizontal").grid(
-            row=4, column=0, columnspan=6, sticky="we", padx=(0, 5), pady=5
-        )
+        ttk.Separator(self, orient="horizontal").grid(row=4, column=0, columnspan=4, sticky="we")
 
         closebutton = ttk.Label(self, cursor="hand2")
-        closebutton.grid(row=0, column=5, sticky="ne")
+        closebutton.place(relx=1, rely=0, anchor="ne")
         closebutton.bind("<Button-1>", self.hide, add=True)
 
         closebutton.config(image=images.get("closebutton"))
@@ -119,14 +126,14 @@ class Finder(ttk.Frame):
         self._textwidget.tag_raise("find_highlight_selected", "find_highlight")
 
     def _add_entry(self, row: int, text: str) -> ttk.Entry:
-        ttk.Label(self, text=text).grid(row=row, column=0, sticky="w", padx=(0, 5), pady=(0, 5))
+        ttk.Label(self, text=text).grid(row=row, column=0, sticky="w")
         entry = ttk.Entry(self, width=35, font="TkFixedFont")
         entry.bind("<Escape>", self.hide, add=True)
         entry.bind("<Alt-t>", self._replace_this, add=True)
         entry.bind("<Alt-a>", self._replace_all, add=True)
         entry.bind("<Alt-f>", partial(self._toggle_var, self.full_words_var), add=True)
         entry.bind("<Alt-i>", partial(self._toggle_var, self.ignore_case_var), add=True)
-        entry.grid(row=row, column=1, sticky="we", padx=(0, 5), pady=(0, 5))
+        entry.grid(row=row, column=1, sticky="we")
         return entry
 
     def _toggle_var(self, var: tkinter.BooleanVar, junk: object) -> str:
@@ -229,7 +236,7 @@ class Finder(ttk.Frame):
         looking4 = self.find_entry.get()
         if not looking4:  # don't search for empty string
             self._update_buttons()
-            self.statuslabel.config(text="Type something to find")
+            self.statuslabel.config(text="Type something to find.")
             return
         if self.full_words_var.get() and not re.fullmatch(r"\w|\w.*\w", looking4):
             self._update_buttons()
@@ -255,9 +262,9 @@ class Finder(ttk.Frame):
         if count == 0:
             self.statuslabel.config(text="Found no matches :(")
         elif count == 1:
-            self.statuslabel.config(text="Found 1 match")
+            self.statuslabel.config(text="Found 1 match.")
         else:
-            self.statuslabel.config(text=f"Found {count} matches")
+            self.statuslabel.config(text=f"Found {count} matches.")
 
     def _select_match(self, match_tags: list[str], index: int) -> None:
         tag = match_tags[index]
@@ -268,7 +275,7 @@ class Finder(ttk.Frame):
         self._textwidget.mark_set("insert", f"{tag}.first")
         self._textwidget.see("insert")
 
-        self.statuslabel.config(text=f"{index + 1} of {len(match_tags)} matches")
+        self.statuslabel.config(text=f"Match {index + 1}/{len(match_tags)}")
         self._update_buttons()
 
     def _go_to_next_match(self, junk: object = None) -> None:
@@ -319,11 +326,11 @@ class Finder(ttk.Frame):
 
         left = len(self.get_match_tags())
         if left == 0:
-            self.statuslabel.config(text="Replaced the last match")
+            self.statuslabel.config(text="Replaced the last match.")
         elif left == 1:
-            self.statuslabel.config(text="Replaced a match. There is 1 more match")
+            self.statuslabel.config(text="Replaced a match. There is 1 more match.")
         else:
-            self.statuslabel.config(text=f"Replaced a match. There are {left} more matches")
+            self.statuslabel.config(text=f"Replaced a match. There are {left} more matches.")
         return "break"
 
     def _replace_all(self, junk: object = None) -> str:
@@ -337,9 +344,9 @@ class Finder(ttk.Frame):
         self._update_buttons()
 
         if len(match_tags) == 1:
-            self.statuslabel.config(text="Replaced 1 match")
+            self.statuslabel.config(text="Replaced 1 match.")
         else:
-            self.statuslabel.config(text=f"Replaced {len(match_tags)} matches")
+            self.statuslabel.config(text=f"Replaced {len(match_tags)} matches.")
         return "break"
 
     def _handle_undo(self, event: object) -> None:
@@ -348,7 +355,7 @@ class Finder(ttk.Frame):
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    finder = Finder(tab.bottom_frame, tab.textwidget, padding=(5, 5, 0, 0))
+    finder = Finder(tab.bottom_frame, tab.textwidget)
     tab.bind("<<FiletabCommand:Edit/Find and Replace>>", finder.show, add=True)
 
 
