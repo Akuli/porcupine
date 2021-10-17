@@ -212,7 +212,7 @@ def test_cycling_through_items(tree, tmp_path, tabmanager):
 
 def test_empty_directory_refreshing(tree, tmp_path):
     new_dir_path = tmp_path / "a"
-    new_dir_path.mkdir(parents=True)
+    new_dir_path.mkdir()
 
     tree.add_project(tmp_path)
     [project_id] = [id for id in tree.get_children("") if get_path(id) == tmp_path]
