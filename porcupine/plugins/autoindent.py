@@ -34,10 +34,10 @@ def leading_whitespace(string: str) -> str:
 class AutoIndentRegexes:
     indent: Optional[str] = None
     dedent: Optional[str] = None
-    dedent_prev_line: Optional[bool] = False
+    dedent_prev_line: bool = False
 
 
-def get_regexes(tab: tabs.FileTab) -> tuple[str, str]:
+def get_regexes(tab: tabs.FileTab) -> tuple[str, str, bool]:
     config = tab.settings.get("autoindent_regexes", Optional[AutoIndentRegexes])
     if config is None:
         config = AutoIndentRegexes(None, None, False)
