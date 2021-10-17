@@ -41,7 +41,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: python scripts/download-tkdnd.py
-    - run: del porcupine\plugins\git_status.py
     - run: python -m pytest -vvvv --durations=10
   pytest-linux:
     timeout-minutes: 10
@@ -57,7 +56,6 @@ jobs:
     # Make sure that it doesn't crash with Noto Color Emoji
     - run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
     - run: pip install -r requirements.txt -r requirements-dev.txt
-    - run: rm -v porcupine/plugins/git_status.py
     - uses: GabrielBB/xvfb-action@v1.4
       with:
         run: python3 -m pytest -vvvv --durations=10
@@ -82,7 +80,6 @@ jobs:
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
-    - run: rm -v porcupine/plugins/git_status.py
     - run: $PYTHON -m pytest -vvvv --durations=10
   black:
     runs-on: ubuntu-latest

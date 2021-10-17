@@ -1,7 +1,5 @@
-import os
 import shutil
 import subprocess
-from concurrent.futures import Future
 from functools import partial
 from pathlib import Path
 
@@ -9,25 +7,9 @@ import pytest
 
 from porcupine import get_tab_manager
 
-# shitty debugging attempt for #379
-if os.environ.get("GITHUB_ACTIONS") == "true":
-    pytestmark = pytest.mark.skip
-else:
-    from porcupine.plugins.git_status import git_pool
-
-
-@pytest.fixture
-def disable_thread_pool(monkeypatch):
-    def fake_submit(func):
-        fut = Future()
-        fut.set_result(func())
-        return fut
-
-    monkeypatch.setattr(git_pool, "submit", fake_submit)
-
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_added_and_modified_content(tree, tmp_path, monkeypatch, disable_thread_pool):
+def test_added_and_modified_content(tree, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     subprocess.check_call(["git", "init", "--quiet"], stdout=subprocess.DEVNULL)
@@ -48,7 +30,7 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch, disable_thread_
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
-def test_merge_conflict(tree, tmp_path, monkeypatch, disable_thread_pool):
+def test_merge_conflict(tree, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     # Resulting output of 'git log --graph --oneline --all':
