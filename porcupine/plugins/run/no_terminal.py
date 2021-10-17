@@ -133,6 +133,8 @@ class Executor:
                         "error": "Token.Name.Exception",
                     }[message_type]
 
+                    scrolled_to_end = self._textwidget.yview()[1] == 1.0
+
                     self._textwidget.insert("end", text, [tag])
                     # Add links to full lines
                     linked_line_count = text.count("\n")
@@ -140,6 +142,8 @@ class Executor:
                         start=f"end - 1 char linestart - {linked_line_count} lines",
                         end="end - 1 char linestart",
                     )
+                    if scrolled_to_end:
+                        self._textwidget.yview_moveto(1)
 
             self._textwidget.config(state="disabled")
 
