@@ -12,6 +12,7 @@ import sys
 import tempfile
 import time
 import tkinter
+from concurrent.futures import Future
 
 import appdirs
 import pytest
@@ -20,6 +21,7 @@ import porcupine
 from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
 from porcupine.plugins.directory_tree import get_directory_tree
+from porcupine.plugins.git_status import git_pool
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
@@ -120,7 +122,14 @@ def filetab(porcusession, tabmanager):
 
 # TODO: consider longer name
 @pytest.fixture
-def tree():
+def tree(monkeypatch):
+    def fake_submit(func):
+        fut = Future()
+        fut.set_result(func())
+        return fut
+
+    monkeypatch.setattr(git_pool, "submit", fake_submit)
+
     tree = get_directory_tree()
     for child in tree.get_children(""):
         tree.delete(child)

@@ -1,23 +1,11 @@
 import shutil
 import subprocess
-from concurrent.futures import Future
 from functools import partial
 from pathlib import Path
 
 import pytest
 
 from porcupine import get_tab_manager
-from porcupine.plugins.git_status import git_pool
-
-
-@pytest.fixture
-def disable_thread_pool(monkeypatch):
-    def fake_submit(func):
-        fut = Future()
-        fut.set_result(func())
-        return fut
-
-    monkeypatch.setattr(git_pool, "submit", fake_submit)
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
