@@ -332,7 +332,7 @@ filename_patterns = ["*.html", "*.htm"]
 pygments_lexer = "pygments.lexers.HtmlLexer"
 tabs2spaces = true
 indent_size = 2
-autoindent_regexes = {dedent = '</.*>', indent = '<[^/!].*[^/]>', dedent_prev_line = true}
+autoindent_regexes = {dedent = '</.*>', indent = '<[^/!].*[^/]>|<[A-Za-z]>', dedent_prev_line = true}
 
 [TeX]
 filename_patterns = ["*.tex"]
