@@ -87,7 +87,6 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
         tab.textwidget.dedent("insert")
         if tab.settings.get("dedent_prev_line", bool):
             tab.textwidget.dedent("insert - 1 line")
-            
 
 
 def on_enter_press(
