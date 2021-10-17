@@ -267,6 +267,9 @@ def test_html_autoindent(check_autoindents):
 <a href="foo/bar.png">
 blah
 </a>
+<p>
+blah blah
+</p>
 </body>
 </html>
 """,
@@ -281,7 +284,27 @@ blah
     <a href="foo/bar.png">
       blah
     </a>
+    <p>
+      blah blah
+    </p>
   </body>
 </html>
+""",
+    )
+
+
+@pytest.mark.xfail(strict=True)
+def test_html_open_and_close_on_same_line(check_autoindents):
+    check_autoindents(
+        "lol.html",
+        """
+<div>
+<a>lol</a>
+</div>
+""",
+        """
+<div>
+  <a>lol</a>
+</div>
 """,
     )
