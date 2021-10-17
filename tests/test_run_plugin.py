@@ -139,6 +139,13 @@ def test_mypy_error_message(filetab, tabmanager, tmp_path, wait_until):
     assert click_last_link() == "print(1 + 'lol')"
 
 
+def test_pytest_error_message(tabmanager, tmp_path, wait_until):
+    (tmp_path / "tests.py").write_text("def test_foo(asdf): pass")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} -m pytest tests.py", tmp_path)
+    wait_until(lambda: "The process failed with status 1." in get_output())
+    assert click_last_link() == "def test_foo(asdf): pass"
+
+
 def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     filetab.textwidget.insert("end", "asdf.bind('<Foo>', print)")
     (tmp_path / "foo").mkdir()
