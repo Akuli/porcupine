@@ -208,3 +208,23 @@ def test_cycling_through_items(tree, tmp_path, tabmanager):
     assert get_path(tree.selection()[0]) == tmp_path / "README"
     tree.event_generate("x")
     assert get_path(tree.selection()[0]) == tmp_path / "README"
+
+
+def test_empty_directory_refreshing(tree, tmp_path):
+    new_dir_path = tmp_path / "a"
+    new_dir_path.mkdir()
+
+    tree.add_project(tmp_path)
+    [project_id] = [id for id in tree.get_children("") if get_path(id) == tmp_path]
+
+    open_as_if_user_clicked(tree, project_id)
+    new_dir_id = tree.get_id_from_path(new_dir_path, project_id)
+    open_as_if_user_clicked(tree, new_dir_id)
+    new_file_path = new_dir_path / "foo.txt"
+    new_file_path.touch()
+
+    tree.refresh()
+    new_dir_children = tree.get_children(new_dir_id)
+    assert len(new_dir_children) == 1 and new_dir_children[0] == tree.get_id_from_path(
+        new_file_path, project_id
+    )

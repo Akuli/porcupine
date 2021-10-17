@@ -256,7 +256,7 @@ class DirectoryTree(ttk.Treeview):
     # The following two methods call each other recursively.
 
     def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
-        if child_id.startswith(("dir:", "project:")) and not self.contains_dummy(child_id):
+        if child_id.startswith(("dir:", "project:")) and self.item(child_id, "open"):
             self._open_and_refresh_directory(child_id)
 
     def _open_and_refresh_directory(self, dir_id: str) -> None:
