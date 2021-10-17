@@ -47,7 +47,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree.contextmenu.add_command(
         label="git add",
         command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
-        state=("normal" if tree.tag_has("git_modified", item) else "disabled"),
+        state=("normal" if tree.tag_has("git_modified", item) or tree.tag_has("git_untracked", item) else "disabled"),
     )
     tree.contextmenu.add_command(
         label="git restore --staged (undo add)",
