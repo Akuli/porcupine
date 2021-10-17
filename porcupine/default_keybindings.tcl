@@ -3,7 +3,8 @@
 # Use Command on mac, Control on other systems
 if {[tk windowingsystem] == "aqua"} {
     set contmand Command
-    event add "<<RightClick>>" <Button-2> ? <$contmand-Button-1> ? <Control-Button-1>
+    event add "<<RightClick>>" <Button-2>
+    event add "<<RightClick>>" <Control-Button-1>
     event add "<<WheelClick>>" <Button-3>
 } else {
     set contmand Control
