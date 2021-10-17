@@ -9,6 +9,7 @@ max_line_length = 80
 [*.{py,tcl}]
 indent_style = space
 indent_size = 4
+max_line_length = 100  # keep in sync with pyproject.toml
 
 [*.c]
 indent_style = tab
