@@ -182,7 +182,7 @@ autoindent_regexes = {indent = '.*:'}
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
 comment_prefix = '//'
-# Press shift+enter instead of enter to avoid indent after 'case foo:'
+# Press alt+enter instead of enter to avoid indent after 'case foo:'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
 
 ["C++"]
