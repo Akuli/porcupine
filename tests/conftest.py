@@ -123,20 +123,20 @@ def filetab(porcusession, tabmanager):
 # makes git status tags immediately available in directory tree
 @pytest.fixture(scope="session", autouse=True)
 def fake_git_pool():
-    # monkeypatch fixture doesn't work with scope="session"
     class FakeThreadPool:
         def submit(self, func):
             fut = Future()
             fut.set_result(func())
             return fut
 
+    # monkeypatch fixture doesn't work with scope="session"
     git_status.git_pool = FakeThreadPool()
     yield
 
 
 # TODO: consider longer name
 @pytest.fixture
-def tree(monkeypatch):
+def tree():
     tree = get_directory_tree()
     for child in tree.get_children(""):
         tree.delete(child)
