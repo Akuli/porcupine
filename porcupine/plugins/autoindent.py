@@ -85,6 +85,9 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
     elif re.fullmatch(dedent_regex, prevline):
         # must be end of a block
         tab.textwidget.dedent("insert")
+        if tab.settings.get("dedent_prev_line", bool):
+            tab.textwidget.dedent("insert - 1 line")
+            
 
 
 def on_enter_press(
@@ -113,6 +116,7 @@ def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> N
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("autoindent_regexes", None, Optional[AutoIndentRegexes])
+    tab.settings.add_option("dedent_prev_line", False, bool)
     tab.textwidget.bind("<Return>", partial(on_enter_press, tab, False), add=True)
     tab.textwidget.bind("<Alt-Return>", partial(on_enter_press, tab, True), add=True)
     tab.textwidget.bind("<parenright>", partial(on_closing_brace, tab), add=True)
