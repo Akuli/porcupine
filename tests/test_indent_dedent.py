@@ -251,3 +251,37 @@ for thing in a b c; do
 done
 """,
     )
+
+
+def test_html_autoindent(check_autoindents):
+    check_autoindents(
+        "lol.html",
+        """
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<img src="foo/bar.png" />
+<br />
+<a href="foo/bar.png">
+blah
+</a>
+</body>
+</html>
+""",
+        """
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <img src="foo/bar.png" />
+    <br />
+    <a href="foo/bar.png">
+      blah
+    </a>
+  </body>
+</html>
+""",
+    )
