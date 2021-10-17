@@ -133,7 +133,7 @@ class Executor:
                         "error": "Token.Name.Exception",
                     }[message_type]
 
-                    scrolled_to_end = (self._textwidget.yview()[1] == 1.0)
+                    scrolled_to_end = self._textwidget.yview()[1] == 1.0
 
                     self._textwidget.insert("end", text, [tag])
                     # Add links to full lines
