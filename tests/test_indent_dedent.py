@@ -293,7 +293,6 @@ blah blah
     )
 
 
-@pytest.mark.xfail(strict=True)
 def test_html_open_and_close_on_same_line(check_autoindents):
     check_autoindents(
         "lol.html",
