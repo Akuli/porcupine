@@ -40,7 +40,7 @@ class AutoIndentRegexes:
 def get_regexes(tab: tabs.FileTab) -> tuple[str, str, bool]:
     config = tab.settings.get("autoindent_regexes", Optional[AutoIndentRegexes])
     if config is None:
-        config = AutoIndentRegexes(None, None, False)
+        config = AutoIndentRegexes()
     assert isinstance(config, AutoIndentRegexes)
 
     if config.indent is not None:
