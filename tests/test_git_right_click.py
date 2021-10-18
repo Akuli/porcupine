@@ -1,6 +1,6 @@
-from functools import partial
 import shutil
 import subprocess
+from functools import partial
 
 import pytest
 

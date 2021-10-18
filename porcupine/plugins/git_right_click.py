@@ -39,7 +39,11 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         git_cwd = path.parent
 
     try:
-        output = subprocess.check_output(['git', 'status', '--porcelain', '--', str(path)], cwd=git_cwd, **utils.subprocess_kwargs)
+        output = subprocess.check_output(
+            ["git", "status", "--porcelain", "--", str(path)],
+            cwd=git_cwd,
+            **utils.subprocess_kwargs,
+        )
     except (OSError, subprocess.CalledProcessError):
         return
     staged_changes = [line[0:1].decode("ascii") for line in output.splitlines()]
@@ -49,7 +53,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         tree.contextmenu.add_separator()
 
     # Commands can be different than what label shows, for compatibility with older gits
-    # TODO: use git_cwd here
+    # TODO: use git_cwd below
     tree.contextmenu.add_command(
         label="git add",
         command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
@@ -58,12 +62,20 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree.contextmenu.add_command(
         label="git restore --staged (undo add)",
         command=(lambda: run(["git", "reset", "HEAD", "--", str(path)], path.parent)),
-        state="normal" if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in staged_changes) else "disabled",
+        state=(
+            "normal"
+            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in staged_changes)
+            else "disabled"
+        ),
     )
     tree.contextmenu.add_command(
         label="git restore (discard non-added changes)",
         command=(lambda: run(["git", "checkout", "--", str(path)], path.parent)),
-        state=("normal" if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in unstaged_changes) else "disabled"),
+        state=(
+            "normal"
+            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in unstaged_changes)
+            else "disabled"
+        ),
     )
 
 
