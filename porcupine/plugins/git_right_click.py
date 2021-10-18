@@ -13,6 +13,11 @@ setup_after = ["directory_tree", "filemanager"]
 
 log = logging.getLogger(__name__)
 
+# for parsing output of "git status --porcelain"
+# There are many other characters, but they all seem to indicate some kind of change.
+UNTRACKED = "?"
+NOTHING_CHANGED = " "
+
 
 def run(command: list[str], cwd: Path) -> None:
     log.info(f"running command: {command}")
@@ -27,42 +32,50 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree: DirectoryTree = event.widget
     [item] = tree.selection()
     path = get_path(item)
-    project_root = get_path(tree.find_project_id(item))
+
+    if path.is_dir():
+        git_cwd = path
+    else:
+        git_cwd = path.parent
 
     try:
-        subprocess.check_call(
-            ["git", "status"],
-            cwd=project_root,
-            stdout=subprocess.DEVNULL,
+        output = subprocess.check_output(
+            ["git", "status", "--porcelain", "--", str(path)],
+            cwd=git_cwd,
             **utils.subprocess_kwargs,
         )
     except (OSError, subprocess.CalledProcessError):
         return
+    staged_states = [line[0:1].decode("ascii") for line in output.splitlines()]
+    unstaged_states = [line[1:2].decode("ascii") for line in output.splitlines()]
 
     if tree.contextmenu.index("end") is not None:  # menu not empty
         tree.contextmenu.add_separator()
 
     # Commands can be different than what label shows, for compatibility with older gits
-    # Relies on git_status plugin
+    # TODO: use git_cwd below
     tree.contextmenu.add_command(
         label="git add",
         command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
-        state=(
-            "normal"
-            if tree.tag_has("git_modified", item) or tree.tag_has("git_untracked", item)
-            else "disabled"
-        ),
+        state=("normal" if any(s != NOTHING_CHANGED for s in unstaged_states) else "disabled"),
     )
     tree.contextmenu.add_command(
         label="git restore --staged (undo add)",
         command=(lambda: run(["git", "reset", "HEAD", "--", str(path)], path.parent)),
-        # TODO: disable this reasonably
-        # currently git_added tag missing if there is git_modified tag
+        state=(
+            "normal"
+            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in staged_states)
+            else "disabled"
+        ),
     )
     tree.contextmenu.add_command(
         label="git restore (discard non-added changes)",
         command=(lambda: run(["git", "checkout", "--", str(path)], path.parent)),
-        state=("normal" if tree.tag_has("git_modified", item) else "disabled"),
+        state=(
+            "normal"
+            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in unstaged_states)
+            else "disabled"
+        ),
     )
 
 

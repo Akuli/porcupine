@@ -376,14 +376,18 @@ class DirectoryTree(ttk.Treeview):
         self.set_the_selection_correctly(children[index])
         self.see(children[index])
 
+    # separated because tests
+    def _populate_contextmenu(self) -> None:
+        self.contextmenu.delete(0, "end")
+        self.event_generate("<<PopulateContextMenu>>")
+
     def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
 
         item: str = self.identify_row(event.y)
         self.set_the_selection_correctly(item)
 
-        self.contextmenu.delete(0, "end")
-        self.event_generate("<<PopulateContextMenu>>")
+        self._populate_contextmenu()
         if self.contextmenu.index("end") is not None:
             # Menu is not empty
             self.contextmenu.tk_popup(event.x_root, event.y_root)
