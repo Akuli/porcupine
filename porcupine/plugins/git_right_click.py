@@ -13,6 +13,11 @@ setup_after = ["directory_tree", "filemanager"]
 
 log = logging.getLogger(__name__)
 
+# for parsing output of "git status --porcelain"
+# There are many other characters, but they all seem to indicate some kind of change.
+UNTRACKED = "?"
+NOTHING_CHANGED = " "
+
 
 def run(command: list[str], cwd: Path) -> None:
     log.info(f"running command: {command}")
@@ -27,17 +32,13 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree: DirectoryTree = event.widget
     [item] = tree.selection()
     path = get_path(item)
-    project_root = get_path(tree.find_project_id(item))
 
     try:
-        subprocess.check_call(
-            ["git", "status"],
-            cwd=project_root,
-            stdout=subprocess.DEVNULL,
-            **utils.subprocess_kwargs,
-        )
+        output = subprocess.check_output(['git', 'status', '--porcelain', '--', str(path)], cwd=path.parent, **utils.subprocess_kwargs)
     except (OSError, subprocess.CalledProcessError):
         return
+    tracked_statuses = [line[0:1].decode("ascii") for line in output.splitlines()]
+    untracked_statuses = [line[1:2].decode("ascii") for line in output.splitlines()]
 
     if tree.contextmenu.index("end") is not None:  # menu not empty
         tree.contextmenu.add_separator()
@@ -47,11 +48,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree.contextmenu.add_command(
         label="git add",
         command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
-        state=(
-            "normal"
-            if tree.tag_has("git_modified", item) or tree.tag_has("git_untracked", item)
-            else "disabled"
-        ),
+        state="disabled" if all(s == NOTHING_CHANGED for s in untracked_statuses) else "normal",
     )
     tree.contextmenu.add_command(
         label="git restore --staged (undo add)",

@@ -23,7 +23,7 @@ def test_working_on_untracked_file(tree, tmp_path):
     tree.select_file(tmp_path / "a.py")
 
     tree._populate_contextmenu()
-    #assert tree.contextmenu.entrycget("git add", "state") == "normal"
+    assert tree.contextmenu.entrycget("git add", "state") == "normal"
     #assert tree.contextmenu.entrycget("* (undo add)", "state") == "disabled"
     assert tree.contextmenu.entrycget("* (discard non-added changes)", "state") == "disabled"
 
@@ -35,7 +35,7 @@ def test_working_on_untracked_file(tree, tmp_path):
 
     (tmp_path / "a.py").write_text("wat")
     tree._populate_contextmenu()
-    #assert tree.contextmenu.entrycget("git add", "state") == "normal"
+    assert tree.contextmenu.entrycget("git add", "state") == "normal"
     assert tree.contextmenu.entrycget("* (undo add)", "state") == "normal"
     #assert tree.contextmenu.entrycget("* (discard non-added changes)", "state") == "normal"
 
