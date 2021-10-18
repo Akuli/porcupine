@@ -270,6 +270,9 @@ blah
 <p>
 blah blah
 </p>
+<div>
+<a>lol</a>
+</div>
 </body>
 </html>
 """,
@@ -287,23 +290,10 @@ blah blah
     <p>
       blah blah
     </p>
+    <div>
+      <a>lol</a>
+    </div>
   </body>
 </html>
-""",
-    )
-
-
-def test_html_open_and_close_on_same_line(check_autoindents):
-    check_autoindents(
-        "lol.html",
-        """
-<div>
-<a>lol</a>
-</div>
-""",
-        """
-<div>
-  <a>lol</a>
-</div>
 """,
     )
