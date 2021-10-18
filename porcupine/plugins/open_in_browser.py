@@ -14,7 +14,7 @@ from porcupine import menubar, tabs
 log = logging.getLogger(__name__)
 
 
-def open_file(tab: tabs.FileTab) -> None:
+def open_file_in_browser(tab: tabs.FileTab) -> None:
     try:
         webbrowser.open(str(tab.path))
     except webbrowser.Error:
@@ -24,4 +24,4 @@ def open_file(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    menubar.add_filetab_command("Tools/Web/Open in webbrowser", open_file)
+    menubar.add_filetab_command("Tools/Web/Open in webbrowser", open_file_in_browser)
