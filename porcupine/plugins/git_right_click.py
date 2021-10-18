@@ -46,8 +46,8 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         )
     except (OSError, subprocess.CalledProcessError):
         return
-    staged_changes = [line[0:1].decode("ascii") for line in output.splitlines()]
-    unstaged_changes = [line[1:2].decode("ascii") for line in output.splitlines()]
+    staged_states = [line[0:1].decode("ascii") for line in output.splitlines()]
+    unstaged_states = [line[1:2].decode("ascii") for line in output.splitlines()]
 
     if tree.contextmenu.index("end") is not None:  # menu not empty
         tree.contextmenu.add_separator()
@@ -57,14 +57,14 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree.contextmenu.add_command(
         label="git add",
         command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
-        state=("normal" if any(s != NOTHING_CHANGED for s in unstaged_changes) else "disabled"),
+        state=("normal" if any(s != NOTHING_CHANGED for s in unstaged_states) else "disabled"),
     )
     tree.contextmenu.add_command(
         label="git restore --staged (undo add)",
         command=(lambda: run(["git", "reset", "HEAD", "--", str(path)], path.parent)),
         state=(
             "normal"
-            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in staged_changes)
+            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in staged_states)
             else "disabled"
         ),
     )
@@ -73,7 +73,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         command=(lambda: run(["git", "checkout", "--", str(path)], path.parent)),
         state=(
             "normal"
-            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in unstaged_changes)
+            if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in unstaged_states)
             else "disabled"
         ),
     )
