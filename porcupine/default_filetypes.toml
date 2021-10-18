@@ -60,6 +60,9 @@
 #            dedent_regex
 #                A regular expression for dedenting.
 #
+#            dedent_prev_line (default: false)
+#                Whether to dedent the previous line as well.
+#
 #        In addition to these regular expressions, (), {} and [] are supported
 #        with all file types.
 #
@@ -329,6 +332,7 @@ filename_patterns = ["*.html", "*.htm"]
 pygments_lexer = "pygments.lexers.HtmlLexer"
 tabs2spaces = true
 indent_size = 2
+autoindent_regexes = {dedent = '</.*>', indent = '<[^/!][^<>]*[^/]>|<[A-Za-z]>', dedent_prev_line = true}
 
 [TeX]
 filename_patterns = ["*.tex"]

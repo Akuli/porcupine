@@ -34,12 +34,13 @@ def leading_whitespace(string: str) -> str:
 class AutoIndentRegexes:
     indent: Optional[str] = None
     dedent: Optional[str] = None
+    dedent_prev_line: bool = False
 
 
-def get_regexes(tab: tabs.FileTab) -> tuple[str, str]:
+def get_regexes(tab: tabs.FileTab) -> tuple[str, str, bool]:
     config = tab.settings.get("autoindent_regexes", Optional[AutoIndentRegexes])
     if config is None:
-        config = AutoIndentRegexes(None, None)
+        config = AutoIndentRegexes()
     assert isinstance(config, AutoIndentRegexes)
 
     if config.indent is not None:
@@ -59,6 +60,7 @@ def get_regexes(tab: tabs.FileTab) -> tuple[str, str]:
     return (
         config.indent or r"this regex matches nothing^",
         config.dedent or r"this regex matches nothing^",
+        config.dedent_prev_line,
     )
 
 
@@ -77,7 +79,7 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
         # Not perfect, but should work fine
         prevline = prevline.split(comment_prefix)[0].strip()
 
-    indent_regex, dedent_regex = get_regexes(tab)
+    indent_regex, dedent_regex, dedent_prev_line = get_regexes(tab)
     if (
         prevline.endswith(("(", "[", "{")) or re.fullmatch(indent_regex, prevline)
     ) and not alt_pressed:
@@ -85,6 +87,8 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
     elif re.fullmatch(dedent_regex, prevline):
         # must be end of a block
         tab.textwidget.dedent("insert")
+        if dedent_prev_line:
+            tab.textwidget.dedent("insert - 1 line")
 
 
 def on_enter_press(
