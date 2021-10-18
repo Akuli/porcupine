@@ -24,7 +24,7 @@ def test_working_on_untracked_file(tree, tmp_path):
 
     tree._populate_contextmenu()
     assert tree.contextmenu.entrycget("git add", "state") == "normal"
-    #assert tree.contextmenu.entrycget("* (undo add)", "state") == "disabled"
+    assert tree.contextmenu.entrycget("* (undo add)", "state") == "disabled"
     assert tree.contextmenu.entrycget("* (discard non-added changes)", "state") == "disabled"
 
     tree.contextmenu.invoke("git add")

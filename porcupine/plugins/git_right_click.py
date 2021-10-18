@@ -37,24 +37,22 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         output = subprocess.check_output(['git', 'status', '--porcelain', '--', str(path)], cwd=path.parent, **utils.subprocess_kwargs)
     except (OSError, subprocess.CalledProcessError):
         return
-    tracked_statuses = [line[0:1].decode("ascii") for line in output.splitlines()]
-    untracked_statuses = [line[1:2].decode("ascii") for line in output.splitlines()]
+    staged_changes = [line[0:1].decode("ascii") for line in output.splitlines()]
+    unstaged_changes = [line[1:2].decode("ascii") for line in output.splitlines()]
 
     if tree.contextmenu.index("end") is not None:  # menu not empty
         tree.contextmenu.add_separator()
 
     # Commands can be different than what label shows, for compatibility with older gits
-    # Relies on git_status plugin
     tree.contextmenu.add_command(
         label="git add",
         command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
-        state="disabled" if all(s == NOTHING_CHANGED for s in untracked_statuses) else "normal",
+        state=("normal" if any(s != NOTHING_CHANGED for s in unstaged_changes) else "disabled"),
     )
     tree.contextmenu.add_command(
         label="git restore --staged (undo add)",
         command=(lambda: run(["git", "reset", "HEAD", "--", str(path)], path.parent)),
-        # TODO: disable this reasonably
-        # currently git_added tag missing if there is git_modified tag
+        state="normal" if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in staged_changes) else "disabled",
     )
     tree.contextmenu.add_command(
         label="git restore (discard non-added changes)",
