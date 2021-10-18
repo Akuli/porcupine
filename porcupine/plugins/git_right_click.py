@@ -57,7 +57,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree.contextmenu.add_command(
         label="git restore (discard non-added changes)",
         command=(lambda: run(["git", "checkout", "--", str(path)], path.parent)),
-        state=("normal" if tree.tag_has("git_modified", item) else "disabled"),
+        state=("normal" if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in unstaged_changes) else "disabled"),
     )
 
 
