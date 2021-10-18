@@ -33,8 +33,13 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     [item] = tree.selection()
     path = get_path(item)
 
+    if path.is_dir():
+        git_cwd = path
+    else:
+        git_cwd = path.parent
+
     try:
-        output = subprocess.check_output(['git', 'status', '--porcelain', '--', str(path)], cwd=path.parent, **utils.subprocess_kwargs)
+        output = subprocess.check_output(['git', 'status', '--porcelain', '--', str(path)], cwd=git_cwd, **utils.subprocess_kwargs)
     except (OSError, subprocess.CalledProcessError):
         return
     staged_changes = [line[0:1].decode("ascii") for line in output.splitlines()]
@@ -44,6 +49,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         tree.contextmenu.add_separator()
 
     # Commands can be different than what label shows, for compatibility with older gits
+    # TODO: use git_cwd here
     tree.contextmenu.add_command(
         label="git add",
         command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
