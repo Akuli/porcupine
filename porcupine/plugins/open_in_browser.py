@@ -15,8 +15,12 @@ log = logging.getLogger(__name__)
 
 
 def open_file(tab: tabs.FileTab) -> None:
-    webbrowser.open(str(tab.path))
-    log.info(f"Succesfully opened {str(tab.path)} in webbrowser")
+    try:
+        webbrowser.open(str(tab.path))
+    except webbrowser.Error:
+        log.warning(f"Can't open {str(tab.path)} in webbrowser")
+    else:
+        log.info(f"Succesfully opened {str(tab.path)} in webbrowser")
 
 
 def setup() -> None:
