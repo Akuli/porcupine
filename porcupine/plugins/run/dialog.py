@@ -59,7 +59,6 @@ class _FormattingEntryAndLabels:
 class _CommandAsker:
     def __init__(self, ctx: common.Context):
         self.window = tkinter.Toplevel()
-        self._suggestions = history.get_commands_to_suggest(ctx)
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -156,6 +155,7 @@ class _CommandAsker:
         else:
             self.cwd.format_var.set("{folder_path}")
 
+        self._suggestions = history.get_commands_to_suggest(ctx)
         if self._suggestions:
             # Run _autocomplete when pressing a key without alt
             self.command.entry.bind("<Key>", self._autocomplete, add=True)
