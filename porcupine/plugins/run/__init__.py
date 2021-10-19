@@ -1,7 +1,6 @@
 """Compile, run and lint files."""
 from __future__ import annotations
 
-import copy
 import sys
 import tkinter
 from functools import partial
@@ -19,8 +18,6 @@ setup_before = ["filetypes"]
 
 
 def run(command: common.Command, project_root: Path) -> None:
-    history.add(command)
-
     venv = python_venv.get_venv(project_root)
     if venv is None:
         command_string = command.format_command()
@@ -46,9 +43,11 @@ def ask_and_run_command(initial_key_id: int, junk_event: tkinter.Event[tkinter.M
     assert tab.path is not None
 
     project_root = utils.find_project_root(tab.path)
-    info = dialog.ask_command(tab, project_root, initial_key_id)
-    if info is not None:
-        run(info, project_root)
+    ask_result = dialog.ask_command(tab, project_root, initial_key_id)
+    if ask_result is not None:
+        command, key_id = ask_result
+        history.add(tab, command, key_id)
+        run(command, project_root)
 
 
 def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
@@ -58,8 +57,8 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
     assert tab.path is not None
 
     project_root = utils.find_project_root(tab.path)
-    previous_commands = history.get(tab, project_root, key_id)
-    if not previous_commands:
+    command = history.get_command_to_repeat(tab, project_root, key_id)
+    if command is None:
         ask = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")
         repeat = utils.get_binding(f"<<Run:Repeat{key_id}>>")
         messagebox.showerror(
@@ -68,8 +67,7 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
         )
         return
 
-    command = copy.copy(previous_commands[0])
-    command.substitutions = common.get_substitutions(tab.path, project_root)
+    history.add(tab, command, key_id)
     run(command, project_root)
 
 

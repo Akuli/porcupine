@@ -22,14 +22,6 @@ class Command:
             **{name: utils.quote(value) for name, value in self.substitutions.items()}
         )
 
-    def get_extension(self) -> str:
-        return get_extension(Path(self.substitutions["file_path"]))
-
-# Not same as path.suffix, because we want to distinguish files
-# that have no suffix (e.g. 'Makefile')
-def get_extension(path: Path) -> str:
-    return path.name.split(".")[-1]
-
 
 def get_substitutions(file_path: Path, project_path: Path) -> dict[str, str]:
     return {

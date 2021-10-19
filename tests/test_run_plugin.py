@@ -101,10 +101,15 @@ def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_
                 break
             widgets.extend(w.winfo_children())
 
-    suggestions = history.get(a, tmp_path, 0)
-    suggestions[0].external_terminal = False
-    mocker.patch("porcupine.plugins.run.history.get").return_value = suggestions
+    actual_repeater = history.get_command_to_repeat
+
+    def fake_repeater(*args, **kwargs):
+        result = actual_repeater(*args, **kwargs)
+        result.external_terminal = False
+        return result
+
     monkeypatch.setattr("tkinter.Toplevel.wait_window", fake_wait_window)
+    monkeypatch.setattr("porcupine.plugins.run.history.get_command_to_repeat", fake_repeater)
 
     tabmanager.select(a)
     get_main_window().event_generate("<<Run:AskAndRun0>>")
@@ -263,9 +268,7 @@ def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
 def test_cwd_entry(filetab, tmp_path):
     (tmp_path / "subdir").mkdir()
     filetab.save_as(tmp_path / "foo.txt")
-    asker = dialog._CommandAsker(
-        file_path=(tmp_path / "foo.txt"), project_path=tmp_path, suggestions=[], initial_key_id=1
-    )
+    asker = dialog._CommandAsker(tab=filetab, project_path=tmp_path, initial_key_id=1)
     asker.command.format_var.set("echo lol")
 
     assert asker.cwd.format_var.get() == "{folder_path}"

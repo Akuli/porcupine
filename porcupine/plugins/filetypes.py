@@ -7,7 +7,7 @@ import logging
 import re
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import tomli
 from pygments import lexers
@@ -82,6 +82,11 @@ def load_filetypes() -> None:
         # if not configured, don't let previous filetype leave a mess behind
         filetype.setdefault("example_commands", [])
         filetype.setdefault("langserver", None)
+
+        # Avoid code like "if this is a C file", in case someone wants to use the same thing for c++
+        # Applies to most other filetypes too e.g. Python file .py and Python stub file .pyi
+        assert "filetype_name" not in filetype
+        filetype["filetype_name"] = name
 
 
 def set_filedialog_kwargs() -> None:
@@ -203,6 +208,7 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("filetype_name", None, type_=Optional[str])
     on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
 

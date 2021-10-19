@@ -58,15 +58,10 @@ class _FormattingEntryAndLabels:
 
 
 class _CommandAsker:
-    def __init__(
-        self,
-        file_path: Path,
-        project_path: Path,
-        suggestions: list[common.Command],
-        initial_key_id: int,
-    ):
+    def __init__(self, tab: tabs.FileTab, project_path: Path, initial_key_id: int):
+        assert tab.path is not None
         self.window = tkinter.Toplevel()
-        self._suggestions = suggestions
+        self._suggestions = history.get_commands_to_suggest(tab, project_path, initial_key_id)
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -80,7 +75,7 @@ class _CommandAsker:
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        self._substitutions = common.get_substitutions(file_path, project_path)
+        self._substitutions = common.get_substitutions(tab.path, project_path)
         self.command = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
@@ -155,9 +150,11 @@ class _CommandAsker:
             entry.bind("<Return>", (lambda e: self.run_button.invoke()), add=True)
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
-        if self._suggestions:
-            self._select_command_autocompletion(self._suggestions[0], prefix="")
+        previous_command = history.get_command_to_repeat(tab, project_path, initial_key_id)
+        if previous_command is not None:
+            self._select_command_autocompletion(previous_command, prefix="")
 
+        if self._suggestions:
             # Run _autocomplete when pressing a key without alt
             self.command.entry.bind("<Key>", self._autocomplete, add=True)
             self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
@@ -175,9 +172,11 @@ class _CommandAsker:
             command_format=self.command.format_var.get(),
             cwd_format=self.cwd.format_var.get(),
             external_terminal=self.terminal_var.get(),
-            key_id=self.repeat_bindings.index(self.repeat_var.get()),
             substitutions=self._substitutions,
         )
+
+    def get_key_id(self) -> int:
+        return self.repeat_bindings.index(self.repeat_var.get())
 
     def command_and_cwd_are_valid(self) -> bool:
         try:
@@ -225,11 +224,9 @@ class _CommandAsker:
 
 def ask_command(
     tab: tabs.FileTab, project_path: Path, initial_key_id: int
-) -> common.Command | None:
+) -> tuple[common.Command, int] | None:
     assert tab.path is not None
-    asker = _CommandAsker(
-        tab.path, project_path, history.get(tab, project_path, initial_key_id), initial_key_id
-    )
+    asker = _CommandAsker(tab, project_path, initial_key_id)
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
@@ -239,5 +236,5 @@ def ask_command(
     asker.window.wait_window()
 
     if asker.run_clicked:
-        return asker.get_command()
+        return (asker.get_command(), asker.get_key_id())
     return None
