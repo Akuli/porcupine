@@ -37,9 +37,13 @@ def main():
     else:
         assert False, f"unexpected what_to_bump {args.what_to_bump!r}"
 
-    status = subprocess.check_output(["git", "status"])
-    assert status.startswith(b"On branch master\n")
-    assert b"Changes not staged for commit:" not in status
+    # https://stackoverflow.com/a/1593487
+    branch = subprocess.check_output("git symbolic-ref --short HEAD", shell=True).decode().strip()
+    assert branch in ("master", "bugfix-release")
+
+    # If this fails you have uncommitted changes
+    for line in subprocess.check_output("git status --porcelain", shell=True).splitlines():
+        assert line.startswith(b"?? "), line
 
     assert "VIRTUAL_ENV" in os.environ
     with open("CHANGELOG.md") as changelog:
@@ -52,8 +56,8 @@ def main():
     subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
-    subprocess.check_call(["git", "push", "origin", "master"])
-    subprocess.check_call(["git", "push", "--tags", "origin", "master"])
+    subprocess.check_call(["git", "push", "origin", branch])
+    subprocess.check_call(["git", "push", "--tags", "origin", branch])
 
 
 if __name__ == "__main__":

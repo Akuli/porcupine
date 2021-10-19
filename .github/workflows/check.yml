@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - master
+      - bugfix-release
   pull_request:
 
 jobs:
