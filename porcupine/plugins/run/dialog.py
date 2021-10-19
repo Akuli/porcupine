@@ -54,9 +54,7 @@ class _FormattingEntryAndLabels:
             self._command_display.insert("1.0", value)
             self._command_display.config(state="disabled")
 
-        # _validated_callback might not work if called from __init__
-        if junk_from_var_trace:
-            self._validated_callback()
+        self._validated_callback()
 
 
 class _CommandAsker:
@@ -85,8 +83,8 @@ class _CommandAsker:
         self._substitutions = common.get_substitutions(file_path, project_path)
         self.command = _FormattingEntryAndLabels(
             entry_area,
-            get_substituted_value=(lambda: self.get_command().format_command()),
             text="Run this command:",
+            get_substituted_value=(lambda: self.get_command().format_command()),
             validated_callback=self.update_run_button,
         )
         self.cwd = _FormattingEntryAndLabels(
@@ -181,19 +179,13 @@ class _CommandAsker:
             substitutions=self._substitutions,
         )
 
-    def command_is_valid(self) -> bool:
+    def command_and_cwd_are_valid(self) -> bool:
         try:
             command = self.get_command().format_command()
-        except (ValueError, KeyError, IndexError):
-            return False
-        return bool(command.strip())  # lol
-
-    def cwd_is_valid(self) -> bool:
-        try:
             cwd = self.get_command().format_cwd()
         except (ValueError, KeyError, IndexError):
             return False
-        return cwd.is_dir()
+        return bool(command.strip()) and cwd.is_dir()
 
     def _select_command_autocompletion(self, command: common.Command, prefix: str) -> None:
         assert command.command_format.startswith(prefix)
@@ -221,11 +213,7 @@ class _CommandAsker:
         return None
 
     def update_run_button(self, *junk: object) -> None:
-        if (
-            self.command_is_valid()
-            and self.cwd_is_valid()
-            and self.repeat_var.get() in self.repeat_bindings
-        ):
+        if self.command_and_cwd_are_valid() and self.repeat_var.get() in self.repeat_bindings:
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
