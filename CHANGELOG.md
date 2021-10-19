@@ -2,6 +2,30 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## v0.99.1
+
+Directory tree:
+- Right-clicking a file or folder gives a menu with a few Git-related items in it. They now work. Previously they were sometimes disabled (grayed out) when they weren't supposed to be, and most of the time they didn't actually do anything when clicked. Thank you [rdbende](https://github.com/rdbende) for reporting this and helping me fix it.
+- Empty folders are now refreshed correctly when they become non-empty. Previously empty folders would remain empty-looking even after creating files inside them, unless you closed and reopened the folder. Thank you [nicolafan](https://github.com/nicolafan).
+- On MacOS, control+click now does the same thing as right-click. Thank you [1anakin20](https://github.com/1anakin20).
+
+Running commands:
+- "Repeat previous command" is now clever enough to not repeat commands from the wrong filetype. Previously it would happily run Python commands in C files.
+- When the output is displayed in the Porcupine window, it now stays scrolled to the bottom as more output appears.
+- File names and line numbers are now clickable in some cases that previously didn't work, such as `pytest` error messages.
+- Pressing F5 in a HTML file will now open it in a web browser.
+
+Other improvements:
+- Entries in the find area (Ctrl+F) now stretch as you make the Porcupine window wider. This should make replacing long pieces of code easier. Thank you [rdbende](https://github.com/rdbende).
+- The setting dialog is now tall enough to show all of its content by default, regardless of what Ttk theme you use. Thank you [rdbende](https://github.com/rdbende) for noticing and fixing this.
+- Tooltips that appear when hovering code now have a similar background as the area itself, so if you use a dark theme, the tooltips will also have a dark background. Previously the colors would be opposite. Thank you [rdbende](https://github.com/rdbende).
+- There is now automatic indenting when editing HTML files. Thank you [rdbende](https://github.com/rdbende).
+
+Very small fixes:
+- The plugin manager now shows a more meaningful description when the run plugin is selected.
+- In a `switch` statement (e.g. C, C++, Java), you can press Alt+Enter instead of Enter to avoid automatic indentation when combining multiple `case foo:` statements. Alt+Enter is now mentioned in Porcupine's [default_filetypes.toml](https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml). Thank you [Tawishi](https://github.com/Tawishi).
+
+
 ## v0.99.0
 
 I'm excited about this release. It has lots of awesome improvements, and several people have contributed to it. Thanks to all contributors!
