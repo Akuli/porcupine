@@ -32,6 +32,7 @@ class _HistoryItem:
 
 # not global variable because tests monkeypatch dirs after importing
 def _get_path() -> Path:
+    # config dir is better than cache dir https://github.com/davatorium/rofi/issues/769
     Path(dirs.user_config_dir) / "run_history_v1.json"
 
 
