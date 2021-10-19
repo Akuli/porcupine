@@ -23,20 +23,20 @@ def run(command: common.Command, project_root: Path) -> None:
 
     venv = python_venv.get_venv(project_root)
     if venv is None:
-        command_string = command.command
+        command_string = command.format_command()
     else:
         if sys.platform == "win32":
             activate = utils.quote(str(venv / "Scripts" / "activate"))
             # https://stackoverflow.com/a/8055390
-            command_string = f"{activate} & {command.command}"
+            command_string = f"{activate} & {command.format_command()}"
         else:
             activate = utils.quote(str(venv / "bin" / "activate"))
-            command_string = f". {activate}\n{command.command}"
+            command_string = f". {activate}\n{command.format_command()}"
 
     if command.external_terminal:
-        terminal.run_command(command_string, Path(command.cwd))
+        terminal.run_command(command_string, command.format_cwd())
     else:
-        no_terminal.run_command(command_string, Path(command.cwd))
+        no_terminal.run_command(command_string, command.format_cwd())
 
 
 def ask_and_run_command(initial_key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
@@ -68,10 +68,8 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
         )
         return
 
-    substitutions = common.get_substitutions(tab.path, project_root)
     command = copy.copy(previous_commands[0])
-    command.command = common.format_command(command.command_format, substitutions)
-    command.cwd = str(common.format_cwd(command.cwd_format, substitutions))
+    command.substitutions = common.get_substitutions(tab.path, project_root)
     run(command, project_root)
 
 

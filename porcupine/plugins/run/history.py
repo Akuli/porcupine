@@ -34,7 +34,7 @@ class _HistoryItem:
 def _get_path() -> Path:
     # config dir is better than cache dir https://github.com/davatorium/rofi/issues/769
     # Change the number after v when you make incompatible changes
-    return Path(dirs.user_config_dir) / "run_history_v1.json"
+    return Path(dirs.user_config_dir) / "run_history_v2.json"
 
 
 def _load_items() -> list[_HistoryItem]:
@@ -91,15 +91,13 @@ def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[common.Comma
             command_format = example.command
 
         if command_format not in (item.command_format for item in commands):
-            substitutions = common.get_substitutions(tab.path, project_path)
             commands.append(
                 common.Command(
                     command_format=command_format,
-                    command=common.format_command(command_format, substitutions),
                     cwd_format=example.working_directory,
-                    cwd=str(common.format_cwd(example.working_directory, substitutions)),
                     external_terminal=example.external_terminal,
                     key_id=key_id,
+                    substitutions=common.get_substitutions(tab.path, project_path),
                 )
             )
 
