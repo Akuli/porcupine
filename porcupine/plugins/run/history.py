@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import dacite  # TODO: settings should do this automagically, but doesn't
 
-from porcupine import settings, tabs
+from porcupine import dirs, tabs
 
 from . import common
 
@@ -29,43 +30,50 @@ class _HistoryItem:
     use_count: int
 
 
+def _load_items() -> List[_HistoryItem]:
+    try:
+        with (Path(dirs.user_config_dir) / "run_history.json").open("r", encoding="utf-8") as file:
+            return [dacite.from_dict(_HistoryItem, raw_item) for raw_item in json.load(file)]
+    except FileNotFoundError:
+        return []
+
+
 def add(command: common.Command) -> None:
-    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any])
-    history = [dacite.from_dict(_HistoryItem, raw_item) for raw_item in raw_history]
+    history_items = _load_items()
 
     old_use_count = 0
-    for item in history:
+    for item in history_items:
         if (
             item.command.command_format == command.command_format
             and item.command.key_id == command.key_id
         ):
             old_use_count = item.use_count
-            history.remove(item)
+            history_items.remove(item)
             break
 
-    history.insert(
+    history_items.insert(
         0, _HistoryItem(command=command, last_use=time.time(), use_count=old_use_count + 1)
     )
 
-    settings.set_(
-        "run_history",
-        [
-            dataclasses.asdict(item)
-            for index, item in enumerate(history)
-            # Delete everything after first 50 commands if used only once
-            # Delete everything after first 100 commands if used once or twice
-            # etc
-            if item.use_count > index / 50
-        ],
-    )
+    with (Path(dirs.user_config_dir) / "run_history.json").open("w", encoding="utf-8") as file:
+        json.dump(
+            [
+                dataclasses.asdict(item)
+                for index, item in enumerate(history_items)
+                # Delete everything after first 50 commands if used only once
+                # Delete everything after first 100 commands if used once or twice
+                # etc
+                if item.use_count > index / 50
+            ],
+            file,
+            indent=4,
+        )
+        file.write("\n")
 
 
 def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[common.Command]:
     assert tab.path is not None
-
-    raw_history: list[dict[str, Any]] = settings.get("run_history", List[Any])
-    typed_history = [dacite.from_dict(_HistoryItem, raw_item).command for raw_item in raw_history]
-    commands = [command for command in typed_history if command.key_id == key_id]
+    commands = [item.command for item in _load_items() if item.command.key_id == key_id]
 
     for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
