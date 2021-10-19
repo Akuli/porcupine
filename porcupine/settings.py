@@ -466,7 +466,6 @@ def _create_dialog_content() -> ttk.Frame:
     dialog.title("Porcupine Settings")
     dialog.protocol("WM_DELETE_WINDOW", dialog.withdraw)
     dialog.bind("<Escape>", (lambda event: dialog.withdraw()), add=True)
-    dialog.geometry("600x350")
 
     def confirm_and_reset_all() -> None:
         if messagebox.askyesno(
