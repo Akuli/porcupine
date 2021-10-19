@@ -245,6 +245,21 @@ def test_no_previous_command_error(filetab, tmp_path, mocker):
     assert "then repeat it with F5" in str(mock.call_args)
 
 
+def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
+    python_mock = mocker.patch("porcupine.plugins.run.terminal.run_command")
+    html_mock = mocker.patch("porcupine.plugins.run.no_terminal.run_command")
+
+    filetab.save_as(tmp_path / "hello.py")
+    get_main_window().event_generate("<<Run:Repeat0>>")
+    filetab.save_as(tmp_path / "asdf.html")
+    get_main_window().event_generate("<<Run:Repeat0>>")
+
+    python_mock.assert_called_once_with("python3 hello.py", tmp_path)
+    html_mock.assert_called_once_with(
+        f"x-www-browser {utils.quote(str(tmp_path / 'asdf.html'))} >/dev/null 2>&1 &", tmp_path
+    )
+
+
 def test_cwd_entry(filetab, tmp_path):
     (tmp_path / "subdir").mkdir()
     filetab.save_as(tmp_path / "foo.txt")
