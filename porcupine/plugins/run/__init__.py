@@ -42,7 +42,7 @@ def ask_and_run_command(initial_key_id: int, junk_event: tkinter.Event[tkinter.M
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
 
-    ctx = common.Context.from_tab(tab, initial_key_id)
+    ctx = common.Context(tab, initial_key_id)
     ask_result = dialog.ask_command(ctx)
     if ask_result is not None:
         command, chosen_key_id = ask_result
@@ -55,7 +55,7 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
 
-    ctx = common.Context.from_tab(tab, key_id)
+    ctx = common.Context(tab, key_id)
     command = history.get_command_to_repeat(ctx)
     if command is None:
         ask = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")

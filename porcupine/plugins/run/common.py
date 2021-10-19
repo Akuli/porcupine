@@ -32,23 +32,15 @@ class ExampleCommand:
     external_terminal: bool = True
 
 
-@dataclasses.dataclass
 class Context:
-    file_path: Path
-    project_path: Path
-    key_id: int
-    filetype_name: str | None
-    example_commands: list[ExampleCommand]
-
-    @staticmethod
-    def from_tab(tab: tabs.FileTab, key_id: int) -> Context:
+    def __init__(self, tab: tabs.FileTab, key_id: int):
         assert tab.path is not None
-        return Context(
-            file_path=tab.path,
-            project_path=utils.find_project_root(tab.path),
-            key_id=key_id,
-            filetype_name=tab.settings.get("filetype_name", Optional[str]),
-            example_commands=tab.settings.get("example_commands", List[ExampleCommand]),
+        self.file_path = tab.path
+        self.project_path = utils.find_project_root(tab.path)
+        self.key_id = key_id
+        self.filetype_name: str | None = tab.settings.get("filetype_name", Optional[str])
+        self.example_commands: list[ExampleCommand] = tab.settings.get(
+            "example_commands", List[ExampleCommand]
         )
 
 
