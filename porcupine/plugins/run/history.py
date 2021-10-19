@@ -30,9 +30,14 @@ class _HistoryItem:
     use_count: int
 
 
-def _load_items() -> List[_HistoryItem]:
+# not global variable because tests monkeypatch dirs after importing
+def _get_path() -> Path:
+    Path(dirs.user_config_dir) / "run_history_v1.json"
+
+
+def _load_items() -> list[_HistoryItem]:
     try:
-        with (Path(dirs.user_config_dir) / "run_history.json").open("r", encoding="utf-8") as file:
+        with _get_path().open("r", encoding="utf-8") as file:
             return [dacite.from_dict(_HistoryItem, raw_item) for raw_item in json.load(file)]
     except FileNotFoundError:
         return []
@@ -55,7 +60,7 @@ def add(command: common.Command) -> None:
         0, _HistoryItem(command=command, last_use=time.time(), use_count=old_use_count + 1)
     )
 
-    with (Path(dirs.user_config_dir) / "run_history.json").open("w", encoding="utf-8") as file:
+    with _get_path().open("w", encoding="utf-8") as file:
         json.dump(
             [
                 dataclasses.asdict(item)
