@@ -53,15 +53,14 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
         tree.contextmenu.add_separator()
 
     # Commands can be different than what label shows, for compatibility with older gits
-    # TODO: use git_cwd below
     tree.contextmenu.add_command(
         label="git add",
-        command=(lambda: run(["git", "add", "--", str(path)], path.parent)),
+        command=(lambda: run(["git", "add", "--", str(path)], git_cwd)),
         state=("normal" if any(s != NOTHING_CHANGED for s in unstaged_states) else "disabled"),
     )
     tree.contextmenu.add_command(
         label="git restore --staged (undo add)",
-        command=(lambda: run(["git", "reset", "HEAD", "--", str(path)], path.parent)),
+        command=(lambda: run(["git", "reset", "HEAD", "--", str(path)], git_cwd)),
         state=(
             "normal"
             if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in staged_states)
@@ -70,7 +69,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     )
     tree.contextmenu.add_command(
         label="git restore (discard non-added changes)",
-        command=(lambda: run(["git", "checkout", "--", str(path)], path.parent)),
+        command=(lambda: run(["git", "checkout", "--", str(path)], git_cwd)),
         state=(
             "normal"
             if any(s not in {NOTHING_CHANGED, UNTRACKED} for s in unstaged_states)

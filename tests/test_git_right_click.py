@@ -132,3 +132,9 @@ def test_project_containing_different_statuses(tree, git_repo):
     assert tree.contextmenu.entrycget("git add", "state") == "normal"
     assert tree.contextmenu.entrycget("* (undo add)", "state") == "normal"
     assert tree.contextmenu.entrycget("* (discard non-added changes)", "state") == "normal"
+
+    tree.contextmenu.invoke("git add")
+    tree._populate_contextmenu()
+    assert tree.contextmenu.entrycget("git add", "state") == "disabled"
+    assert tree.contextmenu.entrycget("* (undo add)", "state") == "normal"
+    assert tree.contextmenu.entrycget("* (discard non-added changes)", "state") == "disabled"
