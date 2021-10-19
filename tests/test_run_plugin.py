@@ -7,7 +7,7 @@ from tkinter import ttk
 import pytest
 
 from porcupine import get_main_window, get_tab_manager, utils
-from porcupine.plugins.run import dialog, history, no_terminal, terminal
+from porcupine.plugins.run import common, dialog, history, no_terminal, terminal
 
 
 @pytest.fixture(autouse=True)
@@ -101,10 +101,15 @@ def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_
                 break
             widgets.extend(w.winfo_children())
 
-    suggestions = history.get(a, tmp_path, 0)
-    suggestions[0].external_terminal = False
-    mocker.patch("porcupine.plugins.run.history.get").return_value = suggestions
+    actual_repeater = history.get_command_to_repeat
+
+    def fake_repeater(*args, **kwargs):
+        result = actual_repeater(*args, **kwargs)
+        result.external_terminal = False
+        return result
+
     monkeypatch.setattr("tkinter.Toplevel.wait_window", fake_wait_window)
+    monkeypatch.setattr("porcupine.plugins.run.history.get_command_to_repeat", fake_repeater)
 
     tabmanager.select(a)
     get_main_window().event_generate("<<Run:AskAndRun0>>")
@@ -245,12 +250,29 @@ def test_no_previous_command_error(filetab, tmp_path, mocker):
     assert "then repeat it with F5" in str(mock.call_args)
 
 
+def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
+    python_mock = mocker.patch("porcupine.plugins.run.terminal.run_command")
+    html_mock = mocker.patch("porcupine.plugins.run.no_terminal.run_command")
+
+    filetab.save_as(tmp_path / "hello.py")
+    get_main_window().event_generate("<<Run:Repeat0>>")
+    filetab.save_as(tmp_path / "asdf.html")
+    get_main_window().event_generate("<<Run:Repeat0>>")
+
+    html_path = utils.quote(str(tmp_path / "asdf.html"))
+    if sys.platform == "win32":
+        python_mock.assert_called_once_with("py hello.py", tmp_path)
+        html_mock.assert_called_once_with(f"explorer {html_path}", tmp_path)
+    else:
+        opener = "open" if sys.platform == "darwin" else "x-www-browser"
+        python_mock.assert_called_once_with("python3 hello.py", tmp_path)
+        html_mock.assert_called_once_with(f"{opener} {html_path} >/dev/null 2>&1 &", tmp_path)
+
+
 def test_cwd_entry(filetab, tmp_path):
     (tmp_path / "subdir").mkdir()
     filetab.save_as(tmp_path / "foo.txt")
-    asker = dialog._CommandAsker(
-        file_path=(tmp_path / "foo.txt"), project_path=tmp_path, suggestions=[], initial_key_id=1
-    )
+    asker = dialog._CommandAsker(common.Context(filetab, 1))
     asker.command.format_var.set("echo lol")
 
     assert asker.cwd.format_var.get() == "{folder_path}"

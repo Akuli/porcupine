@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import sys
 import tkinter
-from pathlib import Path
 from tkinter import ttk
 from typing import Callable, TypeVar
 
-from porcupine import get_main_window, tabs, textutils, utils
+from porcupine import get_main_window, textutils, utils
 
 from . import common, history
 
@@ -58,15 +57,8 @@ class _FormattingEntryAndLabels:
 
 
 class _CommandAsker:
-    def __init__(
-        self,
-        file_path: Path,
-        project_path: Path,
-        suggestions: list[common.Command],
-        initial_key_id: int,
-    ):
+    def __init__(self, ctx: common.Context):
         self.window = tkinter.Toplevel()
-        self._suggestions = suggestions
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -80,7 +72,7 @@ class _CommandAsker:
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        self._substitutions = common.get_substitutions(file_path, project_path)
+        self._substitutions = ctx.get_substitutions()
         self.command = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
@@ -128,9 +120,11 @@ class _CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        self.repeat_bindings = [utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)]
-        self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id])
-        self.repeat_var.trace_add("write", self.update_run_button)
+        self._repeat_bindings = [
+            utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)
+        ]
+        self._repeat_var = tkinter.StringVar(value=self._repeat_bindings[ctx.key_id])
+        self._repeat_var.trace_add("write", self.update_run_button)
 
         repeat_frame = ttk.Frame(content_frame)
         repeat_frame.pack(fill="x", pady=10)
@@ -138,7 +132,7 @@ class _CommandAsker:
             repeat_frame, text="This command can be repeated by pressing the following key:"
         ).pack(side="left")
         ttk.Combobox(
-            repeat_frame, textvariable=self.repeat_var, values=self.repeat_bindings, width=3
+            repeat_frame, textvariable=self._repeat_var, values=self._repeat_bindings, width=3
         ).pack(side="left")
 
         button_frame = ttk.Frame(content_frame)
@@ -155,14 +149,16 @@ class _CommandAsker:
             entry.bind("<Return>", (lambda e: self.run_button.invoke()), add=True)
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
-        if self._suggestions:
-            self._select_command_autocompletion(self._suggestions[0], prefix="")
-
-            # Run _autocomplete when pressing a key without alt
-            self.command.entry.bind("<Key>", self._autocomplete, add=True)
-            self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
-        else:
+        previous_command = history.get_command_to_repeat(ctx)
+        if previous_command is None:
             self.cwd.format_var.set("{folder_path}")
+        else:
+            self._select_command_autocompletion(previous_command, prefix="")
+
+        # Autocomplete when pressing any key without alt
+        self._suggestions = history.get_commands_to_suggest(ctx)
+        self.command.entry.bind("<Key>", self._autocomplete, add=True)
+        self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
 
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
@@ -175,9 +171,11 @@ class _CommandAsker:
             command_format=self.command.format_var.get(),
             cwd_format=self.cwd.format_var.get(),
             external_terminal=self.terminal_var.get(),
-            key_id=self.repeat_bindings.index(self.repeat_var.get()),
             substitutions=self._substitutions,
         )
+
+    def get_key_id(self) -> int:
+        return self._repeat_bindings.index(self._repeat_var.get())
 
     def command_and_cwd_are_valid(self) -> bool:
         try:
@@ -213,7 +211,7 @@ class _CommandAsker:
         return None
 
     def update_run_button(self, *junk: object) -> None:
-        if self.command_and_cwd_are_valid() and self.repeat_var.get() in self.repeat_bindings:
+        if self.command_and_cwd_are_valid() and self._repeat_var.get() in self._repeat_bindings:
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
@@ -223,13 +221,8 @@ class _CommandAsker:
         self.window.destroy()
 
 
-def ask_command(
-    tab: tabs.FileTab, project_path: Path, initial_key_id: int
-) -> common.Command | None:
-    assert tab.path is not None
-    asker = _CommandAsker(
-        tab.path, project_path, history.get(tab, project_path, initial_key_id), initial_key_id
-    )
+def ask_command(ctx: common.Context) -> tuple[common.Command, int] | None:
+    asker = _CommandAsker(ctx)
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
@@ -239,5 +232,5 @@ def ask_command(
     asker.window.wait_window()
 
     if asker.run_clicked:
-        return asker.get_command()
+        return (asker.get_command(), asker.get_key_id())
     return None
