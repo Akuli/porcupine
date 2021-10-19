@@ -7,9 +7,9 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox
-from typing import Any, List
+from typing import List
 
-from porcupine import get_main_window, get_tab_manager, menubar, settings, tabs, utils
+from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 from porcupine.plugins import python_venv
 
 from . import common, dialog, history, no_terminal, terminal
