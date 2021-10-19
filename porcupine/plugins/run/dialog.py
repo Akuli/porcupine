@@ -185,7 +185,7 @@ class _CommandAsker:
             cwd = self.get_command().format_cwd()
         except (ValueError, KeyError, IndexError):
             return False
-        return bool(command.strip()) and cwd.is_dir()
+        return bool(command.strip()) and cwd.is_dir() and cwd.is_absolute()
 
     def _select_command_autocompletion(self, command: common.Command, prefix: str) -> None:
         assert command.command_format.startswith(prefix)
