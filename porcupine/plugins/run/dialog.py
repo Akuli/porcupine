@@ -123,9 +123,9 @@ class _CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        self.repeat_bindings = [utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)]
-        self.repeat_var = tkinter.StringVar(value=self.repeat_bindings[initial_key_id])
-        self.repeat_var.trace_add("write", self.update_run_button)
+        self._repeat_bindings = [utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)]
+        self._repeat_var = tkinter.StringVar(value=self._repeat_bindings[initial_key_id])
+        self._repeat_var.trace_add("write", self.update_run_button)
 
         repeat_frame = ttk.Frame(content_frame)
         repeat_frame.pack(fill="x", pady=10)
@@ -133,7 +133,7 @@ class _CommandAsker:
             repeat_frame, text="This command can be repeated by pressing the following key:"
         ).pack(side="left")
         ttk.Combobox(
-            repeat_frame, textvariable=self.repeat_var, values=self.repeat_bindings, width=3
+            repeat_frame, textvariable=self._repeat_var, values=self._repeat_bindings, width=3
         ).pack(side="left")
 
         button_frame = ttk.Frame(content_frame)
@@ -176,7 +176,7 @@ class _CommandAsker:
         )
 
     def get_key_id(self) -> int:
-        return self.repeat_bindings.index(self.repeat_var.get())
+        return self._repeat_bindings.index(self._repeat_var.get())
 
     def command_and_cwd_are_valid(self) -> bool:
         try:
@@ -212,7 +212,7 @@ class _CommandAsker:
         return None
 
     def update_run_button(self, *junk: object) -> None:
-        if self.command_and_cwd_are_valid() and self.repeat_var.get() in self.repeat_bindings:
+        if self.command_and_cwd_are_valid() and self._repeat_var.get() in self._repeat_bindings:
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
