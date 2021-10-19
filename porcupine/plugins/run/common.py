@@ -32,7 +32,6 @@ class ExampleCommand:
     external_terminal: bool = True
 
 
-@dataclasses.dataclass
 class Context:
     def __init__(self, tab: tabs.FileTab, key_id: int):
         assert tab.path is not None
