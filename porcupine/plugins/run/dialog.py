@@ -153,13 +153,13 @@ class _CommandAsker:
         previous_command = history.get_command_to_repeat(tab, project_path, initial_key_id)
         if previous_command is not None:
             self._select_command_autocompletion(previous_command, prefix="")
+        else:
+            self.cwd.format_var.set("{folder_path}")
 
         if self._suggestions:
             # Run _autocomplete when pressing a key without alt
             self.command.entry.bind("<Key>", self._autocomplete, add=True)
             self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
-        else:
-            self.cwd.format_var.set("{folder_path}")
 
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
