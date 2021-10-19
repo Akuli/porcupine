@@ -17,7 +17,9 @@ from . import common, dialog, history, no_terminal, terminal
 setup_before = ["filetypes"]
 
 
-def run(command: common.Command, project_root: Path) -> None:
+def run(tab: tabs.FileTab, command: common.Command, key_id: int, project_root: Path) -> None:
+    history.add(tab, command, key_id)
+
     venv = python_venv.get_venv(project_root)
     if venv is None:
         command_string = command.format_command()
@@ -46,8 +48,7 @@ def ask_and_run_command(initial_key_id: int, junk_event: tkinter.Event[tkinter.M
     ask_result = dialog.ask_command(tab, project_root, initial_key_id)
     if ask_result is not None:
         command, key_id = ask_result
-        history.add(tab, command, key_id)
-        run(command, project_root)
+        run(tab, command, key_id, project_root)
 
 
 def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
@@ -65,10 +66,8 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
             "No commands to repeat",
             f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
         )
-        return
-
-    history.add(tab, command, key_id)
-    run(command, project_root)
+    else:
+        run(tab, command, key_id, project_root)
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
