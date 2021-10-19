@@ -12,7 +12,6 @@ class Command:
     command_format: str
     cwd_format: str
     external_terminal: bool
-    key_id: int  # with default bindings: 0 = F5, 1 = F6, 2 = F7, 3 = F8
     substitutions: Dict[str, str]
 
     def format_cwd(self) -> Path:
@@ -22,6 +21,14 @@ class Command:
         return self.command_format.format(
             **{name: utils.quote(value) for name, value in self.substitutions.items()}
         )
+
+    def get_extension(self) -> str:
+        return get_extension(Path(self.substitutions["file_path"]))
+
+# Not same as path.suffix, because we want to distinguish files
+# that have no suffix (e.g. 'Makefile')
+def get_extension(path: Path) -> str:
+    return path.name.split(".")[-1]
 
 
 def get_substitutions(file_path: Path, project_path: Path) -> dict[str, str]:
