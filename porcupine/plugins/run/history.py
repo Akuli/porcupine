@@ -5,22 +5,13 @@ import dataclasses
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import dacite
 
-from porcupine import dirs, tabs
+from porcupine import dirs
 
 from . import common
-
-
-@dataclasses.dataclass
-class ExampleCommand:
-    command: str
-    windows_command: Optional[str] = None
-    macos_command: Optional[str] = None
-    working_directory: str = "{folder_path}"
-    external_terminal: bool = True
 
 
 @dataclasses.dataclass
@@ -46,15 +37,15 @@ def _load_json_file() -> list[_HistoryItem]:
         return []
 
 
-def add(tab: tabs.FileTab, command: common.Command, key_id: int) -> None:
+def add(ctx: common.Context, command: common.Command) -> None:
     history_items = _load_json_file()
 
     old_use_count = 0
     for item in history_items:
         if (
             item.command.command_format == command.command_format
-            and item.key_id == key_id
-            and item.filetype_name == tab.settings.get("filetype_name", Optional[str])
+            and item.key_id == ctx.key_id
+            and item.filetype_name == ctx.filetype_name
         ):
             old_use_count = item.use_count
             history_items.remove(item)
@@ -65,8 +56,8 @@ def add(tab: tabs.FileTab, command: common.Command, key_id: int) -> None:
         _HistoryItem(
             command=command,
             use_count=old_use_count + 1,
-            key_id=key_id,
-            filetype_name=tab.settings.get("filetype_name", Optional[str]),
+            key_id=ctx.key_id,
+            filetype_name=ctx.filetype_name,
         ),
     )
 
@@ -86,22 +77,16 @@ def add(tab: tabs.FileTab, command: common.Command, key_id: int) -> None:
         file.write("\n")
 
 
-def _get_commands(
-    tab: tabs.FileTab, project_path: Path, key_id: int, *, include_unmatching: bool = False
-) -> list[common.Command]:
-    assert tab.path is not None
-
+def _get_commands(ctx: common.Context, *, include_unmatching: bool = False) -> list[common.Command]:
     unmatching_commands = []
     commands = []
     for item in _load_json_file():
-        if item.key_id == key_id and item.filetype_name == tab.settings.get(
-            "filetype_name", Optional[str]
-        ):
+        if item.key_id == ctx.key_id and item.filetype_name == ctx.filetype_name:
             commands.append(item.command)
         else:
             unmatching_commands.append(item.command)
 
-    for example in tab.settings.get("example_commands", List[ExampleCommand]):
+    for example in ctx.example_commands:
         if sys.platform == "win32" and example.windows_command is not None:
             command_format = example.windows_command
         elif sys.platform == "darwin" and example.macos_command is not None:
@@ -115,7 +100,7 @@ def _get_commands(
                     command_format=command_format,
                     cwd_format=example.working_directory,
                     external_terminal=example.external_terminal,
-                    substitutions=common.get_substitutions(tab.path, project_path),
+                    substitutions=common.get_substitutions(ctx.file_path, ctx.project_path),
                 )
             )
 
@@ -124,20 +109,14 @@ def _get_commands(
     return commands
 
 
-def get_command_to_repeat(
-    tab: tabs.FileTab, project_path: Path, key_id: int
-) -> common.Command | None:
-    assert tab.path is not None
-
-    alternatives = _get_commands(tab, project_path, key_id)
+def get_command_to_repeat(ctx: common.Context) -> common.Command | None:
+    alternatives = _get_commands(ctx)
     if alternatives:
         command = copy.copy(alternatives[0])
-        command.substitutions = common.get_substitutions(tab.path, project_path)
+        command.substitutions = common.get_substitutions(ctx.file_path, ctx.project_path)
         return command
     return None
 
 
-def get_commands_to_suggest(
-    tab: tabs.FileTab, project_path: Path, key_id: int
-) -> list[common.Command]:
-    return _get_commands(tab, project_path, key_id, include_unmatching=True)
+def get_commands_to_suggest(ctx: common.Context) -> list[common.Command]:
+    return _get_commands(ctx, include_unmatching=True)

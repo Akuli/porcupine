@@ -4,7 +4,6 @@ from __future__ import annotations
 import sys
 import tkinter
 from functools import partial
-from pathlib import Path
 from tkinter import messagebox
 from typing import List
 
@@ -17,10 +16,10 @@ from . import common, dialog, history, no_terminal, terminal
 setup_before = ["filetypes"]
 
 
-def run(tab: tabs.FileTab, command: common.Command, key_id: int, project_root: Path) -> None:
-    history.add(tab, command, key_id)
+def run(ctx: common.Context, command: common.Command) -> None:
+    history.add(ctx, command)
 
-    venv = python_venv.get_venv(project_root)
+    venv = python_venv.get_venv(ctx.project_path)
     if venv is None:
         command_string = command.format_command()
     else:
@@ -42,23 +41,22 @@ def ask_and_run_command(initial_key_id: int, junk_event: tkinter.Event[tkinter.M
     tab = get_tab_manager().select()
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
-    assert tab.path is not None
 
-    project_root = utils.find_project_root(tab.path)
-    ask_result = dialog.ask_command(tab, project_root, initial_key_id)
+    ctx = common.Context.from_tab(tab, initial_key_id)
+    ask_result = dialog.ask_command(ctx)
     if ask_result is not None:
-        command, key_id = ask_result
-        run(tab, command, key_id, project_root)
+        command, chosen_key_id = ask_result
+        ctx.key_id = chosen_key_id
+        run(ctx, command)
 
 
 def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None:
     tab = get_tab_manager().select()
     if not isinstance(tab, tabs.FileTab) or not tab.save():
         return
-    assert tab.path is not None
 
-    project_root = utils.find_project_root(tab.path)
-    command = history.get_command_to_repeat(tab, project_root, key_id)
+    ctx = common.Context.from_tab(tab, key_id)
+    command = history.get_command_to_repeat(ctx)
     if command is None:
         ask = utils.get_binding(f"<<Run:AskAndRun{key_id}>>")
         repeat = utils.get_binding(f"<<Run:Repeat{key_id}>>")
@@ -67,11 +65,11 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
             f"Please press {ask} to choose a command to run. You can then repeat it with {repeat}.",
         )
     else:
-        run(tab, command, key_id, project_root)
+        run(ctx, command)
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("example_commands", [], type_=List[history.ExampleCommand])
+    tab.settings.add_option("example_commands", [], type_=List[common.ExampleCommand])
 
 
 def setup() -> None:

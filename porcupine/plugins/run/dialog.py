@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import sys
 import tkinter
-from pathlib import Path
 from tkinter import ttk
 from typing import Callable, TypeVar
 
-from porcupine import get_main_window, tabs, textutils, utils
+from porcupine import get_main_window, textutils, utils
 
 from . import common, history
 
@@ -58,10 +57,9 @@ class _FormattingEntryAndLabels:
 
 
 class _CommandAsker:
-    def __init__(self, tab: tabs.FileTab, project_path: Path, initial_key_id: int):
-        assert tab.path is not None
+    def __init__(self, ctx: common.Context):
         self.window = tkinter.Toplevel()
-        self._suggestions = history.get_commands_to_suggest(tab, project_path, initial_key_id)
+        self._suggestions = history.get_commands_to_suggest(ctx)
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -75,7 +73,7 @@ class _CommandAsker:
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        self._substitutions = common.get_substitutions(tab.path, project_path)
+        self._substitutions = common.get_substitutions(ctx.file_path, ctx.project_path)
         self.command = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
@@ -126,7 +124,7 @@ class _CommandAsker:
         self._repeat_bindings = [
             utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)
         ]
-        self._repeat_var = tkinter.StringVar(value=self._repeat_bindings[initial_key_id])
+        self._repeat_var = tkinter.StringVar(value=self._repeat_bindings[ctx.key_id])
         self._repeat_var.trace_add("write", self.update_run_button)
 
         repeat_frame = ttk.Frame(content_frame)
@@ -152,7 +150,7 @@ class _CommandAsker:
             entry.bind("<Return>", (lambda e: self.run_button.invoke()), add=True)
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
-        previous_command = history.get_command_to_repeat(tab, project_path, initial_key_id)
+        previous_command = history.get_command_to_repeat(ctx)
         if previous_command is not None:
             self._select_command_autocompletion(previous_command, prefix="")
         else:
@@ -224,11 +222,8 @@ class _CommandAsker:
         self.window.destroy()
 
 
-def ask_command(
-    tab: tabs.FileTab, project_path: Path, initial_key_id: int
-) -> tuple[common.Command, int] | None:
-    assert tab.path is not None
-    asker = _CommandAsker(tab, project_path, initial_key_id)
+def ask_command(ctx: common.Context) -> tuple[common.Command, int] | None:
+    asker = _CommandAsker(ctx)
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
 
