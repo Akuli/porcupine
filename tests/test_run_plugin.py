@@ -254,18 +254,17 @@ def test_cwd_entry(filetab, tmp_path):
     asker.command.format_var.set("echo lol")
 
     assert asker.cwd.format_var.get() == "{folder_path}"
-    assert asker.cwd.value == tmp_path
     assert str(asker.run_button["state"]) == "normal"
+    assert asker.get_command().format_cwd() == tmp_path
 
     for path in ["", ".", "..", "../..", tmp_path.name, "subdir", str(tmp_path / "foo.txt")]:
         asker.cwd.format_var.set(path)
-        assert asker.cwd.value is None
         assert str(asker.run_button["state"]) == "disabled"
 
     for path in [tmp_path.parent, tmp_path, tmp_path / "subdir"]:
         asker.cwd.format_var.set(str(path))
-        assert asker.cwd.value == path
         assert str(asker.run_button["state"]) == "normal"
+        asker.get_command().format_cwd() == path
 
     asker.window.destroy()
 

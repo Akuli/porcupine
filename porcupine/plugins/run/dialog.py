@@ -4,7 +4,7 @@ import sys
 import tkinter
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable, Generic, TypeVar
+from typing import Callable, TypeVar
 
 from porcupine import get_main_window, tabs, textutils, utils
 
@@ -13,20 +13,16 @@ from . import common, history
 T = TypeVar("T")
 
 
-class _FormattingEntryAndLabels(Generic[T]):
+class _FormattingEntryAndLabels:
     def __init__(
         self,
         entry_area: ttk.Frame,
         text: str,
-        substitutions: dict[str, str],
-        formatter: Callable[[str, dict[str, str]], T],
-        value_validator: Callable[[T], bool],
+        get_substituted_value: Callable[[], str],
         validated_callback: Callable[[], None],
     ):
-        self._substitutions = substitutions
-        self._value_validator = value_validator
         self._validated_callback = validated_callback
-        self._formatter = formatter
+        self._get_substituted_value = get_substituted_value
 
         grid_y = entry_area.grid_size()[1]
         ttk.Label(entry_area, text=text).grid(row=grid_y, column=0, sticky="w")
@@ -42,32 +38,23 @@ class _FormattingEntryAndLabels(Generic[T]):
         )
         self._command_display.grid(row=grid_y, column=1, sticky="we")
 
-        self.format_var.trace_add("write", self._validate)
-        self.value: T | None = None
-        self._validate()
+        self.format_var.trace_add("write", self.validate)
 
-    def _validate(self, *junk_from_var_trace: object) -> None:
+    def validate(self, *junk_from_var_trace: object) -> None:
         try:
-            value = self._formatter(self.format_var.get(), self._substitutions)
+            value = self._get_substituted_value()
         except (ValueError, KeyError, IndexError):
-            self.value = None
             self._command_display.config(state="normal", font="TkDefaultFont")
             self._command_display.delete("1.0", "end")
             self._command_display.insert("1.0", "Substitution error")
             self._command_display.config(state="disabled")
         else:
-            if self._value_validator(value):
-                self.value = value
-            else:
-                self.value = None
             self._command_display.config(state="normal", font="TkFixedFont")
             self._command_display.delete("1.0", "end")
-            self._command_display.insert("1.0", str(value))
+            self._command_display.insert("1.0", value)
             self._command_display.config(state="disabled")
 
-        # _validated_callback might not work if called from __init__
-        if junk_from_var_trace:
-            self._validated_callback()
+        self._validated_callback()
 
 
 class _CommandAsker:
@@ -93,29 +80,25 @@ class _CommandAsker:
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        substitutions = common.get_substitutions(file_path, project_path)
-        self.command: _FormattingEntryAndLabels[str] = _FormattingEntryAndLabels(
+        self._substitutions = common.get_substitutions(file_path, project_path)
+        self.command = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
-            substitutions=substitutions,
-            formatter=common.format_command,
-            value_validator=(lambda command: bool(command.strip())),
+            get_substituted_value=(lambda: self.get_command().format_command()),
             validated_callback=self.update_run_button,
         )
-        self.cwd: _FormattingEntryAndLabels[Path] = _FormattingEntryAndLabels(
+        self.cwd = _FormattingEntryAndLabels(
             entry_area,
             text="In this directory:",
-            substitutions=substitutions,
-            formatter=common.format_cwd,
-            value_validator=(lambda path: path.is_absolute() and path.is_dir()),
+            get_substituted_value=(lambda: str(self.get_command().format_cwd())),
             validated_callback=self.update_run_button,
         )
 
         ttk.Label(content_frame, text="Substitutions:").pack(anchor="w")
 
-        sub_text = "\n".join("{%s} = %s" % pair for pair in substitutions.items())
+        sub_text = "\n".join("{%s} = %s" % pair for pair in self._substitutions.items())
         sub_textbox = textutils.create_passive_text_widget(
-            content_frame, height=len(substitutions), width=1, wrap="none"
+            content_frame, height=len(self._substitutions), width=1, wrap="none"
         )
         sub_textbox.pack(fill="x", padx=(15, 0), pady=(0, 20))
         sub_textbox.config(state="normal")
@@ -184,6 +167,26 @@ class _CommandAsker:
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
 
+        self.command.validate()
+        self.cwd.validate()
+
+    def get_command(self) -> common.Command:
+        return common.Command(
+            command_format=self.command.format_var.get(),
+            cwd_format=self.cwd.format_var.get(),
+            external_terminal=self.terminal_var.get(),
+            key_id=self.repeat_bindings.index(self.repeat_var.get()),
+            substitutions=self._substitutions,
+        )
+
+    def command_and_cwd_are_valid(self) -> bool:
+        try:
+            command = self.get_command().format_command()
+            cwd = self.get_command().format_cwd()
+        except (ValueError, KeyError, IndexError):
+            return False
+        return bool(command.strip()) and cwd.is_dir() and cwd.is_absolute()
+
     def _select_command_autocompletion(self, command: common.Command, prefix: str) -> None:
         assert command.command_format.startswith(prefix)
         self.command.format_var.set(command.command_format)
@@ -210,11 +213,7 @@ class _CommandAsker:
         return None
 
     def update_run_button(self, *junk: object) -> None:
-        if (
-            self.command.value is not None
-            and self.cwd.value is not None
-            and self.repeat_var.get() in self.repeat_bindings
-        ):
+        if self.command_and_cwd_are_valid() and self.repeat_var.get() in self.repeat_bindings:
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
@@ -240,14 +239,5 @@ def ask_command(
     asker.window.wait_window()
 
     if asker.run_clicked:
-        assert asker.command.value is not None
-        assert asker.cwd.value is not None
-        return common.Command(
-            command_format=asker.command.format_var.get(),
-            command=asker.command.value,
-            cwd_format=asker.cwd.format_var.get(),
-            cwd=str(asker.cwd.value),
-            external_terminal=asker.terminal_var.get(),
-            key_id=asker.repeat_bindings.index(asker.repeat_var.get()),
-        )
+        return asker.get_command()
     return None
