@@ -100,7 +100,7 @@ def _get_commands(ctx: common.Context, *, include_unmatching: bool = False) -> l
                     command_format=command_format,
                     cwd_format=example.working_directory,
                     external_terminal=example.external_terminal,
-                    substitutions=common.get_substitutions(ctx.file_path, ctx.project_path),
+                    substitutions=ctx.get_substitutions(),
                 )
             )
 
@@ -113,7 +113,7 @@ def get_command_to_repeat(ctx: common.Context) -> common.Command | None:
     alternatives = _get_commands(ctx)
     if alternatives:
         command = copy.copy(alternatives[0])
-        command.substitutions = common.get_substitutions(ctx.file_path, ctx.project_path)
+        command.substitutions = ctx.get_substitutions()
         return command
     return None
 

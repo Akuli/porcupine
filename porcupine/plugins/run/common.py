@@ -44,14 +44,13 @@ class Context:
             "example_commands", List[ExampleCommand]
         )
 
-
-def get_substitutions(file_path: Path, project_path: Path) -> dict[str, str]:
-    return {
-        "file_stem": file_path.stem,
-        "file_name": file_path.name,
-        "file_path": str(file_path),
-        "folder_name": file_path.parent.name,
-        "folder_path": str(file_path.parent),
-        "project_name": project_path.name,
-        "project_path": str(project_path),
-    }
+    def get_substitutions(self) -> dict[str, str]:
+        return {
+            "file_stem": self.file_path.stem,
+            "file_name": self.file_path.name,
+            "file_path": str(self.file_path),
+            "folder_name": self.file_path.parent.name,
+            "folder_path": str(self.file_path.parent),
+            "project_name": self.project_path.name,
+            "project_path": str(self.project_path),
+        }

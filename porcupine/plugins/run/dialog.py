@@ -73,7 +73,7 @@ class _CommandAsker:
         entry_area.pack(fill="x")
         entry_area.grid_columnconfigure(1, weight=1)
 
-        self._substitutions = common.get_substitutions(ctx.file_path, ctx.project_path)
+        self._substitutions = ctx.get_substitutions()
         self.command = _FormattingEntryAndLabels(
             entry_area,
             text="Run this command:",
