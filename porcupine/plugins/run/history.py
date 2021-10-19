@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
-import dacite  # TODO: settings should do this automagically, but doesn't
+import dacite
 
 from porcupine import dirs, tabs
 
