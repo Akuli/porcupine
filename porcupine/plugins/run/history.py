@@ -19,7 +19,7 @@ class _HistoryItem:
     command: common.Command
     use_count: int
     filetype_name: Optional[str]
-    key_id: int  # with default bindings: 0 = F5, 1 = F6, 2 = F7, 3 = F8
+    key_id: int
 
 
 # not global variable because tests monkeypatch dirs after importing
