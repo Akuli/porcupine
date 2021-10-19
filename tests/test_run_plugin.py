@@ -259,17 +259,14 @@ def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
     filetab.save_as(tmp_path / "asdf.html")
     get_main_window().event_generate("<<Run:Repeat0>>")
 
+    html_path = utils.quote(str(tmp_path / "asdf.html"))
     if sys.platform == "win32":
         python_mock.assert_called_once_with("py hello.py", tmp_path)
-        html_mock.assert_called_once_with(
-            f"explorer {utils.quote(str(tmp_path / 'asdf.html'))}", tmp_path
-        )
+        html_mock.assert_called_once_with(f"explorer {html_path}", tmp_path)
     else:
         opener = "open" if sys.platform == "darwin" else "x-www-browser"
         python_mock.assert_called_once_with("python3 hello.py", tmp_path)
-        html_mock.assert_called_once_with(
-            f"{opener} {utils.quote(str(tmp_path / 'asdf.html'))} >/dev/null 2>&1 &", tmp_path
-        )
+        html_mock.assert_called_once_with(f"{opener} {html_path} >/dev/null 2>&1 &", tmp_path)
 
 
 def test_cwd_entry(filetab, tmp_path):
