@@ -123,7 +123,9 @@ class _CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
-        self._repeat_bindings = [utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)]
+        self._repeat_bindings = [
+            utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)
+        ]
         self._repeat_var = tkinter.StringVar(value=self._repeat_bindings[initial_key_id])
         self._repeat_var.trace_add("write", self.update_run_button)
 
