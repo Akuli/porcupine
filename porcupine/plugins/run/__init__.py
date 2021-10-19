@@ -1,4 +1,7 @@
-"""Compile, run and lint files."""
+"""Run commands in a separate terminal or with output going into the Porcupine window.
+
+See the "Run" menu in the menubar.
+"""
 from __future__ import annotations
 
 import copy
