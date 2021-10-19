@@ -17,6 +17,7 @@ from . import common
 class ExampleCommand:
     command: str
     windows_command: Optional[str] = None
+    macos_command: Optional[str] = None
     working_directory: str = "{folder_path}"
     external_terminal: bool = True
 
@@ -69,6 +70,8 @@ def get(tab: tabs.FileTab, project_path: Path, key_id: int) -> list[common.Comma
     for example in tab.settings.get("example_commands", List[ExampleCommand]):
         if sys.platform == "win32" and example.windows_command is not None:
             command_format = example.windows_command
+        elif sys.platform == "darwin" and example.macos_command is not None:
+            command_format = example.macos_command
         else:
             command_format = example.command
 

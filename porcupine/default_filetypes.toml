@@ -101,6 +101,10 @@
 #                If this is specified and porcupine is running on Windows, it is
 #                used instead of "command".
 #
+#            macos_command (default: same as command)
+#                If this is specified and porcupine is running on MacOS, it is
+#                used instead of "command".
+#
 #            working_directory (default: "{folder_path}")
 #                Content of the "In this directory" text entry.
 #
@@ -333,6 +337,12 @@ pygments_lexer = "pygments.lexers.HtmlLexer"
 tabs2spaces = true
 indent_size = 2
 autoindent_regexes = {dedent = '</.*>', indent = '<[^/!][^<>]*[^/]>|<[A-Za-z]>', dedent_prev_line = true}
+
+[[HTML.example_commands]]
+command = "x-www-browser {file_path} >/dev/null 2>&1 &"
+macos_command = "open {file_path} >/dev/null 2>&1 &"
+windows_command = "explorer {file_path}"
+external_terminal = false
 
 [TeX]
 filename_patterns = ["*.tex"]
