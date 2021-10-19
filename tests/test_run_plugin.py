@@ -7,14 +7,14 @@ from tkinter import ttk
 
 import pytest
 
-from porcupine import dirs, get_main_window, get_tab_manager, utils
+from porcupine import get_main_window, get_tab_manager, utils
 from porcupine.plugins.run import dialog, history, no_terminal, terminal
 
 
 @pytest.fixture(autouse=True)
 def isolated_history():
     # We don't overwrite the user's file because porcupine.dirs is monkeypatched
-    path = Path(dirs.user_config_dir) / "run_history.json"
+    path = history._get_path()
     assert not path.exists()
     yield
     try:
