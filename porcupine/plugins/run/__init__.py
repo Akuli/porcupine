@@ -7,9 +7,9 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox
-from typing import Any, List
+from typing import List
 
-from porcupine import get_main_window, get_tab_manager, menubar, settings, tabs, utils
+from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 from porcupine.plugins import python_venv
 
 from . import common, dialog, history, no_terminal, terminal
@@ -81,7 +81,6 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
-    settings.add_option("run_history", [], type_=List[Any])
 
     menubar.add_filetab_command(
         "Run/Run command",

@@ -3,19 +3,23 @@ import shutil
 import sys
 import time
 from tkinter import ttk
-from typing import Any, List
 
 import pytest
 
 from porcupine import get_main_window, get_tab_manager, utils
-from porcupine.plugins.run import dialog, history, no_terminal, settings, terminal
+from porcupine.plugins.run import dialog, history, no_terminal, terminal
 
 
 @pytest.fixture(autouse=True)
 def isolated_history():
-    assert not settings.get("run_history", List[Any])
+    # We don't overwrite the user's file because porcupine.dirs is monkeypatched
+    path = history._get_path()
+    assert not path.exists()
     yield
-    settings.set_("run_history", [])
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
 
 
 @pytest.fixture
