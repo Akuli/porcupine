@@ -155,11 +155,10 @@ class _CommandAsker:
         else:
             self._select_command_autocompletion(previous_command, prefix="")
 
+        # Autocomplete when pressing any key without alt
         self._suggestions = history.get_commands_to_suggest(ctx)
-        if self._suggestions:
-            # Run _autocomplete when pressing a key without alt
-            self.command.entry.bind("<Key>", self._autocomplete, add=True)
-            self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
+        self.command.entry.bind("<Key>", self._autocomplete, add=True)
+        self.command.entry.bind("<Alt-Key>", (lambda e: None), add=True)
 
         self.command.entry.selection_range(0, "end")
         self.command.entry.focus_set()
