@@ -7,7 +7,7 @@ from tkinter import ttk
 import pytest
 
 from porcupine import get_main_window, get_tab_manager, utils
-from porcupine.plugins.run import dialog, history, no_terminal, terminal
+from porcupine.plugins.run import common, dialog, history, no_terminal, terminal
 
 
 @pytest.fixture(autouse=True)
@@ -275,7 +275,7 @@ def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
 def test_cwd_entry(filetab, tmp_path):
     (tmp_path / "subdir").mkdir()
     filetab.save_as(tmp_path / "foo.txt")
-    asker = dialog._CommandAsker(tab=filetab, project_path=tmp_path, initial_key_id=1)
+    asker = dialog._CommandAsker(ctx=common.Context.from_tab(filetab, 1))
     asker.command.format_var.set("echo lol")
 
     assert asker.cwd.format_var.get() == "{folder_path}"
