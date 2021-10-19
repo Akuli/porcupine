@@ -150,10 +150,10 @@ class _CommandAsker:
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
         previous_command = history.get_command_to_repeat(ctx)
-        if previous_command is not None:
-            self._select_command_autocompletion(previous_command, prefix="")
-        else:
+        if previous_command is None:
             self.cwd.format_var.set("{folder_path}")
+        else:
+            self._select_command_autocompletion(previous_command, prefix="")
 
         self._suggestions = history.get_commands_to_suggest(ctx)
         if self._suggestions:
