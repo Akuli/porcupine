@@ -42,18 +42,20 @@ def get(name: str) -> tkinter.PhotoImage:
     called multiple times with the same name, the same image object is
     returned every time.
     """
-    if name in _images_that_can_be_dark_or_light:
-        # I don't like using ttk.Style, but it'd be complicated without it
-        is_light = utils.is_bright(Style().lookup("TLabel.label", "background"))
-        name = f"{name}_{'dark' if is_light else 'light'}"
+    real_name = name
 
     if name in _image_cache:
         return _image_cache[name]
 
-    paths = [path for path in images_dir.iterdir() if path.stem == name]
+    if name in _images_that_can_be_dark_or_light:
+        # I don't like using ttk.Style, but it'd be complicated without it
+        is_light = utils.is_bright(Style().lookup("TLabel.label", "background"))
+        real_name = f"{name}_{'dark' if is_light else 'light'}"
+
+    paths = [path for path in images_dir.iterdir() if path.stem == real_name]
     if not paths:
-        raise FileNotFoundError(f"no image file named {name!r}")
-    assert len(paths) == 1, f"there are multiple {name!r} files"
+        raise FileNotFoundError(f"no image file named {real_name!r}")
+    assert len(paths) == 1, f"there are multiple {real_name!r} files"
 
     image = tkinter.PhotoImage(file=paths[0])
     _image_cache[name] = image
