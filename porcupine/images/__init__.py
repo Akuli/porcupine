@@ -44,7 +44,7 @@ def get(name: str) -> tkinter.PhotoImage:
     """
     if name in _images_that_can_be_dark_or_light:
         # I don't like using ttk.Style, but it'd be complicated without it
-        is_light = utils.is_bright(Style().lookup(".", "background"))
+        is_light = utils.is_bright(Style().lookup("TLabel.label", "background"))
         name = f"{name}_{'dark' if is_light else 'light'}"
 
     if name in _image_cache:
