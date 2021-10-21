@@ -4,6 +4,9 @@ from __future__ import annotations
 import atexit
 import tkinter
 from pathlib import Path
+from tkinter.ttk import Style
+
+from porcupine import utils
 
 # __path__[0] is the directory where this __init__.py is
 __path__: list[str]
@@ -27,16 +30,23 @@ images_dir = Path(__path__[0]).absolute()
 _image_cache: dict[str, tkinter.PhotoImage] = {}
 atexit.register(_image_cache.clear)
 
+# these icons can be found in both dark and light versions, so you can see them with any ttk theme
+_images_that_can_be_dark_or_light = {"closebutton"}
+
 
 def get(name: str) -> tkinter.PhotoImage:
-    """Load a ``tkinter.PhotoImage`` from an image file that comes with Porcup\
-ine.
+    """Load a ``tkinter.PhotoImage`` from an image file that comes with Porcupine.
 
     The name should be the name of a file in :source:`porcupine/images`
     without the extension, e.g. ``'triangle'``. If this function is
     called multiple times with the same name, the same image object is
     returned every time.
     """
+    if name in _images_that_can_be_dark_or_light:
+        # I don't like using ttk.Style, but it'd be complicated without it
+        is_light = utils.is_bright(Style().lookup(".", "background"))
+        name = f"{name}_{'dark' if is_light else 'light'}"
+
     if name in _image_cache:
         return _image_cache[name]
 
