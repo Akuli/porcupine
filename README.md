@@ -182,7 +182,7 @@ I have tried to make contributing easy:
 
 You can talk with me on GitHub issues,
 or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
-I am on ##learnpython at about 5PM to 9PM UTC.
+I am on ##learnpython at about 6PM to 10PM UTC.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
 Then install Python 3.7 or newer and [git](https://git-scm.com/), and run these commands:
