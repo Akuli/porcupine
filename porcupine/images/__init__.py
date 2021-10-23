@@ -4,6 +4,9 @@ from __future__ import annotations
 import atexit
 import tkinter
 from pathlib import Path
+from tkinter.ttk import Style
+
+from porcupine import utils
 
 # __path__[0] is the directory where this __init__.py is
 __path__: list[str]
@@ -27,10 +30,29 @@ images_dir = Path(__path__[0]).absolute()
 _image_cache: dict[str, tkinter.PhotoImage] = {}
 atexit.register(_image_cache.clear)
 
+# these icons can be found in both dark and light versions, so you can see them with any ttk theme
+_images_that_can_be_dark_or_light = {"closebutton"}
+
+
+def _get_image_file(name: str) -> Path:
+    if name in _images_that_can_be_dark_or_light:
+        if utils.is_bright(Style().lookup("TLabel.label", "background")):
+            name += "_dark"
+        else:
+            name += "_light"
+
+    [path] = [path for path in images_dir.iterdir() if path.stem == name]
+    return path
+
+
+def _update_dark_or_light_images(junk: object) -> None:
+    for name in _images_that_can_be_dark_or_light:
+        if name in _image_cache:
+            _image_cache[name].config(file=_get_image_file(name))
+
 
 def get(name: str) -> tkinter.PhotoImage:
-    """Load a ``tkinter.PhotoImage`` from an image file that comes with Porcup\
-ine.
+    """Load a ``tkinter.PhotoImage`` from an image file that comes with Porcupine.
 
     The name should be the name of a file in :source:`porcupine/images`
     without the extension, e.g. ``'triangle'``. If this function is
@@ -40,11 +62,6 @@ ine.
     if name in _image_cache:
         return _image_cache[name]
 
-    paths = [path for path in images_dir.iterdir() if path.stem == name]
-    if not paths:
-        raise FileNotFoundError(f"no image file named {name!r}")
-    assert len(paths) == 1, f"there are multiple {name!r} files"
-
-    image = tkinter.PhotoImage(file=paths[0])
+    image = tkinter.PhotoImage(file=_get_image_file(name))
     _image_cache[name] = image
     return image

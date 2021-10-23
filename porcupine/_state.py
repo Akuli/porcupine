@@ -8,7 +8,7 @@ import tkinter
 import types
 from typing import Any, Type
 
-from porcupine import tabs, utils
+from porcupine import images, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -60,6 +60,8 @@ def init(args: Any) -> None:
 
     tab_manager = tabs.TabManager(vertical_pw)
     vertical_pw.add(tab_manager, stretch="always")
+
+    tab_manager.bind("<<ThemeChanged>>", images._update_dark_or_light_images, add=True)
 
     _global_state = _State(
         root=root,
