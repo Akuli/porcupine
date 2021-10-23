@@ -34,7 +34,7 @@ atexit.register(_image_cache.clear)
 _images_that_can_be_dark_or_light = {"closebutton"}
 
 
-def _get_image_file(name: str):
+def _get_image_file(name: str) -> Path:
     if name in _images_that_can_be_dark_or_light:
         if utils.is_bright(Style().lookup("TLabel.label", "background")):
             name += "_dark"
@@ -45,7 +45,7 @@ def _get_image_file(name: str):
     return path
 
 
-def _config_images(*junk):
+def _config_images(*junk) -> None:
     for name in _images_that_can_be_dark_or_light:
         if name in _image_cache:
             _image_cache[name].config(file=_get_image_file(name))
