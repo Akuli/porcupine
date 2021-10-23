@@ -8,7 +8,7 @@ import tkinter
 import types
 from typing import Any, Type
 
-from porcupine import tabs, utils
+from porcupine import tabs, utils, images
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ def init(args: Any) -> None:
     log.debug("Tcl/Tk version: " + root.tk.eval("info patchlevel"))
 
     root.protocol("WM_DELETE_WINDOW", quit)
+    root.bind("<<ThemeChanged>>", images._config_images)
 
     # Don't set up custom error handler while testing https://stackoverflow.com/a/58866220
     if "PYTEST_CURRENT_TEST" not in os.environ:
