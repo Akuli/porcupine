@@ -34,26 +34,21 @@ atexit.register(_image_cache.clear)
 _images_that_can_be_dark_or_light = {"closebutton"}
 
 
-def _generate_themed_name(name: str):
-    # I don't like using ttk.Style, but it'd be complicated without it
-    is_light = utils.is_bright(Style().lookup("TLabel.label", "background"))
-    return f"{name}_{'dark' if is_light else 'light'}"
-
-
 def _get_image_file(name: str):
-    paths = [path for path in images_dir.iterdir() if path.stem == name]
-
-    if not paths:
-        raise FileNotFoundError(f"no image file named {name!r}")
-    assert len(paths) == 1, f"there are multiple {name!r} files"
-
-    return paths[0]
+    if name in _images_that_can_be_dark_or_light:
+        if utils.is_bright(Style().lookup("TLabel.label", "background")):
+            name += "_dark"
+        else:
+            name += "_light"
+        
+    [path] = [path for path in images_dir.iterdir() if path.stem == name]
+    return path
 
 
 def _config_images(*junk):
     for name in _images_that_can_be_dark_or_light:
         if name in _image_cache:
-            _image_cache[name].config(file=_get_image_file(_generate_themed_name(name)))
+            _image_cache[name].config(file=_get_image_file(name))
 
 
 def get(name: str) -> tkinter.PhotoImage:
@@ -67,11 +62,6 @@ def get(name: str) -> tkinter.PhotoImage:
     if name in _image_cache:
         return _image_cache[name]
 
-    real_name = name
-
-    if name in _images_that_can_be_dark_or_light:
-        real_name = _generate_themed_name(name)
-
-    image = tkinter.PhotoImage(file=_get_image_file(real_name))
+    image = tkinter.PhotoImage(file=_get_image_file(name))
     _image_cache[name] = image
     return image
