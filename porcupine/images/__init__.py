@@ -40,7 +40,7 @@ def _get_image_file(name: str):
             name += "_dark"
         else:
             name += "_light"
-        
+
     [path] = [path for path in images_dir.iterdir() if path.stem == name]
     return path
 
