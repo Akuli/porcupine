@@ -8,7 +8,7 @@ import tkinter
 import types
 from typing import Any, Type
 
-from porcupine import tabs, utils, images
+from porcupine import images, tabs, utils
 
 log = logging.getLogger(__name__)
 
