@@ -47,7 +47,6 @@ def init(args: Any) -> None:
     log.debug("Tcl/Tk version: " + root.tk.eval("info patchlevel"))
 
     root.protocol("WM_DELETE_WINDOW", quit)
-    root.bind("<<ThemeChanged>>", images._config_images)
 
     # Don't set up custom error handler while testing https://stackoverflow.com/a/58866220
     if "PYTEST_CURRENT_TEST" not in os.environ:
@@ -61,6 +60,8 @@ def init(args: Any) -> None:
 
     tab_manager = tabs.TabManager(vertical_pw)
     vertical_pw.add(tab_manager, stretch="always")
+
+    tab_manager.bind("<<ThemeChanged>>", images._config_images, add=True)
 
     _global_state = _State(
         root=root,
