@@ -192,6 +192,7 @@ def rename(old_path: Path) -> None:
     if new_path is not None:
         if move_with_git_or_otherwise(old_path, new_path):
             get_tab_manager().event_generate("<<FileSystemChanged>>")
+            get_directory_tree().select_file(new_path)
 
 
 def paste(new_path: Path) -> None:
