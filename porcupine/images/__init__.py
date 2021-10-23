@@ -45,7 +45,7 @@ def _get_image_file(name: str) -> Path:
     return path
 
 
-def _update_dark_or_light_images(*junk) -> None:
+def _update_dark_or_light_images(junk: object) -> None:
     for name in _images_that_can_be_dark_or_light:
         if name in _image_cache:
             _image_cache[name].config(file=_get_image_file(name))
