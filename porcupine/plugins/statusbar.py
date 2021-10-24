@@ -115,9 +115,10 @@ class StatusBar(ttk.Frame):
             self.path_label.config(text=str(self._tab.path or "File not saved yet"))
 
         try:
-            # For line count, if the cursor is in beginning of line, don't count that as another line.
             chars = count(self._tab.textwidget, "sel.first", "sel.last")
+            # If the cursor is in beginning of line, don't count that as another line
             lines = count(self._tab.textwidget, "sel.first", "sel.last - 1 char", option="-lines")
+            lines += 1
         except tkinter.TclError:
             # no text selected
             line, column = self._tab.textwidget.index("insert").split(".")
@@ -136,7 +137,7 @@ class StatusBar(ttk.Frame):
                 text = f"{chars} characters"
                 if words >= 2:
                     text += f" ({words} words)"
-                if lines >= 1:
+                if lines >= 2:
                     text += f" on {lines} lines"
                 text += " selected"
             self.selection_label.config(text=text)
