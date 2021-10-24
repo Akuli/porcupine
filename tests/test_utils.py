@@ -58,8 +58,8 @@ if sys.platform == "darwin":
         ("<<Menubar:View/Bigger Font>>", "⌘+", "Command-+"),
         ("<<Menubar:View/Reset Font Size>>", "⌘0", "Command-0"),
         ("<<Menubar:View/Smaller Font>>", "⌘-", "Command--"),
-        ("<<Urls:OpenWithKeyboard>>", "⇧⌥⏎", "Shift-Alt-Return"),
-        ("<<Urls:OpenWithMouse>>", "double-click", ""),  # not possible to show in menu
+        ("<<Urls:OpenWithKeyboard>>", "⇧⌘⏎", "Command-Return"),
+        ("<<Urls:OpenWithMouse>>", "Command-click", ""),  # not possible to show in menu
         ("<<UtilsTestEvent>>", "⇧⌥-click", ""),  # not possible to show in menu
     ]
 else:
@@ -74,8 +74,8 @@ else:
         ("<<Menubar:View/Bigger Font>>", "Ctrl+Plus", "Ctrl+Plus"),
         ("<<Menubar:View/Reset Font Size>>", "Ctrl+Zero", "Ctrl+Zero"),
         ("<<Menubar:View/Smaller Font>>", "Ctrl+Minus", "Ctrl+Minus"),
-        ("<<Urls:OpenWithKeyboard>>", "Alt+Shift+Enter", "Alt+Shift+Enter"),
-        ("<<Urls:OpenWithMouse>>", "double-click", "double-click"),
+        ("<<Urls:OpenWithKeyboard>>", "Ctrl+Enter", "Ctrl+Enter"),
+        ("<<Urls:OpenWithMouse>>", "Ctrl+click", "Ctrl+click"),
         ("<<UtilsTestEvent>>", "Alt+Shift+click", "Alt+Shift+click"),
     ]
 
