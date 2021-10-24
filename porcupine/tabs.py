@@ -273,10 +273,6 @@ _FileTabT = TypeVar("_FileTabT", bound="FileTab")
 
 
 class Tab(ttk.Frame):
-    def __del__(self, p=print):
-        p("Delete Tab", flush=True)
-        p(self._w)
-
     """Base class for widgets that can be added to TabManager.
 
     You can easily create custom kinds of tabs by inheriting from this
@@ -497,10 +493,6 @@ def _find_changed_part(old_content: str, new_content: str) -> tuple[str, str, st
 
 
 class FileTab(Tab):
-    def __del__(self, p=print):
-        p("Delete FileTab", flush=True)
-        p(self._w)
-
     """A subclass of :class:`.Tab` that represents an opened file.
 
     The filetab will have *content* in it by default when it's opened. If
