@@ -56,7 +56,7 @@ event add "<<Menubar:Edit/Anchors/Clear>>" <Alt-C>
 event add "<<Menubar:Edit/Anchors/Add to error//warning lines>>" <Alt-E>
 
 # urls plugin
-event add "<<Urls:OpenWithMouse>>" <Double-Button-1>
+event add "<<Urls:OpenWithMouse>>" <Control-Button-1>
 event add "<<Urls:OpenWithKeyboard>>" <Alt-Shift-Return>
 
 # tab_order plugin
