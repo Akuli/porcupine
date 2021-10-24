@@ -1,3 +1,5 @@
+import gc
+import weakref
 import os
 import sys
 
@@ -250,3 +252,12 @@ def test_encoding_remembered(tabmanager, tmp_path):
     tab2 = tabs.FileTab.from_state(tabmanager, state)
     assert tab2.settings.get("encoding", str) == "latin-1"
     tab2.destroy()
+
+
+def test_filetabs_get_garbage_collected_when_closed(tabmanager, tmp_path):
+    # Do not save the tab to a local variable, that will hold reference too long
+    (tmp_path / "asd.txt").write_text("asd")
+    ref = weakref.ref(tabmanager.open_file(tmp_path / "asd.txt"))
+    tabmanager.close_tab(ref())
+    gc.collect()
+    assert ref() is None
