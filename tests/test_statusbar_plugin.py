@@ -54,20 +54,20 @@ def test_selection(filetab):
     assert statusbar.selection_label["text"] == "2 characters selected"
 
     select(filetab, "1.2", "2.2")
-    assert statusbar.selection_label["text"] == "5 characters on 2 lines selected"
+    assert statusbar.selection_label["text"] == "5 characters (2 words) on 2 lines selected"
 
     select(filetab, "1.2", "2.4")
     filetab.update()
-    assert statusbar.selection_label["text"] == "7 characters on 2 lines selected"
+    assert statusbar.selection_label["text"] == "7 characters (2 words) on 2 lines selected"
 
     # selecting to end of line doesn't mean next line (consistent with indent_block plugin)
     select(filetab, "1.2", "3.0")
-    assert statusbar.selection_label["text"] == "8 characters on 2 lines selected"
+    assert statusbar.selection_label["text"] == "8 characters (2 words) on 2 lines selected"
 
     filetab.textwidget.tag_remove("sel", "1.0", "end")
     filetab.textwidget.tag_add("sel", "1.2", "3.1")
     filetab.update()
-    assert statusbar.selection_label["text"] == "9 characters on 3 lines selected"
+    assert statusbar.selection_label["text"] == "9 characters (3 words) on 3 lines selected"
 
     filetab.textwidget.tag_remove("sel", "1.0", "end")
     filetab.update()
