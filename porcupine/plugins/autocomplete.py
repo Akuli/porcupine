@@ -213,7 +213,7 @@ class _Popup:
             return None
 
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
-        self._doc_text.yview_scroll(page_count, "pages")
+        self.treeview.yview_scroll(page_count, "pages")
         return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
