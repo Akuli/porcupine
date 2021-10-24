@@ -4,7 +4,7 @@ from __future__ import annotations
 from porcupine import get_tab_manager, tabs
 
 
-# TODO: should cursor and scrolling stuff be a part of reload()?
+# TODO: should cursor and scrolling stuff be a part of reload() or change_batch()?
 def reload_if_necessary(tab: tabs.FileTab) -> None:
     if tab.other_program_changed_file():
         cursor_pos = tab.textwidget.index("insert")
