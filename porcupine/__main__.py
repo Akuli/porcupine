@@ -4,7 +4,6 @@ import sys
 import threading
 from pathlib import Path
 
-# imports spread across multiple lines to keep sane line lengths and make it greppable
 from porcupine import __version__ as porcupine_version
 from porcupine import (
     _logs,
