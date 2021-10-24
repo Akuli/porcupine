@@ -56,8 +56,8 @@ event add "<<Menubar:Edit/Anchors/Clear>>" <Alt-C>
 event add "<<Menubar:Edit/Anchors/Add to error//warning lines>>" <Alt-E>
 
 # urls plugin
-event add "<<Urls:OpenWithMouse>>" <Control-Button-1>
-event add "<<Urls:OpenWithKeyboard>>" <Control-Return>
+event add "<<Urls:OpenWithMouse>>" <$contmand-Button-1>
+event add "<<Urls:OpenWithKeyboard>>" <$contmand-Return>
 
 # tab_order plugin
 # Prior = Page Up, Next = Page Down
