@@ -20,8 +20,8 @@ import pytest
 import porcupine
 from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
-from porcupine.plugins import git_status
-from porcupine.plugins.directory_tree import get_directory_tree
+#from porcupine.plugins import git_status
+#from porcupine.plugins.directory_tree import get_directory_tree
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
@@ -120,29 +120,29 @@ def filetab(porcusession, tabmanager):
     return tab
 
 
-# makes git status tags immediately available in directory tree
-@pytest.fixture(scope="session", autouse=True)
-def fake_git_pool():
-    class FakeThreadPool:
-        def submit(self, func):
-            fut = Future()
-            fut.set_result(func())
-            return fut
-
-    # monkeypatch fixture doesn't work with scope="session"
-    git_status.git_pool = FakeThreadPool()
-    yield
-
-
-# TODO: consider longer name
-@pytest.fixture
-def tree():
-    tree = get_directory_tree()
-    for child in tree.get_children(""):
-        tree.delete(child)
-    return tree
-
-
+## makes git status tags immediately available in directory tree
+#@pytest.fixture(scope="session", autouse=True)
+#def fake_git_pool():
+#    class FakeThreadPool:
+#        def submit(self, func):
+#            fut = Future()
+#            fut.set_result(func())
+#            return fut
+#
+#    # monkeypatch fixture doesn't work with scope="session"
+#    git_status.git_pool = FakeThreadPool()
+#    yield
+#
+#
+## TODO: consider longer name
+#@pytest.fixture
+#def tree():
+#    tree = get_directory_tree()
+#    for child in tree.get_children(""):
+#        tree.delete(child)
+#    return tree
+#
+#
 @pytest.fixture(scope="function", autouse=True)
 def check_nothing_logged(request):
     if "caplog" in request.fixturenames:
