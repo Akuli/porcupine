@@ -255,9 +255,11 @@ def test_encoding_remembered(tabmanager, tmp_path):
 
 
 def test_filetabs_get_garbage_collected_when_closed(tabmanager, tmp_path):
-    # Do not save the tab to a local variable, that will hold reference too long
-    (tmp_path / "asd.txt").write_text("asd")
-    ref = weakref.ref(tabmanager.open_file(tmp_path / "asd.txt"))
+    tab = tabs.FileTab(tabmanager)
+    ref = weakref.ref(tab)
+    tabmanager.add_tab(tab)
     tabmanager.close_tab(ref())
+
+    tab = None
     gc.collect()
     assert ref() is None
