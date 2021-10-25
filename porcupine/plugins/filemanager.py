@@ -352,7 +352,7 @@ def can_paste(path: Path) -> bool:
 def new_file_here(path: Path) -> str:
     name = ask_file_name(path, is_new=True)
     if name:
-        open(name, "w").close()
+        name.touch()
         get_tab_manager().open_file(name)
     return "break"  # must do, otherwise others will handle Ctrl+N
 
