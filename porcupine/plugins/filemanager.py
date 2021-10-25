@@ -339,8 +339,7 @@ def new_file_here(path: Path) -> str:
     name = ask_file_name(path, "", mode=FilenameMode.NEW)
     if name:
         name.touch()
-        get_directory_tree().refresh()
-        get_directory_tree().event_generate("<<FileSystemChanged>>")
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
         get_tab_manager().open_file(name)
 
 
