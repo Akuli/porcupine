@@ -10,7 +10,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Callable, NamedTuple, Literal
+from typing import Callable, Literal, NamedTuple
 
 from send2trash import send2trash
 
@@ -50,7 +50,10 @@ def show_error(title: str, message: str, error: Exception) -> None:
 
 
 def ask_file_name(
-    old_path: Path, is_paste: bool = False, show_overwriting_option: bool = False
+    old_path: Path,
+    is_paste: bool = False,
+    is_new: bool = False,
+    show_overwriting_option: bool = False,
 ) -> Path | None:
     label_width = 400
 
@@ -64,7 +67,7 @@ def ask_file_name(
     dialog_title = "Rename"
     dialog_phrase = f"Enter a new name for {old_path.name}:"
 
-    if old_path.is_dir():
+    if is_new:
         dialog_title = "New file"
         dialog_phrase = "Enter a name for the new file:"
 
@@ -90,7 +93,7 @@ def ask_file_name(
     entry = ttk.Entry(entry_frame, textvariable=file_name_var)
     entry.pack(pady=40, side=tkinter.BOTTOM, fill="x")
 
-    if not old_path.is_dir():
+    if not is_new:
         entry.insert(0, old_path.name)
 
     button_frame = ttk.Frame(big_frame)
@@ -132,7 +135,7 @@ def ask_file_name(
         entry.config(state="normal")
         name = entry.get()
         try:
-            if old_path.is_dir():
+            if is_new:
                 possible_new_path = old_path / name
             else:
                 possible_new_path = old_path.with_name(name)
@@ -347,7 +350,7 @@ def can_paste(path: Path) -> bool:
 
 
 def new_file_here(path: Path) -> Literal["break"]:
-    name = ask_file_name(path)
+    name = ask_file_name(path, is_new=True)
     if name:
         open(name, "w").close()
         get_tab_manager().open_file(name)
