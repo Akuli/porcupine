@@ -86,10 +86,10 @@ def ask_file_name(target_dir: Path, old_name: str, mode: FilenameMode, can_overw
         dialog.destroy()
 
     cancel_button = ttk.Button(big_frame, text="Cancel", command=dialog.destroy, width=1)
-    cancel_button.grid(row=4, column=0, padx=(0, 5), pady=(20, 0), sticky="ew")
+    cancel_button.grid(row=4, column=0, padx=(0, 5), pady=(30, 0), sticky="ew")
 
     ok_button = ttk.Button(big_frame, text="OK", command=select_name, state="disabled", width=1)
-    ok_button.grid(row=4, column=1, padx=(5, 0), pady=(20, 0), sticky="ew")
+    ok_button.grid(row=4, column=1, padx=(5, 0), pady=(30, 0), sticky="ew")
 
     if can_overwrite:
         r1 = ttk.Radiobutton(big_frame, text="Overwrite", variable=overwrite_var, value=True)
