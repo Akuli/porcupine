@@ -7,7 +7,7 @@ import tkinter
 import weakref
 from functools import partial
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, cast
+from typing import Any, Callable, Iterator, TypeVar, cast
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -45,14 +45,9 @@ CallableT = TypeVar("CallableT", bound=Callable[..., Any])
 # To fix this, we break the cycle by basically making the method
 # reference self through a weakref.ref().
 def method_weakref(method: CallableT) -> CallableT:
-    if TYPE_CHECKING:
-        return method
-    else:
-        # I don't think I can explain this to mypy
-        ref_to_self = weakref.ref(method.__self__)
-        unbound_method = method.__func__
-        del method
-        return lambda *args, **kwargs: unbound_method(ref_to_self(), *args, **kwargs)
+    method_ref = weakref.WeakMethod(method)  # type: ignore
+    del method
+    return lambda *args, **kwargs: method_ref()(*args, **kwargs)  # type: ignore
 
 
 class Finder(ttk.Frame):
