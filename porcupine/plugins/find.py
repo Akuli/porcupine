@@ -19,31 +19,33 @@ from porcupine import get_tab_manager, images, menubar, tabs, textutils
 CallableT = TypeVar("CallableT", bound=Callable[..., Any])
 
 
-# In Porcupine, I try to avoid leaking memory if you open and close
-# a tab. This code creates a memory leak:
+# I try to avoid leaking memory when opening and closing a tab. This
+# code creates a memory leak:
 #
 #    self.var = tkinter.StringVar()
 #    self.var.trace_add("write", self.some_method)
 #
 # Now the variable refers to a method object, which refers to self,
 # which refers to the variable. So we have a reference cycle.
+# Usually reference cycles are fine, because CPython's garbage
+# collection detects them and cleans them up.
 #
 # Actually the variable doesn't hold a reference to the method
 # directly. It registers a command in the Tcl interpreter, making
 # the Tcl interpreter refer to the method object until the variable
 # is garbage-collected. This is usually fine, but because the garbage
 # collection only sees the Tcl interpreter holding a reference to the
-# variable, it doesn't see the reference cycle.
+# variable, it doesn't see the reference cycle, and all objects involved
+# in the cycle will stay alive until the interpreter is destroyed.
 #
 # GC not working is especially bad if the class defines a widget
-# (i.e. inherits from a Tkinter widget), because then it holds a
+# (i.e. inherits from a Tkinter class), because then it holds a
 # reference to the parent widget (self.parent), which holds a
-# reference to its parent, and so on. This means that the instance
-# of the class will prevent many more widgets from getting garbage
-# collected.
+# reference to its parent, and so on. None of them can be garbage
+# collected, because they are still accessible through `.parent`.
 #
-# To fix this, we break the cycle by basically making the method
-# reference self through a weakref.ref().
+# To fix this, we break the cycle by making the method reference
+# self weakly.
 def method_weakref(method: CallableT) -> CallableT:
     method_ref = weakref.WeakMethod(method)  # type: ignore
     del method

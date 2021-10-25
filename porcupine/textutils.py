@@ -92,10 +92,8 @@ def count(widget: tkinter.Text, start: str, end: str, *, option: str = "-chars")
 
 class _ChangeTracker:
     def __init__(self, event_receiver_widget: tkinter.Text) -> None:
-        # _ChangeTrackers can't reference the text widget directly
-        # because that widgets because that causes the text widgets
-        # to never reach refcount zero, and the WeakKeyDictionary
-        # just won't work
+        # can't reference text widget directly
+        # would cause text widget refcount never reach zero, WeakKeyDictionary won't work
         self._event_receiver_ref = ref(event_receiver_widget)
         self._change_batch: list[Change] | None = None
 
