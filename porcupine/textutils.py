@@ -4,10 +4,10 @@ import contextlib
 import dataclasses
 import re
 import tkinter
-from weakref import ref, WeakKeyDictionary
 from functools import partial
 from tkinter.font import Font
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List
+from weakref import WeakKeyDictionary, ref
 
 from pygments import styles
 

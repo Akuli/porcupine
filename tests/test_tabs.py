@@ -1,7 +1,7 @@
 import gc
-import weakref
 import os
 import sys
+import weakref
 
 import pytest
 
