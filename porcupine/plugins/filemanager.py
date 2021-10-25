@@ -89,7 +89,7 @@ def ask_file_name(
     file_name_var = tkinter.StringVar()
     entry = ttk.Entry(entry_frame, textvariable=file_name_var)
     entry.pack(pady=40, side=tkinter.BOTTOM, fill="x")
-    
+
     if not old_path.is_dir():
         entry.insert(0, old_path.name)
 
@@ -344,6 +344,7 @@ def is_NOT_project_root(path: Path) -> bool:
 
 def can_paste(path: Path) -> bool:
     return paste_state is not None and paste_state.path.is_file()
+
 
 def new_file_here(path: Path) -> str:
     name = ask_file_name(path)
