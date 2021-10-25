@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import dataclasses
+import enum
 import logging
 import shutil
 import subprocess
@@ -26,11 +27,10 @@ else:
     trash_name = "trash"
 
 
-ask_file_name_text = {
-    "rename": ("Rename", "Enter a new name for {name}:"),
-    "new": ("New file", "Enter a name for the new file:"),
-    "paste": ("File conflict", "There is already a file named {name} in {parent}\n\n"),
-}
+class FilenameMode(enum.Enum):
+    RENAME = ("Rename", "Enter a new name for {name}:")
+    NEW = ("New file", "Enter a name for the new file:")
+    PASTE = ("File conflict", "There is already a file named {name} in {parent}\n\n")
 
 
 class PasteState(NamedTuple):
@@ -56,7 +56,7 @@ def show_error(title: str, message: str, error: Exception) -> None:
     messagebox.showerror(title, message, detail=f"{type(error).__name__}: {error}")
 
 
-def ask_file_name(target_dir: Path, old_name: str, mode: str, can_overwrite: bool = False) -> Path | None:
+def ask_file_name(target_dir: Path, old_name: str, mode: FilenameMode, can_overwrite: bool = False) -> Path | None:
     dialog = tkinter.Toplevel()
     dialog.transient(get_main_window())
 
@@ -103,8 +103,8 @@ def ask_file_name(target_dir: Path, old_name: str, mode: str, can_overwrite: boo
         ok_button.config(state="normal")
         entry.config(state="disabled")
 
-    assert mode in ask_file_name_text
-    dialog_title, dialog_phrase = ask_file_name_text[mode]
+    assert mode in FilenameMode
+    dialog_title, dialog_phrase = mode.value
 
     if mode == "paste":
         if can_overwrite:
@@ -184,7 +184,7 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
 
 
 def rename(old_path: Path) -> None:
-    new_path = ask_file_name(old_path.parent, old_path.name, mode="rename")
+    new_path = ask_file_name(old_path.parent, old_path.name, mode=FilenameMode.RENAME)
     if new_path is not None:
         if move_with_git_or_otherwise(old_path, new_path):
             get_tab_manager().event_generate("<<FileSystemChanged>>")
@@ -204,7 +204,7 @@ def paste(new_path: Path) -> None:
         path = ask_file_name(
             new_file_path.parent,
             new_file_path.name,
-            mode="paste",
+            mode=FilenameMode.PASTE,
             can_overwrite=paste_state.path.parent != new_file_path.parent,
         )
         if path is None:
@@ -335,7 +335,7 @@ def can_paste(path: Path) -> bool:
 
 
 def new_file_here(path: Path) -> str:
-    name = ask_file_name(path, "", mode="new")
+    name = ask_file_name(path, "", mode=FilenameMode.NEW)
     if name:
         name.touch()
         get_tab_manager().open_file(name)
