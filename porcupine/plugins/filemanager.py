@@ -27,9 +27,9 @@ else:
 
 
 ask_file_name_text = {
-    "rename": ("Rename", "Enter a new name for {}:"),
+    "rename": ("Rename", "Enter a new name for {name}:"),
     "new": ("New file", "Enter a name for the new file:"),
-    "paste": ("File conflict", "There is already a file named {} in {}\n\n"),
+    "paste": ("File conflict", "There is already a file named {name} in {parent}\n\n"),
 }
 
 
@@ -56,7 +56,7 @@ def show_error(title: str, message: str, error: Exception) -> None:
     messagebox.showerror(title, message, detail=f"{type(error).__name__}: {error}")
 
 
-def ask_file_name(path: Path, mode: str, can_overwrite: bool = False) -> Path | None:
+def ask_file_name(target_dir: Path, old_name: str, mode: str, can_overwrite: bool = False) -> Path | None:
     dialog = tkinter.Toplevel()
     dialog.transient(get_main_window())
 
@@ -69,7 +69,7 @@ def ask_file_name(path: Path, mode: str, can_overwrite: bool = False) -> Path | 
     phrase_label = ttk.Label(big_frame, wraplength=400)
     phrase_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
 
-    file_name_var = tkinter.StringVar(value=path.name)
+    file_name_var = tkinter.StringVar(value=old_name)
     overwrite_var = tkinter.BooleanVar(value=False)
 
     entry = ttk.Entry(big_frame, textvariable=file_name_var)
@@ -80,9 +80,9 @@ def ask_file_name(path: Path, mode: str, can_overwrite: bool = False) -> Path | 
     def select_name() -> None:
         nonlocal new_path
         if overwrite_var.get():
-            new_path = path
+            new_path = target_dir / old_name
         else:
-            new_path = path.with_name(entry.get())
+            new_path = (target_dir / "dummy").with_name(entry.get())
         dialog.destroy()
 
     cancel_button = ttk.Button(big_frame, text="Cancel", command=dialog.destroy, width=1)
@@ -111,10 +111,8 @@ def ask_file_name(path: Path, mode: str, can_overwrite: bool = False) -> Path | 
             dialog_phrase += "What do you want to do with it?"
         else:
             dialog_phrase += "Choose a name that isn't in use."
-    elif mode == "new":
-        file_name_var.set("")
 
-    phrase_label.config(text=dialog_phrase.format(path.name, path.parent))
+    phrase_label.config(text=dialog_phrase.format(name=old_name, parent=target_dir))
 
     def update_dialog_state(*junk: object) -> None:
         if overwrite_var.get():
@@ -125,10 +123,7 @@ def ask_file_name(path: Path, mode: str, can_overwrite: bool = False) -> Path | 
         entry.config(state="normal")
         name = entry.get()
         try:
-            if mode == "new":
-                possible_new_path = path / name
-            else:
-                possible_new_path = path.with_name(name)
+            possible_new_path = (target_dir / "dummy").with_name(name)
         except ValueError:
             ok_button.config(state="disabled")
             return
@@ -189,7 +184,7 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
 
 
 def rename(old_path: Path) -> None:
-    new_path = ask_file_name(old_path, mode="rename")
+    new_path = ask_file_name(old_path.parent, old_path.name, mode="rename")
     if new_path is not None:
         if move_with_git_or_otherwise(old_path, new_path):
             get_tab_manager().event_generate("<<FileSystemChanged>>")
@@ -207,7 +202,8 @@ def paste(new_path: Path) -> None:
 
     if new_file_path.exists():
         path = ask_file_name(
-            new_file_path,
+            new_file_path.parent,
+            new_file_path.name,
             mode="paste",
             can_overwrite=paste_state.path.parent != new_file_path.parent,
         )
@@ -339,7 +335,7 @@ def can_paste(path: Path) -> bool:
 
 
 def new_file_here(path: Path) -> str:
-    name = ask_file_name(path, mode="new")
+    name = ask_file_name(path, "", mode="new")
     if name:
         name.touch()
         get_tab_manager().open_file(name)
