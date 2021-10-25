@@ -232,6 +232,12 @@ time.sleep(10)
     assert end - start < 8
 
 
+def test_crlf_on_any_platform(tmp_path, wait_until):
+    (tmp_path / "crlf.py").write_text(r"import sys; sys.stdout.buffer.write(b'foo\r\nbar')")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} crlf.py", tmp_path)
+    wait_until(lambda: "foo\nbar" in get_output())
+
+
 def test_changing_current_file(filetab, tmp_path, wait_until):
     filetab.textwidget.insert("end", 'with open("foo.py", "w") as f: f.write("lol")')
     filetab.save_as(tmp_path / "foo.py")

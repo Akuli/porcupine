@@ -103,7 +103,7 @@ class Executor:
             if not bytez:
                 break
             text = bytez.decode(locale.getpreferredencoding(), errors="replace")
-            self._queue.put(("output", utils.tkinter_safe_string(text).replace(os.linesep, "\n")))
+            self._queue.put(("output", utils.tkinter_safe_string(text).replace("\r\n", "\n")))
 
         status = self._shell_process.wait()
         if status == 0:
