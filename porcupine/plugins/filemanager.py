@@ -207,7 +207,9 @@ def paste(new_path: Path) -> None:
 
     if new_file_path.exists():
         path = ask_file_name(
-            new_file_path, mode="paste", overwrite=paste_state.path.parent != new_file_path.parent
+            new_file_path,
+            mode="paste",
+            can_overwrite=paste_state.path.parent != new_file_path.parent,
         )
         if path is None:
             return
