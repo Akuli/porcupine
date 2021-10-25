@@ -10,7 +10,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Callable, NamedTuple
+from typing import Callable, NamedTuple, Literal
 
 from send2trash import send2trash
 
@@ -330,7 +330,7 @@ class Command:
     name: str
     virtual_event_name: str | None
     condition: Callable[[Path], bool]
-    callback: Callable[[Path], None]
+    callback: Callable[[Path], None | Literal["break"]]
 
     def run(self, event: tkinter.Event[DirectoryTree]) -> None:
         path = get_selected_path(event.widget)
@@ -346,12 +346,12 @@ def can_paste(path: Path) -> bool:
     return paste_state is not None and paste_state.path.is_file()
 
 
-def new_file_here(path: Path) -> str:
+def new_file_here(path: Path) -> Literal["break"]:
     name = ask_file_name(path)
     if name:
         open(name, "w").close()
         get_tab_manager().open_file(name)
-    return "break"
+    return "break"  # must do, otherwise others will handle Ctrl+N
 
 
 commands = [
