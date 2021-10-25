@@ -71,7 +71,7 @@ def find_cursor_xy(textwidget: tkinter.Text) -> tuple[int, int]:
     return (left, top + height)
 
 
-def receive_jump(event: utils.EventWithData) -> str:
+def receive_jump(event: utils.EventWithData) -> None:
     tab = event.widget
     assert isinstance(tab, tabs.FileTab), repr(tab)
     response = event.data_class(Response)
@@ -103,16 +103,15 @@ def receive_jump(event: utils.EventWithData) -> str:
             )
         menu.tk_popup(*find_cursor_xy(tab.textwidget))
         menu.bind("<Unmap>", (lambda event: menu.after_idle(menu.destroy)), add=True)
-    
-    return "break"
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     utils.bind_with_data(tab, "<<JumpToDefinitionResponse>>", receive_jump, add=True)
 
 
-def generate_jump_request(tab: tabs.FileTab) -> None:
+def generate_jump_request(tab: tabs.FileTab) -> str:
     tab.textwidget.event_generate("<<JumpToDefinitionRequest>>")
+    return "break"
 
 
 def setup() -> None:
