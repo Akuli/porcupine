@@ -10,7 +10,12 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Callable, Literal, NamedTuple
+from typing import Callable, NamedTuple
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 from send2trash import send2trash
 
