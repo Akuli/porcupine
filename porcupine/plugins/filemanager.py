@@ -327,6 +327,7 @@ class Command:
         if path is not None and self.condition(path):
             self.callback(path)
             return "break"
+        return None
 
 
 def is_NOT_project_root(path: Path) -> bool:
@@ -337,7 +338,7 @@ def can_paste(path: Path) -> bool:
     return paste_state is not None and paste_state.path.is_file()
 
 
-def new_file_here(path: Path) -> str:
+def new_file_here(path: Path) -> None:
     name = ask_file_name(path, "", mode=FilenameMode.NEW)
     if name:
         name.touch()
