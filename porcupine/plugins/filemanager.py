@@ -29,7 +29,7 @@ else:
 
 class FilenameMode(enum.Enum):
     RENAME = ("Rename", "Enter a new name for {name}:")
-    NEW = ("New file", "Enter a name for the new file:")
+    NEW = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
     PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n")
 
 
