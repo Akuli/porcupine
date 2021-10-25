@@ -9,6 +9,8 @@ from typing import Iterable
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import underlines
 
+# uses same key binding as jump_to_definition plugin
+setup_before = ["jump_to_definition"]
 
 def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[tuple[str, str]]:
     match_ends_and_search_begins = start
