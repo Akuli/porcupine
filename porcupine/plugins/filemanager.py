@@ -12,11 +12,6 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Callable, NamedTuple
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
 from send2trash import send2trash
 
 from porcupine import get_main_window, get_tab_manager, tabs, utils
@@ -338,7 +333,7 @@ class Command:
     name: str
     virtual_event_name: str | None
     condition: Callable[[Path], bool]
-    callback: Callable[[Path], None | Literal["break"]]
+    callback: Callable[[Path], None | str]
 
     def run(self, event: tkinter.Event[DirectoryTree]) -> None:
         path = get_selected_path(event.widget)
@@ -354,7 +349,7 @@ def can_paste(path: Path) -> bool:
     return paste_state is not None and paste_state.path.is_file()
 
 
-def new_file_here(path: Path) -> Literal["break"]:
+def new_file_here(path: Path) -> str:
     name = ask_file_name(path, is_new=True)
     if name:
         open(name, "w").close()
