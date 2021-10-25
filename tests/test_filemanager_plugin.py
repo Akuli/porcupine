@@ -42,7 +42,7 @@ def test_cutpasting_or_copypasting_to_same_dir(tree, tmp_path, mocker, event):
     tree.event_generate(event)
     tree.event_generate("<<Paste>>")
     ask_file_name.assert_called_once_with(
-        tmp_path.parent, "foo", mode=FilenameMode.PASTE, can_overwrite=False
+        tmp_path, "foo", mode=FilenameMode.PASTE, can_overwrite=False
     )
 
     if event == "<<Copy>>":
