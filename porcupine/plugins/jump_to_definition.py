@@ -103,8 +103,8 @@ def receive_jump(event: utils.EventWithData) -> str:
             )
         menu.tk_popup(*find_cursor_xy(tab.textwidget))
         menu.bind("<Unmap>", (lambda event: menu.after_idle(menu.destroy)), add=True)
-
-        return "break"
+    
+    return "break"
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
