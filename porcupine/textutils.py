@@ -4,10 +4,10 @@ import contextlib
 import dataclasses
 import re
 import tkinter
-import weakref
 from functools import partial
 from tkinter.font import Font
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List
+from weakref import WeakKeyDictionary, ref
 
 from pygments import styles
 
@@ -91,10 +91,10 @@ def count(widget: tkinter.Text, start: str, end: str, *, option: str = "-chars")
 
 
 class _ChangeTracker:
-
-    # event_receiver_widget will receive the change events
     def __init__(self, event_receiver_widget: tkinter.Text) -> None:
-        self._event_receiver_widget = event_receiver_widget
+        # can't reference text widget directly
+        # would cause text widget refcount never reach zero, WeakKeyDictionary won't work
+        self._event_receiver_ref = ref(event_receiver_widget)
         self._change_batch: list[Change] | None = None
 
     def setup(self, widget: tkinter.Text) -> None:
@@ -227,7 +227,7 @@ class _ChangeTracker:
                 "change_event_from_command": widget.register(
                     partial(self._change_event_from_command, widget)
                 ),
-                "event_receiver": self._event_receiver_widget,
+                "event_receiver": str(self._event_receiver_ref()),
                 "cursor_moved_callback": widget.register(cursor_pos_changed),
             }
         )
@@ -366,19 +366,17 @@ class _ChangeTracker:
         self._change_batch = []
 
     def finish_batch(self) -> None:
-        assert self._change_batch is not None
         try:
+            assert self._change_batch is not None
             if self._change_batch:
-                self._event_receiver_widget.event_generate(
-                    "<<ContentChanged>>", data=Changes(self._change_batch)
-                )
+                widget = self._event_receiver_ref()
+                assert widget is not None
+                widget.event_generate("<<ContentChanged>>", data=Changes(self._change_batch))
         finally:
             self._change_batch = None
 
 
-_change_trackers: weakref.WeakKeyDictionary[
-    tkinter.Text, _ChangeTracker
-] = weakref.WeakKeyDictionary()
+_change_trackers: WeakKeyDictionary[tkinter.Text, _ChangeTracker] = WeakKeyDictionary()
 
 
 def track_changes(widget: tkinter.Text) -> None:

@@ -1,5 +1,7 @@
+import gc
 import os
 import sys
+import weakref
 
 import pytest
 
@@ -250,3 +252,14 @@ def test_encoding_remembered(tabmanager, tmp_path):
     tab2 = tabs.FileTab.from_state(tabmanager, state)
     assert tab2.settings.get("encoding", str) == "latin-1"
     tab2.destroy()
+
+
+def test_filetabs_get_garbage_collected_when_closed(tabmanager, tmp_path):
+    tab = tabs.FileTab(tabmanager)
+    ref = weakref.ref(tab)
+    tabmanager.add_tab(tab)
+    tabmanager.close_tab(ref())
+
+    tab = None
+    gc.collect()
+    assert ref() is None
