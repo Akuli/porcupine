@@ -320,10 +320,11 @@ class Command:
     condition: Callable[[Path], bool]
     callback: Callable[[Path], None | str]
 
-    def run(self, event: tkinter.Event[DirectoryTree]) -> None:
+    def run(self, event: tkinter.Event[DirectoryTree]) -> None | str:
         path = get_selected_path(event.widget)
         if path is not None and self.condition(path):
             self.callback(path)
+            return "break"
 
 
 def is_NOT_project_root(path: Path) -> bool:
@@ -341,7 +342,6 @@ def new_file_here(path: Path) -> str:
         get_directory_tree().refresh()
         get_directory_tree().event_generate("<<FileSystemChanged>>")
         get_tab_manager().open_file(name)
-    return "break"  # must do, otherwise others will handle Ctrl+N
 
 
 commands = [
