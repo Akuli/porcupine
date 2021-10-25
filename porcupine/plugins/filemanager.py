@@ -56,7 +56,9 @@ def show_error(title: str, message: str, error: Exception) -> None:
     messagebox.showerror(title, message, detail=f"{type(error).__name__}: {error}")
 
 
-def ask_file_name(target_dir: Path, old_name: str, mode: FilenameMode, can_overwrite: bool = False) -> Path | None:
+def ask_file_name(
+    target_dir: Path, old_name: str, mode: FilenameMode, can_overwrite: bool = False
+) -> Path | None:
     dialog = tkinter.Toplevel()
     dialog.transient(get_main_window())
 
