@@ -64,6 +64,10 @@ def ask_file_name(
     dialog_title = "Rename"
     dialog_phrase = f"Enter a new name for {old_path.name}:"
 
+    if old_path.is_dir():
+        dialog_title = "New file"
+        dialog_phrase = "Enter a name for the new file:"
+
     if is_paste:
         dialog_title = "File conflict"
         if show_overwriting_option:
@@ -85,7 +89,9 @@ def ask_file_name(
     file_name_var = tkinter.StringVar()
     entry = ttk.Entry(entry_frame, textvariable=file_name_var)
     entry.pack(pady=40, side=tkinter.BOTTOM, fill="x")
-    entry.insert(0, old_path.name)
+    
+    if not old_path.is_dir():
+        entry.insert(0, old_path.name)
 
     button_frame = ttk.Frame(big_frame)
     button_frame.pack(fill="x", pady=(10, 0))
@@ -126,7 +132,10 @@ def ask_file_name(
         entry.config(state="normal")
         name = entry.get()
         try:
-            possible_new_path = old_path.with_name(name)
+            if old_path.is_dir():
+                possible_new_path = old_path / name
+            else:
+                possible_new_path = old_path.with_name(name)
         except ValueError:
             ok_button.config(state="disabled")
             return
@@ -336,11 +345,19 @@ def is_NOT_project_root(path: Path) -> bool:
 def can_paste(path: Path) -> bool:
     return paste_state is not None and paste_state.path.is_file()
 
+def new_file_here(path: Path) -> str:
+    name = ask_file_name(path)
+    if name:
+        open(name, "w").close()
+        get_tab_manager().open_file(name)
+    return "break"
+
 
 commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
+    Command("New file", "<<FileManager:New file>>", (lambda p: p.is_dir()), new_file_here),
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),

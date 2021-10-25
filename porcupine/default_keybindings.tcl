@@ -86,6 +86,7 @@ event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
 event add "<<FileManager:Rename>>" <F2>
 event add "<<FileManager:Trash>>" <Delete>
 event add "<<FileManager:Delete>>" <Shift-Delete>
+event add "<<FileManager:New file>>" <$contmand-n>
 
 # jump_to_definition plugin
 # cursor moves between button press and release, don't bind to press
