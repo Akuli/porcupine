@@ -67,7 +67,7 @@ def ask_file_name(target_dir: Path, old_name: str, mode: FilenameMode, can_overw
         big_frame.columnconfigure(i, weight=1)
 
     phrase_label = ttk.Label(big_frame, wraplength=400)
-    phrase_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+    phrase_label.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="ew")
 
     file_name_var = tkinter.StringVar(value=old_name)
     overwrite_var = tkinter.BooleanVar(value=False)
@@ -106,7 +106,7 @@ def ask_file_name(target_dir: Path, old_name: str, mode: FilenameMode, can_overw
     assert mode in FilenameMode
     dialog_title, dialog_phrase = mode.value
 
-    if mode == "paste":
+    if mode == FilenameMode.PASTE:
         if can_overwrite:
             dialog_phrase += "What do you want to do with it?"
         else:
