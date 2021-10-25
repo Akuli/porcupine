@@ -56,7 +56,7 @@ def show_error(title: str, message: str, error: Exception) -> None:
     messagebox.showerror(title, message, detail=f"{type(error).__name__}: {error}")
 
 
-def ask_file_name(path: Path, mode: str, overwrite: bool = False) -> Path | None:
+def ask_file_name(path: Path, mode: str, can_overwrite: bool = False) -> Path | None:
     dialog = tkinter.Toplevel()
     dialog.transient(get_main_window())
 
@@ -91,7 +91,7 @@ def ask_file_name(path: Path, mode: str, overwrite: bool = False) -> Path | None
     ok_button = ttk.Button(big_frame, text="OK", command=select_name, state="disabled", width=1)
     ok_button.grid(row=4, column=1, padx=(5, 0), pady=(20, 0), sticky="ew")
 
-    if overwrite:
+    if can_overwrite:
         r1 = ttk.Radiobutton(big_frame, text="Overwrite", variable=overwrite_var, value=True)
         r2 = ttk.Radiobutton(
             big_frame, text="Change name of destination", variable=overwrite_var, value=False
@@ -107,7 +107,7 @@ def ask_file_name(path: Path, mode: str, overwrite: bool = False) -> Path | None
     dialog_title, dialog_phrase = ask_file_name_text[mode]
 
     if mode == "paste":
-        if overwrite:
+        if can_overwrite:
             dialog_phrase += "What do you want to do with it?"
         else:
             dialog_phrase += "Choose a name that isn't in use."
