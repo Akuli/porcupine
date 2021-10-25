@@ -81,6 +81,47 @@ def test_cutpasting_and_copypasting_error(tree, tmp_path, mocker, event, check_e
     )
 
 
+def test_delete_file(tree, tmp_path, mocker):
+    askyesno = mocker.patch("tkinter.messagebox.askyesno")
+    askyesno.return_value = True
+    (tmp_path / "file.txt").write_text("blah")
+    add_project_and_select_file(tmp_path / "file.txt")
+    tree.event_generate("<<FileManager:Delete>>")
+
+    askyesno.assert_called_once_with(
+        "Delete file.txt", "Do you want to permanently delete file.txt?", icon="warning"
+    )
+    assert not (tmp_path / "subdir").exists()
+
+
+def test_delete_nonempty_dir(tree, tmp_path, mocker):
+    askyesno = mocker.patch("tkinter.messagebox.askyesno")
+    askyesno.return_value = True
+    (tmp_path / "subdir").mkdir()
+    (tmp_path / "subdir" / "file.txt").write_text("blah")
+    (tmp_path / "subdir" / "subdir2").mkdir()
+    (tmp_path / "subdir" / "subdir2" / "nestedfile.txt").write_text("blah2")
+    add_project_and_select_file(tmp_path / "subdir")
+    tree.event_generate("<<FileManager:Delete>>")
+
+    askyesno.assert_called_once_with(
+        "Delete subdir",
+        "Do you want to permanently delete subdir and everything inside it?",
+        icon="warning",
+    )
+    assert not (tmp_path / "subdir").exists()
+
+
+def test_delete_empty_dir(tree, tmp_path, mocker):
+    askyesno = mocker.patch("tkinter.messagebox.askyesno")
+    (tmp_path / "subdir").mkdir()
+    add_project_and_select_file(tmp_path / "subdir")
+    tree.event_generate("<<FileManager:Delete>>")
+
+    assert not (tmp_path / "subdir").exists()
+    assert askyesno.call_count == 0
+
+
 def test_delete_error(tree, tmp_path, mocker, check_error):
     rmtree = mocker.patch("porcupine.plugins.filemanager.shutil").rmtree
     mocker.patch("tkinter.messagebox.showerror")
