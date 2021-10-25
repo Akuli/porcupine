@@ -4,9 +4,10 @@ from __future__ import annotations
 import re
 import sys
 import tkinter
+import weakref
 from functools import partial
 from tkinter import ttk
-from typing import Any, Iterator, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, cast
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -14,6 +15,44 @@ else:
     from typing_extensions import Literal
 
 from porcupine import get_tab_manager, images, menubar, tabs, textutils
+
+CallableT = TypeVar("CallableT", bound=Callable[..., Any])
+
+
+# In Porcupine, I try to avoid leaking memory if you open and close
+# a tab. This code creates a memory leak:
+#
+#    self.var = tkinter.StringVar()
+#    self.var.trace_add("write", self.some_method)
+#
+# Now the variable refers to a method object, which refers to self,
+# which refers to the variable. So we have a reference cycle.
+#
+# Actually the variable doesn't hold a reference to the method
+# directly. It registers a command in the Tcl interpreter, making
+# the Tcl interpreter refer to the method object until the variable
+# is garbage-collected. This is usually fine, but because the garbage
+# collection only sees the Tcl interpreter holding a reference to the
+# variable, it doesn't see the reference cycle.
+#
+# GC not working is especially bad if the class defines a widget
+# (i.e. inherits from a Tkinter widget), because then it holds a
+# reference to the parent widget (self.parent), which holds a
+# reference to its parent, and so on. This means that the instance
+# of the class will prevent many more widgets from getting garbage
+# collected.
+#
+# To fix this, we break the cycle by basically making the method
+# reference self through a weakref.ref().
+def method_weakref(method: CallableT) -> CallableT:
+    if TYPE_CHECKING:
+        return method
+    else:
+        # I don't think I can explain this to mypy
+        ref_to_self = weakref.ref(method.__self__)
+        unbound_method = method.__func__
+        del method
+        return lambda *args, **kwargs: unbound_method(ref_to_self(), *args, **kwargs)
 
 
 class Finder(ttk.Frame):
@@ -49,7 +88,7 @@ class Finder(ttk.Frame):
 
         self.find_entry = self._add_entry(0, "Find:")
         self.find_entry.config(textvariable=find_var)
-        find_var.trace_add("write", self.highlight_all_matches)
+        find_var.trace_add("write", method_weakref(self.highlight_all_matches))
 
         # because cpython gc
         cast(Any, self.find_entry).lol = find_var
@@ -84,8 +123,8 @@ class Finder(ttk.Frame):
         self.replace_all_button.pack(side="left", padx=(0, 5))
         self._update_buttons()
 
-        self.full_words_var.trace_add("write", self.highlight_all_matches)
-        self.ignore_case_var.trace_add("write", self.highlight_all_matches)
+        self.full_words_var.trace_add("write", method_weakref(self.highlight_all_matches))
+        self.ignore_case_var.trace_add("write", method_weakref(self.highlight_all_matches))
 
         ttk.Checkbutton(
             self, text="Full words only", underline=0, variable=self.full_words_var
