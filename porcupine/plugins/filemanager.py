@@ -270,11 +270,17 @@ def trash(path: Path) -> None:
 
 def delete(path: Path) -> None:
     if path.is_dir():
-        message = f"Do you want to permanently delete {path.name} and everything inside it?"
+        if next(path.iterdir(), None) is None:
+            # empty dir
+            message = None
+        else:
+            message = f"Do you want to permanently delete {path.name} and everything inside it?"
     else:
         message = f"Do you want to permanently delete {path.name}?"
 
-    if not messagebox.askyesno(f"Delete {path.name}", message, icon="warning"):
+    if message is not None and not messagebox.askyesno(
+        f"Delete {path.name}", message, icon="warning"
+    ):
         return
     if not close_tabs(find_tabs_by_parent_path(path)):
         return
