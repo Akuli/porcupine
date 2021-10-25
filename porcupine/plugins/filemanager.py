@@ -26,6 +26,13 @@ else:
     trash_name = "trash"
 
 
+ask_file_name_text = {
+    "rename": ("Rename", "Enter a new name for {}:"),
+    "new": ("New file", "Enter a name for the new file:"),
+    "paste": ("File conflict", "There is already a file named {} in {}\n\n"),
+}
+
+
 class PasteState(NamedTuple):
     is_cut: bool
     path: Path
@@ -49,82 +56,65 @@ def show_error(title: str, message: str, error: Exception) -> None:
     messagebox.showerror(title, message, detail=f"{type(error).__name__}: {error}")
 
 
-def ask_file_name(
-    old_path: Path,
-    is_paste: bool = False,
-    is_new: bool = False,
-    show_overwriting_option: bool = False,
-) -> Path | None:
-    label_width = 400
-
+def ask_file_name(path: Path, mode: str, overwrite: bool = False) -> Path | None:
     dialog = tkinter.Toplevel()
     dialog.transient(get_main_window())
-    dialog.resizable(False, False)
 
     big_frame = ttk.Frame(dialog, padding=10)
     big_frame.pack(fill="both", expand=True)
 
-    dialog_title = "Rename"
-    dialog_phrase = f"Enter a new name for {old_path.name}:"
+    for i in {0, 1}:
+        big_frame.columnconfigure(i, weight=1)
 
-    if is_new:
-        dialog_title = "New file"
-        dialog_phrase = "Enter a name for the new file:"
+    phrase_label = ttk.Label(big_frame, wraplength=400)
+    phrase_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
 
-    if is_paste:
-        dialog_title = "File conflict"
-        if show_overwriting_option:
-            dialog_phrase = (
-                f"{old_path.parent} already has a file named {old_path.name}.\nDo you want to"
-                " overwrite it?"
-            )
-        else:
-            dialog_phrase = (
-                f"{old_path.parent} already has a file named {old_path.name}.\nChoose a name that"
-                " isn't in use."
-            )
+    file_name_var = tkinter.StringVar(value=path.name)
+    overwrite_var = tkinter.BooleanVar(value=False)
 
-    dialog.title(dialog_title)
-    ttk.Label(big_frame, text=dialog_phrase, wraplength=label_width).pack(fill="x")
-
-    entry_frame = ttk.Frame(big_frame)
-    entry_frame.pack(fill="x")
-    file_name_var = tkinter.StringVar()
-    entry = ttk.Entry(entry_frame, textvariable=file_name_var)
-    entry.pack(pady=40, side=tkinter.BOTTOM, fill="x")
-
-    if not is_new:
-        entry.insert(0, old_path.name)
-
-    button_frame = ttk.Frame(big_frame)
-    button_frame.pack(fill="x", pady=(10, 0))
+    entry = ttk.Entry(big_frame, textvariable=file_name_var)
+    entry.grid(row=3, column=0, columnspan=2, sticky="ew")
 
     new_path = None
-    overwrite_var = tkinter.BooleanVar(value=False)
 
     def select_name() -> None:
         nonlocal new_path
         if overwrite_var.get():
-            new_path = old_path
+            new_path = path
         else:
-            new_path = old_path.with_name(entry.get())
+            new_path = path.with_name(entry.get())
         dialog.destroy()
 
-    cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
-    cancel_button.pack(side="left", expand=True, fill="x", padx=(0, 5))
-    ok_button = ttk.Button(button_frame, text="OK", command=select_name, state="disabled", width=1)
-    ok_button.pack(side="right", expand=True, fill="x", padx=(5, 0))
+    cancel_button = ttk.Button(big_frame, text="Cancel", command=dialog.destroy, width=1)
+    cancel_button.grid(row=4, column=0, padx=(0, 5), pady=(20, 0), sticky="ew")
 
-    if is_paste and show_overwriting_option:
-        r1 = ttk.Radiobutton(entry_frame, text="Overwrite", variable=overwrite_var, value=True)
+    ok_button = ttk.Button(big_frame, text="OK", command=select_name, state="disabled", width=1)
+    ok_button.grid(row=4, column=1, padx=(5, 0), pady=(20, 0), sticky="ew")
+
+    if overwrite:
+        r1 = ttk.Radiobutton(big_frame, text="Overwrite", variable=overwrite_var, value=True)
         r2 = ttk.Radiobutton(
-            entry_frame, text="Change name of destination", variable=overwrite_var, value=False
+            big_frame, text="Change name of destination", variable=overwrite_var, value=False
         )
-        r1.pack(pady=(40, 0), fill="x")
+        r1.grid(row=1, column=0, columnspan=2, sticky="ew")
+        r2.grid(row=2, column=0, columnspan=2, pady=(5, 20), sticky="ew")
+
         r1.invoke()
-        r2.pack(fill="x")
         ok_button.config(state="normal")
         entry.config(state="disabled")
+
+    assert mode in ask_file_name_text
+    dialog_title, dialog_phrase = ask_file_name_text[mode]
+
+    if mode == "paste":
+        if overwrite:
+            dialog_phrase += "What do you want to do with it?"
+        else:
+            dialog_phrase += "Choose a name that isn't in use."
+    elif mode == "new":
+        file_name_var.set("")
+
+    phrase_label.config(text=dialog_phrase.format(path.name, path.parent))
 
     def update_dialog_state(*junk: object) -> None:
         if overwrite_var.get():
@@ -135,26 +125,25 @@ def ask_file_name(
         entry.config(state="normal")
         name = entry.get()
         try:
-            if is_new:
-                possible_new_path = old_path / name
+            if mode == "new":
+                possible_new_path = path / name
             else:
-                possible_new_path = old_path.with_name(name)
+                possible_new_path = path.with_name(name)
         except ValueError:
             ok_button.config(state="disabled")
             return
 
-        if possible_new_path.exists():
-            ok_button.config(state="disabled")
-        else:
-            ok_button.config(state="normal")
+        ok_button["state"] = "disabled" if possible_new_path.exists() else "normal"
 
-    overwrite_var.trace_add("write", update_dialog_state)
     file_name_var.trace_add("write", update_dialog_state)
+    overwrite_var.trace_add("write", update_dialog_state)
     entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
     entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
     entry.select_range(0, "end")
     entry.focus()
 
+    dialog.title(dialog_title)
+    dialog.resizable(False, False)
     dialog.wait_window()
 
     return new_path
@@ -200,7 +189,7 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
 
 
 def rename(old_path: Path) -> None:
-    new_path = ask_file_name(old_path)
+    new_path = ask_file_name(old_path, mode="rename")
     if new_path is not None:
         if move_with_git_or_otherwise(old_path, new_path):
             get_tab_manager().event_generate("<<FileSystemChanged>>")
@@ -218,9 +207,7 @@ def paste(new_path: Path) -> None:
 
     if new_file_path.exists():
         path = ask_file_name(
-            new_file_path,
-            is_paste=True,
-            show_overwriting_option=(paste_state.path.parent != new_file_path.parent),
+            new_file_path, mode="paste", overwrite=paste_state.path.parent != new_file_path.parent
         )
         if path is None:
             return
@@ -350,7 +337,7 @@ def can_paste(path: Path) -> bool:
 
 
 def new_file_here(path: Path) -> str:
-    name = ask_file_name(path, is_new=True)
+    name = ask_file_name(path, mode="new")
     if name:
         name.touch()
         get_tab_manager().open_file(name)
