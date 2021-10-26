@@ -217,8 +217,10 @@ class _Popup:
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
         self.treeview.yview_scroll(page_count, "pages")
 
+        # select first/last visible row, lol
         y = self.treeview.winfo_height() - MAX_PADDING if page_count == 1 else MAX_PADDING
         while not self.treeview.identify_row(y):
+            assert 0 <= y <= self.treeview.winfo_height()
             y -= page_count
 
         self.treeview.selection_set(self.treeview.identify_row(y))
