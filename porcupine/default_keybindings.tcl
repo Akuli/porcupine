@@ -55,8 +55,8 @@ event add "<<Menubar:Edit/Anchors/Jump to next>>" <Alt-Shift-Down>
 event add "<<Menubar:Edit/Anchors/Clear>>" <Alt-C>
 event add "<<Menubar:Edit/Anchors/Add to error//warning lines>>" <Alt-E>
 
-# urls plugin
-event add "<<Urls:OpenWithMouse>>" <$contmand-Button-1>
+# urls plugin (same bindings as jump to definition plugin)
+event add "<<Urls:OpenWithMouse>>" <$contmand-ButtonRelease-1>
 event add "<<Urls:OpenWithKeyboard>>" <$contmand-Return>
 
 # tab_order plugin
