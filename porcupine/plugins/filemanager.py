@@ -30,7 +30,7 @@ else:
 class FilenameMode(enum.Enum):
     RENAME = ("Rename", "Enter a new name for {name}:")
     NEW = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
-    PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n")
+    PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n{plus}")
 
 
 class PasteState(NamedTuple):
@@ -108,13 +108,15 @@ def ask_file_name(
     assert mode in FilenameMode
     dialog_title, dialog_phrase = mode.value
 
-    if mode == FilenameMode.PASTE:
-        if can_overwrite:
-            dialog_phrase += "What do you want to do with it?"
-        else:
-            dialog_phrase += "Choose a name that isn't in use."
-
-    phrase_label.config(text=dialog_phrase.format(name=old_name, parent=target_dir))
+    phrase_label.config(
+        text=dialog_phrase.format(
+            name=old_name,
+            parent=target_dir,
+            plus="What do you want to do with it?"
+            if can_overwrite
+            else "Choose a name that isn't in use.",
+        )
+    )
 
     def update_dialog_state(*junk: object) -> None:
         if overwrite_var.get():
