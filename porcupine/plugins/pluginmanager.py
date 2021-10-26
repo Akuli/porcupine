@@ -195,7 +195,7 @@ class PluginDialogContent:
             elif info.status == pluginloader.Status.SETUP_MISSING:
                 # It is safe to say that if setup() is missing, a beginner tries to make a plugin
                 text = (
-                    "Congratulation!\n\nThis is your own plugin. Make sure to include a setup"
+                    "Congratulations!\n\nThis is your own plugin. Make sure to include a setup"
                     " function, so it can be loaded.\nTo learn more about Porcupine's plugin API,"
                     " visit https://akuli.github.io/porcupine"
                 )
