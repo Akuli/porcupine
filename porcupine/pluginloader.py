@@ -184,26 +184,26 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
     handler.emit = error_log.append  # type: ignore
     logger.addHandler(handler)
 
-    start = time.perf_counter()
-    if hasattr(info.module, "setup"):
-        try:
-            log.debug(f"calling porcupine.plugins.{info.name}.setup()")
-            info.module.setup()
-        except Exception:
-            log.exception(f"{info.name}.setup() doesn't work")
-            info.status = Status.SETUP_FAILED
-            info.error = traceback.format_exc()
-        else:
-            if error_log:
-                info.status = Status.SETUP_FAILED
-                info.error = "".join(
-                    f"{record.levelname}: {record.message}\n" for record in error_log
-                )
-            else:
-                info.status = Status.ACTIVE
-    else:
-        info.status = Status.SETUP_MISSING
+    if not hasattr(info.module, "setup"):
+        info.status = Status.SETUP_FAILED
+        info.error = "missing"
         log.warning(f"{info.name} plugin has no setup()")
+        return
+
+    start = time.perf_counter()
+    try:
+        log.debug(f"calling porcupine.plugins.{info.name}.setup()")
+        info.module.setup()
+    except Exception:
+        log.exception(f"{info.name}.setup() doesn't work")
+        info.status = Status.SETUP_FAILED
+        info.error = traceback.format_exc()
+    else:
+        if error_log:
+            info.status = Status.SETUP_FAILED
+            info.error = "".join(f"{record.levelname}: {record.message}\n" for record in error_log)
+        else:
+            info.status = Status.ACTIVE
 
     duration = time.perf_counter() - start
     logger.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
