@@ -110,7 +110,6 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def generate_jump_request(tab: tabs.FileTab) -> str:
-    print("generate_jump_request")
     tab.textwidget.event_generate("<<JumpToDefinitionRequest>>")
     return "break"
 
