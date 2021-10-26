@@ -67,11 +67,11 @@ def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
     )
 
 
-def open_the_url(tab: tabs.FileTab, index: str, junk: object) -> str | None:
+def open_the_url(tab: tabs.FileTab, junk: object) -> str | None:
     # tag_ranges is a painful method to use
     ranges = tab.textwidget.tag_ranges("underline:urls")
     for start, end in zip(ranges[0::2], ranges[1::2]):
-        if tab.textwidget.compare(start, "<=", index) and tab.textwidget.compare(index, "<=", end):
+        if tab.textwidget.compare(start, "<=", "insert") and tab.textwidget.compare("insert", "<=", end):
             webbrowser.open(tab.textwidget.get(start, end))
             return "break"
     return None
@@ -82,7 +82,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     utils.add_scroll_command(tab.textwidget, "yscrollcommand", partial(update_url_underlines, tab))
     update_url_underlines(tab)
 
-    tab.textwidget.bind("<<JumpToDefinitionRequest>>", partial(open_the_url, tab, "current"), add=True)
+    tab.textwidget.bind("<<JumpToDefinitionRequest>>", partial(open_the_url, tab), add=True)
 
 
 def setup() -> None:
