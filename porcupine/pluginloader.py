@@ -187,7 +187,7 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
     if not hasattr(info.module, "setup"):
         info.status = Status.SETUP_FAILED
         info.error = "missing"
-        log.warning(f"{info.name} plugin has no setup()")
+        log.warning(f"{info.name} plugin has no setup(). See https://akuli.github.io/porcupine/plugin-intro.html for more.")
         return
 
     start = time.perf_counter()
