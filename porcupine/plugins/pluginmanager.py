@@ -194,12 +194,12 @@ class PluginDialogContent:
                     # It is safe to say that if setup() is missing, a beginner tries to make a plugin
                     text = (
                         "Congratulations!\n\nThis is your own plugin. Make sure to include a setup"
-                        " function, so it can be loaded.\nTo learn more about Porcupine's plugin API,"
-                        " visit https://akuli.github.io/porcupine"
+                        " function, so it can be loaded.\nTo learn more about Porcupine's plugin"
+                        " API, visit https://akuli.github.io/porcupine"
                     )
                 else:
                     text = f"The plugin's setup() function failed.\n\n{info.error}"
-                
+
             elif info.status == pluginloader.Status.CIRCULAR_DEPENDENCY_ERROR:
                 assert info.error is not None
                 text = info.error
