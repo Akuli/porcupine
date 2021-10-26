@@ -209,16 +209,19 @@ class _Popup:
             self._select_item(self.treeview.next(the_id) or self.treeview.get_children()[0])
 
     def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
+        MAX_PADDING = 10
+        
         if not self._panedwindow.winfo_ismapped():
             return None
 
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
         self.treeview.yview_scroll(page_count, "pages")
-        self.treeview.selection_set(
-            self.treeview.identify_row(11)
-            # 11 to ensure that there's actually an item, not padding,
-            # even if theme uses a pretty big (10 px) padding
-        )
+
+        y = self.treeview.winfo_height() - MAX_PADDING if page_count == 1 else MAX_PADDING
+        while not self.treeview.identify_row(y):
+            y -= page_count
+
+        self.treeview.selection_set(self.treeview.identify_row(y))
         return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
