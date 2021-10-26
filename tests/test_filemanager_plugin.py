@@ -4,6 +4,7 @@ import sys
 import pytest
 
 from porcupine.plugins.directory_tree import get_directory_tree, get_path
+from porcupine.plugins.filemanager import FilenameMode
 
 
 def add_project_and_select_file(file_path, project=None) -> None:
@@ -41,7 +42,7 @@ def test_cutpasting_or_copypasting_to_same_dir(tree, tmp_path, mocker, event):
     tree.event_generate(event)
     tree.event_generate("<<Paste>>")
     ask_file_name.assert_called_once_with(
-        tmp_path / "foo", is_paste=True, show_overwriting_option=False
+        tmp_path, "foo", mode=FilenameMode.PASTE, can_overwrite=False
     )
 
     if event == "<<Copy>>":
