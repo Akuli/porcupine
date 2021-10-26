@@ -90,6 +90,7 @@ class Status(enum.Enum):
     DISABLED_ON_COMMAND_LINE = enum.auto()
     IMPORT_FAILED = enum.auto()
     SETUP_FAILED = enum.auto()
+    SETUP_MISSING = enum.auto()
     CIRCULAR_DEPENDENCY_ERROR = enum.auto()
 
 
@@ -184,19 +185,25 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
     logger.addHandler(handler)
 
     start = time.perf_counter()
-    try:
-        log.debug(f"calling porcupine.plugins.{info.name}.setup()")
-        info.module.setup()
-    except Exception:
-        log.exception(f"{info.name}.setup() doesn't work")
-        info.status = Status.SETUP_FAILED
-        info.error = traceback.format_exc()
-    else:
-        if error_log:
+    if hasattr(info.module, "setup"):
+        try:
+            log.debug(f"calling porcupine.plugins.{info.name}.setup()")
+            info.module.setup()
+        except Exception:
+            log.exception(f"{info.name}.setup() doesn't work")
             info.status = Status.SETUP_FAILED
-            info.error = "".join(f"{record.levelname}: {record.message}\n" for record in error_log)
+            info.error = traceback.format_exc()
         else:
-            info.status = Status.ACTIVE
+            if error_log:
+                info.status = Status.SETUP_FAILED
+                info.error = "".join(
+                    f"{record.levelname}: {record.message}\n" for record in error_log
+                )
+            else:
+                info.status = Status.ACTIVE
+    else:
+        info.status = Status.SETUP_MISSING
+        log.warning(f"{info.name} plugin has no setup()")
 
     duration = time.perf_counter() - start
     logger.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
