@@ -112,9 +112,11 @@ def ask_file_name(
         text=dialog_phrase.format(
             name=old_name,
             parent=target_dir,
-            plus="What do you want to do with it?"
-            if can_overwrite
-            else "Choose a name that isn't in use.",
+            plus=(
+                "What do you want to do with it?"
+                if can_overwrite
+                else "Choose a name that isn't in use."
+            ),
         )
     )
 
