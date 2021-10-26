@@ -210,7 +210,7 @@ class _Popup:
 
     def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         MAX_PADDING = 10
-        
+
         if not self._panedwindow.winfo_ismapped():
             return None
 
