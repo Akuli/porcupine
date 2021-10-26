@@ -109,9 +109,8 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     utils.bind_with_data(tab, "<<JumpToDefinitionResponse>>", receive_jump, add=True)
 
 
-def generate_jump_request(tab: tabs.FileTab) -> str:
+def generate_jump_request(tab: tabs.FileTab) -> None:
     tab.textwidget.event_generate("<<JumpToDefinitionRequest>>")
-    return "break"
 
 
 def setup() -> None:
