@@ -829,7 +829,6 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
                 langserver.send_change_events(tab, event.data_class(textutils.Changes))
 
     def request_jump2def(event: object) -> str:
-        print("langserver sees jump request")
         for langserver in langservers.values():
             if tab in langserver.tabs_opened:
                 langserver.request_jump_to_definition(tab)

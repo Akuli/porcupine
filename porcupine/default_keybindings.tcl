@@ -55,10 +55,6 @@ event add "<<Menubar:Edit/Anchors/Jump to next>>" <Alt-Shift-Down>
 event add "<<Menubar:Edit/Anchors/Clear>>" <Alt-C>
 event add "<<Menubar:Edit/Anchors/Add to error//warning lines>>" <Alt-E>
 
-# urls plugin (same bindings as jump to definition plugin)
-#event add "<<Urls:OpenWithMouse>>" <$contmand-ButtonRelease-1>
-#event add "<<Urls:OpenWithKeyboard>>" <$contmand-Return>
-
 # tab_order plugin
 # Prior = Page Up, Next = Page Down
 event add "<<TabOrder:SelectLeft>>" <$contmand-Prior>
@@ -87,7 +83,7 @@ event add "<<FileManager:Rename>>" <F2>
 event add "<<FileManager:Trash>>" <Delete>
 event add "<<FileManager:Delete>>" <Shift-Delete>
 
-# jump_to_definition plugin
+# jump_to_definition plugin (used by langserver and urls)
 # cursor moves between button press and release, don't bind to press
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
