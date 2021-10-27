@@ -58,8 +58,8 @@ if sys.platform == "darwin":
         ("<<Menubar:View/Bigger Font>>", "⌘+", "Command-+"),
         ("<<Menubar:View/Reset Font Size>>", "⌘0", "Command-0"),
         ("<<Menubar:View/Smaller Font>>", "⌘-", "Command--"),
-        ("<<Urls:OpenWithKeyboard>>", "⌘⏎", "Command-Return"),
-        ("<<Urls:OpenWithMouse>>", "⌘-click", ""),  # not possible to show in menu
+        ("<<Menubar:Edit/Jump to definition>>", "⌘⏎", "Command-Return"),
+        ("<<Menubar:Edit/Jump to definition>>", "⌘-click", "Command-click"),  # not possible to show in menu
         ("<<UtilsTestEvent>>", "⇧⌥-click", ""),  # not possible to show in menu
     ]
 else:
@@ -87,8 +87,10 @@ def test_get_binding(binding, menu_false_text, menu_true_text):
     # Old test case, currently unused
     get_main_window().tk.eval("event add <<UtilsTestEvent>> <Alt-Shift-Button-1>")
 
-    assert utils.get_binding(binding, menu=False) == menu_false_text
-    assert utils.get_binding(binding, menu=True) == menu_true_text
+    false_text = utils.get_binding(binding, menu=False, many=True)
+    true_text = utils.get_binding(binding, menu=True, many=True)
+    assert menu_false_text in false_text
+    assert menu_true_text in true_text
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")

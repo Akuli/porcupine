@@ -330,9 +330,13 @@ def _format_binding(binding: str, menu: bool) -> str:
 # TODO: document this
 def get_binding(virtual_event: str, *, menu: bool = False, many: bool = False) -> str:
     bindings = porcupine.get_main_window().event_info(virtual_event)
-    if not bindings and not menu:
+    replaced_binds = []
+    for binding in bindings:
+        replaced_binds.append(binding.replace("ButtonRelease-1", "click"))
+        
+    if not replaced_binds and not menu:
         log.warning(f"no bindings configured for {virtual_event}")
-    results = [_format_binding(b, menu) for b in bindings]
+    results = [_format_binding(b, menu) for b in replaced_binds]
     if not many:
         del results[1:]
     return " or ".join(results)
