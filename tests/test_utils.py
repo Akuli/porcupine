@@ -78,8 +78,12 @@ else:
         ("<<Menubar:View/Bigger Font>>", "Ctrl+Plus", "Ctrl+Plus"),
         ("<<Menubar:View/Reset Font Size>>", "Ctrl+Zero", "Ctrl+Zero"),
         ("<<Menubar:View/Smaller Font>>", "Ctrl+Minus", "Ctrl+Minus"),
-        ("<<Urls:OpenWithKeyboard>>", "Ctrl+Enter", "Ctrl+Enter"),
-        ("<<Urls:OpenWithMouse>>", "Ctrl+click", "Ctrl+click"),
+        ("<<Menubar:Edit/Jump to definition>>", "Ctrl-Return", "Ctrl-Return"),
+        (
+            "<<Menubar:Edit/Jump to definition>>",
+            "Ctrl-click",
+            "Ctrl-click",
+        ),  # not possible to show in menu
         ("<<UtilsTestEvent>>", "Alt+Shift+click", "Alt+Shift+click"),
     ]
 
