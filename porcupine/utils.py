@@ -342,13 +342,6 @@ def get_binding(virtual_event: str, *, menu: bool = False, many: bool = False) -
     return " or ".join(results)
 
 
-def get_variable(tcl_variable: str) -> str:
-    """
-    Reads the value of a Tcl variable.
-    """
-    return porcupine.get_main_window().tk.eval(f"return ${tcl_variable}")
-
-
 # TODO: document this
 def tkinter_safe_string(string: str, *, hide_unsupported_chars: bool = False) -> str:
     if hide_unsupported_chars:
