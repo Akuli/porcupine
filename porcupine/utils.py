@@ -333,7 +333,7 @@ def get_binding(virtual_event: str, *, menu: bool = False, many: bool = False) -
     replaced_binds = []
     for binding in bindings:
         replaced_binds.append(binding.replace("ButtonRelease-1", "click"))
-        
+
     if not replaced_binds and not menu:
         log.warning(f"no bindings configured for {virtual_event}")
     results = [_format_binding(b, menu) for b in replaced_binds]

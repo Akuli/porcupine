@@ -59,7 +59,11 @@ if sys.platform == "darwin":
         ("<<Menubar:View/Reset Font Size>>", "⌘0", "Command-0"),
         ("<<Menubar:View/Smaller Font>>", "⌘-", "Command--"),
         ("<<Menubar:Edit/Jump to definition>>", "⌘⏎", "Command-Return"),
-        ("<<Menubar:Edit/Jump to definition>>", "⌘-click", "Command-click"),  # not possible to show in menu
+        (
+            "<<Menubar:Edit/Jump to definition>>",
+            "⌘-click",
+            "Command-click",
+        ),  # not possible to show in menu
         ("<<UtilsTestEvent>>", "⇧⌥-click", ""),  # not possible to show in menu
     ]
 else:
