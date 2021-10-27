@@ -87,14 +87,6 @@ event add "<<FileManager:Delete>>" <Shift-Delete>
 # cursor moves between button press and release, don't bind to press
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
-if {[tk windowingsystem] == "aqua"} {
-    set open_url_mouse ⌘-click
-    set open_url_keyboard ⌘⏎
-} else {
-    set open_url_mouse Ctrl+click
-    set open_url_keyboard Ctrl+Enter
-}
-
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
