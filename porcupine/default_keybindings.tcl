@@ -87,10 +87,12 @@ event add "<<FileManager:Delete>>" <Shift-Delete>
 # cursor moves between button press and release, don't bind to press
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
-if { $contmand == "Command" } {
-    set open_url_keybind ⌘⏎
+if {[tk windowingsystem] == "aqua"} {
+    set open_url_mouse ⌘-Click
+    set open_url_keyboard ⌘-Return
 } else {
-    set open_url_keybind Ctrl-Enter
+    set open_url_mouse Ctrl-Click
+    set open_url_keyboard Ctrl-Return
 }
 
 
