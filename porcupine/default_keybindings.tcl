@@ -88,11 +88,11 @@ event add "<<FileManager:Delete>>" <Shift-Delete>
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
 if {[tk windowingsystem] == "aqua"} {
-    set open_url_mouse ⌘-Click
-    set open_url_keyboard ⌘-Return
+    set open_url_mouse ⌘-click
+    set open_url_keyboard ⌘⏎
 } else {
-    set open_url_mouse Ctrl-Click
-    set open_url_keyboard Ctrl-Return
+    set open_url_mouse Ctrl+click
+    set open_url_keyboard Ctrl+Enter
 }
 
 
