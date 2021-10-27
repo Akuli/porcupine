@@ -72,7 +72,9 @@ def open_the_url(tab: tabs.FileTab, junk: object) -> str | None:
     # tag_ranges is a painful method to use
     ranges = tab.textwidget.tag_ranges("underline:urls")
     for start, end in zip(ranges[0::2], ranges[1::2]):
-        if tab.textwidget.compare(start, "<=", "insert") and tab.textwidget.compare("insert", "<=", end):
+        if tab.textwidget.compare(start, "<=", "insert") and tab.textwidget.compare(
+            "insert", "<=", end
+        ):
             webbrowser.open(tab.textwidget.get(start, end))
             return "break"
     return None
