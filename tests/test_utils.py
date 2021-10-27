@@ -83,7 +83,7 @@ else:
             "<<Menubar:Edit/Jump to definition>>",
             "Ctrl+click",
             "Ctrl+click",
-        ),  # not possible to show in menu
+        ),
         ("<<UtilsTestEvent>>", "Alt+Shift+click", "Alt+Shift+click"),
     ]
 
