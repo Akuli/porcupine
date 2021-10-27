@@ -87,6 +87,12 @@ event add "<<FileManager:Delete>>" <Shift-Delete>
 # cursor moves between button press and release, don't bind to press
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
 event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
+if { $contmand == "Command" } {
+    set open_url_keybind ⌘⏎
+} else {
+    set open_url_keybind Ctrl-Enter
+}
+
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
