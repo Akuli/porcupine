@@ -212,7 +212,6 @@ class _Popup:
         # First id is "0", second is "1" etc
         for item_id in self.treeview.get_children():
             if self.treeview.bbox(item_id):
-                print("x", int(item_id), self.treeview.bbox(item_id))
                 return int(item_id)
         raise RuntimeError("wut")
 
