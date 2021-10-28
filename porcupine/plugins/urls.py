@@ -9,6 +9,9 @@ from typing import Iterable
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import underlines
 
+# urls and langserver both use <<JumpToDefinitionRequest>>
+setup_before = ["langserver"]
+
 
 def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[tuple[str, str]]:
     match_ends_and_search_begins = start
@@ -50,26 +53,27 @@ def find_urls(text: tkinter.Text, start: str, end: str) -> Iterable[tuple[str, s
 def update_url_underlines(tab: tabs.FileTab, junk: object = None) -> None:
     view_start = tab.textwidget.index("@0,0")
     view_end = tab.textwidget.index("@0,10000")
-    shortcut1 = utils.get_binding("<<Urls:OpenWithMouse>>")
-    shortcut2 = utils.get_binding("<<Urls:OpenWithKeyboard>>")
+    shortcut = utils.get_binding("<<Menubar:Edit/Jump to definition>>", many=True)
 
     tab.event_generate(
         "<<SetUnderlines>>",
         data=underlines.Underlines(
             id="urls",
             underline_list=[
-                underlines.Underline(start, end, f"{shortcut1} or {shortcut2} to open")
+                underlines.Underline(start, end, f"{shortcut} to open")
                 for start, end in find_urls(tab.textwidget, view_start, view_end)
             ],
         ),
     )
 
 
-def open_the_url(tab: tabs.FileTab, index: str, junk: object) -> str | None:
+def open_the_url(tab: tabs.FileTab, junk: object) -> str | None:
     # tag_ranges is a painful method to use
     ranges = tab.textwidget.tag_ranges("underline:urls")
     for start, end in zip(ranges[0::2], ranges[1::2]):
-        if tab.textwidget.compare(start, "<=", index) and tab.textwidget.compare(index, "<=", end):
+        if tab.textwidget.compare(start, "<=", "insert") and tab.textwidget.compare(
+            "insert", "<=", end
+        ):
             webbrowser.open(tab.textwidget.get(start, end))
             return "break"
     return None
@@ -80,10 +84,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     utils.add_scroll_command(tab.textwidget, "yscrollcommand", partial(update_url_underlines, tab))
     update_url_underlines(tab)
 
-    tab.textwidget.tag_bind(
-        "underline:urls", "<<Urls:OpenWithMouse>>", partial(open_the_url, tab, "current"), add=True
-    )
-    tab.textwidget.bind("<<Urls:OpenWithKeyboard>>", partial(open_the_url, tab, "insert"), add=True)
+    tab.textwidget.bind("<<JumpToDefinitionRequest>>", partial(open_the_url, tab), add=True)
 
 
 def setup() -> None:
