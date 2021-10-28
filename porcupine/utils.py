@@ -269,7 +269,7 @@ def _format_binding(binding: str, menu: bool) -> str:
     while i < len(parts):
         if parts[i : i + 3] == ["Double", "Button", "1"]:
             parts[i : i + 3] = ["double-click"]
-        elif parts[i : i + 2] == ["Button", "1"]:
+        elif parts[i : i + 2] == ["Button", "1"] or parts[i : i + 2] == ["ButtonRelease", "1"]:
             parts[i : i + 2] = ["click"]
         elif re.fullmatch(r"[a-z]", parts[i]):
             parts[i] = parts[i].upper()
@@ -330,13 +330,10 @@ def _format_binding(binding: str, menu: bool) -> str:
 # TODO: document this
 def get_binding(virtual_event: str, *, menu: bool = False, many: bool = False) -> str:
     bindings = porcupine.get_main_window().event_info(virtual_event)
-    replaced_binds = []
-    for binding in bindings:
-        replaced_binds.append(binding.replace("ButtonRelease-1", "click"))
 
-    if not replaced_binds and not menu:
+    if not bindings and not menu:
         log.warning(f"no bindings configured for {virtual_event}")
-    results = [_format_binding(b, menu) for b in replaced_binds]
+    results = [_format_binding(b, menu) for b in bindings]
     if not many:
         del results[1:]
     return " or ".join(results)
