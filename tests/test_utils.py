@@ -73,7 +73,11 @@ else:
         ("<<Menubar:View/Bigger Font>>", "Ctrl+Plus", "Ctrl+Plus"),
         ("<<Menubar:View/Reset Font Size>>", "Ctrl+Zero", "Ctrl+Zero"),
         ("<<Menubar:View/Smaller Font>>", "Ctrl+Minus", "Ctrl+Minus"),
-        ("<<Menubar:Edit/Jump to definition>>", "Ctrl+Enter or Ctrl+click", "Ctrl+Enter or Ctrl+click"),
+        (
+            "<<Menubar:Edit/Jump to definition>>",
+            "Ctrl+Enter or Ctrl+click",
+            "Ctrl+Enter or Ctrl+click",
+        ),
         ("<<UtilsTestEvent>>", "Alt+Shift+click", "Alt+Shift+click"),
     ]
 
