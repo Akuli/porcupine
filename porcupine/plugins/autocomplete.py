@@ -208,12 +208,32 @@ class _Popup:
             [the_id] = selected_ids
             self._select_item(self.treeview.next(the_id) or self.treeview.get_children()[0])
 
+    def _get_first_visible_id(self) -> int:
+        # First id is "0", second is "1" etc
+        for item_id in self.treeview.get_children():
+            if self.treeview.bbox(item_id):
+                return int(item_id)
+        raise RuntimeError("wut")
+
     def on_page_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
         if not self._panedwindow.winfo_ismapped():
             return None
 
         page_count = {"Prior": -1, "Next": 1}[event.keysym]
-        self._doc_text.yview_scroll(page_count, "pages")
+        old_selection = self.treeview.selection()
+
+        old_first_visible = self._get_first_visible_id()
+        self.treeview.yview_scroll(page_count, "pages")
+        self.treeview.update()
+        new_first_visible = self._get_first_visible_id()
+
+        # Move selection as scrolled
+        if old_selection:
+            [old_id] = old_selection
+            rows_scrolled = new_first_visible - old_first_visible
+            new_id = str(int(old_id) + rows_scrolled)
+            self.treeview.selection_set(new_id)
+
         return "break"
 
     def on_arrow_key_up_down(self, event: tkinter.Event[tkinter.Misc]) -> str | None:
