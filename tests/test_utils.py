@@ -58,7 +58,7 @@ if sys.platform == "darwin":
         ("<<Menubar:View/Bigger Font>>", "⌘+", "Command-+"),
         ("<<Menubar:View/Reset Font Size>>", "⌘0", "Command-0"),
         ("<<Menubar:View/Smaller Font>>", "⌘-", "Command--"),
-        ("<<Menubar:Edit/Jump to definition>>", "⌘⏎ or ⌘ButtonRelease1", "Command-Return or Command-ButtonRelease-1"),
+        ("<<Menubar:Edit/Jump to definition>>", "⌘⏎ or ⌘-click", "Command-Return or Command-ButtonRelease-1"),
         ("<<UtilsTestEvent>>", "⇧⌥-click", ""),  # not possible to show in menu
     ]
 else:
@@ -73,7 +73,7 @@ else:
         ("<<Menubar:View/Bigger Font>>", "Ctrl+Plus", "Ctrl+Plus"),
         ("<<Menubar:View/Reset Font Size>>", "Ctrl+Zero", "Ctrl+Zero"),
         ("<<Menubar:View/Smaller Font>>", "Ctrl+Minus", "Ctrl+Minus"),
-        ("<<Menubar:Edit/Jump to definition>>", "Ctrl+Enter or Ctrl+ButtonRelease+1", "Ctrl+Enter or Ctrl+ButtonRelease+1"),
+        ("<<Menubar:Edit/Jump to definition>>", "Ctrl+Enter or Ctrl+click", "Ctrl+Enter or Ctrl+ButtonRelease+1"),
         ("<<UtilsTestEvent>>", "Alt+Shift+click", "Alt+Shift+click"),
     ]
 
