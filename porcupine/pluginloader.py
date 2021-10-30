@@ -90,7 +90,6 @@ class Status(enum.Enum):
     DISABLED_ON_COMMAND_LINE = enum.auto()
     IMPORT_FAILED = enum.auto()
     SETUP_FAILED = enum.auto()
-    SETUP_MISSING = enum.auto()
     CIRCULAR_DEPENDENCY_ERROR = enum.auto()
 
 
@@ -186,7 +185,6 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
 
     if not hasattr(info.module, "setup"):
         info.status = Status.SETUP_FAILED
-        info.error = "missing"
         log.warning(
             f"{info.name} plugin has no setup(). See"
             " https://akuli.github.io/porcupine/plugin-intro.html for more."

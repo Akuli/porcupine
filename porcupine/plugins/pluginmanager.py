@@ -190,15 +190,17 @@ class PluginDialogContent:
             if info.status == pluginloader.Status.IMPORT_FAILED:
                 text = f"Importing the plugin failed.\n\n{info.error}"
             elif info.status == pluginloader.Status.SETUP_FAILED:
-                if info.error == "missing":
-                    # It is safe to say that if setup() is missing, a beginner tries to make a plugin
-                    text = (
-                        "Congratulations!\n\nThis is your own plugin. Make sure to include a setup"
-                        " function, so it can be loaded.\nTo learn more about Porcupine's plugin"
-                        " API, visit https://akuli.github.io/porcupine"
+                text = "Calling the plugin's setup() function failed.\n\n"
+                if info.error is None:
+                    # no setup(). probably a beginner tries to make a plugin
+                    text += (
+                        "There is no setup() function. Make sure to include a setup function into"
+                        " your plugin.\n\nTo learn more about Porcupine's plugin API, visit"
+                        " https://akuli.github.io/porcupine"
                     )
                 else:
-                    text = f"The plugin's setup() function failed.\n\n{info.error}"
+                    # exception in setup()
+                    text += info.error
 
             elif info.status == pluginloader.Status.CIRCULAR_DEPENDENCY_ERROR:
                 assert info.error is not None
