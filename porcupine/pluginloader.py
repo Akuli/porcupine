@@ -185,6 +185,11 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
 
     if not hasattr(info.module, "setup"):
         info.status = Status.SETUP_FAILED
+        info.error = (
+            "There is no setup() function. Make sure to include a setup function into your"
+            " plugin.\n\nTo learn more about Porcupine's plugin API, visit"
+            " https://akuli.github.io/porcupine"
+        )
         log.warning(
             f"{info.name} plugin has no setup(). See"
             " https://akuli.github.io/porcupine/plugin-intro.html for more."
