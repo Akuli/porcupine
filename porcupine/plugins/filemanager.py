@@ -349,6 +349,9 @@ def can_paste(path: Path) -> bool:
 
 
 def new_file_here(path: Path) -> None:
+    if not path.is_dir():
+        path = path.parent
+
     name = ask_file_name(path, "", mode=FilenameMode.NEW)
     if name:
         name.touch()
@@ -360,7 +363,7 @@ commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
-    Command("New file", "<<FileManager:New file>>", (lambda p: p.is_dir()), new_file_here),
+    Command("New file here", "<<FileManager:New file>>", (lambda p: True), new_file_here),
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
