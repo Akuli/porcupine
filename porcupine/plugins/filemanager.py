@@ -329,12 +329,12 @@ def get_selected_path(tree: DirectoryTree) -> Path | None:
 class Command:
     name: str
     virtual_event_name: str | None
-    condition: Callable[[Path], bool] | None
+    condition: Callable[[Path], bool]
     callback: Callable[[Path], None | str]
 
     def run(self, event: tkinter.Event[DirectoryTree]) -> None | str:
         path = get_selected_path(event.widget)
-        if path is not None and (self.condition is None or self.condition(path)):
+        if path is not None and self.condition(path):
             self.callback(path)
             return "break"
         return None
@@ -363,7 +363,7 @@ commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
-    Command("New file here", "<<FileManager:New file>>", None, new_file_here),
+    Command("New file here", "<<FileManager:New file>>", (lambda p: True), new_file_here),
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
@@ -379,7 +379,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     path = get_selected_path(tree)
     if path is not None:
         for command in commands:
-            if command.condition is None or command.condition(path):
+            if command.condition(path):
                 tree.contextmenu.add_command(
                     label=command.name, command=partial(command.callback, path)
                 )
