@@ -183,7 +183,27 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
     handler.emit = error_log.append  # type: ignore
     logger.addHandler(handler)
 
-    if not hasattr(info.module, "setup"):
+    if hasattr(info.module, "setup"):
+        start = time.perf_counter()
+        try:
+            log.debug(f"calling porcupine.plugins.{info.name}.setup()")
+            info.module.setup()
+        except Exception:
+            log.exception(f"{info.name}.setup() doesn't work")
+            info.status = Status.SETUP_FAILED
+            info.error = traceback.format_exc()
+        else:
+            if error_log:
+                info.status = Status.SETUP_FAILED
+                info.error = "".join(
+                    f"{record.levelname}: {record.message}\n" for record in error_log
+                )
+            else:
+                info.status = Status.ACTIVE
+
+        duration = time.perf_counter() - start
+        logger.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
+    else:
         info.status = Status.SETUP_FAILED
         info.error = (
             "There is no setup() function. Make sure to include a setup function into your"
@@ -191,25 +211,6 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
             " https://akuli.github.io/porcupine/plugin-intro.html"
         )
         log.warning(f"Calling {info.name!r} plugin's setup() function failed.\n{info.error}")
-        return
-
-    start = time.perf_counter()
-    try:
-        log.debug(f"calling porcupine.plugins.{info.name}.setup()")
-        info.module.setup()
-    except Exception:
-        log.exception(f"{info.name}.setup() doesn't work")
-        info.status = Status.SETUP_FAILED
-        info.error = traceback.format_exc()
-    else:
-        if error_log:
-            info.status = Status.SETUP_FAILED
-            info.error = "".join(f"{record.levelname}: {record.message}\n" for record in error_log)
-        else:
-            info.status = Status.ACTIVE
-
-    duration = time.perf_counter() - start
-    logger.debug("ran %s.setup() in %.3f milliseconds", info.name, duration * 1000)
 
     logger.removeHandler(handler)
 
