@@ -190,7 +190,7 @@ class PluginDialogContent:
             if info.status == pluginloader.Status.IMPORT_FAILED:
                 text = f"Importing the plugin failed.\n\n{info.error}"
             elif info.status == pluginloader.Status.SETUP_FAILED:
-                text = f"The plugin's setup() function failed.\n\n{info.error}"
+                text = f"Calling the plugin's setup() function failed.\n\n{info.error}"
             elif info.status == pluginloader.Status.CIRCULAR_DEPENDENCY_ERROR:
                 assert info.error is not None
                 text = info.error
