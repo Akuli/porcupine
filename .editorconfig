@@ -13,7 +13,3 @@ max_line_length = 100  # keep in sync with pyproject.toml
 
 [*.c]
 indent_style = tab
-
-# this is for docstrings and comments
-# code can be much longer, linters won't complain
-max_line_length = 79
