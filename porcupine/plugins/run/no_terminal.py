@@ -67,6 +67,15 @@ class Executor:
         env = dict(os.environ)
         env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
 
+        # If Porcupine is running within a virtualenv, ignore it
+        if "VIRTUAL_ENV" in env and "PATH" in env:
+            # os.pathsep = ":"
+            # os.sep = "/"
+            porcu_venv = env.pop("VIRTUAL_ENV")
+            env["PATH"] = os.pathsep.join(
+                p for p in env["PATH"].split(os.pathsep) if not p.startswith(porcu_venv + os.sep)
+            )
+
         # Update needed to get width and height, but causes key bindings to execute
         self._textwidget.update()
         width, height = textutils.textwidget_size(self._textwidget)
