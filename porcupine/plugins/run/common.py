@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -53,3 +54,18 @@ class Context:
             "project_name": self.project_path.name,
             "project_path": str(self.project_path),
         }
+
+
+def prepare_env() -> dict[str, str]:
+    env = dict(os.environ)
+
+    # If Porcupine is running within a virtualenv, ignore it
+    if "VIRTUAL_ENV" in env and "PATH" in env:
+        # os.pathsep = ":"
+        # os.sep = "/"
+        porcu_venv = env.pop("VIRTUAL_ENV")
+        env["PATH"] = os.pathsep.join(
+            p for p in env["PATH"].split(os.pathsep) if not p.startswith(porcu_venv + os.sep)
+        )
+
+    return env
