@@ -2,6 +2,24 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## v0.99.2
+
+Directory tree:
+- When a file has been renamed, it is now selected. Previously you would have to click the file after renaming it if you wanted to open it, for example. Thank you [rdbende](https://github.com/rdbende) for fixing this.
+- You can now make a new file by right-clicking the directory tree. Thank you [rdbende](https://github.com/rdbende).
+- Deleting an empty directory no longer displays a dialog that asks you whether you surely want to delete it. Previously the dialog would confusingly say "Do you want to permanently delete `foo` and everything inside it?", even if there was nothing inside the directory.
+
+Running commands:
+- If Porcupine is installed into a virtualenv, that no longer affects running commands. Previously Python would often fail to find libraries installed with `pip` if you didn't use a virtualenv, for example.
+- When the output displayed in the Porcupine window, the output can now contain `\n` or `\r\n`, and it's displayed as a newline, regardless of the platform. Previously `\r\n` was supported only on Windows, and on other systems, it added a box at the end of the previous line.
+
+Other improvements:
+- The X button that closes a tab is now white on dark themes, so it is easier to see. Thank you [rdbende](https://github.com/rdbende).
+- The status bar now shows the number of words selected.
+- URLs in code are now opened with Ctrl+Click or Ctrl+Enter (Command+Click or Command+Enter on MacOS). They previously used Alt+Shift instead of Ctrl, which was unnecessarily confusing. Thank you [1anakin20](https://github.com/1anakin20).
+- Page up and down keys now work in the autocompletion list. Thank you [rdbende](https://github.com/rdbende).
+
+
 ## v0.99.1
 
 Directory tree:
