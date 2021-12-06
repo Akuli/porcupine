@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import locale
 import logging
-import os
 import queue
 import re
 import signal
@@ -27,6 +26,7 @@ from porcupine import (
     textutils,
     utils,
 )
+from porcupine.plugins.run import common
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -64,17 +64,8 @@ class Executor:
         self.started = False
 
     def run(self, command: str) -> None:
-        env = dict(os.environ)
+        env = common.prepare_env()
         env["PYTHONUNBUFFERED"] = "1"  # same as passing -u option to python (#802)
-
-        # If Porcupine is running within a virtualenv, ignore it
-        if "VIRTUAL_ENV" in env and "PATH" in env:
-            # os.pathsep = ":"
-            # os.sep = "/"
-            porcu_venv = env.pop("VIRTUAL_ENV")
-            env["PATH"] = os.pathsep.join(
-                p for p in env["PATH"].split(os.pathsep) if not p.startswith(porcu_venv + os.sep)
-            )
 
         # Update needed to get width and height, but causes key bindings to execute
         self._textwidget.update()
