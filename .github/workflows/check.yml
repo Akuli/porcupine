@@ -61,7 +61,7 @@ jobs:
       with:
         run: python3 -m pytest -vvvv --durations=10
   pytest-macos:
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: macos-latest
     strategy:
       matrix:
