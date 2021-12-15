@@ -50,9 +50,9 @@ _MAX_PROJECTS = 5
 def get_path(item_id: str) -> Path | None:
     try:
         item_type, project_number, path = item_id.split(":", maxsplit=2)
-    except ValueError:
+    except ValueError as e:
         if "dummy" not in get_directory_tree().item(item_id)["tags"]:
-            raise ValueError
+            raise e
         return None
     return Path(path)
 
