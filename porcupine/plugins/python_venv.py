@@ -120,6 +120,10 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
     tree: dirtree.DirectoryTree = event.widget
     [item] = tree.selection()
     path = dirtree.get_path(item)
+
+    if path is None:
+        return
+
     project_root = dirtree.get_path(tree.find_project_id(item))
     if not is_venv(path):
         return

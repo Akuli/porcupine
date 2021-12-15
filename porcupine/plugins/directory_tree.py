@@ -47,8 +47,13 @@ _MAX_PROJECTS = 5
 # where:
 #   - type is "file", "dir", "project"
 #   - project_number is unique to each project
-def get_path(item_id: str) -> Path:
-    item_type, project_number, path = item_id.split(":", maxsplit=2)
+def get_path(item_id: str) -> Path | None:
+    try:
+        item_type, project_number, path = item_id.split(":", maxsplit=2)
+    except ValueError:
+        if "dummy" not in get_directory_tree().item(item_id)["tags"]:
+            raise ValueError
+        return None
     return Path(path)
 
 
