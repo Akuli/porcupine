@@ -200,7 +200,9 @@ def _update_shortcuts_for_opening_submenus() -> None:
                 used_letters.add(match.group(1))
 
     menu = get_menu("")
-    for submenu_index in range(menu.index("end") + 1):
+    last_index = menu.index("end")
+    assert last_index is not None
+    for submenu_index in range(last_index + 1):
         for letter_index, letter in enumerate(menu.entrycget(submenu_index, "label").lower()):
             if letter in ascii_lowercase and letter not in used_letters:
                 menu.entryconfig(submenu_index, underline=letter_index)
