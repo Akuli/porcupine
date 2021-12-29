@@ -126,7 +126,7 @@ def error_says_socket_not_connected(error: OSError) -> bool:
 
 
 class LocalhostSocketIO:
-    def __init__(self, port: int, log: logging.LoggerAdapter) -> None:
+    def __init__(self, port: int, log: logging.LoggerAdapter[logging.Logger]) -> None:
         self._sock = socket.socket()
 
         # This queue solves two problems:
@@ -140,7 +140,7 @@ class LocalhostSocketIO:
         )
         self._reader_thread.start()
 
-    def _send_queue_to_socket(self, port: int, log: logging.LoggerAdapter) -> None:
+    def _send_queue_to_socket(self, port: int, log: logging.LoggerAdapter[logging.Logger]) -> None:
         while True:
             try:
                 self._sock.connect(("localhost", port))
@@ -320,7 +320,7 @@ class LangServer:
         self,
         process: subprocess.Popen[bytes],
         the_id: LangServerId,
-        log: logging.LoggerAdapter,
+        log: logging.LoggerAdapter[logging.Logger],
         config: LangServerConfig,
     ) -> None:
         self._process = process
@@ -726,7 +726,7 @@ langservers: dict[LangServerId, LangServer] = {}
 # is already being used, then it should exit with an error message.
 
 
-def stream_to_log(stream: IO[bytes], log: logging.LoggerAdapter) -> None:
+def stream_to_log(stream: IO[bytes], log: logging.LoggerAdapter[logging.Logger]) -> None:
     for line_bytes in stream:
         line = line_bytes.rstrip(b"\r\n").decode("utf-8", errors="replace")
         log.info(f"langserver logged: {line}")

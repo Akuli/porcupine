@@ -10,5 +10,4 @@ import os
 from porcupine import dirs
 
 # simple hack to allow user-wide plugins
-__path__: list[str]
 __path__.insert(0, os.path.join(dirs.user_config_dir, "plugins"))

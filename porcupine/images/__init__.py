@@ -9,7 +9,6 @@ from tkinter.ttk import Style
 from porcupine import utils
 
 # __path__[0] is the directory where this __init__.py is
-__path__: list[str]
 images_dir = Path(__path__[0]).absolute()
 
 

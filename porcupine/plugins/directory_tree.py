@@ -108,7 +108,7 @@ class DirectoryTree(ttk.Treeview):
 
         # Man page says identify_row is "obsolescent" but tkinter doesn't have the new thing yet
         item = self.identify_row(event.y)
-        if item is None:
+        if not item:
             return None
 
         # Couldn't get <Double-Button-1> to work, so I wrote a program to

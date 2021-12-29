@@ -47,7 +47,7 @@ CallableT = TypeVar("CallableT", bound=Callable[..., Any])
 # To fix this, we break the cycle by making the method reference
 # self weakly.
 def method_weakref(method: CallableT) -> CallableT:
-    method_ref = weakref.WeakMethod(method)  # type: ignore
+    method_ref = weakref.WeakMethod(method)
     del method
     return lambda *args, **kwargs: method_ref()(*args, **kwargs)  # type: ignore
 

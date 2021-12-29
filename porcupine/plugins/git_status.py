@@ -229,7 +229,12 @@ def update_tree_selection_color(tree: DirectoryTree, event: object = None) -> No
 
 
 def sorting_key(tree: DirectoryTree, item_id: str) -> Any:
-    [git_tag] = [t for t in tree.item(item_id, "tags") if t.startswith("git_")] or [None]
+    tags = [t for t in tree.item(item_id, "tags") if t.startswith("git_")]
+    if not tags:
+        git_tag = None
+    else:
+        [git_tag] = tags
+
     return [
         "git_added",
         "git_modified",
