@@ -203,14 +203,17 @@ def test_pasting_selected_indented_code(filetab, tabmanager, mocker):
     mock_run = mocker.patch("porcupine.plugins.pastebin.DPaste.run")
     mock_run.return_value = "https://foobar"
 
-    filetab.textwidget.insert('1.0', '''\
+    filetab.textwidget.insert(
+        "1.0",
+        """\
 if foo:
     bar
     if baz:
         lol
-''')
-    filetab.textwidget.tag_add('sel', '2.0', '5.0')
+""",
+    )
+    filetab.textwidget.tag_add("sel", "2.0", "5.0")
 
     tabmanager.select(filetab)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
-    mock_run.assert_called_once_with('bar\nif baz:\n    lol\n', PythonLexer)
+    mock_run.assert_called_once_with("bar\nif baz:\n    lol\n", PythonLexer)
