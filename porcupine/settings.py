@@ -742,7 +742,9 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
     var = tkinter.StringVar()
 
     # not using ttk.Menubutton because i want custom colors
-    menubutton = tkinter.Menubutton(get_dialog_content(), textvariable=var)
+    menubutton = tkinter.Menubutton(
+        get_dialog_content(), textvariable=var, takefocus=True, highlightthickness=1
+    )
     menu = tkinter.Menu(menubutton, tearoff=False)
     menubutton.config(menu=menu)
 
@@ -753,7 +755,7 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
         style_name = get(option_name, object)
         var.set(style_name)
         fg, bg = _get_colors(style_name)
-        menubutton.config(foreground=fg, background=bg)
+        menubutton.config(foreground=fg, background=bg, highlightcolor=fg, highlightbackground=bg)
 
     menubutton.bind(f"<<SettingChanged:{option_name}>>", settings_to_var_and_colors, add=True)
     var.trace_add("write", var_to_settings)
