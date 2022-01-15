@@ -17,7 +17,7 @@ def _connect_label_to_radiobutton(label: ttk.Label, radio: ttk.Radiobutton) -> N
 
 
 def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding:
-    top = tkinter.Toplevel()
+    top = tkinter.Toplevel(name="choose_line_ending")
     top.resizable(False, False)
     top.transient(get_main_window())
     top.title("Choose a line ending")
@@ -160,6 +160,10 @@ class StatusBar(ttk.Frame):
             self._tab.settings.set("encoding", new_encoding)
 
     def _choose_line_ending(self) -> None:
+        if get_main_window().tk.call("winfo", "exists", ".choose_line_ending"):
+            get_main_window().tk.call("focus", ".choose_line_ending")
+            return
+        
         old_value = self._tab.settings.get("line_ending", settings.LineEnding)
         self._tab.settings.set("line_ending", ask_line_ending(old_value))
 
