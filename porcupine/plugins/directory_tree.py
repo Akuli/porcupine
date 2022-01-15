@@ -385,12 +385,25 @@ class DirectoryTree(ttk.Treeview):
         self.tk.call("focus", self)
 
         item: str = self.identify_row(event.y)
-        self.set_the_selection_correctly(item)
+
+        # Behaviour for a mouse right-click
+        if event.keysym != "App":
+            # Update selected item
+            self.set_the_selection_correctly(item)
+            # Set menu position to cursor position
+            menu_x=event.x_root
+            menu_y=event.y_root
+
+        # Behaviour for menu/application key
+        else:
+            menu_x=self.winfo_rootx()
+            # Vertical menu offset by the focus item's relative position
+            menu_y=self.winfo_rooty()+self.bbox(self.focus())[1]+self.bbox(self.focus())[3]
 
         self._populate_contextmenu()
         if self.contextmenu.index("end") is not None:
             # Menu is not empty
-            self.contextmenu.tk_popup(event.x_root, event.y_root)
+            self.contextmenu.tk_popup(menu_x, menu_y)
         return "break"
 
 
@@ -459,8 +472,10 @@ def setup() -> None:
             tree.add_project(path, refresh=False)
     tree.refresh()
 
-    # TODO: invoking context menu from keyboard
+    # Invoke context menu from right-click
     tree.bind("<<RightClick>>", tree._on_right_click, add=True)
+    # Invoke context menu from menu key
+    tree.bind("<App>", tree._on_right_click, add=True)
 
     tree.bind("<Key>", tree._cycle_through_items, add=True)
 
