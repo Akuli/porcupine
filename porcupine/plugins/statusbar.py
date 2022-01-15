@@ -163,7 +163,7 @@ class StatusBar(ttk.Frame):
         if get_main_window().tk.call("winfo", "exists", ".choose_line_ending"):
             get_main_window().tk.call("focus", ".choose_line_ending")
             return
-        
+
         old_value = self._tab.settings.get("line_ending", settings.LineEnding)
         self._tab.settings.set("line_ending", ask_line_ending(old_value))
 
