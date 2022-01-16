@@ -214,7 +214,7 @@ if foo:
     )
     filetab.textwidget.tag_add("sel", "2.0", "5.0")
 
-    return
     tabmanager.select(filetab)
+    return
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
     mock_run.assert_called_once_with("bar\nif baz:\n    lol\n", PythonLexer)
