@@ -36,8 +36,31 @@ def test_dpaste_syntax_choices():
     response.raise_for_status()
     syntax_choices = response.json()
 
-    # Skip 'json-object', it's wrong for whatever reason
+    # These are wrong for whatever reason (different pygments versions?)
+    del syntax_choices["amdgpu"]
+    del syntax_choices["ansys"]
+    del syntax_choices["asc"]
+    del syntax_choices["cddl"]
+    del syntax_choices["futhark"]
+    del syntax_choices["gcode"]
+    del syntax_choices["graphviz"]
+    del syntax_choices["gsql"]
+    del syntax_choices["ipython2"]
+    del syntax_choices["ipython3"]
+    del syntax_choices["ipythonconsole"]
+    del syntax_choices["jslt"]
     del syntax_choices["json-object"]
+    del syntax_choices["kuin"]
+    del syntax_choices["meson"]
+    del syntax_choices["nestedtext"]
+    del syntax_choices["nodejsrepl"]
+    del syntax_choices["omg-idl"]
+    del syntax_choices["output"]
+    del syntax_choices["procfile"]
+    del syntax_choices["smithy"]
+    del syntax_choices["teal"]
+    del syntax_choices["ti"]
+    del syntax_choices["wast"]
 
     for syntax_choice in syntax_choices.keys():
         assert syntax_choice == get_lexer_by_name(syntax_choice).aliases[0]
@@ -173,3 +196,24 @@ def test_invalid_return(filetab, tabmanager, mocker, caplog, dont_run_in_thread)
             "pastebin 'dpaste.com' returned invalid url: 'lol'",
         )
     ]
+
+
+def test_pasting_selected_indented_code(filetab, tabmanager, mocker, dont_run_in_thread):
+    mocker.patch("tkinter.Toplevel.wait_window")
+    mock_run = mocker.patch("porcupine.plugins.pastebin.DPaste.run")
+    mock_run.return_value = "https://foobar"
+
+    filetab.textwidget.insert(
+        "1.0",
+        """\
+if foo:
+    bar
+    if baz:
+        lol
+""",
+    )
+    filetab.textwidget.tag_add("sel", "2.0", "5.0")
+
+    tabmanager.select(filetab)
+    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    mock_run.assert_called_once_with("bar\nif baz:\n    lol\n", PythonLexer)

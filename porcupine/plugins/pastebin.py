@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import socket
 import ssl
+import textwrap
 import tkinter
 import webbrowser
 from functools import partial
@@ -252,6 +253,8 @@ def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
     except tkinter.TclError:
         # nothing is selected, pastebin everything
         code = tab.textwidget.get("1.0", "end - 1 char")
+
+    code = textwrap.dedent(code)
 
     paste = paste_class()
     plz_wait = make_please_wait_window(paste)
