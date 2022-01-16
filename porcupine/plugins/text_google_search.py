@@ -7,7 +7,7 @@ import webbrowser
 def google_search(tab: tabs.FileTab) -> None:
     try:
         selected_text_tuple = tab.textwidget.tag_ranges(tk.SEL)
-        # Check if text is selected to search on Google
+        # Check if text is selected to search on google
         if len(selected_text_tuple)>0:
             selected_text = tab.textwidget.get(*selected_text_tuple)
             url = "https://www.google.com/search?q={}".format(selected_text)
