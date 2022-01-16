@@ -25,7 +25,7 @@ def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     monkeypatch.chdir(tmp_path)
     file_content = "before\nhello\nafter\n"
 
-    subprocess.run(["git", "init"])
+    subprocess.run(["git", "init", "-b", "master"])
     # No --global, only affects test repo
     subprocess.run(["git", "config", "user.name", "foo"])
     subprocess.run(["git", "config", "user.email", "foo@example.com"])
