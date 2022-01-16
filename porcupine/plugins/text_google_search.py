@@ -1,9 +1,10 @@
 """Search selected text on Google."""
 
 import tkinter as tk
-from porcupine import menubar, tabs
 import webbrowser
 import urllib.parse
+
+from porcupine import menubar, tabs
 
 def google_search(tab: tabs.FileTab) -> None:
     try:
