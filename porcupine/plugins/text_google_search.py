@@ -18,4 +18,4 @@ def google_search(tab: tabs.FileTab) -> None:
         tk.messagebox.showerror("Error", "Something went wrong!")
 
 def setup() -> None:
-    menubar.add_filetab_command("Tools/Google Search", google_search)
+    menubar.add_filetab_command("Tools/Search selected text on Google", google_search)
