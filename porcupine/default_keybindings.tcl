@@ -39,6 +39,9 @@ event add "<<Run:Repeat3>>" <F8>
 # gotoline plugin
 event add "<<Menubar:Edit/Go to Line>>" <$contmand-l>
 
+# google search plugin
+event add "<<Menubar:Tools/Search selected text on Google>>" <$contmand-g>
+
 # fullscreen plugin
 event add "<<Menubar:View/Full Screen>>" <F11>
 
