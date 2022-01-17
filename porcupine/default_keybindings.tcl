@@ -10,6 +10,11 @@ if {[tk windowingsystem] == "aqua"} {
     set contmand Control
     event add "<<RightClick>>" <Button-3>
     event add "<<WheelClick>>" <Button-2>
+    if {[tk windowingsystem] == "win32"} {
+        event add "<<MenuKey>>" <App>
+    } elseif {[tk windowingsystem] == "x11"} {
+        event add "<<MenuKey>>" <Menu>
+    }
 }
 
 event add "<<Menubar:File/New File>>" <$contmand-n>

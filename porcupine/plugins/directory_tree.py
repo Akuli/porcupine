@@ -381,24 +381,28 @@ class DirectoryTree(ttk.Treeview):
         self.contextmenu.delete(0, "end")
         self.event_generate("<<PopulateContextMenu>>")
 
-    def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
+    def _on_right_click(self, event: tkinter.Event[DirectoryTree], menu_key: bool) -> str | None:
         self.tk.call("focus", self)
 
-        item: str = self.identify_row(event.y)
+        # Behaviour for menu/application key
+        if menu_key:
+            # Get relative position of focus item
+            x, y, width, height = self.bbox(self.focus())
 
+            # Apply menu position offsets
+            menu_x = self.winfo_rootx() + x
+            menu_y = self.winfo_rooty() + y + height
+        
         # Behaviour for a mouse right-click
-        if event.keysym != "App":
+        else:
+            item = self.identify_row(event.y)
+
             # Update selected item
             self.set_the_selection_correctly(item)
+            
             # Set menu position to cursor position
-            menu_x=event.x_root
-            menu_y=event.y_root
-
-        # Behaviour for menu/application key
-        else:
-            menu_x=self.winfo_rootx()
-            # Vertical menu offset by the focus item's relative position
-            menu_y=self.winfo_rooty()+self.bbox(self.focus())[1]+self.bbox(self.focus())[3]
+            menu_x = event.x_root
+            menu_y = event.y_root
 
         self._populate_contextmenu()
         if self.contextmenu.index("end") is not None:
@@ -473,9 +477,9 @@ def setup() -> None:
     tree.refresh()
 
     # Invoke context menu from right-click
-    tree.bind("<<RightClick>>", tree._on_right_click, add=True)
+    tree.bind("<<RightClick>>", partial(tree._on_right_click, menu_key=False), add=True)
     # Invoke context menu from menu key
-    tree.bind("<App>", tree._on_right_click, add=True)
+    tree.bind("<<MenuKey>>", partial(tree._on_right_click, menu_key=True), add=True)
 
     tree.bind("<Key>", tree._cycle_through_items, add=True)
 
