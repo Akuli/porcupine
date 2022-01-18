@@ -388,7 +388,7 @@ class DirectoryTree(ttk.Treeview):
         if menu_key:
             # Get relative position of focus item
             try:
-                x, y, width, height = self.bbox(self.focus())
+                x, y, width, height = self.bbox(self.focus())  # type: ignore
             except ValueError:
                 x, y, width, height = (0, 0, 0, 0)
 
