@@ -392,6 +392,8 @@ class DirectoryTree(ttk.Treeview):
             except ValueError:
                 x, y, width, height = (0, 0, 0, 0)
 
+            width  # Silence pyflakes unused variable warning
+
             # Apply menu position offsets
             menu_x = self.winfo_rootx() + x
             menu_y = self.winfo_rooty() + y + height
