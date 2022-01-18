@@ -381,16 +381,38 @@ class DirectoryTree(ttk.Treeview):
         self.contextmenu.delete(0, "end")
         self.event_generate("<<PopulateContextMenu>>")
 
-    def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
+    def _on_right_click(self, event: tkinter.Event[DirectoryTree], menu_key: bool) -> str | None:
         self.tk.call("focus", self)
 
-        item: str = self.identify_row(event.y)
-        self.set_the_selection_correctly(item)
+        # Behaviour for menu/application key
+        if menu_key:
+            # Get relative position of focus item
+            try:
+                x, y, width, height = self.bbox(self.focus())  # type: ignore
+            except ValueError:
+                x, y, width, height = (0, 0, 0, 0)
+
+            width  # Silence pyflakes unused variable warning
+
+            # Apply menu position offsets
+            menu_x = self.winfo_rootx() + x
+            menu_y = self.winfo_rooty() + y + height
+
+        # Behaviour for a mouse right-click
+        else:
+            item = self.identify_row(event.y)
+
+            # Update selected item
+            self.set_the_selection_correctly(item)
+
+            # Set menu position to cursor position
+            menu_x = event.x_root
+            menu_y = event.y_root
 
         self._populate_contextmenu()
         if self.contextmenu.index("end") is not None:
             # Menu is not empty
-            self.contextmenu.tk_popup(event.x_root, event.y_root)
+            self.contextmenu.tk_popup(menu_x, menu_y)
         return "break"
 
 
@@ -459,8 +481,10 @@ def setup() -> None:
             tree.add_project(path, refresh=False)
     tree.refresh()
 
-    # TODO: invoking context menu from keyboard
-    tree.bind("<<RightClick>>", tree._on_right_click, add=True)
+    # Invoke context menu from right-click
+    tree.bind("<<RightClick>>", partial(tree._on_right_click, menu_key=False), add=True)
+    # Invoke context menu from menu key
+    tree.bind("<<MenuKey>>", partial(tree._on_right_click, menu_key=True), add=True)
 
     tree.bind("<Key>", tree._cycle_through_items, add=True)
 
