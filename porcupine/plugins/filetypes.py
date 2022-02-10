@@ -232,10 +232,11 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
 
 
 def setup() -> None:
+    settings.add_option("default_filetype", "Python")
+
     # load_filetypes() got already called in setup_argument_parser()
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
-    settings.add_option("default_filetype", "Python")
     settings.add_combobox(
         "default_filetype",
         "Default filetype for new files:",
