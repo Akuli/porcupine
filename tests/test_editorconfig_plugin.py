@@ -44,6 +44,11 @@ def test_glob():
     assert not glob_match("foo.{py,js}", "foo.c")
     assert not glob_match("foo.{py,js}", "bar.js")
 
+    assert glob_match("{*.c,Makefile}", "foo.c")
+    assert glob_match("{*.c,Makefile}", "Makefile")
+    assert not glob_match("{*.c,Makefile}", "foo.h")
+    assert not glob_match("{*.c,Makefile}", "Makefile2")
+
     for n in range(-50, 50):
         if -2 <= n <= 14:
             assert glob_match("foo{-2..14}.py", f"foo{n}.py")
