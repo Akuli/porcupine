@@ -32,6 +32,11 @@ class FilenameMode(enum.Enum):
     NEW = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
     PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n{plus}")
 
+class DirectoryName(enum.Enum):
+    RENAME = ("Rename", "Enter a new name for {name}:")
+    NEW = ("New directory", "Enter a name for the new directory.")
+    PASTE = ("Directory conflict", "There is already a Directory named {name} in {parent}.\n\n{plus}")
+
 
 class PasteState(NamedTuple):
     is_cut: bool
@@ -149,6 +154,98 @@ def ask_file_name(
 
     return new_path
 
+def ask_directory_name(
+    target_dir: Path, old_name: str, mode: DirectoryName, can_overwrite: bool = False
+) -> Path | None:
+    dialog = tkinter.Toplevel()
+    dialog.transient(get_main_window())
+
+    big_frame = ttk.Frame(dialog, padding=10)
+    big_frame.pack(fill="both", expand=True)
+
+    for i in {0, 1}:
+        big_frame.columnconfigure(i, weight=1)
+
+    phrase_label = ttk.Label(big_frame, wraplength=400)
+    phrase_label.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="ew")
+
+    file_name_var = tkinter.StringVar(value=old_name)
+    overwrite_var = tkinter.BooleanVar(value=False)
+
+    entry = ttk.Entry(big_frame, textvariable=file_name_var)
+    entry.grid(row=3, column=0, columnspan=2, sticky="ew")
+
+    new_path = None
+
+    def select_name() -> None:
+        nonlocal new_path
+        if overwrite_var.get():
+            new_path = target_dir / old_name
+        else:
+            new_path = (target_dir / "dummy").with_name(entry.get())
+        dialog.destroy()
+
+    cancel_button = ttk.Button(big_frame, text="Cancel", command=dialog.destroy, width=1)
+    cancel_button.grid(row=4, column=0, padx=(0, 5), pady=(30, 0), sticky="ew")
+
+    ok_button = ttk.Button(big_frame, text="OK", command=select_name, state="disabled", width=1)
+    ok_button.grid(row=4, column=1, padx=(5, 0), pady=(30, 0), sticky="ew")
+
+    if can_overwrite:
+        r1 = ttk.Radiobutton(big_frame, text="Overwrite", variable=overwrite_var, value=True)
+        r2 = ttk.Radiobutton(
+            big_frame, text="Change name of destination", variable=overwrite_var, value=False
+        )
+        r1.grid(row=1, column=0, columnspan=2, sticky="ew")
+        r2.grid(row=2, column=0, columnspan=2, pady=(5, 20), sticky="ew")
+
+        r1.invoke()
+        ok_button.config(state="normal")
+        entry.config(state="disabled")
+
+    assert mode in DirectoryName
+    dialog_title, dialog_phrase = mode.value
+
+    phrase_label.config(
+        text=dialog_phrase.format(
+            name=old_name,
+            parent=target_dir,
+            plus=(
+                "What do you want to do with it?"
+                if can_overwrite
+                else "Choose a name that isn't in use."
+            ),
+        )
+    )
+
+    def update_dialog_state(*junk: object) -> None:
+        if overwrite_var.get():
+            ok_button.config(state="normal")
+            entry.config(state="disabled")
+            return
+
+        entry.config(state="normal")
+        name = entry.get()
+        try:
+            possible_new_path = (target_dir / "dummy").with_name(name)
+        except ValueError:
+            ok_button.config(state="disabled")
+            return
+
+        ok_button["state"] = "disabled" if possible_new_path.exists() else "normal"
+
+    file_name_var.trace_add("write", update_dialog_state)
+    overwrite_var.trace_add("write", update_dialog_state)
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
+    entry.select_range(0, "end")
+    entry.focus()
+
+    dialog.title(dialog_title)
+    dialog.resizable(False, False)
+    dialog.wait_window()
+
+    return new_path
 
 # Not necessarily same concept as Porcupine's project root
 def find_git_root(path: Path) -> Path | None:
@@ -358,12 +455,22 @@ def new_file_here(path: Path) -> None:
         get_tab_manager().event_generate("<<FileSystemChanged>>")
         get_tab_manager().open_file(name)
 
+def new_directory_here(path: Path) -> None:
+    # print('New Directory Created')
+    name = ask_directory_name(path, "", mode=DirectoryName.NEW)
+    if path.is_dir():
+        path=path.parent
+        name.mkdir()
+
+    if name:
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
     Command("New file here", "<<FileManager:New file>>", (lambda p: True), new_file_here),
+    Command("New directory here", "<<FileManager:New directory>>", (lambda p: True), new_directory_here), 
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
