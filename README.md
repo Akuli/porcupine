@@ -207,14 +207,31 @@ Windows-specific notes:
     It is created into whatever folder you are currently `cd`'d to
     (i.e. the folder that shows up on the command prompt before the `>`).
 
+Porcupine uses `mypy`, which is a tool that type-checks the code without running it.
+Run it like this:
+
+    mypy porcupine
+
+It often points out problems like forgetting to check whether something is `None`.
+
+Porcupine also uses `black` and `isort` to format code,
+and you should run them after making changes.
+For example, if you changed something in `porcupine/plugins/pastebin.py`, you would do:
+
+    black porcupine/plugins/pastebin.py
+    isort porcupine/plugins/pastebin.py
+
+You can also just run `black porcupine` and `isort porcupine` to format everything.
+
+If you forget to run `mypy`, `black` or `isort`, it doesn't matter.
+GitHub Actions will let us know before I merge your PR.
+
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct
 place and running `source env/bin/activate` again. You can run `deactivate` to undo
 the `source env/bin/activate`.
 
-Here is a list of the commands I use when developing Porcupine:
-- Git commands. I'll assume that you know how to use Git and GitHub.
-- Type checking with mypy: `mypy porcupine more_plugins`
+Other commands you may find useful:
 - `python3 -m pytest` runs tests. You will see lots of weird stuff happening
   while testing, and that's expected.
     A good way to debug a test to see what is actually going on is to add traces.
@@ -224,14 +241,11 @@ Here is a list of the commands I use when developing Porcupine:
     - When the test pauses, type `cont` in terminal to continue the test.
     - If you at any time need to interact with the program during the pause,
       type `interact` in terminal. Exit interactive mode with `ctrl + D`.
-- Code formatting tools: `black porcupine/` and `isort porcupine/`
 - To see a report of test coverage, add `--cov=porcupine` to the above pytest
   command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
   browser to view it.
 - `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
   Open `docs/build/index.html` in your favorite browser to view it.
-- Linter commands run automatically on pull request or push. Usually I don't run
-  them on my computer.
 
 I also use these commands, but **I don't recommend running these yourself.**
 Instead, ask me to run them if you need to.
