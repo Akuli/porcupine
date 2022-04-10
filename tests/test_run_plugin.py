@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import time
+import tkinter
 from tkinter import ttk
 
 import pytest
@@ -363,3 +364,36 @@ def test_stop_button_pressed_after_finished(tmp_path, wait_until):
 
     no_terminal.runner.stop_button.event_generate("<Button-1>")
     assert "Killed" not in get_output()
+
+
+def _tkinter_sleep(delay):
+    var = tkinter.BooleanVar()
+    get_main_window().after(1000*delay, (lambda: var.set(True)))
+    print("Wait start")
+    get_main_window().tk.eval(f"tkwait variable {var._name}")
+    print("Wait DONE")
+
+
+def test_infinite_loop(tmp_path, wait_until):
+    (tmp_path / "loop.py").write_text(
+        """\
+i = 0
+while True:
+    print(i)
+    i = i+1
+    """
+    )
+    no_terminal.run_command(f"{utils.quote(sys.executable)} loop.py", tmp_path)
+
+    wait_until(
+        lambda: get_output().splitlines()[-1].isdecimal()
+        and int(get_output().splitlines()[-1]) >= 2*no_terminal.MAX_SCROLLBACK
+    )
+    no_terminal.runner.stop_button.event_generate("<Button-1>")
+    wait_until(lambda: get_output().strip().endswith("Killed."))
+    lines = get_output().strip().replace("Killed.", "").splitlines()[1:]
+
+    assert len(lines) < no_terminal.MAX_SCROLLBACK  # there were more prints, but old output was removed
+    start = int(lines[0])
+    assert start > 0
+    assert lines == [str(i) for i in range(start, start + len(lines))]

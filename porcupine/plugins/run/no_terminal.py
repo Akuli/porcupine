@@ -52,6 +52,9 @@ def open_file_with_line_number(path: Path, lineno: int) -> None:
         tab.textwidget.tag_add("sel", "insert", "insert lineend")
 
 
+MAX_SCROLLBACK = 5000
+
+
 class Executor:
     def __init__(self, cwd: Path, textwidget: tkinter.Text, link_manager: textutils.LinkManager):
         self.cwd = cwd
@@ -59,9 +62,10 @@ class Executor:
         self._link_manager = link_manager
 
         self._shell_process: subprocess.Popen[bytes] | None = None
-        self._queue: queue.Queue[tuple[str, str]] = queue.Queue()
+        self._queue: queue.Queue[tuple[str, str]]= queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
         self.started = False
+        self._thread: threading.Thread | None = None
 
     def run(self, command: str) -> None:
         env = common.prepare_env()
@@ -75,8 +79,9 @@ class Executor:
         env["COLUMNS"] = str(width // font.measure("a"))
         env["LINES"] = str(height // font.metrics("linespace"))
 
-        threading.Thread(target=self._thread_target, args=[command, env], daemon=True).start()
-        self._flush_queue_repeatedly()
+        self._thread = threading.Thread(target=self._thread_target, args=[command, env], daemon=True)
+        self._thread.start()
+        self._poll_queue_and_put_to_textwidget()
         self.started = True
 
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
@@ -112,44 +117,43 @@ class Executor:
             self._queue.put(("error", f"The process failed with status {status}."))
         self._queue.put(("end", ""))
 
-    def _flush_queue(self) -> None:
-        messages: list[tuple[str, str]] = []
-        while True:
-            try:
-                messages.append(self._queue.get(block=False))
-            except queue.Empty:
-                break
-
-        if messages:
+    def _handle_queued_item(self, message_type: str, text: str) -> None:
             self._textwidget.config(state="normal")
-            for message_type, text in messages:
-                if message_type == "end":
-                    assert not text
-                    get_tab_manager().event_generate("<<FileSystemChanged>>")
-                else:
-                    tag = {
-                        "info": "Token.Keyword",
-                        "output": "Token.Text",
-                        "error": "Token.Name.Exception",
-                    }[message_type]
+            if message_type == "end":
+                assert not text
+                get_tab_manager().event_generate("<<FileSystemChanged>>")
+            else:
+                tag = {
+                    "info": "Token.Keyword",
+                    "output": "Token.Text",
+                    "error": "Token.Name.Exception",
+                }[message_type]
 
-                    scrolled_to_end = self._textwidget.yview()[1] == 1.0
+                scrolled_to_end = self._textwidget.yview()[1] == 1.0
 
-                    self._textwidget.insert("end", text, [tag])
-                    # Add links to full lines
-                    linked_line_count = text.count("\n")
-                    self._link_manager.add_links(
-                        start=f"end - 1 char linestart - {linked_line_count} lines",
-                        end="end - 1 char linestart",
-                    )
-                    if scrolled_to_end:
-                        self._textwidget.yview_moveto(1)
+                self._textwidget.insert("end", text, [tag])
+                # Add links to full lines
+                linked_line_count = text.count("\n")
+                self._link_manager.add_links(
+                    start=f"end - 1 char linestart - {linked_line_count} lines",
+                    end="end - 1 char linestart",
+                )
+                if scrolled_to_end:
+                    self._textwidget.yview_moveto(1)
 
+            self._textwidget.delete("1.0", f"end - {MAX_SCROLLBACK} lines")
             self._textwidget.config(state="disabled")
 
-    def _flush_queue_repeatedly(self) -> None:
-        self._flush_queue()
-        self._timeout_id = self._textwidget.after(100, self._flush_queue_repeatedly)
+    def _poll_queue_and_put_to_textwidget(self) -> None:
+        # too many iterations here freezes the GUI when an infinite loop with print is running
+        for iteration in range(10):
+            try:
+                message_type, text = self._queue.get(block=False)
+            except queue.Empty:
+                break
+            self._handle_queued_item(message_type, text)
+
+        self._timeout_id = self._textwidget.after(50, self._poll_queue_and_put_to_textwidget)
 
     def stop(self, *, quitting: bool = False) -> None:
         if self._timeout_id is not None:
@@ -185,8 +189,19 @@ class Executor:
 
         else:
             if not quitting:
-                self._queue.put(("error", "Killed."))
-                self._flush_queue()
+                assert self._thread is not None
+
+                # Consume queue until the thread stops
+                while True:
+                    message_type, text = self._queue.get(block=True)
+                    # For killing messages, a separate "Killed." will be added below
+                    if (message_type, text) != ("error", f"The process failed with status -{int(signal.SIGKILL)}."):
+                        self._handle_queued_item(message_type, text)
+                    if message_type == "end":
+                        break
+                self._thread.join()
+
+                self._handle_queued_item("error", "Killed.")
 
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
