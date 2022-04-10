@@ -16,9 +16,12 @@ jobs:
     - uses: egor-tensin/setup-mingw@v2
       with:
         platform: x64
-    - uses: MinoruSekine/setup-scoop@99d10ead5f17bf73827aad5a5fc4f6160b665342
-    - run: scoop bucket add extras
-    - run: scoop install nsis
+    # Next step copied from https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
+    - name: Install NSIS
+      run: |
+        Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+        scoop bucket add extras
+        scoop install nsis
     # -u makes print show in real time
     - run: python -u scripts/build-exe-installer.py
     - uses: actions/upload-artifact@v2
