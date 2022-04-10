@@ -29,14 +29,9 @@ else:
 
 class FilenameMode(enum.Enum):
     RENAME = ("Rename", "Enter a new name for {name}:")
-    NEW = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
+    NEW_FILE = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
+    NEW_DIRECTORY = ("New directory", "Enter a name for the new directory.")
     PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n{plus}")
-
-class DirectoryName(enum.Enum):
-    RENAME = ("Rename", "Enter a new name for {name}:")
-    NEW = ("New directory", "Enter a name for the new directory.")
-    PASTE = ("Directory conflict", "There is already a Directory named {name} in {parent}.\n\n{plus}")
-
 
 class PasteState(NamedTuple):
     is_cut: bool
@@ -154,69 +149,6 @@ def ask_file_name(
 
     return new_path
 
-def ask_directory_name(
-    target_dir: Path, old_name: str, mode: DirectoryName, can_overwrite: bool = False
-) -> Path | None:
-    dialog = tkinter.Toplevel()
-    dialog.transient(get_main_window())
-
-    big_frame = ttk.Frame(dialog, padding=10)
-    big_frame.pack(fill="both", expand=True)
-
-    for i in {0, 1}:
-        big_frame.columnconfigure(i, weight=1)
-
-    phrase_label = ttk.Label(big_frame, wraplength=400)
-    phrase_label.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="ew")
-
-    file_name_var = tkinter.StringVar(value=old_name)
-    overwrite_var = tkinter.BooleanVar(value=False)
-
-    entry = ttk.Entry(big_frame, textvariable=file_name_var)
-    entry.grid(row=3, column=0, columnspan=2, sticky="ew")
-
-    new_path = None
-
-    def select_name() -> None:
-        nonlocal new_path
-        if overwrite_var.get():
-            new_path = target_dir / old_name
-        else:
-            new_path = (target_dir / "dummy").with_name(entry.get())
-        dialog.destroy()
-
-    cancel_button = ttk.Button(big_frame, text="Cancel", command=dialog.destroy, width=1)
-    cancel_button.grid(row=4, column=0, padx=(0, 5), pady=(30, 0), sticky="ew")
-
-    ok_button = ttk.Button(big_frame, text="OK", command=select_name, state="disabled", width=1)
-    ok_button.grid(row=4, column=1, padx=(5, 0), pady=(30, 0), sticky="ew")
-
-    if can_overwrite:
-        r1 = ttk.Radiobutton(big_frame, text="Overwrite", variable=overwrite_var, value=True)
-        r2 = ttk.Radiobutton(
-            big_frame, text="Change name of destination", variable=overwrite_var, value=False
-        )
-        r1.grid(row=1, column=0, columnspan=2, sticky="ew")
-        r2.grid(row=2, column=0, columnspan=2, pady=(5, 20), sticky="ew")
-
-        r1.invoke()
-        ok_button.config(state="normal")
-        entry.config(state="disabled")
-
-    assert mode in DirectoryName
-    dialog_title, dialog_phrase = mode.value
-
-    phrase_label.config(
-        text=dialog_phrase.format(
-            name=old_name,
-            parent=target_dir,
-            plus=(
-                "What do you want to do with it?"
-                if can_overwrite
-                else "Choose a name that isn't in use."
-            ),
-        )
-    )
 
     def update_dialog_state(*junk: object) -> None:
         if overwrite_var.get():
@@ -449,15 +381,14 @@ def new_file_here(path: Path) -> None:
     if not path.is_dir():
         path = path.parent
 
-    name = ask_file_name(path, "", mode=FilenameMode.NEW)
+    name = ask_file_name(path, "", mode=FilenameMode.NEW_FILE)
     if name:
         name.touch()
         get_tab_manager().event_generate("<<FileSystemChanged>>")
         get_tab_manager().open_file(name)
 
 def new_directory_here(path: Path) -> None:
-    # print('New Directory Created')
-    name = ask_directory_name(path, "", mode=DirectoryName.NEW)
+    name = ask_file_name(path, "", mode=FilenameMode.NEW_DIRECTORY)
     if path.is_dir():
         path=path.parent
         name.mkdir()
