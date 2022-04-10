@@ -330,7 +330,7 @@ def get_selected_path(tree: DirectoryTree) -> Path | None:
         return None
     return get_path(item)
 
-    
+
 @dataclasses.dataclass
 class Command:
     name: str
