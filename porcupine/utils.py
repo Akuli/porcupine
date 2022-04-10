@@ -80,7 +80,6 @@ if sys.platform == "win32":
 
         return "".join(result)
 
-
 else:
     quote = shlex.quote
 
