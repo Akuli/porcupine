@@ -381,20 +381,22 @@ def new_file_here(path: Path) -> None:
     if not path.is_dir():
         path = path.parent
 
-    name = ask_file_name(path, "", mode=FilenameMode.NEW_FILE)
-    if name:
-        name.touch()
+    file_name = ask_file_name(path, "", mode=FilenameMode.NEW_FILE)
+    if file_name:
+        file_name.touch()
         get_tab_manager().event_generate("<<FileSystemChanged>>")
-        get_tab_manager().open_file(name)
+        get_tab_manager().open_file(file_name)
+
 
 def new_directory_here(path: Path) -> None:
-    name = ask_file_name(path, "", mode=FilenameMode.NEW_DIRECTORY)
-    if path.is_dir():
+    if not path.is_dir():
         path=path.parent
-        name.mkdir()
 
-    if name:
+    dir_name = ask_file_name(path, "", mode=FilenameMode.NEW_DIRECTORY)
+    if dir_name :
+        dir_name.mkdir()
         get_tab_manager().event_generate("<<FileSystemChanged>>")
+
 
 commands = [
     # Doing something to an entire project is more difficult than you would think.
