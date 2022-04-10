@@ -389,7 +389,7 @@ commands = [
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
     Command("Open in file manager", None, (lambda p: p.is_dir()), open_in_file_manager),
     Command("Open in terminal", None, (lambda p: p.is_dir()), open_in_terminal),
-    Command("Copy full path to clipboard", None, (lambda p: p.is_dir()), copy_full_path_to_clipboard),
+    Command("Copy full path to clipboard", None, (lambda p: True), copy_full_path_to_clipboard),
 ]
 
 
