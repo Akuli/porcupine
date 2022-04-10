@@ -317,6 +317,12 @@ def open_in_file_manager(path: Path) -> None:
     subprocess.Popen([opener_command, str(path)])
 
 
+def copy_full_path_to_clipboard(path: Path) -> None:
+    main_window = get_main_window()
+    main_window.clipboard_clear()
+    main_window.clipboard_append(str(path))
+
+
 def get_selected_path(tree: DirectoryTree) -> Path | None:
     try:
         [item] = tree.selection()
@@ -385,6 +391,7 @@ commands = [
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
     Command("Open in file manager", None, (lambda p: p.is_dir()), open_in_file_manager),
+    Command("Copy full path to clipboard", None, (lambda p: True), copy_full_path_to_clipboard),
 ]
 
 
