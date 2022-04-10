@@ -149,36 +149,6 @@ def ask_file_name(
 
     return new_path
 
-
-    def update_dialog_state(*junk: object) -> None:
-        if overwrite_var.get():
-            ok_button.config(state="normal")
-            entry.config(state="disabled")
-            return
-
-        entry.config(state="normal")
-        name = entry.get()
-        try:
-            possible_new_path = (target_dir / "dummy").with_name(name)
-        except ValueError:
-            ok_button.config(state="disabled")
-            return
-
-        ok_button["state"] = "disabled" if possible_new_path.exists() else "normal"
-
-    file_name_var.trace_add("write", update_dialog_state)
-    overwrite_var.trace_add("write", update_dialog_state)
-    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
-    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
-    entry.select_range(0, "end")
-    entry.focus()
-
-    dialog.title(dialog_title)
-    dialog.resizable(False, False)
-    dialog.wait_window()
-
-    return new_path
-
 # Not necessarily same concept as Porcupine's project root
 def find_git_root(path: Path) -> Path | None:
     for parent in path.parents:
@@ -393,7 +363,7 @@ def new_directory_here(path: Path) -> None:
         path=path.parent
 
     dir_name = ask_file_name(path, "", mode=FilenameMode.NEW_DIRECTORY)
-    if dir_name :
+    if dir_name:
         dir_name.mkdir()
         get_tab_manager().event_generate("<<FileSystemChanged>>")
 
