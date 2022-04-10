@@ -316,17 +316,6 @@ def open_in_file_manager(path: Path) -> None:
     subprocess.Popen([opener_command, str(path)])
 
 
-def open_in_terminal(path: Path) -> None:
-    # Using pushd for windows to change drive aswell navigate to directory
-    windowingsystem = get_main_window().tk.call("tk", "windowingsystem")
-    if windowingsystem == "win32":
-        command = "pushd"
-    else:
-        command = "cd"
-
-    subprocess.Popen(f"start /wait {command} {path}", shell=True)
-
-
 def copy_full_path_to_clipboard(path: Path) -> None:
     main_window = get_main_window()
     main_window.clipboard_clear()
@@ -388,7 +377,6 @@ commands = [
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
     Command("Open in file manager", None, (lambda p: p.is_dir()), open_in_file_manager),
-    Command("Open in terminal", None, (lambda p: p.is_dir()), open_in_terminal),
     Command("Copy full path to clipboard", None, (lambda p: True), copy_full_path_to_clipboard),
 ]
 
