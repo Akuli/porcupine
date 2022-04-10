@@ -324,8 +324,7 @@ def can_setup_while_running(info: PluginInfo) -> bool:
     if setup_preventors:
         log.info(
             f"can't setup {info.name} now because it must be done before setting up the following"
-            " plugins, which are already active: "
-            + "\n".join(setup_preventors)
+            " plugins, which are already active: " + "\n".join(setup_preventors)
         )
         return False
 
