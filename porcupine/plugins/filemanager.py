@@ -29,7 +29,8 @@ else:
 
 class FilenameMode(enum.Enum):
     RENAME = ("Rename", "Enter a new name for {name}:")
-    NEW = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
+    NEW_FILE = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
+    NEW_DIRECTORY = ("New directory", "Enter a name for the new directory.")
     PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n{plus}")
 
 
@@ -352,11 +353,21 @@ def new_file_here(path: Path) -> None:
     if not path.is_dir():
         path = path.parent
 
-    name = ask_file_name(path, "", mode=FilenameMode.NEW)
-    if name:
-        name.touch()
+    file_name = ask_file_name(path, "", mode=FilenameMode.NEW_FILE)
+    if file_name:
+        file_name.touch()
         get_tab_manager().event_generate("<<FileSystemChanged>>")
-        get_tab_manager().open_file(name)
+        get_tab_manager().open_file(file_name)
+
+
+def new_directory_here(path: Path) -> None:
+    if not path.is_dir():
+        path = path.parent
+
+    dir_name = ask_file_name(path, "", mode=FilenameMode.NEW_DIRECTORY)
+    if dir_name:
+        dir_name.mkdir()
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 commands = [
@@ -364,6 +375,9 @@ commands = [
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
     Command("New file here", "<<FileManager:New file>>", (lambda p: True), new_file_here),
+    Command(
+        "New directory here", "<<FileManager:New directory>>", (lambda p: True), new_directory_here
+    ),
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
