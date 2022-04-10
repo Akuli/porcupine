@@ -33,6 +33,7 @@ class FilenameMode(enum.Enum):
     NEW_DIRECTORY = ("New directory", "Enter a name for the new directory.")
     PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n{plus}")
 
+
 class PasteState(NamedTuple):
     is_cut: bool
     path: Path
@@ -148,6 +149,7 @@ def ask_file_name(
     dialog.wait_window()
 
     return new_path
+
 
 # Not necessarily same concept as Porcupine's project root
 def find_git_root(path: Path) -> Path | None:
@@ -360,7 +362,7 @@ def new_file_here(path: Path) -> None:
 
 def new_directory_here(path: Path) -> None:
     if not path.is_dir():
-        path=path.parent
+        path = path.parent
 
     dir_name = ask_file_name(path, "", mode=FilenameMode.NEW_DIRECTORY)
     if dir_name:
@@ -373,7 +375,9 @@ commands = [
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
     Command("New file here", "<<FileManager:New file>>", (lambda p: True), new_file_here),
-    Command("New directory here", "<<FileManager:New directory>>", (lambda p: True), new_directory_here), 
+    Command(
+        "New directory here", "<<FileManager:New directory>>", (lambda p: True), new_directory_here
+    ),
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
