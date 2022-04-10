@@ -19,7 +19,8 @@ jobs:
     # Next step copied from https://github.com/NSIS-Dev/github-action-examples/blob/master/.github/workflows/windows-latest.yml
     - name: Install NSIS
       run: |
-        Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh') -RunAsAdmin
+        (New-Object System.Net.WebClient).DownloadFile('https://get.scoop.sh', 'scoop-installer.ps1')
+        pwsh -File scoop-installer.ps1 -RunAsAdmin
         scoop bucket add extras
         scoop install nsis
     # -u makes print show in real time
