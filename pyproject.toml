@@ -1,7 +1,6 @@
 [tool.black]
 line-length = 100
 skip-magic-trailing-comma = true
-experimental-string-processing = true
 
 [tool.isort]
 line_length = 100

@@ -1,10 +1,10 @@
-pytest>=5.4.3
-pytest-cov>=2.10.1
-black==21.5b2
+pytest==6.2.5
+pytest-cov==3.0.0
+pytest-mock==3.6.1
+black==22.3.0
 isort==5.8.0
 sphinx>=4.0.0, <5.0.0
 pyflakes==2.2.0
-pytest-mock>=3.2.0,<4.0.0
 pillow>=5.4.1
 requests>=2.24.0, <3.0.0
 
