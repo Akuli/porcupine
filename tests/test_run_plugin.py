@@ -311,7 +311,7 @@ def size_is_changing(path):
 def test_previous_process_dies(tmp_path, wait_until):
     (tmp_path / "hello.py").write_text("print('Hello')")
     (tmp_path / "killed.py").write_text(
-        fr"""
+        rf"""
 import time
 while True:
     with open("out.txt", "a") as file:
