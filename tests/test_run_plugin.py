@@ -379,13 +379,15 @@ while True:
 
     wait_until(
         lambda: get_output().splitlines()[-1].isdecimal()
-        and int(get_output().splitlines()[-1]) >= 2*no_terminal.MAX_SCROLLBACK
+        and int(get_output().splitlines()[-1]) >= 2 * no_terminal.MAX_SCROLLBACK
     )
     no_terminal.runner.stop_button.event_generate("<Button-1>")
     wait_until(lambda: get_output().strip().endswith("Killed."))
     lines = get_output().strip().replace("Killed.", "").splitlines()[1:]
 
-    assert len(lines) < no_terminal.MAX_SCROLLBACK  # there were more prints, but old output was removed
+    assert (
+        len(lines) < no_terminal.MAX_SCROLLBACK
+    )  # there were more prints, but old output was removed
     start = int(lines[0])
     assert start > 0
     assert lines == [str(i) for i in range(start, start + len(lines))]

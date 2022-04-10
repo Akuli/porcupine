@@ -62,7 +62,7 @@ class Executor:
         self._link_manager = link_manager
 
         self._shell_process: subprocess.Popen[bytes] | None = None
-        self._queue: queue.Queue[tuple[str, str]]= queue.Queue(maxsize=1)
+        self._queue: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
         self.started = False
         self._thread: threading.Thread | None = None
@@ -79,7 +79,9 @@ class Executor:
         env["COLUMNS"] = str(width // font.measure("a"))
         env["LINES"] = str(height // font.metrics("linespace"))
 
-        self._thread = threading.Thread(target=self._thread_target, args=[command, env], daemon=True)
+        self._thread = threading.Thread(
+            target=self._thread_target, args=[command, env], daemon=True
+        )
         self._thread.start()
         self._poll_queue_and_put_to_textwidget()
         self.started = True
@@ -118,31 +120,31 @@ class Executor:
         self._queue.put(("end", ""))
 
     def _handle_queued_item(self, message_type: str, text: str) -> None:
-            self._textwidget.config(state="normal")
-            if message_type == "end":
-                assert not text
-                get_tab_manager().event_generate("<<FileSystemChanged>>")
-            else:
-                tag = {
-                    "info": "Token.Keyword",
-                    "output": "Token.Text",
-                    "error": "Token.Name.Exception",
-                }[message_type]
+        self._textwidget.config(state="normal")
+        if message_type == "end":
+            assert not text
+            get_tab_manager().event_generate("<<FileSystemChanged>>")
+        else:
+            tag = {
+                "info": "Token.Keyword",
+                "output": "Token.Text",
+                "error": "Token.Name.Exception",
+            }[message_type]
 
-                scrolled_to_end = self._textwidget.yview()[1] == 1.0
+            scrolled_to_end = self._textwidget.yview()[1] == 1.0
 
-                self._textwidget.insert("end", text, [tag])
-                # Add links to full lines
-                linked_line_count = text.count("\n")
-                self._link_manager.add_links(
-                    start=f"end - 1 char linestart - {linked_line_count} lines",
-                    end="end - 1 char linestart",
-                )
-                if scrolled_to_end:
-                    self._textwidget.yview_moveto(1)
+            self._textwidget.insert("end", text, [tag])
+            # Add links to full lines
+            linked_line_count = text.count("\n")
+            self._link_manager.add_links(
+                start=f"end - 1 char linestart - {linked_line_count} lines",
+                end="end - 1 char linestart",
+            )
+            if scrolled_to_end:
+                self._textwidget.yview_moveto(1)
 
-            self._textwidget.delete("1.0", f"end - {MAX_SCROLLBACK} lines")
-            self._textwidget.config(state="disabled")
+        self._textwidget.delete("1.0", f"end - {MAX_SCROLLBACK} lines")
+        self._textwidget.config(state="disabled")
 
     def _poll_queue_and_put_to_textwidget(self) -> None:
         # too many iterations here freezes the GUI when an infinite loop with print is running
@@ -195,7 +197,10 @@ class Executor:
                 while True:
                     message_type, text = self._queue.get(block=True)
                     # For killing messages, a separate "Killed." will be added below
-                    if (message_type, text) != ("error", f"The process failed with status -{int(signal.SIGKILL)}."):
+                    if (message_type, text) != (
+                        "error",
+                        f"The process failed with status -{int(signal.SIGKILL)}.",
+                    ):
                         self._handle_queued_item(message_type, text)
                     if message_type == "end":
                         break
