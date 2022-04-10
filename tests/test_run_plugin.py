@@ -366,14 +366,6 @@ def test_stop_button_pressed_after_finished(tmp_path, wait_until):
     assert "Killed" not in get_output()
 
 
-def _tkinter_sleep(delay):
-    var = tkinter.BooleanVar()
-    get_main_window().after(1000*delay, (lambda: var.set(True)))
-    print("Wait start")
-    get_main_window().tk.eval(f"tkwait variable {var._name}")
-    print("Wait DONE")
-
-
 def test_infinite_loop(tmp_path, wait_until):
     (tmp_path / "loop.py").write_text(
         """\
