@@ -192,6 +192,7 @@ class Executor:
         else:
             if not quitting:
                 assert self._thread is not None
+                assert self._thread.is_alive()
 
                 # Consume queue until the thread stops
                 while True:
