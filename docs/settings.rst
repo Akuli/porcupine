@@ -161,7 +161,7 @@ The Settings Dialog
 -------------------
 
 Click *Porcupine Settings* in the *Edit* menu to open the dialog.
-It is meant to be used for editing :data:`global_settings`.
+It allows the user to edit :data:`global_settings`.
 
 .. autofunction:: get_dialog_content
 
