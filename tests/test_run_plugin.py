@@ -2,7 +2,6 @@ import os
 import shutil
 import sys
 import time
-import tkinter
 from tkinter import ttk
 
 import pytest
