@@ -167,9 +167,9 @@ def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     assert click_last_link() == "asdf.bind('<Foo>', print)"
 
 
-# caplog needed to silence logging errors from langserver plugin, which tries to start clangd
 @pytest.mark.skipif(shutil.which("gcc") is None, reason="C compiler needed")
 @pytest.mark.skipif(shutil.which("valgrind") is None, reason="need valgrind")
+# caplog needed to silence logging errors from langserver plugin, which tries to start clangd
 def test_valgrind_error_message(filetab, tmp_path, wait_until, caplog):
     filetab.textwidget.insert(
         "end",
