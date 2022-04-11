@@ -167,6 +167,10 @@ def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     assert click_last_link() == "asdf.bind('<Foo>', print)"
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="commands below wouldn't work on windows even if valgrind supported windows",
+)
 @pytest.mark.skipif(shutil.which("gcc") is None, reason="C compiler needed")
 @pytest.mark.skipif(shutil.which("valgrind") is None, reason="need valgrind")
 # caplog needed to silence logging errors from langserver plugin, which tries to start clangd
