@@ -197,7 +197,7 @@ class Executor:
                 while True:
                     message_type, text = self._queue.get(block=True)
                     # For killing messages, a separate "Killed." will be added below
-                    if sys.platform != "win32" and (message_type, text) != (
+                    if sys.platform == "win32" or (message_type, text) != (
                         "error",
                         f"The process failed with status -{int(signal.SIGKILL)}.",
                     ):
