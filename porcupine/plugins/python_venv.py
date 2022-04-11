@@ -142,9 +142,7 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
 
 def setup() -> None:
     # paths as strings, for json
-    global_settings.add_option(
-        "python_venvs", {}, Dict[str, Optional[str]]
-    )  
+    global_settings.add_option("python_venvs", {}, Dict[str, Optional[str]])
 
     try:
         tree = dirtree.get_directory_tree()
