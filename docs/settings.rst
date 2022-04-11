@@ -185,7 +185,7 @@ When setting the values, the converter passed to :func:`add_option` is used.
         ...
 
         global_settings.add_option('http_server_host', '127.0.0.1')
-        settings.add_entry('http_server_host', "HTTP server host:", validate_callback)
+        settings.add_entry('http_server_host', "HTTP server host:", validate_host)
 
 
 .. autofunction:: add_entry
