@@ -319,7 +319,8 @@ class Settings:
     def reset_all(self) -> None:
         """
         Reset all settings, including the ones not shown in the setting dialog.
-        Clicking the reset button of the setting dialog runs this function.
+        Clicking the reset button of the setting dialog runs this function
+        on :data:`global_settings`.
         """
         self._unknown_options.clear()
         for name in self._options:

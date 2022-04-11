@@ -21,8 +21,7 @@ Global and non-global settings
 .. class:: Settings
 
     Each instance of :class:`Settings` is basically a dict of option names and values,
-    but it does more than that;
-    it ensures that the values have the correct type,
+    but it also ensures that the values have the correct type,
     converts them to the correct type when loaded from a setting file,
     and so on.
 
@@ -162,7 +161,7 @@ The Settings Dialog
 -------------------
 
 Click *Porcupine Settings* in the *Edit* menu to open the dialog.
-It is meant to be used for editing :data:`global_settings`.
+It allows the user to edit :data:`global_settings`.
 
 .. autofunction:: get_dialog_content
 
@@ -186,7 +185,7 @@ When setting the values, the converter passed to :func:`add_option` is used.
         ...
 
         global_settings.add_option('http_server_host', '127.0.0.1')
-        settings.add_entry('http_server_host', "HTTP server host:", validate_callback)
+        settings.add_entry('http_server_host', "HTTP server host:", validate_host)
 
 
 .. autofunction:: add_entry
