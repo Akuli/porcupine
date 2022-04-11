@@ -20,7 +20,8 @@ from porcupine import (
     get_tab_manager,
     menubar,
     settings,
-    tabs)
+    tabs,
+)
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)

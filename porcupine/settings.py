@@ -389,7 +389,9 @@ def init_enough_for_using_disabled_plugins_list() -> None:
 
 def _init_global_gui_settings() -> None:
     global_settings.add_option("pygments_style", "stata-dark", converter=_check_pygments_style)
-    global_settings.add_option("default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__)
+    global_settings.add_option(
+        "default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__
+    )
 
     fixedfont = tkinter.font.Font(name="TkFixedFont", exists=True)
     if fixedfont["size"] < 0:
@@ -414,10 +416,17 @@ def _init_global_gui_settings() -> None:
         # can't bind to get_tab_manager() as recommended in docs because tab
         # manager isn't ready yet when settings get inited
         if event is None or event.widget == porcupine.get_main_window():
-            fixedfont.config(family=global_settings.get("font_family", str), size=global_settings.get("font_size", int))
+            fixedfont.config(
+                family=global_settings.get("font_family", str),
+                size=global_settings.get("font_size", int),
+            )
 
-    porcupine.get_main_window().bind("<<GlobalSettingChanged:font_family>>", update_fixedfont, add=True)
-    porcupine.get_main_window().bind("<<GlobalSettingChanged:font_size>>", update_fixedfont, add=True)
+    porcupine.get_main_window().bind(
+        "<<GlobalSettingChanged:font_family>>", update_fixedfont, add=True
+    )
+    porcupine.get_main_window().bind(
+        "<<GlobalSettingChanged:font_size>>", update_fixedfont, add=True
+    )
     update_fixedfont(None)
 
 

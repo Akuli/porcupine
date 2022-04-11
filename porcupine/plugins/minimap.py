@@ -89,7 +89,11 @@ class MiniMap(tkinter.Text):
     def set_font(self) -> None:
         self.tag_config(
             "sel",
-            font=(global_settings.get("font_family", str), round(global_settings.get("font_size", int) / 3), ()),
+            font=(
+                global_settings.get("font_family", str),
+                round(global_settings.get("font_size", int) / 3),
+                (),
+            ),
         )
         textutils.config_tab_displaying(self, self._tab.settings.get("indent_size", int), tag="sel")
         self._update_lines()

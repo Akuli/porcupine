@@ -245,7 +245,9 @@ class DirectoryTree(ttk.Treeview):
 
     def save_project_list(self) -> None:
         # Settings is a weird place for this, but easier than e.g. using a cache file.
-        global_settings.set("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
+        global_settings.set(
+            "directory_tree_projects", [str(get_path(id)) for id in self.get_children()]
+        )
 
     def refresh(self, junk: object = None) -> None:
         log.debug("refreshing begins")

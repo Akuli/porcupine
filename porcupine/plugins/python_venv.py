@@ -46,7 +46,9 @@ def set_venv(project_root: Path, venv: Path | None) -> None:
     if venv is not None:
         assert is_venv(venv), venv
 
-    custom_paths: dict[str, str | None] = global_settings.get("python_venvs", Dict[str, Optional[str]])
+    custom_paths: dict[str, str | None] = global_settings.get(
+        "python_venvs", Dict[str, Optional[str]]
+    )
     custom_paths[str(project_root)] = None if venv is None else str(venv)
     global_settings.set("python_venvs", custom_paths)  # custom_paths is copy
     log.info(f"venv of {project_root} set to {venv}")
@@ -54,7 +56,9 @@ def set_venv(project_root: Path, venv: Path | None) -> None:
 
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
-    custom_paths: dict[str, str | None] = global_settings.get("python_venvs", Dict[str, Optional[str]])
+    custom_paths: dict[str, str | None] = global_settings.get(
+        "python_venvs", Dict[str, Optional[str]]
+    )
 
     if str(project_root) in custom_paths:
         path_string = custom_paths[str(project_root)]
@@ -137,7 +141,9 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
 
 
 def setup() -> None:
-    global_settings.add_option("python_venvs", {}, Dict[str, Optional[str]])  # paths as strings, for json
+    global_settings.add_option(
+        "python_venvs", {}, Dict[str, Optional[str]]
+    )  # paths as strings, for json
 
     try:
         tree = dirtree.get_directory_tree()
