@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, cast
 
 import porcupine.plugins.directory_tree as dirtree
-from porcupine import images, settings, utils
+from porcupine import images, utils
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
