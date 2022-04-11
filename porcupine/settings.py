@@ -12,7 +12,7 @@ import time
 import tkinter
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Iterator, List, Type, TypeVar, overload
+from typing import Any, Callable, Iterator, List, TypeVar, overload
 
 import dacite
 from pygments import styles, token

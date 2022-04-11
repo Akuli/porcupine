@@ -121,11 +121,7 @@ Custom Options
 --------------
 
 Use :data:`global_settings` to store things that shouldn't reset every
-time Porcupine is restarted.
-
-.. automethod:: Settings.add_option
-
-Example::
+time Porcupine is restarted. For example::
 
     import logging
     from porcupine.settings import global_settings
@@ -142,6 +138,8 @@ Example::
         # 80 and '127.0.0.1' are default values
         global_settings.add_option('http_server_host', '127.0.0.1')
         global_settings.add_option('http_server_port', 80)
+
+.. automethod:: Settings.add_option
 
 As the name suggests, the global settings are shared by all plugins,
 so don't make the option names too short.
