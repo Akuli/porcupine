@@ -8,8 +8,8 @@ import time
 import tkinter
 
 from porcupine import get_tab_manager, menubar, settings, tabs
-from porcupine.settings import global_settings
 from porcupine.plugins.linenumbers import LineNumbers
+from porcupine.settings import global_settings
 
 # Dependent on code from linenumbers.py
 setup_after = ["linenumbers"]

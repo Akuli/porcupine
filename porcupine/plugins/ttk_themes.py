@@ -10,6 +10,7 @@ import ttkthemes
 from porcupine import get_main_window, menubar
 from porcupine.settings import global_settings
 
+
 # TODO: modernize this code a bit, so that it actually matches ttkthemes docs
 def setup() -> None:
     style = ttkthemes.ThemedStyle()

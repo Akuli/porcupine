@@ -21,7 +21,7 @@ from functools import partial
 from tkinter import ttk
 from typing import List
 
-from porcupine import get_tab_manager, tabs, textutils, utils, settings
+from porcupine import get_tab_manager, settings, tabs, textutils, utils
 from porcupine.settings import global_settings
 
 # autoindent: it shouldn't indent when pressing enter to choose completion

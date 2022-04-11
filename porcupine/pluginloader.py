@@ -18,8 +18,8 @@ from typing import Any, Iterable, List, Sequence
 import toposort
 
 from porcupine import get_main_window
-from porcupine.settings import global_settings
 from porcupine.plugins import __path__ as plugin_paths
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
