@@ -21,8 +21,7 @@ Global and non-global settings
 .. class:: Settings
 
     Each instance of :class:`Settings` is basically a dict of option names and values,
-    but it does more than that;
-    it ensures that the values have the correct type,
+    but it also ensures that the values have the correct type,
     converts them to the correct type when loaded from a setting file,
     and so on.
 
