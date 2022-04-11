@@ -167,6 +167,31 @@ def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     assert click_last_link() == "asdf.bind('<Foo>', print)"
 
 
+# caplog needed to silence logging errors from langserver plugin, which tries to start clangd
+@pytest.mark.skipif(shutil.which("gcc") is None, reason="C compiler needed")
+@pytest.mark.skipif(shutil.which("valgrind") is None, reason="need valgrind")
+def test_valgrind_error_message(filetab, tmp_path, wait_until, caplog):
+    filetab.textwidget.insert(
+        "end",
+        r"""
+#include <stdio.h>
+#include <stdlib.h>
+int main()
+{
+    char *ptr = malloc(1);
+    printf("%c\n", *ptr);
+    return 0;
+}
+""",
+    )
+    filetab.save_as(tmp_path / "bug.c")
+    no_terminal.run_command("gcc -g bug.c", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    no_terminal.run_command("valgrind ./a.out", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    assert click_last_link() == r'    printf("%c\n", *ptr);'
+
+
 @pytest.mark.skipif(shutil.which("grep") is None, reason="uses grep")
 def test_grep_n_output(tabmanager, tmp_path, wait_until):
     (tmp_path / ".github").mkdir()

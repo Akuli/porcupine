@@ -36,9 +36,12 @@ filename_regex_parts = [
     # c compiler output, also many other tools
     # TODO: support spaces in file names?
     # playground.c:4:9: warning: ...
-    r"([^\n\s:]+):([0-9]+)",
+    r"([^\n\s:()]+):([0-9]+)",
     # python error
     r'File "([^\n"]+)", line ([0-9]+)',
+    # valgrind, SDL_assert() etc
+    # blah blah: some_function (filename.c:123)
+    r"\(([^\n():]+):([0-9]+)\)",
 ]
 filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
