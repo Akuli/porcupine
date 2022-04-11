@@ -194,13 +194,18 @@ class Executor:
                 assert self._thread is not None
                 assert self._thread.is_alive()
 
+                if sys.platform == "win32":
+                    kill_status = 1
+                else:
+                    kill_status = -signal.SIGKILL
+
                 # Consume queue until the thread stops
                 while True:
                     message_type, text = self._queue.get(block=True)
                     # For killing messages, a separate "Killed." will be added below
-                    if sys.platform == "win32" or (message_type, text) != (
+                    if (message_type, text) != (
                         "error",
-                        f"The process failed with status -{int(signal.SIGKILL)}.",
+                        f"The process failed with status {kill_status}.",
                     ):
                         self._handle_queued_item(message_type, text)
                     if message_type == "end":
