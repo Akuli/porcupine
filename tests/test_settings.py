@@ -30,8 +30,8 @@ def restore_default_settings():
 # like rewriting the tests just because it would be slightly nicer that way
 @pytest.fixture
 def cleared_global_settings(monkeypatch, tmp_path):
-    monkeypatch.setattr(settings.global_settings, "_options", {})
-    monkeypatch.setattr(settings.global_settings, "_unknown_options", {})
+    monkeypatch.setattr(global_settings, "_options", {})
+    monkeypatch.setattr(global_settings, "_unknown_options", {})
     monkeypatch.setattr(settings, "get_json_path", (lambda: tmp_path / "settings.json"))
 
 
