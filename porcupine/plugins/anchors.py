@@ -8,6 +8,7 @@ import time
 import tkinter
 
 from porcupine import get_tab_manager, menubar, settings, tabs
+from porcupine.settings import global_settings
 from porcupine.plugins.linenumbers import LineNumbers
 
 # Dependent on code from linenumbers.py
@@ -79,7 +80,7 @@ class AnchorManager:
             next_anchor_row = min(rows_after_cursor)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif len(anchor_rows) >= 2 and settings.get("anchors_cycle", bool):
+        elif len(anchor_rows) >= 2 and global_settings.get("anchors_cycle", bool):
             next_anchor_row = min(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
@@ -95,7 +96,7 @@ class AnchorManager:
             previous_anchor_row = max(rows_before_cursor)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif len(anchor_rows) >= 2 and settings.get("anchors_cycle", bool):
+        elif len(anchor_rows) >= 2 and global_settings.get("anchors_cycle", bool):
             previous_anchor_row = max(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
@@ -135,7 +136,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    settings.add_option("anchors_cycle", False)
+    global_settings.add_option("anchors_cycle", False)
     settings.add_checkbutton(
         "anchors_cycle", text="Jumping to previous/next anchor cycles to end/start of file"
     )

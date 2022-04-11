@@ -345,27 +345,21 @@ class Settings:
         for name, unknown in state.items():
             self.set(name, unknown.value, from_config=True, call_converter=unknown.call_converter)
 
+    def reset(self, option_name: str) -> None:
+        """Set an option to its default value given to :meth:`add_option`."""
+        self.set(option_name, self._options[option_name].default)
 
-_global_settings = Settings(None, "<<SettingChanged:{}>>")
-add_option = _global_settings.add_option
-set_ = _global_settings.set
-get = _global_settings.get
-debug_dump = _global_settings.debug_dump
+    def reset_all(self) -> None:
+        """
+        Reset all settings, including the ones not shown in the setting dialog.
+        Clicking the reset button of the setting dialog runs this function.
+        """
+        self._unknown_options.clear()
+        for name in self._options:
+            self.reset(name)
 
 
-def reset(option_name: str) -> None:
-    """Set an option to its default value given to :func:`add_option`."""
-    set_(option_name, _global_settings._options[option_name].default)
-
-
-def reset_all() -> None:
-    """
-    Reset all settings, including the ones not shown in the setting dialog.
-    Clicking the reset button of the setting dialog runs this function.
-    """
-    _global_settings._unknown_options.clear()
-    for name in _global_settings._options:
-        reset(name)
+global_settings = Settings(None, "<<SettingChanged:{}>>")
 
 
 # Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
@@ -390,7 +384,7 @@ def save() -> None:
         json.dump(
             {
                 name: _value_to_save(unknown_obj.value)
-                for name, unknown_obj in _global_settings.get_state().items()
+                for name, unknown_obj in global_settings.get_state().items()
             },
             file,
             indent=4,
@@ -406,7 +400,7 @@ def _load_from_file() -> None:
         return
 
     for name, value in options.items():
-        set_(name, value, from_config=True)
+        global_settings.set(name, value, from_config=True)
 
 
 # pygments styles can be uninstalled, must not end up with invalid pygments style that way
@@ -423,12 +417,12 @@ def init_enough_for_using_disabled_plugins_list() -> None:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {get_json_path()} failed")
-    add_option("disabled_plugins", [], List[str])
+    global_settings.add_option("disabled_plugins", [], List[str])
 
 
 def _init_global_gui_settings() -> None:
-    add_option("pygments_style", "stata-dark", converter=_check_pygments_style)
-    add_option("default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__)
+    global_settings.add_option("pygments_style", "stata-dark", converter=_check_pygments_style)
+    global_settings.add_option("default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__)
 
     fixedfont = tkinter.font.Font(name="TkFixedFont", exists=True)
     if fixedfont["size"] < 0:
@@ -445,15 +439,15 @@ def _init_global_gui_settings() -> None:
         # in tkinter.font.families()
         default_font_family = fixedfont.actual("family")
 
-    add_option("font_family", default_font_family)
-    add_option("font_size", fixedfont["size"])
+    global_settings.add_option("font_family", default_font_family)
+    global_settings.add_option("font_size", fixedfont["size"])
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: tkinter.Event[tkinter.Misc] | None) -> None:
         # can't bind to get_tab_manager() as recommended in docs because tab
         # manager isn't ready yet when settings get inited
         if event is None or event.widget == porcupine.get_main_window():
-            fixedfont.config(family=get("font_family", str), size=get("font_size", int))
+            fixedfont.config(family=global_settings.get("font_family", str), size=global_settings.get("font_size", int))
 
     porcupine.get_main_window().bind("<<SettingChanged:font_family>>", update_fixedfont, add=True)
     porcupine.get_main_window().bind("<<SettingChanged:font_size>>", update_fixedfont, add=True)
@@ -471,7 +465,7 @@ def _create_dialog_content() -> ttk.Frame:
         if messagebox.askyesno(
             "Reset Settings", "Are you sure you want to reset all settings?", parent=dialog
         ):
-            reset_all()
+            global_settings.reset_all()
 
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill="both", expand=True)
@@ -589,10 +583,10 @@ def _create_validation_triangle(
             triangle.config(image=images.get("triangle"))
         else:
             triangle.config(image=_get_blank_triangle_sized_image())
-            set_(option_name, value, from_config=True)
+            global_settings.set(option_name, value, from_config=True)
 
     def setting_changed(junk: object = None) -> None:
-        var.set(str(_value_to_save(get(option_name, object))))
+        var.set(str(_value_to_save(global_settings.get(option_name, object))))
 
     widget.bind(f"<<SettingChanged:{option_name}>>", setting_changed, add=True)
     var.trace_add("write", var_changed)
@@ -639,6 +633,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
     You can do this, for example::
 
         from porcupine import settings
+        from porcupine.settings import global_settings
 
         def do_something() -> None:
             # 'bool' here is a keyword and should not be replaced with 'True' or 'False'
@@ -648,7 +643,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
                 print("Foobar disabled")
 
         def setup() -> None:
-            settings.add_option("foobar", False)  # False is default value
+            global_settings.add_option("foobar", False)  # False is default value
             settings.add_checkbutton("foobar", text="Enable foobar")
 
     Currently it is not possible to display a |triangle| next to the
@@ -661,10 +656,10 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
 
     def var_changed(*junk: object) -> None:
         value = var.get()
-        set_(option_name, value)
+        global_settings.set(option_name, value)
 
     def setting_changed(junk: object = None) -> None:
-        var.set(get(option_name, bool))
+        var.set(global_settings.get(option_name, bool))
 
     checkbutton.bind(f"<<SettingChanged:{option_name}>>", setting_changed, add=True)
     var.trace_add("write", var_changed)
@@ -685,8 +680,9 @@ def add_combobox(option_name: str, text: str, **combobox_kwargs: Any) -> ttk.Com
     (given with the ``values=list_of_strings`` keyword argument or changed
     later by configuring the returned combobox), then the option given by
     *option_name* is set to the content of the combobox. The converter passed
-    to :func:`add_option` will be used. If the content of the combobox is not
-    in ``combobox['values']``, then |triangle| is shown.
+    to the :meth:`~Settings.add_option` of ``global_settings`` will be used.
+    If the content of the combobox is not in ``combobox['values']``,
+    then |triangle| is shown.
     """
     combo = ttk.Combobox(get_dialog_content(), **combobox_kwargs)
     triangle = _create_validation_triangle(
@@ -749,10 +745,10 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
     menubutton.config(menu=menu)
 
     def var_to_settings(*junk: object) -> None:
-        set_(option_name, var.get())
+        global_settings.set(option_name, var.get())
 
     def settings_to_var_and_colors(junk: object = None) -> None:
-        style_name = get(option_name, object)
+        style_name = global_settings.get(option_name, object)
         var.set(style_name)
         fg, bg = _get_colors(style_name)
         menubutton.config(foreground=fg, background=bg, highlightcolor=fg, highlightbackground=bg)
@@ -802,19 +798,19 @@ def remember_pane_size(
     panedwindow: utils.PanedWindow, pane: tkinter.Misc, option_name: str, default_size: int
 ) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
-    add_option(option_name, default_size, int, exist_ok=True)
+    global_settings.add_option(option_name, default_size, int, exist_ok=True)
 
     def settings_to_gui(junk: object = None) -> None:
         if panedwindow["orient"] == "horizontal":
-            panedwindow.paneconfig(pane, width=get(option_name, int))
+            panedwindow.paneconfig(pane, width=global_settings.get(option_name, int))
         else:
-            panedwindow.paneconfig(pane, height=get(option_name, int))
+            panedwindow.paneconfig(pane, height=global_settings.get(option_name, int))
 
     def gui_to_settings() -> None:
         if panedwindow["orient"] == "horizontal":
-            set_(option_name, pane.winfo_width())
+            global_settings.set(option_name, pane.winfo_width())
         else:
-            set_(option_name, pane.winfo_height())
+            global_settings.set(option_name, pane.winfo_height())
 
     settings_to_gui()
     pane.bind("<Map>", settings_to_gui, add=True)
@@ -839,7 +835,7 @@ def use_pygments_fg_and_bg(
     """
 
     def on_style_changed(junk: object = None) -> None:
-        style = styles.get_style_by_name(get(option_name, str))
+        style = styles.get_style_by_name(global_settings.get(option_name, str))
         # Similar to _get_colors() but doesn't use the color of strings
         bg = style.background_color
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)

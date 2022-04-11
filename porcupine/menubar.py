@@ -17,6 +17,7 @@ else:
     from typing_extensions import Literal
 
 from porcupine import settings, tabs, utils
+from porcupine.settings import global_settings
 from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
 
 log = logging.getLogger(__name__)
@@ -385,10 +386,10 @@ def _fill_menus_with_default_stuff() -> None:
 
     def change_font_size(how: Literal["bigger", "smaller", "reset"]) -> None:
         if how == "reset":
-            settings.reset("font_size")
+            global_settings.reset("font_size")
             return
 
-        size = settings.get("font_size", int)
+        size = global_settings.get("font_size", int)
         if how == "bigger":
             size += 1
         else:
@@ -396,7 +397,7 @@ def _fill_menus_with_default_stuff() -> None:
             if size < 3:
                 return
 
-        settings.set_("font_size", size)
+        global_settings.set("font_size", size)
 
     get_menu("View").add_command(label="Bigger Font", command=partial(change_font_size, "bigger"))
     get_menu("View").add_command(label="Smaller Font", command=partial(change_font_size, "smaller"))

@@ -7,7 +7,8 @@ import tkinter.font as tkfont
 
 from pygments import styles, token
 
-from porcupine import get_tab_manager, settings, tabs, textutils, utils
+from porcupine import get_tab_manager, tabs, textutils, utils
+from porcupine.settings import global_settings
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -53,7 +54,7 @@ class LongLineMarker:
         self.frame.place(x=(font_x - scroll_x), y=0, height=height)
 
     def on_style_changed(self, junk: object = None) -> None:
-        style = styles.get_style_by_name(settings.get("pygments_style", str))
+        style = styles.get_style_by_name(global_settings.get("pygments_style", str))
         infos = dict(iter(style))  # iterating is documented
         for tokentype in [token.Error, token.Name.Exception]:
             if tokentype in infos:

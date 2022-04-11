@@ -12,6 +12,7 @@ from weakref import WeakKeyDictionary, ref
 from pygments import styles
 
 from porcupine import settings, utils
+from porcupine.settings import global_settings
 
 if TYPE_CHECKING:
     from porcupine import tabs
@@ -627,7 +628,7 @@ def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_
             selectbackground=fg,
         )
 
-        style = styles.get_style_by_name(settings.get(option_name, str))
+        style = styles.get_style_by_name(global_settings.get(option_name, str))
 
         # http://pygments.org/docs/formatterdevelopment/#styles
         # all styles seem to yield all token types when iterated over,

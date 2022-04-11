@@ -27,6 +27,7 @@ from porcupine import (
     utils,
 )
 from porcupine.plugins.run import common
+from porcupine.settings import global_settings
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -284,7 +285,7 @@ runner: NoTerminalRunner | None = None
 
 
 def setup() -> None:
-    settings.add_option("run_output_pygments_style", default="inkpot")
+    global_settings.add_option("run_output_pygments_style", default="inkpot")
     settings.add_pygments_style_button(
         "run_output_pygments_style", "Pygments style for output of commands:"
     )
