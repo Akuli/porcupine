@@ -217,12 +217,12 @@ If you want your binding to work as long as Porcupine is running,
 use the bind method of :func:`porcupine.get_tab_manager`.
 
 .. note::
-    Do not use :func:`porcupine.get_main_window` for binding to ``<<SettingChanged:foo>>``.
+    Do not use :func:`porcupine.get_main_window` for binding to ``<<GlobalSettingChanged:foo>>``.
     The main window is a :class:`tkinter.Tk` widget,
     so it gets notified of its child widgets' events too.
     (The same applies to :class:`tkinter.Toplevel`.)
     For example, let's say that  there are 100 widgets currently being shown in the main window,
-    and you unwisely use the main window's ``bind()`` to bind ``<<SettingChanged:foo>>``.
+    and you unwisely use the main window's ``bind()`` to bind ``<<GlobalSettingChanged:foo>>``.
     When the ``foo`` setting changes, your bind callback runs
     100 times with ``event.widget`` set to something else than the main window, and
     once with ``event.widget`` set to the main window.

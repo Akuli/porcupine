@@ -28,9 +28,9 @@ class LongLineMarker:
         # xscrollcommand runs when the text widget resizes
         utils.add_scroll_command(self.tab.textwidget, "xscrollcommand", self.do_update)
         self.tab.bind("<<TabSettingChanged:max_line_length>>", self.do_update, add=True)
-        self.tab.bind("<<SettingChanged:font_family>>", self.do_update, add=True)
-        self.tab.bind("<<SettingChanged:font_size>>", self.do_update, add=True)
-        self.tab.bind("<<SettingChanged:pygments_style>>", self.on_style_changed, add=True)
+        self.tab.bind("<<GlobalSettingChanged:font_family>>", self.do_update, add=True)
+        self.tab.bind("<<GlobalSettingChanged:font_size>>", self.do_update, add=True)
+        self.tab.bind("<<GlobalSettingChanged:pygments_style>>", self.on_style_changed, add=True)
 
         self.do_update()
         self.on_style_changed()

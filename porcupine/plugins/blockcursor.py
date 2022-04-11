@@ -17,7 +17,7 @@ def do_toggle(tab: tabs.FileTab) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.bind("<<SettingChanged:blockcursor>>", lambda event: do_toggle(tab), add=True)
+    tab.bind("<<GlobalSettingChanged:blockcursor>>", lambda event: do_toggle(tab), add=True)
     do_toggle(tab)
 
 

@@ -326,7 +326,7 @@ class Settings:
             self.reset(name)
 
 
-global_settings = Settings(None, "<<SettingChanged:{}>>")
+global_settings = Settings(None, "<<GlobalSettingChanged:{}>>")
 
 
 # Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
@@ -416,8 +416,8 @@ def _init_global_gui_settings() -> None:
         if event is None or event.widget == porcupine.get_main_window():
             fixedfont.config(family=global_settings.get("font_family", str), size=global_settings.get("font_size", int))
 
-    porcupine.get_main_window().bind("<<SettingChanged:font_family>>", update_fixedfont, add=True)
-    porcupine.get_main_window().bind("<<SettingChanged:font_size>>", update_fixedfont, add=True)
+    porcupine.get_main_window().bind("<<GlobalSettingChanged:font_family>>", update_fixedfont, add=True)
+    porcupine.get_main_window().bind("<<GlobalSettingChanged:font_size>>", update_fixedfont, add=True)
     update_fixedfont(None)
 
 
@@ -555,7 +555,7 @@ def _create_validation_triangle(
     def setting_changed(junk: object = None) -> None:
         var.set(str(_value_to_save(global_settings.get(option_name, object))))
 
-    widget.bind(f"<<SettingChanged:{option_name}>>", setting_changed, add=True)
+    widget.bind(f"<<GlobalSettingChanged:{option_name}>>", setting_changed, add=True)
     var.trace_add("write", var_changed)
     setting_changed()
 
@@ -628,7 +628,7 @@ def add_checkbutton(option_name: str, **checkbutton_kwargs: Any) -> ttk.Checkbut
     def setting_changed(junk: object = None) -> None:
         var.set(global_settings.get(option_name, bool))
 
-    checkbutton.bind(f"<<SettingChanged:{option_name}>>", setting_changed, add=True)
+    checkbutton.bind(f"<<GlobalSettingChanged:{option_name}>>", setting_changed, add=True)
     var.trace_add("write", var_changed)
     setting_changed()
 
@@ -720,7 +720,7 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
         fg, bg = _get_colors(style_name)
         menubutton.config(foreground=fg, background=bg, highlightcolor=fg, highlightbackground=bg)
 
-    menubutton.bind(f"<<SettingChanged:{option_name}>>", settings_to_var_and_colors, add=True)
+    menubutton.bind(f"<<GlobalSettingChanged:{option_name}>>", settings_to_var_and_colors, add=True)
     var.trace_add("write", var_to_settings)
 
     # Not done when creating button, because can slow down porcupine startup
@@ -808,7 +808,7 @@ def use_pygments_fg_and_bg(
         fg = getattr(style, "default_style", "") or utils.invert_color(bg)
         callback(fg, bg)
 
-    widget.bind(f"<<SettingChanged:{option_name}>>", on_style_changed, add=True)
+    widget.bind(f"<<GlobalSettingChanged:{option_name}>>", on_style_changed, add=True)
     on_style_changed()
 
 

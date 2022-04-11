@@ -615,8 +615,8 @@ def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_
                 if key not in ("weight", "slant"):
                     font[key] = value
 
-    textwidget.bind("<<SettingChanged:font_family>>", on_font_changed, add=True)
-    textwidget.bind("<<SettingChanged:font_size>>", on_font_changed, add=True)
+    textwidget.bind("<<GlobalSettingChanged:font_family>>", on_font_changed, add=True)
+    textwidget.bind("<<GlobalSettingChanged:font_size>>", on_font_changed, add=True)
     on_font_changed()
 
     def on_theme_changed(fg: str, bg: str) -> None:
@@ -675,8 +675,8 @@ def config_tab_displaying(
 
 # TODO: document this?
 def bind_font_changed(tab: tabs.FileTab, callback: Callable[[], None]) -> None:
-    tab.bind("<<SettingChanged:font_family>>", (lambda event: callback()), add=True)
-    tab.bind("<<SettingChanged:font_size>>", (lambda event: callback()), add=True)
+    tab.bind("<<GlobalSettingChanged:font_family>>", (lambda event: callback()), add=True)
+    tab.bind("<<GlobalSettingChanged:font_size>>", (lambda event: callback()), add=True)
     tab.bind("<<TabSettingChanged:indent_size>>", (lambda event: callback()), add=True)
 
 
