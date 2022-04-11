@@ -132,10 +132,10 @@ class Settings:
     ) -> None:
         """Add a custom option.
 
-        The type of *default* determines how :func:`set_` and :func:`get` behave.
+        The type of *default* determines how :meth:`set` and :meth:`get` behave.
         For example, if *default* is a string, then
-        calling :func:`set_` with a value that isn't a string or
-        calling :func:`get` with the type set to something else than ``str``
+        calling :meth:`set` with a value that isn't a string or
+        calling :meth:`get` with the type set to something else than ``str``
         is an error. You can also provide a custom type with the *type*
         argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
 
@@ -214,18 +214,15 @@ class Settings:
         """Set the value of an opiton.
 
         Set ``from_config=True`` if the value comes from a configuration
-        file (see :func:`add_option`). That does two things:
+        file (see :meth:`add_option`). That does two things:
 
-            * The converter given to :func:`add_option` will be used.
-            * If the option hasn't been added with :func:`add_option` yet, then
-              the value won't be set immediatelly, but instead it gets set
+            * The converter given to :meth:`add_option` will be used.
+            * If the option hasn't been added with :meth:`add_option` yet, then
+              the value won't be set immediately, but instead it gets set
               later when the option is added.
 
         You can specify ``call_converter`` to force the converter to be or
         to not be called.
-
-        This function is not named ``set`` to avoid conflicting with the
-        built-in :class:`set` class.
         """
         # ...even though this method isn't named 'set_'. But the docstring is
         # used in settings.rst to document a global "function".
@@ -263,56 +260,26 @@ class Settings:
         else:
             self._change_event_widget.event_generate(event_name)
 
-    # I don't like how this requires overloads for every type
+    # I don't like how this requires overloads for every type.
+    # Also no docstring, because using it from docs/settings.rst showed
+    # the messy overloads in the docs.
     # https://stackoverflow.com/q/61471700
+
     # fmt: off
     @overload
-    def get(self, option_name: str, type_: Type[Path]) -> Path: ...
+    def get(self, option_name: str, type_: type[Path]) -> Path: ...
     @overload
-    def get(self, option_name: str, type_: Type[LineEnding]) -> LineEnding: ...
+    def get(self, option_name: str, type_: type[LineEnding]) -> LineEnding: ...
     @overload
-    def get(self, option_name: str, type_: Type[str]) -> str: ...
+    def get(self, option_name: str, type_: type[str]) -> str: ...
     @overload
-    def get(self, option_name: str, type_: Type[bool]) -> bool: ...
+    def get(self, option_name: str, type_: type[bool]) -> bool: ...
     @overload
-    def get(self, option_name: str, type_: Type[int]) -> int: ...
+    def get(self, option_name: str, type_: type[int]) -> int: ...
     @overload
     def get(self, option_name: str, type_: object) -> Any: ...
     # fmt: on
     def get(self, option_name: str, type_: Any) -> Any:
-        """
-        Return the current value of an option.
-        *type_* should be e.g. ``str`` or ``int`` depending on what type the option is.
-        You can also specify ``object`` to allow any type.
-
-        This method works correctly for :class:`str` and :class:`int`,
-        but sometimes it returns Any because mypy sucks::
-
-            foo = settings.get('something', str)
-            reveal_type(foo)  # str
-
-            from pathlib import Path
-            shitty_bar = settings.get('something', Optional[Path])
-            reveal_type(shitty_bar)  # Any
-
-        Use a type annotation to work around this (and make sure to write the
-        same type two times)::
-
-            good_bar: Path | None = settings.get('something', Optional[Path])
-            reveal_type(good_bar)  # Optional[Path]
-
-        Before Python 3.10, you can't use the new ``|`` syntax as an argument to ``settings.get()``,
-        even though it otherwise works with ``from __future__ import annotations``.
-        The same goes for built-in generics,
-        such as ``list[str]`` with lower-case ``list``.
-
-        Options of mutable types are returned as copies, so things like
-        ``settings.get('something', List[str])`` always return a new list.
-        If you want to change a setting like that, you need to first get a copy
-        of the current value, then modify the copy, and finally :func:`set_` it
-        back. This is an easy way to make sure that change events run every
-        time the value changes.
-        """
         result = self._options[option_name].value
         result = _type_check(type_, result)
         return copy.deepcopy(result)  # mutating wouldn't trigger change events
@@ -375,9 +342,9 @@ def get_json_path() -> Path:
 
 
 def save() -> None:
-    """Save the settings to the config file.
+    """Save :data:`global_settings` to the config file.
 
-    Note that :func:`porcupine.run` always calls this before it returns,
+    Porcupine always calls this when it's closed,
     so usually you don't need to worry about calling this yourself.
     """
     with get_json_path().open("w", encoding="utf-8") as file:
@@ -560,7 +527,7 @@ _StrOrInt = TypeVar("_StrOrInt", str, int)
 def _create_validation_triangle(
     widget: ttk.Entry,
     option_name: str,
-    type_: Type[_StrOrInt],
+    type_: type[_StrOrInt],
     callback: Callable[[_StrOrInt], bool],
 ) -> ttk.Label:
 
