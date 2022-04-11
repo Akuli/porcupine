@@ -21,7 +21,7 @@ from urllib.request import HTTPSHandler, Request, build_opener
 
 from pygments.lexer import LexerMeta
 
-from porcupine import get_main_window, menubar, tabs, utils
+from porcupine import get_main_window, menubar, settings, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -246,7 +246,63 @@ def pasting_done_callback(
         )
 
 
+def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
+    window = tkinter.Toplevel()
+
+    content = ttk.Frame(window, padding=10)
+    content.pack(fill="both", expand=True)
+    content.columnconfigure(0, weight=1)
+
+    label = ttk.Label(
+        content,
+        text=f"Do you want to send the content of {filename} to {paste_class.name}?",
+        wraplength=300,
+        justify="center",
+        font="TkHeadingFont",
+    )
+    label.pack(pady=5)
+
+    label = ttk.Label(
+        content,
+        text="This is a bad idea if your code is not meant to be publicly available.",
+        wraplength=300,
+        justify="center",
+        font="TkTextFont",
+    )
+    label.pack(pady=5)
+
+    var = tkinter.BooleanVar(value=True)
+    checkbox = ttk.Checkbutton(
+        content, text="Show this dialog when I try to pastebin something", variable=var
+    )
+    checkbox.pack(pady=25)
+
+    result = False
+
+    def yes() -> None:
+        nonlocal result
+        result = True
+        window.destroy()
+
+    def no() -> None:
+        window.destroy()
+
+    button_frame = ttk.Frame(content)
+    button_frame.pack(fill="x")
+    ttk.Button(button_frame, text="Yes", command=yes).pack(side="left", expand=True)
+    ttk.Button(button_frame, text="No", command=no).pack(side="left", expand=True)
+
+    window.wait_window()
+    settings.set_("ask_to_pastebin", var.get())
+    return result
+
+
 def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
+    if settings.get("ask_to_pastebin", bool):
+        filename = "this file" if tab.path is None else tab.path.name
+        if not ask_are_you_sure(filename, paste_class):
+            return
+
     lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
     try:
         code = tab.textwidget.get("sel.first", "sel.last")
@@ -264,6 +320,7 @@ def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
+    settings.add_option("ask_to_pastebin", default=True)
     for klass in [DPaste, Termbin]:
         assert "/" not in klass.name
         menubar.add_filetab_command(f"Pastebin/{klass.name}", partial(start_pasting, klass))
