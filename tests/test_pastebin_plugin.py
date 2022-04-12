@@ -6,7 +6,6 @@ import time
 import tkinter
 import traceback
 from http.client import RemoteDisconnected
-from tkinter import ttk
 
 import pytest
 import requests
