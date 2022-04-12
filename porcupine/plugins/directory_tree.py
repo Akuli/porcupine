@@ -448,7 +448,15 @@ def _focus_treeview(tree: DirectoryTree) -> None:
     tree.tk.call("focus", tree)
 
 
+# https://stackoverflow.com/q/62824799
+def config_indent(junk: object = None) -> None:
+    get_tab_manager().tk.eval("ttk::style configure DirectoryTree.Treeview -indent 10")
+
+
 def setup() -> None:
+    config_indent()
+    get_tab_manager().bind("<<ThemeChanged>>", config_indent, add=True)
+
     settings.add_option("directory_tree_projects", [], List[str])
 
     container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")

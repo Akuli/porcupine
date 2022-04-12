@@ -219,13 +219,13 @@ def update_tree_selection_color(tree: DirectoryTree, event: object = None) -> No
         tree.tk.call(
             "ttk::style",
             "map",
-            "DirectoryTreeGitStatus.Treeview",
+            "DirectoryTree.Treeview",
             "-foreground",
             ["selected", color],
         )
     else:
         # use default colors
-        tree.tk.eval("ttk::style map DirectoryTreeGitStatus.Treeview -foreground {}")
+        tree.tk.eval("ttk::style map DirectoryTree.Treeview -foreground {}")
 
 
 def sorting_key(tree: DirectoryTree, item_id: str) -> Any:
@@ -247,7 +247,6 @@ def sorting_key(tree: DirectoryTree, item_id: str) -> Any:
 
 def setup() -> None:
     tree = get_directory_tree()
-    tree.config(style="DirectoryTreeGitStatus.Treeview")
 
     main_colorer = TreeColorer(tree)
     tree.bind("<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True)
