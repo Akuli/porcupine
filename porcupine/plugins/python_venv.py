@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional, cast
 
 import porcupine.plugins.directory_tree as dirtree
-from porcupine import images, settings, utils
+from porcupine import images, utils
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 setup_after = ["directory_tree"]
@@ -45,15 +46,19 @@ def set_venv(project_root: Path, venv: Path | None) -> None:
     if venv is not None:
         assert is_venv(venv), venv
 
-    custom_paths: dict[str, str | None] = settings.get("python_venvs", Dict[str, Optional[str]])
+    custom_paths: dict[str, str | None] = global_settings.get(
+        "python_venvs", Dict[str, Optional[str]]
+    )
     custom_paths[str(project_root)] = None if venv is None else str(venv)
-    settings.set_("python_venvs", custom_paths)  # custom_paths is copy
+    global_settings.set("python_venvs", custom_paths)  # custom_paths is copy
     log.info(f"venv of {project_root} set to {venv}")
 
 
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
-    custom_paths: dict[str, str | None] = settings.get("python_venvs", Dict[str, Optional[str]])
+    custom_paths: dict[str, str | None] = global_settings.get(
+        "python_venvs", Dict[str, Optional[str]]
+    )
 
     if str(project_root) in custom_paths:
         path_string = custom_paths[str(project_root)]
@@ -67,7 +72,7 @@ def get_venv(project_root: Path) -> Path | None:
 
         log.warning(f"Python venv is no longer valid: {from_settings}")
         del custom_paths[str(project_root)]
-        settings.set_("python_venvs", custom_paths)  # custom_paths is copy
+        global_settings.set("python_venvs", custom_paths)  # custom_paths is copy
 
     result = _find_venv(project_root)
     if result is None:
@@ -136,7 +141,8 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
 
 
 def setup() -> None:
-    settings.add_option("python_venvs", {}, Dict[str, Optional[str]])  # paths as strings, for json
+    # paths as strings, for json
+    global_settings.add_option("python_venvs", {}, Dict[str, Optional[str]])
 
     try:
         tree = dirtree.get_directory_tree()
