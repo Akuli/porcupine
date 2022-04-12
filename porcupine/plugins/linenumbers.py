@@ -28,8 +28,8 @@ class LineNumbers(tkinter.Canvas):
         )
         self.do_update()
 
-        self.bind("<<SettingChanged:font_family>>", self._update_width, add=True)
-        self.bind("<<SettingChanged:font_size>>", self._update_width, add=True)
+        self.bind("<<GlobalSettingChanged:font_family>>", self._update_width, add=True)
+        self.bind("<<GlobalSettingChanged:font_size>>", self._update_width, add=True)
         self._update_width()
 
         self._clicked_place: str | None = None

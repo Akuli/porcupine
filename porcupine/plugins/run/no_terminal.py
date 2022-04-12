@@ -27,6 +27,7 @@ from porcupine import (
     utils,
 )
 from porcupine.plugins.run import common
+from porcupine.settings import global_settings
 from porcupine.textutils import create_passive_text_widget
 
 log = logging.getLogger(__name__)
@@ -36,9 +37,12 @@ filename_regex_parts = [
     # c compiler output, also many other tools
     # TODO: support spaces in file names?
     # playground.c:4:9: warning: ...
-    r"([^\n\s:]+):([0-9]+)",
+    r"([^\n\s:()]+):([0-9]+)",
     # python error
     r'File "([^\n"]+)", line ([0-9]+)',
+    # valgrind, SDL_assert() etc
+    # blah blah: some_function (filename.c:123)
+    r"\(([^\n():]+):([0-9]+)\)",
 ]
 filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
@@ -284,7 +288,7 @@ runner: NoTerminalRunner | None = None
 
 
 def setup() -> None:
-    settings.add_option("run_output_pygments_style", default="inkpot")
+    global_settings.add_option("run_output_pygments_style", default="inkpot")
     settings.add_pygments_style_button(
         "run_output_pygments_style", "Pygments style for output of commands:"
     )
