@@ -235,18 +235,16 @@ def test_are_you_sure_dialog(filetab, tmp_path, wait_until, mocker, monkeypatch)
     monkeypatch.setattr("tkinter.Toplevel.wait_window", (lambda d: dialogs.append(d)))
 
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
-    wait_until(lambda: len(dialogs) == 1)
+    filetab.save_as(tmp_path / "lolwat.py")
+    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+
+    assert len(dialogs) == 2
     assert dialogs[0].title() == "Pastebin this file"
+    assert dialogs[1].title() == "Pastebin lolwat.py"
     assert (
         dialogs[0].winfo_children()[0].winfo_children()[0]["text"]
         == "Do you want to send the content of this file to dpaste.com?"
     )
-
-    filetab.save_as(tmp_path / "lolwat.py")
-
-    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
-    wait_until(lambda: len(dialogs) == 2)
-    assert dialogs[1].title() == "Pastebin lolwat.py"
     assert (
         dialogs[1].winfo_children()[0].winfo_children()[0]["text"]
         == "Do you want to send the content of lolwat.py to dpaste.com?"
