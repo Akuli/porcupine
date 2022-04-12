@@ -128,7 +128,9 @@ def test_success_dialog(mocker):
     dialog.destroy()
 
 
-def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, mocker, tabmanager, dont_run_in_thread):
+def test_lots_of_stuff_with_localhost_termbin(
+    filetab, monkeypatch, mocker, tabmanager, dont_run_in_thread
+):
     mocker.patch("porcupine.plugins.pastebin.ask_are_you_sure").return_value = True
 
     with socket.socket() as termbin:
@@ -235,14 +237,20 @@ def test_are_you_sure_dialog(filetab, tmp_path, wait_until, mocker, monkeypatch)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
     wait_until(lambda: len(dialogs) == 1)
     assert dialogs[0].title() == "Pastebin this file"
-    assert dialogs[0].winfo_children()[0].winfo_children()[0]["text"] == 'Do you want to send the content of this file to dpaste.com?'
+    assert (
+        dialogs[0].winfo_children()[0].winfo_children()[0]["text"]
+        == "Do you want to send the content of this file to dpaste.com?"
+    )
 
     filetab.save_as(tmp_path / "lolwat.py")
 
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
     wait_until(lambda: len(dialogs) == 2)
     assert dialogs[1].title() == "Pastebin lolwat.py"
-    assert dialogs[1].winfo_children()[0].winfo_children()[0]["text"] == 'Do you want to send the content of lolwat.py to dpaste.com?'
+    assert (
+        dialogs[1].winfo_children()[0].winfo_children()[0]["text"]
+        == "Do you want to send the content of lolwat.py to dpaste.com?"
+    )
 
     for d in dialogs:
         d.destroy()
