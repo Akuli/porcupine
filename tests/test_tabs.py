@@ -254,6 +254,9 @@ def test_encoding_remembered(tabmanager, tmp_path):
     tab2.destroy()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="no idea why this often fails on windows github actions"
+)
 def test_filetabs_get_garbage_collected_when_closed(tabmanager, tmp_path):
     tab = tabs.FileTab(tabmanager)
     ref = weakref.ref(tab)
