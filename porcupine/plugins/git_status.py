@@ -217,11 +217,7 @@ def update_tree_selection_color(tree: DirectoryTree, event: object = None) -> No
         [tag] = git_tags
         color = tree.tag_configure(tag, "foreground")
         tree.tk.call(
-            "ttk::style",
-            "map",
-            "DirectoryTree.Treeview",
-            "-foreground",
-            ["selected", color],
+            "ttk::style", "map", "DirectoryTree.Treeview", "-foreground", ["selected", color]
         )
     else:
         # use default colors
