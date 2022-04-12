@@ -228,7 +228,6 @@ if foo:
 
 def test_are_you_sure_dialog(filetab, tmp_path, wait_until, mocker, monkeypatch):
     mock_run = mocker.patch("porcupine.plugins.pastebin.DPaste.run")
-    mock_run.return_value = "https://foobar"
 
     dialogs = []
     monkeypatch.setattr("tkinter.Toplevel.wait_window", (lambda d: dialogs.append(d)))
