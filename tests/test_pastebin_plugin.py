@@ -241,11 +241,11 @@ def test_are_you_sure_dialog(filetab, tmp_path, wait_until, mocker, monkeypatch)
     assert dialogs[0].title() == "Pastebin this file"
     assert dialogs[1].title() == "Pastebin lolwat.py"
     assert (
-        dialogs[0].winfo_children()[0].winfo_children()[0]["text"]
+        dialogs[0].nametowidget("content.label1")["text"]
         == "Do you want to send the content of this file to dpaste.com?"
     )
     assert (
-        dialogs[1].winfo_children()[0].winfo_children()[0]["text"]
+        dialogs[1].nametowidget("content.label1")["text"]
         == "Do you want to send the content of lolwat.py to dpaste.com?"
     )
 

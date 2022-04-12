@@ -251,27 +251,29 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     window = tkinter.Toplevel()
     window.title(f"Pastebin {filename}")
 
-    content = ttk.Frame(window, padding=10)
+    content = ttk.Frame(window, name="content", padding=10)
     content.pack(fill="both", expand=True)
     content.columnconfigure(0, weight=1)
 
-    label = ttk.Label(
+    label1 = ttk.Label(
         content,
+        name="label1",
         text=f"Do you want to send the content of {filename} to {paste_class.name}?",
         wraplength=300,
         justify="center",
         font="TkHeadingFont",
     )
-    label.pack(pady=5)
+    label1.pack(pady=5)
 
-    label = ttk.Label(
+    label2 = ttk.Label(
         content,
+        name="label2",
         text="This is a bad idea if your code is not meant to be publicly available.",
         wraplength=300,
         justify="center",
         font="TkTextFont",
     )
-    label.pack(pady=5)
+    label2.pack(pady=5)
 
     var = tkinter.BooleanVar(value=True)
     checkbox = ttk.Checkbutton(
