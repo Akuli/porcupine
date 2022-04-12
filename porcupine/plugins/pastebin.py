@@ -21,7 +21,8 @@ from urllib.request import HTTPSHandler, Request, build_opener
 
 from pygments.lexer import LexerMeta
 
-from porcupine import get_main_window, menubar, settings, tabs, utils
+from porcupine import get_main_window, menubar, tabs, utils
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -248,6 +249,7 @@ def pasting_done_callback(
 
 def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     window = tkinter.Toplevel()
+    window.title(f"Pastebin {filename}")
 
     content = ttk.Frame(window, padding=10)
     content.pack(fill="both", expand=True)
@@ -293,12 +295,12 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     ttk.Button(button_frame, text="No", command=no).pack(side="left", expand=True)
 
     window.wait_window()
-    settings.set_("ask_to_pastebin", var.get())
+    global_settings.set("ask_to_pastebin", var.get())
     return result
 
 
 def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
-    if settings.get("ask_to_pastebin", bool):
+    if global_settings.get("ask_to_pastebin", bool):
         filename = "this file" if tab.path is None else tab.path.name
         if not ask_are_you_sure(filename, paste_class):
             return
@@ -320,7 +322,7 @@ def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    settings.add_option("ask_to_pastebin", default=True)
+    global_settings.add_option("ask_to_pastebin", default=True)
     for klass in [DPaste, Termbin]:
         assert "/" not in klass.name
         menubar.add_filetab_command(f"Pastebin/{klass.name}", partial(start_pasting, klass))

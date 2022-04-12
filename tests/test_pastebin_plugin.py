@@ -6,6 +6,7 @@ import time
 import tkinter
 import traceback
 from http.client import RemoteDisconnected
+from tkinter import ttk
 
 import pytest
 import requests
@@ -127,7 +128,9 @@ def test_success_dialog(mocker):
     dialog.destroy()
 
 
-def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, dont_run_in_thread):
+def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, mocker, tabmanager, dont_run_in_thread):
+    mocker.patch("porcupine.plugins.pastebin.ask_are_you_sure").return_value = True
+
     with socket.socket() as termbin:
         termbin.settimeout(5)
         termbin.bind(("localhost", 0))
@@ -168,6 +171,7 @@ def test_lots_of_stuff_with_localhost_termbin(filetab, monkeypatch, tabmanager, 
 
 
 def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, dont_run_in_thread):
+    mocker.patch("porcupine.plugins.pastebin.ask_are_you_sure").return_value = True
     monkeypatch.setattr("porcupine.plugins.pastebin.DPASTE_URL", "ThisIsNotValidUrlStart://wat")
     mocker.patch("tkinter.messagebox.showerror")
 
@@ -180,6 +184,7 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, 
 
 
 def test_invalid_return(filetab, tabmanager, mocker, caplog, dont_run_in_thread):
+    mocker.patch("porcupine.plugins.pastebin.ask_are_you_sure").return_value = True
     mocker.patch("tkinter.messagebox.showerror")
     mocker.patch("porcupine.plugins.pastebin.DPaste.run").return_value = "lol"
 
@@ -199,6 +204,7 @@ def test_invalid_return(filetab, tabmanager, mocker, caplog, dont_run_in_thread)
 
 
 def test_pasting_selected_indented_code(filetab, tabmanager, mocker, dont_run_in_thread):
+    mocker.patch("porcupine.plugins.pastebin.ask_are_you_sure").return_value = True
     mocker.patch("tkinter.Toplevel.wait_window")
     mock_run = mocker.patch("porcupine.plugins.pastebin.DPaste.run")
     mock_run.return_value = "https://foobar"
@@ -217,3 +223,27 @@ if foo:
     tabmanager.select(filetab)
     get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
     mock_run.assert_called_once_with("bar\nif baz:\n    lol\n", PythonLexer)
+
+
+def test_are_you_sure_dialog(filetab, tmp_path, wait_until, mocker, monkeypatch):
+    mock_run = mocker.patch("porcupine.plugins.pastebin.DPaste.run")
+    mock_run.return_value = "https://foobar"
+
+    dialogs = []
+    monkeypatch.setattr("tkinter.Toplevel.wait_window", (lambda d: dialogs.append(d)))
+
+    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    wait_until(lambda: len(dialogs) == 1)
+    assert dialogs[0].title() == "Pastebin this file"
+    assert dialogs[0].winfo_children()[0].winfo_children()[0]["text"] == 'Do you want to send the content of this file to dpaste.com?'
+
+    filetab.save_as(tmp_path / "lolwat.py")
+
+    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    wait_until(lambda: len(dialogs) == 2)
+    assert dialogs[1].title() == "Pastebin lolwat.py"
+    assert dialogs[1].winfo_children()[0].winfo_children()[0]["text"] == 'Do you want to send the content of lolwat.py to dpaste.com?'
+
+    for d in dialogs:
+        d.destroy()
+    assert mock_run.call_count == 0  # closing the window cancels pastebinning
