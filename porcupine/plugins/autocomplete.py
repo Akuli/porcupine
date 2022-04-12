@@ -22,6 +22,7 @@ from tkinter import ttk
 from typing import List
 
 from porcupine import get_tab_manager, settings, tabs, textutils, utils
+from porcupine.settings import global_settings
 
 # autoindent: it shouldn't indent when pressing enter to choose completion
 # tabs2spaces: all plugins binding tab or shift+tab must bind first
@@ -82,8 +83,8 @@ def _add_resize_handle(placed_widget: tkinter.Widget) -> ttk.Label:
         height = max(1, event.y_root - placed_widget.winfo_rooty() + y_offset)
         placed_widget.place(width=width, height=height)
 
-        settings.set_("autocomplete_popup_width", width)
-        settings.set_("autocomplete_popup_height", height)
+        global_settings.set("autocomplete_popup_width", width)
+        global_settings.set("autocomplete_popup_height", height)
 
     handle = ttk.Label(placed_widget, text="⇲")  # unicode awesomeness
     handle.bind("<Button-1>", begin_resize, add=True)
@@ -181,8 +182,8 @@ class _Popup:
         if textutils.place_popup(
             self._textwidget,
             self._panedwindow,
-            width=settings.get("autocomplete_popup_width", int),
-            height=settings.get("autocomplete_popup_height", int),
+            width=global_settings.get("autocomplete_popup_width", int),
+            height=global_settings.get("autocomplete_popup_height", int),
         ):
             self._panedwindow.update()  # _on_resize() uses current sizes
             self._on_resize()
@@ -547,5 +548,5 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
-    settings.add_option("autocomplete_popup_width", 500)
-    settings.add_option("autocomplete_popup_height", 200)
+    global_settings.add_option("autocomplete_popup_width", 500)
+    global_settings.add_option("autocomplete_popup_height", 200)

@@ -18,6 +18,7 @@ from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer
 
 from porcupine import _state, settings, textutils, utils
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 _flatten = itertools.chain.from_iterable
@@ -601,7 +602,7 @@ class FileTab(Tab):
         self.settings.add_option("comment_prefix", None, Optional[str])
         self.settings.add_option(
             "line_ending",
-            settings.get("default_line_ending", settings.LineEnding),
+            global_settings.get("default_line_ending", settings.LineEnding),
             converter=settings.LineEnding.__getitem__,
         )
 

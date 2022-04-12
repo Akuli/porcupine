@@ -23,6 +23,7 @@ from porcupine import (
     tabs,
     utils,
 )
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -244,7 +245,9 @@ class DirectoryTree(ttk.Treeview):
 
     def save_project_list(self) -> None:
         # Settings is a weird place for this, but easier than e.g. using a cache file.
-        settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
+        global_settings.set(
+            "directory_tree_projects", [str(get_path(id)) for id in self.get_children()]
+        )
 
     def refresh(self, junk: object = None) -> None:
         log.debug("refreshing begins")
@@ -449,7 +452,7 @@ def _focus_treeview(tree: DirectoryTree) -> None:
 
 
 def setup() -> None:
-    settings.add_option("directory_tree_projects", [], List[str])
+    global_settings.add_option("directory_tree_projects", [], List[str])
 
     container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")
     get_horizontal_panedwindow().add(container, before=get_vertical_panedwindow())
@@ -475,7 +478,7 @@ def setup() -> None:
     )
 
     # Must reverse because last added project goes first
-    string_paths = settings.get("directory_tree_projects", List[str])
+    string_paths = global_settings.get("directory_tree_projects", List[str])
     for path in map(Path, string_paths[:_MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)

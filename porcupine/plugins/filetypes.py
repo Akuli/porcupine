@@ -22,6 +22,7 @@ from porcupine import (
     settings,
     tabs,
 )
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]
@@ -187,7 +188,7 @@ def guess_filetype(filepath: Path) -> FileType:
 
 def get_filetype_for_tab(tab: tabs.FileTab) -> FileType:
     if tab.path is None:
-        return filetypes[settings.get("default_filetype", str)]
+        return filetypes[global_settings.get("default_filetype", str)]
     # FIXME: this may read the shebang from the file, but the file
     #        might not be saved yet because save_as() sets self.path
     #        before saving, and that's when this runs
@@ -235,7 +236,7 @@ def setup() -> None:
     # load_filetypes() got already called in setup_argument_parser()
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
-    settings.add_option("default_filetype", "Python")
+    global_settings.add_option("default_filetype", "Python")
     settings.add_combobox(
         "default_filetype",
         "Default filetype for new files:",

@@ -12,6 +12,7 @@ from weakref import WeakKeyDictionary, ref
 from pygments import styles
 
 from porcupine import settings, utils
+from porcupine.settings import global_settings
 
 if TYPE_CHECKING:
     from porcupine import tabs
@@ -614,8 +615,8 @@ def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_
                 if key not in ("weight", "slant"):
                     font[key] = value
 
-    textwidget.bind("<<SettingChanged:font_family>>", on_font_changed, add=True)
-    textwidget.bind("<<SettingChanged:font_size>>", on_font_changed, add=True)
+    textwidget.bind("<<GlobalSettingChanged:font_family>>", on_font_changed, add=True)
+    textwidget.bind("<<GlobalSettingChanged:font_size>>", on_font_changed, add=True)
     on_font_changed()
 
     def on_theme_changed(fg: str, bg: str) -> None:
@@ -627,7 +628,7 @@ def use_pygments_tags(textwidget: tkinter.Text, *, option_name: str = "pygments_
             selectbackground=fg,
         )
 
-        style = styles.get_style_by_name(settings.get(option_name, str))
+        style = styles.get_style_by_name(global_settings.get(option_name, str))
 
         # http://pygments.org/docs/formatterdevelopment/#styles
         # all styles seem to yield all token types when iterated over,
@@ -674,8 +675,8 @@ def config_tab_displaying(
 
 # TODO: document this?
 def bind_font_changed(tab: tabs.FileTab, callback: Callable[[], None]) -> None:
-    tab.bind("<<SettingChanged:font_family>>", (lambda event: callback()), add=True)
-    tab.bind("<<SettingChanged:font_size>>", (lambda event: callback()), add=True)
+    tab.bind("<<GlobalSettingChanged:font_family>>", (lambda event: callback()), add=True)
+    tab.bind("<<GlobalSettingChanged:font_size>>", (lambda event: callback()), add=True)
     tab.bind("<<TabSettingChanged:indent_size>>", (lambda event: callback()), add=True)
 
 

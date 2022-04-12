@@ -11,6 +11,7 @@ from tkinter import messagebox, ttk
 from typing import List
 
 from porcupine import get_main_window, menubar, pluginloader, settings, textutils, utils
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -147,7 +148,7 @@ class PluginDialogContent:
         else:
             how_it_got_installed = "You installed this"
 
-        disable_list = settings.get("disabled_plugins", List[str])
+        disable_list = global_settings.get("disabled_plugins", List[str])
         if (
             info.status == pluginloader.Status.DISABLED_BY_SETTINGS
             and info.name not in disable_list
@@ -183,7 +184,7 @@ class PluginDialogContent:
 
     def _on_select(self, junk: object = None) -> None:
         infos = self._get_selected_infos()
-        disable_list = settings.get("disabled_plugins", List[str])
+        disable_list = global_settings.get("disabled_plugins", List[str])
 
         if len(infos) == 1:
             info = infos[0]
@@ -226,12 +227,12 @@ class PluginDialogContent:
         ):
             return
 
-        disabled = set(settings.get("disabled_plugins", List[str]))
+        disabled = set(global_settings.get("disabled_plugins", List[str]))
         if they_become_enabled:
             disabled -= {info.name for info in infos}
         else:
             disabled |= {info.name for info in infos}
-        settings.set_("disabled_plugins", list(disabled))
+        global_settings.set("disabled_plugins", list(disabled))
 
         for info in infos:
             if info.name not in disabled and pluginloader.can_setup_while_running(info):

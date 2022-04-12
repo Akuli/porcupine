@@ -144,7 +144,7 @@ class Finder(ttk.Frame):
         # _update_buttons() uses current selection, update when changes
         textwidget.bind("<<Selection>>", self._update_buttons, add=True)
 
-        textwidget.bind("<<SettingChanged:pygments_style>>", self._config_tags, add=True)
+        textwidget.bind("<<GlobalSettingChanged:pygments_style>>", self._config_tags, add=True)
         self._config_tags()
 
         # catch highlight issue after undo

@@ -11,6 +11,7 @@ import dacite
 import pytest
 
 from porcupine import settings, utils
+from porcupine.settings import global_settings
 
 
 @pytest.fixture(autouse=True)
@@ -22,15 +23,15 @@ def restore_default_settings():
         assert "Temp" in settings.get_json_path().parts
     else:
         assert Path.home() not in settings.get_json_path().parents
-    settings.reset_all()
+    global_settings.reset_all()
 
 
 # Could replace some of this with non-global setting objects, but I don't feel
 # like rewriting the tests just because it would be slightly nicer that way
 @pytest.fixture
 def cleared_global_settings(monkeypatch, tmp_path):
-    monkeypatch.setattr(settings._global_settings, "_options", {})
-    monkeypatch.setattr(settings._global_settings, "_unknown_options", {})
+    monkeypatch.setattr(global_settings, "_options", {})
+    monkeypatch.setattr(global_settings, "_unknown_options", {})
     monkeypatch.setattr(settings, "get_json_path", (lambda: tmp_path / "settings.json"))
 
 
@@ -47,15 +48,15 @@ def save_and_read_file() -> str:
 
 
 def test_add_option_and_get_and_set(cleared_global_settings):
-    settings.add_option("how_many_foos", 123)
-    settings.add_option("bar_message", "hello")
+    global_settings.add_option("how_many_foos", 123)
+    global_settings.add_option("bar_message", "hello")
 
-    assert settings.get("how_many_foos", int) == 123
-    assert settings.get("bar_message", str) == "hello"
-    settings.set_("how_many_foos", 456)
-    settings.set_("bar_message", "bla")
-    assert settings.get("how_many_foos", int) == 456
-    assert settings.get("bar_message", str) == "bla"
+    assert global_settings.get("how_many_foos", int) == 123
+    assert global_settings.get("bar_message", str) == "hello"
+    global_settings.set("how_many_foos", 456)
+    global_settings.set("bar_message", "bla")
+    assert global_settings.get("how_many_foos", int) == 456
+    assert global_settings.get("bar_message", str) == "bla"
 
 
 # Consider this situation:
@@ -68,60 +69,60 @@ def test_add_option_and_get_and_set(cleared_global_settings):
 def test_unknown_option_in_settings_file(cleared_global_settings):
     load_from_json_string('{"foo": "custom", "unknown": "hello"}')
     with pytest.raises(KeyError):
-        settings.get("foo", str)
+        global_settings.get("foo", str)
 
-    settings.add_option("foo", "default")
-    assert settings.get("foo", str) == "custom"
-    settings.set_("foo", "default")
-    assert settings.get("foo", str) == "default"
+    global_settings.add_option("foo", "default")
+    assert global_settings.get("foo", str) == "custom"
+    global_settings.set("foo", "default")
+    assert global_settings.get("foo", str) == "default"
 
     assert save_and_read_file() == {"unknown": "hello"}
 
 
 def test_wrong_type(cleared_global_settings):
-    settings.add_option("magic_message", "bla")
+    global_settings.add_option("magic_message", "bla")
 
     with pytest.raises(
         dacite.exceptions.WrongTypeError,
         match=r'wrong value type .* should be "int" instead of .* "str"',
     ):
-        settings.get("magic_message", int)
+        global_settings.get("magic_message", int)
     with pytest.raises(
         dacite.exceptions.WrongTypeError,
         match=r'wrong value type .* should be "str" instead of .* "int"',
     ):
-        settings.set_("magic_message", 123)
+        global_settings.set("magic_message", 123)
 
 
 def test_name_collision(cleared_global_settings):
-    settings.add_option("omg", "bla")
+    global_settings.add_option("omg", "bla")
     with pytest.raises(RuntimeError, match="^there's already an option named 'omg'$"):
-        settings.add_option("omg", "bla")
+        global_settings.add_option("omg", "bla")
 
-    settings.add_option("omg", "bla", exist_ok=True)
+    global_settings.add_option("omg", "bla", exist_ok=True)
     with pytest.raises(AssertionError):
-        settings.add_option("omg", 123, exist_ok=True)
+        global_settings.add_option("omg", 123, exist_ok=True)
 
 
 def test_reset(cleared_global_settings):
     load_from_json_string('{"foo": "custom", "bar": "custom", "unknown": "hello"}')
-    settings.add_option("foo", "default")
-    settings.add_option("bar", "default")
-    settings.add_option("baz", "default")
-    assert settings.get("foo", str) == "custom"
-    assert settings.get("bar", str) == "custom"
-    assert settings.get("baz", str) == "default"
+    global_settings.add_option("foo", "default")
+    global_settings.add_option("bar", "default")
+    global_settings.add_option("baz", "default")
+    assert global_settings.get("foo", str) == "custom"
+    assert global_settings.get("bar", str) == "custom"
+    assert global_settings.get("baz", str) == "default"
 
-    settings.reset("bar")
-    assert settings.get("foo", str) == "custom"
-    assert settings.get("bar", str) == "default"
-    assert settings.get("baz", str) == "default"
+    global_settings.reset("bar")
+    assert global_settings.get("foo", str) == "custom"
+    assert global_settings.get("bar", str) == "default"
+    assert global_settings.get("baz", str) == "default"
     assert save_and_read_file() == {"foo": "custom", "unknown": "hello"}
 
-    settings.reset_all()
-    assert settings.get("foo", str) == "default"
-    assert settings.get("bar", str) == "default"
-    assert settings.get("baz", str) == "default"
+    global_settings.reset_all()
+    assert global_settings.get("foo", str) == "default"
+    assert global_settings.get("bar", str) == "default"
+    assert global_settings.get("baz", str) == "default"
     assert save_and_read_file() == {}  # even unknown options go away
 
 
@@ -129,21 +130,21 @@ def test_no_json_file(cleared_global_settings):
     assert not settings.get_json_path().exists()
     settings._load_from_file()
 
-    settings.add_option("foo", "default")
-    settings.set_("foo", "custom")
+    global_settings.add_option("foo", "default")
+    global_settings.set("foo", "custom")
 
     assert not settings.get_json_path().exists()
-    settings.reset_all()
-    assert settings.get("foo", str) == "default"
+    global_settings.reset_all()
+    assert global_settings.get("foo", str) == "default"
 
 
 def test_save(cleared_global_settings):
     load_from_json_string('{"bar": "custom bar"}')
 
-    settings.add_option("foo", "default")
-    settings.add_option("bar", "default")
-    settings.add_option("baz", "default")
-    settings.set_("foo", "custom foo")
+    global_settings.add_option("foo", "default")
+    global_settings.add_option("bar", "default")
+    global_settings.add_option("baz", "default")
+    global_settings.set("foo", "custom foo")
 
     settings.save()
     with settings.get_json_path().open("r") as file:
@@ -153,9 +154,9 @@ def test_save(cleared_global_settings):
 def test_font_gets_updated():
     fixedfont = Font(name="TkFixedFont", exists=True)
 
-    settings.set_("font_family", "Helvetica")
+    global_settings.set("font_family", "Helvetica")
     assert fixedfont["family"] == "Helvetica"
-    settings.set_("font_size", 123)
+    global_settings.set("font_size", 123)
     assert fixedfont["size"] == 123
 
 
