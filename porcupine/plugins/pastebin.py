@@ -250,6 +250,7 @@ def pasting_done_callback(
 def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     window = tkinter.Toplevel()
     window.title(f"Pastebin {filename}")
+    window.transient(get_main_window())
 
     content = ttk.Frame(window, name="content", padding=10)
     content.pack(fill="both", expand=True)
