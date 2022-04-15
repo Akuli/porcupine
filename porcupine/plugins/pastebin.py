@@ -247,7 +247,7 @@ def pasting_done_callback(
         )
 
 
-def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
+def ask_are_you_sure(filename: str | None, paste_class: type[Paste], selection_only: bool) -> bool:
     window = tkinter.Toplevel()
     window.title(f"Pastebin {filename}")
     window.transient(get_main_window())
@@ -256,10 +256,15 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     content.pack(fill="both", expand=True)
     content.columnconfigure(0, weight=1)
 
+    if selection_only:
+        question = f"Do you want to send the selected code to {paste_class.name}?"
+    else:
+        question = f"Do you want to send the content of {filename} to {paste_class.name}?"
+
     label1 = ttk.Label(
         content,
         name="label1",
-        text=f"Do you want to send the content of {filename} to {paste_class.name}?",
+        text=question,
         wraplength=300,
         justify="center",
         font="TkHeadingFont",
@@ -303,17 +308,19 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
 
 
 def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
+    try:
+        code = tab.textwidget.get("sel.first", "sel.last")
+        selection_only = True
+    except tkinter.TclError:
+        code = tab.textwidget.get("1.0", "end - 1 char")
+        selection_only = False
+
     if global_settings.get("ask_to_pastebin", bool):
         filename = "this file" if tab.path is None else tab.path.name
-        if not ask_are_you_sure(filename, paste_class):
+        if not ask_are_you_sure(filename, paste_class, selection_only=selection_only):
             return
 
     lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
-    try:
-        code = tab.textwidget.get("sel.first", "sel.last")
-    except tkinter.TclError:
-        # nothing is selected, pastebin everything
-        code = tab.textwidget.get("1.0", "end - 1 char")
 
     code = textwrap.dedent(code)
 
