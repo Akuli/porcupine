@@ -293,8 +293,8 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
 
     button_frame = ttk.Frame(content)
     button_frame.pack(fill="x")
-    ttk.Button(button_frame, text="Yes", command=yes).pack(side="left", expand=True)
-    ttk.Button(button_frame, text="No", command=no).pack(side="left", expand=True)
+    ttk.Button(button_frame, text="Yes", command=yes).pack(side="left", expand=True, fill="x", padx=(0, 10))
+    ttk.Button(button_frame, text="No", command=no).pack(side="left", expand=True, fill="x", padx=(10, 0))
 
     window.wait_window()
     global_settings.set("ask_to_pastebin", var.get())
