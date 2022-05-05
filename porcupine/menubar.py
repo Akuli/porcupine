@@ -27,7 +27,12 @@ log = logging.getLogger(__name__)
 # IMO applications shouldn't receive the window manager's special key bindings.
 # Windows is weird...
 def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
-    return sys.platform == "win32" and isinstance(event.state, int) and (event.state & 0x20000) and event.keysym == "F4"
+    return (
+        sys.platform == "win32"
+        and isinstance(event.state, int)
+        and (event.state & 0x20000)
+        and event.keysym == "F4"
+    )
 
 
 # Try this:
