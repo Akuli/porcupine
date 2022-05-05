@@ -204,9 +204,11 @@ def test_invalid_return(filetab, tabmanager, mocker, caplog, dont_run_in_thread)
     ]
 
 
-def test_pasting_selected_indented_code(filetab, tabmanager, mocker, dont_run_in_thread):
+def test_pasting_selected_indented_code(
+    filetab, tabmanager, monkeypatch, mocker, dont_run_in_thread
+):
     mocker.patch("porcupine.plugins.pastebin.ask_are_you_sure").return_value = True
-    mocker.patch("tkinter.Toplevel.wait_window")
+    monkeypatch.setattr("tkinter.Toplevel.wait_window", tkinter.Toplevel.destroy)
     mock_run = mocker.patch("porcupine.plugins.pastebin.DPaste.run")
     mock_run.return_value = "https://foobar"
 
