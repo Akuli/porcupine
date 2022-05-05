@@ -30,7 +30,7 @@ def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
     return (
         sys.platform == "win32"
         and isinstance(event.state, int)
-        and (event.state & 0x20000)  # Alt key is pressed
+        and bool(event.state & 0x20000)  # Alt key is pressed
         and event.keysym == "F4"
     )
 
