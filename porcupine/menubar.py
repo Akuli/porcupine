@@ -23,6 +23,13 @@ from porcupine.settings import global_settings
 log = logging.getLogger(__name__)
 
 
+# For some reason, binding <F4> on Windows also captures Alt+F4 presses.
+# IMO applications shouldn't receive the window manager's special key bindings.
+# Windows is weird...
+def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
+    return sys.platform == "win32" and event.state == 0x20000 and event.keysym == "F4"
+
+
 # Try this:
 #
 #    import tkinter
@@ -47,9 +54,12 @@ log = logging.getLogger(__name__)
 #
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
-def _generate_event(name: str, junk: object) -> Literal["break"]:
-    log.debug(f"Generating event: {name}")
-    get_main_window().event_generate(name)
+def _generate_event(name: str, event: tkinter.Event[tkinter.Misc]) -> Literal["break"]:
+    if event_is_windows_alt_f4(event):
+        quit()
+    else:
+        log.debug(f"Generating event: {name}")
+        get_main_window().event_generate(name)
     return "break"
 
 
@@ -167,8 +177,11 @@ def _walk_menu_contents(
                 yield (_join(path), menu, index)
 
 
-def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]) -> str:
-    menu.invoke(index)
+def _menu_event_handler(menu: tkinter.Menu, index: int, event: tkinter.Event[tkinter.Misc]) -> str:
+    if event_is_windows_alt_f4(event):
+        quit()
+    else:
+        menu.invoke(index)
     return "break"
 
 
