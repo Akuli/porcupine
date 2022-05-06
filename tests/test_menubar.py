@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from porcupine import get_main_window, menubar, tabs
@@ -64,3 +66,17 @@ def test_text_widget_binding_weirdness(filetab):
     filetab.textwidget.event_generate("<<Menubar:File/Close>>")
     assert filetab.textwidget.get("1.0", "end - 1 char") == "hello world"
     assert called == 1
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="checks if Windows-specific bug was fixed")
+def test_alt_f4_bug_with_filetab(filetab, mocker):
+    mock_quit = mocker.patch("porcupine.menubar.quit")
+    filetab.textwidget.event_generate("<Alt-F4>")
+    mock_quit.assert_called_once_with()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="checks if Windows-specific bug was fixed")
+def test_alt_f4_bug_without_filetab(mocker):
+    mock_quit = mocker.patch("porcupine.menubar.quit")
+    get_main_window().event_generate("<Alt-F4>")
+    mock_quit.assert_called_once_with()
