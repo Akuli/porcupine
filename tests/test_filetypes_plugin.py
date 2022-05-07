@@ -107,3 +107,16 @@ def test_cplusplus_toml_bug(tmp_path, tabmanager, custom_filetypes):
     (tmp_path / "foo.cpp").touch()
     tab = tabmanager.open_file(tmp_path / "foo.cpp")
     pickle.dumps(tab.get_state())  # should not raise an error
+
+
+def test_settings_reset_when_filetype_changes(filetab, tmp_path):
+    assert filetab.settings.get("filetype_name", object) == "Python"
+    assert filetab.settings.get("comment_prefix", object) == "#"
+    assert filetab.settings.get("langserver", object) is not None
+    assert len(filetab.settings.get("example_commands", object)) >= 2
+
+    filetab.save_as(tmp_path / "asdf.css")
+    assert filetab.settings.get("filetype_name", object) is None
+    assert filetab.settings.get("comment_prefix", object) is None
+    assert filetab.settings.get("langserver", object) is None
+    assert len(filetab.settings.get("example_commands", object)) == 0
