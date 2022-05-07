@@ -18,8 +18,21 @@ else:
 
 from porcupine import settings, tabs, utils
 from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
+
+
+# For some reason, binding <F4> on Windows also captures Alt+F4 presses.
+# IMO applications shouldn't receive the window manager's special key bindings.
+# Windows is weird...
+def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
+    return (
+        sys.platform == "win32"
+        and isinstance(event.state, int)
+        and bool(event.state & 0x20000)  # Alt key is pressed
+        and event.keysym == "F4"
+    )
 
 
 # Try this:
@@ -46,9 +59,12 @@ log = logging.getLogger(__name__)
 #
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
-def _generate_event(name: str, junk: object) -> Literal["break"]:
-    log.debug(f"Generating event: {name}")
-    get_main_window().event_generate(name)
+def _generate_event(name: str, event: tkinter.Event[tkinter.Misc]) -> Literal["break"]:
+    if event_is_windows_alt_f4(event):
+        quit()
+    else:
+        log.debug(f"Generating event: {name}")
+        get_main_window().event_generate(name)
     return "break"
 
 
@@ -166,8 +182,11 @@ def _walk_menu_contents(
                 yield (_join(path), menu, index)
 
 
-def _menu_event_handler(menu: tkinter.Menu, index: int, junk: tkinter.Event[tkinter.Misc]) -> str:
-    menu.invoke(index)
+def _menu_event_handler(menu: tkinter.Menu, index: int, event: tkinter.Event[tkinter.Misc]) -> str:
+    if event_is_windows_alt_f4(event):
+        quit()
+    else:
+        menu.invoke(index)
     return "break"
 
 
@@ -385,10 +404,10 @@ def _fill_menus_with_default_stuff() -> None:
 
     def change_font_size(how: Literal["bigger", "smaller", "reset"]) -> None:
         if how == "reset":
-            settings.reset("font_size")
+            global_settings.reset("font_size")
             return
 
-        size = settings.get("font_size", int)
+        size = global_settings.get("font_size", int)
         if how == "bigger":
             size += 1
         else:
@@ -396,7 +415,7 @@ def _fill_menus_with_default_stuff() -> None:
             if size < 3:
                 return
 
-        settings.set_("font_size", size)
+        global_settings.set("font_size", size)
 
     get_menu("View").add_command(label="Bigger Font", command=partial(change_font_size, "bigger"))
     get_menu("View").add_command(label="Smaller Font", command=partial(change_font_size, "smaller"))

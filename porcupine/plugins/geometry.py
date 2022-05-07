@@ -4,7 +4,8 @@ from __future__ import annotations
 import re
 import tkinter
 
-from porcupine import get_main_window, settings
+from porcupine import get_main_window
+from porcupine.settings import global_settings
 
 
 def geometry_is_within_screen(geometry: str) -> bool:
@@ -24,14 +25,14 @@ def geometry_is_within_screen(geometry: str) -> bool:
 
 def save_geometry(event: tkinter.Event[tkinter.Misc]) -> None:
     assert isinstance(event.widget, (tkinter.Tk, tkinter.Toplevel))
-    settings.set_("default_geometry", event.widget.geometry())
+    global_settings.set("default_geometry", event.widget.geometry())
 
 
 def setup() -> None:
-    settings.add_option("default_geometry", "650x600")
+    global_settings.add_option("default_geometry", "650x600")
     get_main_window().bind("<<PorcupineQuit>>", save_geometry, add=True)
 
-    geometry = settings.get("default_geometry", str)
+    geometry = global_settings.get("default_geometry", str)
     if not geometry_is_within_screen(geometry):
         geometry = geometry.split("+")[0]  # size only, discard location
     get_main_window().geometry(geometry)

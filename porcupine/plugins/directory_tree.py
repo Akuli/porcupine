@@ -23,6 +23,7 @@ from porcupine import (
     tabs,
     utils,
 )
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,14 @@ def _stringify_path(path: Path) -> str:
     if path == home or home in path.parents:
         return os.sep.join(["~"] + list(path.relative_to(home).parts))
     return str(path)
+
+
+def get_fg_and_bg_colors() -> tuple[str, str]:
+    tcl_interp = get_tab_manager().tk
+    fg = tcl_interp.eval("ttk::style lookup Treeview -foreground") or "black"
+    bg = tcl_interp.eval("ttk::style lookup Treeview -background")
+    assert bg
+    return fg, bg
 
 
 class DirectoryTree(ttk.Treeview):
@@ -135,8 +144,7 @@ class DirectoryTree(ttk.Treeview):
         return "break"
 
     def _config_tags(self, junk: object = None) -> None:
-        fg = self.tk.eval("ttk::style lookup Treeview -foreground")
-        bg = self.tk.eval("ttk::style lookup Treeview -background")
+        fg, bg = get_fg_and_bg_colors()
         gray = utils.mix_colors(fg, bg, 0.5)
         self.tag_configure("dummy", foreground=gray)
 
@@ -244,7 +252,9 @@ class DirectoryTree(ttk.Treeview):
 
     def save_project_list(self) -> None:
         # Settings is a weird place for this, but easier than e.g. using a cache file.
-        settings.set_("directory_tree_projects", [str(get_path(id)) for id in self.get_children()])
+        global_settings.set(
+            "directory_tree_projects", [str(get_path(id)) for id in self.get_children()]
+        )
 
     def refresh(self, junk: object = None) -> None:
         log.debug("refreshing begins")
@@ -381,16 +391,38 @@ class DirectoryTree(ttk.Treeview):
         self.contextmenu.delete(0, "end")
         self.event_generate("<<PopulateContextMenu>>")
 
-    def _on_right_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
+    def _on_right_click(self, event: tkinter.Event[DirectoryTree], menu_key: bool) -> str | None:
         self.tk.call("focus", self)
 
-        item: str = self.identify_row(event.y)
-        self.set_the_selection_correctly(item)
+        # Behaviour for menu/application key
+        if menu_key:
+            # Get relative position of focus item
+            try:
+                x, y, width, height = self.bbox(self.focus())  # type: ignore
+            except ValueError:
+                x, y, width, height = (0, 0, 0, 0)
+
+            width  # Silence pyflakes unused variable warning
+
+            # Apply menu position offsets
+            menu_x = self.winfo_rootx() + x
+            menu_y = self.winfo_rooty() + y + height
+
+        # Behaviour for a mouse right-click
+        else:
+            item = self.identify_row(event.y)
+
+            # Update selected item
+            self.set_the_selection_correctly(item)
+
+            # Set menu position to cursor position
+            menu_x = event.x_root
+            menu_y = event.y_root
 
         self._populate_contextmenu()
         if self.contextmenu.index("end") is not None:
             # Menu is not empty
-            self.contextmenu.tk_popup(event.x_root, event.y_root)
+            self.contextmenu.tk_popup(menu_x, menu_y)
         return "break"
 
 
@@ -426,8 +458,16 @@ def _focus_treeview(tree: DirectoryTree) -> None:
     tree.tk.call("focus", tree)
 
 
+# https://stackoverflow.com/q/62824799
+def config_indent(junk: object = None) -> None:
+    get_tab_manager().tk.eval("ttk::style configure DirectoryTree.Treeview -indent 10")
+
+
 def setup() -> None:
-    settings.add_option("directory_tree_projects", [], List[str])
+    config_indent()
+    get_tab_manager().bind("<<ThemeChanged>>", config_indent, add=True)
+
+    global_settings.add_option("directory_tree_projects", [], List[str])
 
     container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")
     get_horizontal_panedwindow().add(container, before=get_vertical_panedwindow())
@@ -453,14 +493,16 @@ def setup() -> None:
     )
 
     # Must reverse because last added project goes first
-    string_paths = settings.get("directory_tree_projects", List[str])
+    string_paths = global_settings.get("directory_tree_projects", List[str])
     for path in map(Path, string_paths[:_MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)
     tree.refresh()
 
-    # TODO: invoking context menu from keyboard
-    tree.bind("<<RightClick>>", tree._on_right_click, add=True)
+    # Invoke context menu from right-click
+    tree.bind("<<RightClick>>", partial(tree._on_right_click, menu_key=False), add=True)
+    # Invoke context menu from menu key
+    tree.bind("<<MenuKey>>", partial(tree._on_right_click, menu_key=True), add=True)
 
     tree.bind("<Key>", tree._cycle_through_items, add=True)
 

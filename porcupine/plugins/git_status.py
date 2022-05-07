@@ -16,6 +16,7 @@ from porcupine.plugins.directory_tree import (
     DirectoryTree,
     FolderRefreshed,
     get_directory_tree,
+    get_fg_and_bg_colors,
     get_path,
 )
 
@@ -169,8 +170,7 @@ class TreeColorer:
         self.project_specific_colorers: dict[str, ProjectColorer] = {}
 
     def config_color_tags(self, junk: object = None) -> None:
-        fg = self.tree.tk.eval("ttk::style lookup Treeview -foreground")
-        bg = self.tree.tk.eval("ttk::style lookup Treeview -background")
+        fg, bg = get_fg_and_bg_colors()
         gray = utils.mix_colors(fg, bg, 0.5)
 
         if utils.is_bright(fg):
@@ -217,15 +217,11 @@ def update_tree_selection_color(tree: DirectoryTree, event: object = None) -> No
         [tag] = git_tags
         color = tree.tag_configure(tag, "foreground")
         tree.tk.call(
-            "ttk::style",
-            "map",
-            "DirectoryTreeGitStatus.Treeview",
-            "-foreground",
-            ["selected", color],
+            "ttk::style", "map", "DirectoryTree.Treeview", "-foreground", ["selected", color]
         )
     else:
         # use default colors
-        tree.tk.eval("ttk::style map DirectoryTreeGitStatus.Treeview -foreground {}")
+        tree.tk.eval("ttk::style map DirectoryTree.Treeview -foreground {}")
 
 
 def sorting_key(tree: DirectoryTree, item_id: str) -> Any:
@@ -247,7 +243,6 @@ def sorting_key(tree: DirectoryTree, item_id: str) -> Any:
 
 def setup() -> None:
     tree = get_directory_tree()
-    tree.config(style="DirectoryTreeGitStatus.Treeview")
 
     main_colorer = TreeColorer(tree)
     tree.bind("<<RefreshBegins>>", main_colorer.start_status_coloring_for_all_projects, add=True)

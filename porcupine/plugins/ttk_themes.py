@@ -7,7 +7,8 @@ import tkinter
 
 import ttkthemes
 
-from porcupine import get_main_window, menubar, settings
+from porcupine import get_main_window, menubar
+from porcupine.settings import global_settings
 
 
 # TODO: modernize this code a bit, so that it actually matches ttkthemes docs
@@ -16,12 +17,15 @@ def setup() -> None:
 
     if get_main_window().tk.call("tk", "windowingsystem") == "x11":
         # Default theme sucks on linux
-        settings.add_option("ttk_theme", "black")
+        global_settings.add_option("ttk_theme", "black")
     else:
-        settings.add_option("ttk_theme", style.theme_use())
+        global_settings.add_option("ttk_theme", style.theme_use())
 
     var = tkinter.StringVar()
-    for name in sorted(style.get_themes()):
+
+    theme_names = sorted(style.get_themes())
+    theme_names.remove("breeze")  # messes with font of text widgets and causes lots of errors
+    for name in theme_names:
         # TODO: capitalize theme names?
         menubar.get_menu("UI Themes").add_radiobutton(label=name, value=name, variable=var)
 
@@ -30,9 +34,9 @@ def setup() -> None:
 
     # Connect var and settings
     get_main_window().bind(
-        "<<SettingChanged:ttk_theme>>",
-        lambda event: var.set(settings.get("ttk_theme", str)),
+        "<<GlobalSettingChanged:ttk_theme>>",
+        lambda event: var.set(global_settings.get("ttk_theme", str)),
         add=True,
     )
-    var.set(settings.get("ttk_theme", str))
-    var.trace_add("write", lambda *junk: settings.set_("ttk_theme", var.get()))
+    var.set(global_settings.get("ttk_theme", str))
+    var.trace_add("write", lambda *junk: global_settings.set("ttk_theme", var.get()))

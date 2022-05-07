@@ -29,7 +29,8 @@ else:
 
 class FilenameMode(enum.Enum):
     RENAME = ("Rename", "Enter a new name for {name}:")
-    NEW = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
+    NEW_FILE = ("New file", "Enter a name for the new file. Remember the extension (e.g. .py).")
+    NEW_DIRECTORY = ("New directory", "Enter a name for the new directory.")
     PASTE = ("File conflict", "There is already a file named {name} in {parent}.\n\n{plus}")
 
 
@@ -316,6 +317,12 @@ def open_in_file_manager(path: Path) -> None:
     subprocess.Popen([opener_command, str(path)])
 
 
+def copy_full_path_to_clipboard(path: Path) -> None:
+    main_window = get_main_window()
+    main_window.clipboard_clear()
+    main_window.clipboard_append(str(path))
+
+
 def get_selected_path(tree: DirectoryTree) -> Path | None:
     try:
         [item] = tree.selection()
@@ -352,11 +359,21 @@ def new_file_here(path: Path) -> None:
     if not path.is_dir():
         path = path.parent
 
-    name = ask_file_name(path, "", mode=FilenameMode.NEW)
-    if name:
-        name.touch()
+    file_name = ask_file_name(path, "", mode=FilenameMode.NEW_FILE)
+    if file_name:
+        file_name.touch()
         get_tab_manager().event_generate("<<FileSystemChanged>>")
-        get_tab_manager().open_file(name)
+        get_tab_manager().open_file(file_name)
+
+
+def new_directory_here(path: Path) -> None:
+    if not path.is_dir():
+        path = path.parent
+
+    dir_name = ask_file_name(path, "", mode=FilenameMode.NEW_DIRECTORY)
+    if dir_name:
+        dir_name.mkdir()
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 commands = [
@@ -364,6 +381,9 @@ commands = [
     # For example, if the project is renamed, venv locations don't update.
     # TODO: update venv locations when the venv is renamed
     Command("New file here", "<<FileManager:New file>>", (lambda p: True), new_file_here),
+    Command(
+        "New directory here", "<<FileManager:New directory>>", (lambda p: True), new_directory_here
+    ),
     Command("Cut", "<<Cut>>", (lambda p: not p.is_dir()), cut),
     Command("Copy", "<<Copy>>", (lambda p: not p.is_dir()), copy),
     Command("Paste", "<<Paste>>", can_paste, paste),
@@ -371,6 +391,7 @@ commands = [
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
     Command("Open in file manager", None, (lambda p: p.is_dir()), open_in_file_manager),
+    Command("Copy full path to clipboard", None, (lambda p: True), copy_full_path_to_clipboard),
 ]
 
 

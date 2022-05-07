@@ -22,6 +22,7 @@ from urllib.request import HTTPSHandler, Request, build_opener
 from pygments.lexer import LexerMeta
 
 from porcupine import get_main_window, menubar, tabs, utils
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -246,13 +247,84 @@ def pasting_done_callback(
         )
 
 
+def ask_are_you_sure(filename: str | None, paste_class: type[Paste], selection_only: bool) -> bool:
+    window = tkinter.Toplevel()
+    window.title(f"Pastebin {filename}")
+    window.transient(get_main_window())
+
+    content = ttk.Frame(window, name="content", padding=10)
+    content.pack(fill="both", expand=True)
+    content.columnconfigure(0, weight=1)
+
+    if selection_only:
+        question = f"Do you want to send the selected code to {paste_class.name}?"
+    else:
+        question = f"Do you want to send the content of {filename} to {paste_class.name}?"
+
+    label1 = ttk.Label(
+        content,
+        name="label1",
+        text=question,
+        wraplength=300,
+        justify="center",
+        font="TkHeadingFont",
+    )
+    label1.pack(pady=5)
+
+    label2 = ttk.Label(
+        content,
+        name="label2",
+        text="This is a bad idea if your code is not meant to be publicly available.",
+        wraplength=300,
+        justify="center",
+        font="TkTextFont",
+    )
+    label2.pack(pady=5)
+
+    var = tkinter.BooleanVar(value=True)
+    checkbox = ttk.Checkbutton(
+        content, text="Show this dialog when I try to pastebin something", variable=var
+    )
+    checkbox.pack(pady=25)
+
+    result = False
+
+    def yes() -> None:
+        nonlocal result
+        result = True
+        window.destroy()
+
+    def no() -> None:
+        window.destroy()
+
+    button_frame = ttk.Frame(content)
+    button_frame.pack(fill="x")
+    ttk.Button(button_frame, text="Yes", command=yes).pack(
+        side="left", expand=True, fill="x", padx=(0, 10)
+    )
+    ttk.Button(button_frame, text="No", command=no).pack(
+        side="left", expand=True, fill="x", padx=(10, 0)
+    )
+
+    window.wait_window()
+    global_settings.set("ask_to_pastebin", var.get())
+    return result
+
+
 def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
-    lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
     try:
         code = tab.textwidget.get("sel.first", "sel.last")
+        selection_only = True
     except tkinter.TclError:
-        # nothing is selected, pastebin everything
         code = tab.textwidget.get("1.0", "end - 1 char")
+        selection_only = False
+
+    if global_settings.get("ask_to_pastebin", bool):
+        filename = "this file" if tab.path is None else tab.path.name
+        if not ask_are_you_sure(filename, paste_class, selection_only=selection_only):
+            return
+
+    lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
 
     code = textwrap.dedent(code)
 
@@ -264,6 +336,7 @@ def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
+    global_settings.add_option("ask_to_pastebin", default=True)
     for klass in [DPaste, Termbin]:
         assert "/" not in klass.name
         menubar.add_filetab_command(f"Pastebin/{klass.name}", partial(start_pasting, klass))

@@ -17,8 +17,9 @@ from typing import Any, Iterable, List, Sequence
 
 import toposort
 
-from porcupine import get_main_window, settings
+from porcupine import get_main_window
 from porcupine.plugins import __path__ as plugin_paths
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -239,7 +240,7 @@ def import_plugins(disabled_on_command_line: list[str]) -> None:
         # If it's disabled in settings and on command line, then status is set
         # to DISABLED_BY_SETTINGS. This makes more sense for the user of the
         # plugin manager dialog.
-        if info.name in settings.get("disabled_plugins", List[str]):
+        if info.name in global_settings.get("disabled_plugins", List[str]):
             info.status = Status.DISABLED_BY_SETTINGS
             continue
         if info.name in disabled_on_command_line:
@@ -324,8 +325,7 @@ def can_setup_while_running(info: PluginInfo) -> bool:
     if setup_preventors:
         log.info(
             f"can't setup {info.name} now because it must be done before setting up the following"
-            " plugins, which are already active: "
-            + "\n".join(setup_preventors)
+            " plugins, which are already active: " + "\n".join(setup_preventors)
         )
         return False
 

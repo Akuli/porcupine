@@ -134,6 +134,15 @@ def fake_git_pool():
     yield
 
 
+@pytest.fixture(autouse=True)
+def fail_test_if_a_tkinter_callback_errors(mocker):
+    mock = mocker.patch("tkinter.Tk.report_callback_exception")
+    yield
+    if mock.call_count != 0:
+        exc_type, exc_value, exc_tb = mock.call_args.args
+        raise ValueError("error in tkinter callback while running test") from exc_value
+
+
 # TODO: consider longer name
 @pytest.fixture
 def tree():
@@ -178,7 +187,14 @@ def run_porcupine():
 
 @pytest.fixture
 def wait_until():
-    def actually_wait_until(condition, *, timeout=5):
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # Avoid random timeouting errors
+        default_timeout = 20
+    else:
+        # Short timeout is good for local development, so that you quickly notice something is wrong
+        default_timeout = 4
+
+    def actually_wait_until(condition, *, timeout=default_timeout):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             get_main_window().update()

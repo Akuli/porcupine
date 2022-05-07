@@ -168,6 +168,17 @@ def test_dedent_blank_line_in_tabs_file_bug(filetab):
     assert filetab.textwidget.get("1.0", "end - 1 char") == "foo\n\nbar"
 
 
+def test_css_indented_as_if_it_was_python_bug(filetab, tmp_path):
+    filetab.textwidget.insert("1.0", "body {\n    background-color: #ffffff;")
+    filetab.save_as(tmp_path / "blah.css")
+    filetab.textwidget.event_generate("<Return>")
+    filetab.update()
+
+    # Cursor should be below the "b" of background-color.
+    # Before it was below "g", because of unwanted automagic indentation.
+    assert filetab.textwidget.get("insert - 1 line") == "b"
+
+
 @pytest.fixture
 def check_autoindents(filetab, tmp_path):
     def check(filename, input_commands, output):

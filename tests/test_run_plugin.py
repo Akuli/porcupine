@@ -167,6 +167,35 @@ def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
     assert click_last_link() == "asdf.bind('<Foo>', print)"
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="commands below wouldn't work on windows even if valgrind supported windows",
+)
+@pytest.mark.skipif(shutil.which("gcc") is None, reason="C compiler needed")
+@pytest.mark.skipif(shutil.which("valgrind") is None, reason="need valgrind")
+# caplog needed to silence logging errors from langserver plugin, which tries to start clangd
+def test_valgrind_error_message(filetab, tmp_path, wait_until, caplog):
+    filetab.textwidget.insert(
+        "end",
+        r"""
+#include <stdio.h>
+#include <stdlib.h>
+int main()
+{
+    char *ptr = malloc(1);
+    printf("%c\n", *ptr);
+    return 0;
+}
+""",
+    )
+    filetab.save_as(tmp_path / "bug.c")
+    no_terminal.run_command("gcc -g bug.c", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    no_terminal.run_command("valgrind ./a.out", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    assert click_last_link() == r'    printf("%c\n", *ptr);'
+
+
 @pytest.mark.skipif(shutil.which("grep") is None, reason="uses grep")
 def test_grep_n_output(tabmanager, tmp_path, wait_until):
     (tmp_path / ".github").mkdir()
@@ -311,7 +340,7 @@ def size_is_changing(path):
 def test_previous_process_dies(tmp_path, wait_until):
     (tmp_path / "hello.py").write_text("print('Hello')")
     (tmp_path / "killed.py").write_text(
-        fr"""
+        rf"""
 import time
 while True:
     with open("out.txt", "a") as file:
@@ -363,3 +392,30 @@ def test_stop_button_pressed_after_finished(tmp_path, wait_until):
 
     no_terminal.runner.stop_button.event_generate("<Button-1>")
     assert "Killed" not in get_output()
+
+
+def test_infinite_loop(tmp_path, wait_until):
+    (tmp_path / "loop.py").write_text(
+        """\
+i = 0
+while True:
+    print(i)
+    i = i+1
+    """
+    )
+    no_terminal.run_command(f"{utils.quote(sys.executable)} loop.py", tmp_path)
+
+    wait_until(
+        lambda: get_output().splitlines()[-1].isdecimal()
+        and int(get_output().splitlines()[-1]) >= 2 * no_terminal.MAX_SCROLLBACK
+    )
+    no_terminal.runner.stop_button.event_generate("<Button-1>")
+    wait_until(lambda: get_output().strip().endswith("Killed."))
+    lines = get_output().strip().replace("Killed.", "").splitlines()[1:]
+
+    assert (
+        len(lines) < no_terminal.MAX_SCROLLBACK
+    )  # there were more prints, but old output was removed
+    start = int(lines[0])
+    assert start > 0
+    assert lines == [str(i) for i in range(start, start + len(lines))]
