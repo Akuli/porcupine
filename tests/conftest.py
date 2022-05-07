@@ -134,6 +134,15 @@ def fake_git_pool():
     yield
 
 
+@pytest.fixture(autouse=True)
+def fail_test_if_a_tkinter_callback_errors(mocker):
+    mock = mocker.patch("tkinter.Tk.report_callback_exception")
+    yield
+    if mock.call_count != 0:
+        exc_type, exc_value, exc_tb = mock.call_args.args
+        raise ValueError("error in tkinter callback while running test") from exc_value
+
+
 # TODO: consider longer name
 @pytest.fixture
 def tree():

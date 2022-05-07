@@ -16,6 +16,7 @@ from porcupine.plugins.directory_tree import (
     DirectoryTree,
     FolderRefreshed,
     get_directory_tree,
+    get_fg_and_bg_colors,
     get_path,
 )
 
@@ -169,8 +170,7 @@ class TreeColorer:
         self.project_specific_colorers: dict[str, ProjectColorer] = {}
 
     def config_color_tags(self, junk: object = None) -> None:
-        fg = self.tree.tk.eval("ttk::style lookup Treeview -foreground")
-        bg = self.tree.tk.eval("ttk::style lookup Treeview -background")
+        fg, bg = get_fg_and_bg_colors()
         gray = utils.mix_colors(fg, bg, 0.5)
 
         if utils.is_bright(fg):
