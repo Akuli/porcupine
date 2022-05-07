@@ -307,7 +307,7 @@ class Settings:
 
         print(f"{len(self._unknown_options)} unknown options (add_option not called)")
         for name, unknown in self._unknown_options.items():
-            string = f"  {name} = {unknown.value!r} (tag={unknown.tag!r}"
+            string = f"  {name} = {unknown.value!r}    (tag={unknown.tag!r}"
             if not unknown.call_converter:
                 string += ", converter function will not be called"
             string += ")"
