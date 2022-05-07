@@ -71,7 +71,7 @@ def get_fg_and_bg_colors() -> tuple[str, str]:
     tcl_interp = get_tab_manager().tk
     fg = tcl_interp.eval("ttk::style lookup Treeview -foreground") or "black"
     bg = tcl_interp.eval("ttk::style lookup Treeview -background")
-    assert bg, ttk.Style().theme_use()
+    assert bg
     return fg, bg
 
 
