@@ -22,7 +22,10 @@ def setup() -> None:
         global_settings.add_option("ttk_theme", style.theme_use())
 
     var = tkinter.StringVar()
-    for name in sorted(style.get_themes()):
+
+    theme_names = sorted(style.get_themes())
+    theme_names.remove("breeze")  # messes with font of text widgets and causes lots of errors
+    for name in theme_names:
         # TODO: capitalize theme names?
         menubar.get_menu("UI Themes").add_radiobutton(label=name, value=name, variable=var)
 

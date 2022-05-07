@@ -67,6 +67,14 @@ def _stringify_path(path: Path) -> str:
     return str(path)
 
 
+def get_fg_and_bg_colors() -> tuple[str, str]:
+    tcl_interp = get_tab_manager().tk
+    fg = tcl_interp.eval("ttk::style lookup Treeview -foreground") or "black"
+    bg = tcl_interp.eval("ttk::style lookup Treeview -background")
+    assert bg, ttk.Style().theme_use()
+    return fg, bg
+
+
 class DirectoryTree(ttk.Treeview):
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(
@@ -136,8 +144,7 @@ class DirectoryTree(ttk.Treeview):
         return "break"
 
     def _config_tags(self, junk: object = None) -> None:
-        fg = self.tk.eval("ttk::style lookup Treeview -foreground")
-        bg = self.tk.eval("ttk::style lookup Treeview -background")
+        fg, bg = get_fg_and_bg_colors()
         gray = utils.mix_colors(fg, bg, 0.5)
         self.tag_configure("dummy", foreground=gray)
 
