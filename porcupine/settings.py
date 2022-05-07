@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import atexit
+import builtins
 import copy
 import dataclasses
 import enum
@@ -90,12 +91,14 @@ class _Option:
         self.default = default
         self.type = type_
         self.converter = converter
+        self.tag: str | None = None
 
 
 @dataclasses.dataclass
 class _UnknownOption:
     value: Any
     call_converter: bool
+    tag: str | None
 
 
 def _default_converter(value: Any) -> Any:
@@ -196,9 +199,9 @@ class Settings:
             # to fail.
             try:
                 if unknown.call_converter:
-                    self.set(option_name, converter(unknown.value))
+                    self.set(option_name, converter(unknown.value), tag=unknown.tag)
                 else:
-                    self.set(option_name, unknown.value)
+                    self.set(option_name, unknown.value, tag=unknown.tag)
             except Exception:
                 # can be an error from converter
                 _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
@@ -210,6 +213,7 @@ class Settings:
         *,
         from_config: bool = False,
         call_converter: bool | None = None,
+        tag: str | None = None,
     ) -> None:
         """Set the value of an opiton.
 
@@ -223,21 +227,23 @@ class Settings:
 
         You can specify ``call_converter`` to force the converter to be or
         to not be called.
-        """
-        # ...even though this method isn't named 'set_'. But the docstring is
-        # used in settings.rst to document a global "function".
 
+        If ``tag`` is given, the option name will be returned from
+        :meth:`get_options_by_tag`. Otherwise the tag of the option is cleared.
+        """
         if call_converter is None:
             call_converter = from_config
 
         if option_name not in self._options and from_config:
-            self._unknown_options[option_name] = _UnknownOption(value, call_converter)
+            self._unknown_options[option_name] = _UnknownOption(value, call_converter, tag)
             return
 
         option = self._options[option_name]
         if call_converter:
             value = option.converter(value)
         value = _type_check(option.type, value)
+
+        option.tag = tag
 
         # don't create change events when nothing changes (helps avoid infinite recursion)
         if option.value == value:
@@ -259,6 +265,10 @@ class Settings:
                     widget.event_generate(event_name)
         else:
             self._change_event_widget.event_generate(event_name)
+
+    def get_options_by_tag(self, tag: str) -> builtins.set[str]:
+        """Return the names of all options that were :meth:`set` with the given ``tag``."""
+        return {name for name, option in self._options.items() if option.tag == tag}
 
     # I don't like how this requires overloads for every type.
     # Also no docstring, because using it from docs/settings.rst showed
@@ -288,14 +298,15 @@ class Settings:
         """Print all settings and their values. This is useful for debugging."""
         print(f"{len(self._options)} known options (add_option called)")
         for name, option in self._options.items():
-            print(f"  {name} = {option.value!r}    (type: {option.type!r})")
+            print(f"  {name} = {option.value!r}    (type={option.type!r}, tag={option.tag!r})")
         print()
 
         print(f"{len(self._unknown_options)} unknown options (add_option not called)")
         for name, unknown in self._unknown_options.items():
-            string = f"  {name} = {unknown.value!r}"
+            string = f"  {name} = {unknown.value!r} (tag={unknown.tag!r}"
             if not unknown.call_converter:
-                string += " (converter function will not be called)"
+                string += ", converter function will not be called"
+            string += ")"
             print(string)
         print()
 
@@ -305,12 +316,12 @@ class Settings:
         for name, option in self._options.items():
             value = self.get(name, object)
             if value != option.default:
-                result[name] = _UnknownOption(value, call_converter=False)
+                result[name] = _UnknownOption(value, call_converter=False, tag=option.tag)
         return result
 
     def set_state(self, state: dict[str, _UnknownOption]) -> None:
         for name, unknown in state.items():
-            self.set(name, unknown.value, from_config=True, call_converter=unknown.call_converter)
+            self.set(name, unknown.value, from_config=True, call_converter=unknown.call_converter, tag=unknown.tag)
 
     def reset(self, option_name: str) -> None:
         """Set an option to its default value given to :meth:`add_option`."""

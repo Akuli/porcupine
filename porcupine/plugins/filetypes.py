@@ -80,10 +80,6 @@ def load_filetypes() -> None:
         filetype.setdefault("filename_patterns", [])
         filetype.setdefault("shebang_regex", r"this regex matches nothing^")
 
-        # if not configured, don't let previous filetype leave a mess behind
-        filetype.setdefault("example_commands", [])
-        filetype.setdefault("langserver", None)
-
         # Avoid code like "if this is a C file", in case someone wants to use the same thing for c++
         # Applies to most other filetypes too e.g. Python file .py and Python stub file .pyi
         assert "filetype_name" not in filetype
@@ -197,10 +193,20 @@ def get_filetype_for_tab(tab: tabs.FileTab) -> FileType:
 
 def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
     log.info(f"applying filetype settings: {filetype!r}")
+
+    previously_set = tab.settings.get_options_by_tag("from_filetype")
     for name, value in filetype.items():
         # Ignore stuff used only for guessing the correct filetype
         if name not in {"filename_patterns", "shebang_regex"}:
-            tab.settings.set(name, value, from_config=True)
+            tab.settings.set(name, value, from_config=True, tag="from_filetype")
+
+    # Avoid resetting an option before setting its value.
+    # If the option's value doesn't change, that would create unnecessary change events.
+    # For example, when you rename a file, it would temporarily reset the "langserver" setting.
+    # That would cause the langserver to be restarted unnecessarily.
+    needs_reset = previously_set - filetype.keys()
+    for name in needs_reset:
+        tab.settings.reset(name)
 
 
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
