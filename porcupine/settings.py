@@ -325,7 +325,13 @@ class Settings:
 
     def set_state(self, state: dict[str, _UnknownOption]) -> None:
         for name, unknown in state.items():
-            self.set(name, unknown.value, from_config=True, call_converter=unknown.call_converter, tag=unknown.tag)
+            self.set(
+                name,
+                unknown.value,
+                from_config=True,
+                call_converter=unknown.call_converter,
+                tag=unknown.tag,
+            )
 
     def reset(self, option_name: str) -> None:
         """Set an option to its default value given to :meth:`add_option`."""
