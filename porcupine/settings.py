@@ -271,7 +271,7 @@ class Settings:
             self._change_event_widget.event_generate(event_name)
 
     def get_options_by_tag(self, tag: str) -> builtins.set[str]:
-        """Return the names of all options that were :meth:`set` with the given ``tag``."""
+        """Return the names of all options whose current value was set with the given ``tag``."""
         return {name for name, option in self._options.items() if option.tag == tag}
 
     # I don't like how this requires overloads for every type.
