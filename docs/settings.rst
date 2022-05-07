@@ -115,6 +115,7 @@ Use these methods on ``global_settings`` (or other :class:`Settings` objects) fo
     time the value changes.
 
 .. automethod:: Settings.debug_dump
+.. automethod:: Settings.get_options_by_tag
 
 
 Custom Options
