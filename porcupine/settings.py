@@ -228,8 +228,12 @@ class Settings:
         You can specify ``call_converter`` to force the converter to be or
         to not be called.
 
-        If ``tag`` is given, the option name will be returned from
-        :meth:`get_options_by_tag`. Otherwise the tag of the option is cleared.
+        Each option has a tag that shows up in :meth:`debug_dump` and :meth:`get_options_by_tag`.
+        If the ``tag`` argument is given, the tag of the option will be changed to it.
+        Otherwise the tag is cleared.
+        Tagging is useful for figuring out where/why an option was set:
+        if you call ``.set()`` in two places with different tags,
+        the option's current tag tells which of the two places has set the current value.
         """
         if call_converter is None:
             call_converter = from_config
