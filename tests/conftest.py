@@ -178,7 +178,14 @@ def run_porcupine():
 
 @pytest.fixture
 def wait_until():
-    def actually_wait_until(condition, *, timeout=5):
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # Avoid random timeouting errors
+        default_timeout = 20
+    else:
+        # Short timeout is good for local development, so that you quickly notice something is wrong
+        default_timeout = 4
+
+    def actually_wait_until(condition, *, timeout=default_timeout):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             get_main_window().update()
