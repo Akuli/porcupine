@@ -1,11 +1,20 @@
+import os
 import shutil
 import subprocess
 import sys
 
+import pytest
+
 from porcupine.plugins import python_venv
+
+creates_venvs = pytest.mark.xfail(
+    sys.platform == "win32" and os.environ.get("GITHUB_ACTIONS") != "true",
+    reason="running exes from temp folders fails on some windows systems",
+)
 
 
 # This test is slow, because making venvs is slow
+@creates_venvs
 def test_venv_setting(tmp_path):
     assert python_venv.get_venv(tmp_path) is None
 
@@ -30,6 +39,7 @@ def test_venv_setting(tmp_path):
         assert python_venv.get_venv(tmp_path) is None
 
 
+@creates_venvs
 def test_venv_becomes_invalid(tmp_path, caplog):
     subprocess.run([sys.executable, "-m", "venv", "env"], cwd=tmp_path, check=True)
     assert python_venv.get_venv(tmp_path) == tmp_path / "env"
