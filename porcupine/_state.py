@@ -7,15 +7,14 @@ import os
 import tkinter
 import types
 from typing import Any, Type
+from sys import platform
 
 from porcupine import images, tabs, utils
 
-try:
+if platform == "win32":
     from ctypes import windll
 
     windll.shcore.SetProcessDpiAwareness(1)
-except ImportError:
-    pass  # Therefore, not on Windows.
 
 log = logging.getLogger(__name__)
 
