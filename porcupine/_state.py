@@ -6,11 +6,13 @@ import logging
 import os
 import tkinter
 import types
+from ctypes import windll
 from typing import Any, Type
 
 from porcupine import images, tabs, utils
 
 log = logging.getLogger(__name__)
+windll.shcore.SetProcessDpiAwareness(1)
 
 
 @dataclasses.dataclass
