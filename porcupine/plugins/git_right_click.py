@@ -30,7 +30,11 @@ def run(command: list[str], cwd: Path) -> None:
 
 def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
     tree: DirectoryTree = event.widget
-    [item] = tree.selection()
+    try:
+        [item] = tree.selection()
+    except ValueError:
+        return
+
     path = get_path(item)
 
     if path.is_dir():

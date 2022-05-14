@@ -123,7 +123,11 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
 
 def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
     tree: dirtree.DirectoryTree = event.widget
-    [item] = tree.selection()
+    try:
+        [item] = tree.selection()
+    except ValueError:
+        return
+
     path = dirtree.get_path(item)
     project_root = dirtree.get_path(tree.find_project_id(item))
     if not is_venv(path):
