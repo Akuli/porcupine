@@ -2,7 +2,8 @@ on:
   push:
     tags:
       - v*
-  pull_request:   # Build windows exe and docs, but not release anything
+  # TODO: fix and re-enable
+  #pull_request:   # Build windows exe and docs, but not release anything
 
 jobs:
   windows-build:
