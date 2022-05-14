@@ -1,3 +1,4 @@
+import os
 import sys
 
 import pytest
@@ -69,6 +70,10 @@ def test_text_widget_binding_weirdness(filetab):
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="checks if Windows-specific bug was fixed")
+@pytest.mark.xfail(
+    os.environ.get("GITHUB_ACTIONS") != "true",
+    reason="fails on some computers even though pressing Alt+F4 works",
+)
 def test_alt_f4_bug_with_filetab(filetab, mocker):
     mock_quit = mocker.patch("porcupine.menubar.quit")
     filetab.textwidget.event_generate("<Alt-F4>")
@@ -76,6 +81,10 @@ def test_alt_f4_bug_with_filetab(filetab, mocker):
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="checks if Windows-specific bug was fixed")
+@pytest.mark.xfail(
+    os.environ.get("GITHUB_ACTIONS") != "true",
+    reason="fails on some computers even though pressing Alt+F4 works",
+)
 def test_alt_f4_bug_without_filetab(mocker):
     mock_quit = mocker.patch("porcupine.menubar.quit")
     get_main_window().event_generate("<Alt-F4>")
