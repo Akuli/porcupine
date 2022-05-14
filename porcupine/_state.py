@@ -14,7 +14,10 @@ from porcupine import images, tabs, utils
 if sys.platform == "win32":
     from ctypes import windll
 
-    windll.shcore.SetProcessDpiAwareness(1)
+    try:
+        windll.shcore.SetProcessDpiAwareness(1)
+    except FileNotFoundError:  # windows 7
+        pass
 
 log = logging.getLogger(__name__)
 
