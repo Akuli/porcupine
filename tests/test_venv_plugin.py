@@ -7,7 +7,6 @@ import pytest
 
 from porcupine.plugins import python_venv
 
-
 creates_venvs = pytest.mark.xfail(
     sys.platform == "win32" and os.environ.get("GITHUB_ACTIONS") != "true",
     reason="running exes from temp folders fails on some windows systems",
