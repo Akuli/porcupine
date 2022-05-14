@@ -4,6 +4,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import os
+import sys
 import tkinter
 import types
 from typing import Any, Type
@@ -12,7 +13,7 @@ import platform
 from porcupine import images, tabs, utils
 
 # Windows resolution
-if platform.system() == "Windows":
+if sys.platform == "win32":
     from ctypes import windll
 
     windows_version = platform.release()
