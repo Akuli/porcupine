@@ -4,11 +4,11 @@ from __future__ import annotations
 import dataclasses
 import logging
 import os
+import platform
 import sys
 import tkinter
 import types
 from typing import Any, Type
-import platform
 
 from porcupine import images, tabs, utils
 
