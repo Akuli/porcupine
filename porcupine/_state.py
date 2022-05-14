@@ -4,14 +4,14 @@ from __future__ import annotations
 import dataclasses
 import logging
 import os
+import sys
 import tkinter
 import types
 from typing import Any, Type
-from sys import platform
 
 from porcupine import images, tabs, utils
 
-if platform == "win32":
+if sys.platform == "win32":
     from ctypes import windll
 
     windll.shcore.SetProcessDpiAwareness(1)
