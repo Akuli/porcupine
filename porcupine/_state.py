@@ -6,13 +6,18 @@ import logging
 import os
 import tkinter
 import types
-from ctypes import windll
 from typing import Any, Type
 
 from porcupine import images, tabs, utils
 
+try:
+    from ctypes import windll
+
+    windll.shcore.SetProcessDpiAwareness(1)
+except ImportError:
+    pass  # Therefore, not on Windows.
+
 log = logging.getLogger(__name__)
-windll.shcore.SetProcessDpiAwareness(1)
 
 
 @dataclasses.dataclass
