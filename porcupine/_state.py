@@ -17,9 +17,10 @@ if sys.platform == "win32":
     from ctypes import windll
 
     windows_version = platform.release()
-    if windows_version == "10" or windows_version == "11":
+    try:
         windll.shcore.SetProcessDpiAwareness(1)
-    elif windows_version == "7" or windows_version == "Vista":
+    except (AttributeError, OSError):
+        # Windows 7 or older
         windll.user32.SetProcessDPIAware()
 
 log = logging.getLogger(__name__)
