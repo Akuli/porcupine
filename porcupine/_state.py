@@ -4,7 +4,6 @@ from __future__ import annotations
 import dataclasses
 import logging
 import os
-import platform
 import sys
 import tkinter
 import types
@@ -16,7 +15,6 @@ from porcupine import images, tabs, utils
 if sys.platform == "win32":
     from ctypes import windll
 
-    windows_version = platform.release()
     try:
         windll.shcore.SetProcessDpiAwareness(1)
     except (AttributeError, OSError):
