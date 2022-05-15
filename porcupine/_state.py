@@ -4,11 +4,22 @@ from __future__ import annotations
 import dataclasses
 import logging
 import os
+import sys
 import tkinter
 import types
 from typing import Any, Type
 
 from porcupine import images, tabs, utils
+
+# Windows resolution
+if sys.platform == "win32":
+    from ctypes import windll
+
+    try:
+        windll.shcore.SetProcessDpiAwareness(1)
+    except (AttributeError, OSError):
+        # Windows 7 or older
+        windll.user32.SetProcessDPIAware()
 
 log = logging.getLogger(__name__)
 
@@ -119,7 +130,6 @@ def quit() -> None:
             return
         # the tabs must not be closed here, otherwise some of them
         # are closed if not all tabs can be closed
-
     get_main_window().event_generate("<<PorcupineQuit>>")  # TODO: still needed?
     for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)
