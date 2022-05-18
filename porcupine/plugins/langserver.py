@@ -4,20 +4,16 @@
 from __future__ import annotations
 
 import dataclasses
-import errno
 import itertools
 import logging
 import os
 import pprint
 import queue
 import re
-import select
 import signal
-import socket
 import subprocess
 import sys
 import threading
-import time
 from functools import partial
 from pathlib import Path
 from typing import IO, Any, Iterator, NamedTuple, Optional
@@ -44,7 +40,7 @@ setup_after = ["python_venv", "underlines"]
 CHUNK_SIZE = 64 * 1024
 
 
-class SubprocessStdIO:
+class NonBlockingIO:
     def __init__(self, process: subprocess.Popen[bytes]) -> None:
         self._process = process
 
@@ -87,6 +83,8 @@ class SubprocessStdIO:
             while True:
                 # for whatever reason, nothing works unless i go ONE BYTE at a
                 # time.... this is a piece of shit
+                #
+                # TODO: read1() method?
                 assert self._process.stdout is not None
                 one_fucking_byte = self._process.stdout.read(1)
                 if not one_fucking_byte:
@@ -116,76 +114,6 @@ class SubprocessStdIO:
 
     def write(self, bytez: bytes) -> None:
         self._write_queue.put(bytez)
-
-
-def error_says_socket_not_connected(error: OSError) -> bool:
-    if sys.platform == "win32":
-        return error.winerror == 10057
-    else:
-        return error.errno == errno.ENOTCONN
-
-
-class LocalhostSocketIO:
-    def __init__(self, port: int, log: logging.LoggerAdapter[logging.Logger]) -> None:
-        self._sock = socket.socket()
-
-        # This queue solves two problems:
-        #   - I don't feel like learning to do non-blocking send right now.
-        #   - It must be possible to .write() before the socket is connected.
-        #     The written bytes get sent when the socket connects.
-        self._send_queue: queue.Queue[bytes | None] = queue.Queue()
-
-        self._reader_thread = threading.Thread(
-            target=self._send_queue_to_socket, args=[port, log], daemon=True
-        )
-        self._reader_thread.start()
-
-    def _send_queue_to_socket(self, port: int, log: logging.LoggerAdapter[logging.Logger]) -> None:
-        while True:
-            try:
-                self._sock.connect(("localhost", port))
-                log.info(f"connected to localhost:{port}")
-                break
-            except ConnectionRefusedError:
-                log.info(f"connecting to localhost:{port} failed, retrying soon")
-                time.sleep(0.5)
-
-        while True:
-            bytez = self._send_queue.get()
-            if bytez is None:
-                break
-            self._sock.sendall(bytez)
-
-    def write(self, bytez: bytes) -> None:
-        self._send_queue.put(bytez)
-
-    # Return values:
-    #   - nonempty bytes object: data was received
-    #   - empty bytes object: socket closed
-    #   - None: no data to receive
-    def read(self) -> bytes | None:
-        # figure out if we can read from the socket without blocking
-        # 0 is timeout, i.e. return immediately
-        #
-        # TODO: pass the correct non-block flag to recv instead?
-        #       does that work on windows?
-        can_read, can_write, error = select.select([self._sock], [], [], 0)
-        if self._sock not in can_read:
-            return None
-
-        try:
-            result = self._sock.recv(CHUNK_SIZE)
-        except OSError as e:
-            if error_says_socket_not_connected(e):
-                return None
-            raise e
-
-        if not result:
-            assert result == b""
-            # stop worker thread
-            if self._reader_thread.is_alive():
-                self._send_queue.put(None)
-        return result
 
 
 def completion_item_doc_contains_label(doc: str, label: str) -> bool:
@@ -304,14 +232,11 @@ def _substitute_python_venv_recursively(obj: object, venv: Path | None) -> Any:
 class LangServerConfig:
     command: str
     language_id: str
-    port: Optional[int] = None
     settings: Any = dataclasses.field(default_factory=dict)
 
 
-# FIXME: two langservers with same command, same port, different project_root
 class LangServerId(NamedTuple):
     command: str
-    port: Optional[int]
     project_root: Path
 
 
@@ -337,11 +262,7 @@ class LangServer:
         self.tabs_opened: set[tabs.FileTab] = set()
         self._is_shutting_down_cleanly = False
 
-        self._io: SubprocessStdIO | LocalhostSocketIO
-        if the_id.port is None:
-            self._io = SubprocessStdIO(process)
-        else:
-            self._io = LocalhostSocketIO(the_id.port, log)
+        self._io = NonBlockingIO(process)
 
     def __repr__(self) -> str:
         return (
@@ -375,10 +296,9 @@ class LangServer:
                 return
 
             # langserver doesn't want to exit, let's kill it
-            what_closed = "stdout" if self._id.port is None else "socket connection"
             self.log.warning(
                 f"killing langserver process {self._process.pid} "
-                f"because {what_closed} has closed for some reason"
+                f"because stdout has closed for some reason"
             )
 
             if self._process.poll() is None:  # process still alive
@@ -721,11 +641,6 @@ class LangServer:
 langservers: dict[LangServerId, LangServer] = {}
 
 
-# I was going to add code that checks if two langservers use the same port
-# number, but it's unnecessary: if a langserver tries to use a port number that
-# is already being used, then it should exit with an error message.
-
-
 def stream_to_log(stream: IO[bytes], log: logging.LoggerAdapter[logging.Logger]) -> None:
     for line_bytes in stream:
         line = line_bytes.rstrip(b"\r\n").decode("utf-8", errors="replace")
@@ -742,7 +657,7 @@ def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
     assert isinstance(config, LangServerConfig)
 
     project_root = utils.find_project_root(tab.path)
-    the_id = LangServerId(config.command, config.port, project_root)
+    the_id = LangServerId(config.command, project_root)
     try:
         return langservers[the_id]
     except KeyError:
@@ -752,20 +667,13 @@ def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
     global_log.info(f"Running command: {command}")
 
     try:
-        if the_id.port is None:
-            # langserver writes log messages to stderr
-            process = subprocess.Popen(
-                command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                **utils.subprocess_kwargs,
-            )
-        else:
-            # most langservers log to stderr, but also watch stdout
-            process = subprocess.Popen(
-                command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **utils.subprocess_kwargs
-            )
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,  # log messages
+            **utils.subprocess_kwargs,
+        )
     except (OSError, subprocess.CalledProcessError):
         global_log.exception(f"failed to start langserver with command {config.command!r}")
         return None
@@ -776,9 +684,8 @@ def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
         f"Langserver process started with command '{config.command}', project root '{project_root}'"
     )
 
-    logging_stream = process.stderr if the_id.port is None else process.stdout
-    assert logging_stream is not None
-    threading.Thread(target=stream_to_log, args=[logging_stream, log], daemon=True).start()
+    assert process.stderr is not None
+    threading.Thread(target=stream_to_log, args=[process.stderr, log], daemon=True).start()
 
     langserver = LangServer(process, the_id, log, config)
     langserver.run_stuff()
