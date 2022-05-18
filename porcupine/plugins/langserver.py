@@ -16,7 +16,7 @@ import sys
 import threading
 from functools import partial
 from pathlib import Path
-from typing import IO, Any, Iterator, NamedTuple, Optional
+from typing import IO, Any, Iterator, Optional
 
 if sys.platform != "win32":
     import fcntl
@@ -241,7 +241,7 @@ class LangServer:
         process: subprocess.Popen[bytes],
         log: logging.LoggerAdapter[logging.Logger],
         config: LangServerConfig,
-        project_root: Path
+        project_root: Path,
     ) -> None:
         self._process = process
         self.log = log
@@ -263,7 +263,7 @@ class LangServer:
     def __repr__(self) -> str:
         return (
             f"<{type(self).__name__}: "
-            f"PID {self._process.pid} for project \"{self._project_root}\", "
+            f'PID {self._process.pid} for project "{self._project_root}", '
             f"configured with {self._config}, "
             f"{len(self.tabs_opened)} tabs opened>"
         )
