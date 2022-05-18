@@ -235,30 +235,26 @@ class LangServerConfig:
     settings: Any = dataclasses.field(default_factory=dict)
 
 
-class LangServerId(NamedTuple):
-    command: str
-    project_root: Path
-
-
 class LangServer:
     def __init__(
         self,
         process: subprocess.Popen[bytes],
-        the_id: LangServerId,
         log: logging.LoggerAdapter[logging.Logger],
         config: LangServerConfig,
+        project_root: Path
     ) -> None:
         self._process = process
+        self.log = log
         self._config = config
-        self._id = the_id  # TODO: replace with config
-        self._lsp_client = lsp.Client(trace="verbose", root_uri=the_id.project_root.as_uri())
+        self._project_root = project_root
+
+        self._lsp_client = lsp.Client(trace="verbose", root_uri=project_root.as_uri())
 
         self._autocompletion_requests: dict[lsp.Id, tuple[tabs.FileTab, autocomplete.Request]] = {}
         self._jump2def_requests: dict[lsp.Id, tabs.FileTab] = {}
         self._hover_requests: dict[lsp.Id, tuple[tabs.FileTab, str]] = {}
 
         self._version_counter = itertools.count()
-        self.log = log
         self.tabs_opened: set[tabs.FileTab] = set()
         self._is_shutting_down_cleanly = False
 
@@ -267,22 +263,22 @@ class LangServer:
     def __repr__(self) -> str:
         return (
             f"<{type(self).__name__}: "
-            f"PID {self._process.pid}, "
-            f"{self._id}, "
+            f"PID {self._process.pid} for project \"{self._project_root}\", "
+            f"configured with {self._config}, "
             f"{len(self.tabs_opened)} tabs opened>"
         )
 
     def _is_in_langservers(self) -> bool:
         # This returns False if a langserver died and another one with the same
         # id was launched.
-        return langservers.get(self._id, None) is self
+        return langservers.get((self._project_root, self._config.command), None) is self
 
     def _get_removed_from_langservers(self) -> None:
         # this is called more than necessary to make sure we don't end up with
         # funny issues caused by unusable langservers
         if self._is_in_langservers():
             self.log.debug("getting removed from langservers")
-            del langservers[self._id]
+            del langservers[(self._project_root, self._config.command)]
 
     def _ensure_langserver_process_quits_soon(self) -> None:
         exit_code = self._process.poll()
@@ -408,7 +404,7 @@ class LangServer:
                 "workspace/didChangeConfiguration",
                 {
                     "settings": _substitute_python_venv_recursively(
-                        self._config.settings, python_venv.get_venv(self._id.project_root)
+                        self._config.settings, python_venv.get_venv(self._project_root)
                     )
                 },
             )
@@ -638,7 +634,9 @@ class LangServer:
         )
 
 
-langservers: dict[LangServerId, LangServer] = {}
+# String in key is the command. Each project can have multiple langservers with
+# different commands, e.g. if the project has both Python files and JavaScript files.
+langservers: dict[tuple[Path, str], LangServer] = {}
 
 
 def stream_to_log(stream: IO[bytes], log: logging.LoggerAdapter[logging.Logger]) -> None:
@@ -657,9 +655,8 @@ def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
     assert isinstance(config, LangServerConfig)
 
     project_root = utils.find_project_root(tab.path)
-    the_id = LangServerId(config.command, project_root)
     try:
-        return langservers[the_id]
+        return langservers[(project_root, config.command)]
     except KeyError:
         pass
 
@@ -687,9 +684,9 @@ def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
     assert process.stderr is not None
     threading.Thread(target=stream_to_log, args=[process.stderr, log], daemon=True).start()
 
-    langserver = LangServer(process, the_id, log, config)
+    langserver = LangServer(process, log, config, project_root)
     langserver.run_stuff()
-    langservers[the_id] = langserver
+    langservers[(project_root, config.command)] = langserver
     return langserver
 
 
