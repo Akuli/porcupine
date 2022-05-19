@@ -1,9 +1,10 @@
+# TODO: test large files
 # TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
-# TODO: partial highlights efficiently
 # TODO: integrate compile step, aka build.py, to editor
 # TODO: config file stuff
 # TODO: docs for config file stuff
 # TODO: recurse inside strings? showing f-string contents properly would be nice
+# TODO: highlight built-in funcs
 from __future__ import annotations
 
 import logging
@@ -21,11 +22,19 @@ parser = Parser()
 parser.set_language(Language("build/lang-python.so", "python"))
 
 
-def get_all_nodes(cursor):
+# If change_range given, only returns nodes that overlap the range
+def get_all_nodes(cursor, change_range=None):
+    if change_range is not None:
+        overlap_start = max(cursor.node.start_point, change_range.start_point)
+        overlap_end = min(cursor.node.end_point, change_range.end_point)
+        if overlap_start >= overlap_end:
+            return
+
+    # don't recurse inside strings, for now
     if cursor.node.type != "string" and cursor.goto_first_child():
-        yield from get_all_nodes(cursor)
+        yield from get_all_nodes(cursor, change_range)
         while cursor.goto_next_sibling():
-            yield from get_all_nodes(cursor)
+            yield from get_all_nodes(cursor, change_range)
         cursor.goto_parent()
     else:
         yield cursor.node
@@ -47,29 +56,40 @@ def get_tag_name(node) -> str:
     else:
         return "Token.Operator"
 
+
 class Highlighter:
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
         textutils.use_pygments_tags(self.textwidget)
         self._tree: Tree = None
 
-    def highlight_all(self, junk: object = None) -> None:
-        print("Highlight!!!")
+    def _update_tags_from_tree(self, change_range):
+        if change_range is None:
+            start = "1.0"
+            end = "end"
+        else:
+            start_row, start_col = change_range.start_point
+            end_row, end_col = change_range.end_point
+            start = f"{start_row+1}.{start_col}"
+            end = f"{end_row+1}.{end_col}"
 
-        self.textwidget.tag_remove("Token.Name", "1.0", "end")
-        self.textwidget.tag_remove("Token.Comment", "1.0", "end")
-        self.textwidget.tag_remove("Token.Literal.Number.Integer", "1.0", "end")
-        self.textwidget.tag_remove("Token.Literal.Number.Float", "1.0", "end")
-        self.textwidget.tag_remove("Token.Literal.String", "1.0", "end")
-        self.textwidget.tag_remove("Token.Keyword", "1.0", "end")
-        self.textwidget.tag_remove("Token.Operator", "1.0", "end")
+        self.textwidget.tag_remove("Token.Name", start, end)
+        self.textwidget.tag_remove("Token.Comment", start, end)
+        self.textwidget.tag_remove("Token.Literal.Number.Integer", start, end)
+        self.textwidget.tag_remove("Token.Literal.Number.Float", start, end)
+        self.textwidget.tag_remove("Token.Literal.String", start, end)
+        self.textwidget.tag_remove("Token.Keyword", start, end)
+        self.textwidget.tag_remove("Token.Operator", start, end)
 
-        self._tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
-        for node in get_all_nodes(self._tree.walk()):
+        for node in list(get_all_nodes(self._tree.walk(), change_range)):
             tag_name = get_tag_name(node)
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
             self.textwidget.tag_add(tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}")
+
+    def highlight_all(self, junk: object = None) -> None:
+        self._tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
+        self._update_tags_from_tree(None)
 
     def set_lexer(self, lexer: Lexer) -> None:
         self._lexer = lexer
@@ -80,14 +100,38 @@ class Highlighter:
         if not change_list:
             return
         if len(change_list) >= 2:
-            # TODO: figure out how to handle this properly
+            # doesn't happen very often in normal editing
             self.highlight_all()
             return
-
         [change] = change_list
-        self._tree.edit()
-        print(change)
-        self.highlight_all()
+
+        # FIXME: bytes are wrong when text has non-ascii chars
+        start_row, start_col = change.start
+        old_end_row, old_end_col = change.end
+        new_end_row = old_end_row + change.new_text.count("\n")
+        if "\n" in change.new_text:
+            new_end_col = len(change.new_text.split("\n")[-1])
+        else:
+            new_end_col = old_end_col + len(change.new_text)
+
+        start_byte = self.textwidget.tk.call(
+            self.textwidget._w, "count", "-chars", "1.0", f"{start_row}.{start_col}"
+        )
+        self._tree.edit(
+            start_byte=start_byte,
+            old_end_byte=start_byte+change.old_text_len,
+            new_end_byte = start_byte+len(change.new_text),
+            start_point=(start_row - 1, start_col),
+            old_end_point=(old_end_row - 1, old_end_col),
+            new_end_point = (new_end_row - 1, new_end_col),
+        )
+
+        new_tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"), self._tree)
+        ranges = self._tree.get_changed_ranges(new_tree)
+        self._tree = new_tree
+
+        for changed_range in ranges:
+            self._update_tags_from_tree(changed_range)
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
