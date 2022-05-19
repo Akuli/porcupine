@@ -182,7 +182,7 @@ autoindent_regexes = {indent = '.*:'}
 
 [C]
 filename_patterns = ["*.c", "*.h"]
-pygments_lexer = "pygments.lexers.CLexer"
+syntax_highlight_name = "c"
 comment_prefix = '//'
 # Press alt+enter instead of enter to avoid indent after 'case foo:'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
@@ -190,7 +190,7 @@ autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case
 ["C++"]
 # Override this in your own filetypes.toml if you use .h for C++ headers
 filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
-pygments_lexer = "pygments.lexers.CppLexer"
+syntax_highlight_name = "cpp"
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
@@ -219,7 +219,7 @@ language_id = "cpp"
 
 [Java]
 filename_patterns = ["*.java"]
-pygments_lexer = "pygments.lexers.JavaLexer"
+syntax_highlight_name = "java"
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
@@ -231,7 +231,7 @@ command = "java {file_stem}"
 
 [JavaScript]
 filename_patterns = ["*.js"]
-pygments_lexer = "pygments.lexers.JavascriptLexer"
+syntax_highlight_name = "javascript"
 tabs2spaces = true
 indent_size = 2
 comment_prefix = '//'
@@ -300,13 +300,13 @@ command = "tclsh {file_name}"
 
 [JSON]
 filename_patterns = ["*.json"]
-pygments_lexer = "pygments.lexers.JsonLexer"
+syntax_highlight_name = "json"
 indent_size = 2
 tabs2spaces = true
 
 [TOML]
 filename_patterns = ["*.toml"]
-pygments_lexer = "pygments.lexers.TOMLLexer"
+syntax_highlight_name = "toml"
 comment_prefix = '#'
 
 [reStructuredText]
@@ -328,7 +328,7 @@ autoindent_regexes = {indent = '.*:'}
 
 [HTML]
 filename_patterns = ["*.html", "*.htm"]
-pygments_lexer = "pygments.lexers.HtmlLexer"
+syntax_highlight_name = "html"
 tabs2spaces = true
 indent_size = 2
 autoindent_regexes = {dedent = '</.*>', indent = '<[^/!][^<>]*[^/]>|<[A-Za-z]>', dedent_prev_line = true}

@@ -21,7 +21,11 @@ log = logging.getLogger(__name__)
 
 
 DONT_LOOK_INSIDE = [
-    "string",  # don't recurse inside strings, for now
+    # don't recurse inside strings, for now
+    "string",  # python
+    "string_literal",  # c string
+    "char_literal",  # c character
+    "quoted_key",  # string in toml section header
     # in markdown, everything's ultimately Text, but not if we don't recurse that deep
     "fenced_code_block",
     "code_span",
@@ -49,15 +53,22 @@ def get_all_nodes(cursor, start_point, end_point):
 
 def get_tag_name(node) -> str:
     # Programming languages
-    if node.type == "identifier":
+    if node.type == "identifier":  # variable names
         return "Token.Name"
+    if node.type == "type_identifier":  # typedef names in C
+        return "Token.Name.Class"
+    if node.type == "field_identifier":  # struct members in C when they're used
+        return "Token.Name.Attribute"
     if node.type == "comment":
         return "Token.Comment"
     if node.type == "integer":
         return "Token.Literal.Number.Integer"
     if node.type == "float":
         return "Token.Literal.Number.Float"
-    if node.type == "string":
+    if node.type == "number_literal":
+        return "Token.Literal.Number"
+    # system_lib_string is the <foo.h> includes in c/c++
+    if node.type in ("string", "string_literal", "char_literal", "system_lib_string"):
         return "Token.Literal.String"
 
     # Markdown
@@ -68,6 +79,10 @@ def get_tag_name(node) -> str:
     if node.type == "strong_emphasis":  # **bold** text in markdown
         return "Token.Keyword"
     if node.type in ("fenced_code_block", "code_span"):
+        return "Token.Literal.String"
+
+    # TOML
+    if node.type == "quoted_key":
         return "Token.Literal.String"
 
     # Fallbacks for programming languages, e.g. python has "(" and "def" nodes
@@ -110,21 +125,21 @@ class Highlighter:
                 tag_name = get_tag_name(node)
                 start_row, start_col = node.start_point
                 end_row, end_col = node.end_point
-                print("Add Tag", tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}")
                 self.textwidget.tag_add(
                     tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
                 )
 
     def reparse_whole_file(self) -> None:
         log.info("Reparsing the whole file from scratch")
-        if self._parser is not None:
+        if self._parser is None:
+            self._tree = None
+        else:
             self._tree = self._parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
 
     def set_language(self, language: str | None) -> None:
         log.info(f"Changing language: {language}")
         if language is None:
             self._parser = None
-            self._tree = None
         else:
             self._parser = Parser()
             self._parser.set_language(Language("build/langs.so", language))
@@ -133,6 +148,9 @@ class Highlighter:
         self.update_tags_of_visible_area_from_tree()
 
     def on_change(self, event: utils.EventWithData) -> None:
+        if self._tree is None or self._parser is None:
+            return
+
         change_list = event.data_class(textutils.Changes).change_list
         if not change_list:
             return
