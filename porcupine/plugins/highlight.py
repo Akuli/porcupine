@@ -1,3 +1,4 @@
+# TODO: bug with writing more text at end of comment
 # TODO: test large files
 # TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
 # TODO: integrate compile step, aka build.py, to editor
