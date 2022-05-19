@@ -5,6 +5,8 @@
 # TODO: docs for config file stuff
 # TODO: recurse inside strings? showing f-string contents properly would be nice
 # TODO: highlight built-in funcs
+# TODO: "big files = slow" issue not entirely highlighter's fault, try mypy/checker.py with highlighter disabled
+# TODO: tree-sitter segfault, try import in >>> prompt and then Ctrl+D
 from __future__ import annotations
 
 import logging
