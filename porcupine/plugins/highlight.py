@@ -1,4 +1,4 @@
-# TODO: more languages: c, c++, java, javascript, html, css, php, shell, anything else??
+# TODO: test more languages: c++, java, javascript, html, css, php, shell, anything else??
 # TODO: test large files
 # TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
 # TODO: integrate compile step, aka build.py, to editor
