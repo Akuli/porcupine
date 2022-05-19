@@ -1,9 +1,9 @@
 # TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
-# TODO: figure out how strings should work
 # TODO: partial highlights efficiently
 # TODO: integrate compile step, aka build.py, to editor
 # TODO: config file stuff
 # TODO: docs for config file stuff
+# TODO: recurse inside strings? showing f-string contents properly would be nice
 from __future__ import annotations
 
 import logging
@@ -22,7 +22,7 @@ parser.set_language(Language("build/lang-python.so", "python"))
 
 
 def get_all_nodes(cursor):
-    if cursor.goto_first_child():
+    if cursor.node.type != "string" and cursor.goto_first_child():
         yield from get_all_nodes(cursor)
         while cursor.goto_next_sibling():
             yield from get_all_nodes(cursor)
@@ -40,6 +40,8 @@ def get_tag_name(node) -> str:
         return "Token.Literal.Number.Integer"
     elif node.type == "float":
         return "Token.Literal.Number.Float"
+    elif node.type == "string":
+        return "Token.Literal.String"
     elif node.type.isidentifier():
         return "Token.Keyword"
     else:
@@ -57,6 +59,7 @@ class Highlighter:
         self.textwidget.tag_remove("Token.Comment", "1.0", "end")
         self.textwidget.tag_remove("Token.Literal.Number.Integer", "1.0", "end")
         self.textwidget.tag_remove("Token.Literal.Number.Float", "1.0", "end")
+        self.textwidget.tag_remove("Token.Literal.String", "1.0", "end")
         self.textwidget.tag_remove("Token.Keyword", "1.0", "end")
         self.textwidget.tag_remove("Token.Operator", "1.0", "end")
 
