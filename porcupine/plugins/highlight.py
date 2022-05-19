@@ -11,7 +11,7 @@ import tkinter
 
 from pygments.lexer import Lexer, LexerMeta
 
-from tree_sitter import Language, Parser
+from tree_sitter import Language, Parser, Tree
 from porcupine import get_tab_manager, tabs, textutils, utils
 
 
@@ -51,6 +51,7 @@ class Highlighter:
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
         textutils.use_pygments_tags(self.textwidget)
+        self._tree: Tree = None
 
     def highlight_all(self, junk: object = None) -> None:
         print("Highlight!!!")
@@ -63,8 +64,8 @@ class Highlighter:
         self.textwidget.tag_remove("Token.Keyword", "1.0", "end")
         self.textwidget.tag_remove("Token.Operator", "1.0", "end")
 
-        tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
-        for node in get_all_nodes(tree.walk()):
+        self._tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
+        for node in get_all_nodes(self._tree.walk()):
             tag_name = get_tag_name(node)
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
@@ -75,7 +76,17 @@ class Highlighter:
         self.highlight_all()
 
     def on_change(self, event: utils.EventWithData) -> None:
-        #change_list = event.data_class(textutils.Changes).change_list
+        change_list = event.data_class(textutils.Changes).change_list
+        if not change_list:
+            return
+        if len(change_list) >= 2:
+            # TODO: figure out how to handle this properly
+            self.highlight_all()
+            return
+
+        [change] = change_list
+        self._tree.edit()
+        print(change)
         self.highlight_all()
 
 
