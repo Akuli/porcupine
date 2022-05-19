@@ -30,12 +30,8 @@
 #        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
 #        matches the shebang '#!/bin/foo --bar --baz'.
 #
-#    pygments_lexer (default: "pygments.lexers.TextLexer")
-#        Name of a Pygments lexer class that will be used for syntax
-#        highlighting. See the Pygments documentation for lexers that Pygments
-#        comes with:
-#
-#            https://pygments.org/docs/lexers/
+#    syntax_highlight_name (default: "")
+#        TODO: document
 #
 #    tabs2spaces (default: true)
 #        If this is true, then spaces will be used for indentation.
@@ -148,12 +144,11 @@
 
 ["Plain Text"]
 filename_patterns = ["*.txt"]
-pygments_lexer = "pygments.lexers.TextLexer"
 
 [Python]
 filename_patterns = ["*.py", "*.pyw"]
 shebang_regex = 'python(\d(\.\d)?)?$'
-pygments_lexer = "pygments.lexers.Python3Lexer"
+syntax_highlight_name = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
@@ -177,7 +172,7 @@ environment = "{python_venv}"
 
 ["Python stub file"]
 filename_patterns = ["*.pyi"]
-pygments_lexer = "pygments.lexers.Python3Lexer"
+syntax_highlight_name = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
@@ -320,7 +315,7 @@ pygments_lexer = "pygments.lexers.RstLexer"
 
 [Markdown]
 filename_patterns = ["*.md", "*.markdown"]
-pygments_lexer = "pygments.lexers.MarkdownLexer"
+syntax_highlight_name = "markdown"
 autoindent_regexes = {dedent = '.*\.', indent = '^([0-9]+\.|-) .*'}
 
 [YAML]

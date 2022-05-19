@@ -1,4 +1,3 @@
-# TODO: config file stuff
 # TODO: more languages: c, c++, java, javascript, html, css, php, shell, anything else??
 # TODO: test large files
 # TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
@@ -12,9 +11,8 @@ from __future__ import annotations
 
 import logging
 import tkinter
+from typing import Optional, Callable
 
-from typing import Callable
-from pygments.lexer import Lexer, LexerMeta
 from tree_sitter import Language, Parser, Tree
 
 from porcupine import get_tab_manager, tabs, textutils, utils
@@ -107,24 +105,29 @@ class Highlighter:
         self.textwidget.tag_remove("Token.Keyword", start, end)
         self.textwidget.tag_remove("Token.Operator", start, end)
 
-        for node in list(get_all_nodes(self._tree.walk(), start_point, end_point)):
-            tag_name = get_tag_name(node)
-            start_row, start_col = node.start_point
-            end_row, end_col = node.end_point
-            print("Add Tag", tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}")
-            self.textwidget.tag_add(
-                tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
-            )
+        if self._tree is not None:
+            for node in list(get_all_nodes(self._tree.walk(), start_point, end_point)):
+                tag_name = get_tag_name(node)
+                start_row, start_col = node.start_point
+                end_row, end_col = node.end_point
+                print("Add Tag", tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}")
+                self.textwidget.tag_add(
+                    tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
+                )
 
     def reparse_whole_file(self) -> None:
         log.info("Reparsing the whole file from scratch")
-        self._tree = self._parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
+        if self._parser is not None:
+            self._tree = self._parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
 
-    # FIXME: replace pygments lexers with language name string
-    def set_lexer(self, lexer: Lexer) -> None:
-        log.info(f"Changing language: {lexer}")
-        self._parser = Parser()
-        self._parser.set_language(Language("build/langs.so", "markdown"))
+    def set_language(self, language: str | None) -> None:
+        log.info(f"Changing language: {language}")
+        if language is None:
+            self._parser = None
+            self._tree = None
+        else:
+            self._parser = Parser()
+            self._parser.set_language(Language("build/langs.so", language))
 
         self.reparse_whole_file()
         self.update_tags_of_visible_area_from_tree()
@@ -201,13 +204,12 @@ def debounce(
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    # needed because pygments_lexer might change
-    def on_lexer_changed(junk: object = None) -> None:
-        highlighter.set_lexer(tab.settings.get("pygments_lexer", LexerMeta)())
+    def on_language_changed(junk: object = None) -> None:
+        highlighter.set_language(tab.settings.get("syntax_highlight_name", Optional[str]))
 
     highlighter = Highlighter(tab.textwidget)
-    tab.bind("<<TabSettingChanged:pygments_lexer>>", on_lexer_changed, add=True)
-    on_lexer_changed()
+    tab.bind("<<TabSettingChanged:syntax_highlight_name>>", on_language_changed, add=True)
+    on_language_changed()
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", highlighter.on_change, add=True)
     utils.add_scroll_command(
         tab.textwidget,

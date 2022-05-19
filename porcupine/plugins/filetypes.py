@@ -166,19 +166,9 @@ def guess_filetype(filepath: Path) -> FileType:
         if filetype is not None:
             return filetype
 
-    # if nothing else works, create a new filetype automagically based on pygments
-    try:
-        lexer = lexers.get_lexer_for_filename(filepath)
-    except ClassNotFound:
-        if shebang_line is None:
-            return filetypes["Plain Text"]  # give up
-        lexer = lexers.guess_lexer(shebang_line)
-        if isinstance(lexer, lexers.TextLexer):
-            return filetypes["Plain Text"]  # give up
-
     return {
-        "pygments_lexer": type(lexer).__module__ + "." + type(lexer).__name__,
-        "langserver": None,
+        "syntax_highlight_name": None,
+        "langserver": None
     }
 
 
