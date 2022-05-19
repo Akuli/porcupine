@@ -11,10 +11,9 @@ import logging
 import tkinter
 
 from pygments.lexer import Lexer, LexerMeta
-
 from tree_sitter import Language, Parser, Tree
-from porcupine import get_tab_manager, tabs, textutils, utils
 
+from porcupine import get_tab_manager, tabs, textutils, utils
 
 log = logging.getLogger(__name__)
 
@@ -41,9 +40,9 @@ def get_all_nodes(cursor, change_range=None):
 
 
 def get_tag_name(node) -> str:
-    if node.type == 'identifier':
+    if node.type == "identifier":
         return "Token.Name"
-    elif node.type == 'comment':
+    elif node.type == "comment":
         return "Token.Comment"
     elif node.type == "integer":
         return "Token.Literal.Number.Integer"
@@ -85,7 +84,9 @@ class Highlighter:
             tag_name = get_tag_name(node)
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
-            self.textwidget.tag_add(tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}")
+            self.textwidget.tag_add(
+                tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
+            )
 
     def highlight_all(self, junk: object = None) -> None:
         self._tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
@@ -119,14 +120,16 @@ class Highlighter:
         )
         self._tree.edit(
             start_byte=start_byte,
-            old_end_byte=start_byte+change.old_text_len,
-            new_end_byte = start_byte+len(change.new_text),
+            old_end_byte=start_byte + change.old_text_len,
+            new_end_byte=start_byte + len(change.new_text),
             start_point=(start_row - 1, start_col),
             old_end_point=(old_end_row - 1, old_end_col),
-            new_end_point = (new_end_row - 1, new_end_col),
+            new_end_point=(new_end_row - 1, new_end_col),
         )
 
-        new_tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"), self._tree)
+        new_tree = parser.parse(
+            self.textwidget.get("1.0", "end - 1 char").encode("utf-8"), self._tree
+        )
         ranges = self._tree.get_changed_ranges(new_tree)
         self._tree = new_tree
 
