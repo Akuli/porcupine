@@ -110,11 +110,11 @@ class Highlighter:
         # FIXME: bytes are wrong when text has non-ascii chars
         start_row, start_col = change.start
         old_end_row, old_end_col = change.end
-        new_end_row = old_end_row + change.new_text.count("\n")
+        new_end_row = start_row + change.new_text.count("\n")
         if "\n" in change.new_text:
             new_end_col = len(change.new_text.split("\n")[-1])
         else:
-            new_end_col = old_end_col + len(change.new_text)
+            new_end_col = start_col + len(change.new_text)
 
         start_byte = self.textwidget.tk.call(
             self.textwidget._w, "count", "-chars", "1.0", f"{start_row}.{start_col}"
