@@ -1,12 +1,13 @@
+# TODO: config file stuff
+# TODO: more languages: c, c++, java, javascript, html, css, php, shell, anything else??
 # TODO: test large files
 # TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
 # TODO: integrate compile step, aka build.py, to editor
-# TODO: config file stuff
 # TODO: docs for config file stuff
 # TODO: recurse inside strings? showing f-string contents properly would be nice
 # TODO: highlight built-in funcs
 # TODO: "big files = slow" issue not entirely highlighter's fault, try mypy/checker.py with highlighter disabled
-# TODO: tree-sitter segfault, try import in >>> prompt and then Ctrl+D
+# TODO: tree-sitter segfault: install from github with pip, import in >>> prompt, Ctrl+D
 from __future__ import annotations
 
 import logging
@@ -20,8 +21,16 @@ from porcupine import get_tab_manager, tabs, textutils, utils
 
 log = logging.getLogger(__name__)
 
-parser = Parser()
-parser.set_language(Language("build/lang-python.so", "python"))
+
+DONT_LOOK_INSIDE = [
+    "string",  # don't recurse inside strings, for now
+    # in markdown, everything's ultimately Text, but not if we don't recurse that deep
+    "fenced_code_block",
+    "code_span",
+    "link_destination",
+    "emphasis",
+    "strong_emphasis",
+]
 
 
 # If change_range given, only returns nodes that overlap the range
@@ -31,8 +40,7 @@ def get_all_nodes(cursor, start_point, end_point):
     if overlap_start >= overlap_end:
         return
 
-    # don't recurse inside strings, for now
-    if cursor.node.type != "string" and cursor.goto_first_child():
+    if cursor.node.type not in DONT_LOOK_INSIDE and cursor.goto_first_child():
         yield from get_all_nodes(cursor, start_point, end_point)
         while cursor.goto_next_sibling():
             yield from get_all_nodes(cursor, start_point, end_point)
@@ -42,16 +50,29 @@ def get_all_nodes(cursor, start_point, end_point):
 
 
 def get_tag_name(node) -> str:
+    # Programming languages
     if node.type == "identifier":
         return "Token.Name"
-    elif node.type == "comment":
+    if node.type == "comment":
         return "Token.Comment"
-    elif node.type == "integer":
+    if node.type == "integer":
         return "Token.Literal.Number.Integer"
-    elif node.type == "float":
+    if node.type == "float":
         return "Token.Literal.Number.Float"
-    elif node.type == "string":
+    if node.type == "string":
         return "Token.Literal.String"
+
+    # Markdown
+    if node.type == "text":
+        return "Token.Text"
+    if node.type == "emphasis":  # *italic* text in markdown
+        return "Token.Comment"
+    if node.type == "strong_emphasis":  # **bold** text in markdown
+        return "Token.Keyword"
+    if node.type in ("fenced_code_block", "code_span"):
+        return "Token.Literal.String"
+
+    # Fallbacks for programming languages, e.g. python has "(" and "def" nodes
     elif node.type.isidentifier():
         return "Token.Keyword"
     else:
@@ -62,7 +83,8 @@ class Highlighter:
     def __init__(self, textwidget: tkinter.Text) -> None:
         self.textwidget = textwidget
         textutils.use_pygments_tags(self.textwidget)
-        self._tree: Tree = None
+        self._parser: Parser | None = None
+        self._tree: Tree | None = None
 
     # tree-sitter has get_changed_ranges() method, but it has a couple problems:
     #   - It returns empty list if you append text to end of a line. But text like that may need to
@@ -71,11 +93,11 @@ class Highlighter:
     def update_tags_of_visible_area_from_tree(self) -> None:
         log.debug("Updating colors of visible part of file")
         start = self.textwidget.index("@0,0")
-        end =  self.textwidget.index("@0,10000")
+        end = self.textwidget.index("@0,10000")
         start_row, start_col = map(int, start.split("."))
         end_row, end_col = map(int, end.split("."))
-        start_point = (start_row-1, start_col)
-        end_point = (end_row-1, end_col)
+        start_point = (start_row - 1, start_col)
+        end_point = (end_row - 1, end_col)
 
         self.textwidget.tag_remove("Token.Name", start, end)
         self.textwidget.tag_remove("Token.Comment", start, end)
@@ -89,16 +111,21 @@ class Highlighter:
             tag_name = get_tag_name(node)
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
+            print("Add Tag", tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}")
             self.textwidget.tag_add(
                 tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
             )
 
     def reparse_whole_file(self) -> None:
         log.info("Reparsing the whole file from scratch")
-        self._tree = parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
+        self._tree = self._parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
 
-    # FIXME: replace pygments lexers with something else
+    # FIXME: replace pygments lexers with language name string
     def set_lexer(self, lexer: Lexer) -> None:
+        log.info(f"Changing language: {lexer}")
+        self._parser = Parser()
+        self._parser.set_language(Language("build/langs.so", "markdown"))
+
         self.reparse_whole_file()
         self.update_tags_of_visible_area_from_tree()
 
@@ -121,7 +148,9 @@ class Highlighter:
             else:
                 new_end_col = start_col + len(change.new_text)
 
-            log.debug(f"File changed between {start_row}.{start_col} and {new_end_row}.{new_end_col}, updating")
+            log.debug(
+                f"File changed between {start_row}.{start_col} and {new_end_row}.{new_end_col}, updating"
+            )
 
             start_byte = self.textwidget.tk.call(
                 self.textwidget._w, "count", "-chars", "1.0", f"{start_row}.{start_col}"
@@ -134,7 +163,7 @@ class Highlighter:
                 old_end_point=(old_end_row - 1, old_end_col),
                 new_end_point=(new_end_row - 1, new_end_col),
             )
-            self._tree = parser.parse(
+            self._tree = self._parser.parse(
                 self.textwidget.get("1.0", "end - 1 char").encode("utf-8"), self._tree
             )
 
@@ -181,7 +210,9 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     on_lexer_changed()
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", highlighter.on_change, add=True)
     utils.add_scroll_command(
-        tab.textwidget, "yscrollcommand", debounce(tab, highlighter.update_tags_of_visible_area_from_tree, 100)
+        tab.textwidget,
+        "yscrollcommand",
+        debounce(tab, highlighter.update_tags_of_visible_area_from_tree, 100),
     )
 
     highlighter.reparse_whole_file()
