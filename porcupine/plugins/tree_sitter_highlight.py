@@ -11,7 +11,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import tkinter
-from typing import Optional, Callable, Any, Dict,List,Iterator
+from typing import Optional, Callable, Any, Dict,List,Iterator,Union
 
 from tree_sitter import Language, Parser, Tree,TreeCursor,Node # type: ignore[import]
 
@@ -81,7 +81,7 @@ DONT_LOOK_INSIDE = [
 class Config:
     language_name: str
     dont_recurse_inside: List[str]
-    token_mapping: Dict[str, str]
+    token_mapping: Dict[str, Union[str, Dict[str, str]]]
 
 
 class Highlighter:
@@ -132,10 +132,16 @@ class Highlighter:
             try:
                 tag_name = self._config.token_mapping[node.type]
             except KeyError:
-                try:
-                    tag_name = self._config.token_mapping[f"{node.type}[{node.text.decode('utf-8')}]"]
-                except KeyError:
-                    tag_name = self._config.token_mapping["anything_else"]
+                tag_name = self._config.token_mapping["<anything else>"]
+                assert isinstance(tag_name, str)
+            else:
+                if isinstance(tag_name, dict):
+                    text_to_tag_name = tag_name
+                    try:
+                        tag_name = text_to_tag_name[node.text.decode('utf-8')]
+                    except KeyError:
+                        tag_name = text_to_tag_name["<anything else>"]
+
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
             self.textwidget.tag_add(
@@ -157,9 +163,10 @@ class Highlighter:
         if config is None:
             self._parser = None
         else:
-            assert "anything_else" in config.token_mapping
-            for token_tag in config.token_mapping.values():
-                assert token_tag in all_token_tags, token_tag
+            assert isinstance(config.token_mapping["<anything else>"], str)
+            for value in config.token_mapping.values():
+                assert isinstance(value, str) or isinstance(value["<anything else>"], str)
+            
             self._parser = Parser()
             # TODO: load this at import time, and check in pygments plugin if this plugin imported successfully
             self._parser.set_language(Language("build/langs.so", config.language_name))
