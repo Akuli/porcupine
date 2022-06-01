@@ -1,11 +1,9 @@
-# TODO: test more languages: c++, java, javascript, html, css, php, shell, anything else??
-# TODO: test large files
 # TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
 # TODO: integrate compile step, aka build.py, to editor
 # TODO: docs for config file stuff
-# TODO: recurse inside strings? showing f-string contents properly would be nice
 # TODO: "big files = slow" issue not entirely highlighter's fault, try mypy/checker.py with highlighter disabled
 # TODO: tree-sitter segfault: install from github with pip, import in >>> prompt, Ctrl+D
+# TODO: switch to tree-sitter from pypi?
 from __future__ import annotations
 
 import dataclasses
@@ -22,7 +20,7 @@ Point = Any
 log = logging.getLogger(__name__)
 
 
-#DONT_LOOK_INSIDE = [
+# DONT_LOOK_INSIDE = [
 #    # don't recurse inside strings, for now
 #    "string_literal",  # c string
 #    "char_literal",  # c character
@@ -32,7 +30,7 @@ log = logging.getLogger(__name__)
 #    "link_destination",
 #    "emphasis",
 #    "strong_emphasis",
-#]
+# ]
 #
 #
 # def get_tag_name(node) -> str:
@@ -139,19 +137,15 @@ class Highlighter:
             #
             # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
             if (
-                (
-                    self._config.language_name == "toml"
-                    and node.type not in ("pair", "comment")
-                    and node.parent is not None
-                    and node.parent.type in ("table", "table_array_element")
-                )
-                or
-                (
-                self._config.language_name == 'rust'
-                and node.type in ("identifier", "scoped_identifier", '!')
+                self._config.language_name == "toml"
+                and node.type not in ("pair", "comment")
+                and node.parent is not None
+                and node.parent.type in ("table", "table_array_element")
+            ) or (
+                self._config.language_name == "rust"
+                and node.type in ("identifier", "scoped_identifier", "!")
                 and node.parent is not None
                 and node.parent.type == "macro_invocation"
-                )
             ):
                 type_name = node.parent.type
             else:
