@@ -222,39 +222,6 @@ class Executor:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
-# Path.is_file() can fail with "OSError: [Errno 36] File name too long"
-# crasher below:
-#
-#    print(bytes.fromhex("""
-#    ffffffffffffffffffffffffffffffff57cc11aea00f1d1238
-#    caf9520645b9318644629efae43bcb2e42a7ae6d80fd87e7ab
-#    381d7252c5bc217dbdbc08f65ff1fd4beec736350ca507c16e
-#    cd1d7884c14259e40e6a9f681781c85f278dd84ac3947ac51c
-#    c4ba66caa4303575dd315e9291c9f3df17f433ea12a45d950c
-#    bbcee6ada3a9ae81e7b2825d90c2fe6f75443f7dfabe7fc095
-#    bf8129b8c074c96f5330805cf6707d9191b194ec651dd467e5
-#    a0312e9fdf96a3b242dda57893de3cb588b8eba4f79a43629c
-#    bc7698e4a51876c804464b5a28f667d16d0a7bbf7439f2d2d3
-#    4c42cfe9ca16d716cb8b067ef836160343a79ead656b0e6155
-#    ef2a3fc785a8bffd7cc5ef399e083238d03af67d0c7da82484
-#    3ffb32aa68f6d42422e7ba0db4d7065a0958ab8ab36fca74c6
-#    e9dc410138d6e707e6f16e3a6bebce07b8c0ae21d8385e9496
-#    9ef4a18cccd6ea3b11ad488700e6bb4f05d1790005b3316808
-#    70106d8ea14be82a0dbf128e10df95f11c65516cf76cd2221c
-#    81c87ddafeeeba9eac8b1bdf1e92fc52309c6956e00fca5e05
-#    e3ae4f0a8bf21e48847b815f129cf3acd7d7f3caa823eb3a33
-#    33b487f9dac56ca370099425e988e42367296130eda2d48622
-#    96bd5bfa3321828528976c398a84e127e190b19c3001466ecd
-#    dc065ff9749eb33cb5276899ce5fd0dcb8631eec2c96f3daa9
-#    """))
-def _is_file(path: Path) -> bool:
-    try:
-        return path.is_file()
-    except OSError as e:
-        print(e)
-        return False
-
-
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
         self.textwidget = create_passive_text_widget(
@@ -296,8 +263,14 @@ class NoTerminalRunner:
 
         filename, lineno = (value for value in match.groups() if value is not None)
         path = self.executor.cwd / filename  # doesn't use cwd if filename is absolute
-        if not _is_file(path):
+
+        try:
+            if not path.is_file():
+                return None
+        except OSError:
+            # e.g. filename too long
             return None
+
         return partial(open_file_with_line_number, path, int(lineno))
 
     def run_command(self, cwd: Path, command: str) -> None:
