@@ -30,7 +30,14 @@
 #        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
 #        matches the shebang '#!/bin/foo --bar --baz'.
 #
-#    syntax_highlight_name (default: "")
+#    pygments_lexer (default: "pygments.lexers.TextLexer")
+#        Name of a Pygments lexer class that will be used for syntax
+#        highlighting. See the Pygments documentation for lexers that Pygments
+#        comes with:
+#
+#            https://pygments.org/docs/lexers/
+#
+#    tree_sitter
 #        TODO: document
 #
 #    tabs2spaces (default: true)
@@ -144,11 +151,12 @@
 
 ["Plain Text"]
 filename_patterns = ["*.txt"]
+pygments_lexer = "pygments.lexers.TextLexer"
 
 [Python]
 filename_patterns = ["*.py", "*.pyw"]
 shebang_regex = 'python(\d(\.\d)?)?$'
-syntax_highlight_name = "python"
+pygments_lexer = "pygments.lexers.Python3Lexer"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
@@ -170,9 +178,214 @@ language_id = "python"
 [Python.langserver.settings.pyls.plugins.jedi]
 environment = "{python_venv}"
 
+[Python.tree_sitter]
+language_name = "python"
+# not recursing inside attributes allows me to distinguish attributes and variables
+# otherwise both would be identifier, now attributes are "attribute"
+#
+# TODO: recurse inside f-strings
+dont_recurse_inside = ["string", "attribute"]
+
+[Python.tree_sitter.token_mapping]
+comment = "Token.Comment"
+# TODO: which of the number things are needed?
+integer = "Token.Literal.Number.Integer"
+float = "Token.Literal.Number.Float"
+number_literal = "Token.Literal.Number"
+string = "Token.Literal.String"
+"identifier[ArithmeticError]" = "Token.Name.Exception"
+"identifier[AssertionError]" = "Token.Name.Exception"
+"identifier[AttributeError]" = "Token.Name.Exception"
+"identifier[BaseException]" = "Token.Name.Builtin"
+"identifier[BlockingIOError]" = "Token.Name.Exception"
+"identifier[BrokenPipeError]" = "Token.Name.Exception"
+"identifier[BufferError]" = "Token.Name.Exception"
+"identifier[BytesWarning]" = "Token.Name.Builtin"
+"identifier[ChildProcessError]" = "Token.Name.Exception"
+"identifier[ConnectionAbortedError]" = "Token.Name.Exception"
+"identifier[ConnectionError]" = "Token.Name.Exception"
+"identifier[ConnectionRefusedError]" = "Token.Name.Exception"
+"identifier[ConnectionResetError]" = "Token.Name.Exception"
+"identifier[DeprecationWarning]" = "Token.Name.Builtin"
+"identifier[EOFError]" = "Token.Name.Exception"
+"identifier[Ellipsis]" = "Token.Name.Builtin"
+"identifier[EnvironmentError]" = "Token.Name.Exception"
+"identifier[Exception]" = "Token.Name.Builtin"
+"identifier[False]" = "Token.Name.Builtin"
+"identifier[FileExistsError]" = "Token.Name.Exception"
+"identifier[FileNotFoundError]" = "Token.Name.Exception"
+"identifier[FloatingPointError]" = "Token.Name.Exception"
+"identifier[FutureWarning]" = "Token.Name.Builtin"
+"identifier[GeneratorExit]" = "Token.Name.Builtin"
+"identifier[IOError]" = "Token.Name.Exception"
+"identifier[ImportError]" = "Token.Name.Exception"
+"identifier[ImportWarning]" = "Token.Name.Builtin"
+"identifier[IndentationError]" = "Token.Name.Exception"
+"identifier[IndexError]" = "Token.Name.Exception"
+"identifier[InterruptedError]" = "Token.Name.Exception"
+"identifier[IsADirectoryError]" = "Token.Name.Exception"
+"identifier[KeyError]" = "Token.Name.Exception"
+"identifier[KeyboardInterrupt]" = "Token.Name.Builtin"
+"identifier[LookupError]" = "Token.Name.Exception"
+"identifier[MemoryError]" = "Token.Name.Exception"
+"identifier[ModuleNotFoundError]" = "Token.Name.Exception"
+"identifier[NameError]" = "Token.Name.Exception"
+"identifier[None]" = "Token.Name.Builtin"
+"identifier[NotADirectoryError]" = "Token.Name.Exception"
+"identifier[NotImplemented]" = "Token.Name.Builtin"
+"identifier[NotImplementedError]" = "Token.Name.Exception"
+"identifier[OSError]" = "Token.Name.Exception"
+"identifier[OverflowError]" = "Token.Name.Exception"
+"identifier[PendingDeprecationWarning]" = "Token.Name.Builtin"
+"identifier[PermissionError]" = "Token.Name.Exception"
+"identifier[ProcessLookupError]" = "Token.Name.Exception"
+"identifier[RecursionError]" = "Token.Name.Exception"
+"identifier[ReferenceError]" = "Token.Name.Exception"
+"identifier[ResourceWarning]" = "Token.Name.Builtin"
+"identifier[RuntimeError]" = "Token.Name.Exception"
+"identifier[RuntimeWarning]" = "Token.Name.Builtin"
+"identifier[StopAsyncIteration]" = "Token.Name.Builtin"
+"identifier[StopIteration]" = "Token.Name.Builtin"
+"identifier[SyntaxError]" = "Token.Name.Exception"
+"identifier[SyntaxWarning]" = "Token.Name.Builtin"
+"identifier[SystemError]" = "Token.Name.Exception"
+"identifier[SystemExit]" = "Token.Name.Builtin"
+"identifier[TabError]" = "Token.Name.Exception"
+"identifier[TimeoutError]" = "Token.Name.Exception"
+"identifier[True]" = "Token.Name.Builtin"
+"identifier[TypeError]" = "Token.Name.Exception"
+"identifier[UnboundLocalError]" = "Token.Name.Exception"
+"identifier[UnicodeDecodeError]" = "Token.Name.Exception"
+"identifier[UnicodeEncodeError]" = "Token.Name.Exception"
+"identifier[UnicodeError]" = "Token.Name.Exception"
+"identifier[UnicodeTranslateError]" = "Token.Name.Exception"
+"identifier[UnicodeWarning]" = "Token.Name.Builtin"
+"identifier[UserWarning]" = "Token.Name.Builtin"
+"identifier[ValueError]" = "Token.Name.Exception"
+"identifier[Warning]" = "Token.Name.Builtin"
+"identifier[ZeroDivisionError]" = "Token.Name.Exception"
+"identifier[__debug__]" = "Token.Name.Builtin"
+"identifier[__doc__]" = "Token.Name.Builtin"
+"identifier[__import__]" = "Token.Name.Builtin"
+"identifier[__loader__]" = "Token.Name.Builtin"
+"identifier[__name__]" = "Token.Name.Builtin"
+"identifier[__package__]" = "Token.Name.Builtin"
+"identifier[__path__]" = "Token.Name.Builtin"
+"identifier[__spec__]" = "Token.Name.Builtin"
+"identifier[abs]" = "Token.Name.Builtin"
+"identifier[all]" = "Token.Name.Builtin"
+"identifier[any]" = "Token.Name.Builtin"
+"identifier[ascii]" = "Token.Name.Builtin"
+"identifier[bin]" = "Token.Name.Builtin"
+"identifier[bool]" = "Token.Name.Builtin"
+"identifier[breakpoint]" = "Token.Name.Builtin"
+"identifier[bytearray]" = "Token.Name.Builtin"
+"identifier[bytes]" = "Token.Name.Builtin"
+"identifier[callable]" = "Token.Name.Builtin"
+"identifier[chr]" = "Token.Name.Builtin"
+"identifier[classmethod]" = "Token.Name.Builtin"
+"identifier[compile]" = "Token.Name.Builtin"
+"identifier[complex]" = "Token.Name.Builtin"
+"identifier[copyright]" = "Token.Name.Builtin"
+"identifier[credits]" = "Token.Name.Builtin"
+"identifier[delattr]" = "Token.Name.Builtin"
+"identifier[dict]" = "Token.Name.Builtin"
+"identifier[dir]" = "Token.Name.Builtin"
+"identifier[divmod]" = "Token.Name.Builtin"
+"identifier[enumerate]" = "Token.Name.Builtin"
+"identifier[eval]" = "Token.Name.Builtin"
+"identifier[exec]" = "Token.Name.Builtin"
+"identifier[exit]" = "Token.Name.Builtin"
+"identifier[filter]" = "Token.Name.Builtin"
+"identifier[float]" = "Token.Name.Builtin"
+"identifier[format]" = "Token.Name.Builtin"
+"identifier[frozenset]" = "Token.Name.Builtin"
+"identifier[getattr]" = "Token.Name.Builtin"
+"identifier[globals]" = "Token.Name.Builtin"
+"identifier[hasattr]" = "Token.Name.Builtin"
+"identifier[hash]" = "Token.Name.Builtin"
+"identifier[help]" = "Token.Name.Builtin"
+"identifier[hex]" = "Token.Name.Builtin"
+"identifier[id]" = "Token.Name.Builtin"
+"identifier[input]" = "Token.Name.Builtin"
+"identifier[int]" = "Token.Name.Builtin"
+"identifier[isinstance]" = "Token.Name.Builtin"
+"identifier[issubclass]" = "Token.Name.Builtin"
+"identifier[iter]" = "Token.Name.Builtin"
+"identifier[len]" = "Token.Name.Builtin"
+"identifier[license]" = "Token.Name.Builtin"
+"identifier[list]" = "Token.Name.Builtin"
+"identifier[locals]" = "Token.Name.Builtin"
+"identifier[map]" = "Token.Name.Builtin"
+"identifier[max]" = "Token.Name.Builtin"
+"identifier[memoryview]" = "Token.Name.Builtin"
+"identifier[min]" = "Token.Name.Builtin"
+"identifier[next]" = "Token.Name.Builtin"
+"identifier[object]" = "Token.Name.Builtin"
+"identifier[oct]" = "Token.Name.Builtin"
+"identifier[open]" = "Token.Name.Builtin"
+"identifier[ord]" = "Token.Name.Builtin"
+"identifier[pow]" = "Token.Name.Builtin"
+"identifier[print]" = "Token.Name.Builtin"
+"identifier[property]" = "Token.Name.Builtin"
+"identifier[quit]" = "Token.Name.Builtin"
+"identifier[range]" = "Token.Name.Builtin"
+"identifier[repr]" = "Token.Name.Builtin"
+"identifier[reversed]" = "Token.Name.Builtin"
+"identifier[round]" = "Token.Name.Builtin"
+"identifier[self]" = "Token.Name.Builtin"
+"identifier[set]" = "Token.Name.Builtin"
+"identifier[setattr]" = "Token.Name.Builtin"
+"identifier[slice]" = "Token.Name.Builtin"
+"identifier[sorted]" = "Token.Name.Builtin"
+"identifier[staticmethod]" = "Token.Name.Builtin"
+"identifier[str]" = "Token.Name.Builtin"
+"identifier[sum]" = "Token.Name.Builtin"
+"identifier[super]" = "Token.Name.Builtin"
+"identifier[tuple]" = "Token.Name.Builtin"
+"identifier[type]" = "Token.Name.Builtin"
+"identifier[vars]" = "Token.Name.Builtin"
+"identifier[zip]" = "Token.Name.Builtin"
+and = "Token.Keyword"
+as = "Token.Keyword"
+assert = "Token.Keyword"
+async = "Token.Keyword"
+await = "Token.Keyword"
+break = "Token.Keyword"
+class = "Token.Keyword"
+continue = "Token.Keyword"
+def = "Token.Keyword"
+del = "Token.Keyword"
+elif = "Token.Keyword"
+else = "Token.Keyword"
+except = "Token.Keyword"
+false = "Token.Keyword"
+finally = "Token.Keyword"
+for = "Token.Keyword"
+from = "Token.Keyword"
+global = "Token.Keyword"
+if = "Token.Keyword"
+import = "Token.Keyword"
+in = "Token.Keyword"
+is = "Token.Keyword"
+lambda = "Token.Keyword"
+none = "Token.Keyword"
+nonlocal = "Token.Keyword"
+not = "Token.Keyword"
+or = "Token.Keyword"
+pass = "Token.Keyword"
+raise = "Token.Keyword"
+return = "Token.Keyword"
+true = "Token.Keyword"
+try = "Token.Keyword"
+while = "Token.Keyword"
+with = "Token.Keyword"
+yield = "Token.Keyword"
+anything_else = "Token.Operator"
+
 ["Python stub file"]
 filename_patterns = ["*.pyi"]
-syntax_highlight_name = "python"
+pygments_lexer = "pygments.lexers.Python3Lexer"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
@@ -182,7 +395,7 @@ autoindent_regexes = {indent = '.*:'}
 
 [C]
 filename_patterns = ["*.c", "*.h"]
-syntax_highlight_name = "c"
+pygments_lexer = "pygments.lexers.CLexer"
 comment_prefix = '//'
 # Press alt+enter instead of enter to avoid indent after 'case foo:'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
@@ -190,7 +403,7 @@ autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case
 ["C++"]
 # Override this in your own filetypes.toml if you use .h for C++ headers
 filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
-syntax_highlight_name = "cpp"
+pygments_lexer = "pygments.lexers.CppLexer"
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
@@ -219,7 +432,7 @@ language_id = "cpp"
 
 [Java]
 filename_patterns = ["*.java"]
-syntax_highlight_name = "java"
+pygments_lexer = "pygments.lexers.JavaLexer"
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
 
@@ -231,7 +444,7 @@ command = "java {file_stem}"
 
 [JavaScript]
 filename_patterns = ["*.js"]
-syntax_highlight_name = "javascript"
+pygments_lexer = "pygments.lexers.JavascriptLexer"
 tabs2spaces = true
 indent_size = 2
 comment_prefix = '//'
@@ -300,13 +513,13 @@ command = "tclsh {file_name}"
 
 [JSON]
 filename_patterns = ["*.json"]
-syntax_highlight_name = "json"
+pygments_lexer = "pygments.lexers.JsonLexer"
 indent_size = 2
 tabs2spaces = true
 
 [TOML]
 filename_patterns = ["*.toml"]
-syntax_highlight_name = "toml"
+pygments_lexer = "pygments.lexers.TOMLLexer"
 comment_prefix = '#'
 
 [reStructuredText]
@@ -315,7 +528,7 @@ pygments_lexer = "pygments.lexers.RstLexer"
 
 [Markdown]
 filename_patterns = ["*.md", "*.markdown"]
-syntax_highlight_name = "markdown"
+pygments_lexer = "pygments.lexers.MarkdownLexer"
 autoindent_regexes = {dedent = '.*\.', indent = '^([0-9]+\.|-) .*'}
 
 [YAML]
@@ -328,7 +541,7 @@ autoindent_regexes = {indent = '.*:'}
 
 [HTML]
 filename_patterns = ["*.html", "*.htm"]
-syntax_highlight_name = "html"
+pygments_lexer = "pygments.lexers.HtmlLexer"
 tabs2spaces = true
 indent_size = 2
 autoindent_regexes = {dedent = '</.*>', indent = '<[^/!][^<>]*[^/]>|<[A-Za-z]>', dedent_prev_line = true}

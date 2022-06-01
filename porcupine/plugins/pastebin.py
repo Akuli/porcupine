@@ -41,7 +41,7 @@ class Paste:
         raise NotImplementedError
 
     # runs in a new thread
-    def run(self, code: str) -> str:
+    def run(self, code: str, lexer_class: LexerMeta) -> str:
         raise NotImplementedError
 
     def cancel(self) -> bool:
@@ -68,7 +68,7 @@ class Termbin(Paste):
     def get_socket(self) -> socket.socket | None:
         return self._socket
 
-    def run(self, code: str) -> str:
+    def run(self, code: str, lexer_class: LexerMeta) -> str:
         with socket.socket() as self._socket:
             self._socket.connect(TERMBIN_HOST_AND_PORT)
             self._socket.sendall(code.encode("utf-8"))
@@ -129,7 +129,7 @@ class DPaste(Paste):
             return None
         return cast(ssl.SSLSocket, self.connection.sock)
 
-    def run(self, code: str) -> str:
+    def run(self, code: str, lexer_class: LexerMeta) -> str:
         # kwargs of do_open() go to MyHTTPSConnection
         handler = HTTPSHandler()
         handler.https_open = partial(handler.do_open, MyHTTPSConnection, dpaste=self)  # type: ignore
@@ -138,7 +138,7 @@ class DPaste(Paste):
         # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
         request = Request(
             DPASTE_URL,
-            data=urlencode({"content": code}).encode("utf-8"),
+            data=urlencode({"syntax": lexer_class.aliases[0], "content": code}).encode("utf-8"),
         )
 
         with build_opener(handler).open(request) as response:
@@ -324,12 +324,14 @@ def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
         if not ask_are_you_sure(filename, paste_class, selection_only=selection_only):
             return
 
+    lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
+
     code = textwrap.dedent(code)
 
     paste = paste_class()
     plz_wait = make_please_wait_window(paste)
     utils.run_in_thread(
-        partial(paste.run, code), partial(pasting_done_callback, paste, plz_wait)
+        partial(paste.run, code, lexer_class), partial(pasting_done_callback, paste, plz_wait)
     )
 
 

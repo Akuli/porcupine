@@ -520,7 +520,7 @@ class FileTab(Tab):
         It contains the following settings by default (but plugins add more
         settings with :meth:`~porcupine.settings.Settings.add_option`):
 
-            ``syntax_highlight_name``: :class:`str` | None
+            ``pygments_lexer``: a subclass of :class:`pygments.lexer.Lexer`
 
             ``tabs2spaces``: :class:`bool`
 
@@ -594,7 +594,7 @@ class FileTab(Tab):
 
         self.settings = settings.Settings(self, "<<TabSettingChanged:{}>>")
         self.settings.add_option(
-            "syntax_highlight_name", None, Optional[str]
+            "pygments_lexer", TextLexer, LexerMeta, converter=_import_lexer_class
         )
         self.settings.add_option("tabs2spaces", True)
         self.settings.add_option("indent_size", 4)

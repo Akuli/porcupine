@@ -146,8 +146,6 @@ class Settings:
         options), use only JSON-safe types. Let me know if this limitation is
         too annoying.
 
-        TODO: update the following with a new example:
-
         If you are **not** adding a global option, you
         can also specify a *converter* that takes the value in the
         configuration file as an argument and returns an instance of *type*.
