@@ -11,9 +11,9 @@ from __future__ import annotations
 import dataclasses
 import logging
 import tkinter
-from typing import Optional, Callable, Any, Dict,List,Iterator,Union
+from typing import Optional, Callable, Any, Dict, List, Iterator, Union
 
-from tree_sitter import Language, Parser, Tree,TreeCursor,Node # type: ignore[import]
+from tree_sitter import Language, Parser, Tree, TreeCursor, Node  # type: ignore[import]
 
 from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins.pygments_highlight import all_token_tags
@@ -22,21 +22,20 @@ Point = Any
 log = logging.getLogger(__name__)
 
 
-DONT_LOOK_INSIDE = [
-    # don't recurse inside strings, for now
-    "string_literal",  # c string
-    "char_literal",  # c character
-    "quoted_key",  # string in toml section header
-    # in markdown, everything's ultimately Text, but not if we don't recurse that deep
-    "fenced_code_block",
-    "code_span",
-    "link_destination",
-    "emphasis",
-    "strong_emphasis",
-]
-
-
-#def get_tag_name(node) -> str:
+#DONT_LOOK_INSIDE = [
+#    # don't recurse inside strings, for now
+#    "string_literal",  # c string
+#    "char_literal",  # c character
+#    # in markdown, everything's ultimately Text, but not if we don't recurse that deep
+#    "fenced_code_block",
+#    "code_span",
+#    "link_destination",
+#    "emphasis",
+#    "strong_emphasis",
+#]
+#
+#
+# def get_tag_name(node) -> str:
 #    # Programming languages
 #    if node.type == "identifier":  # variable names
 #        return "Token.Name"
@@ -66,16 +65,7 @@ DONT_LOOK_INSIDE = [
 #    if node.type in ("fenced_code_block", "code_span"):
 #        return "Token.Literal.String"
 #
-#    # TOML
-#    if node.type == "quoted_key":
-#        return "Token.Literal.String"
-#
-#    # Fallbacks for programming languages, e.g. python has "(" and "def" nodes
-#    elif node.type.isidentifier():
-#        return "Token.Keyword"
-#    else:
-#        return "Token.Operator"
-#
+
 
 @dataclasses.dataclass
 class Config:
@@ -93,7 +83,9 @@ class Highlighter:
         self._tree: Tree | None = None
 
     # only returns nodes that overlap the start,end range
-    def _get_all_nodes(self, cursor: TreeCursor, start_point:Point, end_point:Point) -> Iterator[Node]:
+    def _get_all_nodes(
+        self, cursor: TreeCursor, start_point: Point, end_point: Point
+    ) -> Iterator[Node]:
         assert self._config is not None
         overlap_start = max(cursor.node.start_point, start_point)
         overlap_end = min(cursor.node.end_point, end_point)
@@ -129,18 +121,45 @@ class Highlighter:
 
         assert self._tree is not None
         for node in list(self._get_all_nodes(self._tree.walk(), start_point, end_point)):
-            try:
-                tag_name = self._config.token_mapping[node.type]
-            except KeyError:
-                tag_name = self._config.token_mapping["<anything else>"]
-                assert isinstance(tag_name, str)
+            # A hack for TOML. This:
+            #
+            #   [foo]
+            #   x=1
+            #   y=2
+            #
+            # parses as:
+            #
+            #    type='[' text=b'['
+            #    type='bare_key' text=b'foo'
+            #    type=']' text=b']'
+            #    type='pair' text=b'x=1'
+            #    type='pair' text=b'y=2'
+            #
+            # I want the whole section header [foo] to have the same tag.
+            #
+            # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
+            if (
+                (
+                    self._config.language_name == "toml"
+                    and node.type not in ("pair", "comment")
+                    and node.parent is not None
+                    and node.parent.type in ("table", "table_array_element")
+                )
+                or
+                (
+                self._config.language_name == 'rust'
+                and node.type in ("identifier", "scoped_identifier", '!')
+                and node.parent is not None
+                and node.parent.type == "macro_invocation"
+                )
+            ):
+                type_name = node.parent.type
             else:
-                if isinstance(tag_name, dict):
-                    text_to_tag_name = tag_name
-                    try:
-                        tag_name = text_to_tag_name[node.text.decode('utf-8')]
-                    except KeyError:
-                        tag_name = text_to_tag_name["<anything else>"]
+                type_name = node.type
+
+            tag_name = self._config.token_mapping.get(type_name, "Token.Text")
+            if isinstance(tag_name, dict):
+                tag_name = tag_name.get(node.text.decode("utf-8"), "Token.Text")
 
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
@@ -153,7 +172,9 @@ class Highlighter:
         if self._parser is None:
             self._tree = None
         else:
-            self._tree = self._parser.parse(self.textwidget.get("1.0", "end - 1 char").encode("utf-8"))
+            self._tree = self._parser.parse(
+                self.textwidget.get("1.0", "end - 1 char").encode("utf-8")
+            )
 
     def set_config(self, config: Config | None) -> None:
         print("tree_sitter set language", None if config is None else config.language_name)
@@ -163,10 +184,6 @@ class Highlighter:
         if config is None:
             self._parser = None
         else:
-            assert isinstance(config.token_mapping["<anything else>"], str)
-            for value in config.token_mapping.values():
-                assert isinstance(value, str) or isinstance(value["<anything else>"], str)
-            
             self._parser = Parser()
             # TODO: load this at import time, and check in pygments plugin if this plugin imported successfully
             self._parser.set_language(Language("build/langs.so", config.language_name))
