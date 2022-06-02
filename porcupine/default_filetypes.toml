@@ -181,7 +181,7 @@ language_name = "python"
 # whose attribute it is won't highlight, e.g. open("foo", "rb").read()
 #
 # TODO: recurse inside f-strings
-dont_recurse_inside = ["string", "attribute"]
+dont_recurse_inside = ["string"]
 [Python.tree_sitter.token_mapping]
 comment = "Token.Comment"
 # TODO: which of the number things are needed?
