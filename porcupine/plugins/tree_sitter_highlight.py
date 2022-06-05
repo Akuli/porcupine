@@ -1,4 +1,3 @@
-# TODO: offsets are in utf8 bytes, so ä currently messes up everything after on same line
 # TODO: integrate compile step, aka build.py, to editor
 # TODO: docs for config file stuff
 # TODO: "big files = slow" issue not entirely highlighter's fault, try mypy/checker.py with highlighter disabled
@@ -161,14 +160,22 @@ class Highlighter:
                 tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
             )
 
+    def _get_file_content_for_tree_sitter(self) -> bytes:
+        # tk indexes are in chars, tree_sitter is in utf-8 bytes
+        # here's my hack to get them compatible:
+        #
+        # bad:  "örkki" (5 chars) --> b"\xc3\xb6rkki" (6 bytes)
+        # good: "örkki" (5 chars) --> b"?rkki" (5 bytes)
+        #
+        # should be ok as long as all your non-ascii chars are e.g. inside strings
+        return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
+
     def reparse_whole_file(self) -> None:
         log.info("Reparsing the whole file from scratch")
         if self._parser is None:
             self._tree = None
         else:
-            self._tree = self._parser.parse(
-                self.textwidget.get("1.0", "end - 1 char").encode("utf-8")
-            )
+            self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
     def set_config(self, config: Config | None) -> None:
         print("tree_sitter set language", None if config is None else config.language_name)
@@ -223,7 +230,7 @@ class Highlighter:
                 new_end_point=(new_end_row - 1, new_end_col),
             )
             self._tree = self._parser.parse(
-                self.textwidget.get("1.0", "end - 1 char").encode("utf-8"), self._tree
+                self._get_file_content_for_tree_sitter(), self._tree
             )
 
         self.update_tags_of_visible_area_from_tree()
