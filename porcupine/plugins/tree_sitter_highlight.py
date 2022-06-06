@@ -177,6 +177,7 @@ class Highlighter:
         self._config = config
         if config is None:
             self._parser = None
+            # TODO: doesn't seem to remove highlight tags in this case
         else:
             self._parser = Parser()
             # TODO: load this at import time, and check in pygments plugin if this plugin imported successfully
