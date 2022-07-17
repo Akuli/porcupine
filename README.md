@@ -166,8 +166,7 @@ I have tried to make contributing easy:
     I have written most issues so that I understand what I wrote,
     and if you are new to Porcupine, you likely need a longer explanation to understand what the problem is.
 - Don't worry about asking too many questions!
-    It's not annoying, and if you create several pull requests after I answer all your questions,
-    I think answering the questions was definitely worth it.
+    It's not annoying. I like interacting with other programmers.
 - There is not much boilerplate involved in the contributing process.
     You just create a pull request and that's it.
     You can choose an issue and start working on it, without prior permission.
