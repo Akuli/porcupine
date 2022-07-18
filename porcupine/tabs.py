@@ -838,6 +838,8 @@ class FileTab(Tab):
             msg = "Do you want to save your changes?"
         else:
             msg = f"Do you want to save your changes to {self.path.name}?"
+        
+        self.master.select(self)
         answer = messagebox.askyesnocancel("Close file", msg)
         if answer is None:
             # cancel
