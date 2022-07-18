@@ -125,12 +125,11 @@ def quit() -> None:
     with :meth:`~porcupine.tabs.TabManager.close_tab` and widgets are
     destroyed.
     """
-    for tab in get_tab_manager().tabs():
+    get_main_window().event_generate("<<PorcupineQuit>>")  # TODO: still needed?
+    
+    for tab in reversed(get_tab_manager().tabs()):
         if not tab.can_be_closed():
             return
-        # the tabs must not be closed here, otherwise some of them
-        # are closed if not all tabs can be closed
-    get_main_window().event_generate("<<PorcupineQuit>>")  # TODO: still needed?
-    for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)
+
     get_main_window().destroy()
