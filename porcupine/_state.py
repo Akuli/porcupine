@@ -126,7 +126,7 @@ def quit() -> None:
     destroyed.
     """
     get_main_window().event_generate("<<PorcupineQuit>>")  # TODO: still needed?
-    
+
     for tab in reversed(get_tab_manager().tabs()):
         if not tab.can_be_closed():
             return
