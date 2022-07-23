@@ -925,7 +925,7 @@ def _fill_dialog_content_with_defaults() -> None:
     )
     add_checkbutton(
         "remember_tabs_on_restart",
-        text="Remember opened tabs when Porcupine is closed and reopened",
+        text="Remember open tabs when Porcupine is closed and reopened",
     )
     add_pygments_style_button("pygments_style", "Pygments style for editing:")
 
