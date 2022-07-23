@@ -27,7 +27,7 @@ def quit_callback() -> bool:
                     {"tab_type": type(tab), "tab_state": state, "selected": (tab == selected_tab)}
                 )
     else:
-        # Ask user to save opened files
+        # Ask user to save changes in open tabs. They will soon be gone.
         for tab in get_tab_manager().tabs():
             if not tab.can_be_closed():
                 return False
