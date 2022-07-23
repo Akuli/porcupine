@@ -1,6 +1,6 @@
 import pytest
 
-from porcupine import get_main_window, get_tab_manager, quit
+from porcupine import get_tab_manager, quit
 from porcupine.settings import global_settings
 from porcupine.tabs import Tab
 
