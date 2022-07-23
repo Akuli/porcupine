@@ -30,7 +30,7 @@ class _State:
     horizontal_panedwindow: utils.PanedWindow
     vertical_panedwindow: utils.PanedWindow
     tab_manager: tabs.TabManager
-    close_callbacks: list[Callable[[], bool]]
+    quit_callbacks: list[Callable[[], bool]]
     parsed_args: Any  # not None
 
 
@@ -80,7 +80,7 @@ def init(args: Any) -> None:
         horizontal_panedwindow=horizontal_pw,
         vertical_panedwindow=vertical_pw,
         tab_manager=tab_manager,
-        close_callbacks=[],
+        quit_callbacks=[],
         parsed_args=args,
     )
     log.debug("init() done")
@@ -124,7 +124,7 @@ def add_quit_callback(callback: Callable[[], bool]) -> None:
     or ``False`` to prevent Porcupine from closing. This is useful for
     asking the user whether they really want to quit.
     """
-    _get_state().close_callbacks.append(callback)
+    _get_state().quit_callbacks.append(callback)
 
 
 def quit() -> None:
@@ -137,7 +137,7 @@ def quit() -> None:
     :meth:`~porcupine.tabs.TabManager.close_tab` and all widgets are
     destroyed.
     """
-    for callback in _get_state().close_callbacks:
+    for callback in _get_state().quit_callbacks:
         if not callback():
             return
 
