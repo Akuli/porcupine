@@ -414,6 +414,7 @@ def _init_global_gui_settings() -> None:
     global_settings.add_option(
         "default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__
     )
+    global_settings.add_option("remember_tabs_on_restart", default=True)
 
     fixedfont = tkinter.font.Font(name="TkFixedFont", exists=True)
     if fixedfont["size"] < 0:
@@ -922,6 +923,7 @@ def _fill_dialog_content_with_defaults() -> None:
     add_combobox(
         "default_line_ending", "Default line ending:", values=[ending.name for ending in LineEnding]
     )
+    add_checkbutton("remember_tabs_on_restart", text="Remember opened tabs when Porcupine is closed and reopened")
     add_pygments_style_button("pygments_style", "Pygments style for editing:")
 
 

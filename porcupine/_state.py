@@ -7,7 +7,7 @@ import os
 import sys
 import tkinter
 import types
-from typing import Any, Type
+from typing import Any, Callable, Type
 
 from porcupine import images, tabs, utils
 
@@ -30,6 +30,7 @@ class _State:
     horizontal_panedwindow: utils.PanedWindow
     vertical_panedwindow: utils.PanedWindow
     tab_manager: tabs.TabManager
+    close_callbacks: list[Callable[[], bool]]
     parsed_args: Any  # not None
 
 
@@ -79,6 +80,7 @@ def init(args: Any) -> None:
         horizontal_panedwindow=horizontal_pw,
         vertical_panedwindow=vertical_pw,
         tab_manager=tab_manager,
+        close_callbacks=[],
         parsed_args=args,
     )
     log.debug("init() done")
@@ -114,23 +116,31 @@ def get_vertical_panedwindow() -> utils.PanedWindow:
     return _get_state().vertical_panedwindow
 
 
+# Can't be done with virtual events, because virtual event bindings don't return a value
+def add_quit_callback(callback: Callable[[], bool]) -> None:
+    """Add a callback that runs when the user quits Porcupine.
+
+    The callback should return ``True`` if it's fine to close Porcupine,
+    or ``False`` to prevent Porcupine from closing. This is useful for
+    asking the user whether they really want to quit.
+    """
+    _get_state().close_callbacks.append(callback)
+
+
 def quit() -> None:
     """
     Calling this function is equivalent to clicking the X button in the
     corner of the main window.
 
-    First the :meth:`~porcupine.tabs.Tab.can_be_closed` method of each
-    tab is called. If all tabs can be closed, a ``<<PorcupineQuit>>``
-    virtual event is generated on the main window, all tabs are closed
-    with :meth:`~porcupine.tabs.TabManager.close_tab` and widgets are
+    First, close callbacks are ran (see :func:`add_quit_callback`).
+    If they all returned True, all tabs are closed by calling
+    :meth:`~porcupine.tabs.TabManager.close_tab` and all widgets are
     destroyed.
     """
-    for tab in get_tab_manager().tabs():
-        if not tab.can_be_closed():
+    for callback in _get_state().close_callbacks:
+        if not callback():
             return
-        # the tabs must not be closed here, otherwise some of them
-        # are closed if not all tabs can be closed
-    get_main_window().event_generate("<<PorcupineQuit>>")  # TODO: still needed?
+
     for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)
     get_main_window().destroy()
