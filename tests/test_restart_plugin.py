@@ -1,14 +1,14 @@
 import pytest
 
-from porcupine.tabs import Tab
-from porcupine.settings import global_settings
 from porcupine import get_main_window, get_tab_manager, quit
+from porcupine.settings import global_settings
+from porcupine.tabs import Tab
 
 
 @pytest.fixture
 def dont_remember_tabs_on_restart():
     # default value is True, set to False temporarily for testing
-    assert global_settings.get("remember_tabs_on_restart", bool)  
+    assert global_settings.get("remember_tabs_on_restart", bool)
     global_settings.set("remember_tabs_on_restart", False)
     yield
     global_settings.set("remember_tabs_on_restart", True)

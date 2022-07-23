@@ -3,7 +3,7 @@ import logging
 import pickle
 from pathlib import Path
 
-from porcupine import dirs, get_tab_manager, add_quit_callback
+from porcupine import add_quit_callback, dirs, get_tab_manager
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
