@@ -262,15 +262,15 @@ Other people shouldn't need them.
     changing it afterwards is difficult, as the text gets copied into the releases page.
 4. Merge the pull request and pull the merge commit to your local `master` branch.
 5. Run `python3 scripts/release.py major_or_minor_or_patch` from the `master` branch.
-  The argument works like this:
+    The argument works like this:
     - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
-  The script pushes a tag named e.g. `v0.71.4`,
-  which triggers the parts of `.github/workflows/build.yml`
-  that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
-  They build and deploy docs, copy the changelog to the releases page, and so on.
+    The script pushes a tag named e.g. `v0.71.4`,
+    which triggers the parts of `.github/workflows/build.yml`
+    that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
+    They build and deploy docs, copy the changelog to the releases page, and so on.
 6. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
 
 If you want, you can also do a release from a branch named `bugfix-release` instead of `master`.
