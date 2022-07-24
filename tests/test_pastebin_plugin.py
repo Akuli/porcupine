@@ -9,7 +9,7 @@ from http.client import RemoteDisconnected
 
 import pytest
 import requests
-from pygments.lexers import PythonLexer, TextLexer, find_lexer_class_by_name
+from pygments.lexers import PythonLexer, TextLexer, get_lexer_by_name
 
 from porcupine import get_main_window, utils
 from porcupine.plugins.pastebin import DPaste, SuccessDialog, Termbin
@@ -36,15 +36,34 @@ def test_dpaste_syntax_choices():
     response.raise_for_status()
     syntax_choices = response.json()
 
-    # These are wrong for whatever reason, can look into them if it bothers someone
-    del syntax_choices["json-object"]
+    # These are wrong for whatever reason (different pygments versions?)
+    del syntax_choices["amdgpu"]
+    del syntax_choices["ansys"]
+    del syntax_choices["asc"]
+    del syntax_choices["cddl"]
+    del syntax_choices["futhark"]
+    del syntax_choices["gcode"]
+    del syntax_choices["graphviz"]
+    del syntax_choices["gsql"]
     del syntax_choices["ipython2"]
     del syntax_choices["ipython3"]
     del syntax_choices["ipythonconsole"]
+    del syntax_choices["jslt"]
+    del syntax_choices["json-object"]
+    del syntax_choices["kuin"]
+    del syntax_choices["meson"]
+    del syntax_choices["nestedtext"]
+    del syntax_choices["nodejsrepl"]
+    del syntax_choices["omg-idl"]
+    del syntax_choices["output"]
+    del syntax_choices["procfile"]
+    del syntax_choices["smithy"]
+    del syntax_choices["teal"]
+    del syntax_choices["ti"]
+    del syntax_choices["wast"]
 
     for syntax_choice in syntax_choices.keys():
-        lexer_class = find_lexer_class_by_name(syntax_choice)
-        assert syntax_choice == DPaste.get_dpaste_name_for_lexer_class(lexer_class)
+        assert syntax_choice == get_lexer_by_name(syntax_choice).aliases[0]
 
 
 @pytest.mark.pastebin_test

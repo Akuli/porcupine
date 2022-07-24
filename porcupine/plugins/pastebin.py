@@ -129,58 +129,6 @@ class DPaste(Paste):
             return None
         return cast(ssl.SSLSocket, self.connection.sock)
 
-    @staticmethod
-    def get_dpaste_name_for_lexer_class(lexer_class: LexerMeta) -> str:
-        special_cases = {
-            "actionscript3": "as3",
-            "actionscript": "as",
-            "ambienttalk": "at",
-            "antlr-actionscript": "antlr-as",
-            "asymptote": "asy",
-            "autohotkey": "ahk",
-            "batch": "bat",
-            "bibtex": "bib",
-            "chaiscript": "chai",
-            "javascript+cheetah": "js+cheetah",
-            "coffeescript": "coffee-script",
-            "css+ruby": "css+erb",
-            "debcontrol": "control",
-            "emacs-lisp": "emacs",
-            "gherkin": "cucumber",
-            "haxe": "hx",
-            "javascript+django": "js+django",
-            "javascript+ruby": "js+erb",
-            "javascript": "js",
-            "javascript+php": "js+php",
-            "javascript+smarty": "js+smarty",
-            "javascript+lasso": "js+lasso",
-            "lighttpd": "lighty",
-            "literate-agda": "lagda",
-            "literate-cryptol": "lcry",
-            "literate-haskell": "lhs",
-            "literate-idris": "lidr",
-            "livescript": "live-script",
-            "javascript+mako": "js+mako",
-            "markdown": "md",
-            "miniscript": "ms",
-            "moonscript": "moon",
-            "javascript+myghty": "js+myghty",
-            "nimrod": "nim",
-            "pwsh-session": "ps1con",
-            "rng-compact": "rnc",
-            "reasonml": "reason",
-            "resourcebundle": "resource",
-            "restructuredtext": "rst",
-            "trafficscript": "rts",
-            "ruby": "rb",
-            "debsources": "sourceslist",
-            "supercollider": "sc",
-            "teratermmacro": "ttl",
-            "typescript": "ts",
-            "xml+ruby": "xml+erb",
-        }
-        return special_cases.get(lexer_class.aliases[0], lexer_class.aliases[0])
-
     def run(self, code: str, lexer_class: LexerMeta) -> str:
         # kwargs of do_open() go to MyHTTPSConnection
         handler = HTTPSHandler()
@@ -190,9 +138,7 @@ class DPaste(Paste):
         # dpaste.com's syntax highlighting choices correspond with pygments lexers (see tests)
         request = Request(
             DPASTE_URL,
-            data=urlencode(
-                {"syntax": self.get_dpaste_name_for_lexer_class(lexer_class), "content": code}
-            ).encode("utf-8"),
+            data=urlencode({"syntax": lexer_class.aliases[0], "content": code}).encode("utf-8"),
         )
 
         with build_opener(handler).open(request) as response:
