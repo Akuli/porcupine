@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import re
-import tkinter
 
-from porcupine import get_main_window
+from porcupine import add_quit_callback, get_main_window
 from porcupine.settings import global_settings
 
 
@@ -23,14 +22,14 @@ def geometry_is_within_screen(geometry: str) -> bool:
     )
 
 
-def save_geometry(event: tkinter.Event[tkinter.Misc]) -> None:
-    assert isinstance(event.widget, (tkinter.Tk, tkinter.Toplevel))
-    global_settings.set("default_geometry", event.widget.geometry())
+def save_geometry() -> bool:
+    global_settings.set("default_geometry", get_main_window().geometry())
+    return True
 
 
 def setup() -> None:
     global_settings.add_option("default_geometry", "650x600")
-    get_main_window().bind("<<PorcupineQuit>>", save_geometry, add=True)
+    add_quit_callback(save_geometry)
 
     geometry = global_settings.get("default_geometry", str)
     if not geometry_is_within_screen(geometry):
