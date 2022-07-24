@@ -249,7 +249,7 @@ Other commands you may find useful:
 
 ## Releasing Porcupine
 
-These instructions are meant for Porcupine maintainers (currently Akuli and rdbende).
+These instructions are meant for Porcupine maintainers.
 Other people shouldn't need them.
 
 1. Update `CHANGELOG.md` based on Git logs (e.g. `git log --all --oneline --graph`).
