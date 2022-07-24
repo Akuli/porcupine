@@ -11,7 +11,6 @@ requests>=2.24.0, <3.0.0
 # type checking, exact versions to avoid "works on my computer" problems
 mypy==0.971
 types-Pygments==2.12.1
-types-toml==0.10.8
 types-docutils==0.19.0
 types-Send2Trash==1.8.2
 types-setuptools==63.2.1
