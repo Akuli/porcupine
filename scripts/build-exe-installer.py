@@ -117,7 +117,6 @@ subprocess.check_call(
     [
         "pip",
         "install",
-        "--use-feature=in-tree-build",  # TODO: delete once pip new enough to not show warning without this
         "--target=build/python-second",
         ".",
         "setuptools",  # pyls needs pkg_resources from setuptools, don't know why need explicitly
