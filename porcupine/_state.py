@@ -132,7 +132,7 @@ def quit() -> None:
     Calling this function is equivalent to clicking the X button in the
     corner of the main window.
 
-    First, close callbacks are ran (see :func:`add_quit_callback`).
+    First, quit callbacks are ran (see :func:`add_quit_callback`).
     If they all returned True, all tabs are closed by calling
     :meth:`~porcupine.tabs.TabManager.close_tab` and all widgets are
     destroyed.
