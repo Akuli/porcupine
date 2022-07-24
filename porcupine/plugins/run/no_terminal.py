@@ -263,8 +263,14 @@ class NoTerminalRunner:
 
         filename, lineno = (value for value in match.groups() if value is not None)
         path = self.executor.cwd / filename  # doesn't use cwd if filename is absolute
-        if not path.is_file():
+
+        try:
+            if not path.is_file():
+                return None
+        except OSError:
+            # e.g. filename too long
             return None
+
         return partial(open_file_with_line_number, path, int(lineno))
 
     def run_command(self, cwd: Path, command: str) -> None:
