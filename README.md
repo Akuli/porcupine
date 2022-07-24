@@ -246,15 +246,31 @@ Other commands you may find useful:
 - `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
   Open `docs/build/index.html` in your favorite browser to view it.
 
-I also use these commands, but **I don't recommend running these yourself.**
-Instead, ask me to run them if you need to.
-- `python3 scripts/release.py major_or_minor_or_patch` increments the version number and
-  runs all the commands needed for doing a new Porcupine release. Run it from
-  inside a virtualenv with master or bugfix-release branch checked out in git,
-  and with `CHANGELOG.md` updated. The argument works like this:
+
+## Releasing Porcupine
+
+These instructions are meant for Porcupine maintainers (currently Akuli and rdbende).
+Other people shouldn't need them.
+
+1. Update `CHANGELOG.md` based on Git logs (e.g. `git log --all --oneline --graph`).
+    You should add a new section to the beginning with the new version number.
+2. On a Windows computer (or VM), install Resource Hacker and change the version number in `launcher/Porcupine.exe`.
+    Hopefully I will eventually get a C compiler to work again,
+    so that this step can be skipped (see [#1086](https://github.com/Akuli/porcupine/pull/1086)).
+    ![resource-hacker.png](resource-hacker.png)
+3. Make a pull request with the changes until this point. Review the changelog carefully:
+    changing it afterwards is difficult, as the text gets copied into the releases page.
+4. Merge the pull request and pull the merge commit to your local `master` branch.
+5. Run `python3 scripts/release.py major_or_minor_or_patch` from the `master` branch.
+  The argument works like this:
     - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
   Docs and Windows exe are built automatically after running the release script
-  (see `.github/workflows/on-release.yml`), but `porcupine.wiki` may need manual updating.
+  (see `.github/workflows/on-release.yml`).
+6. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
+
+If you want, you can also do a release from a branch named `bugfix-release` instead of `master`.
+This is useful if you fixed a bug that made Porcupine unusable for someone,
+but the new features on `master` aren't ready for releasing yet.
