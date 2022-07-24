@@ -267,8 +267,10 @@ Other people shouldn't need them.
     - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
     - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
-  Docs and Windows exe are built automatically after running the release script
-  (see `.github/workflows/on-release.yml`).
+  The script pushes a tag named e.g. `v0.71.4`,
+  which triggers the parts of `.github/workflows/build.yml`
+  that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
+  They build and deploy docs, copy the changelog to the releases page, and so on.
 6. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
 
 If you want, you can also do a release from a branch named `bugfix-release` instead of `master`.
