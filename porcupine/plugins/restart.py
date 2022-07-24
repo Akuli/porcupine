@@ -3,7 +3,7 @@ import logging
 import pickle
 from pathlib import Path
 
-from porcupine import add_quit_callback, dirs, get_tab_manager
+from porcupine import add_quit_callback, dirs, get_tab_manager, settings
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -38,6 +38,11 @@ def quit_callback() -> bool:
 
 
 def setup() -> None:
+    global_settings.add_option("remember_tabs_on_restart", default=True)
+    settings.add_checkbutton(
+        "remember_tabs_on_restart", text="Remember open tabs when Porcupine is closed and reopened"
+    )
+
     # this must run even if loading tabs from states below fails
     add_quit_callback(quit_callback)
 
