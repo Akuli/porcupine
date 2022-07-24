@@ -85,14 +85,11 @@ metadata_file.write_text(
 print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
-# If you can't get a C compiler to work (with windres):
-#   1. Download a Porcupine installer from GitHub and install Porcupine
-#   2. Copy C:\Users\YourName\AppData\Local\Programs\Porcupine\Python\Porcupine.exe
-#      to where you cloned Porcupine
-#   3. Uninstall Porcupine
-if os.path.exists("Porcupine.exe"):
-    print("Porcupine.exe found, no C compiler needed")
-    shutil.copy("Porcupine.exe", "build/launcher/")
+# FIXME: Currently I can't get C compiler to work on github actions.
+#        I have committed a copy of the Porcupine.exe launcher here.
+#        Unfortunately the launcher contains an old version number that I can't update...
+if os.path.exists("build/launcher/Porcupine.exe"):
+    print("Found launcher/Porcupine.exe, no C compiler needed")
 else:
     print("Porcupine.exe was not found, compiling")
     subprocess.check_call(

@@ -13,9 +13,10 @@ jobs:
       with:
         python-version: "3.8"  # last version supporting windows 7
     - run: pip install -r requirements.txt -r requirements-dev.txt
-    - uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x64
+    # FIXME: recompile launcher when this is fixed: https://github.com/egor-tensin/setup-mingw/issues/6
+#    - uses: egor-tensin/setup-mingw@v2
+#      with:
+#        platform: x64
     - name: Install scoop
       run: |
         (New-Object System.Net.WebClient).DownloadFile('https://get.scoop.sh', 'scoop-installer.ps1')
