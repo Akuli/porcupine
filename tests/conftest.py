@@ -7,6 +7,7 @@
 import logging
 import operator
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -60,6 +61,8 @@ def monkeypatch_dirs():
     user_plugindir = plugins.__path__.pop(0)
     assert user_plugindir == os.path.join(dirs.user_config_dir, "plugins")
 
+    user_font_cache_file = os.path.join(dirs.user_cache_dir, "font_cache.json")
+
     with tempfile.TemporaryDirectory() as d:
         # This is a hack because:
         #   - pytest monkeypatch fixture doesn't work (not for scope='session')
@@ -70,6 +73,13 @@ def monkeypatch_dirs():
         dirs._config = os.path.join(d, "config")
         dirs._logs = os.path.join(d, "logs")
         assert dirs.user_cache_dir.startswith(d)
+
+        # Copy font cache to speed up tests
+        if os.path.isfile(user_font_cache_file):
+            os.mkdir(dirs.user_cache_dir)
+            test_font_cache_file = os.path.join(dirs.user_cache_dir, "font_cache.json")
+            shutil.copy(user_font_cache_file, test_font_cache_file)
+
         yield
 
 
