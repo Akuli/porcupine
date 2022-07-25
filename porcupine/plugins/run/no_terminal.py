@@ -279,7 +279,7 @@ class NoTerminalRunner:
             self.executor.stop(quitting=quitting)
 
     def pause_resume_executor(self, junk: object = None) -> None:
-        if self.executor is None:
+        if sys.platform == "win32" or self.executor is None:
             return
 
         if self.executor.paused:
