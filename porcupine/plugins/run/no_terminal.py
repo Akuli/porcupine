@@ -279,17 +279,15 @@ class NoTerminalRunner:
             self.executor.stop(quitting=quitting)
 
     def pause_resume_executor(self, junk: object = None) -> None:
-        if sys.platform == "win32" or self.executor is None:
-            return
-
-        if self.executor.paused:
-            self.executor.send_signal(signal.SIGCONT)
-            self.executor.paused = False
-            self.pause_button.configure(image=images.get("pause"))
-        else:
-            self.executor.send_signal(signal.SIGSTOP)
-            self.executor.paused = True
-            self.pause_button.configure(image=images.get("resume"))
+        if sys.platform != "win32" or self.executor is not None:
+            if self.executor.paused:
+                self.executor.send_signal(signal.SIGCONT)
+                self.executor.paused = False
+                self.pause_button.configure(image=images.get("pause"))
+            else:
+                self.executor.send_signal(signal.SIGSTOP)
+                self.executor.paused = True
+                self.pause_button.configure(image=images.get("resume"))
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
