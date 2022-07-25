@@ -16,7 +16,6 @@ from tkinter import ttk
 from typing import Callable
 
 import psutil
-
 from porcupine import (
     get_tab_manager,
     get_vertical_panedwindow,
@@ -69,6 +68,7 @@ class Executor:
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
         self.started = False
+        self.paused = False
         self._thread: threading.Thread | None = None
 
     def run(self, command: str) -> None:
@@ -161,6 +161,22 @@ class Executor:
 
         self._timeout_id = self._textwidget.after(50, self._poll_queue_and_put_to_textwidget)
 
+    def send_signal(self, signal: signal.Signals) -> None:
+        if self._shell_process is None:
+            return
+
+        try:
+            process = psutil.Process(self._shell_process.pid)
+            process.send_signal(signal)
+            for child in process.children():
+                try:
+                    child.send_signal(signal)
+                except psutil.NoSuchProcess:
+                    pass
+
+        except (psutil.NoSuchProcess, ProcessLookupError):
+            pass
+
     def stop(self, *, quitting: bool = False) -> None:
         if self._timeout_id is not None:
             self._textwidget.after_cancel(self._timeout_id)
@@ -249,6 +265,9 @@ class NoTerminalRunner:
             option_name="run_output_pygments_style",
         )
 
+        self.pause_button = ttk.Label(button_frame, image=images.get("pause"), cursor="hand2")
+        if sys.platform != "win32":
+            self.pause_button.pack(side="left", padx=1)
         self.stop_button = ttk.Label(button_frame, image=images.get("stop"), cursor="hand2")
         self.stop_button.pack(side="left", padx=1)
         self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"), cursor="hand2")
@@ -257,6 +276,19 @@ class NoTerminalRunner:
     def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
             self.executor.stop(quitting=quitting)
+
+    def pause_resume_executor(self, junk: object = None) -> None:
+        if self.executor is None:
+            return
+
+        if self.executor.paused:
+            self.executor.send_signal(signal.SIGCONT)
+            self.executor.paused = False
+            self.pause_button.configure(image=images.get("pause"))
+        else:
+            self.executor.send_signal(signal.SIGSTOP)
+            self.executor.paused = True
+            self.pause_button.configure(image=images.get("resume"))
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
@@ -316,7 +348,11 @@ def setup() -> None:
 
     runner.hide_button.bind("<Button-1>", toggle_visible, add=True)
     runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
+    runner.pause_button.bind("<Button-1>", runner.pause_resume_executor, add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
+    menubar.get_menu("Run").add_command(
+        label="Pause/resume process", command=runner.pause_resume_executor
+    )
     menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
 

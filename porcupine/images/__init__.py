@@ -30,7 +30,7 @@ _image_cache: dict[str, tkinter.PhotoImage] = {}
 atexit.register(_image_cache.clear)
 
 # these icons can be found in both dark and light versions, so you can see them with any ttk theme
-_images_that_can_be_dark_or_light = {"closebutton"}
+_images_that_can_be_dark_or_light = {"closebutton", "pause", "resume"}
 
 
 def _get_image_file(name: str) -> Path:
