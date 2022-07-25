@@ -16,6 +16,7 @@ from tkinter import ttk
 from typing import Callable
 
 import psutil
+
 from porcupine import (
     get_tab_manager,
     get_vertical_panedwindow,
