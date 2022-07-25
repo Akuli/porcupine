@@ -166,11 +166,11 @@ class TabManager(ttk.Notebook):
 
         try:
             if path.stat().st_size > 1_000_000 and not messagebox.askyesno(
-                "Open big file",
+                "Opening large file",
                 "Uhh, this file is huge!\nAre you sure you want to open it? ",
                 detail=(
                     "This file is larger than 1MB. If you open it, Porcupine may be unusably slow"
-                    " or require an huge amount of RAM."
+                    " or require a large amount of RAM."
                 ),
             ):
                 return None
