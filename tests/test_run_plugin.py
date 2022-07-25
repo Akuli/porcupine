@@ -434,8 +434,9 @@ def test_pause_resume_button(tmp_path, wait_until):
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "before" in get_output())
     no_terminal.runner.pause_button.event_generate("<Button-1>")
+    sleep_end = time.time() + 1
+    wait_until(lambda: time.time() > sleep_end)
     assert "after" not in get_output()
-    time.sleep(1)
     no_terminal.runner.pause_button.event_generate("<Button-1>")
     wait_until(lambda: "after" in get_output())
 
