@@ -430,7 +430,9 @@ def test_smashing_f5(tmp_path, wait_until, use_after_idle):
 
 
 def test_pause_resume_button(tmp_path, wait_until):
-    (tmp_path / "sleeper.py").write_text("import time; print('before'); time.sleep(0.5); print('after')")
+    (tmp_path / "sleeper.py").write_text(
+        "import time; print('before'); time.sleep(0.5); print('after')"
+    )
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "before" in get_output())
     no_terminal.runner.pause_button.event_generate("<Button-1>")
