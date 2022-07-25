@@ -142,8 +142,11 @@ class StatusBar(ttk.Frame):
                 text += " selected"
             self.selection_label.config(text=text)
         
-        if len(self._tab_settings) > 20: self._tab_settings_name = f"{self._tab_settings.get("encoding", str)[:17]}..."
-        else: self._tab_settings_name = self._tab_settings.get("encoding", str).center(20)
+        if len(self._tab_settings.get("encoding", str)) > 20:
+            first_part = self._tab_settings.get("encoding", str)[:17]
+            self._tab_settings_name = f"{first_part}..."
+        else:
+            self._tab_settings_name = self._tab_settings.get("encoding", str).center(20)
         self._encoding_button.config(text=self._tab_settings_name)
         self._line_ending_button.config(
             text=self._tab.settings.get("line_ending", settings.LineEnding).name
