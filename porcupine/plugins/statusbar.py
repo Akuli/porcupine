@@ -103,7 +103,7 @@ class StatusBar(ttk.Frame):
         )
         self._line_ending_button.pack(side="right", padx=2)
         self._encoding_button = ttk.Button(
-            self._top_frame, command=self._choose_encoding, style="Statusbar.TButton", width=6
+            self._top_frame, command=self._choose_encoding, style="Statusbar.TButton", width=20
         )
         self._encoding_button.pack(side="right", padx=2)
 
@@ -141,8 +141,10 @@ class StatusBar(ttk.Frame):
                     text += f" on {lines} lines"
                 text += " selected"
             self.selection_label.config(text=text)
-
-        self._encoding_button.config(text=self._tab.settings.get("encoding", str))
+        
+        if len(self._tab_settings) > 20: self._tab_settings_name = f"{self._tab_settings.get("encoding", str)[:17]}..."
+        else: self._tab_settings_name = self._tab_settings.get("encoding", str).center(20)
+        self._encoding_button.config(text=self._tab_settings_name)
         self._line_ending_button.config(
             text=self._tab.settings.get("line_ending", settings.LineEnding).name
         )
