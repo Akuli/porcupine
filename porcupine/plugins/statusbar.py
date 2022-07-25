@@ -99,11 +99,11 @@ class StatusBar(ttk.Frame):
         self.path_label = ttk.Label(self._top_frame)
         self.path_label.pack(side="left")
         self._line_ending_button = ttk.Button(
-            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=6
+            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=6, padding=0
         )
         self._line_ending_button.pack(side="right", padx=2)
         self._encoding_button = ttk.Button(
-            self._top_frame, command=self._choose_encoding, style="Statusbar.TButton", width=20
+            self._top_frame, command=self._choose_encoding, style="Statusbar.TButton", width=0, padding=(8, 0)
         )
         self._encoding_button.pack(side="right", padx=2)
 
@@ -141,13 +141,8 @@ class StatusBar(ttk.Frame):
                     text += f" on {lines} lines"
                 text += " selected"
             self.selection_label.config(text=text)
-        
-        if len(self._tab.settings.get("encoding", str)) > 20:
-            first_part = self._tab.settings.get("encoding", str)[:17]
-            self._tab_settings_name = f"{first_part}..."
-        else:
-            self._tab_settings_name = self._tab.settings.get("encoding", str).center(20)
-        self._encoding_button.config(text=self._tab_settings_name)
+
+        self._encoding_button.config(text=self._tab.settings.get("encoding", str))
         self._line_ending_button.config(
             text=self._tab.settings.get("line_ending", settings.LineEnding).name
         )
@@ -196,7 +191,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 def update_button_style(junk_event: object = None) -> None:
     # https://tkdocs.com/tutorial/styles.html
     # tkinter's style stuff sucks
-    get_tab_manager().tk.eval("ttk::style configure Statusbar.TButton -padding 0 -anchor center")
+    get_tab_manager().tk.eval("ttk::style configure Statusbar.TButton -anchor center")
 
 
 def setup() -> None:
