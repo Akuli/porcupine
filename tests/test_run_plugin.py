@@ -429,7 +429,7 @@ def test_smashing_f5(tmp_path, wait_until, use_after_idle):
     assert rest == "Hello\nThe process completed successfully."
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="windows sucks")
+@pytest.mark.skipif(sys.platform == "win32", reason="can't pause processes on windows")
 def test_pause_resume_button(tmp_path, wait_until):
     (tmp_path / "sleeper.py").write_text(
         "import time; print('before'); time.sleep(0.5); print('after')"
