@@ -1,3 +1,4 @@
+import hashlib
 import io
 import os
 import shutil
@@ -20,19 +21,16 @@ assert sys.platform == "win32"
 assert 8 * struct.calcsize("P") == 64
 
 
-def delete(path):
-    if path.is_file():
-        path.unlink()
-    else:
-        shutil.rmtree(path)
-
-
 try:
     os.mkdir("build")
+    print("Created directory: build")
 except FileExistsError:
     print("Found existing build directory, deleting contents")
     for path in list(Path("build").glob("*")):
-        delete(path)
+        if path.is_file():
+            path.unlink()
+        else:
+            shutil.rmtree(path)
 
 
 print("Downloading Python")
@@ -45,6 +43,15 @@ print(url)
 response = requests.get(url)
 response.raise_for_status()
 zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/python-first")
+
+print("Downloading NSIS")
+url = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08.zip"
+response = requests.get(url)
+response.raise_for_status()
+zip_hash = hashlib.sha256(response.content).hexdigest()
+assert zip_hash == "1bb9fc85ee5b220d3869325dbb9d191dfe6537070f641c30fbb275c97051fd0c"
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build")
+
 
 print("Copying files")
 
@@ -126,7 +133,7 @@ subprocess.check_call(
 print("Deleting __pycache__ directories")
 for path in list(Path("build/python-second").rglob("__pycache__")):
     print(path)
-    delete(path)
+    shutil.rmtree(path)
 
 print("Moving files")
 shutil.move("build/launcher/Porcupine.exe", "build/python-second/Porcupine.exe")
@@ -151,8 +158,7 @@ extensions = [
 ]
 print(extensions)
 
-# makensis is not in PATH when nsis is installed without scoop
-makensis = shutil.which("makensis") or r"C:\Program Files (x86)\NSIS\makensis.exe"
+makensis = os.path.abspath("build/nsis-3.08/makensis.exe")
 print(f"Running {makensis}")
 subprocess.check_call(
     [
