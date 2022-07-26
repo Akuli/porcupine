@@ -35,10 +35,9 @@ class HoverManager:
     def _show_label(self, message: str) -> None:
         self.hide_label()
 
-        if message != self._label["text"]:
-            self._label.configure(
-                text=message, wraplength=1000  # place_popup will adjust the wraplength
-            )
+        self._label.configure(
+            text=message, wraplength=1000  # place_popup will adjust the wraplength
+        )
 
         textutils.place_popup(
             self._textwidget,
