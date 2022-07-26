@@ -46,6 +46,7 @@ zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/python-first")
 
 print("Downloading NSIS")
 url = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08.zip"
+print(url)
 response = requests.get(url)
 response.raise_for_status()
 zip_hash = hashlib.sha256(response.content).hexdigest()
