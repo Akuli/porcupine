@@ -99,19 +99,11 @@ class StatusBar(ttk.Frame):
         self.path_label = ttk.Label(self._top_frame)
         self.path_label.pack(side="left")
         self._line_ending_button = ttk.Button(
-            self._top_frame,
-            command=self._choose_line_ending,
-            style="Statusbar.TButton",
-            width=6,
-            padding=0,
+            self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=0
         )
         self._line_ending_button.pack(side="right", padx=2)
         self._encoding_button = ttk.Button(
-            self._top_frame,
-            command=self._choose_encoding,
-            style="Statusbar.TButton",
-            width=0,
-            padding=(8, 0),
+            self._top_frame, command=self._choose_encoding, style="Statusbar.TButton", width=0
         )
         self._encoding_button.pack(side="right", padx=2)
 
@@ -199,7 +191,9 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 def update_button_style(junk_event: object = None) -> None:
     # https://tkdocs.com/tutorial/styles.html
     # tkinter's style stuff sucks
-    get_tab_manager().tk.eval("ttk::style configure Statusbar.TButton -anchor center")
+    get_tab_manager().tk.eval(
+        "ttk::style configure Statusbar.TButton -padding {10 0} -anchor center"
+    )
 
 
 def setup() -> None:
