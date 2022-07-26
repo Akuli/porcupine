@@ -68,7 +68,7 @@ class Executor:
         self._shell_process: subprocess.Popen[bytes] | None = None
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
-        self.started = self.running = False
+        self.started = False
         self.paused = False
         self._thread: threading.Thread | None = None
 
@@ -89,7 +89,11 @@ class Executor:
         )
         self._thread.start()
         self._poll_queue_and_put_to_textwidget()
-        self.started = self.running = True
+        self.started = True
+
+    @property
+    def running(self) -> bool:
+        return self._shell_process is not None and self._shell_process.poll() is None
 
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
         self._queue.put(("info", command + "\n"))
@@ -123,7 +127,6 @@ class Executor:
         else:
             self._queue.put(("error", f"The process failed with status {status}."))
         self._queue.put(("end", ""))
-        self.running = False
 
     def _handle_queued_item(self, message_type: str, text: str) -> None:
         self._textwidget.config(state="normal")
@@ -238,8 +241,6 @@ class Executor:
 
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
-
-        self.running = False
 
 
 class NoTerminalRunner:
