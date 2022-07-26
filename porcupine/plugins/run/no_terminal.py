@@ -68,7 +68,7 @@ class Executor:
         self._shell_process: subprocess.Popen[bytes] | None = None
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
-        self.started = False
+        self.started = self.running = False
         self.paused = False
         self._thread: threading.Thread | None = None
 
@@ -89,7 +89,7 @@ class Executor:
         )
         self._thread.start()
         self._poll_queue_and_put_to_textwidget()
-        self.started = True
+        self.started = self.running = True
 
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
         self._queue.put(("info", command + "\n"))
@@ -123,6 +123,7 @@ class Executor:
         else:
             self._queue.put(("error", f"The process failed with status {status}."))
         self._queue.put(("end", ""))
+        self.running = False
 
     def _handle_queued_item(self, message_type: str, text: str) -> None:
         self._textwidget.config(state="normal")
@@ -238,6 +239,8 @@ class Executor:
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
+        self.running = False
+
 
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
@@ -279,7 +282,7 @@ class NoTerminalRunner:
             self.executor.stop(quitting=quitting)
 
     def pause_resume_executor(self, junk: object = None) -> None:
-        if sys.platform != "win32" and self.executor is not None:
+        if sys.platform != "win32" and self.executor is not None and self.executor.running:
             if self.executor.paused:
                 self.executor.send_signal(signal.SIGCONT)
                 self.executor.paused = False
@@ -316,6 +319,7 @@ class NoTerminalRunner:
         self.textwidget.delete("1.0", "end")
         self.textwidget.config(state="disabled")
         self._link_manager.delete_all_links()  # prevent memory leak
+        self.pause_button.configure(image=images.get("pause"))
 
         self.executor = Executor(cwd, self.textwidget, self._link_manager)
         self.executor.run(command)
