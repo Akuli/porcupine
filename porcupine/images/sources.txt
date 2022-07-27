@@ -5,7 +5,7 @@ venv.png                Drawn by Akuli
 stop.png                Edited from https://openmoji.org/library/emoji-1F6D1/
 closebutton_dark.png    Drawn by rdbende
 closebutton_light.png   Drawn by rdbende
-pause_dark.png:         Drawn by rdbende
-pause_light.png:        Drawn by rdbende
-resume_dark.png:        Drawn by rdbende
-resume_light.png:       Drawn by rdbende
+pause_dark.png          Drawn by rdbende
+pause_light.png         Drawn by rdbende
+resume_dark.png         Drawn by rdbende
+resume_light.png        Drawn by rdbende
