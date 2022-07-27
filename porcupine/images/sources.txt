@@ -1,6 +1,11 @@
-The images come from these places:
-- triangle.gif:      https://cdn.pixabay.com/photo/2012/04/14/15/13/danger-34250_960_720.png
-- logo.gif:          I drew this myself, as you may have guessed
-- venv.png:          I drew this myself
-- stop.png:          Edited from https://openmoji.org/library/#search=stop&emoji=1F6D1
-- closebutton_(dark|light).png:    Drawn by rdbende
+triangle.gif            https://cdn.pixabay.com/photo/2012/04/14/15/13/danger-34250_960_720.png
+logo.gif                Drawn by Akuli
+logo-200x200.gif        Drawn by Akuli
+venv.png                Drawn by Akuli
+stop.png                Edited from https://openmoji.org/library/emoji-1F6D1/
+closebutton_dark.png    Drawn by rdbende
+closebutton_light.png   Drawn by rdbende
+pause_dark.png:         Drawn by rdbende
+pause_light.png:        Drawn by rdbende
+resume_dark.png:        Drawn by rdbende
+resume_light.png:       Drawn by rdbende
