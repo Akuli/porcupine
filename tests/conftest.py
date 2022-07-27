@@ -208,7 +208,9 @@ def wait_until():
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             get_main_window().update()
-            if condition():
+            boolean = condition()
+            assert isinstance(boolean, bool)  # https://github.com/Akuli/porcupine/issues/1095
+            if boolean:
                 return
         raise RuntimeError("timed out waiting")
 
