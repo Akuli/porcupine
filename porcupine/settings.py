@@ -492,6 +492,11 @@ def show_dialog() -> None:
     This function is called when the user opens the dialog from the menu.
     """
     dialog = get_dialog_content().winfo_toplevel()
+
+    if dialog.winfo_viewable():
+        dialog.focus()
+        return
+
     dialog.transient(porcupine.get_main_window())
     dialog.deiconify()
 
