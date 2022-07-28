@@ -647,7 +647,7 @@ _list_of_encodings = [
 def ask_encoding(text: str, old_encoding: str) -> str | None:
     if porcupine.get_main_window().tk.call("winfo", "exists", ".choose_encoding"):
         porcupine.get_main_window().tk.call("focus", ".choose_encoding")
-        return
+        return None
 
     dialog = tkinter.Toplevel(name="choose_encoding")
     if porcupine.get_main_window().winfo_viewable():
