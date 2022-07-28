@@ -225,7 +225,7 @@ def ask_command(ctx: common.Context) -> tuple[common.Command, int] | None:
     if get_main_window().tk.call("winfo", "exists", ".command_asker"):
         get_main_window().tk.call("focus", ".command_asker")
         return None
-    
+
     asker = _CommandAsker(ctx)
     asker.window.title("Run command")
     asker.window.transient(get_main_window())
