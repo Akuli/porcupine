@@ -5,7 +5,7 @@ import tkinter
 from tkinter import ttk
 from typing import Callable, TypeVar
 
-from porcupine import get_main_window, textutils, utils
+from porcupine import textutils, utils
 
 from . import common, history
 

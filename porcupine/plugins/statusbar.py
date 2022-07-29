@@ -5,7 +5,7 @@ import tkinter
 import unicodedata
 from tkinter import ttk
 
-from porcupine import get_main_window, get_tab_manager, settings, tabs, utils
+from porcupine import get_tab_manager, settings, tabs, utils
 from porcupine.textutils import count
 
 
