@@ -29,7 +29,7 @@ Other new features and improvements:
 - You can now select text and press Ctrl+G to search the selected text on Google. This is useful if you don't know what a function does, for example. Thank you [okankamilsen](https://github.com/okankamilsen) for implementing this.
 - Hover popups now appear with some delay: if you move your mouse over a function call, you will now have to wait about half a second before you see a description of what the function does. This makes the hover popups less annoying and reduces CPU usage when moving the mouse. Thank you [rdbende](https://github.com/rdbende) for implementing this.
 - The color scheme buttons in Porcupine Settings can now be accessed with keyboard in addition to clicking them.
-- It is no longer possible to open several instances of the same dialog. For example, previously it was possible to open Plugin Manager even if Plugin manager was already opened. Thank you [rdbende](https://github.com/rdbende).
+- It is no longer possible to open several instances of the same dialog. For example, previously it was possible to open Plugin Manager even if Plugin Manager was already opened. Thank you [rdbende](https://github.com/rdbende).
 - The encoding button (at bottom right, usually displaying `utf-8`) now becomes wider if you select an encoding with a long name. Thank you [rdbende](https://github.com/rdbende) and [Moosems](https://github.com/Moosems).
 
 Removed features:
