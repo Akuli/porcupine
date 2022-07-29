@@ -59,6 +59,7 @@ class _FormattingEntryAndLabels:
 class _CommandAsker:
     def __init__(self, ctx: common.Context):
         self.window = utils.make_dialog("run_command_asker", destroy_existing=True)
+        assert self.window is not None
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
