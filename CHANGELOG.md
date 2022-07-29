@@ -2,6 +2,9 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+
 ## v0.99.2
 
 Directory tree:
