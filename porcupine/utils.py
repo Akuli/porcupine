@@ -545,12 +545,12 @@ def make_dialog(name: str, destroy_existing: bool = False) -> tkinter.Toplevel |
     main_window = porcupine.get_main_window()
 
     if main_window.tk.call("winfo", "exists", f".{name}"):
-        if destroy_existing: 
+        if destroy_existing:
             main_window.tk.call("destroy", f".{name}")
         else:
             main_window.tk.call("focus", f".{name}")
             return None
-    
+
     dialog = tkinter.Toplevel(main_window, name=name)
 
     if main_window.winfo_viewable():
@@ -668,7 +668,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
 
     if dialog is None:
         return None
-    
+
     dialog.resizable(False, False)
     dialog.title("Choose an encoding")
 
