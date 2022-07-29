@@ -128,6 +128,7 @@ def test_file_url_to_path():
     for path in paths:
         assert utils.file_url_to_path(path.as_uri()) == path
 
+
 def test_make_dialog():
     dialog = utils.make_dialog("test_dialog")
     assert isinstance(dialog, tkinter.Toplevel)
