@@ -20,17 +20,17 @@ Pastebin menu:
 
 Running programs without an external terminal window:
 - Porcupine no longer freezes if the program produces a lot of output, e.g. `print` inside an infinite loop.
-- On Linux and MacOS, there is now a pause button that can be used to stop and continue running the program. This is useful if you made a game but you didn't implement pause yet, for example.
+- On Linux and MacOS, there is now a pause button that can be used to stop and continue running the program. This is useful if you made a game but you didn't implement pause yet, for example. Thank you [rdbende](https://github.com/rdbende) for implementing this.
 - Porcupine no longer stops showing the output in a corner case. This corner case happened frequently when printing large amounts of random bytes in Python.
 - Porcupine now recognizes file names and line numbers of the form `(filename:linenumber)` and makes them clickable. At least valgrind prints source code locations this way.
 
 Other new features and improvements:
 - You can now decide whether Porcupine should remember your opened tabs when you close and reopen it. There's a new checkbox in *Porcupine Settings* (in the *Settings* menu).
-- You can now select text and press Ctrl+G to search the selected text on Google. This is useful if you don't know what a function does, for example.
-- Hover popups now appear with some delay: if you move your mouse over a function call, you will now have to wait about half a second before you see a description of what the function does. This makes the hover popups less annoying and reduces CPU usage when moving the mouse.
+- You can now select text and press Ctrl+G to search the selected text on Google. This is useful if you don't know what a function does, for example. Thank you [okankamilsen](https://github.com/okankamilsen) for implementing this.
+- Hover popups now appear with some delay: if you move your mouse over a function call, you will now have to wait about half a second before you see a description of what the function does. This makes the hover popups less annoying and reduces CPU usage when moving the mouse. Thank you [rdbende](https://github.com/rdbende) for implementing this.
 - The color scheme buttons in Porcupine Settings can now be accessed with keyboard in addition to clicking them.
 - It is no longer possible to open several instances of the same dialog. For example, you could open Plugin Manager even if Plugin manager was already opened. Thank you [rdbende](https://github.com/rdbende).
-- The encoding button (at bottom right, usually displaying `utf-8`) now becomes wider if you select an encoding with a long name.
+- The encoding button (at bottom right, usually displaying `utf-8`) now becomes wider if you select an encoding with a long name. Thank you [rdbende](https://github.com/rdbende) and [Moosems](https://github.com/Moosems).
 
 Removed features:
 - It is no longer possible to use langservers with local TCP sockets. Use stdio (i.e. stdin and stdout) instead. So far I haven't seen any langservers that can't be used with stdio.
