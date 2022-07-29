@@ -4,6 +4,9 @@ and other details that don't affect using Porcupine.
 
 ## Unreleased
 
+Porcupine now uses a calendar-based versioning scheme:
+from now on, a Porcupine version is simply its release date in the "year.month.day" format.
+
 Windows improvements:
 - Porcupine no longer looks blurry on some Windows installs. Thank you [VideoCarp](https://github.com/VideoCarp/) for finally fixing this old issue!
 - Alt+F4 now works on Windows. Previously it worked on some Windows systems and didn't work on others.
