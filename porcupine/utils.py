@@ -699,7 +699,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     def select_encoding() -> None:
         nonlocal selected_encoding
         selected_encoding = combobox.get()
-        
+
         assert dialog is not None  # mypy grrr...
         dialog.destroy()
 
