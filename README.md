@@ -254,6 +254,8 @@ Other people shouldn't need them.
 
 1. Update `CHANGELOG.md` based on Git logs (e.g. `git log --all --oneline --graph`).
     You should add a new section to the beginning with the new version number.
+    Don't split the text to multiple lines any more than is necessary,
+    as that won't show up correctly on GitHub's releases page.
 2. On a Windows computer (or VM), install Resource Hacker and change the version number in `launcher/Porcupine.exe`.
     Hopefully I will eventually get a C compiler to work again,
     so that this step can be skipped (see [#1086](https://github.com/Akuli/porcupine/pull/1086)).
