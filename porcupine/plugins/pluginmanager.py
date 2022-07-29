@@ -10,12 +10,10 @@ from functools import partial
 from tkinter import messagebox, ttk
 from typing import List
 
-from porcupine import get_main_window, menubar, pluginloader, settings, textutils, utils
+from porcupine import menubar, pluginloader, settings, textutils, utils
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
-
-dialog: tkinter.Toplevel | None = None
 
 
 def get_docstring(module_name: str) -> str:
@@ -242,26 +240,26 @@ class PluginDialogContent:
         self._on_select()
         self._update_plz_restart_label()
 
-
-def show_dialog() -> None:
-    global dialog
-    if dialog is not None and dialog.winfo_exists():
-        dialog.lift()
-        dialog.focus()
-    else:
-        dialog = create_dialog()[0]
+    def destroy(self) -> None:
+        self.content_frame.master.destroy()
 
 
-def create_dialog() -> tuple[tkinter.Toplevel, PluginDialogContent]:
-    dialog = tkinter.Toplevel()
+def create_dialog() -> PluginDialogContent | None:
+    dialog = utils.make_dialog("plugin_manager")
+
+    if dialog is None:
+        return None
+
     dialog.title("Porcupine Plugin Manager")
+
     content = PluginDialogContent(dialog)
     content.content_frame.pack(fill="both", expand=True)
-    dialog.transient(get_main_window())
+
     dialog.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
     dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
-    return (dialog, content)  # content returned for tests
+
+    return content  # content returned for tests
 
 
 def setup() -> None:
-    menubar.get_menu("Settings").add_command(label="Plugin Manager", command=show_dialog)
+    menubar.get_menu("Settings").add_command(label="Plugin Manager", command=create_dialog)

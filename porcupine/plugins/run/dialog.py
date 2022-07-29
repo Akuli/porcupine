@@ -58,7 +58,7 @@ class _FormattingEntryAndLabels:
 
 class _CommandAsker:
     def __init__(self, ctx: common.Context):
-        self.window = tkinter.Toplevel(name="command_asker")
+        self.window = utils.make_dialog("run_command_asker", destroy_existing=True)
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -222,13 +222,8 @@ class _CommandAsker:
 
 
 def ask_command(ctx: common.Context) -> tuple[common.Command, int] | None:
-    if get_main_window().tk.call("winfo", "exists", ".command_asker"):
-        get_main_window().tk.call("focus", ".command_asker")
-        return None
-
     asker = _CommandAsker(ctx)
     asker.window.title("Run command")
-    asker.window.transient(get_main_window())
 
     # you probably don't wanna resize it in y, it's safe to do it here,
     # as the content is already packed

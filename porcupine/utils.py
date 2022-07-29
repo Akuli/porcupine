@@ -540,6 +540,25 @@ def bind_tab_key(
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
 
 
+# TODO: document this
+def make_dialog(name: str, destroy_existing: bool = False) -> tkinter.Toplevel | None:
+    main_window = porcupine.get_main_window()
+
+    if main_window.tk.call("winfo", "exists", f".{name}"):
+        if destroy_existing: 
+            main_window.tk.call("destroy", f".{name}")
+        else:
+            main_window.tk.call("focus", f".{name}")
+            return None
+    
+    dialog = tkinter.Toplevel(main_window, name=name)
+
+    if main_window.winfo_viewable():
+        dialog.transient(main_window)
+
+    return dialog
+
+
 # list of encodings supported by python 3.7 https://stackoverflow.com/a/25584253
 _list_of_encodings = [
     "ascii",
@@ -645,13 +664,11 @@ _list_of_encodings = [
 
 # TODO: document this?
 def ask_encoding(text: str, old_encoding: str) -> str | None:
-    if porcupine.get_main_window().tk.call("winfo", "exists", ".choose_encoding"):
-        porcupine.get_main_window().tk.call("destroy", ".choose_encoding")
-        return None
+    dialog = make_dialog("choose_encoding", destroy_existing=True)
 
-    dialog = tkinter.Toplevel(name="choose_encoding")
-    if porcupine.get_main_window().winfo_viewable():
-        dialog.transient(porcupine.get_main_window())
+    if dialog is None:
+        return None
+    
     dialog.resizable(False, False)
     dialog.title("Choose an encoding")
 
