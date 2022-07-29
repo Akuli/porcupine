@@ -253,23 +253,19 @@ These instructions are meant for Porcupine maintainers.
 Other people shouldn't need them.
 
 1. Update `CHANGELOG.md` based on Git logs (e.g. `git log --all --oneline --graph`).
-    You should add a new section to the beginning with the new version number.
+    You should add a new section to the beginning with `Unreleased` instead of a version number.
     Don't split the text to multiple lines any more than is necessary,
     as that won't show up correctly on GitHub's releases page.
-2. On a Windows computer (or VM), install Resource Hacker and change the version number in `launcher/Porcupine.exe`.
+2. Make a pull request of your changelog edits. Review carefully:
+    changing the changelog afterwards is difficult, as the text gets copied into the releases page.
+3. Merge the pull request and pull the merge commit to your local `master` branch.
+4. On a Windows computer (or VM), install Resource Hacker and change the version number in `launcher/Porcupine.exe`.
     Hopefully I will eventually get a C compiler to work again,
     so that this step can be skipped (see [#1086](https://github.com/Akuli/porcupine/pull/1086)).
     ![resource-hacker.png](resource-hacker.png)
-3. Make a pull request with the changes until this point. Review the changelog carefully:
-    changing it afterwards is difficult, as the text gets copied into the releases page.
-4. Merge the pull request and pull the merge commit to your local `master` branch.
-5. Run `python3 scripts/release.py major_or_minor_or_patch` from the `master` branch.
-    The argument works like this:
-    - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
-    - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
-    - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
-
-    The script pushes a tag named e.g. `v0.71.4`,
+    Push the new `.exe` file directly to master.
+5. Run `python3 scripts/release.py` from the `master` branch.
+    The script pushes a tag named e.g. `v2022.07.29`,
     which triggers the parts of `.github/workflows/build.yml`
     that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
     They build and deploy docs, copy the changelog to the releases page, and so on.

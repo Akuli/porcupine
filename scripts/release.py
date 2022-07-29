@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Bump the Porcupine version number."""
 
-import argparse
 import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.append("")  # import from current working directory
 from porcupine import version_info as old_info
 
-TAG_FORMAT = "v%d.%d.%d"
+TAG_FORMAT = "v%d.%02d.%02d"
+OLD_TAG_FORMAT = "v%d.%d.%d"  # TODO: delete after the first calver release
 
 
 def replace_in_file(path, old, new):
@@ -20,22 +21,9 @@ def replace_in_file(path, old, new):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "what_to_bump",
-        choices=["major", "minor", "patch"],
-        help="which part of major.minor.patch version number to increment",
-    )
-    args = parser.parse_args()
-
-    if args.what_to_bump == "major":
-        new_info = (old_info[0] + 1, 0, 0)
-    elif args.what_to_bump == "minor":
-        new_info = (old_info[0], old_info[1] + 1, 0)
-    elif args.what_to_bump == "patch":
-        new_info = (old_info[0], old_info[1], old_info[2] + 1)
-    else:
-        assert False, f"unexpected what_to_bump {args.what_to_bump!r}"
+    dt = datetime.now()
+    new_info = (dt.year, dt.month, dt.day)
+    assert new_info > old_info
 
     # https://stackoverflow.com/a/1593487
     branch = subprocess.check_output("git symbolic-ref --short HEAD", shell=True).decode().strip()
@@ -46,13 +34,16 @@ def main():
         assert line.startswith(b"?? "), line
 
     assert "VIRTUAL_ENV" in os.environ
-    with open("CHANGELOG.md") as changelog:
-        assert changelog.read().split("\n\n\n")[1].startswith(f"## {TAG_FORMAT % new_info}")
 
-    print(f"Version changes: {TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
+    changelog = Path("CHANGELOG.md").read_text()
+    assert changelog.split("\n\n\n")[1].startswith("## Unreleased")
+    assert changelog.count("Unreleased") == 1
 
+    print(f"Version changes: {OLD_TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
+
+    replace_in_file(Path("CHANGELOG.md"), "Unreleased", TAG_FORMAT % new_info)
     replace_in_file(Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
-    replace_in_file(Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
+    replace_in_file(Path("README.md"), OLD_TAG_FORMAT % old_info, TAG_FORMAT % new_info)
     subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
