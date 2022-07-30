@@ -540,22 +540,29 @@ def bind_tab_key(
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
 
 
-# TODO: document this
-def make_dialog(name: str, destroy_existing: bool = False) -> tkinter.Toplevel | None:
+# TODO: document dialog making functions
+def make_dialog_if_not_exists(name: str) -> tkinter.Toplevel | None:
     main_window = porcupine.get_main_window()
 
     if main_window.tk.call("winfo", "exists", f".{name}"):
-        if destroy_existing:
-            main_window.tk.call("destroy", f".{name}")
-        else:
-            main_window.tk.call("focus", f".{name}")
-            return None
+        main_window.tk.call("focus", f".{name}")
+        return None
 
     dialog = tkinter.Toplevel(main_window, name=name)
-
     if main_window.winfo_viewable():
         dialog.transient(main_window)
+    return dialog
 
+
+def make_dialog_destroying_if_exists(name: str) -> tkinter.Toplevel:
+    main_window = porcupine.get_main_window()
+
+    if main_window.tk.call("winfo", "exists", f".{name}"):
+        main_window.tk.call("destroy", f".{name}")
+
+    dialog = tkinter.Toplevel(main_window, name=name)
+    if main_window.winfo_viewable():
+        dialog.transient(main_window)
     return dialog
 
 
@@ -664,9 +671,9 @@ _list_of_encodings = [
 
 # TODO: document this?
 def ask_encoding(text: str, old_encoding: str) -> str | None:
-    dialog = make_dialog("choose_encoding", destroy_existing=True)
-
+    dialog = make_dialog_if_not_exists("choose_encoding")
     if dialog is None:
+        # Another (possibly unrelated) encoding chooser is already running
         return None
 
     dialog.resizable(False, False)

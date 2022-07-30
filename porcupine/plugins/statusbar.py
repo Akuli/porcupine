@@ -17,9 +17,7 @@ def _connect_label_to_radiobutton(label: ttk.Label, radio: ttk.Radiobutton) -> N
 
 
 def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding:
-    dialog = utils.make_dialog("choose_line_ending", destroy_existing=True)
-    assert dialog is not None
-
+    dialog = utils.make_dialog_destroying_if_exists("choose_line_ending")
     dialog.resizable(False, False)
     dialog.title("Choose a line ending")
 
@@ -81,7 +79,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
     ttk.Button(big_frame, text="OK", command=dialog.destroy, width=15).pack(
         side="right", padx=10, pady=10
     )
-    dialog.bind("<Escape>", (lambda e: dialog.destroy()), add=True)  # type: ignore
+    dialog.bind("<Escape>", (lambda e: dialog.destroy()), add=True)
 
     dialog.wait_window()
     return settings.LineEnding[var.get()]

@@ -245,8 +245,7 @@ class PluginDialogContent:
 
 
 def create_dialog() -> PluginDialogContent | None:
-    dialog = utils.make_dialog("plugin_manager")
-
+    dialog = utils.make_dialog_if_not_exists("plugin_manager")
     if dialog is None:
         return None
 
