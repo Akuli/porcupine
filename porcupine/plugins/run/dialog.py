@@ -58,7 +58,7 @@ class _FormattingEntryAndLabels:
 
 class _CommandAsker:
     def __init__(self, ctx: common.Context):
-        self.window = tkinter.Toplevel(name="command_asker")
+        self.window = tkinter.Toplevel(name="run_command_asker")
 
         if sys.platform == "win32":
             terminal_name = "command prompt"
@@ -222,8 +222,8 @@ class _CommandAsker:
 
 
 def ask_command(ctx: common.Context) -> tuple[common.Command, int] | None:
-    if get_main_window().tk.call("winfo", "exists", ".command_asker"):
-        get_main_window().tk.call("focus", ".command_asker")
+    if get_main_window().tk.call("winfo", "exists", ".run_command_asker"):
+        get_main_window().tk.call("focus", ".run_command_asker")
         return None
 
     asker = _CommandAsker(ctx)
