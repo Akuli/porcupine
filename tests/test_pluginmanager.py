@@ -7,8 +7,9 @@ from porcupine.plugins.pluginmanager import create_dialog
 @pytest.fixture
 def dialog_content(mocker):
     content = create_dialog()
+    assert content is not None
     yield content
-    content.destroy_dialog()
+    content.destroy_window()
 
 
 def test_select_one(dialog_content):
