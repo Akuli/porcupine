@@ -115,6 +115,7 @@ else:
             "main.c",
             "icon.res",
             "metadata.res",
+            "-luser32",
         ],
         cwd="build/launcher",
     )
