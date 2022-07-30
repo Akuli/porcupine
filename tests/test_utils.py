@@ -130,9 +130,14 @@ def test_file_url_to_path():
 
 
 def test_make_dialog():
-    dialog = utils.make_dialog("test_dialog")
+    dialog = utils.make_dialog_if_not_exists("test_dialog")
     assert isinstance(dialog, tkinter.Toplevel)
-    dialog = utils.make_dialog("test_dialog")
+    dialog = utils.make_dialog_if_not_exists("test_dialog")
     assert dialog is None
-    dialog = utils.make_dialog("test_dialog", destroy_existing=True)
+    dialog = utils.make_dialog_if_not_exists("test_dialog")
+    assert dialog is None
+    dialog = utils.make_dialog_destroying_if_exists("test_dialog")
     assert isinstance(dialog, tkinter.Toplevel)
+    dialog = utils.make_dialog_destroying_if_exists("test_dialog")
+    assert isinstance(dialog, tkinter.Toplevel)
+    dialog.destroy()
