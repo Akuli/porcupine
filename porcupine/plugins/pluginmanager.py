@@ -240,7 +240,7 @@ class PluginDialogContent:
         self._on_select()
         self._update_plz_restart_label()
 
-    def destroy(self) -> None:
+    def destroy_window(self) -> None:
         self.content_frame.master.destroy()
 
 
