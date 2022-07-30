@@ -4,7 +4,7 @@ and other details that don't affect using Porcupine.
 
 ## Unreleased
 
-Porcupine now uses a calendar-based versioning scheme:
+Porcupine now uses [calver](https://calver.org/):
 from now on, a Porcupine version is simply its release date in the "year.month.day" format.
 
 Windows improvements:
