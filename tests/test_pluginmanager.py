@@ -8,7 +8,7 @@ from porcupine.plugins.pluginmanager import create_dialog
 def dialog_content(mocker):
     content = create_dialog()
     yield content
-    content.destroy()
+    content.destroy_dialog()
 
 
 def test_select_one(dialog_content):
