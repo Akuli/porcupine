@@ -1,8 +1,8 @@
-#include <stdnoreturn.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include <windows.h>
+#include <stdnoreturn.h>
 
 static noreturn void fatal_error(const wchar_t *msg)
 {
