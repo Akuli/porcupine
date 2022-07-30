@@ -671,10 +671,7 @@ _list_of_encodings = [
 
 # TODO: document this?
 def ask_encoding(text: str, old_encoding: str) -> str | None:
-    dialog = make_dialog_if_not_exists("choose_encoding")
-    if dialog is None:
-        # Another (possibly unrelated) encoding chooser is already running
-        return None
+    dialog = make_dialog_destroying_if_exists("choose_encoding")
 
     dialog.resizable(False, False)
     dialog.title("Choose an encoding")
