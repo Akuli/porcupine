@@ -257,17 +257,12 @@ Other people shouldn't need them.
 2. Make a pull request of your changelog edits. Review carefully:
     changing the changelog afterwards is difficult, as the text gets copied into the releases page.
 3. Merge the pull request and pull the merge commit to your local `master` branch.
-4. On a Windows computer (or VM), install Resource Hacker and change the version number in `launcher/Porcupine.exe`.
-    Hopefully I will eventually get a C compiler to work again,
-    so that this step can be skipped (see [#1086](https://github.com/Akuli/porcupine/pull/1086)).
-    ![resource-hacker.png](resource-hacker.png)
-    Push the new `.exe` file directly to master.
-5. Run `python3 scripts/release.py` from the `master` branch.
+4. Run `python3 scripts/release.py` from the `master` branch.
     The script pushes a tag named e.g. `v2022.07.29`,
     which triggers the parts of `.github/workflows/build.yml`
     that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
     They build and deploy docs, copy the changelog to the releases page, and so on.
-6. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
+5. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
 
 If you want, you can also do a release from a branch named `bugfix-release` instead of `master`.
 This is useful if you fixed a bug that made Porcupine unusable for someone,
