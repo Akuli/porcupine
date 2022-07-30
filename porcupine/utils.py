@@ -645,13 +645,16 @@ _list_of_encodings = [
 
 # TODO: document this?
 def ask_encoding(text: str, old_encoding: str) -> str | None:
-    label_width = 400
+    if porcupine.get_main_window().tk.call("winfo", "exists", ".choose_encoding"):
+        porcupine.get_main_window().tk.call("destroy", ".choose_encoding")
 
-    dialog = tkinter.Toplevel()
+    dialog = tkinter.Toplevel(name="choose_encoding")
     if porcupine.get_main_window().winfo_viewable():
         dialog.transient(porcupine.get_main_window())
     dialog.resizable(False, False)
     dialog.title("Choose an encoding")
+
+    label_width = 400
 
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill="both", expand=True)
