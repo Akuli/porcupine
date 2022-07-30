@@ -25,7 +25,7 @@ Running programs without an external terminal window:
 - Porcupine no longer freezes if the program produces a lot of output, e.g. `print` inside an infinite loop.
 - On Linux and MacOS, there is now a pause button that can be used to stop and continue running the program. This is useful if you made a game but you didn't implement pause yet, for example. Thank you [rdbende](https://github.com/rdbende) for implementing this.
 - Porcupine no longer stops showing the output in a corner case. This corner case happened frequently when printing large amounts of random bytes in Python.
-- Porcupine now recognizes file names and line numbers of the form `(filename:linenumber)` and makes them clickable. At least valgrind prints source code locations this way.
+- Porcupine now recognizes file names and line numbers of the format `(filename:linenumber)` and makes them clickable. Recognizing file names and line numbers this way was added in Porcupine 0.99.0, and this release only adds one new format.
 
 Other new features and improvements:
 - You can now decide whether Porcupine should remember your opened tabs when you close and reopen it. There's a new checkbox in *Porcupine Settings* (in the *Settings* menu).
