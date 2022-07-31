@@ -44,6 +44,12 @@ else:
 
 
 def quote(string: str) -> str:
+    """Add quotes around an argument of a command.
+
+    This function is equivalent to :func:`shlex.quote` on non-Windows systems,
+    and on Windows it adds double quotes in a similar way. This is useful for
+    running commands in the Windows command prompt or a POSIX-compatible shell.
+    """
     if sys.platform == "win32":
         return subprocess.list2cmdline([string])
     else:
