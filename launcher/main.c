@@ -13,8 +13,12 @@ static noreturn void fatal_error(const wchar_t *msg)
 
 typedef int(WINAPI *PyMainProc)(int argc, wchar_t **argv);
 
-int wmain(int argc, wchar_t **argv)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
+	// this is basically what cpython's PC/WinMain.c does
+	int argc = __argc;
+	wchar_t **argv = __wargv;
+
 	wchar_t *launcherpath = calloc(sizeof(launcherpath[0]), MAX_PATH);
 	if (!launcherpath)
 		fatal_error(L"allocating memory failed");
