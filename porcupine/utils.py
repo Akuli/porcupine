@@ -56,45 +56,17 @@ else:
     python_executable = Path(sys.executable)
 
 
-if sys.platform == "win32":
-    # this is mostly copy/pasted from subprocess.list2cmdline
-    def quote(string: str) -> str:
-        result = []
-        needquote = False
-        bs_buf = []
+def quote(string: str) -> str:
+    """Add quotes around an argument of a command.
 
-        needquote = (" " in string) or ("\t" in string) or not string
-        if needquote:
-            result.append('"')
-
-        for c in string:
-            if c == "\\":
-                # Don't know if we need to double yet.
-                bs_buf.append(c)
-            elif c == '"':
-                # Double backslashes.
-                result.append("\\" * len(bs_buf) * 2)
-                bs_buf = []
-                result.append('\\"')
-            else:
-                # Normal char
-                if bs_buf:
-                    result.extend(bs_buf)
-                    bs_buf = []
-                result.append(c)
-
-        # Add remaining backslashes, if any.
-        if bs_buf:
-            result.extend(bs_buf)
-
-        if needquote:
-            result.extend(bs_buf)
-            result.append('"')
-
-        return "".join(result)
-
-else:
-    quote = shlex.quote
+    This function is equivalent to :func:`shlex.quote` on non-Windows systems,
+    and on Windows it adds double quotes in a similar way. This is useful for
+    running commands in the Windows command prompt or a POSIX-compatible shell.
+    """
+    if sys.platform == "win32":
+        return subprocess.list2cmdline([string])
+    else:
+        return shlex.quote(string)
 
 
 # TODO: document this?
