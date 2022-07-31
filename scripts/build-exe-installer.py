@@ -109,13 +109,13 @@ else:
         [
             "clang.exe",
             "-municode",
-            "-mwindows",
             "-o",
             "Porcupine.exe",
             "main.c",
             "icon.res",
             "metadata.res",
             "-luser32",
+            "-Wl,--subsystem,windows",  # https://stackoverflow.com/a/37409970
         ],
         cwd="build/launcher",
     )
