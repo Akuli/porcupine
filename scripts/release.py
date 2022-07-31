@@ -11,7 +11,6 @@ sys.path.append("")  # import from current working directory
 from porcupine import version_info as old_info
 
 TAG_FORMAT = "v%d.%02d.%02d"
-OLD_TAG_FORMAT = "v%d.%d.%d"  # TODO: delete after the first calver release
 
 
 def replace_in_file(path, old, new):
@@ -39,11 +38,11 @@ def main():
     assert changelog.split("\n\n\n")[1].startswith("## Unreleased")
     assert changelog.count("Unreleased") == 1
 
-    print(f"Version changes: {OLD_TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
+    print(f"Version changes: {TAG_FORMAT % old_info}  --->  {TAG_FORMAT % new_info}")
 
     replace_in_file(Path("CHANGELOG.md"), "Unreleased", TAG_FORMAT % new_info)
     replace_in_file(Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
-    replace_in_file(Path("README.md"), OLD_TAG_FORMAT % old_info, TAG_FORMAT % new_info)
+    replace_in_file(Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
     subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
