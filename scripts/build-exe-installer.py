@@ -93,9 +93,8 @@ metadata_file.write_text(
 print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
-# FIXME: Currently I can't get C compiler to work on github actions.
-#        I have committed a copy of the Porcupine.exe launcher here.
-#        Unfortunately the launcher contains an old version number that I can't update...
+# If you can't get a C compiler to work, you can install an older version of Porcupine and copy
+# its Porcupine.exe to launcher/Porcupine.exe
 if os.path.exists("build/launcher/Porcupine.exe"):
     print("Found launcher/Porcupine.exe, no C compiler needed")
 else:
@@ -108,14 +107,17 @@ else:
     )
     subprocess.check_call(
         [
-            "gcc.exe",
+            "clang.exe",
             "-municode",
-            "-mwindows",
             "-o",
             "Porcupine.exe",
             "main.c",
             "icon.res",
             "metadata.res",
+            "-luser32",
+            # https://stackoverflow.com/a/37409970
+            # https://stackoverflow.com/q/64911334
+            "-Wl,/subsystem:windows",
         ],
         cwd="build/launcher",
     )
