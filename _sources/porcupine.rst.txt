@@ -18,6 +18,7 @@ I recommend reading it first. Then you'll have a much better idea about what
 .. autofunction:: get_main_window
 .. autofunction:: get_tab_manager
 .. autofunction:: get_parsed_args
+.. autofunction:: add_quit_callback
 .. autofunction:: quit
 
 

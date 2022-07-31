@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; Porcupine API 0.99.2 documentation</title>
+    <title>Index &#8212; Porcupine API 2022.07.31 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -76,6 +76,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="settings.html#porcupine.settings.GlobalSettingChanged-foo">&lt;&lt;GlobalSettingChanged:foo&gt;&gt; (virtual event)</a>
+</li>
       <li><a href="menubar.html#porcupine.menubar.Menubar-Foo-Bar-Baz">&lt;&lt;Menubar:Foo/Bar/Baz&gt;&gt; (virtual event)</a>
 </li>
       <li><a href="tabs.html#porcupine.tabs.TabManager.NotebookTabChanged">&lt;&lt;NotebookTabChanged&gt;&gt; (porcupine.tabs.TabManager virtual event)</a>
@@ -83,8 +85,6 @@
       <li><a href="tabs.html#porcupine.tabs.FileTab.PathChanged">&lt;&lt;PathChanged&gt;&gt; (porcupine.tabs.FileTab virtual event)</a>
 </li>
       <li><a href="pluginloader.html#porcupine.pluginloader.PluginsLoaded">&lt;&lt;PluginsLoaded&gt;&gt; (virtual event)</a>
-</li>
-      <li><a href="settings.html#porcupine.settings.SettingChanged-foo">&lt;&lt;SettingChanged:foo&gt;&gt; (virtual event)</a>
 </li>
       <li><a href="tabs.html#porcupine.tabs.Tab.TabSelected">&lt;&lt;TabSelected&gt;&gt; (porcupine.tabs.Tab virtual event)</a>
 </li>
@@ -120,12 +120,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="settings.html#porcupine.settings.add_label">add_label() (in module porcupine.settings)</a>
 </li>
-      <li><a href="settings.html#porcupine.settings.add_option">add_option() (in module porcupine.settings)</a>
-
-      <ul>
-        <li><a href="settings.html#porcupine.settings.Settings.add_option">(porcupine.settings.Settings method)</a>
+      <li><a href="settings.html#porcupine.settings.Settings.add_option">add_option() (porcupine.settings.Settings method)</a>
 </li>
-      </ul></li>
+      <li><a href="porcupine.html#porcupine.add_quit_callback">add_quit_callback() (in module porcupine)</a>
+</li>
       <li><a href="utils.html#porcupine.utils.add_scroll_command">add_scroll_command() (in module porcupine.utils)</a>
 </li>
       <li><a href="settings.html#porcupine.settings.add_spinbox">add_spinbox() (in module porcupine.settings)</a>
@@ -164,15 +162,13 @@
 </li>
       <li><a href="textutils.html#porcupine.textutils.change_batch">change_batch() (in module porcupine.textutils)</a>
 </li>
-      <li><a href="textutils.html#porcupine.textutils.Changes">Changes (class in porcupine.textutils)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="textutils.html#porcupine.textutils.Changes">Changes (class in porcupine.textutils)</a>
+</li>
       <li><a href="tabs.html#porcupine.tabs.TabManager.close_tab">close_tab() (porcupine.tabs.TabManager method)</a>
 </li>
       <li><a href="textutils.html#porcupine.textutils.config_tab_displaying">config_tab_displaying() (in module porcupine.textutils)</a>
-</li>
-      <li><a href="utils.html#porcupine.utils.copy_type">copy_type() (in module porcupine.utils)</a>
 </li>
       <li><a href="textutils.html#porcupine.textutils.create_passive_text_widget">create_passive_text_widget() (in module porcupine.textutils)</a>
 </li>
@@ -190,12 +186,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="settings.html#porcupine.settings.debug_dump">debug_dump() (in module porcupine.settings)</a>
-
-      <ul>
-        <li><a href="settings.html#porcupine.settings.Settings.debug_dump">(porcupine.settings.Settings method)</a>
+      <li><a href="settings.html#porcupine.settings.Settings.debug_dump">debug_dump() (porcupine.settings.Settings method)</a>
 </li>
-      </ul></li>
       <li><a href="porcupine.html#porcupine.dirs">dirs (in module porcupine)</a>
 </li>
   </ul></td>
@@ -241,24 +233,26 @@
       <li><a href="images.html#porcupine.images.get">get() (in module porcupine.images)</a>
 
       <ul>
-        <li><a href="settings.html#porcupine.settings.get">(in module porcupine.settings)</a>
-</li>
         <li><a href="settings.html#porcupine.settings.Settings.get">(porcupine.settings.Settings method)</a>
 </li>
       </ul></li>
       <li><a href="settings.html#porcupine.settings.get_dialog_content">get_dialog_content() (in module porcupine.settings)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="porcupine.html#porcupine.get_main_window">get_main_window() (in module porcupine)</a>
 </li>
       <li><a href="menubar.html#porcupine.menubar.get_menu">get_menu() (in module porcupine.menubar)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="settings.html#porcupine.settings.Settings.get_options_by_tag">get_options_by_tag() (porcupine.settings.Settings method)</a>
 </li>
       <li><a href="porcupine.html#porcupine.get_parsed_args">get_parsed_args() (in module porcupine)</a>
 </li>
       <li><a href="tabs.html#porcupine.tabs.Tab.get_state">get_state() (porcupine.tabs.Tab method)</a>
 </li>
       <li><a href="porcupine.html#porcupine.get_tab_manager">get_tab_manager() (in module porcupine)</a>
+</li>
+      <li><a href="settings.html#porcupine.settings.global_settings">global_settings (in module porcupine.settings)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -443,14 +437,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="tabs.html#porcupine.tabs.FileTab.reload">reload() (porcupine.tabs.FileTab method)</a>
 </li>
-      <li><a href="settings.html#porcupine.settings.reset">reset() (in module porcupine.settings)</a>
-</li>
-      <li><a href="settings.html#porcupine.settings.reset_all">reset_all() (in module porcupine.settings)</a>
+      <li><a href="tabs.html#porcupine.tabs.Tab.right_frame">right_frame (porcupine.tabs.Tab attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="tabs.html#porcupine.tabs.Tab.right_frame">right_frame (porcupine.tabs.Tab attribute)</a>
-</li>
       <li><a href="utils.html#porcupine.utils.run_in_thread">run_in_thread() (in module porcupine.utils)</a>
 </li>
       <li><a href="utils.html#porcupine.utils.running_pythonw">running_pythonw (in module porcupine.utils)</a>
@@ -474,8 +464,6 @@
       <li><a href="tabs.html#porcupine.tabs.TabManager.select">select() (porcupine.tabs.TabManager method)</a>
 </li>
       <li><a href="settings.html#porcupine.settings.Settings.set">set() (porcupine.settings.Settings method)</a>
-</li>
-      <li><a href="settings.html#porcupine.settings.set_">set_() (in module porcupine.settings)</a>
 </li>
       <li><a href="menubar.html#porcupine.menubar.set_enabled_based_on_tab">set_enabled_based_on_tab() (in module porcupine.menubar)</a>
 </li>
@@ -616,10 +604,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy; 2017-2021 Akuli.
+      &copy; 2017-2022 Akuli.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>

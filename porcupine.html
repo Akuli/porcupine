@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>porcupine — The top level Porcupine package &#8212; Porcupine API 0.99.2 documentation</title>
+    <title>porcupine — The top level Porcupine package &#8212; Porcupine API 2022.07.31 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -57,8 +57,17 @@ I recommend reading it first. Then you’ll have a much better idea about what
 
 <dl class="py function">
 <dt class="sig sig-object py" id="porcupine.get_parsed_args">
-<span class="sig-prename descclassname"><span class="pre">porcupine.</span></span><span class="sig-name descname"><span class="pre">get_parsed_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#porcupine.get_parsed_args" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">porcupine.</span></span><span class="sig-name descname"><span class="pre">get_parsed_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></span><a class="headerlink" href="#porcupine.get_parsed_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return Porcupine’s arguments as returned by <code class="xref py py-func docutils literal notranslate"><span class="pre">argparse.parse_args()</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="porcupine.add_quit_callback">
+<span class="sig-prename descclassname"><span class="pre">porcupine.</span></span><span class="sig-name descname"><span class="pre">add_quit_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#porcupine.add_quit_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a callback that runs when the user quits Porcupine.</p>
+<p>The callback should return <code class="docutils literal notranslate"><span class="pre">True</span></code> if it’s fine to close Porcupine,
+or <code class="docutils literal notranslate"><span class="pre">False</span></code> to prevent Porcupine from closing. This is useful for
+asking the user whether they really want to quit.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -66,10 +75,9 @@ I recommend reading it first. Then you’ll have a much better idea about what
 <span class="sig-prename descclassname"><span class="pre">porcupine.</span></span><span class="sig-name descname"><span class="pre">quit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#porcupine.quit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calling this function is equivalent to clicking the X button in the
 corner of the main window.</p>
-<p>First the <a class="reference internal" href="tabs.html#porcupine.tabs.Tab.can_be_closed" title="porcupine.tabs.Tab.can_be_closed"><code class="xref py py-meth docutils literal notranslate"><span class="pre">can_be_closed()</span></code></a> method of each
-tab is called. If all tabs can be closed, a <code class="docutils literal notranslate"><span class="pre">&lt;&lt;PorcupineQuit&gt;&gt;</span></code>
-virtual event is generated on the main window, all tabs are closed
-with <a class="reference internal" href="tabs.html#porcupine.tabs.TabManager.close_tab" title="porcupine.tabs.TabManager.close_tab"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close_tab()</span></code></a> and widgets are
+<p>First, quit callbacks are ran (see <a class="reference internal" href="#porcupine.add_quit_callback" title="porcupine.add_quit_callback"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_quit_callback()</span></code></a>).
+If they all returned True, all tabs are closed by calling
+<a class="reference internal" href="tabs.html#porcupine.tabs.TabManager.close_tab" title="porcupine.tabs.TabManager.close_tab"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close_tab()</span></code></a> and all widgets are
 destroyed.</p>
 </dd></dl>
 
@@ -194,10 +202,10 @@ For example, <code class="docutils literal notranslate"><span class="pre">porcup
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy; 2017-2021 Akuli.
+      &copy; 2017-2022 Akuli.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
