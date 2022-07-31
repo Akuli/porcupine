@@ -9,7 +9,7 @@ this file should have most of these properties:
 * The util is significantly easier to use than just doing what it does internally.
 * The util and its usages as a whole should be less code than what would be needed without the util.
 
-It's fine if one or two properties are satisfied, but most of them should be.
+It's fine if one or two properties aren't quite true, but most of them should be.
 
 tl;dr: Please think twice before adding new things to this file.
 """
