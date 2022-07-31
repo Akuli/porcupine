@@ -1,4 +1,18 @@
-"""Handy utility functions."""
+"""A collection of carefully selected utility functions.
+
+Not everything should be an util: for example, if it's only used in one file,
+then it should be defined in that file. Specifically, I believe everything in
+this file should have most of these properties:
+
+* The util is a lot of code or it does something that is hard to get right.
+* The util is used in multiple files.
+* The util is significantly easier to use than just doing what it does internally.
+* The util and its usages as a whole should be less code than what would be needed without the util.
+
+It's fine if one or two properties aren't quite true, but most of them should be.
+
+tl;dr: Please think twice before adding new things to this file.
+"""
 from __future__ import annotations
 
 import codecs
@@ -19,7 +33,6 @@ import traceback
 from pathlib import Path
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar
-from urllib.request import url2pathname
 
 import dacite
 
@@ -56,51 +69,10 @@ def quote(string: str) -> str:
         return shlex.quote(string)
 
 
-# https://github.com/python/typing/issues/769
-def copy_type(f: _T) -> Callable[[Any], _T]:
-    """A decorator to tell mypy that one function or method has the same type as another.
-
-    Example::
-
-        from typing import Any
-        from porcupine.utils import copy_type
-
-        def foo(x: int) -> None:
-            print(x)
-
-        @copy_type(foo)
-        def bar(*args: Any, **kwargs: Any) -> Any:
-            foo(*args, **kwargs)
-
-        bar(1)      # ok
-        bar("lol")  # mypy error
-    """
-    return lambda x: x
-
-
 # TODO: document this?
 def format_command(command: str, substitutions: dict[str, Any]) -> list[str]:
     parts = shlex.split(command, posix=(sys.platform != "win32"))
     return [part.format_map(substitutions) for part in parts]
-
-
-# There doesn't seem to be standard library trick that works in all cases
-# https://stackoverflow.com/q/5977576
-#
-# TODO: document this?
-def file_url_to_path(file_url: str) -> Path:
-    assert file_url.startswith("file://")
-
-    if sys.platform == "win32":
-        if file_url.startswith("file:///"):
-            # File on this computer: 'file:///C:/Users/Akuli/Foo%20Bar.txt'
-            return Path(url2pathname(file_url[8:]))
-        else:
-            # Network share: 'file://Server2/Share/Test/Foo%20Bar.txt'
-            return Path(url2pathname(file_url[5:]))
-    else:
-        # 'file:///home/akuli/foo%20bar.txt'
-        return Path(url2pathname(file_url[7:]))
 
 
 # Using these with subprocess prevents opening unnecessary cmd windows
@@ -155,6 +127,11 @@ def find_project_root(project_file_path: Path) -> Path:
     return likely_root or project_file_path.parent
 
 
+# https://github.com/python/typing/issues/769
+def _copy_type(f: _T) -> Callable[[Any], _T]:
+    return lambda x: x
+
+
 class PanedWindow(tkinter.PanedWindow):
     """Like :class:`tkinter.PanedWindow`, but uses Ttk colors.
 
@@ -162,7 +139,7 @@ class PanedWindow(tkinter.PanedWindow):
     control the sizes of the panes.
     """
 
-    @copy_type(tkinter.PanedWindow.__init__)
+    @_copy_type(tkinter.PanedWindow.__init__)
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # even non-ttk widgets can handle <<ThemeChanged>>
@@ -734,7 +711,7 @@ def run_in_thread(
     root.after_idle(check)
 
 
-@copy_type(open)
+@_copy_type(open)
 @contextlib.contextmanager
 def backup_open(file: Any, *args: Any, **kwargs: Any) -> Any:
     """Like :func:`open`, but uses a backup file if needed.
