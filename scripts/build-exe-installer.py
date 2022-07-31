@@ -115,7 +115,9 @@ else:
             "icon.res",
             "metadata.res",
             "-luser32",
-            "-Wl,--subsystem,windows",  # https://stackoverflow.com/a/37409970
+            # https://stackoverflow.com/a/37409970
+            # https://stackoverflow.com/q/64911334
+            "-Wl,/subsystem:windows",
         ],
         cwd="build/launcher",
     )
