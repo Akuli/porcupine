@@ -4,7 +4,7 @@ Not everything should be an util: for example, if it's only used in one file,
 then it should be defined in that file. Specifically, I believe everything in
 this file should have most of these properties:
 
-* Compared to the rest of Porcupine, the util does something difficult, ugly or tricky.
+* The util is a lot of code or it does something that is hard to get right.
 * The util is used in multiple files.
 * The util is significantly easier to use than just doing what it does internally.
 * The util and its usages as a whole should be less code than what would be needed without the util.
