@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2022.07.31
 
 Porcupine now uses [calver](https://calver.org/):
 from now on, a Porcupine version is simply its release date in the "year.month.day" format.

@@ -260,7 +260,7 @@ Other people shouldn't need them.
     changing the changelog afterwards is difficult, as the text gets copied into the releases page.
 3. Merge the pull request and pull the merge commit to your local `master` branch.
 4. Run `python3 scripts/release.py` from the `master` branch.
-    The script pushes a tag named e.g. `v2022.07.29`,
+    The script pushes a tag named e.g. `v2022.07.31`,
     which triggers the parts of `.github/workflows/build.yml`
     that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
     They build and deploy docs, copy the changelog to the releases page, and so on.
