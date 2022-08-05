@@ -162,6 +162,8 @@ def find_git_root(path: Path) -> Path | None:
 def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
     old_git = find_git_root(old_path)
     new_git = find_git_root(new_path)
+
+    git_mv_worked = False
     if old_git is not None and new_git is not None and old_git == new_git:
         log.info(f"attemting 'git mv' ({old_path} --> {new_path})")
         try:
@@ -170,19 +172,20 @@ def move_with_git_or_otherwise(old_path: Path, new_path: Path) -> bool:
                 cwd=old_path.parent,
                 **utils.subprocess_kwargs,
             )
-            return True
+            git_mv_worked = True
         except (OSError, subprocess.CalledProcessError):
             # Happens when:
             #   - git not installed
             #   - old_path is not 'git add'ed
             pass
 
-    log.info(f"moving without git ({old_path} --> {new_path})")
-    try:
-        shutil.move(str(old_path), str(new_path))
-    except OSError as e:
-        show_error("Moving failed", f"Cannot move {old_path} to {new_path}.", e)
-        return False
+    if not git_mv_worked:
+        log.info(f"moving without git ({old_path} --> {new_path})")
+        try:
+            shutil.move(str(old_path), str(new_path))
+        except OSError as e:
+            show_error("Moving failed", f"Cannot move {old_path} to {new_path}.", e)
+            return False  # give up
 
     for tab in find_tabs_by_parent_path(old_path):
         assert tab.path is not None
