@@ -180,7 +180,7 @@ I have tried to make contributing easy:
     There are also checks running on GitHub Actions.
 
 You can talk with me on GitHub issues,
-or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
+or chat at [##learnpython on the libera IRC server](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
 I am on ##learnpython at about 6PM to 9PM UTC.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
