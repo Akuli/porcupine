@@ -1,6 +1,7 @@
 import subprocess
 import sys
 
+
 # I currently don't think the new highlight plugin needs lots of tests.
 # If highlight plugin doesn't work, it's usually quite obvious after using it a while.
 #

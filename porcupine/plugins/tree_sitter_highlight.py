@@ -3,16 +3,16 @@
 # TODO: tree-sitter segfault: install from github with pip, import in >>> prompt, Ctrl+D
 from __future__ import annotations
 
-import platform
 import dataclasses
 import logging
+import platform
 import reprlib
 import sys
 import tkinter
 import zlib
-from zipfile import ZipFile
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+from zipfile import ZipFile
 
 from tree_sitter import Language, Node, Parser, Tree, TreeCursor  # type: ignore[import]
 
@@ -59,7 +59,9 @@ def prepare_binary() -> None:
             zipfile.extract(info, BINARY_PATH.parent)
         else:
             if crc != info.CRC:
-                log.warning(f"binary has changed after extracting (CRC mismatch), extracting again: {BINARY_PATH}")
+                log.warning(
+                    f"binary has changed after extracting (CRC mismatch), extracting again: {BINARY_PATH}"
+                )
                 zipfile.extract(info, BINARY_PATH.parent)
 
 
