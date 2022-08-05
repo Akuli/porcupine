@@ -7,7 +7,7 @@ jobs:
   build-binary:
     strategy:
       matrix:
-        platform: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        platform: ["ubuntu-latest"]
     runs-on: ${{ matrix.platform }}-latest
     steps:
       - run: echo hello
