@@ -1,6 +1,6 @@
 # See scripts/build-tree-sitter-binary.py for documentation on what this does and why.
 # To run this, use the "Run workflow" button here:
-# https://github.com/Akuli/porcupine/actions/workflows/tree-sitter-binary.yml
+# https://github.com/Akuli/porcupine/actions/workflows/tree-sitter-binaries.yml
 
 on:
   workflow_dispatch:
