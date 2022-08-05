@@ -5,6 +5,9 @@ on:
 
 jobs:
   build-binary:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest", "windows-latest", "macos-latest"]
+    runs-on: ${{ matrix.platform }}-latest
     steps:
       - run: echo hello
