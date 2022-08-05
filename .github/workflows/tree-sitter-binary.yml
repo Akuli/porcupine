@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         platform: ["ubuntu-latest", "windows-latest", "macos-latest"]
-    runs-on: ${{ matrix.platform }}-latest
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
