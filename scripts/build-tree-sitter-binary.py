@@ -30,13 +30,15 @@ with Path(__file__).absolute().with_name("tree-sitter-syntax-repos.txt").open() 
         syntax_dirs.append(target_dir)
 
 extension = {"win32": ".dll", "darwin": ".dylib", "linux": ".so"}[sys.platform]
-binary_filename = f"syntax-binary-{sys.platform}-{platform.machine()}{extension}"
+binary_filename = f"tree-sitter-binary-{sys.platform}-{platform.machine()}{extension}"
 print("Building", binary_filename)
 
-# Build to a temporary file first, because otherwise we end up with three files for some reason:
+# Build to a temporary file first, because for some reason we end up with three files:
 #
-#   syntax-binary-win32-x86_64.dll    <-- this is the only file we need
-#   syntax-binary-win32-x86_64.exp
-#   syntax-binary-win32-x86_64.lib
-Language.build_library("build/out" + extension, syntax_dirs)
-shutil.copy("build/out" + extension, binary_filename)
+#   tree-sitter-binary-win32-AMD64.dll    <-- this is the only file we need
+#   tree-sitter-binary-win32-AMD64.exp
+#   tree-sitter-binary-win32-AMD64.lib
+#
+# Other files will stay in build.
+Language.build_library("build/" + binary_filename, syntax_dirs)
+shutil.copy("build/" + binary_filename, binary_filename)
