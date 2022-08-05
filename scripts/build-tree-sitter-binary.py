@@ -1,11 +1,13 @@
 """
 One of Porcupine's two syntax highlighter plugins uses py-tree-sitter.
 py-tree-sitter wants to use a C compiler to build language definitions.
-This is great, because it makes py-tree-sitter fast, except that most Porcupine users don't have a C compiler.
+This makes py-tree-sitter fast, but most Porcupine users don't have a C compiler.
 
 This script does all things that need C compiler.
 It produces a platform-specific binary file.
-Use GitHub Actions to easily run this script on Windows, MacOS and Linux.
+To run this script on multiple platforms and make a PR of the results,
+use the "Run workflow" button here:
+https://github.com/Akuli/porcupine/actions/workflows/tree-sitter-binary.yml
 """
 # TODO: create the github action and update instructions here
 import platform
