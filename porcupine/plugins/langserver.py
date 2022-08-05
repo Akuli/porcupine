@@ -17,6 +17,7 @@ import threading
 from functools import partial
 from pathlib import Path
 from typing import IO, Any, Iterator, Optional
+from urllib.request import url2pathname
 
 if sys.platform != "win32":
     import fcntl
@@ -183,6 +184,23 @@ def _position_lsp2tk(lsp_position: lsp.Position) -> str:
     return f"{lsp_position.line + 1}.{lsp_position.character}"
 
 
+# There doesn't seem to be standard library trick that works in all cases
+# https://stackoverflow.com/q/5977576
+def _file_url_to_path(file_url: str) -> Path:
+    assert file_url.startswith("file://")
+
+    if sys.platform == "win32":
+        if file_url.startswith("file:///"):
+            # File on this computer: 'file:///C:/Users/Akuli/Foo%20Bar.txt'
+            return Path(url2pathname(file_url[8:]))
+        else:
+            # Network share: 'file://Server2/Share/Test/Foo%20Bar.txt'
+            return Path(url2pathname(file_url[5:]))
+    else:
+        # 'file:///home/akuli/foo%20bar.txt'
+        return Path(url2pathname(file_url[7:]))
+
+
 # TODO: do this better in sansio-lsp-client
 def _get_jump_paths_and_ranges(
     locations: list[lsp.Location | lsp.LocationLink] | lsp.Location | None,
@@ -194,7 +212,7 @@ def _get_jump_paths_and_ranges(
 
     for location in locations:
         assert not isinstance(location, lsp.LocationLink)  # TODO
-        yield (utils.file_url_to_path(location.uri), location.range)
+        yield (_file_url_to_path(location.uri), location.range)
 
 
 def _get_diagnostic_string(diagnostic: lsp.Diagnostic) -> str:

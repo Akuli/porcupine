@@ -3,7 +3,6 @@ import shutil
 import subprocess
 import sys
 import typing
-from pathlib import Path
 
 import pytest
 
@@ -116,13 +115,3 @@ def test_format_command():
         assert utils.format_command(path + " {file}", {"file": "tetris.py"}) == [path, "tetris.py"]
     else:
         assert utils.format_command(r"foo\ bar", {}) == ["foo bar"]
-
-
-def test_file_url_to_path():
-    if sys.platform == "win32":
-        paths = [Path(r"\\Server\Share\Test\Foo Bar.txt"), Path(r"C:\Users\Akuli\Foo Bar.txt")]
-    else:
-        paths = [Path("/home/akuli/Foo Bar.txt")]
-
-    for path in paths:
-        assert utils.file_url_to_path(path.as_uri()) == path

@@ -16,24 +16,29 @@ class Response(utils.EventDataclass):
 class HoverManager:
     def __init__(self, textwidget: tkinter.Text):
         self._textwidget = textwidget
-        self._label: tkinter.Label | None = None
-        self._location = textwidget.index("insert")
-
-    def hide_label(self, junk: object = None) -> None:
-        if self._label is not None:
-            self._label.destroy()
-            self._label = None
-
-    def _show_label(self, message: str) -> None:
-        self.hide_label()
         self._label = tkinter.Label(
             self._textwidget,
-            text=message,
             justify="left",
             # some hack to get a fitting popup bg
             bg=utils.mix_colors(self._textwidget["bg"], self._textwidget["fg"], 0.8),
             fg=self._textwidget["fg"],
         )
+        self._location = textwidget.index("insert")
+        self._after_id: str | None = None
+
+    def hide_label(self, junk: object = None) -> None:
+        if self._after_id:
+            self._textwidget.after_cancel(self._after_id)
+
+        self._label.place_forget()
+
+    def _show_label(self, message: str) -> None:
+        self.hide_label()
+
+        self._label.configure(
+            text=message, wraplength=1000  # place_popup will adjust the wraplength
+        )
+
         textutils.place_popup(
             self._textwidget,
             self._label,
@@ -46,7 +51,9 @@ class HoverManager:
         if self._location != location:
             self._location = location
             self.hide_label()
-            self._textwidget.event_generate("<<HoverRequest>>", data=location)
+            self._after_id = self._textwidget.after(
+                500, lambda: self._textwidget.event_generate("<<HoverRequest>>", data=location)
+            )
 
     def on_mouse_move(self, junk_event: object) -> None:
         self._request_hover(self._textwidget.index("current"))

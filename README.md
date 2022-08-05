@@ -53,7 +53,7 @@ Open a terminal and run these commands:
     python3 -m pip install --user --upgrade pip wheel
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.99.2.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v2022.07.31.zip
     porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
@@ -74,7 +74,7 @@ Then run these commands:
     python3 -m pip install --user --upgrade pip wheel
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v0.99.2.zip
+    python3 -m pip install https://github.com/Akuli/porcupine/archive/v2022.07.31.zip
     porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
@@ -166,8 +166,7 @@ I have tried to make contributing easy:
     I have written most issues so that I understand what I wrote,
     and if you are new to Porcupine, you likely need a longer explanation to understand what the problem is.
 - Don't worry about asking too many questions!
-    It's not annoying, and if you create several pull requests after I answer all your questions,
-    I think answering the questions was definitely worth it.
+    It's not annoying. I like interacting with other programmers.
 - There is not much boilerplate involved in the contributing process.
     You just create a pull request and that's it.
     You can choose an issue and start working on it, without prior permission.
@@ -181,7 +180,7 @@ I have tried to make contributing easy:
     There are also checks running on GitHub Actions.
 
 You can talk with me on GitHub issues,
-or chat at [##learnpython on libera](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
+or chat at [##learnpython on the libera IRC server](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython).
 I am on ##learnpython at about 6PM to 9PM UTC.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
@@ -247,15 +246,26 @@ Other commands you may find useful:
 - `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
   Open `docs/build/index.html` in your favorite browser to view it.
 
-I also use these commands, but **I don't recommend running these yourself.**
-Instead, ask me to run them if you need to.
-- `python3 scripts/release.py major_or_minor_or_patch` increments the version number and
-  runs all the commands needed for doing a new Porcupine release. Run it from
-  inside a virtualenv with master or bugfix-release branch checked out in git,
-  and with `CHANGELOG.md` updated. The argument works like this:
-    - `major`: version goes `0.bla.bla --> 1.0.0` (porcupine becomes stable)
-    - `minor`: version goes `0.71.4 --> 0.72.0` (backwards-incompatible changes)
-    - `patch`: version goes `0.71.3 --> 0.71.4` (bug fixes without breaking compatibility)
 
-  Docs and Windows exe are built automatically after running the release script
-  (see `.github/workflows/on-release.yml`), but `porcupine.wiki` may need manual updating.
+## Releasing Porcupine
+
+These instructions are meant for Porcupine maintainers.
+Other people shouldn't need them.
+
+1. Update `CHANGELOG.md` based on Git logs (e.g. `git log --all --oneline --graph`).
+    You should add a new section to the beginning with `Unreleased` instead of a version number.
+    Don't split the text to multiple lines any more than is necessary,
+    as that won't show up correctly on GitHub's releases page.
+2. Make a pull request of your changelog edits. Review carefully:
+    changing the changelog afterwards is difficult, as the text gets copied into the releases page.
+3. Merge the pull request and pull the merge commit to your local `master` branch.
+4. Run `python3 scripts/release.py` from the `master` branch.
+    The script pushes a tag named e.g. `v2022.07.31`,
+    which triggers the parts of `.github/workflows/build.yml`
+    that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
+    They build and deploy docs, copy the changelog to the releases page, and so on.
+5. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
+
+If you want, you can also do a release from a branch named `bugfix-release` instead of `master`.
+This is useful if you fixed a bug that made Porcupine unusable for someone,
+but the new features on `master` aren't ready for releasing yet.

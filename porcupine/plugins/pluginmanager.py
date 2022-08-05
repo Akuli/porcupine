@@ -247,6 +247,7 @@ def show_dialog() -> None:
     global dialog
     if dialog is not None and dialog.winfo_exists():
         dialog.lift()
+        dialog.focus()
     else:
         dialog = create_dialog()[0]
 

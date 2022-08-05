@@ -1,3 +1,4 @@
+import hashlib
 import io
 import os
 import shutil
@@ -20,19 +21,16 @@ assert sys.platform == "win32"
 assert 8 * struct.calcsize("P") == 64
 
 
-def delete(path):
-    if path.is_file():
-        path.unlink()
-    else:
-        shutil.rmtree(path)
-
-
 try:
     os.mkdir("build")
+    print("Created directory: build")
 except FileExistsError:
     print("Found existing build directory, deleting contents")
     for path in list(Path("build").glob("*")):
-        delete(path)
+        if path.is_file():
+            path.unlink()
+        else:
+            shutil.rmtree(path)
 
 
 print("Downloading Python")
@@ -45,6 +43,16 @@ print(url)
 response = requests.get(url)
 response.raise_for_status()
 zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/python-first")
+
+print("Downloading NSIS")
+url = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08.zip"
+print(url)
+response = requests.get(url)
+response.raise_for_status()
+zip_hash = hashlib.sha256(response.content).hexdigest()
+assert zip_hash == "1bb9fc85ee5b220d3869325dbb9d191dfe6537070f641c30fbb275c97051fd0c"
+zipfile.ZipFile(io.BytesIO(response.content)).extractall("build")
+
 
 print("Copying files")
 
@@ -85,14 +93,10 @@ metadata_file.write_text(
 print("Converting logo to .ico format")
 PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
-# If you can't get a C compiler to work (with windres):
-#   1. Download a Porcupine installer from GitHub and install Porcupine
-#   2. Copy C:\Users\YourName\AppData\Local\Programs\Porcupine\Python\Porcupine.exe
-#      to where you cloned Porcupine
-#   3. Uninstall Porcupine
-if os.path.exists("Porcupine.exe"):
-    print("Porcupine.exe found, no C compiler needed")
-    shutil.copy("Porcupine.exe", "build/launcher/")
+# If you can't get a C compiler to work, you can install an older version of Porcupine and copy
+# its Porcupine.exe to launcher/Porcupine.exe
+if os.path.exists("build/launcher/Porcupine.exe"):
+    print("Found launcher/Porcupine.exe, no C compiler needed")
 else:
     print("Porcupine.exe was not found, compiling")
     subprocess.check_call(
@@ -103,14 +107,17 @@ else:
     )
     subprocess.check_call(
         [
-            "gcc.exe",
+            "clang.exe",
             "-municode",
-            "-mwindows",
             "-o",
             "Porcupine.exe",
             "main.c",
             "icon.res",
             "metadata.res",
+            "-luser32",
+            # https://stackoverflow.com/a/37409970
+            # https://stackoverflow.com/q/64911334
+            "-Wl,/subsystem:windows",
         ],
         cwd="build/launcher",
     )
@@ -120,7 +127,6 @@ subprocess.check_call(
     [
         "pip",
         "install",
-        "--use-feature=in-tree-build",  # TODO: delete once pip new enough to not show warning without this
         "--target=build/python-second",
         ".",
         "setuptools",  # pyls needs pkg_resources from setuptools, don't know why need explicitly
@@ -130,7 +136,7 @@ subprocess.check_call(
 print("Deleting __pycache__ directories")
 for path in list(Path("build/python-second").rglob("__pycache__")):
     print(path)
-    delete(path)
+    shutil.rmtree(path)
 
 print("Moving files")
 shutil.move("build/launcher/Porcupine.exe", "build/python-second/Porcupine.exe")
@@ -155,8 +161,7 @@ extensions = [
 ]
 print(extensions)
 
-# makensis is not in PATH when nsis is installed without scoop
-makensis = shutil.which("makensis") or r"C:\Program Files (x86)\NSIS\makensis.exe"
+makensis = os.path.abspath("build/nsis-3.08/makensis.exe")
 print(f"Running {makensis}")
 subprocess.check_call(
     [

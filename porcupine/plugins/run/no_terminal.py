@@ -69,6 +69,7 @@ class Executor:
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
         self.started = False
+        self.paused = False
         self._thread: threading.Thread | None = None
 
     def run(self, command: str) -> None:
@@ -89,6 +90,10 @@ class Executor:
         self._thread.start()
         self._poll_queue_and_put_to_textwidget()
         self.started = True
+
+    @property
+    def running(self) -> bool:
+        return self._shell_process is not None and self._shell_process.poll() is None
 
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
         self._queue.put(("info", command + "\n"))
@@ -160,6 +165,22 @@ class Executor:
             self._handle_queued_item(message_type, text)
 
         self._timeout_id = self._textwidget.after(50, self._poll_queue_and_put_to_textwidget)
+
+    def send_signal(self, signal: signal.Signals) -> None:
+        if self._shell_process is None:
+            return
+
+        try:
+            process = psutil.Process(self._shell_process.pid)
+            process.send_signal(signal)
+            for child in process.children():
+                try:
+                    child.send_signal(signal)
+                except psutil.NoSuchProcess:
+                    pass
+
+        except (psutil.NoSuchProcess, ProcessLookupError):
+            pass
 
     def stop(self, *, quitting: bool = False) -> None:
         if self._timeout_id is not None:
@@ -249,6 +270,9 @@ class NoTerminalRunner:
             option_name="run_output_pygments_style",
         )
 
+        self.pause_button = ttk.Label(button_frame, image=images.get("pause"), cursor="hand2")
+        if sys.platform != "win32":
+            self.pause_button.pack(side="left", padx=1)
         self.stop_button = ttk.Label(button_frame, image=images.get("stop"), cursor="hand2")
         self.stop_button.pack(side="left", padx=1)
         self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"), cursor="hand2")
@@ -258,13 +282,30 @@ class NoTerminalRunner:
         if self.executor is not None:
             self.executor.stop(quitting=quitting)
 
+    def pause_resume_executor(self, junk: object = None) -> None:
+        if sys.platform != "win32" and self.executor is not None and self.executor.running:
+            if self.executor.paused:
+                self.executor.send_signal(signal.SIGCONT)
+                self.executor.paused = False
+                self.pause_button.configure(image=images.get("pause"))
+            else:
+                self.executor.send_signal(signal.SIGSTOP)
+                self.executor.paused = True
+                self.pause_button.configure(image=images.get("resume"))
+
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
 
         filename, lineno = (value for value in match.groups() if value is not None)
         path = self.executor.cwd / filename  # doesn't use cwd if filename is absolute
-        if not path.is_file():
+
+        try:
+            if not path.is_file():
+                return None
+        except OSError:
+            # e.g. filename too long
             return None
+
         return partial(open_file_with_line_number, path, int(lineno))
 
     def run_command(self, cwd: Path, command: str) -> None:
@@ -279,6 +320,7 @@ class NoTerminalRunner:
         self.textwidget.delete("1.0", "end")
         self.textwidget.config(state="disabled")
         self._link_manager.delete_all_links()  # prevent memory leak
+        self.pause_button.configure(image=images.get("pause"))
 
         self.executor = Executor(cwd, self.textwidget, self._link_manager)
         self.executor.run(command)
@@ -310,7 +352,12 @@ def setup() -> None:
 
     runner.hide_button.bind("<Button-1>", toggle_visible, add=True)
     runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
+    runner.pause_button.bind("<Button-1>", runner.pause_resume_executor, add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
+    if sys.platform != "win32":
+        menubar.get_menu("Run").add_command(
+            label="Pause/resume process", command=runner.pause_resume_executor
+        )
     menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
 

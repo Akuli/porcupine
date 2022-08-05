@@ -85,6 +85,64 @@ if sys.platform != "win32":
         assert get_output().count("\N{replacement character}") == 2
 
 
+def there_are_links():
+    return bool(no_terminal.runner.textwidget.tag_ranges("link"))
+
+
+def click_last_link():
+    assert there_are_links()
+    textwidget = no_terminal.runner.textwidget
+    textwidget.mark_set("current", "link.last - 1 char")
+    no_terminal.runner._link_manager._open_link(None)
+    return get_tab_manager().select().textwidget.get("sel.first", "sel.last")
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="windows users are sometimes admins, so no inaccessible paths to test with",
+)
+def test_inaccessible_filename(filetab, tmp_path, wait_until):
+    filetab.textwidget.insert("end", r"print('/root/s3kr3t.txt:123: hello')")
+    filetab.save_as(tmp_path / "lol.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
+    # Doesn't really matter whether it's highlighted or not, as long as it didn't crash
+    wait_until(lambda: "The process completed successfully." in get_output())
+
+
+def test_random_bytes_interpreted_as_very_long_filename_bug(filetab, tmp_path, wait_until):
+    filetab.textwidget.insert(
+        "end",
+        r"""
+print(bytes.fromhex('''
+ffffffffffffffffffffffffffffffff57cc11aea00f1d1238
+caf9520645b9318644629efae43bcb2e42a7ae6d80fd87e7ab
+381d7252c5bc217dbdbc08f65ff1fd4beec736350ca507c16e
+cd1d7884c14259e40e6a9f681781c85f278dd84ac3947ac51c
+c4ba66caa4303575dd315e9291c9f3df17f433ea12a45d950c
+bbcee6ada3a9ae81e7b2825d90c2fe6f75443f7dfabe7fc095
+bf8129b8c074c96f5330805cf6707d9191b194ec651dd467e5
+a0312e9fdf96a3b242dda57893de3cb588b8eba4f79a43629c
+bc7698e4a51876c804464b5a28f667d16d0a7bbf7439f2d2d3
+4c42cfe9ca16d716cb8b067ef836160343a79ead656b0e6155
+ef2a3fc785a8bffd7cc5ef399e083238d03af67d0c7da82484
+3ffb32aa68f6d42422e7ba0db4d7065a0958ab8ab36fca74c6
+e9dc410138d6e707e6f16e3a6bebce07b8c0ae21d8385e9496
+9ef4a18cccd6ea3b11ad488700e6bb4f05d1790005b3316808
+70106d8ea14be82a0dbf128e10df95f11c65516cf76cd2221c
+81c87ddafeeeba9eac8b1bdf1e92fc52309c6956e00fca5e05
+e3ae4f0a8bf21e48847b815f129cf3acd7d7f3caa823eb3a33
+33b487f9dac56ca370099425e988e42367296130eda2d48622
+96bd5bfa3321828528976c398a84e127e190b19c3001466ecd
+dc065ff9749eb33cb5276899ce5fd0dcb8631eec2c96f3daa9
+'''))
+""",
+    )
+    filetab.save_as(tmp_path / "lol.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
+    wait_until(lambda: "The process completed successfully." in get_output())
+    assert not there_are_links()
+
+
 def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_until):
     (tmp_path / "a.py").write_text("print('aaa')")
     (tmp_path / "b.py").write_text("print('bbb')")
@@ -118,13 +176,6 @@ def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_
     tabmanager.select(b)
     get_main_window().event_generate("<<Run:Repeat0>>")
     wait_until(lambda: "bbb" in get_output())
-
-
-def click_last_link():
-    textwidget = no_terminal.runner.textwidget
-    textwidget.mark_set("current", "link.last - 1 char")
-    no_terminal.runner._link_manager._open_link(None)
-    return get_tab_manager().select().textwidget.get("sel.first", "sel.last")
 
 
 def test_python_error_message(filetab, tabmanager, tmp_path, wait_until):
@@ -378,12 +429,27 @@ def test_smashing_f5(tmp_path, wait_until, use_after_idle):
     assert rest == "Hello\nThe process completed successfully."
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="can't pause processes on windows")
+def test_pause_resume_button(tmp_path, wait_until):
+    (tmp_path / "sleeper.py").write_text(
+        "import time; print('before'); time.sleep(0.5); print('after')"
+    )
+    no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
+    wait_until(lambda: "before" in get_output())
+    no_terminal.runner.pause_button.event_generate("<Button-1>")
+    sleep_end = time.time() + 1
+    wait_until(lambda: time.time() > sleep_end)
+    assert "after" not in get_output()
+    no_terminal.runner.pause_button.event_generate("<Button-1>")
+    wait_until(lambda: "after" in get_output())
+
+
 def test_stop_button(tmp_path, wait_until):
     (tmp_path / "sleeper.py").write_text("import time; print('started'); time.sleep(10)")
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "started" in get_output())
     no_terminal.runner.stop_button.event_generate("<Button-1>")
-    wait_until(lambda: "started\nKilled.")
+    wait_until(lambda: "started\nKilled." in get_output())
 
 
 def test_stop_button_pressed_after_finished(tmp_path, wait_until):

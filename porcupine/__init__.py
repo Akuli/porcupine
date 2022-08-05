@@ -11,8 +11,8 @@ import sys
 
 import appdirs
 
-version_info = (0, 99, 2)  # this is updated with scripts/release.py
-__version__ = "%d.%d.%d" % version_info
+version_info = (2022, 7, 31)  # this is updated with scripts/release.py
+__version__ = "%d.%02d.%02d" % version_info
 __author__ = "Akuli"
 __copyright__ = "Copyright (c) 2017-2022 Akuli"
 __license__ = "MIT"
@@ -26,11 +26,11 @@ else:
 # Must be after creating dirs
 from porcupine import _state
 
-# TODO: document get_*_panedwindow
 get_main_window = _state.get_main_window
 get_parsed_args = _state.get_parsed_args
-get_horizontal_panedwindow = _state.get_horizontal_panedwindow
-get_vertical_panedwindow = _state.get_vertical_panedwindow
+get_horizontal_panedwindow = _state.get_horizontal_panedwindow  # TODO: document this
+get_vertical_panedwindow = _state.get_vertical_panedwindow  # TODO: document this
 get_tab_manager = _state.get_tab_manager
 filedialog_kwargs = _state.filedialog_kwargs
+add_quit_callback = _state.add_quit_callback
 quit = _state.quit

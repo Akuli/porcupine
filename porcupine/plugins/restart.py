@@ -3,7 +3,8 @@ import logging
 import pickle
 from pathlib import Path
 
-from porcupine import dirs, get_main_window, get_tab_manager
+from porcupine import add_quit_callback, dirs, get_tab_manager, settings
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -14,24 +15,36 @@ STATE_FILE = Path(dirs.user_cache_dir) / "restart_state.pkl"
 setup_after = ["ttk_themes"]
 
 
-def save_states(junk: object) -> None:
+def quit_callback() -> bool:
     file_contents = []
-    selected_tab = get_tab_manager().select()
 
-    for tab in get_tab_manager().tabs():
-        state = tab.get_state()
-        if state is not None:
-            file_contents.append(
-                {"tab_type": type(tab), "tab_state": state, "selected": (tab == selected_tab)}
-            )
+    if global_settings.get("remember_tabs_on_restart", bool):
+        selected_tab = get_tab_manager().select()
+        for tab in get_tab_manager().tabs():
+            state = tab.get_state()
+            if state is not None:
+                file_contents.append(
+                    {"tab_type": type(tab), "tab_state": state, "selected": (tab == selected_tab)}
+                )
+    else:
+        # Ask user to save changes in open tabs. They will soon be gone.
+        for tab in get_tab_manager().tabs():
+            if not tab.can_be_closed():
+                return False
 
     with STATE_FILE.open("wb") as file:
         pickle.dump(file_contents, file)
+    return True
 
 
 def setup() -> None:
+    global_settings.add_option("remember_tabs_on_restart", default=True)
+    settings.add_checkbutton(
+        "remember_tabs_on_restart", text="Remember open tabs when Porcupine is closed and reopened"
+    )
+
     # this must run even if loading tabs from states below fails
-    get_main_window().bind("<<PorcupineQuit>>", save_states, add=True)
+    add_quit_callback(quit_callback)
 
     try:
         with STATE_FILE.open("rb") as file:
