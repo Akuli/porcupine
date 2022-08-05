@@ -1,16 +1,16 @@
-# TODO: integrate compile step, aka build.py, to editor
 # TODO: docs for config file stuff
 # TODO: "big files = slow" issue not entirely highlighter's fault, try mypy/checker.py with highlighter disabled
 # TODO: tree-sitter segfault: install from github with pip, import in >>> prompt, Ctrl+D
-# TODO: switch to tree-sitter from pypi?
 from __future__ import annotations
 
 import dataclasses
 import logging
+import reprlib
+import sys
 import tkinter
-from typing import Optional, Callable, Any, Dict, List, Iterator, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
-from tree_sitter import Language, Parser, Tree, TreeCursor, Node  # type: ignore[import]
+from tree_sitter import Language, Node, Parser, Tree, TreeCursor  # type: ignore[import]
 
 from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins.pygments_highlight import all_token_tags
@@ -230,9 +230,7 @@ class Highlighter:
                 old_end_point=(old_end_row - 1, old_end_col),
                 new_end_point=(new_end_row - 1, new_end_col),
             )
-            self._tree = self._parser.parse(
-                self._get_file_content_for_tree_sitter(), self._tree
-            )
+            self._tree = self._parser.parse(self._get_file_content_for_tree_sitter(), self._tree)
 
         self.update_tags_of_visible_area_from_tree()
 
@@ -289,3 +287,47 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
+
+
+def tree_dumping_command_line_util():
+    """A small command-line utility to explore small programs. Useful for configuring tree-sitter.
+
+    Example:
+
+        $ cat hello.py
+        print("hello")
+
+        $ python3 -m porcupine.plugins.tree_sitter_highlight python hello.py
+        type=module text='print("hello")\n'
+          type=expression_statement text='print("hello")'
+            type=call text='print("hello")'
+              type=identifier text='print'
+              type=argument_list text='("hello")'
+                type=( text='('
+                type=string text='"hello"'
+                  type=" text='"'
+                  type=" text='"'
+                type=) text=')'
+    """
+    [program_name, language_name, filename] = sys.argv
+
+    def show_nodes(cursor, indent_level=0):
+        node = cursor.node
+        print(
+            f"{'  ' * indent_level}type={node.type} text={reprlib.repr(node.text.decode('utf-8'))}"
+        )
+
+        if cursor.goto_first_child():
+            show_nodes(cursor, indent_level + 1)
+            while cursor.goto_next_sibling():
+                show_nodes(cursor, indent_level + 1)
+            cursor.goto_parent()
+
+    parser = Parser()
+    parser.set_language(Language("build/langs.so", language_name))
+    tree = parser.parse(open(filename, "rb").read())
+    show_nodes(tree.walk())
+
+
+if __name__ == "__main__":
+    tree_dumping_command_line_util()

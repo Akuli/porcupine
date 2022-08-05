@@ -166,10 +166,7 @@ def guess_filetype(filepath: Path) -> FileType:
         if filetype is not None:
             return filetype
 
-    return {
-        "syntax_highlight_name": None,
-        "langserver": None
-    }
+    return {"syntax_highlight_name": None, "langserver": None}
 
 
 def get_filetype_for_tab(tab: tabs.FileTab) -> FileType:
