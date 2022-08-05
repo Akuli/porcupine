@@ -1,13 +1,29 @@
 # See scripts/build-tree-sitter-binary.py for documentation on what this does and why.
 
+name: Daily test
+
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+# Please keep the permissions minimal, as stubtest runs arbitrary code from pypi.
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
 
 jobs:
-  build-binary:
+  stubtest-stdlib:
+    name: Check stdlib with stubtest
+    if: github.repository == 'python/typeshed'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11-dev"]
+      fail-fast: false
+
     steps:
       - run: echo hello
