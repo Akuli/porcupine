@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.10'
       - run: pip install -r requirements.txt
-      - run: python scripts/build-tree-sitter-binary.py
+      - run: python -u scripts/build-tree-sitter-binary.py
       - uses: actions/upload-artifact@v2
         with:
           name: tree-sitter-binary-${{ matrix.platform }}
