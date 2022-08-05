@@ -1,7 +1,5 @@
 # See scripts/build-tree-sitter-binary.py for documentation on what this does and why.
 
-name: Asd asd
-
 on:
   workflow_dispatch:
   schedule:
