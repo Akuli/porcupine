@@ -3,20 +3,64 @@
 # TODO: tree-sitter segfault: install from github with pip, import in >>> prompt, Ctrl+D
 from __future__ import annotations
 
+import platform
 import dataclasses
 import logging
 import reprlib
 import sys
 import tkinter
+import zlib
+from zipfile import ZipFile
+from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 from tree_sitter import Language, Node, Parser, Tree, TreeCursor  # type: ignore[import]
 
-from porcupine import get_tab_manager, tabs, textutils, utils
+from porcupine import dirs, get_tab_manager, tabs, textutils, utils
 from porcupine.plugins.pygments_highlight import all_token_tags
 
 Point = Any
 log = logging.getLogger(__name__)
+
+
+# This must match scripts/build-tree-sitter-binary.py
+_extension = {"win32": ".dll", "darwin": ".dylib", "linux": ".so"}[sys.platform]
+BINARY_FILENAME = f"tree-sitter-binary-{sys.platform}-{platform.machine()}{_extension}"
+
+BINARY_PATH = Path(dirs.user_cache_dir) / BINARY_FILENAME
+ZIP_PATH = Path(__file__).absolute().with_name("tree-sitter-binaries.zip")
+
+
+# https://stackoverflow.com/a/2387880
+def compute_crc32(path: Path) -> int:
+    crc = 0
+    with path.open("rb") as file:
+        while True:
+            chunk = file.read(16 * 1024)
+            if not chunk:
+                break
+            crc = zlib.crc32(chunk, crc)
+    return crc
+
+
+def prepare_binary() -> None:
+    with ZipFile(ZIP_PATH) as zipfile:
+        try:
+            info = zipfile.getinfo(BINARY_FILENAME)
+        except KeyError as e:
+            raise RuntimeError("Unsupported platform. Please create an issue on GitHub.") from e
+
+        # Check if extracted already and not changed since.
+        # This way we re-extract after updating Porcupine if necessary.
+        try:
+            crc = compute_crc32(BINARY_PATH)
+        except FileNotFoundError:
+            log.warning(f"binary has not been extracted yet, extracting now: {BINARY_PATH}")
+            zipfile.extract(info, BINARY_PATH.parent)
+        else:
+            if crc != info.CRC:
+                log.warning(f"binary has changed after extracting (CRC mismatch), extracting again: {BINARY_PATH}")
+                zipfile.extract(info, BINARY_PATH.parent)
 
 
 # DONT_LOOK_INSIDE = [
@@ -153,6 +197,7 @@ class Highlighter:
             tag_name = self._config.token_mapping.get(type_name, "Token.Text")
             if isinstance(tag_name, dict):
                 tag_name = tag_name.get(node.text.decode("utf-8"), "Token.Text")
+            assert isinstance(tag_name, str)
 
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
@@ -187,8 +232,7 @@ class Highlighter:
             # TODO: doesn't seem to remove highlight tags in this case
         else:
             self._parser = Parser()
-            # TODO: load this at import time, and check in pygments plugin if this plugin imported successfully
-            self._parser.set_language(Language("build/langs.so", config.language_name))
+            self._parser.set_language(Language(str(BINARY_PATH), config.language_name))
 
         self.reparse_whole_file()
         self.update_tags_of_visible_area_from_tree()
@@ -286,10 +330,11 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
+    prepare_binary()
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
 
-def tree_dumping_command_line_util():
+def tree_dumping_command_line_util() -> None:
     """A small command-line utility to explore small programs. Useful for configuring tree-sitter.
 
     Example:
@@ -311,7 +356,7 @@ def tree_dumping_command_line_util():
     """
     [program_name, language_name, filename] = sys.argv
 
-    def show_nodes(cursor, indent_level=0):
+    def show_nodes(cursor: TreeCursor, indent_level: int = 0) -> None:
         node = cursor.node
         print(
             f"{'  ' * indent_level}type={node.type} text={reprlib.repr(node.text.decode('utf-8'))}"
@@ -324,7 +369,7 @@ def tree_dumping_command_line_util():
             cursor.goto_parent()
 
     parser = Parser()
-    parser.set_language(Language("build/langs.so", language_name))
+    parser.set_language(Language(str(BINARY_PATH), language_name))
     tree = parser.parse(open(filename, "rb").read())
     show_nodes(tree.walk())
 
