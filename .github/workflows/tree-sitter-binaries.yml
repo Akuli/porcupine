@@ -14,9 +14,8 @@ on:
     inputs:
       make-pull-request:
         type: boolean
-        description: >-
-          If false, skip making a pull request.
-          The build results can still be downloaded manually from GitHub's UI.
+        description: "Create a pull request of the results"
+  pull_request:   # Run the build to make sure it's successful, but don't make a pull request
 
 jobs:
   build-binaries:
@@ -58,7 +57,7 @@ jobs:
       - run: mv tree-sitter-binaries.zip porcupine/plugins/
       - run: rm tree-sitter-binary-*
       - run: echo ${{ github.event.inputs.make-pull-request }}
-      - if: github.event.inputs.make-pull-request == 'true'
+      - if: github.event_name == 'workflow_dispatch' && github.event.inputs.make-pull-request == 'true'
         uses: peter-evans/create-pull-request@v4
         with:
           # Commit message is "[create-pull-request] automated change" by default.
