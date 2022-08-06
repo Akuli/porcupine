@@ -64,8 +64,8 @@ def main() -> None:
         "--verbose-logger",
         help=(
             "increase verbosity for just one logger only, e.g. "
-            "--verbose-logger=porcupine.plugins.highlight "
-            "to see messages from highlight plugin"
+            "--verbose-logger=porcupine.plugins.pygments_highlight "
+            "to see messages from the Pygments syntax highlighter plugin"
         ),
     )
 
