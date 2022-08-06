@@ -55,10 +55,12 @@ class HighlighterManager:
                 self._tab.settings.set("syntax_highlighter", "pygments")
                 return  # this will be called again soon (or was called again already?)
 
+            config = self._tab.settings.get("tree_sitter", TreeSitterConfig)
+            log.info(f"creating a tree_sitter highlighter with language {config.language_name}")
             self._highlighter = TreeSitterHighlighter(
                 self._tab.textwidget,
                 self._tree_sitter_binary_path,
-                self._tab.settings.get("tree_sitter", TreeSitterConfig),
+                config,
             )
 
         else:
@@ -66,8 +68,11 @@ class HighlighterManager:
                 log.warning(
                     f"bad syntax_highlighter setting {repr(highlighter_name)}, assuming 'pygments'"
                 )
+
+            lexer_class = self._tab.settings.get("pygments_lexer", LexerMeta)
+            log.info(f"creating a pygments highlighter with lexer class {lexer_class}")
             self._highlighter = PygmentsHighlighter(
-                self._tab.textwidget, self._tab.settings.get("pygments_lexer", LexerMeta)()
+                self._tab.textwidget, lexer_class()
             )
 
         self.update_tags_of_visible_area()
