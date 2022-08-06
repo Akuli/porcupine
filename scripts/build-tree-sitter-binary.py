@@ -1,4 +1,5 @@
 # see .github/workflows/tree-sitter-binaries.yml
+import os
 import platform
 import shutil
 import sys
@@ -33,7 +34,7 @@ extension = {"win32": ".dll", "darwin": ".dylib", "linux": ".so"}[sys.platform]
 binary_filename = f"tree-sitter-binary-{sys.platform}-{platform.machine()}{extension}"
 print("Building", binary_filename)
 
-# Build to a temporary file first, because for some reason we end up with three files:
+# Build to a temporary file first, because for some reason we end up with three files on windows:
 #
 #   tree-sitter-binary-win32-AMD64.dll    <-- this is the only file we need
 #   tree-sitter-binary-win32-AMD64.exp
@@ -42,3 +43,6 @@ print("Building", binary_filename)
 # Other files will stay in build.
 Language.build_library("build/" + binary_filename, syntax_dirs)
 shutil.copy("build/" + binary_filename, binary_filename)
+
+# Sanity check: can we load a language from the new binary?
+Language(os.path.abspath(binary_filename), "python")
