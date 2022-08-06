@@ -5,7 +5,7 @@
 #
 #    https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language
 #
-# Most commonly used options (plugins may add more):
+# Most commonly used options that Porcupine comes with (plugins may add more):
 #
 #    filename_patterns
 #        List of strings with * used as wildcard, such as "*.py" to match files
@@ -30,15 +30,72 @@
 #        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
 #        matches the shebang '#!/bin/foo --bar --baz'.
 #
+#    syntax_highlighter
+#        Porcupine currently comes with two syntax highlighters that this
+#        setting chooses from:
+#
+#            "pygments"
+#                This syntax highlighter supports many different languages and
+#                it is easy to configure, but it is slow with large files. It
+#                also has known bugs that are basically impossible to fix:
+#                sometimes editing the code and reverting your edits changes how
+#                the code is highlighted.
+#
+#                Recommended for any language with small files.
+#
+#            "tree_sitter"
+#                A fast highlighter that produces consistent results as the code
+#                is being edited. However, this highlighter supports only a few
+#                languages. Several things must be done for a language to be
+#                supported, and as a user of Porcupine, you probably shouldn't
+#                try to configure this highlighter yourself; just ask me to do
+#                it instead by making an issue on GitHub.
+#
+#                Recommended for languages with large files or known bugs with
+#                the "pygments" highlighter.
+#
+#        Regardless of this setting, the color theme is always taken from
+#        Pygments, because there are many Pygments themes and it is easy to get
+#        them to work with other highlighting libraries. The theme can be
+#        changed in Porcupine Settings (in the Settings menu).
+#
 #    pygments_lexer (default: "pygments.lexers.TextLexer")
-#        Name of a Pygments lexer class that will be used for syntax
-#        highlighting. See the Pygments documentation for lexers that Pygments
-#        comes with:
+#        If syntax_highlighter is set to "pygments", this should be the name of
+#        a Pygments lexer class that will be used for syntax highlighting. See
+#        the Pygments documentation for lexers that Pygments comes with:
 #
 #            https://pygments.org/docs/lexers/
 #
 #    tree_sitter
-#        TODO: document
+#        Configuration for the "tree_sitter" syntax highlighter. You can look
+#        at the examples below to figure out how it works, or ask me to
+#        document it better.
+#
+#        The tree-sitter highlighter plugin has a command-line interface for
+#        exploring the structure of programs:
+#
+#            $ cat hello.py
+#            print("hello")
+#
+#            $ python3 -m porcupine.plugins.tree_sitter_highlight python hello.py
+#            type=module text='print("hello")\n'
+#              type=expression_statement text='print("hello")'
+#                type=call text='print("hello")'
+#                  type=identifier text='print'
+#                  type=argument_list text='("hello")'
+#                    type=( text='('
+#                    type=string text='"hello"'
+#                      type=" text='"'
+#                      type=" text='"'
+#                    type=) text=')'
+#
+#        You can then use the output to write syntax-highlighting rules. For
+#        example, a type=identifier token with text='print' should be colored as
+#        a built-in function, which is why below in this file you will find:
+#
+#            [Python.tree_sitter.token_mapping.identifier]
+#            ...
+#            print = "Token.Name.Builtin"
 #
 #    tabs2spaces (default: true)
 #        If this is true, then spaces will be used for indentation.

@@ -1,4 +1,8 @@
-"""Syntax highlighting."""
+"""Syntax highlighting.
+
+This plugin only highlights file types that have syntax_highlighter set to
+"pygments" in filetypes.toml.
+"""
 from __future__ import annotations
 
 import itertools

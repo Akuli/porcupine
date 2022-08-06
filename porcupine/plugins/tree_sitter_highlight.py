@@ -1,6 +1,9 @@
-# TODO: docs for config file stuff
-# TODO: "big files = slow" issue not entirely highlighter's fault, try mypy/checker.py with highlighter disabled
-# TODO: tree-sitter segfault: install from github with pip, import in >>> prompt, Ctrl+D
+"""Syntax highlighting.
+
+This plugin only highlights file types that have syntax_highlighter set to
+"pygments" in filetypes.toml.
+"""
+
 from __future__ import annotations
 
 import dataclasses
@@ -336,26 +339,9 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
 
+# A small command-line utility for configuring tree-sitter.
+# Documented in default_filetypes.toml.
 def tree_dumping_command_line_util() -> None:
-    """A small command-line utility to explore small programs. Useful for configuring tree-sitter.
-
-    Example:
-
-        $ cat hello.py
-        print("hello")
-
-        $ python3 -m porcupine.plugins.tree_sitter_highlight python hello.py
-        type=module text='print("hello")\n'
-          type=expression_statement text='print("hello")'
-            type=call text='print("hello")'
-              type=identifier text='print'
-              type=argument_list text='("hello")'
-                type=( text='('
-                type=string text='"hello"'
-                  type=" text='"'
-                  type=" text='"'
-                type=) text=')'
-    """
     [program_name, language_name, filename] = sys.argv
 
     def show_nodes(cursor: TreeCursor, indent_level: int = 0) -> None:
