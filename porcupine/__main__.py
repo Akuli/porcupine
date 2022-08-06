@@ -51,6 +51,7 @@ def main() -> None:
     verbose_group.add_argument(
         "-v",
         "--verbose",
+        action="store_true",
         help=(
             "print all logging messages to stderr, only warnings and errors "
             "are printed by default (but all messages always go to a log "

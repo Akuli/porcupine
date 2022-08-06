@@ -60,7 +60,7 @@ def test_log_path_printed(mocker):
     mock = mocker.patch("porcupine._logs.print")
     mock.side_effect = ZeroDivisionError  # to make it stop when it prints
     with pytest.raises(ZeroDivisionError):
-        _logs.setup(None)
+        _logs.setup()
 
     mock.assert_called_once()
     [printed] = mock.call_args[0]

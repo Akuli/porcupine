@@ -9,7 +9,7 @@ import sys
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, TextIO, cast
+from typing import Any, Sequence, TextIO, cast
 
 import porcupine
 from porcupine import dirs
@@ -62,7 +62,7 @@ def _open_log_file() -> TextIO:
     assert False  # makes mypy happy
 
 
-def setup(*, all_loggers_verbose: bool, verbose_loggers: list[str]) -> None:
+def setup(*, all_loggers_verbose: bool = False, verbose_loggers: Sequence[str] = ()) -> None:
     handlers: list[logging.Handler] = []
 
     log_file = _open_log_file()
@@ -78,8 +78,14 @@ def setup(*, all_loggers_verbose: bool, verbose_loggers: list[str]) -> None:
     if sys.stderr is not None:
         # not running in pythonw.exe, can also show something in terminal
         print_handler = logging.StreamHandler(sys.stderr)
-        print_handler.setLevel(logging.DEBUG)
-        if not all_loggers_verbose:
+        if all_loggers_verbose:
+            print_handler.setLevel(logging.DEBUG)
+        elif not verbose_loggers:
+            print_handler.setLevel(logging.WARNING)
+        else:
+            # Filter manually. It is possible to set verbosities for each logger,
+            # but that would also affect what goes to the log file, not good.
+            print_handler.setLevel(logging.DEBUG)
             print_handler.addFilter(
                 lambda record: (
                     # Always show warnings and errors
