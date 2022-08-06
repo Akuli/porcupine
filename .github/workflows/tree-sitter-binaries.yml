@@ -11,6 +11,12 @@
 
 on:
   workflow_dispatch:
+    inputs:
+      make-pull-request:
+        type: boolean
+        description: >-
+          If false, skip making a pull request.
+          The build results can still be downloaded manually from GitHub's UI.
 
 jobs:
   build-binaries:
@@ -51,7 +57,9 @@ jobs:
       - run: zip tree-sitter-binaries.zip tree-sitter-binary-*
       - run: mv tree-sitter-binaries.zip porcupine/plugins/
       - run: rm tree-sitter-binary-*
-      - uses: peter-evans/create-pull-request@v4
+      - run: echo ${{ github.event.inputs.make-pull-request }}
+      - if: github.event.inputs.make-pull-request == 'true'
+        uses: peter-evans/create-pull-request@v4
         with:
           # Commit message is "[create-pull-request] automated change" by default.
           # With just one commit on PR, it shows up on master once the PR is merged.
