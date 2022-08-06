@@ -62,16 +62,7 @@ def _open_log_file() -> TextIO:
     assert False  # makes mypy happy
 
 
-class _FilterThatDoesntHideWarnings(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        return record.levelno >= logging.WARNING or super().filter(record)
-
-
-# verbose_logger can be:
-#   - empty string (print everything)
-#   - logger name (print only messages from that logger)
-#   - None (only print errors)
-def setup(verbose_logger: str | None) -> None:
+def setup(*, all_loggers_verbose: bool, verbose_loggers: list[str]) -> None:
     handlers: list[logging.Handler] = []
 
     log_file = _open_log_file()
@@ -87,11 +78,18 @@ def setup(verbose_logger: str | None) -> None:
     if sys.stderr is not None:
         # not running in pythonw.exe, can also show something in terminal
         print_handler = logging.StreamHandler(sys.stderr)
-        if verbose_logger is None:
-            print_handler.setLevel(logging.WARNING)
-        else:
-            print_handler.setLevel(logging.DEBUG)
-            print_handler.addFilter(_FilterThatDoesntHideWarnings(verbose_logger))
+        print_handler.setLevel(logging.DEBUG)
+        if not all_loggers_verbose:
+            print_handler.addFilter(
+                lambda record: (
+                    # Always show warnings and errors
+                    record.levelno >= logging.WARNING
+                    # If --verbose-loggers=foo is passed on command line, show all messages
+                    # from loggers "foo", "foo.bar", "foo.bar.baz"
+                    or record.name in verbose_loggers
+                    or any(record.name.startswith(name + ".") for name in verbose_loggers)
+                )
+            )
         print_handler.setFormatter(logging.Formatter("%(name)s %(levelname)s: %(message)s"))
         handlers.append(print_handler)
 
