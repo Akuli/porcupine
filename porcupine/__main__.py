@@ -51,9 +51,7 @@ def main() -> None:
     verbose_group.add_argument(
         "-v",
         "--verbose",
-        dest="verbose_logger",
-        action="store_const",
-        const="",
+        action="store_true",
         help=(
             "print all logging messages to stderr, only warnings and errors "
             "are printed by default (but all messages always go to a log "
@@ -62,6 +60,7 @@ def main() -> None:
     )
     verbose_group.add_argument(
         "--verbose-logger",
+        action="append",  # Allow passing multiple times: --verbose-logger foo --verbose-logger bar
         help=(
             "increase verbosity for just one logger only, e.g. "
             "--verbose-logger=porcupine.plugins.highlight "
@@ -94,7 +93,10 @@ def main() -> None:
     Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
     (Path(dirs.user_config_dir) / "plugins").mkdir(parents=True, exist_ok=True)
     Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
-    _logs.setup(args_parsed_in_first_step.verbose_logger)
+    _logs.setup(
+        all_loggers_verbose=args_parsed_in_first_step.verbose,
+        verbose_loggers=(args_parsed_in_first_step.verbose_logger or []),
+    )
 
     settings.init_enough_for_using_disabled_plugins_list()
     if args_parsed_in_first_step.use_plugins:
