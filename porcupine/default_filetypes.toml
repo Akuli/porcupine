@@ -219,6 +219,7 @@ indent_size = 4
 max_line_length = 79   # pep8 says so, lol
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
+syntax_highlighter = "tree_sitter"
 [[Python.example_commands]]
 command = "python3 {file_name}"
 windows_command = "py {file_name}"

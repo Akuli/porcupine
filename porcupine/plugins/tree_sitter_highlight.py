@@ -1,37 +1,37 @@
 """Syntax highlighting.
 
 This plugin only highlights file types that have syntax_highlighter set to
-"pygments" in filetypes.toml.
+"tree_sitter" in filetypes.toml.
 """
 
 from __future__ import annotations
 
 import dataclasses
+import webbrowser
 import logging
 import platform
 import reprlib
 import sys
 import tkinter
 import zlib
+from functools import partial
 from pathlib import Path
+from tkinter import ttk
+from urllib.parse import quote_plus
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 from zipfile import ZipFile
 
 from tree_sitter import Language, Node, Parser, Tree, TreeCursor  # type: ignore[import]
 
 from porcupine import dirs, get_tab_manager, tabs, textutils, utils
+from porcupine.settings import global_settings
 from porcupine.plugins.pygments_highlight import all_token_tags
 
 Point = Any
 log = logging.getLogger(__name__)
 
-
-# This must match scripts/build-tree-sitter-binary.py
-_extension = {"win32": ".dll", "darwin": ".dylib", "linux": ".so"}[sys.platform]
-BINARY_FILENAME = f"tree-sitter-binary-{sys.platform}-{platform.machine()}{_extension}"
-
-BINARY_PATH = Path(dirs.user_cache_dir) / BINARY_FILENAME
-ZIP_PATH = Path(__file__).absolute().with_name("tree-sitter-binaries.zip")
+# setup() can show an error message, and the ttk theme affects that
+setup_after = ["ttk_themes"]
 
 
 # https://stackoverflow.com/a/2387880
@@ -49,26 +49,98 @@ def compute_crc32(path: Path) -> int:
     return crc
 
 
-def prepare_binary() -> None:
-    with ZipFile(ZIP_PATH) as zipfile:
+def show_unsupported_platform_error() -> None:
+    global_settings.add_option("show_tree_sitter_platform_error", default=True)
+    if not global_settings.get("show_tree_sitter_platform_error", bool):
+        return
+
+    window = tkinter.Toplevel()
+    window.title("Syntax highlighter error")
+    window.resizable(False, False)
+
+    content = ttk.Frame(window, name="content", padding=10)
+    content.pack(fill="both", expand=True)
+    content.columnconfigure(0, weight=1)
+
+    label1 = ttk.Label(
+        content,
+        text=(
+            f"Porcupine's syntax highlighter doesn't support {sys.platform} on {platform.machine()} yet."
+        ),
+        wraplength=600,
+        justify="center",
+        font="TkHeadingFont",
+    )
+    label1.pack(pady=5)
+
+    label2 = ttk.Label(
+        content,
+        text=(
+            "You can still use Porcupine."
+            + " You will even get syntax highlighting,"
+            + " because Porcupine actually has two syntax highlighters."
+            + " However, the syntax highlighter to be used as a fallback is slower and more buggy."
+            + "\n\nPlease report this by creating an issue on GitHub so that it can be fixed."
+        ),
+        wraplength=600,
+        justify="center",
+        font="TkTextFont",
+    )
+    label2.pack(pady=5)
+
+    var = tkinter.BooleanVar(value=True)
+    checkbox = ttk.Checkbutton(content, text="Show this dialog when Porcupine starts", variable=var)
+    checkbox.pack(pady=25)
+
+    issue_title = f"Syntax highlighter error: {sys.platform} on {platform.machine()}"
+    issue_url = "https://github.com/Akuli/porcupine/issues/new?title=" + quote_plus(issue_title)
+    button_frame = ttk.Frame(content)
+    button_frame.pack(fill="x")
+    ttk.Button(
+        button_frame, text="Create a GitHub issue now", command=(lambda: webbrowser.open(issue_url))
+    ).pack(side="left", expand=True, fill="x", padx=(0, 10))
+    ttk.Button(button_frame, text="Continue to Porcupine", command=window.destroy).pack(
+        side="left", expand=True, fill="x", padx=(10, 0)
+    )
+
+    window.wait_window()
+    global_settings.set("show_tree_sitter_platform_error", var.get())
+
+
+def prepare_binary() -> Path | None:
+    zip_path = Path(__file__).absolute().with_name("tree-sitter-binaries.zip")
+    with ZipFile(zip_path) as zipfile:
         try:
-            info = zipfile.getinfo(BINARY_FILENAME)
-        except KeyError as e:
-            raise RuntimeError("Unsupported platform. Please create an issue on GitHub.") from e
+            # This must match scripts/build-tree-sitter-binary.py
+            extension = {"win32": ".dll", "darwin": ".dylib", "linux": ".so"}[sys.platform]
+        except KeyError:
+            log.error(f"unsupported platform: sys.platform is {sys.platform!r}")
+            show_unsupported_platform_error()
+            return None
+
+        binary_filename = f"tree-sitter-binary-{sys.platform}-{platform.machine()}{extension}"
+        try:
+            info = zipfile.getinfo(binary_filename)
+        except KeyError:
+            log.error(f"unsupported platform: {binary_filename} not found from {zip_path}")
+            show_unsupported_platform_error()
+            return None
 
         # Check if extracted already and not changed since.
         # This way we re-extract after updating Porcupine if necessary.
+        binary_path = Path(dirs.user_cache_dir) / binary_filename
         try:
-            crc = compute_crc32(BINARY_PATH)
+            crc = compute_crc32(binary_path)
         except FileNotFoundError:
-            log.warning(f"binary has not been extracted yet, extracting now: {BINARY_PATH}")
-            zipfile.extract(info, BINARY_PATH.parent)
+            log.warning(f"binary has not been extracted yet, extracting now: {binary_path}")
+            zipfile.extract(info, binary_path.parent)
         else:
             if crc != info.CRC:
                 log.warning(
-                    f"binary has changed after extracting (CRC mismatch), extracting again: {BINARY_PATH}"
+                    f"binary has changed after extracting (CRC mismatch), extracting again: {binary_filename}"
                 )
-                zipfile.extract(info, BINARY_PATH.parent)
+                zipfile.extract(info, binary_path.parent)
+        return binary_path
 
 
 # DONT_LOOK_INSIDE = [
@@ -124,7 +196,8 @@ class Config:
 
 
 class Highlighter:
-    def __init__(self, textwidget: tkinter.Text) -> None:
+    def __init__(self, binary_path: Path, textwidget: tkinter.Text) -> None:
+        self._binary_path = binary_path
         self.textwidget = textwidget
         textutils.use_pygments_tags(self.textwidget)
         self._config: Config | None = None
@@ -237,7 +310,7 @@ class Highlighter:
             self._parser = None
         else:
             self._parser = Parser()
-            self._parser.set_language(Language(str(BINARY_PATH), config.language_name))
+            self._parser.set_language(Language(self._binary_path, config.language_name))
 
         self.recreate_the_whole_tree()
         self.update_tags_of_visible_area_from_tree()
@@ -313,8 +386,20 @@ def debounce(
     return request_running
 
 
-def on_new_filetab(tab: tabs.FileTab) -> None:
+def on_new_filetab(binary_path: Path | None, tab: tabs.FileTab) -> None:
     tab.settings.add_option("syntax_highlighter", default="pygments", exist_ok=True)
+
+    if binary_path is None:
+
+        def delegate_to_pygments(junk: object = None) -> None:
+            if tab.settings.get("syntax_highlighter", str) == "tree_sitter":
+                log.warning("Delegating to pygments highlighter")
+                tab.settings.set("syntax_highlighter", "pygments")
+
+        tab.bind("<<TabSettingChanged:syntax_highlighter>>", delegate_to_pygments, add=True)
+        delegate_to_pygments()
+        return
+
     tab.settings.add_option("tree_sitter", default=None, type_=Optional[Config])
 
     def on_config_changed(junk: object = None) -> None:
@@ -323,9 +408,9 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
         else:
             highlighter.set_config(None)
 
-    highlighter = Highlighter(tab.textwidget)
-    tab.bind("<<TabSettingChanged:tree_sitter>>", on_config_changed, add=True)
+    highlighter = Highlighter(binary_path, tab.textwidget)
     tab.bind("<<TabSettingChanged:syntax_highlighter>>", on_config_changed, add=True)
+    tab.bind("<<TabSettingChanged:tree_sitter>>", on_config_changed, add=True)
     on_config_changed()
 
     utils.bind_with_data(
@@ -342,8 +427,8 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    prepare_binary()
-    get_tab_manager().add_filetab_callback(on_new_filetab)
+    binary_path = prepare_binary()
+    get_tab_manager().add_filetab_callback(partial(on_new_filetab, binary_path))
 
 
 # A small command-line utility for configuring tree-sitter.
@@ -363,8 +448,11 @@ def tree_dumping_command_line_util() -> None:
                 show_nodes(cursor, indent_level + 1)
             cursor.goto_parent()
 
+    binary_path = prepare_binary()
+    assert binary_path is not None
+
     parser = Parser()
-    parser.set_language(Language(str(BINARY_PATH), language_name))
+    parser.set_language(Language(binary_path, language_name))
     tree = parser.parse(open(filename, "rb").read())
     show_nodes(tree.walk())
 
