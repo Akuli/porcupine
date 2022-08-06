@@ -32,6 +32,7 @@ language_id = "cpp"
 settings = {clangd = {arguments = ["-std=c++17"]}}
 """
     )
+    filetypes.filetypes.clear()
     filetypes.load_filetypes()
     filetypes.set_filedialog_kwargs()
 
@@ -120,3 +121,44 @@ def test_settings_reset_when_filetype_changes(filetab, tmp_path):
     assert filetab.settings.get("comment_prefix", object) is None
     assert filetab.settings.get("langserver", object) is None
     assert len(filetab.settings.get("example_commands", object)) == 0
+
+
+def test_merging_settings():
+    default = {
+        "Plain Text": {"filename_patterns": ["*.txt"]},
+        "Python": {
+            "filename_patterns": ["*.py", "*.pyw"],
+            "langserver": {
+                "command": "{porcupine_python} -m pyls",
+                "language_id": "python",
+                "settings": {"pyls": {"plugins": {"jedi": {"environment": "{python_venv}"}}}},
+            },
+        },
+    }
+    user = {
+        "Python": {
+            "filename_patterns": ["*.foobar"],
+            "langserver": {"settings": {"pyls": {"plugins": {"flake8": {"enabled": True}}}}},
+        },
+        "Custom File Type": {"filename_patterns": ["*.custom"]},
+    }
+
+    assert filetypes.merge_settings(default, user) == {
+        "Plain Text": {"filename_patterns": ["*.txt"]},
+        "Python": {
+            "filename_patterns": ["*.py", "*.pyw", "*.foobar"],
+            "langserver": {
+                "command": "{porcupine_python} -m pyls",
+                "language_id": "python",
+                "settings": {
+                    "pyls": {
+                        "plugins": {
+                            "jedi": {"environment": "{python_venv}"},
+                            "flake8": {"enabled": True},
+                        }
+                    }
+                },
+            },
+        },
+        "Custom File Type": {"filename_patterns": ["*.custom"]},
+    }
