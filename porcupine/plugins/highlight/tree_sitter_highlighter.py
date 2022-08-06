@@ -1,9 +1,3 @@
-"""Syntax highlighting.
-
-This plugin only highlights file types that have syntax_highlighter set to
-"tree_sitter" in filetypes.toml.
-"""
-
 from __future__ import annotations
 
 import dataclasses
@@ -14,39 +8,23 @@ import reprlib
 import sys
 import tkinter
 import zlib
-from functools import partial
 from pathlib import Path
 from tkinter import ttk
 from urllib.parse import quote_plus
-from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Union
 from zipfile import ZipFile
 
-from tree_sitter import Language, Node, Parser, Tree, TreeCursor  # type: ignore[import]
+from tree_sitter import Language, Node, Parser, TreeCursor  # type: ignore[import]
 
-from porcupine import dirs, get_tab_manager, tabs, textutils, utils
+from porcupine import dirs, textutils
 from porcupine.settings import global_settings
-from porcupine.plugins.pygments_highlight import all_token_tags
+from .base_highlighter import BaseHighlighter
 
 Point = Any
 log = logging.getLogger(__name__)
 
 # setup() can show an error message, and the ttk theme affects that
 setup_after = ["ttk_themes"]
-
-
-# https://stackoverflow.com/a/2387880
-def compute_crc32(path: Path) -> int:
-    crc = 0
-    with path.open("rb") as file:
-        while True:
-            # I tried various chunk sizes, with other things affecting plugin setup time commented out.
-            # 128K, 256K and 512K all performed quite well.
-            # Smaller and bigger chunks were measurably worse.
-            chunk = file.read(256 * 1024)
-            if not chunk:
-                break
-            crc = zlib.crc32(chunk, crc)  # This is the bottleneck of this plugin's setup() time
-    return crc
 
 
 def show_unsupported_platform_error() -> None:
@@ -105,6 +83,21 @@ def show_unsupported_platform_error() -> None:
 
     window.wait_window()
     global_settings.set("show_tree_sitter_platform_error", var.get())
+
+
+# https://stackoverflow.com/a/2387880
+def compute_crc32(path: Path) -> int:
+    crc = 0
+    with path.open("rb") as file:
+        while True:
+            # I tried various chunk sizes, with other things affecting plugin setup time commented out.
+            # 128K, 256K and 512K all performed quite well.
+            # Smaller and bigger chunks were measurably worse.
+            chunk = file.read(256 * 1024)
+            if not chunk:
+                break
+            crc = zlib.crc32(chunk, crc)  # This is the bottleneck of this plugin's setup() time
+    return crc
 
 
 def prepare_binary() -> Path | None:
@@ -189,20 +182,21 @@ def prepare_binary() -> Path | None:
 
 
 @dataclasses.dataclass
-class Config:
+class TreeSitterConfig:
     language_name: str
     dont_recurse_inside: List[str]
     token_mapping: Dict[str, Union[str, Dict[str, str]]]
 
 
-class Highlighter:
-    def __init__(self, binary_path: Path, textwidget: tkinter.Text) -> None:
+class TreeSitterHighlighter(BaseHighlighter):
+    def __init__(self, textwidget: tkinter.Text, binary_path: Path, config: TreeSitterConfig) -> None:
+        super().__init__(textwidget)
         self._binary_path = binary_path
-        self.textwidget = textwidget
-        textutils.use_pygments_tags(self.textwidget)
-        self._config: Config | None = None
-        self._parser: Parser | None = None
-        self._tree: Tree | None = None
+        self._config = config
+
+        self._parser = Parser()
+        self._parser.set_language(Language(self._binary_path, config.language_name))
+        self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
     # only returns nodes that overlap the start,end range
     def _get_all_nodes(
@@ -226,20 +220,11 @@ class Highlighter:
     #   - It returns empty list if you append text to end of a line. But text like that may need to
     #     get highlighted.
     #   - Release version from pypi doesn't have the method.
-    def update_tags_of_visible_area_from_tree(self) -> None:
-        if self._config is None:
-            return
-
-        log.debug("Updating colors of visible part of file")
-        start = self.textwidget.index("@0,0")
-        end = self.textwidget.index("@0,10000")
+    def add_tags(self, start: str, end: str) -> None:
         start_row, start_col = map(int, start.split("."))
         end_row, end_col = map(int, end.split("."))
         start_point = (start_row - 1, start_col)
         end_point = (end_row - 1, end_col)
-
-        for tag in all_token_tags:
-            self.textwidget.tag_remove(tag, start, end)
 
         assert self._tree is not None
         for node in list(self._get_all_nodes(self._tree.walk(), start_point, end_point)):
@@ -296,38 +281,15 @@ class Highlighter:
         # should be ok as long as all your non-ascii chars are e.g. inside strings
         return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
 
-    def recreate_the_whole_tree(self) -> None:
-        log.info("Reparsing the whole file from scratch")
-        if self._parser is None:
-            self._tree = None
-        else:
-            self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
-
-    def set_config(self, config: Config | None) -> None:
-        log.info(f"Changing language: {None if config is None else config.language_name}")
-        self._config = config
-        if config is None:
-            self._parser = None
-        else:
-            self._parser = Parser()
-            self._parser.set_language(Language(self._binary_path, config.language_name))
-
-        self.recreate_the_whole_tree()
-        self.update_tags_of_visible_area_from_tree()
-
-    def update_based_on_changes(self, event: utils.EventWithData) -> None:
-        if self._tree is None or self._parser is None:
+    def update_internal_state(self, changes: textutils.Changes) -> None:
+        if not changes.change_list:
             return
 
-        change_list = event.data_class(textutils.Changes).change_list
-        if not change_list:
-            return
-
-        if len(change_list) >= 2:
+        if len(changes.change_list) >= 2:
             # doesn't happen very often in normal editing
-            self.recreate_the_whole_tree()
+            self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
         else:
-            [change] = change_list
+            [change] = changes.change_list
             start_row, start_col = change.start
             old_end_row, old_end_col = change.end
             new_end_row = start_row + change.new_text.count("\n")
@@ -352,83 +314,6 @@ class Highlighter:
                 new_end_point=(new_end_row - 1, new_end_col),
             )
             self._tree = self._parser.parse(self._get_file_content_for_tree_sitter(), self._tree)
-
-        self.update_tags_of_visible_area_from_tree()
-
-
-# When scrolling, don't highlight too often. Makes scrolling smoother.
-def debounce(
-    any_widget: tkinter.Misc, function: Callable[[], None], ms_between_calls_min: int
-) -> Callable[[], None]:
-    timeout_scheduled = False
-    running_requested = False
-
-    def timeout_callback() -> None:
-        nonlocal timeout_scheduled, running_requested
-        assert timeout_scheduled
-        if running_requested:
-            function()
-            any_widget.after(ms_between_calls_min, timeout_callback)
-            running_requested = False
-        else:
-            timeout_scheduled = False
-
-    def request_running() -> None:
-        nonlocal timeout_scheduled, running_requested
-        if timeout_scheduled:
-            running_requested = True
-        else:
-            assert not running_requested
-            function()
-            any_widget.after(ms_between_calls_min, timeout_callback)
-            timeout_scheduled = True
-
-    return request_running
-
-
-def on_new_filetab(binary_path: Path | None, tab: tabs.FileTab) -> None:
-    tab.settings.add_option("syntax_highlighter", default="pygments", exist_ok=True)
-
-    if binary_path is None:
-
-        def delegate_to_pygments(junk: object = None) -> None:
-            if tab.settings.get("syntax_highlighter", str) == "tree_sitter":
-                log.warning("Delegating to pygments highlighter")
-                tab.settings.set("syntax_highlighter", "pygments")
-
-        tab.bind("<<TabSettingChanged:syntax_highlighter>>", delegate_to_pygments, add=True)
-        delegate_to_pygments()
-        return
-
-    tab.settings.add_option("tree_sitter", default=None, type_=Optional[Config])
-
-    def on_config_changed(junk: object = None) -> None:
-        if tab.settings.get("syntax_highlighter", str) == "tree_sitter":
-            highlighter.set_config(tab.settings.get("tree_sitter", Config))
-        else:
-            highlighter.set_config(None)
-
-    highlighter = Highlighter(binary_path, tab.textwidget)
-    tab.bind("<<TabSettingChanged:syntax_highlighter>>", on_config_changed, add=True)
-    tab.bind("<<TabSettingChanged:tree_sitter>>", on_config_changed, add=True)
-    on_config_changed()
-
-    utils.bind_with_data(
-        tab.textwidget, "<<ContentChanged>>", highlighter.update_based_on_changes, add=True
-    )
-    utils.add_scroll_command(
-        tab.textwidget,
-        "yscrollcommand",
-        debounce(tab, highlighter.update_tags_of_visible_area_from_tree, 100),
-    )
-
-    highlighter.recreate_the_whole_tree()
-    highlighter.update_tags_of_visible_area_from_tree()
-
-
-def setup() -> None:
-    binary_path = prepare_binary()
-    get_tab_manager().add_filetab_callback(partial(on_new_filetab, binary_path))
 
 
 # A small command-line utility for configuring tree-sitter.
