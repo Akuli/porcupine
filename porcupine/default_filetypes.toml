@@ -34,7 +34,7 @@
 #        Porcupine currently comes with two syntax highlighters that this
 #        setting chooses from:
 #
-#            "pygments"
+#            "pygments" (default)
 #                This syntax highlighter supports many different languages and
 #                it is easy to configure, but it is slow with large files. It
 #                also has known bugs that are basically impossible to fix:

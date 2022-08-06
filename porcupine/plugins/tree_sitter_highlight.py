@@ -39,10 +39,13 @@ def compute_crc32(path: Path) -> int:
     crc = 0
     with path.open("rb") as file:
         while True:
-            chunk = file.read(16 * 1024)
+            # I tried various chunk sizes, with other things affecting plugin setup time commented out.
+            # 128K, 256K and 512K all performed quite well.
+            # Smaller and bigger chunks were measurably worse.
+            chunk = file.read(256 * 1024)
             if not chunk:
                 break
-            crc = zlib.crc32(chunk, crc)
+            crc = zlib.crc32(chunk, crc)  # This is the bottleneck of this plugin's setup() time
     return crc
 
 
@@ -220,7 +223,7 @@ class Highlighter:
         # should be ok as long as all your non-ascii chars are e.g. inside strings
         return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
 
-    def reparse_whole_file(self) -> None:
+    def recreate_the_whole_tree(self) -> None:
         log.info("Reparsing the whole file from scratch")
         if self._parser is None:
             self._tree = None
@@ -228,21 +231,18 @@ class Highlighter:
             self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
     def set_config(self, config: Config | None) -> None:
-        print("tree_sitter set language", None if config is None else config.language_name)
-        # TODO: better error handling than assert / KeyError
         log.info(f"Changing language: {None if config is None else config.language_name}")
         self._config = config
         if config is None:
             self._parser = None
-            # TODO: doesn't seem to remove highlight tags in this case
         else:
             self._parser = Parser()
             self._parser.set_language(Language(str(BINARY_PATH), config.language_name))
 
-        self.reparse_whole_file()
+        self.recreate_the_whole_tree()
         self.update_tags_of_visible_area_from_tree()
 
-    def on_change(self, event: utils.EventWithData) -> None:
+    def update_based_on_changes(self, event: utils.EventWithData) -> None:
         if self._tree is None or self._parser is None:
             return
 
@@ -252,10 +252,9 @@ class Highlighter:
 
         if len(change_list) >= 2:
             # doesn't happen very often in normal editing
-            self.reparse_whole_file()
+            self.recreate_the_whole_tree()
         else:
             [change] = change_list
-            # FIXME: bytes are wrong when text has non-ascii chars
             start_row, start_col = change.start
             old_end_row, old_end_col = change.end
             new_end_row = start_row + change.new_text.count("\n")
@@ -315,22 +314,30 @@ def debounce(
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("syntax_highlighter", default="pygments", exist_ok=True)
     tab.settings.add_option("tree_sitter", default=None, type_=Optional[Config])
 
     def on_config_changed(junk: object = None) -> None:
-        highlighter.set_config(tab.settings.get("tree_sitter", Optional[Config]))
+        if tab.settings.get("syntax_highlighter", str) == "tree_sitter":
+            highlighter.set_config(tab.settings.get("tree_sitter", Config))
+        else:
+            highlighter.set_config(None)
 
     highlighter = Highlighter(tab.textwidget)
     tab.bind("<<TabSettingChanged:tree_sitter>>", on_config_changed, add=True)
+    tab.bind("<<TabSettingChanged:syntax_highlighter>>", on_config_changed, add=True)
     on_config_changed()
-    utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", highlighter.on_change, add=True)
+
+    utils.bind_with_data(
+        tab.textwidget, "<<ContentChanged>>", highlighter.update_based_on_changes, add=True
+    )
     utils.add_scroll_command(
         tab.textwidget,
         "yscrollcommand",
         debounce(tab, highlighter.update_tags_of_visible_area_from_tree, 100),
     )
 
-    highlighter.reparse_whole_file()
+    highlighter.recreate_the_whole_tree()
     highlighter.update_tags_of_visible_area_from_tree()
 
 

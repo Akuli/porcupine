@@ -17,9 +17,6 @@ from pygments.lexers import MarkdownLexer
 
 from porcupine import get_tab_manager, tabs, textutils, utils
 
-# This plugin checks: if tree sitter plugin's setting is set, then doesn't highlight
-setup_after = ["tree_sitter_highlight"]
-
 
 def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
     yield tokentype
@@ -29,7 +26,7 @@ def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
 
 all_token_tags = set(map(str, _list_all_token_types(token.Token)))
 log = logging.getLogger(__name__)
-ROOT_STATE_MARK_PREFIX = "highlight_root_"
+ROOT_STATE_MARK_PREFIX = "pygments_root_"
 root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 
 
@@ -150,12 +147,11 @@ class Highlighter:
         self.highlight_range(self.textwidget.index("@0,0"))
 
     def set_lexer(self, lexer: Lexer | None) -> None:
-        print("pygments set lexer", lexer)
         self.textwidget.mark_unset(*self._get_root_marks("1.0", "end"))
         self._lexer = lexer
         self.highlight_visible()
 
-    def on_change(self, event: utils.EventWithData) -> None:
+    def update_based_on_changes(self, event: utils.EventWithData) -> None:
         change_list = event.data_class(textutils.Changes).change_list
         if len(change_list) == 1:
             [change] = change_list
@@ -198,23 +194,23 @@ def debounce(
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    # needed because pygments_lexer might change
-    def on_lexer_changed(junk: object = None) -> None:
-        try:
-            tree_sitter_config = tab.settings.get("tree_sitter", Any)
-        # TODO: figure out what error happens if tree sitter plugin disable
-        except Exception:
-            tree_sitter_config = None
+    tab.settings.add_option("syntax_highlighter", default="pygments", exist_ok=True)
+    # pygments_lexer option already exists, as it is used also outside this file
 
-        if tree_sitter_config is None:
+    def on_config_changed(junk: object = None) -> None:
+        if tab.settings.get("syntax_highlighter", str) == "pygments":
             highlighter.set_lexer(tab.settings.get("pygments_lexer", LexerMeta)())
         else:
             highlighter.set_lexer(None)
 
     highlighter = Highlighter(tab.textwidget)
-    tab.bind("<<TabSettingChanged:pygments_lexer>>", on_lexer_changed, add=True)
-    on_lexer_changed()
-    utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", highlighter.on_change, add=True)
+    tab.bind("<<TabSettingChanged:pygments_lexer>>", on_config_changed, add=True)
+    tab.bind("<<TabSettingChanged:syntax_highlighter>>", on_config_changed, add=True)
+    on_config_changed()
+
+    utils.bind_with_data(
+        tab.textwidget, "<<ContentChanged>>", highlighter.update_based_on_changes, add=True
+    )
     utils.add_scroll_command(
         tab.textwidget, "yscrollcommand", debounce(tab, highlighter.highlight_visible, 100)
     )
