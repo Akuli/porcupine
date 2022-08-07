@@ -54,7 +54,7 @@ jobs:
         with:
           name: tree-sitter-binary-macos-latest
       - run: zip tree-sitter-binaries.zip tree-sitter-binary-*
-      - run: mv tree-sitter-binaries.zip porcupine/plugins/highlight/
+      - run: mv tree-sitter-binaries.zip porcupine/plugins/highlight/tree-sitter-data/
       - run: rm tree-sitter-binary-*
       - if: github.event_name == 'workflow_dispatch' && github.event.inputs.make-pull-request == 'true'
         uses: peter-evans/create-pull-request@v4

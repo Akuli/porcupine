@@ -19,3 +19,4 @@ types-colorama==0.4.15
 types-appdirs==1.4.3
 types-toposort==1.7.4
 types-psutil==5.9.2
+types-PyYAML==6.0.11

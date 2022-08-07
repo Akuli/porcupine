@@ -66,36 +66,11 @@
 #
 #            https://pygments.org/docs/lexers/
 #
-#    tree_sitter
-#        Configuration for the "tree_sitter" syntax highlighter. You can look
-#        at the examples below to figure out how it works, or ask me to
-#        document it better.
+#    tree_sitter_language_id
+#        Configuration for the "tree_sitter" syntax highlighter. The following
+#        file in Porcupine's source code explains this setting in more detail:
 #
-#        The tree-sitter highlighter plugin has a command-line interface for
-#        exploring the structure of programs:
-#
-#            $ cat hello.py
-#            print("hello")
-#
-#            $ python3 -m porcupine.plugins.tree_sitter_highlight python hello.py
-#            type=module text='print("hello")\n'
-#              type=expression_statement text='print("hello")'
-#                type=call text='print("hello")'
-#                  type=identifier text='print'
-#                  type=argument_list text='("hello")'
-#                    type=( text='('
-#                    type=string text='"hello"'
-#                      type=" text='"'
-#                      type=" text='"'
-#                    type=) text=')'
-#
-#        You can then use the output to write syntax-highlighting rules. For
-#        example, a type=identifier token with text='print' should be colored as
-#        a built-in function, which is why below in this file you will find:
-#
-#            [Python.tree_sitter.token_mapping.identifier]
-#            ...
-#            print = "Token.Name.Builtin"
+#            porcupine/plugins/highlight/tree-sitter-data/token-mappings/readme.txt
 #
 #    tabs2spaces (default: true)
 #        If this is true, then spaces will be used for indentation.
@@ -220,6 +195,7 @@ max_line_length = 79   # pep8 says so, lol
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
 syntax_highlighter = "tree_sitter"
+tree_sitter_language_id = "python"
 [[Python.example_commands]]
 command = "python3 {file_name}"
 windows_command = "py {file_name}"
@@ -232,209 +208,6 @@ command = "{porcupine_python} -m pyls"
 language_id = "python"
 [Python.langserver.settings.pyls.plugins.jedi]
 environment = "{python_venv}"
-[Python.tree_sitter]
-language_name = "python"
-# TODO: distinguish between variables and attributes?
-# Can't just add "attribute" to dont_recurse_inside because then the object
-# whose attribute it is won't highlight, e.g. open("foo", "rb").read()
-#
-# TODO: recurse inside f-strings
-dont_recurse_inside = ["string"]
-[Python.tree_sitter.token_mapping]
-comment = "Token.Comment"
-# TODO: which of the number things are needed?
-integer = "Token.Literal.Number.Integer"
-float = "Token.Literal.Number.Float"
-string = "Token.Literal.String"
-and = "Token.Keyword"
-as = "Token.Keyword"
-assert = "Token.Keyword"
-async = "Token.Keyword"
-await = "Token.Keyword"
-break = "Token.Keyword"
-class = "Token.Keyword"
-continue = "Token.Keyword"
-def = "Token.Keyword"
-del = "Token.Keyword"
-elif = "Token.Keyword"
-else = "Token.Keyword"
-except = "Token.Keyword"
-false = "Token.Keyword"
-finally = "Token.Keyword"
-for = "Token.Keyword"
-from = "Token.Keyword"
-global = "Token.Keyword"
-if = "Token.Keyword"
-import = "Token.Keyword"
-in = "Token.Keyword"
-is = "Token.Keyword"
-lambda = "Token.Keyword"
-none = "Token.Keyword"
-nonlocal = "Token.Keyword"
-not = "Token.Keyword"
-or = "Token.Keyword"
-pass = "Token.Keyword"
-raise = "Token.Keyword"
-return = "Token.Keyword"
-true = "Token.Keyword"
-try = "Token.Keyword"
-while = "Token.Keyword"
-with = "Token.Keyword"
-yield = "Token.Keyword"
-[Python.tree_sitter.token_mapping.identifier]
-ArithmeticError = "Token.Name.Exception"
-AssertionError = "Token.Name.Exception"
-AttributeError = "Token.Name.Exception"
-BaseException = "Token.Name.Builtin"
-BlockingIOError = "Token.Name.Exception"
-BrokenPipeError = "Token.Name.Exception"
-BufferError = "Token.Name.Exception"
-BytesWarning = "Token.Name.Builtin"
-ChildProcessError = "Token.Name.Exception"
-ConnectionAbortedError = "Token.Name.Exception"
-ConnectionError = "Token.Name.Exception"
-ConnectionRefusedError = "Token.Name.Exception"
-ConnectionResetError = "Token.Name.Exception"
-DeprecationWarning = "Token.Name.Builtin"
-EOFError = "Token.Name.Exception"
-Ellipsis = "Token.Name.Builtin"
-EnvironmentError = "Token.Name.Exception"
-Exception = "Token.Name.Builtin"
-False = "Token.Name.Builtin"
-FileExistsError = "Token.Name.Exception"
-FileNotFoundError = "Token.Name.Exception"
-FloatingPointError = "Token.Name.Exception"
-FutureWarning = "Token.Name.Builtin"
-GeneratorExit = "Token.Name.Builtin"
-IOError = "Token.Name.Exception"
-ImportError = "Token.Name.Exception"
-ImportWarning = "Token.Name.Builtin"
-IndentationError = "Token.Name.Exception"
-IndexError = "Token.Name.Exception"
-InterruptedError = "Token.Name.Exception"
-IsADirectoryError = "Token.Name.Exception"
-KeyError = "Token.Name.Exception"
-KeyboardInterrupt = "Token.Name.Builtin"
-LookupError = "Token.Name.Exception"
-MemoryError = "Token.Name.Exception"
-ModuleNotFoundError = "Token.Name.Exception"
-NameError = "Token.Name.Exception"
-None = "Token.Name.Builtin"
-NotADirectoryError = "Token.Name.Exception"
-NotImplemented = "Token.Name.Builtin"
-NotImplementedError = "Token.Name.Exception"
-OSError = "Token.Name.Exception"
-OverflowError = "Token.Name.Exception"
-PendingDeprecationWarning = "Token.Name.Builtin"
-PermissionError = "Token.Name.Exception"
-ProcessLookupError = "Token.Name.Exception"
-RecursionError = "Token.Name.Exception"
-ReferenceError = "Token.Name.Exception"
-ResourceWarning = "Token.Name.Builtin"
-RuntimeError = "Token.Name.Exception"
-RuntimeWarning = "Token.Name.Builtin"
-StopAsyncIteration = "Token.Name.Builtin"
-StopIteration = "Token.Name.Builtin"
-SyntaxError = "Token.Name.Exception"
-SyntaxWarning = "Token.Name.Builtin"
-SystemError = "Token.Name.Exception"
-SystemExit = "Token.Name.Builtin"
-TabError = "Token.Name.Exception"
-TimeoutError = "Token.Name.Exception"
-True = "Token.Name.Builtin"
-TypeError = "Token.Name.Exception"
-UnboundLocalError = "Token.Name.Exception"
-UnicodeDecodeError = "Token.Name.Exception"
-UnicodeEncodeError = "Token.Name.Exception"
-UnicodeError = "Token.Name.Exception"
-UnicodeTranslateError = "Token.Name.Exception"
-UnicodeWarning = "Token.Name.Builtin"
-UserWarning = "Token.Name.Builtin"
-ValueError = "Token.Name.Exception"
-Warning = "Token.Name.Builtin"
-ZeroDivisionError = "Token.Name.Exception"
-__debug__ = "Token.Name.Builtin"
-__doc__ = "Token.Name.Builtin"
-__import__ = "Token.Name.Builtin"
-__loader__ = "Token.Name.Builtin"
-__name__ = "Token.Name.Builtin"
-__package__ = "Token.Name.Builtin"
-__path__ = "Token.Name.Builtin"
-__spec__ = "Token.Name.Builtin"
-abs = "Token.Name.Builtin"
-all = "Token.Name.Builtin"
-any = "Token.Name.Builtin"
-ascii = "Token.Name.Builtin"
-bin = "Token.Name.Builtin"
-bool = "Token.Name.Builtin"
-breakpoint = "Token.Name.Builtin"
-bytearray = "Token.Name.Builtin"
-bytes = "Token.Name.Builtin"
-callable = "Token.Name.Builtin"
-chr = "Token.Name.Builtin"
-classmethod = "Token.Name.Builtin"
-compile = "Token.Name.Builtin"
-complex = "Token.Name.Builtin"
-copyright = "Token.Name.Builtin"
-credits = "Token.Name.Builtin"
-delattr = "Token.Name.Builtin"
-dict = "Token.Name.Builtin"
-dir = "Token.Name.Builtin"
-divmod = "Token.Name.Builtin"
-enumerate = "Token.Name.Builtin"
-eval = "Token.Name.Builtin"
-exec = "Token.Name.Builtin"
-exit = "Token.Name.Builtin"
-filter = "Token.Name.Builtin"
-float = "Token.Name.Builtin"
-format = "Token.Name.Builtin"
-frozenset = "Token.Name.Builtin"
-getattr = "Token.Name.Builtin"
-globals = "Token.Name.Builtin"
-hasattr = "Token.Name.Builtin"
-hash = "Token.Name.Builtin"
-help = "Token.Name.Builtin"
-hex = "Token.Name.Builtin"
-id = "Token.Name.Builtin"
-input = "Token.Name.Builtin"
-int = "Token.Name.Builtin"
-isinstance = "Token.Name.Builtin"
-issubclass = "Token.Name.Builtin"
-iter = "Token.Name.Builtin"
-len = "Token.Name.Builtin"
-license = "Token.Name.Builtin"
-list = "Token.Name.Builtin"
-locals = "Token.Name.Builtin"
-map = "Token.Name.Builtin"
-max = "Token.Name.Builtin"
-memoryview = "Token.Name.Builtin"
-min = "Token.Name.Builtin"
-next = "Token.Name.Builtin"
-object = "Token.Name.Builtin"
-oct = "Token.Name.Builtin"
-open = "Token.Name.Builtin"
-ord = "Token.Name.Builtin"
-pow = "Token.Name.Builtin"
-print = "Token.Name.Builtin"
-property = "Token.Name.Builtin"
-quit = "Token.Name.Builtin"
-range = "Token.Name.Builtin"
-repr = "Token.Name.Builtin"
-reversed = "Token.Name.Builtin"
-round = "Token.Name.Builtin"
-self = "Token.Name.Builtin"
-set = "Token.Name.Builtin"
-setattr = "Token.Name.Builtin"
-slice = "Token.Name.Builtin"
-sorted = "Token.Name.Builtin"
-staticmethod = "Token.Name.Builtin"
-str = "Token.Name.Builtin"
-sum = "Token.Name.Builtin"
-super = "Token.Name.Builtin"
-tuple = "Token.Name.Builtin"
-type = "Token.Name.Builtin"
-vars = "Token.Name.Builtin"
-zip = "Token.Name.Builtin"
 
 ["Python stub file"]
 filename_patterns = ["*.pyi"]

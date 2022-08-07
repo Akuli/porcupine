@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import dacite
 import dataclasses
 import webbrowser
 import logging
 import platform
-import reprlib
 import sys
 import tkinter
 import zlib
@@ -14,6 +14,7 @@ from urllib.parse import quote_plus
 from typing import Any, Dict, Iterator, List, Union
 from zipfile import ZipFile
 
+import yaml
 from tree_sitter import Language, Node, Parser, TreeCursor  # type: ignore[import]
 
 from porcupine import dirs, textutils
@@ -25,6 +26,8 @@ log = logging.getLogger(__name__)
 
 # setup() can show an error message, and the ttk theme affects that
 setup_after = ["ttk_themes"]
+
+DATA_DIR = Path(__file__).absolute().with_name("tree-sitter-data")
 
 
 def show_unsupported_platform_error() -> None:
@@ -101,7 +104,7 @@ def compute_crc32(path: Path) -> int:
 
 
 def prepare_binary() -> Path | None:
-    zip_path = Path(__file__).absolute().with_name("tree-sitter-binaries.zip")
+    zip_path = DATA_DIR / "tree-sitter-binaries.zip"
     with ZipFile(zip_path) as zipfile:
         try:
             # This must match scripts/build-tree-sitter-binary.py
@@ -182,20 +185,23 @@ def prepare_binary() -> Path | None:
 
 
 @dataclasses.dataclass
-class TreeSitterConfig:
-    language_name: str
+class YmlConfig:
     dont_recurse_inside: List[str]
     token_mapping: Dict[str, Union[str, Dict[str, str]]]
 
 
 class TreeSitterHighlighter(BaseHighlighter):
-    def __init__(self, textwidget: tkinter.Text, binary_path: Path, config: TreeSitterConfig) -> None:
+    def __init__(self, textwidget: tkinter.Text, binary_path: Path, language_id: str) -> None:
         super().__init__(textwidget)
         self._binary_path = binary_path
-        self._config = config
+        self._language_id = language_id
         self._parser = Parser()
-        self._parser.set_language(Language(self._binary_path, config.language_name))
+        self._parser.set_language(Language(self._binary_path, language_id))
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
+
+        token_mapping_path = DATA_DIR / "token-mappings" / (language_id + ".yml")
+        with token_mapping_path.open("r", encoding="utf-8") as file:
+            self._config = dacite.from_dict(YmlConfig, yaml.safe_load(file))
 
     def _get_file_content_for_tree_sitter(self) -> bytes:
         # tk indexes are in chars, tree_sitter is in utf-8 bytes
@@ -257,12 +263,12 @@ class TreeSitterHighlighter(BaseHighlighter):
             #
             # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
             if (
-                self._config.language_name == "toml"
+                self._language_id == "toml"
                 and node.type not in ("pair", "comment")
                 and node.parent is not None
                 and node.parent.type in ("table", "table_array_element")
             ) or (
-                self._config.language_name == "rust"
+                self._language_id == "rust"
                 and node.type in ("identifier", "scoped_identifier", "!")
                 and node.parent is not None
                 and node.parent.type == "macro_invocation"
@@ -317,33 +323,3 @@ class TreeSitterHighlighter(BaseHighlighter):
             self._tree = self._parser.parse(self._get_file_content_for_tree_sitter(), self._tree)
 
         self.update_tags_of_visible_area_from_tree()
-
-
-# A small command-line utility for configuring tree-sitter.
-# Documented in default_filetypes.toml.
-def tree_dumping_command_line_util() -> None:
-    [program_name, language_name, filename] = sys.argv
-
-    def show_nodes(cursor: TreeCursor, indent_level: int = 0) -> None:
-        node = cursor.node
-        print(
-            f"{'  ' * indent_level}type={node.type} text={reprlib.repr(node.text.decode('utf-8'))}"
-        )
-
-        if cursor.goto_first_child():
-            show_nodes(cursor, indent_level + 1)
-            while cursor.goto_next_sibling():
-                show_nodes(cursor, indent_level + 1)
-            cursor.goto_parent()
-
-    binary_path = prepare_binary()
-    assert binary_path is not None
-
-    parser = Parser()
-    parser.set_language(Language(binary_path, language_name))
-    tree = parser.parse(open(filename, "rb").read())
-    show_nodes(tree.walk())
-
-
-if __name__ == "__main__":
-    tree_dumping_command_line_util()
