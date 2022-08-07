@@ -1,0 +1,146 @@
+dont_recurse_inside:
+  - string
+  - attribute
+  # recursing inside scoped_identifier would break highlighting of tokio::select!
+  # TODO: Vec::foo() doesn't highlight properly
+  - scoped_identifier
+  - string_literal
+  - attribute_item
+
+token_mapping:
+  line_comment: Token.Comment
+  block_comment: Token.Comment
+  integer_literal: Token.Literal.Number.Integer
+  float_literal: Token.Literal.Number.Float
+  string_literal: Token.Literal.String
+  raw_string_literal: Token.Literal.String
+  char_literal: Token.Literal.String
+  self: Token.Name.Builtin  # special-cased in compiler, but doesn't feel like a keyword
+  pub: Token.Keyword
+  async: Token.Keyword
+  fn: Token.Keyword
+  as: Token.Keyword
+  in: Token.Keyword
+  for: Token.Keyword
+  while: Token.Keyword
+  loop: Token.Keyword
+  let: Token.Keyword
+  mutable_specifier: Token.Keyword  # the "mut" keyword
+  match: Token.Keyword
+  break: Token.Keyword
+  continue: Token.Keyword
+  const: Token.Keyword
+  return: Token.Keyword
+  if: Token.Keyword
+  else: Token.Keyword
+  struct: Token.Keyword
+  impl: Token.Keyword
+  type: Token.Keyword
+  enum: Token.Keyword
+  trait: Token.Keyword
+  dyn: Token.Keyword
+  where: Token.Keyword
+  use: Token.Keyword
+  mod: Token.Keyword
+  crate: Token.Keyword
+  attribute_item: Token.Name.Decorator  # lol
+  macro_invocation: Token.Name.Decorator  # lol
+  primitive_type: Token.Keyword
+  'true': Token.Keyword
+  'false': Token.Keyword
+
+  # builtins taken from pygments
+  type_identifier:
+    Send: Token.Name.Builtin
+    Sized: Token.Name.Builtin
+    Sync: Token.Name.Builtin
+    Unpin: Token.Name.Builtin
+    Drop: Token.Name.Builtin
+    Fn: Token.Name.Builtin
+    FnMut: Token.Name.Builtin
+    FnOnce: Token.Name.Builtin
+    AsRef: Token.Name.Builtin
+    AsMut: Token.Name.Builtin
+    Into: Token.Name.Builtin
+    From: Token.Name.Builtin
+    Iterator: Token.Name.Builtin
+    Extend: Token.Name.Builtin
+    IntoIterator: Token.Name.Builtin
+    DoubleEndedIterator: Token.Name.Builtin
+    ExactSizeIterator: Token.Name.Builtin
+    Option: Token.Name.Builtin
+    Result: Token.Name.Builtin
+    Box: Token.Name.Builtin
+    ToOwned: Token.Name.Builtin
+    String: Token.Name.Builtin
+    ToString: Token.Name.Builtin
+    Vec: Token.Name.Builtin
+    Clone: Token.Name.Builtin
+    Copy: Token.Name.Builtin
+    Default: Token.Name.Builtin
+    Eq: Token.Name.Builtin
+    Hash: Token.Name.Builtin
+    Ord: Token.Name.Builtin
+    PartialEq: Token.Name.Builtin
+    PartialOrd: Token.Name.Builtin
+    Some: Token.Name.Builtin
+    None: Token.Name.Builtin
+    Ok: Token.Name.Builtin
+    Err: Token.Name.Builtin
+
+  identifier:
+    Send: Token.Name.Builtin
+    Sized: Token.Name.Builtin
+    Sync: Token.Name.Builtin
+    Unpin: Token.Name.Builtin
+    Drop: Token.Name.Builtin
+    Fn: Token.Name.Builtin
+    FnMut: Token.Name.Builtin
+    FnOnce: Token.Name.Builtin
+    AsRef: Token.Name.Builtin
+    AsMut: Token.Name.Builtin
+    Into: Token.Name.Builtin
+    From: Token.Name.Builtin
+    Iterator: Token.Name.Builtin
+    Extend: Token.Name.Builtin
+    IntoIterator: Token.Name.Builtin
+    DoubleEndedIterator: Token.Name.Builtin
+    ExactSizeIterator: Token.Name.Builtin
+    Option: Token.Name.Builtin
+    Result: Token.Name.Builtin
+    Box: Token.Name.Builtin
+    ToOwned: Token.Name.Builtin
+    String: Token.Name.Builtin
+    ToString: Token.Name.Builtin
+    Vec: Token.Name.Builtin
+    Clone: Token.Name.Builtin
+    Copy: Token.Name.Builtin
+    Default: Token.Name.Builtin
+    Eq: Token.Name.Builtin
+    Hash: Token.Name.Builtin
+    Ord: Token.Name.Builtin
+    PartialEq: Token.Name.Builtin
+    PartialOrd: Token.Name.Builtin
+    Some: Token.Name.Builtin
+    None: Token.Name.Builtin
+    Ok: Token.Name.Builtin
+    Err: Token.Name.Builtin
+
+    # these would ideally be covered by primitive_type above but aren't, try "foo: Vec<(i8, i8)>"
+    u8: Token.Keyword
+    u16: Token.Keyword
+    u32: Token.Keyword
+    u64: Token.Keyword
+    u128: Token.Keyword
+    i8: Token.Keyword
+    i16: Token.Keyword
+    i32: Token.Keyword
+    i64: Token.Keyword
+    i128: Token.Keyword
+    usize: Token.Keyword
+    isize: Token.Keyword
+    f32: Token.Keyword
+    f64: Token.Keyword
+    char: Token.Keyword
+    str: Token.Keyword
+    bool: Token.Keyword
