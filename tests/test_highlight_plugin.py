@@ -1,7 +1,6 @@
 import subprocess
 import sys
 
-
 from pygments.lexers import PythonLexer
 
 

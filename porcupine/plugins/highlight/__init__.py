@@ -12,9 +12,10 @@ import logging
 import tkinter
 from pathlib import Path
 from typing import Callable
+
 from pygments.lexer import LexerMeta
 
-from porcupine import get_tab_manager, tabs, textutils,utils
+from porcupine import get_tab_manager, tabs, textutils, utils
 
 from .base_highlighter import BaseHighlighter
 from .pygments_highlighter import PygmentsHighlighter
@@ -47,9 +48,7 @@ class HighlighterManager:
             language_id = self._tab.settings.get("tree_sitter_language_id", str)
             log.info(f"creating a tree_sitter highlighter with language {repr(language_id)}")
             self._highlighter = TreeSitterHighlighter(
-                self._tab.textwidget,
-                self._tree_sitter_binary_path,
-                language_id
+                self._tab.textwidget, self._tree_sitter_binary_path, language_id
             )
 
         else:
@@ -60,9 +59,7 @@ class HighlighterManager:
 
             lexer_class = self._tab.settings.get("pygments_lexer", LexerMeta)
             log.info(f"creating a pygments highlighter with lexer class {lexer_class}")
-            self._highlighter = PygmentsHighlighter(
-                self._tab.textwidget, lexer_class()
-            )
+            self._highlighter = PygmentsHighlighter(self._tab.textwidget, lexer_class())
 
         self._highlighter.on_scroll()
 
@@ -70,7 +67,7 @@ class HighlighterManager:
         assert self._highlighter is not None
         self._highlighter.on_change(event.data_class(textutils.Changes))
 
-    def on_scroll_event(self)->None:
+    def on_scroll_event(self) -> None:
         assert self._highlighter is not None
         self._highlighter.on_scroll()
 
@@ -117,9 +114,7 @@ def on_new_filetab(tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> N
     manager.on_config_changed()
 
     # These need lambdas because the highlighter variable can be reassigned.
-    utils.bind_with_data(
-        tab.textwidget, "<<ContentChanged>>", manager.on_change_event, add=True
-    )
+    utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", manager.on_change_event, add=True)
     utils.add_scroll_command(
         tab.textwidget, "yscrollcommand", debounce(tab, manager.on_scroll_event, 100)
     )

@@ -8,8 +8,8 @@ from pygments.lexer import Lexer, RegexLexer
 from pygments.lexers import MarkdownLexer
 
 from porcupine import textutils
-from .base_highlighter import BaseHighlighter
 
+from .base_highlighter import BaseHighlighter
 
 ROOT_STATE_MARK_PREFIX = "pygments_root_"
 root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
@@ -61,7 +61,9 @@ class PygmentsHighlighter(BaseHighlighter):
         # Start of line (column zero) and not indentation or blank line
         return end_location.endswith(".0") and bool(self.textwidget.get(end_location).strip())
 
-    def highlight_range(self, last_possible_start: str = "1.0", first_possible_end: str = "end") -> None:
+    def highlight_range(
+        self, last_possible_start: str = "1.0", first_possible_end: str = "end"
+    ) -> None:
         # Clamp given start and end to be within the visible part.
         # If no arguments are given, highlight the visible part of the file.
         start_of_view, end_of_view = self.get_visible_part()
@@ -123,7 +125,7 @@ class PygmentsHighlighter(BaseHighlighter):
         for mark_index in mark_locations:
             self.textwidget.mark_set(next(root_mark_names), mark_index)
 
-    def on_scroll(self)->None:
+    def on_scroll(self) -> None:
         self.highlight_range()
 
     def on_change(self, changes: textutils.Changes) -> None:

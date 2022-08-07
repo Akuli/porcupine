@@ -43,9 +43,9 @@ class BaseHighlighter:
         raise NotImplementedError
 
     def get_visible_part(self) -> tuple[str, str]:
-        start=self.textwidget.index("@0,0")
-        end=self.textwidget.index("@0,10000")
-        return (start,end)
+        start = self.textwidget.index("@0,0")
+        end = self.textwidget.index("@0,10000")
+        return (start, end)
 
     def delete_tags(self, start: str, end: str) -> None:
         for tag in _all_token_tags:

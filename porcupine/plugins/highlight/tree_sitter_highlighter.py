@@ -1,24 +1,25 @@
 from __future__ import annotations
 
-import dacite
 import dataclasses
-import webbrowser
 import logging
 import platform
 import sys
 import tkinter
+import webbrowser
 import zlib
 from pathlib import Path
 from tkinter import ttk
-from urllib.parse import quote_plus
 from typing import Any, Dict, Iterator, List, Union
+from urllib.parse import quote_plus
 from zipfile import ZipFile
 
+import dacite
 import yaml
 from tree_sitter import Language, Node, Parser, TreeCursor  # type: ignore[import]
 
 from porcupine import dirs, textutils
 from porcupine.settings import global_settings
+
 from .base_highlighter import BaseHighlighter
 
 Point = Any
