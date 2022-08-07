@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import tkinter
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 from pygments.lexer import LexerMeta
 
 from porcupine import get_tab_manager, tabs, textutils,utils
@@ -45,7 +45,7 @@ class HighlighterManager:
                 return  # this will be called again soon (or was called again already?)
 
             language_id = self._tab.settings.get("tree_sitter_language_id", str)
-            log.info(f"creating a tree_sitter highlighter with language {language_id}")
+            log.info(f"creating a tree_sitter highlighter with language {repr(language_id)}")
             self._highlighter = TreeSitterHighlighter(
                 self._tab.textwidget,
                 self._tree_sitter_binary_path,

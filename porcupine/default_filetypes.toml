@@ -189,13 +189,13 @@ pygments_lexer = "pygments.lexers.TextLexer"
 filename_patterns = ["*.py", "*.pyw"]
 shebang_regex = 'python(\d(\.\d)?)?$'
 pygments_lexer = "pygments.lexers.Python3Lexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_id = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
-syntax_highlighter = "tree_sitter"
-tree_sitter_language_id = "python"
 [[Python.example_commands]]
 command = "python3 {file_name}"
 windows_command = "py {file_name}"
@@ -212,6 +212,8 @@ environment = "{python_venv}"
 ["Python stub file"]
 filename_patterns = ["*.pyi"]
 pygments_lexer = "pygments.lexers.Python3Lexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_id = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
