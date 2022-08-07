@@ -193,10 +193,19 @@ class TreeSitterHighlighter(BaseHighlighter):
         super().__init__(textwidget)
         self._binary_path = binary_path
         self._config = config
-
         self._parser = Parser()
         self._parser.set_language(Language(self._binary_path, config.language_name))
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
+
+    def _get_file_content_for_tree_sitter(self) -> bytes:
+        # tk indexes are in chars, tree_sitter is in utf-8 bytes
+        # here's my hack to get them compatible:
+        #
+        # bad:  "örkki" (5 chars) --> b"\xc3\xb6rkki" (6 bytes)
+        # good: "örkki" (5 chars) --> b"?rkki" (5 bytes)
+        #
+        # should be ok as long as all your non-ascii chars are e.g. inside strings
+        return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
 
     # only returns nodes that overlap the start,end range
     def _get_all_nodes(
@@ -220,13 +229,15 @@ class TreeSitterHighlighter(BaseHighlighter):
     #   - It returns empty list if you append text to end of a line. But text like that may need to
     #     get highlighted.
     #   - Release version from pypi doesn't have the method.
-    def add_tags(self, start: str, end: str) -> None:
+    def update_tags_of_visible_area_from_tree(self) -> None:
+        start, end = self.get_visible_part()
         start_row, start_col = map(int, start.split("."))
         end_row, end_col = map(int, end.split("."))
         start_point = (start_row - 1, start_col)
         end_point = (end_row - 1, end_col)
 
-        assert self._tree is not None
+        self.delete_tags(start, end)
+
         for node in list(self._get_all_nodes(self._tree.walk(), start_point, end_point)):
             # A hack for TOML. This:
             #
@@ -271,22 +282,16 @@ class TreeSitterHighlighter(BaseHighlighter):
                 tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
             )
 
-    def _get_file_content_for_tree_sitter(self) -> bytes:
-        # tk indexes are in chars, tree_sitter is in utf-8 bytes
-        # here's my hack to get them compatible:
-        #
-        # bad:  "örkki" (5 chars) --> b"\xc3\xb6rkki" (6 bytes)
-        # good: "örkki" (5 chars) --> b"?rkki" (5 bytes)
-        #
-        # should be ok as long as all your non-ascii chars are e.g. inside strings
-        return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
+    def on_scroll(self) -> None:
+        # TODO: This could be optimized. Often most of the new visible part was already visible before.
+        self.update_tags_of_visible_area_from_tree()
 
-    def update_internal_state(self, changes: textutils.Changes) -> None:
+    def on_change(self, changes: textutils.Changes) -> None:
         if not changes.change_list:
             return
 
         if len(changes.change_list) >= 2:
-            # doesn't happen very often in normal editing
+            # slow, but doesn't happen very often in normal editing
             self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
         else:
             [change] = changes.change_list
@@ -297,10 +302,6 @@ class TreeSitterHighlighter(BaseHighlighter):
                 new_end_col = len(change.new_text.split("\n")[-1])
             else:
                 new_end_col = start_col + len(change.new_text)
-
-            log.debug(
-                f"File changed between {start_row}.{start_col} and {new_end_row}.{new_end_col}, updating"
-            )
 
             start_byte = self.textwidget.tk.call(
                 str(self.textwidget), "count", "-chars", "1.0", f"{start_row}.{start_col}"
@@ -314,6 +315,8 @@ class TreeSitterHighlighter(BaseHighlighter):
                 new_end_point=(new_end_row - 1, new_end_col),
             )
             self._tree = self._parser.parse(self._get_file_content_for_tree_sitter(), self._tree)
+
+        self.update_tags_of_visible_area_from_tree()
 
 
 # A small command-line utility for configuring tree-sitter.

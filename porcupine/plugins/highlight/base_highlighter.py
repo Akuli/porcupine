@@ -2,22 +2,32 @@ from __future__ import annotations
 
 import tkinter
 from abc import abstractmethod
+from typing import Any, Iterator
+
+from pygments import token
 
 from porcupine import textutils
+
+
+def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
+    yield tokentype
+    for sub in map(_list_all_token_types, tokentype.subtypes):
+        yield from sub
+
+
+_all_token_tags = set(map(str, _list_all_token_types(token.Token)))
 
 
 class BaseHighlighter:
     """This class defines what all syntax highlighters must do.
 
-    A syntax highlighter can have internal state that depends on the text
-    widget, e.g. an AST tree. The highlighter's __init__() should initialize
-    that state from what is currently in the text widget, and afterwards it
-    should be updated based on change events.
+    A syntax highlighter has to:
+    - Highlight the visible part of the file in __init__().
+    - Update the visible part of the file when the user scrolls the file.
+    - Update the visible part of the file when it is edited.
 
-    Once the internal state is up to date, the highlighter should be able to
-    turn it into tags for the text widget. That's what add_tags() does. What
-    color each tag gets depends on the current pygments theme and is configured
-    in a separate plugin.
+    The concrete highlighter subclasses decide how exactly this is done, but
+    this base class provides utilities to help with it.
     """
 
     def __init__(self, textwidget: tkinter.Text) -> None:
@@ -25,10 +35,18 @@ class BaseHighlighter:
         textutils.use_pygments_tags(self.textwidget)
 
     @abstractmethod
-    def update_internal_state(self, changes: textutils.Changes) -> None:
+    def on_scroll(self) -> None:
         raise NotImplementedError
 
-    # It's fine if some tags end up outside the given range
     @abstractmethod
-    def add_tags(self, start: str, end: str) -> None:
+    def on_change(self, changes: textutils.Changes) -> None:
         raise NotImplementedError
+
+    def get_visible_part(self) -> tuple[str, str]:
+        start=self.textwidget.index("@0,0")
+        end=self.textwidget.index("@0,10000")
+        return (start,end)
+
+    def delete_tags(self, start: str, end: str) -> None:
+        for tag in _all_token_tags:
+            self.textwidget.tag_remove(tag, start, end)

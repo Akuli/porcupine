@@ -11,12 +11,10 @@ from __future__ import annotations
 import logging
 import tkinter
 from pathlib import Path
-from typing import Callable, Any, Iterator, Optional
-from pygments import token
+from typing import Callable, Optional
 from pygments.lexer import LexerMeta
 
-from porcupine import get_tab_manager, tabs, utils
-from porcupine.textutils import Changes
+from porcupine import get_tab_manager, tabs, textutils,utils
 
 from .base_highlighter import BaseHighlighter
 from .pygments_highlighter import PygmentsHighlighter
@@ -27,15 +25,6 @@ log = logging.getLogger(__name__)
 # Uses tab settings defined in filetypes.toml.
 # TODO: what other plugins need this?
 setup_after = ["filetypes"]
-
-
-def _list_all_token_types(tokentype: Any) -> Iterator[Any]:
-    yield tokentype
-    for sub in map(_list_all_token_types, tokentype.subtypes):
-        yield from sub
-
-
-all_token_tags = set(map(str, _list_all_token_types(token.Token)))
 
 
 class HighlighterManager:
@@ -75,37 +64,15 @@ class HighlighterManager:
                 self._tab.textwidget, lexer_class()
             )
 
-        self.update_tags_of_visible_area()
+        self._highlighter.on_scroll()
 
-    # Can add some tags outside the range, depending on the highlighter.
-    # That's fine, because adding the same tag twice to the same text does nothing.
-    def _update_tags(self, start: str, end: str) -> None:
-        for tag in all_token_tags:
-            self._tab.textwidget.tag_remove(tag, start, end)
+    def on_change_event(self, event: utils.EventWithData) -> None:
         assert self._highlighter is not None
-        self._highlighter.add_tags(start, end)
+        self._highlighter.on_change(event.data_class(textutils.Changes))
 
-    def update_tags_of_visible_area(self) -> None:
+    def on_scroll_event(self)->None:
         assert self._highlighter is not None
-        start=self._tab.textwidget.index("@0,0")
-        end=self._tab.textwidget.index("@0,10000")
-        self._update_tags(start,end)
-
-    def update_with_change_event(self, event: utils.EventWithData) -> None:
-        assert self._highlighter is not None
-        changes = event.data_class(Changes)
-        self._highlighter.update_internal_state(changes)
-
-        if len(changes.change_list) == 1 and len(changes.change_list[0].new_text) <= 1:
-            # Optimization for typical key strokes (but not for reloading entire file):
-            # Only highlight the area that might have changed.
-            # TODO: does this surely work correctly if changes[0].new_text == '\n'?
-            change = changes.change_list[0]
-            start = self._tab.textwidget.index(f"{change.start[0]}.0")
-            end = self._tab.textwidget.index(f"{change.end[0]}.0 lineend")
-            self._update_tags(start,end)
-        else:
-            self.update_tags_of_visible_area()
+        self._highlighter.on_scroll()
 
 
 # When scrolling, don't highlight too often. Makes scrolling smoother.
@@ -151,10 +118,10 @@ def on_new_filetab(tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> N
 
     # These need lambdas because the highlighter variable can be reassigned.
     utils.bind_with_data(
-        tab.textwidget, "<<ContentChanged>>", manager.update_with_change_event, add=True
+        tab.textwidget, "<<ContentChanged>>", manager.on_change_event, add=True
     )
     utils.add_scroll_command(
-        tab.textwidget, "yscrollcommand", debounce(tab, manager.update_tags_of_visible_area, 100)
+        tab.textwidget, "yscrollcommand", debounce(tab, manager.on_scroll_event, 100)
     )
 
 

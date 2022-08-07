@@ -16,11 +16,11 @@ root_mark_names = (ROOT_STATE_MARK_PREFIX + str(n) for n in itertools.count())
 
 
 class PygmentsHighlighter(BaseHighlighter):
-
     def __init__(self, textwidget: tkinter.Text, lexer: Lexer) -> None:
         super().__init__(textwidget)
-        self.lexer = lexer
         self.textwidget.mark_unset(*self._get_root_marks("1.0", "end"))
+        self._lexer = lexer
+        self.highlight_range()
 
     # yields marks backwards, from end to start
     def _get_root_marks(self, start: str = "1.0", end: str = "end") -> Iterator[str]:
@@ -42,12 +42,12 @@ class PygmentsHighlighter(BaseHighlighter):
 
     def _detect_root_state(self, generator: Any, end_location: str) -> bool:
         # below code buggy for markdown
-        if isinstance(self.lexer, MarkdownLexer):
+        if isinstance(self._lexer, MarkdownLexer):
             return False
 
         # Only for subclasses of RegexLexer that don't override get_tokens_unprocessed
         # TODO: support ExtendedRegexLexer's context thing
-        if type(self.lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
+        if type(self._lexer).get_tokens_unprocessed == RegexLexer.get_tokens_unprocessed:
             # Use local variables inside the generator (ugly hack)
             local_vars = generator.gi_frame.f_locals
 
@@ -61,23 +61,23 @@ class PygmentsHighlighter(BaseHighlighter):
         # Start of line (column zero) and not indentation or blank line
         return end_location.endswith(".0") and bool(self.textwidget.get(end_location).strip())
 
-    # No internal state.
-    def update_internal_state(self, changes: textutils.Changes) -> None:
-        pass
-
-    def add_tags(self, last_possible_start: str, first_possible_end: str) -> None:
-        start = self.textwidget.index(next(self._get_root_marks(end=last_possible_start), "1.0"))
-        lineno, column = map(int, start.split("."))
-
-        end_of_view = self.textwidget.index("@0,10000")
+    def highlight_range(self, last_possible_start: str = "1.0", first_possible_end: str = "end") -> None:
+        # Clamp given start and end to be within the visible part.
+        # If no arguments are given, highlight the visible part of the file.
+        start_of_view, end_of_view = self.get_visible_part()
+        if self.textwidget.compare(last_possible_start, "<", start_of_view):
+            last_possible_start = start_of_view
         if self.textwidget.compare(first_possible_end, ">", end_of_view):
             first_possible_end = end_of_view
+
+        start = self.textwidget.index(next(self._get_root_marks(end=last_possible_start), "1.0"))
+        lineno, column = map(int, start.split("."))
 
         tag_locations: dict[str, list[str]] = {}
         mark_locations = [start]
 
         # The one time where tk's magic trailing newline is helpful! See #436.
-        generator = self.lexer.get_tokens_unprocessed(self.textwidget.get(start, "end"))
+        generator = self._lexer.get_tokens_unprocessed(self.textwidget.get(start, "end"))
         for position, tokentype, text in generator:
             token_start = f"{lineno}.{column}"
             newline_count = text.count("\n")
@@ -105,7 +105,7 @@ class PygmentsHighlighter(BaseHighlighter):
                 break
 
         end = f"{lineno}.{column}"
-
+        self.delete_tags(start, end)
         for tag, places in tag_locations.items():
             self.textwidget.tag_add(tag, *places)
 
@@ -122,3 +122,16 @@ class PygmentsHighlighter(BaseHighlighter):
 
         for mark_index in mark_locations:
             self.textwidget.mark_set(next(root_mark_names), mark_index)
+
+    def on_scroll(self)->None:
+        self.highlight_range()
+
+    def on_change(self, changes: textutils.Changes) -> None:
+        if len(changes.change_list) == 1:
+            [change] = changes.change_list
+            if len(change.new_text) <= 1:
+                # Optimization for typical key strokes (but not for reloading entire file):
+                # only highlight the area that might have changed
+                self.highlight_range(f"{change.start[0]}.0", f"{change.end[0]}.0 lineend")
+                return
+        self.highlight_range()
