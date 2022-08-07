@@ -8,7 +8,7 @@ Pygments color themes, and we use them with tree-sitter for a couple reasons:
   Pygments theme named "zaab" created by a friend of mine, available here:
   https://github.com/8banana/banana-themes
 
-There is a command-line interface for exploring the structure of syntax trees:
+Porcupine comes with a script for exploring tree-syntax syntax trees:
 
     $ cat hello.py
     print("hello")
@@ -43,6 +43,7 @@ these files.
 
 In tree-sitter, each language has a language ID ("python" in this example) that
 is used in several places:
-- tree_sitter_language_id in default_filetypes.toml
+- Argument of `scripts/tree-sitter-dump.py`
+- tree_sitter_language_id in default_filetypes.toml and filetypes.toml
 - Names of .yml files in this directory
 - Inside the language binaries (see .github/workflows/tree-sitter-binaries.yml)
