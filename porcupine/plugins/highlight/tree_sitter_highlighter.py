@@ -211,8 +211,9 @@ class TreeSitterHighlighter(BaseHighlighter):
         #
         # Needing this is probably a bug in py-tree-sitter.
         if sys.platform == "win32":
-            result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(self._language.lib._handle))
-            assert result == 1
+            self._language.lib = None
+            # result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(self._language.lib._handle))
+            # assert result == 1
 
     def _get_file_content_for_tree_sitter(self) -> bytes:
         # tk indexes are in chars, tree_sitter is in utf-8 bytes
