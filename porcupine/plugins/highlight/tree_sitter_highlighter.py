@@ -192,28 +192,38 @@ class YmlConfig:
     token_mapping: Dict[str, Union[str, Dict[str, str]]]
 
 
+_LANGUAGE_CACHE: dict[str, object] = {}
+
+
+# Called from tests. Without this, tests fail on windows because they try to delete the cache
+# directory containing the .dll file, but the .dll is still in use. Needing this is probably a bug
+# in py-tree-sitter.
+def clean_up() -> None:
+    if sys.platform == "win32":
+        for language in _LANGUAGE_CACHE.values():
+            result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(language.lib._handle))
+            assert result == 1
+    _LANGUAGE_CACHE.clear()
+
+
 class TreeSitterHighlighter(BaseHighlighter):
     def __init__(self, textwidget: tkinter.Text, binary_path: Path, language_name: str) -> None:
         super().__init__(textwidget)
         self._language_name = language_name
-        self._language = Language(str(binary_path), language_name)
+
+        try:
+            language = _LANGUAGE_CACHE[language_name]
+        except KeyError:
+            language = Language(str(binary_path), language_name)
+            _LANGUAGE_CACHE[language_name] = language
+
         self._parser = Parser()
-        self._parser.set_language(self._language)
+        self._parser.set_language(language)
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
         token_mapping_path = DATA_DIR / "token-mappings" / (language_name + ".yml")
         with token_mapping_path.open("r", encoding="utf-8") as file:
             self._config = dacite.from_dict(YmlConfig, yaml.safe_load(file))
-
-    def clean_up(self) -> None:
-        # Without this, tests fail on windows because they try to delete the cache directory
-        # containing the .dll file, but the .dll is still in use.
-        #
-        # Needing this is probably a bug in py-tree-sitter.
-        if sys.platform == "win32":
-            self._language.lib = None
-            # result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(self._language.lib._handle))
-            # assert result == 1
 
     def _get_file_content_for_tree_sitter(self) -> bytes:
         # tk indexes are in chars, tree_sitter is in utf-8 bytes
