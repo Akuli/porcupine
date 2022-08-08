@@ -29,6 +29,20 @@ FileType = Dict[str, Any]
 filetypes: dict[str, FileType] = {}
 
 
+# Sometimes dynamic typing is awesome
+def merge_settings(default: object, user: object) -> Any:
+    if isinstance(default, list) and isinstance(user, list):
+        return default + user
+    if isinstance(default, dict) and isinstance(user, dict):
+        # If a key is in only one of the dicts, include as is.
+        # Recurse for keys in both dicts.
+        result = {**default, **user}
+        for common_key in default.keys() & user.keys():
+            result[common_key] = merge_settings(default[common_key], user[common_key])
+        return result
+    return user
+
+
 def is_list_of_strings(obj: object) -> bool:
     return isinstance(obj, list) and all(isinstance(item, str) for item in obj)
 
@@ -39,7 +53,7 @@ def load_filetypes() -> None:
     defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
     with defaults_path.open("rb") as defaults_file:
-        filetypes.update(tomli.load(defaults_file))
+        default_filetypes = tomli.load(defaults_file)
 
     user_filetypes: dict[str, FileType] = {}
     try:
@@ -59,8 +73,8 @@ def load_filetypes() -> None:
     except (OSError, UnicodeError, tomli.TOMLDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
 
-    for name, updates in user_filetypes.items():
-        filetypes.setdefault(name, {}).update(updates)
+    assert not filetypes
+    filetypes.update(merge_settings(default_filetypes, user_filetypes))
 
     for name, filetype in filetypes.items():
         # everything except filename_patterns and shebang_regex is handled by Settings objects
