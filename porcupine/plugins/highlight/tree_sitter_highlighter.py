@@ -134,7 +134,7 @@ def prepare_binary() -> Path | None:
         else:
             if crc != info.CRC:
                 log.warning(
-                    f"binary has changed after extracting (CRC mismatch), extracting again: {binary_filename}"
+                    f"binary has changed after extracting (CRC mismatch), extracting again: {binary_path}"
                 )
                 zipfile.extract(info, binary_path.parent)
         return binary_path
@@ -222,6 +222,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         overlap_start = max(cursor.node.start_point, start_point)
         overlap_end = min(cursor.node.end_point, end_point)
         if overlap_start >= overlap_end:
+            # No overlap with the range we care about. Skip subnodes.
             return
 
         if cursor.node.type not in self._config.dont_recurse_inside and cursor.goto_first_child():
@@ -245,7 +246,7 @@ class TreeSitterHighlighter(BaseHighlighter):
 
         self.delete_tags(start, end)
 
-        for node in list(self._get_all_nodes(self._tree.walk(), start_point, end_point)):
+        for node in self._get_all_nodes(self._tree.walk(), start_point, end_point):
             # A hack for TOML. This:
             #
             #   [foo]

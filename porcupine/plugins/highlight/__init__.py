@@ -113,7 +113,6 @@ def on_new_filetab(tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> N
     tab.bind("<<TabSettingChanged:tree_sitter>>", manager.on_config_changed, add=True)
     manager.on_config_changed()
 
-    # These need lambdas because the highlighter variable can be reassigned.
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", manager.on_change_event, add=True)
     utils.add_scroll_command(
         tab.textwidget, "yscrollcommand", debounce(tab, manager.on_scroll_event, 100)
