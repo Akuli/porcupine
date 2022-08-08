@@ -201,6 +201,7 @@ _LANGUAGE_CACHE: dict[str, object] = {}
 def clean_up() -> None:
     if sys.platform == "win32":
         for language in _LANGUAGE_CACHE.values():
+            print("Free Handle", cast(Any, language).lib._handle)
             result = ctypes.windll.kernel32.FreeLibrary(
                 ctypes.c_void_p(cast(Any, language).lib._handle)
             )

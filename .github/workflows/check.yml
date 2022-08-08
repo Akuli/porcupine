@@ -46,7 +46,7 @@ jobs:
     - run: pip install wheel
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: python scripts/download-tkdnd.py
-    - run: python -m pytest -vvvv --durations=10
+    - run: python -m pytest --durations=10
   pytest-linux:
     timeout-minutes: 10
     strategy:
