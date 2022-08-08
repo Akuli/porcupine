@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-from pygments.lexers import PythonLexer, YamlLexer, TclLexer, BashLexer
+from pygments.lexers import BashLexer, PythonLexer, TclLexer, YamlLexer
 
 
 def test_pygments_deleting_bug(filetab):
