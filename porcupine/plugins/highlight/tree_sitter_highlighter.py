@@ -10,7 +10,7 @@ import webbrowser
 import zlib
 from pathlib import Path
 from tkinter import ttk
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Dict, Iterator, List, Union, cast
 from urllib.parse import quote_plus
 from zipfile import ZipFile
 
@@ -201,7 +201,7 @@ _LANGUAGE_CACHE: dict[str, object] = {}
 def clean_up() -> None:
     if sys.platform == "win32":
         for language in _LANGUAGE_CACHE.values():
-            result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(language.lib._handle))
+            result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(cast(Any, language).lib._handle))
             assert result == 1
     _LANGUAGE_CACHE.clear()
 
