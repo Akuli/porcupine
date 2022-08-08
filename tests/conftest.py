@@ -4,6 +4,7 @@
 # adding any_widget.update() calls
 # see also update(3tcl)
 
+import ctypes
 import logging
 import operator
 import os
@@ -81,6 +82,17 @@ def monkeypatch_dirs():
             shutil.copy(user_font_cache_file, test_font_cache_file)
 
         yield
+
+        if sys.platform == "win32":
+            # FIXME: there must be a better way to prevent errors from deleting
+            # the .dll while it's still loaded?
+            dll = os.path.join(d, "cache", "tree-sitter-binary-win32-AMD64.dll")
+            while True:
+                handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
+                if handle == 0:
+                    break
+                result = ctypes.windll.kernel32.FreeLibrary(handle)
+                assert result == 1
 
 
 @pytest.fixture(scope="session", autouse=True)
