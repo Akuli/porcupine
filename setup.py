@@ -43,7 +43,7 @@ setup(
     install_requires=list(get_requirements()),
     packages=find_packages(),
     package_data={
-        "": ["*.txt", "*.gif", "*.sh", "*.toml", "*.tcl", "*.zip"],
+        "": ["*.txt", "*.gif", "*.sh", "*.toml", "*.tcl", "*.zip", "*.yml"],
         # this is needed because porcupine/images isn't a package
         "porcupine": ["images/*"],
     },
