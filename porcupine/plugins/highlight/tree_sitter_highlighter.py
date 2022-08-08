@@ -192,15 +192,15 @@ class YmlConfig:
 
 
 class TreeSitterHighlighter(BaseHighlighter):
-    def __init__(self, textwidget: tkinter.Text, binary_path: Path, language_id: str) -> None:
+    def __init__(self, textwidget: tkinter.Text, binary_path: Path, language_name: str) -> None:
         super().__init__(textwidget)
         self._binary_path = binary_path
-        self._language_id = language_id
+        self._language_name = language_name
         self._parser = Parser()
-        self._parser.set_language(Language(str(self._binary_path), language_id))
+        self._parser.set_language(Language(str(self._binary_path), language_name))
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
-        token_mapping_path = DATA_DIR / "token-mappings" / (language_id + ".yml")
+        token_mapping_path = DATA_DIR / "token-mappings" / (language_name + ".yml")
         with token_mapping_path.open("r", encoding="utf-8") as file:
             self._config = dacite.from_dict(YmlConfig, yaml.safe_load(file))
 
@@ -265,12 +265,12 @@ class TreeSitterHighlighter(BaseHighlighter):
             #
             # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
             if (
-                self._language_id == "toml"
+                self._language_name == "toml"
                 and node.type not in ("pair", "comment")
                 and node.parent is not None
                 and node.parent.type in ("table", "table_array_element")
             ) or (
-                self._language_id == "rust"
+                self._language_name == "rust"
                 and node.type in ("identifier", "scoped_identifier", "!")
                 and node.parent is not None
                 and node.parent.type == "macro_invocation"

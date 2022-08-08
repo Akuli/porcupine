@@ -72,7 +72,7 @@
 #        is, even though the [Python] section configures Porcupine's syntax
 #        highlighting to use tree_sitter instead of pygments.
 #
-#    tree_sitter_language_id
+#    tree_sitter_language_name
 #        Configuration for the "tree_sitter" syntax highlighter. The following
 #        file in Porcupine's source code explains this setting in more detail:
 #
@@ -196,7 +196,7 @@ filename_patterns = ["*.py", "*.pyw"]
 shebang_regex = 'python(\d(\.\d)?)?$'
 pygments_lexer = "pygments.lexers.Python3Lexer"
 syntax_highlighter = "tree_sitter"
-tree_sitter_language_id = "python"
+tree_sitter_language_name = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
@@ -219,7 +219,7 @@ environment = "{python_venv}"
 filename_patterns = ["*.pyi"]
 pygments_lexer = "pygments.lexers.Python3Lexer"
 syntax_highlighter = "tree_sitter"
-tree_sitter_language_id = "python"
+tree_sitter_language_name = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
@@ -412,7 +412,7 @@ comment_prefix = ';'
 filename_patterns = ["*.rs"]
 syntax_highlighter = "tree_sitter"
 pygments_lexer = "pygments.lexers.RustLexer"
-tree_sitter_language_id = "rust"
+tree_sitter_language_name = "rust"
 tabs2spaces = true
 indent_size = 4
 comment_prefix = '//'

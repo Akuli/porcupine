@@ -45,10 +45,10 @@ class HighlighterManager:
                 self._tab.settings.set("syntax_highlighter", "pygments")
                 return  # this will be called again soon (or was called again already?)
 
-            language_id = self._tab.settings.get("tree_sitter_language_id", str)
-            log.info(f"creating a tree_sitter highlighter with language {repr(language_id)}")
+            language_name = self._tab.settings.get("tree_sitter_language_name", str)
+            log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
             self._highlighter = TreeSitterHighlighter(
-                self._tab.textwidget, self._tree_sitter_binary_path, language_id
+                self._tab.textwidget, self._tree_sitter_binary_path, language_name
             )
 
         else:
@@ -105,7 +105,7 @@ def debounce(
 def on_new_filetab(tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> None:
     # pygments_lexer option already exists, as it is used also outside this plugin
     tab.settings.add_option("syntax_highlighter", default="pygments")
-    tab.settings.add_option("tree_sitter_language_id", default="<missing>")
+    tab.settings.add_option("tree_sitter_language_name", default="<missing>")
 
     manager = HighlighterManager(tab, tree_sitter_binary_path)
     tab.bind("<<TabSettingChanged:pygments_lexer>>", manager.on_config_changed, add=True)

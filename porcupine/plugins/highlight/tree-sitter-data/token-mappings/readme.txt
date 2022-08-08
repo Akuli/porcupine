@@ -41,9 +41,9 @@ This gives you a good overall idea of the file format, but the details are
 undocumented. Just ask me (Akuli) if you need help with something related to
 these files.
 
-In tree-sitter, each language has a language ID ("python" in this example) that
-is used in several places:
+In tree-sitter, each programming language has a name ("python" in this example)
+that is used in several places:
 - Argument of `scripts/tree-sitter-dump.py`
-- tree_sitter_language_id in default_filetypes.toml and filetypes.toml
+- tree_sitter_language_name in default_filetypes.toml and filetypes.toml
 - Names of .yml files in this directory
 - Inside the language binaries (see .github/workflows/tree-sitter-binaries.yml)
