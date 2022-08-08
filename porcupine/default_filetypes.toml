@@ -41,7 +41,7 @@
 #                sometimes editing the code and reverting your edits changes how
 #                the code is highlighted.
 #
-#                Recommended for any language with small files.
+#                Recommended for most languages with small files.
 #
 #            "tree_sitter"
 #                A fast highlighter that produces consistent results as the code
