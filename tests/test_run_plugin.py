@@ -143,6 +143,10 @@ dc065ff9749eb33cb5276899ce5fd0dcb8631eec2c96f3daa9
     assert not there_are_links()
 
 
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true" and sys.platform == "win32",
+    reason="sometimes fails randomly on windows github actions, hard to debug",
+)
 def test_repeat_in_another_file(tmp_path, tabmanager, mocker, monkeypatch, wait_until):
     (tmp_path / "a.py").write_text("print('aaa')")
     (tmp_path / "b.py").write_text("print('bbb')")
