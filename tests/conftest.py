@@ -87,12 +87,12 @@ def monkeypatch_dirs():
             # FIXME: there must be a better way to prevent errors from deleting
             # the .dll while it's still loaded?
             dll = os.path.join(d, "cache", "tree-sitter-binary-win32-AMD64.dll")
-            while True:
-                handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
-                if handle == 0:
-                    break
-                result = ctypes.windll.kernel32.FreeLibrary(handle)
-                assert result == 1
+
+            handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
+            assert handle != 0
+
+            free_result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(handle))
+            assert free_result == 1
 
 
 @pytest.fixture(scope="session", autouse=True)
