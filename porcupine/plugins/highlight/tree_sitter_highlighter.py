@@ -206,7 +206,9 @@ class TreeSitterHighlighter(BaseHighlighter):
             self._config = dacite.from_dict(YmlConfig, yaml.safe_load(file))
 
     def clean_up(self) -> None:
-        # Without this, deleting the .dll file from cache fails on windows because it's still in use.
+        # Without this, tests fail on windows because they try to delete the cache directory
+        # containing the .dll file, but the .dll is still in use.
+        #
         # Needing this is probably a bug in py-tree-sitter.
         if sys.platform == "win32":
             result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(self._language.lib._handle))
