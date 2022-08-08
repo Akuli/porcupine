@@ -134,7 +134,7 @@ def prepare_binary() -> Path | None:
         else:
             if crc != info.CRC:
                 log.warning(
-                    f"binary has changed after extracting (CRC mismatch), extracting again: {binary_filename}"
+                    f"binary has changed after extracting (CRC mismatch), extracting again: {binary_path}"
                 )
                 zipfile.extract(info, binary_path.parent)
         return binary_path
