@@ -246,7 +246,7 @@ class TreeSitterHighlighter(BaseHighlighter):
 
         self.delete_tags(start, end)
 
-        for node in list(self._get_all_nodes(self._tree.walk(), start_point, end_point)):
+        for node in self._get_all_nodes(self._tree.walk(), start_point, end_point):
             # A hack for TOML. This:
             #
             #   [foo]
