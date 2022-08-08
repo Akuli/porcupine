@@ -14,6 +14,7 @@ jobs:
       with:
         python-version: "3.9"  # can be 3.10 once mypy is updated and no longer really slow on 3.10
         cache: pip
+    - run: pip install wheel
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: |
         time mypy --platform linux --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
@@ -42,6 +43,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
+    - run: pip install wheel
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: python scripts/download-tkdnd.py
     - run: python -m pytest -vvvv --durations=10
@@ -57,6 +59,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
+    - run: pip install wheel
     # Make sure that it doesn't crash with Noto Color Emoji
     - run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
     - run: pip install -r requirements.txt -r requirements-dev.txt
@@ -93,6 +96,7 @@ jobs:
       with:
         python-version: "3.10"
         cache: pip
+    - run: pip install wheel
     - run: pip install -r requirements-dev.txt
     - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
   isort:
@@ -103,6 +107,7 @@ jobs:
       with:
         python-version: "3.10"
         cache: pip
+    - run: pip install wheel
     - run: pip install -r requirements-dev.txt
     - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
   pyflakes:
@@ -113,6 +118,7 @@ jobs:
       with:
         python-version: "3.10"
         cache: pip
+    - run: pip install wheel
     - run: pip install -r requirements-dev.txt
     - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
   bindcheck:
