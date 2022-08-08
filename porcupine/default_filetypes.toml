@@ -60,11 +60,17 @@
 #        changed in Porcupine Settings (in the Settings menu).
 #
 #    pygments_lexer (default: "pygments.lexers.TextLexer")
-#        If syntax_highlighter is set to "pygments", this should be the name of
-#        a Pygments lexer class that will be used for syntax highlighting. See
-#        the Pygments documentation for lexers that Pygments comes with:
+#        A class name from here:
 #
 #            https://pygments.org/docs/lexers/
+#
+#        This is used for syntax highlighting when syntax_highlighter is set to
+#        "pygments". It is also used for various other things in the editor. For
+#        example, when you select dpaste.com from the "Pastebin" menu at top to
+#        pastebin Python code, Porcupine uses the pygments_lexer defined in the
+#        [Python] section of this file to tell dpaste.com what language the code
+#        is, even though the [Python] section configures Porcupine's syntax
+#        highlighting to use tree_sitter instead of pygments.
 #
 #    tree_sitter_language_id
 #        Configuration for the "tree_sitter" syntax highlighter. The following

@@ -63,8 +63,8 @@ def main() -> None:
         action="append",  # Allow passing multiple times: --verbose-logger foo --verbose-logger bar
         help=(
             "increase verbosity for just one logger only, e.g. "
-            "--verbose-logger=porcupine.plugins.pygments_highlight "
-            "to see messages from the Pygments syntax highlighter plugin"
+            "--verbose-logger=porcupine.plugins.highlight "
+            "to see messages from highlight plugin"
         ),
     )
 
