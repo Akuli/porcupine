@@ -5,7 +5,7 @@
 #
 #    https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language
 #
-# Most commonly used options that Porcupine comes with (plugins may add more):
+# Most commonly used options (plugins may add more):
 #
 #    filename_patterns
 #        List of strings with * used as wildcard, such as "*.py" to match files
