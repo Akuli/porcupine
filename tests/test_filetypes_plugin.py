@@ -76,8 +76,10 @@ digraph G {
     )
     filetab.path = tmp_path / "graphviz-hello-world.gvz"
     filetab.save()
-    lexer_class_name = filetypes.get_filetype_for_tab(filetab)["pygments_lexer"]
-    assert lexer_class_name.endswith(".TextLexer")
+
+    filetype = filetypes.get_filetype_for_tab(filetab)
+    assert filetype["syntax_highlighter"] == "pygments"
+    assert filetype["pygments_lexer"].endswith(".TextLexer")
 
 
 def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
