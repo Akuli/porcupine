@@ -30,6 +30,6 @@ binary_path = prepare_binary()
 assert binary_path is not None
 
 parser = Parser()
-parser.set_language(Language(binary_path, language_name))
+parser.set_language(Language(str(binary_path), language_name))
 tree = parser.parse(open(filename, "rb").read())
 show_nodes(tree.walk())

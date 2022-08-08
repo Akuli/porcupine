@@ -197,7 +197,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         self._binary_path = binary_path
         self._language_id = language_id
         self._parser = Parser()
-        self._parser.set_language(Language(self._binary_path, language_id))
+        self._parser.set_language(Language(str(self._binary_path), language_id))
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
         token_mapping_path = DATA_DIR / "token-mappings" / (language_id + ".yml")
