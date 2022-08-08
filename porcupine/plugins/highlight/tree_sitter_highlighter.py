@@ -222,6 +222,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         overlap_start = max(cursor.node.start_point, start_point)
         overlap_end = min(cursor.node.end_point, end_point)
         if overlap_start >= overlap_end:
+            # No overlap with the range we care about. Skip subnodes.
             return
 
         if cursor.node.type not in self._config.dont_recurse_inside and cursor.goto_first_child():
