@@ -35,7 +35,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        os: ["ubuntu-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -45,27 +45,41 @@ jobs:
         cache: pip
     - run: pip install wheel
     - run: pip install -r requirements.txt -r requirements-dev.txt
-
-    # Install tkdnd
     - if: matrix.os == 'ubuntu-latest'
-      # Also make sure that it doesn't crash with Noto Color Emoji
+      # Make sure that it doesn't crash with Noto Color Emoji installed
       run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
-    - if: matrix.os != 'ubuntu-latest'
-      run: python scripts/download-tkdnd.py
-
-    # Add tkdnd to TCLLIBPATH if needed
     - if: matrix.os == 'windows-latest'
-      # https://stackoverflow.com/a/65110357
       run: |
+        python scripts/download-tkdnd.py
         echo "TCLLIBPATH=lib" >> $env:GITHUB_ENV
-    - if: matrix.os == 'macos-latest'
-      run: |
-        echo TCLLIBPATH=./lib >> $GITHUB_ENV
-
-    # Run pytest
     - uses: GabrielBB/xvfb-action@v1.4
       with:
         run: python -m pytest -vvvv --durations=10
+
+  # Separate from other pytests because tkinter doesn't work on macos with actions/setup-python.
+  # It imports, but gives this error:    RuntimeError: tk.h version (8.6) doesn't match libtk.a version (8.5)
+  pytest-macos:
+    timeout-minutes: 15
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        # tk version in python 3.7 is too old
+        # brew doesn't have python 3.10 yet
+        python-version: ["3.8", "3.9"]
+    env:
+      # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
+      TCLLIBPATH: ./lib
+      PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
+    steps:
+    - uses: actions/checkout@v2
+    - run: brew install python@${{ matrix.python-version }}
+    # https://stackoverflow.com/a/66919851
+    - if: matrix.python-version == '3.9'
+      run: brew install python-tk@${{ matrix.python-version }}
+    - run: $PYTHON --version
+    - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
+    - run: $PYTHON scripts/download-tkdnd.py
+    - run: $PYTHON -m pytest -vvvv --durations=10
 
   black:
     runs-on: ubuntu-latest
