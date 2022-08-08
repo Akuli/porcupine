@@ -2,12 +2,11 @@
 import os
 import platform
 import shutil
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 from tree_sitter import Language
-
 
 Path("build").mkdir(exist_ok=True)
 
