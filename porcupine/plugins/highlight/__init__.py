@@ -34,7 +34,13 @@ class HighlighterManager:
         self._tree_sitter_binary_path = tree_sitter_binary_path
         self._highlighter: BaseHighlighter | None = None
 
+    def clean_up_highlighter(self, junk: object = None) -> None:
+        if self._highlighter is not None:
+            self._highlighter.clean_up()
+            self._highlighter = None
+
     def on_config_changed(self, junk: object = None) -> None:
+        self.clean_up_highlighter()
         highlighter_name = self._tab.settings.get("syntax_highlighter", str)
         if highlighter_name == "tree_sitter":
             if self._tree_sitter_binary_path is None:
@@ -117,6 +123,8 @@ def on_new_filetab(tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> N
     utils.add_scroll_command(
         tab.textwidget, "yscrollcommand", debounce(tab, manager.on_scroll_event, 100)
     )
+
+    tab.bind("<Destroy>", manager.clean_up_highlighter, add=True)
 
 
 def setup() -> None:

@@ -34,6 +34,10 @@ class BaseHighlighter:
         self.textwidget = textwidget
         textutils.use_pygments_tags(self.textwidget)
 
+    # Called when the highlighter is no longer needed.
+    def clean_up(self) -> None:
+        pass
+
     @abstractmethod
     def on_scroll(self) -> None:
         raise NotImplementedError

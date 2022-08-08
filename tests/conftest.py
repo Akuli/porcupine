@@ -24,6 +24,7 @@ from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
 from porcupine.plugins import git_status
 from porcupine.plugins.directory_tree import get_directory_tree
+from porcupine.plugins.highlight import tree_sitter_highlighter
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
@@ -82,17 +83,7 @@ def monkeypatch_dirs():
             shutil.copy(user_font_cache_file, test_font_cache_file)
 
         yield
-
-        if sys.platform == "win32":
-            # FIXME: there must be a better way to prevent errors from deleting
-            # the .dll while it's still loaded?
-            dll = os.path.join(d, "cache", "tree-sitter-binary-win32-AMD64.dll")
-
-            handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
-            assert handle != 0
-
-            free_result = ctypes.windll.kernel32.FreeLibrary(ctypes.c_void_p(handle))
-            assert free_result == 1
+        tree_sitter_highlighter.clean_up()
 
 
 @pytest.fixture(scope="session", autouse=True)
