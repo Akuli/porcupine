@@ -64,8 +64,7 @@ jobs:
     strategy:
       matrix:
         # tk version in python 3.7 is too old
-        # brew doesn't have python 3.10 yet
-        python-version: ["3.8", "3.9"]
+        python-version: ["3.8", "3.9", "3.10"]
     env:
       # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
       TCLLIBPATH: ./lib
