@@ -13,6 +13,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: "3.9"  # can be 3.10 once mypy is updated and no longer really slow on 3.10
+        cache: pip
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: |
         time mypy --platform linux --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
@@ -40,6 +41,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: pip
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: python scripts/download-tkdnd.py
     - run: python -m pytest -vvvv --durations=10
@@ -54,6 +56,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: pip
     # Make sure that it doesn't crash with Noto Color Emoji
     - run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
     - run: pip install -r requirements.txt -r requirements-dev.txt
@@ -89,6 +92,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: "3.10"
+        cache: pip
     - run: pip install -r requirements-dev.txt
     - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
   isort:
@@ -98,6 +102,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: "3.10"
+        cache: pip
     - run: pip install -r requirements-dev.txt
     - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
   pyflakes:
@@ -107,6 +112,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: "3.10"
+        cache: pip
     - run: pip install -r requirements-dev.txt
     - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
   bindcheck:
@@ -116,6 +122,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: "3.10"
+        cache: pip
     - run: python3 scripts/bindcheck.py porcupine
     - run: python3 scripts/bindcheck.py more_plugins
     - run: python3 scripts/bindcheck.py tests
