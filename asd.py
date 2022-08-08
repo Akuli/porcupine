@@ -10,3 +10,4 @@ with tempfile.TemporaryDirectory() as d:
     x = tree_sitter.Language(os.path.join(d, "tree-sitter-binary-win32-AMD64.dll"), "python")
     windll.kernel32.FreeLibrary(x.lib._handle)
     del x
+    import gc; gc.collect()
