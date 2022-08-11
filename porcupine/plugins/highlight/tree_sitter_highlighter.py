@@ -2,18 +2,22 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import sys
 import tkinter
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Dict, Iterator, List, Union, TYPE_CHECKING
 
 import dacite
-import tree_sitter_languages  # type: ignore[import]
 import yaml
-from tree_sitter import Node, TreeCursor  # type: ignore[import]
 
 from porcupine import textutils
 
 from .base_highlighter import BaseHighlighter
+
+# TODO: how to install tree-sitter and tree-sitter-languages on Windows?
+if sys.platform != "win32" or TYPE_CHECKING:
+    import tree_sitter_languages  # type: ignore[import]
+    from tree_sitter import Node, TreeCursor  # type: ignore[import]
 
 Point = Any
 log = logging.getLogger(__name__)

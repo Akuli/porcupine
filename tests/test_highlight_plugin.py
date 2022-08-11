@@ -1,6 +1,7 @@
 import subprocess
 import sys
 
+import pytest
 from pygments.lexers import BashLexer, PythonLexer, TclLexer, YamlLexer
 
 
@@ -64,6 +65,9 @@ def test_pygments_last_line_bug(filetab, tmp_path):
 #    - The dumping script, used only when configuring the plugin
 #
 # These need testing, and this test conveniently tests them both.
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="tree_sitter highlighter doesn't work on windows yet"
+)
 def test_tree_sitter_dump(tmp_path):
     (tmp_path / "hello.py").write_text("print('hello')")
     output = subprocess.check_output(

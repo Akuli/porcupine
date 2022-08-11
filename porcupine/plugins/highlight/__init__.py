@@ -9,6 +9,7 @@ You can change the color theme in Porcupine Settings.
 from __future__ import annotations
 
 import logging
+import sys
 import tkinter
 from typing import Callable
 
@@ -35,9 +36,19 @@ class HighlighterManager:
     def on_config_changed(self, junk: object = None) -> None:
         highlighter_name = self._tab.settings.get("syntax_highlighter", str)
         if highlighter_name == "tree_sitter":
-            language_name = self._tab.settings.get("tree_sitter_language_name", str)
-            log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
-            self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
+            if sys.platform == "win32":
+                log.warning(
+                    "the tree_sitter syntax highlighter is not supported on Windows yet,"
+                    + " falling back to the pygments highlighter"
+                )
+                self._tab.settings.set("syntax_highlighter", "pygments")
+                return  # will run again because the setting changed
+
+            # relying on early return causes mypy errors :(
+            else:
+                language_name = self._tab.settings.get("tree_sitter_language_name", str)
+                log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
+                self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
 
         else:
             if highlighter_name != "pygments":
