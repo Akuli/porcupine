@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Union
 
 import dacite
-import yaml
 import tree_sitter_languages  # type: ignore[import]
+import yaml
 from tree_sitter import Node, TreeCursor  # type: ignore[import]
 
 from porcupine import textutils
