@@ -5,7 +5,7 @@ import logging
 import sys
 import tkinter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Union
+from typing import TYPE_CHECKING, Dict, Iterator, List, Union
 
 import dacite
 import yaml
@@ -19,7 +19,6 @@ if sys.platform != "win32" or TYPE_CHECKING:
     import tree_sitter_languages  # type: ignore[import]
     from tree_sitter import Node, TreeCursor  # type: ignore[import]
 
-Point = Any
 log = logging.getLogger(__name__)
 
 # setup() can show an error message, and the ttk theme affects that
@@ -102,7 +101,7 @@ class TreeSitterHighlighter(BaseHighlighter):
 
     # only returns nodes that overlap the start,end range
     def _get_all_nodes(
-        self, cursor: TreeCursor, start_point: Point, end_point: Point
+        self, cursor: TreeCursor, start_point: tuple[int, int], end_point: tuple[int, int]
     ) -> Iterator[Node]:
         assert self._config is not None
         overlap_start = max(cursor.node.start_point, start_point)
