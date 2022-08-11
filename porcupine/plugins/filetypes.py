@@ -93,8 +93,9 @@ def load_filetypes() -> None:
 
         filetype.setdefault("filename_patterns", [])
         filetype.setdefault("shebang_regex", r"this regex matches nothing^")
+        filetype.setdefault("syntax_highlighter", "pygments")
 
-        # Avoid code like "if this is a C file", in case someone wants to use the same thing for c++
+        # Please avoid code like "if this is a C file", in case someone wants to use the same thing for c++
         # Applies to most other filetypes too e.g. Python file .py and Python stub file .pyi
         assert "filetype_name" not in filetype
         filetype["filetype_name"] = name
