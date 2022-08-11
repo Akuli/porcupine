@@ -261,7 +261,7 @@ Other people shouldn't need them.
 3. Merge the pull request and pull the merge commit to your local `master` branch.
 4. Run `python3 scripts/release.py` from the `master` branch.
     The script pushes a tag named e.g. `v2022.07.31`,
-    which triggers the parts of `.github/workflows/build.yml`
+    which triggers the parts of `.github/workflows/release-builds.yml`
     that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
     They build and deploy docs, copy the changelog to the releases page, and so on.
 5. Update `porcupine.wiki` if you added new features that are likely not obvious to users.

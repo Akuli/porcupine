@@ -30,12 +30,55 @@
 #        Arguments starting with '-' are ignored, so the regex '^#!/bin/foo$'
 #        matches the shebang '#!/bin/foo --bar --baz'.
 #
+#    syntax_highlighter
+#        Porcupine currently comes with two syntax highlighters that this
+#        setting chooses from:
+#
+#            "pygments" (default)
+#                This syntax highlighter supports many different languages and
+#                it is easy to configure, but it is slow with large files. It
+#                also has known bugs that are basically impossible to fix:
+#                sometimes editing the code and reverting your edits changes how
+#                the code is highlighted.
+#
+#                Recommended for most languages with small files.
+#
+#            "tree_sitter"
+#                A fast highlighter that produces consistent results as the code
+#                is being edited. However, this highlighter supports only a few
+#                languages. Several things must be done for a language to be
+#                supported, and as a user of Porcupine, you probably shouldn't
+#                try to configure this highlighter yourself; just ask me to do
+#                it instead by making an issue on GitHub.
+#
+#                Currently this highlighter does not work at all on Windows.
+#
+#                Recommended for languages with large files or known bugs with
+#                the "pygments" highlighter.
+#
+#        Regardless of this setting, the color theme is always taken from
+#        Pygments, because there are many Pygments themes and it is easy to get
+#        them to work with other highlighting libraries. The theme can be
+#        changed in Porcupine Settings (in the Settings menu).
+#
 #    pygments_lexer (default: "pygments.lexers.TextLexer")
-#        Name of a Pygments lexer class that will be used for syntax
-#        highlighting. See the Pygments documentation for lexers that Pygments
-#        comes with:
+#        A class name from here:
 #
 #            https://pygments.org/docs/lexers/
+#
+#        This is used for syntax highlighting when syntax_highlighter is set to
+#        "pygments". It is also used for various other things in the editor. For
+#        example, when you select dpaste.com from the "Pastebin" menu at top to
+#        pastebin Python code, Porcupine uses the pygments_lexer defined in the
+#        [Python] section of this file to tell dpaste.com what language the code
+#        is, even though the [Python] section configures Porcupine's syntax
+#        highlighting to use tree_sitter instead of pygments.
+#
+#    tree_sitter_language_name
+#        Configuration for the "tree_sitter" syntax highlighter. The following
+#        file in Porcupine's source code explains this setting in more detail:
+#
+#            porcupine/plugins/highlight/tree-sitter-token-mappings/readme.txt
 #
 #    tabs2spaces (default: true)
 #        If this is true, then spaces will be used for indentation.
@@ -154,12 +197,13 @@ pygments_lexer = "pygments.lexers.TextLexer"
 filename_patterns = ["*.py", "*.pyw"]
 shebang_regex = 'python(\d(\.\d)?)?$'
 pygments_lexer = "pygments.lexers.Python3Lexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_name = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
-
 [[Python.example_commands]]
 command = "python3 {file_name}"
 windows_command = "py {file_name}"
@@ -167,17 +211,17 @@ windows_command = "py {file_name}"
 command = "python3 -m {project_name}"
 windows_command = "py -m {project_name}"
 working_directory = "{project_path}"
-
 [Python.langserver]
 command = "{porcupine_python} -m pyls"
 language_id = "python"
-
 [Python.langserver.settings.pyls.plugins.jedi]
 environment = "{python_venv}"
 
 ["Python stub file"]
 filename_patterns = ["*.pyi"]
 pygments_lexer = "pygments.lexers.Python3Lexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_name = "python"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 130   # https://github.com/python/typeshed/blob/4586ed9/CONTRIBUTING.md#conventions
@@ -241,7 +285,6 @@ tabs2spaces = true
 indent_size = 2
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
-
 # TODO: node typically ends up in path from ~/.bashrc
 [[JavaScript.example_commands]]
 command = "node {file_name}"
@@ -254,7 +297,6 @@ tabs2spaces = true
 indent_size = 2
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
-
 [[TypeScript.example_commands]]
 command = "tsc {file_name}"
 external_terminal = false
@@ -268,7 +310,6 @@ pygments_lexer = "pygments.lexers.MakefileLexer"
 # make doesn't work with spaces
 tabs2spaces = false
 comment_prefix = '#'
-
 [[Makefile.example_commands]]
 command = "make"
 working_directory = "{project_path}"
@@ -283,7 +324,6 @@ shebang_regex = '((ba|da|k|pdk)?sh[-0-9_]*|openrc-run|runscript)$'
 pygments_lexer = "pygments.lexers.BashLexer"
 comment_prefix = '#'
 autoindent_regexes = {dedent = '(return|exit)( .+)?|break|continue|;;', indent = '[^()]+\)|.*\b(then|do|else|in)'}
-
 [[Shell.example_commands]]
 command = "./{file_name}"
 [[Shell.example_commands]]
@@ -297,7 +337,6 @@ shebang_regex = '(wi|tcl)sh$'
 pygments_lexer = "pygments.lexers.TclLexer"
 tabs2spaces = true
 comment_prefix = '#'
-
 [[Tcl.example_commands]]
 command = "tclsh {file_name}"
 
@@ -313,6 +352,20 @@ tabs2spaces = true
 filename_patterns = ["*.toml"]
 pygments_lexer = "pygments.lexers.TOMLLexer"
 comment_prefix = '#'
+[TOML.tree_sitter]
+language_name = "toml"
+dont_recurse_inside = ["quoted_key", "string", "dotted_key"]
+[TOML.tree_sitter.token_mapping]
+# see hacky code in the plugin
+table = "Token.Keyword"
+table_array_element = "Token.Keyword"
+comment = "Token.Comment"
+# TODO: which of the number things are needed?
+boolean = "Token.Keyword"
+quoted_key = "Token.Literal.String"
+integer = "Token.Literal.Number.Integer"
+float = "Token.Literal.Number.Float"
+string = "Token.Literal.String"
 
 [reStructuredText]
 filename_patterns = ["*.rst"]
@@ -356,3 +409,13 @@ pygments_lexer = "pygments.lexers.NSISLexer"
 tabs2spaces = true
 indent_size = 2
 comment_prefix = ';'
+
+[Rust]
+filename_patterns = ["*.rs"]
+syntax_highlighter = "tree_sitter"
+pygments_lexer = "pygments.lexers.RustLexer"
+tree_sitter_language_name = "rust"
+tabs2spaces = true
+indent_size = 4
+comment_prefix = '//'
+autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = 'this regex matches nothing^'}
