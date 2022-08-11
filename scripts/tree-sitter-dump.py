@@ -7,10 +7,9 @@ import reprlib
 import sys
 from pathlib import Path
 
-from tree_sitter import Language, Parser
+from tree_sitter_languages import get_parser
 
 sys.path.append(str(Path(__file__).absolute().parent.parent))
-from porcupine.plugins.highlight.tree_sitter_highlighter import prepare_binary
 
 [program_name, language_name, filename] = sys.argv
 
@@ -26,10 +25,6 @@ def show_nodes(cursor, indent_level=0):
         cursor.goto_parent()
 
 
-binary_path = prepare_binary()
-assert binary_path is not None
-
-parser = Parser()
-parser.set_language(Language(str(binary_path), language_name))
+parser = get_parser(language_name)
 tree = parser.parse(open(filename, "rb").read())
 show_nodes(tree.walk())

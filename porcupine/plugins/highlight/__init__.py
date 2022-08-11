@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import tkinter
-from pathlib import Path
 from typing import Callable
 
 from pygments.lexer import LexerMeta
@@ -19,7 +18,7 @@ from porcupine import get_tab_manager, tabs, textutils, utils
 
 from .base_highlighter import BaseHighlighter
 from .pygments_highlighter import PygmentsHighlighter
-from .tree_sitter_highlighter import TreeSitterHighlighter, prepare_binary
+from .tree_sitter_highlighter import TreeSitterHighlighter
 
 log = logging.getLogger(__name__)
 
@@ -29,27 +28,16 @@ setup_after = ["filetypes"]
 
 
 class HighlighterManager:
-    def __init__(self, tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> None:
+    def __init__(self, tab: tabs.FileTab) -> None:
         self._tab = tab
-        self._tree_sitter_binary_path = tree_sitter_binary_path
         self._highlighter: BaseHighlighter | None = None
 
     def on_config_changed(self, junk: object = None) -> None:
         highlighter_name = self._tab.settings.get("syntax_highlighter", str)
         if highlighter_name == "tree_sitter":
-            if self._tree_sitter_binary_path is None:
-                log.warning(
-                    "using pygments highlighter instead of tree_sitter,"
-                    + " because the tree_sitter binary failed to load"
-                )
-                self._tab.settings.set("syntax_highlighter", "pygments")
-                return  # this will be called again soon (or was called again already?)
-
             language_name = self._tab.settings.get("tree_sitter_language_name", str)
             log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
-            self._highlighter = TreeSitterHighlighter(
-                self._tab.textwidget, self._tree_sitter_binary_path, language_name
-            )
+            self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
 
         else:
             if highlighter_name != "pygments":
@@ -102,12 +90,12 @@ def debounce(
     return request_running
 
 
-def on_new_filetab(tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> None:
+def on_new_filetab(tab: tabs.FileTab) -> None:
     # pygments_lexer option already exists, as it is used also outside this plugin
     tab.settings.add_option("syntax_highlighter", default="pygments")
     tab.settings.add_option("tree_sitter_language_name", default="<missing>")
 
-    manager = HighlighterManager(tab, tree_sitter_binary_path)
+    manager = HighlighterManager(tab)
     tab.bind("<<TabSettingChanged:pygments_lexer>>", manager.on_config_changed, add=True)
     tab.bind("<<TabSettingChanged:syntax_highlighter>>", manager.on_config_changed, add=True)
     tab.bind("<<TabSettingChanged:tree_sitter>>", manager.on_config_changed, add=True)
@@ -120,5 +108,4 @@ def on_new_filetab(tab: tabs.FileTab, tree_sitter_binary_path: Path | None) -> N
 
 
 def setup() -> None:
-    tree_sitter_binary_path = prepare_binary()
-    get_tab_manager().add_filetab_callback(lambda tab: on_new_filetab(tab, tree_sitter_binary_path))
+    get_tab_manager().add_filetab_callback(on_new_filetab)

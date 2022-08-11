@@ -1,25 +1,17 @@
 from __future__ import annotations
 
-import ctypes
 import dataclasses
 import logging
-import platform
-import sys
 import tkinter
-import webbrowser
-import zlib
 from pathlib import Path
-from tkinter import ttk
-from typing import Any, Dict, Iterator, List, Union, cast
-from urllib.parse import quote_plus
-from zipfile import ZipFile
+from typing import Any, Dict, Iterator, List, Union
 
 import dacite
 import yaml
-from tree_sitter import Language, Node, Parser, TreeCursor  # type: ignore[import]
+import tree_sitter_languages  # type: ignore[import]
+from tree_sitter import Node, TreeCursor  # type: ignore[import]
 
-from porcupine import dirs, textutils
-from porcupine.settings import global_settings
+from porcupine import textutils
 
 from .base_highlighter import BaseHighlighter
 
@@ -29,116 +21,7 @@ log = logging.getLogger(__name__)
 # setup() can show an error message, and the ttk theme affects that
 setup_after = ["ttk_themes"]
 
-DATA_DIR = Path(__file__).absolute().with_name("tree-sitter-data")
-
-
-def show_unsupported_platform_error() -> None:
-    global_settings.add_option("show_tree_sitter_platform_error", default=True)
-    if not global_settings.get("show_tree_sitter_platform_error", bool):
-        return
-
-    window = tkinter.Toplevel()
-    window.title("Syntax highlighter error")
-    window.resizable(False, False)
-
-    content = ttk.Frame(window, name="content", padding=10)
-    content.pack(fill="both", expand=True)
-    content.columnconfigure(0, weight=1)
-
-    label1 = ttk.Label(
-        content,
-        text=(
-            f"Porcupine's syntax highlighter doesn't support {sys.platform} on {platform.machine()} yet."
-        ),
-        wraplength=600,
-        justify="center",
-        font="TkHeadingFont",
-    )
-    label1.pack(pady=5)
-
-    label2 = ttk.Label(
-        content,
-        text=(
-            "You can still use Porcupine."
-            + " You will even get syntax highlighting,"
-            + " because Porcupine actually has two syntax highlighters."
-            + " However, the syntax highlighter to be used as a fallback is slower and more buggy."
-            + "\n\nPlease report this by creating an issue on GitHub so that it can be fixed."
-        ),
-        wraplength=600,
-        justify="center",
-        font="TkTextFont",
-    )
-    label2.pack(pady=5)
-
-    var = tkinter.BooleanVar(value=True)
-    checkbox = ttk.Checkbutton(content, text="Show this dialog when Porcupine starts", variable=var)
-    checkbox.pack(pady=25)
-
-    issue_title = f"Syntax highlighter error: {sys.platform} on {platform.machine()}"
-    issue_url = "https://github.com/Akuli/porcupine/issues/new?title=" + quote_plus(issue_title)
-    button_frame = ttk.Frame(content)
-    button_frame.pack(fill="x")
-    ttk.Button(
-        button_frame, text="Create a GitHub issue now", command=(lambda: webbrowser.open(issue_url))
-    ).pack(side="left", expand=True, fill="x", padx=(0, 10))
-    ttk.Button(button_frame, text="Continue to Porcupine", command=window.destroy).pack(
-        side="left", expand=True, fill="x", padx=(10, 0)
-    )
-
-    window.wait_window()
-    global_settings.set("show_tree_sitter_platform_error", var.get())
-
-
-# https://stackoverflow.com/a/2387880
-def compute_crc32(path: Path) -> int:
-    crc = 0
-    with path.open("rb") as file:
-        while True:
-            # I tried various chunk sizes, with other things affecting plugin setup time commented out.
-            # 128K, 256K and 512K all performed quite well.
-            # Smaller and bigger chunks were measurably worse.
-            chunk = file.read(256 * 1024)
-            if not chunk:
-                break
-            crc = zlib.crc32(chunk, crc)  # This is the bottleneck of this plugin's setup() time
-    return crc
-
-
-def prepare_binary() -> Path | None:
-    zip_path = DATA_DIR / "tree-sitter-binaries.zip"
-    with ZipFile(zip_path) as zipfile:
-        try:
-            # This must match scripts/build-tree-sitter-binary.py
-            extension = {"win32": ".dll", "darwin": ".dylib", "linux": ".so"}[sys.platform]
-        except KeyError:
-            log.error(f"unsupported platform: sys.platform is {sys.platform!r}")
-            show_unsupported_platform_error()
-            return None
-
-        binary_filename = f"tree-sitter-binary-{sys.platform}-{platform.machine()}{extension}"
-        try:
-            info = zipfile.getinfo(binary_filename)
-        except KeyError:
-            log.error(f"unsupported platform: {binary_filename} not found from {zip_path}")
-            show_unsupported_platform_error()
-            return None
-
-        # Check if extracted already and not changed since.
-        # This way we re-extract after updating Porcupine if necessary.
-        binary_path = Path(dirs.user_cache_dir) / binary_filename
-        try:
-            crc = compute_crc32(binary_path)
-        except FileNotFoundError:
-            log.warning(f"binary has not been extracted yet, extracting now: {binary_path}")
-            zipfile.extract(info, binary_path.parent)
-        else:
-            if crc != info.CRC:
-                log.warning(
-                    f"binary has changed after extracting (CRC mismatch), extracting again: {binary_path}"
-                )
-                zipfile.extract(info, binary_path.parent)
-        return binary_path
+TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappings")
 
 
 # DONT_LOOK_INSIDE = [
@@ -192,39 +75,14 @@ class YmlConfig:
     token_mapping: Dict[str, Union[str, Dict[str, str]]]
 
 
-_LANGUAGE_CACHE: dict[str, object] = {}
-
-
-# Called from tests. Without this, tests fail on windows because they try to delete the cache
-# directory containing the .dll file, but the .dll is still in use. Needing this is probably a bug
-# in py-tree-sitter.
-def clean_up() -> None:
-    if sys.platform == "win32":
-        for language in _LANGUAGE_CACHE.values():
-            print("Free Handle", cast(Any, language).lib._handle)
-            result = ctypes.windll.kernel32.FreeLibrary(
-                ctypes.c_void_p(cast(Any, language).lib._handle)
-            )
-            assert result == 1
-    _LANGUAGE_CACHE.clear()
-
-
 class TreeSitterHighlighter(BaseHighlighter):
-    def __init__(self, textwidget: tkinter.Text, binary_path: Path, language_name: str) -> None:
+    def __init__(self, textwidget: tkinter.Text, language_name: str) -> None:
         super().__init__(textwidget)
         self._language_name = language_name
-
-        try:
-            language = _LANGUAGE_CACHE[language_name]
-        except KeyError:
-            language = Language(str(binary_path), language_name)
-            _LANGUAGE_CACHE[language_name] = language
-
-        self._parser = Parser()
-        self._parser.set_language(language)
+        self._parser = tree_sitter_languages.get_parser(language_name)
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
-        token_mapping_path = DATA_DIR / "token-mappings" / (language_name + ".yml")
+        token_mapping_path = TOKEN_MAPPING_DIR / (language_name + ".yml")
         with token_mapping_path.open("r", encoding="utf-8") as file:
             self._config = dacite.from_dict(YmlConfig, yaml.safe_load(file))
 

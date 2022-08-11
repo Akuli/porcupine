@@ -82,7 +82,6 @@ def monkeypatch_dirs():
             shutil.copy(user_font_cache_file, test_font_cache_file)
 
         yield
-        tree_sitter_highlighter.clean_up()
 
 
 @pytest.fixture(scope="session", autouse=True)
