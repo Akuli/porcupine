@@ -51,6 +51,8 @@
 #                try to configure this highlighter yourself; just ask me to do
 #                it instead by making an issue on GitHub.
 #
+#                Currently this highlighter does not work at all on Windows.
+#
 #                Recommended for languages with large files or known bugs with
 #                the "pygments" highlighter.
 #
