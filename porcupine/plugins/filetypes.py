@@ -193,7 +193,6 @@ def guess_filetype(filepath: Path) -> FileType:
 
     return {
         "pygments_lexer": type(lexer).__module__ + "." + type(lexer).__name__,
-        "syntax_highlighter": "pygments",
         "langserver": None,
     }
 
