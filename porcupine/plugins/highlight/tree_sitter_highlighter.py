@@ -5,7 +5,7 @@ import logging
 import sys
 import tkinter
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Union
 
 import dacite
 import yaml
