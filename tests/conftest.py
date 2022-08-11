@@ -23,7 +23,6 @@ from porcupine import dirs, get_main_window, get_tab_manager, plugins, tabs
 from porcupine.__main__ import main
 from porcupine.plugins import git_status
 from porcupine.plugins.directory_tree import get_directory_tree
-from porcupine.plugins.highlight import tree_sitter_highlighter
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#dynamically-adding-command-line-options
