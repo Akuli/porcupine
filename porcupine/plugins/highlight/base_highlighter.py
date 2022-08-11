@@ -22,7 +22,10 @@ class BaseHighlighter:
     """This class defines what all syntax highlighters must do.
 
     A syntax highlighter has to:
-    - Highlight the visible part of the file in __init__().
+    - Highlight the visible part of the file when the highlighter is enabled.
+        * When the highlighter has been created (and __init__() has ran), on_scroll()
+          will be called automatically. This means that you can do some of the initial
+          highlighting with on_scroll().
     - Update the visible part of the file when the user scrolls the file.
     - Update the visible part of the file when it is edited.
 
