@@ -22,6 +22,7 @@ token_mapping:
   class_name: Token.Name.Class
 
   # Keywords
+  and: Token.Keyword
   as: Token.Keyword
   assert: Token.Keyword
   async: Token.Keyword
@@ -41,9 +42,13 @@ token_mapping:
   global: Token.Keyword
   if: Token.Keyword
   import: Token.Keyword
+  in: Token.Keyword
+  is: Token.Keyword
   lambda: Token.Keyword
   match: Token.Keyword
   nonlocal: Token.Keyword
+  not: Token.Keyword
+  or: Token.Keyword
   pass: Token.Keyword
   raise: Token.Keyword
   return: Token.Keyword
@@ -88,11 +93,6 @@ token_mapping:
   '~': Token.Operator
   '=': Token.Operator
   ':=': Token.Operator
-  and: Token.Operator.Word
-  in: Token.Operator.Word
-  is: Token.Operator.Word
-  not: Token.Operator.Word
-  or: Token.Operator.Word
 
   # Punctuation
   '(': Token.Punctuation
