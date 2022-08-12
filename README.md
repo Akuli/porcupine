@@ -57,7 +57,7 @@ Open a terminal and run these commands:
     porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
-you can use `python3 -m porcupine &` instead of `python3 -m porcupine`.
+you can use `porcu&` instead of `porcu`.
 To run porcupine later, you need to activate the virtualenv before running it:
 
     source porcupine-venv/bin/activate
