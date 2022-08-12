@@ -150,6 +150,13 @@ class TreeSitterHighlighter(BaseHighlighter):
             #
             # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
             if (
+                self._language_name == "python"
+                and node.type == "identifier"
+                and node.prev_sibling is not None
+                and node.prev_sibling.type in ("def", "class")
+            ):
+                type_name = f"{node.prev_sibling.type}_name"
+            elif (
                 self._language_name == "toml"
                 and node.type not in ("pair", "comment")
                 and node.parent is not None

@@ -17,6 +17,8 @@ token_mapping:
   none: Token.Keyword.Constant
   
   ellipsis: Token.Name.Builtin.Pseudo
+  def_name: Token.Name.Function
+  class_name: Token.Name.Class
 
   # Keywords
   as: Token.Keyword
