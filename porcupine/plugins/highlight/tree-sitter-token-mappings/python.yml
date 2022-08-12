@@ -6,6 +6,7 @@ dont_recurse_inside:
 
 token_mapping:
   comment: Token.Comment
+  ERROR: Token.Error
 
   # TODO: which of these are needed?
   integer: Token.Literal.Number.Integer
