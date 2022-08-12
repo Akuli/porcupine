@@ -6,7 +6,7 @@ dont_recurse_inside:
 
 token_mapping:
   comment: Token.Comment
-  ERROR: Token.Error
+  ERROR: Token.Error  # happens at least for f"{asdf!}" with nothing after the '!' character
 
   # TODO: which of these are needed?
   integer: Token.Literal.Number.Integer
