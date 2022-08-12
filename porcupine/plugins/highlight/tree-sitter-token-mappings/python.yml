@@ -196,8 +196,6 @@ token_mapping:
     classmethod: Token.Name.Builtin
     compile: Token.Name.Builtin
     complex: Token.Name.Builtin
-    copyright: Token.Name.Builtin
-    credits: Token.Name.Builtin
     delattr: Token.Name.Builtin
     dict: Token.Name.Builtin
     dir: Token.Name.Builtin
@@ -223,7 +221,6 @@ token_mapping:
     issubclass: Token.Name.Builtin
     iter: Token.Name.Builtin
     len: Token.Name.Builtin
-    license: Token.Name.Builtin
     list: Token.Name.Builtin
     locals: Token.Name.Builtin
     map: Token.Name.Builtin
