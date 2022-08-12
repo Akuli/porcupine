@@ -124,5 +124,5 @@ jobs:
       with:
         python-version: "3.10"
         cache: pip
-    - run: pip flake8-tkinter
+    - run: pip install flake8-tkinter
     - run: flake8 $(git ls-files | grep -E '\.(py|pyw)$') | grep TK231 && exit 1
