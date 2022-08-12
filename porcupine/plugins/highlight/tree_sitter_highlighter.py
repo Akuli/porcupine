@@ -155,6 +155,7 @@ class TreeSitterHighlighter(BaseHighlighter):
                 and node.prev_sibling is not None
                 and node.prev_sibling.type in ("def", "class")
             ):
+                # class Foo:  --> highlight Foo as a class_name
                 type_name = f"{node.prev_sibling.type}_name"
             elif (
                 self._language_name == "toml"
