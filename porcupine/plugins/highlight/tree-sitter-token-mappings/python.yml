@@ -121,6 +121,7 @@ token_mapping:
     ConnectionResetError: Token.Name.Exception
     DeprecationWarning: Token.Name.Builtin
     EOFError: Token.Name.Exception
+    EncodingWarning: Token.Name.Builtin
     EnvironmentError: Token.Name.Exception
     Exception: Token.Name.Builtin
     FileExistsError: Token.Name.Exception
