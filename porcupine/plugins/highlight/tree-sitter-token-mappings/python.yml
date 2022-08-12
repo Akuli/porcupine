@@ -54,10 +54,10 @@ token_mapping:
   # Operators
   '!=': Token.Operator
   '==': Token.Operator
-  '<<': Token.Operator
-  '>>': Token.Operator
   '<': Token.Operator
   '>': Token.Operator
+  '<=': Token.Operator
+  '>=': Token.Operator
   '+=': Token.Operator
   '-=': Token.Operator
   '*=': Token.Operator
@@ -79,10 +79,12 @@ token_mapping:
   '//': Token.Operator
   '%': Token.Operator
   '**': Token.Operator
+  '<<': Token.Operator
+  '>>': Token.Operator
   '&': Token.Operator
   '^': Token.Operator
-  '~': Token.Operator
   '|': Token.Operator
+  '~': Token.Operator
   '=': Token.Operator
   ':=': Token.Operator
   and: Token.Operator.Word
