@@ -12,12 +12,19 @@ token_mapping:
   float: Token.Literal.Number.Float
   string: Token.Literal.String
 
-  and: Token.Keyword
+  'true': Token.Keyword.Constant
+  'false': Token.Keyword.Constant
+  none: Token.Keyword.Constant
+  
+  ellipsis: Token.Name.Builtin.Pseudo
+
+  # Keywords
   as: Token.Keyword
   assert: Token.Keyword
   async: Token.Keyword
   await: Token.Keyword
   break: Token.Keyword
+  case: Token.Keyword
   class: Token.Keyword
   continue: Token.Keyword
   def: Token.Keyword
@@ -25,30 +32,78 @@ token_mapping:
   elif: Token.Keyword
   else: Token.Keyword
   except: Token.Keyword
-  'false': Token.Keyword
   finally: Token.Keyword
   for: Token.Keyword
   from: Token.Keyword
   global: Token.Keyword
   if: Token.Keyword
   import: Token.Keyword
-  in: Token.Keyword
-  is: Token.Keyword
   lambda: Token.Keyword
-  none: Token.Keyword
+  match: Token.Keyword
   nonlocal: Token.Keyword
-  not: Token.Keyword
-  or: Token.Keyword
   pass: Token.Keyword
   raise: Token.Keyword
   return: Token.Keyword
-  'true': Token.Keyword
   try: Token.Keyword
   while: Token.Keyword
   with: Token.Keyword
   yield: Token.Keyword
 
+  # Operators
+  '!=': Token.Operator
+  '==': Token.Operator
+  '<<': Token.Operator
+  '>>': Token.Operator
+  '<': Token.Operator
+  '>': Token.Operator
+  '+=': Token.Operator
+  '-=': Token.Operator
+  '*=': Token.Operator
+  '/=': Token.Operator
+  '@=': Token.Operator
+  '//=': Token.Operator
+  '%=': Token.Operator
+  '**=': Token.Operator
+  '<<=': Token.Operator
+  '>>=': Token.Operator
+  '&=': Token.Operator
+  '^=': Token.Operator
+  '|=': Token.Operator
+  '+': Token.Operator
+  '-': Token.Operator
+  '*': Token.Operator
+  '/': Token.Operator
+  '@': Token.Operator
+  '//': Token.Operator
+  '%': Token.Operator
+  '**': Token.Operator
+  '&': Token.Operator
+  '^': Token.Operator
+  '~': Token.Operator
+  '|': Token.Operator
+  '=': Token.Operator
+  ':=': Token.Operator
+  and: Token.Operator.Word
+  in: Token.Operator.Word
+  is: Token.Operator.Word
+  not: Token.Operator.Word
+  or: Token.Operator.Word
+
+  # Punctuation
+  '(': Token.Punctuation
+  ')': Token.Punctuation
+  '[': Token.Punctuation
+  ']': Token.Punctuation
+  '{': Token.Punctuation
+  '}': Token.Punctuation
+  '.': Token.Punctuation
+  ',': Token.Punctuation
+  ':': Token.Punctuation
+  ';': Token.Punctuation
+  '->': Token.Punctuation  # Hax
+
   identifier:
+    # Exceptions
     ArithmeticError: Token.Name.Exception
     AssertionError: Token.Name.Exception
     AttributeError: Token.Name.Exception
@@ -64,10 +119,8 @@ token_mapping:
     ConnectionResetError: Token.Name.Exception
     DeprecationWarning: Token.Name.Builtin
     EOFError: Token.Name.Exception
-    Ellipsis: Token.Name.Builtin
     EnvironmentError: Token.Name.Exception
     Exception: Token.Name.Builtin
-    'False': Token.Name.Builtin
     FileExistsError: Token.Name.Exception
     FileNotFoundError: Token.Name.Exception
     FloatingPointError: Token.Name.Exception
@@ -86,9 +139,7 @@ token_mapping:
     MemoryError: Token.Name.Exception
     ModuleNotFoundError: Token.Name.Exception
     NameError: Token.Name.Exception
-    None: Token.Name.Builtin
     NotADirectoryError: Token.Name.Exception
-    NotImplemented: Token.Name.Builtin
     NotImplementedError: Token.Name.Exception
     OSError: Token.Name.Exception
     OverflowError: Token.Name.Exception
@@ -108,26 +159,23 @@ token_mapping:
     SystemExit: Token.Name.Builtin
     TabError: Token.Name.Exception
     TimeoutError: Token.Name.Exception
-    'True': Token.Name.Builtin
     TypeError: Token.Name.Exception
     UnboundLocalError: Token.Name.Exception
     UnicodeDecodeError: Token.Name.Exception
     UnicodeEncodeError: Token.Name.Exception
     UnicodeError: Token.Name.Exception
     UnicodeTranslateError: Token.Name.Exception
+    ValueError: Token.Name.Exception
+    ZeroDivisionError: Token.Name.Exception
     UnicodeWarning: Token.Name.Builtin
     UserWarning: Token.Name.Builtin
-    ValueError: Token.Name.Exception
     Warning: Token.Name.Builtin
-    ZeroDivisionError: Token.Name.Exception
-    __debug__: Token.Name.Builtin
-    __doc__: Token.Name.Builtin
+    
+    # Builtins
+    'True': Token.Name.Builtin
+    'False': Token.Name.Builtin
+    None: Token.Name.Builtin
     __import__: Token.Name.Builtin
-    __loader__: Token.Name.Builtin
-    __name__: Token.Name.Builtin
-    __package__: Token.Name.Builtin
-    __path__: Token.Name.Builtin
-    __spec__: Token.Name.Builtin
     abs: Token.Name.Builtin
     all: Token.Name.Builtin
     any: Token.Name.Builtin
@@ -189,7 +237,6 @@ token_mapping:
     repr: Token.Name.Builtin
     reversed: Token.Name.Builtin
     round: Token.Name.Builtin
-    self: Token.Name.Builtin
     set: Token.Name.Builtin
     setattr: Token.Name.Builtin
     slice: Token.Name.Builtin
@@ -202,3 +249,132 @@ token_mapping:
     type: Token.Name.Builtin
     vars: Token.Name.Builtin
     zip: Token.Name.Builtin
+
+    # builtin.Pseudo
+    self: Token.Name.Builtin.Pseudo
+    cls: Token.Name.Builtin.Pseudo
+    Ellipsis: Token.Name.Builtin.Pseudo
+    NotImplemented: Token.Name.Builtin.Pseudo
+
+    # Magic variables
+    __annotations__: Token.Name.Variable.Magic
+    __bases__: Token.Name.Variable.Magic
+    __class__: Token.Name.Variable.Magic
+    __closure__: Token.Name.Variable.Magic
+    __code__: Token.Name.Variable.Magic
+    __debug__: Token.Name.Variable.Magic
+    __defaults__: Token.Name.Variable.Magic
+    __dict__: Token.Name.Variable.Magic
+    __doc__: Token.Name.Variable.Magic
+    __file__: Token.Name.Variable.Magic
+    __func__: Token.Name.Variable.Magic
+    __globals__: Token.Name.Variable.Magic
+    __kwdefaults__: Token.Name.Variable.Magic
+    __loader__: Token.Name.Variable.Magic
+    __module__: Token.Name.Variable.Magic
+    __mro__: Token.Name.Variable.Magic
+    __name__: Token.Name.Variable.Magic
+    __objclass__: Token.Name.Variable.Magic
+    __package__: Token.Name.Variable.Magic
+    __path__: Token.Name.Variable.Magic
+    __qualname__: Token.Name.Variable.Magic
+    __self__: Token.Name.Variable.Magic
+    __slots__: Token.Name.Variable.Magic
+    __spec__: Token.Name.Variable.Magic
+    __weakref__: Token.Name.Variable.Magic
+
+    # Magic funcs
+    __abs__: Token.Name.Function.Magic
+    __add__: Token.Name.Function.Magic
+    __aenter__: Token.Name.Function.Magic
+    __aexit__: Token.Name.Function.Magic
+    __aiter__: Token.Name.Function.Magic
+    __and__: Token.Name.Function.Magic
+    __anext__: Token.Name.Function.Magic
+    __await__: Token.Name.Function.Magic
+    __bool__: Token.Name.Function.Magic
+    __bytes__: Token.Name.Function.Magic
+    __call__: Token.Name.Function.Magic
+    __complex__: Token.Name.Function.Magic
+    __contains__: Token.Name.Function.Magic
+    __del__: Token.Name.Function.Magic
+    __delattr__: Token.Name.Function.Magic
+    __delete__: Token.Name.Function.Magic
+    __delitem__: Token.Name.Function.Magic
+    __dir__: Token.Name.Function.Magic
+    __divmod__: Token.Name.Function.Magic
+    __enter__: Token.Name.Function.Magic
+    __eq__: Token.Name.Function.Magic
+    __exit__: Token.Name.Function.Magic
+    __float__: Token.Name.Function.Magic
+    __floordiv__: Token.Name.Function.Magic
+    __format__: Token.Name.Function.Magic
+    __ge__: Token.Name.Function.Magic
+    __get__: Token.Name.Function.Magic
+    __getattr__: Token.Name.Function.Magic
+    __getattribute__: Token.Name.Function.Magic
+    __getitem__: Token.Name.Function.Magic
+    __gt__: Token.Name.Function.Magic
+    __hash__: Token.Name.Function.Magic
+    __iadd__: Token.Name.Function.Magic
+    __iand__: Token.Name.Function.Magic
+    __ifloordiv__: Token.Name.Function.Magic
+    __ilshift__: Token.Name.Function.Magic
+    __imatmul__: Token.Name.Function.Magic
+    __imod__: Token.Name.Function.Magic
+    __imul__: Token.Name.Function.Magic
+    __index__: Token.Name.Function.Magic
+    __init__: Token.Name.Function.Magic
+    __instancecheck__: Token.Name.Function.Magic
+    __int__: Token.Name.Function.Magic
+    __invert__: Token.Name.Function.Magic
+    __ior__: Token.Name.Function.Magic
+    __ipow__: Token.Name.Function.Magic
+    __irshift__: Token.Name.Function.Magic
+    __isub__: Token.Name.Function.Magic
+    __iter__: Token.Name.Function.Magic
+    __itruediv__: Token.Name.Function.Magic
+    __ixor__: Token.Name.Function.Magic
+    __le__: Token.Name.Function.Magic
+    __len__: Token.Name.Function.Magic
+    __length_hint__: Token.Name.Function.Magic
+    __lshift__: Token.Name.Function.Magic
+    __lt__: Token.Name.Function.Magic
+    __matmul__: Token.Name.Function.Magic
+    __missing__: Token.Name.Function.Magic
+    __mod__: Token.Name.Function.Magic
+    __mul__: Token.Name.Function.Magic
+    __ne__: Token.Name.Function.Magic
+    __neg__: Token.Name.Function.Magic
+    __new__: Token.Name.Function.Magic
+    __next__: Token.Name.Function.Magic
+    __or__: Token.Name.Function.Magic
+    __pos__: Token.Name.Function.Magic
+    __pow__: Token.Name.Function.Magic
+    __prepare__: Token.Name.Function.Magic
+    __radd__: Token.Name.Function.Magic
+    __rand__: Token.Name.Function.Magic
+    __rdivmod__: Token.Name.Function.Magic
+    __repr__: Token.Name.Function.Magic
+    __reversed__: Token.Name.Function.Magic
+    __rfloordiv__: Token.Name.Function.Magic
+    __rlshift__: Token.Name.Function.Magic
+    __rmatmul__: Token.Name.Function.Magic
+    __rmod__: Token.Name.Function.Magic
+    __rmul__: Token.Name.Function.Magic
+    __ror__: Token.Name.Function.Magic
+    __round__: Token.Name.Function.Magic
+    __rpow__: Token.Name.Function.Magic
+    __rrshift__: Token.Name.Function.Magic
+    __rshift__: Token.Name.Function.Magic
+    __rsub__: Token.Name.Function.Magic
+    __rtruediv__: Token.Name.Function.Magic
+    __rxor__: Token.Name.Function.Magic
+    __set__: Token.Name.Function.Magic
+    __setattr__: Token.Name.Function.Magic
+    __setitem__: Token.Name.Function.Magic
+    __str__: Token.Name.Function.Magic
+    __sub__: Token.Name.Function.Magic
+    __subclasscheck__: Token.Name.Function.Magic
+    __truediv__: Token.Name.Function.Magic
+    __xor__: Token.Name.Function.Magic
