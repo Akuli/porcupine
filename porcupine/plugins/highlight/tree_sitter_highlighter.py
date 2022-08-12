@@ -72,6 +72,18 @@ TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappi
 #
 
 
+def markdown_hax(node: Node) -> str:
+    if node.type == "atx_heading":
+        # dont_recurse_inside atx_heading, but we need to checks heading is h1 or not
+        return "heading" if node.children[0].type == "atx_h1_marker" else "subheading"
+    elif node.parent.type in {"emphasis", "strong_emphasis"} and not {
+        x.type for x in node.parent.children if x.type not in {"text", "line_break"}
+    }:
+        # dont_recurse_inside emphasis only, if it only contains plain text
+        return node.parent.type
+    return node.type
+
+
 @dataclasses.dataclass
 class YmlConfig:
     dont_recurse_inside: List[str]
@@ -161,6 +173,8 @@ class TreeSitterHighlighter(BaseHighlighter):
                 and node.parent.type == "macro_invocation"
             ):
                 type_name = node.parent.type
+            elif self._language_name == "markdown":
+                type_name = markdown_hax(node)
             else:
                 type_name = node.type
 

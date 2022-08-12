@@ -374,6 +374,8 @@ pygments_lexer = "pygments.lexers.RstLexer"
 [Markdown]
 filename_patterns = ["*.md", "*.markdown"]
 pygments_lexer = "pygments.lexers.MarkdownLexer"
+tree_sitter_language_name = "markdown"
+syntax_highlighter = "tree_sitter"
 autoindent_regexes = {dedent = '.*\.', indent = '^([0-9]+\.|-) .*'}
 
 [YAML]

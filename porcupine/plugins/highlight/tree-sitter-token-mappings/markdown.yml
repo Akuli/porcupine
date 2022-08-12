@@ -1,0 +1,28 @@
+dont_recurse_inside:
+  - atx_heading
+  - code_span
+  - image_description
+  - link_destination
+  - link_label
+  - link_text
+  - uri_autolink
+
+token_mapping:
+  heading: Token.Generic.Heading
+  subheading: Token.Generic.Subheading
+  
+  code_span: Token.Literal.String.Backtick
+  fenced_code_block: Token.Literal.String
+  
+  emphasis: Token.Generic.Emph
+  strong_emphasis: Token.Generic.Strong
+
+  list_marker: Token.Name.Attribute
+  
+  image_description: Token.Name.Tag
+  
+  link_label: Token.Name.Label
+  link_text: Token.Name.Tag
+
+  link_destination: Token.Name.Attribute
+  uri_autolink: Token.Name.Tag
