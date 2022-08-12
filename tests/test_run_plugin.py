@@ -210,18 +210,6 @@ def test_pytest_error_message(tabmanager, tmp_path, wait_until):
     assert click_last_link() == "def test_foo(asdf): pass"
 
 
-def test_bindcheck_message(filetab, tabmanager, tmp_path, wait_until):
-    filetab.textwidget.insert("end", "asdf.bind('<Foo>', print)")
-    (tmp_path / "foo").mkdir()
-    filetab.save_as(tmp_path / "foo" / "foo.py")
-
-    shutil.copy("scripts/bindcheck.py", tmp_path)
-    no_terminal.run_command(f"{utils.quote(sys.executable)} bindcheck.py foo", tmp_path)
-
-    wait_until(lambda: "The process failed with status 1." in get_output())
-    assert click_last_link() == "asdf.bind('<Foo>', print)"
-
-
 @pytest.mark.skipif(
     sys.platform == "win32",
     reason="commands below wouldn't work on windows even if valgrind supported windows",
