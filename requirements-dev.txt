@@ -7,8 +7,6 @@ sphinx>=4.0.0, <5.0.0
 pyflakes==2.2.0
 pillow>=5.4.1
 requests>=2.24.0, <3.0.0
-flake8==5.0.4
-flake8-tkinter==0.5.0
 
 # type checking, exact versions to avoid "works on my computer" problems
 mypy==0.971
