@@ -104,6 +104,7 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
 
+  # TODO: get rid of pyflakes as it is a part of flake8 and we use flake8 anyway
   pyflakes:
     runs-on: ubuntu-latest
     steps:
@@ -116,7 +117,7 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
 
-  flake8-tkinter:
+  flake8:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -124,5 +125,5 @@ jobs:
       with:
         python-version: "3.10"
         cache: pip
-    - run: pip install flake8==5.0.4 flake8-tkinter==0.5.0
+    - run: pip install -r requirements-dev.txt
     - run: python3 -m flake8 $(git ls-files | grep -E '\.(py|pyw)$')
