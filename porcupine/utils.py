@@ -485,8 +485,8 @@ def bind_tab_key(
     else:
         shift_tab = "<Shift-Tab>"
 
-    widget.bind("<Tab>", functools.partial(callback, False), **bind_kwargs)  # bindcheck: ignore
-    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # bindcheck: ignore
+    widget.bind("<Tab>", functools.partial(callback, False), **bind_kwargs)  # noqa: TK231
+    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # noqa: TK231
 
 
 # list of encodings supported by python 3.7 https://stackoverflow.com/a/25584253
