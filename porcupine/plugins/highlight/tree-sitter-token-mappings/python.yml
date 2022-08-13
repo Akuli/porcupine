@@ -57,8 +57,10 @@ token_mapping:
   await: Token.Keyword
   break: Token.Keyword
   case: Token.Keyword
+  class: Token.Keyword
   continue: Token.Keyword
   del: Token.Keyword
+  def: Token.Keyword
   elif: Token.Keyword
   else: Token.Keyword
   except: Token.Keyword
