@@ -16,12 +16,12 @@ queries:
 
   function_definition: |
     (function_definition
-      ("async") @Token.Keyword
+      ("async")? @Token.Keyword
       ("def") @Token.Keyword
       name: (identifier) @Token.Name.Function
       parameters: (parameters) @recurse
-      ("->") @Token.Punctuation
-      return_type: (type) @recurse
+      ("->")? @Token.Punctuation
+      return_type: (type)? @recurse
       (":") @Token.Punctuation
       body: (block) @recurse)
 
@@ -29,7 +29,7 @@ queries:
     (class_definition
       ("class") @Token.Keyword
       name: (identifier) @Token.Name.Function
-      superclasses: (argument_list) @recurse
+      superclasses: (argument_list)? @recurse
       (":") @Token.Punctuation
       body: (block) @recurse)
     
