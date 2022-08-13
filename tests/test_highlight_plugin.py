@@ -72,10 +72,15 @@ def test_pygments_last_line_bug(filetab, tmp_path):
 )
 def test_tree_sitter_dump(tmp_path):
     (tmp_path / "hello.py").write_text("print('hello')")
-    output = subprocess.check_output(
-        [sys.executable, "scripts/tree-sitter-dump.py", "python", str(tmp_path / "hello.py")],
-        text=True,
-    )
+    args = [
+        sys.executable,
+        "scripts/tree-sitter-dump.py",
+        "python",
+        str(tmp_path / "hello.py"),
+        "--query",
+        "(call arguments: (argument_list) @asdasd)",
+    ]
+    output = subprocess.check_output(args, text=True)
     assert len(output) > 300
 
     readme = Path("porcupine/plugins/highlight/tree-sitter-token-mappings/readme.txt")
