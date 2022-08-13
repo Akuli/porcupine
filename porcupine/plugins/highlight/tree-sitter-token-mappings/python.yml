@@ -55,9 +55,7 @@ token_mapping:
   await: Token.Keyword
   break: Token.Keyword
   case: Token.Keyword
-  class: Token.Keyword
   continue: Token.Keyword
-  def: Token.Keyword
   del: Token.Keyword
   elif: Token.Keyword
   else: Token.Keyword
@@ -131,7 +129,6 @@ token_mapping:
   ',': Token.Punctuation
   ':': Token.Punctuation
   ';': Token.Punctuation
-  '->': Token.Punctuation  # Hax
 
   identifier:
     # Exceptions
