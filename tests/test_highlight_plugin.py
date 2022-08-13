@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 from pygments.lexers import BashLexer, PythonLexer, TclLexer, YamlLexer
@@ -60,11 +61,12 @@ def test_pygments_last_line_bug(filetab, tmp_path):
 # I currently don't think the tree-sitter highlighter needs lots of tests.
 # If it doesn't work, it's usually quite obvious after using it a while.
 #
-# That said, it comes with a couple fragile things:
-#    - Unzipping and loading the correct binary file on each platform
+# That said, it comes with some fragile things:
+#    - Installing and loading the correct languages binary on each platform
 #    - The dumping script, used only when configuring the plugin
+#    - The readme, which contains output of the dumping script
 #
-# These need testing, and this test conveniently tests them both.
+# These need testing, and this test conveniently tests them all.
 @pytest.mark.skipif(
     sys.platform == "win32", reason="tree_sitter highlighter doesn't work on windows yet"
 )
@@ -74,17 +76,7 @@ def test_tree_sitter_dump(tmp_path):
         [sys.executable, "scripts/tree-sitter-dump.py", "python", str(tmp_path / "hello.py")],
         text=True,
     )
+    assert len(output) > 300
 
-    expected_output = """
-type=module text="print('hello')"
-  type=expression_statement text="print('hello')"
-    type=call text="print('hello')"
-      type=identifier text='print'
-      type=argument_list text="('hello')"
-        type=( text='('
-        type=string text="'hello'"
-          type=" text="'"
-          type=" text="'"
-        type=) text=')'
-    """
-    assert output.strip() == expected_output.strip()
+    readme = Path("porcupine/plugins/highlight/tree-sitter-token-mappings/readme.txt")
+    assert output in readme.read_text().replace("\n    ", "\n")

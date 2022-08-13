@@ -11,18 +11,18 @@ Pygments color themes, and we use them with tree-sitter for a couple reasons:
 Porcupine comes with a script for exploring tree-syntax syntax trees:
 
     $ cat hello.py
-    print("hello")
+    print('hello')
 
     $ python3 scripts/tree-sitter-dump.py python hello.py
-    type=module text='print("hello")\n'
-      type=expression_statement text='print("hello")'
-        type=call text='print("hello")'
-          type=identifier text='print'
-          type=argument_list text='("hello")'
+    type=module text="print('hello')"
+      type=expression_statement text="print('hello')"
+        type=call text="print('hello')"
+          field 'function': type=identifier text='print'
+          field 'arguments': type=argument_list text="('hello')"
             type=( text='('
-            type=string text='"hello"'
-              type=" text='"'
-              type=" text='"'
+            type=string text="'hello'"
+              type=" text="'"
+              type=" text="'"
             type=) text=')'
 
 For example, look at the type=identifier part above. That's apparently how

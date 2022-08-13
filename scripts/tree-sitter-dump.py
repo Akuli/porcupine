@@ -16,7 +16,11 @@ sys.path.append(str(Path(__file__).absolute().parent.parent))
 
 def show_nodes(cursor, indent_level=0):
     node = cursor.node
-    print(f"{'  ' * indent_level}type={node.type} text={reprlib.repr(node.text.decode('utf-8'))}")
+    field_name = cursor.current_field_name()
+    print("  "*indent_level, end="")
+    if field_name is not None:
+        print(f"field {field_name!r}:", end=" ")
+    print(f"type={node.type} text={reprlib.repr(node.text.decode('utf-8'))}")
 
     if cursor.goto_first_child():
         show_nodes(cursor, indent_level + 1)
