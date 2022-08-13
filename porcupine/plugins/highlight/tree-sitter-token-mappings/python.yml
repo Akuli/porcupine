@@ -1,8 +1,18 @@
-dont_recurse_inside:
-  - string  # TODO: recurse inside f-strings
-  # TODO: distinguish between variables and attributes?
-  # Can't just add "attribute" to dont_recurse_inside because then the object
-  # whose attribute it is won't highlight, e.g. open("foo", "rb").read()
+# TODO: distinguish between variables and attributes?
+# Can't just add "attribute" to dont_recurse_inside because then the object
+# whose attribute it is won't highlight, e.g. open("foo", "rb").read()
+
+queries:
+  string: |
+    # Highlight all strings with Token.Literal.String
+    (string) @Token.Literal.String
+
+    # Recurse into only the len(x) part of f"blah {len(x)!r}".
+    # That makes the meaning of !r obvious: it is string syntax, not a part of the expression inside.
+    #
+    # Here "expression" is a supertype node, see query syntax docs.
+    # There doesn't seem to be any way to say "anything except the !r part".
+    (string (interpolation (expression) @recurse))
 
 token_mapping:
   comment: Token.Comment
@@ -10,7 +20,6 @@ token_mapping:
   # TODO: which of these are needed?
   integer: Token.Literal.Number.Integer
   float: Token.Literal.Number.Float
-  string: Token.Literal.String
 
   and: Token.Keyword
   as: Token.Keyword
