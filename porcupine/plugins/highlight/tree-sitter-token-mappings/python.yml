@@ -278,6 +278,7 @@ token_mapping:
     cls: Token.Name.Builtin.Pseudo
     Ellipsis: Token.Name.Builtin.Pseudo
     NotImplemented: Token.Name.Builtin.Pseudo
+    reveal_type: Token.Name.Builtin.Pseudo
 
     # Magic variables
     __annotations__: Token.Name.Variable.Magic
