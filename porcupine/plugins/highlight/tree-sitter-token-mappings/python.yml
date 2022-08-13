@@ -201,9 +201,6 @@ token_mapping:
     Warning: Token.Name.Builtin
     
     # Builtins
-    'True': Token.Name.Builtin
-    'False': Token.Name.Builtin
-    None: Token.Name.Builtin
     __import__: Token.Name.Builtin
     abs: Token.Name.Builtin
     all: Token.Name.Builtin
