@@ -3,11 +3,6 @@
 # whose attribute it is won't highlight, e.g. open("foo", "rb").read()
 
 queries:
-  # Recurse into only the len(x) part of f"blah {len(x)!r}".
-  # That makes the meaning of !r obvious: it is string syntax, not a part of the expression inside.
-  #
-  # Here "expression" is a supertype node, see query syntax docs.
-  # There doesn't seem to be any way to say "anything except the !r part".
   string: |
     # Highlight all strings with Token.Literal.String
     (string) @Token.Literal.String
