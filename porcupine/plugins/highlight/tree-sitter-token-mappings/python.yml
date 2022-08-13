@@ -23,6 +23,7 @@ queries:
       ("->")? @Token.Punctuation
       return_type: (type)? @recurse
       (":") @Token.Punctuation
+      (comment)? @Token.Comment
       body: (block) @recurse)
 
   class_definition: |
@@ -31,6 +32,7 @@ queries:
       name: (identifier) @Token.Name.Function
       superclasses: (argument_list)? @recurse
       (":") @Token.Punctuation
+      (comment)? @Token.Comment
       body: (block) @recurse)
     
 
