@@ -1,9 +1,6 @@
 dont_recurse_inside:
   - string
   - attribute
-  # recursing inside scoped_identifier would break highlighting of tokio::select!
-  # TODO: Vec::foo() doesn't highlight properly
-  - scoped_identifier
   - string_literal
   - attribute_item
 
