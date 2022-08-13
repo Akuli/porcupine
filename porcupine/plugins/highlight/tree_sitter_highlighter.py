@@ -140,6 +140,9 @@ class TreeSitterHighlighter(BaseHighlighter):
         else:
             type_name = node.type
 
+        if set(type_name) <= set("+-*/%~&|^!?<>="):
+            return "Token.Operator"
+
         config_value = self._config.token_mapping.get(type_name, "Token.Text")
         if isinstance(config_value, dict):
             return config_value.get(node.text.decode("utf-8"), "Token.Text")

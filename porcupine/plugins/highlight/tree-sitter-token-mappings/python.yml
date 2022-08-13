@@ -86,40 +86,8 @@ token_mapping:
   yield: Token.Keyword
 
   # Operators
-  '!=': Token.Operator
-  '==': Token.Operator
-  '<': Token.Operator
-  '>': Token.Operator
-  '<=': Token.Operator
-  '>=': Token.Operator
-  '+=': Token.Operator
-  '-=': Token.Operator
-  '*=': Token.Operator
-  '/=': Token.Operator
   '@=': Token.Operator
-  '//=': Token.Operator
-  '%=': Token.Operator
-  '**=': Token.Operator
-  '<<=': Token.Operator
-  '>>=': Token.Operator
-  '&=': Token.Operator
-  '^=': Token.Operator
-  '|=': Token.Operator
-  '+': Token.Operator
-  '-': Token.Operator
-  '*': Token.Operator
-  '/': Token.Operator
   '@': Token.Operator
-  '//': Token.Operator
-  '%': Token.Operator
-  '**': Token.Operator
-  '<<': Token.Operator
-  '>>': Token.Operator
-  '&': Token.Operator
-  '^': Token.Operator
-  '|': Token.Operator
-  '~': Token.Operator
-  '=': Token.Operator
   ':=': Token.Operator
 
   # Punctuation
