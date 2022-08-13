@@ -1,7 +1,7 @@
 # Print a tree-sitter syntax tree. Meant to be used for configuring the
 # tree-sitter syntax highlighter. Documented in the following file:
 #
-#    porcupine/plugins/highlight/tree_sitter_data/token_mappings/readme.txt
+#    porcupine/plugins/highlight/tree-sitter-token-mappings/readme.txt
 #
 import argparse
 import reprlib
