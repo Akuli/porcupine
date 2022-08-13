@@ -7,6 +7,17 @@ dont_recurse_inside:
   - string_literal
   - attribute_item
 
+queries:
+  macro_invocation: |
+    (macro_invocation
+      # Many themes have a nice decorator color (lol), use it for macro name
+      # Example: in "tokio::select! { ... }", the "tokio::select!" part is decorator-colored
+      macro: (_) @Token.Name.Decorator
+      "!" @Token.Name.Decorator
+      # Recurse into macro body, which seems to always be a token_tree node
+      (token_tree) @recurse
+    )
+
 token_mapping:
   line_comment: Token.Comment
   block_comment: Token.Comment
@@ -44,7 +55,6 @@ token_mapping:
   mod: Token.Keyword
   crate: Token.Keyword
   attribute_item: Token.Name.Decorator  # lol
-  macro_invocation: Token.Name.Decorator  # lol
   primitive_type: Token.Keyword
   'true': Token.Keyword
   'false': Token.Keyword

@@ -130,18 +130,11 @@ class TreeSitterHighlighter(BaseHighlighter):
         #    type='pair' text=b'y=2'
         #
         # I want the whole section header [foo] to have the same tag.
-        #
-        # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
         if (
             self._language.name == "toml"
             and node.type not in ("pair", "comment")
             and node.parent is not None
             and node.parent.type in ("table", "table_array_element")
-        ) or (
-            self._language.name == "rust"
-            and node.type in ("identifier", "scoped_identifier", "!")
-            and node.parent is not None
-            and node.parent.type == "macro_invocation"
         ):
             type_name = node.parent.type
         else:
