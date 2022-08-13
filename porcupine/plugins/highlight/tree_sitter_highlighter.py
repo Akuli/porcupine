@@ -1,7 +1,8 @@
 from __future__ import annotations
-import re
+
 import dataclasses
 import logging
+import re
 import sys
 import tkinter
 from pathlib import Path
@@ -16,8 +17,8 @@ from .base_highlighter import BaseHighlighter
 
 # TODO: how to install tree-sitter and tree-sitter-languages on Windows?
 if sys.platform != "win32" or TYPE_CHECKING:
-    import tree_sitter_languages  # type: ignore[import]
     import tree_sitter  # type: ignore[import]
+    import tree_sitter_languages  # type: ignore[import]
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class YmlConfig:
 
 
 def _strip_comments(tree_sitter_query: str) -> str:
-    return re.sub(r'#.*', '', tree_sitter_query)
+    return re.sub(r"#.*", "", tree_sitter_query)
 
 
 class TreeSitterHighlighter(BaseHighlighter):
@@ -152,7 +153,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         return config_value
 
     # only returns nodes that overlap the start,end range
-    def _get_all_nodes(
+    def _get_nodes_and_tags(
         self,
         cursor: tree_sitter.TreeCursor,
         start_point: tuple[int, int],
@@ -177,14 +178,15 @@ class TreeSitterHighlighter(BaseHighlighter):
             for subnode in to_recurse:
                 # Tell the tagging code that we're about to recurse.
                 # This lets it wipe tags that were previously added on the area.
+                # That's also why recursing is done last.
                 yield (subnode, "recurse")
-                yield from self._get_all_nodes(subnode.walk(), start_point, end_point)
+                yield from self._get_nodes_and_tags(subnode.walk(), start_point, end_point)
             return
 
         if cursor.node.type not in self._config.dont_recurse_inside and cursor.goto_first_child():
-            yield from self._get_all_nodes(cursor, start_point, end_point)
+            yield from self._get_nodes_and_tags(cursor, start_point, end_point)
             while cursor.goto_next_sibling():
-                yield from self._get_all_nodes(cursor, start_point, end_point)
+                yield from self._get_nodes_and_tags(cursor, start_point, end_point)
             cursor.goto_parent()
         else:
             yield (cursor.node, self._decide_tag(cursor.node))
@@ -202,7 +204,7 @@ class TreeSitterHighlighter(BaseHighlighter):
 
         self.delete_tags(start, end)
 
-        for node, tag in self._get_all_nodes(self._tree.walk(), start_point, end_point):
+        for node, tag in self._get_nodes_and_tags(self._tree.walk(), start_point, end_point):
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
             start = f"{start_row+1}.{start_col}"
