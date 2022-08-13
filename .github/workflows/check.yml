@@ -116,7 +116,7 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
 
-  bindcheck:
+  flake8-tkinter:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -124,5 +124,5 @@ jobs:
       with:
         python-version: "3.10"
         cache: pip
-    - run: pip install flake8-tkinter
-    - run: python3 -m flake8 $(git ls-files | grep -E '\.(py|pyw)$') | grep TK231 && exit 1 || exit 0
+    - run: pip install flake8-tkinter==0.5.0
+    - run: python3 -m flake8 $(git ls-files | grep -E '\.(py|pyw)$') | !grep TK
