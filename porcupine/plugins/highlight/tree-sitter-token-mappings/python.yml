@@ -14,6 +14,26 @@ queries:
     # There doesn't seem to be any way to say "anything except the !r part".
     (string (interpolation (expression) @recurse))
 
+  function_definition: |
+    (function_definition
+      ("async") @Token.Keyword
+      ("def") @Token.Keyword
+      name: (identifier) @Token.Name.Function
+      parameters: (parameters) @recurse
+      ("->") @Token.Punctuation
+      return_type: (type) @recurse
+      (":") @Token.Punctuation
+      body: (block) @recurse)
+
+  class_definition: |
+    (class_definition
+      ("class") @Token.Keyword
+      name: (identifier) @Token.Name.Function
+      superclasses: (argument_list) @recurse
+      (":") @Token.Punctuation
+      body: (block) @recurse)
+    
+
 token_mapping:
   comment: Token.Comment
   ERROR: Token.Error  # happens at least for f"{asdf!}" with nothing after the '!' character
@@ -27,8 +47,6 @@ token_mapping:
   none: Token.Keyword.Constant
   
   ellipsis: Token.Name.Builtin.Pseudo
-  def_name: Token.Name.Function
-  class_name: Token.Name.Class
 
   # Keywords
   and: Token.Keyword
