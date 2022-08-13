@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import re
 import sys
 import tkinter
 from pathlib import Path
@@ -16,8 +17,8 @@ from .base_highlighter import BaseHighlighter
 
 # TODO: how to install tree-sitter and tree-sitter-languages on Windows?
 if sys.platform != "win32" or TYPE_CHECKING:
+    import tree_sitter  # type: ignore[import]
     import tree_sitter_languages  # type: ignore[import]
-    from tree_sitter import Node, TreeCursor  # type: ignore[import]
 
 log = logging.getLogger(__name__)
 
@@ -74,20 +75,34 @@ TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappi
 
 @dataclasses.dataclass
 class YmlConfig:
-    dont_recurse_inside: List[str]
     token_mapping: Dict[str, Union[str, Dict[str, str]]]
+    dont_recurse_inside: List[str] = dataclasses.field(default_factory=list)
+    queries: Dict[str, str] = dataclasses.field(default_factory=dict)
+
+
+def _strip_comments(tree_sitter_query: str) -> str:
+    return re.sub(r"#.*", "", tree_sitter_query)
 
 
 class TreeSitterHighlighter(BaseHighlighter):
     def __init__(self, textwidget: tkinter.Text, language_name: str) -> None:
         super().__init__(textwidget)
-        self._language_name = language_name
-        self._parser = tree_sitter_languages.get_parser(language_name)
+        self._language = tree_sitter_languages.get_language(language_name)
+
+        self._parser = tree_sitter.Parser()
+        self._parser.set_language(self._language)
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
         token_mapping_path = TOKEN_MAPPING_DIR / (language_name + ".yml")
         with token_mapping_path.open("r", encoding="utf-8") as file:
             self._config = dacite.from_dict(YmlConfig, yaml.safe_load(file))
+
+        # Pseudo-optimization: "pre-compile" queries when the highlighter starts.
+        # Also makes the highlighter fail noticably if any query contain syntax errors.
+        self._queries = {
+            node_type_name: self._language.query(_strip_comments(text))
+            for node_type_name, text in self._config.queries.items()
+        }
 
     def _get_file_content_for_tree_sitter(self) -> bytes:
         # tk indexes are in chars, tree_sitter is in utf-8 bytes
@@ -99,10 +114,51 @@ class TreeSitterHighlighter(BaseHighlighter):
         # should be ok as long as all your non-ascii chars are e.g. inside strings
         return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
 
+    def _decide_tag(self, node: tree_sitter.Node) -> str:
+        # A hack for TOML. This:
+        #
+        #   [foo]
+        #   x=1
+        #   y=2
+        #
+        # parses as:
+        #
+        #    type='[' text=b'['
+        #    type='bare_key' text=b'foo'
+        #    type=']' text=b']'
+        #    type='pair' text=b'x=1'
+        #    type='pair' text=b'y=2'
+        #
+        # I want the whole section header [foo] to have the same tag.
+        #
+        # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
+        if (
+            self._language.name == "toml"
+            and node.type not in ("pair", "comment")
+            and node.parent is not None
+            and node.parent.type in ("table", "table_array_element")
+        ) or (
+            self._language.name == "rust"
+            and node.type in ("identifier", "scoped_identifier", "!")
+            and node.parent is not None
+            and node.parent.type == "macro_invocation"
+        ):
+            type_name = node.parent.type
+        else:
+            type_name = node.type
+
+        config_value = self._config.token_mapping.get(type_name, "Token.Text")
+        if isinstance(config_value, dict):
+            return config_value.get(node.text.decode("utf-8"), "Token.Text")
+        return config_value
+
     # only returns nodes that overlap the start,end range
-    def _get_all_nodes(
-        self, cursor: TreeCursor, start_point: tuple[int, int], end_point: tuple[int, int]
-    ) -> Iterator[Node]:
+    def _get_nodes_and_tags(
+        self,
+        cursor: tree_sitter.TreeCursor,
+        start_point: tuple[int, int],
+        end_point: tuple[int, int],
+    ) -> Iterator[tuple[tree_sitter.Node, str]]:
         assert self._config is not None
         overlap_start = max(cursor.node.start_point, start_point)
         overlap_end = min(cursor.node.end_point, end_point)
@@ -110,13 +166,30 @@ class TreeSitterHighlighter(BaseHighlighter):
             # No overlap with the range we care about. Skip subnodes.
             return
 
+        query = self._queries.get(cursor.node.type)
+        if query is not None:
+            to_recurse = []
+            for subnode, tag_or_recurse in query.captures(cursor.node):
+                if tag_or_recurse == "recurse":
+                    to_recurse.append(subnode)
+                else:
+                    yield (subnode, tag_or_recurse)
+
+            for subnode in to_recurse:
+                # Tell the tagging code that we're about to recurse.
+                # This lets it wipe tags that were previously added on the area.
+                # That's also why recursing is done last.
+                yield (subnode, "recurse")
+                yield from self._get_nodes_and_tags(subnode.walk(), start_point, end_point)
+            return
+
         if cursor.node.type not in self._config.dont_recurse_inside and cursor.goto_first_child():
-            yield from self._get_all_nodes(cursor, start_point, end_point)
+            yield from self._get_nodes_and_tags(cursor, start_point, end_point)
             while cursor.goto_next_sibling():
-                yield from self._get_all_nodes(cursor, start_point, end_point)
+                yield from self._get_nodes_and_tags(cursor, start_point, end_point)
             cursor.goto_parent()
         else:
-            yield cursor.node
+            yield (cursor.node, self._decide_tag(cursor.node))
 
     # tree-sitter has get_changed_ranges() method, but it has a couple problems:
     #   - It returns empty list if you append text to end of a line. But text like that may need to
@@ -131,57 +204,16 @@ class TreeSitterHighlighter(BaseHighlighter):
 
         self.delete_tags(start, end)
 
-        for node in self._get_all_nodes(self._tree.walk(), start_point, end_point):
-            # A hack for TOML. This:
-            #
-            #   [foo]
-            #   x=1
-            #   y=2
-            #
-            # parses as:
-            #
-            #    type='[' text=b'['
-            #    type='bare_key' text=b'foo'
-            #    type=']' text=b']'
-            #    type='pair' text=b'x=1'
-            #    type='pair' text=b'y=2'
-            #
-            # I want the whole section header [foo] to have the same tag.
-            #
-            # There's a similar situation in rust: macro name is just an identifier in a macro_invocation
-            if (
-                self._language_name == "python"
-                and node.type == "identifier"
-                and node.prev_sibling is not None
-                and node.prev_sibling.type in ("def", "class")
-            ):
-                # class Foo:  --> highlight Foo as a class_name
-                type_name = f"{node.prev_sibling.type}_name"
-            elif (
-                self._language_name == "toml"
-                and node.type not in ("pair", "comment")
-                and node.parent is not None
-                and node.parent.type in ("table", "table_array_element")
-            ) or (
-                self._language_name == "rust"
-                and node.type in ("identifier", "scoped_identifier", "!")
-                and node.parent is not None
-                and node.parent.type == "macro_invocation"
-            ):
-                type_name = node.parent.type
-            else:
-                type_name = node.type
-
-            tag_name = self._config.token_mapping.get(type_name, "Token.Text")
-            if isinstance(tag_name, dict):
-                tag_name = tag_name.get(node.text.decode("utf-8"), "Token.Text")
-            assert isinstance(tag_name, str)
-
+        for node, tag in self._get_nodes_and_tags(self._tree.walk(), start_point, end_point):
             start_row, start_col = node.start_point
             end_row, end_col = node.end_point
-            self.textwidget.tag_add(
-                tag_name, f"{start_row+1}.{start_col}", f"{end_row+1}.{end_col}"
-            )
+            start = f"{start_row+1}.{start_col}"
+            end = f"{end_row+1}.{end_col}"
+
+            if tag == "recurse":
+                self.delete_tags(start, end)
+            else:
+                self.textwidget.tag_add(tag, start, end)
 
     def on_scroll(self) -> None:
         # TODO: This could be optimized. Often most of the new visible part was already visible before.
