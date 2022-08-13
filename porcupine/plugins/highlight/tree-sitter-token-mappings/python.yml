@@ -14,6 +14,28 @@ queries:
     # There doesn't seem to be any way to say "anything except the !r part".
     (string (interpolation (expression) @recurse))
 
+  function_definition: |
+    (function_definition
+      ("async")? @Token.Keyword
+      ("def") @Token.Keyword
+      name: (identifier) @Token.Name.Function
+      parameters: (parameters) @recurse
+      ("->")? @Token.Punctuation
+      return_type: (type)? @recurse
+      (":") @Token.Punctuation
+      (comment)? @Token.Comment
+      body: (block) @recurse)
+
+  class_definition: |
+    (class_definition
+      ("class") @Token.Keyword
+      name: (identifier) @Token.Name.Function
+      superclasses: (argument_list)? @recurse
+      (":") @Token.Punctuation
+      (comment)? @Token.Comment
+      body: (block) @recurse)
+    
+
 token_mapping:
   comment: Token.Comment
 
@@ -21,20 +43,27 @@ token_mapping:
   integer: Token.Literal.Number.Integer
   float: Token.Literal.Number.Float
 
+  'true': Token.Keyword.Constant
+  'false': Token.Keyword.Constant
+  none: Token.Keyword.Constant
+  
+  ellipsis: Token.Name.Builtin.Pseudo
+
+  # Keywords
   and: Token.Keyword
   as: Token.Keyword
   assert: Token.Keyword
   async: Token.Keyword
   await: Token.Keyword
   break: Token.Keyword
+  case: Token.Keyword
   class: Token.Keyword
   continue: Token.Keyword
-  def: Token.Keyword
   del: Token.Keyword
+  def: Token.Keyword
   elif: Token.Keyword
   else: Token.Keyword
   except: Token.Keyword
-  'false': Token.Keyword
   finally: Token.Keyword
   for: Token.Keyword
   from: Token.Keyword
@@ -44,20 +73,69 @@ token_mapping:
   in: Token.Keyword
   is: Token.Keyword
   lambda: Token.Keyword
-  none: Token.Keyword
+  match: Token.Keyword
   nonlocal: Token.Keyword
   not: Token.Keyword
   or: Token.Keyword
   pass: Token.Keyword
   raise: Token.Keyword
   return: Token.Keyword
-  'true': Token.Keyword
   try: Token.Keyword
   while: Token.Keyword
   with: Token.Keyword
   yield: Token.Keyword
 
+  # Operators
+  '!=': Token.Operator
+  '==': Token.Operator
+  '<': Token.Operator
+  '>': Token.Operator
+  '<=': Token.Operator
+  '>=': Token.Operator
+  '+=': Token.Operator
+  '-=': Token.Operator
+  '*=': Token.Operator
+  '/=': Token.Operator
+  '@=': Token.Operator
+  '//=': Token.Operator
+  '%=': Token.Operator
+  '**=': Token.Operator
+  '<<=': Token.Operator
+  '>>=': Token.Operator
+  '&=': Token.Operator
+  '^=': Token.Operator
+  '|=': Token.Operator
+  '+': Token.Operator
+  '-': Token.Operator
+  '*': Token.Operator
+  '/': Token.Operator
+  '@': Token.Operator
+  '//': Token.Operator
+  '%': Token.Operator
+  '**': Token.Operator
+  '<<': Token.Operator
+  '>>': Token.Operator
+  '&': Token.Operator
+  '^': Token.Operator
+  '|': Token.Operator
+  '~': Token.Operator
+  '=': Token.Operator
+  ':=': Token.Operator
+
+  # Punctuation
+  '(': Token.Punctuation
+  ')': Token.Punctuation
+  '[': Token.Punctuation
+  ']': Token.Punctuation
+  '{': Token.Punctuation
+  '}': Token.Punctuation
+  '.': Token.Punctuation
+  ',': Token.Punctuation
+  ':': Token.Punctuation
+  ';': Token.Punctuation
+
   identifier:
+    # Exceptions
     ArithmeticError: Token.Name.Exception
     AssertionError: Token.Name.Exception
     AttributeError: Token.Name.Exception
@@ -73,10 +151,9 @@ token_mapping:
     ConnectionResetError: Token.Name.Exception
     DeprecationWarning: Token.Name.Builtin
     EOFError: Token.Name.Exception
-    Ellipsis: Token.Name.Builtin
+    EncodingWarning: Token.Name.Builtin
     EnvironmentError: Token.Name.Exception
     Exception: Token.Name.Builtin
-    'False': Token.Name.Builtin
     FileExistsError: Token.Name.Exception
     FileNotFoundError: Token.Name.Exception
     FloatingPointError: Token.Name.Exception
@@ -95,9 +172,7 @@ token_mapping:
     MemoryError: Token.Name.Exception
     ModuleNotFoundError: Token.Name.Exception
     NameError: Token.Name.Exception
-    None: Token.Name.Builtin
     NotADirectoryError: Token.Name.Exception
-    NotImplemented: Token.Name.Builtin
     NotImplementedError: Token.Name.Exception
     OSError: Token.Name.Exception
     OverflowError: Token.Name.Exception
@@ -117,26 +192,20 @@ token_mapping:
     SystemExit: Token.Name.Builtin
     TabError: Token.Name.Exception
     TimeoutError: Token.Name.Exception
-    'True': Token.Name.Builtin
     TypeError: Token.Name.Exception
     UnboundLocalError: Token.Name.Exception
     UnicodeDecodeError: Token.Name.Exception
     UnicodeEncodeError: Token.Name.Exception
     UnicodeError: Token.Name.Exception
     UnicodeTranslateError: Token.Name.Exception
+    ValueError: Token.Name.Exception
+    ZeroDivisionError: Token.Name.Exception
     UnicodeWarning: Token.Name.Builtin
     UserWarning: Token.Name.Builtin
-    ValueError: Token.Name.Exception
     Warning: Token.Name.Builtin
-    ZeroDivisionError: Token.Name.Exception
-    __debug__: Token.Name.Builtin
-    __doc__: Token.Name.Builtin
+    
+    # Builtins
     __import__: Token.Name.Builtin
-    __loader__: Token.Name.Builtin
-    __name__: Token.Name.Builtin
-    __package__: Token.Name.Builtin
-    __path__: Token.Name.Builtin
-    __spec__: Token.Name.Builtin
     abs: Token.Name.Builtin
     all: Token.Name.Builtin
     any: Token.Name.Builtin
@@ -151,8 +220,6 @@ token_mapping:
     classmethod: Token.Name.Builtin
     compile: Token.Name.Builtin
     complex: Token.Name.Builtin
-    copyright: Token.Name.Builtin
-    credits: Token.Name.Builtin
     delattr: Token.Name.Builtin
     dict: Token.Name.Builtin
     dir: Token.Name.Builtin
@@ -178,7 +245,6 @@ token_mapping:
     issubclass: Token.Name.Builtin
     iter: Token.Name.Builtin
     len: Token.Name.Builtin
-    license: Token.Name.Builtin
     list: Token.Name.Builtin
     locals: Token.Name.Builtin
     map: Token.Name.Builtin
@@ -198,7 +264,6 @@ token_mapping:
     repr: Token.Name.Builtin
     reversed: Token.Name.Builtin
     round: Token.Name.Builtin
-    self: Token.Name.Builtin
     set: Token.Name.Builtin
     setattr: Token.Name.Builtin
     slice: Token.Name.Builtin
@@ -211,3 +276,37 @@ token_mapping:
     type: Token.Name.Builtin
     vars: Token.Name.Builtin
     zip: Token.Name.Builtin
+
+    # builtin.Pseudo
+    self: Token.Name.Builtin.Pseudo
+    cls: Token.Name.Builtin.Pseudo
+    Ellipsis: Token.Name.Builtin.Pseudo
+    NotImplemented: Token.Name.Builtin.Pseudo
+    reveal_type: Token.Name.Builtin.Pseudo
+
+    # Magic variables
+    __annotations__: Token.Name.Variable.Magic
+    __bases__: Token.Name.Variable.Magic
+    __class__: Token.Name.Variable.Magic
+    __closure__: Token.Name.Variable.Magic
+    __code__: Token.Name.Variable.Magic
+    __debug__: Token.Name.Variable.Magic
+    __defaults__: Token.Name.Variable.Magic
+    __dict__: Token.Name.Variable.Magic
+    __doc__: Token.Name.Variable.Magic
+    __file__: Token.Name.Variable.Magic
+    __func__: Token.Name.Variable.Magic
+    __globals__: Token.Name.Variable.Magic
+    __kwdefaults__: Token.Name.Variable.Magic
+    __loader__: Token.Name.Variable.Magic
+    __module__: Token.Name.Variable.Magic
+    __mro__: Token.Name.Variable.Magic
+    __name__: Token.Name.Variable.Magic
+    __objclass__: Token.Name.Variable.Magic
+    __package__: Token.Name.Variable.Magic
+    __path__: Token.Name.Variable.Magic
+    __qualname__: Token.Name.Variable.Magic
+    __self__: Token.Name.Variable.Magic
+    __slots__: Token.Name.Variable.Magic
+    __spec__: Token.Name.Variable.Magic
+    __weakref__: Token.Name.Variable.Magic
