@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import sys
 import tkinter
-from typing import Callable
+from typing import Callable, Optional
 
 from pygments.lexer import LexerMeta
 
@@ -45,7 +45,14 @@ class HighlighterManager:
             return
 
         if highlighter_name == "tree_sitter":
-            language_name = self._tab.settings.get("tree_sitter_language_name", str)
+            language_name = self._tab.settings.get("tree_sitter_language_name", Optional[str])
+            if language_name is None:
+                # TODO: set all highlighter settings at once, so that this doesn't happen in the
+                # middle of applying filetype settings
+                log.info(
+                    "highlighter_name set to 'tree_sitter' even though tree_sitter_language_name is unset"
+                )
+                return
             log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
             self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
         elif highlighter_name == "pygments":
@@ -103,12 +110,12 @@ def debounce(
 def on_new_filetab(tab: tabs.FileTab) -> None:
     # pygments_lexer option already exists, as it is used also outside this plugin
     tab.settings.add_option("syntax_highlighter", default="pygments")
-    tab.settings.add_option("tree_sitter_language_name", default="<missing>")
+    tab.settings.add_option("tree_sitter_language_name", default=None, type_=Optional[str])
 
     manager = HighlighterManager(tab)
     tab.bind("<<TabSettingChanged:pygments_lexer>>", manager.on_config_changed, add=True)
     tab.bind("<<TabSettingChanged:syntax_highlighter>>", manager.on_config_changed, add=True)
-    tab.bind("<<TabSettingChanged:tree_sitter>>", manager.on_config_changed, add=True)
+    tab.bind("<<TabSettingChanged:tree_sitter_language_name>>", manager.on_config_changed, add=True)
     manager.on_config_changed()
 
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", manager.on_change_event, add=True)
