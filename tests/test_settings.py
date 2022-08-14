@@ -225,10 +225,12 @@ def test_change_events(toplevel):
     toplevel.bind(
         "<<ItChanged:foo>>",
         (lambda e: change_events.append("foo = " + settings_obj.get("foo", str))),
+        add=True,
     )
     toplevel.bind(
         "<<ItChanged:bar>>",
         (lambda e: change_events.append("bar = " + settings_obj.get("bar", str))),
+        add=True,
     )
 
     settings_obj.set("foo", "x")
