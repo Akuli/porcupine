@@ -40,6 +40,7 @@ queries:
             function: (identifier)? @Token.Name.Decorator   # @foo()()
             function: (attribute)? @Token.Name.Decorator    # @foo.bar()()
             # I think two levels deep is enough
+            arguments: (_) @recurse
           )?
           arguments: (_) @recurse
         )?
