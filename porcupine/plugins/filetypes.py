@@ -216,13 +216,14 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
             if name not in {"filename_patterns", "shebang_regex"}:
                 tab.settings.set(name, value, from_config=True, tag="from_filetype")
 
-    # Avoid resetting an option before setting its value.
-    # If the option's value doesn't change, that would create unnecessary change events.
-    # For example, when you rename a file, it would temporarily reset the "langserver" setting.
-    # That would cause the langserver to be restarted unnecessarily.
-    needs_reset = previously_set - filetype.keys()
-    for name in needs_reset:
-        tab.settings.reset(name)
+        # Avoid resetting an option before setting its value.
+        # If the option's value doesn't change, that would create unnecessary change events.
+        # For example, when you rename a file, it would temporarily reset the "langserver" setting.
+        # That would cause the langserver to be restarted unnecessarily.
+        # Alternatively we could make settings.set_many_at_once() more clever to handle this :)
+        needs_reset = previously_set - filetype.keys()
+        for name in needs_reset:
+            tab.settings.reset(name)
 
 
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
