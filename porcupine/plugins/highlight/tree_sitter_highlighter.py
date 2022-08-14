@@ -115,14 +115,12 @@ class TreeSitterHighlighter(BaseHighlighter):
         return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
 
     def _decide_tag(self, node: tree_sitter.Node) -> str:
-        type_name = node.type
-
-        if set(type_name) <= set("+-*/%~&|^!?<>=@.,:;()[]{}"):
+        if set(node.type) <= set("+-*/%~&|^!?<>=@.,:;()[]{}"):
             default = "Token.Operator"
         else:
             default = "Token.Text"
 
-        config_value = self._config.token_mapping.get(type_name, default)
+        config_value = self._config.token_mapping.get(node.type, default)
         if isinstance(config_value, dict):
             return config_value.get(node.text.decode("utf-8"), default)
         return config_value
