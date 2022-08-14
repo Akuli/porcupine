@@ -211,8 +211,7 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
 
     with tab.settings.set_many_at_once():
         # Reset all options whose values came from the previous filetype.
-        needs_reset = tab.settings.get_options_by_tag("from_filetype") - filetype.keys()
-        for name in needs_reset:
+        for name in tab.settings.get_options_by_tag("from_filetype"):
             tab.settings.reset(name)
 
         for name, value in filetype.items():
