@@ -27,6 +27,16 @@ queries:
       body: (_) @recurse
     )
 
+  class_definition: |
+    (class_definition
+      ("class") @Token.Keyword
+      name: (identifier) @Token.Name.Function
+      superclasses: (argument_list)? @recurse
+      (":") @Token.Punctuation
+      (comment)? @Token.Comment
+      body: (_) @recurse
+    )
+
   decorated_definition: |
     (decorated_definition
       (decorator
@@ -46,16 +56,6 @@ queries:
         )?
       )
       definition: (_) @recurse
-    )
-
-  class_definition: |
-    (class_definition
-      ("class") @Token.Keyword
-      name: (identifier) @Token.Name.Function
-      superclasses: (argument_list)? @recurse
-      (":") @Token.Punctuation
-      (comment)? @Token.Comment
-      body: (_) @recurse
     )
     
 
