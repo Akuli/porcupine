@@ -24,7 +24,19 @@ queries:
       return_type: (type)? @recurse
       (":") @Token.Punctuation
       (comment)? @Token.Comment
-      body: (block) @recurse)
+      body: (_) @recurse
+    )
+
+  decorated_definition: |
+    (decorated_definition
+      (decorator
+        ("@") @Token.Name.Decorator
+        (identifier)? @Token.Name.Decorator
+        (attribute)? @Token.Name.Decorator
+        (call)? @recurse
+      )
+      definition: (_) @recurse
+    )
 
   class_definition: |
     (class_definition
@@ -33,7 +45,8 @@ queries:
       superclasses: (argument_list)? @recurse
       (":") @Token.Punctuation
       (comment)? @Token.Comment
-      body: (block) @recurse)
+      body: (_) @recurse
+    )
     
 
 token_mapping:
