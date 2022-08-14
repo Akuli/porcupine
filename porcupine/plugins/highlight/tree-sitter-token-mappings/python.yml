@@ -24,7 +24,8 @@ queries:
       return_type: (type)? @recurse
       (":") @Token.Punctuation
       (comment)? @Token.Comment
-      body: (block) @recurse)
+      body: (_) @recurse
+    )
 
   class_definition: |
     (class_definition
@@ -33,7 +34,29 @@ queries:
       superclasses: (argument_list)? @recurse
       (":") @Token.Punctuation
       (comment)? @Token.Comment
-      body: (block) @recurse)
+      body: (_) @recurse
+    )
+
+  decorated_definition: |
+    (decorated_definition
+      (decorator
+        ("@") @Token.Name.Decorator
+        (identifier)? @Token.Name.Decorator     # @foo
+        (attribute)? @Token.Name.Decorator      # @foo.bar
+        (call
+          function: (identifier)? @Token.Name.Decorator   # @foo()
+          function: (attribute)? @Token.Name.Decorator    # @foo.bar()
+          function: (call
+            function: (identifier)? @Token.Name.Decorator   # @foo()()
+            function: (attribute)? @Token.Name.Decorator    # @foo.bar()()
+            # I think two levels deep is enough
+            arguments: (_) @recurse
+          )?
+          arguments: (_) @recurse
+        )?
+      )
+      definition: (_) @recurse
+    )
     
 
 token_mapping:
