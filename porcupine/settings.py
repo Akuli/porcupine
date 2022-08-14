@@ -235,7 +235,7 @@ class Settings:
     @contextlib.contextmanager
     def defer_change_events(self) -> Generator[None, None, None]:
         if self._pending_change_events is not None:
-            raise RuntimeError("calls to set_batch() cannot be nested")
+            raise RuntimeError("calls to defer_change_events() cannot be nested")
 
         self._pending_change_events = {}
         try:
