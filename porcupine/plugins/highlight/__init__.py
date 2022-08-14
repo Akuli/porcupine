@@ -108,7 +108,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     manager = HighlighterManager(tab)
     tab.bind("<<TabSettingChanged:pygments_lexer>>", manager.on_config_changed, add=True)
     tab.bind("<<TabSettingChanged:syntax_highlighter>>", manager.on_config_changed, add=True)
-    tab.bind("<<TabSettingChanged:tree_sitter>>", manager.on_config_changed, add=True)
+    tab.bind("<<TabSettingChanged:tree_sitter_language_name>>", manager.on_config_changed, add=True)
     manager.on_config_changed()
 
     utils.bind_with_data(tab.textwidget, "<<ContentChanged>>", manager.on_change_event, add=True)
