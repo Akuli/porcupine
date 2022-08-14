@@ -124,7 +124,7 @@ class Settings:
         self._unknown_options: dict[str, _UnknownOption] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
-        self._pending_change_events: list[tuple[str, object]] | None = None
+        self._pending_change_events: dict[str, object] | None = None
 
     def add_option(
         self,
@@ -231,12 +231,12 @@ class Settings:
         if self._pending_change_events is not None:
             raise RuntimeError( "calls to set_batch() cannot be nested")
 
-        self._pending_change_events = []
+        self._pending_change_events = {}
         try:
             yield
         finally:
             try:
-                for option_name, value in self._pending_change_events:
+                for option_name, value in self._pending_change_events.items():
                     self._generate_change_event(option_name, value)
             finally:
                 self._pending_change_events = None
@@ -292,7 +292,7 @@ class Settings:
         if self._pending_change_events is None:
             self._generate_change_event(option_name, value)
         else:
-            self._pending_change_events.append((option_name, value))
+            self._pending_change_events[option_name] = value
 
     def get_options_by_tag(self, tag: str) -> builtins.set[str]:
         """Return the names of all options whose current value was set with the given ``tag``."""
