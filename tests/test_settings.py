@@ -238,6 +238,7 @@ def test_change_events(toplevel):
 
     change_events.clear()
     with settings_obj.set_many_at_once():
+        settings_obj.set("foo", "some temporary value")
         settings_obj.set("foo", "xxx")
         settings_obj.set("bar", "yyy")
         assert change_events == []
