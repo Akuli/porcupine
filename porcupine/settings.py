@@ -124,7 +124,7 @@ class Settings:
         self._unknown_options: dict[str, _UnknownOption] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
-        self._pending_change_events: dict[str, object] | None = None
+        self._pending_change_events: dict[str, tuple[object, object]] | None = None
 
     def add_option(
         self,
@@ -208,9 +208,13 @@ class Settings:
                 # can be an error from converter
                 _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
 
-    def _generate_change_event(self, option_name: str, value: object) -> None:
+    def _generate_change_event(self, option_name: str, old_value: object, new_value: object) -> None:
         event_name = self._change_event_format.format(option_name)
-        _log.debug(f"{option_name} was set to {value!r}, generating {event_name} events")
+        if old_value == new_value:
+            _log.debug(f"not generating a change event because value didn't change: {event_name}")
+            return
+
+        _log.info(f"generating change event: {event_name}")
 
         if self._change_event_widget is None:
             try:
@@ -236,8 +240,9 @@ class Settings:
             yield
         finally:
             try:
-                for option_name, value in self._pending_change_events.items():
-                    self._generate_change_event(option_name, value)
+                _log.debug("generating pending change events")
+                for option_name, (old_value, new_value) in self._pending_change_events.items():
+                    self._generate_change_event(option_name, old_value, new_value)
             finally:
                 self._pending_change_events = None
 
@@ -283,16 +288,20 @@ class Settings:
         value = _type_check(option.type, value)
 
         option.tag = tag
-
-        # don't create change events when nothing changes (helps avoid infinite recursion)
-        if option.value == value:
-            return
+        old_value = option.value
         option.value = value
+        if old_value != value:
+            _log.info(f"changed value of {option_name!r}: {old_value!r} --> {value!r}")
 
         if self._pending_change_events is None:
-            self._generate_change_event(option_name, value)
+            self._generate_change_event(option_name, old_value, value)
+        elif option_name in self._pending_change_events:
+            # If changed a-->b and then b-->c, add pending change event for (a, c)
+            previous_old_value, previous_new_value = self._pending_change_events[option_name]
+            assert previous_new_value == old_value
+            self._pending_change_events[option_name] = (previous_old_value, value)
         else:
-            self._pending_change_events[option_name] = value
+            self._pending_change_events[option_name] = (old_value, value)
 
     def get_options_by_tag(self, tag: str) -> builtins.set[str]:
         """Return the names of all options whose current value was set with the given ``tag``."""

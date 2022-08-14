@@ -45,14 +45,7 @@ class HighlighterManager:
             return
 
         if highlighter_name == "tree_sitter":
-            language_name = self._tab.settings.get("tree_sitter_language_name", Optional[str])
-            if language_name is None:
-                # TODO: set all highlighter settings at once, so that this doesn't happen in the
-                # middle of applying filetype settings
-                log.info(
-                    "highlighter_name set to 'tree_sitter' even though tree_sitter_language_name is unset"
-                )
-                return
+            language_name = self._tab.settings.get("tree_sitter_language_name", str)
             log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
             self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
         elif highlighter_name == "pygments":
