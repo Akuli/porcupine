@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import atexit
 import builtins
+import contextlib
 import copy
 import dataclasses
 import enum
@@ -13,7 +14,7 @@ import time
 import tkinter
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Iterator, List, TypeVar, overload
+from typing import Any, Callable, Generator, Iterator, List, TypeVar, overload
 
 import dacite
 from pygments import styles, token
@@ -123,6 +124,7 @@ class Settings:
         self._unknown_options: dict[str, _UnknownOption] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
+        self._pending_change_events: dict[str, tuple[object, object]] | None = None
 
     def add_option(
         self,
@@ -206,6 +208,46 @@ class Settings:
                 # can be an error from converter
                 _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
 
+    def _generate_change_event(
+        self, option_name: str, old_value: object, new_value: object
+    ) -> None:
+        event_name = self._change_event_format.format(option_name)
+        if old_value == new_value:
+            _log.debug(f"not generating a change event because value didn't change: {event_name}")
+            return
+
+        _log.info(f"generating change event: {event_name}")
+
+        if self._change_event_widget is None:
+            try:
+                main_window = porcupine.get_main_window()
+            except RuntimeError as e:
+                # on porcupine startup, plugin disable list needs to be set before main window exists
+                if option_name != "disabled_plugins":
+                    raise e
+            else:
+                for widget in _get_children_recursively(main_window):
+                    widget.event_generate(event_name)
+        else:
+            self._change_event_widget.event_generate(event_name)
+
+    # TODO: document this
+    @contextlib.contextmanager
+    def defer_change_events(self) -> Generator[None, None, None]:
+        if self._pending_change_events is not None:
+            raise RuntimeError("calls to defer_change_events() cannot be nested")
+
+        self._pending_change_events = {}
+        try:
+            yield
+        finally:
+            try:
+                _log.debug("generating pending change events")
+                for option_name, (old_value, new_value) in self._pending_change_events.items():
+                    self._generate_change_event(option_name, old_value, new_value)
+            finally:
+                self._pending_change_events = None
+
     def set(
         self,
         option_name: str,
@@ -248,27 +290,20 @@ class Settings:
         value = _type_check(option.type, value)
 
         option.tag = tag
-
-        # don't create change events when nothing changes (helps avoid infinite recursion)
-        if option.value == value:
-            return
+        old_value = option.value
         option.value = value
+        if old_value != value:
+            _log.info(f"changed value of {option_name!r}: {old_value!r} --> {value!r}")
 
-        event_name = self._change_event_format.format(option_name)
-        _log.debug(f"{option_name} was set to {value!r}, generating {event_name} events")
-
-        if self._change_event_widget is None:
-            try:
-                main_window = porcupine.get_main_window()
-            except RuntimeError as e:
-                # on porcupine startup, plugin disable list needs to be set before main window exists
-                if option_name != "disabled_plugins":
-                    raise e
-            else:
-                for widget in _get_children_recursively(main_window):
-                    widget.event_generate(event_name)
+        if self._pending_change_events is None:
+            self._generate_change_event(option_name, old_value, value)
+        elif option_name in self._pending_change_events:
+            # If changed a-->b and then b-->c, add pending change event for (a, c)
+            previous_old_value, previous_new_value = self._pending_change_events[option_name]
+            assert previous_new_value == old_value
+            self._pending_change_events[option_name] = (previous_old_value, value)
         else:
-            self._change_event_widget.event_generate(event_name)
+            self._pending_change_events[option_name] = (old_value, value)
 
     def get_options_by_tag(self, tag: str) -> builtins.set[str]:
         """Return the names of all options whose current value was set with the given ``tag``."""

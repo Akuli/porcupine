@@ -211,8 +211,51 @@ def test_font_family_chooser():
 def toplevel():
     toplevel = tkinter.Toplevel()
     toplevel.geometry("600x100")
+    toplevel.update()
     yield toplevel
     toplevel.destroy()
+
+
+def test_change_events(toplevel):
+    settings_obj = settings.Settings(toplevel, "<<ItChanged:{}>>")
+    settings_obj.add_option("foo", default="foo default")
+    settings_obj.add_option("bar", default="bar default")
+
+    change_events = []
+    toplevel.bind(
+        "<<ItChanged:foo>>",
+        (lambda e: change_events.append("foo = " + settings_obj.get("foo", str))),
+        add=True,
+    )
+    toplevel.bind(
+        "<<ItChanged:bar>>",
+        (lambda e: change_events.append("bar = " + settings_obj.get("bar", str))),
+        add=True,
+    )
+
+    settings_obj.set("foo", "x")
+    assert change_events == ["foo = x"]
+    settings_obj.set("bar", "y")
+    assert change_events == ["foo = x", "bar = y"]
+
+    change_events.clear()
+    with settings_obj.defer_change_events():
+        settings_obj.set("foo", "some temporary value")
+        settings_obj.set("foo", "xxx")
+        settings_obj.set("bar", "yyy")
+        assert change_events == []
+    assert change_events == ["foo = xxx", "bar = yyy"]
+
+    change_events.clear()
+    with settings_obj.defer_change_events():
+        settings_obj.set("foo", "asd asd")
+        settings_obj.set("foo", "xxx")
+    assert change_events == []  # change was ignored: "xxx" --> "asd asd" --> "xxx"
+
+    with settings_obj.defer_change_events():
+        with pytest.raises(RuntimeError, match="cannot be nested"):
+            with settings_obj.defer_change_events():
+                pass
 
 
 def create_paned_window(toplevel):

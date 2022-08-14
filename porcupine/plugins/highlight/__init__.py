@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import sys
 import tkinter
-from typing import Callable, Optional
+from typing import Callable
 
 from pygments.lexer import LexerMeta
 
@@ -45,14 +45,7 @@ class HighlighterManager:
             return
 
         if highlighter_name == "tree_sitter":
-            language_name = self._tab.settings.get("tree_sitter_language_name", Optional[str])
-            if language_name is None:
-                # TODO: set all highlighter settings at once, so that this doesn't happen in the
-                # middle of applying filetype settings
-                log.info(
-                    "highlighter_name set to 'tree_sitter' even though tree_sitter_language_name is unset"
-                )
-                return
+            language_name = self._tab.settings.get("tree_sitter_language_name", str)
             log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
             self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
         elif highlighter_name == "pygments":
@@ -110,7 +103,9 @@ def debounce(
 def on_new_filetab(tab: tabs.FileTab) -> None:
     # pygments_lexer option already exists, as it is used also outside this plugin
     tab.settings.add_option("syntax_highlighter", default="pygments")
-    tab.settings.add_option("tree_sitter_language_name", default=None, type_=Optional[str])
+    tab.settings.add_option(
+        "tree_sitter_language_name", default="<tree_sitter_language_name not set>"
+    )
 
     manager = HighlighterManager(tab)
     tab.bind("<<TabSettingChanged:pygments_lexer>>", manager.on_config_changed, add=True)
