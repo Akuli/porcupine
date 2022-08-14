@@ -210,10 +210,11 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
     log.info(f"applying filetype settings: {filetype!r}")
 
     previously_set = tab.settings.get_options_by_tag("from_filetype")
-    for name, value in filetype.items():
-        # Ignore stuff used only for guessing the correct filetype
-        if name not in {"filename_patterns", "shebang_regex"}:
-            tab.settings.set(name, value, from_config=True, tag="from_filetype")
+    with tab.settings.set_many_at_once():
+        for name, value in filetype.items():
+            # Ignore stuff used only for guessing the correct filetype
+            if name not in {"filename_patterns", "shebang_regex"}:
+                tab.settings.set(name, value, from_config=True, tag="from_filetype")
 
     # Avoid resetting an option before setting its value.
     # If the option's value doesn't change, that would create unnecessary change events.

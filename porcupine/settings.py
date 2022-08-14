@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import atexit
 import builtins
+import contextlib
 import copy
 import dataclasses
 import enum
@@ -13,7 +14,7 @@ import time
 import tkinter
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Iterator, List, TypeVar, overload
+from typing import Any, Callable, Generator, Iterator, List, TypeVar, overload
 
 import dacite
 from pygments import styles, token
@@ -123,6 +124,7 @@ class Settings:
         self._unknown_options: dict[str, _UnknownOption] = {}
         self._change_event_widget = change_event_widget  # None to notify all widgets
         self._change_event_format = change_event_format
+        self._pending_change_events: list[tuple[str, object]] | None = None
 
     def add_option(
         self,
@@ -206,6 +208,39 @@ class Settings:
                 # can be an error from converter
                 _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
 
+    def _generate_change_event(self, option_name: str, value: object) -> None:
+        event_name = self._change_event_format.format(option_name)
+        _log.debug(f"{option_name} was set to {value!r}, generating {event_name} events")
+
+        if self._change_event_widget is None:
+            try:
+                main_window = porcupine.get_main_window()
+            except RuntimeError as e:
+                # on porcupine startup, plugin disable list needs to be set before main window exists
+                if option_name != "disabled_plugins":
+                    raise e
+            else:
+                for widget in _get_children_recursively(main_window):
+                    widget.event_generate(event_name)
+        else:
+            self._change_event_widget.event_generate(event_name)
+
+    # TODO: document this
+    @contextlib.contextmanager
+    def set_many_at_once(self) -> Generator[None, None, None]:
+        if self._pending_change_events is not None:
+            raise RuntimeError( "calls to set_batch() cannot be nested")
+
+        self._pending_change_events = []
+        try:
+            yield
+        finally:
+            try:
+                for option_name, value in self._pending_change_events:
+                    self._generate_change_event(option_name, value)
+            finally:
+                self._pending_change_events = None
+
     def set(
         self,
         option_name: str,
@@ -254,21 +289,10 @@ class Settings:
             return
         option.value = value
 
-        event_name = self._change_event_format.format(option_name)
-        _log.debug(f"{option_name} was set to {value!r}, generating {event_name} events")
-
-        if self._change_event_widget is None:
-            try:
-                main_window = porcupine.get_main_window()
-            except RuntimeError as e:
-                # on porcupine startup, plugin disable list needs to be set before main window exists
-                if option_name != "disabled_plugins":
-                    raise e
-            else:
-                for widget in _get_children_recursively(main_window):
-                    widget.event_generate(event_name)
+        if self._pending_change_events is None:
+            self._generate_change_event(option_name, value)
         else:
-            self._change_event_widget.event_generate(event_name)
+            self._pending_change_events.append((option_name, value))
 
     def get_options_by_tag(self, tag: str) -> builtins.set[str]:
         """Return the names of all options whose current value was set with the given ``tag``."""
