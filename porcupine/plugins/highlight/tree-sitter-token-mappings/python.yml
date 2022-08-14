@@ -33,7 +33,10 @@ queries:
         ("@") @Token.Name.Decorator
         (identifier)? @Token.Name.Decorator
         (attribute)? @Token.Name.Decorator
-        (call)? @recurse
+        (call
+          function: (_) @Token.Name.Decorator
+          arguments: (_) @recurse
+        )?
       )
       definition: (_) @recurse
     )
