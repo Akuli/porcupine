@@ -85,55 +85,6 @@ token_mapping:
   with: Token.Keyword
   yield: Token.Keyword
 
-  # Operators
-  '!=': Token.Operator
-  '==': Token.Operator
-  '<': Token.Operator
-  '>': Token.Operator
-  '<=': Token.Operator
-  '>=': Token.Operator
-  '+=': Token.Operator
-  '-=': Token.Operator
-  '*=': Token.Operator
-  '/=': Token.Operator
-  '@=': Token.Operator
-  '//=': Token.Operator
-  '%=': Token.Operator
-  '**=': Token.Operator
-  '<<=': Token.Operator
-  '>>=': Token.Operator
-  '&=': Token.Operator
-  '^=': Token.Operator
-  '|=': Token.Operator
-  '+': Token.Operator
-  '-': Token.Operator
-  '*': Token.Operator
-  '/': Token.Operator
-  '@': Token.Operator
-  '//': Token.Operator
-  '%': Token.Operator
-  '**': Token.Operator
-  '<<': Token.Operator
-  '>>': Token.Operator
-  '&': Token.Operator
-  '^': Token.Operator
-  '|': Token.Operator
-  '~': Token.Operator
-  '=': Token.Operator
-  ':=': Token.Operator
-
-  # Punctuation
-  '(': Token.Punctuation
-  ')': Token.Punctuation
-  '[': Token.Punctuation
-  ']': Token.Punctuation
-  '{': Token.Punctuation
-  '}': Token.Punctuation
-  '.': Token.Punctuation
-  ',': Token.Punctuation
-  ':': Token.Punctuation
-  ';': Token.Punctuation
-
   identifier:
     # Exceptions
     ArithmeticError: Token.Name.Exception

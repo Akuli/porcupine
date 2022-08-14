@@ -140,9 +140,14 @@ class TreeSitterHighlighter(BaseHighlighter):
         else:
             type_name = node.type
 
-        config_value = self._config.token_mapping.get(type_name, "Token.Text")
+        if set(type_name) <= set("+-*/%~&|^!?<>=@.,:;()[]{}"):
+            default = "Token.Operator"
+        else:
+            default = "Token.Text"
+
+        config_value = self._config.token_mapping.get(type_name, default)
         if isinstance(config_value, dict):
-            return config_value.get(node.text.decode("utf-8"), "Token.Text")
+            return config_value.get(node.text.decode("utf-8"), default)
         return config_value
 
     # only returns nodes that overlap the start,end range
