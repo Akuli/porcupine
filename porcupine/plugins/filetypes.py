@@ -209,7 +209,7 @@ def get_filetype_for_tab(tab: tabs.FileTab) -> FileType:
 def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
     log.info(f"applying filetype settings: {filetype!r}")
 
-    with tab.settings.set_many_at_once():
+    with tab.settings.defer_change_events():
         # Reset all options whose values came from the previous filetype.
         for name in tab.settings.get_options_by_tag("from_filetype"):
             tab.settings.reset(name)

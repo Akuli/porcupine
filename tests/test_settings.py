@@ -239,7 +239,7 @@ def test_change_events(toplevel):
     assert change_events == ["foo = x", "bar = y"]
 
     change_events.clear()
-    with settings_obj.set_many_at_once():
+    with settings_obj.defer_change_events():
         settings_obj.set("foo", "some temporary value")
         settings_obj.set("foo", "xxx")
         settings_obj.set("bar", "yyy")
@@ -247,14 +247,14 @@ def test_change_events(toplevel):
     assert change_events == ["foo = xxx", "bar = yyy"]
 
     change_events.clear()
-    with settings_obj.set_many_at_once():
+    with settings_obj.defer_change_events():
         settings_obj.set("foo", "asd asd")
         settings_obj.set("foo", "xxx")
     assert change_events == []  # change was ignored: "xxx" --> "asd asd" --> "xxx"
 
-    with settings_obj.set_many_at_once():
+    with settings_obj.defer_change_events():
         with pytest.raises(RuntimeError, match="cannot be nested"):
-            with settings_obj.set_many_at_once():
+            with settings_obj.defer_change_events():
                 pass
 
 

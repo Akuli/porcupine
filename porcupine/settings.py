@@ -233,7 +233,7 @@ class Settings:
 
     # TODO: document this
     @contextlib.contextmanager
-    def set_many_at_once(self) -> Generator[None, None, None]:
+    def defer_change_events(self) -> Generator[None, None, None]:
         if self._pending_change_events is not None:
             raise RuntimeError("calls to set_batch() cannot be nested")
 
