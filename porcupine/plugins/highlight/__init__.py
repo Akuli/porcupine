@@ -49,7 +49,9 @@ class HighlighterManager:
             if language_name is None:
                 # TODO: set all highlighter settings at once, so that this doesn't happen in the
                 # middle of applying filetype settings
-                log.info("highlighter_name set to 'tree_sitter' even though tree_sitter_language_name is unset")
+                log.info(
+                    "highlighter_name set to 'tree_sitter' even though tree_sitter_language_name is unset"
+                )
                 return
             log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
             self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
