@@ -1,0 +1,36 @@
+dont_recurse_inside:
+  - quoted_key
+  - string
+  - dotted_key
+
+queries:
+  # Highlight [foo] and [[foo]] with Token.Name.Decorator.
+  # It has a nice color in many themes.
+  table: |
+    (table
+      .
+      ("[") @Token.Name.Decorator
+      .
+      (_) @Token.Name.Decorator
+      .
+      ("]") @Token.Name.Decorator
+      (_)? @recurse
+    )
+  table_array_element: |
+    (table_array_element
+      .
+      ("[[") @Token.Name.Decorator
+      .
+      (_) @Token.Name.Decorator
+      .
+      ("]]") @Token.Name.Decorator
+      (_)? @recurse
+    )
+
+token_mapping:
+  comment: Token.Comment
+  boolean: Token.Name.Builtin
+  quoted_key: Token.Literal.String
+  string: Token.Literal.String
+  integer: Token.Literal.Number.Integer
+  float: Token.Literal.Number.Float

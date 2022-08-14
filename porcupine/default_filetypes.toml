@@ -351,21 +351,9 @@ tabs2spaces = true
 [TOML]
 filename_patterns = ["*.toml"]
 pygments_lexer = "pygments.lexers.TOMLLexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_name = "toml"
 comment_prefix = '#'
-[TOML.tree_sitter]
-language_name = "toml"
-dont_recurse_inside = ["quoted_key", "string", "dotted_key"]
-[TOML.tree_sitter.token_mapping]
-# see hacky code in the plugin
-table = "Token.Keyword"
-table_array_element = "Token.Keyword"
-comment = "Token.Comment"
-# TODO: which of the number things are needed?
-boolean = "Token.Keyword"
-quoted_key = "Token.Literal.String"
-integer = "Token.Literal.Number.Integer"
-float = "Token.Literal.Number.Float"
-string = "Token.Literal.String"
 
 [reStructuredText]
 filename_patterns = ["*.rst"]

@@ -115,30 +115,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         return self.textwidget.get("1.0", "end - 1 char").encode("ascii", errors="replace")
 
     def _decide_tag(self, node: tree_sitter.Node) -> str:
-        # A hack for TOML. This:
-        #
-        #   [foo]
-        #   x=1
-        #   y=2
-        #
-        # parses as:
-        #
-        #    type='[' text=b'['
-        #    type='bare_key' text=b'foo'
-        #    type=']' text=b']'
-        #    type='pair' text=b'x=1'
-        #    type='pair' text=b'y=2'
-        #
-        # I want the whole section header [foo] to have the same tag.
-        if (
-            self._language.name == "toml"
-            and node.type not in ("pair", "comment")
-            and node.parent is not None
-            and node.parent.type in ("table", "table_array_element")
-        ):
-            type_name = node.parent.type
-        else:
-            type_name = node.type
+        type_name = node.type
 
         if set(type_name) <= set("+-*/%~&|^!?<>=@.,:;()[]{}"):
             default = "Token.Operator"
