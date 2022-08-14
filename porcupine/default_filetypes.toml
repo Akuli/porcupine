@@ -345,6 +345,8 @@ command = "tclsh {file_name}"
 [JSON]
 filename_patterns = ["*.json"]
 pygments_lexer = "pygments.lexers.JsonLexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_name = "json"
 indent_size = 2
 tabs2spaces = true
 

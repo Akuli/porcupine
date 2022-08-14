@@ -1,0 +1,11 @@
+dont_recurse_inside:
+  - string
+  - ERROR
+
+token_mapping:
+  string: Token.Literal.String
+  ERROR: Token.Error  # e.g. trailing comma
+  number: Token.Literal.Number
+  'true': Token.Keyword
+  'false': Token.Keyword
+  'null': Token.Keyword
