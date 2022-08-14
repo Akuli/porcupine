@@ -208,7 +208,9 @@ class Settings:
                 # can be an error from converter
                 _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
 
-    def _generate_change_event(self, option_name: str, old_value: object, new_value: object) -> None:
+    def _generate_change_event(
+        self, option_name: str, old_value: object, new_value: object
+    ) -> None:
         event_name = self._change_event_format.format(option_name)
         if old_value == new_value:
             _log.debug(f"not generating a change event because value didn't change: {event_name}")

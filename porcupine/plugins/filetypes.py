@@ -220,7 +220,6 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
                 tab.settings.set(name, value, from_config=True, tag="from_filetype")
 
 
-
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     log.info(f"file path changed: {tab.path}")
     apply_filetype_to_tab(get_filetype_for_tab(tab), tab)

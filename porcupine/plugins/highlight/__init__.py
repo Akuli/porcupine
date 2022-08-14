@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import sys
 import tkinter
-from typing import Callable, Optional
+from typing import Callable
 
 from pygments.lexer import LexerMeta
 
