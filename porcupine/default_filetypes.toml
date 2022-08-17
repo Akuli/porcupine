@@ -189,113 +189,6 @@
 #            currently selected Python virtual environment. If no venv is set,
 #            the whole string will be replaced with null.
 
-[C]
-filename_patterns = ["*.c", "*.h"]
-pygments_lexer = "pygments.lexers.CLexer"
-comment_prefix = '//'
-# Press alt+enter instead of enter to avoid indent after 'case foo:'
-autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
-
-["C++"]
-# Override this in your own filetypes.toml if you use .h for C++ headers
-filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
-pygments_lexer = "pygments.lexers.CppLexer"
-comment_prefix = '//'
-autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
-
-[[C.example_commands]]
-command = "gcc {file_name} -Wall -Wextra -std=c99 -o {file_stem}"
-windows_command = "gcc {file_name} -Wall -Wextra -std=c99 -o {file_stem}.exe"
-external_terminal = false
-[["C++".example_commands]]
-command = "g++ {file_name} -Wall -Wextra -std=c++17 -o {file_stem}"
-windows_command = "g++ {file_name} -Wall -Wextra -std=c++17 -o {file_stem}.exe"
-external_terminal = false
-
-[[C.example_commands]]
-command = "./{file_stem}"
-windows_command = "{file_stem}.exe"
-[["C++".example_commands]]
-command = "./{file_stem}"
-windows_command = "{file_stem}.exe"
-
-[C.langserver]
-command = "clangd"
-language_id = "c"
-["C++".langserver]
-command = "clangd"
-language_id = "cpp"
-
-[HTML]
-filename_patterns = ["*.html", "*.htm"]
-pygments_lexer = "pygments.lexers.HtmlLexer"
-tabs2spaces = true
-indent_size = 2
-autoindent_regexes = {dedent = '</.*>', indent = '<[^/!][^<>]*[^/]>|<[A-Za-z]>', dedent_prev_line = true}
-
-[[HTML.example_commands]]
-command = "x-www-browser {file_path} >/dev/null 2>&1 &"
-macos_command = "open {file_path} >/dev/null 2>&1 &"
-windows_command = "explorer {file_path}"
-external_terminal = false
-
-[Java]
-filename_patterns = ["*.java"]
-pygments_lexer = "pygments.lexers.JavaLexer"
-comment_prefix = '//'
-autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
-
-[[Java.example_commands]]
-command = "javac {file_name}"
-external_terminal = false
-[[Java.example_commands]]
-command = "java {file_stem}"
-
-[JavaScript]
-filename_patterns = ["*.js"]
-pygments_lexer = "pygments.lexers.JavascriptLexer"
-tabs2spaces = true
-indent_size = 2
-comment_prefix = '//'
-autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
-# TODO: node typically ends up in path from ~/.bashrc
-[[JavaScript.example_commands]]
-command = "node {file_name}"
-external_terminal = false  # useful for webdev?
-
-# TODO: autoindents for many more languages
-
-[JSON]
-filename_patterns = ["*.json"]
-pygments_lexer = "pygments.lexers.JsonLexer"
-syntax_highlighter = "tree_sitter"
-tree_sitter_language_name = "json"
-indent_size = 2
-tabs2spaces = true
-
-[Makefile]
-filename_patterns = ["Makefile", "makefile", "Makefile.*", "makefile.*"]
-pygments_lexer = "pygments.lexers.MakefileLexer"
-# make doesn't work with spaces
-tabs2spaces = false
-comment_prefix = '#'
-[[Makefile.example_commands]]
-command = "make"
-working_directory = "{project_path}"
-external_terminal = false
-
-[Markdown]
-filename_patterns = ["*.md", "*.markdown"]
-pygments_lexer = "pygments.lexers.MarkdownLexer"
-autoindent_regexes = {dedent = '.*\.', indent = '^([0-9]+\.|-) .*'}
-
-["NSIS installer file"]
-filename_patterns = ["*.nsi", "*.nsh"]
-pygments_lexer = "pygments.lexers.NSISLexer"
-tabs2spaces = true
-indent_size = 2
-comment_prefix = ';'
-
 ["Plain Text"]
 filename_patterns = ["*.txt"]
 pygments_lexer = "pygments.lexers.TextLexer"
@@ -336,19 +229,91 @@ autocomplete_chars = ["."]
 comment_prefix = '#'
 autoindent_regexes = {indent = '.*:'}
 
-[reStructuredText]
-filename_patterns = ["*.rst"]
-pygments_lexer = "pygments.lexers.RstLexer"
-
-[Rust]
-filename_patterns = ["*.rs"]
-syntax_highlighter = "tree_sitter"
-pygments_lexer = "pygments.lexers.RustLexer"
-tree_sitter_language_name = "rust"
-tabs2spaces = true
-indent_size = 4
+[C]
+filename_patterns = ["*.c", "*.h"]
+pygments_lexer = "pygments.lexers.CLexer"
 comment_prefix = '//'
-autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = 'this regex matches nothing^'}
+# Press alt+enter instead of enter to avoid indent after 'case foo:'
+autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+["C++"]
+# Override this in your own filetypes.toml if you use .h for C++ headers
+filename_patterns = ["*.c++", "*.cpp", "*.cxx", "*.cc", "*.h++", "*.hpp", "*.hxx", "*.hh"]
+pygments_lexer = "pygments.lexers.CppLexer"
+comment_prefix = '//'
+autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+[[C.example_commands]]
+command = "gcc {file_name} -Wall -Wextra -std=c99 -o {file_stem}"
+windows_command = "gcc {file_name} -Wall -Wextra -std=c99 -o {file_stem}.exe"
+external_terminal = false
+[["C++".example_commands]]
+command = "g++ {file_name} -Wall -Wextra -std=c++17 -o {file_stem}"
+windows_command = "g++ {file_name} -Wall -Wextra -std=c++17 -o {file_stem}.exe"
+external_terminal = false
+
+[[C.example_commands]]
+command = "./{file_stem}"
+windows_command = "{file_stem}.exe"
+[["C++".example_commands]]
+command = "./{file_stem}"
+windows_command = "{file_stem}.exe"
+
+[C.langserver]
+command = "clangd"
+language_id = "c"
+["C++".langserver]
+command = "clangd"
+language_id = "cpp"
+
+[Java]
+filename_patterns = ["*.java"]
+pygments_lexer = "pygments.lexers.JavaLexer"
+comment_prefix = '//'
+autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+
+[[Java.example_commands]]
+command = "javac {file_name}"
+external_terminal = false
+[[Java.example_commands]]
+command = "java {file_stem}"
+
+[JavaScript]
+filename_patterns = ["*.js"]
+pygments_lexer = "pygments.lexers.JavascriptLexer"
+tabs2spaces = true
+indent_size = 2
+comment_prefix = '//'
+autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+# TODO: node typically ends up in path from ~/.bashrc
+[[JavaScript.example_commands]]
+command = "node {file_name}"
+external_terminal = false  # useful for webdev?
+
+[TypeScript]
+filename_patterns = ["*.ts"]
+pygments_lexer = "pygments.lexers.TypeScriptLexer"
+tabs2spaces = true
+indent_size = 2
+comment_prefix = '//'
+autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
+[[TypeScript.example_commands]]
+command = "tsc {file_name}"
+external_terminal = false
+[[TypeScript.example_commands]]
+command = "node {file_stem}.js"
+external_terminal = false  # useful for webdev?
+
+[Makefile]
+filename_patterns = ["Makefile", "makefile", "Makefile.*", "makefile.*"]
+pygments_lexer = "pygments.lexers.MakefileLexer"
+# make doesn't work with spaces
+tabs2spaces = false
+comment_prefix = '#'
+[[Makefile.example_commands]]
+command = "make"
+working_directory = "{project_path}"
+external_terminal = false
 
 # TODO: Windows batch files and powershell files
 # override pygments_lexer if you want to
@@ -375,11 +340,15 @@ comment_prefix = '#'
 [[Tcl.example_commands]]
 command = "tclsh {file_name}"
 
-[TeX]
-filename_patterns = ["*.tex"]
-pygments_lexer = "pygments.lexers.TexLexer"
+# TODO: autoindents for many more languages
+
+[JSON]
+filename_patterns = ["*.json"]
+pygments_lexer = "pygments.lexers.JsonLexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_name = "json"
+indent_size = 2
 tabs2spaces = true
-comment_prefix = '%'
 
 [TOML]
 filename_patterns = ["*.toml"]
@@ -388,19 +357,14 @@ syntax_highlighter = "tree_sitter"
 tree_sitter_language_name = "toml"
 comment_prefix = '#'
 
-[TypeScript]
-filename_patterns = ["*.ts"]
-pygments_lexer = "pygments.lexers.TypeScriptLexer"
-tabs2spaces = true
-indent_size = 2
-comment_prefix = '//'
-autoindent_regexes = {dedent = '(throw .+|return( .+)?|break|continue);', indent = '(case .+|default):'}
-[[TypeScript.example_commands]]
-command = "tsc {file_name}"
-external_terminal = false
-[[TypeScript.example_commands]]
-command = "node {file_stem}.js"
-external_terminal = false  # useful for webdev?
+[reStructuredText]
+filename_patterns = ["*.rst"]
+pygments_lexer = "pygments.lexers.RstLexer"
+
+[Markdown]
+filename_patterns = ["*.md", "*.markdown"]
+pygments_lexer = "pygments.lexers.MarkdownLexer"
+autoindent_regexes = {dedent = '.*\.', indent = '^([0-9]+\.|-) .*'}
 
 [YAML]
 filename_patterns = ["*.yml", "*.yaml"]
@@ -409,3 +373,39 @@ tabs2spaces = true
 indent_size = 2
 comment_prefix = '#'
 autoindent_regexes = {indent = '.*:'}
+
+[HTML]
+filename_patterns = ["*.html", "*.htm"]
+pygments_lexer = "pygments.lexers.HtmlLexer"
+tabs2spaces = true
+indent_size = 2
+autoindent_regexes = {dedent = '</.*>', indent = '<[^/!][^<>]*[^/]>|<[A-Za-z]>', dedent_prev_line = true}
+
+[[HTML.example_commands]]
+command = "x-www-browser {file_path} >/dev/null 2>&1 &"
+macos_command = "open {file_path} >/dev/null 2>&1 &"
+windows_command = "explorer {file_path}"
+external_terminal = false
+
+[TeX]
+filename_patterns = ["*.tex"]
+pygments_lexer = "pygments.lexers.TexLexer"
+tabs2spaces = true
+comment_prefix = '%'
+
+["NSIS installer file"]
+filename_patterns = ["*.nsi", "*.nsh"]
+pygments_lexer = "pygments.lexers.NSISLexer"
+tabs2spaces = true
+indent_size = 2
+comment_prefix = ';'
+
+[Rust]
+filename_patterns = ["*.rs"]
+syntax_highlighter = "tree_sitter"
+pygments_lexer = "pygments.lexers.RustLexer"
+tree_sitter_language_name = "rust"
+tabs2spaces = true
+indent_size = 4
+comment_prefix = '//'
+autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = 'this regex matches nothing^'}

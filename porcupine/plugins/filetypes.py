@@ -262,10 +262,10 @@ def setup() -> None:
     )
     set_filedialog_kwargs()
 
-    for name, filetype in filetypes.items():
+    for name in sorted(filetypes.keys(), key=str.casefold):
         escaped_name = name.replace("/", "//")  # doesn't work in all corner cases
         menubar.add_filetab_command(
-            f"Filetypes/{escaped_name}", partial(apply_filetype_to_tab, filetype)
+            f"Filetypes/{escaped_name}", partial(apply_filetype_to_tab, filetypes[name])
         )
 
     path = Path(dirs.user_config_dir) / "filetypes.toml"
