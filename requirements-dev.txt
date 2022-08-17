@@ -20,3 +20,5 @@ types-appdirs==1.4.3
 types-toposort==1.7.4
 types-psutil==5.9.2
 types-PyYAML==6.0.11
+types-tree-sitter==0.20.0
+types-tree-sitter-languages==1.3.0

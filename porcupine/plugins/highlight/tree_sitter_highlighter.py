@@ -17,8 +17,8 @@ from .base_highlighter import BaseHighlighter
 
 # TODO: how to install tree-sitter and tree-sitter-languages on Windows?
 if sys.platform != "win32" or TYPE_CHECKING:
-    import tree_sitter  # type: ignore[import]
-    import tree_sitter_languages  # type: ignore[import]
+    import tree_sitter
+    import tree_sitter_languages
 
 log = logging.getLogger(__name__)
 
