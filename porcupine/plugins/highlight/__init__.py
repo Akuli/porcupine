@@ -9,7 +9,6 @@ You can change the color theme in Porcupine Settings.
 from __future__ import annotations
 
 import logging
-import sys
 import tkinter
 from typing import Callable
 
