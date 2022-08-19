@@ -8,14 +8,13 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Union
 
 import dacite
+import tree_sitter
+import tree_sitter_languages
 import yaml
 
 from porcupine import textutils
 
 from .base_highlighter import BaseHighlighter
-
-import tree_sitter
-import tree_sitter_languages
 
 log = logging.getLogger(__name__)
 
