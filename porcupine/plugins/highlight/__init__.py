@@ -36,14 +36,6 @@ class HighlighterManager:
     def on_config_changed(self, junk: object = None) -> None:
         highlighter_name = self._tab.settings.get("syntax_highlighter", str)
 
-        if highlighter_name == "tree_sitter" and sys.platform == "win32":
-            log.warning(
-                "the tree_sitter syntax highlighter is not supported on Windows yet,"
-                + " falling back to the pygments highlighter"
-            )
-            self._tab.settings.set("syntax_highlighter", "pygments")  # runs this again
-            return
-
         if highlighter_name == "tree_sitter":
             language_name = self._tab.settings.get("tree_sitter_language_name", str)
             log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
