@@ -30,6 +30,7 @@ class LineNumbers(tkinter.Canvas):
 
         self.bind("<<GlobalSettingChanged:font_family>>", self._update_width, add=True)
         self.bind("<<GlobalSettingChanged:font_size>>", self._update_width, add=True)
+        self.bind("<<Updated>>", self._update_width, add=True)
         self._update_width()
 
         self._clicked_place: str | None = None
@@ -72,7 +73,7 @@ class LineNumbers(tkinter.Canvas):
         self.event_generate("<<Updated>>")
 
     def _update_width(self, junk: object = None) -> None:
-        self.config(width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(" 1234 "))
+        self.config(width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(f" {self._textwidget.index('end').split('.')[0]} "))
 
     def _on_click(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # go to clicked line
