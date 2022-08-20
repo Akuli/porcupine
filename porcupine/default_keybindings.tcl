@@ -3,11 +3,13 @@
 # Use Command on mac, Control on other systems
 if {[tk windowingsystem] == "aqua"} {
     set contmand Command
+    set anchmand Control
     event add "<<RightClick>>" <Button-2>
     event add "<<RightClick>>" <Control-Button-1>
     event add "<<WheelClick>>" <Button-3>
 } else {
     set contmand Control
+    set anchmand $anchmand
     event add "<<RightClick>>" <Button-3>
     event add "<<WheelClick>>" <Button-2>
     if {[tk windowingsystem] == "win32"} {
@@ -54,14 +56,14 @@ event add "<<Menubar:View/Full Screen>>" <F11>
 event add "<<Menubar:Edit/Find and Replace>>" <$contmand-f>
 
 # fold plugin
-event add "<<Menubar:Edit/Fold>>" <Alt-f>
+event add "<<Menubar:Edit/Fold>>" <$anchmand-f>
 
 # anchor plugin
-event add "<<Menubar:Edit/Anchors/Add or remove on this line>>" <Alt-A>
-event add "<<Menubar:Edit/Anchors/Jump to previous>>" <Alt-Shift-Up>
-event add "<<Menubar:Edit/Anchors/Jump to next>>" <Alt-Shift-Down>
-event add "<<Menubar:Edit/Anchors/Clear>>" <Alt-C>
-event add "<<Menubar:Edit/Anchors/Add to error//warning lines>>" <Alt-E>
+event add "<<Menubar:Edit/Anchors/Add or remove on this line>>" <$anchmand-A>
+event add "<<Menubar:Edit/Anchors/Jump to previous>>" <$anchmand-Shift-Up>
+event add "<<Menubar:Edit/Anchors/Jump to next>>" <$anchmand-Shift-Down>
+event add "<<Menubar:Edit/Anchors/Clear>>" <$anchmand-C>
+event add "<<Menubar:Edit/Anchors/Add to error//warning lines>>" <$anchmand-E>
 
 # tab_order plugin
 # Prior = Page Up, Next = Page Down
@@ -70,18 +72,18 @@ event add "<<TabOrder:SelectRight>>" <$contmand-Next>
 event add "<<TabOrder:MoveLeft>>" <$contmand-Shift-Prior>
 event add "<<TabOrder:MoveRight>>" <$contmand-Shift-Next>
 for {set i 1} {$i <= 9} {incr i} {
-    # e.g. Alt+2 to select second tab
-    event add "<<TabOrder:SelectTab$i>>" <Alt-Key-$i>
+    # e.g. $anchmand+2 to select second tab
+    event add "<<TabOrder:SelectTab$i>>" <$anchmand-Key-$i>
 }
 
 # sort plugin
-event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
+event add "<<Menubar:Edit/Sort Lines>>" <$anchmand-s>
 
 # poppingtabs plugin
 event add "<<Menubar:View/Pop Tab>>" <$contmand-P>
 
-# directory tree plugin (don't use <Alt-t>, see #425)
-event add "<<Menubar:View/Focus directory tree>>" <Alt-T>
+# directory tree plugin (don't use <$anchmand-t>, see #425)
+event add "<<Menubar:View/Focus directory tree>>" <$anchmand-T>
 
 # filemanager plugin
 event add "<<FileManager:Rename>>" <F2>
@@ -183,13 +185,13 @@ bind Text <<Paste>> {+
     catch {%W delete sel.first sel.last}
 }
 
-# Alt and arrow keys to scroll
+# $anchmand and arrow keys to scroll
 set scroll_amount 2
-bind Text <Alt-Up> {
+bind Text <$anchmand-Up> {
     %W yview scroll -$scroll_amount units
     %W mark set insert @0,[expr [winfo height %W] / 2]
 }
-bind Text <Alt-Down> {
+bind Text <$anchmand-Down> {
     %W yview scroll $scroll_amount units
     %W mark set insert @0,[expr [winfo height %W] / 2]
 }
