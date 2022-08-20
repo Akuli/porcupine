@@ -2,13 +2,13 @@
 
 # On Mac, Alt is used for typing characters, command/ctrl are the main buttons for special commands
 if {[tk windowingsystem] == "aqua"} {
-    set contmand Command
+    set control_ish Command
     set alt_ish Control
     event add "<<RightClick>>" <Button-2>
     event add "<<RightClick>>" <Control-Button-1>
     event add "<<WheelClick>>" <Button-3>
 } else {
-    set contmand Control
+    set control_ish Control
     set alt_ish Alt
     event add "<<RightClick>>" <Button-3>
     event add "<<WheelClick>>" <Button-2>
@@ -19,15 +19,15 @@ if {[tk windowingsystem] == "aqua"} {
     }
 }
 
-event add "<<Menubar:File/New File>>" <$contmand-n>
-event add "<<Menubar:File/Open>>" <$contmand-o>
-event add "<<Menubar:File/Save>>" <$contmand-s>
-event add "<<Menubar:File/Save As>>" <$contmand-S>   ;# uppercase S means you need to hold down shift
-event add "<<Menubar:File/Close>>" <$contmand-w>
-event add "<<Menubar:File/Quit>>" <$contmand-q>
-event add "<<Menubar:View/Bigger Font>>" <$contmand-plus>
-event add "<<Menubar:View/Smaller Font>>" <$contmand-minus>
-event add "<<Menubar:View/Reset Font Size>>" <$contmand-0>
+event add "<<Menubar:File/New File>>" <$control_ish-n>
+event add "<<Menubar:File/Open>>" <$control_ish-o>
+event add "<<Menubar:File/Save>>" <$control_ish-s>
+event add "<<Menubar:File/Save As>>" <$control_ish-S>   ;# uppercase S means you need to hold down shift
+event add "<<Menubar:File/Close>>" <$control_ish-w>
+event add "<<Menubar:File/Quit>>" <$control_ish-q>
+event add "<<Menubar:View/Bigger Font>>" <$control_ish-plus>
+event add "<<Menubar:View/Smaller Font>>" <$control_ish-minus>
+event add "<<Menubar:View/Reset Font Size>>" <$control_ish-0>
 
 # run plugin
 event add "<<Menubar:Run/Show//hide output>>" <F4>
@@ -44,16 +44,16 @@ event add "<<Run:Repeat2>>" <F7>
 event add "<<Run:Repeat3>>" <F8>
 
 # gotoline plugin
-event add "<<Menubar:Edit/Go to Line>>" <$contmand-l>
+event add "<<Menubar:Edit/Go to Line>>" <$control_ish-l>
 
 # google search plugin
-event add "<<Menubar:Tools/Search selected text on Google>>" <$contmand-g>
+event add "<<Menubar:Tools/Search selected text on Google>>" <$control_ish-g>
 
 # fullscreen plugin
 event add "<<Menubar:View/Full Screen>>" <F11>
 
 # find plugin
-event add "<<Menubar:Edit/Find and Replace>>" <$contmand-f>
+event add "<<Menubar:Edit/Find and Replace>>" <$control_ish-f>
 
 # fold plugin
 event add "<<Menubar:Edit/Fold>>" <$alt_ish-f>
@@ -67,10 +67,10 @@ event add "<<Menubar:Edit/Anchors/Add to error//warning lines>>" <$alt_ish-E>
 
 # tab_order plugin
 # Prior = Page Up, Next = Page Down
-event add "<<TabOrder:SelectLeft>>" <$contmand-Prior>
-event add "<<TabOrder:SelectRight>>" <$contmand-Next>
-event add "<<TabOrder:MoveLeft>>" <$contmand-Shift-Prior>
-event add "<<TabOrder:MoveRight>>" <$contmand-Shift-Next>
+event add "<<TabOrder:SelectLeft>>" <$control_ish-Prior>
+event add "<<TabOrder:SelectRight>>" <$control_ish-Next>
+event add "<<TabOrder:MoveLeft>>" <$control_ish-Shift-Prior>
+event add "<<TabOrder:MoveRight>>" <$control_ish-Shift-Next>
 for {set i 1} {$i <= 9} {incr i} {
     # e.g. $alt_ish+2 to select second tab
     event add "<<TabOrder:SelectTab$i>>" <$alt_ish-Key-$i>
@@ -80,7 +80,7 @@ for {set i 1} {$i <= 9} {incr i} {
 event add "<<Menubar:Edit/Sort Lines>>" <$alt_ish-s>
 
 # poppingtabs plugin
-event add "<<Menubar:View/Pop Tab>>" <$contmand-P>
+event add "<<Menubar:View/Pop Tab>>" <$control_ish-P>
 
 # directory tree plugin (don't use <$alt_ish-t>, see #425)
 event add "<<Menubar:View/Focus directory tree>>" <$alt_ish-T>
@@ -89,38 +89,38 @@ event add "<<Menubar:View/Focus directory tree>>" <$alt_ish-T>
 event add "<<FileManager:Rename>>" <F2>
 event add "<<FileManager:Trash>>" <Delete>
 event add "<<FileManager:Delete>>" <Shift-Delete>
-event add "<<FileManager:New file>>" <$contmand-n>
+event add "<<FileManager:New file>>" <$control_ish-n>
 
 # jump_to_definition plugin (used by langserver and urls)
 # cursor moves between button press and release, don't bind to press
-event add "<<Menubar:Edit/Jump to definition>>" <$contmand-Return>
-event add "<<Menubar:Edit/Jump to definition>>" <$contmand-ButtonRelease-1>
+event add "<<Menubar:Edit/Jump to definition>>" <$control_ish-Return>
+event add "<<Menubar:Edit/Jump to definition>>" <$control_ish-ButtonRelease-1>
 
 # more_plugins/terminal.py
 # upper-case T means Ctrl+Shift+T or Command+Shift+T
 # I use non-shifted ctrl+t for swapping two characters before cursor while editing
-event add "<<Menubar:Tools/Terminal>>" <$contmand-T>
+event add "<<Menubar:Tools/Terminal>>" <$control_ish-T>
 
 # more_plugins/pythonprompt.py
-event add "<<Menubar:Run/Interactive Python prompt>>" <$contmand-i>
-event add "<<PythonPrompt:KeyboardInterrupt>>" <$contmand-c>
-event add "<<PythonPrompt:Copy>>" <$contmand-C>
+event add "<<Menubar:Run/Interactive Python prompt>>" <$control_ish-i>
+event add "<<PythonPrompt:KeyboardInterrupt>>" <$control_ish-c>
+event add "<<PythonPrompt:Copy>>" <$control_ish-C>
 # FIXME: conflicts with gotoline plugin
-#event add "<<PythonPrompt:Clear>>" <$contmand-l>
-event add "<<PythonPrompt:Clear>>" <$contmand-L>
-event add "<<PythonPrompt:SendEOF>>" <$contmand-d> <$contmand-D>
+#event add "<<PythonPrompt:Clear>>" <$control_ish-l>
+event add "<<PythonPrompt:Clear>>" <$control_ish-L>
+event add "<<PythonPrompt:SendEOF>>" <$control_ish-d> <$control_ish-D>
 
 
 # Text widgets have confusing control-click behaviour by default. Disabling it
 # here makes control-click same as just click.
-bind Text <$contmand-Button-1> {}
+bind Text <$control_ish-Button-1> {}
 
 # Also, by default, Control+Slash selects all and Control+A goes to beginning.
-event delete "<<LineStart>>" <$contmand-a>
-event add "<<SelectAll>>" <$contmand-a>
+event delete "<<LineStart>>" <$control_ish-a>
+event add "<<SelectAll>>" <$control_ish-a>
 
 # Ctrl+A for treeviews
-bind Treeview <$contmand-a> {
+bind Treeview <$control_ish-a> {
     if {[%W cget -selectmode] == "extended"} {
         # The treeview supports selecting multiple items
         %W selection set [%W children {}]
@@ -133,7 +133,7 @@ bind Text <<SelectAll>> {
     %W tag add sel 1.0 {end - 1 char}
 }
 
-bind Text <$contmand-Delete> {
+bind Text <$control_ish-Delete> {
     try {%W delete sel.first sel.last} on error {} {
         set start [%W index insert]
         event generate %W <<NextWord>>
@@ -152,7 +152,7 @@ bind Text <BackSpace> {
     }
 }
 
-bind Text <$contmand-BackSpace> {
+bind Text <$control_ish-BackSpace> {
     try {%W delete sel.first sel.last} on error {} {
         set end [%W index insert]
         event generate %W <<PrevWord>>
@@ -160,7 +160,7 @@ bind Text <$contmand-BackSpace> {
     }
 }
 
-bind Text <Shift-$contmand-Delete> {
+bind Text <Shift-$control_ish-Delete> {
     try {%W delete sel.first sel.last} on error {} {
         if {[%W index insert] == [%W index {insert lineend}]} {
             %W delete insert
@@ -170,7 +170,7 @@ bind Text <Shift-$contmand-Delete> {
     }
 }
 
-bind Text <Shift-$contmand-BackSpace> {
+bind Text <Shift-$control_ish-BackSpace> {
     try {%W delete sel.first sel.last} on error {} {
         if {[%W index insert] == [%W index {insert linestart}]} {
             %W delete {insert - 1 char} insert
