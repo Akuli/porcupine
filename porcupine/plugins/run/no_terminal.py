@@ -336,7 +336,6 @@ def setup() -> None:
     )
 
     global runner
-    assert runner is None
     runner = NoTerminalRunner(get_vertical_panedwindow())
     get_vertical_panedwindow().add(
         runner.textwidget, after=get_tab_manager(), stretch="never", hide=True

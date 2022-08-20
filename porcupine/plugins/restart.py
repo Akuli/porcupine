@@ -3,7 +3,7 @@ import logging
 import pickle
 from pathlib import Path
 
-from porcupine import add_quit_callback, dirs, get_tab_manager, settings
+from porcupine import add_quit_callback, dirs, get_tab_manager, menubar, settings
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -14,11 +14,13 @@ STATE_FILE = Path(dirs.user_cache_dir) / "restart_state.pkl"
 # If loading a file fails, a dialog is created and it should be themed as user wants
 setup_after = ["ttk_themes"]
 
+restart_clicked = False
+
 
 def quit_callback() -> bool:
     file_contents = []
 
-    if global_settings.get("remember_tabs_on_restart", bool):
+    if global_settings.get("remember_tabs_on_restart", bool) or restart_clicked:
         selected_tab = get_tab_manager().select()
         for tab in get_tab_manager().tabs():
             state = tab.get_state()
@@ -35,6 +37,11 @@ def quit_callback() -> bool:
     with STATE_FILE.open("wb") as file:
         pickle.dump(file_contents, file)
     return True
+
+
+def restart() -> None:
+    global restart_clicked
+    restart_clicked
 
 
 def setup() -> None:

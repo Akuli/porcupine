@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import atexit
 import builtins
 import contextlib
 import copy
@@ -379,8 +378,17 @@ class Settings:
         on :data:`global_settings`.
         """
         self._unknown_options.clear()
+        # TODO: use defer_change_events()
         for name in self._options:
             self.reset(name)
+
+    # Intentionally undocumented, you probably want to use reset_all() instead of this.
+    # This is meant for serious clearing of everything when Porcupine restarts.
+    def clear(self) -> None:
+        assert self._pending_change_events is None
+        assert self._change_event_widget is None
+        self._options.clear()
+        self._unknown_options.clear()
 
 
 global_settings = Settings(None, "<<GlobalSettingChanged:{}>>")
@@ -437,6 +445,7 @@ def _check_pygments_style(name: str) -> str:
 #
 # undocumented on purpose, don't use in plugins
 def init_enough_for_using_disabled_plugins_list() -> None:
+    global_settings.clear()
     try:
         _load_from_file()
     except Exception:
@@ -580,18 +589,6 @@ def get_dialog_content() -> ttk.Frame:
     return _dialog_content
 
 
-def _get_blank_triangle_sized_image(*, _cache: list[tkinter.PhotoImage] = []) -> tkinter.PhotoImage:
-    # see images/__init__.py
-    if not _cache:
-        _cache.append(
-            tkinter.PhotoImage(
-                width=images.get("triangle").width(), height=images.get("triangle").height()
-            )
-        )
-        atexit.register(_cache.clear)
-    return _cache[0]
-
-
 _StrOrInt = TypeVar("_StrOrInt", str, int)
 
 
@@ -620,7 +617,7 @@ def _create_validation_triangle(
         if value is None:
             triangle.config(image=images.get("triangle"))
         else:
-            triangle.config(image=_get_blank_triangle_sized_image())
+            triangle.config(image=images.get("triangle-sized-blank"))
             global_settings.set(option_name, value, from_config=True)
 
     def setting_changed(junk: object = None) -> None:
@@ -968,7 +965,6 @@ def _fill_dialog_content_with_defaults() -> None:
 # undocumented on purpose, don't use in plugins
 def init_the_rest_after_initing_enough_for_using_disabled_plugins_list() -> None:
     global _dialog_content
-    assert _dialog_content is None
 
     _log.debug("initializing continues")
     _init_global_gui_settings()

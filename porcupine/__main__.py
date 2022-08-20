@@ -13,6 +13,7 @@ from porcupine import (
     menubar,
     pluginloader,
     settings,
+    images,
     tabs,
 )
 
@@ -29,12 +30,7 @@ Examples:
 """
 
 
-def main() -> None:
-    # Arguments are parsed in two steps:
-    #   1. only the arguments needed for importing plugins
-    #   2. everything else
-    #
-    # Between those steps, plugins get a chance to add more command-line options.
+def _create_argument_parser() -> tuple[argparse.ArgumentParser, argparse._ArgumentGroup ]:
     parser = argparse.ArgumentParser(
         epilog=_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -88,7 +84,17 @@ def main() -> None:
         ),
     )
 
-    args_parsed_in_first_step, junk = parser.parse_known_args()
+    return (parser, plugingroup)
+
+
+def main() -> None:
+    # Arguments are parsed in two steps:
+    #   1. only the arguments needed for importing plugins
+    #   2. everything else
+    #
+    # Between those steps, plugins get a chance to add more command-line options.
+    parser, junk1 = _create_argument_parser()
+    args_parsed_in_first_step, junk2 = parser.parse_known_args()
 
     Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
     (Path(dirs.user_config_dir) / "plugins").mkdir(parents=True, exist_ok=True)
@@ -98,69 +104,81 @@ def main() -> None:
         verbose_loggers=(args_parsed_in_first_step.verbose_logger or []),
     )
 
-    settings.init_enough_for_using_disabled_plugins_list()
-    if args_parsed_in_first_step.use_plugins:
-        if args_parsed_in_first_step.without_plugins:
-            disable_list = args_parsed_in_first_step.without_plugins.split(",")
+    while True:
+        _state.reset()
+        images.cache.clear()
+        settings.init_enough_for_using_disabled_plugins_list()
+        if args_parsed_in_first_step.use_plugins:
+            if args_parsed_in_first_step.without_plugins:
+                disable_list = args_parsed_in_first_step.without_plugins.split(",")
+            else:
+                disable_list = []
+            pluginloader.import_plugins(disable_list)
+
+            bad_disables = set(disable_list) - {info.name for info in pluginloader.plugin_infos}
+            if bad_disables:
+                one_of_them, *the_rest = bad_disables
+                parser.error(f"--without-plugins: no plugin named {one_of_them!r}")
+
+        # Create a new argument parser on restart. This avoids errors from
+        # adding an already existing argument.
+        parser, plugingroup = _create_argument_parser()
+        parser.add_argument("--help", action="help", help="show this message")
+        pluginloader.run_setup_argument_parser_functions(parser)
+        parser.add_argument(
+            "files",
+            metavar="FILES",
+            nargs=argparse.ZERO_OR_MORE,
+            help="open these files when Porcupine starts, - means stdin",
+        )
+        plugingroup.add_argument(
+            "--shuffle-plugins",
+            action="store_true",
+            help=(
+                "respect setup_before and setup_after, but otherwise setup the "
+                "plugins in a random order instead of sorting by name "
+                "alphabetically, useful for making sure that your plugin's "
+                "setup_before and setup_after define everything needed; usually "
+                "plugins are not shuffled in order to make the UI consistent"
+            ),
+        )
+
+        args = parser.parse_args()
+        _state.init(args)
+
+        # Prevent showing up a not-ready-yet root window to user
+        get_main_window().withdraw()
+
+        settings.init_the_rest_after_initing_enough_for_using_disabled_plugins_list()
+        menubar._init()
+        pluginloader.run_setup_functions(args.shuffle_plugins)
+
+        tabmanager = get_tab_manager()
+        for path_string in args.files:
+            if path_string == "-":
+                # don't close stdin so it's possible to do this:
+                #
+                #   $ porcu - -
+                #   bla bla bla
+                #   ^D
+                #   bla bla
+                #   ^D
+                tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
+            else:
+                tabmanager.open_file(Path(path_string))
+
+        get_main_window().deiconify()
+        try:
+            get_main_window().mainloop()
+        finally:
+            settings.save()
+
+        if _state.was_restarted():
+            # This is a warning to make sure you see it when debugging weird issues
+            log.warning("Restarting!!!")
         else:
-            disable_list = []
-        pluginloader.import_plugins(disable_list)
-
-        bad_disables = set(disable_list) - {info.name for info in pluginloader.plugin_infos}
-        if bad_disables:
-            one_of_them, *the_rest = bad_disables
-            parser.error(f"--without-plugins: no plugin named {one_of_them!r}")
-
-    parser.add_argument("--help", action="help", help="show this message")
-    pluginloader.run_setup_argument_parser_functions(parser)
-    parser.add_argument(
-        "files",
-        metavar="FILES",
-        nargs=argparse.ZERO_OR_MORE,
-        help="open these files when Porcupine starts, - means stdin",
-    )
-    plugingroup.add_argument(
-        "--shuffle-plugins",
-        action="store_true",
-        help=(
-            "respect setup_before and setup_after, but otherwise setup the "
-            "plugins in a random order instead of sorting by name "
-            "alphabetically, useful for making sure that your plugin's "
-            "setup_before and setup_after define everything needed; usually "
-            "plugins are not shuffled in order to make the UI consistent"
-        ),
-    )
-
-    args = parser.parse_args()
-    _state.init(args)
-
-    # Prevent showing up a not-ready-yet root window to user
-    get_main_window().withdraw()
-
-    settings.init_the_rest_after_initing_enough_for_using_disabled_plugins_list()
-    menubar._init()
-    pluginloader.run_setup_functions(args.shuffle_plugins)
-
-    tabmanager = get_tab_manager()
-    for path_string in args.files:
-        if path_string == "-":
-            # don't close stdin so it's possible to do this:
-            #
-            #   $ porcu - -
-            #   bla bla bla
-            #   ^D
-            #   bla bla
-            #   ^D
-            tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
-        else:
-            tabmanager.open_file(Path(path_string))
-
-    get_main_window().deiconify()
-    try:
-        get_main_window().mainloop()
-    finally:
-        settings.save()
-    log.info("exiting Porcupine successfully")
+            log.info("exiting Porcupine successfully")
+            break
 
 
 # python3 -m pocupine

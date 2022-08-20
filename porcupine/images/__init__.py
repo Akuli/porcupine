@@ -26,8 +26,8 @@ images_dir = Path(__path__[0]).absolute()
 #   - the images must be destroyed before step 2 above
 #
 # tldr: the cache is not just a performance or memory optimization
-_image_cache: dict[str, tkinter.PhotoImage] = {}
-atexit.register(_image_cache.clear)
+cache: dict[str, tkinter.PhotoImage] = {}
+atexit.register(cache.clear)
 
 # these icons can be found in both dark and light versions, so you can see them with any ttk theme
 _images_that_can_be_dark_or_light = {"closebutton", "pause", "resume"}
@@ -46,8 +46,8 @@ def _get_image_file(name: str) -> Path:
 
 def _update_dark_or_light_images(junk: object) -> None:
     for name in _images_that_can_be_dark_or_light:
-        if name in _image_cache:
-            _image_cache[name].config(file=_get_image_file(name))
+        if name in cache:
+            cache[name].config(file=_get_image_file(name))
 
 
 def get(name: str) -> tkinter.PhotoImage:
@@ -58,9 +58,9 @@ def get(name: str) -> tkinter.PhotoImage:
     called multiple times with the same name, the same image object is
     returned every time.
     """
-    if name in _image_cache:
-        return _image_cache[name]
+    if name in cache:
+        return cache[name]
 
     image = tkinter.PhotoImage(file=_get_image_file(name))
-    _image_cache[name] = image
+    cache[name] = image
     return image

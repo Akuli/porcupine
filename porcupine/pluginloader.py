@@ -222,7 +222,10 @@ def _did_plugin_come_with_porcupine(finder: object) -> bool:
 
 # undocumented on purpose, don't use in plugins
 def import_plugins(disabled_on_command_line: list[str]) -> None:
-    assert not _mutable_plugin_infos and not _dependencies
+    # Start from scratch when restarting Porcupine
+    _mutable_plugin_infos.clear()
+    _dependencies.clear()
+
     _mutable_plugin_infos.extend(
         PluginInfo(
             name=name,

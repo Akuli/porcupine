@@ -17,7 +17,7 @@ else:
     from typing_extensions import Literal
 
 from porcupine import settings, tabs, utils
-from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
+from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit, restart
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -394,12 +394,13 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("File").add_command(label="Save", command=partial(save_file, False))
     get_menu("File").add_command(label="Save As", command=partial(save_file, True))
     get_menu("File").add_separator()
-    get_menu("File").add_command(label="Close", command=close_selected_tab)
+    get_menu("File").add_command(label="Close Tab", command=close_selected_tab)
+    get_menu("File").add_command(label="Restart", command=restart)
     get_menu("File").add_command(label="Quit", command=quit)
 
     set_enabled_based_on_tab("File/Save", (lambda tab: isinstance(tab, tabs.FileTab)))
     set_enabled_based_on_tab("File/Save As", (lambda tab: isinstance(tab, tabs.FileTab)))
-    set_enabled_based_on_tab("File/Close", (lambda tab: tab is not None))
+    set_enabled_based_on_tab("File/Close Tab", (lambda tab: tab is not None))
     set_enabled_based_on_tab("File/Quit", (lambda tab: tab is None))
 
     def change_font_size(how: Literal["bigger", "smaller", "reset"]) -> None:

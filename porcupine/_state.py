@@ -32,6 +32,7 @@ class _State:
     tab_manager: tabs.TabManager
     quit_callbacks: list[Callable[[], bool]]
     parsed_args: Any  # not None
+    restarted: bool
 
 
 # global state makes some things a lot easier (I'm sorry)
@@ -43,6 +44,12 @@ def _log_tkinter_error(
     exc: Type[BaseException], val: BaseException, tb: types.TracebackType | None
 ) -> Any:
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
+
+
+# undocumented on purpose, don't use in plugins
+def reset() -> None:
+    global _global_state
+    _global_state = None
 
 
 # undocumented on purpose, don't use in plugins
@@ -82,6 +89,7 @@ def init(args: Any) -> None:
         tab_manager=tab_manager,
         quit_callbacks=[],
         parsed_args=args,
+        restarted=False,
     )
     log.debug("init() done")
 
@@ -144,3 +152,18 @@ def quit() -> None:
     for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)
     get_main_window().destroy()
+
+
+def restart() -> None:
+    """Similar to quit(), but makes Porcupine start immediately again.
+
+    The newly started Porcupine will run in the same process. Restarting is
+    intended to be an easy way to e.g. reload a configuration file you edited.
+    """
+    _get_state().restarted = True
+    quit()
+
+
+# TODO: document?
+def was_restarted() -> bool:
+    return _get_state().restarted

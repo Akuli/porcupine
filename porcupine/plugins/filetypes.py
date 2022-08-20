@@ -73,7 +73,7 @@ def load_filetypes() -> None:
     except (OSError, UnicodeError, tomli.TOMLDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
 
-    assert not filetypes
+    filetypes.clear()
     filetypes.update(merge_settings(default_filetypes, user_filetypes))
 
     for name, filetype in filetypes.items():
