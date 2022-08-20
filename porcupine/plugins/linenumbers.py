@@ -74,10 +74,11 @@ class LineNumbers(tkinter.Canvas):
 
     def _update_width(self, junk: object = None) -> None:
         end = self._textwidget.index("end").split(".")[0]
+        font = tkinter.font.Font(name="TkFixedFont", exists=True)
         if int(end) < 1000:
-            self.configure(self, width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(f" 1234 "))
+            self.config(self, width=font.measure(" 1234 "))
         else:
-            self.config(width=tkinter.font.Font(name="TkFixedFont", exists=True).measure(f" {end} "))
+            self.config(width=font.measure(f" {end} "))
 
     def _on_click(self, event: tkinter.Event[tkinter.Misc]) -> None:
         # go to clicked line
