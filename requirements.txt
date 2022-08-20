@@ -13,6 +13,30 @@ tomli==2.0.1
 ttkthemes>=3.0.0
 send2trash>=1.8.0,<2.0.0
 psutil>=5.8.0,<6.0.0
-tree-sitter==0.20.0; sys_platform != 'win32'
-tree-sitter-languages==1.2.2; sys_platform != 'win32'
 PyYAML==6.0
+
+# TODO: get rid of wheel files committed to this repo when my windows PR
+# to tree-sitter-languages gets released
+tree-sitter-languages==1.3.0; sys_platform != 'win32'
+tree-sitter-languages @ https://github.com/Akuli/porcupine/raw/py-tree-sitter-builds/vendor/tree_sitter_languages-1.3.0-cp37-cp37m-win_amd64.whl ; python_version == '3.7' and sys_platform == 'win32'
+tree-sitter-languages @ https://github.com/Akuli/porcupine/raw/py-tree-sitter-builds/vendor/tree_sitter_languages-1.3.0-cp38-cp38-win_amd64.whl ; python_version == '3.8' and sys_platform == 'win32'
+tree-sitter-languages @ https://github.com/Akuli/porcupine/raw/py-tree-sitter-builds/vendor/tree_sitter_languages-1.3.0-cp39-cp39-win_amd64.whl ; python_version == '3.9' and sys_platform == 'win32'
+tree-sitter-languages @ https://github.com/Akuli/porcupine/raw/py-tree-sitter-builds/vendor/tree_sitter_languages-1.3.0-cp310-cp310-win_amd64.whl ; python_version == '3.10' and sys_platform == 'win32'
+
+# Install py-tree-sitter 0.20.0 from github.com/Akuli/py-tree-sitter-builds.
+# TODO: remove once it is released on pypi
+# 64-bit linux
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl ; python_version == '3.7' and sys_platform == 'linux'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl ; python_version == '3.8' and sys_platform == 'linux'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl ; python_version == '3.9' and sys_platform == 'linux'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl ; python_version == '3.10' and sys_platform == 'linux'
+# 64-bit windows
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp37-cp37m-win_amd64.whl ; python_version == '3.7' and sys_platform == 'win32'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp38-cp38-win_amd64.whl ; python_version == '3.8' and sys_platform == 'win32'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp39-cp39-win_amd64.whl ; python_version == '3.9' and sys_platform == 'win32'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp310-cp310-win_amd64.whl ; python_version == '3.10' and sys_platform == 'win32'
+# 64-bit MacOS. Works only on Intel CPU or under Intel emulation on arm64 macs.
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp37-cp37m-macosx_10_9_x86_64.whl ; python_version == '3.7' and sys_platform == 'darwin'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp38-cp38-macosx_10_9_x86_64.whl ; python_version == '3.8' and sys_platform == 'darwin'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp39-cp39-macosx_10_9_x86_64.whl ; python_version == '3.9' and sys_platform == 'darwin'
+tree-sitter @ https://github.com/Akuli/py-tree-sitter-builds/releases/download/v0.20.0/tree_sitter-0.20.0-cp310-cp310-macosx_10_9_x86_64.whl ; python_version == '3.10' and sys_platform == 'darwin'

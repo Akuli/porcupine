@@ -2,7 +2,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 from pygments.lexers import BashLexer, PythonLexer, TclLexer, YamlLexer
 
 
@@ -67,9 +66,6 @@ def test_pygments_last_line_bug(filetab, tmp_path):
 #    - The readme, which contains output of the dumping script
 #
 # These need testing, and this test conveniently tests them all.
-@pytest.mark.skipif(
-    sys.platform == "win32", reason="tree_sitter highlighter doesn't work on windows yet"
-)
 def test_tree_sitter_dump(tmp_path):
     (tmp_path / "hello.py").write_text("print('hello')")
     args = [
