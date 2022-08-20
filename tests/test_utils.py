@@ -48,10 +48,9 @@ def test_bind_with_data_class():
 
 if sys.platform == "darwin":
     binding_test_cases = [
-        ("<<Menubar:Edit/Anchors/Add or remove on this line>>", "⇧⌃A", "Shift-Control-A"),
-        # TODO: does the word "Down" mixed in with the rest look ok? I don't have a mac.
-        ("<<Menubar:Edit/Anchors/Jump to next>>", "⇧⌃Down", "Shift-Control-Down"),
-        ("<<Menubar:Edit/Fold>>", "⌃F", "Control-F"),
+        ("<<Menubar:Edit/Anchors/Add or remove on this line>>", "⇧⌥A", "Shift-Alt-A"),
+        ("<<Menubar:Edit/Anchors/Jump to next>>", "⇧⌥Down", "Shift-Alt-Down"),  # sucks but unused
+        ("<<Menubar:Edit/Fold>>", "⌥F", "Alt-F"),
         ("<<Menubar:File/New File>>", "⌘N", "Command-N"),
         ("<<Menubar:File/Save As>>", "⇧⌘S", "Shift-Command-S"),
         ("<<Menubar:File/Save>>", "⌘S", "Command-S"),
