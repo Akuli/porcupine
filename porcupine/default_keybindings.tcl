@@ -1,6 +1,6 @@
 # This file contains Tcl code that is executed when Porcupine starts.
 
-# Use Command on mac, Control on other systems
+# On Mac, Alt is used for typing characters, command/ctrl are the main buttons for special commands
 if {[tk windowingsystem] == "aqua"} {
     set contmand Command
     set alt_ish Control
