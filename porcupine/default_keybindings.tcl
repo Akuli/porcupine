@@ -74,9 +74,6 @@ for {set i 1} {$i <= 9} {incr i} {
     event add "<<TabOrder:SelectTab$i>>" <Alt-Key-$i>
 }
 
-# tab_closing plugin
-event add "<<TabClosing:XButtonClickClose>>" <Button-1>
-
 # sort plugin
 event add "<<Menubar:Edit/Sort Lines>>" <Alt-s>
 
