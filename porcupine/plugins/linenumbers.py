@@ -76,7 +76,7 @@ class LineNumbers(tkinter.Canvas):
         end = self._textwidget.index("end").split(".")[0]
         font = tkinter.font.Font(name="TkFixedFont", exists=True)
         if int(end) < 1000:
-            self.config(self, width=font.measure(" 1234 "))
+            self.config(width=font.measure(" 1234 "))
         else:
             self.config(width=font.measure(f" {end} "))
 
