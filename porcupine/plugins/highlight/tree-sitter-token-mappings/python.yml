@@ -30,7 +30,7 @@ queries:
   class_definition: |
     (class_definition
       ("class") @Token.Keyword
-      name: (identifier) @Token.Name.Function  # close enough lol
+      name: (identifier) @Token.Name.Class
       superclasses: (argument_list)? @recurse
       (":") @Token.Punctuation
       (comment)? @Token.Comment

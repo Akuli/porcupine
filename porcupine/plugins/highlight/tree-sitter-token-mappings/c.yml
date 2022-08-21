@@ -15,7 +15,7 @@ queries:
   preproc_function_def: |
     (preproc_function_def
       ("#define") @Token.Keyword
-      name: (_) @Token.Name.Function  # close enough lol
+      name: (_) @Token.Name.Function
       parameters: (_) @recurse
       # Recursing into the value wouldn't help, it parses into a string (if it isn't missing)
     )
@@ -49,7 +49,7 @@ token_mapping:
     '#undef': Token.Keyword
 
   # Applies to: typedef/struct/union/enum names when defining and using them
-  type_identifier: Token.Name.Function
+  type_identifier: Token.Name.Class
 
   string_literal: Token.Literal.String
   char_literal: Token.Literal.String.Char
