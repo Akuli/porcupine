@@ -141,20 +141,28 @@ class TreeSitterHighlighter(BaseHighlighter):
 
         query = self._queries.get(cursor.node.type)
         if query is not None:
-            to_recurse = []
-            for subnode, tag_or_recurse in query.captures(cursor.node):
-                if tag_or_recurse == "recurse":
-                    to_recurse.append(subnode)
-                else:
-                    yield (subnode, tag_or_recurse)
+            captures = query.captures(cursor.node)
+            # Ignore the query if it doesn't match at all. Queries are usually
+            # written to handle some specific situation, and we want a reasonable
+            # fallback. For example, in a C function definition "int asdf() {}"
+            # the function name "asdf" is highlighted with a query, but a function
+            # pointer like "int (*foo)() = asdf;" should be just recursed into as
+            # it would be without the query.
+            if captures:
+                to_recurse = []
+                for subnode, tag_or_recurse in captures:
+                    if tag_or_recurse == "recurse":
+                        to_recurse.append(subnode)
+                    else:
+                        yield (subnode, tag_or_recurse)
 
-            for subnode in to_recurse:
-                # Tell the tagging code that we're about to recurse.
-                # This lets it wipe tags that were previously added on the area.
-                # That's also why recursing is done last.
-                yield (subnode, "recurse")
-                yield from self._get_nodes_and_tags(subnode.walk(), start_point, end_point)
-            return
+                for subnode in to_recurse:
+                    # Tell the tagging code that we're about to recurse.
+                    # This lets it wipe tags that were previously added on the area.
+                    # That's also why recursing is done last.
+                    yield (subnode, "recurse")
+                    yield from self._get_nodes_and_tags(subnode.walk(), start_point, end_point)
+                return
 
         if cursor.node.type not in self._config.dont_recurse_inside and cursor.goto_first_child():
             yield from self._get_nodes_and_tags(cursor, start_point, end_point)

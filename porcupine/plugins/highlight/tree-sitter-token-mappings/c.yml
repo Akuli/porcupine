@@ -20,6 +20,15 @@ queries:
       # Recursing into the value wouldn't help, it parses into a string (if it isn't missing)
     )
 
+  # Highlight function names when defining a function.
+  function_declarator: |
+    (function_declarator
+      # This query doesn't apply when the function isn't just a name:   int (*foo)();
+      # In those cases we want to highlight each part of the function recursively.
+      declarator: (identifier) @Token.Name.Function
+      parameters: (_) @recurse
+    )
+
 dont_recurse_inside:
   - string_literal
   - char_literal
