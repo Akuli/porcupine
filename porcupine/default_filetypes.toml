@@ -230,6 +230,8 @@ autoindent_regexes = {indent = '.*:'}
 [C]
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
+syntax_highlighter = "tree_sitter"
+tree_sitter_language_name = "c"
 comment_prefix = '//'
 # Press alt+enter instead of enter to avoid indent after 'case foo:'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = '(case .+|default):'}

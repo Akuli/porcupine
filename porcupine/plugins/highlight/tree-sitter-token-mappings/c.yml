@@ -1,0 +1,93 @@
+queries:
+  # Highlight #include, #define etc as keywords, because they behave like keywords.
+  preproc_include: |
+    (preproc_include
+      ("#include") @Token.Keyword
+      # Always highlight included file name (<foo.h> or "foo.h") as string
+      path: (_) @Token.Literal.String
+    )
+  preproc_def: |
+    (preproc_def
+      ("#define") @Token.Keyword
+      name: (_) @Token.Name.Function  # close enough lol
+      # Recursing into the value wouldn't help, it parses into a string (if it isn't missing)
+    )
+  preproc_function_def: |
+    (preproc_function_def
+      ("#define") @Token.Keyword
+      name: (_) @Token.Name.Function
+      parameters: (_) @recurse
+      # Recursing into the value wouldn't help, it parses into a string (if it isn't missing)
+    )
+
+  # Highlight function names when defining a function.
+  function_declarator: |
+    (function_declarator
+      # This query doesn't apply when the function isn't just a name:   int (*foo)();
+      # In those cases we want to highlight each part of the function recursively.
+      declarator: (identifier) @Token.Name.Function
+      parameters: (_) @recurse
+    )
+
+dont_recurse_inside:
+  - string_literal
+  - char_literal
+
+token_mapping:
+  '#if': Token.Keyword
+  '#ifdef': Token.Keyword
+  '#ifndef': Token.Keyword
+  '#elif': Token.Keyword
+  '#else': Token.Keyword
+  '#endif': Token.Keyword
+  '#error': Token.Keyword
+
+  # Only highlight known preprocessor directives.
+  # This way you immediately know if you try something like #ifnotdef
+  preproc_directive:
+    '#pragma': Token.Keyword
+    '#undef': Token.Keyword
+
+  # Applies to: typedef/struct/union/enum names when defining and using them
+  type_identifier: Token.Name.Class
+
+  string_literal: Token.Literal.String
+  char_literal: Token.Literal.String.Char
+
+  comment: Token.Comment
+  number_literal: Token.Literal.Number
+  primitive_type: Token.Keyword
+
+  # "auto" intentionally missing, it's the default and therefore useless to write explicitly.
+  # This is different from "auto" in C++.
+  break: Token.Keyword
+  case: Token.Keyword
+  const: Token.Keyword
+  continue: Token.Keyword
+  default: Token.Keyword
+  do: Token.Keyword
+  else: Token.Keyword
+  enum: Token.Keyword
+  extern: Token.Keyword
+  for: Token.Keyword
+  goto: Token.Keyword
+  if: Token.Keyword
+  inline: Token.Keyword
+  long: Token.Keyword
+  register: Token.Keyword  # I have never used this
+  return: Token.Keyword
+  short: Token.Keyword
+  signed: Token.Keyword
+  sizeof: Token.Keyword
+  static: Token.Keyword
+  struct: Token.Keyword
+  switch: Token.Keyword
+  typedef: Token.Keyword
+  union: Token.Keyword
+  unsigned: Token.Keyword
+  volatile: Token.Keyword
+  while: Token.Keyword
+
+  'null': Token.Name.Builtin
+  'true': Token.Name.Builtin
+  'false': Token.Name.Builtin
