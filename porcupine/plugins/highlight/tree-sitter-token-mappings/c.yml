@@ -54,26 +54,38 @@ token_mapping:
   string_literal: Token.Literal.String
   char_literal: Token.Literal.String.Char
 
-  primitive_type: Token.Keyword
-  struct: Token.Keyword
-  enum: Token.Keyword
-  union: Token.Keyword
-  static: Token.Keyword
-  if: Token.Keyword
-  else: Token.Keyword
-  while: Token.Keyword
-  for: Token.Keyword
-  break: Token.Keyword
-  return: Token.Keyword
-  const: Token.Keyword
-  switch: Token.Keyword
-  case: Token.Keyword
-  default: Token.Keyword
   comment: Token.Comment
+  primitive_type: Token.Keyword
+
+  # "auto" intentionally missing, it's the default and therefore useless to write explicitly.
+  # This is different from "auto" in C++.
+  break: Token.Keyword
+  case: Token.Keyword
+  const: Token.Keyword
+  continue: Token.Keyword
+  default: Token.Keyword
+  do: Token.Keyword
+  else: Token.Keyword
+  enum: Token.Keyword
+  extern: Token.Keyword
+  for: Token.Keyword
+  goto: Token.Keyword
+  if: Token.Keyword
   inline: Token.Keyword
-  typedef: Token.Keyword
-  short: Token.Keyword
   long: Token.Keyword
+  register: Token.Keyword  # I have never used this
+  return: Token.Keyword
+  short: Token.Keyword
+  signed: Token.Keyword
+  sizeof: Token.Keyword
+  static: Token.Keyword
+  struct: Token.Keyword
+  switch: Token.Keyword
+  typedef: Token.Keyword
+  union: Token.Keyword
+  unsigned: Token.Keyword
+  volatile: Token.Keyword
+  while: Token.Keyword
 
   'null': Token.Name.Builtin
   'true': Token.Name.Builtin
