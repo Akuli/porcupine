@@ -24,51 +24,6 @@ setup_after = ["ttk_themes"]
 TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappings")
 
 
-# DONT_LOOK_INSIDE = [
-#    # don't recurse inside strings, for now
-#    "string_literal",  # c string
-#    "char_literal",  # c character
-#    # in markdown, everything's ultimately Text, but not if we don't recurse that deep
-#    "fenced_code_block",
-#    "code_span",
-#    "link_destination",
-#    "emphasis",
-#    "strong_emphasis",
-# ]
-#
-#
-# def get_tag_name(node) -> str:
-#    # Programming languages
-#    if node.type == "identifier":  # variable names
-#        return "Token.Name"
-#    if node.type == "type_identifier":  # typedef names in C
-#        return "Token.Name.Class"
-#    if node.type == "field_identifier":  # struct members in C when they're used
-#        return "Token.Name.Attribute"
-#    if node.type == "comment":
-#        return "Token.Comment"
-#    if node.type == "integer":
-#        return "Token.Literal.Number.Integer"
-#    if node.type == "float":
-#        return "Token.Literal.Number.Float"
-#    if node.type == "number_literal":
-#        return "Token.Literal.Number"
-#    # system_lib_string is the <foo.h> includes in c/c++
-#    if node.type in ("string", "string_literal", "char_literal", "system_lib_string"):
-#        return "Token.Literal.String"
-#
-#    # Markdown
-#    if node.type == "text":
-#        return "Token.Text"
-#    if node.type == "emphasis":  # *italic* text in markdown
-#        return "Token.Comment"
-#    if node.type == "strong_emphasis":  # **bold** text in markdown
-#        return "Token.Keyword"
-#    if node.type in ("fenced_code_block", "code_span"):
-#        return "Token.Literal.String"
-#
-
-
 @dataclasses.dataclass
 class YmlConfig:
     token_mapping: Dict[str, Union[str, Dict[str, str]]]
