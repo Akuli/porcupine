@@ -55,6 +55,7 @@ token_mapping:
   char_literal: Token.Literal.String.Char
 
   comment: Token.Comment
+  number_literal: Token.Literal.Number
   primitive_type: Token.Keyword
 
   # "auto" intentionally missing, it's the default and therefore useless to write explicitly.
