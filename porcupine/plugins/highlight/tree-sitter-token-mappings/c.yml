@@ -1,0 +1,63 @@
+queries:
+  # Highlight #include, #define etc as decorator, because decorators have a nice color in many themes.
+  preproc_include: |
+    (preproc_include
+      ("#include") @Token.Keyword
+      # Always highlight included file name (<foo.h> or "foo.h") as string
+      path: (_) @Token.Literal.String
+    )
+  preproc_def: |
+    (preproc_def
+      ("#define") @Token.Keyword
+      name: (_) @Token.Name.Function  # close enough lol
+      # Recursing into the value wouldn't help, it parses as text (if it isn't missing)
+    )
+  preproc_function_def: |
+    (preproc_function_def
+      ("#define") @Token.Keyword
+      name: (_) @Token.Name.Function  # close enough lol
+      parameters: (_) @recurse
+      # Recursing into the value wouldn't help, it parses as text (if it isn't missing)
+    )
+
+dont_recurse_inside:
+  - string_literal
+  - char_literal
+
+token_mapping:
+  '#if': Token.Keyword
+  '#ifdef': Token.Keyword
+  '#elif': Token.Keyword
+  '#else': Token.Keyword
+  '#endif': Token.Keyword
+  preproc_directive:
+    '#pragma': Token.Keyword
+
+  # Applies to: typedef/struct/union/enum names when defining and using them
+  type_identifier: Token.Name.Function
+
+  string_literal: Token.Literal.String
+  char_literal: Token.Literal.String.Char
+
+  primitive_type: Token.Keyword
+  struct: Token.Keyword
+  enum: Token.Keyword
+  union: Token.Keyword
+  static: Token.Keyword
+  if: Token.Keyword
+  else: Token.Keyword
+  while: Token.Keyword
+  for: Token.Keyword
+  break: Token.Keyword
+  return: Token.Keyword
+  const: Token.Keyword
+  switch: Token.Keyword
+  case: Token.Keyword
+  default: Token.Keyword
+  comment: Token.Comment
+  inline: Token.Keyword
+  typedef: Token.Keyword
+
+  'null': Token.Name.Builtin
+  'true': Token.Name.Builtin
+  'false': Token.Name.Builtin

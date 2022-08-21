@@ -76,8 +76,12 @@ class YmlConfig:
     queries: Dict[str, str] = dataclasses.field(default_factory=dict)
 
 
-def _strip_comments(tree_sitter_query: str) -> str:
-    return re.sub(r"#.*", "", tree_sitter_query)
+def _strip_comments(query: str) -> str:
+    # Ignore '#' between double quotes.
+    # Otherwise ignore everything after '#' on the same line.
+    # If the query contains an odd number of " (excluding comments), don't remove the last one.
+    parts = re.findall(r'"[^"]*"|"|#.*|[^#"]+', query)
+    return ''.join(p for p in parts if not p.startswith('#'))
 
 
 class TreeSitterHighlighter(BaseHighlighter):
