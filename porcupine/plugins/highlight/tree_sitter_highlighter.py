@@ -81,7 +81,7 @@ def _strip_comments(query: str) -> str:
     # Otherwise ignore everything after '#' on the same line.
     # If the query contains an odd number of " (excluding comments), don't remove the last one.
     parts = re.findall(r'"[^"]*"|"|#.*|[^#"]+', query)
-    return ''.join(p for p in parts if not p.startswith('#'))
+    return "".join(p for p in parts if not p.startswith("#"))
 
 
 class TreeSitterHighlighter(BaseHighlighter):
