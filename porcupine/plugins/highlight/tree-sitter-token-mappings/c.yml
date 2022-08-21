@@ -72,6 +72,8 @@ token_mapping:
   comment: Token.Comment
   inline: Token.Keyword
   typedef: Token.Keyword
+  short: Token.Keyword
+  long: Token.Keyword
 
   'null': Token.Name.Builtin
   'true': Token.Name.Builtin
