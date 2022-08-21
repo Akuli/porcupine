@@ -1,5 +1,5 @@
 queries:
-  # Highlight #include, #define etc as decorator, because decorators have a nice color in many themes.
+  # Highlight #include, #define etc as keywords, because they behave like keywords.
   preproc_include: |
     (preproc_include
       ("#include") @Token.Keyword
@@ -10,14 +10,14 @@ queries:
     (preproc_def
       ("#define") @Token.Keyword
       name: (_) @Token.Name.Function  # close enough lol
-      # Recursing into the value wouldn't help, it parses as text (if it isn't missing)
+      # Recursing into the value wouldn't help, it parses into a string (if it isn't missing)
     )
   preproc_function_def: |
     (preproc_function_def
       ("#define") @Token.Keyword
       name: (_) @Token.Name.Function  # close enough lol
       parameters: (_) @recurse
-      # Recursing into the value wouldn't help, it parses as text (if it isn't missing)
+      # Recursing into the value wouldn't help, it parses into a string (if it isn't missing)
     )
 
 dont_recurse_inside:
@@ -27,11 +27,17 @@ dont_recurse_inside:
 token_mapping:
   '#if': Token.Keyword
   '#ifdef': Token.Keyword
+  '#ifndef': Token.Keyword
   '#elif': Token.Keyword
   '#else': Token.Keyword
   '#endif': Token.Keyword
+  '#error': Token.Keyword
+
+  # Only highlight known preprocessor directives.
+  # This way you immediately know if you try something like #ifnotdef
   preproc_directive:
     '#pragma': Token.Keyword
+    '#undef': Token.Keyword
 
   # Applies to: typedef/struct/union/enum names when defining and using them
   type_identifier: Token.Name.Function
