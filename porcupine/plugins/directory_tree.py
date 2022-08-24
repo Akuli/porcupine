@@ -51,11 +51,9 @@ def get_path(item_id: str) -> Path | None:
     try:
         item_type, project_number, path = item_id.split(":", maxsplit=2)
     except ValueError as e:
-        # We found a dummy which doesn't represent any file or directory
+        # This should happen only if we found a dummy which doesn't represent any file or directory.
         if "dummy" not in get_directory_tree().item(item_id)["tags"]:
-            # But wait, it wasn't supposed to be there!
             raise e
-        # Otherwise, the dummy isn't anything to write home about.
         return None
     return Path(path)
 
