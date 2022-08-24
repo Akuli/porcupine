@@ -299,7 +299,6 @@ class DirectoryTree(ttk.Treeview):
                 self._insert_dummy(item_id)
 
         project_id = self.find_project_id(dir_id)
-        project_root = get_path(project_id)
         for child_path, child_id in path2id.items():
             self._update_tags_and_content(child_id)
         self.sort_folder_contents(dir_id)
