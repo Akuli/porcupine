@@ -51,8 +51,11 @@ def get_path(item_id: str) -> Path | None:
     try:
         item_type, project_number, path = item_id.split(":", maxsplit=2)
     except ValueError as e:
+        # We found a dummy which doesn't represent any file or directory
         if "dummy" not in get_directory_tree().item(item_id)["tags"]:
+            # But wait, it wasn't supposed to be there!
             raise e
+        # Otherwise, the dummy isn't anything to write home about.
         return None
     return Path(path)
 
@@ -236,7 +239,8 @@ class DirectoryTree(ttk.Treeview):
     def _hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(""):
             project_path = get_path(project_id)
-            if project_path is None or not project_path.is_dir():
+            assert project_path is not None
+            if not project_path.is_dir():
                 self.delete(project_id)
 
         # To avoid getting rid of existing projects when not necessary, we do
@@ -258,11 +262,11 @@ class DirectoryTree(ttk.Treeview):
         self._hide_old_projects()
         self.event_generate("<<RefreshBegins>>")
         for project_id in self.get_children():
-            self._update_tags_and_content(get_path(project_id), project_id)
+            self._update_tags_and_content(project_id)
 
     # The following two methods call each other recursively.
 
-    def _update_tags_and_content(self, project_root: Path|None, child_id: str) -> None:
+    def _update_tags_and_content(self, child_id: str) -> None:
         if child_id.startswith(("dir:", "project:")) and self.item(child_id, "open"):
             self._open_and_refresh_directory(child_id)
 
@@ -299,7 +303,7 @@ class DirectoryTree(ttk.Treeview):
         project_id = self.find_project_id(dir_id)
         project_root = get_path(project_id)
         for child_path, child_id in path2id.items():
-            self._update_tags_and_content(project_root, child_id)
+            self._update_tags_and_content(child_id)
         self.sort_folder_contents(dir_id)
 
         if not self.get_children(dir_id):

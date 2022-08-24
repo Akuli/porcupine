@@ -148,9 +148,9 @@ class ProjectColorer:
                 tags_changed = False
                 for item_id in self.tree.get_children(dir_id):
                     item_path = get_path(item_id)
-                    if item_path is not None:
-                        if self._set_tag(item_id, self._choose_tag(item_path)):
-                            tags_changed = True
+                    assert item_path is not None
+                    if self._set_tag(item_id, self._choose_tag(item_path)):
+                        tags_changed = True
                 if tags_changed:
                     self.tree.sort_folder_contents(dir_id)
 
