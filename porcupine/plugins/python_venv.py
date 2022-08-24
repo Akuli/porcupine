@@ -127,8 +127,7 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
         return
 
     project_root = dirtree.get_path(tree.find_project_id(item))
-    if project_root is None:
-        return
+    assert project_root is not None
 
     def on_change(*junk: object) -> None:
         assert project_root is not None
