@@ -37,6 +37,9 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
 
     path = get_path(item)
 
+    if path is None:
+        return
+
     if path.is_dir():
         git_cwd = path
     else:

@@ -148,13 +148,17 @@ class ProjectColorer:
             if not self.tree.contains_dummy(dir_id):
                 tags_changed = False
                 for item_id in self.tree.get_children(dir_id):
-                    if self._set_tag(item_id, self._choose_tag(get_path(item_id))):
+                    item_path = get_path(item_id)
+                    assert item_path is not None
+                    if self._set_tag(item_id, self._choose_tag(item_path)):
                         tags_changed = True
                 if tags_changed:
                     self.tree.sort_folder_contents(dir_id)
 
             if dir_id.startswith("project:"):
-                self._set_tag(dir_id, self._choose_tag(get_path(dir_id)))
+                dir_path = get_path(dir_id)
+                assert dir_path is not None
+                self._set_tag(dir_id, self._choose_tag(dir_path))
 
     def color_children_now_or_later(self, parent_id: str) -> None:
         self.queue.add(parent_id)

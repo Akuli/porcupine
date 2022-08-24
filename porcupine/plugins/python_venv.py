@@ -114,7 +114,9 @@ def _on_folder_refreshed(event: utils.EventWithData) -> None:
     # tkinter is lacking tag_remove and tag_add
     tree.tk.call(tree, "tag", "remove", "venv", tree.get_children(info.folder_id))
 
-    venv = get_venv(dirtree.get_path(info.project_id))
+    project_path = dirtree.get_path(info.project_id)
+    assert project_path is not None
+    venv = get_venv(project_path)
     if venv is not None:
         venv_id = tree.get_id_from_path(venv, info.project_id)
         if venv_id is not None:
@@ -129,11 +131,15 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
         return
 
     path = dirtree.get_path(item)
-    project_root = dirtree.get_path(tree.find_project_id(item))
-    if not is_venv(path):
+
+    if path is None or not is_venv(path):
         return
 
+    project_root = dirtree.get_path(tree.find_project_id(item))
+    assert project_root is not None
+
     def on_change(*junk: object) -> None:
+        assert project_root is not None
         set_venv(project_root, path if var.get() else None)
         tree.refresh()  # needed on windows
 
