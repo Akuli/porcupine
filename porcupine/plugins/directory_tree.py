@@ -192,6 +192,7 @@ class DirectoryTree(ttk.Treeview):
             return
 
         project_root_path = get_path(project_id)
+        assert project_root_path is not None
 
         # Find the visible sub-item representing the file
         file_id = project_id
@@ -234,7 +235,8 @@ class DirectoryTree(ttk.Treeview):
 
     def _hide_old_projects(self, junk: object = None) -> None:
         for project_id in self.get_children(""):
-            if not get_path(project_id).is_dir():
+            project_path = get_path(project_id)
+            if project_path is None or not project_path.is_dir():
                 self.delete(project_id)
 
         # To avoid getting rid of existing projects when not necessary, we do
@@ -260,12 +262,13 @@ class DirectoryTree(ttk.Treeview):
 
     # The following two methods call each other recursively.
 
-    def _update_tags_and_content(self, project_root: Path, child_id: str) -> None:
+    def _update_tags_and_content(self, project_root: Path|None, child_id: str) -> None:
         if child_id.startswith(("dir:", "project:")) and self.item(child_id, "open"):
             self._open_and_refresh_directory(child_id)
 
     def _open_and_refresh_directory(self, dir_id: str) -> None:
         dir_path = get_path(dir_id)
+        assert dir_path is not None
 
         if self.contains_dummy(dir_id):
             self.delete(self.get_children(dir_id)[0])
@@ -327,7 +330,9 @@ class DirectoryTree(ttk.Treeview):
             return
 
         if selected_id.startswith("file:"):
-            get_tab_manager().open_file(get_path(selected_id))
+            selected_id_path = get_path(selected_id)
+            assert selected_id_path is not None
+            get_tab_manager().open_file(selected_id_path)
         elif selected_id.startswith(("dir:", "project:")):  # not dummy item
             self._open_and_refresh_directory(selected_id)
 
