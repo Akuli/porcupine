@@ -128,6 +128,7 @@ def test_settings_reset_when_filetype_changes(filetab, tmp_path):
 @pytest.fixture
 def filetypes_toml_filetab(tabmanager):
     tab = tabmanager.open_file(Path(dirs.user_config_dir) / "filetypes.toml")
+    tab.update()
     yield tab
     tabmanager.close_tab(tab)
 
