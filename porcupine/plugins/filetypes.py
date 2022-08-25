@@ -100,8 +100,6 @@ def load_filetypes() -> None:
         assert "filetype_name" not in filetype
         filetype["filetype_name"] = name
 
-
-def set_filedialog_kwargs() -> None:
     filedialog_kwargs["filetypes"] = [("All Files", ["*"])] + [
         (
             name,
@@ -123,6 +121,7 @@ def get_filetype_from_matches(
     if not matches:
         return None
     if len(matches) >= 2:
+        # Last match, because it's more likely from the user's configuration rather than default.
         names = ", ".join(matches.keys())
         log.warning(
             f"{len(matches)} file types match {they_match_what}: {names}. The last match will be"
@@ -211,6 +210,8 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
 
     with tab.settings.defer_change_events():
         # Reset all options whose values came from the previous filetype.
+        # This is needed because previous filetype could have set some option that
+        # the new filetype does not set.
         for name in tab.settings.get_options_by_tag("from_filetype"):
             tab.settings.reset(name)
 
@@ -225,10 +226,22 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     apply_filetype_to_tab(get_filetype_for_tab(tab), tab)
 
 
+def after_save(tab: tabs.FileTab, junk: object) -> None:
+    if tab.path == Path(dirs.user_config_dir) / "filetypes.toml":
+        # Reload all filetypes when the user saves filetypes.toml.
+        # If user has chosen a custom filetype, leave the tab alone.
+        tabs_with_default_filetype = [tab for tab in get_tab_manager().tabs() if isinstance(tab, tabs.FileTab) and tab.settings.get("filetype_name", str) == get_filetype_for_tab(tab)["filetype_name"]]
+        filetypes.clear()
+        load_filetypes()
+        for tab in tabs_with_default_filetype:
+            apply_filetype_to_tab(get_filetype_for_tab(tab), tab)
+
+
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("filetype_name", None, type_=Optional[str])
     on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
+    tab.bind("<<AfterSave>>", partial(after_save, tab), add=True)
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
@@ -260,7 +273,6 @@ def setup() -> None:
         "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    set_filedialog_kwargs()
 
     for name in sorted(filetypes.keys(), key=str.casefold):
         escaped_name = name.replace("/", "//")  # doesn't work in all corner cases
