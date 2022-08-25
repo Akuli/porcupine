@@ -7,7 +7,7 @@ from tkinter import filedialog
 
 import pytest
 from pygments.lexer import LexerMeta
-from pygments.lexers import TextLexer, RustLexer, JsonLexer
+from pygments.lexers import JsonLexer, RustLexer, TextLexer
 
 from porcupine import dirs, filedialog_kwargs, get_main_window, menubar
 from porcupine.plugins import filetypes

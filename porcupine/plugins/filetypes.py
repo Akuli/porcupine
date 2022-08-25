@@ -230,7 +230,12 @@ def after_save(tab: tabs.FileTab, junk: object) -> None:
     if tab.path == Path(dirs.user_config_dir) / "filetypes.toml":
         # Reload all filetypes when the user saves filetypes.toml.
         # If user has chosen a custom filetype, leave the tab alone.
-        tabs_with_default_filetype = [tab for tab in get_tab_manager().tabs() if isinstance(tab, tabs.FileTab) and tab.settings.get("filetype_name", str) == get_filetype_for_tab(tab)["filetype_name"]]
+        tabs_with_default_filetype = [
+            tab
+            for tab in get_tab_manager().tabs()
+            if isinstance(tab, tabs.FileTab)
+            and tab.settings.get("filetype_name", str) == get_filetype_for_tab(tab)["filetype_name"]
+        ]
         filetypes.clear()
         load_filetypes()
         for tab in tabs_with_default_filetype:
