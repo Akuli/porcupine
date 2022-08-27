@@ -17,18 +17,18 @@ jobs:
     - run: pip install wheel
     - run: pip install -r requirements.txt -r requirements-dev.txt
     - run: |
-        time mypy --platform linux --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform linux --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform linux --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform linux --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform win32 --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform win32 --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform win32 --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform win32 --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform darwin --python-version 3.7 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform darwin --python-version 3.8 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform darwin --python-version 3.9 porcupine more_plugins docs/extensions.py *.py
-        time mypy --platform darwin --python-version 3.10 porcupine more_plugins docs/extensions.py *.py
+        time mypy --platform linux --python-version 3.7 porcupine more_plugins docs/extensions.py
+        time mypy --platform linux --python-version 3.8 porcupine more_plugins docs/extensions.py
+        time mypy --platform linux --python-version 3.9 porcupine more_plugins docs/extensions.py
+        time mypy --platform linux --python-version 3.10 porcupine more_plugins docs/extensions.py
+        time mypy --platform win32 --python-version 3.7 porcupine more_plugins docs/extensions.py
+        time mypy --platform win32 --python-version 3.8 porcupine more_plugins docs/extensions.py
+        time mypy --platform win32 --python-version 3.9 porcupine more_plugins docs/extensions.py
+        time mypy --platform win32 --python-version 3.10 porcupine more_plugins docs/extensions.py
+        time mypy --platform darwin --python-version 3.7 porcupine more_plugins docs/extensions.py
+        time mypy --platform darwin --python-version 3.8 porcupine more_plugins docs/extensions.py
+        time mypy --platform darwin --python-version 3.9 porcupine more_plugins docs/extensions.py
+        time mypy --platform darwin --python-version 3.10 porcupine more_plugins docs/extensions.py
 
   pytest:
     timeout-minutes: 10
