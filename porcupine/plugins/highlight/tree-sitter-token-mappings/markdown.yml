@@ -10,12 +10,20 @@ queries:
   link: |
     (link
       (link_text) @recurse
-      (link_destination) @recurse
+      (link_destination)? @recurse  # Missing for [foo] links
     ) @Token.Operator
 
   image: |
     (image
       (image_description)? @recurse
+      (link_destination) @recurse
+    ) @Token.Operator
+
+  # [foo] is a valid link but must be defined later in the document with a
+  # link_reference_definition that looks like "[foo]: https://..."
+  link_reference_definition: |
+    (link_reference_definition
+      (link_label) @recurse
       (link_destination) @recurse
     ) @Token.Operator
 
