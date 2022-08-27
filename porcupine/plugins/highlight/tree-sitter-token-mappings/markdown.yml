@@ -15,7 +15,7 @@ queries:
 
   image: |
     (image
-      (image_description) @recurse
+      (image_description)? @recurse
       (link_destination) @recurse
     ) @Token.Operator
 
