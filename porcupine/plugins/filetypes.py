@@ -5,6 +5,7 @@ import argparse
 import fnmatch
 import logging
 import re
+import sys
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -100,7 +101,7 @@ def load_filetypes() -> None:
 
 
 def set_filedialog_kwargs() -> None:
-    filedialog_kwargs["filetypes"] = [("All Files", ["*"])] + [
+    filedialog_kwargs["filetypes"] = [
         (
             name,
             [
@@ -113,6 +114,10 @@ def set_filedialog_kwargs() -> None:
         for name, filetype in filetypes.items()
         if name != "Plain Text"  # can just use "All Files" for this
     ]
+
+    if sys.platform != "darwin":
+        # Causes crashes for some Mac users, but not all. See #1092
+        filedialog_kwargs["filetypes"].insert(0, ("All Files", ["*"]))
 
 
 def get_filetype_from_matches(
