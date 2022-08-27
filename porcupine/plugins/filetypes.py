@@ -5,6 +5,7 @@ import argparse
 import fnmatch
 import logging
 import re
+import sys
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -31,8 +32,6 @@ filetypes: dict[str, FileType] = {}
 
 # Sometimes dynamic typing is awesome
 def merge_settings(default: object, user: object) -> Any:
-    if isinstance(default, list) and isinstance(user, list):
-        return default + user
     if isinstance(default, dict) and isinstance(user, dict):
         # If a key is in only one of the dicts, include as is.
         # Recurse for keys in both dicts.
@@ -100,7 +99,7 @@ def load_filetypes() -> None:
         assert "filetype_name" not in filetype
         filetype["filetype_name"] = name
 
-    filedialog_kwargs["filetypes"] = [("All Files", ["*"])] + [
+    filedialog_kwargs["filetypes"] = [
         (
             name,
             [
@@ -113,6 +112,10 @@ def load_filetypes() -> None:
         for name, filetype in filetypes.items()
         if name != "Plain Text"  # can just use "All Files" for this
     ]
+
+    if sys.platform != "darwin":
+        # Causes crashes for some Mac users, but not all. See #1092
+        filedialog_kwargs["filetypes"].insert(0, ("All Files", ["*"]))
 
 
 def get_filetype_from_matches(

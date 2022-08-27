@@ -184,8 +184,7 @@ def test_merging_settings():
     assert filetypes.merge_settings(default, user) == {
         "Plain Text": {"filename_patterns": ["*.txt"]},
         "Python": {
-            # TODO: concatenating filename_patterns not good, no way to make .h files C++ only for example
-            "filename_patterns": ["*.py", "*.pyw", "*.foobar"],
+            "filename_patterns": ["*.foobar"],  # It is possible to get rid of patterns
             "langserver": {
                 "command": "{porcupine_python} -m pyls",
                 "language_id": "python",

@@ -1,0 +1,45 @@
+dont_recurse_inside:
+  - code_span
+  - fenced_code_block  # TODO: highlight with inner language
+  - indented_code_block  # TODO: guess an inner language???
+  - emphasis
+  - strong_emphasis
+
+queries:
+  # Links look like [link text](https://...). Make []() colored as operators.
+  link: |
+    (link
+      (link_text) @recurse
+      (link_destination)? @recurse  # Missing for [foo] links
+    ) @Token.Operator
+
+  image: |
+    (image
+      (image_description)? @recurse
+      (link_destination) @recurse
+    ) @Token.Operator
+
+  # [foo] is a valid link but must be defined later in the document with a
+  # link_reference_definition that looks like "[foo]: https://..."
+  link_reference_definition: |
+    (link_reference_definition
+      (link_label) @recurse
+      (link_destination) @recurse
+    ) @Token.Operator
+
+token_mapping:
+  code_span: Token.Literal.String           # `print("hi")`
+  fenced_code_block: Token.Literal.String   # ```
+  indented_code_block: Token.Literal.String # indented stuff is similar to ```
+  emphasis: Token.Name.Decorator            # *italic*
+  strong_emphasis: Token.Keyword            # **bold**
+
+  list_marker: Token.Operator  # "-", "*", or "1." "2." "3." etc in the beginning of a list item
+
+  # The '#' characters in titles as in '# bla bla', '## bla bla' etc
+  atx_h1_marker: Token.Operator
+  atx_h2_marker: Token.Operator
+  atx_h3_marker: Token.Operator
+  atx_h4_marker: Token.Operator
+  atx_h5_marker: Token.Operator
+  atx_h6_marker: Token.Operator
