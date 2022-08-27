@@ -2,6 +2,28 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+The main feature in this release is Porcupine's new syntax highlighter. It is faster and less buggy than the old syntax highlighter. The old and new highlighters are also known as "pygments highlighter" (old) and "tree-sitter highlighter" (new), named after the libraries they are based on.
+
+The tree-sitter highlighter is currently used for C, JSON, Markdown, Python, Rust and TOML files. Other filetypes still use the pygments highlighter. As with any other problem with Porcupine, please let me know by creating an issue if the pygments highlighter isn't working with a filetype you use.
+
+Thank you [rdbende](https://github.com/rdbende) for working on the new highlighter with me, and for your work on Porcupine in general :)
+
+Mac fixes:
+- "Save As" no longer crashes Porcupine on some Macs. Thank you [Moosems](https://github.com/Moosems) for reporting this and helping me figure out what the problem was.
+- By default, the Alt key is no longer used for key bindings on Mac. For example, the binding for setting an anchor on Mac is now Control+Shift+a instead of Alt+Shift+A. Many key bindings that used Alt didn't work because of how Alt is also used for entering special characters. Thank you [Moosems](https://github.com/Moosems) for fixing this.
+
+Filetypes fixes:
+- The *Filetypes* menu is now in alphabetical order. Thank you [sokratisvas](https://github.com/sokratisvas) for fixing this.
+- Settings from `filetypes.toml` and `default_filetypes.toml` are now merged recursively. This is useful for giving custom langserver options without copy/pasting the default configuration from `default_filetypes.toml`.
+
+Other fixes and improvements:
+- The line numbers now work in files that are more than 9999 lines long. Thank you [Moosems](https://github.com/Moosems) for fixing this.
+- Porcupine no longer displays errors on the terminal when right-clicking `(empty)` items in the directory tree. Thank you Tuomas Ahola and [nicolafan](https://github.com/nicolafan) for fixing this.
+- Renaming a currently opened file in the directory tree now works as expected. Previously you would often get an error saying that the file isn't found, and then you would have to close and reopen the file.
+
+
 ## v2022.07.31
 
 Porcupine now uses [calver](https://calver.org/):
