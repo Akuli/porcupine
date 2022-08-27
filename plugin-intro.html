@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Introduction to Writing Plugins &#8212; Porcupine API 2022.07.31 documentation</title>
+    <title>Introduction to Writing Plugins &#8212; Porcupine API 2022.08.27 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -280,6 +280,13 @@ notified of those tab presses that this plugin was able to autocomplete with
 </pre></div>
 </div>
 <p>See <a class="reference external" href="https://github.com/Akuli/porcupine/tree/master/porcupine/plugins/indent_block.py">porcupine/plugins/indent_block.py</a> for a complete example plugin.</p>
+</section>
+<section id="the-end-is-beyond-document">
+<h3>The end is beyond document<a class="headerlink" href="#the-end-is-beyond-document" title="Permalink to this headline">¶</a></h3>
+<p>Yet another off-kilter aspect of tkinter is that <code class="docutils literal notranslate"><span class="pre">end</span></code> indicates the
+character just after the end. Thus in practice it is often needed to
+use <code class="docutils literal notranslate"><span class="pre">end</span> <span class="pre">-</span> <span class="pre">1</span> <span class="pre">char</span></code> even if <code class="docutils literal notranslate"><span class="pre">end</span></code> looked quite capable of doing the
+trick by itself.</p>
 </section>
 </section>
 <section id="cleaning-up-bindings">

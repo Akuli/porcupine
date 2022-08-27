@@ -288,6 +288,15 @@ Let's fix this crap with ``add=True``, ``return 'break'`` and
 See :source:`porcupine/plugins/indent_block.py` for a complete example plugin.
 
 
+The end is beyond document
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Yet another off-kilter aspect of tkinter is that ``end`` indicates the
+character just after the end. Thus in practice it is often needed to
+use ``end - 1 char`` even if ``end`` looked quite capable of doing the
+trick by itself.
+
+
 Cleaning Up Bindings
 --------------------
 

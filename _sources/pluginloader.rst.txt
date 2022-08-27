@@ -4,8 +4,8 @@
 .. module:: porcupine.pluginloader
 
 In this documentation, a plugin name means no file extension or
-``porcupine.plugins.`` prefix, e.g. ``highlight`` instead of ``highlight.py``
-or ``porcupine.plugins.highlight``.
+``porcupine.plugins.`` prefix, e.g. ``directory_tree`` instead of ``directory_tree.py``
+or ``porcupine.plugins.directory_tree``.
 
 .. autoclass:: Status
 .. autoclass:: PluginInfo
