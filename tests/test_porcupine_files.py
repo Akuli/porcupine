@@ -35,7 +35,7 @@ def test_requirements_and_pyproject_toml_in_sync():
     requirements = []
     with open("requirements.txt", "r") as file:
         for line in file:
-            requirement = line.split('#')[0].strip()
+            requirement = line.split("#")[0].strip()
             if requirement:
                 requirements.append(requirement)
 
