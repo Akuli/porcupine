@@ -79,5 +79,5 @@ def test_tree_sitter_dump(tmp_path):
     output = subprocess.check_output(args, text=True)
     assert len(output) > 300
 
-    readme = Path("porcupine/plugins/highlight/tree-sitter-token-mappings/readme.txt")
+    readme = Path("porcupine/plugins/highlight/tree-sitter-token-mappings/README.md")
     assert output in readme.read_text().replace("\n    ", "\n")
