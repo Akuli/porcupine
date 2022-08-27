@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2022.08.28
 
 Yesterday's release (below) turned out to be broken: syntax highlighting didn't work at all. This release fixes that.
 
