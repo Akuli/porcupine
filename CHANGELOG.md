@@ -11,8 +11,8 @@ The tree-sitter highlighter is currently used for C, JSON, Markdown, Python, Rus
 Thank you [rdbende](https://github.com/rdbende) for working on the new highlighter with me, and for your work on Porcupine in general :)
 
 Mac fixes:
-- By default, the Alt key is no longer used for key bindings on Mac. For example, the binding for setting an anchor on Mac is now Control+Shift+a instead of Alt+Shift+A. Many key bindings that used Alt didn't work because of how Alt is also used for entering special characters. Thank you [Moosems](https://github.com/Moosems) for fixing this.
 - "Save As" no longer crashes Porcupine on some Macs. Thank you [Moosems](https://github.com/Moosems) for reporting this and helping me figure out what the problem was.
+- By default, the Alt key is no longer used for key bindings on Mac. For example, the binding for setting an anchor on Mac is now Control+Shift+a instead of Alt+Shift+A. Many key bindings that used Alt didn't work because of how Alt is also used for entering special characters. Thank you [Moosems](https://github.com/Moosems) for fixing this.
 
 Filetypes fixes:
 - The *Filetypes* menu is now in alphabetical order. Thank you [sokratisvas](https://github.com/sokratisvas) for fixing this.
