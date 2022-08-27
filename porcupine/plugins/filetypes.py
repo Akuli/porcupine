@@ -117,8 +117,8 @@ def set_filedialog_kwargs() -> None:
         if name != "Plain Text"  # can just use "All Files" for this
     ]
 
-    # Causes crashes for some Mac users, but not all. See #1092
     if sys.platform != "darwin":
+        # Causes crashes for some Mac users, but not all. See #1092
         filedialog_kwargs["filetypes"].insert(0, ("All Files", ["*"]))
 
 
