@@ -2,6 +2,17 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+- Porcupine has a new syntax highlighter that is faster and less buggy than the old syntax highlighter. The new highlighter is used for C, JSON, Markdown, Python, Rust and TOML files. All other file types still use the old highlighter. The old and new highlighters are also known as "pygments highlighter" and "tree-sitter highlighter", named after the libraries they are based on. Thank you [rdbende](https://github.com/rdbende) for adding support for many of the languages that are currently supported.
+- The *Filetypes* menu is now in alphabetical order. Thank you [sokratisvas](https://github.com/sokratisvas) for fixing this.
+- The line numbers now work in files that are more than 9999 lines long. Thank you [Moosems](https://github.com/Moosems) for fixing this.
+- The Alt key is no longer used for key bindings on Mac. Many key bindings that use Alt didn't because of how Alt is used for entering special characters. Thank you [Moosems](https://github.com/Moosems) for fixing this.
+- Porcupine no longer displays errors on the terminal when right-clicking `(empty)` items in the directory tree. Thank you Tuomas Ahola and [nicolafan](https://github.com/nicolafan) for fixing this.
+- Renaming a currently opened file in the directory tree now works as expected. Previously you would typically get an error saying that the file isn't found, and then you would have to close and reopen the file.
+- Settings from `filetypes.toml` and `default_filetypes.toml` are now merged recursively. This is useful for giving custom langserver options without copy/pasting the default configuration from `default_filetypes.toml`.
+
+
 ## v2022.07.31
 
 Porcupine now uses [calver](https://calver.org/):
