@@ -31,7 +31,7 @@ token_mapping:
   code_span: Token.Literal.String           # `print("hi")`
   fenced_code_block: Token.Literal.String   # ```
   indented_code_block: Token.Literal.String # indented stuff is similar to ```
-  emphasis: Token.Comment                   # *italic*
+  emphasis: Token.Name.Decorator            # *italic*
   strong_emphasis: Token.Keyword            # **bold**
 
   # - Foo
