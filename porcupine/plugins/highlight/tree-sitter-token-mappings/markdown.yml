@@ -34,10 +34,7 @@ token_mapping:
   emphasis: Token.Name.Decorator            # *italic*
   strong_emphasis: Token.Keyword            # **bold**
 
-  # - Foo
-  # - Bar
-  # - Baz
-  list_marker: Token.Operator
+  list_marker: Token.Operator  # "-", "*", or "1." "2." "3." etc in the beginning of a list item
 
   # The '#' characters in titles as in '# bla bla', '## bla bla' etc
   atx_h1_marker: Token.Operator
