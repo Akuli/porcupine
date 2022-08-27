@@ -128,6 +128,7 @@ def test_settings_reset_when_filetype_changes(filetab, tmp_path):
 @pytest.fixture
 def filetypes_toml_filetab(tabmanager):
     tab = tabmanager.open_file(Path(dirs.user_config_dir) / "filetypes.toml")
+    tab.update()
     yield tab
     tabmanager.close_tab(tab)
 
@@ -144,12 +145,10 @@ def test_saving_filetypes_toml_reloads_filetypes(
     assert filetab.settings.get("pygments_lexer", LexerMeta) is TextLexer  # default
 
     filetypes_toml_filetab.save()
-    tabmanager.update()
     assert filetab.settings.get("pygments_lexer", LexerMeta) is RustLexer
 
     filetypes_toml_filetab.textwidget.edit_undo()
     filetypes_toml_filetab.save()
-    tabmanager.update()
     assert filetab.settings.get("pygments_lexer", LexerMeta) is TextLexer
 
     # If user sets custom filetype, respect that
@@ -157,7 +156,6 @@ def test_saving_filetypes_toml_reloads_filetypes(
     menubar.get_menu("Filetypes").invoke("JSON")
     filetypes_toml_filetab.textwidget.edit_redo()
     filetypes_toml_filetab.save()
-    tabmanager.update()
     assert filetab.settings.get("pygments_lexer", LexerMeta) is JsonLexer
 
 
