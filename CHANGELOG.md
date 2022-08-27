@@ -2,6 +2,11 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## v2022.08.28
+
+Yesterday's release (below) turned out to be broken: syntax highlighting didn't work at all. This release fixes that.
+
+
 ## v2022.08.27
 
 The main feature in this release is Porcupine's new syntax highlighter. It is faster and less buggy than the old syntax highlighter. The old and new highlighters are also known as "pygments highlighter" (old) and "tree-sitter highlighter" (new), named after the libraries they are based on.
