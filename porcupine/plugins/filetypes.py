@@ -224,39 +224,26 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
                 tab.settings.set(name, value, from_config=True, tag="from_filetype")
 
 
-def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
-    log.info(f"file path changed: {tab.path}")
+def detect_and_apply_filetype(tab: tabs.FileTab, junk: object = None) -> None:
+    # TODO: Do not auto-detect if a user has chosen a custom filetype from menu
+    log.info(f"Applying auto-detected filetype to filetab with path: {tab.path}")
     apply_filetype_to_tab(get_filetype_for_tab(tab), tab)
 
 
-def after_save(tab: tabs.FileTab, junk: object) -> None:
+def trigger_update_if_filetypes_toml_saved(tab: tabs.FileTab, junk: object) -> None:
     if tab.path == Path(dirs.user_config_dir) / "filetypes.toml":
-        filetabs = [tab for tab in get_tab_manager().tabs() if isinstance(tab, tabs.FileTab)]
-        filetabs_with_default_filetype = [
-            tab
-            for tab in filetabs
-            if tab.settings.get("filetype_name", str) == get_filetype_for_tab(tab)["filetype_name"]
-        ]
-
         filetypes.clear()
         load_filetypes()
-        for tab in filetabs:
-            # Usually we should detect the filetype again to reflect changes to e.g.
-            # filename_patterns. But there's one situation when we should continue using
-            # the same the user has chosen a custom filetype from the filetypes menu, and
-            # that custom filetype was not deleted in the filetypes.toml edit.
-            old_filetype_name = tab.settings.get("filetype_name", str)
-            if tab in filetabs_with_default_filetype and old_filetype_name in filetypes:
-                apply_filetype_to_tab(filetypes[old_filetype_name], tab)
-            else:
-                apply_filetype_to_tab(get_filetype_for_tab(tab), tab)
+        for tab in get_tab_manager().tabs():
+            if isinstance(tab, tabs.FileTab):
+                tab.event_generate("<<UpdateSettings>>")
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("filetype_name", None, type_=Optional[str])
-    on_path_changed(tab)
-    tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
-    tab.bind("<<AfterSave>>", partial(after_save, tab), add=True)
+    detect_and_apply_filetype(tab)
+    tab.bind("<<UpdateSettings>>", partial(detect_and_apply_filetype, tab), add=True)
+    tab.bind("<<AfterSave>>", partial(trigger_update_if_filetypes_toml_saved, tab), add=True)
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
