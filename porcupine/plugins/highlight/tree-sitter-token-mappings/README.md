@@ -1,19 +1,19 @@
 Files in this directory define how to map a tree-sitter syntax tree into Pygments
 token types. We need to know the corresponding Pygments token types to use
 Pygments color themes, and we use them with tree-sitter for a couple reasons:
+
 - The pygments highlighter uses them already. We want the user to only select
   one color theme.
 - There are many pygments themes to choose from.
-- It is relatively easy to make new pygments themes. I am currently using a
-  Pygments theme named "zaab" created by a friend of mine, available here:
-  https://github.com/8banana/banana-themes
+- It is relatively easy to make new pygments themes. I am currently using
+    [a Pygments theme named "zaab" created by a friend of mine](https://github.com/8banana/banana-themes).
 
-In tree-sitter, each programming language has a name ("python" in this example)
+In tree-sitter, each programming language has a name (`python` in this example)
 that is used in several places:
 - Argument of `scripts/tree-sitter-dump.py` (see below)
-- tree_sitter_language_name in default_filetypes.toml and filetypes.toml
+- `tree_sitter_language_name` in default_filetypes.toml and filetypes.toml
 - Names of .yml files in this directory
-- Inside the binaries from https://github.com/grantjenks/py-tree-sitter-languages/
+- Inside the binaries from [py-tree-sitter-languages](https://github.com/grantjenks/py-tree-sitter-languages/)
 
 Porcupine comes with a script for exploring tree-syntax syntax trees:
 
@@ -45,8 +45,7 @@ specify that for type=identifier tokens with text "print" in python.yml:
         ...
 
 You can also explore how queries work by passing in --query. For more about
-queries, see tree-sitter's documentation:
-https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries
+queries, see [tree-sitter's documentation](https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries):
 
     $ python3 scripts/tree-sitter-dump.py python hello.py --query '(call arguments: (argument_list) @asdasd)'
     type=module text="print('hello')"
