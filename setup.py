@@ -30,8 +30,8 @@ def get_requirements() -> Iterator[str]:
     with open("requirements.txt", "r") as file:
         for line in map(str.strip, file):
             if (not line.startswith("#")) and line:
-                if ';' in line:
-                    requirement, condition = line.split(';')
+                if ";" in line:
+                    requirement, condition = line.split(";")
                     if evaluate_condition(condition):
                         yield requirement
                         continue
