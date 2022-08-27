@@ -40,3 +40,6 @@ dependencies = [
     "tree-sitter-languages==1.4.0",
     "tree-sitter-builds==2022.8.27",
 ]
+
+[project.scripts]
+porcu = "porcupine.__main__:main"
