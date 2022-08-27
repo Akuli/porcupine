@@ -31,8 +31,6 @@ filetypes: dict[str, FileType] = {}
 
 # Sometimes dynamic typing is awesome
 def merge_settings(default: object, user: object) -> Any:
-    if isinstance(default, list) and isinstance(user, list):
-        return default + user
     if isinstance(default, dict) and isinstance(user, dict):
         # If a key is in only one of the dicts, include as is.
         # Recurse for keys in both dicts.
