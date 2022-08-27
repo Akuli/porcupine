@@ -34,7 +34,6 @@ def get_requirements() -> Iterator[str]:
                     requirement, condition = line.split(";")
                     if evaluate_condition(condition):
                         yield requirement
-                        continue
                 else:
                     yield line
 
