@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import platform
 import re
 import sys
 import tkinter
@@ -12,11 +13,30 @@ assert sys.version_info >= (3, 7), "Porcupine requires Python 3.7 or newer"
 assert tkinter.TkVersion >= 8.6, "Porcupine requires Tk 8.6 or newer"
 
 
+# A hacky way to support conditions like:  python_version == "3.9" and sys_platform == "linux" and platform_machine == "x86_64"
+# Ideally there would be a proper way to point pip at requirements.txt.
+# Maybe just get rid of setup.py and requirements.txt, replace them with e.g. flit?
+def evaluate_condition(condition: str) -> bool:
+    condition = " ".join(condition.split())
+    condition = condition.replace('"', "'")
+    major, minor = sys.version_info[:2]
+    condition = condition.replace(f"python_version == '{major}.{minor}'", "True")
+    condition = condition.replace(f"sys_platform == '{sys.platform}'", "True")
+    condition = condition.replace(f"platform_machine == '{platform.machine()}'", "True")
+    return bool(re.fullmatch(r"True( and True)*", condition))
+
+
 def get_requirements() -> Iterator[str]:
     with open("requirements.txt", "r") as file:
         for line in map(str.strip, file):
             if (not line.startswith("#")) and line:
-                yield line
+                if ';' in line:
+                    requirement, condition = line.split(';')
+                    if evaluate_condition(condition):
+                        yield requirement
+                        continue
+                else:
+                    yield line
 
 
 def find_metadata() -> dict[Any, Any]:
