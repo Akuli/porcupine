@@ -7,6 +7,8 @@ line_length = 100
 profile = "black"
 multi_line_output = 3
 
+# Flit configuration ([build-system] and [project]) are used when pip installing with github url.
+# See commands in README.
 [build-system]
 requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
