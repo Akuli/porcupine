@@ -14,5 +14,4 @@ ttkthemes>=3.0.0
 send2trash>=1.8.0,<2.0.0
 psutil>=5.8.0,<6.0.0
 PyYAML==6.0
-tree-sitter-languages==1.4.0
-tree-sitter-builds==2022.8.27
+tree-sitter-builds==2022.8.29
