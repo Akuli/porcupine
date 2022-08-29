@@ -20,7 +20,7 @@ queries:
   function_item: |
     (function_item
       (visibility_modifier)? @recurse
-      "fn" @Token.Keyword
+      "fn" @recurse
       name: (_) @Token.Name.Function  # This is the whole reason why this query exists.
       type_parameters: (_)? @recurse
       parameters: (_) @recurse
