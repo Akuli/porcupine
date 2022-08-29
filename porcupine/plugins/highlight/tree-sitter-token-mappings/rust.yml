@@ -15,6 +15,36 @@ queries:
       (token_tree) @recurse
     )
 
+  # Highlight class and function names when defining them
+  struct_item: |
+    (struct_item
+      "struct" @Token.Keyword
+      name: (_) @Token.Name.Class
+      body: (_) @recurse
+    )
+  enum_item: |
+    (enum_item
+      "enum" @Token.Keyword
+      name: (_) @Token.Name.Class
+      body: (_) @recurse
+    )
+  impl_item: |
+    (impl_item
+      "impl" @Token.Keyword
+      type: (_) @Token.Name.Class  # TODO: what if it's not just a name?
+      body: (_) @recurse
+    )
+  function_item: |
+    (function_item
+      (visibility_modifier)? @recurse
+      "fn" @Token.Keyword
+      name: (_) @Token.Name.Function
+      parameters: (_) @recurse
+      "->"? @recurse
+      return_type: (_)? @recurse
+      body: (_) @recurse
+    )
+
 token_mapping:
   line_comment: Token.Comment
   block_comment: Token.Comment
