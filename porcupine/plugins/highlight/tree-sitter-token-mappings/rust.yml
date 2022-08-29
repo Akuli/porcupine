@@ -26,6 +26,11 @@ token_mapping:
   self: Token.Name.Builtin  # special-cased in compiler, but doesn't feel like a keyword
   pub: Token.Keyword
   async: Token.Keyword
+  await: Token.Keyword
+  move: Token.Keyword
+  static: Token.Keyword
+  extern: Token.Keyword
+  ref: Token.Keyword
   fn: Token.Keyword
   as: Token.Keyword
   in: Token.Keyword
@@ -56,8 +61,9 @@ token_mapping:
   'true': Token.Keyword
   'false': Token.Keyword
 
-  # builtins taken from pygments
+  # builtins mostly taken from pygments
   type_identifier:
+    Self: Token.Name.Builtin  # not in pygments
     Send: Token.Name.Builtin
     Sized: Token.Name.Builtin
     Sync: Token.Name.Builtin
@@ -96,6 +102,7 @@ token_mapping:
     Err: Token.Name.Builtin
 
   identifier:
+    Self: Token.Name.Builtin  # not in pygments
     Send: Token.Name.Builtin
     Sized: Token.Name.Builtin
     Sync: Token.Name.Builtin
