@@ -15,33 +15,18 @@ queries:
       (token_tree) @recurse
     )
 
-  # Highlight class and function names when defining them
-  struct_item: |
-    (struct_item
-      "struct" @Token.Keyword
-      name: (_) @Token.Name.Class
-      body: (_) @recurse
-    )
-  enum_item: |
-    (enum_item
-      "enum" @Token.Keyword
-      name: (_) @Token.Name.Class
-      body: (_) @recurse
-    )
-  impl_item: |
-    (impl_item
-      "impl" @Token.Keyword
-      type: (_) @Token.Name.Class  # TODO: what if it's not just a name?
-      body: (_) @recurse
-    )
+  # Highlight function names when defining them.
+  # Type names are easier because they are type_name nodes in the tree.
   function_item: |
     (function_item
       (visibility_modifier)? @recurse
       "fn" @Token.Keyword
-      name: (_) @Token.Name.Function
+      name: (_) @Token.Name.Function  # This is the whole reason why this query exists.
+      type_parameters: (_)? @recurse
       parameters: (_) @recurse
       "->"? @recurse
       return_type: (_)? @recurse
+      (where_clause)? @recurse
       body: (_) @recurse
     )
 
@@ -130,6 +115,7 @@ token_mapping:
     None: Token.Name.Builtin
     Ok: Token.Name.Builtin
     Err: Token.Name.Builtin
+    "": Token.Name.Class  # fallback
 
   identifier:
     Self: Token.Name.Builtin  # not in pygments
