@@ -25,7 +25,7 @@ Filetypes fixes:
 
 Other fixes and improvements:
 - The line numbers now work in files that are more than 9999 lines long. Thank you [Moosems](https://github.com/Moosems) for fixing this.
-- Porcupine no longer displays errors on the terminal when right-clicking `(empty)` items in the directory tree. Thank you Tuomas Ahola and [nicolafan](https://github.com/nicolafan) for fixing this.
+- Porcupine no longer displays errors on the terminal when right-clicking `(empty)` items in the directory tree. Thank you Tuomas and [nicolafan](https://github.com/nicolafan) for fixing this.
 - Renaming a currently opened file in the directory tree now works as expected. Previously you would often get an error saying that the file isn't found, and then you would have to close and reopen the file.
 
 
