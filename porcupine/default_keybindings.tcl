@@ -50,7 +50,7 @@ event add "<<Menubar:Edit/Go to Line>>" <$control_ish-l>
 event add "<<Menubar:Tools/Search selected text on Google>>" <$control_ish-g>
 
 # fullscreen plugin
-event add "<<Menubar:View/Full Screen>>" <F11>
+event add "<<Menubar:View/Toggle Full Screen>>" <F11>
 
 # find plugin
 event add "<<Menubar:Edit/Find and Replace>>" <$control_ish-f>
