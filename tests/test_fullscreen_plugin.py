@@ -1,5 +1,6 @@
-import pytest
 import sys
+
+import pytest
 
 from porcupine import get_main_window
 from porcupine.menubar import get_menu
