@@ -33,25 +33,25 @@ class Change:
     \...changes the ``'hello'`` to ``'toot'``, and that's represented by a
     ``Change`` like this::
 
-        Change(start=[1, 0], end=[1, 5], old_text_len=5, new_text='toot')
+        Change(start=[1, 0], old_end=[1, 5], old_text_len=5, new_text='toot')
 
     Insertions are represented with ``Change`` objects having ``old_text_len=0``
     and the same ``start`` and ``end``. For example,
     ``textwidget.insert('1.0', 'hello')`` corresponds to this ``Change``::
 
-        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='hello')
+        Change(start=[1, 0], old_end=[1, 0], old_text_len=0, new_text='hello')
 
     For deletions, ``start`` and ``end`` differ and ``new_text`` is empty.
     If the first line of a text widget contains at least 5 characters, then
     deleting the first 5 characters looks like this::
 
-        Change(start=[1, 0], end=[1, 5], old_text_len=5, new_text='')
+        Change(start=[1, 0], old_end=[1, 5], old_text_len=5, new_text='')
 
     Unlike you might think, the ``old_text_len`` is not redundant. Let's
     say that the text widget contains ``'toot world'`` and all that is
     deleted::
 
-        Change(start=[1, 0], end=[1, 10], old_text_len=10, new_text='')
+        Change(start=[1, 0], old_end=[1, 10], old_text_len=10, new_text='')
 
     In this case, ``old_text_len`` happens to be ``10 - 0``, where ``10`` and
     ``0`` are the column numbers of ``start`` and ``end``. But for changing
@@ -66,7 +66,7 @@ class Change:
     # These should be Tuple[int, int], but they can't be because converting to
     # json and back turns tuples to lists
     start: List[int]
-    end: List[int]
+    old_end: List[int]
     old_text_len: int
     new_text: str
 
@@ -238,7 +238,7 @@ class _ChangeTracker:
         end_line = int(end.split(".")[0])
         return Change(
             start=[start_line, count(widget, f"{start_line}.0", start)],
-            end=[end_line, count(widget, f"{end_line}.0", end)],
+            old_end=[end_line, count(widget, f"{end_line}.0", end)],
             old_text_len=len(widget.get(start, end)),
             new_text=new_text,
         )
@@ -352,7 +352,7 @@ class _ChangeTracker:
         changes = [
             change
             for change in changes
-            if change.start != change.end or change.old_text_len != 0 or change.new_text
+            if change.start != change.old_end or change.old_text_len != 0 or change.new_text
         ]
 
         if self._change_batch is None:
@@ -418,7 +418,7 @@ def track_changes(widget: tkinter.Text) -> None:
         a :class:`Changes` object like this::
 
             Changes(change_list=[
-                Change(start='1.0', end='1.5', old_text_len=5, new_text='toot'),
+                Change(start=[1, 0], old_end=[1, 5], old_text_len=5, new_text='toot'),
             ])
 
         The ``<<ContentChanged>>`` event occurs after the text in the text

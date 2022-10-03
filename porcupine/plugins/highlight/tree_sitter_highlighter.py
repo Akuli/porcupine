@@ -165,7 +165,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         else:
             [change] = changes.change_list
             start_row, start_col = change.start
-            old_end_row, old_end_col = change.end
+            old_end_row, old_end_col = change.old_end
             new_end_row = start_row + change.new_text.count("\n")
             if "\n" in change.new_text:
                 new_end_col = len(change.new_text.split("\n")[-1])

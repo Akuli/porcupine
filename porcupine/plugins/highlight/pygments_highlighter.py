@@ -134,6 +134,6 @@ class PygmentsHighlighter(BaseHighlighter):
             if len(change.new_text) <= 1:
                 # Optimization for typical key strokes (but not for reloading entire file):
                 # only highlight the area that might have changed
-                self.highlight_range(f"{change.start[0]}.0", f"{change.end[0]}.0 lineend")
+                self.highlight_range(f"{change.start[0]}.0", f"{change.old_end[0]}.0 lineend")
                 return
         self.highlight_range()
