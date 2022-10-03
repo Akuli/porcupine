@@ -49,7 +49,7 @@ def test_delete_basic(text_and_events):
     text.update()
     assert text.get("1.0", "end - 1 char") == "foobrz"
     assert events.pop().data_class(Changes).change_list == [
-        Change(start=[1, 4], old_end=[1, 5], new_end=[1, 4] , old_text="a", new_text="")
+        Change(start=[1, 4], old_end=[1, 5], new_end=[1, 4], old_text="a", new_text="")
     ]
 
 
