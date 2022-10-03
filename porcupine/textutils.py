@@ -21,10 +21,8 @@ if TYPE_CHECKING:
 @dataclasses.dataclass
 class Change:
     r"""
-    This :mod:`dataclass <dataclasses>` represents any change in a
-    :class:`ChangeTrackingText` widget,
-    where ``old_text_len`` characters between the text widget indexes ``start``
-    and ``end`` get replaced with ``new_text``. For example, this...
+    This :mod:`dataclass <dataclasses>` represents a deletion, insertion or
+    replacing of text in a text widget. For example, this...
     ::
 
         # let's say that text widget contains 'hello world'
@@ -35,17 +33,19 @@ class Change:
 
         Change(start=[1, 0], old_end=[1, 5], new_end=[1, 4], old_text='hello', new_text='toot')
 
-    Insertions are represented with ``Change`` objects having ``old_text_len=0``
+    Insertions are represented with ``Change`` objects with empty ``old_text``
     and the same ``start`` and ``end``. For example,
     ``textwidget.insert('1.0', 'hello')`` corresponds to this ``Change``::
 
         Change(start=[1, 0], old_end=[1, 0], new_end=[1, 5], old_text='', new_text='hello')
 
     For deletions, ``start`` and ``end`` differ and ``new_text`` is empty.
-    If the first line of a text widget contains at least 5 characters, then
-    deleting the first 5 characters looks like this::
+    If the first line of a text widget contains at least 5 characters,
+    say ``'abcde''`, then deleting the first 5 characters looks like this::
 
         Change(start=[1, 0], old_end=[1, 5], new_end=[1, 0], old_text='abcde', new_text='')
+
+    For replacing, both ``old_text`` and ``new_text`` are non-empty.
 
     Technically, ``start=[1, 0]`` is not same as having the change start at
     ``'1.0'``. If there is an embedded window (such as a button widget) at the
@@ -418,7 +418,13 @@ def track_changes(widget: tkinter.Text) -> None:
         a :class:`Changes` object like this::
 
             Changes(change_list=[
-                Change(start=[1, 0], old_end=[1, 5], old_text_len=5, new_text='toot'),
+                Change(
+                    start=[1, 0],
+                    old_end=[1, 5],
+                    new_end=[1, 4],
+                    old_text='hello',
+                    new_text='toot',
+                ),
             ])
 
         The ``<<ContentChanged>>`` event occurs after the text in the text
