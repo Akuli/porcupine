@@ -166,18 +166,14 @@ class TreeSitterHighlighter(BaseHighlighter):
             [change] = changes.change_list
             start_row, start_col = change.start
             old_end_row, old_end_col = change.old_end
-            new_end_row = start_row + change.new_text.count("\n")
-            if "\n" in change.new_text:
-                new_end_col = len(change.new_text.split("\n")[-1])
-            else:
-                new_end_col = start_col + len(change.new_text)
+            new_end_row, new_end_col = change.new_end
 
             start_byte = self.textwidget.tk.call(
                 str(self.textwidget), "count", "-chars", "1.0", f"{start_row}.{start_col}"
             )
             self._tree.edit(
                 start_byte=start_byte,
-                old_end_byte=start_byte + change.old_text_len,
+                old_end_byte=start_byte + len(change.old_text),
                 new_end_byte=start_byte + len(change.new_text),
                 start_point=(start_row - 1, start_col),
                 old_end_point=(old_end_row - 1, old_end_col),
