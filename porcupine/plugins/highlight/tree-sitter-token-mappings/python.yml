@@ -43,6 +43,7 @@ queries:
         ("@") @Token.Name.Decorator
         (identifier)? @Token.Name.Decorator     # @foo
         (attribute)? @Token.Name.Decorator      # @foo.bar
+        (comment)? @recurse
         (call
           function: (identifier)? @Token.Name.Decorator   # @foo()
           function: (attribute)? @Token.Name.Decorator    # @foo.bar()
