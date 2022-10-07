@@ -76,7 +76,7 @@
 #        Configuration for the "tree_sitter" syntax highlighter. The following
 #        file in Porcupine's source code explains this setting in more detail:
 #
-#            porcupine/plugins/highlight/tree-sitter-token-mappings/readme.txt
+#            porcupine/plugins/highlight/tree-sitter-token-mappings/README.md
 #
 #    tabs2spaces (default: true)
 #        If this is true, then spaces will be used for indentation.
