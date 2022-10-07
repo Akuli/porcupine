@@ -15,6 +15,21 @@ queries:
       (token_tree) @recurse
     )
 
+  # Highlight function names when defining them.
+  # Type names are easier because they are type_name nodes in the tree.
+  function_item: |
+    (function_item
+      (visibility_modifier)? @recurse
+      "fn" @recurse
+      name: (_) @Token.Name.Function  # This is the whole reason why this query exists.  TODO is there an easier way?
+      type_parameters: (_)? @recurse
+      parameters: (_) @recurse
+      "->"? @recurse
+      return_type: (_)? @recurse
+      (where_clause)? @recurse
+      body: (_) @recurse
+    )
+
 token_mapping:
   line_comment: Token.Comment
   block_comment: Token.Comment
@@ -26,6 +41,11 @@ token_mapping:
   self: Token.Name.Builtin  # special-cased in compiler, but doesn't feel like a keyword
   pub: Token.Keyword
   async: Token.Keyword
+  await: Token.Keyword
+  move: Token.Keyword
+  static: Token.Keyword
+  extern: Token.Keyword
+  ref: Token.Keyword
   fn: Token.Keyword
   as: Token.Keyword
   in: Token.Keyword
@@ -56,8 +76,9 @@ token_mapping:
   'true': Token.Keyword
   'false': Token.Keyword
 
-  # builtins taken from pygments
+  # builtins mostly taken from pygments
   type_identifier:
+    Self: Token.Name.Builtin  # not in pygments
     Send: Token.Name.Builtin
     Sized: Token.Name.Builtin
     Sync: Token.Name.Builtin
@@ -94,8 +115,10 @@ token_mapping:
     None: Token.Name.Builtin
     Ok: Token.Name.Builtin
     Err: Token.Name.Builtin
+    "": Token.Name.Class  # fallback
 
   identifier:
+    Self: Token.Name.Builtin  # not in pygments
     Send: Token.Name.Builtin
     Sized: Token.Name.Builtin
     Sync: Token.Name.Builtin
