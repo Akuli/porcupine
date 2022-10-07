@@ -41,7 +41,7 @@ class Change:
 
     For deletions, ``start`` and ``end`` differ and ``new_text`` is empty.
     If the first line of a text widget contains at least 5 characters,
-    say ``'abcde''`, then deleting the first 5 characters looks like this::
+    say ``'abcde'`, then deleting the first 5 characters looks like this::
 
         Change(start=[1, 0], old_end=[1, 5], new_end=[1, 0], old_text='abcde', new_text='')
 
