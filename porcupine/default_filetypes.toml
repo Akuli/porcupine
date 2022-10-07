@@ -228,10 +228,9 @@ comment_prefix = '#'
 autoindent_regexes = {indent = '.*:'}
 
 [Cython]
+# mostly copied from [Python]
 filename_patterns = ["*.pyx"]
-pygments_lexer = "pygments.lexers.Python3Lexer"
-syntax_highlighter = "tree_sitter"
-tree_sitter_language_name = "python"
+pygments_lexer = "pygments.lexers.python.CythonLexer"
 tabs2spaces = true
 indent_size = 4
 max_line_length = 79   # pep8 says so, lol
