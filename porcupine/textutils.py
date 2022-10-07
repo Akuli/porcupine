@@ -34,7 +34,7 @@ class Change:
         Change(start=[1, 0], old_end=[1, 5], new_end=[1, 4], old_text='hello', new_text='toot')
 
     Insertions are represented with ``Change`` objects with empty ``old_text``
-    and the same ``start`` and ``end``. For example,
+    and the same ``start`` and ``old_end``. For example,
     ``textwidget.insert('1.0', 'hello')`` corresponds to this ``Change``::
 
         Change(start=[1, 0], old_end=[1, 0], new_end=[1, 5], old_text='', new_text='hello')
