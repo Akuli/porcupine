@@ -45,8 +45,6 @@ class Change:
 
         Change(start=[1, 0], old_end=[1, 5], new_end=[1, 0], old_text='abcde', new_text='')
 
-    For replacing, both ``old_text`` and ``new_text`` are non-empty.
-
     Technically, ``start=[1, 0]`` is not same as having the change start at
     ``'1.0'``. If there is an embedded window (such as a button widget) at the
     beginning of the line, then the text on the line starts at text index
