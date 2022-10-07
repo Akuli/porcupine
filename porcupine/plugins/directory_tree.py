@@ -516,6 +516,7 @@ def setup() -> None:
     tree.bind("<<MenuKey>>", partial(tree._on_right_click, menu_key=True), add=True)
 
     tree.bind("<Key>", tree._cycle_through_items, add=True)
+    tree.bind("<Return>", tree.open_file_or_dir, add=True)
 
 
 # Used in other plugins
