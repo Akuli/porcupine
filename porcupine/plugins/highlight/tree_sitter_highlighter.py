@@ -77,6 +77,9 @@ class TreeSitterHighlighter(BaseHighlighter):
 
         config_value = self._config.token_mapping.get(node.type, default)
         if isinstance(config_value, dict):
+            # Specifying empty string can be used to set a custom fallback when
+            # the text of the node isn't found in the config.
+            default = config_value.get("", default)
             return config_value.get(node.text.decode("utf-8"), default)
         return config_value
 
