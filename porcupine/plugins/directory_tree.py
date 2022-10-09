@@ -518,6 +518,7 @@ def setup() -> None:
     tree.bind("<Key>", tree._cycle_through_items, add=True)
     tree.bind("<Return>", tree.open_file_or_dir, add=True)
 
+
 # Used in other plugins
 def get_directory_tree() -> DirectoryTree:
     return get_horizontal_panedwindow().nametowidget("directory_tree_container.directory_tree")
