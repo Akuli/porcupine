@@ -227,6 +227,16 @@ autocomplete_chars = ["."]
 comment_prefix = '#'
 autoindent_regexes = {indent = '.*:'}
 
+[Cython]
+# mostly copied from [Python]
+filename_patterns = ["*.pyx"]
+pygments_lexer = "pygments.lexers.python.CythonLexer"
+tabs2spaces = true
+indent_size = 4
+max_line_length = 79   # pep8 says so, lol
+comment_prefix = '#'
+autoindent_regexes = {dedent = '(return|raise)( .+)?|break|pass|continue', indent = '.*:'}
+
 [C]
 filename_patterns = ["*.c", "*.h"]
 pygments_lexer = "pygments.lexers.CLexer"
