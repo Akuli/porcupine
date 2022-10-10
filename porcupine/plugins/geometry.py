@@ -28,14 +28,14 @@ def save_geometry() -> bool:
     return True
 
 
-def set_maximized(is_maximized: bool):
-    if not is_maximized:
-        return
-    root = get_main_window()
-    if sys.platform in {"win32", "darwin"}:
-        root.state("zoomed")
-    else:
-        root.attributes("-zoomed", True)
+def set_maximized(is_maximized: bool) -> bool:
+    if is_maximized:
+        root = get_main_window()
+        if sys.platform in {"win32", "darwin"}:
+            root.state("zoomed")
+        else:
+            root.attributes("-zoomed", True)
+    return True
 
 
 def get_maximized() -> bool:
