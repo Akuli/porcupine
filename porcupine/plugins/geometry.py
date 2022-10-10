@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import sys
 
 from porcupine import add_quit_callback, get_main_window
 from porcupine.settings import global_settings
@@ -27,11 +28,39 @@ def save_geometry() -> bool:
     return True
 
 
+def set_maximized(is_maximized: bool):
+    if not is_maximized:
+        return
+    root = get_main_window()
+    if sys.platform in {"win32", "darwin"}:
+        root.state("zoomed")
+    else:
+        root.attributes("-zoomed", True)
+
+
+def get_maximized() -> bool:
+    root = get_main_window()
+    if sys.platform in {"win32", "darwin"}:
+        is_maximized = root.state() == "zoomed"
+    else:
+        is_maximized = bool(root.attributes("-zoomed"))
+    return is_maximized
+
+
+def save_maximized() -> bool:
+    global_settings.set("is_maximized", get_maximized())
+    return True
+
+
 def setup() -> None:
     global_settings.add_option("default_geometry", "650x600")
     add_quit_callback(save_geometry)
+    global_settings.add_option("is_maximized", False)
+    add_quit_callback(save_maximized)
 
     geometry = global_settings.get("default_geometry", str)
     if not geometry_is_within_screen(geometry):
         geometry = geometry.split("+")[0]  # size only, discard location
     get_main_window().geometry(geometry)
+    is_maximized = global_settings.get("is_maximized", bool)
+    set_maximized(is_maximized)
