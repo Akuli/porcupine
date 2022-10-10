@@ -643,7 +643,7 @@ class LangServer:
             content_changes=[
                 lsp.TextDocumentContentChangeEvent(
                     range=lsp.Range(
-                        start=_position_tk2lsp(change.start), end=_position_tk2lsp(change.end)
+                        start=_position_tk2lsp(change.start), end=_position_tk2lsp(change.old_end)
                     ),
                     text=change.new_text,
                 )

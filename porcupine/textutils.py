@@ -21,10 +21,8 @@ if TYPE_CHECKING:
 @dataclasses.dataclass
 class Change:
     r"""
-    This :mod:`dataclass <dataclasses>` represents any change in a
-    :class:`ChangeTrackingText` widget,
-    where ``old_text_len`` characters between the text widget indexes ``start``
-    and ``end`` get replaced with ``new_text``. For example, this...
+    This :mod:`dataclass <dataclasses>` represents a deletion, insertion or
+    replacing of text in a text widget. For example, this...
     ::
 
         # let's say that text widget contains 'hello world'
@@ -33,30 +31,19 @@ class Change:
     \...changes the ``'hello'`` to ``'toot'``, and that's represented by a
     ``Change`` like this::
 
-        Change(start=[1, 0], end=[1, 5], old_text_len=5, new_text='toot')
+        Change(start=[1, 0], old_end=[1, 5], new_end=[1, 4], old_text='hello', new_text='toot')
 
-    Insertions are represented with ``Change`` objects having ``old_text_len=0``
-    and the same ``start`` and ``end``. For example,
+    Insertions are represented with ``Change`` objects with empty ``old_text``
+    and the same ``start`` and ``old_end``. For example,
     ``textwidget.insert('1.0', 'hello')`` corresponds to this ``Change``::
 
-        Change(start=[1, 0], end=[1, 0], old_text_len=0, new_text='hello')
+        Change(start=[1, 0], old_end=[1, 0], new_end=[1, 5], old_text='', new_text='hello')
 
     For deletions, ``start`` and ``end`` differ and ``new_text`` is empty.
-    If the first line of a text widget contains at least 5 characters, then
-    deleting the first 5 characters looks like this::
+    If the first line of a text widget contains at least 5 characters,
+    say ``'abcde'`, then deleting the first 5 characters looks like this::
 
-        Change(start=[1, 0], end=[1, 5], old_text_len=5, new_text='')
-
-    Unlike you might think, the ``old_text_len`` is not redundant. Let's
-    say that the text widget contains ``'toot world'`` and all that is
-    deleted::
-
-        Change(start=[1, 0], end=[1, 10], old_text_len=10, new_text='')
-
-    In this case, ``old_text_len`` happens to be ``10 - 0``, where ``10`` and
-    ``0`` are the column numbers of ``start`` and ``end``. But for changing
-    multiple lines, this doesn't work, because you need to know what exactly
-    was deleted.
+        Change(start=[1, 0], old_end=[1, 5], new_end=[1, 0], old_text='abcde', new_text='')
 
     Technically, ``start=[1, 0]`` is not same as having the change start at
     ``'1.0'``. If there is an embedded window (such as a button widget) at the
@@ -66,8 +53,9 @@ class Change:
     # These should be Tuple[int, int], but they can't be because converting to
     # json and back turns tuples to lists
     start: List[int]
-    end: List[int]
-    old_text_len: int
+    old_end: List[int]
+    new_end: List[int]
+    old_text: str
     new_text: str
 
 
@@ -236,10 +224,20 @@ class _ChangeTracker:
     def _create_change(self, widget: tkinter.Text, start: str, end: str, new_text: str) -> Change:
         start_line = int(start.split(".")[0])
         end_line = int(end.split(".")[0])
+        start_column = count(widget, f"{start_line}.0", start)
+        end_column = count(widget, f"{end_line}.0", end)
+
+        new_end_line = start_line + new_text.count("\n")
+        if "\n" in new_text:
+            new_end_col = len(new_text.rsplit("\n", maxsplit=1)[-1])
+        else:
+            new_end_col = start_column + len(new_text)
+
         return Change(
-            start=[start_line, count(widget, f"{start_line}.0", start)],
-            end=[end_line, count(widget, f"{end_line}.0", end)],
-            old_text_len=len(widget.get(start, end)),
+            start=[start_line, start_column],
+            old_end=[end_line, end_column],
+            new_end=[new_end_line, new_end_col],
+            old_text=widget.get(start, end),
             new_text=new_text,
         )
 
@@ -352,7 +350,7 @@ class _ChangeTracker:
         changes = [
             change
             for change in changes
-            if change.start != change.end or change.old_text_len != 0 or change.new_text
+            if change.start != change.old_end or change.old_text or change.new_text
         ]
 
         if self._change_batch is None:
@@ -418,7 +416,13 @@ def track_changes(widget: tkinter.Text) -> None:
         a :class:`Changes` object like this::
 
             Changes(change_list=[
-                Change(start='1.0', end='1.5', old_text_len=5, new_text='toot'),
+                Change(
+                    start=[1, 0],
+                    old_end=[1, 5],
+                    new_end=[1, 4],
+                    old_text='hello',
+                    new_text='toot',
+                ),
             ])
 
         The ``<<ContentChanged>>`` event occurs after the text in the text
