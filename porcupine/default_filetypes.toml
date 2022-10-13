@@ -421,3 +421,11 @@ tabs2spaces = true
 indent_size = 4
 comment_prefix = '//'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = 'this regex matches nothing^'}
+[[Rust.example_commands]]
+command = "cargo run"
+command = "cargo test"
+command = "cargo build"
+command = "cargo clippy"
+command = "cargo fmt"
+command = "cargo check"
+working_directory = "{project_path}"
