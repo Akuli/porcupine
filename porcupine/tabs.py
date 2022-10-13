@@ -512,6 +512,19 @@ class FileTab(Tab):
         event callbacks run before the file is written, so you can e.g. change
         the encoding setting in a :virtevt:`PathChanged` callback.
 
+    .. virtualevent:: UpdateSettings
+
+        This event tells plugins like :source:`porcupine/plugins/editorconfig.py`
+        and :source:`porcupine/plugins/settings.py` to load their settings into
+        the :attr:`~settings` attribute.
+        It is different from the :virtevt:`TabSettingChanged:foo` events,
+        which run after any setting is changed.
+
+        This event is currently generated in two situations:
+
+            * When a tab's file path changes (e.g. "Save As", or renaming a currently opened file)
+            * When a relevant configuration file (e.g. ``filetypes.toml``) is saved in Porcupine
+
     .. attribute:: settings
         :type: porcupine.settings.Settings
 
@@ -817,6 +830,8 @@ class FileTab(Tab):
         self._path = new_path
         if it_changes:
             self.event_generate("<<PathChanged>>")
+            # TODO: should generate when shebang line is edited
+            self.event_generate("<<UpdateSettings>>")
 
     # TODO: plugin
     def _update_titles(self, junk: object = None) -> None:

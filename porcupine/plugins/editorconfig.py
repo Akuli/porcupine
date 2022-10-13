@@ -180,6 +180,23 @@ def glob_match(glob: str, string: str) -> bool:
     return all(integer in ranke for integer, ranke in zip(integers, ranges))
 
 
+def find_and_parse_relevant_editorconfigs(file_path: Path) -> Iterator[tuple[Path, list[Section]]]:
+    # "When opening a file, EditorConfig plugins look for a file named
+    # .editorconfig in the directory of the opened file and in every parent
+    # directory. A search for .editorconfig files will stop if the root
+    # filepath is reached or ..."
+    for parent in file_path.parents:
+        if not (parent / ".editorconfig").is_file():
+            continue
+
+        sections, is_root = parse_file(parent / ".editorconfig")
+        yield (parent / ".editorconfig", sections)
+        # "A search for .editorconfig files will stop if ... or an EditorConfig
+        # file with root=true is found."
+        if is_root:
+            break
+
+
 def get_config(path: Path) -> dict[str, str]:
     assert path.is_absolute()
 
@@ -187,15 +204,7 @@ def get_config(path: Path) -> dict[str, str]:
     # i.e. every item overrides ones before it
     all_sections: list[Section] = []
 
-    # "When opening a file, EditorConfig plugins look for a file named
-    # .editorconfig in the directory of the opened file and in every parent
-    # directory. A search for .editorconfig files will stop if the root
-    # filepath is reached or ..."
-    for parent in path.parents:
-        if not (parent / ".editorconfig").is_file():
-            continue
-        sections, is_root = parse_file(parent / ".editorconfig")
-
+    for editorconfig_path, sections in find_and_parse_relevant_editorconfigs(path):
         # "Properties from matching EditorConfig sections are applied in the order
         # they were read, so properties in closer files take precedence."
         #
@@ -205,11 +214,6 @@ def get_config(path: Path) -> dict[str, str]:
         # file. That gets parsed first, so anything after that should go to the
         # beginning of all_sections.
         all_sections[0:0] = sections
-
-        # "A search for .editorconfig files will stop if ... or an EditorConfig
-        # file with root=true is found."
-        if is_root:
-            break
 
     result: dict[str, str] = {}
     for section in all_sections:
@@ -351,9 +355,16 @@ def get_config_and_apply_to_tab(tab: tabs.FileTab, junk: object = None) -> None:
         apply_config(get_config(tab.path), tab)
 
 
+def trigger_update_if_relevant_editorconfig_saved(saved_tab: tabs.FileTab, junk: object) -> None:
+    for tab in get_tab_manager().tabs():
+        if isinstance(tab, tabs.FileTab) and tab.path is not None and saved_tab.path in (path for path, _ in find_and_parse_relevant_editorconfigs(tab.path)):
+            # This tab is affected by an editorconfig file that was just saved
+            tab.event_generate("<<UpdateSettings>>")
+
 def on_new_filetab(tab: tabs.FileTab) -> None:
     get_config_and_apply_to_tab(tab)
-    tab.bind("<<PathChanged>>", partial(get_config_and_apply_to_tab, tab), add=True)
+    tab.bind("<<UpdateSettings>>", partial(get_config_and_apply_to_tab, tab), add=True)
+    tab.bind("<<AfterSave>>", partial(trigger_update_if_relevant_editorconfig_saved, tab), add=True)
 
 
 def setup() -> None:

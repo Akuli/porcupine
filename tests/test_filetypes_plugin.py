@@ -1,4 +1,5 @@
 import logging
+import os
 import pickle
 import shutil
 import sys
@@ -6,8 +7,10 @@ from pathlib import Path
 from tkinter import filedialog
 
 import pytest
+from pygments.lexer import LexerMeta
+from pygments.lexers import JsonLexer, RustLexer, TextLexer
 
-from porcupine import dirs, filedialog_kwargs, get_main_window
+from porcupine import dirs, filedialog_kwargs, get_main_window, menubar
 from porcupine.plugins import filetypes
 
 
@@ -34,13 +37,11 @@ settings = {clangd = {arguments = ["-std=c++17"]}}
     )
     filetypes.filetypes.clear()
     filetypes.load_filetypes()
-    filetypes.set_filedialog_kwargs()
 
     yield
     user_filetypes.unlink()
     filetypes.filetypes.clear()
     filetypes.load_filetypes()
-    filetypes.set_filedialog_kwargs()
 
 
 def test_filedialog_patterns_got_stripped():
@@ -123,6 +124,43 @@ def test_settings_reset_when_filetype_changes(filetab, tmp_path):
     assert filetab.settings.get("comment_prefix", object) is None
     assert filetab.settings.get("langserver", object) is None
     assert len(filetab.settings.get("example_commands", object)) == 0
+
+
+@pytest.fixture
+def filetypes_toml_filetab(tabmanager):
+    tab = tabmanager.open_file(Path(dirs.user_config_dir) / "filetypes.toml")
+    yield tab
+    tabmanager.close_tab(tab)
+
+
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true" and sys.platform != "linux",
+    reason="fails CI on windows and macos, but passes locally",
+)
+def test_saving_filetypes_toml_reloads_filetypes(
+    filetab, filetypes_toml_filetab, tabmanager, tmp_path
+):
+    filetypes_toml_filetab.textwidget.insert(
+        "end",
+        "[Foo]\nfilename_patterns = ['*.foo']\npygments_lexer = 'pygments.lexers.RustLexer'\n",
+    )
+    filetypes_toml_filetab.textwidget.edit_separator()
+    filetab.save_as(tmp_path / "asd.foo")
+    assert filetab.settings.get("pygments_lexer", LexerMeta) is TextLexer  # default
+
+    filetypes_toml_filetab.save()
+    assert filetab.settings.get("pygments_lexer", LexerMeta) is RustLexer
+
+    filetypes_toml_filetab.textwidget.edit_undo()
+    filetypes_toml_filetab.save()
+    assert filetab.settings.get("pygments_lexer", LexerMeta) is TextLexer
+
+    # If user sets custom filetype, respect that
+    tabmanager.select(filetab)
+    menubar.get_menu("Filetypes").invoke("JSON")
+    filetypes_toml_filetab.textwidget.edit_redo()
+    filetypes_toml_filetab.save()
+    assert filetab.settings.get("pygments_lexer", LexerMeta) is JsonLexer
 
 
 def test_merging_settings():
