@@ -1,3 +1,9 @@
+"""An interactive Python prompt in the Porcupine process, accessible from the "Run" menu.
+
+This plugin is somewhat buggy and annoying to use, but it's still occasionally
+useful when developing Porcupine.
+"""
+
 import contextlib
 import io
 import queue
