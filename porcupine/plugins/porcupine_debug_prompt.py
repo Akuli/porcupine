@@ -25,7 +25,7 @@ class PromptTab(tabs.Tab):
         self.textwidget.pack(side='left', fill='both', expand=True)
         self.textwidget.mark_set('output_end', 'end')
         self.textwidget.mark_gravity('output_end', 'left')
-        self.show('>>> ')
+        self.show('>>> from porcupine import *\n>>> ')
         try:
             textutils.use_pygments_theme(self.textwidget)
         except AttributeError:
