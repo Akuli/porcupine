@@ -10,9 +10,9 @@ This plugin is somewhat buggy and annoying to use, but it's still occasionally
 useful when developing Porcupine.
 """
 
+from __future__ import annotations
 import contextlib
 import io
-import queue
 import tkinter
 import traceback
 from tkinter import ttk
@@ -28,7 +28,7 @@ class PromptTab(tabs.Tab):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.title_choices = ["Porcupine Debug Prompt"]
-        self.namespace = {}
+        self.namespace: dict[str, Any] = {}
         exec("from porcupine import *", self.namespace)
 
         self.textwidget = tkinter.Text(self, width=1, height=1)
@@ -36,23 +36,17 @@ class PromptTab(tabs.Tab):
         self.textwidget.mark_set("output_end", "end")
         self.textwidget.mark_gravity("output_end", "left")
         self.show(">>> from porcupine import *\n>>> ")
-        try:
-            textutils.use_pygments_theme(self.textwidget)
-        except AttributeError:
-            textutils.use_pygments_tags(self.textwidget)
+        textutils.use_pygments_tags(self.textwidget)
 
         self.scrollbar = ttk.Scrollbar(self)
         self.scrollbar.pack(side="left", fill="y")
         self.textwidget.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.textwidget.yview)
 
-        self.to_interpreter_queue = queue.Queue()
-        self.from_interpreter_queue = queue.Queue()
-        self.bind("<Destroy>", (lambda event: self.to_interpreter_queue.put(None)), add=True)
         self.bind("<<TabSelected>>", (lambda event: self.textwidget.focus()), add=True)
         self.textwidget.bind("<Return>", self.on_enter_key, add=True)
 
-    def show(self, string):
+    def show(self, string: str) -> None:
         self.textwidget.insert("end - 1 char", string)
         self.textwidget.mark_set("output_end", "end - 1 char")
         self.textwidget.mark_set("insert", "end - 1 char")
@@ -61,7 +55,7 @@ class PromptTab(tabs.Tab):
     def on_focus(self) -> None:
         self.textwidget.focus_set()
 
-    def on_enter_key(self, event=None) -> None:
+    def on_enter_key(self, event: object = None) -> str:
         code_string = self.textwidget.get("output_end", "end - 1 char")
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
