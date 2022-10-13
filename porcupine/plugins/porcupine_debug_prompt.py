@@ -1,5 +1,11 @@
 """An interactive Python prompt in the Porcupine process, accessible from the "Run" menu.
 
+Unlike a normal ">>>" prompt, the one here lets you run commands that affect
+the current Porcupine instance. You can e.g. access the opened tabs.
+For example, this sets the color of the last tab:
+
+    >>> get_tab_manager().tabs()[-1].textwidget['bg'] = 'green'
+
 This plugin is somewhat buggy and annoying to use, but it's still occasionally
 useful when developing Porcupine.
 """
