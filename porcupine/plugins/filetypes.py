@@ -6,6 +6,7 @@ import fnmatch
 import logging
 import re
 import sys
+import tkinter
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -141,9 +142,9 @@ def guess_filetype_from_path(filepath: Path) -> FileType | None:
             name: filetype
             for name, filetype in filetypes.items()
             if any(
-                fnmatch.fnmatch(filepath.as_posix(), "*/" + pat)
-                for pat in filetype["filename_patterns"]
-            )
+            fnmatch.fnmatch(filepath.as_posix(), "*/" + pat)
+            for pat in filetype["filename_patterns"]
+        )
         },
         str(filepath),
     )
@@ -252,6 +253,20 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
+filetypes_var: tkinter.StringVar | None = None
+
+
+def _sync_filetypes_menu(event: object) -> None:
+    tab = get_tab_manager().select()
+    if isinstance(tab, tabs.FileTab) and tab.path is not None:
+        try:
+            filetype_name = tab.settings.get('filetype_name', str)
+            if filetypes_var and filetype_name:
+                filetypes_var.set(filetype_name)
+        except KeyError:
+            pass
+
+
 def setup() -> None:
     global_settings.add_option("default_filetype", "Python")
 
@@ -264,13 +279,13 @@ def setup() -> None:
         values=sorted(filetypes.keys(), key=str.casefold),
     )
     set_filedialog_kwargs()
-
+    global filetypes_var
+    filetypes_var = tkinter.StringVar()
     for name in sorted(filetypes.keys(), key=str.casefold):
         escaped_name = name.replace("/", "//")  # doesn't work in all corner cases
-        menubar.add_filetab_command(
-            f"Filetypes/{escaped_name}", partial(apply_filetype_to_tab, filetypes[name])
-        )
+        menubar.add_filetype_menuitem(escaped_name, partial(apply_filetype_to_tab, filetypes[name]), filetypes_var)
 
+    get_tab_manager().bind("<<NotebookTabChanged>>", _sync_filetypes_menu, add=True)
     path = Path(dirs.user_config_dir) / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
     menubar.add_config_file_button(path, menu="Filetypes")

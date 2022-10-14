@@ -358,6 +358,11 @@ def add_filetab_command(
     set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
 
 
+def add_filetype_menuitem(label: str, func: Callable[[tabs.FileTab], object], tk_var: tkinter.StringVar) -> None:
+    get_menu('Filetypes').add_radiobutton(label=f"{label}",
+                                          command=lambda: func(_get_filetab()),
+                                          variable=tk_var)
+
 # TODO: pluginify?
 def _fill_menus_with_default_stuff() -> None:
     # Make sure to get the order of menus right:
