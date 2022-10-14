@@ -9,7 +9,7 @@ import sys
 import tkinter
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict, Optional
 
 import tomli
 from pygments import lexers
