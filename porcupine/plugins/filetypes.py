@@ -258,12 +258,15 @@ filetypes_var: tkinter.StringVar
 
 def _sync_filetypes_menu(event: object) -> None:
     tab = get_tab_manager().select()
+
     if isinstance(tab, tabs.FileTab):
         try:
             filetype_name = tab.settings.get("filetype_name", str)
-            if filetypes_var and filetype_name:
-                filetypes_var.set(filetype_name)
         except KeyError:
+            filetype_name = get_filetype_for_tab(tab).get("filetype_name")
+        if filetypes_var and filetype_name:
+            filetypes_var.set(filetype_name)
+        else:
             filetypes_var.set("")
     else:
         filetypes_var.set("")
