@@ -233,6 +233,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("filetype_name", None, type_=Optional[str])
     on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
+    _sync_filetypes_menu()
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
@@ -256,20 +257,19 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
 filetypes_var: tkinter.StringVar
 
 
-def _sync_filetypes_menu(event: object) -> None:
+def _sync_filetypes_menu(event: object = None) -> None:
     tab = get_tab_manager().select()
 
     if isinstance(tab, tabs.FileTab):
         try:
-            filetype_name = tab.settings.get("filetype_name", str)
+            filetype_name: str = tab.settings.get("filetype_name", str)
         except KeyError:
-            filetype_name = get_filetype_for_tab(tab).get("filetype_name")
-        if filetypes_var and filetype_name:
+            filetype_name = ""
+        if filetypes_var:
             filetypes_var.set(filetype_name)
-        else:
-            filetypes_var.set("")
     else:
-        filetypes_var.set("")
+        if filetypes_var:
+            filetypes_var.set("")
 
 
 def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
