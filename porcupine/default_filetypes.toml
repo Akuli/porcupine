@@ -423,9 +423,19 @@ comment_prefix = '//'
 autoindent_regexes = {dedent = '(return( .+)?|break|continue);', indent = 'this regex matches nothing^'}
 [[Rust.example_commands]]
 command = "cargo run"
+working_directory = "{project_path}"
+[[Rust.example_commands]]
 command = "cargo test"
+working_directory = "{project_path}"
+[[Rust.example_commands]]
 command = "cargo build"
+working_directory = "{project_path}"
+[[Rust.example_commands]]
 command = "cargo clippy"
+working_directory = "{project_path}"
+[[Rust.example_commands]]
 command = "cargo fmt"
+working_directory = "{project_path}"
+[[Rust.example_commands]]
 command = "cargo check"
 working_directory = "{project_path}"
