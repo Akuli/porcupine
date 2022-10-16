@@ -295,7 +295,7 @@ def set_enabled_based_on_tab(
     return update_enabledness
 
 
-def _get_filetab() -> tabs.FileTab:
+def get_filetab() -> tabs.FileTab:
     tab = get_tab_manager().select()
     assert isinstance(tab, tabs.FileTab)
     return tab
@@ -349,9 +349,9 @@ def add_filetab_command(
     but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
     """
     if func is None:
-        command = lambda: _get_filetab().event_generate(f"<<FiletabCommand:{path}>>")
+        command = lambda: get_filetab().event_generate(f"<<FiletabCommand:{path}>>")
     else:
-        command = lambda: func(_get_filetab())  # type: ignore
+        command = lambda: func(get_filetab())  # type: ignore
 
     menu_path, item_text = _split_parent(path)
     get_menu(menu_path).add_command(label=item_text, command=command, **kwargs)
