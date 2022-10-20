@@ -32,7 +32,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar, cast
 
 import dacite
 
@@ -130,6 +130,75 @@ def find_project_root(project_file_path: Path) -> Path:
 # https://github.com/python/typing/issues/769
 def _copy_type(f: _T) -> Callable[[Any], _T]:
     return lambda x: x
+
+
+class _TooltipManager:
+
+    # This needs to be shared by all instances because there's only one
+    # mouse pointer.
+    tipwindow: tkinter.Toplevel | None = None
+
+    def __init__(self, widget: tkinter.Widget, text: str) -> None:
+        widget.bind("<Enter>", self.enter, add=True)
+        widget.bind("<Leave>", self.leave, add=True)
+        widget.bind("<Motion>", self.motion, add=True)
+        self.widget = widget
+        self.got_mouse = False
+        self.text = text  # can be changed after creating tooltip manager
+
+    @classmethod
+    def destroy_tipwindow(cls, junk_event: tkinter.Event[tkinter.Misc] | None = None) -> None:
+        if cls.tipwindow is not None:
+            cls.tipwindow.destroy()
+            cls.tipwindow = None
+
+    def enter(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        # For some reason, toplevels get also notified of their
+        # childrens' events.
+        if event.widget is self.widget:
+            self.destroy_tipwindow()
+            self.got_mouse = True
+            self.widget.after(1000, self.show)
+
+    def leave(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        if event.widget is self.widget:
+            self.destroy_tipwindow()
+            self.got_mouse = False
+
+    def motion(self, event: tkinter.Event[tkinter.Misc]) -> None:
+        self.mousex = event.x_root
+        self.mousey = event.y_root
+
+    def show(self) -> None:
+        if self.got_mouse:
+            self.destroy_tipwindow()
+            tipwindow = type(self).tipwindow = tkinter.Toplevel()
+            tipwindow.geometry(f"+{self.mousex + 10}+{self.mousey - 10}")
+            tipwindow.bind("<Motion>", self.destroy_tipwindow, add=True)
+            tipwindow.overrideredirect(True)
+
+            # If you modify this, make sure to always define either no
+            # colors at all or both foreground and background. Otherwise
+            # the label will have light text on a light background or
+            # dark text on a dark background on some systems.
+            tkinter.Label(tipwindow, text=self.text, border=3, fg="black", bg="white").pack()
+
+
+def set_tooltip(widget: tkinter.Widget, text: str) -> None:
+    """A simple tooltip implementation with tkinter.
+
+    After calling ``set_tooltip(some_widget, "hello")``, "hello" will be
+    displayed in a small window when the user moves the mouse over the
+    widget and waits for 1 second.
+
+    """
+    try:
+        manager: _TooltipManager = cast(Any, widget)._tooltip_manager
+    except AttributeError:
+        cast(Any, widget)._tooltip_manager = _TooltipManager(widget, text)
+        return
+    manager.text = text
+    manager.show()
 
 
 class PanedWindow(tkinter.PanedWindow):
