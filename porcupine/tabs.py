@@ -187,10 +187,7 @@ class TabManager(ttk.Notebook):
             existing_tab.textwidget.focus()
             return existing_tab
 
-        if not tab.reload(undoable=False):
-            self.close_tab(tab)
-            return None
-
+        tab.reload(undoable=False)
         tab.textwidget.mark_set("insert", "1.0")
         return tab
 
@@ -455,8 +452,16 @@ def _import_lexer_class(name: str) -> LexerMeta:
 
 
 @dataclasses.dataclass
+class ReloadErrorInfo(utils.EventDataclass):
+    message: str
+    is_encoding_error: bool  # If false, reading the bytes from the file failed
+
+
+# TODO: document <<Reloaded>>
+@dataclasses.dataclass
 class ReloadInfo(utils.EventDataclass):
     had_unsaved_changes: bool
+    error: Optional[ReloadErrorInfo]
 
 
 # Runs in O(n) time where n = max(old_content.count('\n'), new_content.count('\n'))
@@ -642,8 +647,6 @@ class FileTab(Tab):
         )
         self._update_titles()
 
-        self._previous_reload_failed = False
-
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
 
@@ -687,46 +690,25 @@ class FileTab(Tab):
         assert self.textwidget["state"] == "normal"
         self.textwidget.config(state="disabled")
 
-        while True:
-            try:
-                with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
-                    stat_result = os.fstat(f.fileno())
-                    content = f.read()
-                break
-
-            except OSError as e:
-                if self._previous_reload_failed:
-                    # Do not spam user with errors (not terminal either)
-                    log.info(f"opening '{self.path}' failed", exc_info=True)
-                else:
-                    log.exception(f"opening '{self.path}' failed")
-                    wanna_retry = messagebox.askretrycancel(
-                        "Opening failed",
-                        f"{type(e).__name__}: {e}",
-                        detail="Make sure that the file exists and try again.",
-                    )
-                    if wanna_retry:
-                        continue
-
-            except UnicodeDecodeError:
-                bad_encoding = self.settings.get("encoding", str)
-                user_selected_encoding = utils.ask_encoding(
-                    f'The content of "{self.path}" is not valid {bad_encoding}. Choose an encoding'
-                    " to use instead:",
-                    bad_encoding,
-                )
-                if user_selected_encoding is not None:
-                    self.settings.set("encoding", user_selected_encoding)
-                    continue  # try again
-
-            # Error message shown if needed, let user continue editing
+        try:
+            with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
+                stat_result = os.fstat(f.fileno())
+                content = f.read()
+        except (OSError, UnicodeError) as e:
+            log.info("reload failed", exc_info=True)
+            self.event_generate(
+                "<<Reloaded>>",
+                data=ReloadInfo(
+                    had_unsaved_changes=self.has_unsaved_changes(),
+                    error=ReloadErrorInfo(message=str(e), is_encoding_error=isinstance(e, UnicodeError)),
+                ),
+            )
             self.textwidget.config(state="normal")
-            self._previous_reload_failed = True
             self._set_saved_state((None, -1, "dummy hash"))  # Do not consider file saved
             return False
 
         if isinstance(f.newlines, tuple):
-            # TODO: show a message box to user?
+            # TODO: show a message box to user or something?
             log.warning(f"file '{self.path}' contains mixed line endings: {f.newlines}")
         elif f.newlines is not None:
             assert isinstance(f.newlines, str)
@@ -745,10 +727,9 @@ class FileTab(Tab):
             self.textwidget.edit_reset()
 
         self._set_saved_state((stat_result, self._get_char_count(), self._get_hash()))
-
-        # TODO: document this
-        self.event_generate("<<Reloaded>>", data=ReloadInfo(had_unsaved_changes=was_unsaved))
-        self._previous_reload_failed = False
+        self.event_generate(
+            "<<Reloaded>>", data=ReloadInfo(had_unsaved_changes=was_unsaved, error=None)
+        )
         return True
 
     def other_program_changed_file(self) -> bool:
@@ -759,8 +740,10 @@ class FileTab(Tab):
         is e.g. saved or reloaded.
         """
         save_stat, save_char_count, save_hash = self._saved_state
-        if self.path is None or save_stat is None:
+        if self.path is None:
             return False
+        if save_stat is None:
+            return True
 
         try:
             # We could just reading the contents of the file, but it can often be avoided.
@@ -917,7 +900,9 @@ class FileTab(Tab):
         if self.path is None:
             return self.save_as()
 
-        if self.other_program_changed_file() and not self._previous_reload_failed:
+        # TODO
+        # if self.other_program_changed_file() and not self._previous_reload_failed:
+        if self.other_program_changed_file():
             user_is_sure = messagebox.askyesno(
                 "File changed",
                 f"Another program has changed {self.path.name}. Are you sure you want to save it?",
