@@ -263,5 +263,3 @@ def create_dialog() -> tuple[tkinter.Toplevel, PluginDialogContent]:
     return (dialog, content)  # content returned for tests
 
 
-def setup() -> None:
-    menubar.get_menu("Settings").add_command(label="Plugin Manager", command=show_dialog)
