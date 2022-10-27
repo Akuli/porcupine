@@ -6,6 +6,7 @@ import fnmatch
 import logging
 import re
 import sys
+import tkinter
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -232,6 +233,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("filetype_name", None, type_=Optional[str])
     on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
+    _sync_filetypes_menu()
 
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
@@ -252,6 +254,29 @@ def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
+filetypes_var: tkinter.StringVar
+
+
+def _sync_filetypes_menu(event: object = None) -> None:
+    tab = get_tab_manager().select()
+    filetype_name: str = ""
+    if isinstance(tab, tabs.FileTab):
+        try:
+            filetype_name = tab.settings.get("filetype_name", str)
+        except KeyError:
+            pass
+
+    filetypes_var.set(filetype_name)
+
+
+def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
+    menubar.get_menu("Filetypes").add_radiobutton(
+        label=name,
+        command=lambda: apply_filetype_to_tab(filetypes[name], menubar.get_filetab()),
+        variable=tk_var,
+    )
+
+
 def setup() -> None:
     global_settings.add_option("default_filetype", "Python")
 
@@ -264,13 +289,12 @@ def setup() -> None:
         values=sorted(filetypes.keys(), key=str.casefold),
     )
     set_filedialog_kwargs()
-
+    global filetypes_var
+    filetypes_var = tkinter.StringVar()
     for name in sorted(filetypes.keys(), key=str.casefold):
-        escaped_name = name.replace("/", "//")  # doesn't work in all corner cases
-        menubar.add_filetab_command(
-            f"Filetypes/{escaped_name}", partial(apply_filetype_to_tab, filetypes[name])
-        )
+        _add_filetype_menuitem(name, filetypes_var)
 
+    get_tab_manager().bind("<<NotebookTabChanged>>", _sync_filetypes_menu, add=True)
     path = Path(dirs.user_config_dir) / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
     menubar.add_config_file_button(path, menu="Filetypes")

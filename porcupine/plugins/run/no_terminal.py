@@ -273,10 +273,13 @@ class NoTerminalRunner:
         self.pause_button = ttk.Label(button_frame, image=images.get("pause"), cursor="hand2")
         if sys.platform != "win32":
             self.pause_button.pack(side="left", padx=1)
+        utils.set_tooltip(self.pause_button, "Pause execution")
         self.stop_button = ttk.Label(button_frame, image=images.get("stop"), cursor="hand2")
         self.stop_button.pack(side="left", padx=1)
+        utils.set_tooltip(self.stop_button, "Kill Process")
         self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"), cursor="hand2")
         self.hide_button.pack(side="left", padx=1)
+        utils.set_tooltip(self.hide_button, "Hide output")
 
     def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
@@ -288,10 +291,13 @@ class NoTerminalRunner:
                 self.executor.send_signal(signal.SIGCONT)
                 self.executor.paused = False
                 self.pause_button.configure(image=images.get("pause"))
+                utils.set_tooltip(self.pause_button, "Pause execution")
+
             else:
                 self.executor.send_signal(signal.SIGSTOP)
                 self.executor.paused = True
                 self.pause_button.configure(image=images.get("resume"))
+                utils.set_tooltip(self.pause_button, "Resume execution")
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None

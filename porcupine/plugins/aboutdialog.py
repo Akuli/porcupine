@@ -95,6 +95,7 @@ You can install plugins to [{plugins.__path__[0]}]().
 
     label = ttk.Label(content_frame, image=images.get("logo-200x200"), cursor="hand2")
     label.pack(anchor="e")
+    utils.set_tooltip(label, "Click to view in full size")
     label.bind("<Button-1>", show_huge_logo, add=True)
 
     dialog.update()  # make sure that the winfo stuff works
