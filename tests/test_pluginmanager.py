@@ -1,7 +1,7 @@
 import pytest
 
 from porcupine import pluginloader
-from porcupine.plugins.pluginmanager import create_dialog
+from porcupine.pluginmanager import create_dialog
 
 
 @pytest.fixture

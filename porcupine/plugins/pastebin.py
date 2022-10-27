@@ -104,7 +104,7 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
 
     # https://github.com/python/mypy/issues/10049
     @property  # type: ignore
-    def sock(self) -> socket.socket | ssl.SSLSocket:  
+    def sock(self) -> socket.socket | ssl.SSLSocket:
         return self.__sock
 
     @sock.setter
