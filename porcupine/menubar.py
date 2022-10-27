@@ -427,7 +427,7 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))
 
     get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
-    get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
+    get_menu("Settings").add_command(label="Plugin Settings", command=settings.show_dialog)
 
     def add_link(menu_path: str, label: str, url: str) -> None:
         get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))
