@@ -450,4 +450,3 @@ def _fill_menus_with_default_stuff() -> None:
         "https://github.com/Akuli/python-tutorial/blob/master/README.md",
     )
     add_link("Help/Python", "Official documentation", "https://docs.python.org/")
-
