@@ -16,7 +16,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import pluginmanager, settings, tabs, utils
+from porcupine import settings, tabs, utils
 from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
 from porcupine.settings import global_settings
 
