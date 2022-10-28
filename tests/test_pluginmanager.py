@@ -40,5 +40,3 @@ def test_enable_disable_multiple(dialog_content):
     assert get_states() == ("normal", "normal")
     dialog_content.enable_button.invoke()
     assert get_states() == ("disabled", "normal")
-
-
