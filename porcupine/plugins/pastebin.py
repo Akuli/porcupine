@@ -102,7 +102,8 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
         super().__init__(*args, **kwargs)
         self._dpaste = dpaste
 
-    # https://github.com/python/mypy/issues/10049
+    # Type ignore needed, because the sock is temporarily non-SSL socket while
+    # constructing the connection, and the types don't reflect that.
     @property  # type: ignore
     def sock(self) -> socket.socket | ssl.SSLSocket:
         return self.__sock
