@@ -7,10 +7,10 @@ import logging
 import re
 import tkinter
 from functools import partial
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import List
 
-from porcupine import get_main_window, pluginloader, settings, textutils, utils
+from porcupine import get_main_window, pluginloader, textutils, utils
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
