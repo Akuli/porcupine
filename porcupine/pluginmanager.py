@@ -215,18 +215,6 @@ class PluginDialogContent:
     def _set_enabled(self, they_become_enabled: bool) -> None:
         infos = self._get_selected_infos()
 
-        if (
-            "pluginmanager" in (i.name for i in infos)
-            and not they_become_enabled
-            and not messagebox.askokcancel(
-                "Disable the plugin manager",
-                "Do you really want to disable this plugin manager? You will need to reset"
-                f" Porcupine's settings or edit {settings.get_json_path()} to get it back.",
-                parent=self.content_frame.winfo_toplevel(),
-            )
-        ):
-            return
-
         disabled = set(global_settings.get("disabled_plugins", List[str]))
         if they_become_enabled:
             disabled -= {info.name for info in infos}
