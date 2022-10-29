@@ -16,7 +16,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
-from porcupine import settings, tabs, utils
+from porcupine import pluginmanager, settings, tabs, utils
 from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
 from porcupine.settings import global_settings
 
@@ -427,6 +427,7 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))
 
     get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
+    get_menu("Settings").add_command(label="Plugin Manager", command=pluginmanager.show_dialog)
 
     def add_link(menu_path: str, label: str, url: str) -> None:
         get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))

@@ -7,10 +7,10 @@ import logging
 import re
 import tkinter
 from functools import partial
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import List
 
-from porcupine import get_main_window, menubar, pluginloader, settings, textutils, utils
+from porcupine import get_main_window, pluginloader, textutils, utils
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -215,18 +215,6 @@ class PluginDialogContent:
     def _set_enabled(self, they_become_enabled: bool) -> None:
         infos = self._get_selected_infos()
 
-        if (
-            "pluginmanager" in (i.name for i in infos)
-            and not they_become_enabled
-            and not messagebox.askokcancel(
-                "Disable the plugin manager",
-                "Do you really want to disable this plugin manager? You will need to reset"
-                f" Porcupine's settings or edit {settings.get_json_path()} to get it back.",
-                parent=self.content_frame.winfo_toplevel(),
-            )
-        ):
-            return
-
         disabled = set(global_settings.get("disabled_plugins", List[str]))
         if they_become_enabled:
             disabled -= {info.name for info in infos}
@@ -261,7 +249,3 @@ def create_dialog() -> tuple[tkinter.Toplevel, PluginDialogContent]:
     dialog.geometry(f"{DIALOG_WIDTH}x{DIALOG_HEIGHT}")
     dialog.minsize(DIALOG_WIDTH, DIALOG_HEIGHT)
     return (dialog, content)  # content returned for tests
-
-
-def setup() -> None:
-    menubar.get_menu("Settings").add_command(label="Plugin Manager", command=show_dialog)
