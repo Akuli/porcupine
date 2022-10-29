@@ -67,7 +67,7 @@ Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
 
-  ; see #382
+  ; see #328
   DetailPrint "Deleting $INSTDIR\Python..."
   SetDetailsPrint textonly
   RMDir /r "$INSTDIR\Python"
