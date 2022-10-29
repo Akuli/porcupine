@@ -67,7 +67,12 @@ Section "!Porcupine" sec_app
   SetRegView 64
   SectionIn RO
 
-  RMDir /r "$INSTDIR\Python"  ; see #328
+  ; see #382
+  DetailPrint "Deleting $INSTDIR\Python..."
+  SetDetailsPrint textonly
+  RMDir /r "$INSTDIR\Python"
+  SetDetailsPrint both
+
   SetOutPath "$INSTDIR\Python"
   File /r "python-first\*.*"
 
@@ -135,8 +140,11 @@ Section "Uninstall"
   ${EndIf}
 
   ; Deleting the whole $INSTDIR is not safe https://nsis.sourceforge.io/Reference/RMDir
+  DetailPrint "Deleting $INSTDIR\lib and $INSTDIR\Python..."
+  SetDetailsPrint textonly
   RMDir /r "$INSTDIR\lib"
   RMDir /r "$INSTDIR\Python"
+  SetDetailsPrint both
   Delete "$INSTDIR\_user_install_marker"
   Delete "$INSTDIR\launch.pyw"
   Delete "$INSTDIR\uninstall.exe"
