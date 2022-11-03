@@ -58,6 +58,17 @@ def init(args: Any) -> None:
     log.debug("root window created")
     log.debug("Tcl/Tk version: " + root.tk.eval("info patchlevel"))
 
+    if root.tk.call("tk", "appname", "porcu") != "porcu":
+        try:
+            root.send("porcu", "open_files", args.files)
+        except tkinter.TclError:
+            # `open_files` doesn't exists (yet)
+            # open the files in a new Porcupine instance
+            pass
+        else:
+            root.quit()
+            sys.exit()
+
     root.protocol("WM_DELETE_WINDOW", quit)
 
     # Don't set up custom error handler while testing https://stackoverflow.com/a/58866220

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import Iterable
 
 from porcupine import __version__ as porcupine_version
 from porcupine import (
@@ -27,6 +30,28 @@ Examples:
   %(prog)s --no-plugins       # understand the power of plugins
   %(prog)s -v                 # produce lots of output for debugging
 """
+
+
+def open_files(files: Iterable[str]) -> None:
+    tabmanager = get_tab_manager()
+    for path_string in files:
+        if path_string == "-":
+            # don't close stdin so it's possible to do this:
+            #
+            #   $ porcu - -
+            #   bla bla bla
+            #   ^D
+            #   bla bla
+            #   ^D
+            tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
+        else:
+            tabmanager.open_file(Path(path_string))
+
+
+def open_files_from_tk_send(*files: str) -> None:
+    open_files(files)
+    get_main_window().deiconify()
+    get_main_window().lift()
 
 
 def main() -> None:
@@ -137,23 +162,13 @@ def main() -> None:
     # Prevent showing up a not-ready-yet root window to user
     get_main_window().withdraw()
 
+    get_main_window().createcommand("open_files", open_files_from_tk_send)
+
     settings.init_the_rest_after_initing_enough_for_using_disabled_plugins_list()
     menubar._init()
     pluginloader.run_setup_functions(args.shuffle_plugins)
 
-    tabmanager = get_tab_manager()
-    for path_string in args.files:
-        if path_string == "-":
-            # don't close stdin so it's possible to do this:
-            #
-            #   $ porcu - -
-            #   bla bla bla
-            #   ^D
-            #   bla bla
-            #   ^D
-            tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
-        else:
-            tabmanager.open_file(Path(path_string))
+    open_files(args.files)
 
     get_main_window().deiconify()
     try:
