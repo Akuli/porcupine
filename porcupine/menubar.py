@@ -428,6 +428,7 @@ def _fill_menus_with_default_stuff() -> None:
         label="Reset Font Size", command=partial(change_font_size, "reset")
     )
     get_menu("View/Focus").add_command(label="Active file", command=focus_active_tab)
+    set_enabled_based_on_tab("View/Focus/Active file", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Bigger Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Smaller Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))
