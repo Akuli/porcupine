@@ -389,6 +389,11 @@ def _fill_menus_with_default_stuff() -> None:
         if tab.can_be_closed():
             get_tab_manager().close_tab(tab)
 
+    def focus_active_tab() -> None:
+        tab = get_tab_manager().select()
+        if tab is not None:
+            tab.event_generate("<<TabSelected>>")
+
     get_menu("File").add_command(label="New File", command=new_file)
     get_menu("File").add_command(label="Open", command=open_files)
     get_menu("File").add_command(label="Save", command=partial(save_file, False))
@@ -422,6 +427,8 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("View").add_command(
         label="Reset Font Size", command=partial(change_font_size, "reset")
     )
+    get_menu("View/Focus").add_command(label="Active file", command=focus_active_tab)
+    set_enabled_based_on_tab("View/Focus/Active file", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Bigger Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Smaller Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))
