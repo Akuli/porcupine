@@ -299,6 +299,12 @@ class NoTerminalRunner:
                 self.pause_button.configure(image=images.get("resume"))
                 utils.set_tooltip(self.pause_button, "Resume execution")
 
+    def focus(self, junk: object = None) -> None:
+        is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
+        if is_hidden:
+            get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=False)
+        self.textwidget.focus()
+
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
 
@@ -360,6 +366,7 @@ def setup() -> None:
     runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
     runner.pause_button.bind("<Button-1>", runner.pause_resume_executor, add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
+    menubar.get_menu("Run").add_command(label="Focus output", command=runner.focus)
     if sys.platform != "win32":
         menubar.get_menu("Run").add_command(
             label="Pause/resume process", command=runner.pause_resume_executor

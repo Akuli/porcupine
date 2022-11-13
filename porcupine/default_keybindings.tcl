@@ -28,9 +28,11 @@ event add "<<Menubar:File/Quit>>" <$control_ish-q>
 event add "<<Menubar:View/Bigger Font>>" <$control_ish-plus>
 event add "<<Menubar:View/Smaller Font>>" <$control_ish-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$control_ish-0>
+event add "<<Menubar:View/Focus active file>>" <$alt_ish-F>
 
 # run plugin
 event add "<<Menubar:Run/Show//hide output>>" <F4>
+event add "<<Menubar:Run/Focus output>>" <$alt_ish-C>
 event add "<<Menubar:Run/Kill process>>" <Shift-F4>
 # Many separate events because if you bind many keys to the same virtual
 # event, it is hard to figure out what key was pressed to trigger it
@@ -83,7 +85,7 @@ event add "<<Menubar:Edit/Sort Lines>>" <$alt_ish-s>
 event add "<<Menubar:View/Pop Tab>>" <$control_ish-P>
 
 # directory tree plugin (don't use <$alt_ish-t>, see #425)
-event add "<<Menubar:View/Focus directory tree>>" <$alt_ish-T>
+event add "<<Menubar:View/Focus directory tree>>" <$alt_ish-D>
 
 # filemanager plugin
 event add "<<FileManager:Rename>>" <F2>
