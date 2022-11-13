@@ -300,10 +300,9 @@ class NoTerminalRunner:
                 utils.set_tooltip(self.pause_button, "Resume execution")
 
     def focus(self, junk: object = None) -> None:
-        assert runner is not None
-        is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
+        is_hidden = get_vertical_panedwindow().panecget(self.textwidget, "hide")
         if is_hidden:
-            get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=False)
+            get_vertical_panedwindow().paneconfigure(self.textwidget, hide=False)
         self.textwidget.focus()
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
