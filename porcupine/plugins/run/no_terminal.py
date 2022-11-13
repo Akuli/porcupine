@@ -366,7 +366,7 @@ def setup() -> None:
     runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
     runner.pause_button.bind("<Button-1>", runner.pause_resume_executor, add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
-    menubar.get_menu("Run").add_command(label="Focus output", command=runner.focus)
+    menubar.get_menu("View/Focus").add_command(label="Command output", command=runner.focus)
     if sys.platform != "win32":
         menubar.get_menu("Run").add_command(
             label="Pause/resume process", command=runner.pause_resume_executor

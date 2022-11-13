@@ -499,8 +499,8 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(partial(_on_new_filetab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(_select_current_file, tree), add=True)
 
-    menubar.get_menu("View").add_command(
-        label="Focus directory tree", command=partial(_focus_treeview, tree)
+    menubar.get_menu("View/Focus").add_command(
+        label="Directory tree", command=partial(_focus_treeview, tree)
     )
 
     # Must reverse because last added project goes first
