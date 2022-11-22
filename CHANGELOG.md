@@ -18,7 +18,7 @@ Filetype-specific fixes and improvements:
 Other improvements:
 - On Windows, the Porcupine installer now uninstalls and reinstalls faster than before, because it does not display the name of every file it deletes.
 - When restarted, Porcupine now remembers whether or not the window was maximized. Previously it would only remember the location and size of the window, so restarting a maximized Porcupine would result in a window that is big but not in a maximized state. Thank you [lawson89](https://github.com/lawson89) for fixing this.
-- The full-screen mode (F11 or *Full Screen* in the *View* menu) now works better with window managers that feature their own full-screening feature. Thank you Tuomas for testing this.
+- The full-screen mode (F11 or *Full Screen* in the *View* menu) now works better with window managers that have their own full-screening feature. Thank you Tuomas for testing this.
 - The *Filetypes* menu now shows which filetype is currently selected. Thank you [lawson89](https://github.com/lawson89).
 - The plugin manager is no longer a plugin, so it is not possible to use the plugin manager to disable the plugin manager. Thank you [aloner-pro](https://github.com/aloner-pro) for fixing this.
 - In the *Run* menu, there is a new built-in Python prompt that runs within the Porcupine process. It is meant to be used for developing and debugging Porcupine. For example, `get_tab_manager().tabs()[0].textwidget['bg'] = 'red'` sets the color of the first open tab.
