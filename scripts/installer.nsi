@@ -140,7 +140,7 @@ Section "Uninstall"
   ${EndIf}
 
   ; Deleting the whole $INSTDIR is not safe https://nsis.sourceforge.io/Reference/RMDir
-  DetailPrint "Deleting $INSTDIR\lib and $INSTDIR\Python..."
+  DetailPrint "Deleting $INSTDIR\lib and $INSTDIR\Python"
   SetDetailsPrint textonly
   RMDir /r "$INSTDIR\lib"
   RMDir /r "$INSTDIR\Python"
