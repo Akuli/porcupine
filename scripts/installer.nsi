@@ -68,7 +68,7 @@ Section "!Porcupine" sec_app
   SectionIn RO
 
   ; see #328
-  DetailPrint "Deleting $INSTDIR\Python..."
+  DetailPrint "Deleting $INSTDIR\Python"
   SetDetailsPrint textonly
   RMDir /r "$INSTDIR\Python"
   SetDetailsPrint both
