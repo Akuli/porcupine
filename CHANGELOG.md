@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2022.11.25
 
 New keyboard shortcuts and UI fixes:
 - There are new key bindings for focusing various parts of Porcupine without clicking them: Alt+Shift+D for directory tree, Alt+Shift+F for the file being edited, and Alt+Shift+C for command output. Thank you [lawson89](https://github.com/lawson89) for adding the new key bindings.
