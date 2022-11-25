@@ -2,6 +2,28 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+New keyboard shortcuts and UI fixes:
+- There are new key bindings for focusing various parts of Porcupine without clicking them: Alt+Shift+D for directory tree, Alt+Shift+F for the file being edited, and Alt+Shift+C for command output. Thank you [lawson89](https://github.com/lawson89) for adding the new key bindings.
+- The directory tree now opens the selected file when pressing the Enter key. Previously this worked only for directories, and to open a file, you needed to press the right arrow key or double-click. Thank you [lawson89](https://github.com/lawson89).
+- The buttons related to running commands now have tooltips that explain what they do. You no longer need to guess based on the images. Thank you [lawson89](https://github.com/lawson89).
+
+Filetype-specific fixes and improvements:
+- In Python files, comments placed on the same line with a decorator are now syntax highlighted as comments.
+- In Rust files, function names and a few more keywords are now highlighted correctly.
+- There are new default commands for Rust. For example, pressing F5 in a Rust file does `cargo run` by default. As with any filetype, you can press Shift+F5 (or Shift+F6, Shift+F7, Shift+F8) to run any command you want.
+- Porcupine now supports `.pyx` files slightly better than before. Thank you [lawson89](https://github.com/lawson89).
+
+Other improvements:
+- On Windows, the Porcupine installer now uninstalls and reinstalls faster than before, because it does not display the name of every file it deletes.
+- When restarted, Porcupine now remembers whether or not the window was maximized. Previously it would only remember the location and size of the window, so restarting a maximized Porcupine would result in a window that is big but not in a maximized state. Thank you [lawson89](https://github.com/lawson89) for fixing this.
+- The full-screen mode (F11 or *Full Screen* in the *View* menu) now works better with window managers that have their own full-screening feature. Thank you Tuomas for testing this.
+- The *Filetypes* menu now shows which filetype is currently selected. Thank you [lawson89](https://github.com/lawson89).
+- The plugin manager is no longer a plugin, so it is not possible to use the plugin manager to disable the plugin manager. Thank you [aloner-pro](https://github.com/aloner-pro) for fixing this.
+- In the *Run* menu, there is a new built-in Python prompt that runs within the Porcupine process. It is meant to be used for developing and debugging Porcupine. For example, `get_tab_manager().tabs()[0].textwidget['bg'] = 'red'` sets the color of the first open tab.
+
+
 ## v2022.08.28
 
 Yesterday's release (below) turned out to be broken: syntax highlighting didn't work at all. This release fixes that.
