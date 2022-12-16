@@ -82,9 +82,17 @@ if sys.platform == "win32":
 else:
     import resource
 
+    def f(x):
+        try:
+            resource.setrlimit(resource.RLIMIT_AS, (x, x))
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            raise
+
     def create_memory_limit_callback() -> Callable[[], None]:
         if global_settings.get("run_mem_limit_enabled", bool):
             limit = global_settings.get("run_mem_limit_value", int)
-            return lambda: resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+            return lambda: f(limit)
         else:
             return lambda: None
