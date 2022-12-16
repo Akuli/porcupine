@@ -8,7 +8,7 @@ import sys
 import tkinter
 from functools import partial
 from tkinter import messagebox
-from typing import List, Optional
+from typing import List
 
 from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 from porcupine.plugins import python_venv
@@ -80,7 +80,7 @@ def setup() -> None:
     # Memory limit affects all commands, so that you can "set it and forget it".
     # If you choose to run a different command, it won't reset annoyingly.
     global_settings.add_option("run_mem_limit_enabled", default=False)
-    global_settings.add_option("run_mem_limit_value", default=1000*1000*1000)
+    global_settings.add_option("run_mem_limit_value", default=1000 * 1000 * 1000)
 
     get_tab_manager().add_filetab_callback(on_new_filetab)
 

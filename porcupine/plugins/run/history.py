@@ -14,7 +14,6 @@ from porcupine import dirs
 
 from . import common
 
-
 _log = logging.getLogger(__name__)
 
 

@@ -1,15 +1,15 @@
 import os
 import shutil
+import struct
 import sys
 import time
 from tkinter import ttk
-import struct
 
 import pytest
 
 from porcupine import get_main_window, get_tab_manager, utils
-from porcupine.settings import global_settings
 from porcupine.plugins.run import common, dialog, history, no_terminal, terminal
+from porcupine.settings import global_settings
 
 
 @pytest.fixture(autouse=True)
@@ -320,10 +320,12 @@ def restore_memory_limits():
 
 
 @pytest.mark.skipif(struct.calcsize("P") != 8, reason="assumes 64-bit")
-@pytest.mark.xfail(sys.platform == "win32", strict=True, reason="memory limits don't work on windows")
+@pytest.mark.xfail(
+    sys.platform == "win32", strict=True, reason="memory limits don't work on windows"
+)
 def test_memory_limit(tmp_path, wait_until):
     global_settings.set("run_mem_limit_enabled", True)
-    global_settings.set("run_mem_limit_value", 100*1000*1000)  # 100MB
+    global_settings.set("run_mem_limit_value", 100 * 1000 * 1000)  # 100MB
 
     # 1 array element = pointer = 8 bytes (on a 64-bit system)
     # 15*1000*1000 array elements = 120MB
@@ -331,7 +333,7 @@ def test_memory_limit(tmp_path, wait_until):
     wait_until(lambda: "The process failed" in get_output())
     assert "MemoryError" in get_output()
 
-    global_settings.set("run_mem_limit_value", 1000*1000*1000)  # 1GB
+    global_settings.set("run_mem_limit_value", 1000 * 1000 * 1000)  # 1GB
 
     no_terminal.run_command(f'{utils.quote(sys.executable)} -c "[0] * (15*1000*1000)"', tmp_path)
     wait_until(lambda: "The process completed successfully" in get_output())
