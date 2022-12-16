@@ -98,6 +98,10 @@ class Executor:
     def _thread_target(self, command: str, env: dict[str, str]) -> None:
         self._queue.put(("info", command + "\n"))
 
+        popen_kwargs = utils.subprocess_kwargs.copy()
+        if sys.platform != "win32":
+            popen_kwargs["preexec_fn"] = common.create_memory_limit_callback()
+
         try:
             self._shell_process = subprocess.Popen(
                 command,
@@ -106,7 +110,7 @@ class Executor:
                 stderr=subprocess.STDOUT,
                 shell=True,
                 env=env,
-                **utils.subprocess_kwargs,
+                **popen_kwargs,
             )
         except OSError as e:
             self._queue.put(("error", f"{type(e).__name__}: {e}\n"))

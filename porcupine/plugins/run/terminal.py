@@ -34,6 +34,8 @@ def _run_in_windows_cmd(command: str, cwd: Path, env: dict[str, str]) -> None:
         # new command prompt i found and it works :) we need cmd
         # because start is built in to cmd (lol)
         real_command = ["cmd", "/c", "start"] + real_command
+
+    # no memory limit, don't know how to get that to work on windows
     subprocess.Popen(real_command, env=env)
 
 
@@ -53,7 +55,11 @@ def _run_in_macos_terminal_app(command: str, cwd: Path, env: dict[str, str]) -> 
         )
 
     os.chmod(file.name, 0o755)
-    subprocess.Popen(["open", "-a", "Terminal.app", file.name], env=env)
+    subprocess.Popen(
+        ["open", "-a", "Terminal.app", file.name],
+        env=env,
+        preexec_fn=common.create_memory_limit_callback(),
+    )
     # the terminal might be still opening when we get here, that's why
     # the file deletes itself
     # right now the file removes itself before it runs the actual command so
@@ -118,7 +124,11 @@ def _run_in_x11_like_terminal(command: str, cwd: Path, env: dict[str, str]) -> N
 
     real_command = [str(run_script), str(cwd), command]
     real_command.extend(map(str, command))
-    subprocess.Popen([terminal, "-e", " ".join(map(shlex.quote, real_command))], env=env)
+    subprocess.Popen(
+        [terminal, "-e", " ".join(map(shlex.quote, real_command))],
+        env=env,
+        preexec_fn=common.create_memory_limit_callback(),
+    )
 
 
 # this figures out which terminal to use every time the user wants to run

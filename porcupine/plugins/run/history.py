@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import dataclasses
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Optional
@@ -12,6 +13,9 @@ import dacite
 from porcupine import dirs
 
 from . import common
+
+
+_log = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass

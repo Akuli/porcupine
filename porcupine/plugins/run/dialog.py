@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
 import sys
 import tkinter
 from tkinter import ttk
 from typing import Callable, TypeVar
 
 from porcupine import get_main_window, textutils, utils
+from porcupine.settings import global_settings
 
 from . import common, history
 
@@ -56,6 +58,51 @@ class _FormattingEntryAndLabels:
         self._validated_callback()
 
 
+def _mem_limit_to_string(limit: int) -> str:
+    if limit >= 1000 * 1000 * 1000:
+        number = limit / (1000 * 1000 * 1000)
+        suffix = "GB"
+    elif limit >= 1000 * 1000:
+        number = limit / (1000 * 1000)
+        suffix = "MB"
+    elif limit >= 1000:
+        number = limit / 1000
+        suffix = "KB"
+    else:
+        number = limit
+        suffix = "B"
+
+    # Show 2GB instead of 2.0GB
+    if number == int(number):
+        number = int(number)
+
+    return str(number) + suffix
+
+
+def _string_to_mem_limit(string: str) -> int | None:
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)([KMG]?)B?", string)
+    if match is None:
+        return None
+
+    number_as_string, suffix = match.groups()
+    number = float(number_as_string)
+    if suffix == "":
+        limit = round(number)
+    elif suffix == "K":
+        limit = round(1000 * number)
+    elif suffix == "M":
+        limit = round(1000 * 1000 * number)
+    elif suffix == "G":
+        limit = round(1000 * 1000 * 1000 * number)
+    else:
+        raise NotImplementedError
+
+    # Ban limits smaller than 10MB. Python needs about 17MB to start.
+    if limit < 10 * 1000 * 1000:
+        return None
+    return limit
+
+
 class _CommandAsker:
     def __init__(self, ctx: common.Context):
         self.window = tkinter.Toplevel(name="run_command_asker")
@@ -77,13 +124,13 @@ class _CommandAsker:
             entry_area,
             text="Run this command:",
             get_substituted_value=(lambda: self.get_command().format_command()),
-            validated_callback=self.update_run_button,
+            validated_callback=self.update_disabled_states,
         )
         self.cwd = _FormattingEntryAndLabels(
             entry_area,
             text="In this directory:",
             get_substituted_value=(lambda: str(self.get_command().format_cwd())),
-            validated_callback=self.update_run_button,
+            validated_callback=self.update_disabled_states,
         )
 
         ttk.Label(content_frame, text="Substitutions:").pack(anchor="w")
@@ -120,11 +167,30 @@ class _CommandAsker:
         self.window.bind("<Alt-p>", (lambda e: self.terminal_var.set(False)), add=True)
         self.window.bind("<Alt-e>", (lambda e: self.terminal_var.set(True)), add=True)
 
+        self._mem_limit_enable_var = tkinter.BooleanVar(
+            value=global_settings.get("run_mem_limit_enabled", bool)
+        )
+        self._mem_limit_value_var = tkinter.StringVar(
+            value=_mem_limit_to_string(global_settings.get("run_mem_limit_value", int))
+        )
+
+        memory_frame = ttk.Frame(content_frame)
+        if sys.platform != "win32":
+            memory_frame.pack(fill="x", pady=5)
+        ttk.Checkbutton(
+            memory_frame, variable=self._mem_limit_enable_var, text="Limit memory usage to: "
+        ).pack(side="left")
+        self._mem_entry = ttk.Entry(memory_frame, textvariable=self._mem_limit_value_var, width=20)
+        self._mem_entry.pack(side="left")
+
+        self._mem_limit_enable_var.trace_add("write", self.update_disabled_states)
+        self._mem_limit_value_var.trace_add("write", self.update_disabled_states)
+
         self._repeat_bindings = [
             utils.get_binding(f"<<Run:Repeat{key_id}>>") for key_id in range(4)
         ]
         self._repeat_var = tkinter.StringVar(value=self._repeat_bindings[ctx.key_id])
-        self._repeat_var.trace_add("write", self.update_run_button)
+        self._repeat_var.trace_add("write", self.update_disabled_states)
 
         repeat_frame = ttk.Frame(content_frame)
         repeat_frame.pack(fill="x", pady=10)
@@ -145,7 +211,7 @@ class _CommandAsker:
         self.run_button.pack(side="left", fill="x", expand=True, padx=(5, 0))
         self.run_clicked = False
 
-        for entry in [self.command.entry, self.cwd.entry]:
+        for entry in [self.command.entry, self.cwd.entry, self._mem_entry]:
             entry.bind("<Return>", (lambda e: self.run_button.invoke()), add=True)
             entry.bind("<Escape>", (lambda e: self.window.destroy()), add=True)
 
@@ -174,16 +240,32 @@ class _CommandAsker:
             substitutions=self._substitutions,
         )
 
+    def save_memory_limit_setting(self) -> None:
+        global_settings.set("run_mem_limit_enabled", self._mem_limit_enable_var.get())
+        value = _string_to_mem_limit(self._mem_limit_value_var.get())
+        if value is not None:
+            global_settings.set("run_mem_limit_value", value)
+
     def get_key_id(self) -> int:
         return self._repeat_bindings.index(self._repeat_var.get())
 
-    def command_and_cwd_are_valid(self) -> bool:
+    def _all_entries_are_valid(self) -> bool:
         try:
             command = self.get_command().format_command()
             cwd = self.get_command().format_cwd()
         except (ValueError, KeyError, IndexError):
             return False
-        return bool(command.strip()) and cwd.is_dir() and cwd.is_absolute()
+
+        return (
+            bool(command.strip())
+            and cwd.is_dir()
+            and cwd.is_absolute()
+            and self._repeat_var.get() in self._repeat_bindings
+            and (
+                _string_to_mem_limit(self._mem_limit_value_var.get()) is not None
+                or not self._mem_limit_enable_var.get()
+            )
+        )
 
     def _select_command_autocompletion(self, command: common.Command, prefix: str) -> None:
         assert command.command_format.startswith(prefix)
@@ -210,11 +292,16 @@ class _CommandAsker:
 
         return None
 
-    def update_run_button(self, *junk: object) -> None:
-        if self.command_and_cwd_are_valid() and self._repeat_var.get() in self._repeat_bindings:
+    def update_disabled_states(self, *junk: object) -> None:
+        if self._all_entries_are_valid():
             self.run_button.config(state="normal")
         else:
             self.run_button.config(state="disabled")
+
+        if self._mem_limit_enable_var.get():
+            self._mem_entry.config(state="normal")
+        else:
+            self._mem_entry.config(state="disabled")
 
     def on_run_clicked(self) -> None:
         self.run_clicked = True
@@ -236,5 +323,6 @@ def ask_command(ctx: common.Context) -> tuple[common.Command, int] | None:
     asker.window.wait_window()
 
     if asker.run_clicked:
+        asker.save_memory_limit_setting()
         return (asker.get_command(), asker.get_key_id())
     return None

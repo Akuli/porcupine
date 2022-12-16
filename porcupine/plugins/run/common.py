@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import dataclasses
 import os
+import resource
+import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from porcupine import tabs, utils
+from porcupine.settings import global_settings
 
 
 @dataclasses.dataclass
@@ -34,7 +37,7 @@ class ExampleCommand:
 
 
 class Context:
-    def __init__(self, tab: tabs.FileTab, key_id: int):
+    def __init__(self, tab: tabs.FileTab, key_id: int) -> None:
         assert tab.path is not None
         self.file_path = tab.path
         self.project_path = utils.find_project_root(tab.path)
@@ -69,3 +72,13 @@ def prepare_env() -> dict[str, str]:
         )
 
     return env
+
+
+def create_memory_limit_callback() -> Callable[[], None]:
+    assert sys.platform != "win32"
+
+    if global_settings.get("run_mem_limit_enabled", bool):
+        limit = global_settings.get("run_mem_limit_value", int)
+        return lambda: resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+    else:
+        return lambda: None
