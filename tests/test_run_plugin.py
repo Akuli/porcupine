@@ -331,13 +331,13 @@ def test_memory_limit(tmp_path, wait_until):
     # 15*1000*1000 array elements = 120MB
     no_terminal.run_command(f'{utils.quote(sys.executable)} -c "[0] * (15*1000*1000)"', tmp_path)
     wait_until(lambda: "The process failed" in get_output())
-    assert "MemoryError" in get_output()
+    assert "MemoryError" in get_output(), get_output()
 
     global_settings.set("run_mem_limit_value", 1000 * 1000 * 1000)  # 1GB
 
     no_terminal.run_command(f'{utils.quote(sys.executable)} -c "[0] * (15*1000*1000)"', tmp_path)
     wait_until(lambda: "The process completed successfully" in get_output())
-    assert "MemoryError" not in get_output()
+    assert "MemoryError" not in get_output(), get_output()
 
 
 def test_changing_current_file(filetab, tmp_path, wait_until):
