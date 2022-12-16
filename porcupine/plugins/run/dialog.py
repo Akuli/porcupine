@@ -80,7 +80,7 @@ def _mem_limit_to_string(limit: int) -> str:
 
 
 def _string_to_mem_limit(string: str) -> int | None:
-    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)([KMG]?)B?", string)
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)([KMG]?)B?", string.replace(" ", "").upper())
     if match is None:
         return None
 
