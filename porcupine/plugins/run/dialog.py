@@ -174,9 +174,12 @@ class _CommandAsker:
             value=_mem_limit_to_string(global_settings.get("run_mem_limit_value", int))
         )
 
+        # Do not show memory usage options on Windows.
+        # Limiting the memory on Windows isn't supported.
         memory_frame = ttk.Frame(content_frame)
         if sys.platform != "win32":
             memory_frame.pack(fill="x", pady=5)
+
         ttk.Checkbutton(
             memory_frame, variable=self._mem_limit_enable_var, text="Limit memory usage to: "
         ).pack(side="left")

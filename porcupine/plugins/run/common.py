@@ -74,11 +74,14 @@ def prepare_env() -> dict[str, str]:
     return env
 
 
-def create_memory_limit_callback() -> Callable[[], None]:
-    assert sys.platform != "win32"
-
-    if global_settings.get("run_mem_limit_enabled", bool):
-        limit = global_settings.get("run_mem_limit_value", int)
-        return lambda: resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
-    else:
-        return lambda: None
+# If statements must be outside the function definition because of mypy bugs
+if sys.platform == "win32":
+    def create_memory_limit_callback() -> Callable[[], None]:
+        raise NotImplementedError
+else:
+    def create_memory_limit_callback() -> Callable[[], None]:
+        if global_settings.get("run_mem_limit_enabled", bool):
+            limit = global_settings.get("run_mem_limit_value", int)
+            return lambda: resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+        else:
+            return lambda: None
