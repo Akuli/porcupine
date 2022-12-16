@@ -83,7 +83,6 @@ else:
     import resource
 
     def create_memory_limit_callback() -> Callable[[], None]:
-        resource.setrlimit(resource.RLIMIT_AS, (1000**3, 1000**3))
         if global_settings.get("run_mem_limit_enabled", bool):
             limit = global_settings.get("run_mem_limit_value", int)
             return lambda: resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
