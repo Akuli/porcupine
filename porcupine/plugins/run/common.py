@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dataclasses
 import os
-import resource
 import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -81,6 +80,7 @@ if sys.platform == "win32":
         raise NotImplementedError
 
 else:
+    import resource
 
     def create_memory_limit_callback() -> Callable[[], None]:
         if global_settings.get("run_mem_limit_enabled", bool):
