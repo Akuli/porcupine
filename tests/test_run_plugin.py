@@ -347,7 +347,7 @@ def test_error_when_setting_memory_limit(wait_until, tmp_path):
     global_settings.set("run_mem_limit_enabled", True)
     global_settings.set("run_mem_limit_value", 10**20)  # too huge for 64-bit int, will fail
 
-    no_terminal.run_command('echo 123', tmp_path)
+    no_terminal.run_command("echo 123", tmp_path)
     wait_until(lambda: "The process completed successfully" in get_output())
     assert "Limiting memory usage to 100000000000GB failed" in get_output()
 
