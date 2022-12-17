@@ -331,13 +331,25 @@ def test_memory_limit(tmp_path, wait_until):
     # 15*1000*1000 array elements = 120MB
     no_terminal.run_command(f'{utils.quote(sys.executable)} -c "[0] * (15*1000*1000)"', tmp_path)
     wait_until(lambda: "The process failed" in get_output())
-    assert "MemoryError" in get_output(), get_output()
+    assert "MemoryError" in get_output()
 
     global_settings.set("run_mem_limit_value", 1000 * 1000 * 1000)  # 1GB
 
     no_terminal.run_command(f'{utils.quote(sys.executable)} -c "[0] * (15*1000*1000)"', tmp_path)
     wait_until(lambda: "The process completed successfully" in get_output())
-    assert "MemoryError" not in get_output(), get_output()
+    assert "MemoryError" not in get_output()
+
+
+@pytest.mark.xfail(
+    sys.platform == "win32", strict=True, reason="memory limits don't work on windows"
+)
+def test_error_when_setting_memory_limit(wait_until, tmp_path):
+    global_settings.set("run_mem_limit_enabled", True)
+    global_settings.set("run_mem_limit_value", 10**20)  # too huge for 64-bit int, will fail
+
+    no_terminal.run_command('echo 123', tmp_path)
+    wait_until(lambda: "The process completed successfully" in get_output())
+    assert "Limiting memory usage to 100000000000GB failed" in get_output()
 
 
 def test_changing_current_file(filetab, tmp_path, wait_until):

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import sys
 import tkinter
 from tkinter import ttk
@@ -56,51 +55,6 @@ class _FormattingEntryAndLabels:
             self._command_display.config(state="disabled")
 
         self._validated_callback()
-
-
-def _mem_limit_to_string(limit: int) -> str:
-    if limit >= 1000 * 1000 * 1000:
-        number = limit / (1000 * 1000 * 1000)
-        suffix = "GB"
-    elif limit >= 1000 * 1000:
-        number = limit / (1000 * 1000)
-        suffix = "MB"
-    elif limit >= 1000:
-        number = limit / 1000
-        suffix = "KB"
-    else:
-        number = limit
-        suffix = "B"
-
-    # Show 2GB instead of 2.0GB
-    if number == int(number):
-        number = int(number)
-
-    return str(number) + suffix
-
-
-def _string_to_mem_limit(string: str) -> int | None:
-    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)([KMG]?)B?", string.replace(" ", "").upper())
-    if match is None:
-        return None
-
-    number_as_string, suffix = match.groups()
-    number = float(number_as_string)
-    if suffix == "":
-        limit = round(number)
-    elif suffix == "K":
-        limit = round(1000 * number)
-    elif suffix == "M":
-        limit = round(1000 * 1000 * number)
-    elif suffix == "G":
-        limit = round(1000 * 1000 * 1000 * number)
-    else:
-        raise NotImplementedError
-
-    # Ban limits smaller than 10MB. Python needs about 17MB to start.
-    if limit < 10 * 1000 * 1000:
-        return None
-    return limit
 
 
 class _CommandAsker:
@@ -171,7 +125,7 @@ class _CommandAsker:
             value=global_settings.get("run_mem_limit_enabled", bool)
         )
         self._mem_limit_value_var = tkinter.StringVar(
-            value=_mem_limit_to_string(global_settings.get("run_mem_limit_value", int))
+            value=common.mem_limit_to_string(global_settings.get("run_mem_limit_value", int))
         )
 
         # Do not show memory usage options on Windows.
@@ -245,7 +199,7 @@ class _CommandAsker:
 
     def save_memory_limit_setting(self) -> None:
         global_settings.set("run_mem_limit_enabled", self._mem_limit_enable_var.get())
-        value = _string_to_mem_limit(self._mem_limit_value_var.get())
+        value = common.string_to_mem_limit(self._mem_limit_value_var.get())
         if value is not None:
             global_settings.set("run_mem_limit_value", value)
 
@@ -265,7 +219,7 @@ class _CommandAsker:
             and cwd.is_absolute()
             and self._repeat_var.get() in self._repeat_bindings
             and (
-                _string_to_mem_limit(self._mem_limit_value_var.get()) is not None
+                common.string_to_mem_limit(self._mem_limit_value_var.get()) is not None
                 or not self._mem_limit_enable_var.get()
             )
         )
