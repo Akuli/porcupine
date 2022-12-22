@@ -106,7 +106,6 @@ class Executor:
         else:
             scrolled_to_end = self._textwidget.yview()[1] == 1.0
 
-            print("Insert", repr(text))
             self._textwidget.insert("end", text, [OUTPUT_TAGS[message_type], "output"])
             if scrolled_to_end:
                 self._textwidget.yview_moveto(1)
@@ -198,7 +197,6 @@ class Executor:
                 self._handle_queued_item("error", "Killed.")
 
     def write_to_stdin(self, data: bytes):
-        print("to stdin:", data)
         if self._shell_process is not None:
             self._shell_process.stdin.write(data)
             self._shell_process.stdin.flush()  # TODO: may block, maybe that isn't an issue in practice?
@@ -276,22 +274,23 @@ class TerribleTerminalEmulator(tkinter.Text):
 
         self.mark_set("insert", "insert lineend")
         self.insert("end - 1 char", "\n")
+        self.see("insert")
 
         # Find all characters on last line not tagged with "output".
         last_line_start = 'end - 1 char - 1 line'
         last_line_end = 'end - 2 chars'
 
         text_chunks = []
-        tag_on = self.tag_names(last_line_start)
+        tag_on = ('output' in self.tag_names(last_line_start))
+
         for action, tag_or_text, index in self.dump(last_line_start, last_line_end):
             if action == 'tagon' and tag_or_text == 'output':
-                assert not tag_on
                 tag_on = True
             elif action == 'tagoff' and tag_or_text == 'output':
-                assert tag_on
                 tag_on = False
             elif action == 'text' and not tag_on:
                 text_chunks.append(tag_or_text)
+
 
         return "".join(text_chunks)
 
@@ -312,10 +311,11 @@ class NoTerminalRunner:
         button_frame.place(relx=1, rely=0, anchor="ne")
 
     def _feed_line_to_stdin(self, event):
-        # TODO: which encoding to use?
         if self.executor is not None:
             input_line = self.textwidget.handle_enter_press()
-            self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
+            if input_line is not None:
+                # TODO: which encoding to use?
+                self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
         return "break"
 
     def _handle_end_of_input(self, event):
@@ -345,7 +345,7 @@ def main():
     runner = NoTerminalRunner(root)
     runner.textwidget.pack()
     runner.textwidget.focus()
-    runner.run_command(Path("."), "python3 -c \"while True: print(input('x: ')*2)\"")
+    runner.run_command(Path("."), "python3 -i")
     root.mainloop()
 
 
