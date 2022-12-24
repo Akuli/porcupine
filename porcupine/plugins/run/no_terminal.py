@@ -44,7 +44,7 @@ filename_regex_parts = [
     # blah blah: some_function (filename.c:123)
     r"\(([^\n():]+):([0-9]+)\)",
 ]
-filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
+filename_regex = "(?i)" + "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
 def open_file_with_line_number(path: Path, lineno: int) -> None:
