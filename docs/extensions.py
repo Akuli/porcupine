@@ -11,7 +11,7 @@ from sphinx.application import Sphinx
 from sphinx.domains.python import PyObject, PyXRefRole
 from sphinx.util.nodes import split_explicit_title
 
-GITHUB_URL = "https://github.com/Akuli/porcupine/tree/master/"
+GITHUB_URL = "https://github.com/Akuli/porcupine/tree/main/"
 PROJECT_ROOT = Path(__file__).absolute().parent.parent
 
 

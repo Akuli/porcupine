@@ -25,7 +25,7 @@ def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     monkeypatch.chdir(tmp_path)
     file_content = "before\nhello\nafter\n"
 
-    subprocess.run(["git", "init", "-b", "master"])
+    subprocess.run(["git", "init", "-b", "main"])
     # No --global, only affects test repo
     subprocess.run(["git", "config", "user.name", "foo"])
     subprocess.run(["git", "config", "user.email", "foo@example.com"])
@@ -36,7 +36,7 @@ def test_merge_conflict_string(tmp_path, monkeypatch, capfd):
     subprocess.run(["git", "checkout", "-b", "other_branch"])
     Path("foo.txt").write_text(file_content.replace("hello", "hello world"))
     subprocess.run(["git", "commit", "--all", "-m", "hello there"])
-    subprocess.run(["git", "checkout", "master"])
+    subprocess.run(["git", "checkout", "main"])
     Path("foo.txt").write_text(file_content.replace("hello", "hello there"))
     subprocess.run(["git", "commit", "--all", "-m", "hello my friend"])
     subprocess.run(["git", "merge", "other_branch"])

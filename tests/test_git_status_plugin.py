@@ -36,11 +36,11 @@ def test_merge_conflict(tree, tmp_path, monkeypatch):
     # Resulting output of 'git log --graph --oneline --all':
     #
     #    * 84dca05 (HEAD -> b) b
-    #    | * 9dbd837 (master) a
+    #    | * 9dbd837 (main) a
     #    |/
     #    * e16c2a7 initial
     run = partial(subprocess.run, stdout=subprocess.DEVNULL, shell=True, check=True)
-    run("git init --quiet -b master")
+    run("git init --quiet -b main")
     run("git config user.name foo")  # not --global, will stay inside repo
     run("git config user.email foo@bar.baz")
     Path("file").write_text("initial")
@@ -53,7 +53,7 @@ def test_merge_conflict(tree, tmp_path, monkeypatch):
     Path("file").write_text("b")
     run("git add file")
     run("git commit -m b")
-    run("git merge master", check=False)  # Git returns status 1 when merge conflict occurs
+    run("git merge main", check=False)  # Git returns status 1 when merge conflict occurs
 
     tree.add_project(tmp_path)
     [project_id] = tree.get_children()
