@@ -1,5 +1,6 @@
 import os
 import shutil
+import struct
 import sys
 import time
 from tkinter import ttk
@@ -8,6 +9,7 @@ import pytest
 
 from porcupine import get_main_window, get_tab_manager, utils
 from porcupine.plugins.run import common, dialog, history, no_terminal, terminal
+from porcupine.settings import global_settings
 
 
 @pytest.fixture(autouse=True)
@@ -308,6 +310,46 @@ def test_crlf_on_any_platform(tmp_path, wait_until):
     (tmp_path / "crlf.py").write_text(r"import sys; sys.stdout.buffer.write(b'foo\r\nbar')")
     no_terminal.run_command(f"{utils.quote(sys.executable)} crlf.py", tmp_path)
     wait_until(lambda: "foo\nbar" in get_output())
+
+
+@pytest.fixture(autouse=True)
+def restore_memory_limits():
+    yield
+    global_settings.reset("run_mem_limit_enabled")
+    global_settings.reset("run_mem_limit_value")
+
+
+@pytest.mark.skipif(struct.calcsize("P") != 8, reason="assumes 64-bit")
+@pytest.mark.xfail(
+    sys.platform == "win32", strict=True, reason="memory limits don't work on windows"
+)
+def test_memory_limit(tmp_path, wait_until):
+    global_settings.set("run_mem_limit_enabled", True)
+    global_settings.set("run_mem_limit_value", 100 * 1000 * 1000)  # 100MB
+
+    # 1 array element = pointer = 8 bytes (on a 64-bit system)
+    # 15*1000*1000 array elements = 120MB
+    no_terminal.run_command(f'{utils.quote(sys.executable)} -c "[0] * (15*1000*1000)"', tmp_path)
+    wait_until(lambda: "The process failed" in get_output())
+    assert "MemoryError" in get_output()
+
+    global_settings.set("run_mem_limit_value", 200 * 1000 * 1000)  # 200MB
+
+    no_terminal.run_command(f'{utils.quote(sys.executable)} -c "[0] * (15*1000*1000)"', tmp_path)
+    wait_until(lambda: "The process completed successfully" in get_output())
+    assert "MemoryError" not in get_output()
+
+
+@pytest.mark.xfail(
+    sys.platform == "win32", strict=True, reason="memory limits don't work on windows"
+)
+def test_error_when_setting_memory_limit(wait_until, tmp_path):
+    global_settings.set("run_mem_limit_enabled", True)
+    global_settings.set("run_mem_limit_value", 10**20)  # too huge for 64-bit int, will fail
+
+    no_terminal.run_command("echo 123", tmp_path)
+    wait_until(lambda: "The process completed successfully" in get_output())
+    assert "Limiting memory usage to 100000000000GB failed" in get_output()
 
 
 def test_changing_current_file(filetab, tmp_path, wait_until):
