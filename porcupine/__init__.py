@@ -14,7 +14,7 @@ import appdirs
 version_info = (2022, 11, 25)  # this is updated with scripts/release.py
 __version__ = "%d.%02d.%02d" % version_info
 __author__ = "Akuli"
-__copyright__ = "Copyright (c) 2017-2022 Akuli"
+__copyright__ = "Copyright (c) 2017-2023 Akuli"
 __license__ = "MIT"
 
 if sys.platform in {"win32", "darwin"}:
