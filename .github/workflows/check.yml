@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - master
+      - main
       - bugfix-release
   pull_request:
 

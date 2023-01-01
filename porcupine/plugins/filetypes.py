@@ -67,7 +67,7 @@ def load_filetypes() -> None:
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
 #
-#    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
+#    https://github.com/Akuli/porcupine/blob/main/porcupine/default_filetypes.toml
 """
             )
     except (OSError, UnicodeError, tomli.TOMLDecodeError):
