@@ -48,7 +48,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
 
 Open a terminal and run these commands:
 
-    sudo apt install python3-tk python3-pip
+    sudo apt install python3-tk python3-pip python3-venv
     sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
     python3 -m pip install --user --upgrade pip wheel
     python3 -m venv porcupine-venv
