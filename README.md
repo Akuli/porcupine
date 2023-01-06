@@ -50,10 +50,11 @@ Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip python3-venv
     sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
-    python3 -m pip install --user --upgrade pip wheel
+    python3 -m pip install --user --upgrade pip
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v2022.11.25.zip
+    pip install wheel
+    pip install https://github.com/Akuli/porcupine/archive/v2022.11.25.zip
     porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
@@ -71,10 +72,11 @@ Install Python 3.7 or newer with pip and tkinter somehow.
 If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
 Then run these commands:
 
-    python3 -m pip install --user --upgrade pip wheel
+    python3 -m pip install --user --upgrade pip
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v2022.11.25.zip
+    pip install wheel
+    pip install https://github.com/Akuli/porcupine/archive/v2022.11.25.zip
     porcu
 
 If you want to leave Porcupine running and use the same terminal for something else,
