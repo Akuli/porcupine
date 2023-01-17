@@ -43,7 +43,7 @@ class CreateLauncherAction(argparse.Action):
         with launcher_path.open("w") as file:
             file.write("[Desktop Entry]\n")
             file.write("Name=Porcupine\n")
-            file.write(f"Exec={command}\n")
+            file.write(f"Exec=bash -c {shlex.quote(command)}\n")
             file.write("Terminal=false\n")
             file.write("Type=Application\n")
             file.write(f"Icon={images.images_dir}/logo-200x200.gif\n")
