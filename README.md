@@ -63,7 +63,12 @@ To run porcupine later, you need to activate the virtualenv before running it:
     source porcupine-venv/bin/activate
     porcu
 
-You can uninstall Porcupine by deleting `porcupine-venv`.
+Alternatively, you can ask Porcupine to create a double-clickable launcher on your desktop:
+
+    source porcupine-venv/bin/activate
+    porcu --create-desktop-launcher
+
+You can uninstall Porcupine by deleting `porcupine-venv` and the launcher on desktop.
 
 ### Other Linux distributions
 
@@ -84,7 +89,12 @@ To run porcupine later, you need to activate the virtualenv before running it:
     source porcupine-venv/bin/activate
     porcu
 
-You can uninstall Porcupine by deleting `porcupine-venv`.
+Alternatively, you can ask Porcupine to create a double-clickable launcher on your desktop:
+
+    source porcupine-venv/bin/activate
+    porcu --create-desktop-launcher
+
+You can uninstall Porcupine by deleting `porcupine-venv` and the launcher on desktop.
 
 ### MacOS
 
