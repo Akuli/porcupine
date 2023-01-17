@@ -8,24 +8,25 @@ Currently --create-desktop-launcher works only on Linux.
 
 import argparse
 import os
-import shlex
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 from porcupine import images
 
 
 class CreateLauncherAction(argparse.Action):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, nargs=0, **kwargs)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs["nargs"] = 0
+        super().__init__(*args, **kwargs)
 
-    def __call__(self, *args):
+    def __call__(self, *args: object) -> None:
         if sys.platform != "linux":
             sys.exit("Error: --create-desktop-launcher can only be used on Linux")
 
         venv = os.environ.get("VIRTUAL_ENV")
-        if not venv:
+        if not venv or not (Path(venv) / "bin" / "porcu").is_file():
             sys.exit(
                 "Error: --create-desktop-launcher can only be used when Porcupine is installed into a virtualenv"
             )
@@ -35,20 +36,16 @@ class CreateLauncherAction(argparse.Action):
         output = subprocess.check_output(["xdg-user-dir", "DESKTOP"], text=True)
         launcher_path = Path(output.strip("\n")) / "Porcupine.desktop"
 
-        activate_path = Path(venv) / "bin" / "activate"
-        assert activate_path.is_file()
-
-        command = f"source {shlex.quote(str(activate_path))} && porcu"
-
         with launcher_path.open("w") as file:
             file.write("[Desktop Entry]\n")
             file.write("Name=Porcupine\n")
-            file.write(f"Exec=bash -c {shlex.quote(command)}\n")
+            file.write(f"Exec={venv}/bin/porcu\n")
             file.write("Terminal=false\n")
             file.write("Type=Application\n")
             file.write(f"Icon={images.images_dir}/logo-200x200.gif\n")
 
-        # do what is basically "chmod +x": https://stackoverflow.com/a/12792002
+        # To make a launcher usable, it must be marked as executable.
+        # How to "chmod +x" in python: https://stackoverflow.com/a/12792002
         execute_permissions = 0o111
         launcher_path.chmod(launcher_path.stat().st_mode | execute_permissions)
 
