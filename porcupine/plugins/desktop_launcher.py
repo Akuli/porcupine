@@ -22,7 +22,8 @@ class CreateLauncherAction(argparse.Action):
         super().__init__(*args, **kwargs)
 
     def __call__(self, *args: object) -> None:
-        if sys.platform != "linux":
+        # str() needed to work around mypy bugginess
+        if str(sys.platform) == "linux":
             sys.exit("Error: --create-desktop-launcher can only be used on Linux")
 
         venv = os.environ.get("VIRTUAL_ENV")
