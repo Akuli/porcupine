@@ -7,12 +7,13 @@ Currently --create-desktop-launcher works only on Linux.
 """
 
 import argparse
-import sys
-import shlex
 import os
-from pathlib import Path
-from porcupine import images
+import shlex
 import subprocess
+import sys
+from pathlib import Path
+
+from porcupine import images
 
 
 class CreateLauncherAction(argparse.Action):
@@ -25,11 +26,13 @@ class CreateLauncherAction(argparse.Action):
 
         venv = os.environ.get("VIRTUAL_ENV")
         if not venv:
-            sys.exit("Error: --create-desktop-launcher can only be used when Porcupine is installed into a virtualenv")
+            sys.exit(
+                "Error: --create-desktop-launcher can only be used when Porcupine is installed into a virtualenv"
+            )
 
         # launcher_path is basically ~/Desktop/Porcupine.desktop.
         # But if your OS is not in english it could be e.g. ~/Työpöytä/Porcupine.desktop.
-        output = subprocess.check_output(['xdg-user-dir', 'DESKTOP'], text=True)
+        output = subprocess.check_output(["xdg-user-dir", "DESKTOP"], text=True)
         launcher_path = Path(output.strip("\n")) / "Porcupine.desktop"
 
         activate_path = Path(venv) / "bin" / "activate"
@@ -55,8 +58,11 @@ class CreateLauncherAction(argparse.Action):
 
 def setup_argument_parser(parser: argparse.ArgumentParser) -> None:
     if sys.platform == "linux":
-        parser.add_argument("--create-desktop-launcher", action=CreateLauncherAction,
-        help="create a double-clickable Porcupine launcher icon to desktop (Linux only)")
+        parser.add_argument(
+            "--create-desktop-launcher",
+            action=CreateLauncherAction,
+            help="create a double-clickable Porcupine launcher icon to desktop (Linux only)",
+        )
 
 
 def setup() -> None:
