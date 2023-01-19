@@ -108,6 +108,12 @@ class MiniMap(tkinter.Text):
     def _update_sel_tag(self, junk: object = None) -> None:
         self.tag_add("sel", "1.0", "end")
 
+        # This is also done in use_pygments_tags(), but that doesn't apply
+        # to peer widgets like this one (#1171)
+        for tag in self.tag_names():
+            if tag.startswith("Token."):
+                self.tag_raise("sel", tag)
+
     def _update_lines(self, *junk: object) -> None:
         if not self.tag_cget("sel", "font"):
             # view was created just a moment ago, set_font() hasn't ran yet
