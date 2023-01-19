@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2023.01.19
 
 Fixes a bug where on some computers, the minimap would show keywords and other highlighted parts of the code with a ridiculously large font (see [#](https://github.com/Akuli/porcupine/issues/1171)). The minimap is the narrow view of the file being edited on the side.
 
