@@ -4,7 +4,7 @@ and other details that don't affect using Porcupine.
 
 ## v2023.01.19
 
-Fixes a bug where on some computers, the minimap would show keywords and other highlighted parts of the code with a ridiculously large font (see [#](https://github.com/Akuli/porcupine/issues/1171)). The minimap is the narrow view of the file being edited on the side.
+Fixes a bug where on some computers, the minimap would show keywords and other highlighted parts of the code with a ridiculously large font (see [#1171](https://github.com/Akuli/porcupine/issues/1171)). The minimap is the narrow view of the file being edited on the side.
 
 
 ## v2022.11.25
