@@ -28,7 +28,8 @@ def _run_in_windows_cmd(command: str | None, cwd: Path, env: dict[str, str]) -> 
     log.debug("using Windows command prompt")
 
     if not command:
-        subprocess.Popen(["cmd", "/K", f"cd /d {shlex.quote(str(cwd))}"], env=env)
+        cd_command = subprocess.list2cmdline(["cd", "/d", str(cwd)])
+        subprocess.Popen(["cmd", "/K", cd_command], env=env)
         return
 
     real_command = [str(utils.python_executable), str(run_script), str(cwd), command]
