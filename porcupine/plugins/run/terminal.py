@@ -24,8 +24,12 @@ else:
 
 
 # getting this to work in powershell turned out to be hard :(
-def _run_in_windows_cmd(command: str, cwd: Path, env: dict[str, str]) -> None:
+def _run_in_windows_cmd(command: str | None, cwd: Path, env: dict[str, str]) -> None:
     log.debug("using Windows command prompt")
+
+    if not command:
+        subprocess.Popen(["cmd", "/K", f"cd /d {shlex.quote(str(cwd))}"], env=env)
+        return
 
     real_command = [str(utils.python_executable), str(run_script), str(cwd), command]
     if not utils.running_pythonw:
@@ -37,8 +41,13 @@ def _run_in_windows_cmd(command: str, cwd: Path, env: dict[str, str]) -> None:
     subprocess.Popen(real_command, env=env)
 
 
-def _run_in_macos_terminal_app(command: str, cwd: Path, env: dict[str, str]) -> None:
+def _run_in_macos_terminal_app(command: str | None, cwd: Path, env: dict[str, str]) -> None:
     log.debug("using MacOS terminal.app")
+
+    if not command:
+        subprocess.Popen(["open", "-a", "Terminal", str(cwd)], env=env)
+        return
+
     assert shutil.which("bash") is not None
 
     with tempfile.NamedTemporaryFile("w", delete=False, prefix="porcupine-run-") as file:
@@ -60,7 +69,7 @@ def _run_in_macos_terminal_app(command: str, cwd: Path, env: dict[str, str]) -> 
     # it's removed even if the command is interrupted
 
 
-def _run_in_x11_like_terminal(command: str, cwd: Path, env: dict[str, str]) -> None:
+def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str]) -> None:
     terminal: str = os.environ.get("TERMINAL", "x-terminal-emulator")
 
     # to config what x-terminal-emulator is:
@@ -116,16 +125,22 @@ def _run_in_x11_like_terminal(command: str, cwd: Path, env: dict[str, str]) -> N
         )
         return
 
-    real_command = [str(run_script), str(cwd), command]
-    real_command.extend(map(str, command))
-    subprocess.Popen([terminal, "-e", " ".join(map(shlex.quote, real_command))], env=env)
+    if command:
+        real_command = [str(run_script), str(cwd), command]
+        real_command.extend(map(str, command))
+        subprocess.Popen([terminal, "-e", " ".join(map(shlex.quote, real_command))], env=env)
+    else:
+        subprocess.Popen(terminal, cwd=cwd, env=env)
 
 
 # this figures out which terminal to use every time the user wants to run
 # something but it doesn't really matter, this way the user can install a
 # terminal while porcupine is running without restarting porcupine
-def run_command(command: str, cwd: Path) -> None:
-    log.info(f"Running {command} in {cwd}")
+def run_command(command: str | None, cwd: Path) -> None:
+    if command:
+        log.info(f"Running {command} in {cwd}")
+    else:
+        log.info(f"Opening terminal in {cwd}")
 
     env = common.prepare_env()
     widget = get_main_window()  # any tkinter widget works
