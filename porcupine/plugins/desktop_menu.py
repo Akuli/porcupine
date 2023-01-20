@@ -1,10 +1,15 @@
+"""
+Installs an entry for Porcupine in the desktop menu system.
+You can enable it in Porcupine's settings.
+"""
+
 import os
 import shutil
 import subprocess
 from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import get_tab_manager, images, settings
+from porcupine import dirs, get_tab_manager, images, settings
 from porcupine.settings import global_settings
 
 setup_after = ["filetypes"]  # To group the checkbutton on the bottom
@@ -12,8 +17,8 @@ setup_after = ["filetypes"]  # To group the checkbutton on the bottom
 XDG_DESKTOP_MENU = "xdg-desktop-menu"
 
 
-def create_desktop_file(venv_path: str) -> Path | None:
-    file_path = Path("Porcupine.desktop")
+def create_desktop_file(venv_path: str) -> Path:
+    file_path = Path(dirs.user_cache_dir) / "Porcupine.desktop"
 
     with file_path.open("w") as file:
         file.write("[Desktop Entry]\n")
