@@ -33,7 +33,7 @@ def create_desktop_file(venv_path: str) -> Path:
     return file_path
 
 
-def install_uninstall_desktop_file(*dontcare) -> None:
+def install_uninstall_desktop_file(junk_event: object) -> None:
     if global_settings.get("has_desktop_file", bool):
         venv = os.environ.get("VIRTUAL_ENV")
         if not venv or not (Path(venv) / "bin" / "porcu").is_file():
