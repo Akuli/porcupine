@@ -18,7 +18,7 @@ from porcupine import dirs, images, settings
 setup_after = ["filetypes"]  # To group the checkbutton on the bottom
 
 XDG_DESKTOP_MENU = "xdg-desktop-menu"
-DESKTOP_FILE_PATH = Path(dirs.user_config_dir) / "Porcupine.desktop"
+DESKTOP_FILE_NAME = "Porcupine.desktop"
 
 
 def install_desktop_file() -> None:
@@ -33,7 +33,9 @@ def install_desktop_file() -> None:
     activate_path = Path(venv) / "bin" / "activate"
     assert activate_path.is_file()
 
-    with DESKTOP_FILE_PATH.open("w") as file:
+    launcher_path = Path(dirs.user_cache_dir) / DESKTOP_FILE_NAME
+
+    with launcher_path.open("w") as file:
         file.write("[Desktop Entry]\n")
         file.write("Name=Porcupine\n")
         file.write("GenericName=Text Editor\n")
@@ -46,14 +48,12 @@ def install_desktop_file() -> None:
         file.write("Categories=TextEditor;Development;\n")
         file.write(f"Icon={images.images_dir}/logo-200x200.gif\n")
 
-    subprocess.call(
-        [XDG_DESKTOP_MENU, "install", "--mode", "user", "--novendor", DESKTOP_FILE_PATH]
-    )
+    subprocess.call([XDG_DESKTOP_MENU, "install", "--mode", "user", "--novendor", launcher_path])
+    launcher_path.unlink()
 
 
 def uninstall_desktop_file() -> None:
-    subprocess.call([XDG_DESKTOP_MENU, "uninstall", "--mode", "user", "Porcupine.desktop"])
-    DESKTOP_FILE_PATH.unlink()
+    subprocess.call([XDG_DESKTOP_MENU, "uninstall", "--mode", "user", DESKTOP_FILE_NAME])
 
 
 # Can't use settings.add_checkbutton() because it makes a checkbox that
@@ -66,7 +66,10 @@ def add_checkbox_to_settings() -> None:
     )
     checkbutton.grid(column=0, columnspan=2, sticky="w", pady=2)
 
-    var = tkinter.BooleanVar(value=DESKTOP_FILE_PATH.exists())
+    desktop_file_exists = (
+        (Path("~/.local/share/applications") / DESKTOP_FILE_NAME).expanduser().exists()
+    )
+    var = tkinter.BooleanVar(value=desktop_file_exists)
     checkbutton.config(variable=var)
 
     def var_changed(*junk: object) -> None:
