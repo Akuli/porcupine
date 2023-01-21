@@ -57,14 +57,13 @@ Open a terminal and run these commands:
     pip install https://github.com/Akuli/porcupine/archive/v2023.01.19.zip
     porcu
 
-If you want to leave Porcupine running and use the same terminal for something else,
-you can use `porcu&` instead of `porcu`.
-To run porcupine later, you need to activate the virtualenv before running it:
+To easily run porcupine again later,
+go to *Settings* --> *Porcupine Settings*
+and check "Show Porcupine in the desktop menu system".
+This makes Porcupine show up in the menu just like any other application.
 
-    source porcupine-venv/bin/activate
-    porcu
-
-You can uninstall Porcupine by deleting `porcupine-venv`.
+You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
+and then deleting `porcupine-venv`.
 
 ### Other Linux distributions
 
@@ -79,14 +78,13 @@ Then run these commands:
     pip install https://github.com/Akuli/porcupine/archive/v2023.01.19.zip
     porcu
 
-If you want to leave Porcupine running and use the same terminal for something else,
-you can use `porcu&` instead of `porcu`.
-To run porcupine later, you need to activate the virtualenv before running it:
+To easily run porcupine again later,
+go to *Settings* --> *Porcupine Settings*
+and check "Show Porcupine in the desktop menu system".
+This makes Porcupine show up in the menu just like any other application.
 
-    source porcupine-venv/bin/activate
-    porcu
-
-You can uninstall Porcupine by deleting `porcupine-venv`.
+You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
+and then deleting `porcupine-venv`.
 
 ### MacOS
 
