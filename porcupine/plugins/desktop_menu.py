@@ -21,8 +21,16 @@ XDG_DESKTOP_MENU = "xdg-desktop-menu"
 DESKTOP_FILE_PATH = Path(dirs.user_config_dir) / "Porcupine.desktop"
 
 
-def create_desktop_file(venv_path: Path) -> None:
-    activate_path = venv_path / "bin" / "activate"
+def install_desktop_file() -> None:
+    venv = os.environ.get("VIRTUAL_ENV")
+    if not venv or not (Path(venv) / "bin" / "porcu").is_file():
+        messagebox.showerror(
+            "Creating menu entry failed",
+            "Porcupine must be installed in a virtual environment in order to create a desktop menu entry.",
+        )
+        return
+
+    activate_path = Path(venv) / "bin" / "activate"
     assert activate_path.is_file()
 
     with DESKTOP_FILE_PATH.open("w") as file:
@@ -38,17 +46,6 @@ def create_desktop_file(venv_path: Path) -> None:
         file.write("Categories=TextEditor;Development;\n")
         file.write(f"Icon={images.images_dir}/logo-200x200.gif\n")
 
-
-def install_desktop_file() -> None:
-    venv = os.environ.get("VIRTUAL_ENV")
-    if not venv or not (Path(venv) / "bin" / "porcu").is_file():
-        messagebox.showerror(
-            "Creating menu entry failed",
-            "Porcupine must be installed in a virtual environment in order to create a desktop menu entry.",
-        )
-        return
-
-    create_desktop_file(Path(venv))
     subprocess.call(
         [XDG_DESKTOP_MENU, "install", "--mode", "user", "--novendor", DESKTOP_FILE_PATH]
     )
