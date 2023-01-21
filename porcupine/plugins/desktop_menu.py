@@ -32,7 +32,7 @@ def create_desktop_file(venv_path: Path) -> None:
         # Must activate the venv, otherwise various things don't work
         # (e.g. os.environ.get("VIRTUAL_ENV") in this plugin)
         bash_command = f"source {shlex.quote(str(activate_path))} && porcu"
-        file.write(f"Exec=bash -c {bash_command}\n")
+        file.write(f"Exec=bash -c {shlex.quote(bash_command)}\n")
         file.write("Terminal=false\n")
         file.write("Type=Application\n")
         file.write("Categories=TextEditor;Development;\n")
