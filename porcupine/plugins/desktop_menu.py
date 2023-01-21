@@ -1,6 +1,8 @@
 """
 Installs an entry for Porcupine in the desktop menu system.
 You can enable it in Porcupine's settings.
+
+This plugin doesn't do anything on Windows or MacOS.
 """
 
 import os
