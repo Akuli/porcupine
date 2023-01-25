@@ -7,7 +7,7 @@ highlighting.
 ![Screenshot.](screenshot.png)
 
 Most important features:
-- Syntax highlighting with [Pygments][] (supports many programming languages
+- Syntax highlighting (supports many programming languages
   and color themes, extensible)
 - Autocompletions when pressing tab
 - Jump to definition with Ctrl+click
