@@ -691,17 +691,18 @@ class FileTab(Tab):
         while True:
             encoding = self.settings.get("encoding", str)
             try:
-                charset_match = charset_normalizer.from_path(self.path).best()
-                if charset_match:
-                    encoding_match = charset_match.encoding.replace("_", "-")
-                    if encoding_match == "utf-8" and charset_match.byte_order_mark:
-                        encoding_match = "utf-8-sig"
-                    if encoding != encoding_match:
-                        bad_encoding = encoding
-                        encoding = encoding_match
-                        raise UnicodeDecodeError(
-                            bad_encoding, b"\x00\x00", 1, 2, "This is just a fake reason!"
-                        )
+                charset_matches = [
+                    match.encoding.replace("_", "-") + "-sig"
+                    if match.byte_order_mark
+                    else match.encoding.replace("_", "-")
+                    for match in charset_normalizer.from_path(self.path)
+                ]
+                if encoding not in charset_matches:
+                    bad_encoding = encoding
+                    encoding = charset_matches[0]
+                    raise UnicodeDecodeError(
+                        bad_encoding, b"\x00\x00", 1, 2, "This is just a fake reason!"
+                    )
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()
