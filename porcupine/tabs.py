@@ -14,6 +14,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
+import charset_normalizer
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer
 
@@ -688,7 +689,19 @@ class FileTab(Tab):
         self.textwidget.config(state="disabled")
 
         while True:
+            encoding = self.settings.get("encoding", str)
             try:
+                charset_match = charset_normalizer.from_path(self.path).best()
+                if charset_match:
+                    encoding_match = charset_match.encoding.replace("_", "-")
+                    if encoding_match == "utf-8" and charset_match.byte_order_mark:
+                        encoding_match = "utf-8-sig"
+                    if encoding != encoding_match:
+                        bad_encoding = encoding
+                        encoding = encoding_match
+                        raise UnicodeDecodeError(
+                            bad_encoding, b"\x00\x00", 1, 2, "This is just a fake reason!"
+                        )
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()
@@ -713,7 +726,7 @@ class FileTab(Tab):
                 user_selected_encoding = utils.ask_encoding(
                     f'The content of "{self.path}" is not valid {bad_encoding}. Choose an encoding'
                     " to use instead:",
-                    bad_encoding,
+                    encoding,
                 )
                 if user_selected_encoding is not None:
                     self.settings.set("encoding", user_selected_encoding)
