@@ -15,5 +15,3 @@ send2trash>=1.8.0,<2.0.0
 psutil>=5.8.0,<6.0.0
 PyYAML==6.0
 tree-sitter-builds==2022.8.29
-python-magic
-python-magic-bin; sys_platform == 'win32'

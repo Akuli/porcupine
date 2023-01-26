@@ -1,6 +1,7 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
+import codecs
 import collections
 import dataclasses
 import hashlib
@@ -14,7 +15,6 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
-import magic
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer
 
@@ -700,13 +700,20 @@ class FileTab(Tab):
             encoding = self.settings.get("encoding", str)
             try:
                 if encoding == "utf-8":
-                    magic_match = magic.Magic(mime_encoding=True).from_file(self.path)
-                    if magic_match not in ("utf-8", "ascii"):
-                        user_selected_encoding = confirm_encoding(magic_match)
-                        if user_selected_encoding is not None:
-                            self.settings.set("encoding", user_selected_encoding)
-                    elif "BOM" in magic.from_file(self.path):
-                        self.settings.set("encoding", "utf-8-sig")
+                    with self.path.open("rb") as fb:
+                        byte_str = fb.read(4)
+                    for bytez, guessed_encoding in [
+                        (codecs.BOM_UTF8, "utf-8-sig"),
+                        (codecs.BOM_UTF32_LE, "utf-32"),
+                        (codecs.BOM_UTF32_BE, "utf-32"),
+                        (codecs.BOM_LE, "utf-16"),
+                        (codecs.BOM_BE, "utf-16"),
+                    ]:
+                        if byte_str.startswith(bytez):
+                            user_selected_encoding = confirm_encoding(guessed_encoding)
+                            if user_selected_encoding is not None:
+                                self.settings.set("encoding", user_selected_encoding)
+                            break
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()

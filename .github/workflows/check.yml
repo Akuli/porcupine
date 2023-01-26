@@ -75,7 +75,6 @@ jobs:
     # https://stackoverflow.com/a/66919851
     - if: matrix.python-version != '3.8'
       run: brew install python-tk@${{ matrix.python-version }}
-    - run: brew install libmagic
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
