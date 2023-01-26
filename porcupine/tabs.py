@@ -14,7 +14,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
 
-import charset_normalizer
+import magic
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer
 
@@ -688,21 +688,25 @@ class FileTab(Tab):
         assert self.textwidget["state"] == "normal"
         self.textwidget.config(state="disabled")
 
+        def confirm_encoding(encoding: str) -> str | None:
+            return utils.ask_encoding(
+                f'The content of "{self.path}" is not valid '
+                + self.settings.get("encoding", str)
+                + ". Choose an encoding to use instead:",
+                encoding,
+            )
+
         while True:
             encoding = self.settings.get("encoding", str)
             try:
-                charset_matches = [
-                    match.encoding.replace("_", "-") + "-sig"
-                    if match.byte_order_mark
-                    else match.encoding.replace("_", "-")
-                    for match in charset_normalizer.from_path(self.path)
-                ]
-                if encoding not in charset_matches:
-                    bad_encoding = encoding
-                    encoding = charset_matches[0]
-                    raise UnicodeDecodeError(
-                        bad_encoding, b"\x00\x00", 1, 2, "This is just a fake reason!"
-                    )
+                if encoding == "utf-8":
+                    magic_match = magic.Magic(mime_encoding=True).from_file(self.path)
+                    if magic_match not in ("utf-8", "ascii"):
+                        user_selected_encoding = confirm_encoding(magic_match)
+                        if user_selected_encoding is not None:
+                            self.settings.set("encoding", user_selected_encoding)
+                    elif "BOM" in magic.from_file(self.path):
+                        self.settings.set("encoding", "utf-8-sig")
                 with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()
@@ -723,12 +727,7 @@ class FileTab(Tab):
                         continue
 
             except UnicodeDecodeError:
-                bad_encoding = self.settings.get("encoding", str)
-                user_selected_encoding = utils.ask_encoding(
-                    f'The content of "{self.path}" is not valid {bad_encoding}. Choose an encoding'
-                    " to use instead:",
-                    encoding,
-                )
+                user_selected_encoding = confirm_encoding("latin1")
                 if user_selected_encoding is not None:
                     self.settings.set("encoding", user_selected_encoding)
                     continue  # try again
