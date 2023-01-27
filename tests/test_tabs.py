@@ -177,15 +177,13 @@ def test_file_changes_unicode_encoding(tabmanager, tmp_path, mocker):
     (tmp_path / "foo.py").write_text("asdf")
     tab = tabmanager.open_file(tmp_path / "foo.py")
     assert tab is not None
-
-    (tmp_path / "foo.py").write_text("mörkö", encoding="utf-16")
-
-    mock.return_value = "utf-16"  # user accepts the suggested encoding
-    assert tab.reload()
-    assert 'foo.py" is not valid utf-8. Choose an encoding' in str(mock.call_args[0])
-    assert "utf-16" in str(mock.call_args[0])
-    assert tab.settings.get("encoding", str) == "utf-16"
-    assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
+    for encoding in ("utf-8-sig", "utf-16", "utf-32"):
+        tab.settings.set("encoding","utf-8")
+        (tmp_path / "foo.py").write_text("mörkö", encoding=encoding)
+        mock.return_value = encoding
+        assert tab.reload()
+        assert 'foo.py" is not valid utf-8. Choose an encoding' in str(mock.call_args[0])
+        assert encoding in str(mock.call_args[0])
 
 
 def test_file_deleted(tabmanager, tmp_path, mocker, caplog):

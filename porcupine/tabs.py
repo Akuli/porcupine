@@ -697,9 +697,8 @@ class FileTab(Tab):
             )
 
         while True:
-            encoding = self.settings.get("encoding", str)
             try:
-                if encoding == "utf-8":
+                if self.settings.get("encoding", str) == "utf-8":
                     with self.path.open("rb") as fb:
                         byte_str = fb.read(4)
                     for bytez, guessed_encoding in [
