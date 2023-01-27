@@ -174,16 +174,19 @@ def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
 
 def test_file_changes_unicode_encoding(tabmanager, tmp_path, mocker):
     mock = mocker.patch("porcupine.utils.ask_encoding")
-    (tmp_path / "foo.py").write_text("asdf")
+    (tmp_path / "foo.py").write_text("mörkö", encoding="utf-16")
     tab = tabmanager.open_file(tmp_path / "foo.py")
+
     assert tab is not None
+    assert tab.settings.get("encoding", str) == "utf-16"
+    assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
+    assert not mock.called
     for encoding in ("utf-8-sig", "utf-16", "utf-32"):
-        tab.settings.set("encoding", "utf-8")
         (tmp_path / "foo.py").write_text("mörkö", encoding=encoding)
-        mock.return_value = encoding
         assert tab.reload()
-        assert 'foo.py" is not valid utf-8. Choose an encoding' in str(mock.call_args[0])
-        assert encoding in str(mock.call_args[0])
+        assert tab.settings.get("encoding", str) == encoding
+        assert tab.textwidget.get("1.0", "end").startswith("mörkö")
+        assert not mock.called
 
 
 def test_file_deleted(tabmanager, tmp_path, mocker, caplog):
