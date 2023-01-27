@@ -178,7 +178,7 @@ def test_file_changes_unicode_encoding(tabmanager, tmp_path, mocker):
     tab = tabmanager.open_file(tmp_path / "foo.py")
     assert tab is not None
     for encoding in ("utf-8-sig", "utf-16", "utf-32"):
-        tab.settings.set("encoding","utf-8")
+        tab.settings.set("encoding", "utf-8")
         (tmp_path / "foo.py").write_text("mörkö", encoding=encoding)
         mock.return_value = encoding
         assert tab.reload()
