@@ -231,7 +231,8 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("filetype_name", None, type_=Optional[str])
-    on_path_changed(tab)
+    if not tab.settings.get("filetype_name", Optional[str]):
+        on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
     _sync_filetypes_menu()
 
