@@ -6,6 +6,7 @@ import weakref
 import pytest
 
 from porcupine import settings, tabs
+from porcupine.plugins.statusbar import StatusBar
 
 
 def test_filetab_path_gets_resolved(tmp_path, tabmanager):
@@ -187,6 +188,13 @@ def test_file_changes_unicode_encoding(tabmanager, tmp_path, mocker):
         assert tab.settings.get("encoding", str) == encoding
         assert tab.textwidget.get("1.0", "end").startswith("mörkö")
         assert not mock.called
+
+
+def test_encoding_detection_warning_bug(tabmanager, tmp_path, mocker):
+    (tmp_path / "foo.py").write_text("mörkö", encoding="utf-8-sig")
+    tab = tabmanager.open_file(tmp_path / "foo.py")
+    [statusbar] = [w for w in tab.bottom_frame.winfo_children() if isinstance(w, StatusBar)]
+    assert str(statusbar.path_label["foreground"]) == ""  # not red
 
 
 def test_file_deleted(tabmanager, tmp_path, mocker, caplog):
