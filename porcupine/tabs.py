@@ -599,6 +599,7 @@ class FileTab(Tab):
         )
         self.settings.add_option("tabs2spaces", True)
         self.settings.add_option("indent_size", 4)
+        # Invoke encoding detection early to suppress the unsaved changes warning
         self.settings.add_option("encoding", self._detect_encoding())
         self.settings.add_option("comment_prefix", None, Optional[str])
         self.settings.add_option(
