@@ -7,7 +7,7 @@ from porcupine import get_main_window, get_tab_manager, tabs
 from porcupine.menubar import get_filetab
 
 _ftab_indexes: List[int] = []
-_menu_items: Dict[str, Callable[[tabs.FileTab], object] | Callable[[], object]] = {}
+_menu_items: Dict[str, Callable[[], object]] = {}
 
 
 def text_is_selected(tab: tabs.FileTab) -> bool:
@@ -36,14 +36,12 @@ def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
 
 def add_rightclick_option(
     path: str,
-    func: Callable[[tabs.FileTab], object] | Callable[[], object],
+    func: Callable[[tabs.FileTab], object],
     needs_selected_text: bool = False,
 ) -> None:
+    _menu_items[path] = lambda: func(get_filetab())
     if needs_selected_text:
-        _menu_items[path] = lambda: func(get_filetab())
         _ftab_indexes.append(len(_menu_items) - 1)
-    else:
-        _menu_items[path] = func
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
