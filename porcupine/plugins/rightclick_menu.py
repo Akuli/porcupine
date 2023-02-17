@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import tkinter
-from typing import Callable, List, Dict
+from typing import Callable, Dict, List, Union
 
 from porcupine import get_main_window, get_tab_manager, tabs
 from porcupine.menubar import get_filetab
 
 _ftab_indexes: List[int] = []
-_menu_items: Dict[str, Callable[[tabs.FileTab], object] | Callable[[], object]] = {}
+_menu_items: Dict[str, Union[Callable[[tabs.FileTab], object], Callable[[], object]]] = {}
 
 
 def text_is_selected(tab: tabs.FileTab) -> bool:
@@ -36,7 +36,7 @@ def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
 
 def add_rightclick_option(
     path: str,
-    func: Callable[[tabs.FileTab], object] | Callable[[], object],
+    func: Union[Callable[[tabs.FileTab], object], Callable[[], object]],
     needs_selected_text: bool = False,
 ) -> None:
     if needs_selected_text:
