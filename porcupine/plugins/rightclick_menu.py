@@ -35,9 +35,7 @@ def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
 
 
 def add_rightclick_option(
-    path: str,
-    func: Callable[[tabs.FileTab], object],
-    needs_selected_text: bool = False,
+    path: str, func: Callable[[tabs.FileTab], object], needs_selected_text: bool = False
 ) -> None:
     _menu_items[path] = lambda: func(get_filetab())
     if needs_selected_text:
