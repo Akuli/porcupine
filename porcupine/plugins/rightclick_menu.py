@@ -34,7 +34,9 @@ def show_menu(event) -> None:
     rm.bind("<Unmap>", (lambda event: rm.after_idle(rm.destroy)), add=True)
 
 
-def add_rightclick_option(path: str, func: Callable[[tabs.FileTab], object], needs_selected_text: bool = False) -> None:
+def add_rightclick_option(
+    path: str, func: Callable[[tabs.FileTab], object], needs_selected_text: bool = False
+) -> None:
 
     if needs_selected_text:
         _menu_items[path] = lambda: func(get_filetab())
