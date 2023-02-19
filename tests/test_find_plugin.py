@@ -7,12 +7,12 @@ import sys
 import pytest
 
 from porcupine import get_main_window
-from porcupine.plugins import find
+from porcupine.plugins.find import Finder
 
 
 @pytest.fixture
 def filetab_and_finder(filetab):
-    [finder] = [w for w in filetab.bottom_frame.winfo_children() if isinstance(w, find.Finder)]
+    finder: Finder = filetab.bottom_frame.nametowidget("finder")
     get_main_window().event_generate("<<Menubar:Edit/Find and Replace>>")
     return (filetab, finder)
 

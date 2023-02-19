@@ -193,7 +193,7 @@ def test_file_changes_unicode_encoding(tabmanager, tmp_path, mocker):
 def test_encoding_detection_warning_bug(tabmanager, tmp_path, mocker):
     (tmp_path / "foo.py").write_text("mörkö", encoding="utf-8-sig")
     tab = tabmanager.open_file(tmp_path / "foo.py")
-    [statusbar] = [w for w in tab.bottom_frame.winfo_children() if isinstance(w, StatusBar)]
+    statusbar: StatusBar = tab.bottom_frame.nametowidget("statusbar")
     assert str(statusbar.path_label["foreground"]) == ""  # not red
 
 
