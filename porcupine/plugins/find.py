@@ -399,5 +399,6 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     menubar.add_filetab_command("Edit/Find and Replace")
     rightclick_menu.add_rightclick_option(
-        "Find and Replace", (lambda tab: tab.event_generate("<<FiletabCommand:Edit/Find and Replace>>"))
+        "Find and Replace",
+        (lambda tab: tab.event_generate("<<FiletabCommand:Edit/Find and Replace>>")),
     )
