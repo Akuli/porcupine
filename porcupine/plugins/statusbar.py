@@ -88,7 +88,7 @@ def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding
 
 class StatusBar(ttk.Frame):
     def __init__(self, tab: tabs.FileTab):
-        super().__init__(tab.bottom_frame)
+        super().__init__(tab.bottom_frame, name="statusbar")
         self._tab = tab
 
         self._top_frame = ttk.Frame(self)
