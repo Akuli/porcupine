@@ -302,7 +302,7 @@ def get_filetab() -> tabs.FileTab:
 
 
 def add_filetab_command(
-    path: str, func: Callable[[tabs.FileTab], object] | None = None, **kwargs: Any
+    path: str, func: Callable[[tabs.FileTab], object], **kwargs: Any
 ) -> None:
     """
     This is a convenience function that does several things:
@@ -312,7 +312,7 @@ def add_filetab_command(
       :class:`~porcupine.tabs.FileTab`.
     * Do something when the menu item is clicked. See below.
 
-    If ``func`` is given, it is called with the selected tab as the only
+    The ``func`` is called with the selected tab as the only
     argument when the menu item is clicked. For example::
 
         from procupine import menubar, tabs
@@ -323,38 +323,11 @@ def add_filetab_command(
         def setup() -> None:
             menubar.add_filetab_command("Edit/Do something", do_something)
 
-    If ``func`` is not given, then an event is generated to the tab. The event
-    is named so that if ``path`` is ``"Edit/Foo"``, then the event is
-    ``<<FiletabCommand:Edit/Foo>>``. This is useful, for example, if you want
-    to create an instance of a class for every new tab, and then call a method
-    of the instance when a menu item is clicked. For example::
-
-        from __future__ import annotations
-        import tkinter
-        from procupine import get_tab_manager, menubar, tabs
-
-        class FooBar:
-            def do_something(self, event: tkinter.Event[tabs.FileTab]) -> None:
-                ...
-
-        def on_new_filetab(tab: tabs.FileTab) -> None:
-            foobar = FooBar()
-            tab.bind("<<FiletabCommand:Edit/Do something>>", foobar.do_something, add=True)
-
-        def setup() -> None:
-            get_tab_manager().add_filetab_callback(on_new_filetab)
-            menubar.add_filetab_command("Edit/Do something")
-
     You usually don't need to provide any keyword arguments in ``**kwargs``,
     but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
     """
-    if func is None:
-        command = lambda: get_filetab().event_generate(f"<<FiletabCommand:{path}>>")
-    else:
-        command = lambda: func(get_filetab())  # type: ignore
-
     menu_path, item_text = _split_parent(path)
-    get_menu(menu_path).add_command(label=item_text, command=command, **kwargs)
+    get_menu(menu_path).add_command(label=item_text, command=lambda: func(get_filetab()), **kwargs)
     set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
 
 

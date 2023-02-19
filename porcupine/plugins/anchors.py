@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import time
 import tkinter
+from weakref import WeakKeyDictionary
 
 from porcupine import get_tab_manager, menubar, settings, tabs
 from porcupine.plugins.linenumbers import LineNumbers
@@ -54,7 +55,7 @@ class AnchorManager:
         return mark
 
     # See underlines.py and langserver.py
-    def add_from_underlines(self, junk_event: object) -> None:
+    def add_from_underlines(self) -> None:
         anchors = self.clean_duplicates_and_get_anchor_dict()
         for start in self.tab_textwidget.tag_ranges("underline:diagnostics")[::2]:
             lineno = self._get_line_number(str(start))
@@ -62,7 +63,7 @@ class AnchorManager:
                 anchors[lineno] = self.add_anchor(lineno)
         self.linenumbers.do_update()
 
-    def toggle(self, event: tkinter.Event[tabs.FileTab]) -> None:
+    def toggle(self) -> None:
         anchors = self.clean_duplicates_and_get_anchor_dict()
         cursor_lineno = self._get_line_number("insert")
         if cursor_lineno in anchors:
@@ -71,7 +72,7 @@ class AnchorManager:
             self.add_anchor(cursor_lineno)
         self.linenumbers.do_update()
 
-    def jump_to_next(self, event: tkinter.Event[tabs.FileTab]) -> str:
+    def jump_to_next(self) -> str:
         cursor_row = self._get_line_number("insert")
         anchor_rows = self.clean_duplicates_and_get_anchor_dict().keys()
 
@@ -87,7 +88,7 @@ class AnchorManager:
 
         return "break"
 
-    def jump_to_previous(self, event: tkinter.Event[tabs.FileTab]) -> str:
+    def jump_to_previous(self) -> str:
         cursor_row = self._get_line_number("insert")
         anchor_rows = self.clean_duplicates_and_get_anchor_dict().keys()
 
@@ -118,21 +119,17 @@ class AnchorManager:
                 row_text = self.linenumbers.itemcget(row_id, "text")
                 self.linenumbers.itemconfigure(row_id, text=row_text + "¶")
 
-    def clear(self, junk_event: object) -> None:
+    def clear(self) -> None:
         for mark in self._get_anchor_marks():
             self.tab_textwidget.mark_unset(mark)
         self.linenumbers.do_update()
 
 
+managers: WeakKeyDictionary[tabs.FileTab, AnchorManager] = WeakKeyDictionary()
+
+
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    manager = AnchorManager(tab.textwidget, tab.left_frame.nametowidget("linenumbers"))
-    # fmt: off
-    tab.bind("<<FiletabCommand:Edit/Anchors/Add or remove on this line>>", manager.toggle, add=True)
-    tab.bind("<<FiletabCommand:Edit/Anchors/Jump to previous>>", manager.jump_to_previous, add=True)
-    tab.bind("<<FiletabCommand:Edit/Anchors/Jump to next>>", manager.jump_to_next, add=True)
-    tab.bind("<<FiletabCommand:Edit/Anchors/Clear>>", manager.clear, add=True)
-    tab.bind("<<FiletabCommand:Edit/Anchors/Add to error//warning lines>>", manager.add_from_underlines, add=True)
-    # fmt: on
+    managers[tab] = AnchorManager(tab.textwidget, tab.left_frame.nametowidget("linenumbers"))
 
 
 def setup() -> None:
@@ -142,11 +139,19 @@ def setup() -> None:
     )
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
-    menubar.add_filetab_command("Edit/Anchors/Add or remove on this line")
-    menubar.add_filetab_command("Edit/Anchors/Jump to previous")
-    menubar.add_filetab_command("Edit/Anchors/Jump to next")
-    menubar.add_filetab_command("Edit/Anchors/Clear")
-    menubar.add_filetab_command("Edit/Anchors/Add to error//warning lines")
+    menubar.add_filetab_command(
+        "Edit/Anchors/Add or remove on this line", lambda tab: managers[tab].toggle()
+    )
+    menubar.add_filetab_command(
+        "Edit/Anchors/Jump to previous", lambda tab: managers[tab].jump_to_previous()
+    )
+    menubar.add_filetab_command(
+        "Edit/Anchors/Jump to next", lambda tab: managers[tab].jump_to_next()
+    )
+    menubar.add_filetab_command("Edit/Anchors/Clear", lambda tab: managers[tab].clear())
+    menubar.add_filetab_command(
+        "Edit/Anchors/Add to error//warning lines", lambda tab: managers[tab].add_from_underlines()
+    )
 
     # Disable accessing submenu, makes gui look nicer
     menubar.set_enabled_based_on_tab("Edit/Anchors", lambda tab: isinstance(tab, tabs.FileTab))
