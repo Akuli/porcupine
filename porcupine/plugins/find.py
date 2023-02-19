@@ -393,9 +393,11 @@ class Finder(ttk.Frame):
 def on_new_filetab(tab: tabs.FileTab) -> None:
     finder = Finder(tab.bottom_frame, tab.textwidget)
     tab.bind("<<FiletabCommand:Edit/Find and Replace>>", finder.show, add=True)
-    rightclick_menu.add_rightclick_option("Find and Replace", finder.show)
 
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     menubar.add_filetab_command("Edit/Find and Replace")
+    rightclick_menu.add_rightclick_option(
+        "Find and Replace", (lambda tab: tab.event_generate("Edit/Find and Replace"))
+    )
