@@ -129,7 +129,7 @@ managers: dict[tabs.FileTab, AnchorManager] = {}
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     managers[tab] = AnchorManager(tab.textwidget, tab.left_frame.nametowidget("linenumbers"))
-    tab.bind("<Destroy>", (lambda event: managers.pop(tab)), add=True))
+    tab.bind("<Destroy>", (lambda event: managers.pop(tab)), add=True)
 
 
 def setup() -> None:
