@@ -308,7 +308,7 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], object], **kwa
     * Create a menu item at the given path.
     * Ensure the menu item is enabled only when the selected tab is a
       :class:`~porcupine.tabs.FileTab`.
-    * Do something when the menu item is clicked. See below.
+    * Run ``func`` when the menu item is clicked.
 
     The ``func`` is called with the selected tab as the only
     argument when the menu item is clicked. For example::
