@@ -39,7 +39,7 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         )
         # Ignore '# blah' comments because they are likely written by hand
         # But don't ignore indented '#    blah', that is most likely by this plugin
-        if line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix):])
+        if line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix) :])
     }
 
     with textutils.change_batch(tab.textwidget):
@@ -65,4 +65,6 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 def setup() -> None:
     menubar.add_filetab_command("Edit/Comment Block", comment_or_uncomment)
     get_tab_manager().add_filetab_callback(on_new_filetab)
-    rightclick_menu.add_rightclick_option("Comment Block", comment_or_uncomment, needs_selected_text=True)
+    rightclick_menu.add_rightclick_option(
+        "Comment Block", comment_or_uncomment, needs_selected_text=True
+    )
