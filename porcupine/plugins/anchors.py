@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import time
 import tkinter
-from weakref import WeakKeyDictionary
 
 from porcupine import get_tab_manager, menubar, settings, tabs
 from porcupine.plugins.linenumbers import LineNumbers
@@ -125,11 +124,12 @@ class AnchorManager:
         self.linenumbers.do_update()
 
 
-managers: WeakKeyDictionary[tabs.FileTab, AnchorManager] = WeakKeyDictionary()
+managers: dict[tabs.FileTab, AnchorManager] = {}
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     managers[tab] = AnchorManager(tab.textwidget, tab.left_frame.nametowidget("linenumbers"))
+    tab.bind("<Destroy>", (lambda event: managers.pop(tab)), add=True))
 
 
 def setup() -> None:
