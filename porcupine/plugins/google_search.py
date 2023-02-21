@@ -23,4 +23,6 @@ def google_search(tab: tabs.FileTab) -> None:
 
 def setup() -> None:
     menubar.add_filetab_command("Tools/Search selected text on Google", google_search)
-    rightclick_menu.add_rightclick_option("Search selected text on Google", google_search, needs_selected_text=True)
+    rightclick_menu.add_rightclick_option(
+        "Search selected text on Google", google_search, needs_selected_text=True
+    )
