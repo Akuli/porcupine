@@ -59,8 +59,7 @@ def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
 #
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
-def _generate_event(
-name: str, event: tkinter.Event[tkinter.Misc]) -> Literal["break"]:
+def _generate_event(name: str, event: tkinter.Event[tkinter.Misc]) -> Literal["break"]:
     if event_is_windows_alt_f4(event):
         quit()
     else:
