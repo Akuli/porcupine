@@ -80,7 +80,7 @@ jobs:
     - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pytest --durations=10
 
-  black:
+  black-and-isort:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -90,19 +90,24 @@ jobs:
         cache: pip
     - run: pip install wheel
     - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
-
-  isort:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-        cache: pip
-    - run: pip install wheel
-    - run: pip install -r requirements-dev.txt
-    - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
+    - run: python3 -m black $(git ls-files | grep -E '\.(py|pyw)$')
+    - run: python3 -m isort $(git ls-files | grep -E '\.(py|pyw)$')
+    - name: Check if anything changed
+      id: check-if-changed
+      run: |
+        if git diff --exit-code; then
+          echo changed=no >> $GITHUB_OUTPUT
+        else
+          echo changed=yes >> $GITHUB_OUTPUT
+        fi
+    - name: Commit and push the changes
+      if: ${{ steps.check-if-changed.outputs.changed == 'yes' }}
+      # https://github.com/fregante/setup-git-user/blob/2e28d51939d2a84005a917d2f844090637f435f8/index.js#L5-L6
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email '<41898282+github-actions[bot]@users.noreply.github.com>'
+        git commit -a -m "Run black and isort"
+        git push origin '${{ github.ref }}'
 
   pyflakes:
     runs-on: ubuntu-latest
