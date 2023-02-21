@@ -63,8 +63,8 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    menubar.add_filetab_command("Edit/Comment Block", comment_or_uncomment)
+    menubar.add_filetab_command("Edit/Comment//uncomment selected lines", comment_or_uncomment)
     get_tab_manager().add_filetab_callback(on_new_filetab)
     rightclick_menu.add_rightclick_option(
-        "Comment Block", comment_or_uncomment, needs_selected_text=True
+        "Comment/uncomment selected lines", comment_or_uncomment, needs_selected_text=True
     )
