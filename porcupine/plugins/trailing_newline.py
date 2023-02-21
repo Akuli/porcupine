@@ -6,6 +6,11 @@ import tkinter
 from porcupine import get_tab_manager, tabs
 
 
+def on_new_filetab(tab: tabs.FileTab) -> None:
+    tab.settings.add_option("insert_final_newline", True)
+    tab.bind("<<BeforeSave>>", on_save, add=True)
+
+
 def on_save(event: tkinter.Event[tabs.FileTab]) -> None:
     if event.widget.settings.get("insert_final_newline", bool):
         textwidget = event.widget.textwidget
@@ -15,11 +20,6 @@ def on_save(event: tkinter.Event[tabs.FileTab]) -> None:
             cursor = textwidget.index("insert")
             textwidget.insert("end - 1 char", "\n")
             textwidget.mark_set("insert", cursor)
-
-
-def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("insert_final_newline", True)
-    tab.bind("<<BeforeSave>>", on_save, add=True)
 
 
 def setup() -> None:
