@@ -43,6 +43,7 @@ def main():
     replace_in_file(Path("CHANGELOG.md"), "Unreleased", TAG_FORMAT % new_info)
     replace_in_file(Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
     replace_in_file(Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
+    replace_in_file(Path("pyproject.toml"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
     subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
