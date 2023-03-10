@@ -7,7 +7,7 @@ and other details that don't affect using Porcupine.
 New features:
 - On Linux, there's a new and easy way to launch Porcupine without using the terminal. In settings, you can check "Show Porcupine in the desktop menu system", which makes Porcupine appear in the operating system's menu like most other applications. There are [more instructions in the README](https://github.com/Akuli/porcupine#installing-porcupine).
 - There is a new menu that appears when right-clicking the main editing area. It doesn't contain much yet, but more things will probably be added into it in subsequent releases. Thank you [ArchKats](https://github.com/ArchKats) for designing and implementing the new right-click menu.
-- When right-clicking a folder in the directory tree, there is a new option "Open in terminal". It is equivalent to opening a terminal as usual and then going to the right-clicked folder with `cd some/path/to/the/folder`. Thank you [Tuomas](https://github.com/taahol).
+- When right-clicking a folder in the directory tree, there is a new option "Open in terminal". It is equivalent to opening a terminal or command prompt as usual and then going to the right-clicked folder with `cd some/path/to/the/folder`. Thank you [Tuomas](https://github.com/taahol).
 - Porcupine now recognizes [BOMs](https://en.wikipedia.org/wiki/Byte_order_mark) in text files. Previously UTF-8 files with a BOM would get a weirdly behaving blank character in the beginning. Thank you [Tuomas](https://github.com/taahol).
 
 Bug fixes (both by [Tuomas](https://github.com/taahol)):
