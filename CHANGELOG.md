@@ -11,8 +11,8 @@ New features:
 - Porcupine now recognizes [BOMs](https://en.wikipedia.org/wiki/Byte_order_mark) in text files. Previously UTF-8 files with a BOM would get a weirdly behaving blank character in the beginning. Thank you [Tuomas](https://github.com/taahol).
 
 Bug fixes (both by [Tuomas](https://github.com/taahol)):
-- Dragging and dropping files to Porcupine now works even when the files contain non-ASCII characters.
-- File types selected with the *Filetypes* menu are now remembered when Porcupine is restarted.
+- Dragging and dropping files to Porcupine now works even when the file names contain non-ASCII characters.
+- File types selected with the *Filetypes* menu in the menubar are now remembered when Porcupine is restarted.
 
 
 ## v2023.01.19
