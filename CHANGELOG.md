@@ -2,6 +2,19 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+New features:
+- On Linux, there's a new and easy way to launch Porcupine without using a terminal. In settings, you can check "Show Porcupine in the desktop menu system" to make it show up in the operating system's menu like most other applications. There are [more instructions in the README](https://github.com/Akuli/porcupine#installing-porcupine).
+- There is a new menu that appears when right-clicking the main text area of the editor. It doesn't contain much yet, but more things will probably be added into it in subsequent releases. Thank you [ArchKats](https://github.com/ArchKats) for designing and implementing the new right-click menu.
+- When right-clicking a folder in the directory tree, there is a new option "Open in terminal". Thank you [Tuomas](https://github.com/taahol).
+- Porcupine now recognizes [BOMs](https://en.wikipedia.org/wiki/Byte_order_mark) in text files. Previously UTF-8 files with a BOM would get a weirdly behaving blank character in the beginning. Thank you [Tuomas](https://github.com/taahol).
+
+Bug fixes (all by [Tuomas](https://github.com/taahol)):
+- Dragging and dropping files to Porcupine now works even when the files contain non-ASCII characters.
+- File types selected with the *Filetypes* menu are now remembered when Porcupine is restarted.
+
+
 ## v2023.01.19
 
 Fixes a bug where on some computers, the minimap would show keywords and other highlighted parts of the code with a ridiculously large font (see [#1171](https://github.com/Akuli/porcupine/issues/1171)). The minimap is the narrow view of the file being edited on the side.
