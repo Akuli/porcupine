@@ -54,7 +54,7 @@ Open a terminal and run these commands:
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     pip install wheel
-    pip install https://github.com/Akuli/porcupine/archive/v2023.01.19.zip
+    pip install https://github.com/Akuli/porcupine/archive/v2023.03.11.zip
     porcu
 
 To easily run porcupine again later,
@@ -75,7 +75,7 @@ Then run these commands:
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     pip install wheel
-    pip install https://github.com/Akuli/porcupine/archive/v2023.01.19.zip
+    pip install https://github.com/Akuli/porcupine/archive/v2023.03.11.zip
     porcu
 
 To easily run porcupine again later,

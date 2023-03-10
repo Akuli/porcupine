@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2023.03.11
 
 New features:
 - On Linux, there's a new and easy way to launch Porcupine without using the terminal. In settings, you can check "Show Porcupine in the desktop menu system", which makes Porcupine appear in the operating system's menu like most other applications. There are [more instructions in the README](https://github.com/Akuli/porcupine#installing-porcupine).
