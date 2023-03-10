@@ -10,7 +10,7 @@ New features:
 - When right-clicking a folder in the directory tree, there is a new option "Open in terminal". Thank you [Tuomas](https://github.com/taahol).
 - Porcupine now recognizes [BOMs](https://en.wikipedia.org/wiki/Byte_order_mark) in text files. Previously UTF-8 files with a BOM would get a weirdly behaving blank character in the beginning. Thank you [Tuomas](https://github.com/taahol).
 
-Bug fixes (all by [Tuomas](https://github.com/taahol)):
+Bug fixes (both by [Tuomas](https://github.com/taahol)):
 - Dragging and dropping files to Porcupine now works even when the files contain non-ASCII characters.
 - File types selected with the *Filetypes* menu are now remembered when Porcupine is restarted.
 
