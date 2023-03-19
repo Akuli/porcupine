@@ -141,6 +141,7 @@ bind Text <$control_ish-Delete> {
         event generate %W <<NextWord>>
         %W delete $start insert
     }
+    %W see insert
 }
 
 bind Text <BackSpace> {
@@ -152,6 +153,7 @@ bind Text <BackSpace> {
             %W delete {insert - 1 char} insert
         }
     }
+    %W see insert
 }
 
 bind Text <$control_ish-BackSpace> {
@@ -160,6 +162,7 @@ bind Text <$control_ish-BackSpace> {
         event generate %W <<PrevWord>>
         %W delete insert $end
     }
+    %W see insert
 }
 
 bind Text <Shift-$control_ish-Delete> {
@@ -170,6 +173,7 @@ bind Text <Shift-$control_ish-Delete> {
             %W delete insert {insert lineend}
         }
     }
+    %W see insert
 }
 
 bind Text <Shift-$control_ish-BackSpace> {
@@ -180,6 +184,7 @@ bind Text <Shift-$control_ish-BackSpace> {
             %W delete {insert linestart} insert
         }
     }
+    %W see insert
 }
 
 # When pasting, delete what was selected. Here + adds to end of existing binding.
