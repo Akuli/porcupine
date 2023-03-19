@@ -57,9 +57,9 @@ Directories
 -----------
 
 .. data:: dirs
-    :type: appdirs.AppDirs
+    :type: platformdirs.PlatformDirs
 
-    See `appdirs on PyPI <https://pypi.org/project/appdirs/>`_.
+    See `platformdirs on PyPI <https://pypi.org/project/platformdirs/>`_.
     For example, ``porcupine.dirs.user_cache_dir`` is where temporary cache files should go.
 
     When Porcupine starts, it makes sure that these directories exist:

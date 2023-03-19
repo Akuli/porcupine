@@ -16,7 +16,6 @@ types-Send2Trash==1.8.2.1
 types-setuptools==65.5.0.2
 types-ttkthemes==3.2.4
 types-colorama==0.4.15.2
-types-appdirs==1.4.3
 types-toposort==1.7.4
 types-psutil==5.9.5.4
 types-PyYAML==6.0.12.1

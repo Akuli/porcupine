@@ -15,7 +15,7 @@ import time
 import tkinter
 from concurrent.futures import Future
 
-import appdirs
+import platformdirs
 import pytest
 
 import porcupine
@@ -49,7 +49,7 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_pastebins)
 
 
-class MonkeypatchedAppDirs(appdirs.AppDirs):
+class MonkeypatchedPlatformDirs(platformdirs.PlatformDirs):
     user_cache_dir = property(operator.attrgetter("_cache"))
     user_config_dir = property(operator.attrgetter("_config"))
     user_log_dir = property(operator.attrgetter("_logs"))
@@ -66,9 +66,9 @@ def monkeypatch_dirs():
     with tempfile.TemporaryDirectory() as d:
         # This is a hack because:
         #   - pytest monkeypatch fixture doesn't work (not for scope='session')
-        #   - assigning to dirs.user_cache_dir doesn't work (appdirs uses @property)
+        #   - assigning to dirs.user_cache_dir doesn't work (platformdirs uses @property)
         #   - "porcupine.dirs = blahblah" doesn't work (from porcupine import dirs)
-        dirs.__class__ = MonkeypatchedAppDirs
+        dirs.__class__ = MonkeypatchedPlatformDirs
         dirs._cache = os.path.join(d, "cache")
         dirs._config = os.path.join(d, "config")
         dirs._logs = os.path.join(d, "logs")

@@ -9,7 +9,7 @@ plugin API documentation:
 
 import sys
 
-import appdirs
+import platformdirs
 
 version_info = (2023, 3, 11)  # this is updated with scripts/release.py
 __version__ = "%d.%02d.%02d" % version_info
@@ -19,9 +19,9 @@ __license__ = "MIT"
 
 if sys.platform in {"win32", "darwin"}:
     # these platforms like path names like "Program Files" or "Application Support"
-    dirs = appdirs.AppDirs("Porcupine", "Akuli")
+    dirs = platformdirs.PlatformDirs("Porcupine", "Akuli")
 else:
-    dirs = appdirs.AppDirs("porcupine", "akuli")
+    dirs = platformdirs.PlatformDirs("porcupine", "akuli")
 
 # Must be after creating dirs
 from porcupine import _state
