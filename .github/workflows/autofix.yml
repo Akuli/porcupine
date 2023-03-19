@@ -1,0 +1,11 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request_target:
+
+jobs:
+  black-and-isort:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo hello
