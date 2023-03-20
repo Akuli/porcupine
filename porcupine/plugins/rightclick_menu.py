@@ -19,7 +19,8 @@ def text_is_selected(tab: tabs.FileTab) -> bool:
     return True
 
 
-def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
+# creating and showing menu are separated for tests
+def create_menu() -> tkinter.Menu:
     rm = tkinter.Menu(get_main_window(), tearoff=0)
 
     for path, func in _menu_items.items():
@@ -30,6 +31,11 @@ def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
         for i in _ftab_indexes:
             rm.entryconfigure(i, state=tkinter.DISABLED)
 
+    return rm
+
+
+def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
+    rm = create_menu()
     rm.tk_popup(event.x_root, event.y_root)
     rm.bind("<Unmap>", (lambda event: rm.after_idle(rm.destroy)), add=True)
 
