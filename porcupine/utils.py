@@ -405,7 +405,7 @@ class EventDataclass:
     def __str__(self) -> str:
         # str(Foo(a=1, b=2)) --> 'Foo{"a": 1, "b": 2}'
         # Content after Foo is JSON parsed in Event.data_class()
-        return type(self).__name__ + json.dumps(dataclasses.asdict(self))
+        return type(self).__name__ + json.dumps(dataclasses.asdict(self))  # type: ignore
 
 
 if TYPE_CHECKING:
