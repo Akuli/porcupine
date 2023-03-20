@@ -56,7 +56,7 @@ def _open_log_file() -> TextIO:
     )
     for filename in filenames:
         try:
-            return dirs.user_log_path / filename.open("x", encoding="utf-8")
+            return (dirs.user_log_path / filename).open("x", encoding="utf-8")
         except FileExistsError:
             continue
     assert False  # makes mypy happy
