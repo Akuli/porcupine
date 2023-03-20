@@ -8,7 +8,10 @@ plugin API documentation:
 """
 
 import os
+import pathlib
+import platform
 import sys
+import urllib
 
 import platformdirs
 
