@@ -80,22 +80,6 @@ jobs:
     - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pytest --durations=10
 
-  black-and-isort:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-        cache: pip
-    - run: pip install wheel
-    - run: pip install -r requirements-dev.txt
-    - run: python3 -m black $(git ls-files | grep -E '\.(py|pyw)$')
-    - run: python3 -m isort $(git ls-files | grep -E '\.(py|pyw)$')
-    - uses: stefanzweifel/git-auto-commit-action@v4
-      with:
-        commit_message: "Run black and isort"
-
   pyflakes:
     runs-on: ubuntu-latest
     steps:
