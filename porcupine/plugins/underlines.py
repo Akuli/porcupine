@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 class Underline:
     start: str
     end: str
-    message: str
+    tooltip_text: str
     color: Optional[str] = None
 
 
@@ -78,7 +78,7 @@ class _Underliner:
                 self.textwidget.event_generate(
                     "<<HoverResponse>>",
                     data=hover.Response(
-                        location=event.data_string, text=self._tag2underline[tag].message
+                        location=event.data_string, text=self._tag2underline[tag].tooltip_text
                     ),
                 )
                 return "break"  # Do not pass hover event to langserver
