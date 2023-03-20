@@ -21,7 +21,8 @@ from urllib.request import HTTPSHandler, Request, build_opener
 
 from pygments.lexer import LexerMeta
 
-from porcupine import get_main_window, menubar, tabs, utils
+from porcupine import get_main_window, tabs, utils
+from porcupine.plugins import rightclick_menu
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -102,9 +103,7 @@ class MyHTTPSConnection(HTTPSConnection, MyHTTPConnection):
         super().__init__(*args, **kwargs)
         self._dpaste = dpaste
 
-    # Type ignore needed, because the sock is temporarily non-SSL socket while
-    # constructing the connection, and the types don't reflect that.
-    @property  # type: ignore
+    @property
     def sock(self) -> socket.socket | ssl.SSLSocket:
         return self.__sock
 
@@ -302,7 +301,7 @@ def pasting_done_callback(
         )
 
 
-def ask_are_you_sure(filename: str | None, paste_class: type[Paste], selection_only: bool) -> bool:
+def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     window = tkinter.Toplevel()
     window.title(f"Pastebin {filename}")
     window.transient(get_main_window())
@@ -311,15 +310,10 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste], selection_o
     content.pack(fill="both", expand=True)
     content.columnconfigure(0, weight=1)
 
-    if selection_only:
-        question = f"Do you want to send the selected code to {paste_class.name}?"
-    else:
-        question = f"Do you want to send the content of {filename} to {paste_class.name}?"
-
     label1 = ttk.Label(
         content,
         name="label1",
-        text=question,
+        text=f"Do you want to send the selected text to {paste_class.name}?",
         wraplength=300,
         justify="center",
         font="TkHeadingFont",
@@ -367,21 +361,13 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste], selection_o
 
 
 def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
-    try:
-        code = tab.textwidget.get("sel.first", "sel.last")
-        selection_only = True
-    except tkinter.TclError:
-        code = tab.textwidget.get("1.0", "end - 1 char")
-        selection_only = False
-
     if global_settings.get("ask_to_pastebin", bool):
         filename = "this file" if tab.path is None else tab.path.name
-        if not ask_are_you_sure(filename, paste_class, selection_only=selection_only):
+        if not ask_are_you_sure(filename, paste_class):
             return
 
+    code = textwrap.dedent(tab.textwidget.get("sel.first", "sel.last"))
     lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
-
-    code = textwrap.dedent(code)
 
     paste = paste_class()
     plz_wait = make_please_wait_window(paste)
@@ -394,4 +380,8 @@ def setup() -> None:
     global_settings.add_option("ask_to_pastebin", default=True)
     for klass in [DPaste, Termbin]:
         assert "/" not in klass.name
-        menubar.add_filetab_command(f"Pastebin/{klass.name}", partial(start_pasting, klass))
+        rightclick_menu.add_rightclick_option(
+            f"Pastebin selected text to {klass.name}",
+            partial(start_pasting, klass),
+            needs_selected_text=True,
+        )

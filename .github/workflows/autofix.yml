@@ -1,11 +1,23 @@
 on:
-  push:
-    branches:
-      - main
   pull_request_target:
 
 jobs:
   black-and-isort:
     runs-on: ubuntu-latest
     steps:
-    - run: echo hello
+    # git-auto-commit-action is a bit tricky to use, see its README
+    - uses: actions/checkout@v3
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.head_ref }}
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: pip
+    - run: pip install wheel
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m black $(git ls-files | grep -E '\.(py|pyw)$')
+    - run: python3 -m isort $(git ls-files | grep -E '\.(py|pyw)$')
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "Run black and isort"

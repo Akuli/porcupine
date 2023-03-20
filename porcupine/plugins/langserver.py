@@ -491,7 +491,7 @@ class LangServer:
                         underlines.Underline(
                             start=_position_lsp2tk(diagnostic.range.start),
                             end=_position_lsp2tk(diagnostic.range.end),
-                            message=_get_diagnostic_string(diagnostic),
+                            tooltip_text=_get_diagnostic_string(diagnostic),
                             # TODO: there are plenty of other severities than ERROR and WARNING
                             color=(
                                 "red"

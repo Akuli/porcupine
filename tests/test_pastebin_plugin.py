@@ -12,6 +12,7 @@ import requests
 from pygments.lexers import PythonLexer, TextLexer, find_lexer_class_by_name
 
 from porcupine import get_main_window, utils
+from porcupine.plugins import rightclick_menu
 from porcupine.plugins.pastebin import DPaste, SuccessDialog, Termbin
 
 
@@ -126,16 +127,13 @@ def test_lots_of_stuff_with_localhost_termbin(
 
         def fake_termbin():
             with termbin.accept()[0] as sock:
-                assert sock.recv(1024) == b"hello world\n"
+                assert sock.recv(1024).rstrip(b"\n") == b"hello world"
                 sock.sendall(b"http://example.com/\n\0")
             nonlocal thread_done
             thread_done = True
 
         thread = threading.Thread(target=fake_termbin)
         thread.start()
-
-        tabmanager.select(filetab)
-        filetab.textwidget.insert("end", "hello world\n")
 
         def fake_wait_window(success_dialog):
             assert success_dialog.title() == "Pasting Succeeded"
@@ -145,7 +143,11 @@ def test_lots_of_stuff_with_localhost_termbin(
             fake_wait_window_done = True
 
         monkeypatch.setattr(tkinter.Toplevel, "wait_window", fake_wait_window)
-        get_main_window().event_generate("<<Menubar:Pastebin/termbin.com>>")
+
+        tabmanager.select(filetab)
+        filetab.textwidget.insert("end", "hello world\n")
+        filetab.textwidget.tag_add("sel", "1.0", "end")  # select all
+        rightclick_menu.create_menu().invoke("Pastebin selected text to termbin.com")
 
         thread.join()
         get_main_window().update()
@@ -158,7 +160,8 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, 
     mocker.patch("tkinter.messagebox.showerror")
 
     tabmanager.select(filetab)
-    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    filetab.textwidget.tag_add("sel", "1.0", "end")  # select all
+    rightclick_menu.create_menu().invoke("Pastebin selected text to dpaste.com")
 
     tkinter.messagebox.showerror.assert_called_once_with(
         "Pasting failed", "Check your internet connection or try a different pastebin."
@@ -171,7 +174,8 @@ def test_invalid_return(filetab, tabmanager, mocker, caplog, dont_run_in_thread)
     mocker.patch("porcupine.plugins.pastebin.DPaste.run").return_value = "lol"
 
     tabmanager.select(filetab)
-    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    filetab.textwidget.tag_add("sel", "1.0", "end")  # select all
+    rightclick_menu.create_menu().invoke("Pastebin selected text to dpaste.com")
 
     tkinter.messagebox.showerror.assert_called_once_with(
         "Pasting failed", "Instead of a valid URL, dpaste.com returned 'lol'."
@@ -205,32 +209,30 @@ if foo:
     filetab.textwidget.tag_add("sel", "2.0", "5.0")
 
     tabmanager.select(filetab)
-    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    rightclick_menu.create_menu().invoke("Pastebin selected text to dpaste.com")
     mock_run.assert_called_once_with("bar\nif baz:\n    lol\n", PythonLexer)
 
 
-def test_are_you_sure_dialog(filetab, tmp_path, wait_until, mocker, monkeypatch):
+def test_are_you_sure_dialog(filetab, tabmanager, tmp_path, wait_until, mocker, monkeypatch):
     mock_run = mocker.patch("porcupine.plugins.pastebin.DPaste.run")
 
     dialogs = []
     monkeypatch.setattr("tkinter.Toplevel.wait_window", (lambda d: dialogs.append(d)))
 
-    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    tabmanager.select(filetab)
+    filetab.textwidget.tag_add("sel", "1.0", "end")  # select all
+    rightclick_menu.create_menu().invoke("Pastebin selected text to dpaste.com")
     filetab.save_as(tmp_path / "lolwat.py")
-    get_main_window().event_generate("<<Menubar:Pastebin/dpaste.com>>")
+    rightclick_menu.create_menu().invoke("Pastebin selected text to dpaste.com")
 
     assert len(dialogs) == 2
     assert dialogs[0].title() == "Pastebin this file"
     assert dialogs[1].title() == "Pastebin lolwat.py"
-    assert (
-        dialogs[0].nametowidget("content.label1")["text"]
-        == "Do you want to send the content of this file to dpaste.com?"
-    )
-    assert (
-        dialogs[1].nametowidget("content.label1")["text"]
-        == "Do you want to send the content of lolwat.py to dpaste.com?"
-    )
-
     for d in dialogs:
+        assert (
+            d.nametowidget("content.label1")["text"]
+            == "Do you want to send the selected text to dpaste.com?"
+        )
         d.destroy()
+
     assert mock_run.call_count == 0  # closing the window cancels pastebinning
