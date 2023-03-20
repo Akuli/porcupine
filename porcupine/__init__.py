@@ -25,7 +25,7 @@ else:
     # By default, platformdirs places logs to a weird place ~/.local/state/porcupine/log.
     # No other applications I have use ~/.local/state and it doesn't even exist on my system.
     # See https://github.com/platformdirs/platformdirs/issues/106
-    class _PorcupinePlatformDirs(platformdirs.PlatformDirs):
+    class _PorcupinePlatformDirs(platformdirs.PlatformDirs):  # type: ignore
         @property
         def user_log_dir(self) -> str:
             return os.path.join(self.user_cache_dir, "log")
