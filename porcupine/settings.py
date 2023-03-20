@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import urllib
-import platform
-import pathlib
 import atexit
 import builtins
 import contextlib
