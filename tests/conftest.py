@@ -60,9 +60,9 @@ class MonkeypatchedPlatformDirs(platformdirs.PlatformDirs):
 def monkeypatch_dirs():
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
-    assert user_plugindir == os.path.join(dirs.user_config_dir, "plugins")
+    assert user_plugindir == str(dirs.user_config_path / "plugins")
 
-    user_font_cache_file = os.path.join(dirs.user_cache_dir, "font_cache.json")
+    font_cache = dirs.user_cache_path / "font_cache.json"
 
     # Test our custom log dir before it is monkeypatched away
     assert Path("~/.local/state").expanduser() not in dirs.user_log_path.parents
@@ -79,10 +79,9 @@ def monkeypatch_dirs():
         assert dirs.user_cache_dir.startswith(d)
 
         # Copy font cache to speed up tests
-        if os.path.isfile(user_font_cache_file):
-            os.mkdir(dirs.user_cache_dir)
-            test_font_cache_file = os.path.join(dirs.user_cache_dir, "font_cache.json")
-            shutil.copy(user_font_cache_file, test_font_cache_file)
+        if font_cache.exists():
+            dirs.user_cache_path.mkdir()
+            shutil.copy(font_cache, dirs.user_cache_path)
 
         yield
 

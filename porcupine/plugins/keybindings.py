@@ -7,9 +7,8 @@ from porcupine import dirs, get_main_window, menubar
 
 
 def setup() -> None:
-    porcupine_dir = Path(__file__).absolute().parent.parent
-    default_path = porcupine_dir / "default_keybindings.tcl"
-    user_path = Path(dirs.user_config_dir) / "keybindings.tcl"
+    default_path = Path(__file__).absolute().parent.parent / "default_keybindings.tcl"
+    user_path = dirs.user_config_path / "keybindings.tcl"
     menubar.add_config_file_button(user_path)
 
     try:
