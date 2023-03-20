@@ -8,7 +8,7 @@ python-language-server[rope,pyflakes]>=0.36.2,<1.0.0
 # black and isort minimum versions should be something old and kinda reasonable.
 # For developing Porcupine, newer versions can be set in requirements-dev.
 black>=21.5b2
-isort>=5.10.1
+isort>=5.10
 # typing.Literal is new in python 3.8
 typing_extensions
 dacite>=1.5.1,<2.0.0
