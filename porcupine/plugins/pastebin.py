@@ -22,8 +22,8 @@ from urllib.request import HTTPSHandler, Request, build_opener
 from pygments.lexer import LexerMeta
 
 from porcupine import get_main_window, menubar, tabs, utils
-from porcupine.settings import global_settings
 from porcupine.plugins import rightclick_menu
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
@@ -384,4 +384,6 @@ def setup() -> None:
         assert "/" not in klass.name
         rightclick_menu.add_rightclick_option(
             f"Pastebin selected text to {klass.name}",
-            partial(start_pasting, klass), needs_selected_text=True)
+            partial(start_pasting, klass),
+            needs_selected_text=True,
+        )
