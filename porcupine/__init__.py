@@ -23,7 +23,7 @@ if sys.platform in {"win32", "darwin"}:
     dirs = platformdirs.PlatformDirs("Porcupine", "Akuli")
 else:
     # By default, platformdirs places logs to a weird place ~/.local/state/porcupine/log.
-    # I want them to go to ~/.cache/porcupine/log instead, like they were when using appdirs (now unmaintained) instead of platformdirs
+    # No other applications I have use ~/.local/state and it doesn't even exist on my system.
     # See https://github.com/platformdirs/platformdirs/issues/106
     class _PorcupinePlatformDirs(platformdirs.PlatformDirs):
         @property
