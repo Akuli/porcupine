@@ -96,6 +96,18 @@ jobs:
       with:
         commit_message: "Run black and isort"
 
+  pyflakes:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: pip
+    - run: pip install wheel
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
+
   flake8-tkinter:
     runs-on: ubuntu-latest
     steps:
