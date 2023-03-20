@@ -14,6 +14,7 @@ import tempfile
 import time
 import tkinter
 from concurrent.futures import Future
+from pathlib import Path
 
 import platformdirs
 import pytest
@@ -62,6 +63,9 @@ def monkeypatch_dirs():
     assert user_plugindir == os.path.join(dirs.user_config_dir, "plugins")
 
     user_font_cache_file = os.path.join(dirs.user_cache_dir, "font_cache.json")
+
+    # Test our custom log dir before it is monkeypatched away
+    assert Path("~/.local/state").expanduser() not in dirs.user_log_path.parents
 
     with tempfile.TemporaryDirectory() as d:
         # This is a hack because:

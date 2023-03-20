@@ -7,6 +7,7 @@ plugin API documentation:
     https://akuli.github.io/porcupine/
 """
 
+import os
 import sys
 
 import platformdirs
@@ -21,7 +22,16 @@ if sys.platform in {"win32", "darwin"}:
     # these platforms like path names like "Program Files" or "Application Support"
     dirs = platformdirs.PlatformDirs("Porcupine", "Akuli")
 else:
-    dirs = platformdirs.PlatformDirs("porcupine", "akuli")
+    # By default, platformdirs places logs to a weird place ~/.local/state/porcupine/log.
+    # I want them to go to ~/.cache/porcupine/log instead, like they were when using appdirs (now unmaintained) instead of platformdirs
+    # See https://github.com/platformdirs/platformdirs/issues/106
+    class _PorcupinePlatformDirs(platformdirs.PlatformDirs):
+        @property
+        def user_log_dir(self) -> str:
+            return os.path.join(self.user_cache_dir, "log")
+
+    # Also let's make the directory names lowercase
+    dirs = _PorcupinePlatformDirs("porcupine", "akuli")
 
 # Must be after creating dirs
 from porcupine import _state
