@@ -21,7 +21,7 @@ from urllib.request import HTTPSHandler, Request, build_opener
 
 from pygments.lexer import LexerMeta
 
-from porcupine import get_main_window, menubar, tabs, utils
+from porcupine import get_main_window, tabs, utils
 from porcupine.plugins import rightclick_menu
 from porcupine.settings import global_settings
 
