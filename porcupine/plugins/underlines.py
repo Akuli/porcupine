@@ -1,7 +1,16 @@
-"""Show underlines in code to indicate different things.
+"""Shows underlines in code that can be hovered to display a tooltip.
 
-Currently the langserver plugin displays errors and warnings with this plugin
-and the urls plugin uses this to create control-clickable links.
+This plugin does nothing by itself, and needs some other plugin to tell it what
+to underline and what the tooltips should say.
+
+For example, if you import something that you don't need in a Python file, the
+langserver plugin tells this plugin to underline the unused import with a
+yellow underline, and when hovered, display something like "foolibrary imported
+but not used".
+
+Another example is highlighting links in source code. If your program contains
+a link, the urls plugin finds it and uses this plugin to underline it and
+display something like "Ctrl+Enter or Ctrl+click to open" when hovered.
 """
 from __future__ import annotations
 
@@ -20,7 +29,7 @@ log = logging.getLogger(__name__)
 class Underline:
     start: str
     end: str
-    message: str
+    tooltip_text: str
     color: Optional[str] = None
 
 
@@ -69,7 +78,7 @@ class _Underliner:
                 self.textwidget.event_generate(
                     "<<HoverResponse>>",
                     data=hover.Response(
-                        location=event.data_string, text=self._tag2underline[tag].message
+                        location=event.data_string, text=self._tag2underline[tag].tooltip_text
                     ),
                 )
                 return "break"  # Do not pass hover event to langserver
