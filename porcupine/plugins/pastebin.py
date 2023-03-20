@@ -315,7 +315,7 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     label1 = ttk.Label(
         content,
         name="label1",
-        text=f"Do you want to send the selected code to {paste_class.name}?",
+        text=f"Do you want to send the selected text to {paste_class.name}?",
         wraplength=300,
         justify="center",
         font="TkHeadingFont",
