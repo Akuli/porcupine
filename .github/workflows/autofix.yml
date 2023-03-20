@@ -2,7 +2,7 @@ on:
   pull_request_target:
 
 jobs:
-  black-and-isort:
+  autofix:
     runs-on: ubuntu-latest
     steps:
     # git-auto-commit-action is a bit tricky to use, see its README
@@ -16,8 +16,9 @@ jobs:
         cache: pip
     - run: pip install wheel
     - run: pip install -r requirements-dev.txt
+    - run: python3 -m pycln $(git ls-files | grep -E '\.(py|pyw)$')
     - run: python3 -m black $(git ls-files | grep -E '\.(py|pyw)$')
     - run: python3 -m isort $(git ls-files | grep -E '\.(py|pyw)$')
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "Run black and isort"
+        commit_message: "Run pycln, black and isort"
