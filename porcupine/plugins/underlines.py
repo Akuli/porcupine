@@ -1,10 +1,10 @@
 """Shows underlines in code that can be hovered to display a tooltip.
 
-This plugin does nothing by itself, and needs some other plugin to essentially
-tell it what to underline and what the tooltips should say.
+This plugin does nothing by itself, and needs some other plugin to tell it what
+to underline and what the tooltips should say.
 
 For example, if you import something that you don't need in a Python file, the
-langserver plugin will tell this plugin to underline the unused import with a
+langserver plugin tells this plugin to underline the unused import with a
 yellow underline, and when hovered, display something like "foolibrary imported
 but not used".
 
