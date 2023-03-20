@@ -133,7 +133,6 @@ def _copy_type(f: _T) -> Callable[[Any], _T]:
 
 
 class _TooltipManager:
-
     # This needs to be shared by all instances because there's only one
     # mouse pointer.
     tipwindow: tkinter.Toplevel | None = None
@@ -405,7 +404,7 @@ class EventDataclass:
     def __str__(self) -> str:
         # str(Foo(a=1, b=2)) --> 'Foo{"a": 1, "b": 2}'
         # Content after Foo is JSON parsed in Event.data_class()
-        return type(self).__name__ + json.dumps(dataclasses.asdict(self))
+        return type(self).__name__ + json.dumps(dataclasses.asdict(self))  # type: ignore
 
 
 if TYPE_CHECKING:
@@ -542,6 +541,7 @@ def bind_tab_key(
     ``'<Shift-Tab>'`` only works on Windows and Mac OSX. This function
     also works on X11.
     """
+
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
     def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> Any:
