@@ -2,7 +2,7 @@ pytest==6.2.5
 pytest-cov==4.0.0
 pytest-mock==3.10.0
 black==23.1.0
-#isort==5.12.0  # no idea why this not work...
+isort==5.12.0
 sphinx>=4.0.0, <5.0.0
 pyflakes==2.2.0
 pillow>=5.4.1
