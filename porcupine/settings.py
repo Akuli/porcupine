@@ -601,7 +601,6 @@ def _create_validation_triangle(
     type_: type[_StrOrInt],
     callback: Callable[[_StrOrInt], bool],
 ) -> ttk.Label:
-
     triangle = ttk.Label(widget.master)
     var = tkinter.StringVar()
 

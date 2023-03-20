@@ -169,7 +169,6 @@ def add_config_file_button(path: Path, *, menu: str = "Settings/Config Files") -
 def _walk_menu_contents(
     menu: tkinter.Menu, path_prefix: list[str] = []
 ) -> Iterator[tuple[str, tkinter.Menu, int]]:
-
     last_index = menu.index("end")
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
