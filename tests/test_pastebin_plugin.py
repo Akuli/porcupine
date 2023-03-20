@@ -160,6 +160,7 @@ def test_paste_error_handling(monkeypatch, caplog, mocker, tabmanager, filetab, 
     mocker.patch("tkinter.messagebox.showerror")
 
     tabmanager.select(filetab)
+    filetab.textwidget.tag_add("sel", "1.0", "end")  # select all
     rightclick_menu.create_menu().invoke("Pastebin selected text to dpaste.com")
 
     tkinter.messagebox.showerror.assert_called_once_with(
@@ -173,6 +174,7 @@ def test_invalid_return(filetab, tabmanager, mocker, caplog, dont_run_in_thread)
     mocker.patch("porcupine.plugins.pastebin.DPaste.run").return_value = "lol"
 
     tabmanager.select(filetab)
+    filetab.textwidget.tag_add("sel", "1.0", "end")  # select all
     rightclick_menu.create_menu().invoke("Pastebin selected text to dpaste.com")
 
     tkinter.messagebox.showerror.assert_called_once_with(
