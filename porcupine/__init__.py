@@ -11,6 +11,9 @@ import os
 import sys
 
 import platformdirs
+import urllib
+import platform
+import pathlib
 
 version_info = (2023, 3, 11)  # this is updated with scripts/release.py
 __version__ = "%d.%02d.%02d" % version_info
