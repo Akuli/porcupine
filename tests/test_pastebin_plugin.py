@@ -230,9 +230,9 @@ def test_are_you_sure_dialog(filetab, tabmanager, tmp_path, wait_until, mocker, 
     assert dialogs[1].title() == "Pastebin lolwat.py"
     for d in dialogs:
         assert (
-d.nametowidget("content.label1")["text"]
-        == "Do you want to send the selected text to dpaste.com?"
-    )
+            d.nametowidget("content.label1")["text"]
+            == "Do you want to send the selected text to dpaste.com?"
+        )
         d.destroy()
 
     assert mock_run.call_count == 0  # closing the window cancels pastebinning
