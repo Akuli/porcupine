@@ -53,7 +53,7 @@ It often points out problems like forgetting to check whether something is `None
 If you forget to run `mypy`, it doesn't matter,
 because GitHub Actions will run it before I merge your PR.
 
-Porcupine also uses `black` and `isort` to format code.
+Porcupine also uses a few tools (`pycln`, `black`, `isort`) to format code.
 They run automatically when you make a pull request.
 If you cannot push after the automatic formatting,
 try running `git pull` before pushing or use `git push --force`.
