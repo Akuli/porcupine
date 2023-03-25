@@ -278,7 +278,7 @@ def pasting_done_callback(
     please_wait_window.destroy()
 
     if success:
-        if result.startswith(("http://", "https://")):
+        if result.startswith("https://"):
             log.info("pasting succeeded")
             dialog = SuccessDialog(url=result)
             dialog.title("Pasting Succeeded")
