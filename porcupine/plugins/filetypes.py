@@ -49,7 +49,7 @@ def is_list_of_strings(obj: object) -> bool:
 
 def load_filetypes() -> None:
     # user_path can't be global var because tests monkeypatch
-    user_path = Path(dirs.user_config_dir) / "filetypes.toml"
+    user_path = dirs.user_config_path / "filetypes.toml"
     defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
     with defaults_path.open("rb") as defaults_file:
@@ -296,7 +296,7 @@ def setup() -> None:
         _add_filetype_menuitem(name, filetypes_var)
 
     get_tab_manager().bind("<<NotebookTabChanged>>", _sync_filetypes_menu, add=True)
-    path = Path(dirs.user_config_dir) / "filetypes.toml"
+    path = dirs.user_config_path / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
     menubar.add_config_file_button(path, menu="Filetypes")
     menubar.add_config_file_button(path)  # goes to "Settings/Config Files"

@@ -1,4 +1,4 @@
-appdirs>=1.4.4
+platformdirs>=3.0.0,<4.0.0
 # pygments version fixed because haxx in highlight plugin
 Pygments==2.12.0
 toposort>=1.5
