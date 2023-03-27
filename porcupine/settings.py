@@ -969,7 +969,14 @@ def _fill_dialog_content_with_defaults() -> None:
         "default_line_ending", "Default line ending:", values=[ending.name for ending in LineEnding]
     )
     add_pygments_style_button("pygments_style", "Pygments style for editing:")
-    add_checkbutton("allow_quit_with_open_tabs", text="Asd asd")
+
+    checkbox = add_checkbutton("allow_quit_with_open_tabs")
+    checkbox.bind(
+        "<Map>",
+        lambda event: checkbox.config(
+            text=f"Allow quitting with {utils.get_binding('<<Menubar:File/Quit>>')} when there are no open tabs"
+        ),
+    )
 
 
 # undocumented on purpose, don't use in plugins
