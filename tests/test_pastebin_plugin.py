@@ -93,18 +93,18 @@ def test_dpaste_canceling(monkeypatch):
 
 
 def test_success_dialog(mocker):
-    dialog = SuccessDialog("http://example.com/poop")
+    dialog = SuccessDialog("https://example.com/poop")
 
     dialog.clipboard_append("this junk should be gone soon")
     dialog.copy_to_clipboard()
-    assert dialog.clipboard_get() == "http://example.com/poop"
+    assert dialog.clipboard_get() == "https://example.com/poop"
 
     # make sure that webbrowser.open is called
     mock = mocker.patch("porcupine.plugins.pastebin.webbrowser")
     assert dialog.winfo_exists()
     dialog.open_in_browser()
     assert not dialog.winfo_exists()
-    mock.open.assert_called_once_with("http://example.com/poop")
+    mock.open.assert_called_once_with("https://example.com/poop")
 
     dialog.destroy()
 
@@ -128,7 +128,7 @@ def test_lots_of_stuff_with_localhost_termbin(
         def fake_termbin():
             with termbin.accept()[0] as sock:
                 assert sock.recv(1024).rstrip(b"\n") == b"hello world"
-                sock.sendall(b"http://example.com/\n\0")
+                sock.sendall(b"https://example.com/\n\0")
             nonlocal thread_done
             thread_done = True
 
@@ -137,7 +137,7 @@ def test_lots_of_stuff_with_localhost_termbin(
 
         def fake_wait_window(success_dialog):
             assert success_dialog.title() == "Pasting Succeeded"
-            assert success_dialog.url == "http://example.com/"
+            assert success_dialog.url == "https://example.com/"
             success_dialog.destroy()
             nonlocal fake_wait_window_done
             fake_wait_window_done = True
