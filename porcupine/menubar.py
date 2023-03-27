@@ -375,7 +375,7 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("File/Save", (lambda tab: isinstance(tab, tabs.FileTab)))
     set_enabled_based_on_tab("File/Save As", (lambda tab: isinstance(tab, tabs.FileTab)))
     set_enabled_based_on_tab("File/Close", (lambda tab: tab is not None))
-    set_enabled_based_on_tab("File/Quit", (lambda tab: tab is None))
+    set_enabled_based_on_tab("File/Quit", (lambda tab: tab is None or global_settings.get("allow_quit_with_open_tabs", bool)))
 
     def change_font_size(how: Literal["bigger", "smaller", "reset"]) -> None:
         if how == "reset":
