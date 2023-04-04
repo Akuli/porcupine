@@ -147,3 +147,4 @@ def quit() -> None:
 
 def restart() -> None:
     quit()  # widgets were destroyed here
+    os.execv(sys.executable, [sys.executable] + ['-m'] + ['porcupine'])
