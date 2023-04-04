@@ -17,7 +17,7 @@ else:
     from typing_extensions import Literal
 
 from porcupine import pluginmanager, settings, tabs, utils
-from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
+from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit, restart
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -370,6 +370,7 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("File").add_command(label="Save As", command=partial(save_file, True))
     get_menu("File").add_separator()
     get_menu("File").add_command(label="Close", command=close_selected_tab)
+    get_menu("File").add_command(label="Restart", command=restart)
     get_menu("File").add_command(label="Quit", command=quit)
 
     set_enabled_based_on_tab("File/Save", (lambda tab: isinstance(tab, tabs.FileTab)))
