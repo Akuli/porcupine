@@ -144,3 +144,6 @@ def quit() -> None:
     for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)
     get_main_window().destroy()
+
+    def restart() -> None:
+        quit()  # widgets were destroyed here
