@@ -147,4 +147,4 @@ def quit() -> None:
 
 def restart() -> None:
     quit()  # widgets were destroyed here
-    os.execv(sys.executable, [sys.executable] + ['-m'] + ['porcupine'])
+    os.execv(sys.executable, [sys.executable] + ['-m'] + ['porcupine'])  # overrides current OS process with fresh porcupine instance - difficult to test
