@@ -48,8 +48,8 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
         tab
         for tab in get_tab_manager().tabs()
         if isinstance(tab, tabs.FileTab)
-        and tab.path is not None
-        and (path == tab.path or path in tab.path.parents)
+           and tab.path is not None
+           and (path == tab.path or path in tab.path.parents)
     ]
 
 
@@ -384,6 +384,19 @@ def new_directory_here(path: Path) -> None:
         get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
+# takes path object and copies it into a new path using shutil.copytree, it also throws error if folder name exists
+# but the ask_file_name function prevents that from happening
+def copy_folder(path: Path) -> None:
+    new_path = ask_file_name(path.parent, f"{path.name}_copy", mode=FilenameMode.NEW_DIRECTORY)
+    if new_path:
+        shutil.copytree(path, new_path)
+
+
+# takes the path object  and returns a boolean value determining if the path is a directory
+def can_copy_folder(path: Path) -> bool:
+    return path.is_dir()
+
+
 commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
@@ -397,6 +410,7 @@ commands = [
     Command("Paste", "<<Paste>>", can_paste, paste),
     Command("Rename", "<<FileManager:Rename>>", is_NOT_project_root, rename),
     Command(f"Move to {trash_name}", "<<FileManager:Trash>>", is_NOT_project_root, trash),
+    Command("Copy folder", "<<FileManager:Copy folder>>", can_copy_folder, copy_folder),
     Command("Delete", "<<FileManager:Delete>>", is_NOT_project_root, delete),
     Command("Open in file manager", None, (lambda p: p.is_dir()), open_in_file_manager),
     Command("Open in terminal", None, (lambda p: p.is_dir()), open_in_terminal),
