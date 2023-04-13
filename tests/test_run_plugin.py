@@ -92,14 +92,16 @@ def test_input(filetab, tmp_path, wait_until):
     no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
     wait_until(lambda: "Enter something:" in get_output())
 
-    no_terminal.runner.textwidget.insert('insert', 'örkkimörkkiäinen')
+    no_terminal.runner.textwidget.insert("insert", "örkkimörkkiäinen")
     no_terminal.runner.handle_enter_press()
     wait_until(lambda: "The process completed successfully." in get_output())
 
     assert (
         get_output()
         .strip()
-        .endswith("Enter something: örkkimörkkiäinen\nYou said örkkimörkkiäinen\nThe process completed successfully.")
+        .endswith(
+            "Enter something: örkkimörkkiäinen\nYou said örkkimörkkiäinen\nThe process completed successfully."
+        )
     )
 
 
