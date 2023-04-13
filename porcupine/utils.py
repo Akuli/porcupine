@@ -128,7 +128,7 @@ def find_project_root(project_file_path: Path) -> Path:
 
 
 # https://github.com/python/typing/issues/769
-def _copy_type(f: _T) -> Callable[[Any], _T]:
+def copy_type(f: _T) -> Callable[[Any], _T]:
     return lambda x: x
 
 
@@ -207,7 +207,7 @@ class PanedWindow(tkinter.PanedWindow):
     control the sizes of the panes.
     """
 
-    @_copy_type(tkinter.PanedWindow.__init__)
+    @copy_type(tkinter.PanedWindow.__init__)
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # even non-ttk widgets can handle <<ThemeChanged>>
@@ -780,7 +780,7 @@ def run_in_thread(
     root.after_idle(check)
 
 
-@_copy_type(open)
+@copy_type(open)
 @contextlib.contextmanager
 def backup_open(file: Any, *args: Any, **kwargs: Any) -> Any:
     """Like :func:`open`, but uses a backup file if needed.

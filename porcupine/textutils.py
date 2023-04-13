@@ -86,7 +86,7 @@ class _ChangeTracker:
         # would cause text widget refcount never reach zero, WeakKeyDictionary won't work
         self._event_receiver_ref = weakref.ref(event_receiver_widget)
         self._change_batch: list[Change] | None = None
-        self.change_blockers = []
+        self.change_blockers: list[Callable[[], bool]] = []
 
     def setup(self, widget: tkinter.Text) -> None:
         old_cursor_pos = widget.index("insert")  # must be widget specific

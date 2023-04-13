@@ -14,7 +14,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable
+from typing import Any, Callable
 
 import psutil
 
@@ -29,7 +29,8 @@ from porcupine import (
 )
 from porcupine.plugins.run import common
 from porcupine.settings import global_settings
-from porcupine.textutils import add_change_blocker, create_passive_text_widget, track_changes
+from porcupine.textutils import add_change_blocker, track_changes
+from porcupine.utils import copy_type
 
 log = logging.getLogger(__name__)
 
@@ -238,13 +239,15 @@ class Executor:
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
-    def write_to_stdin(self, data: bytes):
+    def write_to_stdin(self, data: bytes) -> None:
         if self._shell_process is not None:
+            assert self._shell_process.stdin is not None
             self._shell_process.stdin.write(data)
             self._shell_process.stdin.flush()  # TODO: may block, maybe that isn't an issue in practice?
 
-    def close_stdin(self):
+    def close_stdin(self) -> None:
         if self._shell_process is not None:
+            assert self._shell_process.stdin is not None
             self._shell_process.stdin.close()
 
 
@@ -265,21 +268,24 @@ class TerminalTextWidget(tkinter.Text):
         self._in_a_python_method = False
 
     # Keep _in_a_python_method up to date
-    def insert(self, *args, **kwargs):
+    @copy_type(tkinter.Text.insert)
+    def insert(self, *args: Any, **kwargs: Any) -> Any:
         self._in_a_python_method = True
         try:
             return super().insert(*args, **kwargs)
         finally:
             self._in_a_python_method = False
 
-    def delete(self, *args, **kwargs):
+    @copy_type(tkinter.Text.delete)
+    def delete(self, *args: Any, **kwargs: Any) -> Any:
         self._in_a_python_method = True
         try:
             return super().delete(*args, **kwargs)
         finally:
             self._in_a_python_method = False
 
-    def replace(self, *args, **kwargs):
+    @copy_type(tkinter.Text.replace)
+    def replace(self, *args: Any, **kwargs: Any) -> Any:
         self._in_a_python_method = True
         try:
             return super().replace(*args, **kwargs)
@@ -312,7 +318,7 @@ class TerminalTextWidget(tkinter.Text):
         return False
 
     # Needs special handling to avoid deleting output.
-    def _handle_backspace(self, event):
+    def _handle_backspace(self, event: tkinter.Event[tkinter.Text]) -> str:
         if "output" not in self.tag_names("insert - 1 char"):
             self.delete("insert - 1 char", "insert")
         return "break"
@@ -380,7 +386,7 @@ class NoTerminalRunner:
         self.hide_button.pack(side="left", padx=1)
         utils.set_tooltip(self.hide_button, "Hide output")
 
-    def _feed_line_to_stdin(self, event):
+    def _feed_line_to_stdin(self, event: tkinter.Event[tkinter.Text]) -> str:
         if self.executor is not None:
             input_line = self.textwidget.handle_enter_press()
             if input_line is not None:
@@ -388,7 +394,7 @@ class NoTerminalRunner:
                 self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
         return "break"
 
-    def _handle_end_of_input(self, event):
+    def _handle_end_of_input(self, event: tkinter.Event[tkinter.Text]) -> None:
         if self.executor is not None:
             self.executor.close_stdin()
 
