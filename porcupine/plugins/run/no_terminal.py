@@ -371,38 +371,32 @@ class NoTerminalRunner:
 
         return False
 
-    def handle_enter_press(self) -> str | None:
-        if self._editing_should_be_blocked():
-            return None
-
-        self.textwidget.mark_set("insert", "insert lineend")
-        self.textwidget.insert("end - 1 char", "\n")
-        self.textwidget.see("insert")
-
-        # Find all characters on last line not tagged with "output".
-        last_line_start = "end - 1 char - 1 line"
-        last_line_end = "end - 2 chars"
-
-        text_chunks = []
-        tag_on = "output" in self.textwidget.tag_names(last_line_start)
-
-        for action, tag_or_text, index in self.textwidget.dump(last_line_start, last_line_end):
-            if action == "tagon" and tag_or_text == "output":
-                tag_on = True
-            elif action == "tagoff" and tag_or_text == "output":
-                tag_on = False
-            elif action == "text" and not tag_on:
-                text_chunks.append(tag_or_text)
-
-        return "".join(text_chunks)
-
-    # TODO: combine this with handle_enter_press()
     def _feed_line_to_stdin(self, event: tkinter.Event[tkinter.Text]) -> str:
-        if self.executor is not None:
-            input_line = self.handle_enter_press()
-            if input_line is not None:
-                # TODO: which encoding to use?
-                self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
+        if not self._editing_should_be_blocked():
+            self.textwidget.mark_set("insert", "insert lineend")
+            self.textwidget.insert("end - 1 char", "\n")
+            self.textwidget.see("insert")
+
+            # Find all characters on last line not tagged with "output".
+            last_line_start = "end - 1 char - 1 line"
+            last_line_end = "end - 2 chars"
+
+            text_chunks = []
+            tag_on = "output" in self.textwidget.tag_names(last_line_start)
+
+            for action, tag_or_text, index in self.textwidget.dump(last_line_start, last_line_end):
+                if action == "tagon" and tag_or_text == "output":
+                    tag_on = True
+                elif action == "tagoff" and tag_or_text == "output":
+                    tag_on = False
+                elif action == "text" and not tag_on:
+                    text_chunks.append(tag_or_text)
+
+            input_line = "".join(text_chunks)
+
+            # TODO: which encoding to use?
+            self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
+
         return "break"
 
     # Needs special handling to avoid deleting output.
