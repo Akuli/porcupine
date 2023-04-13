@@ -49,7 +49,7 @@ def is_list_of_strings(obj: object) -> bool:
 
 def load_filetypes() -> None:
     # user_path can't be global var because tests monkeypatch
-    user_path = Path(dirs.user_config_dir) / "filetypes.toml"
+    user_path = dirs.user_config_path / "filetypes.toml"
     defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
     with defaults_path.open("rb") as defaults_file:
@@ -67,7 +67,7 @@ def load_filetypes() -> None:
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
 #
-#    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
+#    https://github.com/Akuli/porcupine/blob/main/porcupine/default_filetypes.toml
 """
             )
     except (OSError, UnicodeError, tomli.TOMLDecodeError):
@@ -231,7 +231,8 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("filetype_name", None, type_=Optional[str])
-    on_path_changed(tab)
+    if not tab.settings.get("filetype_name", Optional[str]):
+        on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
     _sync_filetypes_menu()
 
@@ -295,7 +296,7 @@ def setup() -> None:
         _add_filetype_menuitem(name, filetypes_var)
 
     get_tab_manager().bind("<<NotebookTabChanged>>", _sync_filetypes_menu, add=True)
-    path = Path(dirs.user_config_dir) / "filetypes.toml"
+    path = dirs.user_config_path / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
     menubar.add_config_file_button(path, menu="Filetypes")
     menubar.add_config_file_button(path)  # goes to "Settings/Config Files"

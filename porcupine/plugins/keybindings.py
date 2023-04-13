@@ -7,9 +7,8 @@ from porcupine import dirs, get_main_window, menubar
 
 
 def setup() -> None:
-    porcupine_dir = Path(__file__).absolute().parent.parent
-    default_path = porcupine_dir / "default_keybindings.tcl"
-    user_path = Path(dirs.user_config_dir) / "keybindings.tcl"
+    default_path = Path(__file__).absolute().parent.parent / "default_keybindings.tcl"
+    user_path = dirs.user_config_path / "keybindings.tcl"
     menubar.add_config_file_button(user_path)
 
     try:
@@ -19,7 +18,7 @@ def setup() -> None:
 # This Tcl file is executed when Porcupine starts. It's meant to be used for
 # custom key bindings. See Porcupine's default key binding file for examples:
 #
-#    https://github.com/Akuli/porcupine/blob/master/porcupine/default_keybindings.tcl
+#    https://github.com/Akuli/porcupine/blob/main/porcupine/default_keybindings.tcl
 """
             )
     except FileExistsError:

@@ -22,11 +22,11 @@ class _HistoryItem:
     key_id: int
 
 
-# not global variable because tests monkeypatch dirs after importing
+# Must be a function, so that it updates when tests change the dirs object
 def _get_path() -> Path:
     # config dir is better than cache dir https://github.com/davatorium/rofi/issues/769
     # Change the number after v when you make incompatible changes
-    return Path(dirs.user_config_dir) / "run_history_v3.json"
+    return dirs.user_config_path / "run_history_v3.json"
 
 
 def _load_json_file() -> list[_HistoryItem]:

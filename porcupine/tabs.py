@@ -1,6 +1,7 @@
 r"""Tabs as in browser tabs, not \t characters."""
 from __future__ import annotations
 
+import codecs
 import collections
 import dataclasses
 import hashlib
@@ -599,6 +600,8 @@ class FileTab(Tab):
         self.settings.add_option("tabs2spaces", True)
         self.settings.add_option("indent_size", 4)
         self.settings.add_option("encoding", "utf-8")
+        # Invoke encoding detection early to suppress the unsaved changes warning
+        self.settings.set("encoding", self._detect_encoding())
         self.settings.add_option("comment_prefix", None, Optional[str])
         self.settings.add_option(
             "line_ending",
@@ -643,6 +646,26 @@ class FileTab(Tab):
         self._update_titles()
 
         self._previous_reload_failed = False
+
+    def _detect_encoding(self, default: str = "utf-8") -> str:
+        # For now we only can detect various BOM characters
+        if self.path:
+            try:
+                with self.path.open("rb") as f:
+                    byte_str = f.read(4)
+            except OSError:
+                return default
+                # Fail silently
+            for bytez, encoding in [
+                (codecs.BOM_UTF8, "utf-8-sig"),
+                (codecs.BOM_UTF32_LE, "utf-32"),
+                (codecs.BOM_UTF32_BE, "utf-32"),
+                (codecs.BOM_LE, "utf-16"),
+                (codecs.BOM_BE, "utf-16"),
+            ]:
+                if byte_str.startswith(bytez):
+                    return encoding
+        return default
 
     def _get_char_count(self) -> int:
         return textutils.count(self.textwidget, "1.0", "end - 1 char")
@@ -689,7 +712,9 @@ class FileTab(Tab):
 
         while True:
             try:
-                with self.path.open("r", encoding=self.settings.get("encoding", str)) as f:
+                encoding = self._detect_encoding(self.settings.get("encoding", str))
+                self.settings.set("encoding", encoding)
+                with self.path.open("r", encoding=encoding) as f:
                     stat_result = os.fstat(f.fileno())
                     content = f.read()
                 break

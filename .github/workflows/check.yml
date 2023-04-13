@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - master
+      - main
       - bugfix-release
   pull_request:
 
@@ -79,42 +79,6 @@ jobs:
     - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pytest --durations=10
-
-  black:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-        cache: pip
-    - run: pip install wheel
-    - run: pip install -r requirements-dev.txt
-    - run: python3 -m black --check $(git ls-files | grep -E '\.(py|pyw)$')
-
-  isort:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-        cache: pip
-    - run: pip install wheel
-    - run: pip install -r requirements-dev.txt
-    - run: python3 -m isort --check $(git ls-files | grep -E '\.(py|pyw)$')
-
-  pyflakes:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-        cache: pip
-    - run: pip install wheel
-    - run: pip install -r requirements-dev.txt
-    - run: python3 -m pyflakes $(git ls-files | grep -E '\.(py|pyw)$')
 
   flake8-tkinter:
     runs-on: ubuntu-latest

@@ -69,7 +69,7 @@ Links:
 
 Porcupine is available under the MIT license. It means that you can do \
 pretty much anything you want with it as long as you distribute the \
-LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/master/LICENSE) for details.
+LICENSE file with it. [Click here](https://github.com/Akuli/porcupine/blob/main/LICENSE) for details.
 
 Porcupine is installed to [{Path(__file__).absolute().parent.parent.parent}]().
 You can install plugins to [{plugins.__path__[0]}]().

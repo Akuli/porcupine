@@ -1,0 +1,35 @@
+on:
+  pull_request_target:
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+    # git-auto-commit-action is a bit tricky to use.
+    # See the "advanced" section in its README for an insecure configuration that works.
+    #
+    # To make it secure against malicious pull requests, you cannot trust files in the PR,
+    # because pull_request_target jobs have more permissions than pull_request jobs.
+    # Here we place the PR's stuff to a subdirectory named "pr".
+    - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.head_ref }}
+        path: ./pr
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: pip
+    - run: pip install wheel
+    - run: pip install -r requirements-dev.txt
+    - name: Gather a list of Python files in the pull request branch
+      run: |
+        (cd pr && git ls-files) | grep -E '\.(py|pyw)$' | sed s:^:pr/: | tee filelist.txt
+    - run: python3 -m pycln --disable-all-dunder-policy $(cat filelist.txt)
+    - run: python3 -m black $(cat filelist.txt)
+    - run: python3 -m isort $(cat filelist.txt)
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        repository: ./pr
+        commit_message: "Run pycln, black and isort"

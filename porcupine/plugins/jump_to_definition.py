@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import List
 
 from porcupine import get_tab_manager, menubar, tabs, utils
+from porcupine.plugins import rightclick_menu
 
 log = logging.getLogger(__name__)
 
@@ -116,3 +117,4 @@ def generate_jump_request(tab: tabs.FileTab) -> None:
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
     menubar.add_filetab_command("Edit/Jump to definition", generate_jump_request)
+    rightclick_menu.add_rightclick_option("Jump to definition", generate_jump_request)

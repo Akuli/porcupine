@@ -7,7 +7,7 @@ highlighting.
 ![Screenshot.](screenshot.png)
 
 Most important features:
-- Syntax highlighting with [Pygments][] (supports many programming languages
+- Syntax highlighting (supports many programming languages
   and color themes, extensible)
 - Autocompletions when pressing tab
 - Jump to definition with Ctrl+click
@@ -48,22 +48,22 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
 
 Open a terminal and run these commands:
 
-    sudo apt install python3-tk python3-pip
+    sudo apt install python3-tk python3-pip python3-venv
     sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
-    python3 -m pip install --user --upgrade pip wheel
+    python3 -m pip install --user --upgrade pip
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v2022.11.25.zip
+    pip install wheel
+    pip install https://github.com/Akuli/porcupine/archive/v2023.03.11.zip
     porcu
 
-If you want to leave Porcupine running and use the same terminal for something else,
-you can use `porcu&` instead of `porcu`.
-To run porcupine later, you need to activate the virtualenv before running it:
+To easily run porcupine again later,
+go to *Settings* --> *Porcupine Settings*
+and check "Show Porcupine in the desktop menu system".
+This makes Porcupine show up in the menu just like any other application.
 
-    source porcupine-venv/bin/activate
-    porcu
-
-You can uninstall Porcupine by deleting `porcupine-venv`.
+You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
+and then deleting `porcupine-venv`.
 
 ### Other Linux distributions
 
@@ -71,20 +71,20 @@ Install Python 3.7 or newer with pip and tkinter somehow.
 If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
 Then run these commands:
 
-    python3 -m pip install --user --upgrade pip wheel
+    python3 -m pip install --user --upgrade pip
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
-    python3 -m pip install https://github.com/Akuli/porcupine/archive/v2022.11.25.zip
+    pip install wheel
+    pip install https://github.com/Akuli/porcupine/archive/v2023.03.11.zip
     porcu
 
-If you want to leave Porcupine running and use the same terminal for something else,
-you can use `porcu&` instead of `porcu`.
-To run porcupine later, you need to activate the virtualenv before running it:
+To easily run porcupine again later,
+go to *Settings* --> *Porcupine Settings*
+and check "Show Porcupine in the desktop menu system".
+This makes Porcupine show up in the menu just like any other application.
 
-    source porcupine-venv/bin/activate
-    porcu
-
-You can uninstall Porcupine by deleting `porcupine-venv`.
+You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
+and then deleting `porcupine-venv`.
 
 ### MacOS
 

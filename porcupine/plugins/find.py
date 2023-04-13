@@ -9,6 +9,8 @@ from functools import partial
 from tkinter import ttk
 from typing import Any, Callable, Iterator, TypeVar, cast
 
+from porcupine.plugins import rightclick_menu
+
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
@@ -389,10 +391,14 @@ class Finder(ttk.Frame):
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    finder = Finder(tab.bottom_frame, tab.textwidget)
-    tab.bind("<<FiletabCommand:Edit/Find and Replace>>", finder.show, add=True)
+    Finder(tab.bottom_frame, tab.textwidget, name="finder")
+
+
+def show_finder(tab: tabs.FileTab) -> None:
+    tab.bottom_frame.nametowidget("finder").show()
 
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
-    menubar.add_filetab_command("Edit/Find and Replace")
+    menubar.add_filetab_command("Edit/Find and Replace", show_finder)
+    rightclick_menu.add_rightclick_option("Find and Replace", show_finder)

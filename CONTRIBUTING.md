@@ -50,18 +50,13 @@ You can run it locally like this:
     mypy porcupine
 
 It often points out problems like forgetting to check whether something is `None`.
+If you forget to run `mypy`, it doesn't matter,
+because GitHub Actions will run it before I merge your PR.
 
-Porcupine also uses `black` and `isort` to format code,
-and you should run them after making changes.
-For example, if you changed something in `porcupine/plugins/pastebin.py`, you would do:
-
-    black porcupine/plugins/pastebin.py
-    isort porcupine/plugins/pastebin.py
-
-You can also just run `black porcupine` and `isort porcupine` to format everything.
-
-If you forget to run `mypy`, `black` or `isort`, it doesn't matter.
-GitHub Actions will let us know before I merge your PR.
+Porcupine also uses a few tools (`pycln`, `black`, `isort`) to format code.
+They run automatically when you make a pull request.
+If you cannot push after the automatic formatting,
+try running `git pull` before pushing or use `git push --force`.
 
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct

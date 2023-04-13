@@ -6,6 +6,7 @@ import weakref
 import pytest
 
 from porcupine import settings, tabs
+from porcupine.plugins.statusbar import StatusBar
 
 
 def test_filetab_path_gets_resolved(tmp_path, tabmanager):
@@ -170,6 +171,30 @@ def test_file_becomes_invalid_utf8(tabmanager, tmp_path, mocker):
     assert 'foo.py" is not valid utf-8. Choose an encoding' in str(mock.call_args[0])
     assert tab.settings.get("encoding", str) == "latin-1"
     assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
+
+
+def test_file_changes_unicode_encoding(tabmanager, tmp_path, mocker):
+    mock = mocker.patch("porcupine.utils.ask_encoding")
+    (tmp_path / "foo.py").write_text("mörkö", encoding="utf-16")
+    tab = tabmanager.open_file(tmp_path / "foo.py")
+
+    assert tab is not None
+    assert tab.settings.get("encoding", str) == "utf-16"
+    assert tab.textwidget.get("1.0", "end").strip() == "mörkö"
+    assert not mock.called
+    for encoding in ("utf-8-sig", "utf-16", "utf-32"):
+        (tmp_path / "foo.py").write_text("mörkö", encoding=encoding)
+        assert tab.reload()
+        assert tab.settings.get("encoding", str) == encoding
+        assert tab.textwidget.get("1.0", "end").startswith("mörkö")
+        assert not mock.called
+
+
+def test_encoding_detection_warning_bug(tabmanager, tmp_path, mocker):
+    (tmp_path / "foo.py").write_text("mörkö", encoding="utf-8-sig")
+    tab = tabmanager.open_file(tmp_path / "foo.py")
+    statusbar: StatusBar = tab.bottom_frame.nametowidget("statusbar")
+    assert str(statusbar.path_label["foreground"]) == ""  # not red
 
 
 def test_file_deleted(tabmanager, tmp_path, mocker, caplog):

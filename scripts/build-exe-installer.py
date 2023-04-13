@@ -45,7 +45,11 @@ response.raise_for_status()
 zipfile.ZipFile(io.BytesIO(response.content)).extractall("build/python-first")
 
 print("Downloading NSIS")
-url = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08.zip"
+# sourceforge broke their download link. Fortunately I found the same file
+# from a different site by googling the file name "nsis-3.08.zip".
+# There were also a few copies of it in my downloads folder.
+# url = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.08/nsis-3.08.zip"
+url = "https://fossies.org/windows/misc/nsis-3.08.zip"
 print(url)
 response = requests.get(url)
 response.raise_for_status()
