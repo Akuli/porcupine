@@ -29,7 +29,7 @@ from porcupine import (
 )
 from porcupine.plugins.run import common
 from porcupine.settings import global_settings
-from porcupine.textutils import add_change_blocker, create_passive_text_widget, track_changes
+from porcupine.textutils import add_change_blocker, track_changes
 
 log = logging.getLogger(__name__)
 
