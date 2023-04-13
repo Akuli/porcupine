@@ -97,9 +97,7 @@ class _CommandAsker:
         sub_textbox.insert("1.0", sub_text)
         sub_textbox.config(state="disabled")
 
-        porcupine_text = (
-            "Display the output inside the Porcupine window (does not support keyboard input)"
-        )
+        porcupine_text = "Display the output inside the Porcupine window"
         external_text = f"Use an external {terminal_name} window"
 
         self.terminal_var = tkinter.BooleanVar()
