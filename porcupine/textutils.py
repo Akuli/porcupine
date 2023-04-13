@@ -4,10 +4,11 @@ import contextlib
 import dataclasses
 import re
 import tkinter
+import weakref
 from functools import partial
 from tkinter.font import Font
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List
-from weakref import WeakKeyDictionary, ref
+from weakref import WeakKeyDictionary
 
 from pygments import styles
 
@@ -83,8 +84,9 @@ class _ChangeTracker:
     def __init__(self, event_receiver_widget: tkinter.Text) -> None:
         # can't reference text widget directly
         # would cause text widget refcount never reach zero, WeakKeyDictionary won't work
-        self._event_receiver_ref = ref(event_receiver_widget)
+        self._event_receiver_ref = weakref.ref(event_receiver_widget)
         self._change_batch: list[Change] | None = None
+        self.change_blockers: list[Callable[[], bool]] = []
 
     def setup(self, widget: tkinter.Text) -> None:
         old_cursor_pos = widget.index("insert")  # must be widget specific
@@ -165,6 +167,10 @@ class _ChangeTracker:
             # only these subcommands can change the text, but they can also
             # move the cursor by changing the text before the cursor
             if {$subcommand == "delete" || $subcommand == "insert" || $subcommand == "replace"} {
+                if {[%(editing_is_blocked)s]} {
+                    return
+                }
+
                 # Validate and clean up indexes here so that any problems
                 # result in Tcl error
                 if {$subcommand == "delete"} {
@@ -213,6 +219,9 @@ class _ChangeTracker:
             % {
                 "fake_widget": str(widget),
                 "actual_widget": actual_widget_command,
+                "editing_is_blocked": widget.register(
+                    lambda: any(f() for f in self.change_blockers)
+                ),
                 "change_event_from_command": widget.register(
                     partial(self._change_event_from_command, widget)
                 ),
@@ -444,6 +453,18 @@ def track_changes(widget: tkinter.Text) -> None:
     tracker = _ChangeTracker(widget)
     tracker.setup(widget)
     _change_trackers[widget] = tracker
+
+
+# Add a callback function that is called to decide whether the text widget can be edited.
+# You can disable all editing by making a text widget disabled, but that has a few disadvantages:
+#   - Not very dynamic: you have to update the disabled-ness when you want the text to become editable / non editable
+#   - Cursor becomes completely invisible, no way to make it visible for a disabled widget
+#
+# If callback returns True, the edit will be blocked.
+#
+# TODO: document this properly
+def add_change_blocker(widget: tkinter.Text, callback: Callable[[], bool]) -> None:
+    _change_trackers[widget].change_blockers.append(callback)
 
 
 @contextlib.contextmanager

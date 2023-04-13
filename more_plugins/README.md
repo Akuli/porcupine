@@ -10,7 +10,6 @@ Installing these plugins is easy:
 
 | File              | Description                                               | Notes |
 | ----------------- | --------------------------------------------------------- | ----- |
-| pythonprompt.py   | Simple `>>>` prompt tab.                                  |       |
 | terminal.py       | Run a terminal inside Porcupine as a tab.                 | 1.    |
 
 Notes:
