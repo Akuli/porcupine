@@ -4,7 +4,6 @@ from __future__ import annotations
 import locale
 import os
 import queue
-import re
 import signal
 import subprocess
 import sys
@@ -12,12 +11,10 @@ import threading
 import tkinter
 from functools import partial
 from pathlib import Path
-from tkinter import ttk
-from typing import Callable
-from porcupine.textutils import track_changes, add_change_blocker
 
 import psutil
 
+from porcupine.textutils import add_change_blocker, track_changes
 
 filename_regex_parts = [
     # c compiler output, also many other tools
@@ -208,7 +205,7 @@ class Executor:
 
 class TerribleTerminalEmulator(tkinter.Text):
     def __init__(self, master: tkinter.Misc) -> None:
-        super().__init__(master, blockcursor=True, insertunfocussed='hollow')
+        super().__init__(master, blockcursor=True, insertunfocussed="hollow")
         self.bind("<BackSpace>", self._handle_backspace)
 
         track_changes(self)
@@ -277,20 +274,19 @@ class TerribleTerminalEmulator(tkinter.Text):
         self.see("insert")
 
         # Find all characters on last line not tagged with "output".
-        last_line_start = 'end - 1 char - 1 line'
-        last_line_end = 'end - 2 chars'
+        last_line_start = "end - 1 char - 1 line"
+        last_line_end = "end - 2 chars"
 
         text_chunks = []
-        tag_on = ('output' in self.tag_names(last_line_start))
+        tag_on = "output" in self.tag_names(last_line_start)
 
         for action, tag_or_text, index in self.dump(last_line_start, last_line_end):
-            if action == 'tagon' and tag_or_text == 'output':
+            if action == "tagon" and tag_or_text == "output":
                 tag_on = True
-            elif action == 'tagoff' and tag_or_text == 'output':
+            elif action == "tagoff" and tag_or_text == "output":
                 tag_on = False
-            elif action == 'text' and not tag_on:
+            elif action == "text" and not tag_on:
                 text_chunks.append(tag_or_text)
-
 
         return "".join(text_chunks)
 

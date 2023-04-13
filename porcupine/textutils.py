@@ -3,8 +3,8 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import re
-import weakref
 import tkinter
+import weakref
 from functools import partial
 from tkinter.font import Font
 from typing import TYPE_CHECKING, Any, Callable, Iterator, List

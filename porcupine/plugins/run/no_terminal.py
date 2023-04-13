@@ -345,7 +345,7 @@ class TerminalTextWidget(tkinter.Text):
 
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
-        self.textwidget = TerminalTextWidget(master)        
+        self.textwidget = TerminalTextWidget(master)
 
         self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
         self.textwidget.bind("<Control-D>", self._handle_end_of_input)
