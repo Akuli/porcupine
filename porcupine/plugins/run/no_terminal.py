@@ -299,9 +299,13 @@ class NoTerminalRunner:
         textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         def on_style_changed(junk: object = None) -> None:
-            self.textwidget.config(foreground=self.textwidget.tag_cget("Token.Literal.String", "foreground"))
+            self.textwidget.config(
+                foreground=self.textwidget.tag_cget("Token.Literal.String", "foreground")
+            )
 
-        self.textwidget.bind("<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True)
+        self.textwidget.bind(
+            "<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True
+        )
         on_style_changed()
 
         self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
