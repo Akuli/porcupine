@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import locale
 import logging
+import os
 import queue
 import re
 import signal
@@ -28,7 +29,7 @@ from porcupine import (
 )
 from porcupine.plugins.run import common
 from porcupine.settings import global_settings
-from porcupine.textutils import create_passive_text_widget
+from porcupine.textutils import add_change_blocker, create_passive_text_widget, track_changes
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ filename_regex_parts = [
     # blah blah: some_function (filename.c:123)
     r"\(([^\n():]+):([0-9]+)\)",
 ]
-filename_regex = "(?i)" + "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
+filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
 def open_file_with_line_number(path: Path, lineno: int) -> None:
@@ -57,6 +58,7 @@ def open_file_with_line_number(path: Path, lineno: int) -> None:
 
 
 MAX_SCROLLBACK = 5000
+OUTPUT_TAGS = {"info": "Token.Keyword", "output": "Token.Text", "error": "Token.Name.Exception"}
 
 
 class Executor:
@@ -66,6 +68,7 @@ class Executor:
         self._link_manager = link_manager
 
         self._shell_process: subprocess.Popen[bytes] | None = None
+        self._input_queue: queue.Queue[bytes] = queue.Queue(maxsize=1)
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
         self.started = False
@@ -102,6 +105,7 @@ class Executor:
             self._shell_process = subprocess.Popen(
                 command,
                 cwd=self.cwd,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True,
@@ -129,20 +133,13 @@ class Executor:
         self._queue.put(("end", ""))
 
     def _handle_queued_item(self, message_type: str, text: str) -> None:
-        self._textwidget.config(state="normal")
         if message_type == "end":
             assert not text
             get_tab_manager().event_generate("<<FileSystemChanged>>")
         else:
-            tag = {
-                "info": "Token.Keyword",
-                "output": "Token.Text",
-                "error": "Token.Name.Exception",
-            }[message_type]
-
             scrolled_to_end = self._textwidget.yview()[1] == 1.0
 
-            self._textwidget.insert("end", text, [tag])
+            self._textwidget.insert("end", text, [OUTPUT_TAGS[message_type], "output"])
             # Add links to full lines
             linked_line_count = text.count("\n")
             self._link_manager.add_links(
@@ -153,7 +150,6 @@ class Executor:
                 self._textwidget.yview_moveto(1)
 
         self._textwidget.delete("1.0", f"end - {MAX_SCROLLBACK} lines")
-        self._textwidget.config(state="disabled")
 
     def _poll_queue_and_put_to_textwidget(self) -> None:
         # too many iterations here freezes the GUI when an infinite loop with print is running
@@ -242,18 +238,121 @@ class Executor:
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
+    def write_to_stdin(self, data: bytes):
+        if self._shell_process is not None:
+            self._shell_process.stdin.write(data)
+            self._shell_process.stdin.flush()  # TODO: may block, maybe that isn't an issue in practice?
 
-class NoTerminalRunner:
+    def close_stdin(self):
+        if self._shell_process is not None:
+            self._shell_process.stdin.close()
+
+
+class TerminalTextWidget(tkinter.Text):
     def __init__(self, master: tkinter.Misc) -> None:
-        self.textwidget = create_passive_text_widget(
+        super().__init__(
             master,
-            is_focusable=True,
-            set_colors=False,
-            name="run_output",
+            blockcursor=True,
+            insertunfocussed="hollow",
+            name="run_output",  # TODO: rename
             font="TkFixedFont",
             wrap="char",
         )
+        self.bind("<BackSpace>", self._handle_backspace)
+
+        track_changes(self)
+        add_change_blocker(self, self._editing_should_be_blocked)
+        self._in_a_python_method = False
+
+    # Keep _in_a_python_method up to date
+    def insert(self, *args, **kwargs):
+        self._in_a_python_method = True
+        try:
+            return super().insert(*args, **kwargs)
+        finally:
+            self._in_a_python_method = False
+
+    def delete(self, *args, **kwargs):
+        self._in_a_python_method = True
+        try:
+            return super().delete(*args, **kwargs)
+        finally:
+            self._in_a_python_method = False
+
+    def replace(self, *args, **kwargs):
+        self._in_a_python_method = True
+        try:
+            return super().replace(*args, **kwargs)
+        finally:
+            self._in_a_python_method = False
+
+    def _editing_should_be_blocked(self) -> bool:
+        # Do not block if we are currently in a python method e.g. insert()
+        # This blocking is only for Tk's default key bindings (implemented in Tcl).
+        if self._in_a_python_method:
+            return False
+
+        # cursor must be on last line
+        if self.index("insert lineend") != self.index("end - 1 char"):
+            return True
+
+        # Block if there is terminal output after the cursor.
+        # The tag_nextrange method almost does this, but doesn't find ranges that contain the cursor.
+        # The tag_prevrange finds those ranges but also other ranges we don't care about.
+        if self.tag_nextrange("output", "insert"):
+            return True
+
+        range_containing_cursor = self.tag_prevrange("output", "insert")
+        if range_containing_cursor:
+            range_start, range_end = range_containing_cursor
+            if self.compare("insert", "<", range_end):
+                # The range contains at least one character that is after cursor.
+                return True
+
+        return False
+
+    # Needs special handling to avoid deleting output.
+    def _handle_backspace(self, event):
+        if "output" not in self.tag_names("insert - 1 char"):
+            self.delete("insert - 1 char", "insert")
+        return "break"
+
+    def handle_enter_press(self) -> str | None:
+        if self._editing_should_be_blocked():
+            return None
+
+        self.mark_set("insert", "insert lineend")
+        self.insert("end - 1 char", "\n")
+        self.see("insert")
+
+        # Find all characters on last line not tagged with "output".
+        last_line_start = "end - 1 char - 1 line"
+        last_line_end = "end - 2 chars"
+
+        text_chunks = []
+        tag_on = "output" in self.tag_names(last_line_start)
+
+        for action, tag_or_text, index in self.dump(last_line_start, last_line_end):
+            if action == "tagon" and tag_or_text == "output":
+                tag_on = True
+            elif action == "tagoff" and tag_or_text == "output":
+                tag_on = False
+            elif action == "text" and not tag_on:
+                text_chunks.append(tag_or_text)
+
+        return "".join(text_chunks)
+
+
+class NoTerminalRunner:
+    def __init__(self, master: tkinter.Misc) -> None:
+        self.textwidget = TerminalTextWidget(master)        
+
         self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
+        self.textwidget.bind("<Control-D>", self._handle_end_of_input)
+        self.textwidget.bind("<Control-d>", self._handle_end_of_input)
+        self.textwidget.bind("<Return>", self._feed_line_to_stdin)
+
+        self.textwidget.tag_config("output", background="gray")
         textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
@@ -280,6 +379,18 @@ class NoTerminalRunner:
         self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"), cursor="hand2")
         self.hide_button.pack(side="left", padx=1)
         utils.set_tooltip(self.hide_button, "Hide output")
+
+    def _feed_line_to_stdin(self, event):
+        if self.executor is not None:
+            input_line = self.textwidget.handle_enter_press()
+            if input_line is not None:
+                # TODO: which encoding to use?
+                self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
+        return "break"
+
+    def _handle_end_of_input(self, event):
+        if self.executor is not None:
+            self.executor.close_stdin()
 
     def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
@@ -328,9 +439,7 @@ class NoTerminalRunner:
 
             self.executor.stop()
 
-        self.textwidget.config(state="normal")
         self.textwidget.delete("1.0", "end")
-        self.textwidget.config(state="disabled")
         self._link_manager.delete_all_links()  # prevent memory leak
         self.pause_button.configure(image=images.get("pause"))
 
