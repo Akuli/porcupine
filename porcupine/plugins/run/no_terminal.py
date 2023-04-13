@@ -311,7 +311,7 @@ class NoTerminalRunner:
         self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
         self.textwidget.bind("<Control-D>", self._handle_end_of_input, add=True)
         self.textwidget.bind("<Control-d>", self._handle_end_of_input, add=True)
-        self.textwidget.bind("<Return>", self._feed_line_to_stdin, add=True)
+        self.textwidget.bind("<Return>", self.handle_enter_press, add=True)
         self.textwidget.bind("<BackSpace>", self._handle_backspace, add=True)
 
         track_changes(self.textwidget)
@@ -371,8 +371,10 @@ class NoTerminalRunner:
 
         return False
 
-    def _feed_line_to_stdin(self, event: tkinter.Event[tkinter.Text]) -> str:
+    def handle_enter_press(self, junk_event: object | None = None) -> str:
         if not self._editing_should_be_blocked():
+            assert self.executor is not None  # helps mypy
+
             self.textwidget.mark_set("insert", "insert lineend")
             self.textwidget.insert("end - 1 char", "\n")
             self.textwidget.see("insert")
