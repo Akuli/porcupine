@@ -251,9 +251,43 @@ class Executor:
             self._shell_process.stdin.close()
 
 
-class TerminalTextWidget(tkinter.Text):
-    def __init__(self, master: tkinter.Misc, runner: NoTerminalRunner) -> None:
-        super().__init__(
+# A python-edit-tracking text widget lets you know whether the text is currently
+# being edited through invoking a method in Python, such as .insert(). This lets
+# you distinguish between default key bindings and whatever your code does.
+class PyEditTrackingText(tkinter.Text):
+    @copy_type(tkinter.Text.__init__)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.in_a_python_method = False
+
+    @copy_type(tkinter.Text.insert)
+    def insert(self, *args: Any, **kwargs: Any) -> Any:
+        self.in_a_python_method = True
+        try:
+            return super().insert(*args, **kwargs)
+        finally:
+            self.in_a_python_method = False
+
+    @copy_type(tkinter.Text.delete)
+    def delete(self, *args: Any, **kwargs: Any) -> Any:
+        self.in_a_python_method = True
+        try:
+            return super().delete(*args, **kwargs)
+        finally:
+            self.in_a_python_method = False
+
+    @copy_type(tkinter.Text.replace)
+    def replace(self, *args: Any, **kwargs: Any) -> Any:
+        self.in_a_python_method = True
+        try:
+            return super().replace(*args, **kwargs)
+        finally:
+            self.in_a_python_method = False
+
+
+class NoTerminalRunner:
+    def __init__(self, master: tkinter.Misc) -> None:
+        self.textwidget = PyEditTrackingText(
             master,
             name="run_output",  # TODO: rename
             font="TkFixedFont",
@@ -261,115 +295,23 @@ class TerminalTextWidget(tkinter.Text):
             insertunfocussed="hollow",
             wrap="char",
         )
-        textutils.use_pygments_tags(self, option_name="run_output_pygments_style")
-        self._runner = runner
+
+        textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         def on_style_changed(junk: object = None) -> None:
-            self.config(foreground=self.tag_cget("Token.Literal.String", "foreground"))
+            self.textwidget.config(foreground=self.textwidget.tag_cget("Token.Literal.String", "foreground"))
 
-        self.bind("<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True)
+        self.textwidget.bind("<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True)
         on_style_changed()
-
-        self.bind("<BackSpace>", self._handle_backspace, add=True)
-
-        track_changes(self)
-        add_change_blocker(self, self._editing_should_be_blocked)
-        self._in_a_python_method = False
-
-    # Keep _in_a_python_method up to date
-    @copy_type(tkinter.Text.insert)
-    def insert(self, *args: Any, **kwargs: Any) -> Any:
-        self._in_a_python_method = True
-        try:
-            return super().insert(*args, **kwargs)
-        finally:
-            self._in_a_python_method = False
-
-    @copy_type(tkinter.Text.delete)
-    def delete(self, *args: Any, **kwargs: Any) -> Any:
-        self._in_a_python_method = True
-        try:
-            return super().delete(*args, **kwargs)
-        finally:
-            self._in_a_python_method = False
-
-    @copy_type(tkinter.Text.replace)
-    def replace(self, *args: Any, **kwargs: Any) -> Any:
-        self._in_a_python_method = True
-        try:
-            return super().replace(*args, **kwargs)
-        finally:
-            self._in_a_python_method = False
-
-    def _editing_should_be_blocked(self) -> bool:
-        # Do not block if we are currently in a python method e.g. insert()
-        # This blocking is only for Tk's default key bindings (implemented in Tcl).
-        if self._in_a_python_method:
-            return False
-
-        # cursor must be on last line
-        if self.index("insert lineend") != self.index("end - 1 char"):
-            return True
-
-        # Block if there is terminal output after the cursor.
-        # The tag_nextrange method almost does this, but doesn't find ranges that contain the cursor.
-        # The tag_prevrange finds those ranges but also other ranges we don't care about.
-        if self.tag_nextrange("output", "insert"):
-            return True
-
-        range_containing_cursor = self.tag_prevrange("output", "insert")
-        if range_containing_cursor:
-            range_start, range_end = range_containing_cursor
-            if self.compare("insert", "<", range_end):
-                # The range contains at least one character that is after cursor.
-                return True
-
-        # Block editing when nothing is running
-        if self._runner.executor is None or not self._runner.executor.running:
-            return True
-
-        return False
-
-    # Needs special handling to avoid deleting output.
-    def _handle_backspace(self, event: tkinter.Event[tkinter.Text]) -> str:
-        if "output" not in self.tag_names("insert - 1 char"):
-            self.delete("insert - 1 char", "insert")
-        return "break"
-
-    def handle_enter_press(self) -> str | None:
-        if self._editing_should_be_blocked():
-            return None
-
-        self.mark_set("insert", "insert lineend")
-        self.insert("end - 1 char", "\n")
-        self.see("insert")
-
-        # Find all characters on last line not tagged with "output".
-        last_line_start = "end - 1 char - 1 line"
-        last_line_end = "end - 2 chars"
-
-        text_chunks = []
-        tag_on = "output" in self.tag_names(last_line_start)
-
-        for action, tag_or_text, index in self.dump(last_line_start, last_line_end):
-            if action == "tagon" and tag_or_text == "output":
-                tag_on = True
-            elif action == "tagoff" and tag_or_text == "output":
-                tag_on = False
-            elif action == "text" and not tag_on:
-                text_chunks.append(tag_or_text)
-
-        return "".join(text_chunks)
-
-
-class NoTerminalRunner:
-    def __init__(self, master: tkinter.Misc) -> None:
-        self.textwidget = TerminalTextWidget(master, self)
 
         self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
         self.textwidget.bind("<Control-D>", self._handle_end_of_input, add=True)
         self.textwidget.bind("<Control-d>", self._handle_end_of_input, add=True)
         self.textwidget.bind("<Return>", self._feed_line_to_stdin, add=True)
+        self.textwidget.bind("<BackSpace>", self._handle_backspace, add=True)
+
+        track_changes(self.textwidget)
+        add_change_blocker(self.textwidget, self._editing_should_be_blocked)
 
         self._link_manager = textutils.LinkManager(
             self.textwidget, filename_regex, self._get_link_opener
@@ -396,12 +338,73 @@ class NoTerminalRunner:
         self.hide_button.pack(side="left", padx=1)
         utils.set_tooltip(self.hide_button, "Hide output")
 
+    def _editing_should_be_blocked(self) -> bool:
+        # Do not block if we are currently in a python method e.g. insert()
+        # This blocking is only for Tk's default key bindings (implemented in Tcl).
+        if self.textwidget.in_a_python_method:
+            return False
+
+        # cursor must be on last line
+        if self.textwidget.index("insert lineend") != self.textwidget.index("end - 1 char"):
+            return True
+
+        # Block if there is terminal output after the cursor.
+        # The tag_nextrange method almost does this, but doesn't find ranges that contain the cursor.
+        # The tag_prevrange finds those ranges but also other ranges we don't care about.
+        if self.textwidget.tag_nextrange("output", "insert"):
+            return True
+
+        range_containing_cursor = self.textwidget.tag_prevrange("output", "insert")
+        if range_containing_cursor:
+            range_start, range_end = range_containing_cursor
+            if self.textwidget.compare("insert", "<", range_end):
+                # The range contains at least one character that is after cursor.
+                return True
+
+        # Block editing when nothing is running
+        if self.executor is None or not self.executor.running:
+            return True
+
+        return False
+
+    def handle_enter_press(self) -> str | None:
+        if self._editing_should_be_blocked():
+            return None
+
+        self.textwidget.mark_set("insert", "insert lineend")
+        self.textwidget.insert("end - 1 char", "\n")
+        self.textwidget.see("insert")
+
+        # Find all characters on last line not tagged with "output".
+        last_line_start = "end - 1 char - 1 line"
+        last_line_end = "end - 2 chars"
+
+        text_chunks = []
+        tag_on = "output" in self.textwidget.tag_names(last_line_start)
+
+        for action, tag_or_text, index in self.textwidget.dump(last_line_start, last_line_end):
+            if action == "tagon" and tag_or_text == "output":
+                tag_on = True
+            elif action == "tagoff" and tag_or_text == "output":
+                tag_on = False
+            elif action == "text" and not tag_on:
+                text_chunks.append(tag_or_text)
+
+        return "".join(text_chunks)
+
+    # TODO: combine this with handle_enter_press()
     def _feed_line_to_stdin(self, event: tkinter.Event[tkinter.Text]) -> str:
         if self.executor is not None:
-            input_line = self.textwidget.handle_enter_press()
+            input_line = self.handle_enter_press()
             if input_line is not None:
                 # TODO: which encoding to use?
                 self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
+        return "break"
+
+    # Needs special handling to avoid deleting output.
+    def _handle_backspace(self, event: tkinter.Event[tkinter.Text]) -> str:
+        if "output" not in self.textwidget.tag_names("insert - 1 char"):
+            self.textwidget.delete("insert - 1 char", "insert")
         return "break"
 
     def _handle_end_of_input(self, event: tkinter.Event[tkinter.Text]) -> None:
