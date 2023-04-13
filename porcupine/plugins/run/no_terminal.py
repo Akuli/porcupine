@@ -255,12 +255,20 @@ class TerminalTextWidget(tkinter.Text):
     def __init__(self, master: tkinter.Misc) -> None:
         super().__init__(
             master,
-            blockcursor=True,
-            insertunfocussed="hollow",
             name="run_output",  # TODO: rename
             font="TkFixedFont",
+            blockcursor=True,
+            insertunfocussed="hollow",
             wrap="char",
         )
+        textutils.use_pygments_tags(self, option_name="run_output_pygments_style")
+
+        def on_style_changed(junk: object = None) -> None:
+            self.config(foreground=self.tag_cget("Token.Literal.String", "foreground"))
+
+        self.bind(f"<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True)
+        on_style_changed()
+
         self.bind("<BackSpace>", self._handle_backspace)
 
         track_changes(self)
@@ -357,9 +365,6 @@ class NoTerminalRunner:
         self.textwidget.bind("<Control-D>", self._handle_end_of_input)
         self.textwidget.bind("<Control-d>", self._handle_end_of_input)
         self.textwidget.bind("<Return>", self._feed_line_to_stdin)
-
-        self.textwidget.tag_config("output", background="gray")
-        textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
 
         self._link_manager = textutils.LinkManager(
             self.textwidget, filename_regex, self._get_link_opener
