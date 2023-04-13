@@ -252,7 +252,7 @@ class Executor:
 
 
 class TerminalTextWidget(tkinter.Text):
-    def __init__(self, master: tkinter.Misc) -> None:
+    def __init__(self, master: tkinter.Misc, runner: NoTerminalRunner) -> None:
         super().__init__(
             master,
             name="run_output",  # TODO: rename
@@ -262,11 +262,12 @@ class TerminalTextWidget(tkinter.Text):
             wrap="char",
         )
         textutils.use_pygments_tags(self, option_name="run_output_pygments_style")
+        self._runner = runner
 
         def on_style_changed(junk: object = None) -> None:
             self.config(foreground=self.tag_cget("Token.Literal.String", "foreground"))
 
-        self.bind(f"<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True)
+        self.bind("<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True)
         on_style_changed()
 
         self.bind("<BackSpace>", self._handle_backspace)
@@ -323,6 +324,10 @@ class TerminalTextWidget(tkinter.Text):
                 # The range contains at least one character that is after cursor.
                 return True
 
+        # Block editing when nothing is running
+        if self._runner.executor is None or not self._runner.executor.running:
+            return True
+
         return False
 
     # Needs special handling to avoid deleting output.
@@ -359,7 +364,7 @@ class TerminalTextWidget(tkinter.Text):
 
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
-        self.textwidget = TerminalTextWidget(master)
+        self.textwidget = TerminalTextWidget(master, self)
 
         self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
         self.textwidget.bind("<Control-D>", self._handle_end_of_input)
