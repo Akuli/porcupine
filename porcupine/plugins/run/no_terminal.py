@@ -270,7 +270,7 @@ class TerminalTextWidget(tkinter.Text):
         self.bind("<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True)
         on_style_changed()
 
-        self.bind("<BackSpace>", self._handle_backspace)
+        self.bind("<BackSpace>", self._handle_backspace, add=True)
 
         track_changes(self)
         add_change_blocker(self, self._editing_should_be_blocked)
@@ -367,9 +367,9 @@ class NoTerminalRunner:
         self.textwidget = TerminalTextWidget(master, self)
 
         self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
-        self.textwidget.bind("<Control-D>", self._handle_end_of_input)
-        self.textwidget.bind("<Control-d>", self._handle_end_of_input)
-        self.textwidget.bind("<Return>", self._feed_line_to_stdin)
+        self.textwidget.bind("<Control-D>", self._handle_end_of_input, add=True)
+        self.textwidget.bind("<Control-d>", self._handle_end_of_input, add=True)
+        self.textwidget.bind("<Return>", self._feed_line_to_stdin, add=True)
 
         self._link_manager = textutils.LinkManager(
             self.textwidget, filename_regex, self._get_link_opener
