@@ -395,7 +395,9 @@ class NoTerminalRunner:
                     text_chunks.append(tag_or_text)
 
             input_line = "".join(text_chunks) + os.linesep
-            self.executor.write_to_stdin(input_line.encode(locale.getpreferredencoding(), errors="replace"))
+            self.executor.write_to_stdin(
+                input_line.encode(locale.getpreferredencoding(), errors="replace")
+            )
 
         return "break"
 
