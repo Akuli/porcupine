@@ -5,8 +5,7 @@ This documentation is all about writing your own Porcupine plugins in Python
 to make Porcupine do something fun that it doesn't do by default.
 
 If you write a nice plugin, please share it with me! I'm interested to see what you have made.
-Just create a pull request on GitHub that adds your plugin to
-:source:`porcupine/plugins` or :source:`more_plugins`.
+Just create a pull request on GitHub that adds your plugin to :source:`porcupine/plugins`.
 
 
 The Tutorial
