@@ -85,9 +85,6 @@ if sys.platform != "win32":
         assert get_output().count("\N{replacement character}") == 2
 
 
-@pytest.mark.xfail(
-    sys.platform == "win32", strict=True, reason="haven't taken the time to figure this out yet"
-)
 def test_input(filetab, tmp_path, wait_until):
     filetab.textwidget.insert("end", "x = input('Enter something: ')\n")
     filetab.textwidget.insert("end", "print('You said ' + x)\n")

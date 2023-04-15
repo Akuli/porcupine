@@ -394,10 +394,8 @@ class NoTerminalRunner:
                 elif action == "text" and not tag_on:
                     text_chunks.append(tag_or_text)
 
-            input_line = "".join(text_chunks)
-
-            # TODO: which encoding to use?
-            self.executor.write_to_stdin((input_line + os.linesep).encode("utf-8"))
+            input_line = "".join(text_chunks) + os.linesep
+            self.executor.write_to_stdin(input_line.encode(locale.getpreferredencoding(), errors="replace"))
 
         return "break"
 
