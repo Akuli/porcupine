@@ -98,20 +98,6 @@ event add "<<FileManager:New file>>" <$control_ish-n>
 event add "<<Menubar:Edit/Jump to definition>>" <$control_ish-Return>
 event add "<<Menubar:Edit/Jump to definition>>" <$control_ish-ButtonRelease-1>
 
-# more_plugins/terminal.py
-# upper-case T means Ctrl+Shift+T or Command+Shift+T
-# I use non-shifted ctrl+t for swapping two characters before cursor while editing
-event add "<<Menubar:Tools/Terminal>>" <$control_ish-T>
-
-# more_plugins/pythonprompt.py
-event add "<<Menubar:Run/Interactive Python prompt>>" <$control_ish-i>
-event add "<<PythonPrompt:KeyboardInterrupt>>" <$control_ish-c>
-event add "<<PythonPrompt:Copy>>" <$control_ish-C>
-# FIXME: conflicts with gotoline plugin
-#event add "<<PythonPrompt:Clear>>" <$control_ish-l>
-event add "<<PythonPrompt:Clear>>" <$control_ish-L>
-event add "<<PythonPrompt:SendEOF>>" <$control_ish-d> <$control_ish-D>
-
 
 # Text widgets have confusing control-click behaviour by default. Disabling it
 # here makes control-click same as just click.

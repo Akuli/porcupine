@@ -132,10 +132,9 @@ I think because I didn't find other projects named porcupine, but I don't rememb
 Originally, Porcupine was named "Akuli's Editor".
 
 ### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
-Maybe it can, see [the more_plugins directory](more_plugins/). If you don't
-find what you are looking for, you can write your own plugin, or alternatively,
-you can [create an issue on GitHub](https://github.com/Akuli/porcupine/issues/new)
-and hope that I feel like writing the plugin for you.
+You can run Porcupine and find out,
+or [create an issue on GitHub](https://github.com/Akuli/porcupine/issues/new) and ask.
+If you manage to make me excited about X, I might implement it.
 
 ### Why did you create a new editor?
 Because I can.
