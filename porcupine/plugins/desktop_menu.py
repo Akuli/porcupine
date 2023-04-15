@@ -41,7 +41,7 @@ def install_desktop_file() -> None:
         file.write("GenericName=Text Editor\n")
         # Must activate the venv, otherwise various things don't work
         # (e.g. os.environ.get("VIRTUAL_ENV") in this plugin)
-        bash_command = f"source {shlex.quote(str(activate_path))} && porcu"
+        bash_command = f"source {shlex.quote(str(activate_path))} && porcu %F"
         file.write(f"Exec=bash -c {shlex.quote(bash_command)}\n")
         file.write("Terminal=false\n")
         file.write("Type=Application\n")
