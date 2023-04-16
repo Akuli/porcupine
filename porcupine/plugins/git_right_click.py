@@ -5,6 +5,7 @@ import logging
 import subprocess
 import tkinter
 from pathlib import Path
+from tkinter import messagebox
 
 from porcupine import get_tab_manager, utils
 from porcupine.plugins.directory_tree import DirectoryTree, get_directory_tree, get_path
@@ -20,12 +21,21 @@ NOTHING_CHANGED = " "
 
 
 def run(command: list[str], cwd: Path) -> None:
-    log.info(f"running command: {command}")
-    try:
-        subprocess.check_call(command, cwd=cwd, **utils.subprocess_kwargs)
-    except (OSError, subprocess.CalledProcessError):
-        log.exception(f"git command failed: {command}")
-    get_tab_manager().event_generate("<<FileSystemChanged>>")
+    if command[1] == "checkout":
+        if messagebox.askyesno(f"Git Action Requires Action", "Do you really want to perform this action?", icon="warning"):
+            log.info(f"running command: {command}")
+            try:
+                subprocess.check_call(command, cwd=cwd, **utils.subprocess_kwargs)
+            except (OSError, subprocess.CalledProcessError):
+                log.exception(f"git command failed: {command}")
+            get_tab_manager().event_generate("<<FileSystemChanged>>")
+    else:
+        log.info(f"running command: {command}")
+        try:
+            subprocess.check_call(command, cwd=cwd, **utils.subprocess_kwargs)
+        except (OSError, subprocess.CalledProcessError):
+            log.exception(f"git command failed: {command}")
+        get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
 def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
