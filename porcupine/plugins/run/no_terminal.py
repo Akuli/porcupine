@@ -300,7 +300,7 @@ class NoTerminalRunner:
 
         def on_style_changed(junk: object = None) -> None:
             self.textwidget.config(
-                foreground=self.textwidget.tag_cget("Token.Literal.String", "foreground")
+                foreground=self.textwidget.tag_cget("Token.Literal.String", "foreground") or self.textwidget["fg"]
             )
 
         self.textwidget.bind(
