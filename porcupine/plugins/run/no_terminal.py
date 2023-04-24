@@ -348,10 +348,6 @@ class NoTerminalRunner:
         if self.textwidget.in_a_python_method:
             return False
 
-        # cursor must be on last line
-        if self.textwidget.index("insert lineend") != self.textwidget.index("end - 1 char"):
-            return True
-
         if "uneditable" in self.textwidget.tag_names("insert"):
             return True
 
