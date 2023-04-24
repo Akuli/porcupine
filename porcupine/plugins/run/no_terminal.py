@@ -140,7 +140,7 @@ class Executor:
         else:
             scrolled_to_end = self._textwidget.yview()[1] == 1.0
 
-            self._textwidget.insert("end", text, [OUTPUT_TAGS[message_type], "output"])
+            self._textwidget.insert("end", text, [OUTPUT_TAGS[message_type], "uneditable"])
             # Add links to full lines
             linked_line_count = text.count("\n")
             self._link_manager.add_links(
@@ -352,18 +352,8 @@ class NoTerminalRunner:
         if self.textwidget.index("insert lineend") != self.textwidget.index("end - 1 char"):
             return True
 
-        # Block if there is terminal output after the cursor.
-        # The tag_nextrange method almost does this, but doesn't find ranges that contain the cursor.
-        # The tag_prevrange finds those ranges but also other ranges we don't care about.
-        if self.textwidget.tag_nextrange("output", "insert"):
+        if "uneditable" in self.textwidget.tag_names("insert"):
             return True
-
-        range_containing_cursor = self.textwidget.tag_prevrange("output", "insert")
-        if range_containing_cursor:
-            range_start, range_end = range_containing_cursor
-            if self.textwidget.compare("insert", "<", range_end):
-                # The range contains at least one character that is after cursor.
-                return True
 
         # Block editing when nothing is running
         if self.executor is None or not self.executor.running:
@@ -379,31 +369,16 @@ class NoTerminalRunner:
             self.textwidget.insert("end - 1 char", "\n")
             self.textwidget.see("insert")
 
-            # Find all characters on last line not tagged with "output".
-            last_line_start = "end - 1 char - 1 line"
-            last_line_end = "end - 2 chars"
-
-            text_chunks = []
-            tag_on = "output" in self.textwidget.tag_names(last_line_start)
-
-            for action, tag_or_text, index in self.textwidget.dump(last_line_start, last_line_end):
-                if action == "tagon" and tag_or_text == "output":
-                    tag_on = True
-                elif action == "tagoff" and tag_or_text == "output":
-                    tag_on = False
-                elif action == "text" and not tag_on:
-                    text_chunks.append(tag_or_text)
-
-            input_line = "".join(text_chunks) + os.linesep
+            input_line = self.textwidget.get("uneditable.last", "end - 1 char").replace("\n", os.linesep)
+            self.textwidget.tag_add("uneditable", "1.0", "end - 1 char")
             self.executor.write_to_stdin(
                 input_line.encode(locale.getpreferredencoding(), errors="replace")
             )
 
         return "break"
 
-    # Needs special handling to avoid deleting output.
     def _handle_backspace(self, event: tkinter.Event[tkinter.Text]) -> str:
-        if "output" not in self.textwidget.tag_names("insert - 1 char"):
+        if "uneditable" not in self.textwidget.tag_names("insert - 1 char"):
             self.textwidget.delete("insert - 1 char", "insert")
         return "break"
 
