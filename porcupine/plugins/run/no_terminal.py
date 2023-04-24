@@ -343,19 +343,13 @@ class NoTerminalRunner:
         utils.set_tooltip(self.hide_button, "Hide output")
 
     def _editing_should_be_blocked(self) -> bool:
-        # Do not block if we are currently in a python method e.g. insert()
-        # This blocking is only for Tk's default key bindings (implemented in Tcl).
-        if self.textwidget.in_a_python_method:
-            return False
-
-        if "uneditable" in self.textwidget.tag_names("insert"):
-            return True
-
-        # Block editing when nothing is running
-        if self.executor is None or not self.executor.running:
-            return True
-
-        return False
+        return (not self.textwidget.in_a_python_method) and (
+            # Block editing when nothing is running
+            self.executor is None
+            or not self.executor.running
+            # Do not edit uneditable text
+            or "uneditable" in self.textwidget.tag_names("insert")
+        )
 
     def handle_enter_press(self, junk_event: object | None = None) -> str:
         if not self._editing_should_be_blocked():
