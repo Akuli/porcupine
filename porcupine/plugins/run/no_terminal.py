@@ -369,7 +369,9 @@ class NoTerminalRunner:
             self.textwidget.insert("end - 1 char", "\n")
             self.textwidget.see("insert")
 
-            input_line = self.textwidget.get("uneditable.last", "end - 1 char").replace("\n", os.linesep)
+            input_line = self.textwidget.get("uneditable.last", "end - 1 char").replace(
+                "\n", os.linesep
+            )
             self.textwidget.tag_add("uneditable", "1.0", "end - 1 char")
             self.executor.write_to_stdin(
                 input_line.encode(locale.getpreferredencoding(), errors="replace")
