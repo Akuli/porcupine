@@ -359,7 +359,7 @@ syntax_highlighter = "tree_sitter"
 tree_sitter_language_name = "json"
 indent_size = 2
 tabs2spaces = true
-autoindent_regexes = {dedent = '.*[^,{[]', indent = '.*[{[][^,]'}
+autoindent_regexes = {dedent = '.*[^\s,{\[][ \t]*$', indent = '.*[{[][^,]'}
 
 [TOML]
 filename_patterns = ["*.toml"]
