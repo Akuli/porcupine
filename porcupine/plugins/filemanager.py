@@ -384,12 +384,12 @@ def new_directory_here(path: Path) -> None:
         get_tab_manager().event_generate("<<FileSystemChanged>>")
 
 
-# takes path object and copies it into a new path using shutil.copytree, it also throws error if folder name exists
-# but the ask_file_name function prevents that from happening
+# takes path object and copies it into a new path
 def copy_folder(path: Path) -> None:
     new_path = ask_file_name(path.parent, f"{path.name}_copy", mode=FilenameMode.NEW_DIRECTORY)
-    if new_path:
-        shutil.copytree(path, new_path)
+    if not new_path:
+        raise ValueError("Invalid destination directory")
+    shutil.copytree(path, new_path)
 
 
 # takes the path object  and returns a boolean value determining if the path is a directory
