@@ -22,7 +22,11 @@ NOTHING_CHANGED = " "
 
 def run(command: list[str], cwd: Path) -> None:
     if command[1] == "checkout":
-        if messagebox.askyesno(f"Git Action Requires Action", "Do you really want to perform this action?", icon="warning"):
+        if messagebox.askyesno(
+            f"Git Action Requires Action",
+            "Do you really want to perform this action?",
+            icon="warning",
+        ):
             log.info(f"running command: {command}")
             try:
                 subprocess.check_call(command, cwd=cwd, **utils.subprocess_kwargs)
