@@ -397,6 +397,8 @@ def can_copy_folder(path: Path) -> bool:
     return path.is_dir()
 
 
+
+
 commands = [
     # Doing something to an entire project is more difficult than you would think.
     # For example, if the project is renamed, venv locations don't update.
@@ -432,6 +434,7 @@ def populate_menu(event: tkinter.Event[DirectoryTree]) -> None:
 def setup() -> None:
     tree = get_directory_tree()
     tree.bind("<<PopulateContextMenu>>", populate_menu, add=True)
+    tree.bind("<Control-c>", lambda event: copy_folder(get_selected_path(tree)))
 
     for command in commands:
         if command.virtual_event_name is not None:
