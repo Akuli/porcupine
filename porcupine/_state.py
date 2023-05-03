@@ -145,6 +145,7 @@ def quit() -> None:
         get_tab_manager().close_tab(tab)
     get_main_window().destroy()
 
+
 def restart() -> None:
     quit()  # widgets were destroyed here
-    os.execv(sys.executable, [sys.executable] + ['-m'] + ['porcupine'])
+    os.execv(sys.executable, [sys.executable] + ["-m"] + ["porcupine"])

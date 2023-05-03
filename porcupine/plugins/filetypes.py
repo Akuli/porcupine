@@ -143,9 +143,9 @@ def guess_filetype_from_path(filepath: Path) -> FileType | None:
             name: filetype
             for name, filetype in filetypes.items()
             if any(
-            fnmatch.fnmatch(filepath.as_posix(), "*/" + pat)
-            for pat in filetype["filename_patterns"]
-        )
+                fnmatch.fnmatch(filepath.as_posix(), "*/" + pat)
+                for pat in filetype["filename_patterns"]
+            )
         },
         str(filepath),
     )

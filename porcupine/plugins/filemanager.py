@@ -48,8 +48,8 @@ def find_tabs_by_parent_path(path: Path) -> list[tabs.FileTab]:
         tab
         for tab in get_tab_manager().tabs()
         if isinstance(tab, tabs.FileTab)
-           and tab.path is not None
-           and (path == tab.path or path in tab.path.parents)
+        and tab.path is not None
+        and (path == tab.path or path in tab.path.parents)
     ]
 
 
@@ -395,8 +395,6 @@ def copy_folder(path: Path) -> None:
 # takes the path object  and returns a boolean value determining if the path is a directory
 def can_copy_folder(path: Path) -> bool:
     return path.is_dir()
-
-
 
 
 commands = [
