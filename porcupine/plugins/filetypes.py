@@ -29,6 +29,7 @@ from porcupine.settings import global_settings
 log = logging.getLogger(__name__)
 FileType = Dict[str, Any]
 filetypes: dict[str, FileType] = {}
+global filetypes_var
 
 
 # Sometimes dynamic typing is awesome
@@ -142,9 +143,9 @@ def guess_filetype_from_path(filepath: Path) -> FileType | None:
             name: filetype
             for name, filetype in filetypes.items()
             if any(
-                fnmatch.fnmatch(filepath.as_posix(), "*/" + pat)
-                for pat in filetype["filename_patterns"]
-            )
+            fnmatch.fnmatch(filepath.as_posix(), "*/" + pat)
+            for pat in filetype["filename_patterns"]
+        )
         },
         str(filepath),
     )
@@ -282,6 +283,14 @@ def setup() -> None:
     global_settings.add_option("default_filetype", "Python")
 
     # load_filetypes() got already called in setup_argument_parser()
+
+    # set global variable
+    global filetypes_var
+    filetypes_var = tkinter.StringVar()
+
+    for name in sorted(filetypes.keys(), key=str.casefold):
+        _add_filetype_menuitem(name, filetypes_var)
+
     get_tab_manager().add_filetab_callback(on_new_filetab)
 
     settings.add_combobox(
@@ -290,10 +299,6 @@ def setup() -> None:
         values=sorted(filetypes.keys(), key=str.casefold),
     )
     set_filedialog_kwargs()
-    global filetypes_var
-    filetypes_var = tkinter.StringVar()
-    for name in sorted(filetypes.keys(), key=str.casefold):
-        _add_filetype_menuitem(name, filetypes_var)
 
     get_tab_manager().bind("<<NotebookTabChanged>>", _sync_filetypes_menu, add=True)
     path = dirs.user_config_path / "filetypes.toml"
