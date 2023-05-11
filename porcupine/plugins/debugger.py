@@ -44,7 +44,8 @@ def on_output_added(event):
         # Debugger moved into new file/line
         filename, lineno = match.groups()
         highlight_line(Path(filename), int(lineno))
-        event.widget.after_idle(lambda: print("focusing...", event.widget) or event.widget.focus)
+        # TODO: while this works, the 50ms timeout is not very elegant
+        event.widget.after(50, lambda: event.widget.focus())
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
