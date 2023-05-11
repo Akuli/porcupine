@@ -320,7 +320,7 @@ class NoTerminalRunner:
         )
         on_style_changed()
 
-        self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
+        self.textwidget.bind("<Destroy>", (lambda e: self.stop_executor(quitting=True)), add=True)
         self.textwidget.bind("<Control-D>", self._handle_end_of_input, add=True)
         self.textwidget.bind("<Control-d>", self._handle_end_of_input, add=True)
         self.textwidget.bind("<Return>", self.handle_enter_press, add=True)
@@ -343,18 +343,13 @@ class NoTerminalRunner:
             option_name="run_output_pygments_style",
         )
 
-        self.pause_button = ttk.Label(self.button_frame, image=images.get("pause"), cursor="hand2")
-        utils.set_tooltip(self.pause_button, "Pause execution")
-        self.stop_button = ttk.Label(self.button_frame, image=images.get("stop"), cursor="hand2")
-        utils.set_tooltip(self.stop_button, "Kill Process")
-        self.hide_button = ttk.Label(self.button_frame, image=images.get("closebutton"), cursor="hand2")
-        utils.set_tooltip(self.hide_button, "Hide output")
+        self.hide_button = self.add_button("closebutton", "Hide output", self.toggle_visible)
+        self.stop_button = self.add_button("stop", "Kill Process", self.stop_executor)
+        self.pause_button = self.add_button("pause", "Pause execution", self.pause_resume_executor)
 
-        # Packing to right so that more stuff can be added to the left side.
-        self.hide_button.pack(side="right", padx=1)
-        self.stop_button.pack(side="right", padx=1)
-        if sys.platform != "win32":
-            self.pause_button.pack(side="right", padx=1)
+        if sys.platform == "win32":
+            # pause feature not available so don't show button
+            self.pause_button.pack_forget()
 
     def _editing_should_be_blocked(self) -> bool:
         return (not self.textwidget.in_a_python_method) and (
@@ -392,11 +387,11 @@ class NoTerminalRunner:
         if self.executor is not None:
             self.executor.close_stdin()
 
-    def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
+    def stop_executor(self, *, quitting: bool = False) -> None:
         if self.executor is not None:
             self.executor.stop(quitting=quitting)
 
-    def pause_resume_executor(self, junk: object = None) -> None:
+    def pause_resume_executor(self) -> None:
         if sys.platform != "win32" and self.executor is not None and self.executor.running:
             if self.executor.paused:
                 self.executor.send_signal(signal.SIGCONT)
@@ -446,6 +441,18 @@ class NoTerminalRunner:
         self.executor = Executor(cwd, self.textwidget, self._link_manager)
         self.executor.run(command)
 
+    def toggle_visible(self) -> None:
+        is_hidden = get_vertical_panedwindow().panecget(self.textwidget, "hide")
+        get_vertical_panedwindow().paneconfigure(self.textwidget, hide=not is_hidden)
+
+    # Adds buttons right to left
+    def add_button(self, image_name: str, tooltip: str, command: Callable[[], Any]) -> ttk.Label:
+        button = ttk.Label(self.button_frame, image=images.get(image_name), cursor="hand2")
+        button.pack(side="right", padx=1)
+        button.bind("<Button-1>", (lambda e: command()), add=True)
+        utils.set_tooltip(button, tooltip)
+        return button
+
 
 runner: NoTerminalRunner | None = None
 
@@ -466,15 +473,7 @@ def setup() -> None:
         get_vertical_panedwindow(), runner.textwidget, "run_command_output_height", 200
     )
 
-    def toggle_visible(junk_event: object = ...) -> None:
-        assert runner is not None
-        is_hidden = get_vertical_panedwindow().panecget(runner.textwidget, "hide")
-        get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=not is_hidden)
-
-    runner.hide_button.bind("<Button-1>", toggle_visible, add=True)
-    runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
-    runner.pause_button.bind("<Button-1>", runner.pause_resume_executor, add=True)
-    menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
+    menubar.get_menu("Run").add_command(label="Show/hide output", command=runner.toggle_visible)
     menubar.get_menu("View/Focus").add_command(label="Command output", command=runner.focus)
     if sys.platform != "win32":
         menubar.get_menu("Run").add_command(
