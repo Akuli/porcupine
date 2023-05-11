@@ -1,6 +1,7 @@
 import tkinter
 import re
-from porcupine import tabs, get_tab_manager
+from tkinter import ttk
+from porcupine import tabs, get_tab_manager, images, utils
 from pathlib import Path
 from porcupine.plugins.run.no_terminal import get_runner
 
@@ -52,6 +53,28 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.textwidget.tag_lower("debugger-highlight", "sel")
 
 
+def debugger_buttons_can_be_used() -> bool:
+    last_line = get_runner().textwidget.get("end - 1 char linestart", "end - 1 char")
+    return last_line == "(Pdb) "
+
+
+def run_debugger_command(command: str) -> None:
+    if debugger_buttons_can_be_used():
+        get_runner().textwidget.insert("end", command)
+        get_runner().textwidget.mark_set("insert", "end")
+        get_runner().handle_enter_press()
+
+
 def setup():
     get_tab_manager().add_filetab_callback(on_new_filetab)
     get_runner().textwidget.bind("<<OutputAdded>>", on_output_added, add=True)
+
+    step_into_button = ttk.Label(get_runner().button_frame, image=images.get("step_into"), cursor="hand2")
+    step_into_button.pack(side="left", padx=1)
+    step_into_button.bind("<Button-1>", (lambda e: run_debugger_command("step")), add=True)
+    utils.set_tooltip(step_into_button, "Step into function")
+
+    step_over_button = ttk.Label(get_runner().button_frame, image=images.get("step_over"), cursor="hand2")
+    step_over_button.pack(side="left", padx=1)
+    step_over_button.bind("<Button-1>", (lambda e: run_debugger_command("next")), add=True)
+    utils.set_tooltip(step_over_button, "Run to next statement")

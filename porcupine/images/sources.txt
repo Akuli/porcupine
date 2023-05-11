@@ -9,3 +9,9 @@ pause_dark.png          Drawn by rdbende
 pause_light.png         Drawn by rdbende
 resume_dark.png         Drawn by rdbende
 resume_light.png        Drawn by rdbende
+step_into_dark.png      Edited from https://www.flaticon.com/free-icon/arrow-into-drive-symbol_32758
+step_into_light.png     Edited from https://www.flaticon.com/free-icon/arrow-into-drive-symbol_32758
+step_into_large.png     Edited from https://www.flaticon.com/free-icon/arrow-into-drive-symbol_32758
+step_over_dark.png      Edited from https://www.flaticon.com/free-icon/arrow-into-drive-symbol_32758
+step_over_light.png     Edited from https://www.flaticon.com/free-icon/arrow-into-drive-symbol_32758
+step_over_large.png     Edited from https://www.flaticon.com/free-icon/arrow-into-drive-symbol_32758

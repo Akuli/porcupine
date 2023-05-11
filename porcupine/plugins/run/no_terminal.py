@@ -335,24 +335,26 @@ class NoTerminalRunner:
         self.textwidget.tag_config("link", underline=True)
         self.executor: Executor | None = None
 
-        button_frame = tkinter.Frame(self.textwidget)
-        button_frame.place(relx=1, rely=0, anchor="ne")
+        self.button_frame = tkinter.Frame(self.textwidget)
+        self.button_frame.place(relx=1, rely=0, anchor="ne")
         settings.use_pygments_fg_and_bg(
-            button_frame,
-            (lambda fg, bg: button_frame.config(bg=bg)),
+            self.button_frame,
+            (lambda fg, bg: self.button_frame.config(bg=bg)),
             option_name="run_output_pygments_style",
         )
 
-        self.pause_button = ttk.Label(button_frame, image=images.get("pause"), cursor="hand2")
-        if sys.platform != "win32":
-            self.pause_button.pack(side="left", padx=1)
+        self.pause_button = ttk.Label(self.button_frame, image=images.get("pause"), cursor="hand2")
         utils.set_tooltip(self.pause_button, "Pause execution")
-        self.stop_button = ttk.Label(button_frame, image=images.get("stop"), cursor="hand2")
-        self.stop_button.pack(side="left", padx=1)
+        self.stop_button = ttk.Label(self.button_frame, image=images.get("stop"), cursor="hand2")
         utils.set_tooltip(self.stop_button, "Kill Process")
-        self.hide_button = ttk.Label(button_frame, image=images.get("closebutton"), cursor="hand2")
-        self.hide_button.pack(side="left", padx=1)
+        self.hide_button = ttk.Label(self.button_frame, image=images.get("closebutton"), cursor="hand2")
         utils.set_tooltip(self.hide_button, "Hide output")
+
+        # Packing to right so that more stuff can be added to the left side.
+        self.hide_button.pack(side="right", padx=1)
+        self.stop_button.pack(side="right", padx=1)
+        if sys.platform != "win32":
+            self.pause_button.pack(side="right", padx=1)
 
     def _editing_should_be_blocked(self) -> bool:
         return (not self.textwidget.in_a_python_method) and (
