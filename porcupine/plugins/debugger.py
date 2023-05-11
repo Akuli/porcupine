@@ -2,7 +2,7 @@ import tkinter
 import re
 from porcupine import tabs, get_tab_manager
 from pathlib import Path
-from porcupine.plugins.run.no_terminal import get_runner, open_file_with_line_number
+from porcupine.plugins.run.no_terminal import get_runner
 
 
 setup_after = ["run"]
@@ -21,8 +21,6 @@ def clear_highlight_if_any() -> None:
 def highlight_line(path: Path, lineno: int) -> None:
     clear_highlight_if_any()
 
-    # focus_existing=False needed to keep focus in debugger/output area.
-    #tab = get_tab_manager().open_file(path, focus_existing=False)
     tab = get_tab_manager().open_file(path)
     tab.textwidget.mark_set("insert", f"{lineno}.0")
     tab.textwidget.tag_add("debugger-highlight", f"{lineno}.0", f"{lineno+1}.0")
