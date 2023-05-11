@@ -58,6 +58,21 @@ def debugger_buttons_can_be_used() -> bool:
     return last_line == "(Pdb) "
 
 
+debugger_buttons = []
+
+
+def show_or_hide_buttons():
+    if debugger_buttons_can_be_used():
+        # Reversed because we pack right to left.
+        for button in reversed(debugger_buttons):
+            button.pack(side="left", padx=1)
+    else:
+        for button in debugger_buttons:
+            button.pack_forget()
+
+    get_tab_manager().after(50, show_or_hide_buttons)
+
+
 def run_debugger_command(command: str) -> None:
     if debugger_buttons_can_be_used():
         get_runner().textwidget.insert("end", command)
@@ -69,12 +84,14 @@ def setup():
     get_tab_manager().add_filetab_callback(on_new_filetab)
     get_runner().textwidget.bind("<<OutputAdded>>", on_output_added, add=True)
 
-    step_into_button = ttk.Label(get_runner().button_frame, image=images.get("step_into"), cursor="hand2")
-    step_into_button.pack(side="left", padx=1)
-    step_into_button.bind("<Button-1>", (lambda e: run_debugger_command("step")), add=True)
-    utils.set_tooltip(step_into_button, "Step into function")
-
     step_over_button = ttk.Label(get_runner().button_frame, image=images.get("step_over"), cursor="hand2")
-    step_over_button.pack(side="left", padx=1)
     step_over_button.bind("<Button-1>", (lambda e: run_debugger_command("next")), add=True)
     utils.set_tooltip(step_over_button, "Run to next statement")
+    debugger_buttons.append(step_over_button)
+
+    step_into_button = ttk.Label(get_runner().button_frame, image=images.get("step_into"), cursor="hand2")
+    step_into_button.bind("<Button-1>", (lambda e: run_debugger_command("step")), add=True)
+    utils.set_tooltip(step_into_button, "Step into function")
+    debugger_buttons.append(step_into_button)
+
+    show_or_hide_buttons()
