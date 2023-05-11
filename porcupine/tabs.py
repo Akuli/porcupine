@@ -158,7 +158,7 @@ class TabManager(ttk.Notebook):
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())
 
-    def open_file(self, path: Path) -> FileTab | None:
+    def open_file(self, path: Path, *, focus_existing: bool = True) -> FileTab | None:
         """Add a :class:`FileTab` for editing a file and select it.
 
         If the file can't be opened, this method displays an error to the user
@@ -185,7 +185,8 @@ class TabManager(ttk.Notebook):
         if existing_tab != tab:
             # tab is destroyed
             assert isinstance(existing_tab, FileTab)
-            existing_tab.textwidget.focus()
+            if focus_existing:
+                existing_tab.textwidget.focus()
             return existing_tab
 
         if not tab.reload(undoable=False):

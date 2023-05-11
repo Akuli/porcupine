@@ -155,6 +155,8 @@ class Executor:
         self._textwidget.delete("1.0", f"end - {MAX_SCROLLBACK} lines")
 
     def _poll_queue_and_put_to_textwidget(self) -> None:
+        text_added = False
+
         # too many iterations here freezes the GUI when an infinite loop with print is running
         for iteration in range(10):
             try:
@@ -163,6 +165,12 @@ class Executor:
                 break
             self._handle_queued_item(message_type, text)
 
+            if text:
+                text_added = True
+
+        if text_added:
+            print("Generate event")
+            self._textwidget.event_generate("<<OutputAdded>>")
         self._timeout_id = self._textwidget.after(50, self._poll_queue_and_put_to_textwidget)
 
     def send_signal(self, signal: signal.Signals) -> None:
@@ -472,6 +480,11 @@ def setup() -> None:
             label="Pause/resume process", command=runner.pause_resume_executor
         )
     menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
+
+
+def get_runner() -> NoTerminalRunner:
+    assert runner is not None
+    return runner
 
 
 # succeeded_callback() will be ran from tkinter if the command returns 0
