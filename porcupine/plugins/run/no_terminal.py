@@ -45,6 +45,8 @@ filename_regex_parts = [
     # valgrind, SDL_assert() etc
     # blah blah: some_function (filename.c:123)
     r"\(([^\n():]+):([0-9]+)\)",
+    # pdb displays stuff like "> c:\users\akuli\porcupine\asd.py(14)<module>()"
+    r"(?<=> )([^()\n]+)\((\d+)\)",
 ]
 filename_regex = "(?i)" + "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
