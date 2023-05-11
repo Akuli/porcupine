@@ -169,7 +169,6 @@ class Executor:
                 text_added = True
 
         if text_added:
-            print("Generate event")
             self._textwidget.event_generate("<<OutputAdded>>")
         self._timeout_id = self._textwidget.after(50, self._poll_queue_and_put_to_textwidget)
 
