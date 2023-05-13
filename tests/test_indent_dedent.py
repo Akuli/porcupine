@@ -321,11 +321,19 @@ def test_json_autoindent(check_autoindents):
 "directory_tree_projects": [
 "spam",
 "ham",
-"egg"
+{
+"python_venvs": {
+"project_1": "env",
+"project_2": "env"
+}
+}
 ],
 "python_venvs": {
 "project": "env",
-"project": "env"
+"project": [
+"foo",
+"bar"
+]
 }
 }
 """,
@@ -337,11 +345,19 @@ def test_json_autoindent(check_autoindents):
   "directory_tree_projects": [
     "spam",
     "ham",
-    "egg"
+    {
+      "python_venvs": {
+        "project_1": "env",
+        "project_2": "env"
+      }
+    }
   ],
   "python_venvs": {
     "project": "env",
-    "project": "env"
+    "project": [
+      "foo",
+      "bar"
+    ]
   }
 }
 """,
