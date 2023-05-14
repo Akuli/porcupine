@@ -39,6 +39,7 @@ dependencies = [
     "psutil>=5.8.0,<6.0.0",
     "PyYAML==6.0",
     "tree-sitter-builds==2023.3.12",
+    "sv-ttk>=2.4.5",
 ]
 
 [project.scripts]
