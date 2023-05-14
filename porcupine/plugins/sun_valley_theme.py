@@ -5,13 +5,14 @@ Those are handled by pygments_style and highlight plugins.
 
 You also need to disable the `ttk_themes` plugin for this to work well.
 """
-import sv_ttk
+
+import sv_ttk  # type: ignore
 
 from porcupine import get_main_window, get_tab_manager, settings
 from porcupine.settings import global_settings
 
 
-def set_theme(theme) -> None:
+def set_theme(theme: str) -> None:
     sv_ttk.set_theme(theme.lower())
     main_window = get_main_window()
     # TODO: the next 3 lines are a hack?
