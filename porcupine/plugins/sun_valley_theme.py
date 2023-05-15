@@ -22,7 +22,7 @@ def set_theme(theme: str) -> None:
 
 def setup() -> None:
     global_settings.add_option("sv_theme", "Dark")
-    settings.add_combobox("sv_theme", "UI theme", values=["Dark", "Light"], state="readonly")
+    settings.add_combobox("sv_theme", "UI theme:", values=["Dark", "Light"], state="readonly")
     set_theme(global_settings.get("sv_theme", str))
 
     get_tab_manager().bind(
