@@ -2,8 +2,6 @@
 
 This plugin doesn't do anything to the colors used in the main editing area.
 Those are handled by pygments_style and highlight plugins.
-
-You also need to disable the `ttk_themes` plugin for this to work well.
 """
 
 import sv_ttk  # type: ignore

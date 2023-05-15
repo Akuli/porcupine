@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 STATE_FILE = dirs.user_cache_path / "restart_state.pkl"
 
 # If loading a file fails, a dialog is created and it should be themed as user wants
-setup_after = ["ttk_themes"]
+setup_after = ["sun_valley_theme"]
 
 
 def quit_callback() -> bool:
