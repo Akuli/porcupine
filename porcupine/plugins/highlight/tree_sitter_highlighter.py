@@ -19,7 +19,7 @@ from .base_highlighter import BaseHighlighter
 log = logging.getLogger(__name__)
 
 # setup() can show an error message, and the ttk theme affects that
-setup_after = ["ttk_themes"]
+setup_after = ["sun_valley_theme"]
 
 TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappings")
 
