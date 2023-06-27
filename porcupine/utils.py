@@ -558,6 +558,16 @@ def bind_tab_key(
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # noqa: TK231
 
 
+# Must be in a function because lambdas and local variables are ... inconvenient
+# TODO: copy pasted from statusbar plugin
+def _associate_another_widget_with_a_radiobutton(
+    other: ttk.Label | ttk.Entry, radio: ttk.Radiobutton
+) -> None:
+    other.bind("<Enter>", lambda e: radio.event_generate("<Enter>"), add=True)
+    other.bind("<Leave>", lambda e: radio.event_generate("<Leave>"), add=True)
+    other.bind("<Button-1>", lambda e: radio.invoke(), add=True)
+
+
 # TODO: document this?
 def ask_encoding(text: str, old_encoding: str) -> str | None:
     if porcupine.get_main_window().tk.call("winfo", "exists", ".choose_encoding"):
@@ -569,29 +579,55 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     dialog.resizable(False, False)
     dialog.title("Choose an encoding")
 
-    label_width = 600
+    label_width = 400
 
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill="both", expand=True)
     ttk.Label(big_frame, text=text, wraplength=label_width).pack(fill="x", padx=10, pady=10)
 
-    var = tkinter.StringVar()
-    entry = ttk.Entry(big_frame, textvariable=var)
-    entry.pack(pady=40)
+    options: list[tuple[str, str]] = [
+        ("UTF-8", ("By far the most commonly used encoding." " Supports all Unicode characters.")),
+        (
+            "Latin-1",
+            (
+                "Supports only 256 different characters, but never fails to open a file."
+                " Also known as ISO 8859-1."
+            ),
+        ),
+    ]
+    var = tkinter.StringVar(value="other")
+
+    for name, description in options:
+        radio = ttk.Radiobutton(big_frame, variable=var, value=name, text=name)
+        radio.pack(fill="x", padx=(10, 0), pady=(10, 0))
+        label = ttk.Label(big_frame, wraplength=label_width - (50 + 10), text=description)
+        label.pack(fill="x", padx=(50, 10), pady=(0, 10))
+
+        _associate_another_widget_with_a_radiobutton(label, radio)
+
+        # Treat e.g. "utf8" and "UTF-8" the same
+        if codecs.lookup(name) == codecs.lookup(old_encoding):
+            var.set(name)
+            radio.focus()
+
+    other_frame = ttk.Frame(big_frame)
+    other_frame.pack(side="top", fill="x", padx=10, pady=10)
+
+    other_radio = ttk.Radiobutton(other_frame, variable=var, value="other", text="Other encoding:")
+    other_radio.pack(side="left")
+    entry = ttk.Entry(other_frame, text=old_encoding)
+    entry.pack(side="left", padx=5)
     entry.insert(0, old_encoding)
+    _associate_another_widget_with_a_radiobutton(entry, other_radio)
 
     ttk.Label(
         big_frame,
         text=(
-            "Some commonly used encodings are:\n"
-            "\n"
-            "  • utf-8: commonly used, supports all Unicode characters\n"
-            "  • latin-1: only 256 characters, but never fails to open a file\n"
-            "\n"
             "You can create a project-specific .editorconfig file to change the encoding permanently."
         ),
         wraplength=label_width,
-    ).pack(fill="x", padx=10, pady=10)
+    ).pack(fill="x", padx=10, pady=(30, 10))
+
     button_frame = ttk.Frame(big_frame)
     button_frame.pack(fill="x", pady=10)
 
@@ -607,16 +643,26 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     ok_button = ttk.Button(button_frame, text="OK", command=select_encoding, width=1)
     ok_button.pack(side="right", expand=True, fill="x", padx=10)
 
-    def validate_encoding(*junk: object) -> None:
-        encoding = entry.get()
-        try:
-            codecs.lookup(encoding)
-        except LookupError:
-            ok_button.config(state="disabled")
+    def on_selection_changed(*junk: object) -> None:
+        print(var.get())
+        if var.get() == "other":
+            entry.config(state="normal")
         else:
-            ok_button.config(state="normal")
+            entry.config(state="disabled")
 
-    var.trace_add("write", validate_encoding)
+        valid = True
+        if var.get() == "other":
+            encoding = entry.get()
+            try:
+                codecs.lookup(encoding)
+            except LookupError:
+                valid = False
+
+        ok_button.config(state=("normal" if valid else "disabled"))
+
+    var.trace_add("write", on_selection_changed)
+    on_selection_changed()
+
     entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
     entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
     entry.select_range(0, "end")
