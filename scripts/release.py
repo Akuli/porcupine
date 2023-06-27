@@ -46,7 +46,9 @@ def main():
     replace_in_file(
         Path("pyproject.toml"), TAG_FORMAT.lstrip("v") % old_info, TAG_FORMAT.lstrip("v") % new_info
     )
-    subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
+    subprocess.check_call(
+        ["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md", "pyproject.toml"]
+    )
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
     subprocess.check_call(["git", "push", "origin", branch])
