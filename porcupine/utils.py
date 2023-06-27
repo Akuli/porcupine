@@ -569,7 +569,7 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     dialog.resizable(False, False)
     dialog.title("Choose an encoding")
 
-    label_width = 400
+    label_width = 600
 
     big_frame = ttk.Frame(dialog)
     big_frame.pack(fill="both", expand=True)
@@ -583,8 +583,12 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     ttk.Label(
         big_frame,
         text=(
-            "You can create a project-specific .editorconfig file to change the encoding"
-            " permanently."
+            "Some commonly used encodings are:\n"
+            "\n"
+            "  • utf-8: commonly used, supports all Unicode characters\n"
+            "  • latin-1: only 256 characters, but never fails to open a file\n"
+            "\n"
+            "You can create a project-specific .editorconfig file to change the encoding permanently."
         ),
         wraplength=label_width,
     ).pack(fill="x", padx=10, pady=10)
