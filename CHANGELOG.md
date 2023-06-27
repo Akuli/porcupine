@@ -10,7 +10,7 @@ New features:
 - Pastebinning is now done by right-clicking selected text. There is no longer a "Pastebin" menu in the menubar.
 
 Bug fixes:
-- The cursor now remains visible when pressing Ctrl+Delete or Ctrl+backspace.
+- The editor now scrolls automatically to keep the cursor visible when pressing Ctrl+Delete or Ctrl+Backspace.
 - Porcupine now autoindents slightly better when typing into a JSON file. Thank you [Moosems](https://github.com/Moosems) for fixing this.
 - On Linux, if you use the launcher, you can now choose Porcupine in "Open with" menus. For this to work, you may need to uncheck and check again "Show Porcupine in the desktop menu system" in the settings.
 
