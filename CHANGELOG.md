@@ -2,6 +2,19 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+New features:
+- Porcupine now looks quite different than before, because it uses [the sv-ttk themes](https://pypi.org/project/sv-ttk/). You can choose between dark and light theme in settings.
+- When running programs with output going to the terminal window (try Shift+F5), Porcupine now supports keyboard input. For example, programs that use Python's `input()` function now work.
+- Pastebinning is now done by right-clicking selected text. There is no longer a "Pastebin" menu in the menubar.
+
+Bug fixes:
+- The editor now scrolls automatically to keep the cursor visible when pressing Ctrl+Delete or Ctrl+Backspace.
+- Porcupine now autoindents slightly better when typing into a JSON file. Thank you [Moosems](https://github.com/Moosems) for fixing this.
+- On Linux, if you use the launcher, you can now choose Porcupine in "Open with" menus. For this to work, you may need to uncheck and check again "Show Porcupine in the desktop menu system" in the settings.
+
+
 ## v2023.03.11
 
 New features:
