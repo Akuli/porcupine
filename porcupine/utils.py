@@ -707,7 +707,10 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
 
     def select_encoding() -> None:
         nonlocal selected_encoding
-        selected_encoding = entry.get()
+        if var.get() == "other":
+            selected_encoding = entry.get()
+        else:
+            selected_encoding = var.get()
         dialog.destroy()
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
@@ -716,7 +719,6 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     ok_button.pack(side="right", expand=True, fill="x", padx=10)
 
     def on_selection_changed(*junk: object) -> None:
-        print(var.get())
         if var.get() == "other":
             entry.config(state="normal")
         else:
