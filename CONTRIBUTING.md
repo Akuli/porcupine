@@ -21,7 +21,7 @@ I have tried to make contributing easy:
     There are also checks running on GitHub Actions.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
-Then install Python 3.7 or newer and [git](https://git-scm.com/), and run these commands:
+Then install Python 3.8 or newer and [git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/YourUserName/porcupine
     cd porcupine
