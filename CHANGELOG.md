@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2023.06.27
 
 New features:
 - Porcupine now looks quite different than before, because it uses [the sv-ttk themes](https://pypi.org/project/sv-ttk/). You can choose between dark and light theme in settings.
