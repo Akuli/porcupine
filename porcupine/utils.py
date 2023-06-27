@@ -568,7 +568,9 @@ def _associate_another_widget_with_a_radiobutton(
 
 
 # TODO: document this?
-def ask_line_ending(old_line_ending: porcupine.settings.LineEnding) -> porcupine.settings.LineEnding:
+def ask_line_ending(
+    old_line_ending: porcupine.settings.LineEnding,
+) -> porcupine.settings.LineEnding:
     top = tkinter.Toplevel(name="choose_line_ending")
     top.resizable(False, False)
     top.transient(porcupine.get_main_window())
