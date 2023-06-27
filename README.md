@@ -67,7 +67,7 @@ and then deleting `porcupine-venv`.
 
 ### Other Linux distributions
 
-Install Python 3.7 or newer with pip and tkinter somehow.
+Install Python 3.8 or newer with pip and tkinter somehow.
 If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
 Then run these commands:
 
