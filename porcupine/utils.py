@@ -658,39 +658,40 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     ttk.Label(big_frame, text=text, wraplength=label_width).pack(fill="x", padx=10, pady=10)
 
     options: list[tuple[str, str]] = [
-        ("UTF-8", ("By far the most commonly used encoding." " Supports all Unicode characters.")),
+        ("UTF-8", "By far the most commonly used encoding. Supports all Unicode characters."),
         (
             "Latin-1",
-            (
-                "Supports only 256 different characters, but never fails to open a file."
-                " Also known as ISO 8859-1."
-            ),
+            "Supports only 256 different characters, but never fails to open a file. Also known as ISO 8859-1.",
         ),
     ]
-    var = tkinter.StringVar(value="other")
+
+    radio_var = tkinter.StringVar(value="other")  # which item selected: "UTF-8", "Latin-1", "other"
+    entry_var = tkinter.StringVar(value=old_encoding)  # text of entry
 
     for name, description in options:
-        radio = ttk.Radiobutton(big_frame, variable=var, value=name, text=name)
+        radio = ttk.Radiobutton(big_frame, variable=radio_var, value=name, text=name)
         radio.pack(fill="x", padx=(10, 0), pady=(10, 0))
         label = ttk.Label(big_frame, wraplength=label_width - (50 + 10), text=description)
         label.pack(fill="x", padx=(50, 10), pady=(0, 10))
-
         _associate_another_widget_with_a_radiobutton(label, radio)
-
-        # Treat e.g. "utf8" and "UTF-8" the same
-        if codecs.lookup(name) == codecs.lookup(old_encoding):
-            var.set(name)
-            radio.focus()
 
     other_frame = ttk.Frame(big_frame)
     other_frame.pack(side="top", fill="x", padx=10, pady=10)
-
-    other_radio = ttk.Radiobutton(other_frame, variable=var, value="other", text="Other encoding:")
+    other_radio = ttk.Radiobutton(
+        other_frame, variable=radio_var, value="other", text="Other encoding:"
+    )
     other_radio.pack(side="left")
-    entry = ttk.Entry(other_frame, text=old_encoding)
+    entry = ttk.Entry(other_frame, textvariable=entry_var)
     entry.pack(side="left", padx=5)
-    entry.insert(0, old_encoding)
     _associate_another_widget_with_a_radiobutton(entry, other_radio)
+
+    # Set UI to old encoding. Treat e.g. "utf8" as meaning "UTF-8".
+    for name, description in options:
+        if codecs.lookup(name) == codecs.lookup(old_encoding):
+            radio_var.set(name)
+            break
+    else:
+        radio_var.set("other")
 
     ttk.Label(
         big_frame,
@@ -707,10 +708,10 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
 
     def select_encoding() -> None:
         nonlocal selected_encoding
-        if var.get() == "other":
-            selected_encoding = entry.get()
+        if radio_var.get() == "other":
+            selected_encoding = entry_var.get()
         else:
-            selected_encoding = var.get()
+            selected_encoding = radio_var.get()
         dialog.destroy()
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
@@ -718,24 +719,24 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     ok_button = ttk.Button(button_frame, text="OK", command=select_encoding, width=1)
     ok_button.pack(side="right", expand=True, fill="x", padx=10)
 
-    def on_selection_changed(*junk: object) -> None:
-        if var.get() == "other":
+    def update_ui(*junk: object) -> None:
+        if radio_var.get() == "other":
             entry.config(state="normal")
         else:
             entry.config(state="disabled")
 
         valid = True
-        if var.get() == "other":
-            encoding = entry.get()
+        if radio_var.get() == "other":
             try:
-                codecs.lookup(encoding)
+                codecs.lookup(entry_var.get())
             except LookupError:
                 valid = False
 
         ok_button.config(state=("normal" if valid else "disabled"))
 
-    var.trace_add("write", on_selection_changed)
-    on_selection_changed()
+    radio_var.trace_add("write", update_ui)
+    entry_var.trace_add("write", update_ui)
+    update_ui()
 
     entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
     entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
