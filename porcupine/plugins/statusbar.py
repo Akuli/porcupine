@@ -93,7 +93,7 @@ class StatusBar(ttk.Frame):
             return
 
         old_value = self._tab.settings.get("line_ending", settings.LineEnding)
-        self._tab.settings.set("line_ending", ask_line_ending(old_value))
+        self._tab.settings.set("line_ending", utils.ask_line_ending(old_value))
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
