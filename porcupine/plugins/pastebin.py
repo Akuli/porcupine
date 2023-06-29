@@ -1,8 +1,16 @@
-"""Display a "Pastebin" menu that allows you to pastebin files easily.
+"""Allows you to share snippets of code to others easily.
 
-If a part of the file is selected when you click something in the "Pastebin"
-menu, then only the selected part of the file is shared.
+To use this plugin:
+
+1. Select some code in the editor
+
+2. Select "Pastebin selected text to dpaste.com" (or some other site)
+
+3. Wait until you get the link
+
+4. Send the link to someone else
 """
+# docstring above needs to have blank lines to show properly in plugin manager
 # TODO: make this work with pythonprompt plugin?
 from __future__ import annotations
 
