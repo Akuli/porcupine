@@ -10,7 +10,7 @@ from functools import partial
 from pathlib import Path
 from typing import NamedTuple
 
-from porcupine import get_tab_manager, utils
+from porcupine import get_tab_manager, tabs, utils
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ GIT_BLAME_REGEX = r"([0-9a-fA-F]+)\s\((.+?)\s([0-9]*)\s.{5}\s[0-9]+\)"
 
 class Commit(NamedTuple):
     revision: int
-    message: str
+    subject: str
     author: str
     date: datetime
 
@@ -45,7 +45,7 @@ def is_in_git_repo(path: Path) -> bool:
 
 def git_blame_get_commit(path: Path, line: int) -> Commit | None:
     if not path or not is_in_git_repo(path):
-        # TODO: Do we have to run this every time?
+        # TODO: Do we have to check this every time?
         return None
 
     try:
@@ -69,17 +69,17 @@ def git_blame_get_commit(path: Path, line: int) -> Commit | None:
 
     git_log_result = run_git("log", "-n", "1", "--pretty=format:%s", revision, cwd=path.parent)
 
-    return Commit(revision, git_log_result.stdout, author, date)
+    return Commit(int(revision), git_log_result.stdout, author, date)
 
 
 def show_git_blame_message(path: Path, event) -> None:
     line_num = int(event.widget.index("insert").split(".")[0])
 
-    res = git_blame_get_commit(path=path, line=line_num)
-    if res is None:
+    commit = git_blame_get_commit(path=path, line=line_num)
+    if commit is None:
         return
 
-    formatted = f"Line {line_num}: by {res.author} at {res.date} - {res.message}"
+    formatted = f"Line {line_num}: by {commit.author} at {commit.date} - {commit.subject}"
     print(formatted)
 
 
