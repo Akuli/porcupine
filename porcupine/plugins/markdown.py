@@ -40,11 +40,16 @@ def on_tab_key(
         line = event.widget.get("insert linestart", "insert lineend")
         list_item_status = _is_list_item(line)
 
+        # shift-tab
         if shift_pressed and list_item_status:
             event.widget.dedent("insert linestart")
             return "break"
 
-        if list_item_status:
+        # if it isn't, we want tab to trigger autocomplete instead
+        char_before_cursor_is_space = tab.textwidget.get("insert - 1 char", "insert") == " "
+
+        # tab
+        if list_item_status and char_before_cursor_is_space:
             event.widget.indent("insert linestart")
             return "break"
 

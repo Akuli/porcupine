@@ -109,6 +109,8 @@ def test_is_list(line: str, expected: bool, raises):
 @pytest.mark.parametrize(
     "li",
     [
+        "-",
+        "1.",
         "1. item 1",
         "1) item 1",
         "#) item 1",
@@ -127,8 +129,9 @@ def test_filetype_switching(li: str, filetab, tmp_path):
     filetab.textwidget.insert("1.0", li)
     filetab.textwidget.event_generate("<Tab>")
     filetab.update()
+
     assert (
-        filetab.textwidget.get("1.0", "end - 1 char") == li
+        filetab.textwidget.get("1.0", "insert") == li
     ), "should not effect list items unless using markdown filetype"
     filetab.textwidget.event_generate("<Escape>")  # close the autocomplete
 
@@ -138,10 +141,17 @@ def test_filetype_switching(li: str, filetab, tmp_path):
 
     filetab.textwidget.event_generate("<Tab>")
     filetab.update()
-    assert filetab.textwidget.get("1.0", "end - 1 char") == f"    {li}\n", "should indent"
+    # no change to text, should open autocomplete menu
+    assert filetab.textwidget.get("1.0", "insert") == li
+    filetab.textwidget.event_generate("<Escape>")  # close the autocomplete
+
+    # add a space
+    filetab.textwidget.insert("insert", " ")
+    filetab.textwidget.event_generate("<Tab>")
+    assert filetab.textwidget.get("1.0", "insert") == f"    {li} ", "should be indented"
     filetab.textwidget.event_generate("<Shift-Tab>")
     filetab.update()
-    assert filetab.textwidget.get("1.0", "end - 1 char") == f"{li}\n", "should dedent"
+    assert filetab.textwidget.get("1.0", "insert") == f"{li} ", "should be back to normal"
 
 
 @pytest.mark.parametrize(
