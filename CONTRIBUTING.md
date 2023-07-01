@@ -90,7 +90,6 @@ Compared to GitHub issues, IRC feels more like a casual conversation,
 and we often discuss things that have nothing to do with Porcupine.
 To join ##learnpython, you can e.g. go to https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython
 or run [Akuli's mantaray program](https://github.com/Akuli/mantaray).
-You will most likely
 
 
 ## Releasing Porcupine
