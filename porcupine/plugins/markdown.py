@@ -30,8 +30,10 @@ def _is_list_item(line: str) -> bool:
 
 
 def on_tab_key(
-    tab: tabs.FileTab, event: tkinter.Event[textutils.MainText], shift_pressed: bool
-) -> str:
+    tab: tabs.FileTab,
+    event: tkinter.Event[textutils.MainText],
+    shift_pressed: bool,
+) -> str | None:
     """Indenting and dedenting list items"""
     if tab.settings.get("filetype_name", str) == "Markdown":
         line = event.widget.get("insert linestart", "insert lineend")
@@ -44,6 +46,8 @@ def on_tab_key(
         if list_item_status:
             event.widget.indent("insert linestart")
             return "break"
+
+    return None
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
