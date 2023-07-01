@@ -83,9 +83,14 @@ Other commands you may find useful:
 ## Where to talk to us
 
 GitHub issues and pull request comments are the best way to contact other Porcupine developers.
-Many are also sometimes (very inconsistently) on
-[the ##learnpython channel of the libera IRC server](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython),
-with same nicknames as on GitHub, usually at about 7PM to 11PM UTC.
+
+Many Porcupine developers are also sometimes (very inconsistently, usually about 7PM-11PM UTC)
+on the ##learnpython channel of the libera IRC server.
+Compared to GitHub issues, IRC feels more like a casual conversation,
+and we often discuss things that have nothing to do with Porcupine.
+To join ##learnpython, you can e.g. go to https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython
+or run [Akuli's mantaray program](https://github.com/Akuli/mantaray).
+You will most likely
 
 
 ## Releasing Porcupine
