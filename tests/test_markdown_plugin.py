@@ -171,7 +171,6 @@ def test_non_list(line: str, filetab, tmp_path):
     filetab.textwidget.event_generate("<Tab>")
     filetab.textwidget.event_generate("<Escape>")  # close the autocomplete
     filetab.update()
-    # time.sleep(3)
     assert (
         filetab.textwidget.get("1.0", "end - 1 char") == f"{line}\n"
     ), "should not change, just open autocomplete"
