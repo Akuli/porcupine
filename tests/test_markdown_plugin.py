@@ -24,26 +24,52 @@ IS_LIST_ITEM_CASES = [
     IsListItemCase(id="# bad separator \\", line="#\\ item 1", expected=False),
     IsListItemCase(id="ol bad separator |", line="8| item 1", expected=False),
     IsListItemCase(id="ol bad separator /", line="8/ item 1", expected=False),
-    IsListItemCase(id="ol bad separator \\", line="8\\ item 1", expected=False),
+    IsListItemCase(
+        id="ol bad separator \\", line="8\\ item 1", expected=False
+    ),
     IsListItemCase(id="not a list 1", line="item 1", expected=False),
     IsListItemCase(id="not a list 2", line="   item 1", expected=False),
     IsListItemCase(id="not a list 3", line="          item 1", expected=False),
     IsListItemCase(id="not a list 4", line="& item 1", expected=False),
     IsListItemCase(id="not a list 5", line="^ item 1", expected=False),
-    IsListItemCase(id="duplicate token 1", line="-- item 1", expected=True),
-    IsListItemCase(id="duplicate token 2", line="--- item 1", expected=True),
+    IsListItemCase(id="duplicate token 1", line="-- item 1", expected=False),
+    IsListItemCase(id="duplicate token 2", line="--- item 1", expected=False),
     IsListItemCase(id="duplicate token 3", line="- - - item 1", expected=True),
-    IsListItemCase(id="duplicate token 4", line="  - item -- 1 -", expected=True),
-    IsListItemCase(id="duplicate token 5", line="  -#) item -- 1 -", expected=True),
-    IsListItemCase(id="duplicate token 6", line="  *-#)1. item -- 1 -", expected=True),
+    IsListItemCase(
+        id="duplicate token 4", line="  - item -- 1 -", expected=True
+    ),
+    IsListItemCase(
+        id="duplicate token 5", line="  -#) item -- 1 -", expected=False
+    ),
+    IsListItemCase(
+        id="duplicate token 6", line="  *-#)1. item -- 1 -", expected=False
+    ),
 ]
 
 # test `#` and 0 to 99 numbered lists
 # tests ol with `.` and `)`
 IS_LIST_ITEM_CASES.extend(
     [
-        IsListItemCase(id=f"numbered {i}", line=f"{i}{sep} item 1", expected=True)
-        for i, sep in itertools.product(itertools.chain(range(100), "#"), (".", ")"))
+        IsListItemCase(
+            id=f"numbered {i}", line=f"{i}{sep} item 1", expected=True
+        )
+        for i, sep in itertools.product(
+            itertools.chain(range(100), "#"), (".", ")")
+        )
+    ]
+)
+
+# test raw li prefixes with and without space
+IS_LIST_ITEM_CASES.extend(
+    [
+        IsListItemCase(
+            id=f"raw prexix {prefix} no space",
+            line=f"{prefix}{' ' if space else ''}",
+            expected=space,
+        )
+        for prefix, space in itertools.product(
+            ["1.", "1)", "#.", "#)", "-", "*", "+"], [True, False]
+        )
     ]
 )
 
@@ -69,7 +95,9 @@ IS_LIST_ITEM_CASES.extend(
             line=f"{' ' * preceding}{bullet} {' ' * following} item 1",
             expected=True,
         )
-        for bullet, preceding, following in itertools.product(("-", "*", "+"), range(11), range(11))
+        for bullet, preceding, following in itertools.product(
+            ("-", "*", "+"), range(11), range(11)
+        )
     ]
 )
 
@@ -101,8 +129,8 @@ def test_is_list(line: str, expected: bool, raises):
         "- item 1",
         "* item 1",
         "+ item 1",
-        "++++++ weird",
-        "1)))))) still weird",
+        "+ +++++ weird",
+        "1) ))))) still weird",
         "- [ ] unchecked task",
         "- [X] checked task",
     ],
@@ -124,10 +152,14 @@ def test_filetype_switching(li: str, filetab, tmp_path):
 
     filetab.textwidget.event_generate("<Tab>")
     filetab.update()
-    assert filetab.textwidget.get("1.0", "end - 1 char") == f"    {li}\n", "should indent"
+    assert (
+        filetab.textwidget.get("1.0", "end - 1 char") == f"    {li}\n"
+    ), "should indent"
     filetab.textwidget.event_generate("<Shift-Tab>")
     filetab.update()
-    assert filetab.textwidget.get("1.0", "end - 1 char") == f"{li}\n", "should dedent"
+    assert (
+        filetab.textwidget.get("1.0", "end - 1 char") == f"{li}\n"
+    ), "should dedent"
 
 
 @pytest.mark.parametrize(

@@ -23,7 +23,7 @@ def _is_list_item(line: str) -> bool:
     - https://pandoc.org/MANUAL.html#lists
     """
     assert len(line.splitlines()) == 1
-    pattern = r"^\s*\d{1,9}[.)]|^\s*[-+*]|^\s*#\)|^\s*#\."
+    pattern = r"(^\s*\d{1,9}[.)]|^\s*[-+*]|^\s*#\)|^\s*#\.) .*"
     regex = re.compile(pattern)
     match = regex.search(line)
     return bool(match)
