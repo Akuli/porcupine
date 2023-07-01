@@ -30,9 +30,7 @@ def _is_list_item(line: str) -> bool:
 
 
 def on_tab_key(
-    tab: tabs.FileTab,
-    event: tkinter.Event[textutils.MainText],
-    shift_pressed: bool,
+    tab: tabs.FileTab, event: tkinter.Event[textutils.MainText], shift_pressed: bool
 ) -> str | None:
     """Indenting and dedenting list items"""
     if tab.settings.get("filetype_name", str) == "Markdown":
