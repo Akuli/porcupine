@@ -1,4 +1,7 @@
-"""If configuration says so, insert spaces when the tab key is pressed."""
+"""Features for working with Markdown Files.
+
+- Indenting and dedenting lists
+"""
 
 from __future__ import annotations
 
