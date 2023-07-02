@@ -148,6 +148,7 @@ def test_filetype_switching(li: str, filetab, tmp_path):
     # add a space
     filetab.textwidget.insert("insert", " ")
     filetab.textwidget.event_generate("<Tab>")
+    filetab.update()
     assert filetab.textwidget.get("1.0", "insert") == f"    {li} ", "should be indented"
     filetab.textwidget.event_generate("<Shift-Tab>")
     filetab.update()
