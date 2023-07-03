@@ -9,7 +9,7 @@ import pytest
 from porcupine.plugins import markdown
 
 
-class IsListItemCase(NamedTuple):
+class ListItemCase(NamedTuple):
     id: str
     line: str
     expected: bool
@@ -18,31 +18,31 @@ class IsListItemCase(NamedTuple):
 
 
 IS_LIST_ITEM_CASES = [
-    IsListItemCase(id="# with no separator", line="# item 1", expected=False),
-    IsListItemCase(id="# bad separator |", line="#| item 1", expected=False),
-    IsListItemCase(id="# bad separator /", line="#/ item 1", expected=False),
-    IsListItemCase(id="# bad separator \\", line="#\\ item 1", expected=False),
-    IsListItemCase(id="ol bad separator |", line="8| item 1", expected=False),
-    IsListItemCase(id="ol bad separator /", line="8/ item 1", expected=False),
-    IsListItemCase(id="ol bad separator \\", line="8\\ item 1", expected=False),
-    IsListItemCase(id="not a list 1", line="item 1", expected=False),
-    IsListItemCase(id="not a list 2", line="   item 1", expected=False),
-    IsListItemCase(id="not a list 3", line="          item 1", expected=False),
-    IsListItemCase(id="not a list 4", line="& item 1", expected=False),
-    IsListItemCase(id="not a list 5", line="^ item 1", expected=False),
-    IsListItemCase(id="duplicate token 1", line="-- item 1", expected=False),
-    IsListItemCase(id="duplicate token 2", line="--- item 1", expected=False),
-    IsListItemCase(id="duplicate token 3", line="- - - item 1", expected=True),
-    IsListItemCase(id="duplicate token 4", line="  - item -- 1 -", expected=True),
-    IsListItemCase(id="duplicate token 5", line="  -#) item -- 1 -", expected=False),
-    IsListItemCase(id="duplicate token 6", line="  *-#)1. item -- 1 -", expected=False),
+    ListItemCase(id="# with no separator", line="# item 1", expected=False),
+    ListItemCase(id="# bad separator |", line="#| item 1", expected=False),
+    ListItemCase(id="# bad separator /", line="#/ item 1", expected=False),
+    ListItemCase(id="# bad separator \\", line="#\\ item 1", expected=False),
+    ListItemCase(id="ol bad separator |", line="8| item 1", expected=False),
+    ListItemCase(id="ol bad separator /", line="8/ item 1", expected=False),
+    ListItemCase(id="ol bad separator \\", line="8\\ item 1", expected=False),
+    ListItemCase(id="not a list 1", line="item 1", expected=False),
+    ListItemCase(id="not a list 2", line="   item 1", expected=False),
+    ListItemCase(id="not a list 3", line="          item 1", expected=False),
+    ListItemCase(id="not a list 4", line="& item 1", expected=False),
+    ListItemCase(id="not a list 5", line="^ item 1", expected=False),
+    ListItemCase(id="duplicate token 1", line="-- item 1", expected=False),
+    ListItemCase(id="duplicate token 2", line="--- item 1", expected=False),
+    ListItemCase(id="duplicate token 3", line="- - - item 1", expected=True),
+    ListItemCase(id="duplicate token 4", line="  - item -- 1 -", expected=True),
+    ListItemCase(id="duplicate token 5", line="  -#) item -- 1 -", expected=False),
+    ListItemCase(id="duplicate token 6", line="  *-#)1. item -- 1 -", expected=False),
 ]
 
 # test `#` and 0 to 99 numbered lists
 # tests ol with `.` and `)`
 IS_LIST_ITEM_CASES.extend(
     [
-        IsListItemCase(id=f"numbered {i}", line=f"{i}{sep} item 1", expected=True)
+        ListItemCase(id=f"numbered {i}", line=f"{i}{sep} item 1", expected=True)
         for i, sep in itertools.product(itertools.chain(range(100), "#"), (".", ")"))
     ]
 )
@@ -50,7 +50,7 @@ IS_LIST_ITEM_CASES.extend(
 # test raw li prefixes with and without space
 IS_LIST_ITEM_CASES.extend(
     [
-        IsListItemCase(
+        ListItemCase(
             id=f"raw prexix {prefix} no space",
             line=f"{prefix}{' ' if space else ''}",
             expected=space,
@@ -64,7 +64,7 @@ IS_LIST_ITEM_CASES.extend(
 # test numbered list with whitespace following and preceding
 IS_LIST_ITEM_CASES.extend(
     [
-        IsListItemCase(
+        ListItemCase(
             id=f"numbered {preceding=} {following=} space",
             line=f"{' ' * preceding}{i}{sep}{' ' * following} item 1",
             expected=True,
@@ -78,7 +78,7 @@ IS_LIST_ITEM_CASES.extend(
 # test with whitespace following and preceding
 IS_LIST_ITEM_CASES.extend(
     [
-        IsListItemCase(
+        ListItemCase(
             id=f"bullet {preceding=} {following=} space",
             line=f"{' ' * preceding}{bullet} {' ' * following} item 1",
             expected=True,
@@ -103,7 +103,11 @@ IS_LIST_ITEM_CASES.extend(
 )
 def test_is_list(line: str, expected: bool, raises):
     with raises:
-        assert markdown._is_list_item(line) == expected
+        result = markdown._list_item(line)
+        if expected:
+            assert result
+        if not expected:
+            assert not result
 
 
 @pytest.mark.parametrize(
@@ -185,3 +189,35 @@ def test_non_list(line: str, filetab, tmp_path):
     assert (
         filetab.textwidget.get("1.0", "end - 1 char") == f"{line}\n"
     ), "should not change, just open autocomplete"
+
+
+@pytest.mark.parametrize(
+    "li",
+    [
+        "- ",  # note the space
+        "1. ",  # note the space
+        "1. item 1",
+        "1) item 1",
+        "#) item 1",
+        "- item 1",
+        "* item 1",
+        "+ item 1",
+        "+ +++++ weird",
+        "1) ))))) still weird",
+        "- [ ] unchecked task",
+        "- [X] checked task",
+    ],
+)
+def test_list_continuation(li: str, filetab, tmp_path):
+    filetab.textwidget.insert("1.0", li)
+    filetab.update()
+
+    # switch to Markdown filetype format
+    filetab.save_as(tmp_path / "asdf.md")
+    assert filetab.settings.get("filetype_name", object) == "Markdown"
+
+    # new line
+    filetab.textwidget.event_generate("<Return>")
+    filetab.update()
+    current_line = filetab.textwidget.get("insert linestart", "insert")
+    assert markdown._list_item(current_line)
