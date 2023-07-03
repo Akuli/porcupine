@@ -5,8 +5,13 @@ import pytest
 from porcupine import get_main_window
 from porcupine.menubar import get_menu
 
+try:
+    xvfb_status = "xvfb" in os.environ["XAUTHORITY"]
+except KeyError:
+    xvfb = False
 
-@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="fails CI on all platforms")
+
+@pytest.mark.skipif(xvfb_status, reason="fails CI on all platforms")
 def test_basic(wait_until):
     assert not get_main_window().attributes("-fullscreen")
 
@@ -18,7 +23,7 @@ def test_basic(wait_until):
 
 
 # Window managers can toggle full-screen-ness without going through our menubar
-@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="fails CI on all platforms")
+@pytest.mark.skipif(xvfb_status, reason="fails CI on all platforms")
 def test_toggled_without_menu_bar(wait_until):
     get_main_window().attributes("-fullscreen", 1)
     wait_until(lambda: bool(get_main_window().attributes("-fullscreen")))
