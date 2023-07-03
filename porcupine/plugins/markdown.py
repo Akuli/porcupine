@@ -29,7 +29,6 @@ def _list_item(line: str) -> re.Match[str] | None:
     - https://pandoc.org/MANUAL.html#lists
     Technically `#)` is not in either spec, but I won't tell if you won't
     """
-    print(f"{line=}")
     assert isinstance(line, str)
     if not line:
         # empty string
