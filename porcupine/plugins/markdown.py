@@ -45,7 +45,7 @@ def on_tab_key(
     tab: tabs.FileTab, event: tkinter.Event[textutils.MainText], shift_pressed: bool
 ) -> str | None:
     """Indenting and dedenting list items"""
-    if tab.settings.get("filetype_name", str) == "Markdown":
+    if tab.settings.get("filetype_name", object) == "Markdown":
         line = event.widget.get("insert linestart", "insert lineend")
         list_item_status = _list_item(line)
 
@@ -70,7 +70,7 @@ def continue_list(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> str 
 
     This happens after the `autoindent` plugin automatically handles indentation
     """
-    if tab.settings.get("filetype_name", str) == "Markdown":
+    if tab.settings.get("filetype_name", object) == "Markdown":
         current_line = event.widget.get("insert - 1l linestart", "insert -1l lineend")
         list_item_match = _list_item(current_line)
         if list_item_match:
