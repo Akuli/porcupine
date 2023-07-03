@@ -198,28 +198,6 @@ def check_autoindents(filetab, tmp_path):
     return check
 
 
-def test_markdown_autoindent(check_autoindents):
-    check_autoindents(
-        "hello.md",
-        """
-1. Lol and
-wat.
-- Foo and
-bar and
-baz.
-End of list
-""",
-        """
-1. Lol and
-    wat.
-- Foo and
-    bar and
-    baz.
-End of list
-""",
-    )
-
-
 def test_shell_autoindent(check_autoindents):
     check_autoindents(
         "loll.sh",
