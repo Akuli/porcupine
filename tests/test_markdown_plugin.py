@@ -223,5 +223,5 @@ def test_list_continuation(li: str, filetab, tmp_path):
     # new line
     filetab.update()
     filetab.textwidget.event_generate("<Return>")
-    current_line = filetab.textwidget.get("insert linestart", "insert")
+    current_line = filetab.textwidget.get("insert - 1l linestart", "insert - 1l lineend")
     assert markdown._list_item(current_line)
