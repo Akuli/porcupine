@@ -131,29 +131,32 @@ def test_filetype_switching(li: str, filetab, tmp_path):
     assert filetab.settings.get("filetype_name", object) == "Python"
 
     filetab.textwidget.insert("1.0", li)
-    filetab.textwidget.event_generate("<Tab>")
     filetab.update()
+    filetab.textwidget.event_generate("<Tab>")
 
     assert (
         filetab.textwidget.get("1.0", "insert") == li
     ), "should not effect list items unless using markdown filetype"
+    filetab.update()
     filetab.textwidget.event_generate("<Escape>")  # close the autocomplete
 
     # switch to Markdown filetype format
     filetab.save_as(tmp_path / "asdf.md")
     assert filetab.settings.get("filetype_name", object) == "Markdown"
 
-    filetab.textwidget.event_generate("<Tab>")
     filetab.update()
+    filetab.textwidget.event_generate("<Tab>")
     # no change to text, should open autocomplete menu
     assert filetab.textwidget.get("1.0", "insert") == li
+    filetab.update()
     filetab.textwidget.event_generate("<Escape>")  # close the autocomplete
 
     # add a space
     filetab.textwidget.insert("insert", " ")
-    filetab.textwidget.event_generate("<Tab>")
     filetab.update()
+    filetab.textwidget.event_generate("<Tab>")
     assert filetab.textwidget.get("1.0", "insert") == f"    {li} ", "should be indented"
+    filetab.update()
     filetab.textwidget.event_generate("<Shift-Tab>")
     filetab.update()
     assert filetab.textwidget.get("1.0", "insert") == f"{li} ", "should be back to normal"
@@ -183,9 +186,10 @@ def test_non_list(line: str, filetab, tmp_path):
     assert filetab.settings.get("filetype_name", object) == "Markdown"
 
     filetab.textwidget.insert("1.0", line)
-    filetab.textwidget.event_generate("<Tab>")
-    filetab.textwidget.event_generate("<Escape>")  # close the autocomplete
     filetab.update()
+    filetab.textwidget.event_generate("<Tab>")
+    filetab.update()
+    filetab.textwidget.event_generate("<Escape>")  # close the autocomplete
     assert (
         filetab.textwidget.get("1.0", "end - 1 char") == f"{line}\n"
     ), "should not change, just open autocomplete"
@@ -217,7 +221,7 @@ def test_list_continuation(li: str, filetab, tmp_path):
     assert filetab.settings.get("filetype_name", object) == "Markdown"
 
     # new line
-    filetab.textwidget.event_generate("<Return>")
     filetab.update()
+    filetab.textwidget.event_generate("<Return>")
     current_line = filetab.textwidget.get("insert linestart", "insert")
     assert markdown._list_item(current_line)
