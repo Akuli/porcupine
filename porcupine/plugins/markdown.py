@@ -15,14 +15,15 @@ from porcupine import get_tab_manager, tabs, textutils, utils
 log = logging.getLogger(__name__)
 
 
-setup_before = ["tabs2spaces"]
+setup_before = ["tabs2spaces", "autoindent"]
 
 
 def _list_item(line: str) -> re.Match[str] | None:
     """Regex for markdown list item
 
-    First group is the whitespace (if any) preceding the item
-    Second group is the list item prefix (ex `-`, `+`, `6.`, `#.`)
+    1st group is the whitespace (if any) preceding the item
+    2nd group is the list item prefix (ex `-`, `+`, `6.`, `#.`)
+    3rd group is the item text
 
     According to:
     - https://spec.commonmark.org/0.30/#lists
@@ -36,7 +37,7 @@ def _list_item(line: str) -> re.Match[str] | None:
 
     assert len(line.splitlines()) == 1
 
-    list_item_regex = re.compile(r"(^[\t ]*)(\d{1,9}[.)]|[-+*]|#\)|#\.) .*")
+    list_item_regex = re.compile(r"(^[\t ]*)(\d{1,9}[.)]|[-+*]|#\)|#\.) (.*)")
     match = list_item_regex.search(line)
     return match if match else None
 
@@ -74,7 +75,7 @@ def continue_list(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> str 
         current_line = event.widget.get("insert - 1l linestart", "insert -1l lineend")
         list_item_match = _list_item(current_line)
         if list_item_match:
-            indentation, prefix = list_item_match.groups()
+            indentation, prefix, item_text = list_item_match.groups()
 
             tab.textwidget.insert("insert", prefix + " ")
             tab.update()
@@ -82,9 +83,26 @@ def continue_list(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> str 
     return None
 
 
+def on_enter_press(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> str | None:
+    if tab.settings.get("filetype_name", object) == "Markdown":
+        current_line = event.widget.get("insert linestart", "insert lineend")
+        list_item_match = _list_item(current_line)
+        if list_item_match:
+            indentation, prefix, item_text = list_item_match.groups()
+            if item_text:
+                # there is item text, so we are done here
+                return None
+
+            event.widget.delete("insert linestart", "insert lineend")
+            return "break"
+
+    return None
+
+
 def on_new_filetab(tab: tabs.FileTab) -> None:
     utils.bind_tab_key(tab.textwidget, partial(on_tab_key, tab), add=True)
     tab.textwidget.bind("<<post-autoindent>>", partial(continue_list, tab), add=True)
+    tab.textwidget.bind("<Return>", partial(on_enter_press, tab), add=True)
 
 
 def setup() -> None:
