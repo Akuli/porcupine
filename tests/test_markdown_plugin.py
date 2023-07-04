@@ -198,8 +198,6 @@ def test_non_list(line: str, filetab, tmp_path):
 @pytest.mark.parametrize(
     "li",
     [
-        "- ",  # note the space
-        "1. ",  # note the space
         "1. item 1",
         "1) item 1",
         "#) item 1",
@@ -225,3 +223,35 @@ def test_list_continuation(li: str, filetab, tmp_path):
     filetab.update()
     current_line = filetab.textwidget.get("insert linestart", "insert lineend")
     assert markdown._list_item(current_line)
+
+
+@pytest.mark.parametrize("prefix", ["-", "+", "*", "#.", "#)", "1.", "1)", "88)", "88."])
+def test_return_remove_empty_item(prefix: str, filetab, tmp_path):
+    """Pressing 'return' on an empty item should remove it"""
+    filetab.textwidget.insert("1.0", prefix + " item 1")
+    filetab.update()
+
+    # switch to Markdown filetype format
+    filetab.save_as(tmp_path / "asdf.md")
+    assert filetab.settings.get("filetype_name", object) == "Markdown"
+
+    # new line
+    filetab.textwidget.event_generate("<Return>")
+    filetab.update()
+    previous_line = filetab.textwidget.get("insert - 1l linestart", "insert - 1l lineend")
+    current_line = filetab.textwidget.get("insert linestart", "insert lineend")
+    assert previous_line == f"{prefix} item 1"
+    assert markdown._list_item(previous_line)
+    assert current_line == f"{prefix} "
+    assert markdown._list_item(current_line)
+
+    # new line
+    filetab.textwidget.event_generate("<Return>")
+    filetab.update()
+    previous_line = filetab.textwidget.get("insert - 1l linestart", "insert - 1l lineend")
+    current_line = filetab.textwidget.get("insert linestart", "insert lineend")
+    assert previous_line == f"{prefix} item 1"
+    assert markdown._list_item(previous_line)
+    # current line should now be empty
+    assert current_line == ""
+    assert not markdown._list_item(current_line)
