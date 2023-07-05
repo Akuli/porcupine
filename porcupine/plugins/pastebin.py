@@ -8,7 +8,7 @@ To use this plugin:
 
 3. Select "Pastebin selected text to dpaste.com" (or some other site)
 
-4. Wait until you get the link
+4. Wait until you get a link
 
 5. Send the link to someone else
 """
