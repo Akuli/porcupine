@@ -102,19 +102,14 @@ def load_filetypes() -> None:
 
 
 def set_filedialog_kwargs() -> None:
-    filedialog_kwargs["filetypes"] = [
-        (
-            name,
-            [
-                # "*.py" doesn't work on windows, but ".py" works and does the same thing
-                # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
-                pattern.split("/")[-1].lstrip("*")
-                for pattern in filetype["filename_patterns"]
-            ],
-        )
-        for name, filetype in filetypes.items()
-        if name != "Plain Text"  # can just use "All Files" for this
-    ]
+    filedialog_kwargs["filetypes"] = []
+
+    for name, filetype in filetypes.items():
+        # "*.py" doesn't work on windows, but ".py" works and does the same thing
+        # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
+        file_patterns = [pattern.split("/")[-1].lstrip("*") for pattern in filetype["filename_patterns"]]
+
+        filedialog_kwargs["filetypes"].append((name, file_patterns))
 
     # File types without an extension seem to cause crashes on Mac in certain cases (See issue #1092).
     if sys.platform != "darwin":
@@ -123,6 +118,7 @@ def set_filedialog_kwargs() -> None:
         filedialog_kwargs["filetypes"].remove(
             ("Makefile", ["Makefile", "makefile", "Makefile.*", "makefile.*"])
         )
+    
 
 
 
