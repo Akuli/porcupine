@@ -107,7 +107,9 @@ def set_filedialog_kwargs() -> None:
     for name, filetype in filetypes.items():
         # "*.py" doesn't work on windows, but ".py" works and does the same thing
         # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
-        file_patterns = [pattern.split("/")[-1].lstrip("*") for pattern in filetype["filename_patterns"]]
+        file_patterns = [
+            pattern.split("/")[-1].lstrip("*") for pattern in filetype["filename_patterns"]
+        ]
 
         filedialog_kwargs["filetypes"].append((name, file_patterns))
 
@@ -118,7 +120,6 @@ def set_filedialog_kwargs() -> None:
         filedialog_kwargs["filetypes"].remove(
             ("Makefile", ["Makefile", "makefile", "Makefile.*", "makefile.*"])
         )
-    
 
 
 def get_filetype_from_matches(
