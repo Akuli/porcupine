@@ -4,11 +4,13 @@ To use this plugin:
 
 1. Select some code in the editor
 
-2. Select "Pastebin selected text to dpaste.com" (or some other site)
+2. Right-click the selected code
 
-3. Wait until you get the link
+3. Select "Pastebin selected text to dpaste.com" (or some other site)
 
-4. Send the link to someone else
+4. Wait until you get the link
+
+5. Send the link to someone else
 """
 # docstring above needs to have blank lines to show properly in plugin manager
 # TODO: make this work with pythonprompt plugin?
