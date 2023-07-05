@@ -3,7 +3,6 @@ Format the current file with black or isort.
 
 Available in Tools/Python/Black and Tools/Python/Isort.
 """
-
 from __future__ import annotations
 
 import logging
@@ -14,7 +13,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 from porcupine import menubar, tabs, textutils, utils
-from porcupine.plugins import python_venv
+from porcupine.plugins import python_venv, toolbar
 
 log = logging.getLogger(__name__)
 
@@ -66,3 +65,12 @@ def format_code_in_textwidget(tool: str, tab: tabs.FileTab) -> None:
 def setup() -> None:
     menubar.add_filetab_command("Tools/Python/Black", partial(format_code_in_textwidget, "black"))
     menubar.add_filetab_command("Tools/Python/Isort", partial(format_code_in_textwidget, "isort"))
+
+    buttons = []
+    buttons.append(
+        toolbar.Button(text="Black", command=partial(format_code_in_textwidget, "black"))
+    )
+    buttons.append(
+        toolbar.Button(text="isort", command=partial(format_code_in_textwidget, "isort"))
+    )
+    toolbar.add_button_group(filetype_name="Python", name="Python Tools", buttons=buttons)
