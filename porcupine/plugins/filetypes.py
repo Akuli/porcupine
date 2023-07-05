@@ -125,7 +125,6 @@ def set_filedialog_kwargs() -> None:
         )
 
 
-
 def get_filetype_from_matches(
     matches: dict[str, FileType], they_match_what: str
 ) -> FileType | None:
