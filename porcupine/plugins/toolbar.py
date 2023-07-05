@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import Any, Callable, Iterable
+from typing import Callable, Iterable
 
 from porcupine import get_tab_manager, tabs
 
