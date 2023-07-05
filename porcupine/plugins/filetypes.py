@@ -116,9 +116,14 @@ def set_filedialog_kwargs() -> None:
         if name != "Plain Text"  # can just use "All Files" for this
     ]
 
+    # File types without an extension seem to cause crashes on Mac in certain cases (See issue #1092).
     if sys.platform != "darwin":
-        # Causes crashes for some Mac users, but not all. See #1092
         filedialog_kwargs["filetypes"].insert(0, ("All Files", ["*"]))
+    else:
+        filedialog_kwargs["filetypes"].remove(
+            ("Makefile", ["Makefile", "makefile", "Makefile.*", "makefile.*"])
+        )
+
 
 
 def get_filetype_from_matches(
