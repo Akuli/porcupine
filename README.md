@@ -50,7 +50,6 @@ Open a terminal and run these commands:
 
     sudo apt install python3-tk python3-pip python3-venv
     sudo apt install --no-install-recommends tkdnd    # for drop_to_open plugin
-    python3 -m pip install --user --upgrade pip
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     pip install wheel
@@ -71,7 +70,6 @@ Install Python 3.8 or newer with pip and tkinter somehow.
 If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
 Then run these commands:
 
-    python3 -m pip install --user --upgrade pip
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     pip install wheel
