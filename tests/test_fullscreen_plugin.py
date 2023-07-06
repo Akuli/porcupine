@@ -5,9 +5,7 @@ import pytest
 from porcupine import get_main_window
 from porcupine.menubar import get_menu
 
-headless = (
-    os.getenv("GITHUB_ACTIONS") == "true" or "xvfb" in os.getenv("XAUTHORITY", "")
-)
+headless = os.getenv("GITHUB_ACTIONS") == "true" or "xvfb" in os.getenv("XAUTHORITY", "")
 
 
 pytestmark = pytest.mark.skipif(headless, reason="Does not work in headless environments")
