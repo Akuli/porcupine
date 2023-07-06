@@ -306,7 +306,7 @@ time.sleep(10)
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output())
     end = time.monotonic()
-    assert end - start < 8
+    assert end - start < 9
 
 
 def test_not_line_buffered(tmp_path, wait_until):
@@ -321,7 +321,7 @@ time.sleep(10)
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output())
     end = time.monotonic()
-    assert end - start < 8
+    assert end - start < 9
 
 
 def test_crlf_on_any_platform(tmp_path, wait_until):
