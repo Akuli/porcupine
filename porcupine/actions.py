@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Union
 
 from porcupine.tabs import FileTab
 
@@ -46,7 +48,7 @@ class PathAction:
     availability_callbacks: list[path_action_availability_callback] | None = None
 
 
-ActionTypes = Action | FileTabAction | PathAction
+ActionTypes = Union[Action, FileTabAction, PathAction]
 
 _actions: dict[str, ActionTypes] = {}
 
