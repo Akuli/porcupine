@@ -50,7 +50,7 @@ Action = Union[BareAction, FileTabAction, PathAction]
 _actions: dict[str, Action] = {}
 
 
-def register_action(
+def register_bare_action(
     *,
     name: str,
     description: str,
