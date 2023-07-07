@@ -36,6 +36,7 @@ def main() -> None:
     #
     # Between those steps, plugins get a chance to add more command-line options.
     parser = argparse.ArgumentParser(
+        prog="porcupine",
         epilog=_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         add_help=False,  # help in step 1 wouldn't show options added by plugins
