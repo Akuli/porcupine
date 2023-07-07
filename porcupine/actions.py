@@ -108,29 +108,9 @@ def register_path_action(
     return action
 
 
-def filetype_availability(filetypes: list[str]) -> Callable[[FileTab | Path], bool]:
-    def _filetype_availability(filetypes: list[str], context: FileTab | Path) -> bool:
-        if isinstance(context, FileTab):
-            tab = context
-            if tab.settings.get("filetype_name", object) in filetypes:
-                return True
-            return False
+def query_actions(name: str) -> Action | None:
+    return _actions.get(name)
 
-        if isinstance(context, Path):
-            path = context
 
-            if not path.exists():
-                raise RuntimeError(f"{path} does not exist.")
-            if path.is_dir():
-                raise RuntimeError(
-                    f"{path} is a directory - an action consumer registered this action incorrectly"
-                )
-            if not path.is_file():
-                raise RuntimeError(f"{path} is not a file")
-
-            # return True if get_filetype_from_path(path) in filetypes else False
-            raise NotImplementedError  # TODO: there is a way to do this already right?
-
-        raise RuntimeError("wrong context passed")
-
-    return partial(_filetype_availability, filetypes)
+def get_all_actions() -> dict[str, Action]:
+    return _actions.copy()
