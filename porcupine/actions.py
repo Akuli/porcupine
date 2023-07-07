@@ -8,7 +8,7 @@ from porcupine.tabs import FileTab
 action_availability_callback = Callable[[], bool]
 
 
-@dataclass(kw_only=True, slots=True, frozen=True)
+@dataclass(slots=True, frozen=True)
 class Action:
     """Action that requires no context in the callback"""
 
@@ -21,7 +21,7 @@ class Action:
 filetab_action_availability_callback = Callable[[FileTab], bool]
 
 
-@dataclass(kw_only=True, slots=True, frozen=True)
+@dataclass(slots=True, frozen=True)
 class FileTabAction:
     """Action that requires a FileTab to be provided to the callback"""
 
@@ -34,7 +34,7 @@ class FileTabAction:
 path_action_availability_callback = Callable[[Path], bool]
 
 
-@dataclass(kw_only=True, slots=True, frozen=True)
+@dataclass(slots=True, frozen=True)
 class PathAction:
     """Action that requires a Path to be provided to the callback"""
 
