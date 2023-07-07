@@ -1,5 +1,5 @@
 from __future__ import annotations
-from porcupine import actions
+
 import logging
 import re
 import sys
@@ -10,6 +10,8 @@ from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
 from typing import Any, Callable, Iterator
+
+from porcupine import actions
 
 if sys.version_info >= (3, 8):
     from typing import Literal

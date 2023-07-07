@@ -13,7 +13,7 @@ from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import menubar, tabs, textutils, utils, actions
+from porcupine import actions, menubar, tabs, textutils, utils
 from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)
