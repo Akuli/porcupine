@@ -1,6 +1,3 @@
-[tool.ruff]
-ignore = ["E501"]
-
 [tool.black]
 line-length = 100
 skip-magic-trailing-comma = true
@@ -9,6 +6,9 @@ skip-magic-trailing-comma = true
 line_length = 100
 profile = "black"
 multi_line_output = 3
+
+[tool.ruff]
+ignore = ["E501"]
 
 # Flit configuration ([build-system] and [project]) are used when pip installing with github url.
 # See commands in README.
