@@ -334,7 +334,8 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
     """
     This is a convenience function that does several things:
 
-    * Create a menu item at the given path.
+    * Create a menu item at the given path. If the path has a trailing
+      / the menu item is obtained from the action object.
     * Ensure the menu item is enabled only when the selected tab is a
       :class:`~porcupine.tabs.FileTab` AND when
       :class:`~porcupine.actions.FileTabAction.availability_callback`
@@ -348,7 +349,17 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
     You usually don't need to provide any keyword arguments in ``**kwargs``,
     but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
     """
-    menu_path, item_text = _split_parent(path)
+    if path[-1] == "/":
+        # we get the label from the action.name
+        menu_path = path[:-1]
+        item_text = action.name
+
+        path = f"{menu_path}/{item_text}"
+
+    else:
+        # a full path has been passed, including the label
+        menu_path, item_text = _split_parent(path)
+
     get_menu(menu_path).add_command(
         label=item_text, command=lambda: action.callback(get_filetab()), **kwargs
     )

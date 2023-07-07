@@ -79,5 +79,5 @@ isort_format_tab = actions.register_filetab_action(
 
 
 def setup() -> None:
-    menubar.add_filetab_action("Tools/Python/Black", black_format_tab)
-    menubar.add_filetab_action("Tools/Python/Isort", isort_format_tab)
+    menubar.add_filetab_action("Tools/Python/", black_format_tab)
+    menubar.add_filetab_action("Tools/Python/", isort_format_tab)
