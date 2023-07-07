@@ -11,13 +11,13 @@ action_availability_callback = Callable[[], bool]
 
 
 @dataclass(frozen=True)
-class Action:
+class BareAction:
     """Action that requires no context in the callback"""
 
     name: str
     description: str
     callback: Callable[[], None]
-    availability_callbacks: list[action_availability_callback] | None = None
+    availability_callback: action_availability_callback
 
 
 filetab_action_availability_callback = Callable[[FileTab], bool]
@@ -30,7 +30,7 @@ class FileTabAction:
     name: str
     description: str
     callback: Callable[[FileTab], None]
-    availability_callbacks: list[filetab_action_availability_callback] | None = None
+    availability_callback: filetab_action_availability_callback
 
 
 path_action_availability_callback = Callable[[Path], bool]
@@ -43,14 +43,12 @@ class PathAction:
     name: str
     description: str
     callback: Callable[[Path], None]
-    file_compatible: bool = True
-    directory_compatible: bool = False
-    availability_callbacks: list[path_action_availability_callback] | None = None
+    availability_callback: path_action_availability_callback
 
 
-ActionTypes = Union[Action, FileTabAction, PathAction]
+Action = Union[BareAction, FileTabAction, PathAction]
 
-_actions: dict[str, ActionTypes] = {}
+_actions: dict[str, Action] = {}
 
 
 def register_action(
@@ -58,15 +56,15 @@ def register_action(
     name: str,
     description: str,
     callback: Callable[..., None],
-    availability_callbacks: list[action_availability_callback] | None = None,
-) -> Action:
+    availability_callback: action_availability_callback = lambda: True,
+) -> BareAction:
     if name in _actions:
         raise ValueError(f"Action with the name '{name}' already exists")
-    action = Action(
+    action = BareAction(
         name=name,
         description=description,
         callback=callback,
-        availability_callbacks=availability_callbacks,
+        availability_callback=availability_callback,
     )
     _actions[name] = action
     return action
@@ -77,7 +75,7 @@ def register_filetab_action(
     name: str,
     description: str,
     callback: Callable[[FileTab], None],
-    availability_callbacks: list[filetab_action_availability_callback] | None,
+    availability_callback: filetab_action_availability_callback = lambda tab: True,
 ) -> FileTabAction:
     if name in _actions:
         raise ValueError(f"Action with the name '{name}' already exists")
@@ -85,7 +83,7 @@ def register_filetab_action(
         name=name,
         description=description,
         callback=callback,
-        availability_callbacks=availability_callbacks,
+        availability_callback=availability_callback,
     )
     _actions[name] = action
     return action
@@ -96,9 +94,7 @@ def register_path_action(
     name: str,
     description: str,
     callback: Callable[[Path], None],
-    file_compatible: bool = True,
-    directory_compatible: bool = False,
-    availability_callbacks: list[path_action_availability_callback] | None,
+    availability_callback: path_action_availability_callback = lambda path: True,
 ) -> PathAction:
     if name in _actions:
         raise ValueError(f"Action with the name '{name}' already exists")
@@ -106,9 +102,7 @@ def register_path_action(
         name=name,
         description=description,
         callback=callback,
-        file_compatible=file_compatible,
-        directory_compatible=directory_compatible,
-        availability_callbacks=availability_callbacks,
+        availability_callback=availability_callback,
     )
     _actions[name] = action
     return action
