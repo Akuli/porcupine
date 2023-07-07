@@ -249,7 +249,7 @@ def update_keyboard_shortcuts() -> None:
 
 
 def set_enabled_based_on_tab(
-    path: str, callback: Callable[[tabs.Tab | None], bool]
+    path: str, callback: Callable[[tabs.Tab], bool]
 ) -> Callable[..., None]:
     """Use this for disabling menu items depending on the currently selected tab.
 
@@ -284,11 +284,15 @@ def set_enabled_based_on_tab(
 
     def update_enabledness(*junk: object) -> None:
         tab = get_tab_manager().select()
+
         parent, child = _split_parent(path)
         menu = get_menu(parent)
         index = _find_item(menu, child)
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
+        if not tab:
+            menu.entryconfig(index, state="disabled")
+            return
         menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
 
     update_enabledness()
