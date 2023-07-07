@@ -43,3 +43,4 @@ dependencies = [
 
 [project.scripts]
 porcu = "porcupine.__main__:main"
+porcupine = "porcupine.__main__:main"
