@@ -16,7 +16,7 @@ class Action:
 
     name: str
     description: str
-    callback: Callable[..., None]
+    callback: Callable[[], None]
     availability_callbacks: list[action_availability_callback] | None = None
 
 
