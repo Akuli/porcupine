@@ -22,3 +22,8 @@ def test_action_registry():
         assert action in all_actions.values()
 
     assert actions.query_actions("nonexistent action") is None
+
+    all_actions["garbage"] = "mean lean fighting machine"  # type: ignore
+    assert (
+        actions.query_actions("garbage") is None
+    ), "`all_actions` should be a copy, changes to it should not effect `_actions`"
