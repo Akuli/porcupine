@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from porcupine import actions
 import logging
 import re
 import sys
@@ -326,6 +326,31 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], object], **kwa
     menu_path, item_text = _split_parent(path)
     get_menu(menu_path).add_command(label=item_text, command=lambda: func(get_filetab()), **kwargs)
     set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
+
+
+def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) -> None:
+    """
+    This is a convenience function that does several things:
+
+    * Create a menu item at the given path.
+    * Ensure the menu item is enabled only when the selected tab is a
+      :class:`~porcupine.tabs.FileTab` AND when
+      :class:`~porcupine.actions.FileTabAction.availability_callback`
+      evaluates to True.
+    * Run :class:`~porcupine.actions.FileTabAction.callback` when the
+      menu item is clicked.
+
+    The ``callback`` is called with the selected tab as the only
+    argument when the menu item is clicked.
+
+    You usually don't need to provide any keyword arguments in ``**kwargs``,
+    but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
+    """
+    menu_path, item_text = _split_parent(path)
+    get_menu(menu_path).add_command(
+        label=item_text, command=lambda: action.callback(get_filetab()), **kwargs
+    )
+    set_enabled_based_on_tab(path, action.availability_callback)
 
 
 # TODO: pluginify?
