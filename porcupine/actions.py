@@ -5,7 +5,7 @@ from typing import Callable
 
 from porcupine.tabs import FileTab
 
-action_availability_callback = Callable[..., bool]
+action_availability_callback = Callable[[], bool]
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
