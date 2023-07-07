@@ -10,6 +10,9 @@ line_length = 100
 profile = "black"
 multi_line_output = 3
 
+[tool.ruff]
+ignore = ["E501"]
+
 # Flit configuration ([build-system] and [project]) are used when pip installing with github url.
 # See commands in README.
 [build-system]
