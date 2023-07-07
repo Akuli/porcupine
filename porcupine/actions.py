@@ -6,8 +6,6 @@ from typing import Callable, Union
 
 from porcupine.tabs import FileTab
 
-action_availability_callback = Callable[[], bool]
-
 
 @dataclass(frozen=True)
 class BareAction:
@@ -16,10 +14,7 @@ class BareAction:
     name: str
     description: str
     callback: Callable[[], None]
-    availability_callback: action_availability_callback
-
-
-filetab_action_availability_callback = Callable[[FileTab], bool]
+    availability_callback: Callable[[], bool]
 
 
 @dataclass(frozen=True)
@@ -29,10 +24,7 @@ class FileTabAction:
     name: str
     description: str
     callback: Callable[[FileTab], None]
-    availability_callback: filetab_action_availability_callback
-
-
-path_action_availability_callback = Callable[[Path], bool]
+    availability_callback: Callable[[FileTab], bool]
 
 
 @dataclass(frozen=True)
@@ -42,7 +34,7 @@ class PathAction:
     name: str
     description: str
     callback: Callable[[Path], None]
-    availability_callback: path_action_availability_callback
+    availability_callback: Callable[[Path], bool]
 
 
 Action = Union[BareAction, FileTabAction, PathAction]
@@ -55,7 +47,7 @@ def register_bare_action(
     name: str,
     description: str,
     callback: Callable[..., None],
-    availability_callback: action_availability_callback = lambda: True,
+    availability_callback: Callable[[], bool] = lambda: True,
 ) -> BareAction:
     if name in _actions:
         raise ValueError(f"Action with the name '{name}' already exists")
@@ -74,7 +66,7 @@ def register_filetab_action(
     name: str,
     description: str,
     callback: Callable[[FileTab], None],
-    availability_callback: filetab_action_availability_callback = lambda tab: True,
+    availability_callback: Callable[[FileTab], bool] = lambda tab: True,
 ) -> FileTabAction:
     if name in _actions:
         raise ValueError(f"Action with the name '{name}' already exists")
@@ -93,7 +85,7 @@ def register_path_action(
     name: str,
     description: str,
     callback: Callable[[Path], None],
-    availability_callback: path_action_availability_callback = lambda path: True,
+    availability_callback: Callable[[Path], bool] = lambda path: True,
 ) -> PathAction:
     if name in _actions:
         raise ValueError(f"Action with the name '{name}' already exists")

@@ -1,3 +1,6 @@
+[tool.ruff]
+ignore = ["E501"]
+
 [tool.black]
 line-length = 100
 skip-magic-trailing-comma = true
