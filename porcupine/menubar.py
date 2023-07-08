@@ -249,7 +249,7 @@ def update_keyboard_shortcuts() -> None:
 
 
 def set_enabled_based_on_tab(
-    path: str, callback: Callable[[tabs.FileTab], bool]
+    path: str, callback: Callable[[tabs.FileTab], bool], filetab_only: bool = False
 ) -> Callable[..., None]:
     """Use this for disabling menu items depending on the currently selected tab.
 
@@ -291,10 +291,6 @@ def set_enabled_based_on_tab(
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
         if not tab:
-            menu.entryconfig(index, state="disabled")
-            return
-
-        if not isinstance(tab, tabs.FileTab):
             menu.entryconfig(index, state="disabled")
             return
 
@@ -343,8 +339,7 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
     """
     This is a convenience function that does several things:
 
-    * Create a menu item at the given path. If the path has a trailing
-      / the menu item is obtained from the action object.
+    * Create a menu item at the given path with action.name as label
     * Ensure the menu item is enabled only when the selected tab is a
       :class:`~porcupine.tabs.FileTab` AND when
       :class:`~porcupine.actions.FileTabAction.availability_callback`
@@ -362,7 +357,11 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
     get_menu(path).add_command(
         label=action.name, command=lambda: action.callback(get_filetab()), **kwargs
     )
-    set_enabled_based_on_tab(path, action.availability_callback)
+    set_enabled_based_on_tab(
+        path,
+        callback=lambda tab: (lambda tab: isinstance(tab, tabs.FileTab))(tab)
+        and action.availability_callback(tab),
+    )
 
 
 # TODO: pluginify?
