@@ -359,7 +359,7 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
     )
     set_enabled_based_on_tab(
         path,
-        callback=lambda tab: (lambda tab: isinstance(tab, tabs.FileTab))(tab)
+        callback=lambda tab: isinstance(tab, tabs.FileTab)
         and action.availability_callback(tab),
     )
 
