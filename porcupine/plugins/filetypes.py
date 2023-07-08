@@ -5,7 +5,6 @@ import argparse
 import fnmatch
 import logging
 import re
-import sys
 import tkinter
 from functools import partial
 from pathlib import Path
@@ -15,14 +14,7 @@ import tomli
 from pygments import lexers
 from pygments.util import ClassNotFound
 
-from porcupine import (
-    dirs,
-    get_parsed_args,
-    get_tab_manager,
-    menubar,
-    settings,
-    tabs,
-)
+from porcupine import dirs, get_parsed_args, get_tab_manager, menubar, settings, tabs
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)

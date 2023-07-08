@@ -18,7 +18,7 @@ from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer
 
-from porcupine import _state, settings, textutils, utils
+from porcupine import settings, textutils, utils
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
