@@ -353,19 +353,9 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
     You usually don't need to provide any keyword arguments in ``**kwargs``,
     but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
     """
-    if path[-1] == "/":
-        # we get the label from the action.name
-        menu_path = path[:-1]
-        item_text = action.name
 
-        path = f"{menu_path}/{item_text}"
-
-    else:
-        # a full path has been passed, including the label
-        menu_path, item_text = _split_parent(path)
-
-    get_menu(menu_path).add_command(
-        label=item_text, command=lambda: action.callback(get_filetab()), **kwargs
+    get_menu(path).add_command(
+        label=action.name, command=lambda: action.callback(get_filetab()), **kwargs
     )
     set_enabled_based_on_tab(path, action.availability_callback)
 
