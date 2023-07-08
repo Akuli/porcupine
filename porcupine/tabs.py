@@ -960,7 +960,7 @@ class FileTab(Tab):
         asking the user.
         """
         if path is None:
-            path_string = filedialog.asksaveasfilename(**_state.filedialog_kwargs)
+            path_string = filedialog.asksaveasfilename()
             if not path_string:  # it may be '' because tkinter
                 return False
             path = Path(path_string)
