@@ -60,6 +60,9 @@ event add "<<Menubar:Edit/Find and Replace>>" <$control_ish-f>
 # fold plugin
 event add "<<Menubar:Edit/Fold>>" <$alt_ish-f>
 
+# comment/uncomment plugin
+event add "<<Menubar:Edit/Comment//uncomment selected lines>>" <$control_ish-7>
+
 # anchor plugin
 event add "<<Menubar:Edit/Anchors/Add or remove on this line>>" <$alt_ish-A>
 event add "<<Menubar:Edit/Anchors/Jump to previous>>" <$alt_ish-Shift-Up>
