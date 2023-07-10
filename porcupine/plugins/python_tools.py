@@ -67,7 +67,7 @@ black_format_tab = actions.register_filetab_action(
     name="Black Format Tab",
     description="Autoformat open tab using Black",
     callback=partial(format_code_in_textwidget, "black"),
-    availability_callback=lambda tab: isinstance(tab, tabs.FileTab),
+    availability_callback=lambda tab: True,
 )
 
 isort_format_tab = actions.register_filetab_action(
