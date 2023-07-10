@@ -63,21 +63,20 @@ def format_code_in_textwidget(tool: str, tab: tabs.FileTab) -> None:
             tab.textwidget.replace("1.0", "end - 1 char", after)
 
 
-black_format_tab = actions.register_filetab_action(
-    name="Black Format Tab",
-    description="Autoformat open tab using Black",
-    callback=partial(format_code_in_textwidget, "black"),
-    availability_callback=lambda tab: True,
-)
-
-isort_format_tab = actions.register_filetab_action(
-    name="isort Format Tab",
-    description="Sort Imports of open tab with isort",
-    callback=partial(format_code_in_textwidget, "isort"),
-    availability_callback=lambda tab: True,
-)
-
-
 def setup() -> None:
-    menubar.add_filetab_action("Tools/Python/", black_format_tab)
-    menubar.add_filetab_action("Tools/Python/", isort_format_tab)
+    black_format_tab_action = actions.register_filetab_action(
+        name="Black Format Tab",
+        description="Autoformat open tab using Black",
+        callback=partial(format_code_in_textwidget, "black"),
+        availability_callback=lambda tab: True,
+    )
+
+    isort_format_tab_action = actions.register_filetab_action(
+        name="isort Format Tab",
+        description="Sort Imports of open tab with isort",
+        callback=partial(format_code_in_textwidget, "isort"),
+        availability_callback=lambda tab: True,
+    )
+
+    menubar.add_filetab_action("Tools/Python/", black_format_tab_action)
+    menubar.add_filetab_action("Tools/Python/", isort_format_tab_action)
