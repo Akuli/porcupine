@@ -343,7 +343,7 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
     * Ensure the menu item is enabled only when the selected tab is a
       :class:`~porcupine.tabs.FileTab` AND when
       :class:`~porcupine.actions.FileTabAction.availability_callback`
-      evaluates to True.
+      returns True.
     * Run :class:`~porcupine.actions.FileTabAction.callback` when the
       menu item is clicked.
 
