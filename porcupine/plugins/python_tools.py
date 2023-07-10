@@ -74,7 +74,7 @@ isort_format_tab = actions.register_filetab_action(
     name="isort Format Tab",
     description="Sort Imports of open tab with isort",
     callback=partial(format_code_in_textwidget, "isort"),
-    availability_callback=lambda tab: isinstance(tab, tabs.FileTab),
+    availability_callback=lambda tab: True,
 )
 
 
