@@ -2,7 +2,6 @@
 import logging
 import pickle
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from porcupine import add_quit_callback, dirs, get_tab_manager, settings
 from porcupine.settings import global_settings
