@@ -3,11 +3,10 @@ import pickle
 import shutil
 import sys
 from pathlib import Path
-from tkinter import filedialog
 
 import pytest
 
-from porcupine import dirs, filedialog_kwargs, get_main_window
+from porcupine import dirs
 from porcupine.plugins import filetypes
 
 
@@ -33,30 +32,11 @@ settings = {clangd = {arguments = ["-std=c++17"]}}
     )
     filetypes.filetypes.clear()
     filetypes.load_filetypes()
-    filetypes.set_filedialog_kwargs()
 
     yield
     (dirs.user_config_path / "filetypes.toml").unlink()
     filetypes.filetypes.clear()
     filetypes.load_filetypes()
-    filetypes.set_filedialog_kwargs()
-
-
-def test_filedialog_patterns_got_stripped():
-    python_patterns = dict(filedialog_kwargs["filetypes"])["Python"]
-    assert "*.py" not in python_patterns
-    assert ".py" in python_patterns
-
-
-@pytest.mark.skipif(sys.platform != "linux", reason="don't know how filedialog works on non-Linux")
-def test_actually_running_filedialog(custom_filetypes):
-    # Wait and then press Esc. That's done as Tcl code because the Tk widget
-    # representing the dialog can't be used with tkinter.
-    root = get_main_window().nametowidget(".")
-    root.after(1000, root.eval, "event generate [focus] <Escape>")
-
-    # If filedialog_kwargs are wrong, then this errors.
-    filedialog.askopenfilename(**filedialog_kwargs)
 
 
 def test_bad_filetype_on_command_line(run_porcupine):
@@ -97,11 +77,6 @@ def test_slash_in_filename_patterns(custom_filetypes, caplog, tmp_path):
     assert "2 file types match" in caplog.records[0].message
     assert str(tmp_path) in caplog.records[0].message
     assert "HTML, Mako template" in caplog.records[0].message
-
-    # filedialog doesn't support slashes in patterns
-    for filetype_name, patterns in filedialog_kwargs["filetypes"]:
-        for pattern in patterns:
-            assert "/" not in pattern
 
 
 @pytest.mark.skipif(shutil.which("clangd") is None, reason="example config uses clangd")
