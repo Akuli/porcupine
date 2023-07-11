@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Callable, Union
 
@@ -105,3 +106,22 @@ def query_actions(name: str) -> Action | None:
 
 def get_all_actions() -> dict[str, Action]:
     return _actions.copy()
+
+
+# Availability Helpers
+
+
+def filetype_is(filetypes: Union[list[str], str]) -> Callable[[FileTab], bool]:
+    def _filetype_is(filetypes: list[str], tab: FileTab) -> bool:
+        try:
+            filetype = tab.settings.get("filetype_name", object)
+        except KeyError:
+            # don't ask me why a `get` method can raise a KeyError :p
+            return False
+
+        return filetype in filetypes
+
+    if isinstance(filetypes, str):
+        filetypes = [filetypes]
+
+    return partial(_filetype_is, filetypes)
