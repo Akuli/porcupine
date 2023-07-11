@@ -297,7 +297,9 @@ def set_enabled_based_on_tab(
         menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
 
     update_enabledness()
+    get_tab_manager().bind("<<TabFiletypeApplied>>", update_enabledness, add=True)
     get_tab_manager().bind("<<NotebookTabChanged>>", update_enabledness, add=True)
+
     return update_enabledness
 
 

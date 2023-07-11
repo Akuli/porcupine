@@ -68,15 +68,15 @@ def setup() -> None:
         name="Black Format Tab",
         description="Autoformat open tab using Black",
         callback=partial(format_code_in_textwidget, "black"),
-        availability_callback=lambda tab: True,
+        availability_callback=actions.filetype_is("Python"),
     )
 
     isort_format_tab_action = actions.register_filetab_action(
         name="isort Format Tab",
         description="Sort Imports of open tab with isort",
         callback=partial(format_code_in_textwidget, "isort"),
-        availability_callback=lambda tab: True,
+        availability_callback=actions.filetype_is("Python"),
     )
 
-    menubar.add_filetab_action("Tools/Python/", black_format_tab_action)
-    menubar.add_filetab_action("Tools/Python/", isort_format_tab_action)
+    menubar.add_filetab_action("Tools/Python", black_format_tab_action)
+    menubar.add_filetab_action("Tools/Python", isort_format_tab_action)
