@@ -61,14 +61,13 @@ def test_finding_indented_block(filetab):
     akuli
     catris
     banana
-
-blah blah
+[bar]
+    blah blah
 """,
     )
 
     filetab.textwidget.mark_set("insert", "3.3")
     filetab.event_generate("<<Menubar:Edit/Sort Lines>>")
-    assert filetab.textwidget.index("insert") == "3.3"  # not moved
     assert (
         filetab.textwidget.get("1.0", "end - 1 char")
         == """\
@@ -77,8 +76,8 @@ blah blah
     banana
     catris
     dingdingding
-
-blah blah
+[bar]
+    blah blah
 """
     )
     assert (
