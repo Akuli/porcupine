@@ -7,9 +7,9 @@ from porcupine.settings import global_settings
 
 
 def move_cursor(filetab, location):
+    filetab.textwidget.mark_set("insert", location)
     if sys.platform == "win32":
         filetab.update()  # no idea why windows need this
-    filetab.textwidget.mark_set("insert", location)
 
 
 def jump_5_times(filetab, how):
