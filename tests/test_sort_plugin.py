@@ -86,6 +86,30 @@ def test_finding_indented_block(filetab):
     )
 
 
+def test_finding_indented_block_with_tabs(filetab):
+    filetab.textwidget.insert(
+        "1.0",
+        """\
+my_list = [
+\t"bruh",
+\t"asdf",
+]""",
+    )
+
+    filetab.textwidget.mark_set("insert", "2.0")
+    filetab.event_generate("<<Menubar:Edit/Sort Lines>>")
+    assert (
+        filetab.textwidget.get("1.0", "end - 1 char")
+        == """\
+my_list = [
+\t"asdf",
+\t"bruh",
+]
+"""
+    )
+    assert filetab.textwidget.get("sel.first", "sel.last") == '\t"asdf",\t"bruh",\n'
+
+
 def test_just_sorting_the_whole_file(filetab):
     filetab.textwidget.insert("end", "bbb\nccc\naaa")
     filetab.textwidget.mark_set("insert", "2.0")
