@@ -4,7 +4,7 @@ Sort the selected lines alphabetically. Available in menubar → Edit → Sort L
 To sort lines that are indented or surrounded by blank lines, you can simply
 place the cursor somewhere in the middle without selecting anything and run the
 sort. In other words, if there is nothing selected, this plugin will select
-lines above and below the cursor location, excluding blank lines or any lines
+lines above and below the cursor location, stopping at a blank line or any line
 with less indentation.
 """
 
