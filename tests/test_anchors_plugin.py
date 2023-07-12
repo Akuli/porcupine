@@ -1,6 +1,4 @@
-import sys
-
-import pytest
+import pytest,sys
 
 from porcupine.menubar import get_menu
 from porcupine.settings import global_settings
