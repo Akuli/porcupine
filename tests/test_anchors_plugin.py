@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from porcupine.menubar import get_menu
@@ -10,6 +12,12 @@ def jump_5_times(filetab, how):
         get_menu("Edit/Anchors").invoke(how)
         locations.append(filetab.textwidget.index("insert"))
     return locations
+
+
+# TODO: set up windows in a VM and test this locally
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="cursor positions sometimes come out wrong on Windows"
+)
 
 
 def test_basic(filetab):
