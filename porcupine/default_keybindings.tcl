@@ -107,6 +107,12 @@ bind Text <$control_ish-Button-1> {}
 event delete "<<LineStart>>" <$control_ish-a>
 event add "<<SelectAll>>" <$control_ish-a>
 
+# On linux, Ctrl+Y means paste by default. It's dumb. Let's redo instead.
+if {[tk windowingsystem] == "x11"} {
+    event delete <<Paste>> <Control-y> <Control-Lock-Y>
+    event add <<Redo>> <Control-y> <Control-Lock-Y>
+}
+
 # Ctrl+A for treeviews
 bind Treeview <$control_ish-a> {
     if {[%W cget -selectmode] == "extended"} {
