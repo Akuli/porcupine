@@ -26,7 +26,6 @@ def test_basic(filetab):
     assert jump_5_times(filetab, "Jump to next") == ["2.0", "5.0", "5.0", "5.0", "5.0"]
 
     # Jump backwards
-    #    import pdb; pdb.set_trace()
     filetab.textwidget.mark_set("insert", "end")
     assert jump_5_times(filetab, "Jump to previous") == ["5.0", "2.0", "2.0", "2.0", "2.0"]
 
