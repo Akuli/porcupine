@@ -5,7 +5,6 @@ import argparse
 import fnmatch
 import logging
 import re
-import sys
 import tkinter
 from functools import partial
 from pathlib import Path
@@ -15,15 +14,7 @@ import tomli
 from pygments import lexers
 from pygments.util import ClassNotFound
 
-from porcupine import (
-    dirs,
-    filedialog_kwargs,
-    get_parsed_args,
-    get_tab_manager,
-    menubar,
-    settings,
-    tabs,
-)
+from porcupine import dirs, get_parsed_args, get_tab_manager, menubar, settings, tabs
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -99,27 +90,6 @@ def load_filetypes() -> None:
         # Applies to most other filetypes too e.g. Python file .py and Python stub file .pyi
         assert "filetype_name" not in filetype
         filetype["filetype_name"] = name
-
-
-def set_filedialog_kwargs() -> None:
-    filedialog_kwargs["filetypes"] = []
-
-    for name, filetype in filetypes.items():
-        # "*.py" doesn't work on windows, but ".py" works and does the same thing
-        # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
-        file_patterns = [
-            pattern.split("/")[-1].lstrip("*") for pattern in filetype["filename_patterns"]
-        ]
-
-        filedialog_kwargs["filetypes"].append((name, file_patterns))
-
-    # File types without an extension seem to cause crashes on Mac in certain cases (See issue #1092).
-    if sys.platform != "darwin":
-        filedialog_kwargs["filetypes"].insert(0, ("All Files", ["*"]))
-    else:
-        filedialog_kwargs["filetypes"].remove(
-            ("Makefile", ["Makefile", "makefile", "Makefile.*", "makefile.*"])
-        )
 
 
 def get_filetype_from_matches(
@@ -290,7 +260,6 @@ def setup() -> None:
         "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    set_filedialog_kwargs()
     global filetypes_var
     filetypes_var = tkinter.StringVar()
     for name in sorted(filetypes.keys(), key=str.casefold):
