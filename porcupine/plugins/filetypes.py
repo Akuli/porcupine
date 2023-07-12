@@ -252,6 +252,8 @@ def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
 
 
 def setup() -> None:
+    menubar.register_enabledness_check_event("<<TabFiletypeApplied>>")
+
     global_settings.add_option("default_filetype", "Python")
 
     # load_filetypes() got already called in setup_argument_parser()

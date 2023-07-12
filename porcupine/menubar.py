@@ -248,9 +248,23 @@ def update_keyboard_shortcuts() -> None:
     _update_shortcuts_for_opening_submenus()
 
 
+_menu_item_enabledness_callbacks: list[Callable[..., None]] = []
+
+
+def _refresh_menu_item_enabledness(*junk: object) -> None:
+    for callback in _menu_item_enabledness_callbacks:
+        callback(*junk)
+
+
+# TODO: create type for events
+def register_enabledness_check_event(event: str) -> None:
+    """Register an event which will cause all menu items to check if they are available"""
+    get_tab_manager().bind(event, _refresh_menu_item_enabledness, add=True)
+
+
 def set_enabled_based_on_tab(
     path: str, callback: Callable[[tabs.Tab], bool], filetab_only: bool = False
-) -> Callable[..., None]:
+) -> None:
     """Use this for disabling menu items depending on the currently selected tab.
 
     When the selected :class:`~porcupine.tabs.Tab` changes, ``callback`` will
@@ -282,7 +296,7 @@ def set_enabled_based_on_tab(
     easier.
     """
 
-    def update_enabledness(*junk: object) -> None:
+    def update_enabledness(*junk: object, path: str) -> None:
         tab = get_tab_manager().select()
 
         parent, child = _split_parent(path)
@@ -296,11 +310,9 @@ def set_enabled_based_on_tab(
 
         menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
 
-    update_enabledness()
-    get_tab_manager().bind("<<TabFiletypeApplied>>", update_enabledness, add=True)
-    get_tab_manager().bind("<<NotebookTabChanged>>", update_enabledness, add=True)
+    update_enabledness(path=path)
 
-    return update_enabledness
+    _menu_item_enabledness_callbacks.append(partial(update_enabledness, path=path))
 
 
 def get_filetab() -> tabs.FileTab:
@@ -367,6 +379,8 @@ def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) 
 
 # TODO: pluginify?
 def _fill_menus_with_default_stuff() -> None:
+    register_enabledness_check_event("<<NotebookTabChanged>>")
+
     # Make sure to get the order of menus right:
     #   File, Edit, <everything else>, Help
     get_menu("Help")  # handled specially in get_menu
