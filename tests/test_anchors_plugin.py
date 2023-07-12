@@ -71,7 +71,7 @@ def test_single_anchor_bug(filetab, cyclic_setting_enabled):
     get_menu("Edit/Anchors").invoke("Add or remove on this line")
 
     # Because cycling is enabled, jumping to previous anchor from line 1
-    # will jumps to the anchor below.
+    # will jump to the anchor below.
     filetab.textwidget.mark_set("insert", "1.0")
     get_menu("Edit/Anchors").invoke("Jump to previous")
     assert filetab.textwidget.index("insert") == "2.0"
