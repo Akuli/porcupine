@@ -63,7 +63,8 @@ def test_finding_indented_block(filetab):
     banana
 
 blah blah
-""")
+""",
+    )
 
     filetab.textwidget.mark_set("insert", "3.3")
     filetab.event_generate("<<Menubar:Edit/Sort Lines>>")
@@ -80,7 +81,10 @@ blah blah
 blah blah
 """
     )
-    assert filetab.textwidget.get("sel.first", "sel.last") == "    akuli\n    banana\n    catris\n    dingdingding\n"
+    assert (
+        filetab.textwidget.get("sel.first", "sel.last")
+        == "    akuli\n    banana\n    catris\n    dingdingding\n"
+    )
 
 
 def test_just_sorting_the_whole_file(filetab):
