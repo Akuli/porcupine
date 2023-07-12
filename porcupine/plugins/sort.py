@@ -42,6 +42,7 @@ def sort(tab: tabs.FileTab) -> None:
         # If last selected character is newline, ignore it
         last_line = int(tab.textwidget.index("sel.last - 1 char").split(".")[0])
     except tkinter.TclError:
+        # Nothing selected
         first_line, last_line = find_chunk_around_cursor(tab.textwidget)
 
     old_lines = tab.textwidget.get(f"{first_line}.0", f"{last_line}.0 lineend").splitlines()
