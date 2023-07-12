@@ -3,6 +3,7 @@ import sys
 import pytest
 
 from porcupine.menubar import get_menu
+from porcupine.plugins.anchors import managers  # TODO: invoke the actions when they are a thing
 from porcupine.settings import global_settings
 
 
@@ -12,11 +13,17 @@ def move_cursor(filetab, location):
         filetab.update()  # no idea why windows need this
 
 
-def jump_5_times(filetab, how):
+def jump_5_times(filetab, which_way):
     locations = []
     for i in range(5):
-        get_menu("Edit/Anchors").invoke(how)
+        if which_way == "up":
+            managers[filetab].jump_to_previous()
+        elif which_way == "down":
+            managers[filetab].jump_to_next()
+        else:
+            raise ValueError(which_way)
         locations.append(filetab.textwidget.index("insert"))
+
     return locations
 
 
@@ -25,17 +32,17 @@ def test_basic(filetab):
 
     # Set anchors on lines 2 and 5. Column numbers should get ignored.
     move_cursor(filetab, "2.2")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
     move_cursor(filetab, "5.3")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
 
     # Jump forwards, starting at the beginning of the file. Gets stuck at last anchor
     move_cursor(filetab, "1.0")
-    assert jump_5_times(filetab, "Jump to next") == ["2.0", "5.0", "5.0", "5.0", "5.0"]
+    assert jump_5_times(filetab, "down") == ["2.0", "5.0", "5.0", "5.0", "5.0"]
 
     # Jump backwards
     move_cursor(filetab, "end")
-    assert jump_5_times(filetab, "Jump to previous") == ["5.0", "2.0", "2.0", "2.0", "2.0"]
+    assert jump_5_times(filetab, "up") == ["5.0", "2.0", "2.0", "2.0", "2.0"]
 
 
 @pytest.fixture
@@ -50,16 +57,16 @@ def test_cyclic_jumping(filetab, cyclic_setting_enabled):
 
     # Set anchors on lines 2, 4 and 7
     move_cursor(filetab, "2.0")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
     move_cursor(filetab, "4.0")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
     move_cursor(filetab, "7.0")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
 
     # Jump forwards and backwards. It cycles around now.
     move_cursor(filetab, "1.0")
-    assert jump_5_times(filetab, "Jump to next") == ["2.0", "4.0", "7.0", "2.0", "4.0"]
-    assert jump_5_times(filetab, "Jump to previous") == ["2.0", "7.0", "4.0", "2.0", "7.0"]
+    assert jump_5_times(filetab, "down") == ["2.0", "4.0", "7.0", "2.0", "4.0"]
+    assert jump_5_times(filetab, "up") == ["2.0", "7.0", "4.0", "2.0", "7.0"]
 
 
 def test_single_anchor_bug(filetab, cyclic_setting_enabled):
@@ -68,23 +75,23 @@ def test_single_anchor_bug(filetab, cyclic_setting_enabled):
 
     # Set an anchor point on row 1 & one anchor point on row 2.
     move_cursor(filetab, "1.0")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
     move_cursor(filetab, "2.0")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
 
     # Set cursor on row 1. Remove the anchor point on row 1.
     move_cursor(filetab, "1.0")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
 
     # Use keyboard shortcut to jump to next anchor (down).
-    get_menu("Edit/Anchors").invoke("Jump to next")
+    managers[filetab].jump_to_next()
     assert filetab.textwidget.index("insert") == "2.0"
 
     # Recreate anchor point on row 1. Make sure cursor is on row 1, then remove anchor point on row 1.
     move_cursor(filetab, "1.0")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
-    get_menu("Edit/Anchors").invoke("Add or remove on this line")
+    managers[filetab].toggle()
+    managers[filetab].toggle()
 
     # Use keyboard shortcut to jump to previous anchor (up).
-    get_menu("Edit/Anchors").invoke("Jump to previous")
+    managers[filetab].jump_to_previous()
     assert filetab.textwidget.index("insert") == "2.0"
