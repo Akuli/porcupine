@@ -17,6 +17,7 @@ from porcupine import menubar, tabs, textutils
 
 
 def can_extend_default_selection(text: tkinter.Text, required_prefix: str, new_lineno: int) -> bool:
+    # This returns False when line number is beyond the start or end of the text widget
     line = text.get(f"{new_lineno}.0", f"{new_lineno + 1}.0")
     return bool(line.strip()) and line.startswith(required_prefix)
 
