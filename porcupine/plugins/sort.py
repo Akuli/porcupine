@@ -10,7 +10,8 @@ with less indentation.
 
 from __future__ import annotations
 
-import tkinter,re
+import re
+import tkinter
 
 from porcupine import menubar, tabs, textutils
 
@@ -24,7 +25,7 @@ def find_chunk_around_cursor(text: tkinter.Text) -> tuple[int, int]:
     cursor_line = text.get("insert linestart", "insert lineend")
     cursor_line_indentation = re.match(r"\s*", cursor_line).group(0)
 
-    start = end=int(text.index("insert").split(".")[0])
+    start = end = int(text.index("insert").split(".")[0])
     while can_extend_default_selection(text, cursor_line_indentation, start - 1):
         start -= 1
     while can_extend_default_selection(text, cursor_line_indentation, end + 1):
