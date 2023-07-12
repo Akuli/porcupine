@@ -13,6 +13,9 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textutils
 from porcupine.plugins import rightclick_menu
 
+def already_commented(linetext: str, comment_prefix: str) -> bool:
+    if linetext.strip().startswith(comment_prefix):
+        return True
 
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
     comment_prefix = tab.settings.get("comment_prefix", Optional[str])
@@ -22,8 +25,18 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
     try:
         start_index, end_index = map(str, tab.textwidget.tag_ranges("sel"))
     except ValueError:
-        # nothing selected, add '#' normally
-        return None
+        # No text selected
+        lineno = tab.textwidget.index("insert").split(".")[0]
+        line_start = lineno + ".0"
+        line_text = tab.textwidget.get(line_start, f"{line_start} lineend")
+
+        # TODO: Make sure `#foo` works even if indented.
+        if already_commented(line_text, comment_prefix):
+           tab.textwidget.delete(line_start, f"{lineno}.{len(comment_prefix)}")
+        else:
+            tab.textwidget.insert(f"{lineno}.0", comment_prefix)
+
+        return
 
     start = int(start_index.split(".")[0])
     end = int(end_index.split(".")[0])
