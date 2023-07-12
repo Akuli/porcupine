@@ -106,7 +106,7 @@ my_list = [
 \t"bruh",
 ]"""
     )
-    assert filetab.textwidget.get("sel.first", "sel.last") == '\t"asdf",\t"bruh",\n'
+    assert filetab.textwidget.get("sel.first", "sel.last") == '\t"asdf",\n\t"bruh",\n'
 
 
 def test_just_sorting_the_whole_file(filetab):
