@@ -23,7 +23,7 @@ def can_extend_default_selection(text: tkinter.Text, required_prefix: str, new_l
 
 def find_chunk_around_cursor(text: tkinter.Text) -> tuple[int, int]:
     cursor_line = text.get("insert linestart", "insert lineend")
-    cursor_line_indentation = re.match(r"\s*", cursor_line).group(0)
+    cursor_line_indentation = re.match(r"\s*", cursor_line).group(0)  # type: ignore
 
     start = end = int(text.index("insert").split(".")[0])
     while can_extend_default_selection(text, cursor_line_indentation, start - 1):
