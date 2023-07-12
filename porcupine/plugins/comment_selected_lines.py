@@ -13,10 +13,13 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textutils
 from porcupine.plugins import rightclick_menu
 
+
 def already_commented(linetext: str, comment_prefix: str) -> Optional[bool]:
     # Ignore '# blah' comments because they are likely written by hand
     # But don't ignore indented '#    blah', that is most likely by this plugin
-    if linetext.startswith(comment_prefix) and not re.match(r" [^ ]", linetext[len(comment_prefix)]):
+    if linetext.startswith(comment_prefix) and not re.match(
+        r" [^ ]", linetext[len(comment_prefix)]
+    ):
         return True
 
 
@@ -51,7 +54,8 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         lineno
         for lineno, line_text in enumerate(
             tab.textwidget.get(f"{start}.0", f"{end}.0").splitlines(), start
-        ) if already_commented(line_text, comment_prefix)
+        )
+        if already_commented(line_text, comment_prefix)
     }
 
     with textutils.change_batch(tab.textwidget):
