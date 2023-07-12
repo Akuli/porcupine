@@ -13,8 +13,10 @@ from typing import Optional
 from porcupine import get_tab_manager, menubar, tabs, textutils
 from porcupine.plugins import rightclick_menu
 
-def already_commented(linetext: str, comment_prefix: str) -> bool:
-    if linetext.strip().startswith(comment_prefix):
+def already_commented(linetext: str, comment_prefix: str) -> Optional[bool]:
+    # Ignore '# blah' comments because they are likely written by hand
+    # But don't ignore indented '#    blah', that is most likely by this plugin
+    if linetext.startswith(comment_prefix) and not re.match(r" [^ ]", linetext[len(comment_prefix)]):
         return True
 
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
@@ -30,7 +32,6 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         line_start = lineno + ".0"
         line_text = tab.textwidget.get(line_start, f"{line_start} lineend")
 
-        # TODO: Make sure `#foo` works even if indented.
         if already_commented(line_text, comment_prefix):
            tab.textwidget.delete(line_start, f"{lineno}.{len(comment_prefix)}")
         else:
@@ -47,12 +48,9 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
     all_linenos = set(range(start, end))
     commented = {
         lineno
-        for lineno, line in enumerate(
+        for lineno, line_text in enumerate(
             tab.textwidget.get(f"{start}.0", f"{end}.0").splitlines(), start
-        )
-        # Ignore '# blah' comments because they are likely written by hand
-        # But don't ignore indented '#    blah', that is most likely by this plugin
-        if line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix) :])
+        ) if already_commented(line_text, comment_prefix)
     }
 
     with textutils.change_batch(tab.textwidget):
