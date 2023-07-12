@@ -19,7 +19,7 @@ else:
     from typing_extensions import Literal
 
 from porcupine import pluginmanager, settings, tabs, utils
-from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
+from porcupine._state import get_main_window, get_tab_manager, quit
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -378,7 +378,7 @@ def _fill_menus_with_default_stuff() -> None:
 
     def open_files() -> None:
         # paths is "" or tuple
-        paths = filedialog.askopenfilenames(**filedialog_kwargs)
+        paths = filedialog.askopenfilenames()
         for path in map(Path, paths):
             get_tab_manager().open_file(path)
 
