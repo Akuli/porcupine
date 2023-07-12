@@ -104,8 +104,7 @@ my_list = [
 my_list = [
 \t"asdf",
 \t"bruh",
-]
-"""
+]"""
     )
     assert filetab.textwidget.get("sel.first", "sel.last") == '\t"asdf",\t"bruh",\n'
 
