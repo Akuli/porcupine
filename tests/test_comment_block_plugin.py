@@ -1,3 +1,5 @@
+import sys
+
 def test_comment_block_and_undo(filetab):
     filetab.textwidget.insert("1.0", "foo\nbar\nbaz")
     filetab.textwidget.tag_add("sel", "1.0", "end - 1 char")
@@ -99,11 +101,21 @@ def test_single_line_comment(filetab):
     filetab.textwidget.mark_set("insert", "1.0")
     filetab.textwidget.event_generate("<numbersign>")  # hashtag key press
 
-    assert filetab.textwidget.get("1.0", "end") == '#foo = "bar" This should be a comment'
+    assert filetab.textwidget.get("1.0", "end - 1c") == '#foo = "bar" This should be a comment'
 
     filetab.textwidget.edit_undo()
 
     filetab.textwidget.mark_set("insert", "1.12")
     filetab.textwidget.event_generate("<numbersign>")
 
-    assert filetab.textwidget.get("1.0", "end") == 'foo = "bar" #This should be a comment'
+    assert filetab.textwidget.get("1.0", "end 1-c") == 'foo = "bar" #This should be a comment'
+
+    filetab.textwidget.edit_undo()
+    filetab.textwidget.mark_set("insert", "1.0")
+
+    filetab.textwidget.event_generate("<<Menubar:Edit/Comment//uncomment selected lines>>")
+
+    assert filetab.textwidget.get("1.0", "end -1c") == '#foo = "bar" This should be a comment'
+
+    
+
