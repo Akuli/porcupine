@@ -18,7 +18,7 @@ def already_commented(linetext: str, comment_prefix: str) -> Optional[bool]:
     # Ignore '# blah' comments because they are likely written by hand
     # But don't ignore indented '#    blah', that is most likely by this plugin
     if linetext.startswith(comment_prefix) and not re.match(
-        r" [^ ]", linetext[len(comment_prefix)]
+        r" [^ ]", linetext[len(comment_prefix) :]
     ):
         return True
     return None
