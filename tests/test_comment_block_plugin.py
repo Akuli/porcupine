@@ -1,5 +1,3 @@
-import sys
-
 def test_comment_block_and_undo(filetab):
     filetab.textwidget.insert("1.0", "foo\nbar\nbaz")
     filetab.textwidget.tag_add("sel", "1.0", "end - 1 char")
@@ -117,6 +115,3 @@ def test_single_line_comment(filetab):
     filetab.textwidget.event_generate("<<Menubar:Edit/Comment//uncomment selected lines>>")
 
     assert filetab.textwidget.get("1.0", "end -1c") == '#foo = "bar" This should be a comment'
-
-    
-
