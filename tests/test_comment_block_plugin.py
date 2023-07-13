@@ -96,6 +96,7 @@ def test_cant_uncomment_bug(filetab):
 """
     )
 
+
 def test_single_line_comment(filetab):
     filetab.textwidget.insert("1.0", 'foo = "bar" This should be a comment')
     filetab.textwidget.mark_set("insert", "1.0")
