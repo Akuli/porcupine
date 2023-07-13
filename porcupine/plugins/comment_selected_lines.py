@@ -36,7 +36,7 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
         line_no = tab.textwidget.index("insert").split(".")[0]
         line_start = line_no + ".0"
         line_text = tab.textwidget.get(line_start, f"{line_start} lineend")
-        
+
         if pressed_key is None:
             if already_commented(line_text, comment_prefix):
                 tab.textwidget.delete(line_start, f"{line_no}.{len(comment_prefix)}")
