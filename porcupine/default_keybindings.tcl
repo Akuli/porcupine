@@ -60,6 +60,9 @@ event add "<<Menubar:Edit/Find and Replace>>" <$control_ish-f>
 # fold plugin
 event add "<<Menubar:Edit/Fold>>" <$alt_ish-f>
 
+# comment/uncomment plugin
+event add "<<Menubar:Edit/Comment//uncomment selected lines>>" <$control_ish-slash>
+
 # anchor plugin
 event add "<<Menubar:Edit/Anchors/Add or remove on this line>>" <$alt_ish-A>
 event add "<<Menubar:Edit/Anchors/Jump to previous>>" <$alt_ish-Shift-Up>
@@ -106,6 +109,12 @@ bind Text <$control_ish-Button-1> {}
 # Also, by default, Control+Slash selects all and Control+A goes to beginning.
 event delete "<<LineStart>>" <$control_ish-a>
 event add "<<SelectAll>>" <$control_ish-a>
+
+# On linux, Ctrl+Y means paste by default. It's dumb. Let's redo instead.
+if {[tk windowingsystem] == "x11"} {
+    event delete <<Paste>> <Control-y> <Control-Lock-Y>
+    event add <<Redo>> <Control-y> <Control-Lock-Y>
+}
 
 # Ctrl+A for treeviews
 bind Treeview <$control_ish-a> {

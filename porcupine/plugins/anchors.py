@@ -80,7 +80,7 @@ class AnchorManager:
             next_anchor_row = min(rows_after_cursor)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif len(anchor_rows) >= 2 and global_settings.get("anchors_cycle", bool):
+        elif anchor_rows and global_settings.get("anchors_cycle", bool):
             next_anchor_row = min(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
@@ -96,7 +96,7 @@ class AnchorManager:
             previous_anchor_row = max(rows_before_cursor)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif len(anchor_rows) >= 2 and global_settings.get("anchors_cycle", bool):
+        elif anchor_rows and global_settings.get("anchors_cycle", bool):
             previous_anchor_row = max(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
