@@ -7,7 +7,7 @@ import tkinter
 import weakref
 from functools import partial
 from tkinter.font import Font
-from typing import TYPE_CHECKING, Any, Callable, Iterator
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List
 from weakref import WeakKeyDictionary
 
 from pygments import styles
