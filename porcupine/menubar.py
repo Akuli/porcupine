@@ -304,11 +304,10 @@ def set_enabled_based_on_tab(
         index = _find_item(menu, child)
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
-        if not tab:
+        if tab is not None and callback(tab):
+            menu.entryconfig(index, state="normal")
+        else:
             menu.entryconfig(index, state="disabled")
-            return
-
-        menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
 
     update_enabledness(path=path)
 
