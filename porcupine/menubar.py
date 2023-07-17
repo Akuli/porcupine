@@ -9,12 +9,7 @@ from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Iterator, List
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Any, Callable, Iterator, List, Literal
 
 from porcupine import pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit
