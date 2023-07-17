@@ -1,7 +1,6 @@
 """Maximum line length marker."""
 from __future__ import annotations
 
-import sys
 import tkinter
 import tkinter.font as tkfont
 from typing import Literal
