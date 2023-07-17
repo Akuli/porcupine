@@ -51,7 +51,7 @@ def register_bare_action(
     availability_callback: Callable[[], bool] = lambda: True,
 ) -> BareAction:
     if name in _actions:
-        raise ValueError(f"Action with the name '{name}' already exists")
+        raise ValueError(f"Action with the name {name!r} already exists")
     action = BareAction(
         name=name,
         description=description,
