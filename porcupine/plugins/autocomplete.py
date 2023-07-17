@@ -50,7 +50,7 @@ class Request(utils.EventDataclass):
 @dataclasses.dataclass
 class Response(utils.EventDataclass):
     id: int
-    completions: list[Completion]
+    completions: List[Completion]
 
 
 def _pack_with_scrollbar(widget: ttk.Treeview | tkinter.Text) -> ttk.Scrollbar:

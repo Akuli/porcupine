@@ -32,8 +32,8 @@ def leading_whitespace(string: str) -> str:
 
 @dataclasses.dataclass
 class AutoIndentRegexes:
-    indent: str | None = None
-    dedent: str | None = None
+    indent: Optional[str] = None
+    dedent: Optional[str] = None
     dedent_prev_line: bool = False
 
 

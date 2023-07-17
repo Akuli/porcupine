@@ -29,14 +29,14 @@ class Underline:
     start: str
     end: str
     tooltip_text: str
-    color: str | None = None
+    color: Optional[str] = None
 
 
 @dataclasses.dataclass
 class Underlines(utils.EventDataclass):
     # <<SetUnderlines>> clears previous underlinings with the same id
     id: str
-    underline_list: list[Underline]
+    underline_list: List[Underline]
 
 
 class _Underliner:
