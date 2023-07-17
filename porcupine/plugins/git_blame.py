@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import datetime
 import logging
 import re
 import subprocess
 import sys
 import time
-from datetime import datetime
+import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
@@ -23,12 +24,12 @@ setup_after = ["statusbar"]
 class Commit(NamedTuple):
     hash: str
     author: str
-    date: datetime
+    date: datetime.datetime
     message: str
 
 
-def prettify_date(date):
-    diff = datetime.now() - date
+def prettify_date(date: datetime.datetime) -> str:
+    diff = datetime.datetime.now() - date
     second_diff = diff.seconds
     day_diff = diff.days
 
@@ -58,7 +59,7 @@ def prettify_date(date):
     return f"{day_diff // 365} years ago"
 
 
-def run_git(*args, cwd: Path) -> subprocess.CompletedProcess:
+def run_git(*args, cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git"] + list(args),
         cwd=cwd,
@@ -94,13 +95,13 @@ def git_blame_get_commit(path: Path, line: int) -> Commit | None:
         return None
 
     hash, author, timestamp = result.groups()
-    date = datetime.fromtimestamp(int(timestamp))
+    date = datetime.datetime.fromtimestamp(int(timestamp))
     message = run_git("log", "-n", "1", "--pretty=format:%s", hash, cwd=path.parent).stdout
 
     return Commit(hash, author, date, message)
 
 
-def show_git_blame(path: Path, widget, event) -> None:
+def show_git_blame(path: Path, widget: ttk.Label, event: tkinter.Event[tkinter.Text]) -> None:
     # FIXME: don't abuse git when editing on the same line
 
     if event.widget.tag_ranges("sel"):

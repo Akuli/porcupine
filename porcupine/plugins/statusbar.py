@@ -203,7 +203,7 @@ def setup() -> None:
     update_button_style()
 
 
-def get_statusbar(tab: tabs.FileTab) -> StatusBar:
+def get_statusbar(tab: tabs.FileTab) -> StatusBar | None:
     try:
         return tab.bottom_frame.nametowidget("statusbar")
     except KeyError:
