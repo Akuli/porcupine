@@ -9,7 +9,7 @@ from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, List
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -103,7 +103,7 @@ def _find_item(menu: tkinter.Menu, label: str) -> int | None:
 
 
 # "//" means literal backslash, lol
-def _join(parts: list[str]) -> str:
+def _join(parts: List[str]) -> str:
     return "/".join(part.replace("/", "//") for part in parts)
 
 
