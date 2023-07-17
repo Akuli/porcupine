@@ -27,7 +27,7 @@ jobs:
       run: |
         (cd pr && git ls-files) | grep -E '\.(py|pyw)$' | sed s:^:pr/: | tee filelist.txt
     - run: python3 -m pycln --all --disable-all-dunder-policy $(cat filelist.txt)
-    - run: python3 -m pyupgrade $(cat filelist.txt) --keep-runtime-typing --py38-plus
+    - run: python3 -m pyupgrade $(cat filelist.txt) --keep-runtime-typing --py38-plus || true
     - run: python3 -m black $(cat filelist.txt)
     - run: python3 -m isort $(cat filelist.txt)
     - uses: stefanzweifel/git-auto-commit-action@v4
