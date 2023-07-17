@@ -32,7 +32,7 @@ def get_docstring(module_name: str) -> str:
     spec = importlib.util.find_spec(module_name)
     if spec is not None and spec.origin is not None and spec.has_location:
         try:
-            with open(spec.origin, "r") as file:
+            with open(spec.origin) as file:
                 ast_module = ast.parse(file.read())
         except (OSError, SyntaxError):
             pass

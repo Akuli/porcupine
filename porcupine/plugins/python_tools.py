@@ -37,8 +37,7 @@ def run_tool(tool: str, code: str, path: Path | None) -> str:
         result = subprocess.run(
             [str(python), "-m", tool, "-"],
             check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             cwd=(Path.home() if path is None else path.parent),
             input=code.encode("utf-8"),
         )
