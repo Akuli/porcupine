@@ -70,7 +70,7 @@ def register_filetab_action(
     availability_callback: Callable[[FileTab], bool] = lambda tab: True,
 ) -> FileTabAction:
     if name in _actions:
-        raise ValueError(f"Action with the name '{name}' already exists")
+        raise ValueError(f"Action with the name {name!r} already exists")
     action = FileTabAction(
         name=name,
         description=description,
@@ -89,7 +89,7 @@ def register_path_action(
     availability_callback: Callable[[Path], bool] = lambda path: True,
 ) -> PathAction:
     if name in _actions:
-        raise ValueError(f"Action with the name '{name}' already exists")
+        raise ValueError(f"Action with the name {name!r} already exists")
     action = PathAction(
         name=name,
         description=description,
