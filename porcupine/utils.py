@@ -244,7 +244,7 @@ def invert_color(color: str, *, black_or_white: bool = False) -> str:
 
     # tkinter uses 16-bit colors, convert them to 8-bit
     r, g, b = (value >> 8 for value in widget.winfo_rgb(color))
-    return "#{:02x}{:02x}{:02x}".format(0xFF - r, 0xFF - g, 0xFF - b)
+    return f"#{0xFF - r:02x}{0xFF - g:02x}{0xFF - b:02x}"
 
 
 def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
@@ -263,7 +263,7 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
         round(color1_amount * value1 + color2_amount * value2)
         for value1, value2 in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
     )
-    return "#{:02x}{:02x}{:02x}".format(r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
+    return f"#{r >> 8:02x}{g >> 8:02x}{b >> 8:02x}"  # convert back to 8-bit
 
 
 # This doesn't handle all possible cases, see bind(3tk)
