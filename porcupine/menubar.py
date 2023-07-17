@@ -11,10 +11,7 @@ from string import ascii_lowercase
 from tkinter import filedialog
 from typing import Any, Callable, Iterator
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Literal
 
 from porcupine import pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit

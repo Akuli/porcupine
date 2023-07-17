@@ -10,10 +10,7 @@ from pygments import styles, token
 from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.settings import global_settings
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Literal
 
 
 class LongLineMarker:

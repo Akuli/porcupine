@@ -11,10 +11,7 @@ from typing import Any, Callable, Iterator, TypeVar, cast
 
 from porcupine.plugins import rightclick_menu
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Literal
 
 from porcupine import get_tab_manager, images, menubar, tabs, textutils
 

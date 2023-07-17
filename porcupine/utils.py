@@ -36,10 +36,7 @@ from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar, cast
 
 import dacite
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Literal
 
 import porcupine
 
@@ -420,7 +417,7 @@ class EventWithData(_Event):
     #: then this is that string.
     data_string: str
 
-    def data_class(self, T: Type[_T]) -> _T:
+    def data_class(self, T: type[_T]) -> _T:
         """
         If a dataclass instance of type ``T`` was passed as ``data`` to
         ``event_generate()``, then this returns a copy of it. Otherwise this
@@ -521,7 +518,7 @@ def add_scroll_command(
 
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
-    widget: tkinter.Widget, on_tab: Callable[["tkinter.Event[Any]", bool], Any], **bind_kwargs: Any
+    widget: tkinter.Widget, on_tab: Callable[[tkinter.Event[Any], bool], Any], **bind_kwargs: Any
 ) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 
