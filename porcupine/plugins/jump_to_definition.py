@@ -9,7 +9,6 @@ import logging
 import tkinter
 from functools import partial
 from pathlib import Path
-from typing import List
 
 from porcupine import get_tab_manager, menubar, tabs, utils
 from porcupine.plugins import rightclick_menu

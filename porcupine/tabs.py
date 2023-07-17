@@ -13,7 +13,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, TypeVar
 
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer

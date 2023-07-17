@@ -2,18 +2,14 @@
 from __future__ import annotations
 
 import re
-import sys
 import tkinter
 import weakref
 from functools import partial
 from tkinter import ttk
-from typing import Any, Callable, Iterator, TypeVar, cast
-
-from porcupine.plugins import rightclick_menu
-
-from typing import Literal
+from typing import Any, Callable, Iterator, Literal, TypeVar, cast
 
 from porcupine import get_tab_manager, images, menubar, tabs, textutils
+from porcupine.plugins import rightclick_menu
 
 CallableT = TypeVar("CallableT", bound=Callable[..., Any])
 

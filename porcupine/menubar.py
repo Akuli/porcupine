@@ -9,9 +9,7 @@ from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Iterator
-
-from typing import Literal
+from typing import Any, Callable, Iterator, Literal
 
 from porcupine import pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit
