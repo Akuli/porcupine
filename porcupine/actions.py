@@ -111,7 +111,7 @@ def get_all_actions() -> dict[str, Action]:
 # Availability Helpers
 
 
-def filetype_is(filetypes: Union[list[str], str]) -> Callable[[FileTab], bool]:
+def filetype_is(filetypes: str | list[str]) -> Callable[[FileTab], bool]:
     def _filetype_is(filetypes: list[str], tab: FileTab) -> bool:
         try:
             filetype = tab.settings.get("filetype_name", object)
