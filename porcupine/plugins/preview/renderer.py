@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-import re, sys, os, subprocess
+import os
+import re
+import subprocess
+import sys
 import tempfile
 import tkinter
 import urllib.request
+import webbrowser
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator
-import webbrowser
 
 import marko
-from marko import block, inline
 
 if TYPE_CHECKING:
     from .widget import MarkdownPreviewWidget
