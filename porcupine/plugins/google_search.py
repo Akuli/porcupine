@@ -17,7 +17,7 @@ def google_search(tab: tabs.FileTab) -> None:
 
     # Check multi line or text with only spaces
     if selected_text.strip() and "\n" not in selected_text:
-        url = "https://www.google.com/search?q={}".format(urllib.parse.quote_plus(selected_text))
+        url = f"https://www.google.com/search?q={urllib.parse.quote_plus(selected_text)}"
         webbrowser.open_new_tab(url)
 
 
