@@ -4,14 +4,14 @@ This plugin doesn't do anything to the colors used in the main editing area.
 Those are handled by pygments_style and highlight plugins.
 """
 
-import sv_ttk  # type: ignore
+import sv_ttk
 
 from porcupine import get_main_window, get_tab_manager, settings
 from porcupine.settings import global_settings
 
 
 def set_theme(theme: str) -> None:
-    sv_ttk.set_theme(theme.lower())
+    sv_ttk.set_theme(theme)
     main_window = get_main_window()
     # TODO: the next 3 lines are a hack?
     # If they are really needed, why it isn't in sv-ttk by default?
