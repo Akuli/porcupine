@@ -18,12 +18,12 @@ def test_action_registry():
 
     all_actions = actions.get_all_actions()
     for action in [bare_action, filetab_action, path_action]:
-        assert actions.query_actions(action.name) == action
+        assert actions.get_action(action.name) is action
         assert action in all_actions.values()
 
-    assert actions.query_actions("nonexistent action") is None
+    assert actions.get_action("nonexistent action") is None
 
     all_actions["garbage"] = "mean lean fighting machine"  # type: ignore
     assert (
-        actions.query_actions("garbage") is None
+        actions.get_action("garbage") is None
     ), "`all_actions` should be a copy, changes to it should not effect `_actions`"
