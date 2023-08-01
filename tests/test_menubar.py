@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from porcupine import get_main_window, menubar, tabs
+from porcupine import actions, get_main_window, menubar, tabs
 
 
 def test_virtual_events_calling_menu_callbacks():
@@ -89,3 +89,48 @@ def test_alt_f4_bug_without_filetab(mocker):
     mock_quit = mocker.patch("porcupine.menubar.quit")
     get_main_window().event_generate("<Alt-F4>")
     mock_quit.assert_called_once_with()
+
+
+def test_add_filetab_action(filetab, tmp_path):
+    def _callback(tab):
+        filetab.save_as(tmp_path / "asdf.md")
+        tab.update()
+
+    # TODO: https://github.com/Akuli/porcupine/issues/1364
+    assert filetab.settings.get("filetype_name", object) == "Python"
+
+    # create action
+    action = actions.register_filetab_action(
+        name="python",
+        description="test python action",
+        callback=_callback,
+        availability_callback=actions.filetype_is("Python"),
+    )
+
+    path = "testy_test/python"
+
+    # check that no item exists at path
+    menu_item = menubar._find_item(
+        menubar.get_menu(menubar._split_parent(path)[0]), menubar._split_parent(path)[1]
+    )
+    assert menu_item is None
+
+    # register action to path
+    menubar.add_filetab_action(path=path, action=action)
+
+    # check path item exists
+    menu = menubar.get_menu(menubar._split_parent(path)[0])
+    menu_item = menubar._find_item(menu, menubar._split_parent(path)[1])
+    assert menu_item is not None
+
+    # check path item available
+    assert menu.entrycget(index=menu_item, option="state") == "normal"
+
+    # activate item
+    action.callback(filetab)
+
+    # verify something happened
+    assert filetab.settings.get("filetype_name", object) == "Markdown"
+
+    # check unavailable (because Markdown != Python)
+    assert menu.entrycget(index=menu_item, option="state") == "disabled"

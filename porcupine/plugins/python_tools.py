@@ -13,7 +13,7 @@ from functools import partial
 from pathlib import Path
 from tkinter import messagebox
 
-from porcupine import menubar, tabs, textutils, utils
+from porcupine import actions, menubar, tabs, textutils, utils
 from porcupine.plugins import python_venv
 
 log = logging.getLogger(__name__)
@@ -63,5 +63,19 @@ def format_code_in_textwidget(tool: str, tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    menubar.add_filetab_command("Tools/Python/Black", partial(format_code_in_textwidget, "black"))
-    menubar.add_filetab_command("Tools/Python/Isort", partial(format_code_in_textwidget, "isort"))
+    black_format_tab_action = actions.register_filetab_action(
+        name="Black Format Tab",
+        description="Autoformat open tab using Black",
+        callback=partial(format_code_in_textwidget, "black"),
+        availability_callback=actions.filetype_is("Python"),
+    )
+
+    isort_format_tab_action = actions.register_filetab_action(
+        name="isort Format Tab",
+        description="Sort Imports of open tab with isort",
+        callback=partial(format_code_in_textwidget, "isort"),
+        availability_callback=actions.filetype_is("Python"),
+    )
+
+    menubar.add_filetab_action("Tools/Python", black_format_tab_action)
+    menubar.add_filetab_action("Tools/Python", isort_format_tab_action)
