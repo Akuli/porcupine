@@ -30,6 +30,7 @@ import sys
 import threading
 import tkinter
 import traceback
+import warnings
 from pathlib import Path
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Callable, Literal, Type, TypeVar, cast
@@ -840,3 +841,21 @@ def backup_open(file: Any, *args: Any, **kwargs: Any) -> Any:
 
     else:
         yield path.open(*args, **kwargs)
+
+
+def deprecated(issue_url: str | None = None) -> Callable[..., Any]:
+    """This is a decorator which can be used to mark functions as deprecated.
+    It will result in a warning being emitted when the function is used."""
+
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(func)
+        def new_func(*args: Any, **kwargs: Any) -> Any:
+            message = f"`{func.__module__}.{func.__name__}` is deprecated."
+            if issue_url:
+                message += f" See: {issue_url}"
+            warnings.warn(message, category=DeprecationWarning)
+            return func(*args, **kwargs)
+
+        return new_func
+
+    return decorator

@@ -311,6 +311,7 @@ def get_filetab() -> tabs.FileTab:
     return tab
 
 
+@utils.deprecated("https://github.com/Akuli/porcupine/issues/1398")
 def add_filetab_command(path: str, func: Callable[[tabs.FileTab], object], **kwargs: Any) -> None:
     """
     This is a convenience function that does several things:

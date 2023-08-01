@@ -7,6 +7,7 @@ plugin API documentation:
     https://akuli.github.io/porcupine/
 """
 
+import logging
 import os
 import sys
 
@@ -17,6 +18,8 @@ __version__ = "%d.%02d.%02d" % version_info
 __author__ = "Akuli"
 __copyright__ = "Copyright (c) 2017-2023 Akuli"
 __license__ = "MIT"
+
+logging.captureWarnings(True)
 
 if sys.platform in {"win32", "darwin"}:
     # these platforms like path names like "Program Files" or "Application Support"
