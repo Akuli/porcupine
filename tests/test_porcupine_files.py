@@ -33,7 +33,7 @@ def test_copyright():
 # and in pyproject.toml (for installing released versions).
 def test_requirements_and_pyproject_toml_in_sync():
     requirements = []
-    with open("requirements.txt", "r") as file:
+    with open("requirements.txt") as file:
         for line in file:
             requirement = line.split("#")[0].strip()
             if requirement:

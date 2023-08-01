@@ -9,14 +9,9 @@ from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, List, Literal
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
-from porcupine import pluginmanager, settings, tabs, utils
+from porcupine import actions, pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit
 from porcupine.settings import global_settings
 
@@ -103,7 +98,7 @@ def _find_item(menu: tkinter.Menu, label: str) -> int | None:
 
 
 # "//" means literal backslash, lol
-def _join(parts: list[str]) -> str:
+def _join(parts: List[str]) -> str:
     return "/".join(part.replace("/", "//") for part in parts)
 
 
@@ -246,9 +241,21 @@ def update_keyboard_shortcuts() -> None:
     _update_shortcuts_for_opening_submenus()
 
 
-def set_enabled_based_on_tab(
-    path: str, callback: Callable[[tabs.Tab | None], bool]
-) -> Callable[..., None]:
+_menu_item_enabledness_callbacks: list[Callable[..., None]] = []
+
+
+def _refresh_menu_item_enabledness(*junk: object) -> None:
+    for callback in _menu_item_enabledness_callbacks:
+        callback(*junk)
+
+
+# TODO: create type for events
+def register_enabledness_check_event(event: str) -> None:
+    """Register an event which will cause all menu items to check if they are available"""
+    get_tab_manager().bind(event, _refresh_menu_item_enabledness, add=True)
+
+
+def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab], bool]) -> None:
     """Use this for disabling menu items depending on the currently selected tab.
 
     When the selected :class:`~porcupine.tabs.Tab` changes, ``callback`` will
@@ -280,18 +287,22 @@ def set_enabled_based_on_tab(
     easier.
     """
 
-    def update_enabledness(*junk: object) -> None:
+    def update_enabledness(*junk: object, path: str) -> None:
         tab = get_tab_manager().select()
+
         parent, child = _split_parent(path)
         menu = get_menu(parent)
         index = _find_item(menu, child)
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
-        menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
+        if tab is not None and callback(tab):
+            menu.entryconfig(index, state="normal")
+        else:
+            menu.entryconfig(index, state="disabled")
 
-    update_enabledness()
-    get_tab_manager().bind("<<NotebookTabChanged>>", update_enabledness, add=True)
-    return update_enabledness
+    update_enabledness(path=path)
+
+    _menu_item_enabledness_callbacks.append(partial(update_enabledness, path=path))
 
 
 def get_filetab() -> tabs.FileTab:
@@ -328,8 +339,38 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], object], **kwa
     set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
 
 
+def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) -> None:
+    """
+    This is a convenience function that does several things:
+
+    * Create a menu item at the given path with action.name as label
+    * Ensure the menu item is enabled only when the selected tab is a
+      :class:`~porcupine.tabs.FileTab` AND when
+      :class:`~porcupine.actions.FileTabAction.availability_callback`
+      returns True.
+    * Run :class:`~porcupine.actions.FileTabAction.callback` when the
+      menu item is clicked.
+
+    The ``callback`` is called with the selected tab as the only
+    argument when the menu item is clicked.
+
+    You usually don't need to provide any keyword arguments in ``**kwargs``,
+    but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
+    """
+
+    get_menu(path).add_command(
+        label=action.name, command=lambda: action.callback(get_filetab()), **kwargs
+    )
+    set_enabled_based_on_tab(
+        path,
+        callback=lambda tab: isinstance(tab, tabs.FileTab) and action.availability_callback(tab),
+    )
+
+
 # TODO: pluginify?
 def _fill_menus_with_default_stuff() -> None:
+    register_enabledness_check_event("<<NotebookTabChanged>>")
+
     # Make sure to get the order of menus right:
     #   File, Edit, <everything else>, Help
     get_menu("Help")  # handled specially in get_menu

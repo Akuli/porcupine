@@ -194,6 +194,8 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
             if name not in {"filename_patterns", "shebang_regex"}:
                 tab.settings.set(name, value, from_config=True, tag="from_filetype")
 
+    get_tab_manager().event_generate("<<TabFiletypeApplied>>")
+
 
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     log.info(f"file path changed: {tab.path}")
@@ -250,6 +252,8 @@ def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
 
 
 def setup() -> None:
+    menubar.register_enabledness_check_event("<<TabFiletypeApplied>>")
+
     global_settings.add_option("default_filetype", "Python")
 
     # load_filetypes() got already called in setup_argument_parser()
