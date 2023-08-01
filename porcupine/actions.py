@@ -100,7 +100,7 @@ def register_path_action(
     return action
 
 
-def query_actions(name: str) -> Action | None:
+def get_action(name: str) -> Action | None:
     return _actions.get(name)
 
 
