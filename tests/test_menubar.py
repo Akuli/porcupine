@@ -134,3 +134,45 @@ def test_add_filetab_action(filetab, tmp_path):
 
     # check unavailable (because Markdown != Python)
     assert menu.entrycget(index=menu_item, option="state") == "disabled"
+
+
+def test_menubar_state_resetting_1(filetab):
+    """we don't want trailing slashes to effect the path at all
+
+    you can accidentally make "empty" sub-menus in tkinter
+    which are confusing to reason about
+    """
+
+    path = "state_resetting_menu/state_resetting_submenu"
+
+    # check that no item exists at path
+    menu_item = menubar._find_item(
+        menubar.get_menu(menubar._split_parent(path)[0]), menubar._split_parent(path)[1]
+    )
+    assert menu_item is None
+
+    menubar.get_menu(path).add_command(label="foo", command=lambda: None)
+    menu = menubar.get_menu(path)
+    menu_item = menubar._find_item(menu, "foo")
+    assert menu_item is not None
+
+
+def test_menubar_state_resetting_2(filetab):
+    """we don't want trailing slashes to effect the path at all
+
+    you can accidentally make "empty" sub-menus in tkinter
+    which are confusing to reason about
+    """
+
+    path = "state_resetting_menu/state_resetting_submenu"
+
+    # check that no item exists at path
+    menu_item = menubar._find_item(
+        menubar.get_menu(menubar._split_parent(path)[0]), menubar._split_parent(path)[1]
+    )
+    assert menu_item is None
+
+    menubar.get_menu(path).add_command(label="foo", command=lambda: None)
+    menu = menubar.get_menu(path)
+    menu_item = menubar._find_item(menu, "foo")
+    assert menu_item is not None
