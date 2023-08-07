@@ -15,7 +15,7 @@ jobs:
         python-version: "3.11"
         cache: pip
     - run: pip install wheel
-    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: pip install ".[dev]"
     - run: |
         time mypy --platform linux --python-version 3.8 porcupine docs/extensions.py
         time mypy --platform linux --python-version 3.9 porcupine docs/extensions.py
@@ -42,7 +42,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: pip
     - run: pip install wheel
-    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - run: pip install ".[dev]"
     - if: matrix.os == 'ubuntu-latest'
       # Make sure that it doesn't crash with Noto Color Emoji installed
       run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
@@ -73,7 +73,7 @@ jobs:
     - if: matrix.python-version != '3.8'
       run: brew install python-tk@${{ matrix.python-version }}
     - run: $PYTHON --version
-    - run: $PYTHON -m pip install -r requirements.txt -r requirements-dev.txt
+    - run: $PYTHON -m pip install ".[dev]"
     - run: $PYTHON scripts/download-tkdnd.py
     - run: $PYTHON -m pytest --durations=10
 

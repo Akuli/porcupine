@@ -22,7 +22,7 @@ jobs:
         python-version: "3.11"
         cache: pip
     - run: pip install wheel
-    - run: pip install -r requirements-dev.txt
+    - run: pip install ".[dev]"
     - name: Gather a list of Python files in the pull request branch
       run: |
         (cd pr && git ls-files) | grep -E '\.(py|pyw)$' | sed s:^:pr/: | tee filelist.txt
