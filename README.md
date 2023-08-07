@@ -7,6 +7,7 @@ highlighting.
 ![Screenshot.](screenshot.png)
 
 Most important features:
+
 - Syntax highlighting (supports many programming languages
   and color themes, extensible)
 - Autocompletions when pressing tab
@@ -27,9 +28,9 @@ Most important features:
 - Multiple files can be opened at the same time like tabs in a web browser
 - The tabs can be dragged out of the window to open a new Porcupine window conveniently
 
-[Pygments]: https://pygments.org/
-[Langserver]: https://langserver.org/
-[Editorconfig]: https://editorconfig.org/
+[pygments]: https://pygments.org/
+[langserver]: https://langserver.org/
+[editorconfig]: https://editorconfig.org/
 
 Porcupine also has [a very powerful plugin
 API](https://akuli.github.io/porcupine/), and most of the above features are
@@ -39,6 +40,22 @@ fact, the plugin API is so powerful that if you run Porcupine without plugins,
 it shows up as an empty window.
 
 ## Installing Porcupine
+
+To install and run the latest version Porcupine for personal use, execute:
+
+```bash
+python3 -m pip install -u pipx # if you don't have `pipx` already
+pipx install git+https://github.com/Akuli/porcupine.git
+porcu # or `porcupine` if you prefer
+```
+
+To update Porcupine to the latest version:
+
+```bash
+pipx install --force git+https://github.com/Akuli/porcupine.git
+```
+
+This may nuke your configs, so be sure to back them up if you care about them.
 
 ### Development Install
 
@@ -57,7 +74,7 @@ Open a terminal and run these commands:
     porcu
 
 To easily run porcupine again later,
-go to *Settings* --> *Porcupine Settings*
+go to _Settings_ --> _Porcupine Settings_
 and check "Show Porcupine in the desktop menu system".
 This makes Porcupine show up in the menu just like any other application.
 
@@ -77,7 +94,7 @@ Then run these commands:
     porcu
 
 To easily run porcupine again later,
-go to *Settings* --> *Porcupine Settings*
+go to _Settings_ --> _Porcupine Settings_
 and check "Show Porcupine in the desktop menu system".
 This makes Porcupine show up in the menu just like any other application.
 
@@ -111,11 +128,13 @@ When installed, you will find Porcupine from the start menu.
 See [CHANGELOG.md](CHANGELOG.md).
 
 ### Does Porcupine support programming language X?
+
 You will likely get syntax highlighting without any configuring
 and autocompletions with a few lines of configuration file editing.
 See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
 
 ### Help! Porcupine doesn't work.
+
 Please install the latest version.
 If it still doesn't work, [let me know by creating an issue on
 GitHub](http://github.com/Akuli/porcupine/issues/new).
@@ -130,25 +149,32 @@ I think because I didn't find other projects named porcupine, but I don't rememb
 Originally, Porcupine was named "Akuli's Editor".
 
 ### I want an editor that does X, but X is not in the feature list above. Does Porcupine do X?
+
 You can run Porcupine and find out,
 or [create an issue on GitHub](https://github.com/Akuli/porcupine/issues/new) and ask.
 If you manage to make me excited about X, I might implement it.
 
 ### Why did you create a new editor?
+
 Because I can.
 
 ### Why did you create a new editor in tkinter?
+
 Because I can.
 
 ### How does feature X work?
+
 See [porcupine/](porcupine/)X.py or [porcupine/plugins/](porcupine/plugins/)X.py.
 
 ### Why not use editor X?
+
 Because Porcupine is better.
 
 ### Is Porcupine based on IDLE?
+
 Of course not. IDLE is an awful mess that you should stay far away from.
 
 ### Is Porcupine a toy project or is it meant to be a serious editor?
+
 Porcupine is meant to be a serious editor, in fact you might regret even touching it.
 https://www.youtube.com/watch?v=Y3iUoFkDKjU
