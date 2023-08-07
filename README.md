@@ -41,22 +41,6 @@ it shows up as an empty window.
 
 ## Installing Porcupine
 
-To install and run the latest version Porcupine for personal use, execute:
-
-```bash
-python3 -m pip install -u pipx # if you don't have `pipx` already
-pipx install git+https://github.com/Akuli/porcupine.git
-porcu # or `porcupine` if you prefer
-```
-
-To update Porcupine to the latest version:
-
-```bash
-pipx install --force git+https://github.com/Akuli/porcupine.git
-```
-
-This may nuke your configs, so be sure to back them up if you care about them.
-
 ### Development Install
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
@@ -87,19 +71,27 @@ Install Python 3.8 or newer with pip and tkinter somehow.
 If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
 Then run these commands:
 
-    python3 -m venv porcupine-venv
-    source porcupine-venv/bin/activate
-    pip install wheel
-    pip install https://github.com/Akuli/porcupine/archive/v2023.06.27.zip
-    porcu
+```bash
+python3 -m pip install -u pipx # if you don't have `pipx` already
+pipx install git+https://github.com/Akuli/porcupine.git
+porcu # or `porcupine` if you prefer
+```
 
 To easily run porcupine again later,
 go to _Settings_ --> _Porcupine Settings_
 and check "Show Porcupine in the desktop menu system".
 This makes Porcupine show up in the menu just like any other application.
 
+To update Porcupine to the latest version:
+
+```bash
+pipx install --force git+https://github.com/Akuli/porcupine.git
+```
+
+This may nuke your configs, so be sure to back them up if you care about them.
+
 You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
-and then deleting `porcupine-venv`.
+and then running `pipx uninstall porcupine`.
 
 ### MacOS
 
