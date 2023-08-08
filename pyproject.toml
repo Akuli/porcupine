@@ -50,7 +50,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest==6.2.5",
-    "pytest-randomly==3.13.0"
+    "pytest-randomly==3.13.0",
     "pytest-cov==4.0.0",
     "pytest-mock==3.10.0",
     "pycln==2.1.3",
