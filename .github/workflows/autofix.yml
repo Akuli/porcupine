@@ -29,8 +29,8 @@ jobs:
     - run: python3 -m pycln --all --disable-all-dunder-policy $(cat filelist.txt)
     - run: python3 -m pyupgrade $(cat filelist.txt) --keep-runtime-typing --py38-plus --exit-zero-even-if-changed
     - run: python3 -m black $(cat filelist.txt)
-    - run: python3 -m ruff $(cat filelist.txt)
+    - run: python3 -m isort $(cat filelist.txt)
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         repository: ./pr
-        commit_message: "Run pycln, pyupgrade, black, and ruff"
+        commit_message: "Run pycln, pyupgrade, black, and isort"
