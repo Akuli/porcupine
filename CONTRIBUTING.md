@@ -80,6 +80,9 @@ Other commands you may find useful:
   browser to view it.
 - `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
   Open `docs/build/index.html` in your favorite browser to view it.
+- `xvfb-run pytest` (on most Linux systems) will run the tests in a headless mode.
+- `pytest --capture=fd` will prevent `print` statements and logs to print until
+  all tests are finished.
 
 ## Where to talk to us
 
