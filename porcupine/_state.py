@@ -53,7 +53,6 @@ class Quit:
 def open_files(files: Iterable[str]) -> None:
     tabmanager = get_tab_manager()
     for path_string in files:
-        print(path_string)
         if path_string == "-":
             # don't close stdin so it's possible to do this:
             #
