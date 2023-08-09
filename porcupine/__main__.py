@@ -32,28 +32,6 @@ Examples:
 """
 
 
-def open_files(files: Iterable[str]) -> None:
-    tabmanager = get_tab_manager()
-    for path_string in files:
-        if path_string == "-":
-            # don't close stdin so it's possible to do this:
-            #
-            #   $ porcu - -
-            #   bla bla bla
-            #   ^D
-            #   bla bla
-            #   ^D
-            tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
-        else:
-            tabmanager.open_file(Path(path_string))
-
-
-def open_files_from_tk_send(*files: str) -> None:
-    open_files(files)
-    get_main_window().deiconify()
-    get_main_window().lift()
-
-
 def main() -> None:
     # Arguments are parsed in two steps:
     #   1. only the arguments needed for importing plugins
@@ -163,13 +141,11 @@ def main() -> None:
     # Prevent showing up a not-ready-yet root window to user
     get_main_window().withdraw()
 
-    get_main_window().createcommand("open_files", open_files_from_tk_send)
-
     settings.init_the_rest_after_initing_enough_for_using_disabled_plugins_list()
     menubar._init()
     pluginloader.run_setup_functions(args.shuffle_plugins)
 
-    open_files(args.files)
+    _state.open_files(args.files)
 
     get_main_window().deiconify()
     try:

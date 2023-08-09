@@ -5,11 +5,13 @@ import dataclasses
 import logging
 import os
 import sys
+import threading
 import tkinter
 import types
+from pathlib import Path
 from typing import Any, Callable, Type
 
-from porcupine import images, tabs, utils
+from porcupine import _ipc, images, tabs, utils
 
 # Windows resolution
 if sys.platform == "win32":
@@ -44,6 +46,42 @@ def _log_tkinter_error(
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
 
 
+class Quit:
+    ...
+
+
+def open_files(files: Iterable[str]) -> None:
+    tabmanager = get_tab_manager()
+    for path_string in files:
+        print(path_string)
+        if path_string == "-":
+            # don't close stdin so it's possible to do this:
+            #
+            #   $ porcu - -
+            #   bla bla bla
+            #   ^D
+            #   bla bla
+            #   ^D
+            tabmanager.file_queue.put(sys.stdin.read())
+        else:
+            tabmanager.file_queue.put(Path(path_string))
+
+    tabmanager.event_generate("<<OpenFilesQueue>>")
+
+
+def listen_for_files():
+    with _ipc.session() as ipc_message_queue:
+        while True:
+            message = ipc_message_queue.get()
+            if message is Quit:
+                break
+            else:
+                try:
+                    open_files([message])
+                except Exception as e:
+                    log.error(e)
+
+
 # undocumented on purpose, don't use in plugins
 def init(args: Any) -> None:
     assert args is not None
@@ -53,20 +91,17 @@ def init(args: Any) -> None:
 
     log.debug("init() starts")
 
+    try:
+        _ipc.send(args.files)
+    except ConnectionRefusedError:
+        thread = threading.Thread(target=listen_for_files, daemon=True).start()
+    else:
+        log.error("another instance of Porcupine is already running, files were sent to it")
+        sys.exit()
+
     root = tkinter.Tk(className="Porcupine")  # class name shows up in my alt+tab list
     log.debug("root window created")
     log.debug("Tcl/Tk version: " + root.tk.eval("info patchlevel"))
-
-    if root.tk.call("tk", "appname", "porcu") != "porcu":
-        try:
-            root.send("porcu", "open_files", args.files)
-        except tkinter.TclError:
-            # `open_files` doesn't exists (yet)
-            # open the files in a new Porcupine instance
-            pass
-        else:
-            root.quit()
-            sys.exit()
 
     root.protocol("WM_DELETE_WINDOW", quit)
 
@@ -150,6 +185,8 @@ def quit() -> None:
     for callback in _get_state().quit_callbacks:
         if not callback():
             return
+
+    _ipc.send([Quit])
 
     for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)

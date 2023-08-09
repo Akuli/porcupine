@@ -1,5 +1,3 @@
-# this file is currently not being used
-
 from __future__ import annotations
 
 import contextlib
@@ -74,15 +72,3 @@ def session() -> Iterator["queue.Queue[Any]"]:
         )
         thread.start()
         yield message_queue
-
-
-if __name__ == "__main__":
-    # simple test
-    try:
-        send([1, 2, 3])
-        print("a server is running, a message was sent to it")
-    except ConnectionRefusedError:
-        print("a server is not running, let's become the server...")
-        with session() as message_queue:
-            while True:
-                print(message_queue.get())
