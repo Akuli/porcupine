@@ -1,10 +1,18 @@
 # TODO: create much more tests for langserver
+import sys
 import time
 
+import pytest
 from sansio_lsp_client import ClientState
 
 from porcupine import get_main_window
 from porcupine.plugins.langserver import langservers
+
+pytestmark = pytest.mark.xfail(
+    sys.version_info >= (3, 11),
+    strict=True,
+    reason="https://github.com/Akuli/porcupine/issues/1300",
+)
 
 
 def langserver_started(filetab):

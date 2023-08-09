@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import locale
 import logging
+import os
 import queue
 import re
 import signal
@@ -13,7 +14,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable
+from typing import Any, Callable
 
 import psutil
 
@@ -28,7 +29,8 @@ from porcupine import (
 )
 from porcupine.plugins.run import common
 from porcupine.settings import global_settings
-from porcupine.textutils import create_passive_text_widget
+from porcupine.textutils import add_change_blocker, track_changes
+from porcupine.utils import copy_type
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +46,7 @@ filename_regex_parts = [
     # blah blah: some_function (filename.c:123)
     r"\(([^\n():]+):([0-9]+)\)",
 ]
-filename_regex = "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
+filename_regex = "(?i)" + "|".join(r"(?:" + part + r")" for part in filename_regex_parts)
 
 
 def open_file_with_line_number(path: Path, lineno: int) -> None:
@@ -57,6 +59,7 @@ def open_file_with_line_number(path: Path, lineno: int) -> None:
 
 
 MAX_SCROLLBACK = 5000
+OUTPUT_TAGS = {"info": "Token.Keyword", "output": "Token.Text", "error": "Token.Name.Exception"}
 
 
 class Executor:
@@ -66,6 +69,7 @@ class Executor:
         self._link_manager = link_manager
 
         self._shell_process: subprocess.Popen[bytes] | None = None
+        self._input_queue: queue.Queue[bytes] = queue.Queue(maxsize=1)
         self._queue: queue.Queue[tuple[str, str]] = queue.Queue(maxsize=1)
         self._timeout_id: str | None = None
         self.started = False
@@ -102,6 +106,7 @@ class Executor:
             self._shell_process = subprocess.Popen(
                 command,
                 cwd=self.cwd,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True,
@@ -129,20 +134,13 @@ class Executor:
         self._queue.put(("end", ""))
 
     def _handle_queued_item(self, message_type: str, text: str) -> None:
-        self._textwidget.config(state="normal")
         if message_type == "end":
             assert not text
             get_tab_manager().event_generate("<<FileSystemChanged>>")
         else:
-            tag = {
-                "info": "Token.Keyword",
-                "output": "Token.Text",
-                "error": "Token.Name.Exception",
-            }[message_type]
-
             scrolled_to_end = self._textwidget.yview()[1] == 1.0
 
-            self._textwidget.insert("end", text, [tag])
+            self._textwidget.insert("end", text, [OUTPUT_TAGS[message_type], "uneditable"])
             # Add links to full lines
             linked_line_count = text.count("\n")
             self._link_manager.add_links(
@@ -153,7 +151,6 @@ class Executor:
                 self._textwidget.yview_moveto(1)
 
         self._textwidget.delete("1.0", f"end - {MAX_SCROLLBACK} lines")
-        self._textwidget.config(state="disabled")
 
     def _poll_queue_and_put_to_textwidget(self) -> None:
         # too many iterations here freezes the GUI when an infinite loop with print is running
@@ -242,19 +239,86 @@ class Executor:
         if not quitting:
             get_tab_manager().event_generate("<<FileSystemChanged>>")
 
+    def write_to_stdin(self, data: bytes) -> None:
+        if self._shell_process is not None:
+            assert self._shell_process.stdin is not None
+            self._shell_process.stdin.write(data)
+            self._shell_process.stdin.flush()  # TODO: may block, maybe that isn't an issue in practice?
+
+    def close_stdin(self) -> None:
+        if self._shell_process is not None:
+            assert self._shell_process.stdin is not None
+            self._shell_process.stdin.close()
+
+
+# A python-edit-tracking text widget lets you know whether the text is currently
+# being edited through invoking a method in Python, such as .insert(). This lets
+# you distinguish between default key bindings and whatever your code does.
+class PyEditTrackingText(tkinter.Text):
+    @copy_type(tkinter.Text.__init__)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.in_a_python_method = False
+
+    @copy_type(tkinter.Text.insert)
+    def insert(self, *args: Any, **kwargs: Any) -> Any:
+        self.in_a_python_method = True
+        try:
+            return super().insert(*args, **kwargs)
+        finally:
+            self.in_a_python_method = False
+
+    @copy_type(tkinter.Text.delete)
+    def delete(self, *args: Any, **kwargs: Any) -> Any:
+        self.in_a_python_method = True
+        try:
+            return super().delete(*args, **kwargs)
+        finally:
+            self.in_a_python_method = False
+
+    @copy_type(tkinter.Text.replace)
+    def replace(self, *args: Any, **kwargs: Any) -> Any:
+        self.in_a_python_method = True
+        try:
+            return super().replace(*args, **kwargs)
+        finally:
+            self.in_a_python_method = False
+
 
 class NoTerminalRunner:
     def __init__(self, master: tkinter.Misc) -> None:
-        self.textwidget = create_passive_text_widget(
+        self.textwidget = PyEditTrackingText(
             master,
-            is_focusable=True,
-            set_colors=False,
-            name="run_output",
+            name="run_output",  # TODO: rename
             font="TkFixedFont",
+            blockcursor=True,
+            insertunfocussed="hollow",
             wrap="char",
         )
-        self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
+
         textutils.use_pygments_tags(self.textwidget, option_name="run_output_pygments_style")
+
+        def on_style_changed(junk: object = None) -> None:
+            self.textwidget.config(
+                foreground=(
+                    self.textwidget.tag_cget("Token.Literal.String", "foreground")
+                    or self.textwidget["fg"]
+                )
+            )
+
+        self.textwidget.bind(
+            "<<GlobalSettingChanged:run_output_pygments_style>>", on_style_changed, add=True
+        )
+        on_style_changed()
+
+        self.textwidget.bind("<Destroy>", partial(self.stop_executor, quitting=True), add=True)
+        self.textwidget.bind("<Control-D>", self._handle_end_of_input, add=True)
+        self.textwidget.bind("<Control-d>", self._handle_end_of_input, add=True)
+        self.textwidget.bind("<Return>", self.handle_enter_press, add=True)
+        self.textwidget.bind("<BackSpace>", self._handle_backspace, add=True)
+
+        track_changes(self.textwidget)
+        add_change_blocker(self.textwidget, self._editing_should_be_blocked)
 
         self._link_manager = textutils.LinkManager(
             self.textwidget, filename_regex, self._get_link_opener
@@ -281,6 +345,42 @@ class NoTerminalRunner:
         self.hide_button.pack(side="left", padx=1)
         utils.set_tooltip(self.hide_button, "Hide output")
 
+    def _editing_should_be_blocked(self) -> bool:
+        return (not self.textwidget.in_a_python_method) and (
+            # Block editing when nothing is running
+            self.executor is None
+            or not self.executor.running
+            # Do not edit uneditable text
+            or "uneditable" in self.textwidget.tag_names("insert")
+        )
+
+    def handle_enter_press(self, junk_event: object | None = None) -> str:
+        if not self._editing_should_be_blocked():
+            assert self.executor is not None  # helps mypy
+
+            self.textwidget.mark_set("insert", "insert lineend")
+            self.textwidget.insert("end - 1 char", "\n")
+            self.textwidget.see("insert")
+
+            input_line = self.textwidget.get("uneditable.last", "end - 1 char").replace(
+                "\n", os.linesep
+            )
+            self.textwidget.tag_add("uneditable", "1.0", "end - 1 char")
+            self.executor.write_to_stdin(
+                input_line.encode(locale.getpreferredencoding(), errors="replace")
+            )
+
+        return "break"
+
+    def _handle_backspace(self, event: tkinter.Event[tkinter.Text]) -> str:
+        if "uneditable" not in self.textwidget.tag_names("insert - 1 char"):
+            self.textwidget.delete("insert - 1 char", "insert")
+        return "break"
+
+    def _handle_end_of_input(self, event: tkinter.Event[tkinter.Text]) -> None:
+        if self.executor is not None:
+            self.executor.close_stdin()
+
     def stop_executor(self, junk_event: object = None, *, quitting: bool = False) -> None:
         if self.executor is not None:
             self.executor.stop(quitting=quitting)
@@ -298,6 +398,12 @@ class NoTerminalRunner:
                 self.executor.paused = True
                 self.pause_button.configure(image=images.get("resume"))
                 utils.set_tooltip(self.pause_button, "Resume execution")
+
+    def focus(self, junk: object = None) -> None:
+        is_hidden = get_vertical_panedwindow().panecget(self.textwidget, "hide")
+        if is_hidden:
+            get_vertical_panedwindow().paneconfigure(self.textwidget, hide=False)
+        self.textwidget.focus()
 
     def _get_link_opener(self, match: re.Match[str]) -> Callable[[], None] | None:
         assert self.executor is not None
@@ -322,9 +428,7 @@ class NoTerminalRunner:
 
             self.executor.stop()
 
-        self.textwidget.config(state="normal")
         self.textwidget.delete("1.0", "end")
-        self.textwidget.config(state="disabled")
         self._link_manager.delete_all_links()  # prevent memory leak
         self.pause_button.configure(image=images.get("pause"))
 
@@ -360,6 +464,7 @@ def setup() -> None:
     runner.stop_button.bind("<Button-1>", runner.stop_executor, add=True)
     runner.pause_button.bind("<Button-1>", runner.pause_resume_executor, add=True)
     menubar.get_menu("Run").add_command(label="Show/hide output", command=toggle_visible)
+    menubar.get_menu("View/Focus").add_command(label="Command output", command=runner.focus)
     if sys.platform != "win32":
         menubar.get_menu("Run").add_command(
             label="Pause/resume process", command=runner.pause_resume_executor

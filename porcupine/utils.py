@@ -32,14 +32,9 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, Type, TypeVar, cast
 
 import dacite
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 import porcupine
 
@@ -128,12 +123,11 @@ def find_project_root(project_file_path: Path) -> Path:
 
 
 # https://github.com/python/typing/issues/769
-def _copy_type(f: _T) -> Callable[[Any], _T]:
+def copy_type(f: _T) -> Callable[[Any], _T]:
     return lambda x: x
 
 
 class _TooltipManager:
-
     # This needs to be shared by all instances because there's only one
     # mouse pointer.
     tipwindow: tkinter.Toplevel | None = None
@@ -208,7 +202,7 @@ class PanedWindow(tkinter.PanedWindow):
     control the sizes of the panes.
     """
 
-    @_copy_type(tkinter.PanedWindow.__init__)
+    @copy_type(tkinter.PanedWindow.__init__)
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # even non-ttk widgets can handle <<ThemeChanged>>
@@ -250,7 +244,7 @@ def invert_color(color: str, *, black_or_white: bool = False) -> str:
 
     # tkinter uses 16-bit colors, convert them to 8-bit
     r, g, b = (value >> 8 for value in widget.winfo_rgb(color))
-    return "#%02x%02x%02x" % (0xFF - r, 0xFF - g, 0xFF - b)
+    return f"#{0xFF - r:02x}{0xFF - g:02x}{0xFF - b:02x}"
 
 
 def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
@@ -269,7 +263,7 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
         round(color1_amount * value1 + color2_amount * value2)
         for value1, value2 in zip(widget.winfo_rgb(color1), widget.winfo_rgb(color2))
     )
-    return "#%02x%02x%02x" % (r >> 8, g >> 8, b >> 8)  # convert back to 8-bit
+    return f"#{r >> 8:02x}{g >> 8:02x}{b >> 8:02x}"  # convert back to 8-bit
 
 
 # This doesn't handle all possible cases, see bind(3tk)
@@ -405,7 +399,7 @@ class EventDataclass:
     def __str__(self) -> str:
         # str(Foo(a=1, b=2)) --> 'Foo{"a": 1, "b": 2}'
         # Content after Foo is JSON parsed in Event.data_class()
-        return type(self).__name__ + json.dumps(dataclasses.asdict(self))
+        return type(self).__name__ + json.dumps(dataclasses.asdict(self))  # type: ignore
 
 
 if TYPE_CHECKING:
@@ -522,7 +516,7 @@ def add_scroll_command(
 
 # this is not bind_tab to avoid confusing with tabs.py, as in browser tabs
 def bind_tab_key(
-    widget: tkinter.Widget, on_tab: Callable[["tkinter.Event[Any]", bool], Any], **bind_kwargs: Any
+    widget: tkinter.Widget, on_tab: Callable[[tkinter.Event[Any], bool], Any], **bind_kwargs: Any
 ) -> None:
     """A convenience function for binding Tab and Shift+Tab.
 
@@ -542,6 +536,7 @@ def bind_tab_key(
     ``'<Shift-Tab>'`` only works on Windows and Mac OSX. This function
     also works on X11.
     """
+
     # there's something for this in more_functools, but it's a big
     # dependency for something this simple imo
     def callback(shifted: bool, event: tkinter.Event[tkinter.Misc]) -> Any:
@@ -558,107 +553,86 @@ def bind_tab_key(
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # noqa: TK231
 
 
-# list of encodings supported by python 3.7 https://stackoverflow.com/a/25584253
-_list_of_encodings = [
-    "ascii",
-    "big5",
-    "big5hkscs",
-    "cp037",
-    "cp273",
-    "cp424",
-    "cp437",
-    "cp500",
-    "cp720",
-    "cp737",
-    "cp775",
-    "cp850",
-    "cp852",
-    "cp855",
-    "cp856",
-    "cp857",
-    "cp858",
-    "cp860",
-    "cp861",
-    "cp862",
-    "cp863",
-    "cp864",
-    "cp865",
-    "cp866",
-    "cp869",
-    "cp874",
-    "cp875",
-    "cp932",
-    "cp949",
-    "cp950",
-    "cp1006",
-    "cp1026",
-    "cp1125",
-    "cp1140",
-    "cp1250",
-    "cp1251",
-    "cp1252",
-    "cp1253",
-    "cp1254",
-    "cp1255",
-    "cp1256",
-    "cp1257",
-    "cp1258",
-    "cp65001",
-    "euc-jis-2004",
-    "euc-jisx0213",
-    "euc-jp",
-    "euc-kr",
-    "gb2312",
-    "gb18030",
-    "gbk",
-    "hz",
-    "iso2022-jp",
-    "iso2022-jp-1",
-    "iso2022-jp-2",
-    "iso2022-jp-3",
-    "iso2022-jp-2004",
-    "iso2022-jp-ext",
-    "iso2022-kr",
-    "iso8859-2",
-    "iso8859-3",
-    "iso8859-4",
-    "iso8859-5",
-    "iso8859-6",
-    "iso8859-7",
-    "iso8859-8",
-    "iso8859-9",
-    "iso8859-10",
-    "iso8859-11",
-    "iso8859-13",
-    "iso8859-14",
-    "iso8859-15",
-    "iso8859-16",
-    "johab",
-    "koi8-r",
-    "koi8-t",
-    "koi8-u",
-    "kz1048",
-    "latin-1",
-    "mac-cyrillic",
-    "mac-greek",
-    "mac-iceland",
-    "mac-latin2",
-    "mac-roman",
-    "mac-turkish",
-    "ptcp154",
-    "shift-jis",
-    "shift-jis-2004",
-    "shift-jisx0213",
-    "utf-7",
-    "utf-8",
-    "utf-8-sig",
-    "utf-16",
-    "utf-16-be",
-    "utf-16-le",
-    "utf-32",
-    "utf-32-be",
-    "utf-32-le",
-]
+# Must be in a function because lambdas and local variables are ... inconvenient
+def _associate_another_widget_with_a_radiobutton(
+    other: ttk.Label | ttk.Entry, radio: ttk.Radiobutton
+) -> None:
+    other.bind("<Enter>", lambda e: radio.event_generate("<Enter>"), add=True)
+    other.bind("<Leave>", lambda e: radio.event_generate("<Leave>"), add=True)
+    other.bind("<Button-1>", lambda e: radio.invoke(), add=True)
+
+
+# TODO: document this?
+def ask_line_ending(
+    old_line_ending: porcupine.settings.LineEnding,
+) -> porcupine.settings.LineEnding:
+    top = tkinter.Toplevel(name="choose_line_ending")
+    top.resizable(False, False)
+    top.transient(porcupine.get_main_window())
+    top.title("Choose a line ending")
+
+    big_frame = ttk.Frame(top)
+    big_frame.pack(fill="both", expand=True)
+    ttk.Label(big_frame, text="Choose how line endings should be saved:").pack(
+        fill="x", padx=5, pady=5
+    )
+
+    options: list[tuple[str, str, str]] = [
+        (
+            "LF",
+            "LF line endings (Unix)",
+            "Newline characters will be saved to the file as the LF byte (\\n)."
+            " This is the line ending used by most Unix-like operating systems,"
+            " such as Linux and MacOS,"
+            " and usually the preferred line ending in projects that use Git.",
+        ),
+        (
+            "CRLF",
+            "CRLF line endings (Windows)",
+            "Each newline will be saved to the file as two bytes,"
+            " CR (\\r) followed by LF (\\n)."
+            " CRLF is Porcupine's default line ending on Windows,"
+            " and the only line ending supported by many Windows programs."
+            "\n\nCommitting files to Git with CRLF is usually considered bad style."
+            " If you use CRLF in projects that use Git,"
+            " make sure to configure Git to convert the line endings"
+            " so that your CRLF line endings appear as LF line endings"
+            " for other people working on the project.",
+        ),
+        (
+            "CR",
+            "CR line endings (???)",
+            "I don't know when this option could be useful,"
+            " but it is provided in case you have some use case that I didn't think of.",
+        ),
+    ]
+
+    var = tkinter.StringVar(value=old_line_ending.name)
+    for line_ending_name, short_text, long_text in options:
+        radio = ttk.Radiobutton(big_frame, variable=var, value=line_ending_name, text=short_text)
+        radio.pack(fill="x", padx=(10, 0), pady=(10, 0))
+        label = ttk.Label(big_frame, wraplength=450, text=long_text)
+        label.pack(fill="x", padx=(50, 10), pady=(0, 10))
+        _associate_another_widget_with_a_radiobutton(label, radio)
+
+        if line_ending_name == old_line_ending.name:
+            radio.focus()
+
+    ttk.Label(
+        big_frame,
+        text=(
+            "Consider setting the line ending in a project-specific .editorconfig file"
+            " if your project uses an unusual choice of line endings."
+        ),
+    )
+
+    ttk.Button(big_frame, text="OK", command=top.destroy, width=15).pack(
+        side="right", padx=10, pady=10
+    )
+    top.bind("<Escape>", (lambda e: top.destroy()), add=True)
+
+    top.wait_window()
+    return porcupine.settings.LineEnding[var.get()]
 
 
 # TODO: document this?
@@ -678,19 +652,50 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     big_frame.pack(fill="both", expand=True)
     ttk.Label(big_frame, text=text, wraplength=label_width).pack(fill="x", padx=10, pady=10)
 
-    var = tkinter.StringVar()
-    combobox = ttk.Combobox(big_frame, values=_list_of_encodings, textvariable=var)
-    combobox.pack(pady=40)
-    combobox.set(old_encoding)
+    options: list[tuple[str, str]] = [
+        ("UTF-8", "By far the most commonly used encoding. Supports all Unicode characters."),
+        (
+            "Latin-1",
+            "Supports only 256 different characters, but never fails to open a file. Also known as ISO 8859-1.",
+        ),
+    ]
+
+    radio_var = tkinter.StringVar(value="other")  # which item selected: "UTF-8", "Latin-1", "other"
+    entry_var = tkinter.StringVar(value=old_encoding)  # text of entry
+
+    for name, description in options:
+        radio = ttk.Radiobutton(big_frame, variable=radio_var, value=name, text=name)
+        radio.pack(fill="x", padx=(10, 0), pady=(10, 0))
+        label = ttk.Label(big_frame, wraplength=label_width - (50 + 10), text=description)
+        label.pack(fill="x", padx=(50, 10), pady=(0, 10))
+        _associate_another_widget_with_a_radiobutton(label, radio)
+
+    other_frame = ttk.Frame(big_frame)
+    other_frame.pack(side="top", fill="x", padx=10, pady=10)
+    other_radio = ttk.Radiobutton(
+        other_frame, variable=radio_var, value="other", text="Other encoding:"
+    )
+    other_radio.pack(side="left")
+    entry = ttk.Entry(other_frame, textvariable=entry_var)
+    entry.pack(side="left", padx=5)
+    _associate_another_widget_with_a_radiobutton(entry, other_radio)
+
+    # Set UI to old encoding. Treat e.g. "utf8" as meaning "UTF-8".
+    for name, description in options:
+        if codecs.lookup(name) == codecs.lookup(old_encoding):
+            radio_var.set(name)
+            break
+    else:
+        radio_var.set("other")
 
     ttk.Label(
         big_frame,
         text=(
-            "You can create a project-specific .editorconfig file to change the encoding"
-            " permanently."
+            "You can create a project-specific .editorconfig file to change the encoding permanently."
         ),
         wraplength=label_width,
-    ).pack(fill="x", padx=10, pady=10)
+    ).pack(fill="x", padx=10, pady=(30, 10))
+
     button_frame = ttk.Frame(big_frame)
     button_frame.pack(fill="x", pady=10)
 
@@ -698,7 +703,10 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
 
     def select_encoding() -> None:
         nonlocal selected_encoding
-        selected_encoding = combobox.get()
+        if radio_var.get() == "other":
+            selected_encoding = entry_var.get()
+        else:
+            selected_encoding = radio_var.get()
         dialog.destroy()
 
     cancel_button = ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=1)
@@ -706,20 +714,29 @@ def ask_encoding(text: str, old_encoding: str) -> str | None:
     ok_button = ttk.Button(button_frame, text="OK", command=select_encoding, width=1)
     ok_button.pack(side="right", expand=True, fill="x", padx=10)
 
-    def validate_encoding(*junk: object) -> None:
-        encoding = combobox.get()
-        try:
-            codecs.lookup(encoding)
-        except LookupError:
-            ok_button.config(state="disabled")
+    def update_ui(*junk: object) -> None:
+        if radio_var.get() == "other":
+            entry.config(state="normal")
         else:
-            ok_button.config(state="normal")
+            entry.config(state="disabled")
 
-    var.trace_add("write", validate_encoding)
-    combobox.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
-    combobox.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
-    combobox.select_range(0, "end")
-    combobox.focus()
+        valid = True
+        if radio_var.get() == "other":
+            try:
+                codecs.lookup(entry_var.get())
+            except LookupError:
+                valid = False
+
+        ok_button.config(state=("normal" if valid else "disabled"))
+
+    radio_var.trace_add("write", update_ui)
+    entry_var.trace_add("write", update_ui)
+    update_ui()
+
+    entry.bind("<Return>", (lambda event: ok_button.invoke()), add=True)
+    entry.bind("<Escape>", (lambda event: cancel_button.invoke()), add=True)
+    entry.select_range(0, "end")
+    entry.focus()
 
     dialog.wait_window()
     return selected_encoding
@@ -780,7 +797,7 @@ def run_in_thread(
     root.after_idle(check)
 
 
-@_copy_type(open)
+@copy_type(open)
 @contextlib.contextmanager
 def backup_open(file: Any, *args: Any, **kwargs: Any) -> Any:
     """Like :func:`open`, but uses a backup file if needed.

@@ -21,7 +21,7 @@ I have tried to make contributing easy:
     There are also checks running on GitHub Actions.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
-Then install Python 3.7 or newer and [git](https://git-scm.com/), and run these commands:
+Then install Python 3.8 or newer and [git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/YourUserName/porcupine
     cd porcupine
@@ -50,18 +50,13 @@ You can run it locally like this:
     mypy porcupine
 
 It often points out problems like forgetting to check whether something is `None`.
+If you forget to run `mypy`, it doesn't matter,
+because GitHub Actions will run it before I merge your PR.
 
-Porcupine also uses `black` and `isort` to format code,
-and you should run them after making changes.
-For example, if you changed something in `porcupine/plugins/pastebin.py`, you would do:
-
-    black porcupine/plugins/pastebin.py
-    isort porcupine/plugins/pastebin.py
-
-You can also just run `black porcupine` and `isort porcupine` to format everything.
-
-If you forget to run `mypy`, `black` or `isort`, it doesn't matter.
-GitHub Actions will let us know before I merge your PR.
+Porcupine also uses a few tools (`pycln`, `black`, `isort`) to format code.
+They run automatically when you make a pull request.
+If you cannot push after the automatic formatting,
+try running `git pull` before pushing or use `git push --force`.
 
 After doing some development and closing the terminal that you set up the
 environment in, you can go back to the environment by `cd`'ing to the correct
@@ -88,9 +83,13 @@ Other commands you may find useful:
 ## Where to talk to us
 
 GitHub issues and pull request comments are the best way to contact other Porcupine developers.
-Many are also sometimes (very inconsistently) on
-[the ##learnpython channel of the libera IRC server](https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython),
-with same nicknames as on GitHub, usually at about 7PM to 11PM UTC.
+
+Many Porcupine developers are also sometimes (very inconsistently, usually about 7PM-11PM UTC)
+on the ##learnpython channel of the libera IRC server.
+Compared to GitHub issues, IRC feels more like a casual conversation,
+and we often discuss things that have nothing to do with Porcupine.
+To join ##learnpython, you can e.g. go to https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython
+or run [Akuli's mantaray program](https://github.com/Akuli/mantaray).
 
 
 ## Releasing Porcupine
@@ -104,14 +103,14 @@ Other people shouldn't need them.
     as that won't show up correctly on GitHub's releases page.
 2. Make a pull request of your changelog edits. Review carefully:
     changing the changelog afterwards is difficult, as the text gets copied into the releases page.
-3. Merge the pull request and pull the merge commit to your local `master` branch.
-4. Run `python3 scripts/release.py` from the `master` branch.
+3. Merge the pull request and pull the merge commit to your local `main` branch.
+4. Run `python3 scripts/release.py` from the `main` branch.
     The script pushes a tag named e.g. `v2022.08.28`,
     which triggers the parts of `.github/workflows/release-builds.yml`
     that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
     They build and deploy docs, copy the changelog to the releases page, and so on.
 5. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
 
-If you want, you can also do a release from a branch named `bugfix-release` instead of `master`.
+If you want, you can also do a release from a branch named `bugfix-release` instead of `main`.
 This is useful if you fixed a bug that made Porcupine unusable for someone,
-but the new features on `master` aren't ready for releasing yet.
+but the new features on `main` aren't ready for releasing yet.

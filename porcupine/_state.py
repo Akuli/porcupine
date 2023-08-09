@@ -36,7 +36,6 @@ class _State:
 
 # global state makes some things a lot easier (I'm sorry)
 _global_state: _State | None = None
-filedialog_kwargs: dict[str, Any] = {}
 
 
 def _log_tkinter_error(

@@ -28,9 +28,11 @@ event add "<<Menubar:File/Quit>>" <$control_ish-q>
 event add "<<Menubar:View/Bigger Font>>" <$control_ish-plus>
 event add "<<Menubar:View/Smaller Font>>" <$control_ish-minus>
 event add "<<Menubar:View/Reset Font Size>>" <$control_ish-0>
+event add "<<Menubar:View/Focus/Active file>>" <$alt_ish-F>
 
 # run plugin
 event add "<<Menubar:Run/Show//hide output>>" <F4>
+event add "<<Menubar:View/Focus/Command output>>" <$alt_ish-C>
 event add "<<Menubar:Run/Kill process>>" <Shift-F4>
 # Many separate events because if you bind many keys to the same virtual
 # event, it is hard to figure out what key was pressed to trigger it
@@ -58,6 +60,9 @@ event add "<<Menubar:Edit/Find and Replace>>" <$control_ish-f>
 # fold plugin
 event add "<<Menubar:Edit/Fold>>" <$alt_ish-f>
 
+# comment/uncomment plugin
+event add "<<Menubar:Edit/Comment//uncomment selected lines>>" <$control_ish-slash>
+
 # anchor plugin
 event add "<<Menubar:Edit/Anchors/Add or remove on this line>>" <$alt_ish-A>
 event add "<<Menubar:Edit/Anchors/Jump to previous>>" <$alt_ish-Shift-Up>
@@ -83,7 +88,7 @@ event add "<<Menubar:Edit/Sort Lines>>" <$alt_ish-s>
 event add "<<Menubar:View/Pop Tab>>" <$control_ish-P>
 
 # directory tree plugin (don't use <$alt_ish-t>, see #425)
-event add "<<Menubar:View/Focus directory tree>>" <$alt_ish-T>
+event add "<<Menubar:View/Focus/Directory tree>>" <$alt_ish-D>
 
 # filemanager plugin
 event add "<<FileManager:Rename>>" <F2>
@@ -96,20 +101,6 @@ event add "<<FileManager:New file>>" <$control_ish-n>
 event add "<<Menubar:Edit/Jump to definition>>" <$control_ish-Return>
 event add "<<Menubar:Edit/Jump to definition>>" <$control_ish-ButtonRelease-1>
 
-# more_plugins/terminal.py
-# upper-case T means Ctrl+Shift+T or Command+Shift+T
-# I use non-shifted ctrl+t for swapping two characters before cursor while editing
-event add "<<Menubar:Tools/Terminal>>" <$control_ish-T>
-
-# more_plugins/pythonprompt.py
-event add "<<Menubar:Run/Interactive Python prompt>>" <$control_ish-i>
-event add "<<PythonPrompt:KeyboardInterrupt>>" <$control_ish-c>
-event add "<<PythonPrompt:Copy>>" <$control_ish-C>
-# FIXME: conflicts with gotoline plugin
-#event add "<<PythonPrompt:Clear>>" <$control_ish-l>
-event add "<<PythonPrompt:Clear>>" <$control_ish-L>
-event add "<<PythonPrompt:SendEOF>>" <$control_ish-d> <$control_ish-D>
-
 
 # Text widgets have confusing control-click behaviour by default. Disabling it
 # here makes control-click same as just click.
@@ -118,6 +109,12 @@ bind Text <$control_ish-Button-1> {}
 # Also, by default, Control+Slash selects all and Control+A goes to beginning.
 event delete "<<LineStart>>" <$control_ish-a>
 event add "<<SelectAll>>" <$control_ish-a>
+
+# On linux, Ctrl+Y means paste by default. It's dumb. Let's redo instead.
+if {[tk windowingsystem] == "x11"} {
+    event delete <<Paste>> <Control-y> <Control-Lock-Y>
+    event add <<Redo>> <Control-y> <Control-Lock-Y>
+}
 
 # Ctrl+A for treeviews
 bind Treeview <$control_ish-a> {
@@ -139,6 +136,7 @@ bind Text <$control_ish-Delete> {
         event generate %W <<NextWord>>
         %W delete $start insert
     }
+    %W see insert
 }
 
 bind Text <BackSpace> {
@@ -150,6 +148,7 @@ bind Text <BackSpace> {
             %W delete {insert - 1 char} insert
         }
     }
+    %W see insert
 }
 
 bind Text <$control_ish-BackSpace> {
@@ -158,6 +157,7 @@ bind Text <$control_ish-BackSpace> {
         event generate %W <<PrevWord>>
         %W delete insert $end
     }
+    %W see insert
 }
 
 bind Text <Shift-$control_ish-Delete> {
@@ -168,6 +168,7 @@ bind Text <Shift-$control_ish-Delete> {
             %W delete insert {insert lineend}
         }
     }
+    %W see insert
 }
 
 bind Text <Shift-$control_ish-BackSpace> {
@@ -178,6 +179,7 @@ bind Text <Shift-$control_ish-BackSpace> {
             %W delete {insert linestart} insert
         }
     }
+    %W see insert
 }
 
 # When pasting, delete what was selected. Here + adds to end of existing binding.

@@ -413,8 +413,6 @@ class DirectoryTree(ttk.Treeview):
             except ValueError:
                 x, y, width, height = (0, 0, 0, 0)
 
-            width  # Silence pyflakes unused variable warning
-
             # Apply menu position offsets
             menu_x = self.winfo_rootx() + x
             menu_y = self.winfo_rooty() + y + height
@@ -499,8 +497,8 @@ def setup() -> None:
     get_tab_manager().add_filetab_callback(partial(_on_new_filetab, tree))
     get_tab_manager().bind("<<NotebookTabChanged>>", partial(_select_current_file, tree), add=True)
 
-    menubar.get_menu("View").add_command(
-        label="Focus directory tree", command=partial(_focus_treeview, tree)
+    menubar.get_menu("View/Focus").add_command(
+        label="Directory tree", command=partial(_focus_treeview, tree)
     )
 
     # Must reverse because last added project goes first

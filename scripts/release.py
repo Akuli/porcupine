@@ -26,7 +26,7 @@ def main():
 
     # https://stackoverflow.com/a/1593487
     branch = subprocess.check_output("git symbolic-ref --short HEAD", shell=True).decode().strip()
-    assert branch in ("master", "bugfix-release")
+    assert branch in ("main", "bugfix-release")
 
     # If this fails you have uncommitted changes
     for line in subprocess.check_output("git status --porcelain", shell=True).splitlines():
@@ -43,7 +43,12 @@ def main():
     replace_in_file(Path("CHANGELOG.md"), "Unreleased", TAG_FORMAT % new_info)
     replace_in_file(Path("porcupine/__init__.py"), repr(old_info), repr(new_info))
     replace_in_file(Path("README.md"), TAG_FORMAT % old_info, TAG_FORMAT % new_info)
-    subprocess.check_call(["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md"])
+    replace_in_file(
+        Path("pyproject.toml"), TAG_FORMAT.lstrip("v") % old_info, TAG_FORMAT.lstrip("v") % new_info
+    )
+    subprocess.check_call(
+        ["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md", "pyproject.toml"]
+    )
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
     subprocess.check_call(["git", "push", "origin", branch])

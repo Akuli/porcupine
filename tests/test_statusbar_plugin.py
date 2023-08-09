@@ -2,7 +2,7 @@ from porcupine.plugins.statusbar import StatusBar
 
 
 def test_reload_warning(filetab, tmp_path):
-    [statusbar] = [w for w in filetab.bottom_frame.winfo_children() if isinstance(w, StatusBar)]
+    statusbar: StatusBar = filetab.bottom_frame.nametowidget("statusbar")
 
     filetab.path = tmp_path / "lol.py"
     filetab.save()
@@ -34,7 +34,7 @@ def select(filetab, start, end):
 
 
 def test_selection(filetab):
-    [statusbar] = [w for w in filetab.bottom_frame.winfo_children() if isinstance(w, StatusBar)]
+    statusbar: StatusBar = filetab.bottom_frame.nametowidget("statusbar")
 
     filetab.textwidget.insert("1.0", "b öa\n" * 4)
     filetab.textwidget.mark_set("insert", "1.2")

@@ -9,15 +9,10 @@ from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, List, Literal
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
-from porcupine import pluginmanager, settings, tabs, utils
-from porcupine._state import filedialog_kwargs, get_main_window, get_tab_manager, quit
+from porcupine import actions, pluginmanager, settings, tabs, utils
+from porcupine._state import get_main_window, get_tab_manager, quit
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -103,7 +98,7 @@ def _find_item(menu: tkinter.Menu, label: str) -> int | None:
 
 
 # "//" means literal backslash, lol
-def _join(parts: list[str]) -> str:
+def _join(parts: List[str]) -> str:
     return "/".join(part.replace("/", "//") for part in parts)
 
 
@@ -169,7 +164,6 @@ def add_config_file_button(path: Path, *, menu: str = "Settings/Config Files") -
 def _walk_menu_contents(
     menu: tkinter.Menu, path_prefix: list[str] = []
 ) -> Iterator[tuple[str, tkinter.Menu, int]]:
-
     last_index = menu.index("end")
     if last_index is not None:  # menu not empty
         for index in range(last_index + 1):
@@ -247,9 +241,21 @@ def update_keyboard_shortcuts() -> None:
     _update_shortcuts_for_opening_submenus()
 
 
-def set_enabled_based_on_tab(
-    path: str, callback: Callable[[tabs.Tab | None], bool]
-) -> Callable[..., None]:
+_menu_item_enabledness_callbacks: list[Callable[..., None]] = []
+
+
+def _refresh_menu_item_enabledness(*junk: object) -> None:
+    for callback in _menu_item_enabledness_callbacks:
+        callback(*junk)
+
+
+# TODO: create type for events
+def register_enabledness_check_event(event: str) -> None:
+    """Register an event which will cause all menu items to check if they are available"""
+    get_tab_manager().bind(event, _refresh_menu_item_enabledness, add=True)
+
+
+def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab], bool]) -> None:
     """Use this for disabling menu items depending on the currently selected tab.
 
     When the selected :class:`~porcupine.tabs.Tab` changes, ``callback`` will
@@ -281,18 +287,22 @@ def set_enabled_based_on_tab(
     easier.
     """
 
-    def update_enabledness(*junk: object) -> None:
+    def update_enabledness(*junk: object, path: str) -> None:
         tab = get_tab_manager().select()
+
         parent, child = _split_parent(path)
         menu = get_menu(parent)
         index = _find_item(menu, child)
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
-        menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
+        if tab is not None and callback(tab):
+            menu.entryconfig(index, state="normal")
+        else:
+            menu.entryconfig(index, state="disabled")
 
-    update_enabledness()
-    get_tab_manager().bind("<<NotebookTabChanged>>", update_enabledness, add=True)
-    return update_enabledness
+    update_enabledness(path=path)
+
+    _menu_item_enabledness_callbacks.append(partial(update_enabledness, path=path))
 
 
 def get_filetab() -> tabs.FileTab:
@@ -301,18 +311,17 @@ def get_filetab() -> tabs.FileTab:
     return tab
 
 
-def add_filetab_command(
-    path: str, func: Callable[[tabs.FileTab], object] | None = None, **kwargs: Any
-) -> None:
+# FIXME(#1398): this function is deprecated
+def add_filetab_command(path: str, func: Callable[[tabs.FileTab], object], **kwargs: Any) -> None:
     """
     This is a convenience function that does several things:
 
     * Create a menu item at the given path.
     * Ensure the menu item is enabled only when the selected tab is a
       :class:`~porcupine.tabs.FileTab`.
-    * Do something when the menu item is clicked. See below.
+    * Run ``func`` when the menu item is clicked.
 
-    If ``func`` is given, it is called with the selected tab as the only
+    The ``func`` is called with the selected tab as the only
     argument when the menu item is clicked. For example::
 
         from procupine import menubar, tabs
@@ -323,43 +332,46 @@ def add_filetab_command(
         def setup() -> None:
             menubar.add_filetab_command("Edit/Do something", do_something)
 
-    If ``func`` is not given, then an event is generated to the tab. The event
-    is named so that if ``path`` is ``"Edit/Foo"``, then the event is
-    ``<<FiletabCommand:Edit/Foo>>``. This is useful, for example, if you want
-    to create an instance of a class for every new tab, and then call a method
-    of the instance when a menu item is clicked. For example::
+    You usually don't need to provide any keyword arguments in ``**kwargs``,
+    but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
+    """
+    menu_path, item_text = _split_parent(path)
+    get_menu(menu_path).add_command(label=item_text, command=lambda: func(get_filetab()), **kwargs)
+    set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
 
-        from __future__ import annotations
-        import tkinter
-        from procupine import get_tab_manager, menubar, tabs
 
-        class FooBar:
-            def do_something(self, event: tkinter.Event[tabs.FileTab]) -> None:
-                ...
+def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) -> None:
+    """
+    This is a convenience function that does several things:
 
-        def on_new_filetab(tab: tabs.FileTab) -> None:
-            foobar = FooBar()
-            tab.bind("<<FiletabCommand:Edit/Do something>>", foobar.do_something, add=True)
+    * Create a menu item at the given path with action.name as label
+    * Ensure the menu item is enabled only when the selected tab is a
+      :class:`~porcupine.tabs.FileTab` AND when
+      :class:`~porcupine.actions.FileTabAction.availability_callback`
+      returns True.
+    * Run :class:`~porcupine.actions.FileTabAction.callback` when the
+      menu item is clicked.
 
-        def setup() -> None:
-            get_tab_manager().add_filetab_callback(on_new_filetab)
-            menubar.add_filetab_command("Edit/Do something")
+    The ``callback`` is called with the selected tab as the only
+    argument when the menu item is clicked.
 
     You usually don't need to provide any keyword arguments in ``**kwargs``,
     but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
     """
-    if func is None:
-        command = lambda: get_filetab().event_generate(f"<<FiletabCommand:{path}>>")
-    else:
-        command = lambda: func(get_filetab())  # type: ignore
 
-    menu_path, item_text = _split_parent(path)
-    get_menu(menu_path).add_command(label=item_text, command=command, **kwargs)
-    set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
+    get_menu(path).add_command(
+        label=action.name, command=lambda: action.callback(get_filetab()), **kwargs
+    )
+    set_enabled_based_on_tab(
+        path,
+        callback=lambda tab: isinstance(tab, tabs.FileTab) and action.availability_callback(tab),
+    )
 
 
 # TODO: pluginify?
 def _fill_menus_with_default_stuff() -> None:
+    register_enabledness_check_event("<<NotebookTabChanged>>")
+
     # Make sure to get the order of menus right:
     #   File, Edit, <everything else>, Help
     get_menu("Help")  # handled specially in get_menu
@@ -371,7 +383,7 @@ def _fill_menus_with_default_stuff() -> None:
 
     def open_files() -> None:
         # paths is "" or tuple
-        paths = filedialog.askopenfilenames(**filedialog_kwargs)
+        paths = filedialog.askopenfilenames()
         for path in map(Path, paths):
             get_tab_manager().open_file(path)
 
@@ -388,6 +400,11 @@ def _fill_menus_with_default_stuff() -> None:
         assert tab is not None
         if tab.can_be_closed():
             get_tab_manager().close_tab(tab)
+
+    def focus_active_tab() -> None:
+        tab = get_tab_manager().select()
+        if tab is not None:
+            tab.event_generate("<<TabSelected>>")
 
     get_menu("File").add_command(label="New File", command=new_file)
     get_menu("File").add_command(label="Open", command=open_files)
@@ -422,6 +439,8 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("View").add_command(
         label="Reset Font Size", command=partial(change_font_size, "reset")
     )
+    get_menu("View/Focus").add_command(label="Active file", command=focus_active_tab)
+    set_enabled_based_on_tab("View/Focus/Active file", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Bigger Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Smaller Font", (lambda tab: tab is not None))
     set_enabled_based_on_tab("View/Reset Font Size", (lambda tab: tab is not None))

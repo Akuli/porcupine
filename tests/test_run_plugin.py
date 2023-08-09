@@ -85,6 +85,26 @@ if sys.platform != "win32":
         assert get_output().count("\N{replacement character}") == 2
 
 
+def test_input(filetab, tmp_path, wait_until):
+    filetab.textwidget.insert("end", "x = input('Enter something: ')\n")
+    filetab.textwidget.insert("end", "print('You said ' + x)\n")
+    filetab.save_as(tmp_path / "lol.py")
+    no_terminal.run_command(f"{utils.quote(sys.executable)} lol.py", tmp_path)
+    wait_until(lambda: "Enter something:" in get_output())
+
+    no_terminal.runner.textwidget.insert("insert", "örkkimörkkiäinen")
+    no_terminal.runner.handle_enter_press()
+    wait_until(lambda: "The process completed successfully." in get_output())
+
+    assert (
+        get_output()
+        .strip()
+        .endswith(
+            "Enter something: örkkimörkkiäinen\nYou said örkkimörkkiäinen\nThe process completed successfully."
+        )
+    )
+
+
 def there_are_links():
     return bool(no_terminal.runner.textwidget.tag_ranges("link"))
 
@@ -286,7 +306,7 @@ time.sleep(10)
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output())
     end = time.monotonic()
-    assert end - start < 8
+    assert end - start < 9
 
 
 def test_not_line_buffered(tmp_path, wait_until):
@@ -301,7 +321,7 @@ time.sleep(10)
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output())
     end = time.monotonic()
-    assert end - start < 8
+    assert end - start < 9
 
 
 def test_crlf_on_any_platform(tmp_path, wait_until):

@@ -2,6 +2,59 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## v2023.06.27
+
+New features:
+- Porcupine now looks quite different than before, because it uses [the sv-ttk themes](https://pypi.org/project/sv-ttk/). You can choose between dark and light theme in settings.
+- When running programs with output going to the terminal window (try Shift+F5), Porcupine now supports keyboard input. For example, programs that use Python's `input()` function now work.
+- Pastebinning is now done by right-clicking selected text. There is no longer a "Pastebin" menu in the menubar.
+
+Bug fixes:
+- The editor now scrolls automatically to keep the cursor visible when pressing Ctrl+Delete or Ctrl+Backspace.
+- Porcupine now autoindents slightly better when typing into a JSON file. Thank you [Moosems](https://github.com/Moosems) for fixing this.
+- On Linux, if you use the launcher, you can now choose Porcupine in "Open with" menus. For this to work, you may need to uncheck and check again "Show Porcupine in the desktop menu system" in the settings.
+
+
+## v2023.03.11
+
+New features:
+- On Linux, there's a new and easy way to launch Porcupine without using the terminal. In settings, you can check "Show Porcupine in the desktop menu system", which makes Porcupine appear in the operating system's menu like most other applications. There are [more instructions in the README](https://github.com/Akuli/porcupine#installing-porcupine).
+- There is a new menu that appears when right-clicking the main editing area. It doesn't contain much yet, but more things will probably be added into it in subsequent releases. Thank you [ArchKats](https://github.com/ArchKats) for designing and implementing the new right-click menu.
+- When right-clicking a folder in the directory tree, there is a new option "Open in terminal". It is equivalent to opening a terminal or command prompt as usual and then going to the right-clicked folder with `cd some/path/to/the/folder`. Thank you [Tuomas](https://github.com/taahol) for implementing this.
+- Porcupine now recognizes [BOMs](https://en.wikipedia.org/wiki/Byte_order_mark) in text files. Previously UTF-8 files with a BOM would get a weirdly behaving blank character in the beginning. Thank you [Tuomas](https://github.com/taahol).
+
+Bug fixes (both by [Tuomas](https://github.com/taahol)):
+- Dragging and dropping files to Porcupine now works even when the file names contain non-ASCII characters.
+- File types selected with the *Filetypes* menu in the menubar are now remembered when Porcupine is restarted.
+
+
+## v2023.01.19
+
+Fixes a bug where on some computers, the minimap would show keywords and other highlighted parts of the code with a ridiculously large font (see [#1171](https://github.com/Akuli/porcupine/issues/1171)). The minimap is the narrow view of the file being edited on the side.
+
+
+## v2022.11.25
+
+New keyboard shortcuts and UI fixes:
+- There are new key bindings for focusing various parts of Porcupine without clicking them: Alt+Shift+D for directory tree, Alt+Shift+F for the file being edited, and Alt+Shift+C for command output. Thank you [lawson89](https://github.com/lawson89) for adding the new key bindings.
+- The directory tree now opens the selected file when pressing the Enter key. Previously this worked only for directories, and to open a file, you needed to press the right arrow key or double-click. Thank you [lawson89](https://github.com/lawson89).
+- The buttons related to running commands now have tooltips that explain what they do. You no longer need to guess based on the images. Thank you [lawson89](https://github.com/lawson89).
+
+Filetype-specific fixes and improvements:
+- In Python files, comments placed on the same line with a decorator are now syntax highlighted as comments.
+- In Rust files, function names and a few more keywords are now highlighted correctly.
+- There are new default commands for Rust. For example, pressing F5 in a Rust file does `cargo run` by default. As with any filetype, you can press Shift+F5 (or Shift+F6, Shift+F7, Shift+F8) to run any command you want.
+- Porcupine now supports `.pyx` files slightly better than before. Thank you [lawson89](https://github.com/lawson89).
+
+Other improvements:
+- On Windows, the Porcupine installer now uninstalls and reinstalls faster than before, because it does not display the name of every file it deletes.
+- When restarted, Porcupine now remembers whether or not the window was maximized. Previously it would only remember the location and size of the window, so restarting a maximized Porcupine would result in a window that is big but not in a maximized state. Thank you [lawson89](https://github.com/lawson89) for fixing this.
+- The full-screen mode (F11 or *Full Screen* in the *View* menu) now works better with window managers that have their own full-screening feature. Thank you Tuomas for testing this.
+- The *Filetypes* menu now shows which filetype is currently selected. Thank you [lawson89](https://github.com/lawson89).
+- The plugin manager is no longer a plugin, so it is not possible to use the plugin manager to disable the plugin manager. Thank you [aloner-pro](https://github.com/aloner-pro) for fixing this.
+- In the *Run* menu, there is a new built-in Python prompt that runs within the Porcupine process. It is meant to be used for developing and debugging Porcupine. For example, `get_tab_manager().tabs()[0].textwidget['bg'] = 'red'` sets the color of the first open tab.
+
+
 ## v2022.08.28
 
 Yesterday's release (below) turned out to be broken: syntax highlighting didn't work at all. This release fixes that.

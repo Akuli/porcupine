@@ -39,31 +39,18 @@ Version Information
           # display an error message or do things without the new feature
 
 
-File Dialogs
-------------
-
-.. data:: filedialog_kwargs
-    :type: dict[str, Any]
-
-    Porcupine uses :mod:`tkinter.filedialog` functions similarly to this::
-
-        path = filedialog.asksaveasfilename(**porcupine.filedialog_kwargs)
-
-    The :source:`filetypes plugin <porcupine/plugins/filetypes.py>` uses this
-    for displaying known filetypes in the dialogs.
-
-
 Directories
 -----------
 
 .. data:: dirs
-    :type: appdirs.AppDirs
+    :type: platformdirs.PlatformDirs
 
-    See `appdirs on PyPI <https://pypi.org/project/appdirs/>`_.
-    For example, ``porcupine.dirs.user_cache_dir`` is where temporary cache files should go.
+    See `platformdirs on PyPI <https://pypi.org/project/platformdirs/>`_.
+    For example, ``porcupine.dirs.user_cache_path`` is where temporary cache files should go.
 
     When Porcupine starts, it makes sure that these directories exist:
 
-        * ``dirs.user_cache_dir``
-        * ``dirs.user_config_dir`` and a subdirectory named ``plugins`` inside it
-        * ``dirs.user_log_dir``
+        * ``dirs.user_cache_path``
+        * ``dirs.user_config_path``
+        * ``dirs.user_config_path / "plugins"``
+        * ``dirs.user_log_path``

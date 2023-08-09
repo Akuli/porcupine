@@ -5,7 +5,6 @@ import argparse
 import fnmatch
 import logging
 import re
-import sys
 import tkinter
 from functools import partial
 from pathlib import Path
@@ -15,15 +14,7 @@ import tomli
 from pygments import lexers
 from pygments.util import ClassNotFound
 
-from porcupine import (
-    dirs,
-    filedialog_kwargs,
-    get_parsed_args,
-    get_tab_manager,
-    menubar,
-    settings,
-    tabs,
-)
+from porcupine import dirs, get_parsed_args, get_tab_manager, menubar, settings, tabs
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
@@ -49,7 +40,7 @@ def is_list_of_strings(obj: object) -> bool:
 
 def load_filetypes() -> None:
     # user_path can't be global var because tests monkeypatch
-    user_path = Path(dirs.user_config_dir) / "filetypes.toml"
+    user_path = dirs.user_config_path / "filetypes.toml"
     defaults_path = Path(__file__).absolute().parent.parent / "default_filetypes.toml"
 
     with defaults_path.open("rb") as defaults_file:
@@ -67,7 +58,7 @@ def load_filetypes() -> None:
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
 #
-#    https://github.com/Akuli/porcupine/blob/master/porcupine/default_filetypes.toml
+#    https://github.com/Akuli/porcupine/blob/main/porcupine/default_filetypes.toml
 """
             )
     except (OSError, UnicodeError, tomli.TOMLDecodeError):
@@ -99,26 +90,6 @@ def load_filetypes() -> None:
         # Applies to most other filetypes too e.g. Python file .py and Python stub file .pyi
         assert "filetype_name" not in filetype
         filetype["filetype_name"] = name
-
-
-def set_filedialog_kwargs() -> None:
-    filedialog_kwargs["filetypes"] = [
-        (
-            name,
-            [
-                # "*.py" doesn't work on windows, but ".py" works and does the same thing
-                # See "SPECIFYING EXTENSIONS" in tk_getOpenFile manual page
-                pattern.split("/")[-1].lstrip("*")
-                for pattern in filetype["filename_patterns"]
-            ],
-        )
-        for name, filetype in filetypes.items()
-        if name != "Plain Text"  # can just use "All Files" for this
-    ]
-
-    if sys.platform != "darwin":
-        # Causes crashes for some Mac users, but not all. See #1092
-        filedialog_kwargs["filetypes"].insert(0, ("All Files", ["*"]))
 
 
 def get_filetype_from_matches(
@@ -223,6 +194,8 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
             if name not in {"filename_patterns", "shebang_regex"}:
                 tab.settings.set(name, value, from_config=True, tag="from_filetype")
 
+    get_tab_manager().event_generate("<<TabFiletypeApplied>>")
+
 
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     log.info(f"file path changed: {tab.path}")
@@ -231,7 +204,8 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     tab.settings.add_option("filetype_name", None, type_=Optional[str])
-    on_path_changed(tab)
+    if not tab.settings.get("filetype_name", Optional[str]):
+        on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
     _sync_filetypes_menu()
 
@@ -278,6 +252,8 @@ def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
 
 
 def setup() -> None:
+    menubar.register_enabledness_check_event("<<TabFiletypeApplied>>")
+
     global_settings.add_option("default_filetype", "Python")
 
     # load_filetypes() got already called in setup_argument_parser()
@@ -288,14 +264,13 @@ def setup() -> None:
         "Default filetype for new files:",
         values=sorted(filetypes.keys(), key=str.casefold),
     )
-    set_filedialog_kwargs()
     global filetypes_var
     filetypes_var = tkinter.StringVar()
     for name in sorted(filetypes.keys(), key=str.casefold):
         _add_filetype_menuitem(name, filetypes_var)
 
     get_tab_manager().bind("<<NotebookTabChanged>>", _sync_filetypes_menu, add=True)
-    path = Path(dirs.user_config_dir) / "filetypes.toml"
+    path = dirs.user_config_path / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
     menubar.add_config_file_button(path, menu="Filetypes")
     menubar.add_config_file_button(path)  # goes to "Settings/Config Files"

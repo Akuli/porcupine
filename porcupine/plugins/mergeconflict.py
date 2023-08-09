@@ -50,7 +50,6 @@ tag_counter = itertools.count()
 
 
 class ConflictDisplayer:
-
     # line numbers not stored to self because they may change as text is edited
     def __init__(
         self, textwidget: tkinter.Text, start_lineno: int, middle_lineno: int, end_lineno: int

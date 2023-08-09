@@ -9,86 +9,9 @@ from porcupine import get_main_window, get_tab_manager, settings, tabs, utils
 from porcupine.textutils import count
 
 
-# Must be in a function because lambdas and local variables are ... inconvenient
-def _connect_label_to_radiobutton(label: ttk.Label, radio: ttk.Radiobutton) -> None:
-    label.bind("<Enter>", lambda e: radio.event_generate("<Enter>"), add=True)
-    label.bind("<Leave>", lambda e: radio.event_generate("<Leave>"), add=True)
-    label.bind("<Button-1>", lambda e: radio.invoke(), add=True)
-
-
-def ask_line_ending(old_line_ending: settings.LineEnding) -> settings.LineEnding:
-    top = tkinter.Toplevel(name="choose_line_ending")
-    top.resizable(False, False)
-    top.transient(get_main_window())
-    top.title("Choose a line ending")
-
-    big_frame = ttk.Frame(top)
-    big_frame.pack(fill="both", expand=True)
-    ttk.Label(big_frame, text="Choose how line endings should be saved:").pack(
-        fill="x", padx=5, pady=5
-    )
-
-    options: list[tuple[str, str, str]] = [
-        (
-            "LF",
-            "LF line endings (Unix)",
-            "Newline characters will be saved to the file as the LF byte (\\n)."
-            " This is the line ending used by most Unix-like operating systems,"
-            " such as Linux and MacOS,"
-            " and usually the preferred line ending in projects that use Git.",
-        ),
-        (
-            "CRLF",
-            "CRLF line endings (Windows)",
-            "Each newline will be saved to the file as two bytes,"
-            " CR (\\r) followed by LF (\\n)."
-            " CRLF is Porcupine's default line ending on Windows,"
-            " and the only line ending supported by many Windows programs."
-            "\n\nCommitting files to Git with CRLF is usually considered bad style."
-            " If you use CRLF in projects that use Git,"
-            " make sure to configure Git to convert the line endings"
-            " so that your CRLF line endings appear as LF line endings"
-            " for other people working on the project.",
-        ),
-        (
-            "CR",
-            "CR line endings (???)",
-            "I don't know when this option could be useful,"
-            " but it is provided in case you have some use case that I didn't think of.",
-        ),
-    ]
-
-    var = tkinter.StringVar(value=old_line_ending.name)
-    for line_ending_name, short_text, long_text in options:
-        radio = ttk.Radiobutton(big_frame, variable=var, value=line_ending_name, text=short_text)
-        radio.pack(fill="x", padx=(10, 0), pady=(10, 0))
-        label = ttk.Label(big_frame, wraplength=450, text=long_text)
-        label.pack(fill="x", padx=(50, 10), pady=(0, 10))
-        _connect_label_to_radiobutton(label, radio)
-
-        if line_ending_name == old_line_ending.name:
-            radio.focus()
-
-    ttk.Label(
-        big_frame,
-        text=(
-            "Consider setting the line ending in a project-specific .editorconfig file"
-            " if your project uses an unusual choice of line endings."
-        ),
-    )
-
-    ttk.Button(big_frame, text="OK", command=top.destroy, width=15).pack(
-        side="right", padx=10, pady=10
-    )
-    top.bind("<Escape>", (lambda e: top.destroy()), add=True)
-
-    top.wait_window()
-    return settings.LineEnding[var.get()]
-
-
 class StatusBar(ttk.Frame):
     def __init__(self, tab: tabs.FileTab):
-        super().__init__(tab.bottom_frame)
+        super().__init__(tab.bottom_frame, name="statusbar")
         self._tab = tab
 
         self._top_frame = ttk.Frame(self)
@@ -170,7 +93,7 @@ class StatusBar(ttk.Frame):
             return
 
         old_value = self._tab.settings.get("line_ending", settings.LineEnding)
-        self._tab.settings.set("line_ending", ask_line_ending(old_value))
+        self._tab.settings.set("line_ending", utils.ask_line_ending(old_value))
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:

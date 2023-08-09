@@ -31,7 +31,7 @@ def setup() -> None:
 
             # can't bind in tkinter, because tkinter's bind doesn't understand tkdnd events:
             # _tkinter.TclError: expected integer but got "%#"
-            bind . <<Drop:DND_Files>> {DROPCOMMAND %D}
+            bind . <<Drop:DND_Files>> {DROPCOMMAND [encoding convertfrom utf-8 %D]}
             """.replace(
                 "DROPCOMMAND", root.register(handle_drop)
             )

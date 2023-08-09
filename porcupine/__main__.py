@@ -61,6 +61,7 @@ def main() -> None:
     #
     # Between those steps, plugins get a chance to add more command-line options.
     parser = argparse.ArgumentParser(
+        prog="porcupine",
         epilog=_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         add_help=False,  # help in step 1 wouldn't show options added by plugins
@@ -115,9 +116,9 @@ def main() -> None:
 
     args_parsed_in_first_step, junk = parser.parse_known_args()
 
-    Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
-    (Path(dirs.user_config_dir) / "plugins").mkdir(parents=True, exist_ok=True)
-    Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
+    dirs.user_cache_path.mkdir(parents=True, exist_ok=True)
+    (dirs.user_config_path / "plugins").mkdir(parents=True, exist_ok=True)
+    dirs.user_log_path.mkdir(parents=True, exist_ok=True)
     _logs.setup(
         all_loggers_verbose=args_parsed_in_first_step.verbose,
         verbose_loggers=(args_parsed_in_first_step.verbose_logger or []),

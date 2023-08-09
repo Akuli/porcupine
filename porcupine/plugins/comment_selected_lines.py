@@ -11,6 +11,17 @@ import re
 from typing import Optional
 
 from porcupine import get_tab_manager, menubar, tabs, textutils
+from porcupine.plugins import rightclick_menu
+
+
+def already_commented(linetext: str, comment_prefix: str) -> Optional[bool]:
+    # Ignore '# blah' comments because they are likely written by hand
+    # But don't ignore indented '#    blah', that is most likely by this plugin
+    if linetext.startswith(comment_prefix) and not re.match(
+        r" [^ ]", linetext[len(comment_prefix) :]
+    ):
+        return True
+    return None
 
 
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
@@ -21,7 +32,18 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
     try:
         start_index, end_index = map(str, tab.textwidget.tag_ranges("sel"))
     except ValueError:
-        # nothing selected, add '#' normally
+        # No text selected
+        line_no = tab.textwidget.index("insert").split(".")[0]
+        line_start = line_no + ".0"
+        line_text = tab.textwidget.get(line_start, f"{line_start} lineend")
+
+        if pressed_key is None:
+            # Toggle comments on the line where cursor is
+            if already_commented(line_text, comment_prefix):
+                tab.textwidget.delete(line_start, f"{line_no}.{len(comment_prefix)}")
+            else:
+                tab.textwidget.insert(f"{line_no}.0", comment_prefix)
+
         return None
 
     start = int(start_index.split(".")[0])
@@ -33,12 +55,10 @@ def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> s
     all_linenos = set(range(start, end))
     commented = {
         lineno
-        for lineno, line in enumerate(
+        for lineno, line_text in enumerate(
             tab.textwidget.get(f"{start}.0", f"{end}.0").splitlines(), start
         )
-        # Ignore '# blah' comments because they are likely written by hand
-        # But don't ignore indented '#    blah', that is most likely by this plugin
-        if line.startswith(comment_prefix) and not re.match(r" [^ ]", line[len(comment_prefix) :])
+        if already_commented(line_text, comment_prefix)
     }
 
     with textutils.change_batch(tab.textwidget):
@@ -62,5 +82,8 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    menubar.add_filetab_command("Edit/Comment Block", comment_or_uncomment)
+    menubar.add_filetab_command("Edit/Comment//uncomment selected lines", comment_or_uncomment)
     get_tab_manager().add_filetab_callback(on_new_filetab)
+    rightclick_menu.add_rightclick_option(
+        "Comment/uncomment selected lines", comment_or_uncomment, needs_selected_text=True
+    )

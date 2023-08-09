@@ -308,3 +308,57 @@ blah blah
 </html>
 """,
     )
+
+
+def test_json_autoindent(check_autoindents):
+    check_autoindents(
+        "spam.json",
+        """
+{
+"pygments_style": "material",
+"font_size": 11,
+"is_maximized": true,
+"directory_tree_projects": [
+"spam",
+"ham",
+{
+"python_venvs": {
+"project_1": "env",
+"project_2": "env"
+}
+}
+],
+"python_venvs": {
+"project": "env",
+"project": [
+"foo",
+"bar"
+]
+}
+}
+""",
+        """
+{
+  "pygments_style": "material",
+  "font_size": 11,
+  "is_maximized": true,
+  "directory_tree_projects": [
+    "spam",
+    "ham",
+    {
+      "python_venvs": {
+        "project_1": "env",
+        "project_2": "env"
+      }
+    }
+  ],
+  "python_venvs": {
+    "project": "env",
+    "project": [
+      "foo",
+      "bar"
+    ]
+  }
+}
+""",
+    )

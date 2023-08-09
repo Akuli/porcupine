@@ -79,6 +79,7 @@ celerybeat-schedule
 .env
 
 # virtualenv
+.venv/
 venv/
 ENV/
 env*/
@@ -89,7 +90,10 @@ env*/
 # Rope project settings
 .ropeproject
 
+# Mac stuff
+.DS_Store
 
 # other stuff i have needed to add
 .pytest_cache
 playground.*
+.vscode/

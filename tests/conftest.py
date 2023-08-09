@@ -14,8 +14,9 @@ import tempfile
 import time
 import tkinter
 from concurrent.futures import Future
+from pathlib import Path
 
-import appdirs
+import platformdirs
 import pytest
 
 import porcupine
@@ -49,7 +50,7 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_pastebins)
 
 
-class MonkeypatchedAppDirs(appdirs.AppDirs):
+class MonkeypatchedPlatformDirs(platformdirs.PlatformDirs):
     user_cache_dir = property(operator.attrgetter("_cache"))
     user_config_dir = property(operator.attrgetter("_config"))
     user_log_dir = property(operator.attrgetter("_logs"))
@@ -59,26 +60,28 @@ class MonkeypatchedAppDirs(appdirs.AppDirs):
 def monkeypatch_dirs():
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
-    assert user_plugindir == os.path.join(dirs.user_config_dir, "plugins")
+    assert user_plugindir == str(dirs.user_config_path / "plugins")
 
-    user_font_cache_file = os.path.join(dirs.user_cache_dir, "font_cache.json")
+    font_cache = dirs.user_cache_path / "font_cache.json"
+
+    # Test our custom log dir before it is monkeypatched away
+    assert Path("~/.local/state").expanduser() not in dirs.user_log_path.parents
 
     with tempfile.TemporaryDirectory() as d:
         # This is a hack because:
         #   - pytest monkeypatch fixture doesn't work (not for scope='session')
-        #   - assigning to dirs.user_cache_dir doesn't work (appdirs uses @property)
+        #   - assigning to dirs.user_cache_dir doesn't work (platformdirs uses @property)
         #   - "porcupine.dirs = blahblah" doesn't work (from porcupine import dirs)
-        dirs.__class__ = MonkeypatchedAppDirs
+        dirs.__class__ = MonkeypatchedPlatformDirs
         dirs._cache = os.path.join(d, "cache")
         dirs._config = os.path.join(d, "config")
         dirs._logs = os.path.join(d, "logs")
         assert dirs.user_cache_dir.startswith(d)
 
         # Copy font cache to speed up tests
-        if os.path.isfile(user_font_cache_file):
-            os.mkdir(dirs.user_cache_dir)
-            test_font_cache_file = os.path.join(dirs.user_cache_dir, "font_cache.json")
-            shutil.copy(user_font_cache_file, test_font_cache_file)
+        if font_cache.exists():
+            dirs.user_cache_path.mkdir()
+            shutil.copy(font_cache, dirs.user_cache_path)
 
         yield
 

@@ -7,6 +7,9 @@ line_length = 100
 profile = "black"
 multi_line_output = 3
 
+[tool.ruff]
+ignore = ["E501"]
+
 # Flit configuration ([build-system] and [project]) are used when pip installing with github url.
 # See commands in README.
 [build-system]
@@ -15,7 +18,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "porcupine"
-version = "2022.08.27"
+version = "2023.06.27"
 description = "A decent editor written in tkinter"
 authors = [{name = "Akuli", email = "akuviljanen17@gmail.com"}]
 readme = "README.md"
@@ -23,22 +26,24 @@ license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = []  # Do not attempt to import porcupine before dependencies are installed
 dependencies = [
-    "appdirs>=1.4.4",
+    "platformdirs>=3.0.0,<4.0.0",
     "Pygments==2.12.0",
     "toposort>=1.5",
     "colorama>=0.2.5",
     "sansio-lsp-client>=0.10.0,<0.11.0",
     "python-language-server[rope,pyflakes]>=0.36.2,<1.0.0",
     "black>=21.5b2",
+    "isort>=5.10",
     "typing_extensions",
     "dacite>=1.5.1,<2.0.0",
     "tomli==2.0.1",
-    "ttkthemes>=3.0.0",
     "send2trash>=1.8.0,<2.0.0",
     "psutil>=5.8.0,<6.0.0",
     "PyYAML==6.0",
-    "tree-sitter-builds==2022.8.29",
+    "tree-sitter-builds==2023.3.12",
+    "sv-ttk>=2.5.5",
 ]
 
 [project.scripts]
 porcu = "porcupine.__main__:main"
+porcupine = "porcupine.__main__:main"
