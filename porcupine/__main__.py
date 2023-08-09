@@ -2,22 +2,9 @@ from __future__ import annotations
 
 import argparse
 import logging
-import sys
-from pathlib import Path
-from typing import Iterable
 
 from porcupine import __version__ as porcupine_version
-from porcupine import (
-    _logs,
-    _state,
-    dirs,
-    get_main_window,
-    get_tab_manager,
-    menubar,
-    pluginloader,
-    settings,
-    tabs,
-)
+from porcupine import _logs, _state, dirs, get_main_window, menubar, pluginloader, settings
 
 log = logging.getLogger(__name__)
 

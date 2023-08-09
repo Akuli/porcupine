@@ -53,7 +53,7 @@ def _listener2queue(listener: connection.Listener, object_queue: queue.Queue[Any
 
 
 @contextlib.contextmanager
-def session() -> Iterator["queue.Queue[Any]"]:
+def session() -> Iterator[queue.Queue[Any]]:
     """Context manager that listens for send().
 
     Use this as a context manager:
