@@ -1,6 +1,6 @@
-import sys
 import shutil
 import subprocess
+import sys
 from functools import partial
 from pathlib import Path
 
@@ -57,13 +57,7 @@ if sys.platform != "win32":
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
 @pytest.mark.parametrize("filename", weird_filenames)
 def test_funny_paths(tmp_path, filename):
-    try:
-        (tmp_path / filename).write_text("blah")
-    except OSError as e:
-        if sys.platform == "win32" and e.errno == errno.EINVAL:
-            pytest.skip("windows forbids")
-        else:
-            raise e
+    (tmp_path / filename).write_text("blah")
     subprocess.check_call(["git", "init", "--quiet"], cwd=tmp_path, stdout=subprocess.DEVNULL)
     subprocess.check_call(["git", "add", "."], cwd=tmp_path)
 
