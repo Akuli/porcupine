@@ -1,6 +1,6 @@
-import sys
 import shutil
 import subprocess
+import sys
 from functools import partial
 from pathlib import Path
 
@@ -31,7 +31,16 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch):
     assert set(tree.item(project_id, "tags")) == {"git_added"}
 
 
-weird_filenames = ["foo bar.txt", "foo\tbar.txt", "foo\nbar.txt", 'foo"bar.txt', "foo'bar.txt", "örkkimörkkiäinen.ö", "bigyó.txt", "2π.txt"]
+weird_filenames = [
+    "foo bar.txt",
+    "foo\tbar.txt",
+    "foo\nbar.txt",
+    'foo"bar.txt',
+    "foo'bar.txt",
+    "örkkimörkkiäinen.ö",
+    "bigyó.txt",
+    "2π.txt",
+]
 if sys.platform != "win32":
     weird_filenames += [r"foo\bar", r"foo\123"]
 

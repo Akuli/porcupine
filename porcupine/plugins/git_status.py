@@ -1,9 +1,9 @@
 """Color items in the directory tree based on their git status."""
 from __future__ import annotations
 
-import re
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -61,10 +61,7 @@ def _parse_ascii_path_from_git(ascii_str: str) -> Path:
 
     if ascii_str.startswith('"') and ascii_str.endswith('"'):
         path_bytes = ascii_str[1:-1].encode("ascii")
-        path_bytes = re.sub(
-            _ESCAPE_REGEX,
-            _handle_special_git_escape,
-            path_bytes)
+        path_bytes = re.sub(_ESCAPE_REGEX, _handle_special_git_escape, path_bytes)
 
         # Avoid encoding errors, so that a weird file name will not prevent
         # other files from working properly
