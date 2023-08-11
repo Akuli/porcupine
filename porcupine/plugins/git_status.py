@@ -41,7 +41,7 @@ _SPECIAL_ESCAPES = {
     # There are probably more, but hopefully this covers everything
     # that comes up in real-world projects
     b"\\t": b"\t",  # \t = tab
-    b"\\n": b"\n",  # \t = newline
+    b"\\n": b"\n",  # \n = newline
     b'\\"': b'"',  # \" = quote
     b"\\\\": b"\\",  # \\ = literal backslash (not path separator)
 }
