@@ -38,19 +38,20 @@ weird_filenames = [
     "foo'bar.txt",
     "örkkimörkkiäinen.ö",
     "bigyó.txt",
-    "2π.txt"]
+    "2π.txt",
+]
 if sys.platform != "win32":
     # Test each "Windows-forbidden" character: https://stackoverflow.com/a/31976060
     weird_filenames += [
-    "foo<bar.txt",
-    "foo>bar.txt",
-    "foo:bar.txt",
-    'foo"bar.txt',
-    r"foo\bar.txt",
-    r"foo\123.txt",  # not a special escape code, only looks like it
-    "foo|bar.txt",
-    "foo?bar.txt",
-    "foo*bar.txt",
+        "foo<bar.txt",
+        "foo>bar.txt",
+        "foo:bar.txt",
+        'foo"bar.txt',
+        r"foo\bar.txt",
+        r"foo\123.txt",  # not a special escape code, only looks like it
+        "foo|bar.txt",
+        "foo?bar.txt",
+        "foo*bar.txt",
     ]
 
 
