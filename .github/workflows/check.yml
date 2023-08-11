@@ -41,8 +41,18 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
+    - run: pip install wheel
+    - run: pip install -r requirements.txt -r requirements-dev.txt
+    - if: matrix.os == 'ubuntu-latest'
+      # Make sure that it doesn't crash with Noto Color Emoji installed
+      run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
     - if: matrix.os == 'windows-latest'
-      run: python -c "import sys; print(sys.getdefaultencoding())"
+      run: |
+        python scripts/download-tkdnd.py
+        echo "TCLLIBPATH=lib" >> $env:GITHUB_ENV
+    - uses: GabrielBB/xvfb-action@v1.4
+      with:
+        run: python -m pytest --durations=10
 
   # Separate from other pytests because tkinter doesn't work on macos with actions/setup-python.
   # It imports, but gives this error:    RuntimeError: tk.h version (8.6) doesn't match libtk.a version (8.5)
