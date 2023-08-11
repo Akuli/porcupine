@@ -44,7 +44,7 @@ if sys.platform != "win32":
         "foo|bar.txt",
         "foo?bar.txt",
         "foo*bar.txt",
-        # Not mentioned in linked stackoverflow answer but still doesn't work
+        # Not mentioned in linked stackoverflow answer but still doesn't work on Windows
         "foo\tbar.txt",
         "foo\nbar.txt",
     ]
