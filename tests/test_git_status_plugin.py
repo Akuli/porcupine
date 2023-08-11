@@ -31,15 +31,39 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch):
     assert set(tree.item(project_id, "tags")) == {"git_added"}
 
 
-weird_filenames = ["foo bar.txt", "foo\tbar.txt", "foo\nbar.txt", 'foo"bar.txt', "foo'bar.txt", "örkkimörkkiäinen.ö", "bigyó.txt", "2π.txt"]
+weird_filenames = [
+    "foo bar.txt",
+    "foo\tbar.txt",
+    "foo\nbar.txt",
+    "foo'bar.txt",
+    "örkkimörkkiäinen.ö",
+    "bigyó.txt",
+    "2π.txt"]
 if sys.platform != "win32":
-    weird_filenames += [r"foo\bar", r"foo\123"]
+    # Test each "Windows-forbidden" character: https://stackoverflow.com/a/31976060
+    weird_filenames += [
+    "foo<bar.txt",
+    "foo>bar.txt",
+    "foo:bar.txt",
+    'foo"bar.txt',
+    r"foo\bar.txt",
+    r"foo\123.txt",  # not a special escape code, only looks like it
+    "foo|bar.txt",
+    "foo?bar.txt",
+    "foo*bar.txt",
+    ]
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
 @pytest.mark.parametrize("filename", weird_filenames)
 def test_funny_paths(tmp_path, filename):
-    (tmp_path / filename).write_text("blah")
+    try:
+        (tmp_path / filename).write_text("blah")
+    except OSError as e:
+        if sys.platform == "win32" and e.errno == errno.EINVAL:
+            pytest.skip("windows forbids")
+        else:
+            raise e
     subprocess.check_call(["git", "init", "--quiet"], cwd=tmp_path, stdout=subprocess.DEVNULL)
     subprocess.check_call(["git", "add", "."], cwd=tmp_path)
 
