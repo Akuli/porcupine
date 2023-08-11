@@ -1,3 +1,4 @@
+import sys
 import shutil
 import subprocess
 from functools import partial
@@ -6,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from porcupine import get_tab_manager
+from porcupine.plugins.git_status import run_git_status
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
@@ -27,6 +29,22 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch):
     subprocess.check_call(["git", "add", "a", "b"])
     get_tab_manager().event_generate("<<FileSystemChanged>>")
     assert set(tree.item(project_id, "tags")) == {"git_added"}
+
+
+weird_filenames = ["foo bar.txt", "foo\tbar.txt", 'foo"bar.txt', "foo'bar.txt", "örkkimörkkiäinen.ö", "bigyó.txt", "2π.txt"]
+if sys.platform != "win32":
+    weird_filenames += [r"foo\bar", r"foo\123"]
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git not found")
+@pytest.mark.parametrize("filename", weird_filenames)
+def test_funny_paths(tmp_path, filename):
+    (tmp_path / filename).write_text("blah")
+    subprocess.check_call(["git", "init", "--quiet"], cwd=tmp_path, stdout=subprocess.DEVNULL)
+    subprocess.check_call(["git", "add", "."], cwd=tmp_path)
+
+    statuses = run_git_status(tmp_path)
+    assert statuses[tmp_path / filename] == "git_added"
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git not found")

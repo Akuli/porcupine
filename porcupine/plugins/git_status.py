@@ -1,6 +1,7 @@
 """Color items in the directory tree based on their git status."""
 from __future__ import annotations
 
+import re
 import logging
 import os
 import subprocess
@@ -26,6 +27,28 @@ log = logging.getLogger(__name__)
 
 # Each git subprocess uses one cpu core
 git_pool = ThreadPoolExecutor(max_workers=os.cpu_count())
+
+
+def parse_ascii_path_from_git(ascii_str: str) -> Path:
+    assert ascii_str.isascii()
+
+    if ascii_str.startswith('"') and ascii_str.endswith('"'):
+        # Assuming utf-8 file system encoding, git outputs "\303\266rkki\303\244inen.txt"
+        # with the quotes when it means örkkiäinen.txt.
+        #
+        # The \xxx means byte xxx specified as octal. First digit is 0-3 because the
+        # biggest possible byte value is 255, which is 0o377 octal.
+        path_bytes = ascii_str[1:-1].encode("ascii")
+        path_bytes = re.sub(
+            rb"\\[0-3][0-7][0-7]",
+            (lambda m: bytes([int(m.group(0)[1:], 8)])),
+            path_bytes)
+
+        # Avoid encoding errors, so that a weird file name will not prevent
+        # other files from working properly
+        return Path(path_bytes.decode(sys.getfilesystemencoding(), errors="replace"))
+    else:
+        return Path(ascii_str)
 
 
 def run_git_status(project_root: Path) -> dict[Path, str]:
@@ -57,7 +80,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
     # Show .git as ignored, even though it actually isn't
     result = {project_root / ".git": "git_ignored"}
     for line in run_result.stdout.splitlines():
-        path = project_root / line[3:]
+        path = project_root / parse_ascii_path_from_git(line[3:])
         if line[1] == "M":
             result[path] = "git_modified"
         elif line[1] == " ":
