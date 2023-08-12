@@ -83,7 +83,9 @@ Other commands you may find useful:
 - `xvfb-run pytest` (on most Linux systems) will run the tests in a headless mode.
   This means that you will not see a window as the tests are running.
 - `pytest --capture=fd` will prevent `print` statements and logs to print until
-  all tests are finished.
+  all tests are finished. This will change from the default behavior of porcupine
+  where the output is printed as soon as it is generated while executing the tests.
+  Instead output will be printed after all tests are finished (for tests that failed).
 
 ## Where to talk to us
 
