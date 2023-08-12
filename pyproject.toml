@@ -20,14 +20,15 @@ build-backend = "flit_core.buildapi"
 name = "porcupine"
 version = "2023.06.27"
 description = "A decent editor written in tkinter"
-authors = [{name = "Akuli", email = "akuviljanen17@gmail.com"}]
+authors = [{ name = "Akuli", email = "akuviljanen17@gmail.com" }]
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: MIT License"]
-dynamic = []  # Do not attempt to import porcupine before dependencies are installed
+dynamic = [
+] # Do not attempt to import porcupine before dependencies are installed
 dependencies = [
     "platformdirs>=3.10.0,<4.0.0",
-    "pygments==2.16.1", # pygments version fixed because haxx in highlight plugin
+    "pygments==2.12.0",                                     # pygments version fixed because haxx in highlight plugin
     "toposort>=1.10",
     "colorama>=0.4.6",
     "sansio-lsp-client>=0.10.0,<0.11.0",
@@ -60,7 +61,7 @@ dev = [
     "sphinx>=4.0.0, <5.0.0",
     "pillow>=10.0.0",
     "requests>=2.31.0, <3.0.0",
-    "mypy==1.1.1", # exact versions to avoid "works on my computer" problems
+    "mypy==1.1.1",                          # exact versions to avoid "works on my computer" problems
     "types-Pygments==2.16.0.0",
     "types-docutils==0.20.0.1",
     "types-Send2Trash==1.8.2.7",
