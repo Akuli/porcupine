@@ -28,7 +28,7 @@ dynamic = [
 ] # Do not attempt to import porcupine before dependencies are installed
 dependencies = [
     "platformdirs>=3.10.0,<4.0.0",
-    "pygments==2.12.0",                                     # pygments version fixed because haxx in highlight plugin
+    "pygments==2.12.0", # pygments version fixed because haxx in highlight plugin
     "toposort>=1.10",
     "colorama>=0.4.6",
     "sansio-lsp-client>=0.10.0,<0.11.0",
@@ -37,8 +37,7 @@ dependencies = [
     # For developing Porcupine, newer versions can be set in 'dev' optional deps.
     "black>=21.5b2",
     "isort>=5.10",
-    # typing.Literal is new in python 3.8
-    "typing_extensions",
+    "typing_extensions", # typing.Literal is new in python 3.8
     "dacite>=1.8.1,<2.0.0",
     "tomli==2.0.1",
     "send2trash>=1.8.2,<2.0.0",
@@ -61,7 +60,7 @@ dev = [
     "sphinx>=4.0.0, <5.0.0",
     "pillow>=10.0.0",
     "requests>=2.31.0, <3.0.0",
-    "mypy==1.1.1",                          # exact versions to avoid "works on my computer" problems
+    "mypy==1.1.1", # exact versions to avoid "works on my computer" problems
     "types-Pygments==2.16.0.0",
     "types-docutils==0.20.0.1",
     "types-Send2Trash==1.8.2.7",
