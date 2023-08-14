@@ -54,6 +54,7 @@ if sys.platform != "win32":
         # Not mentioned in linked stackoverflow answer but still doesn't work on Windows
         "foo\tbar.txt",
         "foo\nbar.txt",
+        "foo\rbar.txt",
     ]
 
 
