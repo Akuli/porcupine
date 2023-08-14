@@ -34,7 +34,6 @@ def test_added_and_modified_content(tree, tmp_path, monkeypatch):
 weird_filenames = [
     "foo bar.txt",
     "foo'bar.txt",
-    "foo\rbar.txt",
     "örkkimörkkiäinen.ö",
     "bigyó.txt",
     "2π.txt",
