@@ -175,7 +175,7 @@ class _TooltipManager:
             # the label will have light text on a light background or
             # dark text on a dark background on some systems.
             tkinter.Label(tipwindow, text=self.text, border=3, fg="black", bg="white").pack()
-            tipwindow.update()
+            tipwindow.update_idletasks()
             tipwindow.geometry(f"+{self.mousex - tipwindow.winfo_width()}+{self.mousey - 30}")
 
 
