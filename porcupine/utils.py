@@ -167,7 +167,6 @@ class _TooltipManager:
         if self.got_mouse:
             self.destroy_tipwindow()
             tipwindow = type(self).tipwindow = tkinter.Toplevel()
-            tipwindow.geometry(f"+{self.mousex + 10}+{self.mousey - 10}")
             tipwindow.bind("<Motion>", self.destroy_tipwindow, add=True)
             tipwindow.overrideredirect(True)
 
@@ -175,7 +174,11 @@ class _TooltipManager:
             # colors at all or both foreground and background. Otherwise
             # the label will have light text on a light background or
             # dark text on a dark background on some systems.
-            tkinter.Label(tipwindow, text=self.text, border=3, fg="black", bg="white").pack()
+            label = tkinter.Label(tipwindow, text=self.text, border=3, fg="black", bg="white")
+            label.pack()
+            tipwindow.update()
+            tw_width = tipwindow.winfo_width()
+            tipwindow.geometry(f"+{self.mousex - tw_width}+{self.mousey - 30}")
 
 
 def set_tooltip(widget: tkinter.Widget, text: str) -> None:
