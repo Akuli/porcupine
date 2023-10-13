@@ -176,7 +176,14 @@ class _TooltipManager:
             # dark text on a dark background on some systems.
             tkinter.Label(tipwindow, text=self.text, border=3, fg="black", bg="white").pack()
             tipwindow.update_idletasks()
-            tipwindow.geometry(f"+{self.mousex - tipwindow.winfo_width()}+{self.mousey - 30}")
+            screen_width = tipwindow.winfo_screenwidth()
+            to_end = screen_width - self.mousex
+            tip_width = tipwindow.winfo_width()
+            if to_end >= tip_width/2:
+                offset = int(tip_width/2)
+            else:
+                offset = int(tip_width - to_end)
+            tipwindow.geometry(f"+{self.mousex - offset}+{self.mousey - 30}")
 
 
 def set_tooltip(widget: tkinter.Widget, text: str) -> None:
