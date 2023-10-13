@@ -179,8 +179,8 @@ class _TooltipManager:
             screen_width = tipwindow.winfo_screenwidth()
             to_end = screen_width - self.mousex
             tip_width = tipwindow.winfo_width()
-            if to_end >= tip_width/2:
-                offset = int(tip_width/2)
+            if to_end >= tip_width / 2:
+                offset = int(tip_width / 2)
             else:
                 offset = int(tip_width - to_end)
             tipwindow.geometry(f"+{self.mousex - offset}+{self.mousey - 30}")
