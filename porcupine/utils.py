@@ -174,11 +174,9 @@ class _TooltipManager:
             # colors at all or both foreground and background. Otherwise
             # the label will have light text on a light background or
             # dark text on a dark background on some systems.
-            label = tkinter.Label(tipwindow, text=self.text, border=3, fg="black", bg="white")
-            label.pack()
+            tkinter.Label(tipwindow, text=self.text, border=3, fg="black", bg="white").pack()
             tipwindow.update()
-            tw_width = tipwindow.winfo_width()
-            tipwindow.geometry(f"+{self.mousex - tw_width}+{self.mousey - 30}")
+            tipwindow.geometry(f"+{self.mousex - tipwindow.winfo_width()}+{self.mousey - 30}")
 
 
 def set_tooltip(widget: tkinter.Widget, text: str) -> None:
