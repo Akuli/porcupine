@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -26,6 +27,48 @@ log = logging.getLogger(__name__)
 
 # Each git subprocess uses one cpu core
 git_pool = ThreadPoolExecutor(max_workers=os.cpu_count())
+
+
+# Assuming utf-8 file system encoding, git outputs "\303\266rkki\303\244inen.txt"
+# with the quotes when it means örkkiäinen.txt.
+#
+# The \xxx means byte xxx specified as octal. First digit is 0-3 because the
+# biggest possible byte value is 255, which is 0o377 octal.
+#
+# Because this would be too easy, Git also special-cases some characters. For
+# example, tabs come out as \t rather than \011.
+_SPECIAL_ESCAPES = {
+    # There are probably more, but hopefully this covers everything
+    # that comes up in real-world projects
+    b"\\t": b"\t",  # \t = tab
+    b"\\r": b"\r",  # \r = CR byte (part of CRLF newline: \r\n)
+    b"\\n": b"\n",  # \n = newline
+    b'\\"': b'"',  # \" = quote
+    b"\\\\": b"\\",  # \\ = literal backslash (not path separator)
+}
+_ESCAPE_REGEX = rb"\\[0-3][0-7][0-7]|" + b"|".join(map(re.escape, _SPECIAL_ESCAPES.keys()))
+
+
+def _handle_special_git_escape(match: re.Match[bytes]) -> bytes:
+    try:
+        return _SPECIAL_ESCAPES[match.group(0)]
+    except KeyError:
+        # b"\123" --> bytes([0o123])
+        return bytes([int(match.group(0)[1:], 8)])
+
+
+def _parse_ascii_path_from_git(ascii_str: str) -> Path:
+    assert ascii_str.isascii()
+
+    if ascii_str.startswith('"') and ascii_str.endswith('"'):
+        path_bytes = ascii_str[1:-1].encode("ascii")
+        path_bytes = re.sub(_ESCAPE_REGEX, _handle_special_git_escape, path_bytes)
+
+        # Avoid encoding errors, so that a weird file name will not prevent
+        # other files from working properly
+        return Path(path_bytes.decode(sys.getfilesystemencoding(), errors="replace"))
+    else:
+        return Path(ascii_str)
 
 
 def run_git_status(project_root: Path) -> dict[Path, str]:
@@ -57,7 +100,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
     # Show .git as ignored, even though it actually isn't
     result = {project_root / ".git": "git_ignored"}
     for line in run_result.stdout.splitlines():
-        path = project_root / line[3:]
+        path = project_root / _parse_ascii_path_from_git(line[3:])
         if line[1] == "M":
             result[path] = "git_modified"
         elif line[1] == " ":
