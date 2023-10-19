@@ -15,7 +15,6 @@ jobs:
         cache: pip
     - run: pip install wheel
     - run: pip install -r requirements.txt -r requirements-dev.txt
-    - run: pip install toml
     - uses: egor-tensin/setup-clang@v1
       with:
         platform: x64
