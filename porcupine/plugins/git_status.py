@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
-import re
+import ast
 import subprocess
 import sys
 import time
@@ -29,40 +29,25 @@ log = logging.getLogger(__name__)
 git_pool = ThreadPoolExecutor(max_workers=os.cpu_count())
 
 
-# Assuming utf-8 file system encoding, git outputs "\303\266rkki\303\244inen.txt"
-# with the quotes when it means örkkiäinen.txt.
+# Assuming utf-8 file system encoding, when git means örkkiäinen.txt,
+# it actually outputs "\303\266rkki\303\244inen.txt" with the quotes.
 #
-# The \xxx means byte xxx specified as octal. First digit is 0-3 because the
-# biggest possible byte value is 255, which is 0o377 octal.
+# The simplest way to parse this seems to be treating it as a Python
+# byte string:
 #
-# Because this would be too easy, Git also special-cases some characters. For
-# example, tabs come out as \t rather than \011.
-_SPECIAL_ESCAPES = {
-    # There are probably more, but hopefully this covers everything
-    # that comes up in real-world projects
-    b"\\t": b"\t",  # \t = tab
-    b"\\r": b"\r",  # \r = CR byte (part of CRLF newline: \r\n)
-    b"\\n": b"\n",  # \n = newline
-    b'\\"': b'"',  # \" = quote
-    b"\\\\": b"\\",  # \\ = literal backslash (not path separator)
-}
-_ESCAPE_REGEX = rb"\\[0-3][0-7][0-7]|" + b"|".join(map(re.escape, _SPECIAL_ESCAPES.keys()))
-
-
-def _handle_special_git_escape(match: re.Match[bytes]) -> bytes:
-    try:
-        return _SPECIAL_ESCAPES[match.group(0)]
-    except KeyError:
-        # b"\123" --> bytes([0o123])
-        return bytes([int(match.group(0)[1:], 8)])
-
-
+#    >>> eval(r'b"\303\266rkki\303\244inen.txt"')
+#    b'\xc3\xb6rkki\xc3\xa4inen.txt'
+#    >>> eval(r'b"\303\266rkki\303\244inen.txt"').decode("utf-8")
+#    'örkkiäinen.txt'
+#
+# This works because git's weird quoting is apparently close enough
+# to Python's string syntax.
 def _parse_ascii_path_from_git(ascii_str: str) -> Path:
     assert ascii_str.isascii()
 
     if ascii_str.startswith('"') and ascii_str.endswith('"'):
-        path_bytes = ascii_str[1:-1].encode("ascii")
-        path_bytes = re.sub(_ESCAPE_REGEX, _handle_special_git_escape, path_bytes)
+        # ast.literal_eval() is a safe/restricted version of the usual eval()
+        path_bytes = ast.literal_eval('b' + ascii_str)
 
         # Avoid encoding errors, so that a weird file name will not prevent
         # other files from working properly
