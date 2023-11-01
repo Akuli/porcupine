@@ -30,6 +30,19 @@ jobs:
     - run: python3 -m pyupgrade $(cat filelist.txt) --keep-runtime-typing --py38-plus --exit-zero-even-if-changed
     - run: python3 -m black $(cat filelist.txt)
     - run: python3 -m isort $(cat filelist.txt)
+    # I like requirements-dev.txt and some other people like pyproject.toml, so we have both.
+    # Auto-generating is the easiest way to ensure the two stay in sync.
+    - name: Generate requirements-dev.txt from pyproject.toml
+      run: |
+        echo "# Auto-generated in GitHub Actions. See autofix.yml." > pr/requirements-dev.txt
+        pip install tomli
+        python3 -c 'if True:
+          import tomli
+          with open("pr/pyproject.toml", "rb") as f:
+            content = tomli.load(f)
+          for dep in content["project"]["optional-dependencies"]["dev"]:
+            print(dep)
+        ' >> pr/requirements-dev.txt
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         repository: ./pr
