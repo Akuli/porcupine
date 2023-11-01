@@ -32,8 +32,10 @@ jobs:
     - run: python3 -m isort $(cat filelist.txt)
     # I like requirements-dev.txt and some other people like pyproject.toml, so we have both.
     # Auto-generating is the easiest way to ensure the two stay in sync.
-    - run: |
+    - name: Generate requirements-dev.txt from pyproject.toml
+      run: |
         echo "# Auto-generated in GitHub Actions. See autofix.yml." > pr/requirements-dev.txt
+        pip install tomli
         python3 -c 'if True:
           import tomli
           with open("pr/pyproject.toml", "rb") as f:
