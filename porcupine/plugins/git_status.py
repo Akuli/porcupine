@@ -1,9 +1,9 @@
 """Color items in the directory tree based on their git status."""
 from __future__ import annotations
 
+import ast
 import logging
 import os
-import ast
 import subprocess
 import sys
 import time
@@ -47,7 +47,7 @@ def _parse_ascii_path_from_git(ascii_str: str) -> Path:
 
     if ascii_str.startswith('"') and ascii_str.endswith('"'):
         # ast.literal_eval() is a safe/restricted version of the usual eval()
-        path_bytes = ast.literal_eval('b' + ascii_str)
+        path_bytes = ast.literal_eval("b" + ascii_str)
 
         # Avoid encoding errors, so that a weird file name will not prevent
         # other files from working properly
