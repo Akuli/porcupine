@@ -50,7 +50,10 @@ def _parse_ascii_path_from_git(ascii_str: str) -> Path:
         path_bytes = ast.literal_eval("b" + ascii_str)
 
         # Avoid encoding errors, so that a weird file name will not prevent
-        # other files from working properly
+        # other files from working properly.
+        #
+        # TODO: sys.getfilesystemencoding() seems to always be UTF-8, even
+        #       on Windows, so not sure if this should always use utf-8
         return Path(path_bytes.decode(sys.getfilesystemencoding(), errors="replace"))
     else:
         return Path(ascii_str)
