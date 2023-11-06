@@ -52,14 +52,8 @@ def _listener2queue(listener: connection.Listener, object_queue: queue.Queue[Any
 
 
 def start_session() -> tuple[connection.Listener, queue.Queue[Any]]:
-    """Context manager that listens for send().
-
-    Use this as a context manager:
-
-        # the queue will contain objects from send()
-        with session() as message_queue:
-            # start something that processes items in the queue and run
-            # the application
+    """Start the listener session. Return the listener object, and the message queue.
+    The listener has to be closed manually.
     """
     message_queue: queue.Queue[Any] = queue.Queue()
     listener = connection.Listener()
