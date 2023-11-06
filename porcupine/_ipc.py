@@ -58,7 +58,7 @@ def start_session() -> tuple[connection.Listener, queue.Queue[Any]]:
     message_queue: queue.Queue[Any] = queue.Queue()
     listener = connection.Listener()
 
-    _ADDRESS_FILE.touch()
+    _ADDRESS_FILE.touch(parents=True)
     with _ADDRESS_FILE.open("w") as file:
         print(listener.address, file=file)
 
