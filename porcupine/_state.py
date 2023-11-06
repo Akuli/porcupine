@@ -42,6 +42,8 @@ class _State:
 # global state makes some things a lot easier (I'm sorry)
 _global_state: _State | None = None
 
+Quit = object()
+
 
 def _log_tkinter_error(
     exc: Type[BaseException], val: BaseException, tb: types.TracebackType | None
@@ -63,9 +65,6 @@ def open_files(files: Iterable[str]) -> None:
             tabmanager.add_tab(FileTab(tabmanager, content=sys.stdin.read()))
         else:
             tabmanager.open_file(Path(path_string))
-
-
-Quit = object()
 
 
 def listen_for_files(message_queue: queue.Queue):
@@ -192,7 +191,6 @@ def quit() -> None:
             return
 
     _ipc.send([Quit])
-
     _get_state().ipc_session.close()
 
     for tab in get_tab_manager().tabs():

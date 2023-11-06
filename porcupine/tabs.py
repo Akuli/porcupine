@@ -86,7 +86,6 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-
         self.bind("<<NotebookTabChanged>>", self._on_tab_selected, add=True)
         self.bind("<<FileSystemChanged>>", self._on_fs_changed, add=True)
         self.winfo_toplevel().bind("<FocusIn>", self._handle_main_window_focus, add=True)
