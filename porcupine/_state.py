@@ -9,9 +9,13 @@ import threading
 import tkinter
 import types
 from pathlib import Path
-from typing import Any, Callable, Type
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Type
+import queue
+
+from multiprocessing import connection
 
 from porcupine import _ipc, images, tabs, utils
+from porcupine.tabs import FileTab
 
 # Windows resolution
 if sys.platform == "win32":
@@ -34,6 +38,7 @@ class _State:
     tab_manager: tabs.TabManager
     quit_callbacks: list[Callable[[], bool]]
     parsed_args: Any  # not None
+    ipc_session: connection.Listener
 
 
 # global state makes some things a lot easier (I'm sorry)
@@ -44,10 +49,6 @@ def _log_tkinter_error(
     exc: Type[BaseException], val: BaseException, tb: types.TracebackType | None
 ) -> Any:
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
-
-
-class Quit:
-    ...
 
 
 def open_files(files: Iterable[str]) -> None:
@@ -61,24 +62,27 @@ def open_files(files: Iterable[str]) -> None:
             #   ^D
             #   bla bla
             #   ^D
-            tabmanager.file_queue.put(sys.stdin.read())
+            tabmanager.add_tab(FileTab(tabmanager, content=sys.stdin.read()))
         else:
-            tabmanager.file_queue.put(Path(path_string))
-
-    tabmanager.event_generate("<<OpenFilesQueue>>")
+            tabmanager.open_file(Path(path_string))
 
 
-def listen_for_files():
-    with _ipc.session() as ipc_message_queue:
-        while True:
-            message = ipc_message_queue.get()
-            if message is Quit:
-                break
-            else:
-                try:
-                    open_files([message])
-                except Exception as e:
-                    log.error(e)
+Quit = object()
+
+
+def listen_for_files(message_queue: queue.Queue):
+    try:
+        message = message_queue.get_nowait()
+    except queue.Empty:
+        message = None
+    else:
+        try:
+            open_files([message])
+        except Exception as e:
+            log.error(e)
+
+    if message is not Quit:
+        _get_state().root.after(500, listen_for_files, message_queue)
 
 
 # undocumented on purpose, don't use in plugins
@@ -93,9 +97,9 @@ def init(args: Any) -> None:
     try:
         _ipc.send(args.files)
     except ConnectionRefusedError:
-        thread = threading.Thread(target=listen_for_files, daemon=True).start()
+        ipc_session, message_queue = _ipc.start_session()
     else:
-        log.error("another instance of Porcupine is already running, files were sent to it")
+        log.info("another instance of Porcupine is already running, files were sent to it")
         sys.exit()
 
     root = tkinter.Tk(className="Porcupine")  # class name shows up in my alt+tab list
@@ -126,7 +130,11 @@ def init(args: Any) -> None:
         tab_manager=tab_manager,
         quit_callbacks=[],
         parsed_args=args,
+        ipc_session=ipc_session,
     )
+
+    listen_for_files(message_queue)
+
     log.debug("init() done")
 
 
@@ -186,6 +194,8 @@ def quit() -> None:
             return
 
     _ipc.send([Quit])
+
+    _get_state().ipc_session.close()
 
     for tab in get_tab_manager().tabs():
         get_tab_manager().close_tab(tab)

@@ -123,6 +123,7 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+
     _state.init(args)
 
     # Prevent showing up a not-ready-yet root window to user
@@ -139,6 +140,7 @@ def main() -> None:
         get_main_window().mainloop()
     finally:
         settings.save()
+
     log.info("exiting Porcupine successfully")
 
 

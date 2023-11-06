@@ -9,7 +9,6 @@ import importlib
 import itertools
 import logging
 import os
-import queue
 import tkinter
 import traceback
 from pathlib import Path
@@ -87,11 +86,9 @@ class TabManager(ttk.Notebook):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.file_queue = queue.Queue()
 
         self.bind("<<NotebookTabChanged>>", self._on_tab_selected, add=True)
         self.bind("<<FileSystemChanged>>", self._on_fs_changed, add=True)
-        self.bind("<<OpenFilesQueue>>", self.open_from_queue, add=True)
         self.winfo_toplevel().bind("<FocusIn>", self._handle_main_window_focus, add=True)
 
         # the string is call stack for adding callback
@@ -161,18 +158,6 @@ class TabManager(ttk.Notebook):
         # tkinter has a bug that makes the original tabs() return widget name
         # strings instead of widget objects
         return tuple(self.nametowidget(tab) for tab in super().tabs())
-
-    def open_from_queue(self, event: tkinter.Event):
-        while True:
-            try:
-                to_topen = self.file_queue.get(False)
-            except queue.Empty:
-                break
-
-            if isinstance(to_topen, str):
-                self.add_tab(FileTab(self, content=to_topen))
-            else:
-                self.open_file(to_topen)
 
     def open_file(self, path: Path) -> FileTab | None:
         """Add a :class:`FileTab` for editing a file and select it.

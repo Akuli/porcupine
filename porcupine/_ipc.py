@@ -52,8 +52,7 @@ def _listener2queue(listener: connection.Listener, object_queue: queue.Queue[Any
                     break
 
 
-@contextlib.contextmanager
-def session() -> Iterator[queue.Queue[Any]]:
+def start_session() -> tuple[connection.Listener, queue.Queue[Any]]:
     """Context manager that listens for send().
 
     Use this as a context manager:
@@ -64,11 +63,12 @@ def session() -> Iterator[queue.Queue[Any]]:
             # the application
     """
     message_queue: queue.Queue[Any] = queue.Queue()
-    with connection.Listener() as listener:
-        with _ADDRESS_FILE.open("w") as file:
-            print(listener.address, file=file)
-        thread = threading.Thread(
-            target=_listener2queue, args=[listener, message_queue], daemon=True
-        )
-        thread.start()
-        yield message_queue
+    listener = connection.Listener()
+
+    with _ADDRESS_FILE.open("w") as file:
+        print(listener.address, file=file)
+
+    thread = threading.Thread(target=_listener2queue, args=[listener, message_queue], daemon=True)
+    thread.start()
+
+    return listener, message_queue
