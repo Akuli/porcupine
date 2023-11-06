@@ -67,7 +67,7 @@ def open_files(files: Iterable[str]) -> None:
             tabmanager.open_file(Path(path_string))
 
 
-def listen_for_files(message_queue: queue.Queue):
+def listen_for_files(message_queue: queue.Queue[Any]) -> None:
     try:
         message = message_queue.get_nowait()
     except queue.Empty:
