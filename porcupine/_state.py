@@ -4,15 +4,13 @@ from __future__ import annotations
 import dataclasses
 import logging
 import os
+import queue
 import sys
-import threading
 import tkinter
 import types
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Type
-import queue
-
 from multiprocessing import connection
+from pathlib import Path
+from typing import Any, Callable, Iterable, Type
 
 from porcupine import _ipc, images, tabs, utils
 from porcupine.tabs import FileTab

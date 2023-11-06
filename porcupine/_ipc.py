@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import contextlib
 import queue
 import threading
 from multiprocessing import connection
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from porcupine import dirs
 
