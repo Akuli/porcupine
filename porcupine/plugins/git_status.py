@@ -1,6 +1,7 @@
 """Color items in the directory tree based on their git status."""
 from __future__ import annotations
 
+import ast
 import logging
 import os
 import subprocess
@@ -26,6 +27,36 @@ log = logging.getLogger(__name__)
 
 # Each git subprocess uses one cpu core
 git_pool = ThreadPoolExecutor(max_workers=os.cpu_count())
+
+
+# Assuming utf-8 file system encoding, when git means örkkiäinen.txt,
+# it actually outputs "\303\266rkki\303\244inen.txt" with the quotes.
+#
+# The simplest way to parse this seems to be treating it as a Python
+# byte string:
+#
+#    >>> eval(r'b"\303\266rkki\303\244inen.txt"')
+#    b'\xc3\xb6rkki\xc3\xa4inen.txt'
+#    >>> eval(r'b"\303\266rkki\303\244inen.txt"').decode("utf-8")
+#    'örkkiäinen.txt'
+#
+# This works because git's weird quoting is apparently close enough
+# to Python's string syntax.
+def _parse_ascii_path_from_git(ascii_str: str) -> Path:
+    assert ascii_str.isascii()
+
+    if ascii_str.startswith('"') and ascii_str.endswith('"'):
+        # ast.literal_eval() is a safe/restricted version of the usual eval()
+        path_bytes = ast.literal_eval("b" + ascii_str)
+
+        # Avoid encoding errors, so that a weird file name will not prevent
+        # other files from working properly.
+        #
+        # TODO: sys.getfilesystemencoding() seems to always be UTF-8, even
+        #       on Windows, so not sure if this should always use utf-8
+        return Path(path_bytes.decode(sys.getfilesystemencoding(), errors="replace"))
+    else:
+        return Path(ascii_str)
 
 
 def run_git_status(project_root: Path) -> dict[Path, str]:
@@ -57,7 +88,7 @@ def run_git_status(project_root: Path) -> dict[Path, str]:
     # Show .git as ignored, even though it actually isn't
     result = {project_root / ".git": "git_ignored"}
     for line in run_result.stdout.splitlines():
-        path = project_root / line[3:]
+        path = project_root / _parse_ascii_path_from_git(line[3:])
         if line[1] == "M":
             result[path] = "git_modified"
         elif line[1] == " ":

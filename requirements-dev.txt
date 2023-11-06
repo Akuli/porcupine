@@ -1,3 +1,4 @@
+# Auto-generated in GitHub Actions. See autofix.yml.
 pytest==6.2.5
 pytest-cov==4.0.0
 pytest-mock==3.10.0
@@ -8,8 +9,6 @@ pyupgrade==3.9.0
 sphinx>=4.0.0, <5.0.0
 pillow>=5.4.1
 requests>=2.24.0, <3.0.0
-
-# type checking, exact versions to avoid "works on my computer" problems
 mypy==1.1.1
 types-Pygments==2.14.0.6
 types-docutils==0.19.1.6
