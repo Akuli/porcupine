@@ -1,20 +1,10 @@
+from __future__ import annotations
+
 import argparse
 import logging
-import sys
-from pathlib import Path
 
 from porcupine import __version__ as porcupine_version
-from porcupine import (
-    _logs,
-    _state,
-    dirs,
-    get_main_window,
-    get_tab_manager,
-    menubar,
-    pluginloader,
-    settings,
-    tabs,
-)
+from porcupine import _logs, _state, dirs, get_main_window, menubar, pluginloader, settings
 
 log = logging.getLogger(__name__)
 
@@ -133,6 +123,7 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+
     _state.init(args)
 
     # Prevent showing up a not-ready-yet root window to user
@@ -142,25 +133,14 @@ def main() -> None:
     menubar._init()
     pluginloader.run_setup_functions(args.shuffle_plugins)
 
-    tabmanager = get_tab_manager()
-    for path_string in args.files:
-        if path_string == "-":
-            # don't close stdin so it's possible to do this:
-            #
-            #   $ porcu - -
-            #   bla bla bla
-            #   ^D
-            #   bla bla
-            #   ^D
-            tabmanager.add_tab(tabs.FileTab(tabmanager, content=sys.stdin.read()))
-        else:
-            tabmanager.open_file(Path(path_string))
+    _state.open_files(args.files)
 
     get_main_window().deiconify()
     try:
         get_main_window().mainloop()
     finally:
         settings.save()
+
     log.info("exiting Porcupine successfully")
 
 
