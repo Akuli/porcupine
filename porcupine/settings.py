@@ -895,10 +895,8 @@ def _is_monospace(font_family: str) -> bool:
     if "emoji" in font_family.lower():
         return False
 
-    # Let's first ask Tcl whether the font is fixed. This is fastest but
-    # returns the wrong result for some fonts that are not actually monospace.
-    if not tcl_interpreter.call("font", "metrics", (font_family, "12"), "-fixed"):
-        return False
+    # We can't use "font metrics ... -fixed" because it is sometimes wrong.
+    # https://github.com/Akuli/porcupine/issues/1368
 
     # In non-monospace fonts, i is very narrow and m is very wide.
     # Also, make sure that bolding or italic doesn't change the width.
@@ -923,7 +921,7 @@ def _get_monospace_font_families() -> list[str]:
             cache = json.load(file)
 
         # all_families stored to cache in case user installs more fonts
-        if cache["version"] == 2 and cache["all_families"] == all_families:
+        if cache["version"] == 3 and cache["all_families"] == all_families:
             _log.debug(f"Taking list of monospace families from {cache_path}")
             return cache["monospace_families"]
 
@@ -939,7 +937,7 @@ def _get_monospace_font_families() -> list[str]:
         with cache_path.open("w") as file:
             json.dump(
                 {
-                    "version": 2,
+                    "version": 3,
                     "all_families": all_families,
                     "monospace_families": monospace_families,
                 },
