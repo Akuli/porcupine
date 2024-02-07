@@ -18,7 +18,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "porcupine"
-version = "2023.06.27"
+version = "2024.02.07"
 description = "A decent editor written in tkinter"
 authors = [{name = "Akuli", email = "akuviljanen17@gmail.com"}]
 readme = "README.md"
