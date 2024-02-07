@@ -124,3 +124,10 @@ def setup() -> None:
 
     get_tab_manager().bind("<<ThemeChanged>>", update_button_style, add=True)
     update_button_style()
+
+
+def get_statusbar(tab: tabs.FileTab) -> StatusBar | None:
+    try:
+        return tab.bottom_frame.nametowidget("statusbar")
+    except KeyError:
+        return None
