@@ -27,7 +27,6 @@ Then install Python 3.8 or newer and [git](https://git-scm.com/), and run these 
     cd porcupine
     python3 -m venv env
     source env/bin/activate
-    pip install -r requirements.txt
     pip install -r requirements-dev.txt
     python3 -m porcupine
 

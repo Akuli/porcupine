@@ -1,4 +1,20 @@
 # Auto-generated in GitHub Actions. See autofix.yml.
+platformdirs>=3.0.0,<4.0.0
+Pygments==2.12.0
+toposort>=1.5
+colorama>=0.2.5
+sansio-lsp-client>=0.10.0,<0.11.0
+python-language-server[rope,pyflakes]>=0.36.2,<1.0.0
+black>=21.5b2
+isort>=5.10
+typing_extensions
+dacite>=1.5.1,<2.0.0
+tomli==2.0.1
+send2trash>=1.8.0,<2.0.0
+psutil>=5.8.0,<6.0.0
+PyYAML==6.0
+tree-sitter-builds==2023.3.12
+sv-ttk>=2.5.5
 pytest==6.2.5
 pytest-cov==4.0.0
 pytest-mock==3.10.0
