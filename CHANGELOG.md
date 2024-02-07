@@ -7,7 +7,7 @@ and other details that don't affect using Porcupine.
 Bug fixes:
 - Porcupine no longer crashes on Mac when you try to open a file. Thank you [ThePhilgrim](https://github.com/ThePhilgrim) for fixing this.
 - When the stop button (or other buttons) in the top right corner of the command output area are hovered, they display tooltips that explain what the buttons do. These tooltips no longer go partially off the screen when the Porcupine window is maximized or dragged to the right edge of the screen. Thank you [lawson89](https://github.com/lawson89) for fixing this.
-- The directory tree now colors file names with non-ASCII characters correctly based on their Git status. For example, when a file has been `git add`ed, it will now become green regardless of its file name. In previous versions, files named e.g. `örkkiäinen.txt` were always white.
+- The directory tree now colors file names with non-ASCII characters correctly based on their Git status. For example, when a file is `git add`ed, it will now become green regardless of its file name. In previous versions, files named e.g. `örkkiäinen.txt` were always white.
 - On some systems, such as Debian 12, the font chooser in Porcupine Settings now shows more fonts than before, and doesn't show a confusing warning triangle when the default font is selected.
 - In previous versions, the "Jumping to previous/next anchor cycles to end/start of file" setting didn't work when the file contained only one anchor point. Thank you [ThePhilgrim](https://github.com/ThePhilgrim) for reporting this.
 
