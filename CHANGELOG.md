@@ -2,6 +2,23 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+Bug fixes:
+- Porcupine no longer crashes on Mac when you try to open a file. Thank you [ThePhilgrim](https://github.com/ThePhilgrim) for fixing this.
+- When the stop button (or other buttons) in the top right corner of the command output area are hovered, they display tooltips that explain what the buttons do. These tooltips no longer go partially off the screen when the Porcupine window is maximized or dragged to the right edge of the screen. Thank you [lawson89](https://github.com/lawson89) for fixing this.
+- The directory tree now colors file names with non-ASCII characters correctly based on their Git status. In previous versions, files named e.g. `örkkiäinen.txt` always show up in white, even if they're about to be included in the next Git commit.
+- On some systems, such as Debian 12, the font chooser in Porcupine Settings now shows more fonts than before, and doesn't show a confusing warning triangle when the default font is selected.
+- In previous versions, the "Jumping to previous/next anchor cycles to end/start of file" setting didn't work when the file contained only one anchor point. Thank you [ThePhilgrim](https://github.com/ThePhilgrim) for reporting this.
+
+Other changes:
+- Porcupine no longer runs on Python 3.7.
+- Ctrl+Y does redo (that is, reverting a Ctrl+Z) also on Linux. Previously Linux users needed Ctrl+Shift+Z for redo.
+- Ctrl+/ now comments selected lines, somewhat similarly to typing the filetype's comment character (e.g. `#` in a Python file).
+- *Sort Lines* in the *Edit* menu now takes only the lines with the same indentation when nothing is selected. This makes it usable for sorting long Python lists and dicts, for example.
+- Previously the encoding chooser was just a big list of encodings with no explanation. Now it's easy to choose between UTF-8 and Latin-1, and the encoding chooser explains their advantages and disadvantages.
+
+
 ## v2023.06.27
 
 New features:
