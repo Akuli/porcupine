@@ -15,7 +15,7 @@ import platformdirs
 version_info = (2023, 6, 27)  # this is updated with scripts/release.py
 __version__ = "%d.%02d.%02d" % version_info
 __author__ = "Akuli"
-__copyright__ = "Copyright (c) 2017-2023 Akuli"
+__copyright__ = "Copyright (c) 2017-2024 Akuli"
 __license__ = "MIT"
 
 if sys.platform in {"win32", "darwin"}:
