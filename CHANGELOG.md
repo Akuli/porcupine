@@ -15,7 +15,7 @@ Other changes:
 - Porcupine no longer runs on Python 3.7.
 - Ctrl+Y does redo (that is, reverting a Ctrl+Z) also on Linux. Previously Linux users needed Ctrl+Shift+Z for redo.
 - Ctrl+/ now comments selected lines, somewhat similarly to typing the filetype's comment character (e.g. `#` in a Python file).
-- *Sort Lines* in the *Edit* menu now takes only the lines with the same indentation when nothing is selected. This makes it usable for sorting long Python lists and dicts, for example.
+- *Sort Lines* in the *Edit* menu now takes only the lines with the same indentation when nothing is selected. This is convenient for sorting long Python lists and dicts.
 - Previously the encoding chooser was just a big list of encodings with no explanation. Now it's easy to choose between UTF-8 and Latin-1, and the encoding chooser explains their advantages and disadvantages.
 
 
