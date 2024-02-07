@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## v2024.02.07
+## Unreleased
 
 Bug fixes:
 - Porcupine no longer crashes on Mac when you try to open a file. Thank you [ThePhilgrim](https://github.com/ThePhilgrim) for fixing this.
