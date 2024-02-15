@@ -233,14 +233,14 @@ filetypes_var: tkinter.StringVar
 
 def _sync_filetypes_menu(event: object = None) -> None:
     tab = get_tab_manager().select()
-    filetype_name: str = ""
+    filetype_name: str | None = ""
     if isinstance(tab, tabs.FileTab):
         try:
-            filetype_name = tab.settings.get("filetype_name", str)
+            filetype_name = tab.settings.get("filetype_name", Optional[str])
         except KeyError:
             pass
 
-    filetypes_var.set(filetype_name)
+    filetypes_var.set(filetype_name or "")
 
 
 def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
@@ -278,5 +278,5 @@ def setup() -> None:
     new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None
     for filetype in new_file_filetypes:
         tab = tabs.FileTab(get_tab_manager())
-        get_tab_manager().add_tab(tab)  # sets default filetype
         apply_filetype_to_tab(filetype, tab)  # sets correct filetype
+        get_tab_manager().add_tab(tab)

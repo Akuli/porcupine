@@ -18,7 +18,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "porcupine"
-version = "2023.06.27"
+version = "2024.02.07"
 description = "A decent editor written in tkinter"
 authors = [{name = "Akuli", email = "akuviljanen17@gmail.com"}]
 readme = "README.md"
@@ -41,7 +41,8 @@ dependencies = [
     "psutil>=5.8.0,<6.0.0",
     "PyYAML>=6.0,<7",
     "tree-sitter-builds==2023.3.12",
-    "sv-ttk>=2.5.5",
+    # TODO: upgrade sv-ttk
+    "sv-ttk==2.5.5",
 ]
 
 [project.optional-dependencies]

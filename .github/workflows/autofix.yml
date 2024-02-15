@@ -40,6 +40,8 @@ jobs:
           import tomli
           with open("pr/pyproject.toml", "rb") as f:
             content = tomli.load(f)
+          for dep in content["project"]["dependencies"]:
+            print(dep)
           for dep in content["project"]["optional-dependencies"]["dev"]:
             print(dep)
         ' >> pr/requirements-dev.txt

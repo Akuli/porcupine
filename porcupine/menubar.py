@@ -255,7 +255,7 @@ def register_enabledness_check_event(event: str) -> None:
     get_tab_manager().bind(event, _refresh_menu_item_enabledness, add=True)
 
 
-def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab], bool]) -> None:
+def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab | None], bool]) -> None:
     """Use this for disabling menu items depending on the currently selected tab.
 
     When the selected :class:`~porcupine.tabs.Tab` changes, ``callback`` will
@@ -295,7 +295,7 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab], bool]) ->
         index = _find_item(menu, child)
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
-        if tab is not None and callback(tab):
+        if callback(tab):
             menu.entryconfig(index, state="normal")
         else:
             menu.entryconfig(index, state="disabled")
