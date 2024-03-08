@@ -2,6 +2,15 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+Bug fixes:
+- Installing Porcupine no longer fails on MacOS. In previous versions, there was an error caused by the PyYAML dependency.
+- The *File* → *Quit* menu item works again. Previously it was always grayed out, and nothing happened when it was clicked. Thank you [Tuomas](https://github.com/taahol) for fixing this.
+- The *Filetypes* menu no longer displays the wrong filetype in some situations. Thank you [Tuomas](https://github.com/taahol) for fixing this.
+- Porcupine should no longer segfault in a corner case that happens only on some Linux systems with the `Amiri Quran Colored` font installed (see issue [#1442](https://github.com/Akuli/porcupine/issues/1442)). This is technically a bug in Tk, but Porcupine now contains a workaround for the bug.
+
+
 ## v2024.02.07
 
 Bug fixes:
