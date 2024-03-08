@@ -884,6 +884,8 @@ def use_pygments_fg_and_bg(
 
 
 def _is_monospace(font_family: str) -> bool:
+    _log.debug(f"checking whether font {font_family!r} is monospace")
+
     # Ignore weird fonts starting with @ (happens on Windows)
     if font_family.startswith("@"):
         return False
@@ -891,8 +893,11 @@ def _is_monospace(font_family: str) -> bool:
     # I don't want to create font objects just for this, lol
     tcl_interpreter = get_dialog_content().tk
 
-    # https://core.tcl-lang.org/tk/info/3767882e06
-    if "emoji" in font_family.lower():
+    # "Noto Color Emoji" font causes segfault: https://core.tcl-lang.org/tk/info/3767882e06
+    #
+    # There is also segfault with "Amiri Quran Colored" font (see #1442).
+    # I haven't reported to Tk's bug tracker because I couldn't reproduce it myself.
+    if "emoji" in font_family.lower() or "colored" in font_family.lower():
         return False
 
     # We can't use "font metrics ... -fixed" because it is sometimes wrong.
