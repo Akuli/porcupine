@@ -12,7 +12,7 @@ import sys
 
 import platformdirs
 
-version_info = (2024, 2, 7)  # this is updated with scripts/release.py
+version_info = (2024, 3, 9)  # this is updated with scripts/release.py
 __version__ = "%d.%02d.%02d" % version_info
 __author__ = "Akuli"
 __copyright__ = "Copyright (c) 2017-2024 Akuli"
