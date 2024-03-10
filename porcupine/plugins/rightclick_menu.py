@@ -36,7 +36,7 @@ def create_menu() -> tkinter.Menu:
 
 def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
     rm = create_menu()
-    rm.tk_popup(event.x_root+10, event.y_root)
+    rm.tk_popup(event.x_root + 10, event.y_root)
     rm.bind("<Unmap>", (lambda event: rm.after_idle(rm.destroy)), add=True)
 
 

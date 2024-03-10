@@ -52,7 +52,7 @@ def show_menu(event: tkinter.Event[tabs.TabManager]) -> None:
         label="Close other tabs", command=partial(close_clicked_tab, event, what2close="others")
     )
 
-    menu.tk_popup(event.x_root+10, event.y_root)
+    menu.tk_popup(event.x_root + 10, event.y_root)
     menu.bind("<Unmap>", (lambda event: menu.after_idle(menu.destroy)), add=True)
 
 
