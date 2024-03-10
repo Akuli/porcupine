@@ -431,7 +431,7 @@ class DirectoryTree(ttk.Treeview):
         self._populate_contextmenu()
         if self.contextmenu.index("end") is not None:
             # Menu is not empty
-            self.contextmenu.tk_popup(menu_x, menu_y)
+            self.contextmenu.tk_popup(menu_x+15, menu_y)
         return "break"
 
 
