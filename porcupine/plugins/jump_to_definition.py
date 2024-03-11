@@ -70,7 +70,7 @@ def find_cursor_xy(textwidget: tkinter.Text) -> tuple[int, int]:
     
     top += textwidget.winfo_rooty()
 
-    return (left + 1, top + height + 1)
+    return (left + 10, top + height + 10)
 
 
 def receive_jump(event: utils.EventWithData) -> None:
