@@ -67,9 +67,10 @@ def find_cursor_xy(textwidget: tkinter.Text) -> tuple[int, int]:
 
     # Make coords relative to top left corner of screen, not text widget
     left += textwidget.winfo_rootx()
+
     top += textwidget.winfo_rooty()
 
-    return (left, top + height)
+    return (left + 10, top + height + 10)
 
 
 def receive_jump(event: utils.EventWithData) -> None:
