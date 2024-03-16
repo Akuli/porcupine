@@ -32,15 +32,15 @@ def x_days_ago(days: int) -> str:
     if months < 12:
         return f"about {months} months ago"
     if months == 12:
-        return "about 1 year ago"
+        return "about a year ago"
     if months == 13:
-        return "about 1 year and 1 month ago"
+        return "about a year and a month ago"
     if months < 24:
-        return f"about 1 year and {months - 12} months ago"
+        return f"about a year and {months - 12} months ago"
     if months % 24 == 0:
         return f"about {months // 12} years ago"
     if months % 24 == 1:
-        return f"about {months // 12} years and 1 month ago"
+        return f"about {months // 12} years and a month ago"
     return f"about {months // 12} years and {months % 12} months ago"
 
 
