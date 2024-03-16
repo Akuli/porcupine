@@ -73,7 +73,7 @@ def fetch_release_creator(version: str) -> str | None:
         return None
 
     for commit in response.json():
-        if commit["commit"]["message"] == f"Version v{version}":
+        if commit["commit"]["message"] == f"Version v{version.lstrip('v')}":
             return commit["author"]["login"]
 
     # script no longer used in a future version of Porcupine?
