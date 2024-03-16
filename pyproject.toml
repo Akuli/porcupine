@@ -41,6 +41,7 @@ dependencies = [
     "psutil>=5.8.0,<6.0.0",
     "PyYAML>=6.0,<7",
     "tree-sitter-builds==2023.3.12",
+    "requests>=2.24.0, <3.0.0",
     # TODO: upgrade sv-ttk
     "sv-ttk==2.5.5",
 ]
@@ -56,7 +57,6 @@ dev = [
     "pyupgrade==3.9.0",
     "sphinx>=4.0.0, <5.0.0",
     "pillow>=5.4.1",
-    "requests>=2.24.0, <3.0.0",
 
     # type checking, exact versions to avoid "works on my computer" problems
     "mypy==1.1.1",
@@ -70,6 +70,7 @@ dev = [
     "types-PyYAML==6.0.12.8",
     "types-tree-sitter==0.20.1.2",
     "types-tree-sitter-languages==1.5.0.2",
+    "types-requests==2.31.0.20240311",
 ]
 
 [project.scripts]
