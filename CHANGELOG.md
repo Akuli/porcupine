@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## v2024.03.09
+## Unreleased
 
 Bug fixes:
 - Installing Porcupine no longer fails on MacOS. In previous versions, there was an error caused by the PyYAML dependency.
