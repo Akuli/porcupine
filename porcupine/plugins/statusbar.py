@@ -21,6 +21,9 @@ class StatusBar(ttk.Frame):
         # disappears before path truncates
         self.path_label = ttk.Label(self._top_frame)
         self.path_label.pack(side="left")
+
+        self._showing_special_message = False
+
         self._line_ending_button = ttk.Button(
             self._top_frame, command=self._choose_line_ending, style="Statusbar.TButton", width=0
         )
@@ -34,7 +37,7 @@ class StatusBar(ttk.Frame):
         self.selection_label.pack(side="left")
 
     def update_labels(self, junk: object = None) -> None:
-        if not self.path_label["foreground"]:  # reload warning not going on
+        if not self._showing_special_message:
             self.path_label.config(text=str(self._tab.path or "File not saved yet"))
 
         try:
@@ -70,13 +73,18 @@ class StatusBar(ttk.Frame):
             text=self._tab.settings.get("line_ending", settings.LineEnding).name
         )
 
+    def show_special_message(self, text: str) -> None:
+        self.path_label.config(text=text)
+        self._showing_special_message = True
+
     def show_reload_warning(self, event: utils.EventWithData) -> None:
         if event.data_class(tabs.ReloadInfo).had_unsaved_changes:
             oops = utils.get_binding("<<Undo>>")
             text = f"File was reloaded with unsaved changes. Press {oops} to get your changes back."
-            self.path_label.config(foreground="red", text=text)
+            self._show_special_message(text)
+            self.path_label.config(foreground="red")
 
-    def clear_reload_warning(self, junk: object) -> None:
+    def clear_special_message(self, junk: object) -> None:
         self.path_label.config(foreground="")
         self.update_labels()
 
@@ -96,12 +104,28 @@ class StatusBar(ttk.Frame):
         self._tab.settings.set("line_ending", utils.ask_line_ending(old_value))
 
 
-def on_new_filetab(tab: tabs.FileTab) -> None:
+_global_message: str | None = None
+
+
+def set_global_message(message: str | None) -> None:
+    """Display a message whenever a new tab is opened.
+
+    This is currently used for notifying the user about a new Porcupine
+    version. Feel free to expand the status bar's API a lot beyond this
+    if you need something more advanced.
+    """
+    global _global_message
+    _global_message = message
+
+
+def _on_new_filetab(tab: tabs.FileTab) -> None:
     statusbar = StatusBar(tab)
     statusbar.pack(side="bottom", fill="x")
+    if _global_message is not None:
+        statusbar.show_special_message(_global_message)
 
     utils.bind_with_data(tab, "<<Reloaded>>", statusbar.show_reload_warning, add=True)
-    tab.bind("<<AfterSave>>", statusbar.clear_reload_warning, add=True)
+    tab.bind("<<AfterSave>>", statusbar.clear_special_message, add=True)
 
     tab.bind("<<PathChanged>>", statusbar.update_labels, add=True)
     tab.bind("<<TabSettingChanged:encoding>>", statusbar.update_labels, add=True)
@@ -111,7 +135,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
     statusbar.update_labels()
 
 
-def update_button_style(junk_event: object = None) -> None:
+def _update_button_style(junk_event: object = None) -> None:
     # https://tkdocs.com/tutorial/styles.html
     # tkinter's style stuff sucks
     get_tab_manager().tk.eval(
@@ -120,7 +144,7 @@ def update_button_style(junk_event: object = None) -> None:
 
 
 def setup() -> None:
-    get_tab_manager().add_filetab_callback(on_new_filetab)
+    get_tab_manager().add_filetab_callback(_on_new_filetab)
 
-    get_tab_manager().bind("<<ThemeChanged>>", update_button_style, add=True)
-    update_button_style()
+    get_tab_manager().bind("<<ThemeChanged>>", _update_button_style, add=True)
+    _update_button_style()

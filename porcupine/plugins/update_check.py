@@ -8,15 +8,15 @@ from tkinter import ttk
 from porcupine import __version__ as this_porcupine_version
 from porcupine import get_tab_manager, images, tabs, utils, settings
 from porcupine.settings import global_settings
-from porcupine.plugins.welcome import WelcomeMessageDisplayer
+#from porcupine.plugins.welcome import WelcomeMessageDisplayer
+from porcupine.plugins import statusbar
 from porcupine import utils
 
 
 log = logging.getLogger(__name__)
 
 # Place the update checkbox towards the end of the settings dialog
-# setup_after = ["restart"]
-setup_after = ["welcome"]
+setup_after = ["restart"]
 
 
 def x_days_ago(days: int) -> str:
@@ -60,12 +60,14 @@ def show_update_available(when_released: datetime.date, who_released: str | None
     else:
         text = f"{who_released} released a new version of Porcupine {x_days_ago(new_version_age)}."
 
-    # See welcome plugin
-    welcome_frame: ttk.Frame = get_tab_manager().nametowidget("welcome_frame")
-    width, height = welcome_frame.grid_size()
-    _grid_to_end(ttk.Label(welcome_frame, text=text))
-    _grid_to_end(ttk.Button(welcome_frame, text="Show update instructions"))
-
+    statusbar.set_global_message(text)
+#
+#    # See welcome plugin
+#    welcome_frame: ttk.Frame = get_tab_manager().nametowidget("welcome_frame")
+#    width, height = welcome_frame.grid_size()
+#    _grid_to_end(ttk.Label(welcome_frame, text=text))
+#    _grid_to_end(ttk.Button(welcome_frame, text="Show update instructions"))
+#
 
 # Returns (when_released, who_released)
 def fetch_release_info() -> tuple[datetime.date, str | None] | None:
