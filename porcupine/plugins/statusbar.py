@@ -81,7 +81,7 @@ class StatusBar(ttk.Frame):
         if event.data_class(tabs.ReloadInfo).had_unsaved_changes:
             oops = utils.get_binding("<<Undo>>")
             text = f"File was reloaded with unsaved changes. Press {oops} to get your changes back."
-            self._show_special_message(text)
+            self.show_special_message(text)
             self.path_label.config(foreground="red")
 
     def clear_special_message(self, junk: object) -> None:

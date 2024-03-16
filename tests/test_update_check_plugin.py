@@ -1,3 +1,5 @@
+from tkinter import ttk
+
 from porcupine.plugins.update_check import x_days_ago
 from porcupine import settings
 
@@ -32,5 +34,11 @@ def test_x_days_ago():
 
 # IMO the update checkbox is easier to see if it is the last thing.
 # I want users to disable update checking if they hate it.
-#def test_update_checkbox_is_last():
-#    settings.
+def test_update_checkbox_is_last():
+    content = settings.get_dialog_content()
+    width, height = content.grid_size()
+    last_row = content.grid_slaves(row=height-1)
+
+    assert len(last_row) == 1
+    assert isinstance(last_row[0], ttk.Checkbutton)
+    assert last_row[0]['text'] == 'asd'

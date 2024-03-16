@@ -42,6 +42,43 @@ def x_days_ago(days: int) -> str:
     return f"about {months // 12} years and {months % 12} months ago"
 
 
+def get_date(version: str) -> datetime.date:
+    year, month, day = map(int, version.lstrip("v").split("."))
+    return datetime.date(year, month, day)
+
+
+def fetch_release_creator(version: str) -> str | None:
+    """Find out who created a release.
+
+    Unfortunately the releases appear as being created by the GitHub Actions
+    bot account, so we look for a commit created by a script that Porcupine
+    maintainers run locally.
+    """
+
+    # Commit date may be off by a day because time zones
+    start_time = (get_date(version) - datetime.timedelta(days=1)).isoformat() + ":00:00:00Z"
+    end_time = (get_date(version) + datetime.timedelta(days=1)).isoformat() + ":23:59:59Z"
+
+    try:
+        response = requests.get(
+            "https://api.github.com/repos/Akuli/porcupine/commits",
+            params={"since": start_time, "until": end_time},
+            headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
+            timeout=3,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        log.info(f"error fetching commits around release date {version}", exc_info=True)
+        return None
+
+    for commit in response.json():
+        if commit["commit"]["message"] == f"Version v{version}":
+            return commit["author"]["login"]
+
+    # script no longer used in a future version of Porcupine?
+    return None
+
+
 def fetch_release_info() -> tuple[datetime.date, str | None] | None:
     """Returns (when_released, who_released) for the latest release.
 
@@ -62,38 +99,15 @@ def fetch_release_info() -> tuple[datetime.date, str | None] | None:
         log.debug("this is the latest version of Porcupine")
         return None
 
-    year, month, day = map(int, version.split("."))
-    when_released = datetime.date(year, month, day)
+    return (version, fetch_release_creator(version))
 
-    # Who released this? Unfortunately the releases appear as being created by
-    # the GitHub Actions bot account, so we look for a commit created by a
-    # script that Porcupine maintainers run locally. Because of timezones, the
-    # commit date may be off by a day.
-    start_time = (when_released - datetime.timedelta(days=1)).isoformat() + ":00:00:00Z"
-    end_time = (when_released + datetime.timedelta(days=1)).isoformat() + ":23:59:59Z"
 
-    try:
-        response = requests.get(
-            "https://api.github.com/repos/Akuli/porcupine/commits",
-            params={"since": start_time, "until": end_time},
-            headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
-            timeout=3,
-        )
-        response.raise_for_status()
-    except requests.RequestException:
-        log.info(f"error fetching commits around {when_released.isoformat()}", exc_info=True)
-        who_released = None
-    else:
-        who_released = None
-        for commit in response.json():
-            if commit["commit"]["message"] == f"Version v{version}":
-                who_released = commit["author"]["login"]
-                break
-
+def format_new_release_message(when_released: datetime.date, who_released: str | None) -> str:
+    some_days_ago = x_days_ago((datetime.date.today() - when_released).days)
     if who_released is None:
-        log.warning(f"could not find who released latest Porcupine {version!r}")
-
-    return (when_released, who_released)
+        return f"A new version of Porcupine was released {some_days_ago}."
+    else:
+        return f"{who_released} released a new version of Porcupine {some_days_ago}."
 
 
 def check_for_updates_in_background() -> None:
@@ -105,19 +119,9 @@ def check_for_updates_in_background() -> None:
             return
 
         assert not isinstance(result, str)
-
         if result is not None:
             # There is a new release
-            when_released, who_released = result
-            some_days_ago = x_days_ago((datetime.date.today() - when_released).days)
-            if who_released is None:
-                statusbar.set_global_message(
-                 f"A new version of Porcupine was released {some_days_ago}."
-            )
-            else:
-                statusbar.set_global_message(
-                f"{who_released} released a new version of Porcupine {some_days_ago}."
-            )
+            statusbar.set_global_message(format_new_release_message(*result))
 
     utils.run_in_thread(fetch_release_info, done_callback)
 
