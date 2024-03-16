@@ -86,6 +86,7 @@ class StatusBar(ttk.Frame):
 
     def clear_special_message(self, junk: object) -> None:
         self.path_label.config(foreground="")
+        self._showing_special_message = False
         self.update_labels()
 
     def _choose_encoding(self) -> None:
