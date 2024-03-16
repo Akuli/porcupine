@@ -1,16 +1,11 @@
 import datetime
 import requests
-import tkinter
-import threading
 import logging
-from tkinter import ttk
 
 from porcupine import __version__ as this_porcupine_version
-from porcupine import get_tab_manager, images, tabs, utils, settings
+from porcupine import utils, settings
 from porcupine.settings import global_settings
-#from porcupine.plugins.welcome import WelcomeMessageDisplayer
 from porcupine.plugins import statusbar
-from porcupine import utils
 
 
 log = logging.getLogger(__name__)
@@ -47,30 +42,11 @@ def x_days_ago(days: int) -> str:
     return f"about {months // 12} years and {months % 12} months ago"
 
 
-def _grid_to_end(widget: tkinter.Widget) -> None:
-    width, height = widget.master.grid_size()
-    widget.grid(row=height, column=0, columnspan=width)
-
-
-def show_update_available(when_released: datetime.date, who_released: str | None) -> None:
-    new_version_age = (when_released - datetime.date.today()).days
-
-    if who_released is None:
-        text = f"A new version of Porcupine was released {x_days_ago(new_version_age)}."
-    else:
-        text = f"{who_released} released a new version of Porcupine {x_days_ago(new_version_age)}."
-
-    statusbar.set_global_message(text)
-#
-#    # See welcome plugin
-#    welcome_frame: ttk.Frame = get_tab_manager().nametowidget("welcome_frame")
-#    width, height = welcome_frame.grid_size()
-#    _grid_to_end(ttk.Label(welcome_frame, text=text))
-#    _grid_to_end(ttk.Button(welcome_frame, text="Show update instructions"))
-#
-
-# Returns (when_released, who_released)
 def fetch_release_info() -> tuple[datetime.date, str | None] | None:
+    """Returns (when_released, who_released) for the latest release.
+
+    This is slow, and runs in a new thread.
+    """
     response = requests.get(
         "https://api.github.com/repos/Akuli/porcupine/releases/latest",
         headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
@@ -133,7 +109,15 @@ def check_for_updates_in_background() -> None:
         if result is not None:
             # There is a new release
             when_released, who_released = result
-            show_update_available(when_released, who_released)
+            some_days_ago = x_days_ago((datetime.date.today() - when_released).days)
+            if who_released is None:
+                statusbar.set_global_message(
+                 f"A new version of Porcupine was released {some_days_ago}."
+            )
+            else:
+                statusbar.set_global_message(
+                f"{who_released} released a new version of Porcupine {some_days_ago}."
+            )
 
     utils.run_in_thread(fetch_release_info, done_callback)
 
