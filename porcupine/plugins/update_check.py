@@ -79,7 +79,7 @@ def fetch_release_creator(version: str) -> str | None:
     return None
 
 
-def fetch_release_info() -> tuple[datetime.date, str | None] | None:
+def fetch_release_info() -> tuple[str, str | None] | None:
     """Returns (when_released, who_released) for the latest release.
 
     This is slow, and runs in a new thread.
@@ -90,7 +90,7 @@ def fetch_release_info() -> tuple[datetime.date, str | None] | None:
         timeout=3,
     )
     response.raise_for_status()
-    version = response.json()["tag_name"].lstrip("v")
+    version: str = response.json()["tag_name"].lstrip("v")
 
     assert not version.startswith("v")
     assert not this_porcupine_version.startswith("v")
@@ -102,8 +102,8 @@ def fetch_release_info() -> tuple[datetime.date, str | None] | None:
     return (version, fetch_release_creator(version))
 
 
-def format_new_release_message(when_released: datetime.date, who_released: str | None) -> str:
-    some_days_ago = x_days_ago((datetime.date.today() - when_released).days)
+def format_new_release_message(version: str, who_released: str | None) -> str:
+    some_days_ago = x_days_ago((datetime.date.today() - get_date(version)).days)
     if who_released is None:
         return f"A new version of Porcupine was released {some_days_ago}."
     else:
@@ -111,7 +111,7 @@ def format_new_release_message(when_released: datetime.date, who_released: str |
 
 
 def check_for_updates_in_background() -> None:
-    def done_callback(success: bool, result: str | tuple[datetime.date, str | None] | None) -> None:
+    def done_callback(success: bool, result: str | tuple[str, str | None] | None) -> None:
         if not success:
             # Handle errors somewhat silently. Update checking is not very important.
             log.warning("checking for updates failed")
