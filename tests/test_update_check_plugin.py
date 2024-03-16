@@ -1,8 +1,4 @@
 import datetime
-import os
-import sys
-
-import pytest
 
 from porcupine.plugins import update_check
 
@@ -35,27 +31,11 @@ def test_x_days_ago():
     assert update_check.x_days_ago(777) == "about 2 years and 2 months ago"
 
 
-@pytest.mark.skipif(
-    sys.platform == "macos" and os.environ.get("GITHUB_ACTIONS") == "true",
-    reason="failed MacOS CI in github actions, don't know why",
-)
-def test_fetching_release_creator():
-    # I don't want to know which way it calls this function.
-    # Let's just make it work in both cases.
-    assert update_check.fetch_release_creator("2024.03.09") == "Akuli"
-    assert update_check.fetch_release_creator("v2024.03.09") == "Akuli"
-
-
 def test_the_message(mocker):
     mock_datetime = mocker.patch("porcupine.plugins.update_check.datetime")
     mock_datetime.date.side_effect = datetime.date
     mock_datetime.date.today.return_value = datetime.date(2024, 3, 16)
+    mock_set_message = mocker.patch("porcupine.plugins.statusbar.set_global_message")
 
-    assert (
-        update_check.format_new_release_message("v2024.03.09", None)
-        == "A new version of Porcupine was released 7 days ago."
-    )
-    assert (
-        update_check.format_new_release_message("v2024.03.09", "Akuli")
-        == "Akuli released a new version of Porcupine 7 days ago."
-    )
+    update_check.done_callback(True, "v2024.03.09")
+    mock_set_message.assert_called_once_with("A new version of Porcupine was released 7 days ago.")

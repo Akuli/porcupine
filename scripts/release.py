@@ -49,11 +49,7 @@ def main():
     subprocess.check_call(
         ["git", "add", "porcupine/__init__.py", "README.md", "CHANGELOG.md", "pyproject.toml"]
     )
-
-    # Avoid changing this commit message. It is used in the update_check plugin to figure
-    # out who ran this script to create a release.
     subprocess.check_call(["git", "commit", "-m", f"Version {TAG_FORMAT % new_info}"])
-
     subprocess.check_call(["git", "tag", TAG_FORMAT % new_info])
     subprocess.check_call(["git", "push", "origin", branch])
     subprocess.check_call(["git", "push", "--tags", "origin", branch])

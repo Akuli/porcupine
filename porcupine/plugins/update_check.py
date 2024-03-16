@@ -49,40 +49,8 @@ def get_date(version: str) -> datetime.date:
     return datetime.date(year, month, day)
 
 
-def fetch_release_creator(version: str) -> str | None:
-    """Find out who created a release.
-
-    Unfortunately the releases appear as being created by the GitHub Actions
-    bot account, so we look for a commit created by a script that Porcupine
-    maintainers run locally.
-    """
-
-    # Commit date may be off by a day because time zones
-    start_time = (get_date(version) - datetime.timedelta(days=1)).isoformat() + ":00:00:00Z"
-    end_time = (get_date(version) + datetime.timedelta(days=1)).isoformat() + ":23:59:59Z"
-
-    try:
-        response = requests.get(
-            "https://api.github.com/repos/Akuli/porcupine/commits",
-            params={"since": start_time, "until": end_time},
-            headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
-            timeout=3,
-        )
-        response.raise_for_status()
-    except requests.RequestException:
-        log.info(f"error fetching commits around release date {version}", exc_info=True)
-        return None
-
-    for commit in response.json():
-        if commit["commit"]["message"] == f"Version v{version.lstrip('v')}":
-            return commit["author"]["login"]
-
-    # script no longer used in a future version of Porcupine?
-    return None
-
-
-def fetch_release_info() -> tuple[str, str | None] | None:
-    """Returns (when_released, who_released) for the latest release.
+def get_latest_release() -> str | None:
+    """Returns name of the latest release, or None if Porcupine is up to date.
 
     This is slow, and runs in a new thread.
     """
@@ -101,31 +69,20 @@ def fetch_release_info() -> tuple[str, str | None] | None:
         log.debug("this is the latest version of Porcupine")
         return None
 
-    return (version, fetch_release_creator(version))
+    return version
 
 
-def format_new_release_message(version: str, who_released: str | None) -> str:
-    some_days_ago = x_days_ago((datetime.date.today() - get_date(version)).days)
-    if who_released is None:
-        return f"A new version of Porcupine was released {some_days_ago}."
-    else:
-        return f"{who_released} released a new version of Porcupine {some_days_ago}."
+def done_callback(success: bool, result: str | None) -> None:
+    if not success:
+        # Handle errors somewhat silently. Update checking is not very important.
+        log.warning("checking for updates failed")
+        log.info(f"full error message from update checking:\n{result}")
+        return
 
-
-def check_for_updates_in_background() -> None:
-    def done_callback(success: bool, result: str | tuple[str, str | None] | None) -> None:
-        if not success:
-            # Handle errors somewhat silently. Update checking is not very important.
-            log.warning("checking for updates failed")
-            log.info(f"full error message from update checking:\n{result}")
-            return
-
-        assert not isinstance(result, str)
-        if result is not None:
-            # There is a new release
-            statusbar.set_global_message(format_new_release_message(*result))
-
-    utils.run_in_thread(fetch_release_info, done_callback)
+    if result is not None:
+        # There is a new release
+        some_days_ago = x_days_ago((datetime.date.today() - get_date(result)).days)
+        statusbar.set_global_message(f"A new version of Porcupine was released {some_days_ago}.")
 
 
 def setup() -> None:
@@ -133,5 +90,6 @@ def setup() -> None:
     settings.add_checkbutton(
         "update_check_on_startup", text="Check for updates when Porcupine starts"
     )
+
     if global_settings.get("update_check_on_startup", bool):
-        check_for_updates_in_background()
+        utils.run_in_thread(get_latest_release, done_callback)
