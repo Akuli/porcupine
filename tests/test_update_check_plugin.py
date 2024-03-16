@@ -1,7 +1,7 @@
 from tkinter import ttk
 
-from porcupine.plugins.update_check import x_days_ago
 from porcupine import settings
+from porcupine.plugins.update_check import x_days_ago
 
 
 def test_x_days_ago():
@@ -37,8 +37,8 @@ def test_x_days_ago():
 def test_update_checkbox_is_last():
     content = settings.get_dialog_content()
     width, height = content.grid_size()
-    last_row = content.grid_slaves(row=height-1)
+    last_row = content.grid_slaves(row=height - 1)
 
     assert len(last_row) == 1
     assert isinstance(last_row[0], ttk.Checkbutton)
-    assert last_row[0]['text'] == 'asd'
+    assert last_row[0]["text"] == "asd"

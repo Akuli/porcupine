@@ -1,12 +1,12 @@
 import datetime
-import requests
 import logging
 
-from porcupine import __version__ as this_porcupine_version
-from porcupine import utils, settings
-from porcupine.settings import global_settings
-from porcupine.plugins import statusbar
+import requests
 
+from porcupine import __version__ as this_porcupine_version
+from porcupine import settings, utils
+from porcupine.plugins import statusbar
+from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
 
