@@ -5,8 +5,7 @@ import re
 import tkinter
 from tkinter import ttk
 
-from porcupine import get_tab_manager, images, tabs, utils, settings
-from porcupine.settings import global_settings
+from porcupine import get_tab_manager, images, tabs, utils
 
 # Key bindings are included in the message
 setup_after = ["keybindings"]
