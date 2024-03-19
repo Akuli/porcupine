@@ -19,6 +19,8 @@ I have tried to make contributing easy:
 - Don't worry too much about whether your code is good or not.
     I will review the pull requests and try to help you out.
     There are also checks running on GitHub Actions.
+- Don't worry too much about whether your PR follows whatever best practices you might have heard of.
+    Just make a PR and I will edit it as needed.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
 Then install Python 3.8 or newer and [git](https://git-scm.com/), and run these commands:
