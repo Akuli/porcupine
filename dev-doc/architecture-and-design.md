@@ -30,9 +30,9 @@ you can run it with all plugins disabled:
 
 It will look something like this:
 
-![Screenshot of porcupine without plugins 1](no-plugins-1.png)
+![Screenshot of porcupine without plugins 1](images/no-plugins-1.png)
 
-![Screenshot of porcupine without plugins 2](no-plugins-2.png)
+![Screenshot of porcupine without plugins 2](images/no-plugins-2.png)
 
 
 ## Pros and cons
