@@ -122,7 +122,7 @@ For more info about virtual events, see [virtual-events.md](virtual-events.md).
 
 You might have noticed that Porcupine has things like `get_main_window()` and `get_directory_tree()`.
 Internally, these functions use global variables to just give you the thing you need.
-Many of these functions global variables are defined in `porcupine/_state.py`.
+Many of these functions and global variables are defined in `porcupine/_state.py`.
 
 If you hate global variables, you're right,
 but sometimes a small amount of global variables just makes things a lot easier.
