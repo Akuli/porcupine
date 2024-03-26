@@ -32,6 +32,9 @@ def format_amount(amount, show_plus=False):
     return f"{prefix}{amount / G:.2f}GB"
 
 
+running = False
+
+
 def test_mem_leaks_1(n):
     global last_value
 
@@ -42,7 +45,7 @@ def test_mem_leaks_1(n):
 
     last_value = new_value
 
-    if n > 0:
+    if n > 0 and running:
         for lel in range(10):
             get_tab_manager().add_tab(tabs.FileTab(get_tab_manager()))
         get_tab_manager().after(1000, test_mem_leaks_2, n-1)
@@ -55,8 +58,17 @@ def test_mem_leaks_2(n):
 
 
 def test_mem_leaks():
-    test_mem_leaks_1(100)
+    global running
+    if not running:
+        running = True
+        test_mem_leaks_1(100)
+
+
+def stop_test_mem_leaks():
+    global running
+    running = False
 
 
 def setup():
-    get_menu("TEMP").add_command(label="Test Memory Leaks", command=test_mem_leaks)
+    get_menu("TEMP").add_command(label="START Test Memory Leaks", command=test_mem_leaks)
+    get_menu("TEMP").add_command(label="STOP Test Memory Leaks", command=stop_test_mem_leaks)
