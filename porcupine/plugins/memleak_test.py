@@ -1,3 +1,4 @@
+import gc
 import os
 
 import psutil
@@ -37,6 +38,8 @@ running = False
 
 def test_mem_leaks_1(n):
     global last_value
+
+    gc.collect()
 
     new_value = psutil.Process(os.getpid()).memory_info().rss
     if last_value is not None:
