@@ -4,7 +4,8 @@
 - core of Porcupine is small, and most of the functionality is in plugins
 - plugins are loaded dynamically
 - each plugin does a specific thing, and can be enabled/disabled individually by the user
-- plugins can depend on each other when needed, and they pass messages to each other through virtual events.
+- plugins can depend on each other when needed, and they pass messages to each other through virtual events
+- there is global state.
 
 
 ## Small core, powerful plugins
@@ -46,6 +47,10 @@ The plugin-heavy design has many advantages:
 - Most plugins are somewhat self-contained, so it's easy to understand how they work.
 - Users can use the plugin manager to disable features they don't like,
     even if Porcupine developers didn't add something specifically to disable a feature.
+- To debug difficult problems, you can enable and disable plugins to find out
+    which plugin (or combination of plugins) causes the problem.
+    This is helpful even if the problem happens with all plugins disabled,
+    because then you can focus on the small Porcupine core.
 
 And some disadvantages:
 - The loading order (that is, order of calling `setup()` functions) matters.
@@ -112,3 +117,24 @@ then a callback function specified in plugin B will run whenever plugin A trigge
 This is useful, because plugin A can run code in plugin B without knowing anything about plugin B.
 For more info about virtual events, see [virtual-events.md](virtual-events.md).
 
+
+## Global State
+
+You might have noticed that Porcupine has things like `get_main_window()` and `get_directory_tree()`.
+Internally, these functions use global variables to just give you the thing you need.
+Many of these functions global variables are defined in `porcupine/_state.py`.
+
+If you hate global variables, you're right,
+but sometimes a small amount of global variables just makes things a lot easier.
+You don't have to pass around some sort of "Porcupine instance" object when you write a plugin.
+Instead, you just write `get_main_window()` wherever you want to access the main window, and it always works.
+
+A few plugins define their own global variables.
+Avoid this if you can reasonably avoid it.
+For example, if you add something to a global list every time a tab is opened,
+and you never clean up the list,
+that will contribute to Porcupine's [memory leak problem](https://github.com/Akuli/porcupine/issues/1193).
+
+It's better to just add widgets inside other widgets without storing them in global variables.
+For example, when a tab is closed, the tab widget is destroyed,
+and tkinter recursively destroys all widgets inside the tab.
