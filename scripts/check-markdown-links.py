@@ -1,5 +1,6 @@
 """Check that links in markdown files point to reasonable places."""
 
+import os
 import re
 import subprocess
 import sys
@@ -9,13 +10,15 @@ from pathlib import Path
 
 import requests
 
+
 PROJECT_ROOT = Path(__file__).absolute().parent.parent
 assert (PROJECT_ROOT / "README.md").is_file()
+os.chdir(PROJECT_ROOT)
 
 
 def find_markdown_files():
-    output = subprocess.check_output(["git", "ls-files", "*.md"], cwd=PROJECT_ROOT, text=True)
-    return [PROJECT_ROOT / line for line in output.splitlines()]
+    output = subprocess.check_output(["git", "ls-files", "*.md"], text=True)
+    return [Path(line) for line in output.splitlines()]
 
 
 def find_links(markdown_file_path):
@@ -66,7 +69,7 @@ def check_link(markdown_file_path, link_target):
 
     path = markdown_file_path.parent / link_target
 
-    if PROJECT_ROOT not in path.parents:
+    if PROJECT_ROOT not in path.resolve().parents:
         return "link points outside of the Porcupine project folder"
 
     if not path.exists():
