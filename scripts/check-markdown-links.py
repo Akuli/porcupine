@@ -25,7 +25,7 @@ def find_links(markdown_file_path):
 
     if markdown_file_path.name == "CHANGELOG.md":
         # Ignore changelogs of old versions. Editing them doesn't make sense.
-        header_matches = list(re.finditer("^## v", content, flags=re.MULTILINE))
+        header_matches = list(re.finditer("^## ", content, flags=re.MULTILINE))
         end_of_current_version = header_matches[1].start()
         content = content[:end_of_current_version]
 
