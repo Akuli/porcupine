@@ -86,7 +86,6 @@ def main():
     bad_links = 0
 
     for path in paths:
-        print("Checking", path)
         for lineno, link_target in find_links(path):
             problem = check_link(path, link_target)
             if problem:
