@@ -31,8 +31,8 @@ def find_links(markdown_file_path):
 
     for lineno, line in enumerate(content.splitlines(), start=1):
         link_regexes = [
-            r"\[\S*?\]\((\S*?)\)",  # [text](target)
-            r"^\[.*\]: (\S*)$",  # [text]: target
+            r"\[[^[]]+\]\((\S*?)\)",  # [blah blah](target)
+            r"^\[[^[]]+\]: (\S*)$",  # [blah blah]: target
         ]
         for regex in link_regexes:
             for link_target in re.findall(regex, line):
