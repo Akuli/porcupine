@@ -78,6 +78,7 @@ jobs:
     - run: $PYTHON -m pytest --durations=10
 
   flake8-tkinter:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -88,3 +89,15 @@ jobs:
     # TODO: adding these to requirements-dev.txt breaks pip install
     - run: pip install flake8==5.0.4 flake8-tkinter==0.5.0
     - run: python3 -m flake8 $(git ls-files | grep -E '\.(py|pyw)$')
+
+  markdown-links:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: pip
+    - run: pip install requests
+    - run: python3 scripts/check-markdown-links.py
