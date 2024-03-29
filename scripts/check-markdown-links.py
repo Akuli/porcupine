@@ -73,10 +73,8 @@ def check_link(markdown_file_path, link_target, offline_mode=False):
         return "this link should probably use https instead of http"
 
     if link_target.startswith("https://"):
-        if offline_mode:
-            return None  # assume ok
-        else:
-            return check_https_url(link_target)
+        assert not offline_mode
+        return check_https_url(link_target)
 
     if "//" in link_target:
         return "double slashes are allowed only in http:// and https:// links"
@@ -130,6 +128,9 @@ def main():
 
     for path in paths:
         for lineno, link_target in find_links(path):
+            if link_target.startswith("https://") and args.offline:
+                continue
+
             problem = check_link(path, link_target, offline_mode=args.offline)
             if problem:
                 print(f"{path}:{lineno}: {problem}")
@@ -142,7 +143,7 @@ def main():
     if bad_links > 0:
         sys.exit(1)
     else:
-        print("ok :)")
+        print(f"checked {good_links} links, no errors :)")
 
 
 main()
