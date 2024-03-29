@@ -1,13 +1,13 @@
 """Check that links in markdown files point to reasonable places."""
 
-import requests
 import re
-import sys
 import subprocess
+import sys
 from functools import cache
-from pathlib import Path
 from http.client import responses as status_code_names
+from pathlib import Path
 
+import requests
 
 PROJECT_ROOT = Path(__file__).absolute().parent.parent
 assert (PROJECT_ROOT / "README.md").is_file()
@@ -30,7 +30,7 @@ def find_links(markdown_file_path):
     for lineno, line in enumerate(content.splitlines(), start=1):
         link_regexes = [
             r"\[\S*?\]\((\S*?)\)",  # [text](target)
-            r"^\[.*\]: (\S*)$"  # [text]: target
+            r"^\[.*\]: (\S*)$",  # [text]: target
         ]
         for regex in link_regexes:
             for link_target in re.findall(regex, line):
