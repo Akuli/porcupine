@@ -111,21 +111,41 @@ If you still think that static typing would be better for Porcupine's tests,
 please create an issue so that we can discuss this.
 
 
+## Printing in Tests
+
+If you have used pytest in other projects, you're probably used to
+seeing the output of `print` statements after all tests ran,
+or not seeing prints at all when the test containing the prints succeeds.
+
+In Porcupine, pytest is configured to just show the prints immediately when the test runs
+instead of showing them later or hiding them entirely.
+This can make debugging interactive things easier.
+
+For example, let's say that you have a button that prints something when clicked.
+When writing a test for it, you add `tkinter.mainloop()` into a Porcupine test and click the button.
+With pytest's default settings, pytest would eat the prints and show nothing until you close the Porcupine window.
+With Porcupine's pytest config, you will see the prints right away as you would expect.
+
+
 ## Debugging Tips
 
 If you put `breakpoint()` somewhere (in a test or in the actual code),
-this will pause the test at that point and start a debugger session,
-and you will see what is going on.
+this will pause the test at that point and start a debugger session.
+You can then look around to see what's going on.
 For example, you can type `next` to run the code one line at a time,
 or `interact` to get an interactive `>>>` prompt that you can exit with *Ctrl+D*.
 Type `cont` to exit the debugger and continue running the test.
 
-On Windows, the UI tends to be frozen and inresponsive during debugger sessions.
+On Windows, the UI tends to be frozen and unresponsive during debugger sessions.
 Running `any_widget.update()` may help.
-Here `any_widget` can be any tkinter widget, like the main window or a tab.
+Here `any_widget` can be any tkinter widget, and it doesn't matter which widget you use.
+For example, the main window or any tab will do.
 
-If you put `tkinter.mainloop()` somewhere, you can use the Porcupine instance as usual.
+Alternatively, you can put `tkinter.mainloop()` into the test.
+When the test gets to `tkinter.mainloop()`, you can use the Porcupine instance as usual.
 You can open and save files, click buttons, and so on.
+When you are done, just close the Porcupine window.
+This will confuse the tests and make them fail, but that's expected.
 
 
 ## Global State
