@@ -1,6 +1,3 @@
-# not much can be done here, other than running the dialog and trying to get a
-# good coverage
-
 from urllib.request import url2pathname
 
 from porcupine import get_main_window
