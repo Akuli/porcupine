@@ -36,7 +36,7 @@ def find_links(markdown_file_path):
             # The text can contain spaces, and it can even be split across many lines.
             r"\]\((\S+?)\)",
             # [blah blah]: target
-            r"^\[[^\[\]]+\]: (.+)$", 
+            r"^\[[^\[\]]+\]: (.+)$",
         ]
         for regex in link_regexes:
             for link_target in re.findall(regex, line):
