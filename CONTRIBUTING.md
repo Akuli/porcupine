@@ -65,21 +65,8 @@ environment in, you can go back to the environment by `cd`'ing to the correct
 place and running `source env/bin/activate` again. You can run `deactivate` to undo
 the `source env/bin/activate`.
 
-Other commands you may find useful:
-- `python3 -m pytest` runs tests. You will see lots of weird stuff happening
-  while testing, and that's expected.
-    A good way to debug a test to see what is actually going on is to add traces.
-    It pauses the test to show you the current state of the program.
-    - Use `import pdb` and `pdb.set_trace()` to set the pause points in the test. You can
-      set as many as you like, and it can conveniently be done on one line: `import pdb; pdb.set_trace()`.
-    - When the test pauses, type `cont` in terminal to continue the test.
-    - If you at any time need to interact with the program during the pause,
-      type `interact` in terminal. Exit interactive mode with `ctrl + D`.
-- To see a report of test coverage, add `--cov=porcupine` to the above pytest
-  command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
-  browser to view it.
-- `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
-  Open `docs/build/index.html` in your favorite browser to view it.
+Porcupine also has tests, but many changes to Porcupine don't need tests.
+See [dev-doc/tests.md](dev-doc/tests.md) for details about how and when Porcupine uses tests.
 
 
 ## Where to talk to us

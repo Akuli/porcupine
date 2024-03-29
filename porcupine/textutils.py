@@ -352,7 +352,7 @@ class _ChangeTracker:
 
             changes.append(self._create_change(widget, start, end, new_text))
 
-        else:  # pragma: no cover
+        else:
             raise ValueError(f"unexpected subcommand: {subcommand}")
 
         # remove changes that don't actually do anything
