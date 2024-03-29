@@ -64,7 +64,7 @@ def get_all_refs(path):
     result = []
     for title in re.findall(r"\n#+ (.*)", path.read_text()):
         words = re.findall(r"[a-z0-9]+", title.lower())
-        result.append( "#" + "-".join(words))
+        result.append("#" + "-".join(words))
     return result
 
 
@@ -115,8 +115,12 @@ def print_line(file_path, lineno):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--offline", action="store_true", help="don't do HTTP requests, just assume that https:// links are fine")
-    args=parser.parse_args()
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="don't do HTTP requests, just assume that https:// links are fine",
+    )
+    args = parser.parse_args()
 
     paths = find_markdown_files()
     assert paths
