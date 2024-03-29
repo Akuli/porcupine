@@ -60,7 +60,7 @@ some_widget.bind("<<PrintHi>>", print_hello, add=True)
 some_widget.event_generate("<<PrintHi>>")  # only prints hi
 ```
 
-This is typically used together with [setup_before and setup_after](archotecture-and-design.md#loading-order)
+This is typically used together with [setup_before and setup_after](architecture-and-design.md#loading-order)
 to decide which plugin gets to handle a virtual event.
 
 

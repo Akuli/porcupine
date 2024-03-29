@@ -33,7 +33,7 @@ It will look something like this:
 
 ![Screenshot of porcupine without plugins 1](images/no-plugins-1.png)
 
-![Screenshot of porcupine without plugins 2](images/no-plugins-3.png)
+![Screenshot of porcupine without plugins 2](images/no-plugins-2.png)
 
 
 ## Pros and cons
@@ -115,7 +115,7 @@ If plugin A generates a virtual event on a widget,
 and plugin B binds to that virtual event (in its `setup()`, for example),
 then a callback function specified in plugin B will run whenever plugin A triggers the event.
 This is useful, because plugin A can run code in plugin B without knowing anything about plugin B.
-For more info about virtual events, see [virtual-events.md](virtual-eventsssss.md).
+For more info about virtual events, see [virtual-events.md](virtual-events.md).
 
 
 ## Global State

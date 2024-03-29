@@ -1,5 +1,6 @@
 """Check that links in markdown files point to reasonable places."""
 
+import argparse
 import os
 import re
 import subprocess
@@ -31,8 +32,8 @@ def find_links(markdown_file_path):
 
     for lineno, line in enumerate(content.splitlines(), start=1):
         link_regexes = [
-            r"\[[^[]]+\]\((\S*?)\)",  # [blah blah](target)
-            r"^\[[^[]]+\]: (\S*)$",  # [blah blah]: target
+            r"\[[^\[\]]+\]\((\S*?)\)",  # [blah blah](target)
+            r"^\[[^\[\]]+\]: (\S*)$",  # [blah blah]: target
         ]
         for regex in link_regexes:
             for link_target in re.findall(regex, line):
@@ -47,18 +48,35 @@ def check_https_url(url):
     except requests.exceptions.RequestsException as e:
         return f"HTTP HEAD request failed: {e}"
 
-    if response.status_code != 200:
+    if url == "https://github.com/Akuli/porcupine/issues/new":
+        # It returns 302 Found, because it redirects to login page
+        expected_status = 302
+    else:
+        expected_status = 200
+
+    if response.status_code != expected_status:
         return f"site returns {response.status_code} {status_code_names[response.status_code]}"
 
     return None
 
 
-def check_link(markdown_file_path, link_target):
+def get_all_refs(path):
+    result = []
+    for title in re.findall(r"\n#+ (.*)", path.read_text()):
+        words = re.findall(r"[a-z0-9]+", title.lower())
+        result.append( "#" + "-".join(words))
+    return result
+
+
+def check_link(markdown_file_path, link_target, offline_mode=False):
     if link_target.startswith("http://"):
         return "this link should probably use https instead of http"
 
     if link_target.startswith("https://"):
-        return check_https_url(link_target)
+        if offline_mode:
+            return None  # assume ok
+        else:
+            return check_https_url(link_target)
 
     if "//" in link_target:
         return "double slashes are allowed only in http:// and https:// links"
@@ -66,7 +84,7 @@ def check_link(markdown_file_path, link_target):
     if "\\" in link_target:
         return "use forward slashes instead of backslashes"
 
-    path = markdown_file_path.parent / link_target
+    path = markdown_file_path.parent / link_target.split("#")[0]
 
     if PROJECT_ROOT not in path.resolve().parents:
         return "link points outside of the Porcupine project folder"
@@ -74,10 +92,32 @@ def check_link(markdown_file_path, link_target):
     if not path.exists():
         return "link points to a file or folder that doesn't exist"
 
+    if "#" in link_target:
+        # Reference to title within markdown file.
+        # For example: architecture-and-design.md#loading-order
+        if (not path.is_file()) or path.suffix != ".md":
+            return "hashtag '#' can only be used with markdown files"
+
+        refs = get_all_refs(path)
+        ref = "#" + link_target.split("#", 1)[1]
+        if ref not in refs:
+            return f"no heading in {path} matches {ref} (should be one of: {' '.join(refs)})"
+
     return None
 
 
+def print_line(file_path, lineno):
+    with file_path.open("r", encoding="utf-8") as file:
+        for skipped_lineno in range(1, lineno):
+            file.readline()
+        print("  " + file.readline().strip())
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--offline", action="store_true", help="don't do HTTP requests, just assume that https:// links are fine")
+    args=parser.parse_args()
+
     paths = find_markdown_files()
     assert paths
 
@@ -86,7 +126,7 @@ def main():
 
     for path in paths:
         for lineno, link_target in find_links(path):
-            problem = check_link(path, link_target)
+            problem = check_link(path, link_target, offline_mode=args.offline)
             if problem:
                 print(f"{path}:{lineno}: {problem}")
                 bad_links += 1
@@ -95,11 +135,10 @@ def main():
 
     assert good_links + bad_links > 0
 
-    print()
-    print(f"Checked {good_links + bad_links} links in {len(paths)} files.")
-    print(f"Found {bad_links} bad links.")
     if bad_links > 0:
         sys.exit(1)
+    else:
+        print("ok :)")
 
 
 main()
