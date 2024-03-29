@@ -20,10 +20,10 @@ Seriously, how would a test help convince us that the code is correct,
 if it's easier to just read the code?
 This sounds obvious, but apparently it isn't obvious to some web developers.
 
-That said, you should probably write tests when:
+That said, tests may be a good idea when:
 - The code is hard to get right (for example, there are many weird corner cases).
-- It is easy to break the code in unintended ways when you try to modify it.
-- The test is simple, easy to understand, and easy to get right when writing it initially.
+- The code is fragile: it's easy to break it accidentally when trying to modify it.
+- The test is simple, easy to get right when writing it initially, and easy to understand afterwards.
 - If the feature was broken, it might take a long time for Porcupine developers to notice it.
 - If the feature was broken, it would break other things in surprising ways,
     and it would be difficult to understand what happened.
@@ -40,7 +40,7 @@ Running all tests from terminal:
 (env)$ python -m pytest
 ```
 
-The tests launch a new instance of Porcupine that you will see on your screen as the tests run.
+This launches a new instance of Porcupine that you will see on your screen as the tests run.
 It will look crazy as the tests do stuff with it, and that's expected.
 
 Here `-m pytest` tells Python to run the pytest module.
@@ -72,7 +72,7 @@ It selects all tests of [tests/test_indent_dedent.py](../tests/test_indent_deden
 because the file name mentions `indent`,
 and a couple other tests such as `test_pasting_selected_indented_code`
 in [tests/test_pastebin_plugin.py](../tests/test_pastebin_plugin.py).
-The `-v` flag shows which tests get selected, and is not needed.
+The `-v` (verbose) flag shows which tests get selected.
 
 
 ## Writing Tests
@@ -80,8 +80,14 @@ The `-v` flag shows which tests get selected, and is not needed.
 Tests must go to the `tests/` folder and **test function names must start with `test_`**.
 This is how pytest finds them.
 
-Porcupine uses [pytest fixtures](https://docs.pytest.org/en/latest/how-to/fixtures.html).
-For example, saving a file might be tested like this:
+For example, let's say that we want to test saving a file (although it's somewhat unnecessary, see above).
+Our test will:
+- open a new tab
+- type `hello world` to the text widget
+- save the new file into a temporary folder
+- ensure that a file was created with content `hello world`.
+
+Here's what the test looks like:
 
 ```python
 def test_saving_file(filetab, tmp_path):
@@ -92,23 +98,45 @@ def test_saving_file(filetab, tmp_path):
 
 (The `trailing_newline` plugin added a newline when the file was saved.)
 
+Porcupine uses [pytest fixtures](https://docs.pytest.org/en/latest/how-to/fixtures.html).
 Some fixtures are built in to pytest (such as `tmp_path`),
 while others are Porcupine-specific and defined in [tests/conftest.py](../tests/conftest.py) (such as `filetab`).
 The `tmp_path` fixture gives you a path to a newly created empty folder, and deletes the folder when your test is done.
 The `filetab` fixture adds a new tab (specifically, `porcupine.tabs.FileTab`) to the Porcupine instance
 before running your test, and closes the tab when your test is done.
 
+The tests are not type checked.
+Type checking the tests for a **library** is a good thing,
+because it means that type checking will work for users of the library.
+But Porcupine is an **application**, and you almost never `import porcupine` outside Porcupine itself.
+If you still think that static typing would be better for Porcupine's tests,
+please create an issue and tell me why.
+
 It is fine to do hacky things in tests to achieve what you need.
 For example, many tests use [pytest's `monkeypatch` fixture](https://docs.pytest.org/en/latest/how-to/monkeypatch.html)
 and [pytest-mock](https://pypi.org/project/pytest-mock/).
 Dynamic typing helps with this.
 
-The tests are not type-checked.
-Type-checking the tests for a **library** is a good thing,
-because it means that type-checking will work for users of the library.
-But Porcupine is an **application**, and you almost never `import porcupine` outside Porcupine itself.
-If you still think that static typing would be better for Porcupine's tests,
-please create an issue so that we can discuss this.
+
+## Debugging Tips
+
+If you put `breakpoint()` somewhere (in a test or in the actual code),
+this will pause the test at that point and start a debugger session.
+You can then look around to see what's going on.
+For example, you can type `next` to run the code one line at a time,
+or `interact` to get an interactive `>>>` prompt that you can exit with *Ctrl+D*.
+Type `cont` to exit the debugger and continue running the test.
+
+On Windows, the UI tends to be frozen and unresponsive during debugger sessions.
+Running `any_widget.update()` may help.
+Here `any_widget` can be any tkinter widget, and it doesn't matter which widget you use.
+For example, the main window or any tab will do.
+
+Alternatively, you can temporarily add `tkinter.mainloop()` to the test.
+When the test gets to `tkinter.mainloop()`, you can use the Porcupine instance as usual.
+You can open and save files, click buttons, and so on.
+When you are done, just close the Porcupine window.
+This will confuse the tests and make them fail, but that's expected.
 
 
 ## Printing in Tests
@@ -127,27 +155,6 @@ With pytest's default settings, pytest would eat the prints and show nothing unt
 With Porcupine's pytest config, you will see the prints right away as you would expect.
 
 
-## Debugging Tips
-
-If you put `breakpoint()` somewhere (in a test or in the actual code),
-this will pause the test at that point and start a debugger session.
-You can then look around to see what's going on.
-For example, you can type `next` to run the code one line at a time,
-or `interact` to get an interactive `>>>` prompt that you can exit with *Ctrl+D*.
-Type `cont` to exit the debugger and continue running the test.
-
-On Windows, the UI tends to be frozen and unresponsive during debugger sessions.
-Running `any_widget.update()` may help.
-Here `any_widget` can be any tkinter widget, and it doesn't matter which widget you use.
-For example, the main window or any tab will do.
-
-Alternatively, you can put `tkinter.mainloop()` into the test.
-When the test gets to `tkinter.mainloop()`, you can use the Porcupine instance as usual.
-You can open and save files, click buttons, and so on.
-When you are done, just close the Porcupine window.
-This will confuse the tests and make them fail, but that's expected.
-
-
 ## Global State
 
 [Porcupine has global state](architecture-and-design.md#global-state).
@@ -160,5 +167,6 @@ For example, if your test creates new tabs,
 But if your test adds something to the menubar at the top of the editor,
 it will stay there until the end of the test session,
 because there is no cleanup code for menu items.
-This is fine, because having some extra items in the menubar is unlikely to
+So far this has been fine, because most tests don't use the menubar,
+and having some extra items in the menubar is unlikely to
 confuse other tests or Porcupine developers.
