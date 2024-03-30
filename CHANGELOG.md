@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2024.03.31
 
 - There are two new easter eggs in the about dialog. Happy Easter :)
 - Porcupine's documentation has been updated and rearranged. The documentation is now clearly split into two folders, [user-doc](https://github.com/Akuli/porcupine/tree/main/user-doc) for using Porcupine and [dev-doc](https://github.com/Akuli/porcupine/tree/main/dev-doc) for developing Porcupine. Both folders also contain newly written documentation. Porcupine Wiki was deleted, and deleting `akuli.github.io/porcupine` is planned.
