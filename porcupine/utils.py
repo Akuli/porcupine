@@ -99,7 +99,7 @@ def find_project_root(project_file_path: Path) -> Path:
     for path in project_file_path.parents:
         if (path / ".git").exists():
             return path  # trust this the most, if it exists
-        elif likely_root is None and any(
+        elif likely_root is None and (
             (path / ".editorconfig").exists()
             or not _is_empty(path.glob("readme.*"))
             or not _is_empty(path.glob("Readme.*"))
