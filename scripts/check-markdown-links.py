@@ -34,6 +34,7 @@ def find_links(markdown_file_path):
         link_regexes = [
             # [text](target)
             # The text can contain spaces, and it can even be split across many lines.
+            # This also detects images ![text](target) and that's a good thing.
             r"\]\((\S+?)\)",
             # [blah blah]: target
             r"^\[[^\[\]]+\]: (.+)$",
