@@ -69,7 +69,7 @@ class EasterEggs:
                 # land
                 self.pic.place(y=0)
             else:
-                self.timeout = self.pic.after(round(1000 / 60), gravity)
+                self.pic.after(round(1000 / 60), gravity)
 
         def jump() -> None:
             nonlocal fall_speed
@@ -88,7 +88,7 @@ class EasterEggs:
         def bounce() -> None:
             if list(buffer) != list("dvd") or not self.pic.winfo_exists():
                 return
-            self.timeout = self.pic.after(round(1000 / 60), bounce)
+            self.pic.after(round(1000 / 60), bounce)
 
             x_min = -(self.window.winfo_width() - self.pic.winfo_width())
             y_min = -(self.window.winfo_height() - self.pic.winfo_height())
