@@ -122,7 +122,7 @@ These settings work for many Python projects:
 - In this directory: `{project_path}`
 
 Let's say the project name is `foo`.
-Then the resulting command will be `python3 -m foo`.
+Then the resulting command will be `python3 -m foo` in the project root folder.
 It basically tells Python to run `foo.__main__` so that `import foo` works.
 In other words, it assumes a file structure that looks something like this:
 
