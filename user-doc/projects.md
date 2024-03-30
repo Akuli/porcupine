@@ -1,7 +1,7 @@
 # Working with Python projects
 
-For one-file Python scripts, you can just [make a new file and run it](getting-started.md).
-This project explains the recommended way to work with larger Python projects.
+For one-file scripts, you can just [make a new file and run it](getting-started.md).
+This project explains the recommended way to work with larger projects.
 
 
 ## Project Root and Directory Tree
@@ -35,10 +35,10 @@ The meanings of the colors are similar to `git status`:
 
 ## Project Root Detection
 
-Currently, the logic for finding the project root is:
+Currently the logic for finding the project root is:
 1. If the file is inside a Git repository (e.g. created by `git clone`),
     then the Git repository becomes the project root.
-    For example, I am currently editing `/home/akuli/porcupine/user-doc/python-projects.md`,
+    For example, I am currently editing `/home/akuli/porcupine/user-doc/projects.md`,
     and Porcupine has detected `/home/akuli/porcupine` as the project root
     because it is a Git repository.
 2. If Git isn't used but there is a README or [`.editorconfig` file](https://editorconfig.org/),
@@ -50,30 +50,58 @@ Currently, the logic for finding the project root is:
     This is why `~` and `/tmp` show up as projects for me.
     I have edited a couple scripts that have been saved to those folders.
 
-If all else fails, the directory containing the file is used.
+If all else fails, the directory containing the file is used as the project root.
 
 
 ## Virtual environments, aka venvs
 
+This section only applies to Python projects.
+
 Any large Python project has many dependencies.
-You could just `pip install` them all into your system,
-but when you no longer want to work on a project,
-there's no good way to uninstall the dependencies of that project.
-Also, different projects might need different, incompatible versions of the same dependency.
+You could just `pip install` them all into your system, but:
+- When you no longer want to work on a project, there's no good way to uninstall the dependencies of that project.
+- If `pip` doesn't work for whatever reason, you will probably have the same problem in all projects.
+- Different projects might need different, incompatible versions of the same dependency.
 
 Venvs fix these problems.
 A venv is a folder that contains all your dependencies,
 and prevents you from polluting your system's Python with libraries.
-If you no longer want to work on a project, just delete the entire venv.
+If you no longer want to work on a project, just delete the venv folder.
 
 I recommend making one venv for each project that has dependencies.
-Do this to create a venv:
 
-1. Open a terminal in the project root folder.
-    For example, you can right-click the project root in Porcupine and select *Open in terminal*.
-    ![Open in terminal](images/open-in-terminal.png)
-2. Run `python3 -m venv env`. This creates a venv named `env`. If you use Windows, use `py` instead of `python3`.
-3. Go back to Porcupine. You should see a new folder named `env` with a ![yellow venv marker](../porcupine/images/venv.png) next to it.
-    This means that Porcupine found your venv and will use it from now on.
-    ![Venv marker in Porcupine](images/venv-marker.png)
-4. 
+To create a venv, start by opening a terminal in the project root folder.
+For example, you can right-click the project root in Porcupine and select *Open in terminal*.
+
+![Open in terminal](images/open-in-terminal.png)
+
+Let's create a venv named `env`, activate it, and install a library into it:
+
+```
+$ python3 -m venv env
+$ source env/bin/activate
+(env)$ pip install requests
+```
+
+This should look something like this:
+
+![Installing dependencies into venv](images/venv-pip-install.png)
+
+If you are on Windows,
+use `py` instead of `python3` and `env\scripts\activate` instead of `source env/bin/activate`.
+
+Activating the venv means that `pip`, `python` and other commands point to things inside the venv.
+So if you say `pip` with a venv activated, you are running the venv's pip.
+It installs everything into the venv, not globally.
+
+Now go back to Porcupine. You should see a new folder named `env` with a ![yellow venv marker](../porcupine/images/venv.png) next to it.
+This means that Porcupine found your venv and will use it.
+If Porcupine doesn't find your venv, or you have multiple venvs and Porcupine uses the wrong one,
+you can choose the venv to use by right-clicking it:
+
+![Right-click menu for selecting venv](images/venv-right-click.png)
+
+Let's [create and run a file](getting-started.md) that uses `requests`.
+You will see that Porcupine activates the venv before it invokes Python to run the file:
+
+![Running a program that uses requests](images/venv-run.png)
