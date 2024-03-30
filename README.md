@@ -126,7 +126,7 @@ If you have just installed Porcupine, have a look at [user-doc/getting-started.m
 If you want to develop Porcupine, see [CONTRIBUTING.md](CONTRIBUTING.md) or [dev-doc/architecture-and-design.md](dev-doc/architecture-and-design.md).
 
 Most of Porcupine's documentation is markdown files in two folders:
-- [The dev-doc folder](./dev-doc/) contains the documentation for developing Porcupine.
+- [The `dev-doc` folder](./dev-doc/) contains the documentation for developing Porcupine.
 - [The `user-doc` folder](./user-doc/) contains the documentation for using Porcupine.
 
 There are also these two other, deprecated places, where you will find the same documentation:
