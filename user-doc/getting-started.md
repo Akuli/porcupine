@@ -73,8 +73,8 @@ Porcupine comes with a few other color themes too, so you can choose whatever yo
 From a user's point of view, the plugin manager is an easy way to disable features you don't like.
 Porcupine is designed so that almost anything can be disabled through the plugin manager.
 
-For more information about plugins and Porcupine's design in
-[dev-doc/architecture-and-design.md](../dev-doc/architecture-and-design.md).
+See [dev-doc/architecture-and-design.md](../dev-doc/architecture-and-design.md)
+for more information about plugins and Porcupine's design.
 
 ### "Find and Replace" in the Edit menu
 
