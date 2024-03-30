@@ -1,17 +1,16 @@
 """Display the "About Porcupine" button in the "Help" menu."""
 from __future__ import annotations
 
-import collections
 import os
 import re
 import subprocess
 import sys
 import tkinter
 import webbrowser
+from collections import deque
 from pathlib import Path
 from tkinter import ttk
 from typing import Callable
-from collections import deque
 
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils
@@ -53,7 +52,7 @@ class EasterEggs:
 
     def move(self, dx: int, dy: int) -> None:
         old = self.pic.place_info()
-        self.pic.place(x=(int(old['x']) + dx), y=(int(old["y"])+dy))
+        self.pic.place(x=(int(old["x"]) + dx), y=(int(old["y"]) + dy))
 
     def setup_easter_egg_1(self) -> None:
         fall_speed = 0
@@ -96,9 +95,9 @@ class EasterEggs:
             x_max = 0
             y_max = 0
 
-            nonlocal dx,dy
-            x = int(self.pic.place_info()['x'])
-            y = int(self.pic.place_info()['y'])
+            nonlocal dx, dy
+            x = int(self.pic.place_info()["x"])
+            y = int(self.pic.place_info()["y"])
             if x < x_min:
                 dx = 1
             if x > x_max:
@@ -108,7 +107,7 @@ class EasterEggs:
             if y > y_max:
                 dy = -1
 
-            self.move(2*dx, 2*dy)
+            self.move(2 * dx, 2 * dy)
 
         def handle_key(event: tkinter.Event[tkinter.Misc]) -> None:
             buffer.append(event.char)
