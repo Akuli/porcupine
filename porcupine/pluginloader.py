@@ -347,5 +347,5 @@ def setup_while_running(info: PluginInfo) -> None:
 
     _run_setup_and_set_status(info)
     assert info.status != Status.LOADING
-    if info.status == Status.ACTIVE:
+    if info.status == Status.ACTIVE:  # type: ignore[unreachable]
         get_main_window().event_generate("<<PluginsLoaded>>")

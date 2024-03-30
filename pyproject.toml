@@ -58,7 +58,7 @@ dev = [
     "pillow>=5.4.1",
 
     # type checking, exact versions to avoid "works on my computer" problems
-    "mypy==1.1.1",
+    "mypy==1.9.0",
     "types-Pygments==2.14.0.6",
     "types-docutils==0.19.1.6",
     "types-Send2Trash==1.8.2.4",
