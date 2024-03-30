@@ -40,11 +40,15 @@ it shows up as an empty window.
 
 ## Installing Porcupine
 
-### Development Install
+<details>
+<summary>Development Install</summary>
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
 
-### Debian-based Linux distributions (e.g. Ubuntu, Mint)
+</details>
+
+<details>
+<summary>Debian-based Linux distributions (e.g. Ubuntu, Mint)</summary>
 
 Open a terminal and run these commands:
 
@@ -64,7 +68,10 @@ This makes Porcupine show up in the menu just like any other application.
 You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
 and then deleting `porcupine-venv`.
 
-### Other Linux distributions
+</details>
+
+<details>
+<summary>Other Linux distributions</summary>
 
 Install Python 3.8 or newer with pip and tkinter somehow.
 If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
@@ -84,7 +91,10 @@ This makes Porcupine show up in the menu just like any other application.
 You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
 and then deleting `porcupine-venv`.
 
-### MacOS
+</details>
+
+<details>
+<summary>MacOS</summary>
 
 I don't have a Mac. If you have a Mac, you can help me a lot by installing
 Porcupine and letting me know how well it works.
@@ -93,7 +103,10 @@ I think you can download Python with tkinter from
 [python.org](https://www.python.org/) and then run the commands for
 "other Linux distributions" above.
 
-### Windows
+</details>
+
+<details>
+<summary>Windows</summary>
 
 Download a Porcupine installer from [the releases page](https://github.com/Akuli/porcupine/releases) and run it.
 Because I haven't asked Microsoft to trust Porcupine installers,
@@ -103,6 +116,11 @@ you will likely get a warning similar to this one:
 
 You should still be able to run the installer by clicking "More info".
 When installed, you will find Porcupine from the start menu.
+
+</details>
+
+Once you have installed Porcupine, I recommend having a look at [user-doc/getting-started.md](user-doc/getting-started.md).
+
 
 ## FAQ
 
