@@ -119,7 +119,22 @@ When installed, you will find Porcupine from the start menu.
 
 </details>
 
-Once you have installed Porcupine, I recommend having a look at [user-doc/getting-started.md](user-doc/getting-started.md).
+
+## Documentation
+
+If you have just installed Porcupine, have a look at [user-doc/getting-started.md](user-doc/getting-started.md).
+If you want to develop Porcupine, see [CONTRIBUTING.md](CONTRIBUTING.md) or [dev-doc/architecture-and-design.md](dev-doc/architecture-and-design.md).
+
+Most of Porcupine's documentation is markdown files in two folders:
+- [dev-doc](./dev-doc/) contains the documentation for developing Porcupine.
+- [user-doc](./user-doc/) contains the documentation for using Porcupine.
+
+There are also these two other, deprecated places, where you will mostly find outdated and useless documentation:
+- [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki) (not updated since May 2022)
+- [Plugin API Documentation](https://akuli.github.io/porcupine/) (not updated since June 2023)
+
+I will hopefully migrate their content to the two new places soon-ish.
+See [issue #1308](https://github.com/Akuli/porcupine/issues/1308) for discussion about the docs situation.
 
 
 ## FAQ
