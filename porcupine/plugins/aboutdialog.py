@@ -90,8 +90,8 @@ class EasterEggs:
                 return
             self.timeout = self.pic.after(round(1000 / 60), bounce)
 
-            x_min = -(self.window.winfo_width() - 200)
-            y_min = -(self.window.winfo_height() - 200)
+            x_min = -(self.window.winfo_width() - self.pic.winfo_width())
+            y_min = -(self.window.winfo_height() - self.pic.winfo_height())
             x_max = 0
             y_max = 0
 
