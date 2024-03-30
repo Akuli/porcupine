@@ -130,7 +130,6 @@ Most of Porcupine's documentation is markdown files in two folders:
 - [user-doc](./user-doc/) contains the documentation for using Porcupine.
 
 There are also these two other, deprecated places, where you will mostly find outdated and useless documentation:
-- [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki) (not updated since May 2022)
 - [Plugin API Documentation](https://akuli.github.io/porcupine/) (not updated since June 2023)
 
 I will hopefully migrate their content to the two new places soon-ish.
@@ -144,9 +143,9 @@ See [issue #1308](https://github.com/Akuli/porcupine/issues/1308) for discussion
 See [CHANGELOG.md](CHANGELOG.md).
 
 ### Does Porcupine support programming language X?
-You will likely get syntax highlighting without any configuring
+You will likely get syntax highlighting without any configuring,
 and autocompletions with a few lines of configuration file editing.
-See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+See [this documentation](user-doc/new-programming-language.md).
 
 ### Help! Porcupine doesn't work.
 Please install the latest version.

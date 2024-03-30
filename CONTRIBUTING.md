@@ -98,7 +98,6 @@ Other people shouldn't need them.
     which triggers the parts of `.github/workflows/release-builds.yml`
     that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
     They build and deploy docs, copy the changelog to the releases page, and so on.
-5. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
 
 If you want, you can also do a release from a branch named `bugfix-release` instead of `main`.
 This is useful if you fixed a bug that made Porcupine unusable for someone,
