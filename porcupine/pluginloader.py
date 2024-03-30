@@ -13,7 +13,7 @@ import pkgutil
 import random
 import time
 import traceback
-from typing import Any, Iterable, List, Sequence
+from typing import Any, Iterable, List, Sequence, cast
 
 import toposort
 
@@ -342,7 +342,13 @@ def setup_while_running(info: PluginInfo) -> None:
 
     dummy_parser = argparse.ArgumentParser()
     _run_setup_argument_parser_function(info, dummy_parser)
-    if info.status != Status.LOADING:  # error
+
+    # Cast is needed to confuse mypy. It thinks that _run_setup_and_set_status()
+    # won't change info.status, but as the function name clearly suggests, it will.
+    #
+    # See also: https://github.com/python/mypy/issues/12598
+    if cast(object, info.status) != Status.LOADING:
+        # loading plugin failed with error
         return
 
     _run_setup_and_set_status(info)
