@@ -5,7 +5,7 @@ and other details that don't affect using Porcupine.
 ## Unreleased
 
 - There are two new easter eggs in the about dialog. Happy Easter :)
-- Porcupine's documentation has been updated and rearranged. The documentation is now clearly split into two folders, `user-doc` for using Porcupine and `dev-doc` for developing Porcupine. Both folders also contain newly written documentation. Porcupine Wiki was deleted, as I'm pretty sure nobody used it, and deleting `akuli.github.io/porcupine` is planned.
+- Porcupine's documentation has been updated and rearranged. The documentation is now clearly split into two folders, [user-doc](https://github.com/Akuli/porcupine/tree/main/user-doc) for using Porcupine and [dev-doc](https://github.com/Akuli/porcupine/tree/main/dev-doc) for developing Porcupine. Both folders also contain newly written documentation. Porcupine Wiki was deleted, and deleting `akuli.github.io/porcupine` is planned.
 - The contents of the *Help* menu at top were updated. For example, *User Documentation* opens the `user-doc` folder.
 - Porcupine now checks for updates when it starts. Many other programs do this in an annoying way (with e.g. a popup message). Porcupine notifies you about a new version by showing message in the status bar instead. If this is still too annoying, you can easily disable update checking in *Porcupine Settings* or in the plugin manager.
 - Porcupine's right-click menus are now offset a little bit from the cursor location, so that you don't accidentally click the first item in the right-click menu. Thank you [ethical-haquer](https://github.com/ethical-haquer) for fixing this.
