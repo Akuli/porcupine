@@ -126,14 +126,14 @@ If you have just installed Porcupine, have a look at [user-doc/getting-started.m
 If you want to develop Porcupine, see [CONTRIBUTING.md](CONTRIBUTING.md) or [dev-doc/architecture-and-design.md](dev-doc/architecture-and-design.md).
 
 Most of Porcupine's documentation is markdown files in two folders:
-- [dev-doc](./dev-doc/) contains the documentation for developing Porcupine.
-- [user-doc](./user-doc/) contains the documentation for using Porcupine.
+- [The `dev-doc` folder](./dev-doc/) contains the documentation for developing Porcupine.
+- [The `user-doc` folder](./user-doc/) contains the documentation for using Porcupine.
 
-There are also these two other, deprecated places, where you will mostly find outdated and useless documentation:
-- [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki) (not updated since May 2022)
-- [Plugin API Documentation](https://akuli.github.io/porcupine/) (not updated since June 2023)
+There are also these two other, deprecated places:
+- [akuli.github.io/porcupine](https://akuli.github.io/porcupine/) (not updated since June 2023)
+- [The `docs` folder](./docs/) defines the content that was published at `akuli.github.io/porcupine`.
 
-I will hopefully migrate their content to the two new places soon-ish.
+I will hopefully update and migrate their content to the two new places soon-ish.
 See [issue #1308](https://github.com/Akuli/porcupine/issues/1308) for discussion about the docs situation.
 
 
@@ -144,9 +144,9 @@ See [issue #1308](https://github.com/Akuli/porcupine/issues/1308) for discussion
 See [CHANGELOG.md](CHANGELOG.md).
 
 ### Does Porcupine support programming language X?
-You will likely get syntax highlighting without any configuring
+You will likely get syntax highlighting without any configuring,
 and autocompletions with a few lines of configuration file editing.
-See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+See [this documentation](user-doc/new-programming-language.md).
 
 ### Help! Porcupine doesn't work.
 Please install the latest version.

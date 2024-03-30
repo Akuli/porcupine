@@ -56,12 +56,16 @@ That said, don't memorize keyboard shortcuts for things you almost never use.
 
 Here are some of the most important things:
 
-### "Report a problem or request a feature" in the Help menu
+### "Create an issue on GitHub" in the Help menu
 
 This button opens a browser window to create an issue on GitHub.
-If you are new to Porcupine, you will probably have some problems getting started with it,
-and you will probably discover some bugs.
-Please tell me about them :)
+Use it to report problems, request features, or to leave any other feedback to Porcupine developers.
+As you use Porcupine, you will probably experience problems and discover bugs.
+Please tell us about them so that we can fix them :)
+
+### "User Documentation" in the Help menu
+
+It opens this documentation.
 
 ### "Porcupine Settings" in the Settings menu
 

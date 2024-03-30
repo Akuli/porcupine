@@ -135,14 +135,11 @@ Python using the notorious tkinter GUI library. It started as a \
 proof-of-concept of a somewhat good editor written in tkinter, but nowadays \
 it's a tool I use at work every day.
 
-I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. See \
-[the contributor \
-page](https://github.com/Akuli/porcupine/graphs/contributors) for details.
+I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. \
+That said, Porcupine wouldn't be what it is now without the feedback and contributions of many other people. \
+See [the contributor page](https://github.com/Akuli/porcupine/graphs/contributors) for details.
 
-Links:
-\N{bullet} [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki)
-\N{bullet} [Porcupine on GitHub](https://github.com/Akuli/porcupine)
-\N{bullet} [Plugin API documentation for Python programmers](https://akuli.github.io/porcupine/)
+Porcupine is developed in [this GitHub repo](https://github.com/Akuli/porcupine).
 
 Porcupine is available under the MIT license. It means that you can do \
 pretty much anything you want with it as long as you distribute the \

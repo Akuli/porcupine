@@ -448,24 +448,9 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
     get_menu("Settings").add_command(label="Plugin Manager", command=pluginmanager.show_dialog)
 
+    # TODO: these really belong to a plugin
     def add_link(menu_path: str, label: str, url: str) -> None:
         get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))
 
-    # TODO: porcupine starring button
-    add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
-    add_link(
-        "Help",
-        "Report a problem or request a feature",
-        "https://github.com/Akuli/porcupine/issues/new",
-    )
-    add_link(
-        "Help/Python",
-        "Free help chat",
-        "https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython",
-    )
-    add_link(
-        "Help/Python",
-        "My Python tutorial",
-        "https://github.com/Akuli/python-tutorial/blob/master/README.md",
-    )
-    add_link("Help/Python", "Official documentation", "https://docs.python.org/")
+    add_link("Help", "Create an issue on GitHub", "https://github.com/Akuli/porcupine/issues/new")
+    add_link("Help", "User Documentation", "https://github.com/Akuli/porcupine/tree/main/user-doc")
