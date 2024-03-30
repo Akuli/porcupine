@@ -41,6 +41,8 @@ With output going to the Porcupine window, running the hello world program looks
 
 ![The Hello World program in Porcupine.](images/hello-world-run.png)
 
+See [projects.md](projects.md) for instructions to run projects that have more than a one-file Python script.
+
 
 ## The Menus
 
