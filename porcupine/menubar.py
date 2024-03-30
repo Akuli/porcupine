@@ -453,8 +453,4 @@ def _fill_menus_with_default_stuff() -> None:
         get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))
 
     add_link("Help", "Create an issue on GitHub", "https://github.com/Akuli/porcupine/issues/new")
-    add_link(
-        "Help",
-        "User Documentation",
-        "https://github.com/Akuli/porcupine/tree/main/user-doc"
-    )
+    add_link("Help", "User Documentation", "https://github.com/Akuli/porcupine/tree/main/user-doc")
