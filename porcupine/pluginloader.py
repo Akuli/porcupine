@@ -13,8 +13,7 @@ import pkgutil
 import random
 import time
 import traceback
-from typing import cast
-from typing import Any, Iterable, List, Sequence
+from typing import Any, Iterable, List, Sequence, cast
 
 import toposort
 
