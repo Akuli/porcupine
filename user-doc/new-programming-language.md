@@ -6,7 +6,7 @@ This page lists all the things that you may want to do for using Porcupine with 
 Feel free to [create an issue on GitHub](https://github.com/Akuli/porcupine/issues/new)
 if you get any issues with following this guide.
 It might also be a good idea to create an issue if you follow this guide successfully,
-so that the settings that work for you could maybe be shipped with Porcupine :)
+so that your working settings can be added to Porcupine's default settings.
 
 
 ## How to edit filetypes.toml
@@ -22,13 +22,21 @@ every possible option is documented there.
 
 If the programming language X is already listed in `default_filetypes.toml`,
 you can still override its settings in your own `filetypes.toml`.
-For example, if you want C code to be indented with tabs,
+For example, if you want C code to be indented with tabs by default,
 you can add this to your `filetypes.toml`:
 
 ```toml
 [C]
 tabs2spaces = false
 ```
+
+That said, you should use [`.editorconfig` files](https://editorconfig.org/) for project-specific settings.
+Porcupine uses `.editorconfig` settings whenever they disagree with `filetypes.toml`.
+For example, if you open source code of the Python interpreter (written in C),
+Porcupine will use spaces for indentation regardless of your `filetypes.toml` settings,
+because Python's source code comes with
+[this `.editorconfig` file](https://github.com/python/cpython/blob/main/.editorconfig)
+that sets `indent_style = space`.
 
 If the programming language X is not in `default_filetypes.toml`,
 then copy the configuration of some other programming language Y from `default_filetypes.toml`
