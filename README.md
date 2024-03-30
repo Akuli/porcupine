@@ -118,7 +118,7 @@ See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki
 ### Help! Porcupine doesn't work.
 Please install the latest version.
 If it still doesn't work, [let me know by creating an issue on
-GitHub](http://github.com/Akuli/porcupine/issues/new).
+GitHub](https://github.com/Akuli/porcupine/issues/new).
 
 ### Is Porcupine written in Porcupine?
 

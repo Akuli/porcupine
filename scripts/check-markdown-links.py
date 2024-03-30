@@ -32,8 +32,11 @@ def find_links(markdown_file_path):
 
     for lineno, line in enumerate(content.splitlines(), start=1):
         link_regexes = [
-            r"\[[^\[\]]+\]\((\S+?)\)",  # [blah blah](target)
-            r"^\[[^\[\]]+\]: (\S+)$",  # [blah blah]: target
+            # [text](target)
+            # The text can contain spaces, and it can even be split across many lines.
+            r"\]\((\S+?)\)",
+            # [blah blah]: target
+            r"^\[[^\[\]]+\]: (.+)$",
         ]
         for regex in link_regexes:
             for link_target in re.findall(regex, line):
@@ -45,7 +48,7 @@ def check_https_url(url):
     try:
         # Many sites redirect to front page for bad URLs. Let's not treat that as ok.
         response = requests.head(url, timeout=1, allow_redirects=False)
-    except requests.exceptions.RequestsException as e:
+    except requests.exceptions.RequestException as e:
         return f"HTTP HEAD request failed: {e}"
 
     if url == "https://github.com/Akuli/porcupine/issues/new":
@@ -73,10 +76,8 @@ def check_link(markdown_file_path, link_target, offline_mode=False):
         return "this link should probably use https instead of http"
 
     if link_target.startswith("https://"):
-        if offline_mode:
-            return None  # assume ok
-        else:
-            return check_https_url(link_target)
+        assert not offline_mode
+        return check_https_url(link_target)
 
     if "//" in link_target:
         return "double slashes are allowed only in http:// and https:// links"
@@ -130,6 +131,9 @@ def main():
 
     for path in paths:
         for lineno, link_target in find_links(path):
+            if link_target.startswith("https://") and args.offline:
+                continue
+
             problem = check_link(path, link_target, offline_mode=args.offline)
             if problem:
                 print(f"{path}:{lineno}: {problem}")
@@ -142,7 +146,7 @@ def main():
     if bad_links > 0:
         sys.exit(1)
     else:
-        print("ok :)")
+        print(f"checked {good_links} links, no errors :)")
 
 
 main()
