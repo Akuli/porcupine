@@ -6,26 +6,25 @@ If something isn't listed here, please create an issue.
 
 ## Text Widget Locations
 
-Tkinter uses `"line.column"` strings to represents locations in `tkinter.Text` widgets,
-like the text widget in Porcupine that I am typing this documentation into right now.
+Tkinter uses `"line.column"` strings to represents locations in `tkinter.Text` widgets.
 For example, `"12.3"` means "line 12, column 3".
-**Text locations cannot be treated as floats**, so `"12.30"` means "line 12, column 30".
+**Text locations cannot be treated as floats**:
+`"12.30"` means "line 12, column 30", even though as a float it would be equal to `12.3`.
 Line numbers are 1-based and columns 0-based, so `"1.0"` is the start of the text widget.
 
 Actually, `"line.column"` is only one of the many forms accepted by tkinter.
-Here are some other ways to specify locations:
+See `INDICES` in [the `text(3tk)` manual page](https://www.tcl.tk/man/tcl8.6/TkCmd/text.htm) for a full list.
+Here are the most common ways to specify locations:
 - `end` is **one imaginary newline character beyond** the end of the text widget
 - `end - 1 char` is the end of the text widget
+- `12.3 + 4 chars` goes 4 characters forward from column 3 of line 12, going to line 13 and beyond as needed.
 - `insert` is cursor location (not to be confused with the `.insert()` method which adds text)
 - `current` is **mouse** location
 - `sel.first` and `sel.last` are the start and end of the selection.
     You will get `tkinter.TclError` for using these if nothing is selected.
-- More generally, `foo.first` and `foo.last` are the start and end of the range of text that has tag `foo`.
-    Tagging is used for syntax highlighting, making clickable links, and so on.
-- `12.0 lineend` takes is the end of line 12. It takes the start of line 12 (`12.0`) and goes to the end of that line.
-- `12.3 + 4 chars` goes 4 characters forward from column 3 of line 12, going to line 13 and beyond as needed.
-
-There is more. See [the `text(3tk)` manual page](https://www.tcl.tk/man/tcl8.6/TkCmd/text.htm).
+- `12.0 lineend` is the end of line 12.
+    It takes the start of line 12 (`12.0`) and goes to the end of that line.
+    There is also `linestart`.
 
 You can use `textwidget.index(location)` to convert a location into `"line.column"` format.
 
