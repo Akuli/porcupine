@@ -14,7 +14,7 @@ import random
 import time
 import traceback
 from collections.abc import Iterable, Sequence
-from typing import Any, List, cast
+from typing import Any, cast
 
 import toposort
 

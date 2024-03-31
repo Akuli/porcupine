@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 from porcupine import tabs, utils
 

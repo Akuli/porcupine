@@ -14,7 +14,7 @@ import traceback
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, NamedTuple, Optional, Type, TypeVar
+from typing import Any, Callable, NamedTuple, Optional, TypeVar
 
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer

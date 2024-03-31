@@ -8,7 +8,7 @@ import re
 import tkinter
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import tomli
 from pygments import lexers

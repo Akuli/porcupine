@@ -12,7 +12,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from porcupine import (
     get_horizontal_panedwindow,

@@ -10,7 +10,7 @@ from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, List, Literal
+from typing import Any, Callable, Literal
 
 from porcupine import actions, pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit

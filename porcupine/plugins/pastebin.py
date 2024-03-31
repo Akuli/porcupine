@@ -25,7 +25,7 @@ import webbrowser
 from functools import partial
 from http.client import HTTPConnection, HTTPSConnection
 from tkinter import messagebox, ttk
-from typing import Any, ClassVar, Type, cast
+from typing import Any, ClassVar, cast
 from urllib.parse import urlencode
 from urllib.request import HTTPSHandler, Request, build_opener
 

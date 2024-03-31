@@ -15,7 +15,7 @@ import tkinter
 from collections.abc import Generator, Iterator
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, List, TypeVar, overload
+from typing import Any, Callable, TypeVar, overload
 
 import dacite
 from pygments import styles, token
