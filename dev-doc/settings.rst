@@ -2,8 +2,8 @@
 =========================================================
 
 **NOTE:**
-    This documentation was originally meant to be converted to HTML with Sphinx.
-    It probably won't show up perfectly on GitHub.
+    This documentation was originally meant to be converted to HTML with Sphinx,
+    so it doesn't show up perfectly on GitHub.
     Please create an issue if you have trouble figuring out how the settings work.
     I'm planning to rewrite some of the setting stuff and then document it properly,
     see `issue #1481 <https://github.com/Akuli/porcupine/issues/1481>`_.
