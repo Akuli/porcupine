@@ -548,7 +548,7 @@ def bind_tab_key(
         shift_tab = "<Shift-Tab>"
 
     widget.bind("<Tab>", functools.partial(callback, False), **bind_kwargs)  # noqa: TK231
-    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # noqa: TK231
+    widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # noqa: TK131
 
 
 # Must be in a function because lambdas and local variables are ... inconvenient
