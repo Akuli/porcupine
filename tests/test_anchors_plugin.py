@@ -7,6 +7,7 @@ from porcupine.settings import global_settings
 
 
 def jump_5_times(filetab, how):
+    assert sys.platform != "linux"
     locations = []
     for i in range(5):
         get_menu("Edit/Anchors").invoke(how)
