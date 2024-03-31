@@ -26,10 +26,14 @@ jobs:
     - name: Gather a list of Python files in the pull request branch
       run: |
         (cd pr && git ls-files) | grep -E '\.(py|pyw)$' | sed s:^:pr/: | tee filelist.txt
-    - run: python3 -m pycln --all --disable-all-dunder-policy $(cat filelist.txt)
-    - run: python3 -m pyupgrade $(cat filelist.txt) --keep-runtime-typing --py38-plus --exit-zero-even-if-changed
-    - run: python3 -m black $(cat filelist.txt)
-    - run: python3 -m isort $(cat filelist.txt)
+    - name: Run pycln
+      run: mapfile -t files < filelist.txt && python3 -m pycln --all --disable-all-dunder-policy -- "${files[@]}"
+    - name: Run pyupgrade
+      run: mapfile -t files < filelist.txt && python3 -m pyupgrade --keep-runtime-typing --py38-plus --exit-zero-even-if-changed -- "${files[@]}"
+    - name: Run black
+      run: mapfile -t files < filelist.txt && python3 -m black -- "${files[@]}"
+    - name: Run isort
+      run: mapfile -t files < filelist.txt && python3 -m isort -- "${files[@]}"
     # I like requirements-dev.txt and some other people like pyproject.toml, so we have both.
     # Auto-generating is the easiest way to ensure the two stay in sync.
     - name: Generate requirements-dev.txt from pyproject.toml
