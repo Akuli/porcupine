@@ -31,12 +31,15 @@ Most important features:
 [Langserver]: https://langserver.org/
 [Editorconfig]: https://editorconfig.org/
 
-Porcupine also has [a very powerful plugin
-API](https://akuli.github.io/porcupine/), and most of the above features are
-implemented as plugins. This means that if you know how to use Python 3 and
-tkinter, you can easily customize your editor to do anything you want to. In
-fact, the plugin API is so powerful that if you run Porcupine without plugins,
-it shows up as an empty window.
+[Porcupine's design](dev-doc/architecture-and-design.md) makes it very easy to customize.
+Almost everything is implemented as a plugin that can be disabled easily,
+but if you know how to use Python and tkinter, you can also make your own plugins.
+Porcupine plugins are so powerful that if you run Porcupine without any plugins, it looks like this:
+
+![Screenshot of porcupine without plugins 1](dev-doc/images/no-plugins-1.png)
+
+![Screenshot of porcupine without plugins 2](dev-doc/images/no-plugins-2.png)
+
 
 ## Installing Porcupine
 

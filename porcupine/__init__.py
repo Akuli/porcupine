@@ -1,12 +1,3 @@
-"""Porcupine is a simple editor.
-
-You are probably reading this because you want to learn how Porcupine
-works or write fun plugins for it. I recommend getting started with the
-plugin API documentation:
-
-    https://akuli.github.io/porcupine/
-"""
-
 import os
 import sys
 
