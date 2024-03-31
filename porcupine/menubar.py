@@ -1,3 +1,54 @@
+"""This file creates the menubar near the top of the Porcupine window.
+
+Here is a simple example. You can run it by saving it as a `.py` file in the
+`porcupine/plugins/` folder.
+
+    from tkinter import messagebox
+    from porcupine import menubar
+
+    def hello():
+        messagebox.showinfo("Hello", "Hello World!")
+
+    def setup():
+        menubar.get_menu("Run/Greetings").add_command(label="Hello World", command=hello)
+
+This creates a new *Greetings* submenu to Porcupine's *Run* menu. Inside the
+*Greetings* menu, there is a *Hello World* menu item that shows a popup message
+when it is clicked.
+
+The `/`-separated strings are called *menu paths*. They specify a menu and an
+item inside that menu. Here are some details and gotchas about menu paths:
+
+- Menus will be created when they don't already exist.
+- Menu paths must be in ASCII, because they are used in virtual events names (see below).
+- Use `//` to display an actual slash character in the menus.
+- Menu stuff might get rewritten soon. See issue #1342.
+
+Associating key presses with menu items is currently quite complicated, and IMO
+much more complicated than it needs to be. Here's how associating `Ctrl+F` with
+`Edit/Find and Replace` works:
+- `porcupine/default_keybindings.tcl` runs when Porcupine starts, and it
+  associates the physical event `<Control-f>` with the virtual event
+  `<<Menubar:Edit/Find and Replace>>` using the `event add` Tcl command.
+- The `porcupine.menubar` module binds to the virtual event
+  `<<Menubar:Edit/Find and Replace>>` and invokes the `Find and Replace` menu
+  item from the `Edit` menu. These bindings are created automatically for all
+  menu items.
+- The `find` plugin adds a `Find and Replace` option to the `Edit` menu in the menubar.
+
+And here's what happens when the user actually presses Ctrl+F:
+
+1. User presses `Ctrl+F`.
+2. Tk generates a `<Control-f>` event. Tk also considers this to be a
+   `<<Menubar:Edit/Find and Replace>>` event because of the `event add`.
+3. Tk calls the automatically created ``<<Menubar:Edit/Find and Replace>>`
+   binding because the corresponding event was generated.
+4. The binding invokes the `Edit/Find and Replace` menu item.
+5. Because the menu item was invoked, it runs its command as if it was clicked.
+   This command is a function defined in `porcupine/plugins/find.py`.
+6. The `find` plugin does its thing.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -22,7 +73,7 @@ log = logging.getLogger(__name__)
 # For some reason, binding <F4> on Windows also captures Alt+F4 presses.
 # IMO applications shouldn't receive the window manager's special key bindings.
 # Windows is weird...
-def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
+def _event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
     return (
         sys.platform == "win32"
         and isinstance(event.state, int)
@@ -56,7 +107,7 @@ def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
 def _generate_event(name: str, event: tkinter.Event[tkinter.Misc]) -> Literal["break"]:
-    if event_is_windows_alt_f4(event):
+    if _event_is_windows_alt_f4(event):
         quit()
     else:
         log.debug(f"Generating event: {name}")
@@ -178,7 +229,7 @@ def _walk_menu_contents(
 
 
 def _menu_event_handler(menu: tkinter.Menu, index: int, event: tkinter.Event[tkinter.Misc]) -> str:
-    if event_is_windows_alt_f4(event):
+    if _event_is_windows_alt_f4(event):
         quit()
     else:
         menu.invoke(index)
