@@ -32,9 +32,14 @@ Most important features:
 [Editorconfig]: https://editorconfig.org/
 
 [Porcupine's design](dev-doc/architecture-and-design.md) makes it very easy to customize.
-Almost everything is implemented as a plugin that can be disabled easily.
-Also, if you know how to use Python and tkinter, you can easily customize your editor to do anything you want.
-This is the main reason why you would choose Porcupine instead of some other editor.
+Almost everything is implemented as a plugin that can be disabled easily,
+but if you know how to use Python and tkinter, you can also make your own plugins.
+Porcupine plugins are so powerful that if you run Porcupine without any plugins, it looks like this:
+
+![Screenshot of porcupine without plugins 1](images/no-plugins-1.png)
+
+![Screenshot of porcupine without plugins 2](images/no-plugins-2.png)
+
 
 ## Installing Porcupine
 
