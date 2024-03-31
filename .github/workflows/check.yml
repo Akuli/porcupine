@@ -23,7 +23,6 @@ jobs:
     - run: pip install wheel
     - run: pip install -r requirements-dev.txt
     - run: |
-        time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.8 porcupine docs/extensions.py
         time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.9 porcupine docs/extensions.py
         time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.10 porcupine docs/extensions.py
         time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.11 porcupine docs/extensions.py
@@ -34,7 +33,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -54,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -74,7 +73,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     env:
       # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
       TCLLIBPATH: ./lib
@@ -82,9 +81,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: brew install python@${{ matrix.python-version }}
-    # https://stackoverflow.com/a/66919851
-    - if: matrix.python-version != '3.8'
-      run: brew install python-tk@${{ matrix.python-version }}
+    - run: brew install python-tk@${{ matrix.python-version }}
     - run: $PYTHON --version
     - run: $PYTHON -m pip install -r requirements-dev.txt
     - run: $PYTHON scripts/download-tkdnd.py
