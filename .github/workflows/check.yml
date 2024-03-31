@@ -9,7 +9,7 @@ jobs:
   mypy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - uses: actions/setup-python@v4
       with:
         python-version: "3.11"
@@ -36,7 +36,7 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
@@ -67,7 +67,7 @@ jobs:
       TCLLIBPATH: ./lib
       PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: brew install python@${{ matrix.python-version }}
     # https://stackoverflow.com/a/66919851
     - if: matrix.python-version != '3.8'
@@ -81,7 +81,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - uses: actions/setup-python@v4
       with:
         python-version: "3.11"
