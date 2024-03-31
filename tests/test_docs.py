@@ -1,9 +1,10 @@
-import textwrap
-import sys
 import re
 import shutil
 import subprocess
+import sys
+import textwrap
 from pathlib import Path
+
 from porcupine import menubar
 
 
@@ -11,9 +12,14 @@ from porcupine import menubar
 # Let's test it.
 def test_plugin_structure_md_example_plugin(tmp_path):
     shutil.copytree("porcupine", tmp_path / "porcupine")
-    match = re.search(r"```python\n([^`]+def setup_argument_parser[^`]+)\n```", Path("dev-doc/plugin-structure.md").read_text())
-    (tmp_path / "porcupine"/ "plugins"/"foo.py").write_text(match.group(1))
-    output = subprocess.check_output([sys.executable, "-m", "porcupine", "--help"], cwd=tmp_path, text=True)
+    match = re.search(
+        r"```python\n([^`]+def setup_argument_parser[^`]+)\n```",
+        Path("dev-doc/plugin-structure.md").read_text(),
+    )
+    (tmp_path / "porcupine" / "plugins" / "foo.py").write_text(match.group(1))
+    output = subprocess.check_output(
+        [sys.executable, "-m", "porcupine", "--help"], cwd=tmp_path, text=True
+    )
     assert "--foo shows message box" in re.sub(r" +", " ", output)
 
 
