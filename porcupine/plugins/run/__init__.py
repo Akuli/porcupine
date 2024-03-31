@@ -8,7 +8,6 @@ import sys
 import tkinter
 from functools import partial
 from tkinter import messagebox
-from typing import List
 
 from porcupine import get_main_window, get_tab_manager, menubar, tabs, utils
 from porcupine.plugins import python_venv
@@ -72,7 +71,7 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("example_commands", [], type_=List[common.ExampleCommand])
+    tab.settings.add_option("example_commands", [], type_=list[common.ExampleCommand])
 
 
 def setup() -> None:

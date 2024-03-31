@@ -14,9 +14,10 @@ import signal
 import subprocess
 import sys
 import threading
+from collections.abc import Iterator
 from functools import partial
 from pathlib import Path
-from typing import IO, Any, Iterator, Optional
+from typing import IO, Any, Optional
 from urllib.request import url2pathname
 
 if sys.platform != "win32":
