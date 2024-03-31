@@ -29,7 +29,7 @@ jobs:
     - name: Run pycln
       run: mapfile -t files < filelist.txt && python3 -m pycln --all --disable-all-dunder-policy -- "${files[@]}"
     - name: Run pyupgrade
-      run: mapfile -t files < filelist.txt && python3 -m pyupgrade --keep-runtime-typing --py38-plus --exit-zero-even-if-changed -- "${files[@]}"
+      run: mapfile -t files < filelist.txt && python3 -m pyupgrade --keep-runtime-typing --py39-plus --exit-zero-even-if-changed -- "${files[@]}"
     - name: Run black
       run: mapfile -t files < filelist.txt && python3 -m black -- "${files[@]}"
     - name: Run isort
