@@ -9,8 +9,8 @@ jobs:
   mypy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: pip
@@ -28,31 +28,43 @@ jobs:
         time mypy --platform darwin --python-version 3.10 porcupine docs/extensions.py
         time mypy --platform darwin --python-version 3.11 porcupine docs/extensions.py
 
-  pytest:
+  pytest-windows:
     timeout-minutes: 10
+    runs-on: windows-latest
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
     - run: pip install wheel
     - run: pip install -r requirements-dev.txt
-    - if: matrix.os == 'ubuntu-latest'
-      # Make sure that it doesn't crash with Noto Color Emoji installed
-      run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd
-    - if: matrix.os == 'windows-latest'
+    - name: Download tkdnd
       run: |
         python scripts/download-tkdnd.py
         echo "TCLLIBPATH=lib" >> $env:GITHUB_ENV
-    - uses: GabrielBB/xvfb-action@v1.4
+    - run: python -m pytest --durations=10
+
+  pytest-linux:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        run: python -m pytest --durations=10
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+    - run: pip install wheel
+    - run: pip install -r requirements-dev.txt
+    # Make sure that it doesn't crash with Noto Color Emoji installed
+    - run: sudo apt install --no-install-recommends fonts-noto-color-emoji tkdnd xvfb
+    - run: xvfb-run python -m pytest --durations=10
 
   # Separate from other pytests because tkinter doesn't work on macos with actions/setup-python.
   # It imports, but gives this error:    RuntimeError: tk.h version (8.6) doesn't match libtk.a version (8.5)
@@ -67,7 +79,7 @@ jobs:
       TCLLIBPATH: ./lib
       PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: brew install python@${{ matrix.python-version }}
     # https://stackoverflow.com/a/66919851
     - if: matrix.python-version != '3.8'
@@ -81,8 +93,8 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: pip

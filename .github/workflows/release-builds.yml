@@ -8,8 +8,8 @@ jobs:
   windows-build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.8"  # last version supporting windows 7
         cache: pip
@@ -20,7 +20,7 @@ jobs:
         platform: x64
     # -u makes print show in real time
     - run: python -u scripts/build-exe-installer.py
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: windows-exe
         path: build/PorcupineSetup_*.exe
@@ -29,8 +29,8 @@ jobs:
   #docs:
   #  runs-on: ubuntu-latest
   #  steps:
-  #  - uses: actions/checkout@v2
-  #  - uses: actions/setup-python@v4
+  #  - uses: actions/checkout@v4
+  #  - uses: actions/setup-python@v5
   #    with:
   #      python-version: "3.11"
   #      cache: pip
@@ -46,12 +46,12 @@ jobs:
   changelog:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: |
         # Extract second "## blah" separated part, excluding the "## blah" lines
         # https://stackoverflow.com/a/20943815
         awk '/^## / { part++ } (part == 1 && line++ != 0) { print }' CHANGELOG.md | tee changelog_part.md
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: changelog
         path: changelog_part.md
@@ -63,10 +63,10 @@ jobs:
     needs: [windows-build, changelog]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: windows-exe
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: changelog
     - id: get_version
