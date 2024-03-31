@@ -23,9 +23,9 @@ jobs:
     - run: pip install wheel
     - run: pip install -r requirements-dev.txt
     - run: |
-        time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.9 porcupine docs/extensions.py
-        time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.10 porcupine docs/extensions.py
-        time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.11 porcupine docs/extensions.py
+        time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.9 porcupine
+        time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.10 porcupine
+        time mypy --platform ${{ matrix.mypy-platform }} --python-version 3.11 porcupine
 
   pytest-windows:
     timeout-minutes: 10
