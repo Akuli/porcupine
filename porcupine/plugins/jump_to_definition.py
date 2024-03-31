@@ -9,7 +9,6 @@ import logging
 import tkinter
 from functools import partial
 from pathlib import Path
-from typing import List
 
 from porcupine import get_tab_manager, menubar, tabs, utils
 from porcupine.plugins import rightclick_menu
@@ -32,7 +31,7 @@ class LocationRange:
 
 @dataclasses.dataclass
 class Response(utils.EventDataclass):
-    location_ranges: List[LocationRange]
+    location_ranges: list[LocationRange]
 
 
 def show_location_range(loc_range: LocationRange) -> None:

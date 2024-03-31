@@ -25,7 +25,7 @@ import webbrowser
 from functools import partial
 from http.client import HTTPConnection, HTTPSConnection
 from tkinter import messagebox, ttk
-from typing import Any, ClassVar, Type, cast
+from typing import Any, ClassVar, cast
 from urllib.parse import urlencode
 from urllib.request import HTTPSHandler, Request, build_opener
 
@@ -370,7 +370,7 @@ def ask_are_you_sure(filename: str | None, paste_class: type[Paste]) -> bool:
     return result
 
 
-def start_pasting(paste_class: Type[Paste], tab: tabs.FileTab) -> None:
+def start_pasting(paste_class: type[Paste], tab: tabs.FileTab) -> None:
     if global_settings.get("ask_to_pastebin", bool):
         filename = "this file" if tab.path is None else tab.path.name
         if not ask_are_you_sure(filename, paste_class):
