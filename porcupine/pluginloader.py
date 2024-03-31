@@ -13,9 +13,6 @@ for it.
 Note that `<<PluginsLoaded>>` also runs after successfully setting up a plugin
 while Porcupine is running.
 """
-# many things are wrapped in try/except here to allow writing Porcupine
-# plugins using Porcupine, so Porcupine must run if the plugins are
-# broken
 from __future__ import annotations
 
 import argparse

@@ -45,6 +45,7 @@ _T = TypeVar("_T")
 
 # On Windows, sys.executable can point to pythonw.exe or Porcupine.exe.
 # Neither of those behaves quite like you would expect Python to behave.
+# In those cases, `python_executable` points at a plain old `python.exe`.
 #
 # Note that python_executable (or sys.executable for that matter) shouldn't be
 # used to run the user's Python programs. The user could have multiple different

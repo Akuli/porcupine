@@ -31,9 +31,10 @@ much more complicated than it needs to be. Here's how associating `Ctrl+F` with
   associates the physical event `<Control-f>` with the virtual event
   `<<Menubar:Edit/Find and Replace>>` using the `event add` Tcl command.
 - The `porcupine.menubar` module binds to the virtual event
-  `<<Menubar:Edit/Find and Replace>>` and invokes the `Find and Replace` menu
-  item from the `Edit` menu. These bindings are created automatically for all
-  menu items.
+  `<<Menubar:Edit/Find and Replace>>`. This binding invokes the
+  `Find and Replace` menu item from the `Edit` menu whenever the
+  `<<Menubar:Edit/Find and Replace>>` virtual event is generated.
+  Similar bindings are created automatically for all menu items.
 - The `find` plugin adds a `Find and Replace` option to the `Edit` menu in the menubar.
 
 And here's what happens when the user actually presses Ctrl+F:
