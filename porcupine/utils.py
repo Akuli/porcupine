@@ -1,4 +1,4 @@
-"""A collection of carefully selected utility functions.
+"""This is a collection of carefully selected utility functions.
 
 Not everything should be an util: for example, if it's only used in one file,
 then it should be defined in that file. Specifically, I believe everything in
@@ -43,12 +43,15 @@ log = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
-# nsis install puts Porcupine.exe and python.exe in same place
+# On Windows, sys.executable can point to pythonw.exe or Porcupine.exe.
+# Neither of those behaves quite like you would expect Python to behave.
+#
+# Note that python_executable (or sys.executable for that matter) shouldn't be
+# used to run the user's Python programs. The user could have multiple different
+# Python installations or venvs.
 if sys.platform == "win32" and sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe")):
-    running_pythonw = True
     python_executable = Path(sys.executable).parent / "python.exe"
 else:
-    running_pythonw = False
     python_executable = Path(sys.executable)
 
 
