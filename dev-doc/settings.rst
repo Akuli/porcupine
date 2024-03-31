@@ -1,7 +1,7 @@
 :mod:`porcupine.settings` --- Porcupine's setting manager
 =========================================================
 
-.. note::
+**NOTE:**
     This documentation was originally meant to be converted to HTML with Sphinx.
     It probably won't show up perfectly on GitHub.
     Please create an issue if you have trouble figuring out how the settings work.
