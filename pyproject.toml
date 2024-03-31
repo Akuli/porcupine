@@ -56,8 +56,6 @@ dev = [
     "pyupgrade==3.9.0",
     "sphinx>=4.0.0, <5.0.0",
     "pillow>=5.4.1",
-    "flake8>=7.0.0, <8.0.0",
-    "flake8_tkinter==0.6.0",
 
     # type checking, exact versions to avoid "works on my computer" problems
     "mypy==1.9.0",
