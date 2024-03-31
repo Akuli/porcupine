@@ -26,10 +26,10 @@ jobs:
     - name: Gather a list of Python files in the pull request branch
       run: |
         (cd pr && git ls-files) | grep -E '\.(py|pyw)$' | sed s:^:pr/: | tee filelist.txt
-    - name: Run pycln
-      run: mapfile -t files < filelist.txt && python3 -m pycln --all --disable-all-dunder-policy -- "${files[@]}"
     - name: Run pyupgrade
       run: mapfile -t files < filelist.txt && python3 -m pyupgrade --keep-runtime-typing --py39-plus --exit-zero-even-if-changed -- "${files[@]}"
+    - name: Run pycln
+      run: mapfile -t files < filelist.txt && python3 -m pycln --all --disable-all-dunder-policy -- "${files[@]}"
     - name: Run black
       run: mapfile -t files < filelist.txt && python3 -m black -- "${files[@]}"
     - name: Run isort
