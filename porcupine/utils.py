@@ -548,7 +548,7 @@ def bind_tab_key(
     else:
         shift_tab = "<Shift-Tab>"
 
-    widget.bind("<Tab>", functools.partial(callback, False), **bind_kwargs)  # noqa: TK231
+    widget.bind("<Tab>", functools.partial(callback, False), **bind_kwargs)  # noqa: TK141
     widget.bind(shift_tab, functools.partial(callback, True), **bind_kwargs)  # noqa: TK141
 
 
