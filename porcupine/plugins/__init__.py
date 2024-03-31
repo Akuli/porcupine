@@ -1,8 +1,4 @@
-"""
-If you want to write more plugins, that's great! Have a look at the documentation:
-
-    https://akuli.github.io/porcupine/
-"""
+"""This folder contains all plugins that come with Porcupine."""
 from __future__ import annotations
 
 from porcupine import dirs
