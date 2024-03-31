@@ -43,3 +43,4 @@ get_vertical_panedwindow = _state.get_vertical_panedwindow  # TODO: document thi
 get_tab_manager = _state.get_tab_manager
 add_quit_callback = _state.add_quit_callback
 quit = _state.quit
+ 
