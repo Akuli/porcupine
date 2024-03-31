@@ -18,7 +18,7 @@ from porcupine import dirs, get_parsed_args, get_tab_manager, menubar, settings,
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
-FileType = Dict[str, Any]
+FileType = dict[str, Any]
 filetypes: dict[str, FileType] = {}
 
 

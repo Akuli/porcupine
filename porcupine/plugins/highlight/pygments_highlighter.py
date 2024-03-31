@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import itertools
 import tkinter
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from pygments.lexer import Lexer, RegexLexer
 from pygments.lexers import MarkdownLexer

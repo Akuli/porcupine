@@ -7,8 +7,9 @@ import shlex
 import subprocess
 import sys
 import threading
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Any, Sequence, TextIO, cast
+from typing import Any, TextIO, cast
 
 import porcupine
 from porcupine import dirs

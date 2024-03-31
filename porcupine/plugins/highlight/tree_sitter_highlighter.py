@@ -4,8 +4,9 @@ import dataclasses
 import logging
 import re
 import tkinter
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Dict, Iterator, List, Union
+from typing import Dict, List, Union
 
 import dacite
 import tree_sitter
@@ -26,9 +27,9 @@ TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappi
 
 @dataclasses.dataclass
 class YmlConfig:
-    token_mapping: Dict[str, Union[str, Dict[str, str]]]
-    dont_recurse_inside: List[str] = dataclasses.field(default_factory=list)
-    queries: Dict[str, str] = dataclasses.field(default_factory=dict)
+    token_mapping: dict[str, Union[str, dict[str, str]]]
+    dont_recurse_inside: list[str] = dataclasses.field(default_factory=list)
+    queries: dict[str, str] = dataclasses.field(default_factory=dict)
 
 
 def _strip_comments(query: str) -> str:

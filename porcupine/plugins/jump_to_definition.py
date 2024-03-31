@@ -32,7 +32,7 @@ class LocationRange:
 
 @dataclasses.dataclass
 class Response(utils.EventDataclass):
-    location_ranges: List[LocationRange]
+    location_ranges: list[LocationRange]
 
 
 def show_location_range(loc_range: LocationRange) -> None:

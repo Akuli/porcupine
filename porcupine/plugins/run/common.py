@@ -13,7 +13,7 @@ class Command:
     command_format: str
     cwd_format: str
     external_terminal: bool
-    substitutions: Dict[str, str]
+    substitutions: dict[str, str]
 
     def format_cwd(self) -> Path:
         return Path(self.cwd_format.format(**self.substitutions))
@@ -41,7 +41,7 @@ class Context:
         self.key_id = key_id  # with default bindings: 0 = F5, 1 = F6, 2 = F7, 3 = F8
         self.filetype_name: str | None = tab.settings.get("filetype_name", Optional[str])
         self.example_commands: list[ExampleCommand] = tab.settings.get(
-            "example_commands", List[ExampleCommand]
+            "example_commands", list[ExampleCommand]
         )
 
     def get_substitutions(self) -> dict[str, str]:

@@ -5,9 +5,10 @@ import dataclasses
 import re
 import tkinter
 import weakref
+from collections.abc import Iterator
 from functools import partial
 from tkinter.font import Font
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List
+from typing import TYPE_CHECKING, Any, Callable, List
 from weakref import WeakKeyDictionary
 
 from pygments import styles
@@ -53,9 +54,9 @@ class Change:
     """
     # These should be Tuple[int, int], but they can't be because converting to
     # json and back turns tuples to lists
-    start: List[int]
-    old_end: List[int]
-    new_end: List[int]
+    start: list[int]
+    old_end: list[int]
+    new_end: list[int]
     old_text: str
     new_text: str
 
@@ -71,7 +72,7 @@ class Changes(utils.EventDataclass):
     This boilerplate class is needed instead of a plain ``List[Change]``
     because of how :class:`porcupine.utils.EventDataclass` works.
     """
-    change_list: List[Change]
+    change_list: list[Change]
 
 
 # TODO: document this

@@ -72,7 +72,7 @@ def repeat_command(key_id: int, junk_event: tkinter.Event[tkinter.Misc]) -> None
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("example_commands", [], type_=List[common.ExampleCommand])
+    tab.settings.add_option("example_commands", [], type_=list[common.ExampleCommand])
 
 
 def setup() -> None:

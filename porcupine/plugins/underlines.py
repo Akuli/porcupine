@@ -37,7 +37,7 @@ class Underline:
 class Underlines(utils.EventDataclass):
     # <<SetUnderlines>> clears previous underlinings with the same id
     id: str
-    underline_list: List[Underline]
+    underline_list: list[Underline]
 
 
 class _Underliner:

@@ -13,7 +13,8 @@ import pkgutil
 import random
 import time
 import traceback
-from typing import Any, Iterable, List, Sequence, cast
+from collections.abc import Iterable, Sequence
+from typing import Any, List, cast
 
 import toposort
 
@@ -240,7 +241,7 @@ def import_plugins(disabled_on_command_line: list[str]) -> None:
         # If it's disabled in settings and on command line, then status is set
         # to DISABLED_BY_SETTINGS. This makes more sense for the user of the
         # plugin manager dialog.
-        if info.name in global_settings.get("disabled_plugins", List[str]):
+        if info.name in global_settings.get("disabled_plugins", list[str]):
             info.status = Status.DISABLED_BY_SETTINGS
             continue
         if info.name in disabled_on_command_line:

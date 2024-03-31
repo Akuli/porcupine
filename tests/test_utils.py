@@ -29,7 +29,7 @@ class Foo:
 
 @dataclasses.dataclass
 class Bar(utils.EventDataclass):
-    foos: typing.List[Foo]
+    foos: list[Foo]
 
 
 def test_bind_with_data_class():

@@ -39,7 +39,7 @@ _global_state: _State | None = None
 
 
 def _log_tkinter_error(
-    exc: Type[BaseException], val: BaseException, tb: types.TracebackType | None
+    exc: type[BaseException], val: BaseException, tb: types.TracebackType | None
 ) -> Any:
     log.error("Error in tkinter callback", exc_info=(exc, val, tb))
 
