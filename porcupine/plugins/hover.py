@@ -1,3 +1,12 @@
+"""
+Show messages when you bring the mouse or the cursor on top of e.g. a function
+name or a URL in the main editing area.
+
+This plugin does nothing by itself, and needs some other plugin (usually
+underlines or langserver) to tell it what the hovering tooltips should say and
+when to display them.
+"""
+
 from __future__ import annotations
 
 import dataclasses

@@ -215,6 +215,12 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
                     f"{record.levelname}: {record.message}\n" for record in error_log
                 )
             else:
+                if not getattr(info.module, "__doc__", None):
+                    log.warning(
+                        f"Please add a docstring to the {info.name!r} plugin. It will show up in"
+                        f" the plugin manager when the {info.name!r} plugin is selected, so that"
+                        " users know what the plugin does."
+                    )
                 info.status = Status.ACTIVE
 
         duration = time.perf_counter() - start
