@@ -129,13 +129,6 @@ Most of Porcupine's documentation is markdown files in two folders:
 - [The `dev-doc` folder](./dev-doc/) contains the documentation for developing Porcupine.
 - [The `user-doc` folder](./user-doc/) contains the documentation for using Porcupine.
 
-There are also these two other, deprecated places:
-- [akuli.github.io/porcupine](https://akuli.github.io/porcupine/) (not updated since June 2023)
-- [The `docs` folder](./docs/) defines the content that was published at `akuli.github.io/porcupine`.
-
-I will hopefully update and migrate their content to the two new places soon-ish.
-See [issue #1308](https://github.com/Akuli/porcupine/issues/1308) for discussion about the docs situation.
-
 
 ## FAQ
 

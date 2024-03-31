@@ -54,7 +54,6 @@ dev = [
     "black==23.1.0",
     "isort==5.12.0",
     "pyupgrade==3.9.0",
-    "sphinx>=4.0.0, <5.0.0",
     "pillow>=5.4.1",
 
     # type checking, exact versions to avoid "works on my computer" problems

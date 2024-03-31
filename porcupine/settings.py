@@ -311,8 +311,6 @@ class Settings:
         return {name for name, option in self._options.items() if option.tag == tag}
 
     # I don't like how this requires overloads for every type.
-    # Also no docstring, because using it from docs/settings.rst showed
-    # the messy overloads in the docs.
     # https://stackoverflow.com/q/61471700
 
     # fmt: off
