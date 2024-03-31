@@ -36,9 +36,9 @@ Almost everything is implemented as a plugin that can be disabled easily,
 but if you know how to use Python and tkinter, you can also make your own plugins.
 Porcupine plugins are so powerful that if you run Porcupine without any plugins, it looks like this:
 
-![Screenshot of porcupine without plugins 1](images/no-plugins-1.png)
+![Screenshot of porcupine without plugins 1](dev-doc/images/no-plugins-1.png)
 
-![Screenshot of porcupine without plugins 2](images/no-plugins-2.png)
+![Screenshot of porcupine without plugins 2](dev-doc/images/no-plugins-2.png)
 
 
 ## Installing Porcupine
