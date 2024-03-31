@@ -96,8 +96,8 @@ jobs:
         python-version: "3.11"
         cache: pip
     # TODO: adding these to requirements-dev.txt breaks pip install
-    - run: pip install flake8==5.0.4 flake8-tkinter==0.5.0
-    - run: python3 -m flake8 $(git ls-files | grep -E '\.(py|pyw)$')
+    - run: pip install flake8=='7.*' flake8_tkinter==0.6.0
+    - run: python3 -m flake8 --select=TK $(git ls-files | grep -E '\.(py|pyw)$')
 
   markdown-links:
     timeout-minutes: 5

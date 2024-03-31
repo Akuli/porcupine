@@ -29,7 +29,7 @@ def create_menu() -> tkinter.Menu:
     flag = text_is_selected(get_filetab())
     if not flag:
         for i in _ftab_indexes:
-            rm.entryconfigure(i, state=tkinter.DISABLED)
+            rm.entryconfigure(i, state="disabled")
 
     return rm
 
