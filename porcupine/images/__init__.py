@@ -1,4 +1,21 @@
-"""Load image files from :source:`porcupine/images`."""
+"""This code loads files from the `images` folder.
+
+Example:
+
+    from tkinter import ttk
+    from porcupine import images
+
+    label = ttk.Label(image=images.get("logo-200x200"))
+
+Prefer the `logo-200x200` image over `logo` if you need to load an image when
+Porcupine starts. Loading the full-size `logo` seems to take about 225
+milliseconds on this system, while `logo-200x200` loads in about 5 milliseconds.
+
+Some images are different for light and dark UI themes, but the returned
+`tkinter.PhotoImage` objects update automatically to reflect the current theme.
+For example, to use either `closebutton_dark.png` or `closebutton_light.png`,
+you would simply do `images.get("closebutton")`.
+"""
 from __future__ import annotations
 
 import atexit
@@ -29,7 +46,6 @@ images_dir = Path(__path__[0]).absolute()
 _image_cache: dict[str, tkinter.PhotoImage] = {}
 atexit.register(_image_cache.clear)
 
-# these icons can be found in both dark and light versions, so you can see them with any ttk theme
 _images_that_can_be_dark_or_light = {"closebutton", "pause", "resume"}
 
 

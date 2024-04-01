@@ -27,7 +27,6 @@ def find_merge_conflicts(textwidget: tkinter.Text) -> list[list[int]]:
             expected_current_state = "second"
             new_state = "outside"
         else:
-            int("123")  # needed for coverage to notice that the continue runs
             continue
 
         if current_state != expected_current_state:

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tkinter
 import webbrowser
+from collections import deque
 from pathlib import Path
 from tkinter import ttk
 from typing import Callable
@@ -40,6 +41,82 @@ def show_huge_logo(junk: object = None) -> None:
     webbrowser.open((images.images_dir / "logo.gif").as_uri())
 
 
+class EasterEggs:
+    def __init__(self, porcupine_logo: ttk.Label) -> None:
+        self.pic = porcupine_logo
+        self.window = porcupine_logo.winfo_toplevel()
+
+    def setup(self) -> None:
+        self.setup_easter_egg_1()
+        self.setup_easter_egg_2()
+
+    def move(self, dx: int, dy: int) -> None:
+        old = self.pic.place_info()
+        self.pic.place(x=(int(old["x"]) + dx), y=(int(old["y"]) + dy))
+
+    def setup_easter_egg_1(self) -> None:
+        fall_speed = 0
+
+        def gravity() -> None:
+            if not self.pic.winfo_exists():
+                return
+
+            nonlocal fall_speed
+            self.move(0, fall_speed)
+            fall_speed += 4
+
+            if int(self.pic.place_info()["y"]) > 0:
+                # land
+                self.pic.place(y=0)
+            else:
+                self.pic.after(round(1000 / 60), gravity)
+
+        def jump() -> None:
+            nonlocal fall_speed
+            fall_speed = -50
+            gravity()
+
+        self.window.bind("<Left>", (lambda e: self.move(-10, 0)), add=True)
+        self.window.bind("<Right>", (lambda e: self.move(10, 0)), add=True)
+        self.window.bind("<Up>", (lambda e: jump()), add=True)
+
+    def setup_easter_egg_2(self) -> None:
+        buffer: deque[str] = deque(maxlen=3)
+        dx = -1
+        dy = -1
+
+        def bounce() -> None:
+            if list(buffer) != list("dvd") or not self.pic.winfo_exists():
+                return
+            self.pic.after(round(1000 / 60), bounce)
+
+            x_min = -(self.window.winfo_width() - self.pic.winfo_width())
+            y_min = -(self.window.winfo_height() - self.pic.winfo_height())
+            x_max = 0
+            y_max = 0
+
+            nonlocal dx, dy
+            x = int(self.pic.place_info()["x"])
+            y = int(self.pic.place_info()["y"])
+            if x < x_min:
+                dx = 1
+            if x > x_max:
+                dx = -1
+            if y < y_min:
+                dy = 1
+            if y > y_max:
+                dy = -1
+
+            self.move(2 * dx, 2 * dy)
+
+        def handle_key(event: tkinter.Event[tkinter.Misc]) -> None:
+            buffer.append(event.char)
+            bounce()
+
+        self.window.bind("d", handle_key, add=True)
+        self.window.bind("v", handle_key, add=True)
+
+
 def show_about_dialog() -> None:
     dialog = tkinter.Toplevel()
     content_frame = ttk.Frame(dialog)
@@ -58,14 +135,11 @@ Python using the notorious tkinter GUI library. It started as a \
 proof-of-concept of a somewhat good editor written in tkinter, but nowadays \
 it's a tool I use at work every day.
 
-I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. See \
-[the contributor \
-page](https://github.com/Akuli/porcupine/graphs/contributors) for details.
+I'm [Akuli](https://github.com/Akuli), and I wrote most of Porcupine. \
+That said, Porcupine wouldn't be what it is now without the feedback and contributions of many other people. \
+See [the contributor page](https://github.com/Akuli/porcupine/graphs/contributors) for details.
 
-Links:
-\N{bullet} [Porcupine Wiki](https://github.com/Akuli/porcupine/wiki)
-\N{bullet} [Porcupine on GitHub](https://github.com/Akuli/porcupine)
-\N{bullet} [Plugin API documentation for Python programmers](https://akuli.github.io/porcupine/)
+Porcupine is developed in [this GitHub repo](https://github.com/Akuli/porcupine).
 
 Porcupine is available under the MIT license. It means that you can do \
 pretty much anything you want with it as long as you distribute the \
@@ -93,15 +167,18 @@ You can install plugins to [{plugins.__path__[0]}]().
         link_color = "DarkOrange1"
     textwidget.tag_config("link", foreground=link_color, underline=True)
 
-    label = ttk.Label(content_frame, image=images.get("logo-200x200"), cursor="hand2")
-    label.pack(anchor="e")
-    utils.set_tooltip(label, "Click to view in full size")
-    label.bind("<Button-1>", show_huge_logo, add=True)
-
     dialog.update()  # make sure that the winfo stuff works
-    dialog.minsize(content_frame.winfo_reqwidth(), content_frame.winfo_reqheight())
+    width = content_frame.winfo_reqwidth()
+    height = content_frame.winfo_reqheight() + 200
+
+    label = ttk.Label(dialog, image=images.get("logo-200x200"), cursor="hand2")
+    label.bind("<Button-1>", show_huge_logo, add=True)
+    label.place(relx=1, rely=1, anchor="se")
+    EasterEggs(label).setup()
+
     dialog.title(f"About Porcupine {porcupine_version}")
     dialog.transient(get_main_window())
+    dialog.minsize(width, height)
     dialog.wait_window()
 
 

@@ -1,9 +1,10 @@
 # These settings can be overrided in your user-specific filetypes.toml. To edit
 # it, go to Settings --> Config Files.
 #
-# There's a friendly introduction to editing this file on Porcupine Wiki:
+# For an overview of adding support for a new programming language (filetype),
+# see this documentation:
 #
-#    https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language
+#    https://github.com/Akuli/porcupine/blob/main/user-doc/new-programming-language.md
 #
 # Most commonly used options (plugins may add more):
 #

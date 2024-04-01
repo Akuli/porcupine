@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import tkinter
-from typing import Callable, Dict, List
+from typing import Callable
 
 from porcupine import get_main_window, get_tab_manager, tabs
 from porcupine.menubar import get_filetab
 
-_ftab_indexes: List[int] = []
-_menu_items: Dict[str, Callable[[], object]] = {}
+_ftab_indexes: list[int] = []
+_menu_items: dict[str, Callable[[], object]] = {}
 
 
 def text_is_selected(tab: tabs.FileTab) -> bool:
@@ -29,7 +29,7 @@ def create_menu() -> tkinter.Menu:
     flag = text_is_selected(get_filetab())
     if not flag:
         for i in _ftab_indexes:
-            rm.entryconfigure(i, state=tkinter.DISABLED)
+            rm.entryconfigure(i, state="disabled")
 
     return rm
 
