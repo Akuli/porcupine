@@ -21,8 +21,7 @@ setup_after = ["directory_tree"]
 
 
 def is_venv(path: Path) -> bool:
-    if not "porcupine-venv" in str(path):
-        print(f"{path} is valid venv")
+    if path.name != "porcupine-venv":
         landmarks = [path / "pyvenv.cfg"]
         if sys.platform == "win32":
             landmarks.append(path / "Scripts" / "python.exe")
@@ -33,6 +32,7 @@ def is_venv(path: Path) -> bool:
         return all(landmark.exists() for landmark in landmarks)
     else:
         log.info(f"not using venv: '{path}', as it contains 'porcupine-venv'")
+        return False
 
 
 def _find_venv(project_root: Path) -> Path | None:
