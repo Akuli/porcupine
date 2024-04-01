@@ -12,9 +12,10 @@ import os
 import sys
 import time
 import tkinter
+from collections.abc import Generator, Iterator
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Generator, Iterator, List, TypeVar, overload
+from typing import Any, Callable, TypeVar, overload
 
 import dacite
 from pygments import styles, token
@@ -442,7 +443,7 @@ def init_enough_for_using_disabled_plugins_list() -> None:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {get_json_path()} failed")
-    global_settings.add_option("disabled_plugins", [], List[str])
+    global_settings.add_option("disabled_plugins", [], list[str])
 
 
 def _init_global_gui_settings() -> None:

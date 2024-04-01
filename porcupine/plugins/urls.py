@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import tkinter
 import webbrowser
+from collections.abc import Iterable
 from functools import partial
-from typing import Iterable
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import underlines

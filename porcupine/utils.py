@@ -32,7 +32,7 @@ import tkinter
 import traceback
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Literal, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, cast
 
 import dacite
 
@@ -423,7 +423,7 @@ class EventWithData(_Event):
     #: then this is that string.
     data_string: str
 
-    def data_class(self, T: Type[_T]) -> _T:
+    def data_class(self, T: type[_T]) -> _T:
         """
         If a dataclass instance of type ``T`` was passed as ``data`` to
         ``event_generate()``, then this returns a copy of it. Otherwise this

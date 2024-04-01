@@ -8,7 +8,6 @@ import re
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import List
 
 from porcupine import get_main_window, pluginloader, textutils, utils
 from porcupine.settings import global_settings
@@ -148,7 +147,7 @@ class PluginDialogContent:
         else:
             how_it_got_installed = "You installed this"
 
-        disable_list = global_settings.get("disabled_plugins", List[str])
+        disable_list = global_settings.get("disabled_plugins", list[str])
         if (
             info.status == pluginloader.Status.DISABLED_BY_SETTINGS
             and info.name not in disable_list
@@ -184,7 +183,7 @@ class PluginDialogContent:
 
     def _on_select(self, junk: object = None) -> None:
         infos = self._get_selected_infos()
-        disable_list = global_settings.get("disabled_plugins", List[str])
+        disable_list = global_settings.get("disabled_plugins", list[str])
 
         if len(infos) == 1:
             info = infos[0]
@@ -215,7 +214,7 @@ class PluginDialogContent:
     def _set_enabled(self, they_become_enabled: bool) -> None:
         infos = self._get_selected_infos()
 
-        disabled = set(global_settings.get("disabled_plugins", List[str]))
+        disabled = set(global_settings.get("disabled_plugins", list[str]))
         if they_become_enabled:
             disabled -= {info.name for info in infos}
         else:

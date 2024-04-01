@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import tkinter
 from abc import abstractmethod
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from pygments import token
 

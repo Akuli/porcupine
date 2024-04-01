@@ -11,9 +11,10 @@ import logging
 import os
 import tkinter
 import traceback
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, NamedTuple, Optional, TypeVar
 
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer
@@ -428,7 +429,7 @@ restarting Porcupine.
         return None
 
     @classmethod
-    def from_state(cls: Type[_TabT], manager: TabManager, state: Any) -> _TabT | None:
+    def from_state(cls: type[_TabT], manager: TabManager, state: Any) -> _TabT | None:
         """Create a new tab from the return value of :meth:`get_state`.
 
         Be sure to override this if you override :meth:`get_state`.
@@ -1005,7 +1006,7 @@ class FileTab(Tab):
 
     @classmethod
     def from_state(
-        cls: Type[_FileTabT], manager: TabManager, state: _FileTabState
+        cls: type[_FileTabT], manager: TabManager, state: _FileTabState
     ) -> _FileTabT | None:
         assert isinstance(state, _FileTabState)  # not namedtuple in older porcupines
 
