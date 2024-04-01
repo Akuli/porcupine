@@ -21,14 +21,18 @@ setup_after = ["directory_tree"]
 
 
 def is_venv(path: Path) -> bool:
-    landmarks = [path / "pyvenv.cfg"]
-    if sys.platform == "win32":
-        landmarks.append(path / "Scripts" / "python.exe")
-        landmarks.append(path / "Scripts" / "activate.bat")
+    if path.name != "porcupine-venv":
+        landmarks = [path / "pyvenv.cfg"]
+        if sys.platform == "win32":
+            landmarks.append(path / "Scripts" / "python.exe")
+            landmarks.append(path / "Scripts" / "activate.bat")
+        else:
+            landmarks.append(path / "bin" / "python3")
+            landmarks.append(path / "bin" / "activate")
+        return all(landmark.exists() for landmark in landmarks)
     else:
-        landmarks.append(path / "bin" / "python3")
-        landmarks.append(path / "bin" / "activate")
-    return all(landmark.exists() for landmark in landmarks)
+        log.info(f"not using venv: '{path}', as it contains 'porcupine-venv'")
+        return False
 
 
 def _find_venv(project_root: Path) -> Path | None:
