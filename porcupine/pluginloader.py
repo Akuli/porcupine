@@ -1,7 +1,18 @@
-"""Loads plugins from ``porcupine.plugins``."""
-# many things are wrapped in try/except here to allow writing Porcupine
-# plugins using Porcupine, so Porcupine must run if the plugins are
-# broken
+"""Loads plugins from `porcupine.plugins`.
+
+This file contains a lot of try/except, so that one bad plugin is unlikely to
+crash the whole editor.
+
+See dev-doc/architecture-and-design.md for an introduction to plugins.
+
+This file generates a `<<PluginsLoaded>>` virtual event on the main window when
+when the `setup()` methods of all plugins have been called on startup. Bind to
+it if you want to run things that must not happen until plugins are ready
+for it.
+
+Note that `<<PluginsLoaded>>` also runs after successfully setting up a plugin
+while Porcupine is running.
+"""
 from __future__ import annotations
 
 import argparse
@@ -14,7 +25,7 @@ import random
 import time
 import traceback
 from collections.abc import Iterable, Sequence
-from typing import Any
+from typing import Any, cast
 
 import toposort
 
@@ -117,16 +128,19 @@ class PluginInfo:
           user-readable one-line message.
     """
 
-    name: str
+    name: str  # name "foo" means this is porcupine/plugins/foo.py
     came_with_porcupine: bool
     status: Status
     module: Any | None  # you have to check for None, otherwise mypy won't complain
     error: str | None
 
 
+# Includes all plugins, including disabled plugins and plugins that failed to load.
 _mutable_plugin_infos: list[PluginInfo] = []
-plugin_infos: Sequence[PluginInfo] = _mutable_plugin_infos  # changing content is mypy error
+
 _dependencies: dict[PluginInfo, set[PluginInfo]] = {}
+
+plugin_infos: Sequence[PluginInfo] = _mutable_plugin_infos  # don't modify outside this file
 
 
 def _run_setup_argument_parser_function(info: PluginInfo, parser: argparse.ArgumentParser) -> None:
@@ -208,9 +222,7 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
     else:
         info.status = Status.SETUP_FAILED
         info.error = (
-            "There is no setup() function. Make sure to include a setup function into your"
-            " plugin.\nTo learn more about Porcupine's plugin API, visit"
-            " https://akuli.github.io/porcupine/plugin-intro.html"
+            "There is no setup() function. Make sure to include a setup function in your plugin."
         )
         log.warning(f"Calling {info.name!r} plugin's setup() function failed.\n{info.error}")
 
@@ -343,7 +355,13 @@ def setup_while_running(info: PluginInfo) -> None:
 
     dummy_parser = argparse.ArgumentParser()
     _run_setup_argument_parser_function(info, dummy_parser)
-    if info.status != Status.LOADING:  # error
+
+    # Cast is needed to confuse mypy. It thinks that _run_setup_and_set_status()
+    # won't change info.status, but as the function name strongly suggests, it will.
+    #
+    # See also: https://github.com/python/mypy/issues/12598
+    if cast(object, info.status) != Status.LOADING:
+        # loading plugin failed with error
         return
 
     _run_setup_and_set_status(info)

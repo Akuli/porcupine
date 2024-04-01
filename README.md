@@ -31,20 +31,27 @@ Most important features:
 [Langserver]: https://langserver.org/
 [Editorconfig]: https://editorconfig.org/
 
-Porcupine also has [a very powerful plugin
-API](https://akuli.github.io/porcupine/), and most of the above features are
-implemented as plugins. This means that if you know how to use Python 3 and
-tkinter, you can easily customize your editor to do anything you want to. In
-fact, the plugin API is so powerful that if you run Porcupine without plugins,
-it shows up as an empty window.
+[Porcupine's design](dev-doc/architecture-and-design.md) makes it very easy to customize.
+Almost everything is implemented as a plugin that can be disabled easily,
+but if you know how to use Python and tkinter, you can also make your own plugins.
+Porcupine plugins are so powerful that if you run Porcupine without any plugins, it looks like this:
+
+![Screenshot of porcupine without plugins 1](dev-doc/images/no-plugins-1.png)
+
+![Screenshot of porcupine without plugins 2](dev-doc/images/no-plugins-2.png)
+
 
 ## Installing Porcupine
 
-### Development Install
+<details>
+<summary>Development Install</summary>
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
 
-### Debian-based Linux distributions (e.g. Ubuntu, Mint)
+</details>
+
+<details>
+<summary>Debian-based Linux distributions (e.g. Ubuntu, Mint)</summary>
 
 Open a terminal and run these commands:
 
@@ -53,7 +60,7 @@ Open a terminal and run these commands:
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     pip install wheel
-    pip install https://github.com/Akuli/porcupine/archive/v2024.03.09.zip
+    pip install https://github.com/Akuli/porcupine/archive/v2024.03.31.zip
     porcu
 
 To easily run porcupine again later,
@@ -64,16 +71,19 @@ This makes Porcupine show up in the menu just like any other application.
 You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
 and then deleting `porcupine-venv`.
 
-### Other Linux distributions
+</details>
 
-Install Python 3.8 or newer with pip and tkinter somehow.
+<details>
+<summary>Other Linux distributions</summary>
+
+Install Python 3.9 or newer with pip and tkinter somehow.
 If you want drag and drop support, also install tkdnd for the Tcl interpreter that tkinter uses.
 Then run these commands:
 
     python3 -m venv porcupine-venv
     source porcupine-venv/bin/activate
     pip install wheel
-    pip install https://github.com/Akuli/porcupine/archive/v2024.03.09.zip
+    pip install https://github.com/Akuli/porcupine/archive/v2024.03.31.zip
     porcu
 
 To easily run porcupine again later,
@@ -84,7 +94,10 @@ This makes Porcupine show up in the menu just like any other application.
 You can uninstall Porcupine by unchecking "Show Porcupine in the desktop menu system" in the settings
 and then deleting `porcupine-venv`.
 
-### MacOS
+</details>
+
+<details>
+<summary>MacOS</summary>
 
 I don't have a Mac. If you have a Mac, you can help me a lot by installing
 Porcupine and letting me know how well it works.
@@ -93,7 +106,10 @@ I think you can download Python with tkinter from
 [python.org](https://www.python.org/) and then run the commands for
 "other Linux distributions" above.
 
-### Windows
+</details>
+
+<details>
+<summary>Windows</summary>
 
 Download a Porcupine installer from [the releases page](https://github.com/Akuli/porcupine/releases) and run it.
 Because I haven't asked Microsoft to trust Porcupine installers,
@@ -104,6 +120,19 @@ you will likely get a warning similar to this one:
 You should still be able to run the installer by clicking "More info".
 When installed, you will find Porcupine from the start menu.
 
+</details>
+
+
+## Documentation
+
+If you have just installed Porcupine, have a look at [user-doc/getting-started.md](user-doc/getting-started.md).
+If you want to develop Porcupine, see [CONTRIBUTING.md](CONTRIBUTING.md) or [dev-doc/architecture-and-design.md](dev-doc/architecture-and-design.md).
+
+Most of Porcupine's documentation is markdown files in two folders:
+- [The `dev-doc` folder](./dev-doc/) contains the documentation for developing Porcupine.
+- [The `user-doc` folder](./user-doc/) contains the documentation for using Porcupine.
+
+
 ## FAQ
 
 ### What's new in the latest Porcupine release?
@@ -111,14 +140,14 @@ When installed, you will find Porcupine from the start menu.
 See [CHANGELOG.md](CHANGELOG.md).
 
 ### Does Porcupine support programming language X?
-You will likely get syntax highlighting without any configuring
+You will likely get syntax highlighting without any configuring,
 and autocompletions with a few lines of configuration file editing.
-See [the instructions on Porcupine wiki](https://github.com/Akuli/porcupine/wiki/Getting-Porcupine-to-work-with-a-programming-language).
+See [this documentation](user-doc/new-programming-language.md).
 
 ### Help! Porcupine doesn't work.
 Please install the latest version.
 If it still doesn't work, [let me know by creating an issue on
-GitHub](http://github.com/Akuli/porcupine/issues/new).
+GitHub](https://github.com/Akuli/porcupine/issues/new).
 
 ### Is Porcupine written in Porcupine?
 
