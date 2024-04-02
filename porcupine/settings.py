@@ -845,7 +845,7 @@ def remember_pane_size(
             otherwise set height to two lines high.
             """
             previous_height = global_settings.get(option_name, int)
-            linespace = tkinter.font.Font(font='TkFixedFont').metrics('linespace')
+            linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
             linespace += 3
             linespace *= 2
             print(f"linespace is: {linespace}")
