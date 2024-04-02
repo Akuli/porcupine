@@ -841,18 +841,7 @@ def remember_pane_size(
         if panedwindow["orient"] == "horizontal":
             panedwindow.paneconfig(pane, width=global_settings.get(option_name, int))
         else:
-            """Use previous height as long as it's not less than two lines high,
-            otherwise set height to two lines high.
-            """
-            previous_height = global_settings.get(option_name, int)
-            linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
-            linespace += 3
-            linespace *= 2
-            print(f"linespace is: {linespace}")
-            if previous_height < linespace:
-                panedwindow.paneconfig(pane, height=linespace)
-            else:
-                panedwindow.paneconfig(pane, height=global_settings.get(option_name, int))
+            panedwindow.paneconfig(pane, height=global_settings.get(option_name, int))
 
     def gui_to_settings() -> None:
         if panedwindow["orient"] == "horizontal":
