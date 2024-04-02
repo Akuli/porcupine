@@ -481,7 +481,7 @@ def run_command(command: str, cwd: Path) -> None:
     # otherwise set height to two lines high.
     current_height = textutils.textwidget_size(runner.textwidget)[1]
     padding = textutils.get_padding(runner.textwidget)[0]
-    linespace = tkinter.font.Font(font='TkFixedFont').metrics('linespace')
+    linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
     linespace += padding
     # Show two lines of output
     linespace *= 2
