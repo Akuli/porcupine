@@ -472,7 +472,6 @@ def setup() -> None:
     menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
 
-# succeeded_callback() will be ran from tkinter if the command returns 0
 def run_command(command: str, cwd: Path) -> None:
     log.info(f"Running {command} in {cwd}")
     assert runner is not None
