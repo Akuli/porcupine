@@ -474,7 +474,7 @@ def setup() -> None:
 
 # Use previous height as long as it's not less than three lines high,
 # otherwise set height to three lines high.
-def set_output_height():
+def set_output_height() -> None:
     current_height = textutils.textwidget_size(runner.textwidget)[1]
     padding = textutils.get_padding(runner.textwidget)[1]
     linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
