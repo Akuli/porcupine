@@ -478,7 +478,7 @@ def set_output_height():
     current_height = textutils.textwidget_size(runner.textwidget)[1]
     padding = textutils.get_padding(runner.textwidget)[1]
     linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
-    minimum_height = 3*linespace + 2*padding
+    minimum_height = 3 * linespace + 2 * padding
     if current_height < minimum_height:
         get_vertical_panedwindow().paneconfigure(runner.textwidget, height=minimum_height)
 
