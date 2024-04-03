@@ -35,7 +35,7 @@ Examples:
 - Count length of file in lines: `int(text.index("end - 1 char").split(".")[0])`
 - Get all text in the text widget: `textwidget.get("1.0", "end - 1 char")`
 - Get selected text: `textwidget.get("sel.first", "sel.last")`
-- Get selected text, but always take the entire line: `text.get("sel.first linestart", "sel.first lineend")`
+- Get selected text, but always take the entire line: `text.get("sel.first linestart", "sel.last lineend")`
 - Get line of text that contains cursor: `textwidget.get("insert linestart", "insert lineend")`
 - Move cursor to start of file: `textwidget.mark_set("insert", "1.0")`
 - Move cursor to start of line: `textwidget.mark_set("insert", "insert linestart")`
