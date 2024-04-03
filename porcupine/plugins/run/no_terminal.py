@@ -472,8 +472,25 @@ def setup() -> None:
     menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
 
+# Use previous height as long as it's not less than three lines high,
+# otherwise set height to three lines high.
+def set_output_height() -> None:
+    assert runner is not None
+    current_height = textutils.textwidget_size(runner.textwidget)[1]
+    padding = textutils.get_padding(runner.textwidget)[1]
+    linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
+    minimum_height = 3 * linespace + 2 * padding
+
+    if current_height < minimum_height:
+        # No idea why, but setting the height once doesn't always work on Akuli's system.
+        get_vertical_panedwindow().paneconfigure(runner.textwidget, height=minimum_height)
+        get_vertical_panedwindow().update()
+        get_vertical_panedwindow().paneconfigure(runner.textwidget, height=minimum_height)
+
+
 def run_command(command: str, cwd: Path) -> None:
     log.info(f"Running {command} in {cwd}")
     assert runner is not None
     get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=False)
     runner.run_command(cwd, command)
+    set_output_height()
