@@ -472,21 +472,23 @@ def setup() -> None:
     menubar.get_menu("Run").add_command(label="Kill process", command=runner.stop_executor)
 
 
+# Use previous height as long as it's not less than three lines high,
+# otherwise set height to three lines high.
+def set_output_height():
+    current_height = textutils.textwidget_size(runner.textwidget)[1]
+    padding = textutils.get_padding(runner.textwidget)[1]
+    linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
+    minimum_height = 3*linespace + 2*padding
+    if current_height < minimum_height:
+        print("current height is less than minimum height")
+        print(current_height)
+        print(minimum_height)
+        get_vertical_panedwindow().paneconfigure(runner.textwidget, height=minimum_height)
+
+
 def run_command(command: str, cwd: Path) -> None:
     log.info(f"Running {command} in {cwd}")
     assert runner is not None
     get_vertical_panedwindow().paneconfigure(runner.textwidget, hide=False)
     runner.run_command(cwd, command)
-    # Use previous height as long as it's not less than two lines high,
-    # otherwise set height to two lines high.
-    current_height = textutils.textwidget_size(runner.textwidget)[1]
-    padding = textutils.get_padding(runner.textwidget)[0]
-    linespace = tkinter.font.Font(font="TkFixedFont").metrics("linespace")
-    linespace += padding
-    # Show two lines of output
-    linespace *= 2
-    if current_height < linespace:
-        print("current height is less than linespace")
-        print(current_height)
-        print(linespace)
-        get_vertical_panedwindow().paneconfigure(runner.textwidget, height=linespace)
+    set_output_height()
