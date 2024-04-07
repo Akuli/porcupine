@@ -39,7 +39,7 @@ class Context:
         self.file_path = tab.path
         self.project_path = utils.find_project_root(tab.path)
         self.key_id = key_id  # with default bindings: 0 = F5, 1 = F6, 2 = F7, 3 = F8
-        self.filetype_name: str | None = tab.settings.get("filetype_name", Optional[str])
+        self.filetype_name = tab.settings.get("filetype_name", str, can_be_none=True)
         self.example_commands: list[ExampleCommand] = tab.settings.get(
             "example_commands", list[ExampleCommand]
         )

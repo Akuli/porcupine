@@ -25,7 +25,9 @@ def already_commented(linetext: str, comment_prefix: str) -> Optional[bool]:
 
 
 def comment_or_uncomment(tab: tabs.FileTab, pressed_key: str | None = None) -> str | None:
-    comment_prefix = tab.settings.get("comment_prefix", Optional[str])
+    comment_prefix = tab.settings.get("comment_prefix", str, can_be_none=True)
+    if comment_prefix is None:
+        return None
     if pressed_key is not None and pressed_key != comment_prefix:
         return None
 

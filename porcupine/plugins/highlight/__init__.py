@@ -93,9 +93,9 @@ def debounce(
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     # pygments_lexer option already exists, as it is used also outside this plugin
-    tab.settings.add_option("syntax_highlighter", default="pygments")
+    tab.settings.add_option("syntax_highlighter", type=str, default="pygments")
     tab.settings.add_option(
-        "tree_sitter_language_name", default="<tree_sitter_language_name not set>"
+        "tree_sitter_language_name", type=str, default="<tree_sitter_language_name not set>"
     )
 
     manager = HighlighterManager(tab)

@@ -476,7 +476,7 @@ def setup() -> None:
     config_indent()
     get_tab_manager().bind("<<ThemeChanged>>", config_indent, add=True)
 
-    global_settings.add_option("directory_tree_projects", [], list[str])
+    global_settings.add_option("directory_tree_projects", type=list[str], default=[])
 
     container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")
     get_horizontal_panedwindow().add(container, before=get_vertical_panedwindow())

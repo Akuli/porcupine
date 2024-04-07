@@ -547,5 +547,5 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 def setup() -> None:
     get_tab_manager().add_filetab_callback(on_new_filetab)
-    global_settings.add_option("autocomplete_popup_width", 500)
-    global_settings.add_option("autocomplete_popup_height", 200)
+    global_settings.add_option("autocomplete_popup_width", type=int, default=500)
+    global_settings.add_option("autocomplete_popup_height", type=int, default=200)

@@ -74,13 +74,14 @@ class AnchorManager:
     def jump_to_next(self) -> str:
         cursor_row = self._get_line_number("insert")
         anchor_rows = self.clean_duplicates_and_get_anchor_dict().keys()
+        cycle = global_settings.get("anchors_cycle", bool)
 
         rows_after_cursor = [n for n in anchor_rows if n > cursor_row]
         if rows_after_cursor:
             next_anchor_row = min(rows_after_cursor)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif anchor_rows and global_settings.get("anchors_cycle", bool):
+        elif anchor_rows and cycle:
             next_anchor_row = min(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{next_anchor_row}.0")
             self.tab_textwidget.see("insert")
@@ -90,13 +91,14 @@ class AnchorManager:
     def jump_to_previous(self) -> str:
         cursor_row = self._get_line_number("insert")
         anchor_rows = self.clean_duplicates_and_get_anchor_dict().keys()
+        cycle = global_settings.get("anchors_cycle", bool)
 
         rows_before_cursor = [n for n in anchor_rows if n < cursor_row]
         if rows_before_cursor:
             previous_anchor_row = max(rows_before_cursor)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
-        elif anchor_rows and global_settings.get("anchors_cycle", bool):
+        elif anchor_rows and cycle:
             previous_anchor_row = max(anchor_rows)
             self.tab_textwidget.mark_set("insert", f"{previous_anchor_row}.0")
             self.tab_textwidget.see("insert")
@@ -133,7 +135,7 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    global_settings.add_option("anchors_cycle", False)
+    global_settings.add_option("anchors_cycle", type=bool, default=False)
     settings.add_checkbutton(
         "anchors_cycle", text="Jumping to previous/next anchor cycles to end/start of file"
     )

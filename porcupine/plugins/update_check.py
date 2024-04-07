@@ -93,7 +93,7 @@ def done_callback(success: bool, result: str | None) -> None:
 
 
 def setup() -> None:
-    global_settings.add_option("update_check_on_startup", True)
+    global_settings.add_option("update_check_on_startup", type=bool, default=True)
     settings.add_checkbutton(
         "update_check_on_startup", text="Check for updates when Porcupine starts"
     )

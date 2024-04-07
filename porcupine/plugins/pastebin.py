@@ -387,7 +387,7 @@ def start_pasting(paste_class: type[Paste], tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    global_settings.add_option("ask_to_pastebin", default=True)
+    global_settings.add_option("ask_to_pastebin", type=bool, default=True)
     for klass in [DPaste, Termbin]:
         assert "/" not in klass.name
         rightclick_menu.add_rightclick_option(

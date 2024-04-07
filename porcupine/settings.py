@@ -15,7 +15,7 @@ import tkinter
 from collections.abc import Generator, Iterator
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, TypeVar, overload
+from typing import Any, Callable, TypeVar, overload, TYPE_CHECKING, Type, Optional
 
 import dacite
 from pygments import styles, token
@@ -23,88 +23,90 @@ from pygments import styles, token
 import porcupine
 from porcupine import dirs, images, utils
 
+if TYPE_CHECKING:
+    from porcupine import tabs
+
 _log = logging.getLogger(__name__)
 
 
 class LineEnding(enum.Enum):
-    r"""
-    This :mod:`enum` has these members representing different ways to write
-    newline characters to files:
+    r"""This represents different ways to write newline characters to files.
 
-    .. data:: CR
-
-        ``\r``, aka "Mac line endings".
-
-    .. data:: LF
-
-        ``\n``, aka "Linux/Unix line endings".
-
-    .. data:: CRLF
-
-        ``\r\n``, aka "Windows line endings".
-
-    Python's :func:`open` function translates all of these to the string
-    ``'\n'`` when reading files and uses a platform-specific default when
-    writing files.
+    Python's `open` function translates all of these to `\n` when reading files,
+    and uses a platform-specific default when writing files.
 
     There are 3 ways to represent line endings in Porcupine, and
     different things want the line ending represented in different ways:
 
-        * The strings ``'\r'``, ``'\n'`` and ``'\r\n'``. For example,
-          :func:`open` line endings are specified like this.
-        * The strings ``'CR'``, ``'LF'`` and ``'CRLF'``. Line endings are
-          typically defined this way in configuration files, such as
-          `editorconfig <https://editorconfig.org/>`_ files.
-        * This enum. I recommend using this to avoid typos.
-          For example, ``LineEnding[some_string_from_user]`` (see below)
-          raises an error if the string is invalid.
+    - The strings `"\r"`, `"\n"` and `"\r\n"` (for example, the `open` function wants one of these)
+    - The strings `"CR"`, `"LF"` and `"CRLF"` (e.g. [editorconfig](https://editorconfig.org/))
+    - This enum
 
-    Convert between this enum and the different kinds of strings like this:
+    Converting between this enum and other forms:
 
-        * Enum to backslashy string: ``LineEnding.CRLF.value == '\r\n'``
-        * Enum to human readable string: ``LineEnding.CRLF.name == 'CRLF'``
-        * Backslashy string to enum: ``LineEnding('\r\n') == LineEnding.CRLF``
-        * Human readable string to enum: ``LineEnding['CRLF'] == LineEnding.CRLF``
-
-    Use ``LineEnding(os.linesep)`` to get the platform-specific default.
+        >>> LineEnding["CRLF"]
+        <LineEnding.CRLF: '\r\n'>
+        >>> LineEnding["CRLF"].value
+        '\r\n'
+        >>> LineEnding("\r\n")
+        <LineEnding.CRLF: '\r\n'>
+        >>> LineEnding("\r\n").value
+        '\r\n'
     """
     CR = "\r"
     LF = "\n"
     CRLF = "\r\n"
 
 
-def _type_check(type_: object, obj: object) -> object:
-    # dacite tricks needed for validating e.g. objects of type Optional[Path]
-    @dataclasses.dataclass
-    class ValueContainer:
-        __annotations__ = {"value": type_}
+#class _Option:
+#    def __init__(
+#        self, name: str, default: object, type_: Any, converter: Callable[[Any], Any]
+#    ) -> None:
+#        default = _type_check(type_, default)
+#        self.name = name
+#        self.value = default
+#        self.default = default
+#        self.type = type_
+#        self.converter = converter
+#        self.tag: str | None = None
 
-    parsed = dacite.from_dict(ValueContainer, {"value": obj})
-    return parsed.value  # type: ignore
+
+def _type_check(value: object, expected_type: Any) -> bool:
+    if expected_type in (str, bool):
+        return isinstance(value, expected_type)
+    if expected_type == int:
+        # Let's avoid this legacy quirk:
+        #    >>> isinstance(True, int)
+        #    True
+        return isinstance(value, int) and value is not True and value is not False
+    raise NotImplementedError
 
 
-class _Option:
-    def __init__(
-        self, name: str, default: object, type_: Any, converter: Callable[[Any], Any]
-    ) -> None:
-        default = _type_check(type_, default)
-        self.name = name
-        self.value = default
-        self.default = default
-        self.type = type_
-        self.converter = converter
-        self.tag: str | None = None
+def _convert_value_from_json_safe(json_safe_value: object, target_type: Any) -> object:
+    if target_type == str:
+        if not isinstance(json_safe_value, str):
+            raise TypeError(f"expected string, got {json_safe_value!r}")
+        return json_safe_value
+
+    if target_type == int:
+        if not isinstance(json_safe_value, int):
+            raise TypeError(f"expected integer, got {json_safe_value!r}")
+        return json_safe_value
+
+    raise NotImplementedError(repr(target_type))
+
+
+def _convert_value_to_json_safe(value: object) -> object:
+    if value is None or isinstance(value, (str, int)):
+        return value
+    raise NotImplementedError(repr(value))
 
 
 @dataclasses.dataclass
-class _UnknownOption:
-    value: Any
-    call_converter: bool
-    tag: str | None
-
-
-def _default_converter(value: Any) -> Any:
-    return value
+class _KnownOption:
+    type: Any
+    value: object
+    default_value: object
 
 
 # includes the parent
@@ -114,112 +116,82 @@ def _get_children_recursively(parent: tkinter.Misc) -> Iterator[tkinter.Misc]:
         yield from _get_children_recursively(child)
 
 
-class Settings:
-    def __init__(self, change_event_widget: tkinter.Misc | None, change_event_format: str):
-        # '<<Foo:{}>>'
-        assert "{}" in change_event_format
-        assert change_event_format.startswith("<<")
-        assert change_event_format.endswith(">>")
+_T = TypeVar("_T")
 
-        self._options: dict[str, _Option] = {}
-        self._unknown_options: dict[str, _UnknownOption] = {}
-        self._change_event_widget = change_event_widget  # None to notify all widgets
-        self._change_event_format = change_event_format
+
+class Settings:
+    def __init__(self, the_tab: tabs.Tab | None):
+        self._tab = the_tab  # None if global settings
+        self._json_contents: dict[str, object] = {}
+        self._known_options: dict[str, _KnownOption] = {}
         self._pending_change_events: dict[str, tuple[object, object]] | None = None
 
     def add_option(
         self,
         option_name: str,
-        default: Any,
-        type_: Any | None = None,
         *,
-        converter: Callable[[Any], Any] = _default_converter,
+        type: Any,
+        default: object,
         exist_ok: bool = False,
     ) -> None:
-        """Add a custom option.
+        """Add an option to settings.
 
-        The type of *default* determines how :meth:`set` and :meth:`get` behave.
-        For example, if *default* is a string, then
-        calling :meth:`set` with a value that isn't a string or
-        calling :meth:`get` with the type set to something else than ``str``
-        is an error. You can also provide a custom type with the *type*
-        argument, e.g. ``add_option('foo', None, Optional[pathlib.Path])``.
+        Example:
 
-        If you are adding a global option (see :class:`Settings` for non-global
-        options), use only JSON-safe types. Let me know if this limitation is
-        too annoying.
+            global_settings.add_option("foo", type=bool, default=True)
 
-        If you are **not** adding a global option, you
-        can also specify a *converter* that takes the value in the
-        configuration file as an argument and returns an instance of *type*.
-        For example, ``pygments_lexer`` is set to a string like
-        "pygments.lexers.Foo" in the config file, even though it appears as a
-        class in the settings object. That's implemented similarly to this::
+        If the option accepts `None`, you need to use `typing.Optional`, because
+        Porcupine still supports Python 3.9:
 
-            def import_lexer_class(name: str) -> something:
-                ...
-
-            filetab.settings.add_option(
-                'pygments_lexer',
-                pygments.lexers.TextLexer,
-                ...
-                converter=import_lexer_class)
-
-        By default, the converter returns its argument unchanged.
-        Do not use a lambda function as the converter,
-        because the settings must be picklable.
+            global_settings.add_option("extra_thingy", type=Optional[str], default=None)
 
         If an option with the same name exists already, an error is raised by
-        default, but if ``exist_ok=True`` is given, then adding the same
-        option again is allowed. When this happens, an error is raised if
-        *default*, *type* or *converter* doesn't match what was passed in when
-        the option was added for the first time.
+        default, but if `exist_ok=True` is given, then adding the same option
+        multiple times is fine, as long as `type` and `default` are the same
+        every time.
         """
-        if type_ is None:
-            type_ = type(default)
-        assert type_ is not None
-
-        if option_name in self._options:
+        if option_name in self._known_options:
             if not exist_ok:
                 raise RuntimeError(f"there's already an option named {option_name!r}")
-            old_option = self._options[option_name]
+            old_option = self._known_options[option_name]
+            assert type == old_option.type
             assert default == old_option.default
-            assert type_ == old_option.type
-            assert converter == old_option.converter
             return
 
-        option = _Option(option_name, default, type_, converter)
-        self._options[option_name] = option
+        if not _type_check(default, type):
+            raise TypeError(f"default value {default!r} doesn't match the specified type {type!r}")
+
+        self._known_options[option_name] = _KnownOption(type=type, value=default, default_value=default)
 
         try:
-            unknown = self._unknown_options.pop(option_name)
+            raw_value = self._unknown_options.pop(option_name)
         except KeyError:
             pass  # nothing relevant in config file, use default
         else:
-            # Error handling here because it's not possible to fail early when
-            # an option goes to _unknown_options, and bad data in a config file
-            # shouldn't cause add_option() and the rest of a plugin's setup()
-            # to fail.
+            # Error handling here because bad data in a config file shouldn't
+            # cause add_option() and the rest of a plugin's setup() to fail.
             try:
-                if unknown.call_converter:
-                    self.set(option_name, converter(unknown.value), tag=unknown.tag)
-                else:
-                    self.set(option_name, unknown.value, tag=unknown.tag)
+                value = _convert_value_from_json_safe(raw_value, type)
             except Exception:
-                # can be an error from converter
-                _log.exception(f"setting {option_name!r} to {unknown.value!r} failed")
+                _log.exception(f"setting {option_name!r} to {raw_value!r} failed, falling back to default: {default!r}")
+            else:
+                self.set(option_name, value)
 
     def _generate_change_event(
         self, option_name: str, old_value: object, new_value: object
     ) -> None:
-        event_name = self._change_event_format.format(option_name)
+        if self._tab is None:
+            event_name = f"<<GlobalSettingChanged:{option_name}>>"
+        else:
+            event_name = f"<<TabSettingChanged:{option_name}>>"
+
         if old_value == new_value:
             _log.debug(f"not generating a change event because value didn't change: {event_name}")
             return
 
         _log.info(f"generating change event: {event_name}")
 
-        if self._change_event_widget is None:
+        if self._tab is None:
             try:
                 main_window = porcupine.get_main_window()
             except RuntimeError as e:
@@ -230,11 +202,26 @@ class Settings:
                 for widget in _get_children_recursively(main_window):
                     widget.event_generate(event_name)
         else:
-            self._change_event_widget.event_generate(event_name)
+            self._tab.event_generate(event_name)
 
     # TODO: document this
     @contextlib.contextmanager
     def defer_change_events(self) -> Generator[None, None, None]:
+        """A context manager that runs all change events for several changes at once.
+
+        Usage:
+
+            with global_settings.defer_change_events():
+                global_settings.set("font_family", "Noto Sans Mono")
+                global_settings.set("font_size", 12)
+                global_settings.set("font_size", 14)
+                global_settings.set("font_size", 15)
+                # No change events ran yet.
+
+            # When we get here ("with" statement ends), we get only two change events:
+            #   <<GlobalSettingChanged:font_family>>
+            #   <<GlobalSettingChanged:font_size>>    (this only runs once!)
+        """
         if self._pending_change_events is not None:
             raise RuntimeError("calls to defer_change_events() cannot be nested")
 
@@ -253,44 +240,16 @@ class Settings:
         self,
         option_name: str,
         value: object,
-        *,
-        from_config: bool = False,
-        call_converter: bool | None = None,
-        tag: str | None = None,
     ) -> None:
-        """Set the value of an opiton.
+        """Set the value of an opiton."""
+        if option_name not in self._known_options:
+            # TODO: add test for this
+            raise ValueError(f"option {option_name!r} doesn't exist, because `add_option({option_name!r}, ...)` was not called")
 
-        Set ``from_config=True`` if the value comes from a configuration
-        file (see :meth:`add_option`). That does two things:
+        option = self._known_options[option_name]
+        if not _type_check(option.type, value):
+            raise TypeError(f"value of {option_name!r} must be of type {option.type}, not {value!r}")
 
-            * The converter given to :meth:`add_option` will be used.
-            * If the option hasn't been added with :meth:`add_option` yet, then
-              the value won't be set immediately, but instead it gets set
-              later when the option is added.
-
-        You can specify ``call_converter`` to force the converter to be or
-        to not be called.
-
-        Each option has a tag that shows up in :meth:`debug_dump` and :meth:`get_options_by_tag`.
-        If the ``tag`` argument is given, the tag of the option will be changed to it.
-        Otherwise the tag is cleared.
-        Tagging is useful for figuring out where/why an option was set:
-        if you call ``.set()`` in two places with different tags,
-        the option's current tag tells which of the two places has set the current value.
-        """
-        if call_converter is None:
-            call_converter = from_config
-
-        if option_name not in self._options and from_config:
-            self._unknown_options[option_name] = _UnknownOption(value, call_converter, tag)
-            return
-
-        option = self._options[option_name]
-        if call_converter:
-            value = option.converter(value)
-        value = _type_check(option.type, value)
-
-        option.tag = tag
         old_value = option.value
         option.value = value
         if old_value != value:
@@ -306,70 +265,84 @@ class Settings:
         else:
             self._pending_change_events[option_name] = (old_value, value)
 
-    def get_options_by_tag(self, tag: str) -> builtins.set[str]:
-        """Return the names of all options whose current value was set with the given ``tag``."""
-        return {name for name, option in self._options.items() if option.tag == tag}
-
-    # I don't like how this requires overloads for every type.
-    # https://stackoverflow.com/q/61471700
-
     # fmt: off
     @overload
-    def get(self, option_name: str, type_: type[Path]) -> Path: ...
+    def get(self, option_name: str, type: type[_T], *, can_be_none: Literal[True]) -> _T | None: ...
     @overload
-    def get(self, option_name: str, type_: type[LineEnding]) -> LineEnding: ...
-    @overload
-    def get(self, option_name: str, type_: type[str]) -> str: ...
-    @overload
-    def get(self, option_name: str, type_: type[bool]) -> bool: ...
-    @overload
-    def get(self, option_name: str, type_: type[int]) -> int: ...
-    @overload
-    def get(self, option_name: str, type_: object) -> Any: ...
+    def get(self, option_name: str, type: type[_T]) -> _T: ...
     # fmt: on
-    def get(self, option_name: str, type_: Any) -> Any:
-        result = self._options[option_name].value
-        result = _type_check(type_, result)
-        return copy.deepcopy(result)  # mutating wouldn't trigger change events
+
+    def get(self, option_name: str, type: type[_T], can_be_none: bool = False) -> _T:
+        """Returns the current value of an option.
+
+        The `type` must be the same type that what was passed into `add_option()`.
+
+        If you want to get the value of an option that can be `None`, pass the
+        type without `None` and set `can_be_none=True`. So instead of one of these:
+
+            value = global_settings.get("foo", str | None)      # bad
+            value = global_settings.get("foo", Optional[str])   # bad
+
+        You need to do this:
+
+            value = global_settings.get("foo", str, can_be_none=True)  # good
+
+        This works around a mypy bug/limitation. See https://stackoverflow.com/q/61471700
+        """
+        if option_name not in self._known_options:
+            # TODO: add test for this
+            raise ValueError(f"option {option_name!r} doesn't exist, because `add_option({option_name!r}, ...)` was not called")
+
+        if can_be_none:
+            type = Optional[type]
+
+        expected_type = self._known_options[option_name].type
+        if type != expected_type:
+            # TODO: add test for this
+            raise TypeError(
+                f"wrong type {type!r} specified to .get(), should be {expected_type} because"
+                + f" the option was added with `add_option({option_name!r}, type={expected_type}, ...)`"
+            )
+
+        result = self._known_options[option_name].value
+        # Mutating the result would be wrong because it wouldn't trigger change events.
+        # Instead of telling developers to not mutate, let's make a copy so that mutating is pointless.
+        return copy.deepcopy(result)
 
     def debug_dump(self) -> None:
         """Print all settings and their values. This is useful for debugging."""
-        print(f"{len(self._options)} known options (add_option called)")
-        for name, option in self._options.items():
-            print(f"  {name} = {option.value!r}    (type={option.type!r}, tag={option.tag!r})")
+        print(f"{len(self._known_options)} known options (add_option called)")
+        for name, option in self._this_is_deprecated_plz_fix.items():
+            print(f"  {name} = {option.value!r}    (type={option.type!r}, default={option.default_value!r})")
         print()
 
         print(f"{len(self._unknown_options)} unknown options (add_option not called)")
         for name, unknown in self._unknown_options.items():
-            string = f"  {name} = {unknown.value!r}    (tag={unknown.tag!r}"
-            if not unknown.call_converter:
-                string += ", converter function will not be called"
-            string += ")"
-            print(string)
+            print(f"  {name} = {unknown.value!r}")
         print()
 
-    # TODO: document state methods?
-    def get_state(self) -> dict[str, _UnknownOption]:
-        result = self._unknown_options.copy()
-        for name, option in self._options.items():
-            value = self.get(name, object)
-            if value != option.default:
-                result[name] = _UnknownOption(value, call_converter=False, tag=option.tag)
-        return result
-
-    def set_state(self, state: dict[str, _UnknownOption]) -> None:
-        for name, unknown in state.items():
-            self.set(
-                name,
-                unknown.value,
-                from_config=True,
-                call_converter=unknown.call_converter,
-                tag=unknown.tag,
-            )
+#    # TODO: document state methods?
+#    def get_state(self) -> dict[str, _UnknownOption]:
+#        result = self._unknown_options.copy()
+#        for name, option in self._this_is_deprecated_plz_fix.items():
+#            value = self.get(name, object)
+#            if value != option.default:
+#                result[name] = _UnknownOption(value, call_converter=False, tag=option.tag)
+#        return result
+#
+#    def set_state(self, state: dict[str, _UnknownOption]) -> None:
+#        for name, unknown in state.items():
+#            self.set(
+#                name,
+#                unknown.value,
+#                from_config=True,
+#                call_converter=unknown.call_converter,
+#                tag=unknown.tag,
+#            )
 
     def reset(self, option_name: str) -> None:
         """Set an option to its default value given to :meth:`add_option`."""
-        self.set(option_name, self._options[option_name].default)
+        self.set(option_name, self._known_options[option_name].default)
 
     def reset_all(self) -> None:
         """
@@ -378,7 +351,7 @@ class Settings:
         on :data:`global_settings`.
         """
         self._unknown_options.clear()
-        for name in self._options:
+        for name in self._this_is_deprecated_plz_fix:
             self.reset(name)
 
 

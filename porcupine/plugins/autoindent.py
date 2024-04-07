@@ -72,7 +72,7 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
     # pressing enter twice would get rid of all indentation
     tab.textwidget.insert("insert", leading_whitespace(prevline))
 
-    comment_prefix = tab.settings.get("comment_prefix", Optional[str])
+    comment_prefix = tab.settings.get("comment_prefix", str, can_be_none=True)
     if comment_prefix is None:
         prevline = prevline.strip()
     else:
@@ -103,7 +103,7 @@ def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> N
     # example code in them.
     before_cursor = tab.textwidget.get("insert linestart", "insert")
     before_cursor = before_cursor.replace(
-        tab.settings.get("comment_prefix", Optional[str]) or "", ""
+        tab.settings.get("comment_prefix", str, can_be_none=True) or "", ""
     )
     if before_cursor.strip():
         return

@@ -203,8 +203,8 @@ def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("filetype_name", None, type_=Optional[str])
-    if not tab.settings.get("filetype_name", Optional[str]):
+    tab.settings.add_option("filetype_name", type=Optional[str], default=None)
+    if not tab.settings.get("filetype_name", str, can_be_none=True):
         on_path_changed(tab)
     tab.bind("<<PathChanged>>", partial(on_path_changed, tab), add=True)
     _sync_filetypes_menu()
@@ -236,7 +236,7 @@ def _sync_filetypes_menu(event: object = None) -> None:
     filetype_name: str | None = ""
     if isinstance(tab, tabs.FileTab):
         try:
-            filetype_name = tab.settings.get("filetype_name", Optional[str])
+            filetype_name = tab.settings.get("filetype_name", str, can_be_none=True)
         except KeyError:
             pass
 
@@ -254,7 +254,7 @@ def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
 def setup() -> None:
     menubar.register_enabledness_check_event("<<TabFiletypeApplied>>")
 
-    global_settings.add_option("default_filetype", "Python")
+    global_settings.add_option("default_filetype", type=str, default="Python")
 
     # load_filetypes() got already called in setup_argument_parser()
     get_tab_manager().add_filetab_callback(on_new_filetab)

@@ -440,7 +440,7 @@ runner: NoTerminalRunner | None = None
 
 
 def setup() -> None:
-    global_settings.add_option("run_output_pygments_style", default="inkpot")
+    global_settings.add_option("run_output_pygments_style", type=str, default="inkpot")
     settings.add_pygments_style_button(
         "run_output_pygments_style", "Pygments style for output of commands:"
     )

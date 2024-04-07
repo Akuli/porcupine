@@ -36,7 +36,7 @@ def settings_to_textwidget(tab: tabs.FileTab, junk: object = None) -> None:
 
 
 def on_new_filetab(var: tkinter.BooleanVar, tab: tabs.FileTab) -> None:
-    tab.settings.add_option("wrap", False)
+    tab.settings.add_option("wrap", type=bool, default=False)
     tab.bind("<<TabSettingChanged:wrap>>", partial(settings_to_var, var), add=True)
     tab.bind("<<TabSettingChanged:wrap>>", partial(settings_to_textwidget, tab), add=True)
     settings_to_var(var)

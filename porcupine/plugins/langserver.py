@@ -368,7 +368,8 @@ class LangServer:
         return True
 
     def _send_tab_opened_message(self, tab: tabs.FileTab) -> None:
-        config = tab.settings.get("langserver", Optional[LangServerConfig])
+        config = tab.settings.get("langserver", LangServerConfig, can_be_none=True)
+        assert config is not None
         assert tab.path is not None
 
         self._lsp_client.did_open(
@@ -668,7 +669,7 @@ def get_lang_server(tab: tabs.FileTab) -> LangServer | None:
     if tab.path is None:
         return None
 
-    config = tab.settings.get("langserver", Optional[LangServerConfig])
+    config = tab.settings.get("langserver", LangServerConfig, can_be_none=True)
     if config is None:
         return None
     assert isinstance(config, LangServerConfig)
@@ -736,7 +737,7 @@ def switch_langservers(
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("langserver", None, Optional[LangServerConfig])
+    tab.settings.add_option("langserver", type=Optional[LangServerConfig], default=None)
 
     # TODO: some better way to pass events to the correct langsever?
     def request_completions(event: utils.EventWithData) -> str | None:
