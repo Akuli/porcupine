@@ -18,7 +18,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "porcupine"
-version = "2023.06.27"
+version = "2024.03.31"
 description = "A decent editor written in tkinter"
 authors = [{name = "Akuli", email = "akuviljanen17@gmail.com"}]
 readme = "README.md"
@@ -39,9 +39,36 @@ dependencies = [
     "tomli==2.0.1",
     "send2trash>=1.8.0,<2.0.0",
     "psutil>=5.8.0,<6.0.0",
-    "PyYAML==6.0",
+    "PyYAML>=6.0,<7",
     "tree-sitter-builds==2023.3.12",
-    "sv-ttk>=2.4.5",
+    "requests>=2.24.0, <3.0.0",
+    # TODO: upgrade sv-ttk
+    "sv-ttk==2.5.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==6.2.5",
+    "pytest-mock==3.10.0",
+    "pycln==2.1.3",
+    "black==23.1.0",
+    "isort==5.12.0",
+    "pyupgrade==3.9.0",
+    "pillow>=5.4.1",
+
+    # type checking, exact versions to avoid "works on my computer" problems
+    "mypy==1.9.0",
+    "types-Pygments==2.14.0.6",
+    "types-docutils==0.19.1.6",
+    "types-Send2Trash==1.8.2.4",
+    "types-setuptools==67.6.0.5",
+    "types-colorama==0.4.15.8",
+    "types-toposort==1.10.0.0",
+    "types-psutil==5.9.5.10",
+    "types-PyYAML==6.0.12.8",
+    "types-tree-sitter==0.20.1.2",
+    "types-tree-sitter-languages==1.5.0.2",
+    "types-requests==2.31.0.20240311",
 ]
 
 [project.scripts]

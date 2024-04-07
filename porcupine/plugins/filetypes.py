@@ -8,7 +8,7 @@ import re
 import tkinter
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import tomli
 from pygments import lexers
@@ -18,7 +18,7 @@ from porcupine import dirs, get_parsed_args, get_tab_manager, menubar, settings,
 from porcupine.settings import global_settings
 
 log = logging.getLogger(__name__)
-FileType = Dict[str, Any]
+FileType = dict[str, Any]
 filetypes: dict[str, FileType] = {}
 
 
@@ -194,6 +194,8 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
             if name not in {"filename_patterns", "shebang_regex"}:
                 tab.settings.set(name, value, from_config=True, tag="from_filetype")
 
+    get_tab_manager().event_generate("<<TabFiletypeApplied>>")
+
 
 def on_path_changed(tab: tabs.FileTab, junk: object = None) -> None:
     log.info(f"file path changed: {tab.path}")
@@ -231,14 +233,14 @@ filetypes_var: tkinter.StringVar
 
 def _sync_filetypes_menu(event: object = None) -> None:
     tab = get_tab_manager().select()
-    filetype_name: str = ""
+    filetype_name: str | None = ""
     if isinstance(tab, tabs.FileTab):
         try:
-            filetype_name = tab.settings.get("filetype_name", str)
+            filetype_name = tab.settings.get("filetype_name", Optional[str])
         except KeyError:
             pass
 
-    filetypes_var.set(filetype_name)
+    filetypes_var.set(filetype_name or "")
 
 
 def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
@@ -250,6 +252,8 @@ def _add_filetype_menuitem(name: str, tk_var: tkinter.StringVar) -> None:
 
 
 def setup() -> None:
+    menubar.register_enabledness_check_event("<<TabFiletypeApplied>>")
+
     global_settings.add_option("default_filetype", "Python")
 
     # load_filetypes() got already called in setup_argument_parser()
@@ -274,5 +278,5 @@ def setup() -> None:
     new_file_filetypes = get_parsed_args().new_file or []  # argparse can give None
     for filetype in new_file_filetypes:
         tab = tabs.FileTab(get_tab_manager())
-        get_tab_manager().add_tab(tab)  # sets default filetype
         apply_filetype_to_tab(filetype, tab)  # sets correct filetype
+        get_tab_manager().add_tab(tab)

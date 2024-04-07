@@ -33,12 +33,13 @@ def _run_in_windows_cmd(command: str | None, cwd: Path, env: dict[str, str]) -> 
         return
 
     real_command = [str(utils.python_executable), str(run_script), str(cwd), command]
-    if not utils.running_pythonw:
-        # windows wants to run python in the same terminal that
-        # Porcupine was started from, this is the only way to open a
-        # new command prompt i found and it works :) we need cmd
-        # because start is built in to cmd (lol)
+    if not sys.executable.endswith((r"\Porcupine.exe", r"\pythonw.exe")):
+        # Porcupine was started from a command prompt window.
+        #
+        # For some reason, windows wants to run the user's Python program in the
+        # same command prompt window, so we tell it to open a new command prompt.
         real_command = ["cmd", "/c", "start"] + real_command
+
     subprocess.Popen(real_command, env=env)
 
 

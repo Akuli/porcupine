@@ -1,3 +1,55 @@
+"""This file creates the menubar near the top of the Porcupine window.
+
+Here is a simple example. You can run it by saving it as a `.py` file in the
+`porcupine/plugins/` folder.
+
+    from tkinter import messagebox
+    from porcupine import menubar
+
+    def hello():
+        messagebox.showinfo("Hello", "Hello World!")
+
+    def setup():
+        menubar.get_menu("Run/Greetings").add_command(label="Hello World", command=hello)
+
+This creates a new *Greetings* submenu to Porcupine's *Run* menu. Inside the
+*Greetings* menu, there is a *Hello World* menu item that shows a popup message
+when it is clicked.
+
+The `/`-separated strings are called *menu paths*. They specify a menu and an
+item inside that menu. Here are some details and gotchas about menu paths:
+
+- Menus will be created when they don't already exist.
+- Menu paths must be in ASCII, because they are used in virtual events names (see below).
+- Use `//` to display an actual slash character in the menus.
+- Menu stuff might get rewritten soon. See issue #1342.
+
+Associating key presses with menu items is currently quite complicated, and IMO
+much more complicated than it needs to be. Here's how associating `Ctrl+F` with
+`Edit/Find and Replace` works:
+- `porcupine/default_keybindings.tcl` runs when Porcupine starts, and it
+  associates the physical event `<Control-f>` with the virtual event
+  `<<Menubar:Edit/Find and Replace>>` using the `event add` Tcl command.
+- The `porcupine.menubar` module binds to the virtual event
+  `<<Menubar:Edit/Find and Replace>>`. This binding invokes the
+  `Find and Replace` menu item from the `Edit` menu whenever the
+  `<<Menubar:Edit/Find and Replace>>` virtual event is generated.
+  Similar bindings are created automatically for all menu items.
+- The `find` plugin adds a `Find and Replace` option to the `Edit` menu in the menubar.
+
+And here's what happens when the user actually presses Ctrl+F:
+
+1. User presses `Ctrl+F`.
+2. Tk generates a `<Control-f>` event. Tk also considers this to be a
+   `<<Menubar:Edit/Find and Replace>>` event because of the `event add`.
+3. Tk calls the automatically created ``<<Menubar:Edit/Find and Replace>>`
+   binding because the corresponding event was generated.
+4. The binding invokes the `Edit/Find and Replace` menu item.
+5. Because the menu item was invoked, it runs its command as if it was clicked.
+   This command is a function defined in `porcupine/plugins/find.py`.
+6. The `find` plugin does its thing.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -5,13 +57,14 @@ import re
 import sys
 import tkinter
 import webbrowser
+from collections.abc import Iterator
 from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Iterator, List, Literal
+from typing import Any, Callable, Literal
 
-from porcupine import pluginmanager, settings, tabs, utils
+from porcupine import actions, pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit
 from porcupine.settings import global_settings
 
@@ -21,7 +74,7 @@ log = logging.getLogger(__name__)
 # For some reason, binding <F4> on Windows also captures Alt+F4 presses.
 # IMO applications shouldn't receive the window manager's special key bindings.
 # Windows is weird...
-def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
+def _event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
     return (
         sys.platform == "win32"
         and isinstance(event.state, int)
@@ -55,7 +108,7 @@ def event_is_windows_alt_f4(event: tkinter.Event[tkinter.Misc]) -> bool:
 # before root.mainloop(), then it works, so that has to be done for every
 # text widget.
 def _generate_event(name: str, event: tkinter.Event[tkinter.Misc]) -> Literal["break"]:
-    if event_is_windows_alt_f4(event):
+    if _event_is_windows_alt_f4(event):
         quit()
     else:
         log.debug(f"Generating event: {name}")
@@ -98,7 +151,7 @@ def _find_item(menu: tkinter.Menu, label: str) -> int | None:
 
 
 # "//" means literal backslash, lol
-def _join(parts: List[str]) -> str:
+def _join(parts: list[str]) -> str:
     return "/".join(part.replace("/", "//") for part in parts)
 
 
@@ -177,7 +230,7 @@ def _walk_menu_contents(
 
 
 def _menu_event_handler(menu: tkinter.Menu, index: int, event: tkinter.Event[tkinter.Misc]) -> str:
-    if event_is_windows_alt_f4(event):
+    if _event_is_windows_alt_f4(event):
         quit()
     else:
         menu.invoke(index)
@@ -241,9 +294,21 @@ def update_keyboard_shortcuts() -> None:
     _update_shortcuts_for_opening_submenus()
 
 
-def set_enabled_based_on_tab(
-    path: str, callback: Callable[[tabs.Tab | None], bool]
-) -> Callable[..., None]:
+_menu_item_enabledness_callbacks: list[Callable[..., None]] = []
+
+
+def _refresh_menu_item_enabledness(*junk: object) -> None:
+    for callback in _menu_item_enabledness_callbacks:
+        callback(*junk)
+
+
+# TODO: create type for events
+def register_enabledness_check_event(event: str) -> None:
+    """Register an event which will cause all menu items to check if they are available"""
+    get_tab_manager().bind(event, _refresh_menu_item_enabledness, add=True)
+
+
+def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab | None], bool]) -> None:
     """Use this for disabling menu items depending on the currently selected tab.
 
     When the selected :class:`~porcupine.tabs.Tab` changes, ``callback`` will
@@ -275,18 +340,22 @@ def set_enabled_based_on_tab(
     easier.
     """
 
-    def update_enabledness(*junk: object) -> None:
+    def update_enabledness(*junk: object, path: str) -> None:
         tab = get_tab_manager().select()
+
         parent, child = _split_parent(path)
         menu = get_menu(parent)
         index = _find_item(menu, child)
         if index is None:
             raise LookupError(f"menu item {path!r} not found")
-        menu.entryconfig(index, state=("normal" if callback(tab) else "disabled"))
+        if callback(tab):
+            menu.entryconfig(index, state="normal")
+        else:
+            menu.entryconfig(index, state="disabled")
 
-    update_enabledness()
-    get_tab_manager().bind("<<NotebookTabChanged>>", update_enabledness, add=True)
-    return update_enabledness
+    update_enabledness(path=path)
+
+    _menu_item_enabledness_callbacks.append(partial(update_enabledness, path=path))
 
 
 def get_filetab() -> tabs.FileTab:
@@ -295,6 +364,7 @@ def get_filetab() -> tabs.FileTab:
     return tab
 
 
+# FIXME(#1398): this function is deprecated
 def add_filetab_command(path: str, func: Callable[[tabs.FileTab], object], **kwargs: Any) -> None:
     """
     This is a convenience function that does several things:
@@ -323,8 +393,38 @@ def add_filetab_command(path: str, func: Callable[[tabs.FileTab], object], **kwa
     set_enabled_based_on_tab(path, (lambda tab: isinstance(tab, tabs.FileTab)))
 
 
+def add_filetab_action(path: str, action: actions.FileTabAction, **kwargs: Any) -> None:
+    """
+    This is a convenience function that does several things:
+
+    * Create a menu item at the given path with action.name as label
+    * Ensure the menu item is enabled only when the selected tab is a
+      :class:`~porcupine.tabs.FileTab` AND when
+      :class:`~porcupine.actions.FileTabAction.availability_callback`
+      returns True.
+    * Run :class:`~porcupine.actions.FileTabAction.callback` when the
+      menu item is clicked.
+
+    The ``callback`` is called with the selected tab as the only
+    argument when the menu item is clicked.
+
+    You usually don't need to provide any keyword arguments in ``**kwargs``,
+    but if you do, they are passed to :meth:`tkinter.Menu.add_command`.
+    """
+
+    get_menu(path).add_command(
+        label=action.name, command=lambda: action.callback(get_filetab()), **kwargs
+    )
+    set_enabled_based_on_tab(
+        path,
+        callback=lambda tab: isinstance(tab, tabs.FileTab) and action.availability_callback(tab),
+    )
+
+
 # TODO: pluginify?
 def _fill_menus_with_default_stuff() -> None:
+    register_enabledness_check_event("<<NotebookTabChanged>>")
+
     # Make sure to get the order of menus right:
     #   File, Edit, <everything else>, Help
     get_menu("Help")  # handled specially in get_menu
@@ -401,24 +501,9 @@ def _fill_menus_with_default_stuff() -> None:
     get_menu("Settings").add_command(label="Porcupine Settings", command=settings.show_dialog)
     get_menu("Settings").add_command(label="Plugin Manager", command=pluginmanager.show_dialog)
 
+    # TODO: these really belong to a plugin
     def add_link(menu_path: str, label: str, url: str) -> None:
         get_menu(menu_path).add_command(label=label, command=(lambda: webbrowser.open(url)))
 
-    # TODO: porcupine starring button
-    add_link("Help", "Porcupine Wiki", "https://github.com/Akuli/porcupine/wiki")
-    add_link(
-        "Help",
-        "Report a problem or request a feature",
-        "https://github.com/Akuli/porcupine/issues/new",
-    )
-    add_link(
-        "Help/Python",
-        "Free help chat",
-        "https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython",
-    )
-    add_link(
-        "Help/Python",
-        "My Python tutorial",
-        "https://github.com/Akuli/python-tutorial/blob/master/README.md",
-    )
-    add_link("Help/Python", "Official documentation", "https://docs.python.org/")
+    add_link("Help", "Create an issue on GitHub", "https://github.com/Akuli/porcupine/issues/new")
+    add_link("Help", "User Documentation", "https://github.com/Akuli/porcupine/tree/main/user-doc")

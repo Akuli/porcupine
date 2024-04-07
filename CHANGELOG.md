@@ -2,6 +2,41 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## v2024.03.31
+
+- There are two new easter eggs in the about dialog. Happy Easter :)
+- Porcupine's documentation has been updated and rearranged. The documentation is now clearly split into two folders, [user-doc](https://github.com/Akuli/porcupine/tree/main/user-doc) for using Porcupine and [dev-doc](https://github.com/Akuli/porcupine/tree/main/dev-doc) for developing Porcupine. Both folders also contain newly written documentation. Porcupine Wiki was deleted, and deleting `akuli.github.io/porcupine` is planned.
+- The contents of the *Help* menu at top were updated. For example, *User Documentation* opens the `user-doc` folder.
+- Porcupine now checks for updates when it starts. Many other programs do this in an annoying way (with e.g. a popup message). Porcupine notifies you about a new version by showing a message in the status bar instead. If this is still too annoying, you can easily disable update checking in *Porcupine Settings* or in the plugin manager.
+- All right-click menus are now offset a little bit from the cursor location, so that you don't accidentally click the first item in the right-click menu. Thank you [ethical-haquer](https://github.com/ethical-haquer) for fixing this.
+
+
+## v2024.03.09
+
+Bug fixes:
+- Installing Porcupine no longer fails on MacOS. In previous versions, there was an error caused by the PyYAML dependency.
+- The *File* → *Quit* menu item works again. Previously it was always grayed out, and nothing happened when it was clicked. Thank you [Tuomas](https://github.com/taahol) for fixing this.
+- The *Filetypes* menu no longer displays the wrong filetype in some situations. Thank you [Tuomas](https://github.com/taahol) for fixing this.
+- Porcupine should no longer segfault in a corner case that happens only on some Linux systems with the `Amiri Quran Colored` font installed (see issue [#1442](https://github.com/Akuli/porcupine/issues/1442)). This is technically a bug in Tk, but Porcupine now contains a workaround for the bug.
+
+
+## v2024.02.07
+
+Bug fixes:
+- Porcupine no longer crashes on Mac when you try to open a file. Thank you [ThePhilgrim](https://github.com/ThePhilgrim) for fixing this.
+- When the stop button (or other buttons) in the top right corner of the command output area are hovered, they display tooltips that explain what the buttons do. These tooltips no longer go partially off the screen when the Porcupine window is maximized or dragged to the right edge of the screen. Thank you [lawson89](https://github.com/lawson89) for fixing this.
+- The directory tree now colors file names with non-ASCII characters correctly based on their Git status. For example, when a file is `git add`ed, it will now become green regardless of its file name. In previous versions, files named e.g. `örkkiäinen.txt` were always white.
+- On some systems, such as Debian 12, the font chooser in Porcupine Settings now shows more fonts than before, and doesn't show a confusing warning triangle when the default font is selected.
+- In previous versions, the "Jumping to previous/next anchor cycles to end/start of file" setting didn't work when the file contained only one anchor point. Thank you [ThePhilgrim](https://github.com/ThePhilgrim) for reporting this.
+
+Other changes:
+- Porcupine no longer runs on Python 3.7.
+- Ctrl+Y does redo (that is, reverting a Ctrl+Z) also on Linux. Previously Linux users needed Ctrl+Shift+Z for redo.
+- Ctrl+/ now comments selected lines, somewhat similarly to typing the filetype's comment character (e.g. `#` in a Python file).
+- *Sort Lines* in the *Edit* menu now takes only the lines with the same indentation when nothing is selected. This is convenient for sorting long Python lists and dicts.
+- Previously the encoding chooser was just a big list of encodings with no explanation. Now it's easy to choose between UTF-8 and Latin-1, and the encoding chooser explains their advantages and disadvantages.
+
+
 ## v2023.06.27
 
 New features:

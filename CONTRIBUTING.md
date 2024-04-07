@@ -14,20 +14,22 @@ I have tried to make contributing easy:
     Instead of working on an issue, you can also create something that you would
     like to have in an editor.
 - You don't need to read anything before you can get started.
-    I recommend having a look at [the Porcupine plugin API docs](https://akuli.github.io/porcupine/),
+    I recommend having a look at the `dev-doc` folder,
+    especially [dev-doc/architecture-and-design.md](dev-doc/architecture-and-design.md),
     but that's not required.
 - Don't worry too much about whether your code is good or not.
     I will review the pull requests and try to help you out.
     There are also checks running on GitHub Actions.
+- Don't worry too much about whether your PR follows whatever best practices you might have heard of.
+    Just make a PR and I will edit it as needed.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
-Then install Python 3.8 or newer and [git](https://git-scm.com/), and run these commands:
+Then install Python 3.9 or newer and [git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/YourUserName/porcupine
     cd porcupine
     python3 -m venv env
     source env/bin/activate
-    pip install -r requirements.txt
     pip install -r requirements-dev.txt
     python3 -m porcupine
 
@@ -63,21 +65,8 @@ environment in, you can go back to the environment by `cd`'ing to the correct
 place and running `source env/bin/activate` again. You can run `deactivate` to undo
 the `source env/bin/activate`.
 
-Other commands you may find useful:
-- `python3 -m pytest` runs tests. You will see lots of weird stuff happening
-  while testing, and that's expected.
-    A good way to debug a test to see what is actually going on is to add traces.
-    It pauses the test to show you the current state of the program.
-    - Use `import pdb` and `pdb.set_trace()` to set the pause points in the test. You can
-      set as many as you like, and it can conveniently be done on one line: `import pdb; pdb.set_trace()`.
-    - When the test pauses, type `cont` in terminal to continue the test.
-    - If you at any time need to interact with the program during the pause,
-      type `interact` in terminal. Exit interactive mode with `ctrl + D`.
-- To see a report of test coverage, add `--cov=porcupine` to the above pytest
-  command and then run `coverage html`. Open `htmlcov/index.html` in your favorite
-  browser to view it.
-- `cd docs` followed by `python3 -m sphinx . build` creates HTML documentation.
-  Open `docs/build/index.html` in your favorite browser to view it.
+Porcupine also has tests, but many changes to Porcupine don't need tests.
+See [dev-doc/tests.md](dev-doc/tests.md) for details about how and when Porcupine uses tests.
 
 
 ## Where to talk to us
@@ -90,27 +79,3 @@ Compared to GitHub issues, IRC feels more like a casual conversation,
 and we often discuss things that have nothing to do with Porcupine.
 To join ##learnpython, you can e.g. go to https://kiwiirc.com/nextclient/irc.libera.chat/##learnpython
 or run [Akuli's mantaray program](https://github.com/Akuli/mantaray).
-
-
-## Releasing Porcupine
-
-These instructions are meant for Porcupine maintainers.
-Other people shouldn't need them.
-
-1. Update `CHANGELOG.md` based on Git logs (e.g. `git log --all --oneline --graph`).
-    You should add a new section to the beginning with `Unreleased` instead of a version number.
-    Don't split the text to multiple lines any more than is necessary,
-    as that won't show up correctly on GitHub's releases page.
-2. Make a pull request of your changelog edits. Review carefully:
-    changing the changelog afterwards is difficult, as the text gets copied into the releases page.
-3. Merge the pull request and pull the merge commit to your local `main` branch.
-4. Run `python3 scripts/release.py` from the `main` branch.
-    The script pushes a tag named e.g. `v2022.08.28`,
-    which triggers the parts of `.github/workflows/release-builds.yml`
-    that have `if: startsWith(github.ref, 'refs/tags/v')` in them.
-    They build and deploy docs, copy the changelog to the releases page, and so on.
-5. Update `porcupine.wiki` if you added new features that are likely not obvious to users.
-
-If you want, you can also do a release from a branch named `bugfix-release` instead of `main`.
-This is useful if you fixed a bug that made Porcupine unusable for someone,
-but the new features on `main` aren't ready for releasing yet.

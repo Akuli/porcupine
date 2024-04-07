@@ -12,9 +12,10 @@ import os
 import sys
 import time
 import tkinter
+from collections.abc import Generator, Iterator
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, Generator, Iterator, List, TypeVar, overload
+from typing import Any, Callable, TypeVar, overload
 
 import dacite
 from pygments import styles, token
@@ -310,8 +311,6 @@ class Settings:
         return {name for name, option in self._options.items() if option.tag == tag}
 
     # I don't like how this requires overloads for every type.
-    # Also no docstring, because using it from docs/settings.rst showed
-    # the messy overloads in the docs.
     # https://stackoverflow.com/q/61471700
 
     # fmt: off
@@ -442,7 +441,7 @@ def init_enough_for_using_disabled_plugins_list() -> None:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {get_json_path()} failed")
-    global_settings.add_option("disabled_plugins", [], List[str])
+    global_settings.add_option("disabled_plugins", [], list[str])
 
 
 def _init_global_gui_settings() -> None:
@@ -884,6 +883,8 @@ def use_pygments_fg_and_bg(
 
 
 def _is_monospace(font_family: str) -> bool:
+    _log.debug(f"checking whether font {font_family!r} is monospace")
+
     # Ignore weird fonts starting with @ (happens on Windows)
     if font_family.startswith("@"):
         return False
@@ -891,14 +892,15 @@ def _is_monospace(font_family: str) -> bool:
     # I don't want to create font objects just for this, lol
     tcl_interpreter = get_dialog_content().tk
 
-    # https://core.tcl-lang.org/tk/info/3767882e06
-    if "emoji" in font_family.lower():
+    # "Noto Color Emoji" font causes segfault: https://core.tcl-lang.org/tk/info/3767882e06
+    #
+    # There is also segfault with "Amiri Quran Colored" font (see #1442).
+    # I haven't reported to Tk's bug tracker because I couldn't reproduce it myself.
+    if "emoji" in font_family.lower() or "colored" in font_family.lower():
         return False
 
-    # Let's first ask Tcl whether the font is fixed. This is fastest but
-    # returns the wrong result for some fonts that are not actually monospace.
-    if not tcl_interpreter.call("font", "metrics", (font_family, "12"), "-fixed"):
-        return False
+    # We can't use "font metrics ... -fixed" because it is sometimes wrong.
+    # https://github.com/Akuli/porcupine/issues/1368
 
     # In non-monospace fonts, i is very narrow and m is very wide.
     # Also, make sure that bolding or italic doesn't change the width.
@@ -923,7 +925,7 @@ def _get_monospace_font_families() -> list[str]:
             cache = json.load(file)
 
         # all_families stored to cache in case user installs more fonts
-        if cache["version"] == 2 and cache["all_families"] == all_families:
+        if cache["version"] == 3 and cache["all_families"] == all_families:
             _log.debug(f"Taking list of monospace families from {cache_path}")
             return cache["monospace_families"]
 
@@ -939,7 +941,7 @@ def _get_monospace_font_families() -> list[str]:
         with cache_path.open("w") as file:
             json.dump(
                 {
-                    "version": 2,
+                    "version": 3,
                     "all_families": all_families,
                     "monospace_families": monospace_families,
                 },

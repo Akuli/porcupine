@@ -10,7 +10,7 @@ import shutil
 import sys
 import tkinter
 from pathlib import Path
-from typing import Any, Dict, Optional, cast
+from typing import Any, Optional, cast
 
 import porcupine.plugins.directory_tree as dirtree
 from porcupine import images, utils
@@ -21,14 +21,18 @@ setup_after = ["directory_tree"]
 
 
 def is_venv(path: Path) -> bool:
-    landmarks = [path / "pyvenv.cfg"]
-    if sys.platform == "win32":
-        landmarks.append(path / "Scripts" / "python.exe")
-        landmarks.append(path / "Scripts" / "activate.bat")
+    if path.name != "porcupine-venv":
+        landmarks = [path / "pyvenv.cfg"]
+        if sys.platform == "win32":
+            landmarks.append(path / "Scripts" / "python.exe")
+            landmarks.append(path / "Scripts" / "activate.bat")
+        else:
+            landmarks.append(path / "bin" / "python3")
+            landmarks.append(path / "bin" / "activate")
+        return all(landmark.exists() for landmark in landmarks)
     else:
-        landmarks.append(path / "bin" / "python3")
-        landmarks.append(path / "bin" / "activate")
-    return all(landmark.exists() for landmark in landmarks)
+        log.info(f"not using venv: '{path}', as it contains 'porcupine-venv'")
+        return False
 
 
 def _find_venv(project_root: Path) -> Path | None:
@@ -47,7 +51,7 @@ def set_venv(project_root: Path, venv: Path | None) -> None:
         assert is_venv(venv), venv
 
     custom_paths: dict[str, str | None] = global_settings.get(
-        "python_venvs", Dict[str, Optional[str]]
+        "python_venvs", dict[str, Optional[str]]
     )
     custom_paths[str(project_root)] = None if venv is None else str(venv)
     global_settings.set("python_venvs", custom_paths)  # custom_paths is copy
@@ -57,7 +61,7 @@ def set_venv(project_root: Path, venv: Path | None) -> None:
 def get_venv(project_root: Path) -> Path | None:
     assert project_root.is_dir()
     custom_paths: dict[str, str | None] = global_settings.get(
-        "python_venvs", Dict[str, Optional[str]]
+        "python_venvs", dict[str, Optional[str]]
     )
 
     if str(project_root) in custom_paths:
@@ -152,7 +156,7 @@ def _populate_menu(event: tkinter.Event[dirtree.DirectoryTree]) -> None:
 
 def setup() -> None:
     # paths as strings, for json
-    global_settings.add_option("python_venvs", {}, Dict[str, Optional[str]])
+    global_settings.add_option("python_venvs", {}, dict[str, Optional[str]])
 
     try:
         tree = dirtree.get_directory_tree()

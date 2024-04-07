@@ -1,13 +1,14 @@
+"""Display a menu when the main editing area is right-clicked."""
 from __future__ import annotations
 
 import tkinter
-from typing import Callable, Dict, List
+from typing import Callable
 
 from porcupine import get_main_window, get_tab_manager, tabs
 from porcupine.menubar import get_filetab
 
-_ftab_indexes: List[int] = []
-_menu_items: Dict[str, Callable[[], object]] = {}
+_ftab_indexes: list[int] = []
+_menu_items: dict[str, Callable[[], object]] = {}
 
 
 def text_is_selected(tab: tabs.FileTab) -> bool:
@@ -29,14 +30,14 @@ def create_menu() -> tkinter.Menu:
     flag = text_is_selected(get_filetab())
     if not flag:
         for i in _ftab_indexes:
-            rm.entryconfigure(i, state=tkinter.DISABLED)
+            rm.entryconfigure(i, state="disabled")
 
     return rm
 
 
 def show_menu(event: tkinter.Event[tkinter.Misc]) -> None:
     rm = create_menu()
-    rm.tk_popup(event.x_root, event.y_root)
+    rm.tk_popup(event.x_root + 10, event.y_root + 10)
     rm.bind("<Unmap>", (lambda event: rm.after_idle(rm.destroy)), add=True)
 
 

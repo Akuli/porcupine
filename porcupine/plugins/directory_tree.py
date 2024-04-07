@@ -12,7 +12,7 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from porcupine import (
     get_horizontal_panedwindow,
@@ -431,7 +431,7 @@ class DirectoryTree(ttk.Treeview):
         self._populate_contextmenu()
         if self.contextmenu.index("end") is not None:
             # Menu is not empty
-            self.contextmenu.tk_popup(menu_x, menu_y)
+            self.contextmenu.tk_popup(menu_x + 10, menu_y + 10)
         return "break"
 
 
@@ -476,7 +476,7 @@ def setup() -> None:
     config_indent()
     get_tab_manager().bind("<<ThemeChanged>>", config_indent, add=True)
 
-    global_settings.add_option("directory_tree_projects", [], List[str])
+    global_settings.add_option("directory_tree_projects", [], list[str])
 
     container = ttk.Frame(get_horizontal_panedwindow(), name="directory_tree_container")
     get_horizontal_panedwindow().add(container, before=get_vertical_panedwindow())
@@ -502,7 +502,7 @@ def setup() -> None:
     )
 
     # Must reverse because last added project goes first
-    string_paths = global_settings.get("directory_tree_projects", List[str])
+    string_paths = global_settings.get("directory_tree_projects", list[str])
     for path in map(Path, string_paths[:_MAX_PROJECTS][::-1]):
         if path.is_absolute() and path.is_dir():
             tree.add_project(path, refresh=False)

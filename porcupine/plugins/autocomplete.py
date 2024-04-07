@@ -19,7 +19,6 @@ import re
 import tkinter
 from functools import partial
 from tkinter import ttk
-from typing import List
 
 from porcupine import get_tab_manager, settings, tabs, textutils, utils
 from porcupine.settings import global_settings
@@ -50,7 +49,7 @@ class Request(utils.EventDataclass):
 @dataclasses.dataclass
 class Response(utils.EventDataclass):
     id: int
-    completions: List[Completion]
+    completions: list[Completion]
 
 
 def _pack_with_scrollbar(widget: ttk.Treeview | tkinter.Text) -> ttk.Scrollbar:
@@ -476,7 +475,7 @@ class AutoCompleter:
             assert self._orig_cursorpos is not None
             self._tab.textwidget.after_idle(self._filter_through_completions)
 
-        elif event.char in self._tab.settings.get("autocomplete_chars", List[str]):
+        elif event.char in self._tab.settings.get("autocomplete_chars", list[str]):
 
             def do_request() -> None:
                 if (not self.popup.is_completing()) and self._can_complete_here():
@@ -519,7 +518,7 @@ class AutoCompleter:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("autocomplete_chars", [], List[str])
+    tab.settings.add_option("autocomplete_chars", [], list[str])
 
     completer = AutoCompleter(tab)
 
