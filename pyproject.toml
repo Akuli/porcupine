@@ -34,6 +34,7 @@ dependencies = [
     "python-language-server[rope,pyflakes]>=0.36.2,<1.0.0",
     "black>=21.5b2",
     "isort>=5.10",
+    "typing_extensions",
     "dacite>=1.5.1,<2.0.0",
     "tomli==2.0.1",
     "send2trash>=1.8.0,<2.0.0",
