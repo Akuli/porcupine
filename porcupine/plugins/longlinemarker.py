@@ -66,7 +66,7 @@ class LongLineMarker:
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
     # raymond hettinger says 90-ish
-    tab.settings.add_option("max_line_length", 90)
+    tab.settings.add_option("max_line_length", type=int, default=90)
     LongLineMarker(tab).setup()
 
 

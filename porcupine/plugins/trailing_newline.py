@@ -18,7 +18,7 @@ def on_save(event: tkinter.Event[tabs.FileTab]) -> None:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("insert_final_newline", True)
+    tab.settings.add_option("insert_final_newline", type=bool, default=True)
     tab.bind("<<BeforeSave>>", on_save, add=True)
 
 

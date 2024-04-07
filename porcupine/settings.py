@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import atexit
-import builtins
+import importlib
 import contextlib
 import copy
 import dataclasses
@@ -15,10 +15,12 @@ import tkinter
 from collections.abc import Generator, Iterator
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Any, Callable, TypeVar, overload, TYPE_CHECKING, Type, Optional
+import typing
+from typing import Any, Callable, TypeVar, overload, TYPE_CHECKING, Type, Optional, Literal, cast
 
-import dacite
+import pygments
 from pygments import styles, token
+from pygments.lexer import LexerMeta
 
 import porcupine
 from porcupine import dirs, images, utils
@@ -58,30 +60,60 @@ class LineEnding(enum.Enum):
     CRLF = "\r\n"
 
 
-#class _Option:
-#    def __init__(
-#        self, name: str, default: object, type_: Any, converter: Callable[[Any], Any]
-#    ) -> None:
-#        default = _type_check(type_, default)
-#        self.name = name
-#        self.value = default
-#        self.default = default
-#        self.type = type_
-#        self.converter = converter
-#        self.tag: str | None = None
+# Let's avoid this legacy quirk:
+#    >>> isinstance(True, int)
+#    True
+def _is_integer(x: object) -> bool:
+    return isinstance(x, int) and x is not True and x is not False
 
 
+# Ints can be treated as floats basically everywhere.
+# Python's typing system also accepts ints for "float" parameters.
+def _is_float(x: object) -> bool:
+    return _is_integer(x) or isinstance(x, float)
+
+
+def _unwrap_optional(optional: object) -> object:
+    """Convert Optional[str] to str."""
+    assert str(optional).startswith("typing.Optional[")
+
+    # Optional[str] looks like Union[str, None]
+    args = list(typing.get_args(optional))
+    assert len(args) == 2
+    args.remove(type(None))
+    return args[0]
+
+
+# Please ensure that all functions with this exact comment support the same types.
 def _type_check(value: object, expected_type: Any) -> bool:
-    if expected_type in (str, bool):
+    if expected_type in (str, bool) or isinstance(expected_type, enum.EnumMeta):
         return isinstance(value, expected_type)
+
     if expected_type == int:
-        # Let's avoid this legacy quirk:
-        #    >>> isinstance(True, int)
-        #    True
-        return isinstance(value, int) and value is not True and value is not False
-    raise NotImplementedError
+        return _is_integer(value)
+
+    if expected_type == float:
+        return _is_float(value)
+
+    if str(expected_type).startswith("typing.Optional["):
+        return value is None or _type_check(value, _unwrap_optional(expected_type))
+
+    if str(expected_type).startswith("list["):
+        [list_of_what] = typing.get_args(expected_type)
+        return isinstance(value, list) and all(_type_check(item, list_of_what) for item in value)
+
+    if str(expected_type).startswith("dict["):
+        key_type, value_type = typing.get_args(expected_type)
+        return (
+            isinstance(value, dict)
+            and all(_type_check(k, key_type) for k in value.keys())
+            and all(_type_check(v, value_type) for v in value.values())
+        )
+
+    raise NotImplementedError(str(expected_type))
 
 
+# Please ensure that all functions with this exact comment support the same types.
 def _convert_value_from_json_safe(json_safe_value: object, target_type: Any) -> object:
     if target_type == str:
         if not isinstance(json_safe_value, str):
@@ -89,17 +121,70 @@ def _convert_value_from_json_safe(json_safe_value: object, target_type: Any) -> 
         return json_safe_value
 
     if target_type == int:
-        if not isinstance(json_safe_value, int):
+        if not _is_integer(json_safe_value):
             raise TypeError(f"expected integer, got {json_safe_value!r}")
         return json_safe_value
 
-    raise NotImplementedError(repr(target_type))
+    if target_type == float:
+        if not _is_float(json_safe_value):
+            raise TypeError(f"expected float, got {json_safe_value!r}")
+        return json_safe_value
+
+    if target_type == bool:
+        if not isinstance(json_safe_value, bool):
+            raise TypeError(f"expected True or False, got {json_safe_value!r}")
+        return json_safe_value
+
+    if str(target_type).startswith("typing.Optional["):
+        if json_safe_value is None:
+            return None
+        return _convert_value_from_json_safe(json_safe_value, _unwrap_optional(target_type))
+
+    if str(target_type).startswith("list["):
+        if not isinstance(json_safe_value, list):
+            raise TypeError(f"expected list, got {json_safe_value!r}")
+
+        [item_type] = typing.get_args(target_type)
+        return [
+            _convert_value_from_json_safe(item, item_type)
+            for item in json_safe_value
+        ]
+
+    if str(target_type).startswith("dict["):
+        if not isinstance(json_safe_value, dict):
+            raise TypeError(f"expected dict, got {json_safe_value!r}")
+
+        key_type, value_type = typing.get_args(target_type)
+        return {
+            _convert_value_from_json_safe(k, key_type): _convert_value_from_json_safe(v, value_type)
+            for k, v in json_safe_value.items()
+        }
+
+    if isinstance(target_type, enum.EnumMeta):
+        if not isinstance(json_safe_value, str):
+            # TODO: add test?
+            raise TypeError(f"expected string (must belong to the {target_type.__name__} enum), got {json_safe_value!r}")
+        return target_type[json_safe_value]
+
+    raise NotImplementedError(str(target_type))
 
 
+# Please ensure that all functions with this exact comment support the same types.
 def _convert_value_to_json_safe(value: object) -> object:
-    if value is None or isinstance(value, (str, int)):
+    if value is None or isinstance(value, (str, int, float, bool)):
         return value
-    raise NotImplementedError(repr(value))
+
+    if isinstance(value, list):
+        return [_convert_value_to_json_safe(item) for item in value]
+
+    if isinstance(value, dict):
+        assert all(isinstance(k, str) for k in value.keys()), "JSON only supports string keys"
+        return {k: _convert_value_to_json_safe(v) for k, v in value.items()}
+
+    if isinstance(value, enum.Enum):
+        return value.name
+
+    raise NotImplementedError(str(value))
 
 
 @dataclasses.dataclass
@@ -120,19 +205,14 @@ _T = TypeVar("_T")
 
 
 class Settings:
-    def __init__(self, the_tab: tabs.Tab | None):
-        self._tab = the_tab  # None if global settings
-        self._json_contents: dict[str, object] = {}
+    def __init__(self, tab: tabs.Tab | None) -> None:
+        self._tab = tab  # None if global settings
+        self._unknown_options: dict[str, object] = {}
         self._known_options: dict[str, _KnownOption] = {}
         self._pending_change_events: dict[str, tuple[object, object]] | None = None
 
     def add_option(
-        self,
-        option_name: str,
-        *,
-        type: Any,
-        default: object,
-        exist_ok: bool = False,
+        self, option_name: str, *, type: Any, default: object, exist_ok: bool = False
     ) -> None:
         """Add an option to settings.
 
@@ -155,13 +235,15 @@ class Settings:
                 raise RuntimeError(f"there's already an option named {option_name!r}")
             old_option = self._known_options[option_name]
             assert type == old_option.type
-            assert default == old_option.default
+            assert default == old_option.default_value
             return
 
         if not _type_check(default, type):
             raise TypeError(f"default value {default!r} doesn't match the specified type {type!r}")
 
-        self._known_options[option_name] = _KnownOption(type=type, value=default, default_value=default)
+        self._known_options[option_name] = _KnownOption(
+            type=type, value=default, default_value=default
+        )
 
         try:
             raw_value = self._unknown_options.pop(option_name)
@@ -173,7 +255,9 @@ class Settings:
             try:
                 value = _convert_value_from_json_safe(raw_value, type)
             except Exception:
-                _log.exception(f"setting {option_name!r} to {raw_value!r} failed, falling back to default: {default!r}")
+                _log.exception(
+                    f"setting {option_name!r} to {raw_value!r} failed, falling back to default: {default!r}"
+                )
             else:
                 self.set(option_name, value)
 
@@ -236,19 +320,19 @@ class Settings:
             finally:
                 self._pending_change_events = None
 
-    def set(
-        self,
-        option_name: str,
-        value: object,
-    ) -> None:
+    def set(self, option_name: str, value: object) -> None:
         """Set the value of an opiton."""
         if option_name not in self._known_options:
             # TODO: add test for this
-            raise ValueError(f"option {option_name!r} doesn't exist, because `add_option({option_name!r}, ...)` was not called")
+            raise ValueError(
+                f"option {option_name!r} doesn't exist, because `add_option({option_name!r}, ...)` was not called"
+            )
 
         option = self._known_options[option_name]
-        if not _type_check(option.type, value):
-            raise TypeError(f"value of {option_name!r} must be of type {option.type}, not {value!r}")
+        if not _type_check(value, option.type):
+            raise TypeError(
+                f"value of {option_name!r} must be of type {option.type}, not {value!r}"
+            )
 
         old_value = option.value
         option.value = value
@@ -264,6 +348,20 @@ class Settings:
             self._pending_change_events[option_name] = (previous_old_value, value)
         else:
             self._pending_change_events[option_name] = (old_value, value)
+
+    def set_json_safe_value(self, option_name: str, json_safe_value: object) -> None:
+        """Set the value of an option using a raw JSON-safe value.
+
+        For example, for `pathlib.Path` options, this method wants a string
+        whereas `.set()` wants a `pathlib.Path` object.
+
+        Also, with this method, the option doesn't need to be known yet.
+        """
+        if option_name in self._known_options:
+            target_type = self._known_options[option_name].type
+            self.set(option_name, _convert_value_from_json_safe(json_safe_value, target_type))
+        else:
+            self._unknown_options[option_name] = json_safe_value
 
     # fmt: off
     @overload
@@ -291,10 +389,12 @@ class Settings:
         """
         if option_name not in self._known_options:
             # TODO: add test for this
-            raise ValueError(f"option {option_name!r} doesn't exist, because `add_option({option_name!r}, ...)` was not called")
+            raise ValueError(
+                f"option {option_name!r} doesn't exist, because `add_option({option_name!r}, ...)` was not called"
+            )
 
         if can_be_none:
-            type = Optional[type]
+            type = Optional[type]  # type: ignore
 
         expected_type = self._known_options[option_name].type
         if type != expected_type:
@@ -304,66 +404,66 @@ class Settings:
                 + f" the option was added with `add_option({option_name!r}, type={expected_type}, ...)`"
             )
 
-        result = self._known_options[option_name].value
         # Mutating the result would be wrong because it wouldn't trigger change events.
         # Instead of telling developers to not mutate, let's make a copy so that mutating is pointless.
-        return copy.deepcopy(result)
+        result = copy.deepcopy(self._known_options[option_name].value)
+        return cast(_T, result)
 
+    def get_json_safe_value(self, option_name: str) -> object:
+        """Return the value of an option as it would be saved to a JSON file."""
+        if option_name not in self._known_options:
+            # TODO: add test for this
+            raise ValueError(
+                f"option {option_name!r} doesn't exist, because `add_option({option_name!r}, ...)` was not called"
+            )
+
+        return _convert_value_to_json_safe(self._known_options[option_name].value)
+
+    # TODO: check that this works, if there isn't a test for it.
     def debug_dump(self) -> None:
         """Print all settings and their values. This is useful for debugging."""
         print(f"{len(self._known_options)} known options (add_option called)")
-        for name, option in self._this_is_deprecated_plz_fix.items():
-            print(f"  {name} = {option.value!r}    (type={option.type!r}, default={option.default_value!r})")
+        for name, option in self._known_options.items():
+            print(
+                f"  {name} = {option.value!r}    (type={option.type!r}, default={option.default_value!r})"
+            )
         print()
 
         print(f"{len(self._unknown_options)} unknown options (add_option not called)")
-        for name, unknown in self._unknown_options.items():
-            print(f"  {name} = {unknown.value!r}")
+        for name, unknown_value in self._unknown_options.items():
+            print(f"  {name} = {unknown_value!r}")
         print()
 
-#    # TODO: document state methods?
-#    def get_state(self) -> dict[str, _UnknownOption]:
-#        result = self._unknown_options.copy()
-#        for name, option in self._this_is_deprecated_plz_fix.items():
-#            value = self.get(name, object)
-#            if value != option.default:
-#                result[name] = _UnknownOption(value, call_converter=False, tag=option.tag)
-#        return result
-#
-#    def set_state(self, state: dict[str, _UnknownOption]) -> None:
-#        for name, unknown in state.items():
-#            self.set(
-#                name,
-#                unknown.value,
-#                from_config=True,
-#                call_converter=unknown.call_converter,
-#                tag=unknown.tag,
-#            )
+    def get_state(self) -> dict[str, object]:
+        """Return the value that is saved to the JSON file."""
+        result = self._unknown_options.copy()
+        for name, option in self._known_options.items():
+            if option.value != option.default_value:
+                result[name] = _convert_value_to_json_safe(option.value)
+        return result
+
+    def set_state(self, state: dict[str, object]) -> None:
+        """Load settings from a value that came from a JSON file."""
+        for name, value in state.items():
+            self.set_json_safe_value(name, value)
 
     def reset(self, option_name: str) -> None:
         """Set an option to its default value given to :meth:`add_option`."""
-        self.set(option_name, self._known_options[option_name].default)
+        self.set(option_name, self._known_options[option_name].default_value)
 
     def reset_all(self) -> None:
-        """
-        Reset all settings, including the ones not shown in the setting dialog.
+        """Reset all settings to their defaults. This includes unknown options!
+
         Clicking the reset button of the setting dialog runs this method
-        on :data:`global_settings`.
+        on `global_settings`.
         """
         self._unknown_options.clear()
-        for name in self._this_is_deprecated_plz_fix:
-            self.reset(name)
+        with self.defer_change_events():
+            for name in self._known_options.keys():
+                self.reset(name)
 
 
-global_settings = Settings(None, "<<GlobalSettingChanged:{}>>")
-
-
-# Enum options are stored as name strings, e.g. 'CRLF' for LineEnding.CRLF
-# TODO: this is a hack
-def _value_to_save(obj: object) -> object:
-    if isinstance(obj, enum.Enum):
-        return obj.name
-    return obj
+global_settings = Settings(tab=None)
 
 
 # Must be a function, so that it updates when tests change the dirs object
@@ -371,22 +471,16 @@ def get_json_path() -> Path:
     return dirs.user_config_path / "settings.json"
 
 
+# TODO: call save() more frequently
 def save() -> None:
-    """Save :data:`global_settings` to the config file.
+    """Save `global_settings` to `settings.json`.
 
     Porcupine always calls this when it's closed,
     so usually you don't need to worry about calling this yourself.
     """
-    with get_json_path().open("w", encoding="utf-8") as file:
-        json.dump(
-            {
-                name: _value_to_save(unknown_obj.value)
-                for name, unknown_obj in global_settings.get_state().items()
-            },
-            file,
-            indent=4,
-        )
-        file.write("\n")
+    # First create string of JSON, so that writing is less likely to leave the file corrupt.
+    big_string = json.dumps(global_settings.get_state(), indent=4) + "\n"
+    get_json_path().write_text(big_string, encoding="utf-8")
 
 
 def _load_from_file() -> None:
@@ -395,15 +489,7 @@ def _load_from_file() -> None:
             options = json.load(file)
     except FileNotFoundError:
         return
-
-    for name, value in options.items():
-        global_settings.set(name, value, from_config=True)
-
-
-# pygments styles can be uninstalled, must not end up with invalid pygments style that way
-def _check_pygments_style(name: str) -> str:
-    styles.get_style_by_name(name)  # may raise error that will get logged
-    return name
+    global_settings.set_state(options)
 
 
 # plugin disable list is needed on porcupine startup before anything is done with tkinter
@@ -414,13 +500,41 @@ def init_enough_for_using_disabled_plugins_list() -> None:
         _load_from_file()
     except Exception:
         _log.exception(f"reading {get_json_path()} failed")
-    global_settings.add_option("disabled_plugins", [], list[str])
+    global_settings.add_option("disabled_plugins", type=list[str], default=[])
+
+
+def import_pygments_lexer_class(name: str) -> LexerMeta:
+    """Given a string like "pygments.lexers.BashLexer", import the corresponding class.
+
+    This shouldn't be used with untrusted strings, because importing can run
+    arbitrary code
+    """
+    modulename, classname = name.rsplit(".", 1)
+    module = importlib.import_module(modulename)
+    klass = getattr(module, classname)
+    if not isinstance(klass, LexerMeta):
+        raise TypeError(f"expected a Lexer subclass, got {klass}")
+    return klass
+
+
+# TODO: add test
+def _check_pygments_style() -> None:
+    name = global_settings.get("pygments_style", str)
+    try:
+        styles.get_style_by_name(name)
+    except pygments.util.ClassNotFound:
+        # This happens if the user removes a pygments style.
+        # It is possible to install third-party pygments style packages.
+        _log.warning(f"'pygments_style' is set to {name!r} which seems wrong, resetting")
+        global_settings.reset("pygments_style")
 
 
 def _init_global_gui_settings() -> None:
-    global_settings.add_option("pygments_style", "stata-dark", converter=_check_pygments_style)
+    global_settings.add_option("pygments_style", type=str, default="stata-dark")
+    _check_pygments_style()
+
     global_settings.add_option(
-        "default_line_ending", LineEnding(os.linesep), converter=LineEnding.__getitem__
+        "default_line_ending", type=LineEnding, default=LineEnding(os.linesep)
     )
 
     fixedfont = tkinter.font.Font(name="TkFixedFont", exists=True)
@@ -438,8 +552,8 @@ def _init_global_gui_settings() -> None:
         # in tkinter.font.families()
         default_font_family = fixedfont.actual("family")
 
-    global_settings.add_option("font_family", default_font_family)
-    global_settings.add_option("font_size", fixedfont["size"])
+    global_settings.add_option("font_family", type=str, default=default_font_family)
+    global_settings.add_option("font_size", type=int, default=fixedfont["size"])
 
     # keep TkFixedFont up to date with settings
     def update_fixedfont(event: tkinter.Event[tkinter.Misc] | None) -> None:
@@ -593,10 +707,10 @@ def _create_validation_triangle(
             triangle.config(image=images.get("triangle"))
         else:
             triangle.config(image=_get_blank_triangle_sized_image())
-            global_settings.set(option_name, value, from_config=True)
+            global_settings.set_json_safe_value(option_name, value)  # this is used with enums
 
     def setting_changed(junk: object = None) -> None:
-        var.set(str(_value_to_save(global_settings.get(option_name, object))))
+        var.set(str(global_settings.get_json_safe_value(option_name)))
 
     widget.bind(f"<<GlobalSettingChanged:{option_name}>>", setting_changed, add=True)
     var.trace_add("write", var_changed)
@@ -758,7 +872,7 @@ def add_pygments_style_button(option_name: str, text: str) -> None:
         global_settings.set(option_name, var.get())
 
     def settings_to_var_and_colors(junk: object = None) -> None:
-        style_name = global_settings.get(option_name, object)
+        style_name = global_settings.get(option_name, str)
         var.set(style_name)
         fg, bg = _get_colors(style_name)
         menubutton.config(foreground=fg, background=bg, highlightcolor=fg, highlightbackground=bg)
@@ -808,7 +922,7 @@ def remember_pane_size(
     panedwindow: utils.PanedWindow, pane: tkinter.Misc, option_name: str, default_size: int
 ) -> None:
     # exist_ok=True to allow e.g. calling this once for each tab
-    global_settings.add_option(option_name, default_size, int, exist_ok=True)
+    global_settings.add_option(option_name, type=int, default=default_size, exist_ok=True)
 
     def settings_to_gui(junk: object = None) -> None:
         if panedwindow["orient"] == "horizontal":

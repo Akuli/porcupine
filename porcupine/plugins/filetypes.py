@@ -192,7 +192,7 @@ def apply_filetype_to_tab(filetype: FileType, tab: tabs.FileTab) -> None:
         for name, value in filetype.items():
             # Ignore stuff used only for guessing the correct filetype
             if name not in {"filename_patterns", "shebang_regex"}:
-                tab.settings.set(name, value, from_config=True, tag="from_filetype")
+                tab.settings.set_json_safe_value(name, value, tag="from_filetype")
 
     get_tab_manager().event_generate("<<TabFiletypeApplied>>")
 
@@ -269,7 +269,7 @@ def setup() -> None:
     for name in sorted(filetypes.keys(), key=str.casefold):
         _add_filetype_menuitem(name, filetypes_var)
 
-    get_tab_manager().bind("<<NotebookTabChanged>>", _sync_filetypes_menu, add=True)
+    get_tab_manager().bind("<<NotebookTabChanged>>", (lambda e: get_tab_manager().after_idle(_sync_filetypes_menu)), add=True)
     path = dirs.user_config_path / "filetypes.toml"
     menubar.get_menu("Filetypes").add_separator()
     menubar.add_config_file_button(path, menu="Filetypes")

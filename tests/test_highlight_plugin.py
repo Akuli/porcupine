@@ -2,15 +2,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from pygments.lexers import BashLexer, PythonLexer, TclLexer, YamlLexer
-
 
 def test_pygments_deleting_bug(filetab):
     def tag_ranges(tag):
         return list(map(str, filetab.textwidget.tag_ranges(tag)))
 
     filetab.settings.set("syntax_highlighter", "pygments")
-    filetab.settings.set("pygments_lexer", PythonLexer)
+    filetab.settings.set("pygments_lexer", "pygments.lexers.PythonLexer")
     filetab.textwidget.insert("1.0", "return None")
     assert tag_ranges("Token.Keyword") == ["1.0", "1.6"]
     assert tag_ranges("Token.Keyword.Constant") == ["1.7", "1.11"]
@@ -31,7 +29,7 @@ def test_pygments_deleting_bug(filetab):
 
 def test_pygments_yaml_highlighting(filetab, tmp_path):
     filetab.settings.set("syntax_highlighter", "pygments")
-    filetab.settings.set("pygments_lexer", YamlLexer)
+    filetab.settings.set("pygments_lexer", "pygments.lexers.YamlLexer")
     filetab.textwidget.insert("1.0", '"lol"')
     filetab.update()
     assert filetab.textwidget.tag_names("1.2") == ("Token.Literal.String",)
@@ -39,7 +37,7 @@ def test_pygments_yaml_highlighting(filetab, tmp_path):
 
 def test_pygments_tcl_bug(filetab, tmp_path):
     filetab.settings.set("syntax_highlighter", "pygments")
-    filetab.settings.set("pygments_lexer", TclLexer)
+    filetab.settings.set("pygments_lexer", "pygments.lexers.TclLexer")
     filetab.textwidget.replace("1.0", "end - 1 char", "# bla\n" * 50)
     filetab.textwidget.see("end")
     filetab.textwidget.insert("end - 1 char", "a")
@@ -50,7 +48,7 @@ def test_pygments_tcl_bug(filetab, tmp_path):
 
 def test_pygments_last_line_bug(filetab, tmp_path):
     filetab.settings.set("syntax_highlighter", "pygments")
-    filetab.settings.set("pygments_lexer", BashLexer)
+    filetab.settings.set("pygments_lexer", "pygments.lexers.BashLexer")
     filetab.textwidget.delete("1.0", "end")  # Delete inserted trailing newline
     filetab.textwidget.insert("1.0", "# This is a comment")
     filetab.update()

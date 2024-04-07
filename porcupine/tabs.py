@@ -447,15 +447,6 @@ class _FileTabState(NamedTuple):
     settings_state: dict[str, Any]
 
 
-def _import_lexer_class(name: str) -> LexerMeta:
-    modulename, classname = name.rsplit(".", 1)
-    module = importlib.import_module(modulename)
-    klass = getattr(module, classname)
-    if not isinstance(klass, LexerMeta):
-        raise TypeError(f"expected a Lexer subclass, got {klass}")
-    return klass
-
-
 @dataclasses.dataclass
 class ReloadInfo(utils.EventDataclass):
     had_unsaved_changes: bool
@@ -594,20 +585,20 @@ class FileTab(Tab):
         else:
             self._path = path.resolve()
 
-        self.settings = settings.Settings(self, "<<TabSettingChanged:{}>>")
+        self.settings = settings.Settings(tab=self)
         self.settings.add_option(
-            "pygments_lexer", TextLexer, LexerMeta, converter=_import_lexer_class
+            "pygments_lexer", type=str, default="pygments.lexers.TextLexer"
         )
-        self.settings.add_option("tabs2spaces", True)
-        self.settings.add_option("indent_size", 4)
-        self.settings.add_option("encoding", "utf-8")
+        self.settings.add_option("tabs2spaces", type=bool, default=True)
+        self.settings.add_option("indent_size", type=int, default=4)
+        self.settings.add_option("encoding", type=str, default="utf-8")
         # Invoke encoding detection early to suppress the unsaved changes warning
         self.settings.set("encoding", self._detect_encoding())
-        self.settings.add_option("comment_prefix", None, Optional[str])
+        self.settings.add_option("comment_prefix", type=Optional[str], default=None)
         self.settings.add_option(
             "line_ending",
-            global_settings.get("default_line_ending", settings.LineEnding),
-            converter=settings.LineEnding.__getitem__,
+            type=settings.LineEnding,
+            default=global_settings.get("default_line_ending", settings.LineEnding),
         )
 
         # I don't know why this needs a type annotation for self.panedwindow

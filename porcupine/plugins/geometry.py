@@ -53,9 +53,9 @@ def save_maximized() -> bool:
 
 
 def setup() -> None:
-    global_settings.add_option("default_geometry", "650x600")
+    global_settings.add_option("default_geometry", type=str, default="650x600")
     add_quit_callback(save_geometry)
-    global_settings.add_option("is_maximized", False)
+    global_settings.add_option("is_maximized", type=bool, default=False)
     add_quit_callback(save_maximized)
 
     geometry = global_settings.get("default_geometry", str)

@@ -46,7 +46,7 @@ def on_new_filetab(var: tkinter.BooleanVar, tab: tabs.FileTab) -> None:
 def setup() -> None:
     var = tkinter.BooleanVar()
     var.trace_add("write", partial(var_to_settings, var))
-    get_tab_manager().bind("<<NotebookTabChanged>>", partial(settings_to_var, var), add=True)
+    get_tab_manager().bind("<<NotebookTabChanged>>", (lambda e: get_tab_manager().after_idle(settings_to_var, var)), add=True)
     menubar.get_menu("View").add_checkbutton(label="Wrap Long Lines", variable=var)
     menubar.set_enabled_based_on_tab(
         "View/Wrap Long Lines", (lambda tab: isinstance(tab, tabs.FileTab))

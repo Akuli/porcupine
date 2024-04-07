@@ -297,15 +297,15 @@ def update_keyboard_shortcuts() -> None:
 _menu_item_enabledness_callbacks: list[Callable[..., None]] = []
 
 
-def _refresh_menu_item_enabledness(*junk: object) -> None:
+def _refresh_menu_item_enabledness() -> None:
     for callback in _menu_item_enabledness_callbacks:
-        callback(*junk)
+        callback()
 
 
 # TODO: create type for events
 def register_enabledness_check_event(event: str) -> None:
     """Register an event which will cause all menu items to check if they are available"""
-    get_tab_manager().bind(event, _refresh_menu_item_enabledness, add=True)
+    get_tab_manager().bind(event, (lambda e: get_tab_manager().after_idle(_refresh_menu_item_enabledness)), add=True)
 
 
 def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab | None], bool]) -> None:
@@ -340,7 +340,7 @@ def set_enabled_based_on_tab(path: str, callback: Callable[[tabs.Tab | None], bo
     easier.
     """
 
-    def update_enabledness(*junk: object, path: str) -> None:
+    def update_enabledness(path: str) -> None:
         tab = get_tab_manager().select()
 
         parent, child = _split_parent(path)

@@ -38,7 +38,7 @@ class AutoIndentRegexes:
 
 
 def get_regexes(tab: tabs.FileTab) -> tuple[str, str, bool]:
-    config = tab.settings.get("autoindent_regexes", Optional[AutoIndentRegexes])
+    config = tab.settings.get("autoindent_regexes", AutoIndentRegexes, can_be_none=True)
     if config is None:
         config = AutoIndentRegexes()
     assert isinstance(config, AutoIndentRegexes)
@@ -116,7 +116,7 @@ def on_closing_brace(tab: tabs.FileTab, event: tkinter.Event[tkinter.Text]) -> N
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("autoindent_regexes", None, Optional[AutoIndentRegexes])
+    tab.settings.add_option("autoindent_regexes", type=Optional[AutoIndentRegexes], default=None)
     tab.textwidget.bind("<Return>", partial(on_enter_press, tab, False), add=True)
     tab.textwidget.bind("<Alt-Return>", partial(on_enter_press, tab, True), add=True)
     tab.textwidget.bind("<parenright>", partial(on_closing_brace, tab), add=True)

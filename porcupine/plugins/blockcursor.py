@@ -22,6 +22,6 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    global_settings.add_option("blockcursor", False)
+    global_settings.add_option("blockcursor", type=bool, default=False)
     settings.add_checkbutton("blockcursor", text="Show cursor as a block instead of a thin line")
     get_tab_manager().add_filetab_callback(on_new_filetab)

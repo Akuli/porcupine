@@ -326,7 +326,7 @@ def apply_config(config: dict[str, str], tab: tabs.FileTab) -> None:
             if name in {"max_line_length", "trim_trailing_whitespace", "insert_final_newline"}:
                 # these must work even if running without the plugin that creates this option
                 # (or if the plugin's setup() runs after this plugin)
-                tab.settings.set(name, value, from_config=True)
+                tab.settings.set_json_safe_value(name, value)
             else:
                 tab.settings.set(name, value)
 

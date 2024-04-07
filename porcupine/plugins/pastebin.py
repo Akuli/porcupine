@@ -33,7 +33,7 @@ from pygments.lexer import LexerMeta
 
 from porcupine import get_main_window, tabs, utils
 from porcupine.plugins import rightclick_menu
-from porcupine.settings import global_settings
+from porcupine.settings import global_settings, import_pygments_lexer_class
 
 log = logging.getLogger(__name__)
 
@@ -377,7 +377,7 @@ def start_pasting(paste_class: type[Paste], tab: tabs.FileTab) -> None:
             return
 
     code = textwrap.dedent(tab.textwidget.get("sel.first", "sel.last"))
-    lexer_class = tab.settings.get("pygments_lexer", LexerMeta)
+    lexer_class = import_pygments_lexer_class(tab.settings.get("pygments_lexer", str))
 
     paste = paste_class()
     plz_wait = make_please_wait_window(paste)

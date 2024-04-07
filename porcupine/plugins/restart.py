@@ -41,7 +41,7 @@ def quit_callback() -> bool:
 
 
 def setup() -> None:
-    global_settings.add_option("remember_tabs_on_restart", default=True)
+    global_settings.add_option("remember_tabs_on_restart", type=bool, default=True)
     settings.add_checkbutton(
         "remember_tabs_on_restart", text="Remember open tabs when Porcupine is closed and reopened"
     )

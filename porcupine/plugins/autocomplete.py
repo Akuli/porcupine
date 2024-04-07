@@ -518,7 +518,7 @@ class AutoCompleter:
 
 
 def on_new_filetab(tab: tabs.FileTab) -> None:
-    tab.settings.add_option("autocomplete_chars", [], list[str])
+    tab.settings.add_option("autocomplete_chars", type=list[str], default=[])
 
     completer = AutoCompleter(tab)
 

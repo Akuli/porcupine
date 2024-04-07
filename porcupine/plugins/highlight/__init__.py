@@ -15,6 +15,7 @@ from typing import Callable
 from pygments.lexer import LexerMeta
 
 from porcupine import get_tab_manager, tabs, textutils, utils
+from porcupine.settings import import_pygments_lexer_class
 
 from .base_highlighter import BaseHighlighter
 from .pygments_highlighter import PygmentsHighlighter
@@ -40,7 +41,7 @@ class HighlighterManager:
             log.info(f"creating a tree_sitter highlighter with language {repr(language_name)}")
             self._highlighter = TreeSitterHighlighter(self._tab.textwidget, language_name)
         elif highlighter_name == "pygments":
-            lexer_class = self._tab.settings.get("pygments_lexer", LexerMeta)
+            lexer_class = import_pygments_lexer_class(self._tab.settings.get("pygments_lexer", str))
             log.info(f"creating a pygments highlighter with lexer class {lexer_class}")
             self._highlighter = PygmentsHighlighter(self._tab.textwidget, lexer_class())
         else:
