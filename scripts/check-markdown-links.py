@@ -48,7 +48,7 @@ def find_links(markdown_file_path):
 def check_https_url(url):
     try:
         # Many sites redirect to front page for bad URLs. Let's not treat that as ok.
-        response = requests.head(url, timeout=1, allow_redirects=False)
+        response = requests.head(url, timeout=10, allow_redirects=False)
     except requests.exceptions.RequestException as e:
         return f"HTTP HEAD request failed: {e}"
 
