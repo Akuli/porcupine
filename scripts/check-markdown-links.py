@@ -107,14 +107,6 @@ def check_link(markdown_file_path, link_target, offline_mode=False):
 
     return None
 
-
-def print_line(file_path, lineno):
-    with file_path.open("r", encoding="utf-8") as file:
-        for skipped_lineno in range(1, lineno):
-            file.readline()
-        print("  " + file.readline().strip())
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
