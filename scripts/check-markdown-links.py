@@ -107,6 +107,7 @@ def check_link(markdown_file_path, link_target, offline_mode=False):
 
     return None
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
