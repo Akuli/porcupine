@@ -124,7 +124,7 @@ although the "definition" is a website in this case and it opens in a browser wi
 
 More specifically, here's what happens when you press Ctrl+Enter on `self.do_something()`:
 
-1. The `jump_to_definition` sees the Ctrl+Enter. It generates a `<<JumpToDefinitionRequest>>` virtual event.
+1. The `jump_to_definition` plugin sees the Ctrl+Enter. It generates a `<<JumpToDefinitionRequest>>` virtual event.
 2. The `urls` plugin has done a `.bind("<<JumpToDefinitionRequest>>", ...)`, but it ignores the event.
 2. The `langserver` plugin has done a `.bind("<<JumpToDefinitionRequest>>", ...)`,
     so a function in the `langserver` plugin runs.
@@ -137,7 +137,7 @@ More specifically, here's what happens when you press Ctrl+Enter on `self.do_som
 
 And here's what happens when you press Ctrl+Enter on a URL:
 
-1. The `jump_to_definition` sees the Ctrl+Enter. It generates a `<<JumpToDefinitionRequest>>` virtual event.
+1. The `jump_to_definition` plugin sees the Ctrl+Enter. It generates a `<<JumpToDefinitionRequest>>` virtual event.
 2. The `urls` plugin has done a `.bind("<<JumpToDefinitionRequest>>", ...)`,
     so a function in the `urls` plugin runs.
 3. The `urls` plugin opens the URL in the default web browser.
