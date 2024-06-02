@@ -81,6 +81,7 @@ jobs:
     - uses: actions/checkout@v4
     - run: brew install python@${{ matrix.python-version }}
     - run: brew install python-tk@${{ matrix.python-version }}
+    - run: brew list python@${{ matrix.python-version }}
     - run: ls /usr/local/opt
     - run: find /usr/local/opt -name 'python*'
     - run: $PYTHON --version
