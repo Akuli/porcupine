@@ -254,9 +254,9 @@ def run_setup_argument_parser_functions(parser: argparse.ArgumentParser) -> None
 
 # undocumented on purpose, don't use in plugins
 def run_setup_functions(shuffle: bool) -> None:
+    """Called during Porcupine startup. Do not call from plugins."""
     imported_infos = [info for info in plugin_infos if info.status == Status.LOADING]
 
-    """Called during Porcupine startup. Do not call from plugins."""
     # the toposort will partially work even if there's a circular
     # dependency, the CircularDependencyError is raised after doing
     # everything possible (see source code)
