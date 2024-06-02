@@ -274,7 +274,7 @@ def run_setup_argument_parser_functions(parser: argparse.ArgumentParser) -> None
             _run_setup_argument_parser_function(info, parser)
 
 
-def _handle_circular_dependency(cycle: list[PluginInfo]) -> None:
+def _handle_circular_dependency(cycle: Sequence[PluginInfo]) -> None:
     error_message = " -> ".join(info.name for info in cycle)
     log.error(f"circular dependency: {error_message}")
     for info in cycle:
@@ -287,7 +287,7 @@ _T = TypeVar("_T")
 
 # This is generic to make it easier to test. Tests use ints instead of plugin infos.
 def _decide_loading_order(
-    dependencies: dict[_T, set[_T]], cycle_handler: Callable[[list[_T]], None]
+    dependencies: dict[_T, set[_T]], cycle_handler: Callable[[Sequence[_T]], None]
 ) -> Iterator[set[_T]]:
     dependencies = {item: deps.copy() for item, deps in dependencies.items()}
 
