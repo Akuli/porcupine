@@ -26,10 +26,7 @@ import random
 import time
 import traceback
 from collections.abc import Iterable, Sequence
-from typing import Any, cast
 from typing import Any, Iterable, List, Sequence, cast, Generic, TypeVar
-
-import toposort
 
 from porcupine import get_main_window
 from porcupine.plugins import __path__ as plugin_paths
