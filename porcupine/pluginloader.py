@@ -24,10 +24,8 @@ import pkgutil
 import random
 import time
 import traceback
-from collections.abc import Iterable, Sequence
-from typing import Any, cast
-
-import toposort
+from collections.abc import Iterator, Sequence
+from typing import Any, Callable, TypeVar, cast
 
 from porcupine import get_main_window
 from porcupine.plugins import __path__ as plugin_paths
@@ -276,35 +274,73 @@ def run_setup_argument_parser_functions(parser: argparse.ArgumentParser) -> None
             _run_setup_argument_parser_function(info, parser)
 
 
+def _handle_circular_dependency(cycle: Sequence[PluginInfo]) -> None:
+    error_message = " -> ".join(info.name for info in cycle)
+    log.error(f"circular dependency: {error_message}")
+    for info in cycle:
+        info.status = Status.CIRCULAR_DEPENDENCY_ERROR
+        info.error = f"Circular dependency error: {error_message}"
+
+
+_T = TypeVar("_T")
+
+
+# This is generic to make it easier to test. Tests use ints instead of plugin infos.
+def _decide_loading_order(
+    dependencies: dict[_T, set[_T]], cycle_handler: Callable[[Sequence[_T]], None]
+) -> Iterator[set[_T]]:
+    dependencies = {item: deps.copy() for item, deps in dependencies.items()}
+
+    # Create a set of all plugins.
+    remaining = set(dependencies.keys())
+    for deps in dependencies.values():
+        remaining.update(deps)
+
+    while remaining:
+        # Find plugins with no dependencies. We can set them up now.
+        satisfied = {item for item in remaining if not dependencies.get(item)}
+
+        if satisfied:
+            # We have found plugins that can be set up now. Their dependencies are
+            # ready, and we can set them up in any order relative to each other.
+            yield satisfied
+            forget_about = satisfied
+        else:
+            # All remaining plugins have at least one dependency.
+            # This means that we must have cycles. Let's find one such cycle.
+            cycle = [next(iter(remaining))]
+            while cycle.count(cycle[-1]) == 1:
+                cycle.append(next(iter(dependencies[cycle[-1]])))
+
+            # Throw away the non-cyclic start.
+            # For example, 1->2->3->4->5->3 becomes 3->4->5->3.
+            del cycle[: cycle.index(cycle[-1])]
+
+            cycle_handler(cycle)
+            forget_about = set(cycle)
+
+        remaining.difference_update(forget_about)
+        for deps in dependencies.values():
+            deps.difference_update(forget_about)
+
+
 # undocumented on purpose, don't use in plugins
 def run_setup_functions(shuffle: bool) -> None:
-    imported_infos = [info for info in plugin_infos if info.status == Status.LOADING]
-
     # the toposort will partially work even if there's a circular
     # dependency, the CircularDependencyError is raised after doing
     # everything possible (see source code)
     loading_order = []
-    try:
-        toposort_result: Iterable[Iterable[PluginInfo]] = toposort.toposort(_dependencies)
-        for infos in toposort_result:
-            load_list = [info for info in infos if info.status == Status.LOADING]
-            if shuffle:
-                # for plugin developers wanting to make sure that the
-                # dependencies specified in setup_before and setup_after
-                # are correct
-                random.shuffle(load_list)
-            else:
-                # for consistency in UI (e.g. always same order of menu items)
-                load_list.sort(key=(lambda info: info.name))
-            loading_order.extend(load_list)
-
-    except toposort.CircularDependencyError as e:
-        log.exception("circular dependency")
-
-        for info in set(imported_infos) - set(loading_order):
-            info.status = Status.CIRCULAR_DEPENDENCY_ERROR
-            parts = ", ".join(f"{a} depends on {b}" for a, b in e.data.items())
-            info.error = f"Circular dependency error: {parts}"
+    for infos in _decide_loading_order(_dependencies, _handle_circular_dependency):
+        load_list = [info for info in infos if info.status == Status.LOADING]
+        if shuffle:
+            # for plugin developers wanting to make sure that the
+            # dependencies specified in setup_before and setup_after
+            # are correct
+            random.shuffle(load_list)
+        else:
+            # for consistency in UI (e.g. always same order of menu items)
+            load_list.sort(key=(lambda info: info.name))
+        loading_order.extend(load_list)
 
     for info in loading_order:
         assert info.status == Status.LOADING

@@ -28,7 +28,6 @@ dynamic = []  # Do not attempt to import porcupine before dependencies are insta
 dependencies = [
     "platformdirs>=3.0.0,<4.0.0",
     "Pygments==2.15.0",
-    "toposort>=1.5",
     "colorama>=0.2.5",
     "sansio-lsp-client>=0.10.0,<0.11.0",
     "python-language-server[rope,pyflakes]>=0.36.2,<1.0.0",
@@ -62,7 +61,6 @@ dev = [
     "types-Send2Trash==1.8.2.4",
     "types-setuptools==67.6.0.5",
     "types-colorama==0.4.15.8",
-    "types-toposort==1.10.0.0",
     "types-psutil==5.9.5.10",
     "types-PyYAML==6.0.12.8",
     "types-tree-sitter==0.20.1.2",
