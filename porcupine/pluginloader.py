@@ -89,23 +89,15 @@ class Status(enum.Enum):
 
 @dataclasses.dataclass(eq=False)
 class PluginInfo:
-    """
-    This dataclass represents a plugin.
-
-    The value of `error` depends on `status`:
-    - `LOADING`: `error` is `None`
-    - `ACTIVE`: `error` is `None`
-    - `DISABLED_BY_SETTINGS`: `error` is `None`
-    - `DISABLED_ON_COMMAND_LINE`: `error` is `None`
-    - `IMPORT_FAILED`: `error` is a Python error message
-    - `SETUP_FAILED`: `error` is a Python error message
-    - `CIRCULAR_DEPENDENCY_ERROR`: `error` is a user-readable one-line message
-    """
-
     name: str  # name "foo" means this is porcupine/plugins/foo.py
     came_with_porcupine: bool
     status: Status
     module: Any | None  # you have to check for None, otherwise mypy won't complain
+
+    # The value of `error` is:
+    # - a user-readable one-line message, if `status` is `CIRCULAR_DEPENDENCY_ERROR`
+    # - a Python error message, if `status` is `IMPORT_FAILED` or `SETUP_FAILED`
+    # - `None` otherwise.
     error: str | None
 
 
