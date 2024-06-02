@@ -276,7 +276,7 @@ def run_setup_argument_parser_functions(parser: argparse.ArgumentParser) -> None
 
 def _handle_circular_dependency(cycle: list[PluginInfo]) -> None:
     error_message = " -> ".join(info.name for info in cycle)
-    log.exception(f"circular dependency: {error_message}")
+    log.error(f"circular dependency: {error_message}")
     for info in cycle:
         info.status = Status.CIRCULAR_DEPENDENCY_ERROR
         info.error = f"Circular dependency error: {error_message}"
