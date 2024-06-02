@@ -69,25 +69,18 @@ jobs:
   # It imports, but gives this error:    RuntimeError: tk.h version (8.6) doesn't match libtk.a version (8.5)
   pytest-macos:
     timeout-minutes: 15
-    runs-on: macos-13
+    # TODO: run tests on M1 macos when we no longer need tree-sitter-builds.
+    # This was never supported by tree-sitter-builds: https://github.com/Akuli/py-tree-sitter-builds/issues/11
+    runs-on: macos-13  # latest intel mac
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
     env:
       # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
       TCLLIBPATH: ./lib
+      PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
     - uses: actions/checkout@v4
-    - run: brew install python@${{ matrix.python-version }}
-    - run: brew install python-tk@${{ matrix.python-version }}
-    - run: brew list python@${{ matrix.python-version }}
-    - name: Set $PYTHON to point at the Python executable
-      # Example path: /opt/homebrew/Cellar/python@3.10/3.10.14/bin/python3.10
-      run: |
-        (
-          echo -n PYTHON=
-          echo /opt/homebrew/Cellar/python@${{ matrix.python-version }}/${{ matrix.python-version }}.*/bin/python${{ matrix.python-version }}
-        ) | tee -a $GITHUB_ENV
     - run: ls /usr/local/opt
     - run: find /usr/local/opt -name 'python*'
     - run: $PYTHON --version
