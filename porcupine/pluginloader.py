@@ -16,7 +16,6 @@ while Porcupine is running.
 from __future__ import annotations
 
 import argparse
-from collections.abc import Callable
 import dataclasses
 import enum
 import importlib.machinery
@@ -25,8 +24,8 @@ import pkgutil
 import random
 import time
 import traceback
-from collections.abc import Iterable, Sequence
-from typing import Any, Iterable, List, Sequence, cast, Generic, TypeVar
+from collections.abc import Callable, Sequence
+from typing import Any, TypeVar, cast
 
 from porcupine import get_main_window
 from porcupine.plugins import __path__ as plugin_paths
