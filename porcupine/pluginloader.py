@@ -60,7 +60,7 @@ class Status(enum.Enum):
     #
     # In a plugin named `foo`, any message logged with severity `ERROR`
     # or `CRITICAL` to the logger named `porcupine.plugins.foo` counts as
-    # logging an error. Therefore you can do this::
+    # logging an error. Therefore you can do this:
     #
     #    import logging
     #
@@ -81,9 +81,9 @@ class Status(enum.Enum):
     # `setup_after` lists make it impossible to determine the correct order
     # for calling their `setup()` function.
     #
-    # For example, if plugin *A* should be set up before *B*, *B* should be
-    # set up before *C* and *C* should be set up before *A*, then *A*, *B*
-    # and *C* will all fail to load with this status.
+    # For example, if plugin A should be set up before B, B should be
+    # set up before C, and C should be set up before A, then A, B
+    # and C will all fail to load with this status.
     CIRCULAR_DEPENDENCY_ERROR = enum.auto()
 
 
@@ -303,9 +303,6 @@ def _decide_loading_order(
 # undocumented on purpose, don't use in plugins
 def run_setup_functions(shuffle: bool) -> None:
     """Called during Porcupine startup. Do not call from plugins."""
-    # the toposort will partially work even if there's a circular
-    # dependency, the CircularDependencyError is raised after doing
-    # everything possible (see source code)
     loading_order = []
     for infos in _decide_loading_order(_dependencies, _handle_circular_dependency):
         load_list = [info for info in infos if info.status == Status.LOADING]
@@ -368,7 +365,7 @@ def setup_while_running(info: PluginInfo) -> None:
     """Run the `setup_argument_parser()` and `setup()` functions now.
 
     Before calling this function, make sure that the
-    `can_setup_while_running()` function returns ``True``.
+    `can_setup_while_running()` function returns `True`.
     """
     info.status = Status.LOADING
 
