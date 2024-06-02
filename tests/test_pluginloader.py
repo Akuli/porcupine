@@ -34,7 +34,13 @@ def test_determining_setup_order_from_dependencies(mocker, deps, result):
     assert m.call_count == 0
 
 
-def test_dependency_cycle(mocker):
+def test_simple_dependency_cycle(mocker):
+    m = mocker.Mock()
+    assert list(pluginloader._decide_loading_order({0: {0}}, m)) == []
+    m.assert_called_once_with([0, 0])  # cycle: 0 -> 0
+
+
+def test_complex_dependency_cycle(mocker):
     m = mocker.Mock()
     order = list(
         pluginloader._decide_loading_order({0: {1}, 1: {2}, 2: {3}, 3: {1}, 4: {3}, 5: set()}, m)
