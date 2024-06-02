@@ -24,8 +24,8 @@ import pkgutil
 import random
 import time
 import traceback
-from collections.abc import Callable, Sequence
-from typing import Any, TypeVar, cast
+from collections.abc import Iterable, Iterator, Sequence
+from typing import Any, Iterable, List, Sequence, cast, Generic, TypeVar, Iterator
 
 from porcupine import get_main_window
 from porcupine.plugins import __path__ as plugin_paths
@@ -288,7 +288,7 @@ _T = TypeVar("_T")
 # This is generic to make it easier to test. Tests use ints instead of plugin infos.
 def _decide_loading_order(
     dependencies: dict[_T, set[_T]], cycle_handler: Callable[[list[_T]], None]
-) -> None:
+) -> Iterator[set[_T]]:
     dependencies = {item: deps.copy() for item, deps in dependencies.items()}
 
     # Create a set of all plugins.
