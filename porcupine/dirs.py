@@ -19,13 +19,25 @@ Libraries like `platformdirs` exist, but a custom thing makes it easier to
 explain to users where Porcupine is storing its files. Using many small
 dependencies is also bad from a security point of view.
 
-**Note:** Don't do imports like `from porcupine.dirs import config_dir`. This
-will not work as expected when running tests. When the tests start, the
-`config_dir`, `cache_dir` and `log_dir` variables are changed to point inside
-a temporary directory. This separates the user's settings from Porcupine's
-tests. An import like `from module import variable` captures the value of the
-variable at the time of importing, so in the worst possible case, your tests
-might overwrite a Porcupine developer's personal config files.
+
+How to import
+-------------
+
+Good:
+    from porcupine import dirs
+
+Bad:
+    from porcupine.dirs import config_dir
+
+The bad import won't work as expected when running tests.
+
+When the tests start, the `config_dir`, `cache_dir` and `log_dir` variables
+are changed to point inside a temporary directory. This separates the user's
+settings from Porcupine's tests.
+
+The bad import captures the value of the variable at the time of importing,
+before the tests get a chance to change it, so it will always point at the
+user's personal settings folder, even when running tests.
 """
 
 import os
