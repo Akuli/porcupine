@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 # https://fileinfo.com/extension/pkl
 def _get_state_file() -> Path:
-    return dirs.user_cache_path / "restart_state.pkl"
+    return dirs.cache_dir / "restart_state.pkl"
 
 
 # If loading a file fails, a dialog is created and it should be themed as user wants

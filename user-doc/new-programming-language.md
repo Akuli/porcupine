@@ -97,8 +97,7 @@ warning message to the terminal or command prompt (if any) and start normally.
 But if you start Porcupine without a terminal or command prompt,
 you will never see these messages.
 In that case, you need to look at Porcupine's log files.
-To find the log files, open *Porcupine debug prompt* from the *Run* menu
-and type `print(dirs.user_log_path)`.
+See the docstring at start of [porcupine/dirs.py](../porcupine/dirs.py) to find the log files.
 
 To get more output on the terminal or command prompt,
 add `--verbose-logger=porcupine.plugins.langserver` to the end of the command that starts Porcupine.

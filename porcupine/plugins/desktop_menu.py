@@ -33,7 +33,7 @@ def install_desktop_file() -> None:
     activate_path = Path(venv) / "bin" / "activate"
     assert activate_path.is_file()
 
-    launcher_path = dirs.user_cache_path / DESKTOP_FILE_NAME
+    launcher_path = dirs.cache_dir / DESKTOP_FILE_NAME
 
     with launcher_path.open("w") as file:
         file.write("[Desktop Entry]\n")

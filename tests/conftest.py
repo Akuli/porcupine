@@ -60,9 +60,9 @@ class MonkeypatchedPlatformDirs(platformdirs.PlatformDirs):
 def monkeypatch_dirs(monkeypatch):
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
-    assert user_plugindir == str(dirs.user_config_path / "plugins")
+    assert user_plugindir == str(dirs.config_dir / "plugins")
 
-    font_cache = dirs.user_cache_path / "font_cache.json"
+    font_cache = dirs.cache_dir / "font_cache.json"
 
     with tempfile.TemporaryDirectory() as d:
         monkeypatch.setattr("porcupine.dirs.cache_dir", Path(d) / "cache")
