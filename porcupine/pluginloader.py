@@ -292,7 +292,6 @@ def _decide_loading_order(
             deps.difference_update(forget_about)
 
 
-# undocumented on purpose, don't use in plugins
 def run_setup_functions(shuffle: bool) -> None:
     """Called during Porcupine startup. Do not call from plugins."""
     loading_order = []
