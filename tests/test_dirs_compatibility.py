@@ -4,7 +4,7 @@ import os
 import sys
 
 import platformdirs
-from porcupine import dirs
+from porcupine import dirs_
 
 if sys.platform in {"win32", "darwin"}:
     # these platforms like path names like "Program Files" or "Application Support"
@@ -23,7 +23,7 @@ else:
 
 
 def test_dirs_compatibility():
-    assert dirs.cache_dir == old_dirs.user_cache_dir
-    assert dirs.config_dir == old_dirs.user_config_dir
-    assert dirs.log_dir == old_dirs.user_log_dir
-    printf("IT'S FINE!!!!!\n" * 10)
+    assert dirs_.cache_dir == old_dirs.user_cache_path
+    assert dirs_.config_dir == old_dirs.user_config_path
+    assert dirs_.log_dir == old_dirs.user_log_path
+    print("IT'S FINE!!!!!\n" * 10)
