@@ -26,3 +26,4 @@ def test_dirs_compatibility():
     assert dirs.cache_dir == old_dirs.user_cache_dir
     assert dirs.config_dir == old_dirs.user_config_dir
     assert dirs.log_dir == old_dirs.user_log_dir
+    printf("IT'S FINE!!!!!\n" * 10)
