@@ -20,10 +20,9 @@ explain to users where Porcupine is storing its files. Using many small
 dependencies is also bad from a security point of view.
 """
 
-from pathlib import Path
 import os
 import sys
-
+from pathlib import Path
 
 if sys.platform == "win32":
     # %LOCALAPPDATA% seems to be a thing on all reasonably new Windows systems.

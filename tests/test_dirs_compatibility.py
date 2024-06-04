@@ -4,6 +4,7 @@ import os
 import sys
 
 import platformdirs
+
 from porcupine import dirs_
 
 if sys.platform in {"win32", "darwin"}:
