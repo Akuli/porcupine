@@ -1,4 +1,4 @@
-"""This module defines folders where Porcupine stores files.
+r"""This module defines folders where Porcupine stores files.
 
 Folders on most Windows systems:
     config_dir = C:\Users\<username>\AppData\Local\Akuli\Porcupine
