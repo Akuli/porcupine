@@ -57,7 +57,7 @@ class MonkeypatchedPlatformDirs(platformdirs.PlatformDirs):
 
 
 @pytest.fixture(scope="session")
-def monkeypatch_dirs(monkeypatch):
+def monkeypatch_dirs():
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
     assert user_plugindir == str(dirs.config_dir / "plugins")
@@ -65,9 +65,9 @@ def monkeypatch_dirs(monkeypatch):
     font_cache = dirs.cache_dir / "font_cache.json"
 
     with tempfile.TemporaryDirectory() as d:
-        monkeypatch.setattr("porcupine.dirs.cache_dir", Path(d) / "cache")
-        monkeypatch.setattr("porcupine.dirs.config_dir", Path(d) / "config")
-        monkeypatch.setattr("porcupine.dirs.log_dir", Path(d) / "logs")
+        dirs.cache_dir = Path(d) / "cache"
+        dirs.config_dir = Path(d) / "config"
+        dirs.log_dir = Path(d) / "logs"
 
         # Copy font cache to speed up tests
         if font_cache.exists():
