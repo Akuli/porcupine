@@ -35,101 +35,69 @@ log = logging.getLogger(__name__)
 
 
 class Status(enum.Enum):
-    """
-    This :mod:`enum` represents the status of the plugin in the
-    currently running Porcupine process.
+    """This represents the status of a plugin in the Porcupine process."""
 
-    .. data:: LOADING
-
-        The plugin hasn't been set up successfully yet, but no errors
-        preventing the setup have occurred.
-
-    .. data:: ACTIVE
-
-        The plugin was imported and its ``setup()`` function was called successfully.
-
-    .. data:: DISABLED_BY_SETTINGS
-
-        The plugin wasn't loaded because it's in the ``disabled_plugins``
-        setting. See :mod:`porcupine.settings`.
-
-    .. data:: DISABLED_ON_COMMAND_LINE
-
-        The plugin wasn't loaded because it was listed in a
-        ``--without-plugins`` argument given to Porcupine.
-
-    .. data:: IMPORT_FAILED
-
-        Importing the plugin raised an error.
-
-    .. data:: SETUP_FAILED
-
-        The plugin was imported successfully, but its ``setup()`` function
-        raised an exception or logged an error.
-
-        In a plugin named ``foo``, any message logged with severity ``ERROR``
-        or ``CRITICAL`` to the logger named ``porcupine.plugins.foo`` counts as
-        logging an error. Therefore you can do this::
-
-            import logging
-
-            log = logging.getLogger(__name__)  # __name__ == "porcupine.plugins.foo"
-
-            def setup() -> None:
-                if bar_is_installed:
-                    ...
-                else:
-                    log.error("bar is not installed")
-
-        When bar is not installed, this plugin will show a one-line error
-        message in the plugin manager and the terminal. If an exception is
-        raised, the full traceback is shown instead.
-
-    .. data:: CIRCULAR_DEPENDENCY_ERROR
-
-        Plugins with this status were imported, but their ``setup_before`` and
-        ``setup_after`` lists make it impossible to determine the correct order
-        for calling their ``setup()`` function. For example, if plugin *A*
-        should be set up before *B*, *B* should be set up before *C* and *C*
-        should be set up before *A*, then *A*, *B* and *C* will all fail with
-        ``CIRCULAR_DEPENDENCY_ERROR``.
-    """
-
+    # The plugin hasn't been set up successfully yet, but no errors
+    # preventing the setup have occurred.
     LOADING = enum.auto()
+
+    # The plugin was imported and its `setup()` function was called successfully.
     ACTIVE = enum.auto()
+
+    # The plugin wasn't loaded because it's in the `disabled_plugins` setting.
+    # See `porcupine.settings`.
     DISABLED_BY_SETTINGS = enum.auto()
+
+    # The plugin wasn't loaded because it was listed in a `--without-plugins`
+    # argument given to Porcupine.
     DISABLED_ON_COMMAND_LINE = enum.auto()
+
+    # Importing the plugin raised an error.
     IMPORT_FAILED = enum.auto()
+
+    # The plugin was imported successfully, but its `setup()` function
+    # raised an exception or logged an error.
+    #
+    # In a plugin named `foo`, any message logged with severity `ERROR`
+    # or `CRITICAL` to the logger named `porcupine.plugins.foo` counts as
+    # logging an error. Therefore you can do this:
+    #
+    #    import logging
+    #
+    #    log = logging.getLogger(__name__)  # __name__ == "porcupine.plugins.foo"
+    #
+    #    def setup() -> None:
+    #        if bar_is_installed:
+    #            ...
+    #        else:
+    #            log.error("bar is not installed")
+    #
+    # When bar is not installed, this plugin will show a one-line error
+    # message in the plugin manager and the terminal. If an exception is
+    # raised, the full traceback is shown instead.
     SETUP_FAILED = enum.auto()
+
+    # Plugins with this status were imported, but their `setup_before` and
+    # `setup_after` lists make it impossible to determine the correct order
+    # for calling their `setup()` function.
+    #
+    # For example, if plugin A should be set up before B, B should be
+    # set up before C, and C should be set up before A, then A, B
+    # and C will all fail to load with this status.
     CIRCULAR_DEPENDENCY_ERROR = enum.auto()
 
 
 @dataclasses.dataclass(eq=False)
 class PluginInfo:
-    """
-    This :mod:`dataclass <dataclasses>` represents a plugin.
-
-    It's usually better to use ``info.setup_before``
-    instead of accessing ``info.module.setup_before`` directly.
-    Not all plugins define a ``setup_before`` variable, and if it's not present,
-    then ``info.setup_before`` is an empty set.
-    This also applies to ``setup_after``.
-
-    The value of *error* depends on *status*:
-
-        * If *status* is ``LOADING``, ``ACTIVE``, ``DISABLED_BY_SETTINGS`` or
-          ``DISABLED_ON_COMMAND_LINE``, then *error* is ``None``.
-        * If *status* is ``IMPORT_FAILED`` or ``SETUP_FAILED``, then *error*
-          is a Python error message, starting with
-          ``Traceback (most recent call last):``.
-        * If *status* is ``CIRCULAR_DEPENDENCY_ERROR``, then *error* is a
-          user-readable one-line message.
-    """
-
     name: str  # name "foo" means this is porcupine/plugins/foo.py
     came_with_porcupine: bool
     status: Status
     module: Any | None  # you have to check for None, otherwise mypy won't complain
+
+    # The value of `error` is:
+    # - a user-readable one-line message, if `status` is `CIRCULAR_DEPENDENCY_ERROR`
+    # - a Python error message, if `status` is `IMPORT_FAILED` or `SETUP_FAILED`
+    # - `None` otherwise.
     error: str | None
 
 
@@ -324,11 +292,8 @@ def _decide_loading_order(
             deps.difference_update(forget_about)
 
 
-# undocumented on purpose, don't use in plugins
 def run_setup_functions(shuffle: bool) -> None:
-    # the toposort will partially work even if there's a circular
-    # dependency, the CircularDependencyError is raised after doing
-    # everything possible (see source code)
+    """Called during Porcupine startup. Do not call from plugins."""
     loading_order = []
     for infos in _decide_loading_order(_dependencies, _handle_circular_dependency):
         load_list = [info for info in infos if info.status == Status.LOADING]
@@ -388,10 +353,10 @@ def can_setup_while_running(info: PluginInfo) -> bool:
 
 
 def setup_while_running(info: PluginInfo) -> None:
-    """Run the ``setup_argument_parser()`` and ``setup()`` functions now.
+    """Run the `setup_argument_parser()` and `setup()` functions now.
 
-    Before calling this function, make sure that
-    :func:`can_setup_while_running` returns ``True``.
+    Before calling this function, make sure that the
+    `can_setup_while_running()` function returns `True`.
     """
     info.status = Status.LOADING
 
