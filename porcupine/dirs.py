@@ -26,13 +26,14 @@ from pathlib import Path
 
 if sys.platform == "win32":
     # %LOCALAPPDATA% seems to be a thing on all reasonably new Windows systems.
+    #
+    # Porcupine uses local appdata for historical reasons.
+    # I'm not sure whether it is better or worse than the roaming appdata.
+    # Please create an issue if you think Porcupine should use the roaming appdata instead.
     _localappdata = os.getenv("LOCALAPPDATA")
     if not _localappdata:
         raise RuntimeError("%LOCALAPPDATA% is not set")
 
-    # Porcupine uses local appdata for historical reasons.
-    # I'm not sure whether it is better or worse than the roaming appdata.
-    # Please create an issue if you think Porcupine should use the roaming appdata instead.
     config_dir = Path(_localappdata) / "Akuli" / "Porcupine"
     cache_dir = config_dir / "Cache"
     log_dir = config_dir / "Logs"
