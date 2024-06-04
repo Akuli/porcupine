@@ -40,7 +40,7 @@ if sys.platform == "win32":
 
 elif sys.platform == "darwin":
     config_dir = Path("~/Library/Application Support/Porcupine").expanduser()
-    cache_dir = Path("~/Caches/Porcupine").expanduser()
+    cache_dir = Path("~/Library/Caches/Porcupine").expanduser()
     log_dir = Path("~/Library/Logs/Porcupine").expanduser()
 
 else:
