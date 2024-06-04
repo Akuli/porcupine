@@ -5,7 +5,6 @@
 # see also update(3tcl)
 
 import logging
-import operator
 import os
 import shutil
 import subprocess
@@ -16,7 +15,6 @@ import tkinter
 from concurrent.futures import Future
 from pathlib import Path
 
-import platformdirs
 import pytest
 
 import porcupine
@@ -48,12 +46,6 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "pastebin_test" in item.keywords:
             item.add_marker(skip_pastebins)
-
-
-class MonkeypatchedPlatformDirs(platformdirs.PlatformDirs):
-    user_cache_dir = property(operator.attrgetter("_cache"))
-    user_config_dir = property(operator.attrgetter("_config"))
-    user_log_dir = property(operator.attrgetter("_logs"))
 
 
 @pytest.fixture(scope="session")
