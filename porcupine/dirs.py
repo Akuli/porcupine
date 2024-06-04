@@ -36,8 +36,8 @@ are changed to point inside a temporary directory. This separates the user's
 settings from Porcupine's tests.
 
 The bad import captures the value of the variable at the time of importing,
-before the tests get a chance to change it, so it will always point at the
-user's personal settings folder, even when running tests.
+before the tests change it. Therefore it will always point at the user's
+personal settings folder, even when running tests.
 """
 
 import os
