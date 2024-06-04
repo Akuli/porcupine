@@ -57,31 +57,22 @@ class MonkeypatchedPlatformDirs(platformdirs.PlatformDirs):
 
 
 @pytest.fixture(scope="session")
-def monkeypatch_dirs():
+def monkeypatch_dirs(monkeypatch):
     # avoid errors from user's custom plugins
     user_plugindir = plugins.__path__.pop(0)
     assert user_plugindir == str(dirs.user_config_path / "plugins")
 
     font_cache = dirs.user_cache_path / "font_cache.json"
 
-    # Test our custom log dir before it is monkeypatched away
-    assert Path("~/.local/state").expanduser() not in dirs.user_log_path.parents
-
     with tempfile.TemporaryDirectory() as d:
-        # This is a hack because:
-        #   - pytest monkeypatch fixture doesn't work (not for scope='session')
-        #   - assigning to dirs.user_cache_dir doesn't work (platformdirs uses @property)
-        #   - "porcupine.dirs = blahblah" doesn't work (from porcupine import dirs)
-        dirs.__class__ = MonkeypatchedPlatformDirs
-        dirs._cache = os.path.join(d, "cache")
-        dirs._config = os.path.join(d, "config")
-        dirs._logs = os.path.join(d, "logs")
-        assert dirs.user_cache_dir.startswith(d)
+        monkeypatch.setattr("porcupine.dirs.cache_dir", Path(d) / "cache")
+        monkeypatch.setattr("porcupine.dirs.config_dir", Path(d) / "config")
+        monkeypatch.setattr("porcupine.dirs.log_dir", Path(d) / "logs")
 
         # Copy font cache to speed up tests
         if font_cache.exists():
-            dirs.user_cache_path.mkdir()
-            shutil.copy(font_cache, dirs.user_cache_path)
+            dirs.cache_dir.mkdir()
+            shutil.copy(font_cache, dirs.cache_dir)
 
         yield
 
