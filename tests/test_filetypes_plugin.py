@@ -14,11 +14,11 @@ from porcupine.plugins import filetypes
 def custom_filetypes():
     # We don't overwrite the user's file because porcupine.dirs is monkeypatched
     if sys.platform == "win32":
-        assert "Temp" in dirs.user_config_path.parts
+        assert "Temp" in dirs.config_dir.parts
     else:
-        assert Path.home() not in dirs.user_config_path.parents
+        assert Path.home() not in dirs.config_dir.parents
 
-    (dirs.user_config_path / "filetypes.toml").write_text(
+    (dirs.config_dir / "filetypes.toml").write_text(
         """
 ["Mako template"]
 filename_patterns = ["mako-templates/*.html"]
@@ -34,7 +34,7 @@ settings = {clangd = {arguments = ["-std=c++17"]}}
     filetypes.load_filetypes()
 
     yield
-    (dirs.user_config_path / "filetypes.toml").unlink()
+    (dirs.config_dir / "filetypes.toml").unlink()
     filetypes.filetypes.clear()
     filetypes.load_filetypes()
 

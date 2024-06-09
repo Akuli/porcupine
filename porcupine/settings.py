@@ -395,7 +395,7 @@ def _value_to_save(obj: object) -> object:
 
 # Must be a function, so that it updates when tests change the dirs object
 def get_json_path() -> Path:
-    return dirs.user_config_path / "settings.json"
+    return dirs.config_dir / "settings.json"
 
 
 def save() -> None:
@@ -916,7 +916,7 @@ def _is_monospace(font_family: str) -> bool:
 
 
 def _get_monospace_font_families() -> list[str]:
-    cache_path = dirs.user_cache_path / "font_cache.json"
+    cache_path = dirs.config_dir / "font_cache.json"
     all_families = sorted(set(tkinter.font.families()))
 
     # This is surprisingly slow when there are lots of fonts. Let's cache.

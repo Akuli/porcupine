@@ -26,7 +26,7 @@ class _HistoryItem:
 def _get_path() -> Path:
     # config dir is better than cache dir https://github.com/davatorium/rofi/issues/769
     # Change the number after v when you make incompatible changes
-    return dirs.user_config_path / "run_history_v3.json"
+    return dirs.config_dir / "run_history_v3.json"
 
 
 def _load_json_file() -> list[_HistoryItem]:

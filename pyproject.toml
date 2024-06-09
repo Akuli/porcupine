@@ -26,7 +26,6 @@ license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = []  # Do not attempt to import porcupine before dependencies are installed
 dependencies = [
-    "platformdirs>=3.0.0,<4.0.0",
     "Pygments==2.15.0",
     "colorama>=0.2.5",
     "sansio-lsp-client>=0.10.0,<0.11.0",

@@ -1,5 +1,4 @@
 # Auto-generated in GitHub Actions. See autofix.yml.
-platformdirs>=3.0.0,<4.0.0
 Pygments==2.15.0
 colorama>=0.2.5
 sansio-lsp-client>=0.10.0,<0.11.0
