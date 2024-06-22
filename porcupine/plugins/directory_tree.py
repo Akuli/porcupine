@@ -138,7 +138,7 @@ class DirectoryTree(ttk.Treeview):
 
         little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"
 
-        if little_arrow_clicked:
+        if little_arrow_clicked or not item.startswith("file"):
             self.item(item, open=(not self.item(item, "open")))
             if self.item(item, "open"):
                 self.open_file_or_dir()
