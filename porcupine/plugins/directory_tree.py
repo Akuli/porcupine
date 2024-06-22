@@ -117,14 +117,17 @@ class DirectoryTree(ttk.Treeview):
         self.focus(id)
 
     def _on_double_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
-        self.tk.call("focus", self)
         item = self.identify_row(event.y)
         if not item:
             return None
         self.set_the_selection_correctly(item)
+
         if item.startswith("file"):
             self.open_file_or_dir()
-        return "break"
+            return "break"
+
+        # If it's not a file, treat the double-click as two single clicks.
+        return None
 
     def _on_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
