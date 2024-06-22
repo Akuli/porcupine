@@ -139,7 +139,7 @@ class DirectoryTree(ttk.Treeview):
 
         self.set_the_selection_correctly(item)
 
-        if item.startswith(('dir', 'project')):
+        if item.startswith(("dir", "project")):
             self.item(item, open=(not self.item(item, "open")))
             if self.item(item, "open"):
                 self.open_file_or_dir()
