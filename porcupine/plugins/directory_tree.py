@@ -93,14 +93,12 @@ class DirectoryTree(ttk.Treeview):
 
         # Needs after_idle because selection hasn't updated when binding runs
         self.bind("<Button-1>", self._on_click, add=True)
+        self.bind("<Double-1>", self._on_double_click, add=True)
 
         self.bind("<<TreeviewOpen>>", self.open_file_or_dir, add=True)
         self.bind("<<ThemeChanged>>", self._config_tags, add=True)
         self.column("#0", minwidth=500)  # allow scrolling sideways
         self._config_tags()
-
-        self._last_click_time = 0  # Very long time since previous click, no double click
-        self._last_click_item: str | None = None
 
         self._project_num_counter = 0
         self.contextmenu = tkinter.Menu(tearoff=False)
@@ -118,6 +116,19 @@ class DirectoryTree(ttk.Treeview):
         self.selection_set(id)
         self.focus(id)
 
+    def _on_double_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
+        item = self.identify_row(event.y)
+        if not item:
+            return None
+        self.set_the_selection_correctly(item)
+
+        if item.startswith("file"):
+            self.open_file_or_dir()
+            return "break"
+
+        # If it's not a file, treat the double-click as two single clicks.
+        return None
+
     def _on_click(self, event: tkinter.Event[DirectoryTree]) -> str | None:
         self.tk.call("focus", self)
 
@@ -126,27 +137,13 @@ class DirectoryTree(ttk.Treeview):
         if not item:
             return None
 
-        # Couldn't get <Double-Button-1> to work, so I wrote a program to
-        # measure max time between double clicks. It's 500ms on my system.
-        double_click = event.time - self._last_click_time < 500 and self._last_click_item == item
-
         self.set_the_selection_correctly(item)
-        if item.startswith("file:"):
-            if double_click:
-                self.open_file_or_dir()
-        else:
-            little_arrow_clicked = self.identify_element(event.x, event.y) == "Treeitem.indicator"
-            if double_click or little_arrow_clicked:
-                self.item(item, open=(not self.item(item, "open")))
-                if self.item(item, "open"):
-                    self.open_file_or_dir()
 
-        self._last_click_item = item
-        if double_click:
-            # Prevent getting two double clicks with 3 quick subsequent clicks
-            self._last_click_time = 0
-        else:
-            self._last_click_time = event.time
+        if item.startswith(("dir", "project")):
+            self.item(item, open=(not self.item(item, "open")))
+            if self.item(item, "open"):
+                self.open_file_or_dir()
+
         return "break"
 
     def _config_tags(self, junk: object = None) -> None:
