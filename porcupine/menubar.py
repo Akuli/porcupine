@@ -470,7 +470,15 @@ def _fill_menus_with_default_stuff() -> None:
     set_enabled_based_on_tab("File/Save", (lambda tab: isinstance(tab, tabs.FileTab)))
     set_enabled_based_on_tab("File/Save As", (lambda tab: isinstance(tab, tabs.FileTab)))
     set_enabled_based_on_tab("File/Close", (lambda tab: tab is not None))
-    set_enabled_based_on_tab("File/Quit", (lambda tab: tab is None))
+
+    callback = set_enabled_based_on_tab(
+        "File/Quit",
+        (lambda tab: tab is None or global_settings.get("allow_quit_with_open_tabs", bool)),
+    )
+
+    # Update quit menu item disabled-ness whenever main window is focused.
+    # It is easier than accessing the menu item when the checkbox is checked/unchecked, and seems to work.
+    get_main_window().bind("<FocusIn>", callback, add=True)
 
     def change_font_size(how: Literal["bigger", "smaller", "reset"]) -> None:
         if how == "reset":
