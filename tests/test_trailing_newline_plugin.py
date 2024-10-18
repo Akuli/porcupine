@@ -1,5 +1,9 @@
 def test_trailing_newline(filetab, tmp_path):
     filetab.path = tmp_path / "foo.py"
+
+    filetab.save()
+    assert (tmp_path / "foo.py").read_text() == "\n"
+
     filetab.textwidget.insert("1.0", "hello")
     assert filetab.textwidget.get("1.0", "end - 1 char") == "hello"
 
