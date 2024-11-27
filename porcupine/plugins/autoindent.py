@@ -90,6 +90,8 @@ def after_enter(tab: tabs.FileTab, alt_pressed: bool) -> None:
         if dedent_prev_line:
             tab.textwidget.dedent("insert - 1 line")
 
+    tab.textwidget.event_generate("<<post-autoindent>>")
+
 
 def on_enter_press(
     tab: tabs.FileTab, alt_pressed: bool, event: tkinter.Event[tkinter.Text]
