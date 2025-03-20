@@ -3,7 +3,7 @@ from porcupine import _state
 version_info = (2024, 3, 31)  # this is updated with scripts/release.py
 __version__ = "%d.%02d.%02d" % version_info
 __author__ = "Akuli"
-__copyright__ = "Copyright (c) 2017-2024 Akuli"
+__copyright__ = "Copyright (c) 2017-2025 Akuli and friends"
 __license__ = "MIT"
 
 get_main_window = _state.get_main_window
