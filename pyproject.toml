@@ -30,14 +30,14 @@ dependencies = [
     "colorama>=0.2.5",
     "sansio-lsp-client>=0.10.0,<0.11.0",
     "python-language-server[rope,pyflakes]>=0.36.2,<1.0.0",
-    "black>=21.5b2",
-    "isort>=5.10",
+    "black>=25.12.0",
+    "isort>=7.0.0",
     "dacite>=1.5.1,<2.0.0",
     "tomli==2.0.1",
     "send2trash>=1.8.0,<2.0.0",
     "psutil>=5.8.0,<6.0.0",
     "PyYAML>=6.0,<7",
-    "tree-sitter-builds==2023.3.12",
+    "tree-sitter-language-pack==0.13.0",
     "requests>=2.24.0, <3.0.0",
     # TODO: upgrade sv-ttk
     "sv-ttk==2.5.5",
@@ -47,9 +47,7 @@ dependencies = [
 dev = [
     "pytest==6.2.5",
     "pytest-mock==3.10.0",
-    "pycln==2.1.3",
-    "black==23.1.0",
-    "isort==5.12.0",
+    "pycln==2.6.0",
     "pyupgrade==3.9.0",
     "pillow>=5.4.1",
 
