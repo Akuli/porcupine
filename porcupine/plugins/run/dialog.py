@@ -3,7 +3,8 @@ from __future__ import annotations
 import sys
 import tkinter
 from tkinter import ttk
-from typing import Callable, TypeVar
+from typing import TypeVar
+from collections.abc import Callable
 
 from porcupine import get_main_window, textutils, utils
 

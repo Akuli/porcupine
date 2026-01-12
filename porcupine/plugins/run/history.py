@@ -18,7 +18,7 @@ from . import common
 class _HistoryItem:
     command: common.Command
     use_count: int
-    filetype_name: Optional[str]
+    filetype_name: str | None
     key_id: int
 
 

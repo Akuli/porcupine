@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import tkinter
-from typing import Callable
+from collections.abc import Callable
 
 from porcupine import get_main_window, get_tab_manager, tabs
 from porcupine.menubar import get_filetab

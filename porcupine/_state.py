@@ -7,7 +7,8 @@ import os
 import sys
 import tkinter
 import types
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from porcupine import images, tabs, utils
 

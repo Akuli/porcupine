@@ -30,7 +30,7 @@ class Underline:
     start: str
     end: str
     tooltip_text: str
-    color: Optional[str] = None
+    color: str | None = None
 
 
 @dataclasses.dataclass

@@ -14,7 +14,8 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 import psutil
 

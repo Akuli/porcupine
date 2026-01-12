@@ -8,7 +8,8 @@ import weakref
 from collections.abc import Iterator
 from functools import partial
 from tkinter.font import Font
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
 from weakref import WeakKeyDictionary
 
 from pygments import styles

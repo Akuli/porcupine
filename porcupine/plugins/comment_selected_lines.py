@@ -14,7 +14,7 @@ from porcupine import get_tab_manager, menubar, tabs, textutils
 from porcupine.plugins import rightclick_menu
 
 
-def already_commented(linetext: str, comment_prefix: str) -> Optional[bool]:
+def already_commented(linetext: str, comment_prefix: str) -> bool | None:
     # Ignore '# blah' comments because they are likely written by hand
     # But don't ignore indented '#    blah', that is most likely by this plugin
     if linetext.startswith(comment_prefix) and not re.match(

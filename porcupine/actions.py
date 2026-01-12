@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Callable, Union
+from typing import Union
+from collections.abc import Callable
 
 from porcupine.tabs import FileTab
 

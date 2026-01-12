@@ -33,7 +33,8 @@ import traceback
 from collections.abc import Iterator
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from collections.abc import Callable
 
 import dacite
 

@@ -11,7 +11,8 @@ import tkinter
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Callable, NamedTuple
+from typing import NamedTuple
+from collections.abc import Callable
 
 from send2trash import send2trash
 

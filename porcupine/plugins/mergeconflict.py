@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import itertools
 import tkinter
-from typing import Callable
+from collections.abc import Callable
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins.linenumbers import LineNumbers

@@ -62,7 +62,8 @@ from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Literal
+from typing import Any, Literal
+from collections.abc import Callable
 
 from porcupine import actions, pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit

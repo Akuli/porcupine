@@ -27,7 +27,7 @@ TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappi
 
 @dataclasses.dataclass
 class YmlConfig:
-    token_mapping: dict[str, Union[str, dict[str, str]]]
+    token_mapping: dict[str, str | dict[str, str]]
     dont_recurse_inside: list[str] = dataclasses.field(default_factory=list)
     queries: dict[str, str] = dataclasses.field(default_factory=dict)
 

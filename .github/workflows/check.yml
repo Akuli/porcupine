@@ -15,7 +15,7 @@ jobs:
         # Multiple parallel jobs are needed only to make this faster.
         mypy-platform: ["linux", "win32", "darwin"]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
@@ -34,7 +34,7 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
@@ -54,7 +54,7 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
@@ -80,7 +80,7 @@ jobs:
       TCLLIBPATH: ./lib
       PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - run: brew install python@${{ matrix.python-version }}
     - run: brew install python-tk@${{ matrix.python-version }}
     - run: $PYTHON --version
@@ -92,7 +92,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
@@ -105,10 +105,26 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: pip
     - run: pip install requests
     - run: python3 scripts/check-markdown-links.py
+
+  pyupgrade:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: pip
+    - run: pip install -r requirements-dev.txt
+    - run: |
+        python3 scripts/pyupgrade-all-files.py || (
+          echo -e "\x1b[31mError: You need to run scripts/pyupgrade-all-files.py locally and commit the result.\x1b[0m"
+          exit 1
+        )

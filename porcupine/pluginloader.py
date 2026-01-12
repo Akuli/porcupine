@@ -25,7 +25,8 @@ import random
 import time
 import traceback
 from collections.abc import Iterator, Sequence
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, TypeVar, cast
+from collections.abc import Callable
 
 from porcupine import get_main_window
 from porcupine.plugins import __path__ as plugin_paths

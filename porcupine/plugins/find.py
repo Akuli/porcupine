@@ -7,7 +7,8 @@ import weakref
 from collections.abc import Iterator
 from functools import partial
 from tkinter import ttk
-from typing import Any, Callable, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, cast
+from collections.abc import Callable
 
 from porcupine import get_tab_manager, images, menubar, tabs, textutils
 from porcupine.plugins import rightclick_menu

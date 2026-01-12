@@ -10,7 +10,7 @@ import webbrowser
 from collections import deque
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable
+from collections.abc import Callable
 
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils
