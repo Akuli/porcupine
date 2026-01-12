@@ -187,12 +187,14 @@ def test_debug_dump(capsys):
     output, errors = capsys.readouterr()
     assert not errors
     if sys.version_info < (3, 9):
-        output = output.replace("typing.Union[str, NoneType]", "typing.Optional[str]")
+        output = output.replace("typing.Union[str, NoneType]", "str | None")
+    elif sys.version_info < (3, 12):  # TODO: when did this change?
+        output = output.replace("typing.Optional[str]", "str | None")
     assert (
         output
         == """\
 1 known options (add_option called)
-  foo = None    (type=typing.Optional[str], tag=None)
+  foo = None    (type=str | None, tag=None)
 
 1 unknown options (add_option not called)
   bar = ['a', 'b', 'c']    (tag='this is a tag')

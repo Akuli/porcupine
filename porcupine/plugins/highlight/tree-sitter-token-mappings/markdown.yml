@@ -5,27 +5,28 @@ dont_recurse_inside:
   - emphasis
   - strong_emphasis
 
-queries:
-  # Links look like [link text](https://...). Make []() colored as operators.
-  link: |
-    (link
-      (link_text) @recurse
-      (link_destination)? @recurse  # Missing for [foo] links
-    ) @Token.Operator
-
-  image: |
-    (image
-      (image_description)? @recurse
-      (link_destination) @recurse
-    ) @Token.Operator
-
-  # [foo] is a valid link but must be defined later in the document with a
-  # link_reference_definition that looks like "[foo]: https://..."
-  link_reference_definition: |
-    (link_reference_definition
-      (link_label) @recurse
-      (link_destination) @recurse
-    ) @Token.Operator
+# TODO: these queries don't work with whatever versions are in tree-sitter-language-pack
+#queries:
+#  # Links look like [link text](https://...). Make []() colored as operators.
+#  link: |
+#    (link
+#      (link_text) @recurse
+#      (link_destination)? @recurse  # Missing for [foo] links
+#    ) @Token.Operator
+#
+#  image: |
+#    (image
+#      (image_description)? @recurse
+#      (link_destination) @recurse
+#    ) @Token.Operator
+#
+#  # [foo] is a valid link but must be defined later in the document with a
+#  # link_reference_definition that looks like "[foo]: https://..."
+#  link_reference_definition: |
+#    (link_reference_definition
+#      (link_label) @recurse
+#      (link_destination) @recurse
+#    ) @Token.Operator
 
 token_mapping:
   code_span: Token.Literal.String           # `print("hi")`

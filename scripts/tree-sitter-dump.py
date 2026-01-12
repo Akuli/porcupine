@@ -8,8 +8,8 @@ import reprlib
 import sys
 from pathlib import Path
 
-from tree_sitter import Parser
-from tree_sitter_languages import get_language
+from tree_sitter import Parser, QueryCursor, Query
+from tree_sitter_language_pack import get_language
 
 sys.path.append(str(Path(__file__).absolute().parent.parent))
 
@@ -26,7 +26,7 @@ def print_node(node):
 
 def print_nodes_recursively(cursor, indent_level=0):
     node = cursor.node
-    field_name = cursor.current_field_name()
+    field_name = cursor.field_name
     print("  " * indent_level, end="")
     if field_name is not None:
         print(f"field {field_name!r}:", end=" ")
@@ -40,18 +40,19 @@ def print_nodes_recursively(cursor, indent_level=0):
 
 
 language = get_language(args.language_name)
-parser = Parser()
-parser.set_language(language)
+parser = Parser(language)
 tree = parser.parse(args.file.read())
 print_nodes_recursively(tree.walk())
 
 if args.query:
     print()
     print("Running query on the tree:", args.query)
-    matches = language.query(args.query).captures(tree.root_node)
+    matches = QueryCursor(language.query(args.query)).captures(tree.root_node)
     if matches:
-        for node, tag in matches:
-            print(f"  @{tag} matched:", end=" ")
-            print_node(node)
+        print(matches)
+        for tag, nodes in matches.items():
+            for node in nodes:
+                print(f"  @{tag} matched:", end=" ")
+                print_node(node)
     else:
         print("  No '@' matches")

@@ -3,7 +3,8 @@ import sys
 import time
 
 import pytest
-from sansio_lsp_client import ClientState
+if False:  # TODO: langservers are disabled :(
+    from sansio_lsp_client import ClientState
 
 from porcupine import get_main_window
 from porcupine.plugins.langserver import langservers

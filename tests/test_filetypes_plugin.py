@@ -86,6 +86,7 @@ def test_cplusplus_toml_bug(tmp_path, tabmanager, custom_filetypes):
     pickle.dumps(tab.get_state())  # should not raise an error
 
 
+@pytest.mark.xfail(strict=True, reason="langservers are disabled")
 def test_settings_reset_when_filetype_changes(filetab, tmp_path):
     assert filetab.settings.get("filetype_name", object) == "Python"
     assert filetab.settings.get("comment_prefix", object) == "#"

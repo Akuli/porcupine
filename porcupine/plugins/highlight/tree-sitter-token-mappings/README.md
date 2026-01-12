@@ -49,17 +49,18 @@ queries, see [tree-sitter's documentation](https://tree-sitter.github.io/tree-si
 
     $ python3 scripts/tree-sitter-dump.py python hello.py --query '(call arguments: (argument_list) @asdasd)'
     type=module text="print('hello')"
-      type=expression_statement text="print('hello')"
-        type=call text="print('hello')"
-          field 'function': type=identifier text='print'
-          field 'arguments': type=argument_list text="('hello')"
-            type=( text='('
-            type=string text="'hello'"
-              type=" text="'"
-              type=" text="'"
-            type=) text=')'
+      type=call text="print('hello')"
+        field 'function': type=identifier text='print'
+        field 'arguments': type=argument_list text="('hello')"
+          type=( text='('
+          type=string text="'hello'"
+            type=string_start text="'"
+            type=string_content text='hello'
+            type=string_end text="'"
+          type=) text=')'
 
     Running query on the tree: (call arguments: (argument_list) @asdasd)
+    {'asdasd': [<Node type=argument_list, start_point=(0, 5), end_point=(0, 14)>]}
       @asdasd matched: type=argument_list text="('hello')"
 
 The script only prints the `@` captures. In the .yml files, you can use:
