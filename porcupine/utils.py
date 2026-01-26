@@ -272,8 +272,10 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
 
 # This doesn't handle all possible cases, see bind(3tk)
 def _format_binding(binding: str, menu: bool) -> str:
+    binding = binding.lstrip("<").rstrip(">")
+    parts = re.split(r"(?<!-)-", binding)  # "Mod1-Key--" --> ["Mod1", "Key", "-"]
+
     mac = porcupine.get_main_window().tk.eval("tk windowingsystem") == "aqua"
-    parts = binding.lstrip("<").rstrip(">").split("-")
 
     # don't know how to show click in mac menus
     if mac and menu and any(parts[i : i + 2] == "Button-1".split("-") for i in range(len(parts))):
