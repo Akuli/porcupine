@@ -13,7 +13,10 @@ jobs:
       with:
         # This should be the oldest python version we support, so it is
         # backwards-compatible for older windows versions.
-        python-version: "3.9"  
+        #
+        # Unfortunately we currently don't support Windows 7. Latest to support
+        # it was Python 3.9.
+        python-version: "3.10"
         cache: pip
     - run: pip install wheel
     - run: pip install -r requirements-dev.txt
