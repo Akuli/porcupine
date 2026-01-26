@@ -51,7 +51,9 @@ _images_that_can_be_dark_or_light = {"closebutton", "pause", "resume"}
 
 def _get_image_file(name: str) -> Path:
     if name in _images_that_can_be_dark_or_light:
-        if utils.is_bright(Style().lookup("TLabel.label", "background")):
+        # The "or" fallback is needed in some corner case that I don't fully
+        # understand. This will later run again with the correct color.
+        if utils.is_bright(Style().lookup("TLabel.label", "background") or "white"):
             name += "_dark"
         else:
             name += "_light"
