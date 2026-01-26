@@ -40,8 +40,7 @@ dependencies = [
     "PyYAML>=6.0,<7",
     "tree-sitter-language-pack==0.13.0",
     "requests>=2.24.0, <3.0.0",
-    # TODO: upgrade sv-ttk
-    "sv-ttk==2.5.5",
+    "sv-ttk==2.6.1",
 ]
 
 [project.optional-dependencies]
