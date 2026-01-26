@@ -78,7 +78,7 @@ jobs:
     env:
       # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
       TCLLIBPATH: ./lib
-      PYTHON: /usr/local/opt/python@${{ matrix.python-version }}/libexec/bin/python
+      PYTHON: /opt/homebrew/Cellar/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
     - uses: actions/checkout@v6
     - run: brew install python@${{ matrix.python-version }}
