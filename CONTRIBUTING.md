@@ -24,7 +24,7 @@ I have tried to make contributing easy:
     Just make a PR and I will edit it as needed.
 
 To get started, make a fork of Porcupine with the button in the top right corner of this page.
-Then install Python 3.9 or newer and [git](https://git-scm.com/), and run these commands:
+Then install Python 3.10 or newer and [git](https://git-scm.com/), and run these commands:
 
     git clone https://github.com/YourUserName/porcupine
     cd porcupine
