@@ -45,7 +45,7 @@ specify that for type=identifier tokens with text "print" in python.yml:
         ...
 
 You can also explore how queries work by passing in --query. For more about
-queries, see [tree-sitter's documentation](https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries):
+queries, see [tree-sitter's documentation](https://tree-sitter.github.io/tree-sitter/using-parsers/#pattern-matching-with-queries):
 
     $ python3 scripts/tree-sitter-dump.py python hello.py --query '(call arguments: (argument_list) @asdasd)'
     type=module text="print('hello')"
