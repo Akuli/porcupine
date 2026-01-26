@@ -13,7 +13,7 @@ For example, `"12.3"` means "line 12, column 3".
 Line numbers are 1-based and columns 0-based, so `"1.0"` is the start of the text widget.
 
 Actually, `"line.column"` is only one of the many forms accepted by tkinter.
-See `INDICES` in [the `text(3tk)` manual page](https://www.tcl.tk/man/tcl8.6/TkCmd/text.htm) for a full list.
+See `INDICES` in [the `text(3tk)` manual page](https://www.tcl-lang.org/man/tcl8.6/TkCmd/text.htm) for a full list.
 Here are the most common ways to specify locations:
 - `end` is **one imaginary newline character beyond** the end of the text widget
 - `end - 1 char` is the end of the text widget
