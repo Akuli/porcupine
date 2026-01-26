@@ -30,6 +30,7 @@ def intense_super_update():
         get_main_window().update()
 
 
+@pytest.mark.xfail(strict=True, reason="langservers are disabled")
 def test_basic(filetab, tmp_path, wait_until):
     filetab.textwidget.insert(
         "1.0",
@@ -54,6 +55,7 @@ foo()
     assert filetab.textwidget.get("sel.first linestart", "sel.last lineend") == "def foo():"
 
 
+@pytest.mark.xfail(strict=True, reason="langservers are disabled")
 def test_two_definitions(filetab, tmp_path, mocker, wait_until):
     filetab.textwidget.insert(
         "1.0",
