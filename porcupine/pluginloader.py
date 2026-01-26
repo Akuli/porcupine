@@ -175,6 +175,7 @@ def _run_setup_and_set_status(info: PluginInfo) -> None:
             log.exception(f"{info.name}.setup() doesn't work")
             info.status = Status.SETUP_FAILED
             info.error = traceback.format_exc()
+            traceback.print_exc()  # TODO: temporary debug, remove
         else:
             if error_log:
                 info.status = Status.SETUP_FAILED
