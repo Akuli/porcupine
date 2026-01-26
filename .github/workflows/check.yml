@@ -71,9 +71,7 @@ jobs:
   # It imports, but gives this error:    RuntimeError: tk.h version (8.6) doesn't match libtk.a version (8.5)
   pytest-macos:
     timeout-minutes: 15
-    # TODO: run tests on M1 macos when we no longer need tree-sitter-builds.
-    # This was never supported by tree-sitter-builds: https://github.com/Akuli/py-tree-sitter-builds/issues/11
-    runs-on: macos-13  # latest intel mac
+    runs-on: macos-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
