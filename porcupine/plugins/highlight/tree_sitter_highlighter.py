@@ -43,7 +43,7 @@ def _strip_comments(query: str) -> str:
 class TreeSitterHighlighter(BaseHighlighter):
     def __init__(self, textwidget: tkinter.Text, language_name: str) -> None:
         super().__init__(textwidget)
-        self._language = tree_sitter_language_pack.get_language(language_name)
+        self._language = tree_sitter_language_pack.get_language(language_name)  # type: ignore
 
         self._parser = tree_sitter.Parser(self._language)
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
@@ -80,6 +80,7 @@ class TreeSitterHighlighter(BaseHighlighter):
             # Specifying empty string can be used to set a custom fallback when
             # the text of the node isn't found in the config.
             default = config_value.get("", default)
+            assert node.text is not None
             return config_value.get(node.text.decode("utf-8"), default)
         return config_value
 
@@ -91,6 +92,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         end_point: tuple[int, int],
     ) -> Iterator[tuple[tree_sitter.Node, str]]:
         assert self._config is not None
+        assert cursor.node is not None
         overlap_start = max(cursor.node.start_point, start_point)
         overlap_end = min(cursor.node.end_point, end_point)
         if overlap_start >= overlap_end:
