@@ -215,8 +215,11 @@ class PanedWindow(tkinter.PanedWindow):
 
     def _update_colors(self, junk_event: object = None) -> None:
         ttk_bg = self.tk.eval("ttk::style lookup TLabel.label -background")
-        assert ttk_bg
-        self["bg"] = ttk_bg
+
+        # This is sometimes empty for whatever reason, but runs with the
+        # correct color afterwards.
+        if ttk_bg:
+            self["bg"] = ttk_bg
 
 
 # TODO: document this?
