@@ -188,7 +188,7 @@ def test_debug_dump(capsys):
     assert not errors
     if sys.version_info < (3, 9):
         output = output.replace("typing.Union[str, NoneType]", "str | None")
-    elif sys.version_info < (3, 13):
+    elif sys.version_info < (3, 14):  # Needed on GitHub Actions python 3.13
         output = output.replace("typing.Optional[str]", "str | None")
     assert (
         output
