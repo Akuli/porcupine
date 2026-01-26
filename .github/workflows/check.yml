@@ -86,7 +86,7 @@ jobs:
     - run: /opt/homebrew/bin/python${{ matrix.python-version }} -m venv env
     - run: source env/bin/activate && python --version
     - run: source env/bin/activate && pip install -r requirements-dev.txt
-    - run: source env/bin/activate && scripts/download-tkdnd.py
+    - run: source env/bin/activate && python scripts/download-tkdnd.py
     - run: source env/bin/activate && python -m pytest --durations=10
 
   flake8-tkinter:
