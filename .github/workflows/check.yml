@@ -78,15 +78,14 @@ jobs:
     env:
       # TODO: how to install tkdnd on mac? add instructions to README or make mac app that bundles it
       TCLLIBPATH: ./lib
-      PYTHON: /opt/homebrew/Cellar/python@${{ matrix.python-version }}/libexec/bin/python
     steps:
     - uses: actions/checkout@v6
     - run: brew install python@${{ matrix.python-version }}
     - run: brew install python-tk@${{ matrix.python-version }}
-    - run: $PYTHON --version
-    - run: $PYTHON -m pip install -r requirements-dev.txt
-    - run: $PYTHON scripts/download-tkdnd.py
-    - run: $PYTHON -m pytest --durations=10
+    - run: /opt/homebrew/bin/python${{ matrix.python-version }} --version
+    - run: /opt/homebrew/bin/python${{ matrix.python-version }} -m pip install -r requirements-dev.txt
+    - run: /opt/homebrew/bin/python${{ matrix.python-version }} scripts/download-tkdnd.py
+    - run: /opt/homebrew/bin/python${{ matrix.python-version }} -m pytest --durations=10
 
   flake8-tkinter:
     timeout-minutes: 5
