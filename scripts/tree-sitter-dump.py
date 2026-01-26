@@ -47,7 +47,7 @@ print_nodes_recursively(tree.walk())
 if args.query:
     print()
     print("Running query on the tree:", args.query)
-    matches = QueryCursor(language.query(args.query)).captures(tree.root_node)
+    matches = QueryCursor(Query(language, args.query)).captures(tree.root_node)
     if matches:
         print(matches)
         for tag, nodes in matches.items():

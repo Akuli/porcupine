@@ -55,7 +55,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         # Pseudo-optimization: "pre-compile" queries when the highlighter starts.
         # Also makes the highlighter fail noticably if any query contain syntax errors.
         self._queries = {
-            node_type_name: self._language.query(_strip_comments(text))
+            node_type_name: tree_sitter.Query(self._language, _strip_comments(text))
             for node_type_name, text in self._config.queries.items()
         }
 
