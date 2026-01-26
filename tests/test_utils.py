@@ -83,6 +83,8 @@ else:
 
 @pytest.mark.parametrize("binding, menu_false_text, menu_true_text", binding_test_cases)
 def test_get_binding(binding, menu_false_text, menu_true_text):
+    if "Smaller Font" in binding:
+        print("****\n****\nDEBUG " + repr(get_main_window().event_info("<<Menubar:View/Smaller Font>>")) + "\n****\n****")
     # User-wide keybindings.tcl is not loaded when tests run
 
     # Old test case, currently unused
