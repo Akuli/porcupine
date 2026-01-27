@@ -11,7 +11,7 @@ from pathlib import Path
 
 import PIL.Image
 import requests
-import toml
+import tomllib
 
 sys.path.append("")  # import from current working directory
 from porcupine import __version__ as porcupine_version
@@ -157,12 +157,13 @@ root.tk.eval("package require tkdnd")
 root.destroy()
 
 print("Finding supported file extensions")
-extensions = [
-    pattern.lstrip("*")
-    for filetype in toml.load("porcupine/default_filetypes.toml").values()
-    for pattern in filetype["filename_patterns"]
-    if pattern.startswith("*.") and pattern.count("*") == 1 and "," not in pattern
-]
+with open("porcupine/default_filetypes.toml", "rb") as f:
+    extensions = [
+        pattern.lstrip("*")
+        for filetype in tomllib.load(f).values()
+        for pattern in filetype["filename_patterns"]
+        if pattern.startswith("*.") and pattern.count("*") == 1 and "," not in pattern
+    ]
 print(extensions)
 
 makensis = os.path.abspath("build/nsis-3.08/makensis.exe")
