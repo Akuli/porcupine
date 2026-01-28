@@ -348,6 +348,10 @@ def test_no_previous_command_error(filetab, tmp_path, mocker):
     assert "then repeat it with F5" in str(mock.call_args)
 
 
+@pytest.mark.skipif(
+    shutil.which("python3") is None and sys.platform != "win32",
+    reason="uses python3"
+)
 def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
     python_mock = mocker.patch("porcupine.plugins.run.terminal.run_command")
     html_mock = mocker.patch("porcupine.plugins.run.no_terminal.run_command")
