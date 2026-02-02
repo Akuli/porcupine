@@ -72,6 +72,7 @@ def _run_in_macos_terminal_app(command: str | None, cwd: Path, env: dict[str, st
     # it's removed even if the command is interrupted
 
 
+# TODO: Clean up this function, it works but could be more tidy
 def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str]) -> None:
     terminal: str | None = next(
         filter(
