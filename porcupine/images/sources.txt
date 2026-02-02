@@ -1,6 +1,7 @@
 triangle.gif            https://cdn.pixabay.com/photo/2012/04/14/15/13/danger-34250_960_720.png
 logo.gif                Drawn by Akuli
 logo-200x200.gif        Drawn by Akuli
+logo-200x200.ico        Converted from logo-200x200.gif with imagemagick's `convert` tool
 venv.png                Drawn by Akuli
 stop.png                Edited from https://openmoji.org/library/emoji-1F6D1/
 closebutton_dark.png    Drawn by rdbende
