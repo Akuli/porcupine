@@ -2,7 +2,9 @@
 import sys
 from pathlib import Path
 
-from porcupine.plugins.langserver import _file_url_to_path
+# TODO: langservers are disabled
+if False:
+    from porcupine.plugins.langserver import _file_url_to_path
 
 
 def test_file_url_to_path():
