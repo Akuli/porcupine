@@ -27,7 +27,7 @@ from urllib.request import url2pathname
 if sys.platform != "win32":
     import fcntl
 
-# import sansio_lsp_client as lsp
+import sansio_lsp_client as lsp
 
 from porcupine import get_tab_manager, tabs, textutils, utils
 from porcupine.plugins import autocomplete, hover, jump_to_definition, python_venv, underlines
@@ -785,5 +785,4 @@ def on_new_filetab(tab: tabs.FileTab) -> None:
 
 
 def setup() -> None:
-    global_log.error("langservers are disabled for now due to dependency hell, sorry :(")
-    # get_tab_manager().add_filetab_callback(on_new_filetab)
+    get_tab_manager().add_filetab_callback(on_new_filetab)
