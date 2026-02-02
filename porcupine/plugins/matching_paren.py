@@ -1,6 +1,7 @@
 """
 When you put the cursor next to ')', this plugin highlights the matching '('.
 """
+
 from __future__ import annotations
 
 import re

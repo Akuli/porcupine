@@ -1,4 +1,5 @@
 r"""Tabs as in browser tabs, not \t characters."""
+
 from __future__ import annotations
 
 import codecs
@@ -11,11 +12,10 @@ import logging
 import os
 import tkinter
 import traceback
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, NamedTuple, Optional, TypeVar
-from collections.abc import Callable
 
 from pygments.lexer import LexerMeta
 from pygments.lexers import TextLexer

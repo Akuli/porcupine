@@ -1,4 +1,5 @@
 """Allow tabs to be closed in different ways."""
+
 from __future__ import annotations
 
 import tkinter

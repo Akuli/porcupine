@@ -13,6 +13,7 @@ It's fine if one or two properties aren't quite true, but most of them should be
 
 tl;dr: Please think twice before adding new things to this file.
 """
+
 from __future__ import annotations
 
 import codecs
@@ -30,11 +31,10 @@ import sys
 import threading
 import tkinter
 import traceback
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
-from collections.abc import Callable
 
 import dacite
 
@@ -364,7 +364,7 @@ def tkinter_safe_string(string: str, *, hide_unsupported_chars: bool = False) ->
     if hide_unsupported_chars:
         replace_with = ""
     else:
-        replace_with = "\N{replacement character}"
+        replace_with = "\N{REPLACEMENT CHARACTER}"
 
     return "".join(replace_with if ord(char) > 0xFFFF else char for char in string)
 

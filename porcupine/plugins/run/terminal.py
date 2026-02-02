@@ -1,4 +1,5 @@
 """Run commands in a new terminal window."""
+
 from __future__ import annotations
 
 import logging
@@ -72,17 +73,24 @@ def _run_in_macos_terminal_app(command: str | None, cwd: Path, env: dict[str, st
 
 
 def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str]) -> None:
-    terminal: str | None = next(filter(lambda t: t is not None, (
-        shutil.which(term) for term in (
-            os.environ.get("TERMINAL", "x-terminal-emulator"),
-            "mate-terminal",
-            "xfce4-terminal",
-            "st",
-            "lxterm",
-            "uxterm",
-            "xterm",
-        )
-    )), None)
+    terminal: str | None = next(
+        filter(
+            lambda t: t is not None,
+            (
+                shutil.which(term)
+                for term in (
+                    os.environ.get("TERMINAL", "x-terminal-emulator"),
+                    "mate-terminal",
+                    "xfce4-terminal",
+                    "st",
+                    "lxterm",
+                    "uxterm",
+                    "xterm",
+                )
+            ),
+        ),
+        None,
+    )
 
     # to config what x-terminal-emulator is:
     #

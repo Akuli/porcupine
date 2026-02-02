@@ -1,4 +1,5 @@
 """Display a welcome message when there are no tabs."""
+
 from __future__ import annotations
 
 import re

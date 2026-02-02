@@ -1,4 +1,5 @@
 """Add a trailing newline character to the end of file when saving."""
+
 from __future__ import annotations
 
 import tkinter

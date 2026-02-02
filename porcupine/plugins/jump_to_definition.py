@@ -2,6 +2,7 @@
 
 For this plugin to work, you also need the langserver plugin.
 """
+
 from __future__ import annotations
 
 import dataclasses

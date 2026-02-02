@@ -12,6 +12,7 @@ To use this plugin:
 
 5. Send the link to someone else
 """
+
 # docstring above needs to have blank lines to show properly in plugin manager
 # TODO: make this work with pythonprompt plugin?
 from __future__ import annotations

@@ -9,11 +9,11 @@ import dataclasses
 import logging
 import os
 import tkinter
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 from tkinter import ttk
 from typing import Any
-from collections.abc import Callable
 
 from porcupine import (
     get_horizontal_panedwindow,

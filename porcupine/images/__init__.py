@@ -16,6 +16,7 @@ Some images are different for light and dark UI themes, but the returned
 For example, to use either `closebutton_dark.png` or `closebutton_light.png`,
 you would simply do `images.get("closebutton")`.
 """
+
 from __future__ import annotations
 
 import atexit

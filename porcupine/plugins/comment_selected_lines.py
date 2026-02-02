@@ -5,6 +5,7 @@ lines are commented out.
 A different character is used in other programming languages. This can be
 configured with comment_prefix in filetypes.toml.
 """
+
 from __future__ import annotations
 
 import re

@@ -1,4 +1,5 @@
 """If multiple lines are selected and tab is pressed, then indent all of the lines."""
+
 from __future__ import annotations
 
 import tkinter

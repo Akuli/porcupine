@@ -1,4 +1,5 @@
 """Everything related to filetypes.toml."""
+
 from __future__ import annotations
 
 import argparse

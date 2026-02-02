@@ -1,4 +1,5 @@
 """File manager operations (delete, rename etc) when right-clicking directory tree."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -8,11 +9,11 @@ import shutil
 import subprocess
 import sys
 import tkinter
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import NamedTuple
-from collections.abc import Callable
 
 from send2trash import send2trash
 

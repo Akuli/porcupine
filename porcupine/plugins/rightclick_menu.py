@@ -1,4 +1,5 @@
 """Display a menu when the main editing area is right-clicked."""
+
 from __future__ import annotations
 
 import tkinter

@@ -12,12 +12,12 @@ Another example is highlighting links in source code. If your program contains
 a link, the urls plugin finds it and uses this plugin to underline it and
 display something like "Ctrl+Enter or Ctrl+click to open" when hovered.
 """
+
 from __future__ import annotations
 
 import dataclasses
 import logging
 import tkinter
-from typing import Optional
 
 from porcupine import get_tab_manager, tabs, utils
 from porcupine.plugins import hover

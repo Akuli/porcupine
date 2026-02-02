@@ -1,4 +1,5 @@
 """Open a file in Porcupine when it's dragged and dropped from file manager."""
+
 import logging
 import tkinter
 from pathlib import Path

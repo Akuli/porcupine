@@ -12,11 +12,10 @@ import os
 import sys
 import time
 import tkinter
-from collections.abc import Generator, Iterator
+from collections.abc import Callable, Generator, Iterator
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, TypeVar, overload
-from collections.abc import Callable
 
 import dacite
 from pygments import styles, token
@@ -69,6 +68,7 @@ class LineEnding(enum.Enum):
 
     Use ``LineEnding(os.linesep)`` to get the platform-specific default.
     """
+
     CR = "\r"
     LF = "\n"
     CRLF = "\r\n"

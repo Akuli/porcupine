@@ -1,4 +1,5 @@
 """Enable and disable Porcupine plugins."""
+
 from __future__ import annotations
 
 import ast

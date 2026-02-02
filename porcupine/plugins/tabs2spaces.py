@@ -1,4 +1,5 @@
 """If configuration says so, insert spaces when the tab key is pressed."""
+
 # This plugin binds Tab and Shift-Tab, and always returns 'break'.
 # If you are writing a plugin that binds Tab or Shift-Tab too, it
 # **must** be set up before this plugin. For example:

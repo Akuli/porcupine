@@ -1,4 +1,5 @@
 """Indent new lines automatically when Enter is pressed."""
+
 from __future__ import annotations
 
 import dataclasses

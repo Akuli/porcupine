@@ -1,4 +1,5 @@
 """Adds "Hide this project" button when right-clicking a project in the directory tree."""
+
 from __future__ import annotations
 
 import tkinter

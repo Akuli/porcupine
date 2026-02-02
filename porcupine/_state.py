@@ -1,4 +1,5 @@
 """The main window and tab manager globals are here."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -7,8 +8,8 @@ import os
 import sys
 import tkinter
 import types
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from porcupine import images, tabs, utils
 

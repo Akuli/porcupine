@@ -6,7 +6,6 @@ import re
 import tkinter
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Union
 
 import dacite
 import tree_sitter

@@ -2,6 +2,7 @@
 Allow for easy navigation in your files by toggling on/off anchorpoints,
 and jumping back and forth between them.
 """
+
 from __future__ import annotations
 
 import time

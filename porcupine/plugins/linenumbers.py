@@ -1,4 +1,5 @@
 """Line numbers on left side of the file being edited."""
+
 from __future__ import annotations
 
 import tkinter.font

@@ -1,4 +1,5 @@
 """Allow dragging tabs out of the Porcupine window."""
+
 from __future__ import annotations
 
 import enum
