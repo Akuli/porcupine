@@ -1,5 +1,6 @@
-from porcupine.plugins.statusbar import StatusBar
 from tkinter.ttk import Style
+
+from porcupine.plugins.statusbar import StatusBar
 
 
 def test_reload_warning(filetab, tmp_path):

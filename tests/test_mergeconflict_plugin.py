@@ -15,9 +15,7 @@ merge_conflict_string = """\
     hello world
     >>>>>>> other_branch
     after
-    """.replace(
-    " " * 4, ""
-)
+    """.replace(" " * 4, "")
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="need git to make merge conflicts")

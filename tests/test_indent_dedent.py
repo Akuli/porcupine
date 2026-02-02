@@ -64,14 +64,11 @@ baz""",
     )
     filetab.textwidget.tag_add("sel", "2.1", "3.2")
     filetab.textwidget.event_generate("<Tab>")
-    assert (
-        filetab.textwidget.get("1.0", "end - 1 char")
-        == """\
+    assert filetab.textwidget.get("1.0", "end - 1 char") == """\
 foo
     bar
     biz
 baz"""
-    )
     assert list(map(str, filetab.textwidget.tag_ranges("sel"))) == ["2.0", "4.0"]
 
     # shift-tab is platform specific, see utils.bind_tab_key
@@ -79,14 +76,11 @@ baz"""
         key for key in filetab.textwidget.bind() if key.endswith("Tab>") and key != "<Key-Tab>"
     ]
     filetab.textwidget.event_generate(shift_tab)
-    assert (
-        filetab.textwidget.get("1.0", "end - 1 char")
-        == """\
+    assert filetab.textwidget.get("1.0", "end - 1 char") == """\
 foo
 bar
 biz
 baz"""
-    )
     assert list(map(str, filetab.textwidget.tag_ranges("sel"))) == ["2.0", "4.0"]
 
 

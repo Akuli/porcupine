@@ -3,6 +3,7 @@ import sys
 import time
 
 import pytest
+
 if False:  # TODO: langservers are disabled :(
     from sansio_lsp_client import ClientState
 

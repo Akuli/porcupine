@@ -18,8 +18,7 @@ def custom_filetypes():
     else:
         assert Path.home() not in dirs.config_dir.parents
 
-    (dirs.config_dir / "filetypes.toml").write_text(
-        """
+    (dirs.config_dir / "filetypes.toml").write_text("""
 ["Mako template"]
 filename_patterns = ["mako-templates/*.html"]
 pygments_lexer = 'pygments.lexers.MakoHtmlLexer'
@@ -28,8 +27,7 @@ pygments_lexer = 'pygments.lexers.MakoHtmlLexer'
 command = "clangd"
 language_id = "cpp"
 settings = {clangd = {arguments = ["-std=c++17"]}}
-"""
-    )
+""")
     filetypes.filetypes.clear()
     filetypes.load_filetypes()
 

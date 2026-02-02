@@ -42,19 +42,13 @@ stuff = [
 
     # [square brackets]
     text.mark_set("insert", "1.0 lineend")
-    assert (
-        text.get("matching_paren.first", "matching_paren.last")
-        == """[
+    assert text.get("matching_paren.first", "matching_paren.last") == """[
     ('a', 'b', {'c', 'd'})
 ]"""
-    )
     text.mark_set("insert", "3.1")
-    assert (
-        text.get("matching_paren.first", "matching_paren.last")
-        == """[
+    assert text.get("matching_paren.first", "matching_paren.last") == """[
     ('a', 'b', {'c', 'd'})
 ]"""
-    )
 
     # (round parens)
     text.mark_set("insert", "2.5")

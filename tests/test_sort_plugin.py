@@ -10,15 +10,12 @@ bar""",
     )
     filetab.textwidget.tag_add("sel", "2.0", "4.1")
     filetab.event_generate("<<Menubar:Edit/Sort Lines>>")
-    assert (
-        filetab.textwidget.get("1.0", "end - 1 char")
-        == """\
+    assert filetab.textwidget.get("1.0", "end - 1 char") == """\
 foo
 aaa
 bbb
 ccc
 bar"""
-    )
     assert filetab.textwidget.index("sel.first") == "2.0"
     assert filetab.textwidget.index("sel.last") == "5.0"
 
@@ -39,9 +36,7 @@ bar""",
     filetab.textwidget.mark_set("insert", "4.0")
     filetab.event_generate("<<Menubar:Edit/Sort Lines>>")
     assert filetab.textwidget.index("insert") == "4.0"
-    assert (
-        filetab.textwidget.get("1.0", "end - 1 char")
-        == f"""\
+    assert filetab.textwidget.get("1.0", "end - 1 char") == f"""\
 foo
 {whitespace}
 aaa
@@ -49,7 +44,6 @@ bbb
 ccc
 {whitespace}
 bar"""
-    )
 
 
 def test_finding_indented_block(filetab):
@@ -68,9 +62,7 @@ def test_finding_indented_block(filetab):
 
     filetab.textwidget.mark_set("insert", "3.3")
     filetab.event_generate("<<Menubar:Edit/Sort Lines>>")
-    assert (
-        filetab.textwidget.get("1.0", "end - 1 char")
-        == """\
+    assert filetab.textwidget.get("1.0", "end - 1 char") == """\
 [foo]
     akuli
     banana
@@ -79,7 +71,6 @@ def test_finding_indented_block(filetab):
 [bar]
     blah blah
 """
-    )
     assert (
         filetab.textwidget.get("sel.first", "sel.last")
         == "    akuli\n    banana\n    catris\n    dingdingding\n"
@@ -98,14 +89,11 @@ my_list = [
 
     filetab.textwidget.mark_set("insert", "2.0")
     filetab.event_generate("<<Menubar:Edit/Sort Lines>>")
-    assert (
-        filetab.textwidget.get("1.0", "end - 1 char")
-        == """\
+    assert filetab.textwidget.get("1.0", "end - 1 char") == """\
 my_list = [
 \t"asdf",
 \t"bruh",
 ]"""
-    )
     assert filetab.textwidget.get("sel.first", "sel.last") == '\t"asdf",\n\t"bruh",\n'
 
 

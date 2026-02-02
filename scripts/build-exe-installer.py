@@ -6,12 +6,12 @@ import struct
 import subprocess
 import sys
 import tkinter
+import tomllib
 import zipfile
 from pathlib import Path
 
 import PIL.Image
 import requests
-import tomllib
 
 sys.path.append("")  # import from current working directory
 from porcupine import __version__ as porcupine_version

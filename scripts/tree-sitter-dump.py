@@ -8,7 +8,7 @@ import reprlib
 import sys
 from pathlib import Path
 
-from tree_sitter import Parser, QueryCursor, Query
+from tree_sitter import Parser, Query, QueryCursor
 from tree_sitter_language_pack import get_language
 
 sys.path.append(str(Path(__file__).absolute().parent.parent))
